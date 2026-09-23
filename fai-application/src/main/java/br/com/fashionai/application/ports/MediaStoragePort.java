@@ -14,6 +14,9 @@ public interface MediaStoragePort {
 
     void delete(String objectKey);
 
+    /** Chave de objeto a partir de uma URL pública emitida por este storage (vazio se for URL externa). */
+    java.util.Optional<String> keyOf(String url);
+
     record StoredObject(String key, String url, long size, String contentType) {
     }
 }

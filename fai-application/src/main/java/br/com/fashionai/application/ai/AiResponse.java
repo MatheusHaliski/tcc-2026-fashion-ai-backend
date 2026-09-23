@@ -1,14 +1,15 @@
 package br.com.fashionai.application.ai;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.util.Map;
 
+/** Resposta de um provedor: texto (ou JSON), uso de tokens e custo estimado a partir do preço do catálogo. */
 public record AiResponse(
         String provider,
         String model,
-        Duration latency,
+        long latencyMs,
         BigDecimal estimatedCostUsd,
-        Map<String, Object> output
+        String text,
+        long inputTokens,
+        long outputTokens
 ) {
 }
