@@ -95,4 +95,19 @@ public class UserPreferences extends VersionedAuditableEntity {
     public UserPreferences(User user) {
         this.user = user;
     }
+
+    /** RF10 §3.3 — opt-out das sugestões de compra do Copilot. */
+    @Column(name = "purchase_suggestions_enabled", nullable = false)
+    private boolean purchaseSuggestionsEnabled = true;
+
+    /** DET-D04 / ETI-06 — som desligado por padrão; háptico ligado. */
+    @Column(name = "sound_enabled", nullable = false)
+    private boolean soundEnabled;
+
+    @Column(name = "haptics_enabled", nullable = false)
+    private boolean hapticsEnabled = true;
+
+    /** RF10.CA16 — uso da Identidade de Vida (Camada 2) no contexto da IA; desligado por padrão. */
+    @Column(name = "life_identity_in_ai", nullable = false)
+    private boolean lifeIdentityInAi;
 }

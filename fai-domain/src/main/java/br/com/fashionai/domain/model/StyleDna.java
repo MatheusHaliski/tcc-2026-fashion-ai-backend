@@ -89,4 +89,8 @@ public class StyleDna extends VersionedAuditableEntity {
     /** STYLE_ONLY (Camada 1) ou STYLE_AND_LIFE (duas camadas). */
     @Column(name = "phrase_source", length = 20)
     private String phraseSource;
+
+    /** DET-M05 — coloração pessoal (SPRING/SUMMER/AUTUMN/WINTER), opcional. */
+    @Column(name = "color_season", length = 20)
+    private String colorSeason;
 }

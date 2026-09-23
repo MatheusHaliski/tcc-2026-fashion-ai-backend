@@ -1,0 +1,1178 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0}</style></head><body>
+<title>Anatomia dos Cards — DNA de Estilo (RF13) — v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F7F6F2; --surface:#FFFFFF; --surface-2:#F1F0EA;
+  --ink:#191A19; --muted:#5C6058; --faint:#8B8F86;
+  --line:#1A1A18; --line-soft:#D8D6CC;
+  --mark:#C6275E; --mark-soft:#FBE7EE;
+  --thread:#1F7A76; --thread-soft:#E0F0EE;
+  --chalk:#B8862B; --chalk-soft:#FAF0DC;
+  --dna:#7A4B9E; --dna-soft:#F1E9F8;
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Inter","Helvetica Neue",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --maxw:1320px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:14px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:28px}
+
+header.top{border-bottom:2px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:26px 20px}
+.brand{font-family:var(--serif);font-size:26px;font-weight:600}
+h1{font-family:var(--sans);font-weight:700;font-size:20px;margin:3px 0 6px}
+.lede{margin:0 0 14px;color:var(--muted);font-size:13.5px;max-width:84ch}
+.stampbox{display:flex;gap:8px;flex-wrap:wrap}
+.stamp{font-family:var(--mono);font-size:10.5px;background:var(--dna-soft);color:var(--dna);padding:3px 9px;border-radius:99px;font-weight:600}
+
+.gate{background:var(--dna-soft);border-bottom:1px solid var(--dna)}
+.gate .wrap{padding-block:10px;font-family:var(--mono);font-size:12px;color:#4a2f66}
+
+section.band{padding-block:36px 10px}
+h2.sec{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+h2.sec .tag{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--dna);padding:2px 8px;border-radius:99px;vertical-align:middle;margin-right:8px}
+.sec-sub{margin:0 0 26px;color:var(--muted);max-width:82ch;font-size:13px}
+
+.plates{display:flex;flex-direction:column}
+.plate{padding-block:40px;border-bottom:1px solid var(--line-soft)}
+.plate:last-child{border-bottom:none}
+.plate-top{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.plate-n{font-family:var(--mono);font-size:12px;background:var(--dna);color:#fff;padding:3px 8px;border-radius:3px;font-weight:600}
+.plate-name{font-family:var(--serif);font-size:25px;font-weight:600;margin:0}
+.plate-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.thesis{margin:6px 0 22px;color:var(--ink);font-size:14.5px;max-width:66ch}
+.thesis b{color:var(--dna)}
+
+.plate-body{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.plate-col{display:flex;flex-direction:column;gap:10px}
+.plate-notes{max-width:34ch;display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.plate-notes .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.note b{color:var(--ink)}
+
+.card{width:220px;background:var(--surface);border:1.6px solid var(--line);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
+.c-header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.c-avatar{width:16px;height:16px;border-radius:50%;background:#D9D6CC;flex:none}
+.c-meta{font-size:10px;color:var(--muted);flex:1;min-width:0}
+.c-fav{width:13px;height:13px;flex:none;color:var(--faint)}
+.c-fav svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6}
+
+.logo-row{display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--line-soft);background:var(--dna-soft)}
+.logo-row .lg{flex:1;height:18px;border-radius:3px;background:var(--surface);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:6.5px;font-weight:700;color:var(--dna)}
+.logo-row .lg.dim{opacity:.45;font-weight:500;color:var(--muted)}
+
+.c-row{padding:7px 10px;border-bottom:1px solid var(--line-soft);font-size:10.5px}
+.c-row:last-child{border-bottom:none}
+.c-row .k{color:var(--muted);display:block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-family:var(--mono)}
+
+.algo-box{background:var(--surface-2);border:1px dashed var(--line-soft);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--muted)}
+.algo-box b{color:var(--dna)}
+
+/* ---- Container do esquema: borda interna que agrupa TODO o conteúdo do esquema (RF5/RF13), separado do chrome social ---- */
+.dna-header{padding:6px 11px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:7.5px;color:var(--faint);letter-spacing:.01em}
+.scheme-container{margin:14px 8px 8px;border:1.5px dashed var(--dna);border-radius:4px;position:relative}
+.scheme-container::before{
+  content:"container do esquema DNA";position:absolute;top:-7px;left:7px;z-index:2;
+  background:var(--surface);font-family:var(--mono);font-size:7px;font-weight:700;
+  letter-spacing:.05em;color:var(--dna);padding:0 4px;text-transform:uppercase;
+}
+.scheme-container>.dna-hero{border-radius:3px 3px 0 0}
+.scheme-container>.dna-top-split{border-radius:3px 3px 0 0;overflow:hidden}
+.scheme-container>*:last-child{border-bottom:none}
+
+/* ==================== SEÇÃO A — cartão-base (dna-card) ==================== */
+.dna-card{width:290px;background:var(--surface);border:1.6px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.dna-hero{height:104px;background:linear-gradient(160deg,#2A1F35,#7A4B9E 70%);position:relative;flex:none}
+.dna-hero .fav{position:absolute;top:7px;right:8px;width:14px;height:14px;color:#fff;opacity:.9}
+.dna-hero .fav svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7}
+.dna-hero-label{position:absolute;left:8px;bottom:7px;right:26px;color:#fff;font-size:9px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.55);pointer-events:none}
+.dna-hero-label .sb2{display:block;font-weight:400;font-size:7.5px;opacity:.85;font-family:var(--mono);margin-top:1px}
+
+.dna-meta{padding:8px 11px 7px;border-bottom:1px solid var(--line-soft)}
+.dna-title{font-family:var(--serif);font-size:13px;font-weight:600;margin:0 0 2px;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+.dna-title .sub{font-family:var(--sans);font-weight:400;font-size:9px;color:var(--muted)}
+.dna-desc{font-size:9.5px;color:var(--muted);margin:0 0 4px}
+.dna-auth{font-family:var(--mono);font-size:7.5px;color:var(--faint);letter-spacing:.01em}
+
+.dna-list{padding:8px 11px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.dna-list .lbl{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:6px;display:block}
+
+.dna-item{display:flex;align-items:center;gap:7px;min-width:0}
+.dna-item .ph{flex:none;border-radius:3px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft)}
+.dna-item .tx{min-width:0;flex:1}
+.dna-item .tt{font-size:9px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dna-item .sb{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dna-note-inline{font-size:8px;color:var(--faint);font-style:italic;margin:6px 0 0;line-height:1.4}
+
+/* A1 — ampliado: lista vertical, fotos grandes */
+.dna-list-v{display:flex;flex-direction:column;gap:7px}
+.dna-list-v .ph{width:40px;height:40px}
+
+/* A2 — grade: compacto, 2 colunas */
+.dna-list-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.dna-list-grid .ph{width:24px;height:24px}
+.dna-list-grid .tt,.dna-list-grid .sb{font-size:8px}
+
+/* A3 — horizontal: compacto, fileira rolável */
+.dna-list-h{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.dna-list-h .dna-item{flex-direction:column;align-items:flex-start;flex:none;width:58px;gap:4px}
+.dna-list-h .ph{width:58px;height:42px}
+.dna-list-h .tt,.dna-list-h .sb{max-width:58px}
+
+/* A4 — lateral: compacto, hero + lista lado a lado — interativo (clique + scroll) */
+.dna-top-split{display:flex}
+.dna-top-split .dna-hero{flex:1;height:98px}
+.dna-list-lat{width:92px;flex:none;display:flex;flex-direction:column;gap:6px;padding:7px;background:var(--surface-2);border-left:1px solid var(--line-soft);max-height:98px;overflow-y:auto;scroll-behavior:smooth}
+.dna-list-lat .dna-item{flex-direction:column;align-items:flex-start;gap:3px;cursor:pointer;border-radius:3px;padding:3px;margin:-3px;transition:background .15s}
+.dna-list-lat .dna-item:hover{background:var(--surface)}
+.dna-list-lat .dna-item.active{background:var(--dna-soft)}
+.dna-list-lat .dna-item.active .tt{color:var(--dna)}
+.dna-list-lat .ph{width:100%;height:32px}
+.dna-scroll-hint{font-family:var(--mono);font-size:6.5px;color:var(--faint);text-align:center;padding:4px 0 0;letter-spacing:.03em}
+
+.dna-footer{padding:7px 11px;display:flex;flex-direction:column;gap:4px}
+.dna-stats{font-family:var(--mono);font-size:8px;color:var(--muted)}
+.dna-actions{font-family:var(--mono);font-size:7.5px;color:var(--faint)}
+
+/* ==================== SEÇÃO B — narrativas (miniaturas de esquema em cada célula) ==================== */
+
+/* ---- 1 Linha do tempo — interativa (clique + scroll vertical) ---- */
+.tl-track{height:172px;overflow-y:auto;background:linear-gradient(180deg,#E9E5F2,#F7F6F2);padding:10px;scroll-behavior:smooth}
+.tl-inner{position:relative;min-height:100%}
+.tl-line{position:absolute;left:20px;top:14px;bottom:14px;width:2px;background:var(--dna-soft);border-left:2px dashed var(--dna)}
+.tl-item{position:relative;padding-left:24px;margin-bottom:8px;cursor:pointer}
+.tl-dot{position:absolute;left:14px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--dna);border:2px solid var(--surface);transition:background .15s}
+.tl-year{font-family:var(--mono);font-size:8px;color:var(--dna);font-weight:700}
+.tl-cell{width:118px;height:32px;border-radius:3px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft);margin-top:2px;display:flex;align-items:center;padding:0 7px;transition:transform .15s,box-shadow .15s}
+.tl-cell span{font-size:8px;font-weight:600;color:#3a2c53}
+.tl-item.active .tl-cell{transform:translateX(3px);box-shadow:0 0 0 1.5px var(--dna)}
+.tl-item.active .tl-dot{background:var(--chalk)}
+
+/* ---- 2 Momentos marcantes — hero com segmented picker ---- */
+.mm-hero{height:172px;padding:10px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(160deg,#2A1F35,#7A4B9E 70%)}
+.mm-badge{align-self:flex-start;background:var(--chalk);color:#3a2c08;font-family:var(--mono);font-size:7px;font-weight:700;padding:2px 7px;border-radius:99px;transition:background .15s}
+.mm-main{flex:1;border:1.5px solid rgba(255,255,255,.5);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--serif);font-size:11px;text-align:center;padding:6px}
+.mm-strip{display:flex;gap:4px}
+.mm-strip button{all:unset;box-sizing:border-box;cursor:pointer}
+.mm-strip div,.mm-strip button{flex:1;height:32px;border-radius:3px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);display:flex;align-items:flex-end;padding:3px;font-size:6.5px;font-weight:600;color:#fff;transition:background .15s,border-color .15s}
+.mm-strip button.active{background:rgba(255,255,255,.42);border-color:#fff}
+
+/* ---- 3 Primeira vez ---- */
+.pv-wrap{height:172px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.pv-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:4px;padding:5px 7px}
+.pv-tag{font-family:var(--mono);font-size:6.5px;font-weight:700;color:#fff;background:var(--dna);padding:1px 5px;border-radius:99px;flex:none}
+.pv-cell{width:26px;height:26px;border-radius:3px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft);flex:none}
+.pv-tx{flex:1;font-size:8px;color:var(--ink)}
+.pv-tx span{display:block;color:var(--muted);font-size:7px}
+
+/* ---- 4 Cápsula & versatilidade (NOVO, substitui Favoritos) ---- */
+.cv-wrap{height:172px;padding:9px;display:flex;flex-direction:column;gap:7px}
+.cv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;flex:1}
+
+/* B11 — Cartela Sazonal (novo, pedido do usuário 2026-09-22) */
+.season-hero{position:relative;height:104px;overflow:hidden;background:linear-gradient(165deg,#E8F1F8,#B9D4E8 55%,#5C7A99)}
+.season-hero-label{position:absolute;left:10px;bottom:8px;z-index:2;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.season-hero-label .tt{font-family:var(--serif);font-size:15px;font-weight:600;display:block}
+.season-hero-label .sb{font-family:var(--mono);font-size:7.5px;letter-spacing:.03em;opacity:.92;display:block;margin-top:1px}
+.snow-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.snow-layer span{position:absolute;top:-8px;display:block;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.85;animation:snowfall linear infinite}
+@keyframes snowfall{
+  0%{transform:translate(0,-8px);opacity:0}
+  12%{opacity:.9}
+  100%{transform:translate(var(--drift,10px),118px);opacity:.15}
+}
+.season-list{padding:8px 11px;background:var(--surface-2)}
+.season-swatch-row{display:flex;gap:6px;margin-top:2px}
+.season-swatch{flex:1;border-radius:5px;padding:7px 7px 6px;font-family:var(--mono)}
+.season-swatch .tt{font-family:var(--serif);font-size:10.5px;font-weight:600;display:block;margin-bottom:1px}
+.season-swatch .sb{font-size:6.8px;letter-spacing:.02em;opacity:.9}
+.season-swatch.spring{background:linear-gradient(155deg,#FDE2EC,#C9EFCB);color:#3B3B36}
+.season-swatch.summer{background:linear-gradient(155deg,#FFF3B0,#FF7A45);color:#3B2408}
+.season-swatch.autumn{background:linear-gradient(155deg,#F2C879,#7A3B1E);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.season-swatch.winter{background:linear-gradient(155deg,#E8F1F8,#5C7A99);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.season-swatch.active{outline:2px solid var(--dna);outline-offset:2px}
+.cv-piece{position:relative;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center;padding:5px 6px;font-size:6.5px;color:var(--muted)}
+.cv-piece b{display:block;font-size:7.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv-badge{position:absolute;top:-5px;right:-5px;background:var(--dna);color:#fff;font-family:var(--mono);font-size:6.5px;font-weight:700;border-radius:99px;padding:1px 4px;border:1.5px solid var(--surface)}
+.cv-stat{padding:7px 9px;background:var(--dna-soft);border-radius:5px;font-size:9.5px;color:#3a2c53;text-align:center}
+.cv-stat b{font-family:var(--serif);color:var(--dna)}
+
+/* ---- 5 Por ocasião ---- */
+.oc-wrap{height:172px;padding:9px;display:flex;flex-direction:column;gap:7px}
+.oc-row{display:flex;align-items:center;gap:6px}
+.oc-lbl{font-family:var(--mono);font-size:7px;color:var(--muted);width:44px;flex:none;text-transform:uppercase}
+.oc-cells{display:flex;gap:3px;flex:1}
+.oc-cells div{flex:1;height:30px;border-radius:3px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft);display:flex;align-items:flex-end;padding:2px 3px;font-size:6px;font-weight:600;color:#3a2c53;overflow:hidden;white-space:nowrap}
+
+/* ---- 6 Mood board de estilo (renomeado de Constelação) ---- */
+.co-wrap{height:172px;position:relative;background:radial-gradient(circle at 50% 50%,#2A1F35,#150F1C 75%)}
+.co-core{position:absolute;left:50%;top:50%;width:30px;height:30px;border-radius:50%;background:var(--dna);transform:translate(-50%,-50%);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:6px;font-weight:700;color:#fff;text-align:center;line-height:1.1}
+.co-node{position:absolute;width:20px;height:20px;border-radius:4px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1.5px solid var(--dna-soft)}
+.co-orbit{position:absolute;border:1px dashed rgba(255,255,255,.18);border-radius:50%}
+.co-legend{position:absolute;left:9px;bottom:7px;right:9px;font-family:var(--mono);font-size:6.5px;color:rgba(255,255,255,.75);line-height:1.5}
+
+/* ---- 7 Paleta dominante ---- */
+.pd-wrap{height:172px;display:flex;flex-direction:column}
+.pd-bars{flex:none;height:56px;display:flex}
+.pd-bars div{flex:1}
+.pd-cells{display:flex;gap:4px;padding:7px;flex:1}
+.pd-cells div{flex:1;border-radius:3px;border:1px solid var(--line-soft);display:flex;align-items:flex-end;padding:3px;font-size:6.5px;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+
+/* ---- 8 Harmonia cromática (NOVO) ---- */
+.hc-wrap{height:172px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.hc-wheel{position:relative;width:88px;height:88px;border-radius:50%;flex:none;background:conic-gradient(from 0deg,#e8362a,#e8a02a,#e8d92a,#8fd92a,#2ad98f,#2ad9d9,#2a8fd9,#2a4fd9,#8f2ad9,#d92ad9,#d92a6f,#e8362a);box-shadow:inset 0 0 0 24px var(--surface)}
+.hc-dot{position:absolute;width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);top:calc(50% - 6.5px - var(--r) * cos(var(--a)));left:calc(50% - 6.5px + var(--r) * sin(var(--a)))}
+.hc-dot-center{position:absolute;top:calc(50% - 8px);left:calc(50% - 8px);width:16px;height:16px;z-index:2}
+.hc-tag{padding:7px 10px;background:var(--dna-soft);border-radius:5px;font-size:10px;color:#3a2c53;text-align:center;max-width:200px}
+
+/* ---- 9 Marcas favoritas ---- */
+.mf-wrap{height:172px;padding:9px;display:flex;flex-direction:column;gap:7px}
+.mf-row{display:flex;align-items:center;gap:7px}
+.mf-rank{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--dna);width:12px;flex:none}
+.mf-logobox{width:22px;height:16px;border-radius:3px;background:var(--surface);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:5.5px;font-weight:700;color:var(--dna);flex:none}
+.mf-bar-track{flex:1;height:14px;background:var(--surface-2);border-radius:3px;overflow:hidden;border:1px solid var(--line-soft)}
+.mf-bar{height:100%;background:var(--dna)}
+.mf-logo{font-family:var(--mono);font-size:7px;font-weight:700;width:38px;flex:none}
+
+/* ---- 9 Hype Focus (NOVO) — status colors fixos (nunca temáticos), ver RF6_HYPE_SCORE_CALCULO.md §8 ---- */
+:root{
+  --hype-good:#0ca30c; --hype-warning:#fab219; --hype-serious:#ec835a; --hype-critical:#d03b3b;
+}
+.hf-wrap{height:172px;padding:9px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.hf-hero{display:flex;align-items:center;gap:8px;padding-bottom:7px;border-bottom:1px dashed var(--line-soft);flex:none}
+.hf-gauge{flex:none;width:60px;height:36px}
+.hf-gauge .track{fill:none;stroke:var(--line-soft);stroke-width:7;stroke-linecap:round}
+.hf-gauge .fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .2s}
+.hf-gauge-num{position:relative;margin-top:-15px;text-align:center;font-family:var(--mono);font-weight:700;font-size:10px;color:var(--ink)}
+.hf-hero-tx{min-width:0;flex:1}
+.hf-hero-tx .lbl-top{font-family:var(--mono);font-size:7px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);display:block;margin-bottom:1px}
+.hf-hero-tx .tt{font-size:9.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hf-hero-tx .sb{font-size:8px;color:var(--muted)}
+.hf-row{display:flex;align-items:center;gap:7px;flex:none}
+.hf-row .ph{width:26px;height:26px;flex:none;border-radius:3px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft)}
+.hf-row-tx{min-width:0;flex:1}
+.hf-row-tx .tt{font-size:8.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hf-row-tx .sb{font-size:7.5px;color:var(--muted)}
+.hf-meter{flex:none;width:50px;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.hf-meter .pct{font-family:var(--mono);font-weight:700;font-size:8.5px}
+.hf-bar-track{width:100%;height:4px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.hf-bar-fill{height:100%;border-radius:99px}
+.hf-flame{font-size:8px;line-height:1}
+
+footer.fin{padding-block:30px 50px;border-top:2px solid var(--line);margin-top:20px}
+footer.fin .wrap{display:flex;flex-direction:column;gap:10px}
+footer.fin h3{font-size:13px;margin:0}
+footer.fin p{margin:0;color:var(--muted);font-size:12.5px;max-width:92ch}
+
+/* ================= LEGO (NOVO) — todo o card em blocos de montar, exceto as fotos =================
+   Regras: bloco (brick) = estrutura, tem pinos; placa lisa (tile) = superfície impressa, sem pinos, é onde o texto mora;
+   placa redonda 1×1 = selos e avatar. Cor do bloco = cor dominante da peça, quantizada para 10 cores clássicas de blocos.
+   Fotos NUNCA viram blocos: ficam como foto, encaixadas numa moldura de blocos. */
+:root{
+  --lgo-red:#C91A09; --lgo-blue:#0055BF; --lgo-yellow:#F2CD37; --lgo-green:#237841;
+  --lgo-white:#F4F4F4; --lgo-black:#1B2A34; --lgo-tan:#E4CD9E; --lgo-orange:#FE8A18;
+  --lgo-lbg:#A0A5A9; --lgo-dbg:#6C6E68; --lgo-gold:#AA7F2E;
+}
+.lgo-card{
+  width:220px;border:1.6px solid var(--line);border-radius:6px;overflow:hidden;
+  background-color:var(--lgo-lbg);
+  background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.30) 0 1.4px,rgba(0,0,0,.20) 2.5px,transparent 3.1px);
+  background-size:10px 10px;padding:6px 6px 8px;display:flex;flex-direction:column;gap:2px;
+}
+.lgo-card .scheme-container{margin:12px 0 3px;padding:1px 3px 4px;border-color:var(--lgo-white)}
+.lgo-card .scheme-container::before{background:var(--lgo-lbg);color:#fff}
+.lgo-brick,.lgo-tile{
+  --c:var(--lgo-white);position:relative;background:var(--c);color:var(--ink);font-size:10px;line-height:1.35;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -2.5px 0 rgba(0,0,0,.22),inset 1px 0 0 rgba(255,255,255,.14),inset -1px 0 0 rgba(0,0,0,.14),0 1.5px 0 rgba(0,0,0,.30);
+}
+.lgo-brick{margin-top:4px;border-radius:2px;padding:5px 6px 6px}
+/* pinos vistos de lado: domos da mesma cor do bloco, com brilho */
+.lgo-brick::before{
+  content:"";position:absolute;left:2px;right:2px;top:-4px;height:4px;pointer-events:none;
+  background:
+    radial-gradient(1.3px 1.1px at 38% 72%,rgba(255,255,255,.7) 0 80%,transparent 100%) 0 0/10px 4px repeat-x,
+    radial-gradient(3.3px 4px at 50% 100%,var(--c) 0 94%,transparent 100%) 0 0/10px 4px repeat-x;
+  filter:drop-shadow(0 -.5px 0 rgba(0,0,0,.28));
+}
+.lgo-tile{margin-top:2px;border-radius:1.5px;padding:4px 6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1.5px 0 rgba(0,0,0,.14),0 1px 0 rgba(0,0,0,.28)}
+.lgo-dk{color:#fff}
+.lgo-row{display:flex;gap:3px;align-items:flex-end}
+.lgo-row>*{flex:1;min-width:0}
+/* texto sempre "impresso" numa placa lisa branca dentro do bloco colorido: legível em qualquer cor */
+.lgo-print{display:block;background:var(--lgo-white);color:var(--ink);border-radius:1.5px;padding:1px 5px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgo-print b{font-size:9.5px}
+.lgo-print span{font-size:8.5px;color:var(--muted)}
+.lgo-round{--c:var(--lgo-white);width:14px;height:14px;border-radius:50%;background:var(--c);flex:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1.5px 0 rgba(0,0,0,.28),0 1px 0 rgba(0,0,0,.3)}
+.lgo-round.stud{background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 2px,var(--c) 2.5px 3.3px,rgba(0,0,0,.18) 3.6px,var(--c) 4.2px)}
+/* aparelho de "running bond": blocos alternam o recuo, como uma parede montada */
+.lgo-bond>.lgo-brick:nth-child(odd){margin-right:12px}
+.lgo-bond>.lgo-brick:nth-child(even){margin-left:12px}
+.lgo-piece{display:flex;align-items:center;gap:5px}
+/* foto preservada: não vira bloco, fica encaixada numa moldura de blocos */
+.lgo-frame{padding:4px 4px 5px}
+.lgo-photo{position:relative;border-radius:1px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.lgo-photo .c-photo,.lgo-photo .dna-hero{margin:0;border-bottom:none}
+.lgo-photo-tag{position:absolute;top:3px;right:3px;z-index:3;font-family:var(--mono);font-size:6.5px;font-weight:700;letter-spacing:.04em;background:rgba(255,255,255,.9);color:var(--ink);padding:1px 4px;border-radius:2px;text-transform:uppercase}
+.lgo-thumb{width:24px;height:24px;flex:none;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.3);
+  background:repeating-linear-gradient(135deg,#EDEBE4,#EDEBE4 4px,#FFF 4px,#FFF 8px)}
+.lgo-thumb.ph{background:linear-gradient(155deg,#E4DEF0,#C9BEE0)}
+.lgo-btn{cursor:pointer;text-align:center;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.04em;padding:4px 3px 5px;transition:transform .08s}
+.lgo-btn:active{transform:translateY(1.5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(0,0,0,.2)}
+.lgo-gold{--c:var(--lgo-gold);background:linear-gradient(135deg,#D2AE5A,#AA7F2E 48%,#83601F)}
+.lgo-gold-lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.22em;font-weight:700;color:#4a3a0c;text-align:center}
+/* montagem: cada peça cai e encaixa em sequência */
+.lgo-build .lgo-brick,.lgo-build .lgo-tile,.lgo-build .lgo-round{animation:lgoDrop .44s cubic-bezier(.3,1.45,.5,1) both;animation-delay:calc(var(--i,0) * 60ms)}
+@keyframes lgoDrop{0%{transform:translateY(-24px);opacity:0}60%{opacity:1}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.lgo-build .lgo-brick,.lgo-build .lgo-tile,.lgo-build .lgo-round{animation:none}}
+.lgo-replay{all:unset;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--ink);border:1px solid var(--line-soft);background:var(--surface);border-radius:4px;padding:3px 8px;align-self:flex-start}
+.lgo-replay:hover{border-color:var(--line)}
+.lgo-palette{display:flex;gap:4px;flex-wrap:wrap}
+.lgo-palette .lgo-round{width:16px;height:16px}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">FashionAI</div>
+    <h1>Anatomia dos Cards — DNA de Estilo (RF13)</h1>
+    <p class="lede">Duas seções, mesma lógica do documento de anatomia do RF5: <b>Seção A</b> — anatomia base do card "Esquema de DNA de Estilo" (como a lista de esquemas referenciados é organizada: ampliada, em grade, horizontal ou lateral). <b>Seção B</b> — variações de narrativa exclusivas da Etapa 4 — Layout &amp; Peças, disponíveis <b>somente quando, na Etapa 1, o elemento-alvo escolhido é o Conjunto DNA completo</b>. Em ambas, cada célula que representa um esquema referenciado exibe sempre <b>foto + título</b> ou <b>logo + marca</b> — nunca um espaço vazio sem identificação. <b>v2</b> adicionou o container do esquema e tornou interativos três heros. <b>v3</b> revisa as nove narrativas de v2 contra bibliografia real de design de moda: remove Favoritos, renomeia Constelação para Mood board de estilo, adiciona Cápsula &amp; versatilidade e Harmonia cromática, e documenta o limite conceitual do Hype Focus — 10 narrativas ao todo.</p>
+    <div class="stampbox">
+      <span class="stamp">v4 · Lego</span>
+      <span class="stamp">v3 · revisão de moda</span>
+      <span class="stamp">Seção A · 4 anatomias base</span>
+      <span class="stamp">Seção B · 12 narrativas</span>
+      <span class="stamp">2–6 esquemas por DNA</span>
+      <span class="stamp">companheiro de rf13-dna-de-estilo.puml</span>
+    </div>
+  </div>
+</header>
+
+<div class="gate">
+  <div class="wrap">⚠ Regra de ativação: a Seção A descreve o card do DNA em qualquer contexto (feed, perfil, lookbook). A Seção B só aparece no seletor da Etapa 4 quando <code>elemento-alvo = DNA_COMPLETO</code>. Ao editar um <code>esquema de vestimenta específico</code>, a Etapa 4 usa o Background Studio comum (RF11) — sem narrativa, sem mosaico.</div>
+</div>
+
+<main>
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="sec"><span class="tag">Seção A</span>Anatomia do card</h2>
+    <p class="sec-sub">Estrutura base do card "Esquema de DNA de Estilo", comum a qualquer lugar onde ele aparece (feed, perfil, lookbook). O que muda entre as 4 variações é somente <b>como a lista de esquemas referenciados é organizada</b> — o cabeçalho (hero, título, selos, preço, descrição, ocasião, estilo, autor) e o rodapé (métricas e ações) são idênticos nas quatro.</p>
+
+    <div class="plates">
+
+      <!-- A1 AMPLIADO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">A1</span>
+          <h3 class="plate-name">Ampliado</h3>
+          <span class="plate-meta">cardLayout = AMPLIADO</span>
+        </div>
+        <p class="thesis">Lista vertical em largura total — cada linha mostra o esquema de vestimenta referenciado como uma <b>peça compacta</b> (foto grande + título + descrição), a mesma representação que um <code>ClothesScheme</code> usa quando funciona como peça de outro conjunto. É a leitura mais detalhada e menos densa das quatro: prioriza reconhecimento de cada esquema sobre economia de espaço.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="dna-card">
+              <div class="dna-header">autor · há 2 dias · público · ♡ favoritar</div>
+              <div class="scheme-container">
+              <div class="dna-hero"><div class="fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="dna-meta">
+                <div class="dna-title">Verão urbano <span class="sub">· 3 selos · —</span></div>
+                <p class="dna-desc">Da praia ao rooftop · casual · minimalista</p>
+              </div>
+              <div class="dna-list dna-list-v">
+                <span class="lbl">Esquemas do DNA (3)</span>
+                <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Look de trabalho</div><div class="sb">casual · outono/21</div></div></div>
+                <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Formatura 2025</div><div class="sb">festa · verão/25</div></div></div>
+                <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Fim de semana</div><div class="sb">casual · atual</div></div></div>
+                <p class="dna-note-inline">cada item é um ClothesScheme (RF6) renderizado como peça compacta</p>
+              </div>
+              </div>
+              <div class="dna-footer">
+                <div class="dna-stats">♡ 128 · ↻ 12 · 💬 34 · ⟲ 5</div>
+                <div class="dna-actions">curtir · compartilhar · comentar · remix · editar · voltar</div>
+              </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Foto grande (40×40) + título + descrição por linha — a variação com maior custo vertical, indicada para a página de detalhe do DNA, não para feeds.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Foto + título, sempre — a descrição reforça ocasião/época de cada esquema, não a marca.</p>
+            <span class="lbl">Container do esquema</span>
+            <p class="note">A borda tracejada isola hero, título/descrição e a lista de esquemas — tudo que é <code>DNAScheme</code> — do cabeçalho social (autor/data/visibilidade) e do rodapé (curtidas/ações), que ficam fora dela.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A2 GRADE -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">A2</span>
+          <h3 class="plate-name">Em grade</h3>
+          <span class="plate-meta">cardLayout = GRADE · compacto</span>
+        </div>
+        <p class="thesis">Mesma lista, organizada em grade de 2 colunas — reduz a altura total do card à custa de fotos e descrições menores por célula. Versão compacta pensada para feeds e grades de perfil, onde o card compete por espaço com outros conteúdos.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="dna-card">
+              <div class="dna-header">autor · há 2 dias · público · ♡ favoritar</div>
+              <div class="scheme-container">
+              <div class="dna-hero"><div class="fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="dna-meta">
+                <div class="dna-title">Verão urbano <span class="sub">· 3 selos · —</span></div>
+                <p class="dna-desc">Da praia ao rooftop · casual · minimalista</p>
+              </div>
+              <div class="dna-list">
+                <span class="lbl">Esquemas do DNA (4)</span>
+                <div class="dna-list-grid">
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Trabalho</div><div class="sb">casual</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Formatura</div><div class="sb">festa</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Fim de semana</div><div class="sb">casual</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">1º emprego</div><div class="sb">trabalho</div></div></div>
+                </div>
+              </div>
+              </div>
+              <div class="dna-footer">
+                <div class="dna-stats">♡ 128 · ↻ 12 · 💬 34 · ⟲ 5</div>
+                <div class="dna-actions">curtir · compartilhar · comentar · remix · editar · voltar</div>
+              </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Grade 2×2 a 2×3 (conforme número de esquemas, até 6) — fotos 24×24, título + descrição de uma palavra só.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Foto + título, com descrição abreviada à ocasião — a marca não aparece aqui (ela vive na fileira de logos do cabeçalho).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A3 HORIZONTAL -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">A3</span>
+          <h3 class="plate-name">Na horizontal</h3>
+          <span class="plate-meta">cardLayout = HORIZONTAL · compacto</span>
+        </div>
+        <p class="thesis">A lista de esquemas vira uma fileira horizontal rolável, e o rótulo de cada item muda de "ocasião/época" para <b>marca</b> — o horizontal prioriza comunicar rapidamente "quais marcas compõem este DNA", não o contexto de uso de cada esquema. Primeira variação em que <code>Título · marca</code> substitui <code>Título · descrição</code>.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="dna-card">
+              <div class="dna-header">autor · há 2 dias · público · ♡ favoritar</div>
+              <div class="scheme-container">
+              <div class="dna-hero"><div class="fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="dna-meta">
+                <div class="dna-title">Verão urbano <span class="sub">· 3 selos · —</span></div>
+                <p class="dna-desc">Da praia ao rooftop · casual · minimalista</p>
+              </div>
+              <div class="dna-list">
+                <span class="lbl">Esquemas do DNA (3)</span>
+                <div class="dna-list-h">
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Trabalho</div><div class="sb">ZARA</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Festa</div><div class="sb">COACH</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Casual</div><div class="sb">LEVI'S</div></div></div>
+                </div>
+              </div>
+              </div>
+              <div class="dna-footer">
+                <div class="dna-stats">♡ 128 · ↻ 12 · 💬 34 · ⟲ 5</div>
+                <div class="dna-actions">curtir · compartilhar · comentar · remix · editar · voltar</div>
+              </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Fileira rolável, fotos 58×42 — largura do card não cresce com o número de esquemas, apenas a área rolável.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Foto + título · marca por item — cada esquema já entra com sua marca predominante identificada, sem precisar abrir o card.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A4 LATERAL -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">A4</span>
+          <h3 class="plate-name">Na lateral</h3>
+          <span class="plate-meta">cardLayout = LATERAL · compacto</span>
+        </div>
+        <p class="thesis">Hero photo e lista dividem a largura do card lado a lado — a lista fica reduzida a 2–3 esquemas (<code>Título · marca</code>) ao lado da foto de capa, e uma fileira de logos de marca aparece isolada, seguindo a regra transversal de ranking (ver abaixo). A mais compacta verticalmente das quatro variações de anatomia.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="dna-card">
+              <div class="dna-header">autor · há 2 dias · público · ♡ favoritar</div>
+              <div class="scheme-container">
+              <div class="dna-top-split">
+                <div class="dna-hero">
+                  <div class="dna-hero-label"><span class="tt2">Trabalho</span><span class="sb2">ZARA</span></div>
+                </div>
+                <div class="dna-list-lat" aria-label="Esquemas do DNA — clique para trocar a foto, role para ver mais">
+                  <div class="dna-item active"><div class="ph"></div><div class="tx"><div class="tt">Trabalho</div><div class="sb">ZARA</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Festa</div><div class="sb">COACH</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">Casual</div><div class="sb">LEVI'S</div></div></div>
+                  <div class="dna-item"><div class="ph"></div><div class="tx"><div class="tt">1º emprego</div><div class="sb">NIKE</div></div></div>
+                </div>
+              </div>
+              <div class="dna-scroll-hint">role a lista lateral ↕ · clique para trocar a foto</div>
+              <div class="dna-meta">
+                <div class="dna-title">Verão urbano <span class="sub">· 3 selos · —</span></div>
+                <p class="dna-desc">Da praia ao rooftop · casual · minimalista</p>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg">COACH</span><span class="lg dim">+2</span></div>
+              </div>
+              <div class="dna-footer">
+                <div class="dna-stats">♡ 128 · ↻ 12 · 💬 34 · ⟲ 5</div>
+                <div class="dna-actions">curtir · compartilhar · comentar · remix · editar · voltar</div>
+              </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Hero + lista lateral (92px) no topo, cabeçalho de texto abaixo, fileira de logos isolada antes do rodapé — o único dos quatro com uma fileira de logos dedicada, fora do cabeçalho.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Foto + título · marca na lista lateral, reforçado por logo + marca na fileira abaixo — a única anatomia que mostra a mesma marca duas vezes, em formatos diferentes.</p>
+            <span class="lbl">Interativo — hero de múltiplas marcas</span>
+            <p class="note">Como o DNA referencia até 6 esquemas (cada um com sua marca predominante), a lista lateral vira uma <b>lista clicável e rolável</b>: tocar num item troca a foto e o rótulo exibidos no hero; quando a lista excede a altura visível, ela rola verticalmente sem mudar o tamanho do card. Testável nesta prancha.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="sec">Regra transversal: qual logo aparece</h2>
+    <p class="sec-sub">Vale para as quatro anatomias da Seção A e para as dez narrativas da Seção B, sempre que um card exibe logos de marca.</p>
+    <div class="algo-box">
+      <b>1.</b> Contar, em todas as peças de todos os esquemas referenciados no DNA, quantas pertencem a cada marca (<code>brandId</code>). <b>2.</b> A marca com mais peças no conjunto todo ganha o logo de maior destaque. <b>3.</b> Empate → prioriza a marca cujas peças estão mais concentradas em <code>category ∈ {upper_piece, lower_piece}</code> ("superior"/"inferior") — peça estrutural do look pesa mais que acessório ou calçado da mesma marca. <b>4.</b> O número de logos exibidos é definido por variação (ver cada card) — o resto só aparece ao abrir o DNA completo.
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="sec"><span class="tag">Seção B</span>Variações de narrativa</h2>
+    <p class="sec-sub">Exclusivas da Etapa 4 — Layout &amp; Peças, disponíveis somente quando o elemento-alvo da Etapa 1 é o Conjunto DNA completo. As <b>quatro primeiras</b> (1–4: Linha do tempo, Momentos marcantes, Primeira vez, Cápsula &amp; versatilidade) cobrem os eixos temporal, afetivo e prático do guarda-roupa. As <b>cinco seguintes</b> (5–9: Por ocasião, Mood board de estilo, Paleta dominante, Harmonia cromática, Marcas favoritas) cobrem os eixos contextual, identitário, cromático e comercial. A <b>décima</b> (Hype Focus) cobre um eixo à parte dos demais — não uma leitura estática do acervo do usuário, mas um dado <b>social e ao vivo</b>, que muda sozinho ao longo do dia, e que documenta popularidade, não qualidade de estilo. A <b>décima primeira</b> (Cartela sazonal) cobre o eixo temporal-climático, e a <b>décima segunda</b> (Lego) um eixo formal: não muda o conteúdo do DNA, muda a matéria de que o card é feito — tudo em blocos de encaixe, exceto as fotos. Em todas, cada célula que representa um esquema mostra <b>foto + título</b> (ou <b>logo + marca</b>, ou uma barra/medidor, quando indicado) — nunca uma área vazia.</p>
+
+    <div class="plates">
+
+      <!-- 1 LINHA DO TEMPO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">1</span>
+          <h3 class="plate-name">Linha do tempo</h3>
+          <span class="plate-meta">narrativeType = TIMELINE</span>
+        </div>
+        <p class="thesis">Ordena as células pela data do esquema (<code>createdAt</code> do <code>ClothesScheme</code> ou <code>eraLabel</code> manual), do mais antigo ao mais recente. É a variação mais literal do "DNA" — mostra a evolução, não um recorte.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="tl-track" aria-label="Linha do tempo — role para ver todos os esquemas, clique para focar um">
+                <div class="tl-inner">
+                  <div class="tl-line"></div>
+                  <div class="tl-item active"><span class="tl-year">2021 · fase minimalista</span><div class="tl-cell"><span>Look básico</span></div></div>
+                  <div class="tl-item"><span class="tl-year">2022 · troca de cidade</span><div class="tl-cell"><span>Casaco cinza</span></div></div>
+                  <div class="tl-item"><span class="tl-year">2023 · primeiro emprego</span><div class="tl-cell"><span>Terno cinza</span></div></div>
+                  <div class="tl-item"><span class="tl-year">2025 · formatura</span><div class="tl-cell"><span>Vestido de festa</span></div></div>
+                  <div class="tl-item"><span class="tl-year">2026 · agora</span><div class="tl-cell"><span>Jaqueta jeans</span></div></div>
+                </div>
+              </div>
+              <div class="dna-scroll-hint">role o trilho ↕ · clique num marco para focar</div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg dim">+2</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Do básico ao autoral, sem pressa."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Trilho vertical com marcador por célula; cada esquema leva o <code>eraLabel</code> ao lado. Ordem é sempre cronológica — não reordenável manualmente.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Cada célula mostra foto + título do esquema (não a marca) — a linha do tempo é sobre época, o título já basta para reconhecer o look.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">1 logo em destaque (marca dominante do conjunto todo) + contador "+N" para as demais — a linha do tempo não tem espaço para uma fileira completa.</p>
+            <span class="lbl">Interativo — linha do tempo rolável</span>
+            <p class="note">Com até 6 esquemas no DNA, o trilho de 172px normalmente não cabe todos os marcos — por isso ele <b>rola verticalmente</b> dentro do card (a linha tracejada acompanha o conteúdo real, não apenas a altura visível), e cada marco é <b>clicável</b> para se destacar do restante. Testável nesta prancha.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 MOMENTOS MARCANTES -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">2</span>
+          <h3 class="plate-name">Momentos marcantes</h3>
+          <span class="plate-meta">narrativeType = MOMENTOS_MARCANTES</span>
+        </div>
+        <p class="thesis">Elege <b>um</b> esquema como capa — o de <code>eraLabel</code> mais "carregado" (conquista, formatura, primeiro grande evento) — e usa os demais como uma fileira de apoio abaixo. Requer que o usuário marque ao menos uma célula como "marco" ao montar o DNA.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="mm-hero">
+                <span class="mm-badge" id="mmBadge">MARCO · Formatura 2025</span>
+                <div class="mm-main" id="mmMain">esquema em destaque</div>
+                <div class="mm-strip" role="tablist" aria-label="Selecionar momento em destaque no hero">
+                  <button type="button" onclick="selectMoment(this,1)"><span>Ano novo</span></button>
+                  <button type="button" onclick="selectMoment(this,2)"><span>Viagem</span></button>
+                  <button type="button" onclick="selectMoment(this,3)"><span>Show</span></button>
+                </div>
+              </div>
+              <div class="dna-scroll-hint">clique num item da fileira para trocar o destaque do hero</div>
+              <div class="logo-row"><span class="lg">COACH</span><span class="lg dim">+1</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Cresci, e o guarda-roupa cresceu comigo."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Capa grande (célula marcada) + até 3 células menores em fileira, sem cronologia — a ordem é de importância, definida pelo usuário.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Capa mostra o texto do momento; a fileira de apoio mostra foto + título curto por esquema, para não competir com a capa.</p>
+            <span class="lbl">Interativo — hero como segmented picker</span>
+            <p class="note">A fileira de apoio funciona como um <b>segmented picker</b>: tocar em "Ano novo", "Viagem" ou "Show" substitui o texto e o selo do hero pelo esquema escolhido, sem sair do card — o mesmo padrão de troca-no-lugar usado no Bento assimétrico (anatomia de card comum, prancha 04). Testável nesta prancha.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">Logo da marca dominante <b>apenas na célula-capa</b> — as demais células ficam sem logo, para não competir com o momento em destaque.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 PRIMEIRA VEZ -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">3</span>
+          <h3 class="plate-name">Primeira vez</h3>
+          <span class="plate-meta">narrativeType = PRIMEIRA_VEZ</span>
+        </div>
+        <p class="thesis">Uma célula por "primeira ocorrência" — primeiro esquema salvo, primeira vez que o usuário combinou uma <code>occasion</code> nova, primeira peça de uma marca nova dentro de um esquema. Cada linha carrega o rótulo do marco, não uma data.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="pv-wrap">
+                <div class="pv-row"><span class="pv-tag">1ª</span><div class="pv-cell"></div><div class="pv-tx">Primeiro look salvo<span>fev/2021</span></div></div>
+                <div class="pv-row"><span class="pv-tag">1ª</span><div class="pv-cell"></div><div class="pv-tx">Primeiro look de trabalho<span>ago/2023</span></div></div>
+                <div class="pv-row"><span class="pv-tag">1ª</span><div class="pv-cell"></div><div class="pv-tx">Primeira peça COACH<span>mai/2025</span></div></div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg">COACH</span><span class="lg dim">+0</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Cada estreia contou uma versão nova de mim."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Lista compacta (linha = 1 célula), sempre com o selo "1ª" e o rótulo do marco. Diferente da timeline: aqui o critério de seleção é ineditismo, não proximidade no tempo.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Cada linha já é foto + título — o padrão-base da anatomia (Seção A1) aplicado a uma variação de narrativa.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">Uma fileira com todas as marcas que geraram um "primeira vez" (normalmente 2–3) — a única variação em que o número de logos varia com o conteúdo, não é fixo.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 CÁPSULA & VERSATILIDADE -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">4</span>
+          <h3 class="plate-name">Cápsula &amp; versatilidade</h3>
+          <span class="plate-meta">narrativeType = CAPSULA_VERSATILIDADE · substitui Favoritos</span>
+        </div>
+        <p class="thesis">Em vez de destacar esquemas favoritados (redundante com "Mais usadas", já na Seção A do card de esquema), mede o que a teoria de <b>cápsula de guarda-roupa</b> (Donna Karan, <i>Seven Easy Pieces</i>; Susie Faux) chama de versatilidade: quantas peças-base, reaproveitadas entre os esquemas do DNA, sustentam quantos looks diferentes. Poucas peças gerando muitos looks é o próprio objetivo de uma cápsula bem construída.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="cv-wrap">
+                <div class="cv-grid">
+                  <div class="cv-piece"><span class="cv-badge">×3</span><b>Blazer azul</b>ZARA</div>
+                  <div class="cv-piece"><span class="cv-badge">×3</span><b>Camisa branca</b>ZARA</div>
+                  <div class="cv-piece"><span class="cv-badge">×2</span><b>Calça alfaiataria</b>LEVI'S</div>
+                  <div class="cv-piece"><span class="cv-badge">×2</span><b>Tênis branco</b>NIKE</div>
+                  <div class="cv-piece"><span class="cv-badge">×2</span><b>Bolsa couro</b>COACH</div>
+                  <div class="cv-piece"><span class="cv-badge">×1</span><b>Jeans</b>LEVI'S</div>
+                </div>
+                <div class="cv-stat"><b>6</b> peças-base → <b>5</b> looks neste DNA · cada peça rende, em média, <b>2,1</b> combinações</div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg">LEVI'S</span><span class="lg dim">+1</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Poucas peças, muitos looks — isso é que é acertar."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Grade 2×3 de peças-base (não de esquemas) — cada célula é uma peça reaproveitada, com um contador de em quantos looks do DNA ela aparece. Abaixo, uma estatística resumo: total de peças-base, total de looks, fator de versatilidade.</p>
+            <span class="lbl">Como calcular</span>
+            <p class="note">Peças-base = união de <code>SchemeItem.wardrobeItemId</code> de todos os <code>ClothesScheme</code> referenciados no DNA. Fator de versatilidade = nº de looks ÷ nº de peças-base — quanto maior, mais eficiente é a cápsula.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">2 logos + contador — mesma régua da linha do tempo.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 POR OCASIÃO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">5</span>
+          <h3 class="plate-name">Por ocasião</h3>
+          <span class="plate-meta">narrativeType = POR_OCASIAO · novo</span>
+        </div>
+        <p class="thesis">Agrupa os esquemas pela <code>occasion</code> predominante de cada um (trabalho, festa, casual…) em vez de por tempo. Mostra a identidade "por papel social" — como a pessoa se veste em cada contexto — algo que a timeline e os favoritos não capturam sozinhos.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="oc-wrap">
+                <div class="oc-row"><span class="oc-lbl">Trabalho</span><div class="oc-cells"><div>Terno</div><div>Camisa</div></div></div>
+                <div class="oc-row"><span class="oc-lbl">Festa</span><div class="oc-cells"><div>Formatura</div></div></div>
+                <div class="oc-row"><span class="oc-lbl">Casual</span><div class="oc-cells"><div>Jeans</div><div>Finde</div><div>Praia</div></div></div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg dim">+2</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Sou várias pessoas — todas com bom gosto."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Uma fileira por <code>occasion</code> presente no conjunto (máx. 3, mesmo teto de <code>occasion[]</code> do DNA), largura da fileira proporcional ao número de esquemas naquela ocasião.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Foto + título abreviado por célula (o rótulo da ocasião já está na etiqueta da fileira, então o título da célula pode ser mais curto).</p>
+            <span class="lbl">Logos</span>
+            <p class="note">1 logo global (dominante em todo o conjunto) — decompor por ocasião ficaria denso demais nesta variação.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 CONSTELAÇÃO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">6</span>
+          <h3 class="plate-name">Mood board de estilo</h3>
+          <span class="plate-meta">narrativeType = MOOD_BOARD · renomeado de Constelação</span>
+        </div>
+        <p class="thesis">Quadro de inspiração (<b>mood board</b>) — a mesma ferramenta que designers de moda usam para agrupar referências por afinidade estética, aqui aplicada aos próprios looks do usuário. O <code>archetype</code> sintetizado ocupa o núcleo, e os esquemas se organizam ao redor por proximidade de <code>style</code> — sem ordem temporal nem hierárquica, só afinidade visual. É a variação mais "identidade", menos "histórico".</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="co-wrap">
+                <div class="co-orbit" style="left:50%;top:44%;width:76px;height:76px;transform:translate(-50%,-50%)"></div>
+                <div class="co-orbit" style="left:50%;top:44%;width:128px;height:128px;transform:translate(-50%,-50%)"></div>
+                <div class="co-core">urbano<br>62/100</div>
+                <div class="co-node" style="left:50%;top:8px;transform:translateX(-50%)"></div>
+                <div class="co-node" style="right:20px;top:46%"></div>
+                <div class="co-node" style="left:20px;bottom:34px"></div>
+                <div class="co-node" style="right:32px;bottom:40px"></div>
+                <div class="co-legend">① Look casual · ② Terno cinza<br>③ Vestido festa · ④ Jaqueta jeans</div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg">LEVI'S</span><span class="lg">NIKE</span></div>
+              <div class="c-row"><span class="k">Arquétipo</span>Minimalista urbano, ousadia 62/100</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Núcleo fixo no centro (arquétipo), até 6 células distribuídas em 1–2 órbitas por proximidade de <code>style</code> — layout computado, não editável célula a célula.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Cada nó é a foto do esquema (sem espaço para título dentro do nó, 20×20) — uma legenda numerada no rodapé do gráfico faz a ponte nó → título, mantendo a leitura foto + título mesmo no layout mais visual das oito.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">Fileira com até 3 logos, ordenada pelo ranking padrão — aqui cabem mais porque não competem com texto de célula.</p>
+            <span class="lbl">Por que "mood board" e não "constelação"</span>
+            <p class="note">O layout radial não muda — só o conceito por trás dele. "Constelação" é metáfora de visualização de dados (grafo/rede), sem lastro em bibliografia de moda. "Mood board" é uma ferramenta real do processo de design de moda: agrupar referências por afinidade estética antes de decidir uma coleção. Renomear deixa explícito que o núcleo (arquétipo) e os nós (looks) reproduzem esse mesmo raciocínio de curadoria por proximidade visual, não uma visualização técnica de rede social.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 PALETA DOMINANTE -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">7</span>
+          <h3 class="plate-name">Paleta dominante</h3>
+          <span class="plate-meta">narrativeType = PALETA_DOMINANTE · novo</span>
+        </div>
+        <p class="thesis">Usa o <code>colorPalette</code> sintetizado (5 cores) como elemento gráfico principal — uma faixa de cor acima de cada célula, do mesmo jeito que o Espectro (Seção B dos cards de esquema) faz por peça, mas aqui por esquema inteiro dentro do DNA.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="pd-wrap">
+                <div class="pd-bars">
+                  <div style="background:#2F3E46"></div><div style="background:#8C8478"></div><div style="background:#C9B79C"></div><div style="background:#7A4B3A"></div><div style="background:#E6E2DB"></div>
+                </div>
+                <div class="pd-cells">
+                  <div style="background:#4a3f52">Trabalho</div>
+                  <div style="background:#5c4a3f">Festa</div>
+                  <div style="background:#3f4a45">Casual</div>
+                </div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg dim">+2</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Terrosa, contida, sempre com um contraste escuro."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Faixa de 5 cores no topo (largura proporcional à frequência da cor entre os esquemas) + fileira de células abaixo, sem rótulo de data ou ocasião — o card é sobre cor, não sobre texto.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Célula = cor de fundo extraída do esquema + título sobreposto — a "foto" aqui é substituída pela cor dominante do esquema, mas o título permanece obrigatório.</p>
+            <span class="lbl">Logos</span>
+            <p class="note">1 logo + contador, discreto — a paleta é a protagonista, o logo é só contexto.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8 HARMONIA CROMÁTICA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">8</span>
+          <h3 class="plate-name">Harmonia cromática</h3>
+          <span class="plate-meta">narrativeType = HARMONIA_CROMATICA · novo</span>
+        </div>
+        <p class="thesis">Evolução da Paleta dominante: em vez de só mostrar as cores, classifica a <b>relação geométrica</b> entre elas no círculo cromático de Itten (<i>The Art of Color</i>) — complementar, análoga, tríade ou monocromática/neutra. A Paleta dominante responde "quais cores"; esta prancha responde "por que essas cores funcionam juntas".</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="hc-wrap">
+                <div class="hc-wheel">
+                  <div class="hc-dot" style="--a:240deg;--r:38px;background:#2A5FA8" title="Azul"></div>
+                  <div class="hc-dot" style="--a:60deg;--r:38px;background:#E8722A" title="Laranja"></div>
+                  <div class="hc-dot hc-dot-center" style="background:#1B2A4A" title="Azul-marinho (âncora neutra)"></div>
+                </div>
+                <div class="hc-tag"><b>Harmonia: complementar</b> — azul × laranja, quase opostos no círculo, ancorados por um neutro escuro</div>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg dim">+1</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Contraste com intenção, nunca por acaso."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Roda de matiz (gradiente cônico) com um marcador por cor do <code>colorPalette</code> sintetizado — a posição de cada marcador é o ângulo de matiz (<i>hue</i>) daquela cor no círculo de 360°. Cores neutras/de baixo croma ficam no centro, não na borda.</p>
+            <span class="lbl">Classificação automática</span>
+            <p class="note">A distância angular entre os marcadores decide a etiqueta: <b>complementar</b> (≈180° entre dois polos), <b>análoga</b> (marcadores próximos, &lt;60° de arco), <b>tríade</b> (três marcadores a ≈120° entre si) ou <b>monocromática/neutra</b> (todos próximos do centro, baixo croma — o caso mais comum em paletas de moda "seguras").</p>
+            <span class="lbl">Nota de honestidade</span>
+            <p class="note">Os hex desta prancha são ilustrativos, não uma medida colorimétrica exata — mesma ressalva já usada na taxonomia (§11) para a paleta de cores do sistema.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9 MARCAS FAVORITAS -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">9</span>
+          <h3 class="plate-name">Marcas favoritas</h3>
+          <span class="plate-meta">narrativeType = MARCAS_FAVORITAS · novo</span>
+        </div>
+        <p class="thesis">A única variação em que a <b>regra de logos é o próprio conteúdo</b> do card, não um detalhe — um ranking horizontal das marcas mais presentes no conjunto, na mesma ordem e critério de desempate definidos na regra transversal acima.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="mf-wrap">
+                <div class="mf-row"><span class="mf-rank">1</span><span class="mf-logobox">Z</span><span class="mf-logo">ZARA</span><div class="mf-bar-track"><div class="mf-bar" style="width:90%"></div></div></div>
+                <div class="mf-row"><span class="mf-rank">2</span><span class="mf-logobox">L</span><span class="mf-logo">LEVI'S</span><div class="mf-bar-track"><div class="mf-bar" style="width:60%"></div></div></div>
+                <div class="mf-row"><span class="mf-rank">3</span><span class="mf-logobox">N</span><span class="mf-logo">NIKE</span><div class="mf-bar-track"><div class="mf-bar" style="width:35%"></div></div></div>
+                <div class="mf-row"><span class="mf-rank">4</span><span class="mf-logobox">C</span><span class="mf-logo">COACH</span><div class="mf-bar-track"><div class="mf-bar" style="width:15%"></div></div></div>
+              </div>
+              <div class="c-row"><span class="k">Base do ranking</span>9 peças · 4 esquemas · desempate por categoria superior/inferior</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Barra horizontal por marca, comprimento proporcional à contagem de peças — mesma lógica visual do Espectro (barras proporcionais), mas o eixo é marca, não cor.</p>
+            <span class="lbl">Peças</span>
+            <p class="note">Aqui a "peça" da lista é a própria marca, não o esquema — por isso é logo + marca em vez de foto + título, a única inversão do padrão entre as 14 variações do documento (Hype Focus e Harmonia cromática, ao lado, também fogem do par foto+título, mas substituindo por medidor/roda de cor, não por marca).</p>
+            <span class="lbl">Logos</span>
+            <p class="note">Todas as marcas com ao menos 1 peça no conjunto, sem corte de "+N" — aqui o ranking completo é o ponto.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10 HYPE FOCUS -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">10</span>
+          <h3 class="plate-name">Hype Focus</h3>
+          <span class="plate-meta">narrativeType = HYPE_FOCUS · novo</span>
+        </div>
+        <p class="thesis">Substitui o rótulo de época/ocasião/marca de cada célula por um <b>medidor do Hype Score global</b> daquele esquema — o quanto "esse tipo de look" está bombando na plataforma <b>agora</b>, entre todos os usuários que o marcaram como Look do Dia hoje. É a única variação cujo valor exibido muda sozinho ao longo do dia, sem o usuário editar nada.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="hf-wrap" aria-label="Hype Focus — Hype Score global por esquema, role para ver mais">
+                <div class="hf-hero">
+                  <svg class="hf-gauge" viewBox="0 0 100 56">
+                    <path class="track" d="M10,48 A40,40 0 0 1 90,48"/>
+                    <path class="fill" d="M10,48 A40,40 0 0 1 90,48" stroke="var(--hype-good)" stroke-dasharray="125.66" stroke-dashoffset="35.19"/>
+                  </svg>
+                  <div class="hf-hero-tx">
+                    <span class="lbl-top">Em destaque agora</span>
+                    <div class="tt">Formatura 2025</div>
+                    <div class="sb">🔥 72% · Muito Estiloso · COACH</div>
+                  </div>
+                </div>
+                <div class="hf-row">
+                  <div class="ph"></div>
+                  <div class="hf-row-tx"><div class="tt">Verão urbano</div><div class="sb">ZARA</div></div>
+                  <div class="hf-meter">
+                    <span class="pct"><span class="hf-flame">🔥</span> 91%</span>
+                    <div class="hf-bar-track"><div class="hf-bar-fill" style="width:91%;background:var(--hype-good)"></div></div>
+                  </div>
+                </div>
+                <div class="hf-row">
+                  <div class="ph"></div>
+                  <div class="hf-row-tx"><div class="tt">Look de trabalho</div><div class="sb">LEVI'S</div></div>
+                  <div class="hf-meter">
+                    <span class="pct"><span class="hf-flame">🔥</span> 64%</span>
+                    <div class="hf-bar-track"><div class="hf-bar-fill" style="width:64%;background:var(--hype-warning)"></div></div>
+                  </div>
+                </div>
+                <div class="hf-row">
+                  <div class="ph"></div>
+                  <div class="hf-row-tx"><div class="tt">Fim de semana</div><div class="sb">NIKE</div></div>
+                  <div class="hf-meter">
+                    <span class="pct"><span class="hf-flame">🔥</span> 38%</span>
+                    <div class="hf-bar-track"><div class="hf-bar-fill" style="width:38%;background:var(--hype-serious)"></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="dna-scroll-hint">role ↕ · valores recalculam ao longo do dia</div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Sempre um passo à frente do que está bombando."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Um medidor grande em destaque (o esquema com o Hype Score global mais alto do DNA, hoje) + uma linha por esquema restante, cada uma com um mini-medidor (chama + percentual + barra de progresso) — lista rolável quando o DNA tem mais esquemas do que cabem.</p>
+            <span class="lbl">O que é exibido — global, não pessoal</span>
+            <p class="note"><b>Hype Score pessoal</b> (0–100%, fórmula em <code>RF6_HYPE_SCORE_CALCULO.md</code> §4) mede o engajamento e alinhamento de tendência <b>deste esquema específico</b>. <b>Hype Score global</b> — novo, <code>RF6_HYPE_SCORE_CALCULO.md</code> §8 — agrupa todos os esquemas de <b>qualquer usuário</b> marcados como Look do Dia <b>hoje</b> que sejam iguais ou semelhantes a este (mesma marca predominante, tipo/categoria de peça, cor e estilo) e faz a média dos Hype Scores pessoais do grupo. É esse número global — não o pessoal do dono do DNA — que aparece em cada linha desta prancha.</p>
+            <span class="lbl">Cor do medidor</span>
+            <p class="note">Paleta de status fixa (nunca temática): <span style="color:var(--hype-critical)">●</span> 0–29% crítico, <span style="color:var(--hype-serious)">●</span> 30–49% sério, <span style="color:var(--hype-warning)">●</span> 50–69% atenção, <span style="color:var(--hype-good)">●</span> 70–100% bom — mesmas 4 cores de status usadas em qualquer indicador do sistema, nunca reaproveitadas para identidade de marca/série.</p>
+            <span class="lbl">Alerta de moda: hype não é sinônimo de bem vestido</span>
+            <p class="note">Fundamentação real (Rogers, <i>Diffusion of Innovations</i>; Vejlgaard, <i>Anatomy of a Trend</i>) — este medidor documenta <b>popularidade momentânea</b>, não qualidade de estilo. É exatamente o ponto central da crítica ao <i>fast fashion</i>: perseguir o que está bombando não é a mesma coisa que vestir bem, e um esquema de Hype Score baixo pode ser um trabalho de estilo excelente que simplesmente não está em alta agora. Esta prancha nunca deve ser lida como "quão bem vestido" — só como "quão em alta".</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11 CARTELA SAZONAL -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">11</span>
+          <h3 class="plate-name">Cartela sazonal</h3>
+          <span class="plate-meta">narrativeType = CARTELA_SAZONAL · novo</span>
+        </div>
+        <p class="thesis">A análise sazonal (looks de inverno, hauls de verão, cápsulas de outono) é um dos formatos de moda mais consistentes do TikTok brasileiro. O usuário escolhe uma <b>estação real</b> (<code>seasonalTheme</code>, formulário na Etapa 4) e o card assume por inteiro a identidade visual daquela estação — fundo, animação e a seleção de esquemas em destaque. Única narrativa que exige um dado extra antes de gerar o card; as demais dez derivam só dos esquemas já referenciados.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="card">
+              <div class="c-header"><div class="c-avatar"></div><div class="c-meta">autor · DNA de Estilo</div><div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div></div>
+              <div class="scheme-container">
+              <div class="season-hero">
+                <div class="snow-layer" aria-hidden="true">
+                  <span style="left:6%;--drift:14px;width:4px;height:4px;animation-duration:5.2s;animation-delay:0s"></span>
+                  <span style="left:16%;--drift:-10px;animation-duration:6.4s;animation-delay:.6s"></span>
+                  <span style="left:27%;--drift:8px;width:3px;height:3px;animation-duration:4.6s;animation-delay:1.3s"></span>
+                  <span style="left:38%;--drift:-14px;animation-duration:7s;animation-delay:.2s"></span>
+                  <span style="left:49%;--drift:10px;width:6px;height:6px;animation-duration:5.8s;animation-delay:2.1s"></span>
+                  <span style="left:60%;--drift:-8px;animation-duration:4.9s;animation-delay:1.7s"></span>
+                  <span style="left:71%;--drift:12px;width:3px;height:3px;animation-duration:6.7s;animation-delay:.9s"></span>
+                  <span style="left:82%;--drift:-11px;animation-duration:5.4s;animation-delay:2.6s"></span>
+                  <span style="left:91%;--drift:9px;width:5px;height:5px;animation-duration:6.1s;animation-delay:1.1s"></span>
+                </div>
+                <div class="season-hero-label">
+                  <span class="tt">❄ Inverno · Frost</span>
+                  <span class="sb">seasonalTheme = WINTER · backgroundAnimationType = SNOW</span>
+                </div>
+              </div>
+              <div class="season-list">
+                <div class="dna-list-grid">
+                  <div class="dna-item"><div class="ph" style="width:24px;height:24px"></div><div class="tx"><div class="tt">Casaco lã cinza</div><div class="sb">ZARA</div></div></div>
+                  <div class="dna-item"><div class="ph" style="width:24px;height:24px"></div><div class="tx"><div class="tt">Bota impermeável</div><div class="sb">TIMBERLAND</div></div></div>
+                  <div class="dna-item"><div class="ph" style="width:24px;height:24px"></div><div class="tx"><div class="tt">Cachecol xadrez</div><div class="sb">COACH</div></div></div>
+                  <div class="dna-item"><div class="ph" style="width:24px;height:24px"></div><div class="tx"><div class="tt">Suéter gola alta</div><div class="sb">LEVI'S</div></div></div>
+                </div>
+                <p class="dna-note-inline">Esquemas selecionados por proximidade à estação (Scheme.season = WINTER, ou occasion/style compatíveis) — os demais do DNA entram em ordem secundária, não são excluídos.</p>
+              </div>
+              <div class="logo-row"><span class="lg">ZARA</span><span class="lg">COACH</span><span class="lg dim">+2</span></div>
+              <div class="c-row"><span class="k">Frase de identidade</span>"Aquecido por fora, com estilo por dentro."</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Hero de estação em tela cheia (gradiente + camada de animação) ocupando o topo, no lugar do hero de esquema das demais narrativas — seguido da grade 2×2 já usada em A2/B7, agora filtrada pela estação escolhida.</p>
+            <span class="lbl">As 4 estações — mesmo catálogo do RF5</span>
+            <div class="season-swatch-row">
+              <div class="season-swatch spring"><span class="tt">🌸 Bloom</span><span class="sb">Primavera</span></div>
+              <div class="season-swatch summer"><span class="tt">☀ Solstice</span><span class="sb">Verão</span></div>
+              <div class="season-swatch autumn"><span class="tt">🍂 Ember</span><span class="sb">Outono</span></div>
+              <div class="season-swatch winter active"><span class="tt">❄ Frost</span><span class="sb">Inverno</span></div>
+            </div>
+            <p class="note" style="margin-top:8px">Catálogo completo (paleta, animação CSS, justificativa) em <code>RF11/RF11_PRESETS_SAZONAIS.md</code> — o <b>mesmo</b> catálogo de 4 presets é reaproveitado no card de esquema de vestimenta (RF5, anatomias_card_v13.html), como opção opt-in em vez de narrativa dedicada.</p>
+            <span class="lbl">Não confundir com as "paletas sazonais" do RF11 (AURA)</span>
+            <p class="note">O sistema de presets AURA já usa "Spring/Summer/Autumn/Winter" como <i>análise de cor pessoal</i> (quente/claro/vívido etc.), sem relação com a época real do ano. Esta prancha é sobre o <code>Season</code> enum literal — a mesma estação já usada em <code>ClothesScheme.season</code> desde a taxonomia original (não confundir com <code>ClothesPiece.market: Market</code>, enum não relacionado). Os dois sistemas são combináveis, não concorrentes.</p>
+            <span class="lbl">Regra de precedência</span>
+            <p class="note">Escolher esta narrativa <b>sobrescreve</b> qualquer arte de fundo manual definida antes na Etapa 4 — é a própria natureza do card. O usuário é avisado no formulário antes de confirmar (nunca uma sobrescrita silenciosa).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12 LEGO (NOVO, v4) -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">12</span>
+          <h3 class="plate-name">Lego</h3>
+          <span class="plate-meta">narrativeType = BLOCOS · novo</span>
+        </div>
+        <p class="thesis">O DNA inteiro — chrome, hero, título, lista de esquemas, logos e frase de identidade — <b>montado em blocos de encaixe</b> sobre uma placa-base com pinos. A <b>única exceção são as fotos</b>: a arte do hero e as miniaturas dos esquemas continuam fotos, encaixadas em molduras de blocos. É a primeira narrativa que não muda <i>o que</i> o DNA conta, e sim <i>de que matéria</i> ele é feito — mesma prancha 10 do card de esquema (RF5, <code>anatomias_card_v17.html</code>), um nível acima.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <div class="lgo-card">
+              <div class="lgo-brick" style="--c:var(--lgo-white)">
+                <div class="lgo-row" style="align-items:center">
+                  <span class="lgo-round stud" style="--c:var(--lgo-tan)"></span>
+                  <span style="font-size:9.5px;color:var(--muted);white-space:nowrap">autor · DNA de Estilo</span>
+                  <span class="lgo-round" style="--c:var(--lgo-red);width:12px;height:12px"></span>
+                </div>
+              </div>
+              <div class="scheme-container">
+                <div class="lgo-brick lgo-frame" style="--c:var(--dna)">
+                  <div class="lgo-photo">
+                    <span class="lgo-photo-tag">foto original</span>
+                    <div class="dna-hero" style="height:86px"></div>
+                  </div>
+                </div>
+                <div class="lgo-tile" style="--c:var(--lgo-white)">
+                  <div style="font-family:var(--serif);font-size:13px;font-weight:600;line-height:1.2">Verão urbano</div>
+                  <div style="font-size:9px;color:var(--muted)">Da praia ao rooftop · casual · minimalista</div>
+                </div>
+                <div class="lgo-bond">
+                  <div class="lgo-brick lgo-dk" style="--c:var(--lgo-dbg)"><div class="lgo-piece"><div class="lgo-thumb ph"></div><span class="lgo-print"><b>Look de trabalho</b> <span>· outono/21</span></span></div></div>
+                  <div class="lgo-brick lgo-dk" style="--c:var(--lgo-blue)"><div class="lgo-piece"><div class="lgo-thumb ph"></div><span class="lgo-print"><b>Formatura 2025</b> <span>· verão/25</span></span></div></div>
+                  <div class="lgo-brick" style="--c:var(--lgo-tan)"><div class="lgo-piece"><div class="lgo-thumb ph"></div><span class="lgo-print"><b>Fim de semana</b> <span>· atual</span></span></div></div>
+                </div>
+                <div class="lgo-row" style="margin-top:2px">
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:7.5px;font-weight:700;text-align:center">ZARA</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:7.5px;font-weight:700;text-align:center">COACH</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:7.5px;color:var(--muted);text-align:center">+2</span>
+                </div>
+                <div class="lgo-tile" style="--c:var(--lgo-white)"><span style="font-family:var(--mono);font-size:7.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);display:block">Frase de identidade</span><span style="font-size:9.5px">"Da areia ao concreto sem trocar de pele."</span></div>
+              </div>
+              <div class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;color:var(--muted)">♡ 128 · ↻ 12 · 💬 34 · ⟲ 5</div>
+            </div>
+            <button class="lgo-replay" type="button">▸ montar de novo</button>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Mesma ordem do A1 — Ampliado (hero, título, lista de esquemas, logos, frase), com o chrome social fora do container. Cada esquema referenciado vira um bloco em aparelho de amarração, com a miniatura (foto) e o título impresso numa placa lisa.</p>
+            <span class="lbl">Cor do bloco de cada esquema</span>
+            <p class="note">A cor dominante do esquema (média ponderada das cores das peças, mesma base da Paleta dominante, B7), quantizada para 10 cores clássicas de blocos. A moldura do hero usa o roxo do DNA como exceção deliberada: é a assinatura visual do RF13.</p>
+            <span class="lbl">Por que as fotos não viram blocos</span>
+            <p class="note">Mesma regra da prancha 10 do card de esquema: foto é registro, interface é bloco. O DNA conta a história real do guarda-roupa; pixelizar os esquemas apagaria justamente essa história.</p>
+            <span class="lbl">Decisão em aberto: narrativa ou acabamento?</span>
+            <p class="note">Todas as outras narrativas mudam o <b>conteúdo</b>; esta muda a <b>forma</b>. Como <code>narrativeType</code> é uma escolha única, escolher Blocos impede, por exemplo, uma Linha do tempo em blocos. A alternativa é tratar Blocos como um <b>acabamento combinável</b> com qualquer narrativa (um campo separado, como o toggle da Cartela sazonal no RF5). Esta prancha segue o padrão atual do documento (narrativa própria) até o time decidir.</p>
+            <span class="lbl">Nome no produto</span>
+            <p class="note">"LEGO" é marca registrada. No seletor da Etapa 4, a opção se chama <b>Blocos</b> (<code>narrativeType = BLOCOS</code>).</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="fin">
+  <div class="wrap">
+    <h3>v4: Lego — o DNA inteiro em blocos de encaixe, exceto as fotos</h3>
+    <p>Nova narrativa 12 (<code>narrativeType = BLOCOS</code>), espelhando um nível acima a prancha 10 do card de esquema (<code>anatomias_card_v17.html</code>). Chrome, hero, título, lista de esquemas, logos e frase de identidade viram peças de montar sobre uma placa-base com pinos; a arte do hero e as miniaturas dos esquemas continuam <b>fotos</b>, encaixadas em molduras de blocos. A cor do bloco de cada esquema é a sua cor dominante (mesma base da Paleta dominante), quantizada para 10 cores clássicas de blocos; a moldura do hero mantém o roxo do DNA. Fica registrada uma decisão em aberto: por ser a única narrativa de <b>forma</b> e não de conteúdo, Blocos talvez deva virar um acabamento combinável com qualquer narrativa, em vez de ocupar o <code>narrativeType</code>. No produto, a opção se chama <b>Blocos</b> ("LEGO" é marca registrada).</p>
+    <h3>Resumo</h3>
+    <p><b>Seção A</b> — 4 anatomias base do card "Esquema de DNA de Estilo" (Ampliado, Em grade, Na horizontal, Na lateral), extraídas do diagrama de referência do RF13. Diferem apenas em como a lista de esquemas é organizada; cabeçalho e rodapé do card são idênticos nas quatro. <b>Seção B</b> — 11 variações de layout para a Etapa 4 do RF13, ativas apenas quando o elemento-alvo da Etapa 1 é o Conjunto DNA completo. As 4 primeiras (Linha do tempo, Momentos marcantes, Primeira vez, Cápsula &amp; versatilidade) cobrem os eixos temporal, afetivo e prático; as 5 seguintes (Por ocasião, Mood board de estilo, Paleta dominante, Harmonia cromática, Marcas favoritas) completam os eixos contextual, identitário, cromático e comercial; a 10ª (Hype Focus) cobre o eixo social/ao vivo; a 11ª (Cartela sazonal, nova) cobre o eixo temporal-climático. As 9 primeiras reutilizam as mesmas 2–6 células de <code>DNASchemeItem</code> sem pedir dado novo; Hype Focus depende de um dado externo (Hype Score global, <code>RF6_HYPE_SCORE_CALCULO.md</code> §8); Cartela sazonal é a única que exige um campo extra do próprio usuário (<code>seasonalTheme</code>) antes de gerar o card.</p>
+    <h3 style="margin-top:6px">Peça = foto + título, logo + marca, ou medidor</h3>
+    <p>Regra de conteúdo válida nas 14 variações: toda célula que representa um esquema referenciado mostra sua foto (ou cor dominante, na Paleta, ou um medidor de Hype Score/Harmonia cromática) e um título curto — nunca um espaço vazio. Quando o eixo da variação é a marca em vez do esquema em si (Horizontal e Lateral na Seção A; Marcas favoritas na Seção B), o rótulo vira <code>Título · marca</code> ou, no limite, a própria marca com seu logo — sempre identificável, nunca abstrato.</p>
+    <h3 style="margin-top:6px">Regra de logo — onde cada variação diverge</h3>
+    <p>Todas seguem a mesma regra transversal (contagem de peças por marca, desempate por categoria superior/inferior), mas o <b>corte</b> muda por variação: 1 logo + contador nas mais densas em texto (Linha do tempo, Paleta dominante, Por ocasião); logo só na capa em Momentos marcantes; número variável em Primeira vez (um logo por marca-estreia); até 3 em Mood board de estilo; ranking completo, sem corte, em Marcas favoritas — a única em que o logo é o conteúdo principal do card; e nenhum logo — só a marca em texto — em Hype Focus e Harmonia cromática, cujos cards ficam inteiros para o medidor/roda de cor.</p>
+    <h3 style="margin-top:6px">v2: container do esquema, hero interativo + Hype Focus</h3>
+    <p>Novo elemento de anatomia, espelhando o documento de cards de esquema (RF5): uma borda tracejada roxa isola tudo que pertence ao <code>DNAScheme</code> — hero, título/descrição, lista de esquemas referenciados, fileira de logos — do chrome social (autor/data/visibilidade, agora num <code>.dna-header</code> próprio na Seção A) e do rodapé de curtidas/ações. Aplicado às 4 anatomias da Seção A e a todas as narrativas da Seção B — inclusive as mais elaboradas (o princípio é o mesmo do documento de cards comuns: arte mais sofisticada não significa que o esquema deixou de ter um limite próprio). Três hero de múltiplas marcas/linha do tempo ganharam interação real: <b>A4 — Na lateral</b> (clicar num esquema da lista lateral troca a foto do hero; lista rolável verticalmente até 6 esquemas), <b>B1 — Linha do tempo</b> (trilho rolável verticalmente, marcos clicáveis) e <b>B2 — Momentos marcantes</b> (a fileira de apoio vira um segmented picker que troca o conteúdo do hero). Um DNA tende a ser mais complexo que um esquema isolado — essas três pranchas passam a permitir navegar por todos os dados (marcas, títulos, fotos) sem precisar abrir o card. <b>Nova narrativa Hype Focus</b> — um medidor semicircular em destaque + uma linha por esquema com mini-medidor (chama, percentual, barra), mostrando o <b>Hype Score global</b> de cada esquema referenciado: a média dos Hype Scores pessoais de todos os usuários que hoje marcaram como Look do Dia um esquema igual ou semelhante (mesma marca, tipo de peça, cor e estilo) — mecanismo completo em <code>RF6_HYPE_SCORE_CALCULO.md</code> §8 e <code>RF6/RF6-hypescore-global-atividades.puml</code>. É a única narrativa cujo conteúdo muda sozinho ao longo do dia.</p>
+    <h3 style="margin-top:6px">v3: revisão contra bibliografia real de design de moda</h3>
+    <p>As dez narrativas de v2 (nove herdadas + Hype Focus) foram avaliadas contra literatura real de moda — semiótica do vestuário (Barthes), teoria da cor (Itten), cápsula de guarda-roupa (Karan, Faux), arquétipos de estilo (Kibbe), biografia de guarda-roupa (Woodward), difusão de tendência (Rogers, Vejlgaard) e sustentabilidade (Fashion Revolution). Resultado: <b>Favoritos removida</b> — era um "favoritar" genérico sem conceito de moda próprio, redundante com "Mais usadas" do card de esquema. <b>Constelação de estilo renomeada para Mood board de estilo</b> — o layout radial não mudou, mas o enquadramento conceitual deixou de ser uma metáfora de grafo de dados e passou a citar explicitamente a ferramenta real de processo de design (quadro de inspiração agrupado por afinidade estética). <b>Cápsula &amp; versatilidade (nova, B4)</b> — substitui Favoritos no mesmo slot, medindo quantas peças-base sustentam quantos looks, direto da teoria de cápsula de guarda-roupa. <b>Harmonia cromática (nova, B8)</b> — evolução da Paleta dominante, classificando a relação geométrica entre as cores no círculo cromático de Itten (complementar, análoga, tríade, monocromática). <b>Hype Focus</b> ganhou uma nota explícita distinguindo popularidade de qualidade de estilo, para não naturalizar essa confusão dentro do próprio produto. Resultado: 10 narrativas na Seção B (14 variações no documento todo).</p>
+  </div>
+</footer>
+
+<script>
+function selectLatItem(el){
+  var list = el.closest('.dna-list-lat');
+  list.querySelectorAll('.dna-item').forEach(function(it){ it.classList.remove('active'); });
+  el.classList.add('active');
+  var tt = el.querySelector('.tt').textContent;
+  var sb = el.querySelector('.sb').textContent;
+  var card = el.closest('.dna-card');
+  var label = card && card.querySelector('.dna-hero-label');
+  if(label){
+    label.querySelector('.tt2').textContent = tt;
+    label.querySelector('.sb2').textContent = sb;
+  }
+}
+document.querySelectorAll('.dna-list-lat .dna-item').forEach(function(item){
+  item.addEventListener('click', function(){ selectLatItem(item); });
+});
+
+document.querySelectorAll('.tl-item').forEach(function(item){
+  item.addEventListener('click', function(){
+    var track = item.closest('.tl-track');
+    track.querySelectorAll('.tl-item').forEach(function(it){ it.classList.remove('active'); });
+    item.classList.add('active');
+  });
+});
+
+var momentData = {
+  0: {badge:'MARCO · Formatura 2025', text:'esquema em destaque'},
+  1: {badge:'Ano novo', text:'balada com amigos'},
+  2: {badge:'Viagem', text:'mochilão europeu'},
+  3: {badge:'Show', text:'festival de verão'}
+};
+function selectMoment(btn, i){
+  var strip = btn.closest('.mm-strip');
+  strip.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var hero = strip.closest('.mm-hero');
+  var data = momentData[i];
+  if(data){
+    hero.querySelector('.mm-badge').textContent = data.badge;
+    hero.querySelector('.mm-main').textContent = data.text;
+  }
+}
+</script>
+
+<script>
+(function(){
+  function index(card){ var i=0; card.querySelectorAll('.lgo-brick,.lgo-tile,.lgo-round').forEach(function(el){ el.style.setProperty('--i', i++); }); }
+  function build(card){ card.classList.remove('lgo-build'); void card.offsetWidth; card.classList.add('lgo-build'); }
+  document.querySelectorAll('.lgo-card').forEach(function(card){ index(card); build(card); });
+  document.querySelectorAll('.lgo-replay').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var col = btn.closest('.plate-col');
+      if(col) col.querySelectorAll('.lgo-card').forEach(build);
+    });
+  });
+})();
+</script>
+
+</body></html>

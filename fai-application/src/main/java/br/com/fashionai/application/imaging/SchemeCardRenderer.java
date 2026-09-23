@@ -35,7 +35,7 @@ import java.util.Optional;
  * contrast, hue_shift), transformações (posição, escala, rotação, opacidade, zIndex) e as camadas do
  * Background Studio: Cor & Gradiente, Arte com AI (restrita à moldura — passe-partout) e presets AURA ×
  * material (fallback css-blend quando a combinação não tem arquivo). Dimensões RNF9: vestimenta compacto
- * 90 × 164 mm, ampliado 90 × 216 mm, a 10 px/mm.
+ * 90 × 164 mm, ampliado 90 × 220 mm (anatomias_card_v17), a 10 px/mm.
  */
 @Component
 public class SchemeCardRenderer {
@@ -48,7 +48,7 @@ public class SchemeCardRenderer {
     }
 
     public enum Size {
-        COMPACT(90, 164), EXPANDED(90, 216);
+        COMPACT(90, 164), EXPANDED(90, 220);
         final int wMm;
         final int hMm;
 

@@ -96,16 +96,31 @@ AURA_PRESETS = [
 ]
 AURA_NEGATIVE = "avoid gamified badge icons, avoid game UI elements, avoid achievement/level-up graphics, avoid text overlays"
 
-# Ordem oficial P01..P18 (indice_de_correspondencia.csv do pacote presets_aura_sem_GIF_nomeados.zip —
-# confirmada visualmente contra os vídeos do mosaico: P01=cabides, P05=circuitos, P13=palco).
-AURA_VARIANT_ORDER = [
-    "aura_alfaiataria__cabides", "aura_editorial_mono__estudio", "aura_romantico_petala__petalas",
-    "aura_boemio_terracota__dunas_douradas", "aura_streetwear_neon__circuitos", "aura_natural_organico__floresta",
-    "aura_boemio_terracota__deserto", "aura_romantico_petala__brilho_suave", "aura_avantgarde_cromo__fluxo_de_luz",
-    "aura_esportivo_performance__feixes", "aura_avantgarde_cromo__cromo_lilas", "aura_esportivo_performance__diagonais",
-    "aura_glam_noite__palco", "aura_dark_academia__escritorio", "aura_natural_organico__interiores",
-    "aura_boemio_terracota__crepusculo", "aura_streetwear_neon__diagonais", "aura_dark_academia__biblioteca",
+# P01..P18 → preset AURA (fashionai-diagramas-completo 11, RF11_PROPOSTA_PRESETS_AURA_E_MATERIAIS.md §7.4 — tabela
+# oficial vigente). O arquivo estático de /public/aura_sem_GIF foi escolhido pelo conteúdo que a tabela descreve
+# (conferido visualmente). P09 e P10 não têm arquivo estático próprio: usam o 1º quadro do vídeo P×M como pôster.
+# "brilho_suave" (Petal Bloom) e "esportivo_performance__diagonais" são variantes estáticas extras, sem código P.
+AURA_VARIANTS = [
+    ("P01", "aura_alfaiataria__cabides", "aura_alfaiataria", "Pares de peças em cabides sobre fundo cinza-claro"),
+    ("P02", "aura_editorial_mono__estudio", "aura_editorial_mono", "Pedestais de still-life com objetos drapeados"),
+    ("P03", "aura_romantico_petala__petalas", "aura_romantico_petala", "Close-ups têxteis com pétalas flutuando"),
+    ("P04", "aura_boemio_terracota__dunas_douradas", "aura_boemio_terracota", "Dunas de tecido ao pôr do sol"),
+    ("P05", "aura_streetwear_neon__circuitos", "aura_streetwear_neon", "Painéis com faixas diagonais em relevo"),
+    ("P06", "aura_esportivo_performance__feixes", "aura_esportivo_performance", "Feixes de luz em X sobre fundos texturizados"),
+    ("P07", "aura_natural_organico__floresta", "aura_natural_organico", "Texturas têxteis e paisagens em névoa"),
+    ("P08", "aura_boemio_terracota__deserto", "aura_boemio_terracota", "Moldura com 4 painéis verticais de deserto"),
+    ("P09", "aura_natural_organico__gotas", "aura_natural_organico", "Amostras quadradas com gotas sobre fundo branco"),
+    ("P10", "aura_glam_noite__tecidos_flutuando", "aura_glam_noite", "Tecidos flutuando em estúdio escuro"),
+    ("P11", "aura_avantgarde_cromo__cromo_lilas", "aura_avantgarde_cromo", "Tecidos lilás e violeta holográficos sobre preto"),
+    ("P12", "aura_streetwear_neon__diagonais", "aura_streetwear_neon", "Colagem glitch ciano e magenta"),
+    ("P13", "aura_glam_noite__palco", "aura_glam_noite", "Palcos com passarela e holofotes"),
+    ("P14", "aura_dark_academia__escritorio", "aura_dark_academia", "Biblioteca com escrivaninha e luminária"),
+    ("P15", "aura_natural_organico__interiores", "aura_natural_organico", "Detalhes de interiores: estofado, cortinas, móveis"),
+    ("P16", "aura_boemio_terracota__crepusculo", "aura_boemio_terracota", "Painéis têxteis ornamentais com dunas"),
+    ("P17", "aura_avantgarde_cromo__fluxo_de_luz", "aura_avantgarde_cromo", "Amostras de tecido com curvas cromadas"),
+    ("P18", "aura_dark_academia__biblioteca", "aura_dark_academia", "A mesma biblioteca em vários tratamentos de cor"),
 ]
+AURA_VARIANT_ORDER = [v[1] for v in AURA_VARIANTS]
 
 # Ordem oficial M01..M12 (indice_de_correspondencia.csv de materiais_sem_GIF_nomeados.zip — confirmada
 # visualmente: moldura de M01 = lã fria em espinha, M04 = veludo verde, M10 = denim).
@@ -134,17 +149,17 @@ MATERIALS = [
      "params": {"density": 60, "threadDirection": "vertical", "threadThickness": 1.8, "embossIntensity": 35},
      "archetype": "Esportivo/athleisure, natural",
      "prompt": "ribbed knit fabric surface, regular vertical rib lines, soft stretch texture, matte tactile knit finish"},
-    {"id": "acolchoado_azul_marinho", "name": "Acolchoado azul-marinho", "fiber": "Matelassê / quilted nylon", "finish": "satin",
-     "params": {"density": 75, "threadDirection": "cross", "threadThickness": 2.2, "embossIntensity": 65},
-     "archetype": "Outerwear, utilitário, inverno", "promptStatus": "novo — criado nesta rodada (não constava nos 10 prompts originais)",
+    {"id": "nylon_ripstop", "name": "Nylon Ripstop", "fiber": "Nylon ripstop (trama fechada com reforço em losango)", "finish": "satin",
+     "params": {"density": 85, "threadDirection": "cross", "threadThickness": 1.4, "embossIntensity": 45},
+     "archetype": "Streetwear técnico, esportivo", "legacyAliases": ["nylon_ripstop"], "folder": "acolchoado_azul_marinho", "promptStatus": "novo — criado nesta rodada (não constava nos 10 prompts originais)",
      "prompt": "quilted navy nylon fabric surface, diamond stitched padding pattern, soft puffed relief between seams, subtle satin sheen"},
     {"id": "organza_translucida", "name": "Organza translúcida", "fiber": "Tecido plano, fio fino, sheer", "finish": "satin",
      "params": {"density": 20, "threadDirection": "horizontal", "threadThickness": 0.5, "embossIntensity": 10},
      "archetype": "Romântico, noiva, editorial leve", "legacyAliases": ["glass_material"],
      "prompt": "sheer organza fabric surface, crisp fine plain weave, translucent light-catching texture, subtle satin glow"},
-    {"id": "brocado_floral", "name": "Brocado floral", "fiber": "Jacquard com fio metálico", "finish": "satin",
-     "params": {"density": 110, "threadDirection": "cross", "threadThickness": 2.6, "embossIntensity": 75},
-     "archetype": "Glam, festa, barroco", "legacyAliases": ["embroidered_fabric"],
+    {"id": "brocado_jacquard", "name": "Brocado Jacquard", "fiber": "Brocado jacquard (damasco com fio metálico)", "finish": "satin",
+     "params": {"density": 110, "threadDirection": "cross", "threadThickness": 2.2, "embossIntensity": 65},
+     "archetype": "Glam de noite, dark academia", "legacyAliases": ["brocado_floral", "embroidered_fabric"], "folder": "brocado_floral",
      "promptStatus": "novo — criado nesta rodada (não constava nos 10 prompts originais)",
      "prompt": "floral brocade jacquard fabric surface, raised woven floral motifs with metallic gold thread, rich burgundy ground, ornate tactile relief"},
     {"id": "denim_selvagem", "name": "Denim selvedge", "fiber": "Twill grosso", "finish": "matte",
@@ -239,6 +254,34 @@ CATEGORY_ALIASES = {"upper_piece": ["parte_cima", "parte_de_cima", "top", "tops"
                     "shoes_piece": ["tenis", "calcado", "calcados", "shoes", "sapato", "sapatos"],
                     "accessory_piece": ["acessorio", "acessorios", "accessory", "accessories"],
                     "full_body_piece": ["corpo_inteiro", "vestido", "full_body", "macacao"]}
+# Pastas numeradas de /public/assets_pecas → categoria da taxonomia; "06_Variacao_inicial" = imagem genérica.
+PIECE_FOLDER_CATEGORY = {"parte_superior": "upper_piece", "parte_inferior": "lower_piece", "calcados": "shoes_piece",
+                         "acessorios": "accessory_piece", "corpo_inteiro": "full_body_piece", "variacao_inicial": "generic"}
+# Nomes dos arquivos (sem o prefixo numérico) → subcategoria. Cobre os nomes bilíngues e os em português.
+PIECE_FILE_ALIASES = {
+    "camiseta_referencia": "t_shirt", "shirt_camisa": "shirt", "blouse_blusa": "blouse", "tank_top_regata": "tank_top",
+    "crop_top_cropped": "crop_top", "polo_shirt_camisa_polo": "polo_shirt", "bodysuit_body": "bodysuit",
+    "sweater_sueter": "sweater", "sweatshirt_moletom_sem_capuz": "sweatshirt", "hoodie_moletom_com_capuz": "hoodie",
+    "cardigan": "cardigan", "vest_colete": "vest", "blazer": "blazer", "jacket_jaqueta": "jacket", "coat_casaco": "coat",
+    "parka": "parka", "windbreaker_corta_vento": "windbreaker", "kimono_quimono": "kimono",
+    "jeans": "jeans", "calca_casual": "casual_pants", "calca_alfaiataria": "tailored_pants", "calca_cargo": "cargo_pants",
+    "calca_chino": "chino_pants", "calca_moletom": "sweatpants", "calca_jogger": "jogger_pants", "legging": "leggings",
+    "pantacourt": "culottes", "bermuda": "bermuda_shorts", "shorts_jeans": "denim_shorts", "saia": "skirt",
+    "shorts": "shorts", "short_saia": "skort",
+    "tenis_casual": "casual_sneakers", "tenis_corrida": "running_shoes", "tenis_treino": "training_shoes",
+    "tenis_skate": "skate_shoes", "loafer": "loafers", "tenis_cano_alto": "high_top_sneakers",
+    "tenis_basquete": "basketball_shoes", "mocassim": "moccasins", "oxford": "oxford_shoes", "derby": "derby_shoes",
+    "bota_cano_curto": "ankle_boots", "bota_cano_longo": "long_boots", "sandalia": "sandals", "coturno": "combat_boots",
+    "chinelo": "flip_flops", "salto_alto": "heels", "sapatilha": "flats", "alpargata": "espadrilles",
+    "bolsa_transversal": "crossbody_bag", "bolsa_mao": "handbag", "clutch": "clutch", "tote": "tote_bag",
+    "mochila": "backpack", "cinto": "belt", "bone": "cap", "chapeu": "hat", "gorro": "beanie", "cachecol": "scarf",
+    "gravata": "tie", "gravata_borboleta": "bow_tie", "oculos_sol": "sunglasses", "oculos_grau": "eyeglasses",
+    "colar": "necklace", "pulseira": "bracelet", "brincos": "earrings", "anel": "ring", "relogio": "watch",
+    "luvas": "gloves", "meias": "socks", "acessorio_cabelo": "hair_accessory",
+    "vestido": "dress", "macacao": "jumpsuit", "macaquinho": "romper", "conjunto_coordenado": "matching_set",
+    "jardineira": "overalls",
+}
+
 SILHOUETTES = {
     "upper_piece": "M60 40 L100 22 Q120 36 140 22 L180 40 L200 90 L172 100 L168 78 L168 200 L72 200 L72 78 L68 100 L40 90 Z",
     "lower_piece": "M72 24 L168 24 L176 216 L130 216 L122 90 L118 90 L110 216 L64 216 Z",
@@ -426,23 +469,48 @@ def build_skins() -> dict:
 def build_default_pieces(d) -> dict:
     """RF4 — imagem padrão por subcategoria → categoria → genérica. Sem arquivos, gera silhuetas SVG."""
     folder = next((PUBLIC / n for n in DEFAULT_PIECE_FOLDERS if (PUBLIC / n).is_dir()), None)
-    files = media_files(folder, IMAGE_EXT | {".svg"}) if folder else []
-    by_sub, by_cat, generic, unmatched = {}, {}, None, []
+    files = sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXT | {".svg"}) if folder else []
+    by_sub, by_cat, generic, unmatched, duplicates = {}, {}, None, [], []
     sub_to_cat = {sub: cat for cat, subs in PIECE_CATEGORIES.items() for sub in subs}
+    hashes = {}
+    # arquivos dentro das pastas por categoria têm prioridade sobre cópias soltas na raiz
+    files.sort(key=lambda f: (f.parent == folder, str(f)))
     for f in files:
-        key = slug(f.stem)
-        entry = {"url": url_of(f), "previewUrl": d.image(f, DERIVED / "pecas_default" / f"{key}_preview.webp", 360, 80)
+        digest = sha256(f)
+        if digest in hashes:
+            duplicates.append({"file": url_of(f), "sameAs": hashes[digest]})
+            continue
+        hashes[digest] = url_of(f)
+        key = re.sub(r"^\d+_", "", slug(f.stem))
+        folder_key = re.sub(r"^\d+_", "", slug(f.parent.name)) if f.parent != folder else None
+        entry = {"url": url_of(f), "file": f.name,
+                 "previewUrl": d.image(f, DERIVED / "pecas_default" / f"{slug(f.parent.name)}_{slug(f.stem)}_preview.webp", 360, 80)
                  if f.suffix.lower() != ".svg" else url_of(f)}
-        sub = next((s for s in sub_to_cat if key == s or key.startswith(s + "_") or key.endswith("_" + s)), None)
-        cat = next((c for c, al in CATEGORY_ALIASES.items() if key == c or key in al or any(key.startswith(a) for a in al)), None)
+        folder_cat = PIECE_FOLDER_CATEGORY.get(folder_key) if folder_key else None
+        if folder_cat == "generic":
+            generic = generic or entry
+            continue
+        sub = PIECE_FILE_ALIASES.get(key) or next((s2 for s2 in sub_to_cat if key == s2 or key.startswith(s2 + "_")
+                                                   or key.endswith("_" + s2)), None)
         if sub:
-            by_sub[sub] = {**entry, "category": sub_to_cat[sub]}
-        elif cat:
-            by_cat[cat] = entry
+            cat = sub_to_cat[sub]
+            if folder_cat and folder_cat != cat:
+                unmatched.append({"file": url_of(f), "reason": f"pasta indica {folder_cat}, nome indica {cat}"})
+            by_sub.setdefault(sub, {**entry, "category": cat})
+            continue
+        cat = folder_cat or next((c for c, al in CATEGORY_ALIASES.items() if key == c or key in al), None)
+        if cat:
+            by_cat.setdefault(cat, entry)
         elif key in ("default", "generic", "generica", "padrao", "peca", "placeholder"):
             generic = entry
         else:
-            unmatched.append(url_of(f))
+            unmatched.append({"file": url_of(f), "reason": "nome não mapeado para subcategoria"})
+    # categoria sem imagem própria usa a primeira subcategoria dela (ex.: camiseta para parte de cima)
+    for cat, subs in PIECE_CATEGORIES.items():
+        first = next((by_sub[s2] for s2 in subs if s2 in by_sub), None)
+        if first and cat not in by_cat:
+            by_cat[cat] = {k: v for k, v in first.items() if k != "category"}
+    missing_subs = [s2 for s2 in sub_to_cat if s2 not in by_sub]
     generated = {}
     out_dir = DERIVED / "pecas_default"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -457,7 +525,8 @@ def build_default_pieces(d) -> dict:
     for cat in PIECE_CATEGORIES:
         by_cat.setdefault(cat, {"url": generated[cat], "previewUrl": generated[cat], "generated": True})
     return {"folder": ("/" + folder.name) if folder else None, "acceptedFolderNames": DEFAULT_PIECE_FOLDERS,
-            "found": len(files), "bySubcategory": by_sub, "byCategory": by_cat,
+            "found": len(files), "mapped": len(by_sub), "duplicatesIgnored": duplicates, "missingSubcategories": missing_subs,
+            "bySubcategory": by_sub, "byCategory": by_cat,
             "generic": generic or {"url": generated["generic"], "previewUrl": generated["generic"], "generated": True},
             "unmatchedFiles": unmatched,
             "resolution": "subcategoria → categoria → genérica; sem arquivo em /public/assets_pecas usa silhueta gerada",
@@ -499,7 +568,7 @@ def build(derived_enabled: bool) -> dict:
         entry["index"] = idx
         entry["code"] = f"M{idx:02d}"
         entry["negativePrompt"] = MATERIAL_NEGATIVE
-        s = mat_static.get(m["id"])
+        s = mat_static.get(m["id"]) or mat_static.get(m.get("folder", ""))
         if s:
             entry["static"] = {"url": url_of(s),
                                "previewUrl": d.image(s, DERIVED / "material" / f"{m['id']}_preview.webp", 360, 78),
@@ -508,7 +577,7 @@ def build(derived_enabled: bool) -> dict:
         else:
             entry["static"] = None
             missing.append({"category": "material_static", "id": m["id"], "expected": f"/material_no_GIF/{m['id']}/{m['id']}.jpg"})
-        a = mat_anim.get(m["id"])
+        a = mat_anim.get(m["id"]) or mat_anim.get(m.get("folder", ""))
         if a:
             entry["animated"] = {"url": url_of(a), "posterUrl": d.poster(a, DERIVED / "material" / f"{m['id']}_poster.jpg"),
                                  **d.video_info(a)}
@@ -522,23 +591,28 @@ def build(derived_enabled: bool) -> dict:
     aura_anim_dir = find_folder("aura_animated")
     aura_static = {p.stem: p for p in media_files(aura_static_dir, IMAGE_EXT)}
     aura_anim = {p.stem: p for p in media_files(aura_anim_dir, VIDEO_EXT | {".gif"})}
-    known_variants = list(AURA_VARIANT_ORDER) + sorted(v for v in aura_static if v not in AURA_VARIANT_ORDER)
     presets = {p["id"]: {**p, "negativePrompt": AURA_NEGATIVE, "variants": []} for p in AURA_PRESETS}
     variants_flat = []
-    for idx, variant in enumerate(known_variants, start=1):
-        preset_id, _, theme = variant.partition("__")
+    extras = sorted(v for v in aura_static if v not in AURA_VARIANT_ORDER)
+    rows = [(code, vid, pid, desc) for code, vid, pid, desc in AURA_VARIANTS] + \
+           [(None, vid, vid.partition("__")[0], "variante estática extra (sem código P no catálogo P×M)") for vid in extras]
+    for idx, (code, variant, preset_id, desc) in enumerate(rows, start=1):
         preset = presets.get(preset_id)
         if preset is None:
             continue
-        v = {"id": variant, "presetId": preset_id, "theme": theme.replace("_", " "), "index": idx, "code": f"P{idx:02d}"}
-        s = aura_static.get(variant)
-        if s:
-            v["static"] = {"url": url_of(s),
-                           "previewUrl": d.image(s, DERIVED / "aura" / f"{variant}_preview.webp", 360, 78),
-                           "cardUrl": d.image(s, DERIVED / "aura" / f"{variant}_card.webp", 900, 80),
-                           **d.image_info(s)}
+        theme = variant.partition("__")[2]
+        v = {"id": variant, "presetId": preset_id, "theme": theme.replace("_", " "), "description": desc,
+             "index": idx, "code": code}
+        s_file = aura_static.get(variant)
+        if s_file:
+            v["static"] = {"url": url_of(s_file),
+                           "previewUrl": d.image(s_file, DERIVED / "aura" / f"{variant}_preview.webp", 360, 78),
+                           "cardUrl": d.image(s_file, DERIVED / "aura" / f"{variant}_card.webp", 900, 80),
+                           **d.image_info(s_file)}
         else:
             v["static"] = None
+            v["staticFallback"] = {"strategy": "poster-do-video-PxM", "note": "sem arquivo em /aura_sem_GIF; usa o pôster "
+                                   "do asset imagem única " + (code or "") + "_M01"}
             missing.append({"category": "aura_static", "id": variant, "expected": f"/aura_sem_GIF/{variant}.png"})
         a = aura_anim.get(variant)
         if a:
@@ -565,8 +639,10 @@ def build(derived_enabled: bool) -> dict:
                 label = {"aura": mm.group(3).strip(), "material": mm.group(4).strip()}
             if mm:
                 pi, mi = int(mm.group(1)), int(mm.group(2))
-                if 1 <= pi <= len(variants_flat) and 1 <= mi <= len(MATERIALS):
-                    aura_v, mat_id = variants_flat[pi - 1]["id"], MATERIALS[mi - 1]["id"]
+                vcode = f"P{pi:02d}"
+                match = next((v for v in variants_flat if v.get("code") == vcode), None)
+                if match and 1 <= mi <= len(MATERIALS):
+                    aura_v, mat_id = match["id"], MATERIALS[mi - 1]["id"]
             else:
                 m2 = re.match(r"^(aura_[a-z_]+?)(?:__[a-z_]+)?_mais_([a-z_]+)$", stem)
                 if m2:
@@ -579,7 +655,8 @@ def build(derived_enabled: bool) -> dict:
             if not (aura_v and mat_id):
                 continue
             item = {"auraVariantId": aura_v, "materialId": mat_id, "url": url_of(p),
-                    "code": next((f"{v['code']}_{mt['code']}" for v in variants_flat if v["id"] == aura_v
+                    "format": "MOSAICO" if "mosaic" in key else "IMAGEM_UNICA",
+                    "code": next((f"{v['code']}_{mt['code']}" for v in variants_flat if v["id"] == aura_v and v.get("code")
                                   for mt in materials if mt["id"] == mat_id), None)}
             if label:
                 preset_name = next((pr["name"] for pr in AURA_PRESETS if aura_v and aura_v.startswith(pr["id"] + "__")), None)
@@ -603,6 +680,12 @@ def build(derived_enabled: bool) -> dict:
         "mosaic": combo_items("aura_material_mosaic_animated", VIDEO_EXT | {".gif"}),
     }
 
+    # P09/P10: sem estático próprio → pôster do asset imagem única Pxx_M01 como quadro estático
+    for v in variants_flat:
+        if v["static"] is None and v.get("code"):
+            poster = next((c.get("posterUrl") for c in combos["animated"] if (c.get("code") or "").startswith(v["code"] + "_M01")), None)
+            if poster:
+                v["staticFallback"]["posterUrl"] = poster
     skins = build_skins()
     default_pieces = build_default_pieces(d)
     counts = {

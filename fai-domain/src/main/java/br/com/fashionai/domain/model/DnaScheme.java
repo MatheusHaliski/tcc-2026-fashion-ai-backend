@@ -137,4 +137,16 @@ public class DnaScheme extends VersionedAuditableEntity {
 
     @Column(name = "published_at")
     private Instant publishedAt;
+
+    /** anatomia_cards_DNA_v4 Seção A — AMPLIADO, GRADE, HORIZONTAL ou LATERAL. */
+    @Column(name = "card_layout", nullable = false, length = 20)
+    private String cardLayout = "AMPLIADO";
+
+    /** Etapa 1 — DNA_COMPLETO habilita as narrativas da Seção B; ESQUEMA usa o Background Studio comum. */
+    @Column(name = "target_element", nullable = false, length = 20)
+    private String targetElement = "DNA_COMPLETO";
+
+    /** RF11 §7.6 — vídeo em loop do Preset Aura + material (formato imagem única ou mosaico); o quadro estático vai para a arte de fundo. */
+    @Column(name = "background_video_url", length = 1024)
+    private String backgroundVideoUrl;
 }

@@ -208,4 +208,8 @@ public class Scheme extends VersionedAuditableEntity {
     /** RF11 — Direção recomendada aplicada (Editorial Spread, Luxury Glass, Atelier, Show Notes). */
     @Column(name = "recommended_direction", length = 40)
     private String recommendedDirection;
+
+    /** RF11 §7.6 — vídeo em loop do Preset Aura + material (formato imagem única ou mosaico); o quadro estático vai para a arte de fundo. */
+    @Column(name = "background_video_url", length = 1024)
+    private String backgroundVideoUrl;
 }

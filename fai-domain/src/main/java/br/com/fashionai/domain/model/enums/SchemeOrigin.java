@@ -6,5 +6,5 @@ public enum SchemeOrigin {
     PROVADOR,
     REMIX,
     COPILOT,
-    DNA_DUPLICATE
+    DNA_DUPLICATE, SMART_MIRROR, VISTA_ME
 }

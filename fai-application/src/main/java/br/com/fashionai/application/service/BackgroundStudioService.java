@@ -48,7 +48,14 @@ import java.util.UUID;
  */
 @Service
 public class BackgroundStudioService {
-    public static final List<String> ANATOMIES = List.of("LISTA_VERTICAL", "GRADE_PECAS", "HERO_LISTA");
+    /** anatomias_card_v17: 3 anatomias base (Seção A) + 10 variações oficiais (Seção B). */
+    public static final List<String> ANATOMIES = List.of("LISTA_VERTICAL", "GRADE_PECAS", "HERO_LISTA", "PASSARELA", "ETIQUETA",
+            "RAIO_X", "BENTO", "ESPECTRO", "CUSTO_POR_USO", "SILHUETA_PROPORCAO", "HYPE_FOCUS", "CARTELA_SAZONAL", "BLOCOS");
+    /** Versão por peça (Seção C): 7 das 10 variações. */
+    public static final List<String> PIECE_ANATOMIES = List.of("PECA_AMPLIADO", "PASSARELA", "ETIQUETA", "RAIO_X", "BENTO",
+            "ESPECTRO", "CUSTO_POR_USO", "BLOCOS");
+    /** RF11 §7.6 — formato do Preset Aura + material. */
+    public static final List<String> AURA_FORMATS = List.of("IMAGEM_UNICA", "MOSAICO");
 
     /** As quatro direções visuais do RF11 (Recommendation) — cada uma re-renderiza os wearstyles no seu estilo. */
     public static final Map<String, Map<String, Object>> DIRECTIONS = new LinkedHashMap<>();
@@ -64,7 +71,7 @@ public class BackgroundStudioService {
                 "aura", "aura_boemio_terracota__dunas_douradas", "material", "couro_nappa", "wearstyles", "etiquetas tracejadas",
                 "styles", List.of("boho", "vintage", "romantic", "resort", "utility", "grunge")));
         DIRECTIONS.put("SHOW_NOTES", Map.of("label", "Show Notes", "skin", "show_notes",
-                "aura", "aura_streetwear_neon__circuitos", "material", "acolchoado_azul_marinho", "wearstyles", "numerados",
+                "aura", "aura_streetwear_neon__circuitos", "material", "nylon_ripstop", "wearstyles", "numerados",
                 "styles", List.of("streetwear", "sporty", "athleisure", "techwear", "urban", "y2k", "edgy", "basic")));
     }
 
@@ -110,6 +117,8 @@ public class BackgroundStudioService {
         out.put("skinGeneration", assets.manifest().get("skinGeneration"));
         out.put("directions", DIRECTIONS);
         out.put("anatomies", ANATOMIES);
+        out.put("pieceAnatomies", PIECE_ANATOMIES);
+        out.put("auraFormats", AURA_FORMATS);
         out.put("animations", BackgroundAnimation.values());
         out.put("imageGenerationAvailable", generators.stream().anyMatch(ImageProviderPorts.ImageGenerationPort::available));
         return out;
@@ -331,11 +340,57 @@ public class BackgroundStudioService {
         if (material != null && assets.material(material).isEmpty()) {
             throw ApiException.badRequest("PRESET_INVALIDO", "Material desconhecido: " + material);
         }
+        String anatomy = scheme.get("layoutAnatomy") instanceof String a2 ? a2 : s.getLayoutAnatomy();
+        if ("BLOCOS".equals(anatomy) && material != null) {
+            // v17 prancha 10: com a anatomia Blocos a placa-base já é o material — o seletor fica desabilitado.
+            throw ApiException.badRequest("MATERIAL_INDISPONIVEL", "Com a anatomia Blocos o seletor de material fica desabilitado.");
+        }
+        String format = aura == null ? null : (String) aura.get("format");
+        if (format != null && !AURA_FORMATS.contains(format)) {
+            throw ApiException.badRequest("FORMATO_INVALIDO", "Formato do Preset Aura: IMAGEM_UNICA ou MOSAICO.");
+        }
+        if (format != null && (auraVariant == null || material == null)) {
+            throw ApiException.badRequest("FORMATO_INVALIDO", "O formato só se aplica a Preset Aura com camada de material.");
+        }
+        s.setBackgroundVideoUrl(null);
+        if (auraVariant != null && material != null && format != null) {
+            Map<String, Object> combo = assets.resolveCombination(auraVariant, material, true, "MOSAICO".equals(format));
+            if ("asset".equals(combo.get("strategy"))) {
+                s.setBackgroundVideoUrl((String) combo.get("url"));
+                if (scheme.get("aiArt") == null && scheme.get("uploadUrl") == null) {
+                    scheme.put("posterUrl", combo.get("posterUrl"));
+                }
+            }
+        }
         Map<String, Object> aiArt = scheme.get("aiArt") instanceof Map<?, ?> art ? (Map<String, Object>) art : null;
         String upload = (String) scheme.get("uploadUrl");
         s.setBackgroundArtUrl(aiArt != null ? (String) aiArt.get("url") : upload);
         if (scheme.get("animation") instanceof String anim) {
             s.setBackgroundAnimationType(BackgroundAnimation.valueOf(anim));
+        }
+        if (Boolean.TRUE.equals(scheme.get("seasonalAuto"))) {
+            // v17 prancha 09 — Cartela sazonal: opt-in, só com season preenchido; sobrescreve o fundo manual.
+            if (s.getSeason() == null) {
+                throw ApiException.badRequest("ESTACAO_OBRIGATORIA", "Preencha a estação (Etapa 3) para aplicar a arte sazonal.");
+            }
+            String preset = switch (s.getSeason()) {
+                case WINTER -> "frost";
+                case SUMMER -> "solstice";
+                case AUTUMN -> "ember";
+                case SPRING -> "bloom";
+            };
+            assets.gradient(preset).ifPresent(p -> {
+                s.setBackgroundGradient(Json.write(Map.of("type", "linear", "angle", 160, "stops", p.get("stops"))));
+                Object anim = p.get("animation");
+                if (anim instanceof String a3) {
+                    try {
+                        s.setBackgroundAnimationType(BackgroundAnimation.valueOf(a3));
+                    } catch (IllegalArgumentException ignored) {
+                        // animação CSS sem equivalente no enum
+                    }
+                }
+            });
+            scheme.put("seasonalPresetId", preset);
         }
         if (scheme.get("cardSkin") instanceof String skin) {
             if (assets.cardSkin(skin).isEmpty()) {
@@ -344,7 +399,7 @@ public class BackgroundStudioService {
             s.setCardSkin(skin);
         }
         if (scheme.get("layoutAnatomy") instanceof String anat) {
-            if (!ANATOMIES.contains(anat)) {
+            if (!ANATOMIES.contains(anat) && !PIECE_ANATOMIES.contains(anat)) {
                 throw ApiException.badRequest("ANATOMIA_INVALIDA", "Anatomia de card desconhecida: " + anat);
             }
             s.setLayoutAnatomy(anat);
@@ -379,8 +434,8 @@ public class BackgroundStudioService {
         Map<String, Object> stored = new LinkedHashMap<>(config);
         Map<String, Object> resolved = new LinkedHashMap<>();
         if (auraVariant != null || material != null) {
-            boolean animated = aura != null && Boolean.TRUE.equals(aura.get("animated"));
-            boolean mosaic = Boolean.TRUE.equals(scheme.get("mosaic"));
+            boolean animated = aura != null && (Boolean.TRUE.equals(aura.get("animated")) || format != null);
+            boolean mosaic = "MOSAICO".equals(format) || Boolean.TRUE.equals(scheme.get("mosaic"));
             resolved.put("combination", auraVariant != null && material != null
                     ? assets.resolveCombination(auraVariant, material, animated, mosaic)
                     : auraVariant != null ? assets.auraVariant(auraVariant).map(v -> (Object) v).orElse(null)
@@ -390,6 +445,10 @@ public class BackgroundStudioService {
         resolved.put("containerMandatory", s.isContainerMandatory());
         resolved.put("containerColor", s.getContainerColor());
         resolved.put("passePartout", s.isContainerMandatory() && s.getBackgroundArtUrl() != null);
+        resolved.put("backgroundVideoUrl", s.getBackgroundVideoUrl());
+        resolved.put("auraFormat", format);
+        // Mosaico = arte densa (12 painéis): sugere o container em cards de Esquema, sem torná-lo obrigatório.
+        resolved.put("suggestContainer", "MOSAICO".equals(format) && s.getContainerOrigin() == ContainerOrigin.INDEFINIDA);
         stored.put("resolved", resolved);
         s.setStudioConfigJson(Json.write(stored));
     }

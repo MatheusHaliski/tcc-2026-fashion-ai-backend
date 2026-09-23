@@ -45,4 +45,8 @@ public class DnaSchemeItem extends AuditableEntity {
 
     @Column(name = "applied_to_original", nullable = false)
     private boolean appliedToOriginal;
+
+    /** Momentos marcantes — célula marcada como "marco" pelo usuário. */
+    @Column(nullable = false)
+    private boolean milestone;
 }

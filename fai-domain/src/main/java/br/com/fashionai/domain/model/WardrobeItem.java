@@ -237,4 +237,8 @@ public class WardrobeItem extends VersionedAuditableEntity {
         this.disponivel = available;
         this.availabilityStatus = available ? AvailabilityStatus.AVAILABLE : AvailabilityStatus.UNAVAILABLE;
     }
+
+    /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA. */
+    @Column(name = "piece_origin", length = 20)
+    private String pieceOrigin;
 }
