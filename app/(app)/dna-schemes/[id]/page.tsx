@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Badge, Card, ErrorState, Skeleton } from "@/components/ui";
-import { Comments, InteractionBar } from "@/components/interactions";
+import { InteractionBar } from "@/components/interactions";
 import type { UserCard } from "@/lib/api/types";
 
 interface DnaSchemeDetail { id: string; owner: UserCard; title: string; archetype: string; identityPhrase?: string; palette: string[]; cardLayout: string; targetElement?: string; narrativeType?: string | null; seasonalTheme?: string | null; visibility: string; status: string; background?: Record<string, unknown>; cells: { schemeId: string; eraLabel?: string; milestone?: boolean; scheme?: { title: string; coverImageUrl?: string; hypeScore?: number }; pieces?: { name: string; imageUrl?: string; brand?: string }[] }[]; logos?: { name: string; url?: string }[]; logoCut?: string; narrative?: Record<string, unknown>; counters: { likes: number; comments: number; shares: number; remixes: number }; canEdit: boolean; publishedAt?: string | null; }
@@ -38,7 +38,6 @@ export default function DnaSchemePage({ params }: { params: Promise<{ id: string
       </Card>
       {data.narrative && Object.keys(data.narrative).length > 0 && <Card className="mt-4"><p className="label">Narrativa</p><dl className="grid gap-2 sm:grid-cols-2 type-body-sm">{Object.entries(data.narrative).slice(0, 12).map(([k, v]) => <div key={k}><dt className="label">{k}</dt><dd>{typeof v === "object" ? JSON.stringify(v).slice(0, 160) : String(v)}</dd></div>)}</dl></Card>}
       <div className="mt-4"><InteractionBar type="DNA_SCHEME" id={data.id} counters={{ ...data.counters, views: 0, saves: 0, reactions: {} }} viewer={{ liked: false, reactions: [], saved: false, canEdit: data.canEdit, following: false }} ownerId={data.owner.id} onChange={reload} /></div>
-      <Comments type="DNA_SCHEME" id={data.id} />
       <p className="mt-4 type-caption text-faint">{t("common.visibility")}: {label(data.visibility.toLowerCase())}</p>
     </>
   );

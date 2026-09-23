@@ -39,5 +39,10 @@ public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID
 
     @Query("select w from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC") List<WardrobeItem> findAllPublic(Pageable pageable);
 
+    /** Contagem de visualizações sem passar pela entidade versionada: GETs simultâneos não colidem no @Version. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update WardrobeItem w set w.viewCount = w.viewCount + :inc, w.lastViewedAt = :now where w.id = :id")
+    int touchView(@Param("id") UUID id, @Param("inc") long inc, @Param("now") Instant now);
+
     List<WardrobeItem> findByBrandId(UUID brandId);
 }

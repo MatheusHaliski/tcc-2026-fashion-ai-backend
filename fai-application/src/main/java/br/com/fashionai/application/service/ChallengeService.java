@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
@@ -44,7 +47,6 @@ import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +86,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ChallengeService implements RoomService.DecorationsProvider, MirrorService.PieceRestrictionProvider {
+    private SideEffectRunner sideEffects;
     private static final Logger log = LoggerFactory.getLogger(ChallengeService.class);
     public static final int MAX_ACTIVE = 3;
     public static final Duration ACCEPT_WINDOW = Duration.ofHours(48);
@@ -150,7 +153,9 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                             ChallengeVoteRepository votes, WardrobeItemRepository pieces, SchemeRepository schemes,
                             SchemeItemRepository schemeItems, DailyLookRepository dailyLooks, PieceUsageDiaryEntryRepository diary,
                             FollowRepository follows, UserRepository users, StyleDnaRepository dnas, RoomService room,
-                            FaiPointsService points, NotificationService notifications, MediaService media, Guard guard, Audit audit) {
+                            FaiPointsService points, NotificationService notifications, MediaService media, Guard guard, Audit audit,
+            SideEffectRunner sideEffects) {
+        this.sideEffects = sideEffects;
         this.templates = templates;
         this.instances = instances;
         this.participants = participants;
@@ -826,22 +831,17 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         return true;
     }
 
+    /** Listeners dos desafios rodam depois do commit, em transação própria (nunca derrubam a ação principal). */
     private void safe(String what, Runnable r) {
-        try {
-            r.run();
-        } catch (RuntimeException ex) {
-            log.warn("desafios: listener {} falhou: {}", what, ex.getMessage());
-        }
+        sideEffects.run("desafios:" + what, r);
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onSchemeSaved(DomainEvents.SchemeSaved ev) {
         safe("SchemeSaved", () -> handleLook(ev.userId(), ev.schemeId(), ev.pieceIds(), ev.created(), false));
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onDailyLook(DomainEvents.DailyLookRegistered ev) {
         safe("DailyLookRegistered", () -> handleLook(ev.userId(), ev.schemeId(), ev.pieceIds(), false, true));
     }
@@ -933,8 +933,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onMirror(DomainEvents.MirrorAction ev) {
         safe("MirrorAction", () -> {
             for (Object[] row : activeParticipations(ev.userId())) {
@@ -954,8 +953,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     }
 
     /** Semana Vista o que Você Tem: cadastrar compra nova durante a semana invalida o dia (sem culpa, só não conta). */
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceCreated(DomainEvents.PieceCreated ev) {
         safe("PieceCreated", () -> {
             WardrobeItem w = pieces.findById(ev.pieceId()).orElse(null);

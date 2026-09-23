@@ -11,7 +11,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Dialog, ErrorState, Field, Input, Skeleton, useToast } from "@/components/ui";
 import { toSealBadges, SchemeCard, hypeColor } from "@/components/scheme-card";
-import { Comments, InteractionBar } from "@/components/interactions";
+import { InteractionBar } from "@/components/interactions";
 import { FaiIcon } from "@/components/fai-icon";
 
 interface Detail { scheme: SchemeView; seals?: { id: string; name: string; tier?: string; iconUrl?: string; ownerName?: string; status?: string }[]; bonds?: unknown[]; hype?: { hype?: number; band?: { label: string } }; [k: string]: unknown; }
@@ -85,10 +85,9 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
               </>
             )}
           </div>
-          <div className="mt-4"><InteractionBar type="SCHEME" id={s.id} counters={s.counters} viewer={s.viewer} ownerId={s.owner.id} onChange={reload} /></div>
+          <div className="mt-4"><InteractionBar type="SCHEME" id={s.id} counters={s.counters} viewer={s.viewer} ownerId={s.owner.id} onChange={reload} title={s.title} /></div>
         </div>
       </div>
-      <Comments type="SCHEME" id={s.id} />
       <Dialog open={improve} onClose={() => setImprove(false)} title={t("scheme.improve")} footer={diff ? <><Button onClick={() => setDiff(null)}>{t("common.cancel")}</Button><Button variant="primary" onClick={applyDiff} loading={busy}>Aplicar</Button></> : <Button variant="primary" onClick={askImprove} loading={busy} disabled={!instruction.trim()}>{t("scheme.generate")}</Button>}>
         {!diff ? <Field label={t("scheme.instruction")} id="instruction"><Input id="instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="ex.: deixe mais formal trocando o calçado" /></Field>
           : <div className="type-body"><p className="mb-2 text-muted">{String(diff.message ?? diff.explanation ?? "Mudanças propostas:")}</p><pre className="max-h-64 overflow-auto rounded bg-surface-2 p-2 type-caption">{JSON.stringify(diff.diff ?? diff.changes ?? diff, null, 2)}</pre></div>}

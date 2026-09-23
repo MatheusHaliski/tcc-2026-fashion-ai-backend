@@ -104,7 +104,7 @@ public class LookbookService {
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(ownerId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
         List<Scheme> looks = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED);
         if (!self) {
-            all = all.stream().filter(w -> guard.canView(viewer, ownerId, w.getVisibility())).toList();
+            all = all.stream().filter(w -> guard.canView(viewer, ownerId, WardrobeService.effectiveVisibility(w))).toList();
             looks = looks.stream().filter(s -> s.getStatus() == SchemeStatus.PUBLISHED && guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility()))).toList();
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -112,8 +112,11 @@ public class LookbookService {
         out.put("self", self);
         out.put("visible", canSee);
         out.put("institutional", owner.getProfileType() != ProfileType.PESSOAL);
+        // Peças e esquemas nunca dividem a mesma aba: Closet/Peças salvas (peças) × Looks/Looks salvos (esquemas).
         out.put("tabs", List.of(Map.of("id", "closet", "label", "Closet Digital", "count", all.size()),
-                Map.of("id", "looks", "label", "Looks Salvos", "count", looks.size() + (self ? saved.countByUserIdAndTargetType(ownerId, TargetType.SCHEME) : 0)),
+                Map.of("id", "looks", "label", "Looks", "count", looks.size()),
+                Map.of("id", "saved_looks", "label", "Looks salvos", "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.SCHEME) : 0),
+                Map.of("id", "saved_pieces", "label", "Peças salvas", "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.PIECE) : 0),
                 Map.of("id", "daily", "label", "Look do Dia", "count", self ? dailyLooks.today(ownerId).isPresent() ? 1 : 0 : 0),
                 Map.of("id", "capsule", "label", "Minha Cápsula", "count", looks.isEmpty() ? 0 : basePieces(looks).size()),
                 Map.of("id", "room", "label", "Meu Guarda-Roupa", "count", all.size())));
@@ -161,6 +164,38 @@ public class LookbookService {
             rows.add(m);
         }
         rows.sort(Comparator.comparing((Map<String, Object> m) -> String.valueOf(m.get("sortKey"))).reversed());
+        int from = Math.max(0, page * size);
+        List<Map<String, Object>> slice = from >= rows.size() ? List.of() : rows.subList(from, Math.min(rows.size(), from + size));
+        return new Views.Page<>(slice, page, size, rows.size(), from + size < rows.size());
+    }
+
+    // ================================================================== Peças salvas (aba própria, separada dos looks)
+    @Transactional(readOnly = true)
+    public Views.Page<Map<String, Object>> savedPieces(CurrentUser user, String category, int page, int size) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (SavedItem si : saved.findByUserIdAndTargetTypeOrderBySavedAtDesc(user.id(), TargetType.PIECE)) {
+            Optional<WardrobeItem> ow = pieces.findById(si.getTargetId());
+            if (ow.isEmpty()) {
+                continue;
+            }
+            WardrobeItem w = ow.get();
+            boolean own = w.getUser().getId().equals(user.id());
+            if (!own && !guard.canView(user, w.getUser().getId(), WardrobeService.effectiveVisibility(w))) {
+                continue;
+            }
+            if (category != null && !category.isBlank() && !category.equals(w.getCategory())) {
+                continue;
+            }
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("origin", own ? "PROPRIO" : "SALVO");
+            m.put("originLabel", own ? "Sua peça" : "Salva de @" + w.getUser().getUsername());
+            m.put("author", Views.user(w.getUser()));
+            m.put("piece", Views.piece(w, null, null));
+            m.put("favorite", si.isFavorite());
+            m.put("snapshot", w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED);
+            m.put("savedAt", si.getSavedAt());
+            rows.add(m);
+        }
         int from = Math.max(0, page * size);
         List<Map<String, Object>> slice = from >= rows.size() ? List.of() : rows.subList(from, Math.min(rows.size(), from + size));
         return new Views.Page<>(slice, page, size, rows.size(), from + size < rows.size());

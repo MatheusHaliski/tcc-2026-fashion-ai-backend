@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
 import br.com.fashionai.domain.model.WardrobeAvailabilityChange;
@@ -9,9 +12,7 @@ import br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -23,7 +24,7 @@ import java.util.UUID;
 /**
  * Efeitos colaterais dos eventos de domínio (RF32–RF36) fora dos serviços de origem: diário de uso da peça
  * (base da Utilização e das peças esquecidas), histórico de disponibilidade (RF34 §3.3) e FAI Points (RF35 §5.2).
- * Nenhum listener pode quebrar a ação principal: erros são registrados e engolidos.
+ * Nenhum listener pode quebrar a ação principal: rodam depois do commit, em transação própria (SideEffectRunner).
  */
 @Component
 public class WardrobeEventListeners {
@@ -33,21 +34,20 @@ public class WardrobeEventListeners {
     private final WardrobeAvailabilityChangeRepository availability;
     private final WardrobeItemRepository pieces;
     private final FaiPointsService points;
+    private final SideEffectRunner sideEffects;
 
     public WardrobeEventListeners(PieceUsageDiaryEntryRepository diary, WardrobeAvailabilityChangeRepository availability,
-                                  WardrobeItemRepository pieces, FaiPointsService points) {
+                                  WardrobeItemRepository pieces, FaiPointsService points, SideEffectRunner sideEffects) {
+        this.sideEffects = sideEffects;
         this.diary = diary;
         this.availability = availability;
         this.pieces = pieces;
         this.points = points;
     }
 
+    /** Depois do commit, em transação própria: falha aqui não desfaz nem derruba a ação principal. */
     private void safe(String what, Runnable r) {
-        try {
-            r.run();
-        } catch (RuntimeException ex) {
-            log.warn("listener {} falhou: {}", what, ex.getMessage());
-        }
+        sideEffects.run(what, r);
     }
 
     /** Última data de uso conhecida antes de registrar a nova (diário + lastWornDate). */
@@ -89,8 +89,7 @@ public class WardrobeEventListeners {
         }
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onSchemeSaved(DomainEvents.SchemeSaved ev) {
         safe("SchemeSaved", () -> {
             LocalDate today = LocalDate.now(FaiPointsService.ZONE);
@@ -101,8 +100,7 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onDailyLook(DomainEvents.DailyLookRegistered ev) {
         safe("DailyLookRegistered", () -> {
             recordUse(ev.userId(), ev.pieceIds(), ev.date(), "DAILY_LOOK", ev.schemeId(), null);
@@ -118,8 +116,7 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceCreated(DomainEvents.PieceCreated ev) {
         safe("PieceCreated", () -> {
             WardrobeAvailabilityChange c = new WardrobeAvailabilityChange();
@@ -134,8 +131,7 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceUpdated(DomainEvents.PieceUpdated ev) {
         safe("PieceUpdated", () -> {
             if (ev.completeness() >= 90) {
@@ -144,8 +140,7 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onAvailability(DomainEvents.AvailabilityChanged ev) {
         safe("AvailabilityChanged", () -> {
             WardrobeAvailabilityChange c = new WardrobeAvailabilityChange();
@@ -157,14 +152,12 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onModel3d(DomainEvents.Model3dGenerated ev) {
         safe("Model3dGenerated", () -> points.award(ev.userId(), "PIECE_3D", "PIECE", ev.pieceId().toString(), null));
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onInteraction(DomainEvents.InteractionReceived ev) {
         safe("InteractionReceived", () -> {
             if (ev.ownerId() == null || ev.ownerId().equals(ev.actorId())) {
@@ -182,14 +175,12 @@ public class WardrobeEventListeners {
         });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onRoomOrganized(DomainEvents.RoomOrganized ev) {
         safe("RoomOrganized", () -> points.award(ev.userId(), "ROOM_ORGANIZED", "ROOM", null, null));
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceWorn(DomainEvents.PieceWorn ev) {
         // o diário manual já foi gravado pelo RoomService; aqui só o resgate conta pontos
         safe("PieceWorn", () -> diary.findByWardrobeItemIdOrderByUsedOnDesc(ev.pieceId()).stream().filter(e -> e.getUsedOn().equals(ev.date()))

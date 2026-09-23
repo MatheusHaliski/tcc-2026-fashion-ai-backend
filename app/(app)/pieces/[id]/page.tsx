@@ -10,7 +10,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Dialog, ErrorState, Skeleton, useToast } from "@/components/ui";
 import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
-import { Comments, InteractionBar } from "@/components/interactions";
+import { InteractionBar } from "@/components/interactions";
 import { SchemeCard } from "@/components/scheme-card";
 import { FaiIcon } from "@/components/fai-icon";
 
@@ -89,11 +89,10 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
               </>
             ) : user ? <Button variant="primary" onClick={copyToWardrobe}><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addToWardrobe")}</Button> : null}
           </div>
-          <div className="mt-4"><InteractionBar type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} onChange={reload} /></div>
+          <div className="mt-4"><InteractionBar type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} onChange={reload} title={p.name} /></div>
         </div>
       </div>
       {usedIn.length > 0 && <section className="mt-8"><h2 className="type-h2 mb-3">Looks com esta peça</h2><div className="grid-looks">{usedIn.map((s) => <SchemeCard key={s.id} scheme={s} compact />)}</div></section>}
-      <Comments type="PIECE" id={p.id} />
       <Dialog open={editing} onClose={() => setEditing(false)} title={t("common.edit")}>
         <PieceForm value={form} onChange={setForm} onSubmit={saveEdit} busy={saving} error={saveError} submitLabel={t("common.save")} />
       </Dialog>

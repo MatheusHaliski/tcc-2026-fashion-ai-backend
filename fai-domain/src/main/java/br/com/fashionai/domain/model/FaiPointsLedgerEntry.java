@@ -33,10 +33,10 @@ public class FaiPointsLedgerEntry {
     @Column(name = "ref_type", length = 30)
     private String refType;
 
-    @Column(name = "ref_id", length = 64)
+    @Column(name = "ref_id", length = 120)
     private String refId;
 
-    @Column(name = "idempotency_key", nullable = false, length = 160, unique = true)
+    @Column(name = "idempotency_key", nullable = false, length = 240, unique = true)
     private String idempotencyKey;
 
     @Column(name = "counts_lifetime", nullable = false)

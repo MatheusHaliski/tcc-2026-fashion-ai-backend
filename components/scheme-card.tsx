@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { AnatomyBody, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { CommentButton } from "@/components/interactions";
 
 export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-good)" : (h ?? 0) >= 50 ? "var(--status-warning)" : (h ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)";
 
@@ -98,7 +99,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
         <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
       </Link>
       <div className="c-foot">
-        <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><span title="comentários">💬 {scheme.counters?.comments ?? 0}</span><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>
+        <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>
         {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
       </div>
     </article>

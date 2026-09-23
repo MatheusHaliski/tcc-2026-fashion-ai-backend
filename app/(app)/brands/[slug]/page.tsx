@@ -22,15 +22,18 @@ const TIERS = ["LOOK", "PECA", "PERFIL"];
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params); const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
-  const [tab, setTab] = useState("DESTAQUES");
+  const [tab, setTab] = useState("ESQUEMAS_DESTAQUE");
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
-  type Highlighted = { schemes: { scheme: SchemeView; seals: SealBadgeSource[] }[]; pieces: { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: { tier: string; owner: string; premium: boolean }[] }[]; empty?: string | null };
+  type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
+  type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
+  type SavedPieces = { piece: PieceView; author?: UserCard; snapshot?: boolean; savedAt?: string }[];
   type Catalog = { piece: PieceView; looks: number; neverInLook: boolean }[];
   type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[] }[];
-  const tabData = useApi<Highlighted | Catalog | Consecrated>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && admin ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user], { enabled: ["DESTAQUES", "CATALOGO", "LOOKS_CONSAGRADOS"].includes(tab) });
+  // Esquemas e peças sempre em abas separadas (RF14/RF22): cada aba carrega um único tipo de conteúdo.
+  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign };
   const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign }>(emptySeal);
@@ -40,7 +43,8 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
-  const tabs = [{ id: "DESTAQUES", label: "Esquemas & peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" }, ...(admin ? [{ id: "REVISAO", label: "Revisão de vínculos" }, { id: "METRICAS", label: "Métricas" }] : [])];
+  const tabs = [{ id: "ESQUEMAS_DESTAQUE", label: "Esquemas em destaque" }, { id: "PECAS_DESTAQUE", label: "Peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" },
+    ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: "Esquemas salvos" }, { id: "PECAS_SALVAS", label: "Peças salvas" }, { id: "REVISAO", label: "Revisão de vínculos" }, { id: "METRICAS", label: "Métricas" }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
@@ -53,6 +57,8 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   }
   async function redeem(p: Promotion) { try { const r = await api.post<{ code?: string; message?: string }>(`/api/promotions/${p.id}/redemptions`); toast.success(r.message ?? `Código: ${r.code}`); promos.reload(); } catch (e) { toast.fromError(e); } }
   const td = tabData.data;
+  // Na troca de aba, o hook ainda guarda os dados da aba anterior por um render: cada aba só lê itens do próprio tipo.
+  const only = <T,>(key: "scheme" | "piece") => (Array.isArray(td) ? (td as Record<string, unknown>[]).filter((e) => e && typeof e === "object" && e[key]) : []) as T;
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-4">
@@ -63,13 +69,12 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         <div className="flex gap-2">{!admin && user && <Button variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{data.store?.url && <a className="btn" href={data.store.url} target="_blank" rel="noreferrer">Loja ↗</a>}{admin && <Link href="/settings" className="btn">{t("common.edit")}</Link>}</div>
       </div>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
-      {tab === "DESTAQUES" && (tabData.loading ? <SkeletonGrid /> : (() => { const h = td as Highlighted | null; if (!h || h.schemes.length === 0) return <EmptyState title={h?.empty ?? "Nenhum look em destaque ainda."} hint="Looks de qualquer usuário que conquistaram um selo deste perfil (política do selo + aprovação) aparecem aqui, com as peças que os compõem." />; return (<>
-        <h2 className="type-h3 mb-2">Esquemas em destaque <span className="text-faint tabular">({h.schemes.length})</span></h2>
-        <div className="grid-looks mb-6">{h.schemes.map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div>
-        <h2 className="type-h3 mb-2">Peças em destaque <span className="text-faint tabular">({h.pieces.length})</span></h2>
-        <div className="grid-cards">{h.pieces.map((e) => <div key={e.piece.id}><PieceCard piece={e.piece} seals={badges(e.seals)} /><p className="type-caption text-muted mt-1">no look <Link className="underline" href={`/schemes/${e.schemeId}`}>{e.schemeTitle}</Link>{e.author ? ` · @${e.author.username}` : ""}</p></div>)}</div></>); })())}
-      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : (td as Consecrated | null)?.length ? <div className="grid-looks">{(td as Consecrated).map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div> : <EmptyState title={t("common.empty")} />)}
-      {tab === "CATALOGO" && (tabData.loading ? <SkeletonGrid /> : (td as Catalog | null)?.length ? <div className="grid-cards">{(td as Catalog).map((e) => <div key={e.piece.id}><PieceCard piece={e.piece} /><p className="type-caption text-muted mt-1 tabular">{e.looks} looks{e.neverInLook ? " · nunca usada em look" : ""}</p></div>)}</div> : <EmptyState title={t("common.empty")} />)}
+      {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">Looks de qualquer usuário que conquistaram um selo deste perfil (política do selo + aprovação).</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div></> : <EmptyState title="Nenhum esquema em destaque ainda." hint="Aparecem aqui os looks que conquistaram um selo deste perfil." />)}
+      {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">Peças que compõem os looks com selo deste perfil.</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <div key={e.piece.id}><PieceCard piece={e.piece} seals={badges(e.seals)} /><p className="type-caption text-muted mt-1">no look <Link className="underline" href={`/schemes/${e.schemeId}`}>{e.schemeTitle}</Link>{e.author ? ` · @${e.author.username}` : ""}</p></div>)}</div></> : <EmptyState title="Nenhuma peça em destaque ainda." hint="As peças dos looks com selo deste perfil aparecem aqui." />)}
+      {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title="Nenhum esquema salvo." />)}
+      {tab === "PECAS_SALVAS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedPieces>("piece").length ? <div className="grid-cards">{only<SavedPieces>("piece").map((e) => <div key={e.piece.id}><PieceCard piece={e.piece} />{e.author && <p className="type-caption text-muted mt-1">de @{e.author.username}{e.snapshot ? " · arquivada pelo autor" : ""}</p>}</div>)}</div> : <EmptyState title="Nenhuma peça salva." />)}
+      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div> : <EmptyState title={t("common.empty")} />)}
+      {tab === "CATALOGO" && (tabData.loading ? <SkeletonGrid /> : only<Catalog>("piece").length ? <div className="grid-cards">{only<Catalog>("piece").map((e) => <div key={e.piece.id}><PieceCard piece={e.piece} /><p className="type-caption text-muted mt-1 tabular">{e.looks} looks{e.neverInLook ? " · nunca usada em look" : ""}</p></div>)}</div> : <EmptyState title={t("common.empty")} />)}
       {tab === "SELOS" && (
         <>
           <p className="type-body text-muted mb-3">{admin ? "Só o dono deste perfil cria, edita ou desativa selos. Looks de outros usuários recebem o selo quando o SealBond Matcher detecta compatibilidade com a política e você aprova o vínculo." : "Selos concedidos por este perfil. Para usar um selo, publique um look compatível com a política — a IA sugere o vínculo e a marca revisa."}</p>

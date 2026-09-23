@@ -54,6 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** true quando a sessão já foi restaurada (ou quando não há provedor, ex.: testes). Usado pelo useApi. */
+export function useAuthReady(): boolean {
+  const ctx = useContext(Ctx);
+  return ctx ? ctx.ready : true;
+}
+
 export function useAuth(): Auth {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useAuth fora do AuthProvider");

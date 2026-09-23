@@ -619,7 +619,7 @@ public class WardrobeService {
         boolean self = viewer != null && viewer.id().equals(owner);
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(owner).stream()
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
-                .filter(w -> self || guard.canView(viewer, owner, w.getVisibility()))
+                .filter(w -> self || guard.canView(viewer, owner, effectiveVisibility(w)))
                 .filter(w -> self || w.getModerationStatus() == ModerationStatus.APPROVED)
                 .filter(w -> blank(f.category()) || f.category().equals(w.getCategory()))
                 .filter(w -> blank(f.color()) || f.color().equals(w.getColor())
@@ -675,11 +675,10 @@ public class WardrobeService {
             out.put("fromSchemeId", fromSchemeId);
             return out;
         }
-        guard.requireView(viewer, w.getUser().getId(), w.getVisibility(), "piece:" + id);
-        if (!owner) {
-            w.setViewCount(w.getViewCount() + 1);
-        }
-        w.setLastViewedAt(Instant.now());
+        guard.requireView(viewer, w.getUser().getId(), effectiveVisibility(w), "piece:" + id);
+        // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
+        // e mexer na entidade gerava conflito de versão (409) num simples GET.
+        pieces.touchView(w.getId(), owner ? 0 : 1, Instant.now());
         out.put("piece", Views.piece(w, viewerState(viewer, w), reactionCounts(TargetType.PIECE, w.getId())));
         out.put("fromSchemeId", fromSchemeId);
         out.put("wearstyles", Taxonomy.wearstylesOf(w.getCategory(), Json.csv(w.getOccasionTags())));
@@ -694,6 +693,11 @@ public class WardrobeService {
         out.put("originSchemes", origins);
         out.put("canEdit", owner);
         return out;
+    }
+
+    /** Visibilidade efetiva da peça: a mais restritiva entre a da peça e a do perfil do dono (mesma regra dos esquemas). */
+    public static Visibility effectiveVisibility(WardrobeItem w) {
+        return SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility());
     }
 
     public Views.ViewerState viewerState(CurrentUser viewer, WardrobeItem w) {

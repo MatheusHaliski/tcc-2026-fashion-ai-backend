@@ -39,6 +39,14 @@ public class LookbookController {
         return lookbook.overview(viewer, ownerId);
     }
 
+    @GetMapping("/api/me/saved-pieces")
+    @Operation(summary = "RF6 — Peças salvas (aba própria, separada dos looks salvos)")
+    public Views.Page<Map<String, Object>> savedPieces(CurrentUser user, @RequestParam(required = false) String category,
+                                                      @RequestParam(defaultValue = "0") int page,
+                                                      @RequestParam(defaultValue = "24") int size) {
+        return lookbook.savedPieces(user, category, page, size);
+    }
+
     @GetMapping("/api/me/saved-looks")
     @Operation(summary = "RF6.CA03 — Looks salvos (com filtro por ocasião)")
     public Views.Page<Map<String, Object>> savedLooks(CurrentUser user, @RequestParam(required = false) String occasion,

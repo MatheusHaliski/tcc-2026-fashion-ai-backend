@@ -13,7 +13,7 @@ import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
-type TabId = "closet" | "looks" | "daily" | "capsule" | "groups";
+type TabId = "closet" | "looks" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups";
 
 /** Lookbook (RF6) — usado no próprio perfil (/lookbook) e no perfil de terceiros (/u/[username]). */
 export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: string; initialTab?: TabId }) {
@@ -23,13 +23,18 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !ov) return <Skeleton className="h-64" />;
   if (!ov.visible) return <EmptyState title="Perfil privado" hint="Siga esta pessoa para ver o lookbook." />;
-  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: ov.tabs.find((x) => x.id === "closet")?.count }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.tabs.find((x) => x.id === "looks")?.count },
-    ...(ov.self ? [{ id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: ov.tabs.find((x) => x.id === "capsule")?.count }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }];
+  // Peças e esquemas nunca dividem aba: Closet e Peças salvas (peças) × Looks e Looks salvos (esquemas).
+  const count = (id: string) => ov.tabs.find((x) => x.id === id)?.count;
+  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: count("looks") },
+    ...(ov.self ? [{ id: "saved_looks" as TabId, label: t("lookbook.savedLooks"), count: count("saved_looks") }, { id: "saved_pieces" as TabId, label: t("lookbook.savedPieces"), count: count("saved_pieces") },
+      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }];
   return (
     <>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "closet" && <ClosetTab ownerId={ownerId} self={ov.self} empty={ov.emptyCloset} />}
       {tab === "looks" && <LooksTab ownerId={ownerId} self={ov.self} />}
+      {tab === "saved_looks" && ov.self && <SavedLooksTab />}
+      {tab === "saved_pieces" && ov.self && <SavedPiecesTab />}
       {tab === "daily" && ov.self && <DailyTab />}
       {tab === "capsule" && ov.self && <CapsuleTab />}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
@@ -48,17 +53,41 @@ function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; e
 function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const [page, setPage] = useState(0); const [occasion, setOccasion] = useState(""); const [state, setState] = useState("");
   const mine = useApi<Page<SchemeView>>((signal) => api.get(`/api/me/schemes${qs({ page, size: 12, occasion, state })}`, { signal }), [page, occasion, state], { enabled: self });
-  const saved = useApi<Page<{ scheme?: SchemeView; favorite?: boolean; savedAt?: string } & Partial<SchemeView>>>((signal) => api.get(`/api/me/saved-looks${qs({ page: 0, size: 24 })}`, { signal }), [], { enabled: self });
   const theirs = useApi<{ schemes: SchemeView[] }>((signal) => api.get(`/api/profiles/${ownerId}`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !self });
   if (!self) { const list = theirs.data?.schemes ?? []; return theirs.loading ? <SkeletonGrid /> : list.length === 0 ? <EmptyState title={t("common.empty")} /> : <div className="grid-looks">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>; }
-  const savedList = (saved.data?.items ?? []).map((x) => x.scheme ?? (x as SchemeView));
   return (
     <>
       <div className="mb-3 flex flex-wrap gap-2"><Select aria-label={t("common.occasion")} value={occasion} onChange={(e) => { setOccasion(e.target.value); setPage(0); }}><option value="">{t("common.occasion")}: {t("common.all")}</option>{["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => <option key={o} value={o}>{label(o)}</option>)}</Select>
         <Select aria-label="estado" value={state} onChange={(e) => { setState(e.target.value); setPage(0); }}><option value="">{t("common.all")}</option><option value="favoritos">{t("common.favorite")}</option><option value="publicados">{t("common.public")}</option><option value="rascunhos">rascunhos</option><option value="arquivados">arquivados</option></Select>
         <Link href="/schemes/new" className="btn btn-primary ml-auto"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link></div>
       {mine.loading ? <SkeletonGrid /> : (mine.data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.empty")} action={<Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link>} /> : <><div className="grid-looks">{mine.data!.items.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div><Pagination page={mine.data!.page} hasMore={mine.data!.hasMore} total={mine.data!.total} size={mine.data!.size} onPage={setPage} /></>}
-      {savedList.length > 0 && <section className="mt-8"><h2 className="type-h2 mb-3">Salvos de outras pessoas</h2><div className="grid-looks">{savedList.map((s) => <div key={s.id}><SchemeCard scheme={s} /><div className="mt-1 flex gap-1"><Button size="sm" onClick={async () => { try { await api.put(`/api/me/saved-looks/${s.id}/favorite`, { favorite: !s.viewer?.saved }); saved.reload(); } catch (e) { toast.fromError(e); } }}>{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.delete(`/api/me/saved-looks/${s.id}`); saved.reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></div></div>)}</div></section>}
+    </>
+  );
+}
+
+/** Looks salvos (RF6.CA09–CA13) — só esquemas salvos de outras pessoas; os próprios ficam em "Meus looks". */
+function SavedLooksTab() {
+  const { t } = useI18n(); const toast = useToast(); const [page, setPage] = useState(0); const [occasion, setOccasion] = useState("");
+  const { data, loading, reload } = useApi<Page<{ scheme: SchemeView; favorite?: boolean; origin?: string; originLabel?: string; savedAt?: string }>>((signal) => api.get(`/api/me/saved-looks${qs({ page, size: 24, occasion })}`, { signal }), [page, occasion]);
+  const list = (data?.items ?? []).filter((x) => x.origin !== "PROPRIO");
+  return (
+    <>
+      <div className="mb-3 flex flex-wrap gap-2"><Select aria-label={t("common.occasion")} value={occasion} onChange={(e) => { setOccasion(e.target.value); setPage(0); }}><option value="">{t("common.occasion")}: {t("common.all")}</option>{["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => <option key={o} value={o}>{label(o)}</option>)}</Select></div>
+      {loading ? <SkeletonGrid /> : list.length === 0 ? <EmptyState title="Nenhum look salvo." hint="Use o botão salvar em um look do feed ou da busca." /> : <div className="grid-looks">{list.map((x) => <div key={x.scheme.id}><SchemeCard scheme={x.scheme} /><p className="mt-1 type-caption text-muted">{x.originLabel}</p><div className="mt-1 flex items-center gap-1"><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/me/saved-looks/${x.scheme.id}/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.delete(`/api/me/saved-looks/${x.scheme.id}`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></div></div>)}</div>}
+      {data && data.total > data.size && <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />}
+    </>
+  );
+}
+
+/** Peças salvas — aba própria, separada dos looks salvos. */
+function SavedPiecesTab() {
+  const { t } = useI18n(); const toast = useToast(); const [page, setPage] = useState(0); const [category, setCategory] = useState("");
+  const { data, loading, reload } = useApi<Page<{ piece: PieceView; author?: UserCard; favorite?: boolean; originLabel?: string; snapshot?: boolean }>>((signal) => api.get(`/api/me/saved-pieces${qs({ page, size: 24, category })}`, { signal }), [page, category]);
+  return (
+    <>
+      <div className="mb-3 flex flex-wrap gap-1.5">{["", "upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"].map((c) => <Chip key={c} active={category === c} onClick={() => { setCategory(c); setPage(0); }}>{c ? label(c) : t("common.all")}</Chip>)}</div>
+      {loading ? <SkeletonGrid /> : (data?.items.length ?? 0) === 0 ? <EmptyState title="Nenhuma peça salva." hint="Salve peças de outras pessoas pelo botão salvar no detalhe da peça." /> : <div className="grid-cards">{data!.items.map((x) => <div key={x.piece.id}><PieceCard piece={x.piece} /><p className="mt-1 type-caption text-muted">{x.originLabel}{x.snapshot ? " · arquivada" : ""}</p><div className="mt-1 flex items-center gap-1"><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/interactions/PIECE/${x.piece.id}/saves/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.post(`/api/interactions/PIECE/${x.piece.id}/saves`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></div></div>)}</div>}
+      {data && data.total > data.size && <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />}
     </>
   );
 }

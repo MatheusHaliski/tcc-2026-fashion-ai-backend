@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
@@ -10,7 +13,6 @@ import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.UserAchievementRepository;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class AchievementService {
+    private SideEffectRunner sideEffects;
     public record Def(String code, String name, String emoji, String condition, int points, boolean secret) {
     }
 
@@ -54,7 +57,9 @@ public class AchievementService {
     private final ApplicationEventPublisher events;
 
     public AchievementService(UserAchievementRepository achievements, FaiPointsService points, NotificationService notifications,
-                              SchemeRepository schemes, SchemeItemRepository schemeItems, ApplicationEventPublisher events) {
+                              SchemeRepository schemes, SchemeItemRepository schemeItems, ApplicationEventPublisher events,
+            SideEffectRunner sideEffects) {
+        this.sideEffects = sideEffects;
         this.achievements = achievements;
         this.points = points;
         this.notifications = notifications;
@@ -112,39 +117,41 @@ public class AchievementService {
     }
 
     // ------------------------------------------------------------------ secretas por evento
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onMirror(DomainEvents.MirrorAction ev) {
-        if ("TIRA_UMA_COISA".equals(ev.action())) {
-            grant(ev.userId(), "CHANEL");
-        } else if ("VISTA_ME_MADRUGADA".equals(ev.action())) {
-            grant(ev.userId(), "MADRUGADA");
-        }
+        sideEffects.run("conquistas:MirrorAction", () -> {
+            if ("TIRA_UMA_COISA".equals(ev.action())) {
+                grant(ev.userId(), "CHANEL");
+            } else if ("VISTA_ME_MADRUGADA".equals(ev.action())) {
+                grant(ev.userId(), "MADRUGADA");
+            }
+        });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onSchemeSaved(DomainEvents.SchemeSaved ev) {
         if (ev.pieceIds().size() < 2) {
             return;
         }
-        List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(ev.schemeId());
-        Set<String> families = items.stream().map(si -> Taxonomy.COLOR_FAMILY.get(si.getWardrobeItem().getColor())).filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        if (items.size() >= 2 && families.size() == 1) {
-            grant(ev.userId(), "MONOCROMATICO");
-        }
+        sideEffects.run("conquistas:SchemeSaved", () -> {
+            List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(ev.schemeId());
+            Set<String> families = items.stream().map(si -> Taxonomy.COLOR_FAMILY.get(si.getWardrobeItem().getColor())).filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (items.size() >= 2 && families.size() == 1) {
+                grant(ev.userId(), "MONOCROMATICO");
+            }
+        });
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onDailyLook(DomainEvents.DailyLookRegistered ev) {
-        if (ev.date().getDayOfWeek() == DayOfWeek.FRIDAY) {
-            schemes.findById(ev.schemeId()).ifPresent(s -> {
-                if (br.com.fashionai.application.common.Json.csv(s.getOccasion()).contains("casual")) {
-                    grant(ev.userId(), "SEXTA_CASUAL");
-                }
-            });
+        if (ev.date().getDayOfWeek() != DayOfWeek.FRIDAY) {
+            return;
         }
+        sideEffects.run("conquistas:DailyLook", () -> schemes.findById(ev.schemeId()).ifPresent(s -> {
+            if (br.com.fashionai.application.common.Json.csv(s.getOccasion()).contains("casual")) {
+                grant(ev.userId(), "SEXTA_CASUAL");
+            }
+        }));
     }
 }
