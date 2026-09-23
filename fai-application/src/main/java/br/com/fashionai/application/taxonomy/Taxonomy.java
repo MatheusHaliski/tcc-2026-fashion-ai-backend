@@ -35,6 +35,13 @@ public final class Taxonomy {
     public static final List<String> MARKET_SEASONS = List.of("spring", "summer", "autumn", "winter");
     public static final List<String> MARKET_GENDERS = List.of("male", "female", "unisex");
 
+    /**
+     * RF4.CA09 / RF5.CA07 — wearstyles restritos por parte do corpo (04-telas-artefatos-e-pranchas.md, artefato #7,
+     * "proposta a validar"). Cada wearstyle agrupa códigos de ocasião da taxonomia §01.
+     */
+    public static final Map<String, List<String>> WEARSTYLE_GROUPS = new LinkedHashMap<>();
+    public static final Map<String, List<String>> WEARSTYLES_BY_PART = new LinkedHashMap<>();
+
     static {
         SUBCATEGORIES.put("upper_piece", List.of("t_shirt", "shirt", "blouse", "tank_top", "crop_top", "polo_shirt",
                 "bodysuit", "sweater", "sweatshirt", "hoodie", "cardigan", "vest", "blazer", "jacket", "coat", "parka",
@@ -48,6 +55,18 @@ public final class Taxonomy {
                 "cap", "hat", "beanie", "scarf", "tie", "bow_tie", "sunglasses", "eyeglasses", "necklace", "bracelet",
                 "earrings", "ring", "watch", "gloves", "socks", "hair_accessory"));
         SUBCATEGORIES.put("full_body_piece", List.of("dress", "jumpsuit", "romper", "matching_set", "overalls"));
+
+        WEARSTYLE_GROUPS.put("casual", List.of("casual", "home", "school", "university", "travel", "outdoor", "vacation"));
+        WEARSTYLE_GROUPS.put("social", List.of("social", "formal", "business", "wedding", "ceremony", "date"));
+        WEARSTYLE_GROUPS.put("esporte", List.of("sport", "gym", "outdoor"));
+        WEARSTYLE_GROUPS.put("festa", List.of("party", "night_out", "festival", "date"));
+        WEARSTYLE_GROUPS.put("trabalho", List.of("work", "business"));
+        WEARSTYLE_GROUPS.put("praia", List.of("beach", "vacation", "travel"));
+        WEARSTYLES_BY_PART.put("accessory_piece", List.of("casual", "esporte", "praia", "festa"));
+        WEARSTYLES_BY_PART.put("upper_piece", List.of("casual", "social", "esporte", "festa", "trabalho", "praia"));
+        WEARSTYLES_BY_PART.put("lower_piece", List.of("casual", "social", "esporte", "trabalho", "praia"));
+        WEARSTYLES_BY_PART.put("shoes_piece", List.of("casual", "social", "esporte", "festa", "praia"));
+        WEARSTYLES_BY_PART.put("full_body_piece", List.of("casual", "social", "esporte", "festa", "trabalho", "praia"));
 
         Object[][] colors = {
                 {"Preto", "black", "#12100F"}, {"Preto", "charcoal", "#36373B"}, {"Preto", "washed_black", "#2E2B2A"},
@@ -105,7 +124,7 @@ public final class Taxonomy {
         if (size == null || !SIZES.contains(size)) {
             errors.put("size", "Selecione um tamanho válido.");
         }
-        requireTags("occasion", occasions, OCCASIONS, 2, errors);
+        requireTags("occasion", occasions, allowedOccasions(category), 2, errors);
         requireTags("style", styles, STYLES, 2, errors);
         if (!errors.isEmpty()) {
             throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
@@ -127,6 +146,32 @@ public final class Taxonomy {
                 return;
             }
         }
+    }
+
+    /** Ocasiões permitidas para a parte do corpo (união dos grupos dos wearstyles permitidos). */
+    public static List<String> allowedOccasions(String category) {
+        List<String> parts = WEARSTYLES_BY_PART.get(category);
+        if (parts == null) {
+            return OCCASIONS;
+        }
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+        parts.forEach(w -> out.addAll(WEARSTYLE_GROUPS.get(w)));
+        return OCCASIONS.stream().filter(out::contains).toList();
+    }
+
+    /** Wearstyle (rótulo de uso) de cada ocasião, para exibição no card. */
+    public static List<String> wearstylesOf(String category, List<String> occasions) {
+        List<String> allowed = WEARSTYLES_BY_PART.getOrDefault(category, List.copyOf(WEARSTYLE_GROUPS.keySet()));
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+        for (String o : occasions == null ? List.<String>of() : occasions) {
+            for (String w : allowed) {
+                if (WEARSTYLE_GROUPS.get(w).contains(o)) {
+                    out.add(w);
+                    break;
+                }
+            }
+        }
+        return List.copyOf(out);
     }
 
     public static boolean isValidMarket(String market) {

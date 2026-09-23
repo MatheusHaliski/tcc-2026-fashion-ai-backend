@@ -173,6 +173,7 @@ public class AccountService {
         out.put("deletionScheduledFor", u.getDeletionScheduledFor());
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
         out.put("defaultSchemeVisibility", defaultVisibility(u));
+        out.put("profileVisibility", u.getProfileVisibility());
         if (u.getProfileType() == ProfileType.MARCA) {
             brands.findByOwnerId(u.getId()).ifPresent(b -> out.put("brandProfile", Map.of("id", b.getId(), "slug", b.getSlug(),
                     "approvalStatus", b.getApprovalStatus(), "brandName", b.getBrandName())));
@@ -185,9 +186,9 @@ public class AccountService {
         return out;
     }
 
-    /** RF5.CA03 — a visibilidade do esquema é herdada do perfil: conta privada → seguidores; pública → todos. */
+    /** RF5.CA03 — a visibilidade padrão do esquema/peça é herdada do perfil (RF3.CA12). */
     public static Visibility defaultVisibility(User u) {
-        return u.isPrivateAccount() ? Visibility.FOLLOWERS : Visibility.PUBLIC;
+        return u.getProfileVisibility() == null ? Visibility.PRIVATE : u.getProfileVisibility();
     }
 
     public record SensitiveUpdate(String password, String email, String phone, String birthDate, Boolean twoFactorEnabled) {
@@ -255,13 +256,21 @@ public class AccountService {
         return Views.user(u);
     }
 
-    /** RF3.CA12 — visibilidade do perfil (privacy by default: nasce privada). */
+    /**
+     * RF3.CA12 — visibilidade do perfil (público / somente seguidores / privado), aplicada imediatamente ao feed
+     * (RF8) e ao perfil público (RF17). Privacy by Default: a conta nasce PRIVATE (RF3.CA19).
+     */
     @Transactional
-    public Map<String, Object> updatePrivacy(CurrentUser user, boolean privateAccount) {
+    public Map<String, Object> updatePrivacy(CurrentUser user, Visibility visibility) {
+        if (visibility == null) {
+            throw ApiException.badRequest("VISIBILIDADE_INVALIDA", "Escolha público, somente seguidores ou privado.");
+        }
         User u = load(user);
-        u.setPrivateAccount(privateAccount);
-        audit.log(user, AuditActions.ALTERACAO_PERFIL, "user:" + u.getId(), Map.of("privateAccount", privateAccount));
-        return Map.of("privateAccount", privateAccount, "defaultSchemeVisibility", defaultVisibility(u));
+        u.setProfileVisibility(visibility);
+        u.setPrivateAccount(visibility != Visibility.PUBLIC);
+        audit.log(user, AuditActions.ALTERACAO_PERFIL, "user:" + u.getId(), Map.of("profileVisibility", visibility.name()));
+        return Map.of("profileVisibility", visibility, "privateAccount", u.isPrivateAccount(),
+                "defaultSchemeVisibility", defaultVisibility(u));
     }
 
     // ------------------------------------------------------------------ consentimentos

@@ -296,6 +296,24 @@ public class AiEngine {
         return entry.getId();
     }
 
+    /**
+     * Capacidade cujo motor primário é local (SealBond Matcher, Acervo Grouping, Affinity, Category Fallback
+     * Compositor, Photo Curator): registra a inferência como sucesso do provedor local, com o "por quê?".
+     */
+    public <T> AiOutcome<T> local(UUID userId, AiCapability capability, List<String> inputsUsed, Supplier<T> engine) {
+        String correlationId = UUID.randomUUID().toString();
+        List<String> inputs = inputsUsed == null ? List.of() : inputsUsed;
+        long started = System.nanoTime();
+        T value = engine.get();
+        long latency = (System.nanoTime() - started) / 1_000_000;
+        String consent = consentState(userId, capability.consentPurpose());
+        UUID id = record(userId, capability, "local", "local", latency, BigDecimal.ZERO, AiCallResult.SUCCESS, false, inputs,
+                value == null ? "" : String.valueOf(value), consent, correlationId);
+        return new AiOutcome<>(value, id, AiCallResult.SUCCESS, false, "local", "local", latency, BigDecimal.ZERO, null,
+                explanation(capability, "local", "local", inputs, consent,
+                        "Motor local determinístico (primário desta capacidade) — nenhum dado sai do Fashion AI."), null);
+    }
+
     public Optional<AiProviderPort> provider(String id) {
         return Optional.ofNullable(providers.get(id));
     }
