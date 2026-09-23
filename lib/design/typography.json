@@ -1,0 +1,36 @@
+{
+  "source": "FashionAI — Tipografia do App (2026-09-23) — oficial para todo o app: chrome (RNF7), esquemas/cards (v17), DNA (v4), Meu Quarto, Destaques, Desafios, pranchas",
+  "rule": "texto de moda (nome de look, nome de peça, título, número-herói) = editorial (serifa); interface (botão, menu, descrição, comentário) = ui (sans); dado (preço, tamanho, código, contador, rótulo técnico, data) = data (mono)",
+  "families": {
+    "editorial": {"token": "--font-editorial", "family": "Fraunces", "fallback": "Georgia, serif", "weights": [500, 600],
+      "roles": ["título de esquema", "nome de peça", "título de página", "números-herói (Inventory Score, Hype Score)"]},
+    "ui": {"token": "--font-ui", "family": "Inter", "fallback": "system-ui, \"Segoe UI\", sans-serif", "weights": [400, 500, 600, 700],
+      "roles": ["barra lateral", "botões", "formulários", "descrições", "comentários"]},
+    "data": {"token": "--font-data", "family": "IBM Plex Mono", "fallback": "ui-monospace, Menlo, monospace", "weights": [400, 500, 600],
+      "roles": ["preço", "tamanho", "código de peça", "contadores sociais", "rótulos técnicos em maiúsculas", "datas"]}
+  },
+  "loading": "next/font/google (self-hosted junto com o app, sem <link> externo nem troca visível de fonte)",
+  "numbers": "font-variant-numeric: tabular-nums em contadores, preços e placares",
+  "removed": ["Share Tech Mono do body (pode ficar restrita ao logotipo e à tela de login)", "regra de peso 600 forçado em .sa-home-shell", "font-mono do sistema (passa a apontar para --font-data)"],
+  "base": {"px": 14, "minUppercaseLabelPx": 11, "minRunningTextPx": 12},
+  "scale": [
+    {"token": "display-xl", "px": 40, "rem": 2.5, "lineHeight": 1.1, "tracking": "-0.02em", "family": "editorial", "weight": 600, "use": "número do Inventory Score, número do Hype Score"},
+    {"token": "display", "px": 32, "rem": 2, "lineHeight": 1.15, "tracking": "-0.015em", "family": "editorial", "weight": 600, "use": "título de página no desktop"},
+    {"token": "h1", "px": 24, "rem": 1.5, "lineHeight": 1.2, "tracking": "-0.01em", "family": "editorial", "weight": 600, "use": "título de página no celular, título do card ampliado"},
+    {"token": "h2", "px": 20, "rem": 1.25, "lineHeight": 1.25, "tracking": "-0.005em", "family": "editorial", "weight": 500, "use": "seção de página, título de modal"},
+    {"token": "h3", "px": 17, "rem": 1.0625, "lineHeight": 1.3, "tracking": "0", "family": "ui", "weight": 600, "use": "subtítulo, título de painel"},
+    {"token": "body-lg", "px": 16, "rem": 1, "lineHeight": 1.5, "tracking": "0", "family": "ui", "weight": 400, "use": "texto de destaque, onboarding"},
+    {"token": "body", "px": 14, "rem": 0.875, "lineHeight": 1.5, "tracking": "0", "family": "ui", "weight": 400, "use": "texto padrão, descrições, comentários"},
+    {"token": "body-sm", "px": 13, "rem": 0.8125, "lineHeight": 1.45, "tracking": "0", "family": "ui", "weight": 400, "use": "texto secundário, itens de lista"},
+    {"token": "caption", "px": 12, "rem": 0.75, "lineHeight": 1.4, "tracking": "0.005em", "family": "ui", "weight": 500, "use": "legendas, autor e data, dicas de campo"},
+    {"token": "label", "px": 11, "rem": 0.6875, "lineHeight": 1.3, "tracking": "0.08em", "uppercase": true, "family": "data", "weight": 500, "use": "rótulos técnicos, cabeçalho de metadado, selos"}
+  ],
+  "tracking": {"display": "-0.02em", "label": "0.08em"},
+  "migration": {
+    "text-[8px]|text-[9px]|text-[10px]": "text-label se rótulo em maiúsculas; senão text-caption",
+    "text-[11px]": "text-label ou text-caption, pelo mesmo critério",
+    "text-xs": "text-caption", "text-sm": "text-body", "text-base|text-[15px]": "text-body-lg", "text-lg|text-[18px]": "text-h3",
+    "text-xl|text-[20px]|text-[22px]": "text-h2", "text-2xl|text-[26px]|text-[28px]": "text-h1",
+    "text-3xl|text-[30px]|text-4xl": "text-display", "text-[42px]": "text-display-xl"
+  }
+}

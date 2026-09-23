@@ -27,6 +27,8 @@ import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.ShareRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import br.com.fashionai.application.events.DomainEvents;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,12 +63,14 @@ public class SocialService {
     private final CounterStorePort counters;
     private final MediaService media;
     private final Guard guard;
+    private final ApplicationEventPublisher events;
 
     public SocialService(ReactionRepository reactions, CommentRepository comments, SavedItemRepository saved,
                          ShareRepository shares, SchemeRepository schemes, WardrobeItemRepository pieces,
                          DnaSchemeRepository dnas, br.com.fashionai.domain.repository.SchemeItemRepository schemeItems,
                          UserRepository users, SchemeService schemeService,
-                         NotificationService notifications, CounterStorePort counters, MediaService media, Guard guard) {
+                         NotificationService notifications, CounterStorePort counters, MediaService media, Guard guard,
+                         ApplicationEventPublisher events) {
         this.reactions = reactions;
         this.comments = comments;
         this.saved = saved;
@@ -81,6 +85,7 @@ public class SocialService {
         this.counters = counters;
         this.media = media;
         this.guard = guard;
+        this.events = events;
     }
 
     /** Alvo de interação resolvido: dono, título e acesso aos contadores persistidos. */
@@ -175,6 +180,10 @@ public class SocialService {
                             : NotificationType.NEW_REACTION, type.name(), id,
                     "@" + user.username() + (reaction == ReactionType.LIKE ? " curtiu " : " reagiu (" + label(reaction) + ") a ")
                             + "\"" + t.title() + "\"", null, Map.of("reaction", reaction.name()));
+            if (reaction == ReactionType.LIKE) {
+                // RF35 §5.2 — curtida recebida (+1, 50/dia no total; interação consigo mesmo não pontua)
+                events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "LIKE", id));
+            }
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("active", active);
@@ -232,6 +241,7 @@ public class SocialService {
         bump(t, "comments", 1);
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_COMMENT, type.name(), id,
                 "@" + user.username() + " comentou em \"" + t.title() + "\"", text.length() > 120 ? text.substring(0, 117) + "…" : text, null);
+        events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "COMMENT", c.getId()));
         return Map.of("id", c.getId(), "author", Views.user(c.getAuthor()), "content", c.getContent(), "createdAt", String.valueOf(c.getCreatedAt()));
     }
 

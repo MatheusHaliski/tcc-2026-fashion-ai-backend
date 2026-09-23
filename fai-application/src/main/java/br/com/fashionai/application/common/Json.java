@@ -60,6 +60,19 @@ public final class Json {
         }
     }
 
+    /** Lista de objetos (JSON de colunas como modules_json, slots_json). */
+    public static List<Map<String, Object>> list(String json) {
+        if (json == null || json.isBlank()) {
+            return new ArrayList<>();
+        }
+        try {
+            return MAPPER.readValue(json, new TypeReference<ArrayList<Map<String, Object>>>() {
+            });
+        } catch (JsonProcessingException ex) {
+            return new ArrayList<>();
+        }
+    }
+
     public static List<UUID> uuids(String json) {
         return strings(json).stream().map(UUID::fromString).collect(Collectors.toCollection(ArrayList::new));
     }

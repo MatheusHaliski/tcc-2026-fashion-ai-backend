@@ -1,0 +1,2963 @@
+{
+  "source": "FashionAI — Prompts de Assets de Ícones (2026-09-23)",
+  "counts": {
+    "total": 77,
+    "SOC": 15,
+    "NAV": 16,
+    "ACT": 46
+  },
+  "palette": {
+    "disc": "#2A211C",
+    "halo": "#F57C1F",
+    "medallion": "#F5EBD7",
+    "object": "#1E1B18",
+    "mesh": "#F5EBD7",
+    "nodes": [
+      "#F2C230",
+      "#F57C1F",
+      "#5FA35A",
+      "#3B7BC8",
+      "#8A5A3C"
+    ]
+  },
+  "masterPrompt": "A circular app icon badge in soft 3D clay-render style, front view, centered, on a pure white background. Outer ring: a thick dark espresso-brown disc (#2A211C) with a subtly beveled rim. {MESH} Behind the mesh, a vibrant orange halo (#F57C1F) surrounds a smooth matte cream medallion (#F5EBD7) in the center. On the medallion: {OBJETO}, rendered as a single chunky matte-black object (#1E1B18) with rounded edges, soft studio lighting from the top-left, a short soft shadow on the cream medallion.{ACCENT} {TEXTO} Flat composition, no perspective tilt, no extra objects, no background scene, no watermark, crisp edges, high detail, 1024x1024.",
+  "negativePrompt": "text, letters, watermark, logo of real brands, photorealistic person, face, hands, gradient background, perspective, multiple objects, clutter, blur",
+  "meshVariants": {
+    "full": "On the disc: a network mesh of thin cream-colored threads forming triangles, connecting round glossy nodes in yellow, orange, green, blue and brown, larger nodes near the outer edge, smaller near the center.",
+    "halfmesh": "On the disc: a sparse network mesh of thin cream-colored threads with half the usual number of round glossy nodes in yellow, orange, green, blue and brown, larger nodes near the outer edge.",
+    "nomesh": "The dark disc is plain, no network mesh, no nodes."
+  },
+  "textRule": {
+    "logo": "The white bold sans-serif letters \"FAI\" sit on the object.",
+    "buttons": "No text, no letters, no numbers anywhere.",
+    "counters": "contadores e badges são desenhados pelo app por cima/ao lado do ícone, nunca na imagem"
+  },
+  "forbidden": "logotipo de marca real, rosto de pessoa real, símbolos protegidos",
+  "sizes": [
+    {
+      "px": 512,
+      "use": "estados vazios, onboarding, telas de conquista",
+      "variant": "full",
+      "adjust": "original reduzido"
+    },
+    {
+      "px": 96,
+      "use": "cards, painéis, botões grandes do Smart Mirror",
+      "variant": "full",
+      "adjust": "original reduzido"
+    },
+    {
+      "px": 48,
+      "use": "barra lateral expandida, rodapé social",
+      "variant": "halfmesh",
+      "adjust": "malha com metade dos nós"
+    },
+    {
+      "px": 24,
+      "use": "barra recolhida, contadores, toggles",
+      "variant": "nomesh",
+      "adjust": "sem malha: só disco, halo, medalhão e objeto"
+    }
+  ],
+  "states": {
+    "normal": "o asset como gerado",
+    "ativo": "gerado de novo com acento laranja (#F57C1F) conforme a coluna 'Estado ativo'",
+    "hover": "feito pelo app: brilho +8% e anel de foco de 2 px (não é arquivo)",
+    "desabilitado": "feito pelo app: 40% de saturação e 50% de opacidade (não é arquivo)"
+  },
+  "fileNamePattern": "public/icons/fai/{id}-{estado}-{tamanho}.png",
+  "format": "PNG com fundo transparente (remoção de fundo do pipeline RF4 antes do export)",
+  "coherence": {
+    "sparkle": "brilho de quatro pontas só onde há IA (ACT-08, 09, 15, 32, 35 e NAV-03)",
+    "hanger": "cabide = peça nas ações de acervo e participante nos modos de Desafios (ACT-44 a 46)",
+    "bust": "busto de costura = estilo do usuário (Dashboard, Criar Look, Copilot, manequins do Provador)"
+  },
+  "checklist": [
+    "disco, malha e halo com as cores do logo (#2A211C, creme, #F57C1F)",
+    "objeto central preto fosco ocupando 55%–65% do medalhão",
+    "sem letras, números ou logotipo de marca real",
+    "a 24 px o objeto continua reconhecível ao lado dos outros da família",
+    "estado ativo difere do normal só pelo acento laranja",
+    "aria-label definido no componente"
+  ],
+  "excluded": [
+    {
+      "grupo": "Ferramentas do Editor Canvas (RF15)",
+      "itens": "recortar, girar, brilho, remover fundo, desfazer, refazer",
+      "motivo": "barra de ferramentas a 16–20 px, lado a lado; medalha ficaria ilegível",
+      "solucao": "ícones de linha simples da mesma paleta (lineIcon)"
+    },
+    {
+      "grupo": "Botões de formulário",
+      "itens": "confirmar, cancelar, fechar, próximo, voltar de etapa",
+      "motivo": "ícone ilustrado competiria com a ação principal",
+      "solucao": "texto"
+    },
+    {
+      "grupo": "Toggles compactos do card (RF31.CA07)",
+      "itens": "estrela pequena, 'indisponível' só com a letra",
+      "motivo": "o critério exige estrelinha pequena e letra",
+      "solucao": "SOC-06/14/15 só em filtros, cabeçalho da lista e estados vazios"
+    },
+    {
+      "grupo": "Login social",
+      "itens": "botão do Google",
+      "motivo": "logotipo oficial exigido pelo Google",
+      "solucao": "logotipo oficial, nunca recriação"
+    }
+  ],
+  "lineIcons": [
+    "crop",
+    "rotate",
+    "brightness",
+    "removeBackground",
+    "undo",
+    "redo"
+  ],
+  "logo": {
+    "id": "LOGO",
+    "slug": "logo",
+    "family": "LOGO",
+    "rf": "—",
+    "label": {
+      "PT_BR": "Logo FashionAI",
+      "EN": "FashionAI logo",
+      "ES": "Logo FashionAI"
+    },
+    "object": "a shopping tote bag with rounded handles",
+    "activeState": "—",
+    "activeAccent": null,
+    "singleState": true,
+    "states": [
+      "normal"
+    ],
+    "glyph": "tote",
+    "ai": false,
+    "action": "logo",
+    "files": {
+      "normal": {
+        "512": "/icons/fai/logo-normal-512.png",
+        "96": "/icons/fai/logo-normal-96.png",
+        "48": "/icons/fai/logo-normal-48.png",
+        "24": "/icons/fai/logo-normal-24.png"
+      }
+    },
+    "available": false
+  },
+  "icons": [
+    {
+      "id": "SOC-01",
+      "slug": "soc-01",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Curtir",
+        "EN": "Like",
+        "ES": "Me gusta"
+      },
+      "object": "a puffy heart made of quilted leather, like a quilted handbag panel, with visible diamond stitching",
+      "activeState": "coração com costura laranja",
+      "activeAccent": "orange stitching on the heart",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "heart",
+      "ai": false,
+      "action": "like",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-01-normal-512.png",
+          "96": "/icons/fai/soc-01-normal-96.png",
+          "48": "/icons/fai/soc-01-normal-48.png",
+          "24": "/icons/fai/soc-01-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-01-ativo-512.png",
+          "96": "/icons/fai/soc-01-ativo-96.png",
+          "48": "/icons/fai/soc-01-ativo-48.png",
+          "24": "/icons/fai/soc-01-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-02",
+      "slug": "soc-02",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Comentar",
+        "EN": "Comment",
+        "ES": "Comentar"
+      },
+      "object": "a speech bubble shaped like a sewn-in clothing label, with a stitched border and a tiny tail",
+      "activeState": "etiqueta com três pontos laranja",
+      "activeAccent": "three orange dots on the label",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bubble",
+      "ai": false,
+      "action": "comment",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-02-normal-512.png",
+          "96": "/icons/fai/soc-02-normal-96.png",
+          "48": "/icons/fai/soc-02-normal-48.png",
+          "24": "/icons/fai/soc-02-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-02-ativo-512.png",
+          "96": "/icons/fai/soc-02-ativo-96.png",
+          "48": "/icons/fai/soc-02-ativo-48.png",
+          "24": "/icons/fai/soc-02-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-03",
+      "slug": "soc-03",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Compartilhar",
+        "EN": "Share",
+        "ES": "Compartir"
+      },
+      "object": "a paper airplane folded from a clothing swing tag, with the tag's round eyelet hole visible",
+      "activeState": "rastro curto laranja atrás do avião",
+      "activeAccent": "a short orange trail behind the airplane",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "plane",
+      "ai": false,
+      "action": "share",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-03-normal-512.png",
+          "96": "/icons/fai/soc-03-normal-96.png",
+          "48": "/icons/fai/soc-03-normal-48.png",
+          "24": "/icons/fai/soc-03-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-03-ativo-512.png",
+          "96": "/icons/fai/soc-03-ativo-96.png",
+          "48": "/icons/fai/soc-03-ativo-48.png",
+          "24": "/icons/fai/soc-03-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-04",
+      "slug": "soc-04",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Remixar",
+        "EN": "Remix",
+        "ES": "Remezclar"
+      },
+      "object": "two clothes hangers whose hooks curve into each other forming a circular loop of two arrows",
+      "activeState": "ganchos laranja",
+      "activeAccent": "orange hooks",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "remix",
+      "ai": false,
+      "action": "remix",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-04-normal-512.png",
+          "96": "/icons/fai/soc-04-normal-96.png",
+          "48": "/icons/fai/soc-04-normal-48.png",
+          "24": "/icons/fai/soc-04-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-04-ativo-512.png",
+          "96": "/icons/fai/soc-04-ativo-96.png",
+          "48": "/icons/fai/soc-04-ativo-48.png",
+          "24": "/icons/fai/soc-04-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-05",
+      "slug": "soc-05",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Salvar",
+        "EN": "Save",
+        "ES": "Guardar"
+      },
+      "object": "a zipped garment bag hanging from a hanger, with a small bookmark ribbon on its side",
+      "activeState": "fita laranja",
+      "activeAccent": "an orange bookmark ribbon",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "garmentbag",
+      "ai": false,
+      "action": "save",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-05-normal-512.png",
+          "96": "/icons/fai/soc-05-normal-96.png",
+          "48": "/icons/fai/soc-05-normal-48.png",
+          "24": "/icons/fai/soc-05-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-05-ativo-512.png",
+          "96": "/icons/fai/soc-05-ativo-96.png",
+          "48": "/icons/fai/soc-05-ativo-48.png",
+          "24": "/icons/fai/soc-05-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-06",
+      "slug": "soc-06",
+      "family": "SOC",
+      "rf": "RF31",
+      "label": {
+        "PT_BR": "Favoritar",
+        "EN": "Favorite",
+        "ES": "Favorito"
+      },
+      "object": "a five-pointed star-shaped brooch with a small pin on the back",
+      "activeState": "estrela preenchida laranja",
+      "activeAccent": "the star filled in orange",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "star",
+      "ai": false,
+      "action": "favorite",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-06-normal-512.png",
+          "96": "/icons/fai/soc-06-normal-96.png",
+          "48": "/icons/fai/soc-06-normal-48.png",
+          "24": "/icons/fai/soc-06-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-06-ativo-512.png",
+          "96": "/icons/fai/soc-06-ativo-96.png",
+          "48": "/icons/fai/soc-06-ativo-48.png",
+          "24": "/icons/fai/soc-06-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-07",
+      "slug": "soc-07",
+      "family": "SOC",
+      "rf": "RF19",
+      "label": {
+        "PT_BR": "Reação Trend",
+        "EN": "Trend reaction",
+        "ES": "Reacción Tendencia"
+      },
+      "object": "an upward zigzag arrow made of a metal zipper, the zipper pull at the arrow tip",
+      "activeState": "puxador laranja",
+      "activeAccent": "an orange zipper pull",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "zigzag",
+      "ai": false,
+      "action": "react:TREND",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-07-normal-512.png",
+          "96": "/icons/fai/soc-07-normal-96.png",
+          "48": "/icons/fai/soc-07-normal-48.png",
+          "24": "/icons/fai/soc-07-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-07-ativo-512.png",
+          "96": "/icons/fai/soc-07-ativo-96.png",
+          "48": "/icons/fai/soc-07-ativo-48.png",
+          "24": "/icons/fai/soc-07-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-08",
+      "slug": "soc-08",
+      "family": "SOC",
+      "rf": "RF19",
+      "label": {
+        "PT_BR": "Reação Elegante",
+        "EN": "Elegant reaction",
+        "ES": "Reacción Elegante"
+      },
+      "object": "a satin bow tie with soft folds",
+      "activeState": "nó central laranja",
+      "activeAccent": "an orange center knot",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bowtie",
+      "ai": false,
+      "action": "react:ELEGANT",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-08-normal-512.png",
+          "96": "/icons/fai/soc-08-normal-96.png",
+          "48": "/icons/fai/soc-08-normal-48.png",
+          "24": "/icons/fai/soc-08-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-08-ativo-512.png",
+          "96": "/icons/fai/soc-08-ativo-96.png",
+          "48": "/icons/fai/soc-08-ativo-48.png",
+          "24": "/icons/fai/soc-08-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-09",
+      "slug": "soc-09",
+      "family": "SOC",
+      "rf": "RF19",
+      "label": {
+        "PT_BR": "Reação Criativo",
+        "EN": "Creative reaction",
+        "ES": "Reacción Creativo"
+      },
+      "object": "a spool of thread with a sewing needle, the loose thread forming a small spark shape",
+      "activeState": "faísca laranja",
+      "activeAccent": "an orange spark",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "spool",
+      "ai": false,
+      "action": "react:CREATIVE",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-09-normal-512.png",
+          "96": "/icons/fai/soc-09-normal-96.png",
+          "48": "/icons/fai/soc-09-normal-48.png",
+          "24": "/icons/fai/soc-09-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-09-ativo-512.png",
+          "96": "/icons/fai/soc-09-ativo-96.png",
+          "48": "/icons/fai/soc-09-ativo-48.png",
+          "24": "/icons/fai/soc-09-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-10",
+      "slug": "soc-10",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Retornar (abrir esquema de origem)",
+        "EN": "Back to origin look",
+        "ES": "Volver al look de origen"
+      },
+      "object": "a clothes hanger whose hook bends backward into a curved return arrow",
+      "activeState": "seta laranja",
+      "activeAccent": "an orange arrow",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangerback",
+      "ai": false,
+      "action": "return",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-10-normal-512.png",
+          "96": "/icons/fai/soc-10-normal-96.png",
+          "48": "/icons/fai/soc-10-normal-48.png",
+          "24": "/icons/fai/soc-10-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-10-ativo-512.png",
+          "96": "/icons/fai/soc-10-ativo-96.png",
+          "48": "/icons/fai/soc-10-ativo-48.png",
+          "24": "/icons/fai/soc-10-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-11",
+      "slug": "soc-11",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Editar (só o dono)",
+        "EN": "Edit (owner only)",
+        "ES": "Editar (solo el dueño)"
+      },
+      "object": "a triangular tailor's chalk crossed over a short rolled measuring tape",
+      "activeState": "fita métrica laranja",
+      "activeAccent": "an orange measuring tape",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "chalk",
+      "ai": false,
+      "action": "edit",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-11-normal-512.png",
+          "96": "/icons/fai/soc-11-normal-96.png",
+          "48": "/icons/fai/soc-11-normal-48.png",
+          "24": "/icons/fai/soc-11-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-11-ativo-512.png",
+          "96": "/icons/fai/soc-11-ativo-96.png",
+          "48": "/icons/fai/soc-11-ativo-48.png",
+          "24": "/icons/fai/soc-11-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-12",
+      "slug": "soc-12",
+      "family": "SOC",
+      "rf": "RF17",
+      "label": {
+        "PT_BR": "Seguir / Deixar de seguir",
+        "EN": "Follow / Unfollow",
+        "ES": "Seguir / Dejar de seguir"
+      },
+      "object": "a large safety pin bent into a plus sign",
+      "activeState": "alfinete fechado em check, laranja",
+      "activeAccent": "the safety pin closed into an orange check mark",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "pin",
+      "ai": false,
+      "action": "follow",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-12-normal-512.png",
+          "96": "/icons/fai/soc-12-normal-96.png",
+          "48": "/icons/fai/soc-12-normal-48.png",
+          "24": "/icons/fai/soc-12-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-12-ativo-512.png",
+          "96": "/icons/fai/soc-12-ativo-96.png",
+          "48": "/icons/fai/soc-12-ativo-48.png",
+          "24": "/icons/fai/soc-12-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-13",
+      "slug": "soc-13",
+      "family": "SOC",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "Excluir comentário",
+        "EN": "Delete comment",
+        "ES": "Eliminar comentario"
+      },
+      "object": "a pair of tailor's scissors cutting a small fabric label in half",
+      "activeState": "estado único (ação destrutiva, sem ativo)",
+      "activeAccent": null,
+      "singleState": true,
+      "states": [
+        "normal"
+      ],
+      "glyph": "scissors",
+      "ai": false,
+      "action": "deleteComment",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-13-normal-512.png",
+          "96": "/icons/fai/soc-13-normal-96.png",
+          "48": "/icons/fai/soc-13-normal-48.png",
+          "24": "/icons/fai/soc-13-normal-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-14",
+      "slug": "soc-14",
+      "family": "SOC",
+      "rf": "RF31",
+      "label": {
+        "PT_BR": "Disponível",
+        "EN": "Available",
+        "ES": "Disponible"
+      },
+      "object": "a clothes hanger with a small round tag showing a check mark shape",
+      "activeState": "tag laranja",
+      "activeAccent": "an orange tag",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangercheck",
+      "ai": false,
+      "action": "available",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-14-normal-512.png",
+          "96": "/icons/fai/soc-14-normal-96.png",
+          "48": "/icons/fai/soc-14-normal-48.png",
+          "24": "/icons/fai/soc-14-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/soc-14-ativo-512.png",
+          "96": "/icons/fai/soc-14-ativo-96.png",
+          "48": "/icons/fai/soc-14-ativo-48.png",
+          "24": "/icons/fai/soc-14-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "SOC-15",
+      "slug": "soc-15",
+      "family": "SOC",
+      "rf": "RF31",
+      "label": {
+        "PT_BR": "Indisponível",
+        "EN": "Unavailable",
+        "ES": "No disponible"
+      },
+      "object": "a woven laundry basket with a folded shirt on top",
+      "activeState": "estado único",
+      "activeAccent": null,
+      "singleState": true,
+      "states": [
+        "normal"
+      ],
+      "glyph": "basket",
+      "ai": false,
+      "action": "unavailable",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/soc-15-normal-512.png",
+          "96": "/icons/fai/soc-15-normal-96.png",
+          "48": "/icons/fai/soc-15-normal-48.png",
+          "24": "/icons/fai/soc-15-normal-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-01",
+      "slug": "nav-01",
+      "family": "NAV",
+      "rf": "RF9",
+      "label": {
+        "PT_BR": "Dashboard",
+        "EN": "Dashboard",
+        "ES": "Panel"
+      },
+      "object": "a small dress form mannequin bust with a round gauge dial on its chest",
+      "activeState": "resumo e sugestões da IA sobre o seu estilo",
+      "activeAccent": "an orange gauge needle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bustgauge",
+      "ai": false,
+      "route": "/home",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-01-normal-512.png",
+          "96": "/icons/fai/nav-01-normal-96.png",
+          "48": "/icons/fai/nav-01-normal-48.png",
+          "24": "/icons/fai/nav-01-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-01-ativo-512.png",
+          "96": "/icons/fai/nav-01-ativo-96.png",
+          "48": "/icons/fai/nav-01-ativo-48.png",
+          "24": "/icons/fai/nav-01-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-02",
+      "slug": "nav-02",
+      "family": "NAV",
+      "rf": "RF4",
+      "label": {
+        "PT_BR": "Guarda-Roupa",
+        "EN": "Wardrobe",
+        "ES": "Armario"
+      },
+      "object": "a two-door wardrobe with one door slightly open showing hangers inside",
+      "activeState": "o próprio acervo",
+      "activeAccent": "orange hangers inside",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "wardrobe",
+      "ai": false,
+      "route": "/my-wardrobe",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-02-normal-512.png",
+          "96": "/icons/fai/nav-02-normal-96.png",
+          "48": "/icons/fai/nav-02-normal-48.png",
+          "24": "/icons/fai/nav-02-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-02-ativo-512.png",
+          "96": "/icons/fai/nav-02-ativo-96.png",
+          "48": "/icons/fai/nav-02-ativo-48.png",
+          "24": "/icons/fai/nav-02-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-03",
+      "slug": "nav-03",
+      "family": "NAV",
+      "rf": "RF5",
+      "label": {
+        "PT_BR": "Criar Look",
+        "EN": "Create Look",
+        "ES": "Crear Look"
+      },
+      "object": "a dress form mannequin with a small four-point sparkle above its shoulder",
+      "activeState": "montar um look novo",
+      "activeAccent": "an orange sparkle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bustsparkle",
+      "ai": true,
+      "route": "/create-my-scheme",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-03-normal-512.png",
+          "96": "/icons/fai/nav-03-normal-96.png",
+          "48": "/icons/fai/nav-03-normal-48.png",
+          "24": "/icons/fai/nav-03-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-03-ativo-512.png",
+          "96": "/icons/fai/nav-03-ativo-96.png",
+          "48": "/icons/fai/nav-03-ativo-48.png",
+          "24": "/icons/fai/nav-03-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-04",
+      "slug": "nav-04",
+      "family": "NAV",
+      "rf": "RF6",
+      "label": {
+        "PT_BR": "Looks Salvos",
+        "EN": "Saved Looks",
+        "ES": "Looks guardados"
+      },
+      "object": "three garment bags hanging side by side on a short rail",
+      "activeState": "coleção de looks guardados",
+      "activeAccent": "an orange rail",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "garmentbags",
+      "ai": false,
+      "route": "/explore-scheme",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-04-normal-512.png",
+          "96": "/icons/fai/nav-04-normal-96.png",
+          "48": "/icons/fai/nav-04-normal-48.png",
+          "24": "/icons/fai/nav-04-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-04-ativo-512.png",
+          "96": "/icons/fai/nav-04-ativo-96.png",
+          "48": "/icons/fai/nav-04-ativo-48.png",
+          "24": "/icons/fai/nav-04-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-05",
+      "slug": "nav-05",
+      "family": "NAV",
+      "rf": "RF7",
+      "label": {
+        "PT_BR": "The Runway",
+        "EN": "The Runway",
+        "ES": "The Runway"
+      },
+      "object": "a high-heeled shoe standing at the end of a short catwalk under a spotlight cone",
+      "activeState": "feed social = passarela",
+      "activeAccent": "an orange spotlight cone",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "heel",
+      "ai": false,
+      "route": "/feed",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-05-normal-512.png",
+          "96": "/icons/fai/nav-05-normal-96.png",
+          "48": "/icons/fai/nav-05-normal-48.png",
+          "24": "/icons/fai/nav-05-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-05-ativo-512.png",
+          "96": "/icons/fai/nav-05-ativo-96.png",
+          "48": "/icons/fai/nav-05-ativo-48.png",
+          "24": "/icons/fai/nav-05-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-06",
+      "slug": "nav-06",
+      "family": "NAV",
+      "rf": "RF6",
+      "label": {
+        "PT_BR": "Autopiloto",
+        "EN": "Autopilot",
+        "ES": "Piloto automático"
+      },
+      "object": "a clothes hanger whose hook is a small round clock face",
+      "activeState": "looks diários e planejamento semanal",
+      "activeAccent": "orange clock hands",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangerclock",
+      "ai": false,
+      "route": "/autopilot",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-06-normal-512.png",
+          "96": "/icons/fai/nav-06-normal-96.png",
+          "48": "/icons/fai/nav-06-normal-48.png",
+          "24": "/icons/fai/nav-06-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-06-ativo-512.png",
+          "96": "/icons/fai/nav-06-ativo-96.png",
+          "48": "/icons/fai/nav-06-ativo-48.png",
+          "24": "/icons/fai/nav-06-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-07",
+      "slug": "nav-07",
+      "family": "NAV",
+      "rf": "RF18",
+      "label": {
+        "PT_BR": "Provador 2D",
+        "EN": "2D Fitting Room",
+        "ES": "Probador 2D"
+      },
+      "object": "a fitting room booth with a half-drawn curtain",
+      "activeState": "provar peças no manequim",
+      "activeAccent": "an orange curtain",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "booth",
+      "ai": false,
+      "route": "/dress-tester",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-07-normal-512.png",
+          "96": "/icons/fai/nav-07-normal-96.png",
+          "48": "/icons/fai/nav-07-normal-48.png",
+          "24": "/icons/fai/nav-07-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-07-ativo-512.png",
+          "96": "/icons/fai/nav-07-ativo-96.png",
+          "48": "/icons/fai/nav-07-ativo-48.png",
+          "24": "/icons/fai/nav-07-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-08",
+      "slug": "nav-08",
+      "family": "NAV",
+      "rf": "RF8",
+      "label": {
+        "PT_BR": "Peças Públicas",
+        "EN": "Public Pieces",
+        "ES": "Piezas públicas"
+      },
+      "object": "an open clothing rack with several hangers holding different garments",
+      "activeState": "vitrine de peças de outros criadores",
+      "activeAccent": "an orange rack bar",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "rack",
+      "ai": false,
+      "route": "/search-pieces",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-08-normal-512.png",
+          "96": "/icons/fai/nav-08-normal-96.png",
+          "48": "/icons/fai/nav-08-normal-48.png",
+          "24": "/icons/fai/nav-08-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-08-ativo-512.png",
+          "96": "/icons/fai/nav-08-ativo-96.png",
+          "48": "/icons/fai/nav-08-ativo-48.png",
+          "24": "/icons/fai/nav-08-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-09",
+      "slug": "nav-09",
+      "family": "NAV",
+      "rf": "RF8",
+      "label": {
+        "PT_BR": "Buscar",
+        "EN": "Search",
+        "ES": "Buscar"
+      },
+      "object": "a magnifying glass whose lens is a large four-hole sewing button",
+      "activeState": "encontrar usuários e looks",
+      "activeAccent": "an orange lens rim",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "search",
+      "ai": false,
+      "route": "/search-items",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-09-normal-512.png",
+          "96": "/icons/fai/nav-09-normal-96.png",
+          "48": "/icons/fai/nav-09-normal-48.png",
+          "24": "/icons/fai/nav-09-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-09-ativo-512.png",
+          "96": "/icons/fai/nav-09-ativo-96.png",
+          "48": "/icons/fai/nav-09-ativo-48.png",
+          "24": "/icons/fai/nav-09-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-10",
+      "slug": "nav-10",
+      "family": "NAV",
+      "rf": "RF12",
+      "label": {
+        "PT_BR": "Minhas Fotos",
+        "EN": "My Photos",
+        "ES": "Mis fotos"
+      },
+      "object": "an instant camera ejecting a small photo with a t-shirt silhouette on it",
+      "activeState": "galeria de fotos de peças e looks (RF12)",
+      "activeAccent": "an orange photo border",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "camera",
+      "ai": false,
+      "route": "/my-photos",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-10-normal-512.png",
+          "96": "/icons/fai/nav-10-normal-96.png",
+          "48": "/icons/fai/nav-10-normal-48.png",
+          "24": "/icons/fai/nav-10-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-10-ativo-512.png",
+          "96": "/icons/fai/nav-10-ativo-96.png",
+          "48": "/icons/fai/nav-10-ativo-48.png",
+          "24": "/icons/fai/nav-10-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-11",
+      "slug": "nav-11",
+      "family": "NAV",
+      "rf": "RF14",
+      "label": {
+        "PT_BR": "Marcas",
+        "EN": "Brands",
+        "ES": "Marcas"
+      },
+      "object": "a blank luxury clothing brand label with a small diamond shape stitched in the center",
+      "activeState": "perfis de marca, sem imitar nenhuma marca real",
+      "activeAccent": "an orange stitched diamond",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "label",
+      "ai": false,
+      "route": "/maison",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-11-normal-512.png",
+          "96": "/icons/fai/nav-11-normal-96.png",
+          "48": "/icons/fai/nav-11-normal-48.png",
+          "24": "/icons/fai/nav-11-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-11-ativo-512.png",
+          "96": "/icons/fai/nav-11-ativo-96.png",
+          "48": "/icons/fai/nav-11-ativo-48.png",
+          "24": "/icons/fai/nav-11-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-12",
+      "slug": "nav-12",
+      "family": "NAV",
+      "rf": "RF22",
+      "label": {
+        "PT_BR": "Art Celebrity",
+        "EN": "Art Celebrity",
+        "ES": "Art Celebrity"
+      },
+      "object": "a five-pointed star on a short red carpet runner",
+      "activeState": "looks de celebridades, sem rosto nem pessoa",
+      "activeAccent": "an orange star",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "starcarpet",
+      "ai": false,
+      "route": "/art-celebrity",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-12-normal-512.png",
+          "96": "/icons/fai/nav-12-normal-96.png",
+          "48": "/icons/fai/nav-12-normal-48.png",
+          "24": "/icons/fai/nav-12-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-12-ativo-512.png",
+          "96": "/icons/fai/nav-12-ativo-96.png",
+          "48": "/icons/fai/nav-12-ativo-48.png",
+          "24": "/icons/fai/nav-12-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-13",
+      "slug": "nav-13",
+      "family": "NAV",
+      "rf": "RF16",
+      "label": {
+        "PT_BR": "Temas Futuros",
+        "EN": "Future Topics",
+        "ES": "Temas futuros"
+      },
+      "object": "a small telescope whose barrel is a spool of thread",
+      "activeState": "funcionalidades que vêm por aí",
+      "activeAccent": "an orange lens",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "telescope",
+      "ai": false,
+      "route": "/future-topics",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-13-normal-512.png",
+          "96": "/icons/fai/nav-13-normal-96.png",
+          "48": "/icons/fai/nav-13-normal-48.png",
+          "24": "/icons/fai/nav-13-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-13-ativo-512.png",
+          "96": "/icons/fai/nav-13-ativo-96.png",
+          "48": "/icons/fai/nav-13-ativo-48.png",
+          "24": "/icons/fai/nav-13-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-14",
+      "slug": "nav-14",
+      "family": "NAV",
+      "rf": "RF23",
+      "label": {
+        "PT_BR": "Configurações",
+        "EN": "Settings",
+        "ES": "Configuración"
+      },
+      "object": "a gear wheel with a four-hole sewing button at its center",
+      "activeState": "preferências e privacidade",
+      "activeAccent": "an orange button",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "gear",
+      "ai": false,
+      "route": "/profile/settings",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-14-normal-512.png",
+          "96": "/icons/fai/nav-14-normal-96.png",
+          "48": "/icons/fai/nav-14-normal-48.png",
+          "24": "/icons/fai/nav-14-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-14-ativo-512.png",
+          "96": "/icons/fai/nav-14-ativo-96.png",
+          "48": "/icons/fai/nav-14-ativo-48.png",
+          "24": "/icons/fai/nav-14-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-15",
+      "slug": "nav-15",
+      "family": "NAV",
+      "rf": "RF6",
+      "label": {
+        "PT_BR": "Perfil Lookbook",
+        "EN": "Lookbook Profile",
+        "ES": "Perfil Lookbook"
+      },
+      "object": "an open lookbook magazine with a round blank avatar cutout on the left page",
+      "activeState": "a vitrine pessoal: closet digital e looks salvos (RF6)",
+      "activeAccent": "an orange avatar ring",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "lookbook",
+      "ai": false,
+      "route": "/profile",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-15-normal-512.png",
+          "96": "/icons/fai/nav-15-normal-96.png",
+          "48": "/icons/fai/nav-15-normal-48.png",
+          "24": "/icons/fai/nav-15-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-15-ativo-512.png",
+          "96": "/icons/fai/nav-15-ativo-96.png",
+          "48": "/icons/fai/nav-15-ativo-48.png",
+          "24": "/icons/fai/nav-15-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "NAV-16",
+      "slug": "nav-16",
+      "family": "NAV",
+      "rf": "RF32",
+      "label": {
+        "PT_BR": "Meu Quarto",
+        "EN": "My Room",
+        "ES": "Mi cuarto"
+      },
+      "object": "a wardrobe next to a tall standing mirror",
+      "activeState": "o guarda-roupa espacial com o Smart Mirror",
+      "activeAccent": "an orange mirror frame",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "room",
+      "ai": false,
+      "route": "/my-wardrobe/room",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/nav-16-normal-512.png",
+          "96": "/icons/fai/nav-16-normal-96.png",
+          "48": "/icons/fai/nav-16-normal-48.png",
+          "24": "/icons/fai/nav-16-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/nav-16-ativo-512.png",
+          "96": "/icons/fai/nav-16-ativo-96.png",
+          "48": "/icons/fai/nav-16-ativo-48.png",
+          "24": "/icons/fai/nav-16-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-01",
+      "slug": "act-01",
+      "family": "ACT",
+      "rf": "RF1",
+      "label": {
+        "PT_BR": "Criar conta",
+        "EN": "Create account",
+        "ES": "Crear cuenta"
+      },
+      "object": "a blank clothing name tag with a small plus sign stitched on it",
+      "activeState": "ativo",
+      "activeAccent": "an orange plus sign",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "tagplus",
+      "ai": false,
+      "action": "signup",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-01-normal-512.png",
+          "96": "/icons/fai/act-01-normal-96.png",
+          "48": "/icons/fai/act-01-normal-48.png",
+          "24": "/icons/fai/act-01-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-01-ativo-512.png",
+          "96": "/icons/fai/act-01-ativo-96.png",
+          "48": "/icons/fai/act-01-ativo-48.png",
+          "24": "/icons/fai/act-01-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-02",
+      "slug": "act-02",
+      "family": "ACT",
+      "rf": "RF2",
+      "label": {
+        "PT_BR": "Entrar",
+        "EN": "Sign in",
+        "ES": "Entrar"
+      },
+      "object": "a vintage key with a clothing swing tag tied to its bow",
+      "activeState": "ativo",
+      "activeAccent": "an orange swing tag",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "key",
+      "ai": false,
+      "action": "signin",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-02-normal-512.png",
+          "96": "/icons/fai/act-02-normal-96.png",
+          "48": "/icons/fai/act-02-normal-48.png",
+          "24": "/icons/fai/act-02-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-02-ativo-512.png",
+          "96": "/icons/fai/act-02-ativo-96.png",
+          "48": "/icons/fai/act-02-ativo-48.png",
+          "24": "/icons/fai/act-02-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-03",
+      "slug": "act-03",
+      "family": "ACT",
+      "rf": "RF3",
+      "label": {
+        "PT_BR": "Notificações",
+        "EN": "Notifications",
+        "ES": "Notificaciones"
+      },
+      "object": "a small bell hanging from a clothes hanger hook",
+      "activeState": "ativo",
+      "activeAccent": "an orange bell clapper",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bell",
+      "ai": false,
+      "action": "notifications",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-03-normal-512.png",
+          "96": "/icons/fai/act-03-normal-96.png",
+          "48": "/icons/fai/act-03-normal-48.png",
+          "24": "/icons/fai/act-03-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-03-ativo-512.png",
+          "96": "/icons/fai/act-03-ativo-96.png",
+          "48": "/icons/fai/act-03-ativo-48.png",
+          "24": "/icons/fai/act-03-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-04",
+      "slug": "act-04",
+      "family": "ACT",
+      "rf": "RF3",
+      "label": {
+        "PT_BR": "Privacidade",
+        "EN": "Privacy",
+        "ES": "Privacidad"
+      },
+      "object": "a padlock shaped like a handbag clasp",
+      "activeState": "ativo",
+      "activeAccent": "an orange clasp",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "padlock",
+      "ai": false,
+      "action": "privacy",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-04-normal-512.png",
+          "96": "/icons/fai/act-04-normal-96.png",
+          "48": "/icons/fai/act-04-normal-48.png",
+          "24": "/icons/fai/act-04-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-04-ativo-512.png",
+          "96": "/icons/fai/act-04-ativo-96.png",
+          "48": "/icons/fai/act-04-ativo-48.png",
+          "24": "/icons/fai/act-04-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-05",
+      "slug": "act-05",
+      "family": "ACT",
+      "rf": "RF3",
+      "label": {
+        "PT_BR": "Sair",
+        "EN": "Sign out",
+        "ES": "Salir"
+      },
+      "object": "a half-open door with a coat hook on it",
+      "activeState": "estado único (disparo único)",
+      "activeAccent": null,
+      "singleState": true,
+      "states": [
+        "normal"
+      ],
+      "glyph": "door",
+      "ai": false,
+      "action": "signout",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-05-normal-512.png",
+          "96": "/icons/fai/act-05-normal-96.png",
+          "48": "/icons/fai/act-05-normal-48.png",
+          "24": "/icons/fai/act-05-normal-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-06",
+      "slug": "act-06",
+      "family": "ACT",
+      "rf": "RF4",
+      "label": {
+        "PT_BR": "Adicionar peça",
+        "EN": "Add piece",
+        "ES": "Agregar prenda"
+      },
+      "object": "a clothes hanger with a round plus-sign tag",
+      "activeState": "ativo",
+      "activeAccent": "an orange plus tag",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangerplus",
+      "ai": false,
+      "action": "addPiece",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-06-normal-512.png",
+          "96": "/icons/fai/act-06-normal-96.png",
+          "48": "/icons/fai/act-06-normal-48.png",
+          "24": "/icons/fai/act-06-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-06-ativo-512.png",
+          "96": "/icons/fai/act-06-ativo-96.png",
+          "48": "/icons/fai/act-06-ativo-48.png",
+          "24": "/icons/fai/act-06-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-07",
+      "slug": "act-07",
+      "family": "ACT",
+      "rf": "RF4",
+      "label": {
+        "PT_BR": "Enviar foto",
+        "EN": "Upload photo",
+        "ES": "Subir foto"
+      },
+      "object": "a camera with a folded t-shirt resting on top",
+      "activeState": "ativo",
+      "activeAccent": "an orange lens ring",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "camerashirt",
+      "ai": false,
+      "action": "uploadPhoto",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-07-normal-512.png",
+          "96": "/icons/fai/act-07-normal-96.png",
+          "48": "/icons/fai/act-07-normal-48.png",
+          "24": "/icons/fai/act-07-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-07-ativo-512.png",
+          "96": "/icons/fai/act-07-ativo-96.png",
+          "48": "/icons/fai/act-07-ativo-48.png",
+          "24": "/icons/fai/act-07-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-08",
+      "slug": "act-08",
+      "family": "ACT",
+      "rf": "RF4",
+      "label": {
+        "PT_BR": "Detectar com IA",
+        "EN": "Detect with AI",
+        "ES": "Detectar con IA"
+      },
+      "object": "a folded shirt with a small four-point sparkle over its collar",
+      "activeState": "ativo",
+      "activeAccent": "an orange sparkle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "shirtsparkle",
+      "ai": true,
+      "action": "detectAi",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-08-normal-512.png",
+          "96": "/icons/fai/act-08-normal-96.png",
+          "48": "/icons/fai/act-08-normal-48.png",
+          "24": "/icons/fai/act-08-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-08-ativo-512.png",
+          "96": "/icons/fai/act-08-ativo-96.png",
+          "48": "/icons/fai/act-08-ativo-48.png",
+          "24": "/icons/fai/act-08-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-09",
+      "slug": "act-09",
+      "family": "ACT",
+      "rf": "RF5",
+      "label": {
+        "PT_BR": "Gerar com IA",
+        "EN": "Generate with AI",
+        "ES": "Generar con IA"
+      },
+      "object": "a knitting needle used as a magic wand, with a tiny sparkle at its tip",
+      "activeState": "ativo",
+      "activeAccent": "an orange sparkle at the tip",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "wand",
+      "ai": true,
+      "action": "generateAi",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-09-normal-512.png",
+          "96": "/icons/fai/act-09-normal-96.png",
+          "48": "/icons/fai/act-09-normal-48.png",
+          "24": "/icons/fai/act-09-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-09-ativo-512.png",
+          "96": "/icons/fai/act-09-ativo-96.png",
+          "48": "/icons/fai/act-09-ativo-48.png",
+          "24": "/icons/fai/act-09-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-10",
+      "slug": "act-10",
+      "family": "ACT",
+      "rf": "RF5",
+      "label": {
+        "PT_BR": "Salvar esquema",
+        "EN": "Save look",
+        "ES": "Guardar look"
+      },
+      "object": "a look box: a flat gift box with a garment hanger printed on the lid",
+      "activeState": "ativo",
+      "activeAccent": "an orange hanger print",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "lookbox",
+      "ai": false,
+      "action": "saveScheme",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-10-normal-512.png",
+          "96": "/icons/fai/act-10-normal-96.png",
+          "48": "/icons/fai/act-10-normal-48.png",
+          "24": "/icons/fai/act-10-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-10-ativo-512.png",
+          "96": "/icons/fai/act-10-ativo-96.png",
+          "48": "/icons/fai/act-10-ativo-48.png",
+          "24": "/icons/fai/act-10-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-11",
+      "slug": "act-11",
+      "family": "ACT",
+      "rf": "RF5",
+      "label": {
+        "PT_BR": "Publicar no feed",
+        "EN": "Publish to feed",
+        "ES": "Publicar en el feed"
+      },
+      "object": "a small spotlight lamp pointing upward",
+      "activeState": "ativo",
+      "activeAccent": "an orange light beam",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "spotlight",
+      "ai": false,
+      "action": "publish",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-11-normal-512.png",
+          "96": "/icons/fai/act-11-normal-96.png",
+          "48": "/icons/fai/act-11-normal-48.png",
+          "24": "/icons/fai/act-11-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-11-ativo-512.png",
+          "96": "/icons/fai/act-11-ativo-96.png",
+          "48": "/icons/fai/act-11-ativo-48.png",
+          "24": "/icons/fai/act-11-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-12",
+      "slug": "act-12",
+      "family": "ACT",
+      "rf": "RF8",
+      "label": {
+        "PT_BR": "Filtrar",
+        "EN": "Filter",
+        "ES": "Filtrar"
+      },
+      "object": "a funnel shaped like an A-line skirt",
+      "activeState": "ativo",
+      "activeAccent": "an orange hem",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "funnel",
+      "ai": false,
+      "action": "filter",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-12-normal-512.png",
+          "96": "/icons/fai/act-12-normal-96.png",
+          "48": "/icons/fai/act-12-normal-48.png",
+          "24": "/icons/fai/act-12-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-12-ativo-512.png",
+          "96": "/icons/fai/act-12-ativo-96.png",
+          "48": "/icons/fai/act-12-ativo-48.png",
+          "24": "/icons/fai/act-12-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-13",
+      "slug": "act-13",
+      "family": "ACT",
+      "rf": "RF10",
+      "label": {
+        "PT_BR": "Abrir Copilot",
+        "EN": "Open Copilot",
+        "ES": "Abrir Copilot"
+      },
+      "object": "a dress form mannequin bust with a small speech bubble beside it, no face",
+      "activeState": "ativo",
+      "activeAccent": "an orange speech bubble",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bustbubble",
+      "ai": false,
+      "action": "copilot",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-13-normal-512.png",
+          "96": "/icons/fai/act-13-normal-96.png",
+          "48": "/icons/fai/act-13-normal-48.png",
+          "24": "/icons/fai/act-13-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-13-ativo-512.png",
+          "96": "/icons/fai/act-13-ativo-96.png",
+          "48": "/icons/fai/act-13-ativo-48.png",
+          "24": "/icons/fai/act-13-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-14",
+      "slug": "act-14",
+      "family": "ACT",
+      "rf": "RF11",
+      "label": {
+        "PT_BR": "Abrir Background Studio",
+        "EN": "Open Background Studio",
+        "ES": "Abrir Background Studio"
+      },
+      "object": "a painter's palette whose paint wells are small fabric swatches",
+      "activeState": "ativo",
+      "activeAccent": "an orange swatch",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "palette",
+      "ai": false,
+      "action": "backgroundStudio",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-14-normal-512.png",
+          "96": "/icons/fai/act-14-normal-96.png",
+          "48": "/icons/fai/act-14-normal-48.png",
+          "24": "/icons/fai/act-14-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-14-ativo-512.png",
+          "96": "/icons/fai/act-14-ativo-96.png",
+          "48": "/icons/fai/act-14-ativo-48.png",
+          "24": "/icons/fai/act-14-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-15",
+      "slug": "act-15",
+      "family": "ACT",
+      "rf": "RF11",
+      "label": {
+        "PT_BR": "Gerar fundo com IA",
+        "EN": "Generate background with AI",
+        "ES": "Generar fondo con IA"
+      },
+      "object": "a small framed landscape canvas with a sparkle in its corner",
+      "activeState": "ativo",
+      "activeAccent": "an orange sparkle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "canvassparkle",
+      "ai": true,
+      "action": "generateBackground",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-15-normal-512.png",
+          "96": "/icons/fai/act-15-normal-96.png",
+          "48": "/icons/fai/act-15-normal-48.png",
+          "24": "/icons/fai/act-15-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-15-ativo-512.png",
+          "96": "/icons/fai/act-15-ativo-96.png",
+          "48": "/icons/fai/act-15-ativo-48.png",
+          "24": "/icons/fai/act-15-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-16",
+      "slug": "act-16",
+      "family": "ACT",
+      "rf": "RF11",
+      "label": {
+        "PT_BR": "Enviar imagem de fundo",
+        "EN": "Upload background image",
+        "ES": "Subir imagen de fondo"
+      },
+      "object": "a picture frame with an upward arrow above it",
+      "activeState": "ativo",
+      "activeAccent": "an orange arrow",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "frameup",
+      "ai": false,
+      "action": "uploadBackground",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-16-normal-512.png",
+          "96": "/icons/fai/act-16-normal-96.png",
+          "48": "/icons/fai/act-16-normal-48.png",
+          "24": "/icons/fai/act-16-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-16-ativo-512.png",
+          "96": "/icons/fai/act-16-ativo-96.png",
+          "48": "/icons/fai/act-16-ativo-48.png",
+          "24": "/icons/fai/act-16-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-17",
+      "slug": "act-17",
+      "family": "ACT",
+      "rf": "RF12",
+      "label": {
+        "PT_BR": "Baixar foto",
+        "EN": "Download photo",
+        "ES": "Descargar foto"
+      },
+      "object": "a photo print sliding down into an open shopping bag",
+      "activeState": "estado único (disparo único)",
+      "activeAccent": null,
+      "singleState": true,
+      "states": [
+        "normal"
+      ],
+      "glyph": "download",
+      "ai": false,
+      "action": "downloadPhoto",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-17-normal-512.png",
+          "96": "/icons/fai/act-17-normal-96.png",
+          "48": "/icons/fai/act-17-normal-48.png",
+          "24": "/icons/fai/act-17-normal-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-18",
+      "slug": "act-18",
+      "family": "ACT",
+      "rf": "RF12",
+      "label": {
+        "PT_BR": "Excluir em lote",
+        "EN": "Delete selected",
+        "ES": "Eliminar en lote"
+      },
+      "object": "a stack of three photo prints with tailor's scissors across them",
+      "activeState": "ativo",
+      "activeAccent": "orange scissor handles",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "stackscissors",
+      "ai": false,
+      "action": "bulkDelete",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-18-normal-512.png",
+          "96": "/icons/fai/act-18-normal-96.png",
+          "48": "/icons/fai/act-18-normal-48.png",
+          "24": "/icons/fai/act-18-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-18-ativo-512.png",
+          "96": "/icons/fai/act-18-ativo-96.png",
+          "48": "/icons/fai/act-18-ativo-48.png",
+          "24": "/icons/fai/act-18-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-19",
+      "slug": "act-19",
+      "family": "ACT",
+      "rf": "RF13",
+      "label": {
+        "PT_BR": "Abrir DNA de Estilo",
+        "EN": "Open Style DNA",
+        "ES": "Abrir ADN de estilo"
+      },
+      "object": "a double helix made of two twisted threads with small buttons as the rungs",
+      "activeState": "ativo",
+      "activeAccent": "orange buttons",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "helix",
+      "ai": false,
+      "action": "styleDna",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-19-normal-512.png",
+          "96": "/icons/fai/act-19-normal-96.png",
+          "48": "/icons/fai/act-19-normal-48.png",
+          "24": "/icons/fai/act-19-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-19-ativo-512.png",
+          "96": "/icons/fai/act-19-ativo-96.png",
+          "48": "/icons/fai/act-19-ativo-48.png",
+          "24": "/icons/fai/act-19-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-20",
+      "slug": "act-20",
+      "family": "ACT",
+      "rf": "RF16",
+      "label": {
+        "PT_BR": "Gerar 3D",
+        "EN": "Generate 3D",
+        "ES": "Generar 3D"
+      },
+      "object": "a wireframe cube with a small t-shirt inside it",
+      "activeState": "ativo",
+      "activeAccent": "an orange t-shirt",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "cube",
+      "ai": false,
+      "action": "generate3d",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-20-normal-512.png",
+          "96": "/icons/fai/act-20-normal-96.png",
+          "48": "/icons/fai/act-20-normal-48.png",
+          "24": "/icons/fai/act-20-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-20-ativo-512.png",
+          "96": "/icons/fai/act-20-ativo-96.png",
+          "48": "/icons/fai/act-20-ativo-48.png",
+          "24": "/icons/fai/act-20-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-21",
+      "slug": "act-21",
+      "family": "ACT",
+      "rf": "RF16",
+      "label": {
+        "PT_BR": "Reprocessar 3D",
+        "EN": "Reprocess 3D",
+        "ES": "Reprocesar 3D"
+      },
+      "object": "a wireframe cube with a circular arrow around it",
+      "activeState": "ativo",
+      "activeAccent": "an orange circular arrow",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "cubearrow",
+      "ai": false,
+      "action": "reprocess3d",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-21-normal-512.png",
+          "96": "/icons/fai/act-21-normal-96.png",
+          "48": "/icons/fai/act-21-normal-48.png",
+          "24": "/icons/fai/act-21-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-21-ativo-512.png",
+          "96": "/icons/fai/act-21-ativo-96.png",
+          "48": "/icons/fai/act-21-ativo-48.png",
+          "24": "/icons/fai/act-21-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-22",
+      "slug": "act-22",
+      "family": "ACT",
+      "rf": "RF18",
+      "label": {
+        "PT_BR": "Manequim masculino",
+        "EN": "Male mannequin",
+        "ES": "Maniquí masculino"
+      },
+      "object": "a male tailor's dress form with broad shoulders on a stand",
+      "activeState": "ativo",
+      "activeAccent": "an orange stand",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "formmale",
+      "ai": false,
+      "action": "mannequin:MALE",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-22-normal-512.png",
+          "96": "/icons/fai/act-22-normal-96.png",
+          "48": "/icons/fai/act-22-normal-48.png",
+          "24": "/icons/fai/act-22-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-22-ativo-512.png",
+          "96": "/icons/fai/act-22-ativo-96.png",
+          "48": "/icons/fai/act-22-ativo-48.png",
+          "24": "/icons/fai/act-22-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-23",
+      "slug": "act-23",
+      "family": "ACT",
+      "rf": "RF18",
+      "label": {
+        "PT_BR": "Manequim feminino",
+        "EN": "Female mannequin",
+        "ES": "Maniquí femenino"
+      },
+      "object": "a female tailor's dress form with a defined waist on a stand",
+      "activeState": "ativo",
+      "activeAccent": "an orange stand",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "formfemale",
+      "ai": false,
+      "action": "mannequin:FEMALE",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-23-normal-512.png",
+          "96": "/icons/fai/act-23-normal-96.png",
+          "48": "/icons/fai/act-23-normal-48.png",
+          "24": "/icons/fai/act-23-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-23-ativo-512.png",
+          "96": "/icons/fai/act-23-ativo-96.png",
+          "48": "/icons/fai/act-23-ativo-48.png",
+          "24": "/icons/fai/act-23-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-24",
+      "slug": "act-24",
+      "family": "ACT",
+      "rf": "RF18",
+      "label": {
+        "PT_BR": "Limpar manequim",
+        "EN": "Clear mannequin",
+        "ES": "Limpiar maniquí"
+      },
+      "object": "a lint roller",
+      "activeState": "estado único (disparo único)",
+      "activeAccent": null,
+      "singleState": true,
+      "states": [
+        "normal"
+      ],
+      "glyph": "lintroller",
+      "ai": false,
+      "action": "clearMannequin",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-24-normal-512.png",
+          "96": "/icons/fai/act-24-normal-96.png",
+          "48": "/icons/fai/act-24-normal-48.png",
+          "24": "/icons/fai/act-24-normal-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-25",
+      "slug": "act-25",
+      "family": "ACT",
+      "rf": "RF18",
+      "label": {
+        "PT_BR": "Salvar como esquema",
+        "EN": "Save as look",
+        "ES": "Guardar como look"
+      },
+      "object": "a dress form with a small bookmark ribbon on its stand",
+      "activeState": "ativo",
+      "activeAccent": "an orange ribbon",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "formribbon",
+      "ai": false,
+      "action": "saveTryOn",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-25-normal-512.png",
+          "96": "/icons/fai/act-25-normal-96.png",
+          "48": "/icons/fai/act-25-normal-48.png",
+          "24": "/icons/fai/act-25-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-25-ativo-512.png",
+          "96": "/icons/fai/act-25-ativo-96.png",
+          "48": "/icons/fai/act-25-ativo-48.png",
+          "24": "/icons/fai/act-25-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-26",
+      "slug": "act-26",
+      "family": "ACT",
+      "rf": "RF20",
+      "label": {
+        "PT_BR": "Selo de marca",
+        "EN": "Brand seal",
+        "ES": "Sello de marca"
+      },
+      "object": "a round rosette award ribbon with a blank label in the center",
+      "activeState": "ativo",
+      "activeAccent": "orange ribbon tails",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "rosette",
+      "ai": false,
+      "action": "brandSeal",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-26-normal-512.png",
+          "96": "/icons/fai/act-26-normal-96.png",
+          "48": "/icons/fai/act-26-normal-48.png",
+          "24": "/icons/fai/act-26-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-26-ativo-512.png",
+          "96": "/icons/fai/act-26-ativo-96.png",
+          "48": "/icons/fai/act-26-ativo-48.png",
+          "24": "/icons/fai/act-26-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-27",
+      "slug": "act-27",
+      "family": "ACT",
+      "rf": "RF21",
+      "label": {
+        "PT_BR": "Selo de celebridade",
+        "EN": "Celebrity seal",
+        "ES": "Sello de celebridad"
+      },
+      "object": "a round rosette award ribbon with a small star in the center",
+      "activeState": "ativo",
+      "activeAccent": "an orange star",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "rosettestar",
+      "ai": false,
+      "action": "celebritySeal",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-27-normal-512.png",
+          "96": "/icons/fai/act-27-normal-96.png",
+          "48": "/icons/fai/act-27-normal-48.png",
+          "24": "/icons/fai/act-27-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-27-ativo-512.png",
+          "96": "/icons/fai/act-27-ativo-96.png",
+          "48": "/icons/fai/act-27-ativo-48.png",
+          "24": "/icons/fai/act-27-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-28",
+      "slug": "act-28",
+      "family": "ACT",
+      "rf": "RF23",
+      "label": {
+        "PT_BR": "Tema claro/escuro",
+        "EN": "Light/dark theme",
+        "ES": "Tema claro/oscuro"
+      },
+      "object": "a wall light switch, half of it lit",
+      "activeState": "ativo",
+      "activeAccent": "an orange lit half",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "switch",
+      "ai": false,
+      "action": "theme",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-28-normal-512.png",
+          "96": "/icons/fai/act-28-normal-96.png",
+          "48": "/icons/fai/act-28-normal-48.png",
+          "24": "/icons/fai/act-28-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-28-ativo-512.png",
+          "96": "/icons/fai/act-28-ativo-96.png",
+          "48": "/icons/fai/act-28-ativo-48.png",
+          "24": "/icons/fai/act-28-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-29",
+      "slug": "act-29",
+      "family": "ACT",
+      "rf": "RF23",
+      "label": {
+        "PT_BR": "Idioma",
+        "EN": "Language",
+        "ES": "Idioma"
+      },
+      "object": "a small globe wrapped by a measuring tape",
+      "activeState": "ativo",
+      "activeAccent": "an orange measuring tape",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "globe",
+      "ai": false,
+      "action": "language",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-29-normal-512.png",
+          "96": "/icons/fai/act-29-normal-96.png",
+          "48": "/icons/fai/act-29-normal-48.png",
+          "24": "/icons/fai/act-29-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-29-ativo-512.png",
+          "96": "/icons/fai/act-29-ativo-96.png",
+          "48": "/icons/fai/act-29-ativo-48.png",
+          "24": "/icons/fai/act-29-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-30",
+      "slug": "act-30",
+      "family": "ACT",
+      "rf": "RF32",
+      "label": {
+        "PT_BR": "Organizar o quarto",
+        "EN": "Organize room",
+        "ES": "Organizar el cuarto"
+      },
+      "object": "a chest of drawers with one drawer pulled open",
+      "activeState": "ativo",
+      "activeAccent": "an orange drawer",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "drawers",
+      "ai": false,
+      "action": "organizeRoom",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-30-normal-512.png",
+          "96": "/icons/fai/act-30-normal-96.png",
+          "48": "/icons/fai/act-30-normal-48.png",
+          "24": "/icons/fai/act-30-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-30-ativo-512.png",
+          "96": "/icons/fai/act-30-ativo-96.png",
+          "48": "/icons/fai/act-30-ativo-48.png",
+          "24": "/icons/fai/act-30-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-31",
+      "slug": "act-31",
+      "family": "ACT",
+      "rf": "RF32",
+      "label": {
+        "PT_BR": "Mostrar no quarto",
+        "EN": "Show in room",
+        "ES": "Mostrar en el cuarto"
+      },
+      "object": "a single drawer with a small spotlight cone shining on it",
+      "activeState": "ativo",
+      "activeAccent": "an orange spotlight cone",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "drawerspot",
+      "ai": false,
+      "action": "showInRoom",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-31-normal-512.png",
+          "96": "/icons/fai/act-31-normal-96.png",
+          "48": "/icons/fai/act-31-normal-48.png",
+          "24": "/icons/fai/act-31-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-31-ativo-512.png",
+          "96": "/icons/fai/act-31-ativo-96.png",
+          "48": "/icons/fai/act-31-ativo-48.png",
+          "24": "/icons/fai/act-31-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-32",
+      "slug": "act-32",
+      "family": "ACT",
+      "rf": "RF33",
+      "label": {
+        "PT_BR": "Vista-me",
+        "EN": "Dress me",
+        "ES": "Vísteme"
+      },
+      "object": "a tall oval standing mirror with a four-point sparkle in its glass",
+      "activeState": "ativo",
+      "activeAccent": "an orange sparkle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "mirrorsparkle",
+      "ai": true,
+      "action": "vistaMe",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-32-normal-512.png",
+          "96": "/icons/fai/act-32-normal-96.png",
+          "48": "/icons/fai/act-32-normal-48.png",
+          "24": "/icons/fai/act-32-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-32-ativo-512.png",
+          "96": "/icons/fai/act-32-ativo-96.png",
+          "48": "/icons/fai/act-32-ativo-48.png",
+          "24": "/icons/fai/act-32-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-33",
+      "slug": "act-33",
+      "family": "ACT",
+      "rf": "RF33",
+      "label": {
+        "PT_BR": "Tira uma coisa",
+        "EN": "Take one thing off",
+        "ES": "Quita una cosa"
+      },
+      "object": "a necklace lifting off a hanger, with a small minus sign beside it",
+      "activeState": "ativo",
+      "activeAccent": "an orange minus sign",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "necklaceminus",
+      "ai": false,
+      "action": "takeOneOff",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-33-normal-512.png",
+          "96": "/icons/fai/act-33-normal-96.png",
+          "48": "/icons/fai/act-33-normal-48.png",
+          "24": "/icons/fai/act-33-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-33-ativo-512.png",
+          "96": "/icons/fai/act-33-ativo-96.png",
+          "48": "/icons/fai/act-33-ativo-48.png",
+          "24": "/icons/fai/act-33-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-34",
+      "slug": "act-34",
+      "family": "ACT",
+      "rf": "RF33",
+      "label": {
+        "PT_BR": "Trocar uma peça",
+        "EN": "Swap a piece",
+        "ES": "Cambiar una prenda"
+      },
+      "object": "two clothes hangers with two curved arrows swapping them",
+      "activeState": "ativo",
+      "activeAccent": "orange arrows",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "swap",
+      "ai": false,
+      "action": "swapPiece",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-34-normal-512.png",
+          "96": "/icons/fai/act-34-normal-96.png",
+          "48": "/icons/fai/act-34-normal-48.png",
+          "24": "/icons/fai/act-34-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-34-ativo-512.png",
+          "96": "/icons/fai/act-34-ativo-96.png",
+          "48": "/icons/fai/act-34-ativo-48.png",
+          "24": "/icons/fai/act-34-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-35",
+      "slug": "act-35",
+      "family": "ACT",
+      "rf": "RF33",
+      "label": {
+        "PT_BR": "Sugerir calçado",
+        "EN": "Suggest shoes",
+        "ES": "Sugerir calzado"
+      },
+      "object": "a sneaker with a small four-point sparkle above it",
+      "activeState": "ativo",
+      "activeAccent": "an orange sparkle",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "sneakersparkle",
+      "ai": true,
+      "action": "suggestShoes",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-35-normal-512.png",
+          "96": "/icons/fai/act-35-normal-96.png",
+          "48": "/icons/fai/act-35-normal-48.png",
+          "24": "/icons/fai/act-35-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-35-ativo-512.png",
+          "96": "/icons/fai/act-35-ativo-96.png",
+          "48": "/icons/fai/act-35-ativo-48.png",
+          "24": "/icons/fai/act-35-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-36",
+      "slug": "act-36",
+      "family": "ACT",
+      "rf": "RF33",
+      "label": {
+        "PT_BR": "Usar este look",
+        "EN": "Wear this look",
+        "ES": "Usar este look"
+      },
+      "object": "a clothes hanger holding a full outfit, with a round check-mark tag",
+      "activeState": "ativo",
+      "activeAccent": "an orange check tag",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "outfitcheck",
+      "ai": false,
+      "action": "useLook",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-36-normal-512.png",
+          "96": "/icons/fai/act-36-normal-96.png",
+          "48": "/icons/fai/act-36-normal-48.png",
+          "24": "/icons/fai/act-36-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-36-ativo-512.png",
+          "96": "/icons/fai/act-36-ativo-96.png",
+          "48": "/icons/fai/act-36-ativo-48.png",
+          "24": "/icons/fai/act-36-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-37",
+      "slug": "act-37",
+      "family": "ACT",
+      "rf": "RF34",
+      "label": {
+        "PT_BR": "Destaques",
+        "EN": "Highlights",
+        "ES": "Destacados"
+      },
+      "object": "a trophy cup whose handles are two clothes hangers",
+      "activeState": "ativo",
+      "activeAccent": "orange hanger handles",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "trophy",
+      "ai": false,
+      "action": "highlights",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-37-normal-512.png",
+          "96": "/icons/fai/act-37-normal-96.png",
+          "48": "/icons/fai/act-37-normal-48.png",
+          "24": "/icons/fai/act-37-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-37-ativo-512.png",
+          "96": "/icons/fai/act-37-ativo-96.png",
+          "48": "/icons/fai/act-37-ativo-48.png",
+          "24": "/icons/fai/act-37-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-38",
+      "slug": "act-38",
+      "family": "ACT",
+      "rf": "RF34",
+      "label": {
+        "PT_BR": "Como melhorar meu inventário",
+        "EN": "Improve my inventory",
+        "ES": "Mejorar mi inventario"
+      },
+      "object": "a light bulb whose filament is a thread with a needle",
+      "activeState": "ativo",
+      "activeAccent": "an orange filament",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "bulb",
+      "ai": false,
+      "action": "improveInventory",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-38-normal-512.png",
+          "96": "/icons/fai/act-38-normal-96.png",
+          "48": "/icons/fai/act-38-normal-48.png",
+          "24": "/icons/fai/act-38-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-38-ativo-512.png",
+          "96": "/icons/fai/act-38-ativo-96.png",
+          "48": "/icons/fai/act-38-ativo-48.png",
+          "24": "/icons/fai/act-38-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-39",
+      "slug": "act-39",
+      "family": "ACT",
+      "rf": "RF34",
+      "label": {
+        "PT_BR": "Rankings",
+        "EN": "Rankings",
+        "ES": "Rankings"
+      },
+      "object": "a three-step podium with a tiny folded shirt on the top step",
+      "activeState": "ativo",
+      "activeAccent": "an orange top step",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "podium",
+      "ai": false,
+      "action": "rankings",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-39-normal-512.png",
+          "96": "/icons/fai/act-39-normal-96.png",
+          "48": "/icons/fai/act-39-normal-48.png",
+          "24": "/icons/fai/act-39-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-39-ativo-512.png",
+          "96": "/icons/fai/act-39-ativo-96.png",
+          "48": "/icons/fai/act-39-ativo-48.png",
+          "24": "/icons/fai/act-39-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-40",
+      "slug": "act-40",
+      "family": "ACT",
+      "rf": "RF35",
+      "label": {
+        "PT_BR": "Saldo de FAI Points",
+        "EN": "FAI Points balance",
+        "ES": "Saldo de FAI Points"
+      },
+      "object": "a thick coin designed as a four-hole sewing button",
+      "activeState": "ativo",
+      "activeAccent": "an orange coin rim",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "coin",
+      "ai": false,
+      "action": "points",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-40-normal-512.png",
+          "96": "/icons/fai/act-40-normal-96.png",
+          "48": "/icons/fai/act-40-normal-48.png",
+          "24": "/icons/fai/act-40-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-40-ativo-512.png",
+          "96": "/icons/fai/act-40-ativo-96.png",
+          "48": "/icons/fai/act-40-ativo-48.png",
+          "24": "/icons/fai/act-40-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-41",
+      "slug": "act-41",
+      "family": "ACT",
+      "rf": "RF35",
+      "label": {
+        "PT_BR": "Loja do quarto",
+        "EN": "Room shop",
+        "ES": "Tienda del cuarto"
+      },
+      "object": "a shopping tote bag with rounded handles",
+      "activeState": "ativo (o mesmo objeto do logo, sem as letras)",
+      "activeAccent": "orange handles",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "tote",
+      "ai": false,
+      "action": "roomShop",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-41-normal-512.png",
+          "96": "/icons/fai/act-41-normal-96.png",
+          "48": "/icons/fai/act-41-normal-48.png",
+          "24": "/icons/fai/act-41-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-41-ativo-512.png",
+          "96": "/icons/fai/act-41-ativo-96.png",
+          "48": "/icons/fai/act-41-ativo-48.png",
+          "24": "/icons/fai/act-41-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-42",
+      "slug": "act-42",
+      "family": "ACT",
+      "rf": "RF35",
+      "label": {
+        "PT_BR": "Provar no quarto",
+        "EN": "Try in room",
+        "ES": "Probar en el cuarto"
+      },
+      "object": "a wardrobe door with a small price swing tag hanging from its handle",
+      "activeState": "ativo",
+      "activeAccent": "an orange price tag",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "doortag",
+      "ai": false,
+      "action": "tryInRoom",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-42-normal-512.png",
+          "96": "/icons/fai/act-42-normal-96.png",
+          "48": "/icons/fai/act-42-normal-48.png",
+          "24": "/icons/fai/act-42-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-42-ativo-512.png",
+          "96": "/icons/fai/act-42-ativo-96.png",
+          "48": "/icons/fai/act-42-ativo-48.png",
+          "24": "/icons/fai/act-42-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-43",
+      "slug": "act-43",
+      "family": "ACT",
+      "rf": "RF36",
+      "label": {
+        "PT_BR": "Desafios",
+        "EN": "Challenges",
+        "ES": "Desafíos"
+      },
+      "object": "a stopwatch whose strap is a rolled measuring tape",
+      "activeState": "ativo",
+      "activeAccent": "an orange stopwatch hand",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "stopwatch",
+      "ai": false,
+      "action": "challenges",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-43-normal-512.png",
+          "96": "/icons/fai/act-43-normal-96.png",
+          "48": "/icons/fai/act-43-normal-48.png",
+          "24": "/icons/fai/act-43-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-43-ativo-512.png",
+          "96": "/icons/fai/act-43-ativo-96.png",
+          "48": "/icons/fai/act-43-ativo-48.png",
+          "24": "/icons/fai/act-43-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-44",
+      "slug": "act-44",
+      "family": "ACT",
+      "rf": "RF36",
+      "label": {
+        "PT_BR": "Modo Solo",
+        "EN": "Solo mode",
+        "ES": "Modo solo"
+      },
+      "object": "a single clothes hanger",
+      "activeState": "ativo",
+      "activeAccent": "an orange hook",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hanger",
+      "ai": false,
+      "action": "mode:SOLO",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-44-normal-512.png",
+          "96": "/icons/fai/act-44-normal-96.png",
+          "48": "/icons/fai/act-44-normal-48.png",
+          "24": "/icons/fai/act-44-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-44-ativo-512.png",
+          "96": "/icons/fai/act-44-ativo-96.png",
+          "48": "/icons/fai/act-44-ativo-48.png",
+          "24": "/icons/fai/act-44-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-45",
+      "slug": "act-45",
+      "family": "ACT",
+      "rf": "RF36",
+      "label": {
+        "PT_BR": "Modo Equipe",
+        "EN": "Team mode",
+        "ES": "Modo equipo"
+      },
+      "object": "three clothes hangers linked hook to hook in a row",
+      "activeState": "ativo",
+      "activeAccent": "orange hooks",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangers3",
+      "ai": false,
+      "action": "mode:TEAM",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-45-normal-512.png",
+          "96": "/icons/fai/act-45-normal-96.png",
+          "48": "/icons/fai/act-45-normal-48.png",
+          "24": "/icons/fai/act-45-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-45-ativo-512.png",
+          "96": "/icons/fai/act-45-ativo-96.png",
+          "48": "/icons/fai/act-45-ativo-48.png",
+          "24": "/icons/fai/act-45-ativo-24.png"
+        }
+      },
+      "available": false
+    },
+    {
+      "id": "ACT-46",
+      "slug": "act-46",
+      "family": "ACT",
+      "rf": "RF36",
+      "label": {
+        "PT_BR": "Modo Duelo",
+        "EN": "Duel mode",
+        "ES": "Modo duelo"
+      },
+      "object": "two clothes hangers crossed like fencing swords",
+      "activeState": "ativo",
+      "activeAccent": "orange hooks",
+      "singleState": false,
+      "states": [
+        "normal",
+        "ativo"
+      ],
+      "glyph": "hangerscross",
+      "ai": false,
+      "action": "mode:DUEL",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/act-46-normal-512.png",
+          "96": "/icons/fai/act-46-normal-96.png",
+          "48": "/icons/fai/act-46-normal-48.png",
+          "24": "/icons/fai/act-46-normal-24.png"
+        },
+        "ativo": {
+          "512": "/icons/fai/act-46-ativo-512.png",
+          "96": "/icons/fai/act-46-ativo-96.png",
+          "48": "/icons/fai/act-46-ativo-48.png",
+          "24": "/icons/fai/act-46-ativo-24.png"
+        }
+      },
+      "available": false
+    }
+  ]
+}

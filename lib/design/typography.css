@@ -1,0 +1,30 @@
+/* FashionAI — Tipografia do App (docs/tipografia). Importado por app/globals.css dentro do @theme. */
+@theme {
+  --font-editorial: "Fraunces", Georgia, serif;
+  --font-ui: "Inter", system-ui, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-mono: var(--font-data);
+
+  --text-display-xl: 2.5rem;   --text-display-xl--line-height: 1.1;   --text-display-xl--letter-spacing: -0.02em;
+  --text-display: 2rem;        --text-display--line-height: 1.15;     --text-display--letter-spacing: -0.015em;
+  --text-h1: 1.5rem;           --text-h1--line-height: 1.2;           --text-h1--letter-spacing: -0.01em;
+  --text-h2: 1.25rem;          --text-h2--line-height: 1.25;          --text-h2--letter-spacing: -0.005em;
+  --text-h3: 1.0625rem;        --text-h3--line-height: 1.3;
+  --text-body-lg: 1rem;        --text-body-lg--line-height: 1.5;
+  --text-body: 0.875rem;       --text-body--line-height: 1.5;
+  --text-body-sm: 0.8125rem;   --text-body-sm--line-height: 1.45;
+  --text-caption: 0.75rem;     --text-caption--line-height: 1.4;      --text-caption--letter-spacing: 0.005em;
+  --text-label: 0.6875rem;     --text-label--line-height: 1.3;        --text-label--letter-spacing: 0.08em;
+
+  --tracking-display: -0.02em;
+  --tracking-label: 0.08em;
+}
+
+/* papéis por família: moda = editorial, interface = ui, dado = data */
+.type-display-xl, .type-display, .type-h1, .type-h2 { font-family: var(--font-editorial); font-weight: 600; }
+.type-h2 { font-weight: 500; }
+.type-h3 { font-family: var(--font-ui); font-weight: 600; }
+.type-body-lg, .type-body, .type-body-sm { font-family: var(--font-ui); font-weight: 400; }
+.type-caption { font-family: var(--font-ui); font-weight: 500; }
+.type-label { font-family: var(--font-data); font-weight: 500; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.type-data, .tabular { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
