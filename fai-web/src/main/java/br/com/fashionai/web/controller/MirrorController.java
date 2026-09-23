@@ -1,0 +1,113 @@
+package br.com.fashionai.web.controller;
+
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.MirrorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/me/mirror")
+@Tag(name = "RF33 — Smart Mirror e Vista-me")
+public class MirrorController {
+    private final MirrorService mirror;
+
+    public MirrorController(MirrorService mirror) {
+        this.mirror = mirror;
+    }
+
+    @GetMapping
+    @Operation(summary = "RF33.CA01 — Estado do espelho (slots, peças vestidas, restrições de desafio)")
+    public Map<String, Object> state(CurrentUser user) {
+        return mirror.state(user);
+    }
+
+    public record PieceRequest(@NotNull UUID pieceId) {
+    }
+
+    @PostMapping("/pieces")
+    @Operation(summary = "RF33.CA02 — Vestir uma peça no espelho")
+    public Map<String, Object> place(CurrentUser user, @RequestBody PieceRequest body) {
+        return mirror.place(user, body.pieceId());
+    }
+
+    @DeleteMapping("/pieces/{pieceId}")
+    @Operation(summary = "RF33.CA02 — Tirar uma peça")
+    public Map<String, Object> remove(CurrentUser user, @PathVariable UUID pieceId) {
+        return mirror.remove(user, pieceId);
+    }
+
+    @DeleteMapping
+    @Operation(summary = "RF33 — Limpar o espelho")
+    public Map<String, Object> clear(CurrentUser user) {
+        return mirror.clear(user);
+    }
+
+    @GetMapping("/suggestions")
+    @Operation(summary = "RF33.CA03 — Sugestões para um slot")
+    public Map<String, Object> suggest(CurrentUser user, @RequestParam String slot) {
+        return mirror.suggest(user, slot);
+    }
+
+    public record VistaMeRequest(String prompt, List<UUID> anchorIds, UUID focusPieceId, Boolean keepMirror) {
+    }
+
+    @PostMapping("/vista-me")
+    @Operation(summary = "RF33.CA04–CA07 — Vista-me: look completo a partir de um pedido em linguagem natural")
+    public Map<String, Object> vistaMe(CurrentUser user, @RequestBody VistaMeRequest body) {
+        return mirror.vistaMe(user, body.prompt(), body.anchorIds(), body.focusPieceId(), Boolean.TRUE.equals(body.keepMirror()));
+    }
+
+    @PostMapping("/another")
+    @Operation(summary = "RF33.CA08 — Outro look com o mesmo pedido")
+    public Map<String, Object> another(CurrentUser user) {
+        return mirror.another(user);
+    }
+
+    @PostMapping("/slots/{slot}/swap")
+    @Operation(summary = "RF33.CA08 — Trocar só uma peça do look")
+    public Map<String, Object> swap(CurrentUser user, @PathVariable String slot) {
+        return mirror.swap(user, slot);
+    }
+
+    @PostMapping("/take-one-off")
+    @Operation(summary = "RF33.CA09 — 'Tira uma coisa': simplificar o look")
+    public Map<String, Object> takeOneOff(CurrentUser user) {
+        return mirror.takeOneOff(user);
+    }
+
+    @PostMapping("/use")
+    @Operation(summary = "RF33.CA10 — Usar o look de hoje (Look do Dia + diário)")
+    public Map<String, Object> useLook(CurrentUser user) {
+        return mirror.useLook(user);
+    }
+
+    public record SaveRequest(String title, Boolean publish) {
+    }
+
+    @PostMapping("/save")
+    @Operation(summary = "RF33.CA11 — Salvar o look do espelho como esquema")
+    public Map<String, Object> save(CurrentUser user, @RequestBody(required = false) SaveRequest body) {
+        return mirror.save(user, body == null ? null : body.title(), body != null && Boolean.TRUE.equals(body.publish()));
+    }
+
+    public record DraftRequest(String origin) {
+    }
+
+    @PostMapping("/draft")
+    @Operation(summary = "RF33 — Levar o look do espelho para o editor de esquemas")
+    public Map<String, Object> draft(CurrentUser user, @RequestBody(required = false) DraftRequest body) {
+        return mirror.draft(user, body == null ? null : body.origin());
+    }
+
+    @GetMapping("/grwm")
+    @Operation(summary = "RF33.CA12 — Storyboard GRWM do look atual")
+    public Map<String, Object> grwm(CurrentUser user) {
+        return mirror.grwmStoryboard(user);
+    }
+}

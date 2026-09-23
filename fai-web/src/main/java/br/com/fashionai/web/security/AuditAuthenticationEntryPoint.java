@@ -3,6 +3,7 @@ package br.com.fashionai.web.security;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.audit.AuditEvent;
 import br.com.fashionai.application.audit.AuditService;
+import br.com.fashionai.web.error.ErrorWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,9 +20,11 @@ import java.util.UUID;
 @Component
 public class AuditAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final AuditService auditService;
+    private final ErrorWriter errors;
 
-    public AuditAuthenticationEntryPoint(AuditService auditService) {
+    public AuditAuthenticationEntryPoint(AuditService auditService, ErrorWriter errors) {
         this.auditService = auditService;
+        this.errors = errors;
     }
 
     @Override
@@ -38,6 +41,6 @@ public class AuditAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),
                 Map.of("method", request.getMethod())
         ));
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        errors.write(request, response, 401, "NAO_AUTENTICADO", "Faça login para continuar.");
     }
 }
