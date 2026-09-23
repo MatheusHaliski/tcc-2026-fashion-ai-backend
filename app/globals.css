@@ -154,3 +154,15 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card .piece2-sm span { font-size: 8px; color: var(--muted); }
 .hype-bar { height: 6px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
 .hype-bar > i { display: block; height: 100%; border-radius: 999px; }
+
+/* ---------- Selo no card: espaço reservado (medalhão redondo ~ tamanho do logo FAI) em todo esquema/peça ---------- */
+.seal-slot { position: absolute; top: 8px; right: 8px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.seal-slot.empty { border: 1.5px dashed color-mix(in srgb, var(--card-accent, var(--mark)) 45%, transparent); opacity: .55; }
+.seal-slot.empty::after { content: "selo"; font-family: var(--font-data); font-size: 7px; text-transform: uppercase; letter-spacing: .06em; color: var(--card-accent, var(--mark)); }
+.seal-medallion { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid #2B2622; background: radial-gradient(circle at 50% 45%, #F6E8CF 0 34%, #F58220 35% 100%); box-shadow: 0 2px 6px rgba(0,0,0,.28); display: flex; align-items: center; justify-content: center; font-family: var(--font-data); font-size: 9px; font-weight: 700; color: #1A1714; letter-spacing: .02em; overflow: hidden; }
+.seal-medallion img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.seal-medallion.premium { border-color: transparent; background: radial-gradient(circle at 50% 45%, #FFFFFF 0 34%, #F58220 35% 100%); box-shadow: 0 0 0 2.5px transparent, 0 0 0 2.5px #2B2622 inset, 0 2px 8px rgba(124,95,192,.45); outline: 2.5px solid transparent; }
+.seal-medallion.premium::before { content: ""; position: absolute; inset: -2.5px; border-radius: 50%; z-index: -1; background: conic-gradient(#C4956A, #7C5FC0, #4FB3AE, #F58220, #C4956A); }
+.seal-slot .seal-medallion + .seal-medallion { margin-left: -14px; }
+.seal-slot.many { width: auto; }
+.seal-sm .seal-slot, .seal-sm .seal-medallion { width: 36px; height: 36px; }

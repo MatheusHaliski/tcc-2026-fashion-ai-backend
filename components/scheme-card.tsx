@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { backgroundStyle, skinStyle } from "@/lib/skins";
 import { Avatar } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { AnatomyBody, hasOwnArt, toAnatomyPieces } from "@/components/scheme-anatomies";
 
 export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-good)" : (h ?? 0) >= 50 ? "var(--status-warning)" : (h ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)";
 
@@ -13,7 +14,19 @@ export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-g
  * Card oficial v17 (docs/anatomias): header do autor, container do esquema (foto/grade + peças), rodapé com métricas.
  * layout = "lista" (foto + peças em linhas), "grade" (mosaico 3×N), "lateral" (foto hero + lista lateral).
  */
-export function SchemeCard({ scheme, layout, href, compact }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean }) {
+export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; }
+/** Espaço reservado para o selo (RF20/RF21): sempre presente na anatomia; mostra os medalhões quando o look conquistou selos. */
+export function SealSlot({ seals, size }: { seals?: SealBadge[]; size?: "sm" }) {
+  const list = (seals ?? []).slice(0, 3);
+  if (list.length === 0) return <span className={`seal-slot empty ${size === "sm" ? "seal-sm" : ""}`} aria-hidden title="espaço reservado para selo" />;
+  return (
+    <span className={`seal-slot ${list.length > 1 ? "many" : ""}`} role="img" aria-label={`selos: ${list.map((s) => s.label).join(", ")}`}>
+      {list.map((s, i) => <span key={i} className={`seal-medallion relative ${s.premium ? "premium" : ""}`} title={`${s.label}${s.owner ? ` · @${s.owner}` : ""}${s.tier ? ` · ${s.tier}` : ""}`}>{s.iconUrl ? <img src={s.iconUrl} alt="" /> : s.label.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "FAI"}</span>)}
+    </span>
+  );
+}
+
+export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[] }) {
   const { t, fmtMoney, relative } = useI18n();
   const l = layout ?? (scheme.layoutAnatomy?.toLowerCase().includes("grade") ? "grade" : scheme.layoutAnatomy?.toLowerCase().includes("lateral") ? "lateral" : "lista");
   const items = scheme.items ?? [];
@@ -29,7 +42,10 @@ export function SchemeCard({ scheme, layout, href, compact }: { scheme: SchemeVi
         <span className="c-fav" aria-hidden><FaiIcon id="SOC-06" size={24} active={scheme.viewer?.saved} decorative /></span>
       </div>
       <Link href={link} className="scheme-container block" data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
-        {l === "grade" ? (
+        <SealSlot seals={seals ?? (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x }))} />
+        {hasOwnArt(scheme.layoutAnatomy) ? (
+          <AnatomyBody scheme={scheme} pieces={toAnatomyPieces(scheme)} />
+        ) : l === "grade" ? (
           <div className="grid-pieces" style={backgroundStyle(scheme.background)}>
             {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}</div>)}
           </div>
@@ -50,7 +66,7 @@ export function SchemeCard({ scheme, layout, href, compact }: { scheme: SchemeVi
             ))}
           </>
         )}
-        {l !== "lista" && <div className="c-title">{scheme.title}</div>}
+        {(l !== "lista" || hasOwnArt(scheme.layoutAnatomy)) && <div className="c-title">{scheme.title}</div>}
         <div className="c-row"><span className="k">{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].join(", ") || "—"}</div>
       </Link>
       <div className="c-foot">

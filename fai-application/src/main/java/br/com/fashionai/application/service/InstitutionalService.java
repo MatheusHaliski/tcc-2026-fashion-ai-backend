@@ -12,8 +12,10 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.BrandProfile;
 import br.com.fashionai.domain.model.CelebrityProfile;
 import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.SealBond;
 import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
@@ -296,6 +298,7 @@ public class InstitutionalService {
                             "snapshot", w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED, "savedAt", si.getSavedAt())).orElse(null))
                     .filter(Objects::nonNull).toList();
             case "PROMOCOES" -> sealService.promotionsOf(viewer, u.getId());
+            case "DESTAQUES", "ESQUEMAS_PECAS_DESTAQUE" -> highlighted(viewer, u, filter, groupingId);
             default -> throw ApiException.badRequest("ABA_INVALIDA", "Aba desconhecida.");
         };
     }
@@ -324,6 +327,42 @@ public class InstitutionalService {
                 "seals", bonds.findBySchemeId(s.getId()).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
                         .map(b -> Map.of("tier", b.getTier().name(), "owner", b.getTargetOwner().getUsername(), "premium",
                                 b.getTargetOwner().getProfileType() == ProfileType.CELEBRIDADE)).toList())).toList();
+    }
+
+    /**
+     * Aba "Esquemas & peças em destaque": looks de qualquer usuário que conquistaram um selo deste perfil
+     * (vínculo APPROVED — política do selo + revisão do emissor) e as peças que compõem esses looks.
+     * Vale igual para o dono do perfil e para visitantes: destaque é o que passou pela política do selo.
+     */
+    List<Map<String, Object>> highlightedSchemes(CurrentUser viewer, User u, String filter, UUID groupingId) {
+        return consecrated(viewer, u, filter, groupingId, false);
+    }
+
+    Map<String, Object> highlighted(CurrentUser viewer, User u, String filter, UUID groupingId) {
+        List<Map<String, Object>> looks = highlightedSchemes(viewer, u, filter, groupingId);
+        Map<UUID, Map<String, Object>> piecesOut = new LinkedHashMap<>();
+        for (Map<String, Object> entry : looks) {
+            Views.SchemeView sv = (Views.SchemeView) entry.get("scheme");
+            for (SchemeItem si : schemeItems.findBySchemeIdOrderBySortOrder(sv.id())) {
+                WardrobeItem w = si.getWardrobeItem();
+                if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED || piecesOut.containsKey(w.getId())) {
+                    continue;
+                }
+                if (!guard.canView(viewer, w.getUser().getId(), w.getVisibility())) {
+                    continue;
+                }
+                piecesOut.put(w.getId(), Map.of("piece", Views.piece(w, null, null), "author", Views.user(w.getUser()),
+                        "schemeId", sv.id(), "schemeTitle", sv.title(), "seals", entry.get("seals")));
+                if (piecesOut.size() >= 60) {
+                    break;
+                }
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("schemes", looks);
+        out.put("pieces", new ArrayList<>(piecesOut.values()));
+        out.put("empty", looks.isEmpty() ? "Nenhum look conquistou um selo deste perfil ainda. Publique um look compatível com a política do selo." : null);
+        return out;
     }
 
     /** Catálogo (Minhas peças): linha compacta ≤ 18 mm — logo, nome, tipo, tamanho, sexo — e contador de usos em looks. */

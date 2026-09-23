@@ -4,10 +4,11 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FaiIcon } from "@/components/fai-icon";
+import { SealSlot, type SealBadge } from "@/components/scheme-card";
 
 /** Card de peça (anatomia "peça de roupa" v17): foto, nome editorial, cor com nome escrito (acessibilidade para daltônicos), estado. */
-export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect }: {
-  piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void;
+export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals }: {
+  piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[];
 }) {
   const { t, fmtMoney } = useI18n();
   const img = mediaUrl(piece.thumbnailUrl ?? piece.imageUrl);
@@ -15,8 +16,9 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
     <>
       <div className="c-photo" style={{ aspectRatio: "1" }}>
         {img ? <img src={img} alt={piece.name} loading="lazy" style={{ objectFit: "contain", padding: 8 }} /> : null}
+        <SealSlot size="sm" seals={seals} />
         {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
-        {piece.favorite && <span className="absolute right-2 top-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
+        {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
       </div>
       <div className="c-title">{piece.name}</div>
       <div className="c-row flex items-center gap-2">

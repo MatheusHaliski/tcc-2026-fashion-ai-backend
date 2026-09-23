@@ -19,10 +19,12 @@ export function skinStyle(skin?: string | null): React.CSSProperties {
 /** Fundo do card (RF11): gradiente/imagem a partir do config salvo no esquema. */
 export function backgroundStyle(bg?: Record<string, unknown> | null): React.CSSProperties {
   if (!bg) return {};
-  const url = (bg.imageUrl ?? bg.url) as string | undefined;
-  const stops = bg.stops as string[] | undefined;
-  if (url) return { backgroundImage: `url("${url}")`, backgroundSize: "cover", backgroundPosition: "center" };
-  if (stops?.length) return { backgroundImage: `linear-gradient(${(bg.angle as number) ?? 135}deg, ${stops.join(", ")})` };
+  const url = (bg.artUrl ?? bg.posterUrl ?? bg.imageUrl ?? bg.url ?? bg.uploadUrl) as string | undefined;
+  const g = bg.gradient as string | { stops?: string[]; angle?: number; type?: string } | undefined;
+  const stops = (bg.stops as string[] | undefined) ?? (typeof g === "object" && g ? g.stops : undefined);
+  if (url) return { backgroundImage: `url("${url.startsWith("/") || url.startsWith("http") ? url : "/" + url}")`, backgroundSize: "cover", backgroundPosition: "center" };
+  if (typeof g === "string" && g.includes("gradient")) return { backgroundImage: g };
+  if (stops?.length) return { backgroundImage: `${typeof g === "object" && g?.type === "radial" ? "radial-gradient(circle" : `linear-gradient(${(bg.angle as number) ?? (typeof g === "object" ? g?.angle : undefined) ?? 135}deg`}, ${stops.join(", ")})` };
   if (typeof bg.color === "string") return { background: bg.color };
   return {};
 }
