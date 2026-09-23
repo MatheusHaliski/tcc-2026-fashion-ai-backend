@@ -29,7 +29,7 @@ export interface SchemeView {
   id: string; owner: UserCard; title: string; description?: string | null; creationMode: string; origin: string; style: string[]; occasion: string[];
   season?: string | null; mood?: string | null; visibility: string; status: string; displayMode?: string; disponivel: boolean; lookDoDia: boolean;
   coverImageUrl?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
-  containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; tags: string[]; renderingStatus?: string;
+  containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
   virtualTryOnUrl?: string | null; hypeScore?: number | null; hypeScoreGlobal?: number | null; remixedFromId?: string | null; revalidationPending: boolean;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }

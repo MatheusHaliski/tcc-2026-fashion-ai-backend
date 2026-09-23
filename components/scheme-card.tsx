@@ -56,7 +56,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
   const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: mediaUrl(it.piece?.imageUrl ?? (it.imageUrl as string)), brand: it.piece?.brandName, logo: mediaUrl(it.piece?.brandLogoUrl), price: it.piece?.price, slot: it.slot }));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(scheme.layoutAnatomy ?? (l === "grade" ? "GRADE_PECAS" : l === "lateral" ? "HERO_LISTA" : "LISTA_VERTICAL"));
-  const badges: SealBadge[] = seals ?? (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x }));
+  const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
   const pieceSeals = (id?: string) => (id ? badges.filter((b) => b.tier === "PECA" && (b.linkedPieceIds ?? []).includes(id)) : []);
   const titleRow = <div className="c-title seal-row"><span className="min-w-0 flex-1">{scheme.title}</span>{placement.zone === "TITLE_ROW" && <SealSlot inline seals={badges} />}</div>;
   return (

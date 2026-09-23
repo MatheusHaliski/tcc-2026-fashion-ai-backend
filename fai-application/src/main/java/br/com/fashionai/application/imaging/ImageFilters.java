@@ -153,17 +153,53 @@ public final class ImageFilters {
         if (n == 0) {
             return new NormalizationResult(src, 0.5, 1, 1, 1);
         }
-        double mr = sr / n;
-        double mg = sg / n;
-        double mb = sb / n;
-        double gray = (mr + mg + mb) / 3;
-        // gray-world atenuado: peças de cor forte não podem virar cinza, então o ganho é limitado a ±12 %.
-        double gr = limit(gray / Math.max(1, mr));
-        double gg = limit(gray / Math.max(1, mg));
-        double gb = limit(gray / Math.max(1, mb));
+        // Balanço de branco só faz sentido com uma referência neutra: numa foto já sem fundo (só a peça restou) a
+        // média é a própria cor da roupa e o gray-world a empurraria para o cinza (camisa creme virava cinza, oliva
+        // virava limão). Nesse caso o ganho é 1; com fundo presente, a referência é a moldura externa (mesa/fundo).
+        boolean backgroundRemoved = n < px.length * 0.95;
+        double gr = 1;
+        double gg = 1;
+        double gb = 1;
+        double castBefore = 0;
+        if (!backgroundRemoved) {
+            double br = 0;
+            double bg = 0;
+            double bb = 0;
+            long bn = 0;
+            int frame = Math.max(2, (int) (Math.min(w, h) * 0.08));
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    if (x >= frame && x < w - frame && y >= frame && y < h - frame) {
+                        continue;
+                    }
+                    int p = px[y * w + x];
+                    br += (p >> 16) & 0xFF;
+                    bg += (p >> 8) & 0xFF;
+                    bb += p & 0xFF;
+                    bn++;
+                }
+            }
+            if (bn > 0) {
+                double mr = br / bn;
+                double mg = bg / bn;
+                double mb = bb / bn;
+                double gray = (mr + mg + mb) / 3;
+                // gray-world atenuado sobre a moldura: ganho limitado a ±12 %.
+                gr = limit(gray / Math.max(1, mr));
+                gg = limit(gray / Math.max(1, mg));
+                gb = limit(gray / Math.max(1, mb));
+                castBefore = (Math.abs(mr - gray) + Math.abs(mg - gray) + Math.abs(mb - gray)) / 3 / 255;
+            }
+        }
         int lo = percentile(hist, n, 0.01);
         int hi = percentile(hist, n, 0.99);
-        double range = Math.max(40, hi - lo);
+        // Stretch de contraste só quando a foto está realmente "lavada" (faixa estreita por iluminação ruim, mas com
+        // fundo presente). Uma peça lisa recortada tem faixa estreita por natureza — esticá-la inventa gradientes.
+        boolean stretch = !backgroundRemoved && hi - lo < 200 && hi - lo > 40;
+        if (!stretch) {
+            lo = 0;
+        }
+        double range = stretch ? Math.max(120, hi - lo) : 255;
         for (int i = 0; i < px.length; i++) {
             int p = px[i];
             int a = (p >>> 24) & 0xFF;
@@ -177,7 +213,6 @@ public final class ImageFilters {
         }
         BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         out.setRGB(0, 0, w, h, px, 0, w);
-        double castBefore = (Math.abs(mr - gray) + Math.abs(mg - gray) + Math.abs(mb - gray)) / 3 / 255;
         double score = Math.max(0, Math.min(1, 1 - castBefore * 2 + (range >= 180 ? 0.1 : 0)));
         return new NormalizationResult(out, Math.min(1, score), gr, gg, gb);
     }

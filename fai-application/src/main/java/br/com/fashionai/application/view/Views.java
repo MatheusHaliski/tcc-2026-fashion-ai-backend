@@ -140,10 +140,17 @@ public final class Views {
                              String renderingStatus, String virtualTryOnUrl, Map<String, Object> renderingQuality,
                              Map<String, Object> renderingMetadata, BigDecimal hypeScore, BigDecimal hypeScoreGlobal,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
-                             Instant publishedAt, Instant createdAt, Instant updatedAt) {
+                             Instant publishedAt, Instant createdAt, Instant updatedAt,
+                             List<Map<String, Object>> sealBadges) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
+        return scheme(s, items, viewer, reactions, List.of());
+    }
+
+    /** sealBadges = medalhões dos vínculos APROVADOS (SealService.badge) — o card mostra no espaço reservado ao selo. */
+    public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions,
+                                    List<Map<String, Object>> sealBadges) {
         java.util.LinkedHashMap<String, Object> bg = new java.util.LinkedHashMap<>(Json.map(s.getStudioConfigJson()));
         bg.putIfAbsent("color", s.getBackgroundColor());
         bg.putIfAbsent("gradient", s.getBackgroundGradient());
@@ -161,7 +168,8 @@ public final class Views {
                 s.getHypeScore(), s.getHypeScoreGlobal(), s.getOriginalScheme() == null ? null : s.getOriginalScheme().getId(),
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
-                viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt());
+                viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
+                sealBadges == null ? List.of() : sealBadges);
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

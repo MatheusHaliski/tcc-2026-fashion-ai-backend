@@ -19,7 +19,9 @@ public final class AuditSanitizer {
             String key = entry.getKey() == null ? "" : entry.getKey();
             String normalized = key.toLowerCase(Locale.ROOT);
             boolean forbidden = FORBIDDEN_FRAGMENTS.stream().anyMatch(normalized::contains);
-            sanitized.put(key, forbidden ? "[REDACTED]" : entry.getValue());
+            // valores nulos (ex.: confiança ausente num vínculo manual) viram string vazia: Map.copyOf não aceita null
+            Object value = entry.getValue();
+            sanitized.put(key, forbidden ? "[REDACTED]" : value == null ? "" : value);
         }
         return Map.copyOf(sanitized);
     }

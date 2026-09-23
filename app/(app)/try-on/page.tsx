@@ -23,7 +23,7 @@ function TryOnInner() {
   async function saveScheme() { try { const r = await api.post<{ scheme?: { id: string } }>("/api/try-on/schemes", { pieceIds: selected, title: title || "Look do provador", tryOnUrl: render?.imageUrl ?? null }); toast.success(t("scheme.saved")); if (r.scheme?.id) window.location.href = `/schemes/${r.scheme.id}`; } catch (e) { toast.fromError(e); } }
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
-  const tones = data.skinTones.map((x) => (typeof x === "string" ? { id: x, hex: x, label: x } : { id: x.id, hex: x.hex ?? x.id, label: x.label ?? x.id }));
+  const tones = (Array.isArray(data.skinTones) ? data.skinTones : Object.entries(data.skinTones ?? {}).map(([id, hex]) => ({ id, hex: String(hex), label: id }))).map((x) => (typeof x === "string" ? { id: x, hex: x, label: x } : { id: x.id, hex: x.hex ?? x.id, label: x.label ?? x.id }));
   return (
     <>
       <PageHeader title={t("nav.tryon")} kicker="RF18" lead={data.externalAvailable ? "Try-on por IA (FASHN) com compositor local de reserva." : "Compositor local por camadas (IA externa desligada ou sem chave)."} />

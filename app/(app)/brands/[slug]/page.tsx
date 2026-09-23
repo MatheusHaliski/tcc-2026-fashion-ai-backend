@@ -16,14 +16,14 @@ import { FaiIcon } from "@/components/fai-icon";
 
 interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
-interface Profile { user: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { following: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; tabs?: { id: string; label: string; adminOnly?: boolean }[]; admin: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
+interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; following: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 const TIERS = ["LOOK", "PECA", "PERFIL"];
 
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params); const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
   const [tab, setTab] = useState("DESTAQUES");
-  const ownerId = data?.user.id;
+  const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
@@ -37,7 +37,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
-  const admin = data.admin; const brand = data.brand ?? data.celebrity ?? {}; const isCeleb = data.user.profileType === "CELEBRIDADE";
+  const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
+  const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
+  const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const tabs = [{ id: "DESTAQUES", label: "Esquemas & peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" }, ...(admin ? [{ id: "REVISAO", label: "Revisão de vínculos" }, { id: "METRICAS", label: "Métricas" }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
@@ -54,8 +56,8 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <Avatar src={mediaUrl((brand.logoUrl as string) ?? (brand.officialPhotoUrl as string) ?? data.user.avatarUrl)} name={data.user.displayName} size={72} />
-        <div className="min-w-0 flex-1"><p className="type-label text-muted">{isCeleb ? "Celebridade" : "Marca"}{data.user.verified && " · verificada"}</p><h1 className="type-display">{(brand.brandName as string) ?? (brand.stageName as string) ?? data.user.displayName}</h1>
+        <Avatar src={mediaUrl((brand.logoUrl as string) ?? (brand.officialPhotoUrl as string) ?? owner.avatarUrl)} name={owner.displayName} size={72} />
+        <div className="min-w-0 flex-1"><p className="type-label text-muted">{isCeleb ? "Celebridade" : "Marca"}{owner.verified && " · verificada"}</p><h1 className="type-display">{(brand.brandName as string) ?? (brand.stageName as string) ?? owner.displayName}</h1>
           <p className="type-body text-muted">{(brand.fashionCategory as string) ?? ((brand.areas as string[]) ?? []).join(", ")}{brand.officialHashtag ? ` · #${String(brand.officialHashtag).replace(/^#/, "")}` : ""}</p>
           <p className="mt-1 type-body-sm tabular">{data.header.following} seguidores · {data.header.activeSeals} selos ativos</p></div>
         <div className="flex gap-2">{!admin && user && <Button variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{data.store?.url && <a className="btn" href={data.store.url} target="_blank" rel="noreferrer">Loja ↗</a>}{admin && <Link href="/settings" className="btn">{t("common.edit")}</Link>}</div>

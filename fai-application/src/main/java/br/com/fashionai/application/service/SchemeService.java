@@ -584,6 +584,7 @@ public class SchemeService {
                 si -> Taxonomy.wearstylesOf(si.getWardrobeItem().getCategory(), Json.csv(si.getWardrobeItem().getOccasionTags())),
                 (a, b) -> a, LinkedHashMap::new)));
         out.put("seals", sealsOf(s));
+        out.put("sealBadges", seals.approvedBadges(s.getId()));
         out.put("remixedFrom", s.getOriginalScheme() == null ? null : Map.of("id", s.getOriginalScheme().getId(),
                 "title", s.getOriginalScheme().getTitle(), "owner", Views.user(s.getOriginalScheme().getUser())));
         out.put("canEdit", owner);
@@ -629,7 +630,7 @@ public class SchemeService {
             state = new Views.ViewerState(mine.contains("LIKE"), mine.stream().filter(r -> !r.equals("LIKE")).toList(), isSaved,
                     viewer.id().equals(s.getUser().getId()), false);
         }
-        return Views.scheme(s, items, state, wardrobe.reactionCounts(TargetType.SCHEME, s.getId()));
+        return Views.scheme(s, items, state, wardrobe.reactionCounts(TargetType.SCHEME, s.getId()), seals.approvedBadges(s.getId()));
     }
 
     @Transactional(readOnly = true)

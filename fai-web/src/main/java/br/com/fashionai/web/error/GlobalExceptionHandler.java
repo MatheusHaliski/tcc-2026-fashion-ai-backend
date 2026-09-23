@@ -10,6 +10,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -78,6 +79,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     ResponseEntity<ApiError> mediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
         return respond(req, 415, "FORMATO_NAO_SUPORTADO", "Formato de conteúdo não suportado.", Map.of());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    ResponseEntity<ApiError> notAcceptable(HttpMediaTypeNotAcceptableException ex, HttpServletRequest req) {
+        return respond(req, 406, "FORMATO_NAO_ACEITO", "Este endereço devolve imagem; peça com Accept: image/png.", Map.of());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

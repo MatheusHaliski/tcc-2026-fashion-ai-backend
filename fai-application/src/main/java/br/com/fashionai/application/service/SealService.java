@@ -225,6 +225,13 @@ public class SealService {
         return (Map<String, Object>) m;
     }
 
+    /** Medalhões dos vínculos APROVADOS de um esquema — o que o card mostra no espaço reservado ao selo. */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> approvedBadges(UUID schemeId) {
+        return bonds.findBySchemeId(schemeId).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
+                .map(SealService::badge).toList();
+    }
+
     /** Medalhão de um vínculo aprovado (cards, aba de destaques): tier, emissor, Premium e o desenho do selo. */
     public static Map<String, Object> badge(SealBond b) {
         Map<String, Object> m = new LinkedHashMap<>();
