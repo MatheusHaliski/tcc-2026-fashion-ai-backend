@@ -142,7 +142,7 @@
         "24": "/icons/fai/logo-normal-24.png"
       }
     },
-    "available": false
+    "available": true
   },
   "icons": [
     {
@@ -180,7 +180,7 @@
           "24": "/icons/fai/soc-01-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-02",
@@ -217,7 +217,7 @@
           "24": "/icons/fai/soc-02-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-03",
@@ -254,7 +254,7 @@
           "24": "/icons/fai/soc-03-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-04",
@@ -291,7 +291,7 @@
           "24": "/icons/fai/soc-04-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-05",
@@ -328,7 +328,7 @@
           "24": "/icons/fai/soc-05-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-06",
@@ -365,7 +365,7 @@
           "24": "/icons/fai/soc-06-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-07",
@@ -402,7 +402,7 @@
           "24": "/icons/fai/soc-07-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-08",
@@ -439,7 +439,7 @@
           "24": "/icons/fai/soc-08-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-09",
@@ -476,7 +476,7 @@
           "24": "/icons/fai/soc-09-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-10",
@@ -513,7 +513,7 @@
           "24": "/icons/fai/soc-10-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-11",
@@ -550,7 +550,7 @@
           "24": "/icons/fai/soc-11-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-12",
@@ -587,7 +587,7 @@
           "24": "/icons/fai/soc-12-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-13",
@@ -617,7 +617,7 @@
           "24": "/icons/fai/soc-13-normal-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-14",
@@ -654,7 +654,7 @@
           "24": "/icons/fai/soc-14-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "SOC-15",
@@ -684,7 +684,7 @@
           "24": "/icons/fai/soc-15-normal-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-01",
@@ -721,7 +721,7 @@
           "24": "/icons/fai/nav-01-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-02",
@@ -758,7 +758,7 @@
           "24": "/icons/fai/nav-02-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-03",
@@ -795,7 +795,7 @@
           "24": "/icons/fai/nav-03-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-04",
@@ -832,7 +832,7 @@
           "24": "/icons/fai/nav-04-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-05",
@@ -869,7 +869,7 @@
           "24": "/icons/fai/nav-05-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-06",
@@ -906,7 +906,7 @@
           "24": "/icons/fai/nav-06-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-07",
@@ -943,7 +943,7 @@
           "24": "/icons/fai/nav-07-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-08",
@@ -980,7 +980,7 @@
           "24": "/icons/fai/nav-08-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-09",
@@ -1017,7 +1017,7 @@
           "24": "/icons/fai/nav-09-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-10",
@@ -1054,7 +1054,7 @@
           "24": "/icons/fai/nav-10-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-11",
@@ -1091,7 +1091,7 @@
           "24": "/icons/fai/nav-11-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-12",
@@ -1128,7 +1128,7 @@
           "24": "/icons/fai/nav-12-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-13",
@@ -1165,7 +1165,7 @@
           "24": "/icons/fai/nav-13-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-14",
@@ -1202,7 +1202,7 @@
           "24": "/icons/fai/nav-14-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-15",
@@ -1239,7 +1239,7 @@
           "24": "/icons/fai/nav-15-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "NAV-16",
@@ -1276,7 +1276,7 @@
           "24": "/icons/fai/nav-16-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-01",
@@ -1313,7 +1313,7 @@
           "24": "/icons/fai/act-01-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-02",
@@ -1350,7 +1350,7 @@
           "24": "/icons/fai/act-02-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-03",
@@ -1387,7 +1387,7 @@
           "24": "/icons/fai/act-03-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-04",
@@ -1424,7 +1424,7 @@
           "24": "/icons/fai/act-04-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-05",
@@ -1454,7 +1454,7 @@
           "24": "/icons/fai/act-05-normal-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-06",
@@ -1491,7 +1491,7 @@
           "24": "/icons/fai/act-06-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-07",
@@ -1528,7 +1528,7 @@
           "24": "/icons/fai/act-07-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-08",
@@ -1565,7 +1565,7 @@
           "24": "/icons/fai/act-08-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-09",
@@ -1602,7 +1602,7 @@
           "24": "/icons/fai/act-09-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-10",
@@ -1639,7 +1639,7 @@
           "24": "/icons/fai/act-10-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-11",
@@ -1676,7 +1676,7 @@
           "24": "/icons/fai/act-11-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-12",
@@ -1713,7 +1713,7 @@
           "24": "/icons/fai/act-12-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-13",
@@ -1750,7 +1750,7 @@
           "24": "/icons/fai/act-13-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-14",
@@ -1787,7 +1787,7 @@
           "24": "/icons/fai/act-14-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-15",
@@ -1824,7 +1824,7 @@
           "24": "/icons/fai/act-15-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-16",
@@ -1861,7 +1861,7 @@
           "24": "/icons/fai/act-16-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-17",
@@ -1891,7 +1891,7 @@
           "24": "/icons/fai/act-17-normal-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-18",
@@ -1928,7 +1928,7 @@
           "24": "/icons/fai/act-18-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-19",
@@ -1965,7 +1965,7 @@
           "24": "/icons/fai/act-19-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-20",
@@ -2002,7 +2002,7 @@
           "24": "/icons/fai/act-20-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-21",
@@ -2039,7 +2039,7 @@
           "24": "/icons/fai/act-21-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-22",
@@ -2076,7 +2076,7 @@
           "24": "/icons/fai/act-22-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-23",
@@ -2113,7 +2113,7 @@
           "24": "/icons/fai/act-23-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-24",
@@ -2143,7 +2143,7 @@
           "24": "/icons/fai/act-24-normal-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-25",
@@ -2180,7 +2180,7 @@
           "24": "/icons/fai/act-25-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-26",
@@ -2217,7 +2217,7 @@
           "24": "/icons/fai/act-26-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-27",
@@ -2254,7 +2254,7 @@
           "24": "/icons/fai/act-27-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-28",
@@ -2291,7 +2291,7 @@
           "24": "/icons/fai/act-28-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-29",
@@ -2328,7 +2328,7 @@
           "24": "/icons/fai/act-29-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-30",
@@ -2365,7 +2365,7 @@
           "24": "/icons/fai/act-30-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-31",
@@ -2402,7 +2402,7 @@
           "24": "/icons/fai/act-31-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-32",
@@ -2439,7 +2439,7 @@
           "24": "/icons/fai/act-32-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-33",
@@ -2476,7 +2476,7 @@
           "24": "/icons/fai/act-33-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-34",
@@ -2513,7 +2513,7 @@
           "24": "/icons/fai/act-34-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-35",
@@ -2550,7 +2550,7 @@
           "24": "/icons/fai/act-35-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-36",
@@ -2587,7 +2587,7 @@
           "24": "/icons/fai/act-36-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-37",
@@ -2624,7 +2624,7 @@
           "24": "/icons/fai/act-37-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-38",
@@ -2661,7 +2661,7 @@
           "24": "/icons/fai/act-38-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-39",
@@ -2698,7 +2698,7 @@
           "24": "/icons/fai/act-39-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-40",
@@ -2735,7 +2735,7 @@
           "24": "/icons/fai/act-40-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-41",
@@ -2772,7 +2772,7 @@
           "24": "/icons/fai/act-41-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-42",
@@ -2809,7 +2809,7 @@
           "24": "/icons/fai/act-42-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-43",
@@ -2846,7 +2846,7 @@
           "24": "/icons/fai/act-43-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-44",
@@ -2883,7 +2883,7 @@
           "24": "/icons/fai/act-44-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-45",
@@ -2920,7 +2920,7 @@
           "24": "/icons/fai/act-45-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     },
     {
       "id": "ACT-46",
@@ -2957,7 +2957,7 @@
           "24": "/icons/fai/act-46-ativo-24.png"
         }
       },
-      "available": false
+      "available": true
     }
   ]
 }

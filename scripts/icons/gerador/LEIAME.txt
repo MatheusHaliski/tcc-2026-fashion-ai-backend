@@ -1,0 +1,5 @@
+Gerador dos ícones FAI
+1) python3 render.py            -> renderiza os objetos (Playwright/Chromium) em layers/
+2) python3 compose.py export    -> compõe sobre as bases e exporta public/icons/fai/{id}-{estado}-{tamanho}.png
+Para ajustar um ícone, edite a função correspondente em objects.py e rode: python3 render.py <id> && python3 compose.py export
+Bases: base_full (512/96 px), base_half (48 px, metade dos nós), base_plain (24 px, sem malha, medalhão ampliado).

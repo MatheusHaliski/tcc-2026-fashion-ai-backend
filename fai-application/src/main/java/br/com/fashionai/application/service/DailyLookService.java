@@ -18,7 +18,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
+import br.com.fashionai.domain.model.enums.DailyLookFeedback;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -79,9 +83,67 @@ public class DailyLookService {
         return dl;
     }
 
+    /** RF6 §1 — continuidade na virada do dia: sem registro de hoje, materializa copiando o mais recente anterior. */
+    @Transactional
+    public Optional<DailyLook> today(UUID userId) {
+        LocalDate day = LocalDate.now(FaiPointsService.ZONE);
+        Optional<DailyLook> existing = dailyLooks.findByUserIdAndLookDate(userId, day);
+        if (existing.isPresent()) {
+            return existing;
+        }
+        Optional<DailyLook> previous = dailyLooks.findFirstByUserIdAndLookDateBeforeOrderByLookDateDesc(userId, day);
+        if (previous.isEmpty() || previous.get().getScheme().getStatus() == SchemeStatus.ARCHIVED) {
+            return Optional.empty();
+        }
+        DailyLook src = previous.get();
+        DailyLook copy = new DailyLook(src.getUser(), src.getScheme(), day, src.getSource());
+        copy.setMaterializedFrom(src);
+        dailyLooks.save(copy);
+        return Optional.of(copy);
+    }
+
+    /** HU19 — avaliação do Look do Dia (adorei / não usei / não gostei); sem look → orienta o Autopiloto (C3). */
+    @Transactional
+    public Map<String, Object> feedback(CurrentUser user, LocalDate date, DailyLookFeedback feedback) {
+        LocalDate day = date == null ? LocalDate.now(FaiPointsService.ZONE) : date;
+        DailyLook dl = (day.equals(LocalDate.now(FaiPointsService.ZONE)) ? today(user.id()) : dailyLooks.findByUserIdAndLookDate(user.id(), day))
+                .orElseThrow(() -> new ApiException(404, "SEM_LOOK_DO_DIA", "Não há Look do Dia registrado para " + day
+                        + ". Use o Autopiloto ou marque um look salvo como Look do Dia.", Map.of("href", "/autopilot")));
+        dl.setFeedback(feedback);
+        dl.setFeedbackAt(Instant.now());
+        dailyLooks.save(dl);
+        return view(dl);
+    }
+
+    /** HU19 C4 — histórico de looks passados com avaliação e data. */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> history(CurrentUser user) {
+        return dailyLooks.findTop60ByUserIdOrderByLookDateDesc(user.id()).stream().map(this::view).toList();
+    }
+
+    /** HU19 C5 — lembrete à noite quando o look do dia (Autopiloto/Copilot/Vista-me) ainda não foi avaliado. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> pendingFeedback(CurrentUser user) {
+        Optional<DailyLook> dl = dailyLooks.findByUserIdAndLookDate(user.id(), LocalDate.now(FaiPointsService.ZONE));
+        int hour = java.time.LocalDateTime.now(FaiPointsService.ZONE).getHour();
+        boolean pending = dl.isPresent() && dl.get().getFeedback() == null;
+        return Map.of("pending", pending, "evening", hour >= 18, "show", pending && hour >= 18,
+                "message", pending ? "Como foi o look de hoje? Avalie antes da meia-noite." : "", "dailyLook", dl.map(this::view).orElse(null));
+    }
+
     public Map<String, Object> view(DailyLook dl) {
-        return Map.of("id", dl.getId(), "date", dl.getLookDate(), "source", dl.getSource().name(), "schemeId", dl.getScheme().getId(),
-                "title", String.valueOf(dl.getScheme().getTitle()), "coverImageUrl", String.valueOf(dl.getScheme().getCoverImageUrl()),
-                "feedback", dl.getFeedback() == null ? "" : dl.getFeedback().name());
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", dl.getId());
+        m.put("date", dl.getLookDate());
+        m.put("source", dl.getSource().name());
+        m.put("schemeId", dl.getScheme().getId());
+        m.put("title", dl.getScheme().getTitle());
+        m.put("coverImageUrl", dl.getScheme().getCoverImageUrl());
+        m.put("hypeScore", dl.getScheme().getHypeScore());
+        m.put("feedback", dl.getFeedback() == null ? null : dl.getFeedback().name());
+        m.put("feedbackAt", dl.getFeedbackAt());
+        m.put("materialized", dl.getMaterializedFrom() != null);
+        m.put("weekPlanDayId", dl.getWeekPlanDayId());
+        return m;
     }
 }
