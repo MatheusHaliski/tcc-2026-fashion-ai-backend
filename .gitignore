@@ -1,0 +1,16 @@
+.DS_Store
+target/
+.idea/
+.vscode/
+*.iml
+.m2/
+.env
+.env.*
+!.env.example
+*.pem
+keys/
+**/serviceAccount*.json
+**/*firebase*.json
+**/*secret*.json
+node_modules/
+tmp/

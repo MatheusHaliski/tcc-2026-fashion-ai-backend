@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: fashion-ai-api
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:fashionai}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USER:fashionai}
+    password: ${MYSQL_PASSWORD:change-me}
+    hikari:
+      maximum-pool-size: ${MYSQL_POOL_SIZE:10}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080}
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+resilience4j:
+  timelimiter:
+    instances:
+      aiProvider:
+        timeout-duration: ${AI_REQUEST_TIMEOUT_SECONDS:30}s
+  retry:
+    instances:
+      aiProvider:
+        max-attempts: 2
+        wait-duration: 500ms
+  circuitbreaker:
+    instances:
+      aiProvider:
+        failure-rate-threshold: ${AI_CIRCUIT_BREAKER_FAILURE_RATE:50}
+  ratelimiter:
+    instances:
+      aiProvider:
+        limit-for-period: ${AI_DAILY_QUOTA_PER_USER:50}
+        limit-refresh-period: 1d
+        timeout-duration: 0

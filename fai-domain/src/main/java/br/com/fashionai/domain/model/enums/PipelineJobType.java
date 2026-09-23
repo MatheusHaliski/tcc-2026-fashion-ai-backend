@@ -1,0 +1,14 @@
+package br.com.fashionai.domain.model.enums;
+
+public enum PipelineJobType {
+    PIECE_ANALYSIS,
+    FLAT_LAY_STANDARDIZATION,
+    CONTENT_MODERATION,
+    BACKGROUND_GENERATION,
+    TRY_ON_2D,
+    OUTFIT_RENDER,
+    TRY_ON_POLISH,
+    CATEGORY_FALLBACK_COMPOSITION,
+    STYLE_DNA_SYNTHESIS,
+    THREE_D_GENERATION
+}

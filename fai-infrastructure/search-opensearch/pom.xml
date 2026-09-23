@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>br.com.fashionai</groupId>
+        <artifactId>fai-infrastructure</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>search-opensearch</artifactId>
+    <name>search-opensearch</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>br.com.fashionai</groupId>
+            <artifactId>fai-application</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <version>${opensearch-java.version}</version>
+        </dependency>
+    </dependencies>
+</project>
