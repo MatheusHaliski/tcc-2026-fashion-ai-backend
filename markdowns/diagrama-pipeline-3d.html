@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StylistAI — Diagrama de Pipeline 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 32px 24px;
+      min-width: 1100px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 36px;
+    }
+
+    /* ── Phase headers ─────────────────────────────── */
+    .phase-header {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+    .phase-2d  { background: #1e3a5f; color: #93c5fd; }
+    .phase-3d  { background: #1a3a2a; color: #6ee7b7; }
+
+    /* ── Lane layout ───────────────────────────────── */
+    .lanes {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      gap: 0 0;
+      align-items: start;
+    }
+
+    .lane { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+    /* ── Process blocks ────────────────────────────── */
+    .block {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .block-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .block-title .tag {
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      opacity: 0.85;
+    }
+    .block-file {
+      font-size: 0.6rem;
+      font-family: monospace;
+      opacity: 0.55;
+      margin-bottom: 6px;
+    }
+
+    pre {
+      font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      font-size: 0.62rem;
+      line-height: 1.55;
+      overflow-x: auto;
+      padding: 8px 10px;
+      border-radius: 5px;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    /* Color themes */
+    .t-validate  { background: #1e2d45; border-color: #3b82f6; }
+    .t-validate pre  { background: #111827; color: #93c5fd; }
+    .t-validate .tag { background: #1d4ed8; color: #bfdbfe; }
+
+    .t-detect   { background: #2d1e45; border-color: #a855f7; }
+    .t-detect pre   { background: #111827; color: #d8b4fe; }
+    .t-detect .tag  { background: #7e22ce; color: #ede9fe; }
+
+    .t-remove   { background: #45201e; border-color: #f97316; }
+    .t-remove pre   { background: #111827; color: #fdba74; }
+    .t-remove .tag  { background: #c2410c; color: #fed7aa; }
+
+    .t-segment  { background: #1e3a2a; border-color: #22c55e; }
+    .t-segment pre  { background: #111827; color: #86efac; }
+    .t-segment .tag { background: #15803d; color: #bbf7d0; }
+
+    .t-quality  { background: #3a2d1e; border-color: #f59e0b; }
+    .t-quality pre  { background: #111827; color: #fcd34d; }
+    .t-quality .tag { background: #b45309; color: #fef3c7; }
+
+    .t-meshy    { background: #1e2d45; border-color: #60a5fa; }
+    .t-meshy pre    { background: #111827; color: #93c5fd; }
+    .t-meshy .tag   { background: #1e40af; color: #bfdbfe; }
+
+    .t-isolate  { background: #2d1e3a; border-color: #c084fc; }
+    .t-isolate pre  { background: #111827; color: #e9d5ff; }
+    .t-isolate .tag { background: #6b21a8; color: #f3e8ff; }
+
+    .t-purge    { background: #3a1e2a; border-color: #f43f5e; }
+    .t-purge pre    { background: #111827; color: #fda4af; }
+    .t-purge .tag   { background: #9f1239; color: #ffe4e6; }
+
+    .t-sanitize { background: #1e3a2a; border-color: #10b981; }
+    .t-sanitize pre { background: #111827; color: #6ee7b7; }
+    .t-sanitize .tag{ background: #065f46; color: #a7f3d0; }
+
+    .t-decal    { background: #1e2d3a; border-color: #38bdf8; }
+    .t-decal pre    { background: #111827; color: #7dd3fc; }
+    .t-decal .tag   { background: #075985; color: #bae6fd; }
+
+    .t-stain    { background: #3a2a1e; border-color: #fb923c; }
+    .t-stain pre    { background: #111827; color: #fed7aa; }
+    .t-stain .tag   { background: #9a3412; color: #ffedd5; }
+
+    .t-export   { background: #1e3a1e; border-color: #4ade80; }
+    .t-export pre   { background: #111827; color: #bbf7d0; }
+    .t-export .tag  { background: #166534; color: #dcfce7; }
+
+    .t-io {
+      background: #252535;
+      border-color: #6366f1;
+      text-align: center;
+    }
+    .t-io .block-title { justify-content: center; font-size: 0.85rem; }
+
+    /* ── Arrows ────────────────────────────────────── */
+    .arrow-down {
+      width: 2px;
+      background: #334155;
+      flex-shrink: 0;
+      position: relative;
+      align-self: stretch;
+      min-height: 14px;
+      margin: 0 auto 6px;
+    }
+    .arrow-down::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #334155;
+    }
+
+    /* ── Branch decision ──────────────────────────── */
+    .branch-box {
+      width: 100%;
+      background: #252535;
+      border: 1.5px dashed #6366f1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .branch-box .b-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      margin-bottom: 4px;
+    }
+    .branch-box .b-code {
+      font-family: monospace;
+      font-size: 0.63rem;
+      color: #c7d2fe;
+      background: #111827;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .branch-row {
+      display: flex;
+      width: 100%;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .branch-row .branch-block { flex: 1; }
+
+    /* ── Middle connector ─────────────────────────── */
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 80px;
+    }
+    .connector-line {
+      width: 100%;
+      height: 2px;
+      background: #334155;
+      position: relative;
+    }
+    .connector-label {
+      font-size: 0.58rem;
+      color: #64748b;
+      text-align: center;
+      margin-top: 6px;
+      font-style: italic;
+    }
+    .h-arrow {
+      width: 40px;
+      height: 2px;
+      background: #334155;
+      position: relative;
+      margin: 4px 0;
+    }
+    .h-arrow::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: -4px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid #334155;
+    }
+
+    /* ── Legend ───────────────────────────────────── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #1e293b;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.68rem;
+      color: #94a3b8;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── Full-width transfer ─────────────────────── */
+    .transfer-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 10px 0 16px;
+      padding: 10px 16px;
+      background: #1a2535;
+      border: 1px dashed #3b82f6;
+      border-radius: 8px;
+      width: 100%;
+    }
+    .transfer-row .t-label {
+      font-size: 0.72rem;
+      color: #93c5fd;
+      font-family: monospace;
+    }
+    .transfer-row .t-file {
+      font-size: 0.6rem;
+      color: #475569;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<h1>StylistAI — Pipeline de Geração de Imagem 3D</h1>
+<p class="subtitle">Diagrama de processos: Remoção de Humanos · Isolamento de Peça · Aplicação de Textura e Decal</p>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     INPUT
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="display:flex; justify-content:center; margin-bottom:6px;">
+  <div class="block t-io" style="max-width:340px;">
+    <div class="block-title">📥 ENTRADA: Imagem da Peça (URL)</div>
+    <div class="block-file">app/api/3d-worker/submit/route.ts → blender-worker/handler.py</div>
+    <pre>// Payload submetido ao worker GPU
+{
+  imageUrl: "https://storage.../camisa.jpg",
+  garmentType: "top",
+  color: "#1a3c6e",
+  logo_url: "https://storage.../logo.png"
+}</pre>
+  </div>
+</div>
+
+<div style="display:flex; justify-content:center; margin-bottom:6px;">
+  <div class="arrow-down" style="height:18px;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LANES: 2D (esquerda) | conector | 3D Blender (direita)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="lanes">
+
+  <!-- ──────── COLUNA ESQUERDA: PRÉ-PROCESSAMENTO 2D ──────── -->
+  <div class="lane">
+    <div class="phase-header phase-2d">Fase A — Pré-processamento 2D &nbsp;·&nbsp; pipeline.py</div>
+
+    <!-- 1. VALIDAÇÃO DA IMAGEM -->
+    <div class="block t-validate">
+      <div class="block-title">1 · Validação da Imagem de Entrada
+        <span class="tag t-validate">validate</span>
+      </div>
+      <div class="block-file">blender-worker/pipeline.py → validate_input_image()</div>
+      <pre>def validate_input_image(image_path):
+  bgr = cv2.imread(str(image_path))
+  metrics = _compute_quality_metrics(bgr)
+  # Rejeita: blur, brilho, contraste,
+  # fundo ruidoso, pessoa detectada
+  if metrics["blurScore"] &lt; blur_reject_cutoff:
+      return ImageValidationResult(False, ...)
+  if metrics["brightness"] &lt; 0.12 or > 0.96:
+      return ImageValidationResult(False, ...)
+  if metrics["backgroundComplexity"] > 0.28:
+      return ImageValidationResult(False, ...)</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 2. DETECÇÃO DE PESSOA -->
+    <div class="block t-detect">
+      <div class="block-title">2 · Detecção de Pessoa (HSV + Haar Cascade)
+        <span class="tag t-detect">detect</span>
+      </div>
+      <div class="block-file">blender-worker/pipeline.py → preprocess_garment() + _skin_ratio() + _face_confidence()</div>
+      <pre>def _skin_ratio(rgb):
+  hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+  # Hue 0–25: tons de pele humana
+  lower = np.array([0, 35, 40])
+  upper = np.array([25, 210, 255])
+  mask = cv2.inRange(hsv, lower, upper)
+  return np.count_nonzero(mask) / mask.size
+
+def _face_confidence(gray):
+  cascade = cv2.CascadeClassifier(
+    "haarcascade_frontalface_default.xml")
+  faces = cascade.detectMultiScale(gray,
+    scaleFactor=1.1, minNeighbors=4)
+  # Retorna 0.0 se nenhum rosto detectado
+
+# Decisão: skin_ratio > 0.10 OU face > 0.25
+has_person = skin_ratio_val > 0.10 \
+          or face_conf_val > 0.25</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- BRANCH: com pessoa / sem pessoa -->
+    <div class="branch-box">
+      <div class="b-title">⬦ Decisão: Imagem contém pessoa?</div>
+      <div class="b-code">if has_person: → rembg u2net_human_seg<br/>else: → rembg genérico</div>
+    </div>
+
+    <div class="branch-row">
+      <!-- 3a. COM PESSOA -->
+      <div class="branch-block block t-remove">
+        <div class="block-title" style="font-size:0.7rem;">3a · COM PESSOA<br/>Segmentação u2net_human_seg
+          <span class="tag t-remove">remove-body</span>
+        </div>
+        <div class="block-file">pipeline.py → _remove_body_keep_clothing()</div>
+        <pre>human_session = rembg.new_session(
+  "u2net_human_seg")
+human_removed = remove(src,
+  session=human_session)
+# Máscara binária do corpo
+human_mask = np.where(
+  human_alpha > 30, 255, 0)
+
+# Calcula máscara de pele multi-tom
+skin_mask = _compute_extended_skin_mask()
+# Máscara de rosto + cabeça + pescoço
+face_mask = _compute_face_head_mask()
+
+# Remove pele e rosto da máscara
+clothing_mask = human_mask.copy()
+skin_dilated = cv2.dilate(skin_mask,
+  np.ones((11,11)), iterations=2)
+clothing_mask[skin_dilated > 0] = 0
+face_dilated = cv2.dilate(face_mask,
+  np.ones((15,15)), iterations=3)
+clothing_mask[face_dilated > 0] = 0
+
+# Limpeza morfológica
+clothing_mask = cv2.morphologyEx(
+  clothing_mask, cv2.MORPH_CLOSE,
+  np.ones((13,13)))
+# Alpha = máscara da roupa apenas
+result[:,:,3] = clothing_mask</pre>
+      </div>
+
+      <!-- 3b. SEM PESSOA -->
+      <div class="branch-block block t-segment">
+        <div class="block-title" style="font-size:0.7rem;">3b · SEM PESSOA<br/>Remoção de Fundo Genérica
+          <span class="tag t-segment">rembg</span>
+        </div>
+        <div class="block-file">pipeline.py → preprocess_garment() sem pessoa</div>
+        <pre>from rembg import remove
+
+# Remove fundo genérico (U-2-Net)
+generic_removed = np.array(remove(src))
+generic_alpha = generic_removed[:,:,3]
+generic_mask = np.where(
+  generic_alpha > 30, 255, 0)
+
+# Preserva RGB original do src
+# (evita branqueamento pelo rembg)
+rgba = np.zeros_like(src_np)
+rgba[:,:,:3] = src_np[:,:,:3]
+rgba[:,:,3]  = generic_mask</pre>
+      </div>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 4. QUALITY SCORE -->
+    <div class="block t-quality">
+      <div class="block-title">4 · Score de Qualidade da Peça Isolada
+        <span class="tag t-quality">quality</span>
+      </div>
+      <div class="block-file">blender-worker/pipeline.py → score_cleaned_image()</div>
+      <pre>def score_cleaned_image(cleaned_path):
+  # Ocupação da peça no frame
+  occ = garment_pixels / total_pixels
+  # Simetria horizontal da máscara
+  symmetry = np.mean(left == right)
+  # Completude: não toca as bordas
+  edge_completeness = 0.0 if touching_edge \
+    else 1.0
+  # Contaminação residual por pele
+  skin_ratio_garment = detectar_pele(
+    garment_rgb)
+  # Score composto ponderado
+  weighted = (
+    blur * 0.20 + brightness * 0.15
+    + contrast * 0.15 + occupancy * 0.20
+    + margin_balance * 0.10
+    + edge_completeness * 0.10
+    + symmetry * 0.10
+  )
+  # Falha se score &lt; threshold (0.35)</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 5. MESHY PROMPT + GERAÇÃO 3D -->
+    <div class="block t-meshy">
+      <div class="block-title">5 · Geração do Modelo 3D via Meshy AI
+        <span class="tag t-meshy">meshy</span>
+      </div>
+      <div class="block-file">blender-worker/pipeline.py → build_meshy_prompt() + generate_base_glb_with_meshy()</div>
+      <pre>def build_meshy_prompt(clean_meta, options):
+  # Monta prompt descritivo para o Meshy
+  parts = ["isolated", color, sleeve,
+    garment, material, "product shot",
+    "centered", "plain transparent bg"]
+  return " ".join(parts)
+
+def generate_base_glb_with_meshy(
+    cleaned_path, output_glb, prompt):
+  # Envia imagem limpa + prompt
+  resp = requests.post(MESHY_API_URL,
+    headers={"Authorization": f"Bearer {api_key}"},
+    data={"prompt": prompt},
+    files={"image": f})
+  # Download do modelo .glb gerado
+  model_url = payload.get("model_url")
+  output_glb.write_bytes(
+    requests.get(model_url).content)</pre>
+    </div>
+
+  </div><!-- /lane esquerda -->
+
+  <!-- ──────── CONECTOR CENTRAL ──────── -->
+  <div class="connector">
+    <div style="writing-mode:vertical-rl; transform:rotate(180deg); font-size:0.6rem; color:#475569; font-family:monospace; letter-spacing:0.05em;">
+      .glb (modelo 3D base)
+    </div>
+    <div style="width:2px; flex:1; background:#1e40af; margin:8px 50%;"></div>
+    <div style="font-size:1.2rem; color:#3b82f6; transform:rotate(-90deg);">➤</div>
+  </div>
+
+  <!-- ──────── COLUNA DIREITA: PIPELINE BLENDER 3D ──────── -->
+  <div class="lane">
+    <div class="phase-header phase-3d">Fase B — Processamento 3D Blender &nbsp;·&nbsp; blender_pipeline.py</div>
+
+    <!-- 6. IMPORT + ISOLAMENTO HUMANO 3D -->
+    <div class="block t-isolate">
+      <div class="block-title">6 · Import GLB + Isolamento da Peça 3D
+        <span class="tag t-isolate">isolate</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _import_glb() + _isolate_garment_mesh()</div>
+      <pre>def _is_human_like(obj):
+  # Detecta por tokens no nome do objeto
+  _HUMAN_NAME_TOKENS = frozenset({
+    "body","human","person","mannequin",
+    "head","hand","foot","leg","arm",
+    "hanger","rack","stand" ...
+  })
+  for token in _HUMAN_NAME_TOKENS:
+    if token in obj.name.lower(): return True
+
+  # Detecta por proporção altura/largura
+  # Humano em pé: aspect ≈ 4-6
+  # Camiseta: aspect ≈ 1.0–1.8
+  height_z / width_xy >= 3.5 → humano
+
+def _isolate_garment_mesh(mesh_objects):
+  # Remove meshes humanos e stray props
+  garment_candidates = [o for o in meshes
+    if not _is_human_like(o)]
+  # Remove props pequenos (botões, tags)
+  poly_floor = max_polys * 0.05
+  significant = [o for o in candidates
+    if o.polygons >= poly_floor]
+  # Mantém o maior mesh (a peça)
+  garment = max(significant,
+    key=lambda o: len(o.data.polygons))
+  # Deleta tudo o mais da cena
+  bpy.ops.object.delete()</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 7. PURGE DE MATERIAIS + EXTRAÇÃO DE COR -->
+    <div class="block t-purge">
+      <div class="block-title">7 · Purge de Materiais + Extração de Cor Dominante
+        <span class="tag t-purge">purge</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _purge_garment_materials() + _extract_dominant_color()</div>
+      <pre>def _extract_dominant_color(mat):
+  # Amostra grade uniforme do centro (60%)
+  # Quantiza em _COLOR_HIST_BUCKETS³ bins
+  for row in range(y0, y1, stride):
+    r,g,b = pixels[row*w + col : +4]
+    key = (int(r*16), int(g*16), int(b*16))
+    buckets[key] += (1, r, g, b)
+  # Bin mais populoso = cor do tecido
+  # (logos/manchas são minoria dos pixels)
+  best = max(buckets, key=lambda v: v[0])
+  return (best[1]/n, best[2]/n, best[3]/n)
+
+def _purge_garment_materials(obj):
+  dominant_rgb = _extract_dominant_color(
+    obj.data.materials[0])
+  obj.data.materials.clear()  # remove tudo
+  # Cria material limpo SAI_Base_Fabric
+  base_mat = bpy.data.materials.new(
+    "SAI_Base_Fabric")
+  bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+  bsdf.inputs["Base Color"].default_value = (
+    *dominant_rgb, 1.0)
+  bsdf.inputs["Roughness"].default_value = 0.80
+  obj.data.materials.append(base_mat)</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 8. SANITIZAÇÃO DAS FACES TRASEIRAS -->
+    <div class="block t-sanitize">
+      <div class="block-title">8 · Sanitização das Faces Traseiras (dot-product)
+        <span class="tag t-sanitize">sanitize-back</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _sanitize_back_faces()</div>
+      <pre>def _sanitize_back_faces(obj, front_dir,
+    dot_threshold=0.15):
+  # Extrai cor do tecido (livre de manchas)
+  back_rgb = _extract_dominant_color(...)
+  # Cria SAI_Back_Plain com textura procedural
+  noise = nodes.new("ShaderNodeTexNoise")
+  noise.inputs["Scale"].default = 120.0  # tecido
+  noise.inputs["Detail"].default = 6.0
+  mix_rgb.inputs["Fac"].default = 0.06  # 6% ruído
+
+  # Identifica faces traseiras pelo produto escalar
+  local_front = mat_inv @ front_dir
+  for face in bm.faces:
+    # dot &lt; 0.15 → face está virada para trás
+    if face.normal.dot(local_front) &lt; dot_threshold:
+      face.material_index = back_idx  # aplica plain
+
+# Threshold progressivo:
+# 0.00 → apenas hemisférico traseiro
+# 0.15 → padrão (recomendado)
+# 0.30 → agressivo (re-sanitização)</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 9. SELEÇÃO DE FACES FRONTAIS + DECAL -->
+    <div class="block t-decal">
+      <div class="block-title">9 · Seleção de Faces Frontais + Aplicação do Decal/Logo
+        <span class="tag t-decal">decal</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _select_front_faces() + _apply_decal_to_front_faces()</div>
+      <pre>def _select_front_faces(obj, front_dir,
+    dot_threshold=0.35):
+  # Estágio 1: filtro por produto escalar
+  for face in bm.faces:
+    if face.normal.dot(local_front) >= 0.35:
+      dot_selected.append(face)
+
+  # Estágio 2: filtro de bounding-box do torso
+  # Mantém apenas 60% central (horizontal)
+  # e faixa 45–85% da altura (vertical)
+  for face in dot_selected:
+    centre = obj.matrix_world @ face.center
+    if x_lo &lt;= centre.x &lt;= x_hi and \
+       z_lo &lt;= centre.z &lt;= z_hi:
+      torso_selected.append(face)
+
+def _apply_decal_to_front_faces(
+    obj, logo_path, front_dir, scale, offset):
+  mat = _create_decal_material(logo_path)
+  mat.blend_method = "BLEND"
+  mat.use_backface_culling = True  # bloqueio traseiro
+  # Atribui material às faces selecionadas
+  for face in bm.faces:
+    if face.select:
+      face.material_index = mat_index
+  # Projeta UV da vista frontal
+  bpy.ops.uv.project_from_view(
+    correct_aspect=True)
+  # Aplica escala e offset vertical ao UV
+  uv.x = (uv.x - 0.5) * logo_scale + 0.5
+  uv.y = (uv.y - 0.5) * logo_scale + 0.5 + offset</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 10. ANÁLISE DE MANCHAS + RE-SANITIZAÇÃO ADAPTATIVA -->
+    <div class="block t-stain">
+      <div class="block-title">10 · Render de Preview + Análise de Manchas Residuais
+        <span class="tag t-stain">stain-detect</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _render_preview() + _analyze_back_preview_for_stains()</div>
+      <pre>def _analyze_back_preview_for_stains(path):
+  # Carrega preview renderizado (RGBA float32)
+  pixels = np.array(img.pixels[:]).reshape(h,w,4)
+  garment_rgb = pixels[garment_mask]  # exclui fundo
+
+  # Mediana robusta → cor real do tecido
+  median_color = np.median(garment_rgb, axis=0)
+
+  # Distância euclidiana de cada pixel à mediana
+  distances = np.sqrt(((garment_rgb
+    - median_color)**2).sum(axis=1))
+
+  # > 0.20 em RGB normalizado = diferença visível
+  hotspot_ratio = np.mean(distances > 0.20)
+
+  # Score composto de artefatos
+  artifact_confidence = min(1.0,
+    hotspot_ratio * 3.5
+    + max(0, color_variance - 0.08) * 2.5)
+
+# Se confiança > 0.45 → re-sanitização agressiva
+if artifact_confidence > 0.45:
+  _sanitize_back_faces(garment, front_vec,
+    dot_threshold=0.30)  # threshold agressivo</pre>
+    </div>
+    <div class="arrow-down" style="height:16px;"></div>
+
+    <!-- 11. EXPORT -->
+    <div class="block t-export">
+      <div class="block-title">11 · Exportação do Modelo GLB Final
+        <span class="tag t-export">export</span>
+      </div>
+      <div class="block-file">blender-worker/blender_pipeline.py → _export_glb()</div>
+      <pre>def _export_glb(path):
+  bpy.ops.export_scene.gltf(
+    filepath=path,
+    export_format="GLB",
+    export_apply=True,  # aplica transforms
+  )
+# Retorno com metadados de validação
+return {
+  "output_glb_path": str(output_model),
+  "preview_front_path": str(preview_front),
+  "preview_back_path": str(preview_back),
+  "color": color_hex or dominant_hex,
+  "validation": {
+    "frontOnlyDecal": True,
+    "backLogoFree": True,
+    "stainArtifactConfidence": 0.03,
+    "humanMeshesRemoved": True,
+  }
+}</pre>
+    </div>
+
+  </div><!-- /lane direita -->
+</div><!-- /lanes -->
+
+<!-- OUTPUT -->
+<div style="display:flex; justify-content:center; margin-top:6px; margin-bottom:6px;">
+  <div class="arrow-down" style="height:18px;"></div>
+</div>
+<div style="display:flex; justify-content:center; margin-bottom:32px;">
+  <div class="block t-io" style="max-width:420px;">
+    <div class="block-title">📦 SAÍDA: Modelo 3D Finalizado (.glb)</div>
+    <div class="block-file">Firebase Storage → model_branded_3d_url (Firestore: saiWardrobeItems)</div>
+    <pre>// Campos gravados no Firestore
+{
+  model_status: "done",
+  model_3d_url: "https://storage.../final.glb",
+  model_preview_url: "https://storage.../preview.png",
+  brand_applied: true,
+  dominant_color: "#1a3c6e"
+}</pre>
+  </div>
+</div>
+
+<!-- LEGENDA -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Validação de entrada</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div> Detecção de pessoa (2D)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f97316;"></div> Remoção de corpo / pele</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Remoção de fundo genérica</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Score de qualidade</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#60a5fa;"></div> Geração 3D (Meshy AI)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c084fc;"></div> Isolamento 3D (Blender)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f43f5e;"></div> Purge + cor dominante</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Sanitização faces traseiras</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#38bdf8;"></div> Decal / logo frontal</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fb923c;"></div> Detecção adaptativa de manchas</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4ade80;"></div> Exportação GLB final</div>
+</div>
+
+<p style="text-align:center; font-size:0.6rem; color:#334155; margin-top:20px;">
+  StylistAI · TCC 2026 · Fontes: blender-worker/pipeline.py · blender-worker/blender_pipeline.py
+</p>
+
+</body>
+</html>

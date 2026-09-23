@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGPD em Redes Sociais — Configurações de Perfil (RF)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F4EF;
+  --paper-2:#EFEBE2;
+  --ink:#1A1D23;
+  --ink-soft:#3A3F49;
+  --muted:#6B7280;
+  --line:#D9D3C7;
+  --green:#15805C;       /* privacidade / lícito */
+  --green-soft:#E2F0EA;
+  --rose:#C0376B;        /* dado sensível / alerta */
+  --rose-soft:#F8E4EC;
+  --amber:#B45309;       /* armadilha */
+  --amber-soft:#FBEEDB;
+  --blue:#2B5CB8;        /* informação / direito */
+  --blue-soft:#E4ECF9;
+  --shadow:0 1px 2px rgba(26,29,35,.06),0 8px 24px rgba(26,29,35,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 22px}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:
+    radial-gradient(120% 120% at 85% -10%, rgba(21,128,92,.10), transparent 55%),
+    radial-gradient(100% 100% at 0% 0%, rgba(43,92,184,.07), transparent 50%),
+    var(--ink);
+  color:#F4F2EC;padding:64px 0 56px;position:relative;overflow:hidden;
+}
+.hero .wrap{position:relative;z-index:2}
+.kicker{
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;
+  text-transform:uppercase;color:#8FE3C4;margin:0 0 18px;font-weight:500;
+}
+.hero h1{
+  font-family:'Fraunces',serif;font-weight:600;font-size:clamp(34px,6vw,58px);
+  line-height:1.04;letter-spacing:-.02em;margin:0 0 18px;
+}
+.hero h1 em{font-style:italic;color:#9FE7CB;font-weight:500}
+.hero p{font-size:18px;color:#CFCDC4;max-width:62ch;margin:0 0 26px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px}
+.chip{
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.04em;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  padding:6px 12px;border-radius:100px;color:#E6E4DC;
+}
+.hero-rule{
+  position:absolute;inset:0;z-index:1;opacity:.5;
+  background-image:linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:38px 100%;
+}
+
+/* ---------- SECTIONS ---------- */
+section{padding:54px 0}
+section + section{border-top:1px solid var(--line)}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--green);font-weight:600;
+  display:flex;align-items:center;gap:10px;margin:0 0 14px;
+}
+.eyebrow::before{content:"";width:26px;height:1.5px;background:var(--green);display:inline-block}
+h2{
+  font-family:'Fraunces',serif;font-weight:600;font-size:clamp(26px,4vw,38px);
+  line-height:1.1;letter-spacing:-.015em;margin:0 0 16px;
+}
+h3{
+  font-family:'Fraunces',serif;font-weight:600;font-size:22px;letter-spacing:-.01em;
+  margin:30px 0 10px;
+}
+h4{font-family:'Inter';font-weight:700;font-size:15px;margin:22px 0 6px;letter-spacing:.01em}
+p{margin:0 0 16px;color:var(--ink-soft)}
+strong{color:var(--ink);font-weight:600}
+.lead{font-size:18px;color:var(--ink-soft)}
+a.ref{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(43,92,184,.3)}
+code{
+  font-family:'JetBrains Mono',monospace;font-size:.88em;
+  background:var(--paper-2);padding:1px 6px;border-radius:5px;color:var(--ink);
+}
+
+/* ---------- ATORES GRID ---------- */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 18px;
+  box-shadow:var(--shadow);
+}
+.card .tag{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;
+  color:var(--muted);text-transform:uppercase;margin:0 0 6px;font-weight:500;
+}
+.card h4{margin:0 0 6px;font-size:16px}
+.card p{font-size:14px;margin:0;color:var(--ink-soft)}
+
+/* ---------- PRINCIPLES ---------- */
+.princ{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.princ .item{padding:15px 18px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.princ .item:nth-child(2n){border-right:none}
+.princ .item:nth-last-child(-n+2){border-bottom:none}
+.princ .num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);font-weight:600}
+.princ .item b{display:block;font-size:14.5px;margin:2px 0 2px}
+.princ .item span{font-size:13px;color:var(--muted)}
+
+/* ---------- MAPPING TABLE ---------- */
+.maptable{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.maptable th{
+  text-align:left;background:var(--ink);color:#F4F2EC;font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:11px 14px;
+}
+.maptable td{padding:12px 14px;border-top:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+.maptable td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+.maptable .art{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);white-space:nowrap}
+
+/* ---------- CALLOUTS ---------- */
+.box{border-radius:14px;padding:18px 20px;margin:22px 0;border:1px solid;position:relative}
+.box .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.box p{margin:0;font-size:14.5px}
+.box p + p{margin-top:8px}
+.armadilha{background:var(--amber-soft);border-color:#EBC992}
+.armadilha .lbl{color:var(--amber)}
+.nota{background:var(--blue-soft);border-color:#BFD2F0}
+.nota .lbl{color:var(--blue)}
+.sens{background:var(--rose-soft);border-color:#EFC2D3}
+.sens .lbl{color:var(--rose)}
+.ok{background:var(--green-soft);border-color:#B7DCCB}
+.ok .lbl{color:var(--green)}
+
+/* ---------- MOCKUP (SIGNATURE) ---------- */
+.mock-frame{
+  border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;
+  box-shadow:0 24px 60px rgba(26,29,35,.13);margin:8px 0 4px;
+}
+.mock-top{
+  display:flex;align-items:center;gap:8px;padding:11px 16px;
+  background:var(--paper-2);border-bottom:1px solid var(--line);
+}
+.dot{width:10px;height:10px;border-radius:50%;background:#D6CFC0}
+.mock-url{
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
+  margin-left:8px;background:#fff;border:1px solid var(--line);border-radius:7px;
+  padding:4px 12px;flex:1;max-width:340px;
+}
+.mock-body{display:grid;grid-template-columns:184px 1fr;min-height:430px}
+.mock-nav{border-right:1px solid var(--line);padding:14px 10px;background:var(--paper)}
+.mock-nav .nav-h{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 10px 8px}
+.nav-btn{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:none;background:none;
+  font-family:'Inter';font-size:13.5px;font-weight:500;color:var(--ink-soft);
+  padding:8px 10px;border-radius:9px;cursor:pointer;margin-bottom:1px;transition:.15s;
+}
+.nav-btn:hover{background:var(--paper-2)}
+.nav-btn.active{background:var(--ink);color:#F4F2EC}
+.nav-btn .ic{width:16px;height:16px;flex:none}
+.mock-panel{padding:22px 24px;overflow:auto}
+.panel{display:none}
+.panel.show{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 2px}
+.panel-sub{font-size:13px;color:var(--muted);margin:0 0 18px}
+
+/* form bits inside mockup */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--ink)}
+.field .hint{font-size:11.5px;color:var(--muted);font-weight:400;margin-top:4px}
+.field input[type=text],.field input[type=email],.field input[type=date],.field select,.field textarea{
+  width:100%;font-family:'Inter';font-size:14px;color:var(--ink);
+  border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:#fff;outline:none;transition:.15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(21,128,92,.13)}
+.field textarea{resize:vertical;min-height:60px}
+.verified{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--green);font-weight:600;margin-left:8px}
+
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-row .meta{flex:1}
+.toggle-row .meta b{display:block;font-size:14px;font-weight:600}
+.toggle-row .meta span{font-size:12px;color:var(--muted)}
+.sw{position:relative;width:42px;height:24px;flex:none;cursor:pointer}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw .track{position:absolute;inset:0;background:#CBC6BB;border-radius:100px;transition:.2s}
+.sw .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked + .track{background:var(--green)}
+.sw input:checked + .track + .knob{transform:translateX(18px)}
+.sw input:focus-visible + .track{box-shadow:0 0 0 3px rgba(21,128,92,.3)}
+
+.art-pill{
+  display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+  background:var(--blue-soft);color:var(--blue);border:1px solid #C7D7F2;
+  padding:2px 7px;border-radius:6px;margin-top:6px;letter-spacing:.02em;
+}
+.art-pill.s{background:var(--rose-soft);color:var(--rose);border-color:#EFC2D3}
+
+.danger-zone{border:1px solid #EFC2D3;background:var(--rose-soft);border-radius:11px;padding:14px 16px;margin-top:6px}
+.danger-zone b{font-size:13.5px;color:var(--rose)}
+.danger-zone p{font-size:12.5px;margin:4px 0 10px;color:var(--ink-soft)}
+
+.btn{font-family:'Inter';font-size:13.5px;font-weight:600;border-radius:9px;padding:9px 16px;cursor:pointer;border:1px solid transparent;transition:.15s}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:#11694b}
+.btn-ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{background:var(--paper)}
+.btn-danger{background:#fff;color:var(--rose);border-color:#E1A9BE}
+.btn-danger:hover{background:var(--rose-soft)}
+.btn-row{display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+/* radio cards */
+.radio-card{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.radio-card:hover{border-color:#BCB6A8}
+.radio-card.sel{border-color:var(--green);background:var(--green-soft)}
+.radio-card .rad{width:18px;height:18px;border-radius:50%;border:2px solid #BCB6A8;flex:none;position:relative;transition:.15s}
+.radio-card.sel .rad{border-color:var(--green)}
+.radio-card.sel .rad::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--green)}
+.radio-card .rc-t{font-size:13.5px;font-weight:600}
+.radio-card .rc-d{font-size:12px;color:var(--muted)}
+
+/* annotation under mockup */
+.annot{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:18px}
+.annot .a{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.annot .a .h{font-size:13px;font-weight:700;margin-bottom:3px}
+.annot .a .b{font-size:12.5px;color:var(--ink-soft)}
+
+/* DARK MODE inside mockup demo */
+.mock-frame[data-theme="dark"] .mock-panel,
+.mock-frame[data-theme="dark"] .mock-nav{background:#16181D}
+.mock-frame[data-theme="dark"] .mock-top{background:#202329;border-color:#2C3038}
+.mock-frame[data-theme="dark"] .mock-url{background:#16181D;border-color:#2C3038;color:#9AA0AB}
+.mock-frame[data-theme="dark"]{background:#16181D;border-color:#2C3038}
+.mock-frame[data-theme="dark"] .panel-title,
+.mock-frame[data-theme="dark"] .panel-sub,
+.mock-frame[data-theme="dark"] .field label,
+.mock-frame[data-theme="dark"] .toggle-row .meta b,
+.mock-frame[data-theme="dark"] .rc-t,
+.mock-frame[data-theme="dark"] .nav-btn{color:#E6E8EC}
+.mock-frame[data-theme="dark"] .panel-sub,
+.mock-frame[data-theme="dark"] .field .hint,
+.mock-frame[data-theme="dark"] .toggle-row .meta span,
+.mock-frame[data-theme="dark"] .rc-d{color:#9AA0AB}
+.mock-frame[data-theme="dark"] .field input,
+.mock-frame[data-theme="dark"] .field select,
+.mock-frame[data-theme="dark"] .field textarea,
+.mock-frame[data-theme="dark"] .radio-card{background:#1E2127;border-color:#30343C;color:#E6E8EC}
+.mock-frame[data-theme="dark"] .nav-btn:hover{background:#23262D}
+.mock-frame[data-theme="dark"] .nav-btn.active{background:#F4F2EC;color:#16181D}
+.mock-frame[data-theme="dark"] .btn-ghost{background:#1E2127;color:#E6E8EC;border-color:#30343C}
+.mock-frame[data-theme="dark"] .toggle-row,.mock-frame[data-theme="dark"] .btn-row{border-color:#2C3038}
+
+/* ---------- QUIZ ---------- */
+.quiz-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px}
+.score-pill{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;background:var(--ink);color:#F4F2EC;padding:8px 16px;border-radius:100px}
+.q{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 22px 8px;margin-bottom:20px;box-shadow:var(--shadow)}
+.q-num{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:8px}
+.q-ctx{font-size:14px;color:var(--ink-soft);background:var(--paper);border-left:3px solid var(--line);padding:11px 14px;border-radius:0 8px 8px 0;margin:0 0 14px}
+.q-stem{font-size:15.5px;font-weight:600;color:var(--ink);margin:0 0 16px;line-height:1.5}
+.opt{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:9px;cursor:pointer;transition:.15s;font-size:14px;color:var(--ink-soft)}
+.opt:hover{border-color:#BCB6A8;background:var(--paper)}
+.opt .key{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;color:var(--muted);flex:none;width:18px}
+.opt.correct{border-color:var(--green);background:var(--green-soft)}
+.opt.correct .key{color:var(--green)}
+.opt.wrong{border-color:var(--rose);background:var(--rose-soft)}
+.opt.wrong .key{color:var(--rose)}
+.opt.disabled{cursor:default;pointer-events:none}
+.opt.dim{opacity:.5}
+.expl{display:none;font-size:13.5px;color:var(--ink-soft);background:var(--blue-soft);border:1px solid #C7D7F2;border-radius:11px;padding:14px 16px;margin:6px 0 18px;line-height:1.55}
+.expl.show{display:block;animation:fade .25s ease}
+.expl b{color:var(--blue)}
+.expl .gab{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--green)}
+
+.final{display:none;text-align:center;background:var(--ink);color:#F4F2EC;border-radius:18px;padding:34px 24px;margin-top:10px}
+.final.show{display:block}
+.final h3{font-family:'Fraunces',serif;color:#F4F2EC;margin:0 0 6px;font-size:26px}
+.final .big{font-family:'Fraunces',serif;font-size:54px;font-weight:600;color:#9FE7CB;line-height:1;margin:8px 0}
+.final p{color:#CFCDC4;margin:6px 0 16px}
+.final button{font-family:'Inter';font-weight:600;font-size:14px;background:#9FE7CB;color:#14181F;border:none;border-radius:9px;padding:11px 22px;cursor:pointer}
+
+footer{background:var(--ink);color:#9AA0AB;padding:30px 0;font-size:13px;text-align:center}
+footer b{color:#E6E8EC}
+
+@media(max-width:720px){
+  .g2,.g3,.princ,.annot{grid-template-columns:1fr}
+  .princ .item{border-right:none}
+  .mock-body{grid-template-columns:1fr}
+  .mock-nav{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:8px}
+  .mock-nav .nav-h{display:none}
+  .nav-btn{white-space:nowrap;margin-bottom:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="hero-rule"></div>
+  <div class="wrap">
+    <p class="kicker">BSI · ENADE · Engenharia de Requisitos × Privacidade</p>
+    <h1>LGPD em redes sociais:<br>configurando o <em>RF — Editar informações<br>pessoais e preferências do perfil</em></h1>
+    <p>Como as grandes plataformas (Meta, Google, X) transformam a Lei nº 13.709/2018 em telas, toggles e botões — e como você modela isso de forma profissional, defensável em prova e em auditoria.</p>
+    <div class="hero-meta">
+      <span class="chip">Lei nº 13.709/2018</span>
+      <span class="chip">Privacy by Design</span>
+      <span class="chip">Direitos do titular</span>
+      <span class="chip">RF × RNF</span>
+      <span class="chip">10 questões ENADE</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== 1. POR QUE IMPORTA ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Contexto</p>
+  <h2>Um requisito funcional é, ao mesmo tempo, um direito legal</h2>
+  <p class="lead">Quando o cliente escreve “<strong>RF — Editar informações pessoais e preferências do perfil do usuário</strong>”, ele descreve um comportamento do sistema. Mas, em uma rede social, esse mesmo botão de <em>Salvar</em> está exercendo um direito previsto em lei.</p>
+  <p>A tela de configurações deixou de ser um detalhe de UX e virou o <strong>ponto de cumprimento</strong> (compliance point) da LGPD. É ali que o titular dos dados corrige, controla, exporta e elimina suas informações. Modelar esse RF “de qualquer jeito” não gera só uma má experiência: gera <strong>risco jurídico</strong>, multa da ANPD e reprovação na questão da prova. Esta aula liga as duas pontas: o <strong>texto da lei</strong> e o <strong>componente de interface</strong> que o implementa.</p>
+
+  <div class="box nota">
+    <p class="lbl">⚖️ Tese da aula</p>
+    <p>Cada <strong>input, toggle e botão</strong> da página de configurações é a materialização de um <strong>princípio</strong> (Art. 6º) ou de um <strong>direito do titular</strong> (Art. 18) da LGPD. Quem entende esse mapeamento acerta a questão e constrói o produto certo.</p>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 2. FUNDAMENTOS ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Fundamentos</p>
+  <h2>A LGPD em quatro conceitos que caem na prova</h2>
+  <p>A <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>, em vigor desde setembro de 2020 e fiscalizada pela <strong>ANPD</strong> (Autoridade Nacional de Proteção de Dados), regula o <em>tratamento de dados pessoais</em> de pessoas naturais. “Tratamento” é qualquer operação: coletar, armazenar, usar, compartilhar, eliminar.</p>
+
+  <h3>Os atores do tratamento</h3>
+  <div class="grid g3">
+    <div class="card">
+      <p class="tag">Art. 5º, VI</p>
+      <h4>Controlador</h4>
+      <p>Decide <strong>sobre o tratamento</strong>: o porquê (finalidade) e o como. A própria rede social. É o principal responsável.</p>
+    </div>
+    <div class="card">
+      <p class="tag">Art. 5º, VII</p>
+      <h4>Operador</h4>
+      <p>Trata os dados <strong>em nome do controlador</strong>. Ex.: o provedor de nuvem (AWS, GCP) que hospeda o banco.</p>
+    </div>
+    <div class="card">
+      <p class="tag">Art. 5º, VIII</p>
+      <h4>Encarregado (DPO)</h4>
+      <p>Canal de comunicação entre <strong>controlador, titulares e ANPD</strong>. É pessoa/papel, não tecnologia.</p>
+    </div>
+  </div>
+
+  <div class="box armadilha">
+    <p class="lbl">⚠️ Armadilha clássica</p>
+    <p>O <strong>titular</strong> é a pessoa natural a quem os dados se referem (o usuário) — <strong>não</strong> é um dos “responsáveis pelo tratamento”. E o <strong>encarregado</strong> é uma <em>pessoa/função</em>, nunca um software ou um departamento de TI. ENADE adora trocar esses papéis.</p>
+  </div>
+
+  <h3>Dado pessoal × dado pessoal sensível</h3>
+  <div class="grid g2">
+    <div class="card">
+      <p class="tag">Art. 5º, I — Dado pessoal</p>
+      <h4>Identifica uma pessoa</h4>
+      <p>Nome, e-mail, telefone, foto de perfil, IP, ID de cookie. Tudo que torna alguém <strong>identificado ou identificável</strong>.</p>
+    </div>
+    <div class="card" style="border-color:#EFC2D3;background:var(--rose-soft)">
+      <p class="tag" style="color:var(--rose)">Art. 5º, II — Dado sensível</p>
+      <h4>Categoria especial e protegida</h4>
+      <p>Origem racial, convicção religiosa, opinião política, saúde, vida sexual, dado <strong>genético ou biométrico</strong> (reconhecimento facial!). Exige base legal mais restrita (Art. 11).</p>
+    </div>
+  </div>
+  <div class="box sens">
+    <p class="lbl">🧬 Por que isso importa na tela de configurações</p>
+    <p>Recursos como <strong>reconhecimento facial em fotos</strong> e <strong>marcação automática</strong> tratam <strong>dado biométrico = dado sensível</strong>. Por isso, nas grandes plataformas, esse toggle vem <strong>desligado por padrão</strong> e exige consentimento <em>específico e destacado</em>. Ligar isso “no automático” é violação direta.</p>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 3. PRINCÍPIOS ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Art. 6º</p>
+  <h2>Os 10 princípios que toda tela deve respeitar</h2>
+  <p>O tratamento de dados é regido pela <strong>boa-fé</strong> e por dez princípios. Na configuração de perfil, três deles são protagonistas: <strong>necessidade</strong>, <strong>livre acesso</strong> e <strong>transparência</strong>.</p>
+  <div class="princ">
+    <div class="item"><span class="num">01</span><b>Finalidade</b><span>Propósitos legítimos, específicos e informados ao titular.</span></div>
+    <div class="item"><span class="num">02</span><b>Adequação</b><span>Compatível com as finalidades informadas.</span></div>
+    <div class="item"><span class="num">03</span><b>Necessidade</b><span>Mínimo de dados necessário (minimização). Não pedir o que não usa.</span></div>
+    <div class="item"><span class="num">04</span><b>Livre acesso</b><span>Consulta fácil e gratuita sobre forma e duração do tratamento.</span></div>
+    <div class="item"><span class="num">05</span><b>Qualidade dos dados</b><span>Exatidão, clareza e atualização — daí o direito de correção.</span></div>
+    <div class="item"><span class="num">06</span><b>Transparência</b><span>Informações claras e acessíveis sobre o tratamento.</span></div>
+    <div class="item"><span class="num">07</span><b>Segurança</b><span>Medidas técnicas e administrativas de proteção.</span></div>
+    <div class="item"><span class="num">08</span><b>Prevenção</b><span>Evitar danos antes que ocorram.</span></div>
+    <div class="item"><span class="num">09</span><b>Não discriminação</b><span>Vedado tratar para fins discriminatórios/ilícitos.</span></div>
+    <div class="item"><span class="num">10</span><b>Responsabilização</b><span>Demonstrar a adoção de medidas (accountability).</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 4. BASES LEGAIS ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Art. 7º e 11</p>
+  <h2>Nenhum tratamento sem base legal</h2>
+  <p>Todo dado tratado precisa de uma das <strong>hipóteses legais</strong>. Na tela de perfil, três bases aparecem o tempo todo:</p>
+  <table class="maptable">
+    <tr><th>Base legal</th><th>Onde aparece na configuração</th></tr>
+    <tr><td>Consentimento <span class="art">(Art. 7º, I)</span></td><td>Anúncios personalizados, reconhecimento facial, compartilhamento com parceiros. Deve ser <strong>livre, informado, inequívoco</strong> e por <strong>ação afirmativa</strong> (nada de checkbox pré-marcado).</td></tr>
+    <tr><td>Execução de contrato <span class="art">(Art. 7º, V)</span></td><td>E-mail e telefone necessários para a conta funcionar e o serviço ser prestado.</td></tr>
+    <tr><td>Legítimo interesse <span class="art">(Art. 7º, IX)</span></td><td>Segurança da conta, prevenção a fraude. Não serve para tudo: exige teste de balanceamento e <strong>não</strong> vale para dado sensível.</td></tr>
+  </table>
+  <div class="box armadilha">
+    <p class="lbl">⚠️ Armadilha — consentimento</p>
+    <p>O consentimento precisa ser <strong>tão fácil de revogar quanto de conceder</strong> (Art. 8º, §5º). Se ligar o anúncio personalizado é um clique, desligar também tem que ser. Esconder a revogação em cinco menus é um <strong>dark pattern</strong> e fere a livre manifestação.</p>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 5. DIREITOS DO TITULAR ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Art. 18 — o coração do RF</p>
+  <h2>Cada direito do titular vira um controle na tela</h2>
+  <p>Esta é a tabela mais importante da aula. O RF “editar informações pessoais e preferências” é, na prática, a <strong>implementação dos direitos do Art. 18</strong>. Decore o mapeamento:</p>
+  <table class="maptable">
+    <tr><th>Direito do titular</th><th>Artigo</th><th>Componente de UI que o realiza</th></tr>
+    <tr><td>Confirmação e acesso</td><td class="art">Art. 18, I e II</td><td>Página “Suas informações” / “Baixar seus dados”</td></tr>
+    <tr><td>Correção</td><td class="art">Art. 18, III</td><td><strong>Inputs editáveis</strong> de nome, e-mail, bio, data de nascimento + botão <em>Salvar</em></td></tr>
+    <tr><td>Anonimização / bloqueio / eliminação de dados excessivos</td><td class="art">Art. 18, IV</td><td>Toggles que desativam coletas; opção de ocultar campos</td></tr>
+    <tr><td>Portabilidade</td><td class="art">Art. 18, V</td><td>“Exportar dados” em formato legível por máquina (JSON/CSV)</td></tr>
+    <tr><td>Eliminação (dados c/ consentimento)</td><td class="art">Art. 18, VI</td><td>Botão <strong>“Excluir conta”</strong> (zona de risco)</td></tr>
+    <tr><td>Informação sobre compartilhamento</td><td class="art">Art. 18, VII</td><td>Painel “Quem pode ver” / “Apps e parceiros conectados”</td></tr>
+    <tr><td>Revogação do consentimento</td><td class="art">Art. 18, IX</td><td>Toggles de privacidade/anúncios que podem ser <strong>desligados a qualquer momento</strong></td></tr>
+  </table>
+</div>
+</section>
+
+<!-- ===================== 6. PRIVACY BY DESIGN ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Princípio reitor</p>
+  <h2>Privacy by Design & Privacy by Default</h2>
+  <p><strong>Privacy by Design</strong> (Ann Cavoukian) significa embutir a privacidade na arquitetura desde o início — não como um “remendo” no final. <strong>Privacy by Default</strong> é o seu desdobramento prático: a configuração <strong>padrão</strong> entregue ao usuário deve ser a <strong>mais protetiva</strong> possível.</p>
+  <div class="grid g2">
+    <div class="card" style="border-color:#B7DCCB;background:var(--green-soft)">
+      <p class="tag" style="color:var(--green)">By Default ✓ correto</p>
+      <h4>Conta nova nasce privada</h4>
+      <p>Perfil restrito, anúncios personalizados <strong>desligados</strong>, biometria <strong>desligada</strong>, localização <strong>desligada</strong>. O usuário <em>opta por abrir</em> (opt-in).</p>
+    </div>
+    <div class="card" style="border-color:#EBC992;background:var(--amber-soft)">
+      <p class="tag" style="color:var(--amber)">✗ violação</p>
+      <h4>Tudo ligado “para engajar”</h4>
+      <p>Perfil público, dados compartilhados e biometria ativos por padrão, forçando o usuário a caçar e <em>desligar</em> (opt-out). Fere o princípio.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 7. MAQUETE INTERATIVA (SIGNATURE) ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Anatomia da tela</p>
+  <h2>A página de configurações, controle por controle</h2>
+  <p>Abaixo está uma maquete <strong>funcional</strong> da página de configurações no padrão das grandes plataformas. Navegue pelas seções — <strong>Conta</strong>, <strong>Privacidade</strong>, <strong>Aparência</strong> (modo escuro), <strong>Idioma</strong> e <strong>Seus dados</strong>. O <em>Modo escuro</em> e o <em>Idioma</em> realmente funcionam na demo. Cada controle traz a <strong>etiqueta do artigo da LGPD</strong> que ele cumpre.</p>
+
+  <div class="mock-frame" id="mock" data-theme="light">
+    <div class="mock-top">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="mock-url" id="mockUrl">app.rede.com/configuracoes/conta</span>
+    </div>
+    <div class="mock-body">
+      <!-- NAV -->
+      <nav class="mock-nav">
+        <div class="nav-h" data-i18n="navTitle">Configurações</div>
+        <button class="nav-btn active" data-tab="conta">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          <span data-i18n="navConta">Conta</span>
+        </button>
+        <button class="nav-btn" data-tab="privacidade">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>
+          <span data-i18n="navPriv">Privacidade</span>
+        </button>
+        <button class="nav-btn" data-tab="aparencia">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+          <span data-i18n="navApar">Aparência</span>
+        </button>
+        <button class="nav-btn" data-tab="idioma">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>
+          <span data-i18n="navIdioma">Idioma</span>
+        </button>
+        <button class="nav-btn" data-tab="dados">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          <span data-i18n="navDados">Seus dados</span>
+        </button>
+      </nav>
+
+      <!-- PANELS -->
+      <div class="mock-panel">
+
+        <!-- CONTA -->
+        <div class="panel show" data-panel="conta">
+          <div class="panel-title" data-i18n="contaTitle">Conta</div>
+          <div class="panel-sub" data-i18n="contaSub">Informações pessoais que você pode corrigir a qualquer momento.</div>
+
+          <div class="field">
+            <label data-i18n="lblNome">Nome de exibição</label>
+            <input type="text" value="Matheus A.">
+            <div class="art-pill">Art. 18, III · Correção</div>
+          </div>
+          <div class="field">
+            <label data-i18n="lblUser">Nome de usuário</label>
+            <input type="text" value="@matheus">
+            <div class="hint" data-i18n="hintUser">Único na plataforma. Aparece no seu link de perfil.</div>
+          </div>
+          <div class="field">
+            <label data-i18n="lblEmail">E-mail <span class="verified">✓ VERIFICADO</span></label>
+            <input type="email" value="matheus@email.com">
+            <div class="art-pill">Art. 7º, V · Execução de contrato</div>
+          </div>
+          <div class="field">
+            <label data-i18n="lblData">Data de nascimento</label>
+            <input type="date" value="2003-05-12">
+            <div class="hint" data-i18n="hintData">Coletada só para verificar idade mínima — princípio da necessidade (Art. 6º, III).</div>
+          </div>
+          <div class="field">
+            <label data-i18n="lblBio">Biografia</label>
+            <textarea data-i18n-ph="phBio" placeholder="Conte algo sobre você...">BSI · PUCPR</textarea>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" data-i18n="btnSalvar">Salvar alterações</button>
+            <button class="btn btn-ghost" data-i18n="btnCancelar">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- PRIVACIDADE -->
+        <div class="panel" data-panel="privacidade">
+          <div class="panel-title" data-i18n="privTitle">Privacidade</div>
+          <div class="panel-sub" data-i18n="privSub">Controle quem vê o quê e como seus dados são usados.</div>
+
+          <div class="field">
+            <label data-i18n="lblQuemVe">Quem pode ver seu perfil</label>
+            <div class="radio-card sel"><span class="rad"></span><div><div class="rc-t" data-i18n="optSoVoce">Somente você</div><div class="rc-d" data-i18n="optSoVoceD">Padrão mais protetivo (Privacy by Default)</div></div></div>
+            <div class="radio-card"><span class="rad"></span><div><div class="rc-t" data-i18n="optAmigos">Amigos</div><div class="rc-d" data-i18n="optAmigosD">Apenas conexões aprovadas</div></div></div>
+            <div class="radio-card"><span class="rad"></span><div><div class="rc-t" data-i18n="optPublico">Público</div><div class="rc-d" data-i18n="optPublicoD">Qualquer pessoa, inclusive buscadores</div></div></div>
+            <div class="art-pill">Art. 18, VII · Compartilhamento</div>
+          </div>
+
+          <h4 style="margin-top:22px" data-i18n="consHead">Uso dos seus dados (consentimento)</h4>
+          <div class="toggle-row">
+            <div class="meta"><b data-i18n="adsT">Anúncios personalizados</b><span data-i18n="adsD">Usa seu histórico para escolher anúncios.</span><div class="art-pill">Art. 7º, I · Consentimento revogável</div></div>
+            <label class="sw"><input type="checkbox"><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="meta"><b data-i18n="bioT">Reconhecimento facial em fotos</b><span data-i18n="bioD">Sugere marcações reconhecendo seu rosto.</span><div class="art-pill s">Art. 11 · Dado sensível</div></div>
+            <label class="sw"><input type="checkbox"><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="meta"><b data-i18n="locT">Histórico de localização</b><span data-i18n="locD">Registra os lugares de onde você acessa.</span><div class="art-pill">Art. 7º, I · Consentimento revogável</div></div>
+            <label class="sw"><input type="checkbox"><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="meta"><b data-i18n="partT">Compartilhar com parceiros</b><span data-i18n="partD">Envia dados a anunciantes parceiros.</span><div class="art-pill">Art. 18, IX · Revogação</div></div>
+            <label class="sw"><input type="checkbox"><span class="track"></span><span class="knob"></span></label>
+          </div>
+        </div>
+
+        <!-- APARÊNCIA -->
+        <div class="panel" data-panel="aparencia">
+          <div class="panel-title" data-i18n="aparTitle">Aparência</div>
+          <div class="panel-sub" data-i18n="aparSub">Preferência de exibição. Não é dado pessoal — é configuração de uso.</div>
+          <div class="toggle-row">
+            <div class="meta"><b data-i18n="darkT">Modo escuro</b><span data-i18n="darkD">Ative para testar o tema da demonstração.</span></div>
+            <label class="sw"><input type="checkbox" id="darkToggle"><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div class="box nota" style="margin:18px 0 0">
+            <p class="lbl" data-i18n="aparNotaL">📌 Nota de modelagem</p>
+            <p data-i18n="aparNota">Modo escuro e tamanho de fonte são <b>preferências de interface (RF)</b>, ligadas a usabilidade e acessibilidade — não a tratamento de dado pessoal. Cuidado para não confundir “preferência do perfil” com “dado pessoal” na prova.</p>
+          </div>
+        </div>
+
+        <!-- IDIOMA -->
+        <div class="panel" data-panel="idioma">
+          <div class="panel-title" data-i18n="idiomaTitle">Idioma da interface</div>
+          <div class="panel-sub" data-i18n="idiomaSub">Troque o idioma — a demonstração responde de verdade.</div>
+          <div class="field">
+            <label data-i18n="lblIdioma">Idioma</label>
+            <select id="langSelect">
+              <option value="pt">Português (Brasil)</option>
+              <option value="en">English (US)</option>
+              <option value="es">Español</option>
+            </select>
+            <div class="hint" data-i18n="hintIdioma">Preferência de exibição persistida no perfil do usuário.</div>
+          </div>
+        </div>
+
+        <!-- DADOS -->
+        <div class="panel" data-panel="dados">
+          <div class="panel-title" data-i18n="dadosTitle">Seus dados</div>
+          <div class="panel-sub" data-i18n="dadosSub">Exercício direto dos direitos do titular (Art. 18).</div>
+          <div class="toggle-row" style="border-bottom:none;padding-bottom:6px">
+            <div class="meta"><b data-i18n="expT">Baixar seus dados</b><span data-i18n="expD">Exporta tudo em formato legível por máquina (JSON).</span><div class="art-pill">Art. 18, V · Portabilidade</div></div>
+            <button class="btn btn-ghost" data-i18n="btnExport">Exportar</button>
+          </div>
+          <div class="danger-zone">
+            <b data-i18n="delT">Excluir conta</b>
+            <p data-i18n="delD">Remove permanentemente seus dados pessoais tratados com base no consentimento.</p>
+            <button class="btn btn-danger" data-i18n="btnDel">Excluir conta</button>
+            <div class="art-pill s" style="margin-top:8px">Art. 18, VI · Eliminação</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="annot">
+    <div class="a"><div class="h">Inputs editáveis = Correção</div><div class="b">Nome, e-mail, bio e data são campos que o titular altera. Implementam o direito de correção (Art. 18, III) e o princípio de qualidade dos dados.</div></div>
+    <div class="a"><div class="h">Toggles = Consentimento revogável</div><div class="b">Cada chave liga/desliga uma finalidade. Como nascem desligadas (by default) e podem ser desligadas depois, garantem opt-in e revogação (Art. 18, IX).</div></div>
+    <div class="a"><div class="h">Radio “quem pode ver” = Compartilhamento</div><div class="b">Define a audiência. O padrão deve ser o mais restritivo. Materializa o controle sobre compartilhamento (Art. 18, VII).</div></div>
+    <div class="a"><div class="h">Botões “Seus dados” = Portabilidade & Eliminação</div><div class="b">Exportar (Art. 18, V) e Excluir conta (Art. 18, VI) são ações destrutivas/sensíveis: confirmação dupla e linguagem clara.</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 8. SEÇÕES EM DETALHE ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Detalhe das seções</p>
+  <h2>O que sempre existe — e por quê</h2>
+
+  <h3>Conta</h3>
+  <p>É a casa dos <strong>dados pessoais identificadores</strong>: nome, usuário, e-mail, telefone, data de nascimento, foto, bio. Boas práticas das grandes plataformas: e-mail e telefone com <strong>fluxo de verificação</strong> (não basta digitar — confirma-se a posse); data de nascimento coletada apenas para <strong>verificação de idade</strong> (necessidade); e cada alteração sensível dispara <strong>reautenticação</strong>. Esta é a seção que cumpre, sozinha, o direito de <strong>correção</strong>.</p>
+
+  <h3>Privacidade</h3>
+  <p>Concentra <strong>visibilidade</strong> (quem vê perfil, lista de amigos, posts) e <strong>gestão de consentimento</strong> (anúncios, biometria, localização, parceiros). É aqui que mora a maior parte do risco de LGPD. Meta e Google centralizam isso em um <em>“Checkup de Privacidade”</em> — um assistente passo a passo que revisa cada configuração. O padrão de ouro: granularidade (um consentimento por finalidade, nunca um “aceito tudo” agrupado) e revogação em um clique.</p>
+
+  <h3>Aparência (Modo escuro)</h3>
+  <p>Tema, contraste e tamanho de fonte. <strong>Atenção conceitual:</strong> isto é <em>preferência de interface</em>, ligada a <strong>usabilidade e acessibilidade</strong> — não a tratamento de dado pessoal. É um RF de preferências do perfil, mas você não “protege pela LGPD” a escolha de modo escuro. Saber separar as duas coisas é exatamente o tipo de distinção fina que a prova cobra.</p>
+
+  <h3>Idioma da interface</h3>
+  <p>Define a localização (i18n) da experiência. Também é preferência de uso. Tem relação indireta com o princípio do <strong>livre acesso</strong> e <strong>transparência</strong> (Art. 6º, IV e VI): o titular precisa entender, no idioma dele, o que está consentindo. Mas o idioma em si não é dado sensível.</p>
+
+  <h3>Seus dados</h3>
+  <p>A seção que transforma a lei em botão: <strong>baixar dados</strong> (portabilidade/acesso), <strong>histórico de atividades</strong> (transparência) e <strong>excluir conta</strong> (eliminação). O Google chama sua ferramenta de exportação de <em>Takeout</em>; a Meta, de <em>“Baixar suas informações”</em>. Ações destrutivas exigem <strong>confirmação explícita</strong> e explicação clara das consequências.</p>
+</div>
+</section>
+
+<!-- ===================== 9. RF x RNF ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Engenharia de requisitos</p>
+  <h2>A distinção que mais derruba candidato: RF × RNF</h2>
+  <p>O enunciado fala em “<strong>RF</strong> — Editar informações…”. Mas nem tudo nessa tela é requisito funcional. Saber separar é meio ponto garantido.</p>
+  <table class="maptable">
+    <tr><th>Enunciado</th><th>Classificação</th></tr>
+    <tr><td>“O sistema deve permitir editar nome, e-mail e bio.”</td><td><strong style="color:var(--green)">RF</strong> — descreve uma função/comportamento.</td></tr>
+    <tr><td>“O sistema deve permitir definir a visibilidade do perfil.”</td><td><strong style="color:var(--green)">RF</strong> — função de configuração.</td></tr>
+    <tr><td>“Os dados pessoais devem ser armazenados criptografados.”</td><td><strong style="color:var(--amber)">RNF</strong> — segurança.</td></tr>
+    <tr><td>“O sistema deve estar em conformidade com a LGPD.”</td><td><strong style="color:var(--amber)">RNF</strong> — restrição legal/conformidade.</td></tr>
+    <tr><td>“A página deve carregar em até 2 segundos.”</td><td><strong style="color:var(--amber)">RNF</strong> — desempenho.</td></tr>
+    <tr><td>“A interface deve ter contraste acessível (WCAG).”</td><td><strong style="color:var(--amber)">RNF</strong> — usabilidade/acessibilidade.</td></tr>
+  </table>
+  <div class="box armadilha">
+    <p class="lbl">⚠️ Regra de bolso</p>
+    <p>Pergunte: “isso descreve <strong>o que</strong> o sistema faz (uma ação que o usuário aciona)?” → <strong>RF</strong>. Ou “isso descreve <strong>uma qualidade/restrição</strong> de <em>como</em> o sistema faz (rápido, seguro, legal, acessível)?” → <strong>RNF</strong>. “Conformidade com a LGPD” e “criptografia” são quase sempre RNF.</p>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 10. DARK PATTERNS ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Boas práticas</p>
+  <h2>Dark patterns que reprovam você (e a empresa)</h2>
+  <div class="grid g2">
+    <div class="card" style="border-color:#EBC992"><p class="tag" style="color:var(--amber)">✗ Evite</p><h4>Checkbox pré-marcado</h4><p>Consentimento já vem aceito. Viola a exigência de <strong>ação afirmativa</strong> e manifestação livre.</p></div>
+    <div class="card" style="border-color:#EBC992"><p class="tag" style="color:var(--amber)">✗ Evite</p><h4>Consentimento agrupado</h4><p>Um único “Aceito” para dez finalidades diferentes. A LGPD pede <strong>granularidade</strong>.</p></div>
+    <div class="card" style="border-color:#EBC992"><p class="tag" style="color:var(--amber)">✗ Evite</p><h4>Revogação escondida</h4><p>Conceder é fácil, cancelar exige 6 cliques. Fere o Art. 8º, §5º.</p></div>
+    <div class="card" style="border-color:#EBC992"><p class="tag" style="color:var(--amber)">✗ Evite</p><h4>Padrão invasivo</h4><p>Perfil público e biometria ligados por padrão. Fere o Privacy by Default.</p></div>
+  </div>
+  <div class="box ok">
+    <p class="lbl">✓ O padrão profissional</p>
+    <p>Opt-in explícito · um consentimento por finalidade · revogação no mesmo lugar e com o mesmo esforço · padrões mais protetivos · linguagem clara no idioma do usuário · confirmação para ações destrutivas.</p>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 11. QUESTÕES ENADE ===================== -->
+<section>
+<div class="wrap">
+  <p class="eyebrow">Avaliação · estilo ENADE</p>
+  <h2>Questões comentadas</h2>
+  <p>Dez questões contextualizadas. Clique na alternativa para ver o gabarito e o comentário. O placar é atualizado automaticamente.</p>
+
+  <div class="quiz-head">
+    <span class="score-pill" id="score">Acertos: 0 / 10</span>
+  </div>
+
+  <div id="quiz"></div>
+
+  <div class="final" id="final">
+    <h3>Simulado concluído</h3>
+    <div class="big" id="finalScore">0/10</div>
+    <p id="finalMsg">Revise as armadilhas e tente de novo.</p>
+    <button onclick="resetQuiz()">Refazer simulado</button>
+  </div>
+</div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <b>LGPD em Redes Sociais — Configurações de Perfil (RF)</b><br>
+    Material de estudo · BSI · Foco ENADE · Lei nº 13.709/2018
+  </div>
+</footer>
+
+<script>
+/* ========== MOCKUP: navegação entre abas ========== */
+const navBtns=document.querySelectorAll('.nav-btn');
+const panels=document.querySelectorAll('.panel');
+const mockUrl=document.getElementById('mockUrl');
+const urlMap={conta:'conta',privacidade:'privacidade',aparencia:'aparencia',idioma:'idioma',dados:'seus-dados'};
+navBtns.forEach(b=>b.addEventListener('click',()=>{
+  navBtns.forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const t=b.dataset.tab;
+  panels.forEach(p=>p.classList.toggle('show',p.dataset.panel===t));
+  mockUrl.textContent='app.rede.com/configuracoes/'+urlMap[t];
+}));
+
+/* ========== MOCKUP: radio cards ========== */
+document.querySelectorAll('[data-panel="privacidade"] .radio-card').forEach((rc,_,all)=>{
+  rc.addEventListener('click',()=>{all.forEach(x=>x.classList.remove('sel'));rc.classList.add('sel');});
+});
+
+/* ========== MOCKUP: modo escuro real ========== */
+document.getElementById('darkToggle').addEventListener('change',e=>{
+  document.getElementById('mock').dataset.theme=e.target.checked?'dark':'light';
+});
+
+/* ========== MOCKUP: i18n real ========== */
+const I18N={
+  pt:{navTitle:'Configurações',navConta:'Conta',navPriv:'Privacidade',navApar:'Aparência',navIdioma:'Idioma',navDados:'Seus dados',
+    contaTitle:'Conta',contaSub:'Informações pessoais que você pode corrigir a qualquer momento.',
+    lblNome:'Nome de exibição',lblUser:'Nome de usuário',hintUser:'Único na plataforma. Aparece no seu link de perfil.',
+    lblEmail:'E-mail',lblData:'Data de nascimento',hintData:'Coletada só para verificar idade mínima — princípio da necessidade (Art. 6º, III).',
+    lblBio:'Biografia',phBio:'Conte algo sobre você...',btnSalvar:'Salvar alterações',btnCancelar:'Cancelar',
+    privTitle:'Privacidade',privSub:'Controle quem vê o quê e como seus dados são usados.',lblQuemVe:'Quem pode ver seu perfil',
+    optSoVoce:'Somente você',optSoVoceD:'Padrão mais protetivo (Privacy by Default)',optAmigos:'Amigos',optAmigosD:'Apenas conexões aprovadas',
+    optPublico:'Público',optPublicoD:'Qualquer pessoa, inclusive buscadores',consHead:'Uso dos seus dados (consentimento)',
+    adsT:'Anúncios personalizados',adsD:'Usa seu histórico para escolher anúncios.',bioT:'Reconhecimento facial em fotos',bioD:'Sugere marcações reconhecendo seu rosto.',
+    locT:'Histórico de localização',locD:'Registra os lugares de onde você acessa.',partT:'Compartilhar com parceiros',partD:'Envia dados a anunciantes parceiros.',
+    aparTitle:'Aparência',aparSub:'Preferência de exibição. Não é dado pessoal — é configuração de uso.',darkT:'Modo escuro',darkD:'Ative para testar o tema da demonstração.',
+    aparNotaL:'📌 Nota de modelagem',aparNota:'Modo escuro e tamanho de fonte são preferências de interface (RF), ligadas a usabilidade e acessibilidade — não a tratamento de dado pessoal.',
+    idiomaTitle:'Idioma da interface',idiomaSub:'Troque o idioma — a demonstração responde de verdade.',lblIdioma:'Idioma',hintIdioma:'Preferência de exibição persistida no perfil do usuário.',
+    dadosTitle:'Seus dados',dadosSub:'Exercício direto dos direitos do titular (Art. 18).',expT:'Baixar seus dados',expD:'Exporta tudo em formato legível por máquina (JSON).',btnExport:'Exportar',
+    delT:'Excluir conta',delD:'Remove permanentemente seus dados pessoais tratados com base no consentimento.',btnDel:'Excluir conta'},
+  en:{navTitle:'Settings',navConta:'Account',navPriv:'Privacy',navApar:'Appearance',navIdioma:'Language',navDados:'Your data',
+    contaTitle:'Account',contaSub:'Personal information you can correct at any time.',
+    lblNome:'Display name',lblUser:'Username',hintUser:'Unique on the platform. Shown in your profile link.',
+    lblEmail:'Email',lblData:'Date of birth',hintData:'Collected only to verify minimum age — necessity principle (Art. 6, III).',
+    lblBio:'Bio',phBio:'Tell us about yourself...',btnSalvar:'Save changes',btnCancelar:'Cancel',
+    privTitle:'Privacy',privSub:'Control who sees what and how your data is used.',lblQuemVe:'Who can see your profile',
+    optSoVoce:'Only you',optSoVoceD:'Most protective default (Privacy by Default)',optAmigos:'Friends',optAmigosD:'Approved connections only',
+    optPublico:'Public',optPublicoD:'Anyone, including search engines',consHead:'Use of your data (consent)',
+    adsT:'Personalized ads',adsD:'Uses your history to pick ads.',bioT:'Face recognition in photos',bioD:'Suggests tags by recognizing your face.',
+    locT:'Location history',locD:'Records where you log in from.',partT:'Share with partners',partD:'Sends data to partner advertisers.',
+    aparTitle:'Appearance',aparSub:'Display preference. Not personal data — a usage setting.',darkT:'Dark mode',darkD:'Turn on to test the demo theme.',
+    aparNotaL:'📌 Modeling note',aparNota:'Dark mode and font size are interface preferences (FR), tied to usability and accessibility — not personal-data processing.',
+    idiomaTitle:'Interface language',idiomaSub:'Switch the language — the demo really responds.',lblIdioma:'Language',hintIdioma:'Display preference persisted in the user profile.',
+    dadosTitle:'Your data',dadosSub:'Direct exercise of data-subject rights (Art. 18).',expT:'Download your data',expD:'Exports everything in a machine-readable format (JSON).',btnExport:'Export',
+    delT:'Delete account',delD:'Permanently removes personal data processed under consent.',btnDel:'Delete account'},
+  es:{navTitle:'Configuración',navConta:'Cuenta',navPriv:'Privacidad',navApar:'Apariencia',navIdioma:'Idioma',navDados:'Tus datos',
+    contaTitle:'Cuenta',contaSub:'Información personal que puedes corregir en cualquier momento.',
+    lblNome:'Nombre visible',lblUser:'Nombre de usuario',hintUser:'Único en la plataforma. Aparece en tu enlace de perfil.',
+    lblEmail:'Correo',lblData:'Fecha de nacimiento',hintData:'Recopilada solo para verificar la edad mínima — principio de necesidad (Art. 6, III).',
+    lblBio:'Biografía',phBio:'Cuéntanos sobre ti...',btnSalvar:'Guardar cambios',btnCancelar:'Cancelar',
+    privTitle:'Privacidad',privSub:'Controla quién ve qué y cómo se usan tus datos.',lblQuemVe:'Quién puede ver tu perfil',
+    optSoVoce:'Solo tú',optSoVoceD:'Valor más protector (Privacy by Default)',optAmigos:'Amigos',optAmigosD:'Solo conexiones aprobadas',
+    optPublico:'Público',optPublicoD:'Cualquiera, incluso buscadores',consHead:'Uso de tus datos (consentimiento)',
+    adsT:'Anuncios personalizados',adsD:'Usa tu historial para elegir anuncios.',bioT:'Reconocimiento facial en fotos',bioD:'Sugiere etiquetas reconociendo tu rostro.',
+    locT:'Historial de ubicación',locD:'Registra desde dónde accedes.',partT:'Compartir con socios',partD:'Envía datos a anunciantes asociados.',
+    aparTitle:'Apariencia',aparSub:'Preferencia de visualización. No es dato personal — es una configuración de uso.',darkT:'Modo oscuro',darkD:'Actívalo para probar el tema de la demo.',
+    aparNotaL:'📌 Nota de modelado',aparNota:'El modo oscuro y el tamaño de fuente son preferencias de interfaz (RF), ligadas a usabilidad y accesibilidad — no a tratamiento de datos personales.',
+    idiomaTitle:'Idioma de la interfaz',idiomaSub:'Cambia el idioma — la demo responde de verdad.',lblIdioma:'Idioma',hintIdioma:'Preferencia de visualización guardada en el perfil del usuario.',
+    dadosTitle:'Tus datos',dadosSub:'Ejercicio directo de los derechos del titular (Art. 18).',expT:'Descargar tus datos',expD:'Exporta todo en formato legible por máquina (JSON).',btnExport:'Exportar',
+    delT:'Eliminar cuenta',delD:'Elimina permanentemente los datos personales tratados con base en el consentimiento.',btnDel:'Eliminar cuenta'}
+};
+document.getElementById('langSelect').addEventListener('change',e=>{
+  const d=I18N[e.target.value];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{if(d[el.dataset.i18n])el.textContent=d[el.dataset.i18n];});
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{if(d[el.dataset.i18nPh])el.placeholder=d[el.dataset.i18nPh];});
+});
+
+/* ========== QUIZ ENADE ========== */
+const QUESTIONS=[
+ {ctx:"Uma rede social ativa, por padrão, o reconhecimento facial em todas as fotos novas dos usuários, sugerindo marcações automaticamente, sem solicitar autorização específica.",
+  stem:"À luz da LGPD, a prática descrita é problemática principalmente porque:",
+  opts:["O reconhecimento facial é um recurso de desempenho, regido por requisito não funcional.","Dados biométricos são dados pessoais sensíveis (Art. 5º, II) e exigem consentimento específico, não podendo ser ativados por padrão.","A LGPD não se aplica a fotografias publicadas voluntariamente pelo usuário.","O tratamento é lícito desde que a empresa seja a controladora dos dados.","Basta informar a finalidade na política de privacidade para dispensar o consentimento."],
+  correct:1,
+  expl:"Reconhecimento facial trata <b>dado biométrico</b>, que é <b>dado pessoal sensível</b> (Art. 5º, II). Seu tratamento exige base legal específica do Art. 11 e, em regra, consentimento destacado. O <b>Privacy by Default</b> determina que venha desativado. Ativar por padrão fere a lei."},
+
+ {ctx:"Na tela de configurações, o usuário altera seu e-mail e sua biografia em campos de texto editáveis e clica em “Salvar alterações”.",
+  stem:"Esse comportamento implementa diretamente qual direito do titular?",
+  opts:["Portabilidade (Art. 18, V).","Eliminação (Art. 18, VI).","Correção de dados incompletos, inexatos ou desatualizados (Art. 18, III).","Revogação do consentimento (Art. 18, IX).","Confirmação da existência de tratamento (Art. 18, I)."],
+  correct:2,
+  expl:"Campos editáveis de informações pessoais materializam o direito de <b>correção</b> (Art. 18, III), ligado ao princípio da <b>qualidade dos dados</b> (Art. 6º, V)."},
+
+ {ctx:"Durante a especificação do sistema, a equipe lista vários itens para a página de perfil.",
+  stem:"Assinale o item que é um requisito NÃO funcional (RNF):",
+  opts:["O sistema deve permitir editar nome, e-mail e biografia.","O sistema deve permitir definir quem vê o perfil.","Os dados pessoais devem ser armazenados de forma criptografada, em conformidade com a LGPD.","O sistema deve permitir baixar os dados do usuário.","O sistema deve permitir excluir a conta."],
+  correct:2,
+  expl:"Criptografia e conformidade com a LGPD são <b>qualidades/restrições</b> de <i>como</i> o sistema opera (segurança e conformidade) → <b>RNF</b>. Os demais descrevem ações que o usuário aciona → RF."},
+
+ {ctx:"Uma conta recém-criada nasce com o perfil já público, anúncios personalizados ligados e localização ativa, exigindo que o usuário desligue cada item manualmente.",
+  stem:"Essa configuração inicial viola qual princípio/conceito?",
+  opts:["Privacy by Default, segundo o qual a configuração padrão deve ser a mais protetiva à privacidade.","Princípio da portabilidade, que exige exportação automática.","Princípio do livre acesso, que exige perfil público.","Não há violação: opt-out é equivalente a opt-in na LGPD.","Princípio da responsabilização, que obriga perfis abertos."],
+  correct:0,
+  expl:"<b>Privacy by Default</b>: o estado inicial deve ser o mais protetivo, com o usuário optando por <b>abrir</b> (opt-in). Forçar opt-out de tudo viola o conceito."},
+
+ {ctx:"Considere os papéis definidos pela LGPD em uma rede social que usa um provedor de nuvem para hospedar seus bancos de dados e indica um profissional como ponto de contato com a ANPD.",
+  stem:"A associação correta é:",
+  opts:["A rede social é operadora; o provedor de nuvem é controlador.","A rede social é controladora; o provedor de nuvem é operador; o profissional é o encarregado.","O provedor de nuvem é o encarregado; a rede social é operadora.","O usuário é o controlador dos próprios dados.","O encarregado é o software de gestão de consentimento."],
+  correct:1,
+  expl:"Quem decide finalidades = <b>controlador</b> (a rede). Quem trata em nome dela = <b>operador</b> (a nuvem). O ponto de contato com titulares e ANPD = <b>encarregado/DPO</b> (uma pessoa)."},
+
+ {ctx:"Ao criar a conta, um site exibe um checkbox já marcado: “Concordo em receber anúncios personalizados com base no meu comportamento”.",
+  stem:"Sobre o consentimento assim coletado, é correto afirmar que:",
+  opts:["É válido, pois o usuário pode desmarcar se quiser.","É válido, pois consentimento tácito é aceito pela LGPD.","É inválido, pois o consentimento exige manifestação livre, informada, inequívoca e por ação afirmativa.","É válido apenas para dados sensíveis.","É inválido apenas se o usuário for menor de idade."],
+  correct:2,
+  expl:"Checkbox pré-marcado é <b>dark pattern</b>: não há ação afirmativa. O consentimento deve ser <b>livre, informado, inequívoco</b> e por opt-in explícito. Consentimento pré-marcado/tácito não é válido."},
+
+ {ctx:"Na seção “Seus dados”, há dois botões: “Baixar seus dados” (exporta um arquivo JSON) e “Excluir conta”.",
+  stem:"Esses botões correspondem, respectivamente, aos direitos de:",
+  opts:["Correção e revogação.","Portabilidade (Art. 18, V) e eliminação (Art. 18, VI).","Acesso e adequação.","Eliminação e portabilidade.","Confirmação e segurança."],
+  correct:1,
+  expl:"Exportar em formato legível por máquina = <b>portabilidade</b> (Art. 18, V). Remover permanentemente os dados = <b>eliminação</b> (Art. 18, VI). Cuidado com a ordem na alternativa."},
+
+ {ctx:"Avalie as asserções a seguir. I — O modo escuro e o idioma da interface são preferências do perfil e configuram requisitos funcionais. PORQUE II — São formas de tratamento de dados pessoais sensíveis protegidas pelo Art. 11 da LGPD.",
+  stem:"A respeito dessas asserções, assinale a alternativa correta:",
+  opts:["As duas asserções são verdadeiras e a II justifica a I.","As duas asserções são verdadeiras, mas a II não justifica a I.","A asserção I é verdadeira e a II é falsa.","A asserção I é falsa e a II é verdadeira.","As duas asserções são falsas."],
+  correct:2,
+  expl:"I é <b>verdadeira</b>: modo escuro e idioma são preferências de interface (RF). II é <b>falsa</b>: são configurações de uso/usabilidade, <b>não</b> tratamento de dado sensível. Logo, I verdadeira e II falsa."},
+
+ {ctx:"Um usuário ativou anúncios personalizados com um clique. Meses depois, tenta desativar e descobre que precisa navegar por seis menus diferentes para encontrar a opção.",
+  stem:"Essa dificuldade de revogação contraria a LGPD porque:",
+  opts:["A revogação do consentimento deve ser tão fácil quanto a sua concessão (Art. 8º, §5º).","Anúncios personalizados não podem ser desativados depois de aceitos.","A revogação só é permitida para dados sensíveis.","O usuário renunciou ao direito ao consentir.","A LGPD não prevê revogação de consentimento."],
+  correct:0,
+  expl:"A LGPD garante revogação a qualquer momento, mediante procedimento <b>gratuito e facilitado</b>. Esconder a opção é dark pattern e fere a livre manifestação (relacionado ao Art. 8º, §5º e Art. 18, IX)."},
+
+ {ctx:"No cadastro, o sistema exige que o usuário informe renda, religião e orientação política apenas para criar um perfil básico de rede social, embora esses dados não sejam usados em nenhuma funcionalidade.",
+  stem:"A coleta desses dados fere primordialmente o princípio da:",
+  opts:["Transparência, pois não houve aviso.","Necessidade (minimização), que limita a coleta ao mínimo indispensável à finalidade.","Portabilidade, que impede coletar dados sensíveis.","Segurança, que exige criptografia.","Responsabilização, que exige relatório de impacto."],
+  correct:1,
+  expl:"Coletar dados além do necessário fere o princípio da <b>necessidade/minimização</b> (Art. 6º, III). Além disso, religião e opinião política são <b>dados sensíveis</b> — agravando a irregularidade."}
+];
+
+let answered=0,hits=0;
+const quizEl=document.getElementById('quiz');
+const scoreEl=document.getElementById('score');
+
+function renderQuiz(){
+  quizEl.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const keys=['A','B','C','D','E'];
+    const opts=q.opts.map((o,j)=>`<div class="opt" data-q="${i}" data-o="${j}"><span class="key">${keys[j]}</span><span>${o}</span></div>`).join('');
+    quizEl.insertAdjacentHTML('beforeend',`
+      <div class="q">
+        <div class="q-num">Questão ${i+1} de ${QUESTIONS.length}</div>
+        <div class="q-ctx">${q.ctx}</div>
+        <div class="q-stem">${q.stem}</div>
+        ${opts}
+        <div class="expl" id="expl-${i}"><span class="gab">Gabarito: ${keys[q.correct]}.</span> ${q.expl}</div>
+      </div>`);
+  });
+  document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',pick));
+}
+function pick(e){
+  const el=e.currentTarget;
+  const qi=+el.dataset.q, oi=+el.dataset.o;
+  const q=QUESTIONS[qi];
+  const sib=document.querySelectorAll(`.opt[data-q="${qi}"]`);
+  if([...sib].some(s=>s.classList.contains('disabled')))return;
+  sib.forEach(s=>{
+    s.classList.add('disabled');
+    const sj=+s.dataset.o;
+    if(sj===q.correct)s.classList.add('correct');
+    else if(sj===oi)s.classList.add('wrong');
+    else s.classList.add('dim');
+  });
+  document.getElementById('expl-'+qi).classList.add('show');
+  answered++; if(oi===q.correct)hits++;
+  scoreEl.textContent=`Acertos: ${hits} / ${QUESTIONS.length}`;
+  if(answered===QUESTIONS.length)showFinal();
+}
+function showFinal(){
+  const f=document.getElementById('final');
+  document.getElementById('finalScore').textContent=`${hits}/${QUESTIONS.length}`;
+  let msg;
+  if(hits===QUESTIONS.length)msg='Nota máxima. Você domina o mapeamento lei × interface.';
+  else if(hits>=7)msg='Muito bom. Revise os pontos que escaparam e fixe os artigos.';
+  else if(hits>=5)msg='No caminho. Reforce direitos do titular (Art. 18) e RF × RNF.';
+  else msg='Releia a tabela do Art. 18 e a distinção RF × RNF antes de refazer.';
+  document.getElementById('finalMsg').textContent=msg;
+  f.classList.add('show');
+  f.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function resetQuiz(){answered=0;hits=0;scoreEl.textContent=`Acertos: 0 / ${QUESTIONS.length}`;document.getElementById('final').classList.remove('show');renderQuiz();window.scrollTo({top:document.getElementById('quiz').offsetTop-80,behavior:'smooth'});}
+renderQuiz();
+</script>
+</body>
+</html>

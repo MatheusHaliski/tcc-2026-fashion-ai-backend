@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StylistAI — Diagrama Outfit Card</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 32px 24px;
+      min-width: 1160px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 36px;
+    }
+
+    /* ── Phase headers ───────────────────────────── */
+    .phase-header {
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+    .ph-ai       { background: #1e2d45; color: #93c5fd; }
+    .ph-manual   { background: #1a2d1a; color: #86efac; }
+    .ph-compose  { background: #2d1e3a; color: #d8b4fe; }
+    .ph-render   { background: #3a2a1e; color: #fcd34d; }
+    .ph-persist  { background: #1e3a2a; color: #6ee7b7; }
+
+    /* ── Blocks ──────────────────────────────────── */
+    .block {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+    }
+    .block-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .block-title .tag {
+      font-size: 0.58rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .block-file {
+      font-size: 0.58rem;
+      font-family: monospace;
+      opacity: 0.5;
+      margin-bottom: 6px;
+    }
+    pre {
+      font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      font-size: 0.61rem;
+      line-height: 1.55;
+      overflow-x: auto;
+      padding: 7px 10px;
+      border-radius: 5px;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    /* Colour themes */
+    .t-input  { background:#252535; border-color:#6366f1; text-align:center; }
+    .t-input .block-title { justify-content:center; font-size:0.9rem; }
+
+    .t-ai     { background:#1e2d45; border-color:#3b82f6; }
+    .t-ai pre { background:#111827; color:#93c5fd; }
+    .t-ai .tag{ background:#1e40af; color:#bfdbfe; }
+
+    .t-fallback     { background:#2d1e3a; border-color:#a855f7; }
+    .t-fallback pre { background:#111827; color:#d8b4fe; }
+    .t-fallback .tag{ background:#6b21a8; color:#f3e8ff; }
+
+    .t-norm     { background:#1e3a2a; border-color:#22c55e; }
+    .t-norm pre { background:#111827; color:#86efac; }
+    .t-norm .tag{ background:#15803d; color:#bbf7d0; }
+
+    .t-wardrobe     { background:#3a2d1e; border-color:#f59e0b; }
+    .t-wardrobe pre { background:#111827; color:#fcd34d; }
+    .t-wardrobe .tag{ background:#b45309; color:#fef3c7; }
+
+    .t-slot     { background:#2d1e45; border-color:#c084fc; }
+    .t-slot pre { background:#111827; color:#e9d5ff; }
+    .t-slot .tag{ background:#7e22ce; color:#f3e8ff; }
+
+    .t-meta     { background:#3a1e2a; border-color:#f43f5e; }
+    .t-meta pre { background:#111827; color:#fda4af; }
+    .t-meta .tag{ background:#9f1239; color:#ffe4e6; }
+
+    .t-bg     { background:#1e2d3a; border-color:#38bdf8; }
+    .t-bg pre { background:#111827; color:#7dd3fc; }
+    .t-bg .tag{ background:#075985; color:#bae6fd; }
+
+    .t-desc     { background:#2a1e3a; border-color:#a78bfa; }
+    .t-desc pre { background:#111827; color:#ddd6fe; }
+    .t-desc .tag{ background:#5b21b6; color:#ede9fe; }
+
+    .t-assemble     { background:#1e3a1e; border-color:#4ade80; }
+    .t-assemble pre { background:#111827; color:#bbf7d0; }
+    .t-assemble .tag{ background:#166534; color:#dcfce7; }
+
+    .t-render     { background:#3a2a1e; border-color:#fb923c; }
+    .t-render pre { background:#111827; color:#fed7aa; }
+    .t-render .tag{ background:#9a3412; color:#ffedd5; }
+
+    .t-save     { background:#1e2d45; border-color:#60a5fa; }
+    .t-save pre { background:#111827; color:#93c5fd; }
+    .t-save .tag{ background:#1e40af; color:#bfdbfe; }
+
+    .t-export     { background:#1e3a2a; border-color:#34d399; }
+    .t-export pre { background:#111827; color:#a7f3d0; }
+    .t-export .tag{ background:#065f46; color:#d1fae5; }
+
+    /* ── Arrow ───────────────────────────────────── */
+    .arr {
+      width: 2px; background: #334155;
+      margin: 0 auto 6px; min-height: 14px;
+      position: relative;
+    }
+    .arr::after {
+      content:''; position:absolute;
+      bottom:-5px; left:50%; transform:translateX(-50%);
+      border-left:5px solid transparent;
+      border-right:5px solid transparent;
+      border-top:6px solid #334155;
+    }
+
+    /* ── Branch / decision ───────────────────────── */
+    .decision {
+      width:100%; background:#1c1c2e;
+      border:1.5px dashed #6366f1;
+      border-radius:8px; padding:10px 12px;
+      margin-bottom:6px; text-align:center;
+    }
+    .decision .d-title {
+      font-size:0.72rem; font-weight:700;
+      color:#a5b4fc; margin-bottom:4px;
+    }
+    .decision .d-code {
+      font-family:monospace; font-size:0.62rem;
+      color:#c7d2fe; background:#111827;
+      padding:4px 8px; border-radius:4px;
+      display:inline-block;
+    }
+
+    /* ── Two-column layout ───────────────────────── */
+    .two-col {
+      display:grid;
+      grid-template-columns:1fr 32px 1fr;
+      gap:0; align-items:start;
+      margin-bottom:0;
+    }
+    .lane { display:flex; flex-direction:column; align-items:center; }
+
+    /* ── Merge connector ─────────────────────────── */
+    .merge-row {
+      display:flex; align-items:center;
+      justify-content:center; gap:10px;
+      margin:6px 0 10px;
+    }
+    .merge-label {
+      font-size:0.6rem; color:#64748b;
+      font-style:italic; font-family:monospace;
+    }
+
+    /* ── Full-width section ──────────────────────── */
+    .full { max-width:840px; margin:0 auto; }
+
+    /* ── Branch pair ─────────────────────────────── */
+    .branch-pair {
+      display:flex; gap:10px;
+      width:100%; margin-bottom:6px;
+    }
+    .branch-pair > * { flex:1; }
+
+    /* ── Section divider ─────────────────────────── */
+    .section-label {
+      text-align:center; font-size:0.62rem;
+      font-weight:700; letter-spacing:0.1em;
+      text-transform:uppercase; color:#475569;
+      margin:14px 0 8px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .section-label::before, .section-label::after {
+      content:''; flex:1; height:1px;
+      background:#1e293b;
+    }
+
+    /* ── Legend ──────────────────────────────────── */
+    .legend {
+      display:flex; flex-wrap:wrap; gap:10px;
+      justify-content:center; margin-top:28px;
+      padding-top:18px; border-top:1px solid #1e293b;
+    }
+    .legend-item {
+      display:flex; align-items:center;
+      gap:6px; font-size:0.67rem; color:#94a3b8;
+    }
+    .legend-dot {
+      width:10px; height:10px;
+      border-radius:2px; flex-shrink:0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>StylistAI — Geração de Outfit Card do Zero</h1>
+<p class="subtitle">Diagrama de processos: Interpretação AI · Composição de Slots · Background · Descrição · Persistência · Export</p>
+
+<!-- ═══ INPUT ═══ -->
+<div style="display:flex;justify-content:center;margin-bottom:6px;">
+  <div class="block t-input" style="max-width:380px;">
+    <div class="block-title">📥 ENTRADA: Usuário inicia criação do Outfit</div>
+    <div class="block-file">app/views/CreateMySchemeView.tsx</div>
+    <pre>// Dois modos de entrada disponíveis:
+// A) Texto livre → interpretação AI
+// B) Seleção manual → guardaroba
+
+const [creationMode, setCreationMode] =
+  useState&lt;"ai" | "manual"&gt;("ai")</pre>
+  </div>
+</div>
+<div style="display:flex;justify-content:center;">
+  <div class="arr" style="height:16px;"></div>
+</div>
+
+<!-- ═══ DECISION: modo ═══ -->
+<div style="display:flex;justify-content:center;margin-bottom:6px;">
+  <div class="decision" style="max-width:420px;">
+    <div class="d-title">⬦ Decisão: modo de criação?</div>
+    <div class="d-code">creationMode === "ai" → Modo A<br/>creationMode === "manual" → Modo B</div>
+  </div>
+</div>
+<div style="display:flex;justify-content:center;margin-bottom:6px;">
+  <div class="arr" style="height:12px;"></div>
+</div>
+
+<!-- ═══ DUAS COLUNAS: Modo A (AI) | Modo B (Manual) ═══ -->
+<div class="two-col" style="max-width:1120px;margin:0 auto;">
+
+  <!-- COLUNA A: AI ─────────────────────────────── -->
+  <div class="lane">
+    <div class="phase-header ph-ai">Modo A — Interpretação via IA</div>
+
+    <!-- 1. CHAMADA OPENAI -->
+    <div class="block t-ai">
+      <div class="block-title">1 · Envio do Prompt ao GPT-4.1-mini
+        <span class="tag t-ai">openai</span>
+      </div>
+      <div class="block-file">app/backend/integrations/openai/OpenAIOutfitInterpreterClient.ts</div>
+      <pre>// Prompt + system instructions para o modelo
+const systemPrompt =
+  "You are a fashion outfit interpreter. " +
+  "Extract clothing items from PT/EN text. " +
+  "Return strict JSON: title, description, " +
+  "detectedStyleTags, detectedOccasionTags, " +
+  "gender, mood, items[], warnings.";
+
+// Chamada à API com temperatura baixa
+fetch('https://api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  body: JSON.stringify({
+    model: 'gpt-4.1-mini',
+    temperature: 0.1,        // determinístico
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',
+        content: `Locale: pt-BR\nPrompt: ${prompt}` }
+    ],
+  }),
+})</pre>
+    </div>
+    <div class="arr" style="height:12px;"></div>
+
+    <!-- 2. FALLBACK HEURÍSTICO -->
+    <div class="block t-fallback">
+      <div class="block-title">2 · Fallback Heurístico (se OpenAI falhar)
+        <span class="tag t-fallback">fallback</span>
+      </div>
+      <div class="block-file">app/lib/outfit-ai-mapping.ts → buildOutfitCardDraftFromPrompt()</div>
+      <pre>function buildOutfitCardDraftFromPrompt(prompt) {
+  const tokens = tokenize(prompt) // remove acentos
+  const detectedItems = []
+
+  // Varre todas as opções de slot conhecidas
+  for (const [slot, options] of
+      Object.entries(OUTFIT_PIECE_OPTIONS)) {
+    options.forEach(option => {
+      // Busca por value, label e synonyms
+      const found = [option.value,
+        option.label, ...option.synonyms]
+        .some(alias => tokens.includes(alias))
+      if (found) detectedItems.push({
+        piece_type: slot,
+        display_label: option.label,
+        color: normalizeDetectedColor(prompt),
+        inferred_role: slot === 'upper'
+          ? 'base_upper' : null,
+        confidence: 0.5,
+      })
+    })
+  }
+  return { title, items: detectedItems, ... }
+}</pre>
+    </div>
+    <div class="arr" style="height:12px;"></div>
+
+    <!-- 3. NORMALIZAÇÃO AI -->
+    <div class="block t-norm">
+      <div class="block-title">3 · Normalização de Tags e Tipos
+        <span class="tag t-norm">normalize</span>
+      </div>
+      <div class="block-file">app/backend/services/OutfitCardAiService.ts + app/lib/outfit-ai-mapping.ts</div>
+      <pre>// Normaliza tipos de peça (pt/en → slot key)
+normalizeDetectedPieceType("jaqueta") → "upper"
+normalizeDetectedPieceType("sneakers") → "shoes"
+
+// Normaliza cores e materiais por dicionário
+normalizeDetectedColor("azul marinho") → "navy"
+normalizeDetectedMaterial("couro") → "leather"
+
+// Normaliza tags de estilo/ocasião
+normalizeTagList(["casual day", "everyday"],
+  STYLE_TAG_SYNONYMS)
+// → ["casual", "lifestyle"]
+
+// Orquestra tudo no service
+const result = {
+  ...raw,
+  items: raw.items.map(item => ({
+    ...item,
+    piece_type: normalizeDetectedPieceType(
+      item.piece_type),
+    color: normalizeDetectedColor(item.color),
+    material: normalizeDetectedMaterial(
+      item.material),
+  }))
+}</pre>
+    </div>
+  </div><!-- /coluna A -->
+
+  <!-- SEPARADOR CENTRAL -->
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:68px;">
+    <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:0.55rem;color:#475569;font-family:monospace;letter-spacing:0.05em;">OU</div>
+  </div>
+
+  <!-- COLUNA B: MANUAL ─────────────────────────── -->
+  <div class="lane">
+    <div class="phase-header ph-manual">Modo B — Seleção Manual do Guardaroba</div>
+
+    <!-- 1. CARREGA WARDROBE -->
+    <div class="block t-wardrobe">
+      <div class="block-title">1 · Carrega Itens do Guardaroba do Usuário
+        <span class="tag t-wardrobe">wardrobe</span>
+      </div>
+      <div class="block-file">app/views/CreateMySchemeView.tsx → GET /api/wardrobe-items/user/{userId}</div>
+      <pre>// Busca peças do usuário no Firestore
+const wardrobeItems = await fetch(
+  `/api/wardrobe-items/user/${userId}`)
+
+// Cada item contém:
+// wardrobe_item_id, name, piece_type,
+// brand, model_3d_url, catalog_2d_url,
+// model_status, brand_id_selected
+
+// Filtra por tipo para cada slot
+const upperOptions = wardrobeItems.filter(
+  i => ["shirt","jacket","top","hoodie",
+        "blouse","sweater","coat"]
+    .includes(i.piece_type))
+
+// Também carrega marcas disponíveis
+const brands = await fetch('/api/brands')</pre>
+    </div>
+    <div class="arr" style="height:12px;"></div>
+
+    <!-- 2. SELEÇÃO POR SLOT -->
+    <div class="block t-slot">
+      <div class="block-title">2 · Interface de Seleção por Slot (4 slots)
+        <span class="tag t-slot">slots</span>
+      </div>
+      <div class="block-file">app/views/CreateMySchemeView.tsx — SlotSelector</div>
+      <pre>// 4 slots com detecção de conflito
+const SLOTS = {
+  upper:     { icon: '🧥', label: 'Superior' },
+  lower:     { icon: '👖', label: 'Inferior' },
+  shoes:     { icon: '👟', label: 'Calçado'  },
+  accessory: { icon: '👜', label: 'Acessório' },
+}
+
+// Gerenciamento de estado e conflitos
+function wearPiece(piece: WardrobePiece2D) {
+  // Dress remove top + bottom
+  if (piece.piece_type === 'dress') {
+    next.top = null; next.bottom = null
+  }
+  // Bag e accessory são mutuamente exclusivos
+  if (piece.piece_type === 'bag')
+    next.accessory = null
+  // Detecta conflitos por ID
+  const hasConflict = piece.conflicts_with
+    .some(id => selectedIds.has(id))
+}
+
+// Opções AI também são adicionadas ao slot
+// Formato: "suggested:upper:ai-1"
+slotAssignments[slot] =
+  inventoryMatch?.wardrobe_item_id
+  || `suggested:${slot}:ai-${index}`</pre>
+    </div>
+    <div class="arr" style="height:12px;"></div>
+
+    <!-- 3. WARDROBE MATCHING (via AI) -->
+    <div class="block t-norm">
+      <div class="block-title">3 · Match AI → Guardaroba Real
+        <span class="tag t-norm">match</span>
+      </div>
+      <div class="block-file">app/lib/outfit-ai-mapping.ts → mapAiInterpretationToManualForm()</div>
+      <pre>function mapAiInterpretationToManualForm({
+  interpretation, wardrobeItems }) {
+  // Para cada item detectado pela AI...
+  interpretation.items.forEach((item, i) => {
+    const slot = normalizeDetectedPieceType(
+      item.piece_type)
+
+    // Tenta encontrar no guardaroba real
+    const inventoryMatch = wardrobeItems.find(
+      w => w.name.toLowerCase()
+        .includes(item.display_label.toLowerCase()))
+
+    // Fallback: opção sugerida pela AI
+    const aiOptionId =
+      `suggested:${slot}:ai-${i + 1}`
+
+    // Prioriza peça real do guardaroba
+    slotAssignments[slot] =
+      inventoryMatch?.wardrobe_item_id
+      || aiOptionId
+  })
+  return { slotAssignments, aiSlotOptions,
+    style, occasion, title, mood }
+}</pre>
+    </div>
+  </div><!-- /coluna B -->
+</div><!-- /two-col -->
+
+<!-- ═══ MERGE ═══ -->
+<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:10px 0 8px;">
+  <div style="height:1px;flex:1;max-width:200px;background:#334155;"></div>
+  <div style="font-size:0.65rem;color:#6366f1;font-family:monospace;background:#1c1c2e;padding:4px 12px;border:1px solid #4338ca;border-radius:4px;">
+    ↓ Ambos os modos convergem aqui ↓
+  </div>
+  <div style="height:1px;flex:1;max-width:200px;background:#334155;"></div>
+</div>
+<div style="display:flex;justify-content:center;">
+  <div class="arr" style="height:12px;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FASE DE COMPOSIÇÃO
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section-label">Fase B — Composição &amp; Enriquecimento de Metadados</div>
+
+<div class="full">
+
+  <!-- 4. METADADOS DA PEÇA -->
+  <div class="block t-meta">
+    <div class="block-title">4 · Enriquecimento de Metadados por Peça (wearstyles + categoria)
+      <span class="tag t-meta">metadata</span>
+    </div>
+    <div class="block-file">app/lib/outfit-card.ts → inferWearstylesByPieceType() + PieceCategory</div>
+    <pre>// Wearstyles inferidos automaticamente pelo tipo de peça
+const PIECE_TYPE_WEARSTYLE_FALLBACKS = [
+  { matchers: ['jacket','coat','blazer'],
+    wearstyles: ['Statement Piece', 'Visual Anchor'] },
+  { matchers: ['shirt','tee','top','blouse'],
+    wearstyles: ['Visual Anchor', 'Balanced Fit'] },
+  { matchers: ['pants','jeans','skirt','shorts'],
+    wearstyles: ['Base Structure', 'Balanced Fit'] },
+  { matchers: ['shoes','sneakers','boots'],
+    wearstyles: ['Trend Driver', 'Street Energy'] },
+  { matchers: ['accessory','bag','watch'],
+    wearstyles: ['Style Accent', 'Attention Grabber'] },
+]
+inferWearstylesByPieceType("jacket") → ['Statement Piece', 'Visual Anchor']
+
+// Categorias por slot (badges visuais)
+type PieceCategory = 'Premium' | 'Standard' | 'Limited Edition' | 'Rare'
+
+// Resolução do logo da marca por nome
+resolveBrandLogoUrlByName("nike") → '/nike.png'
+resolveBrandLogoUrlByName("adidas") → '/adidas.png'
+
+// Ícone fallback por tipo de peça
+getPieceTypeFallbackIcon("jacket") → '🧥'
+getPieceTypeFallbackIcon("shoes")  → '👟'</pre>
+  </div>
+  <div class="arr" style="height:14px;"></div>
+
+  <!-- 5. BACKGROUND STUDIO -->
+  <div class="block t-bg">
+    <div class="block-title">5 · Configuração do Background (Background Studio)
+      <span class="tag t-bg">background</span>
+    </div>
+    <div class="block-file">app/components/create-scheme/OutfitBackgroundStudioModal.tsx + app/lib/outfit-card.ts → buildBackgroundCssStyle()</div>
+    <pre>// 3 modos de fundo disponíveis
+type OutfitBackgroundMode = 'solid' | 'gradient' | 'ai_artwork'
+
+// Modo gradient — conversão para CSS
+if (background.background_mode === 'gradient') {
+  const stops = gradient.stops
+    .map(s => `${s.color} ${clamp(s.position, 0, 100)}%`)
+    .join(', ')
+  const intensity = clamp(gradient.intensity ?? 100, 20, 120) / 100
+
+  const css = gradient.type === 'radial'
+    ? `radial-gradient(circle at center, ${stops})`
+    : gradient.type === 'conic'
+    ? `conic-gradient(from ${angle}deg at 50% 50%, ${stops})`
+    : `linear-gradient(${angle}deg, ${stops})`    // default linear
+}
+
+// Camada de material (textura procedural via Canvas)
+// Mesmos materiais do pipeline 3D
+materialLayer: {
+  type: 'embroidered_fabric' | 'lego_material'
+    | 'glass_material' | 'water_material',
+  density: number,
+  threadDirection: 'diagonal' | 'cross',
+  embossIntensity: number,
+  finish: 'matte' | 'satin',
+}
+
+// Overlay geométrico decorativo
+shape: 'orb' | 'diamond' | 'mesh' | 'stars'
+  | 'circles' | 'triangles' | 'waves' | 'beams'
+
+// Background AI: imagem gerada + gradiente overlay
+if (background_mode === 'ai_artwork')
+  backgroundImage = `${gradientOverlay}, url(${image_url})`</pre>
+  </div>
+  <div class="arr" style="height:14px;"></div>
+
+  <!-- 6. GERAÇÃO DE DESCRIÇÃO -->
+  <div class="block t-desc">
+    <div class="block-title">6 · Geração da Descrição do Outfit
+      <span class="tag t-desc">description</span>
+    </div>
+    <div class="block-file">app/lib/outfit-card.ts → buildOutfitDescriptionRich() + /api/ai/fashion/generate-card-description</div>
+    <pre>// Estratégia A: Templates ricos (determinístico)
+const DESCRIPTION_TEMPLATES = [
+  ({ mood, styleLine, heroPiece, slotCount }) =>
+    `This composition explores a ${mood} mood with
+     ${styleLine} direction, anchored by ${heroPiece}
+     and balanced across ${slotCount} curated slots.`,
+
+  ({ occasion, palette, styleLine, heroPiece }) =>
+    `Built for ${occasion} use, this ${styleLine} look
+     pairs ${palette} tones with ${heroPiece} as the
+     visual lead.`,
+  // + 4 templates adicionais ...
+]
+
+// Seleção determinística por hash do outfit
+const templateIdx = hashCode(outfitName + style)
+  % DESCRIPTION_TEMPLATES.length
+
+// Estratégia B: AI (Google Gemini) — opcional
+POST /api/ai/fashion/generate-card-description
+{
+  outfitName, style, occasion, mood, palette,
+  pieces: [{ name, brand, pieceType, wearstyles }]
+}
+// → { editorialTitle, shortDescription,
+//     longDescription, colorHarmony,
+//     strongPoints, wearstyles_per_piece }</pre>
+  </div>
+  <div class="arr" style="height:14px;"></div>
+
+  <!-- 7. MONTAGEM DO OutfitCardData -->
+  <div class="block t-assemble">
+    <div class="block-title">7 · Montagem do Objeto OutfitCardData
+      <span class="tag t-assemble">assemble</span>
+    </div>
+    <div class="block-file">app/lib/outfit-card.ts (types) + app/views/CreateMySchemeView.tsx</div>
+    <pre>// Objeto completo que alimenta o componente de renderização
+const outfitCardData: OutfitCardData = {
+  outfitName: title,
+  outfitStyleLine: `${style} · ${occasion}`,
+  outfitDescription: buildOutfitDescriptionRich({
+    style, occasion, mood, palette, pieces }),
+
+  heroImageUrl: selectedHeroImage,
+
+  outfitBackground: {
+    background_mode: 'gradient',   // ou solid / ai_artwork
+    gradient: { type: 'linear', angle: 140,
+      stops: [
+        { color: '#0f172a', position: 0 },
+        { color: '#334155', position: 100 }
+      ]},
+    materialLayer: { type: 'embroidered_fabric', ... },
+    shape: 'orb',
+  },
+
+  metaBadges: detectedStyleTags.map(tag =>
+    ({ label: tag, icon: '🏷️' })),
+  brands: uniq(pieces.map(p => p.brand)),
+
+  pieces: [
+    { id, wardrobeItemId, name, brand,
+      brandLogoUrl, pieceType,
+      category: 'Premium',
+      wearstyles: ['Statement Piece','Visual Anchor'] },
+    // ... demais peças dos slots
+  ],
+
+  schemeId, creatorId, creatorName,
+}</pre>
+  </div>
+
+</div><!-- /full -->
+<div style="display:flex;justify-content:center;">
+  <div class="arr" style="height:14px;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FASE DE RENDERIZAÇÃO
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section-label">Fase C — Renderização Visual</div>
+
+<div class="full">
+  <div class="block t-render">
+    <div class="block-title">8 · Renderização do Outfit Card (componente React)
+      <span class="tag t-render">render</span>
+    </div>
+    <div class="block-file">app/components/outfit-card/OutfitCard.tsx + sub-componentes</div>
+    <pre>// Árvore de componentes do OutfitCard
+&lt;OutfitCard data={outfitCardData}&gt;
+  {/* Fundo resolvido de OutfitBackgroundConfig → CSS */}
+  &lt;div style={buildBackgroundCssStyle(background)}&gt;
+
+    {/* Hero image da peça principal */}
+    &lt;OutfitHeroImage url={heroImageUrl} /&gt;
+
+    {/* Cabeçalho: nome, linha de estilo, descrição */}
+    &lt;OutfitHeader
+      title={outfitName}
+      styleLine={outfitStyleLine}
+      description={outfitDescription}
+    &gt;
+      {/* Logos das marcas (max 4, deduplicados) */}
+      {brands.slice(0,4).map(b =>
+        &lt;BrandBadge name={b} logoUrl={...} /&gt;)}
+      {/* Tags de estilo/ocasião */}
+      {metaBadges.map(b => &lt;OutfitMetaBadge {...b} /&gt;)}
+    &lt;/OutfitHeader&gt;
+
+    {/* Lista das peças com badges */}
+    &lt;OutfitPieceList pieces={pieces}&gt;
+      {pieces.map(piece =&gt;
+        &lt;OutfitPieceCard
+          name={piece.name}
+          brand={piece.brand}
+          category={piece.category}    // Premium/Rare/...
+          wearstyles={piece.wearstyles} // icons + labels
+        /&gt;)}
+    &lt;/OutfitPieceList&gt;
+
+    {/* Overlay geométrico SVG (orb, mesh, stars...) */}
+    {shape !== 'none' &amp;&amp; &lt;ShapeOverlay shape={shape} /&gt;}
+  &lt;/div&gt;
+&lt;/OutfitCard&gt;</pre>
+  </div>
+</div>
+
+<div style="display:flex;justify-content:center;">
+  <div class="arr" style="height:14px;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FASE DE PERSISTÊNCIA E EXPORT
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section-label">Fase D — Persistência &amp; Distribuição</div>
+
+<div class="full">
+  <div class="branch-pair">
+
+    <!-- 9. SALVAR SCHEME -->
+    <div class="block t-save">
+      <div class="block-title">9 · Persistência no Firestore
+        <span class="tag t-save">save</span>
+      </div>
+      <div class="block-file">app/api/schemes/route.ts → SchemesController → SchemesRepository</div>
+      <pre>// Validações obrigatórias antes de salvar
+if (!title || !style || !occasion
+    || !visibility || !items.length)
+  return 400 // Missing required fields
+
+// Normalização do payload
+const normalized = {
+  user_id, title, style, occasion,
+  visibility,  // "private" | "public"
+  creation_mode, // "ai" | "manual"
+  cover_image_url: heroImageUrl,
+
+  // Snapshot das peças (desnormalizado)
+  pieces: pieces.map(p => ({
+    id, sourceId, name, brand,
+    pieceType, wearstyles
+  })),
+
+  // Relação com wardrobe items
+  items: items.map(i => ({
+    wardrobe_item_id: i.wardrobe_item_id
+  })),
+}
+
+// POST /api/schemes → Firestore
+// Coleção: saiSchemes
+// Sub-coleção: schemeItems (por slot)</pre>
+    </div>
+
+    <!-- 10. EXPORT SOCIAL -->
+    <div class="block t-export">
+      <div class="block-title">10 · Export para Redes Sociais
+        <span class="tag t-export">export</span>
+      </div>
+      <div class="block-file">app/hooks/useOutfitExport.ts → /api/outfit-exports</div>
+      <pre>// Configuração de export
+const exportRequest = {
+  userId, outfitId, schemeId,
+  platform: 'instagram' | 'facebook' | 'x',
+  format: 'square' | 'portrait' | 'story',
+  exportMode: 'image_only'
+    | 'image_with_caption',
+  caption: customCaption,
+  sourceImageUrl,
+}
+
+// Submissão via hook
+const { exportOutfit } = useOutfitExport()
+const record = await exportOutfit(exportRequest)
+
+// Registro no Firestore
+// Coleção: sai-outfitExports
+// { user_id, outfit_id, platform,
+//   format, status: "ready",
+//   pipeline_phase:
+//     "phase-1-downloadable-export" }</pre>
+    </div>
+
+  </div><!-- /branch-pair -->
+</div>
+
+<!-- OUTPUT -->
+<div style="display:flex;justify-content:center;margin-top:6px;margin-bottom:28px;">
+  <div class="arr" style="height:16px;"></div>
+</div>
+<div style="display:flex;justify-content:center;">
+  <div class="block t-input" style="max-width:440px;">
+    <div class="block-title">📦 SAÍDA: Outfit Card publicado</div>
+    <div class="block-file">Firestore: saiSchemes → disponível em /profile e /explore</div>
+    <pre>// Campos finais gravados
+{
+  scheme_id: "abc123",
+  title: "Streetwear Minimal",
+  style: "streetwear",
+  occasion: "casual",
+  visibility: "public",
+  creation_mode: "ai",
+  cover_image_url: "https://storage.../hero.png",
+  pieces: [...],           // snapshot
+  model_status: "done",
+  // + opcional: export record para Instagram
+}</pre>
+  </div>
+</div>
+
+<!-- LEGENDA -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Chamada OpenAI GPT-4.1-mini</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div> Fallback heurístico</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Normalização de tipos/tags</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Carregamento do guardaroba</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c084fc;"></div> Seleção de slots + conflitos</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f43f5e;"></div> Metadados: wearstyles + categoria</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#38bdf8;"></div> Background Studio (gradiente/material)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa;"></div> Geração de descrição (templates/AI)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4ade80;"></div> Montagem do OutfitCardData</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fb923c;"></div> Renderização React (OutfitCard.tsx)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#60a5fa;"></div> Persistência Firestore</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#34d399;"></div> Export para redes sociais</div>
+</div>
+
+<p style="text-align:center;font-size:0.6rem;color:#334155;margin-top:20px;">
+  StylistAI · TCC 2026 · Fontes: app/lib/outfit-card.ts · app/backend/services/OutfitCardAiService.ts · app/lib/outfit-ai-mapping.ts · app/api/schemes/route.ts
+</p>
+
+</body>
+</html>

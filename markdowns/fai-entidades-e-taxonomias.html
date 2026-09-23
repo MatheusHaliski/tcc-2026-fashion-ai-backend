@@ -1,0 +1,1028 @@
+<title>Taxonomias do Fashion AI</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Literata:ital,opsz,wght@0,7..72,400;1,7..72,400&display=swap">
+<style>
+  :root {
+    --ground: #fbfaf8;
+    --surface: #ffffff;
+    --surface-2: #f4f2ef;
+    --ink: #1c1b20;
+    --ink-2: #4a4852;
+    --muted: #7b7885;
+    --line: #e2dfda;
+    --line-strong: #cbc6be;
+    --peca: #7a2f52;
+    --peca-soft: #f7ebf0;
+    --esquema: #1c5f63;
+    --esquema-soft: #e4f0ef;
+    --warn: #8a5a12;
+    --warn-soft: #fbf0dc;
+    --focus: #7a2f52;
+    --radius: 10px;
+    --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-read: "Literata", Georgia, "Times New Roman", serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #131217;
+      --surface: #1b1a20;
+      --surface-2: #232128;
+      --ink: #f0eef2;
+      --ink-2: #c6c2cd;
+      --muted: #918d9c;
+      --line: #322f3a;
+      --line-strong: #464252;
+      --peca: #e8a0bf;
+      --peca-soft: #33202a;
+      --esquema: #7fcfd0;
+      --esquema-soft: #16302f;
+      --warn: #e2b269;
+      --warn-soft: #33290f;
+      --focus: #e8a0bf;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #131217;
+    --surface: #1b1a20;
+    --surface-2: #232128;
+    --ink: #f0eef2;
+    --ink-2: #c6c2cd;
+    --muted: #918d9c;
+    --line: #322f3a;
+    --line-strong: #464252;
+    --peca: #e8a0bf;
+    --peca-soft: #33202a;
+    --esquema: #7fcfd0;
+    --esquema-soft: #16302f;
+    --warn: #e2b269;
+    --warn-soft: #33290f;
+    --focus: #e8a0bf;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  h1, h2, h3, h4 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .wrap {
+    display: flex; align-items: center; gap: 14px;
+    padding-block: 10px; flex-wrap: wrap;
+  }
+  .mark {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); white-space: nowrap;
+  }
+  nav.secnav { display: flex; gap: 4px; flex-wrap: wrap; margin-inline-start: auto; }
+  nav.secnav a {
+    font-size: 12.5px; text-decoration: none; color: var(--ink-2);
+    padding: 4px 9px; border-radius: 99px; border: 1px solid transparent;
+  }
+  nav.secnav a:hover { border-color: var(--line-strong); color: var(--ink); }
+
+  /* ---------- header ---------- */
+  header.page { padding-block: 40px 26px; }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--peca); margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.06; font-weight: 700; letter-spacing: -.02em; }
+  .lede {
+    font-family: var(--f-read); font-size: 16.5px; line-height: 1.62;
+    color: var(--ink-2); max-width: 64ch; margin-top: 16px;
+  }
+  .sources {
+    margin-top: 18px; font-size: 12.5px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 6px 16px;
+  }
+  .sources span::before { content: "↳ "; color: var(--line-strong); }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden; margin-top: 28px;
+  }
+  .stat { background: var(--surface); padding: 12px 14px; }
+  .stat b {
+    display: block; font-family: var(--f-display); font-size: 24px;
+    font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  }
+  .stat span { font-size: 11.5px; color: var(--muted); }
+
+  /* ---------- sections ---------- */
+  section { padding-block: 34px; border-top: 1px solid var(--line); }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sec-num {
+    font-family: var(--f-mono); font-size: 12px; color: var(--muted);
+    letter-spacing: .08em; padding-top: 4px;
+  }
+  h2 { font-size: clamp(21px, 3.4vw, 27px); font-weight: 600; letter-spacing: -.015em; }
+  .sec-sub { color: var(--ink-2); font-size: 14.5px; max-width: 70ch; margin-top: 8px; }
+  h3 {
+    font-size: 15px; font-weight: 600; margin-top: 30px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  h4 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+
+  .count {
+    font-family: var(--f-mono); font-size: 11px; font-weight: 400;
+    color: var(--muted); border: 1px solid var(--line-strong);
+    border-radius: 99px; padding: 1px 7px; font-variant-numeric: tabular-nums;
+  }
+  .limit {
+    font-family: var(--f-mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em; padding: 2px 8px; border-radius: 99px;
+  }
+  .limit.p { background: var(--peca-soft); color: var(--peca); }
+  .limit.e { background: var(--esquema-soft); color: var(--esquema); }
+
+  /* ---------- entity rails ---------- */
+  .entity { border-left: 3px solid var(--line-strong); padding-left: 18px; margin-top: 8px; }
+  .entity.peca { border-left-color: var(--peca); }
+  .entity.esquema { border-left-color: var(--esquema); }
+  .entity-name {
+    font-family: var(--f-mono); font-size: 13px; font-weight: 500;
+    display: inline-block; margin-bottom: 4px;
+  }
+  .entity.peca .entity-name { color: var(--peca); }
+  .entity.esquema .entity-name { color: var(--esquema); }
+
+  /* ---------- tables ---------- */
+  .tw { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 520px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    background: var(--surface-2); font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2);
+    white-space: nowrap; position: sticky; top: 0;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, .code {
+    font-family: var(--f-mono); font-size: 12.5px;
+    color: var(--ink); background: var(--surface-2);
+    padding: 1px 5px; border-radius: 4px; white-space: nowrap;
+  }
+  td.req { white-space: nowrap; font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- chips ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 7px;
+    border: 1px solid var(--line); background: var(--surface);
+    border-radius: 7px; padding: 5px 10px; font-size: 13px; line-height: 1.3;
+  }
+  .chip .c { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); }
+  .chip.hit { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus) inset; }
+  .chip.sneaker { border-left: 3px solid var(--warn); }
+
+  /* ---------- swatches ---------- */
+  .swgroup { margin-top: 18px; }
+  .sw {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+    gap: 8px; margin-top: 8px;
+  }
+  .swatch {
+    border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+    padding: 8px 10px; display: flex; align-items: center; gap: 9px;
+  }
+  .dot {
+    width: 22px; height: 22px; border-radius: 5px; flex: none;
+    border: 1px solid rgba(128,128,128,.4);
+  }
+  .swatch .t { min-width: 0; }
+  .swatch .n { font-size: 12.5px; display: block; }
+  .swatch .h { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); }
+
+  /* ---------- callouts ---------- */
+  .note {
+    border: 1px solid var(--line); border-left: 3px solid var(--warn);
+    background: var(--warn-soft); border-radius: 8px;
+    padding: 12px 15px; font-size: 13.5px; color: var(--ink-2); margin-top: 16px;
+  }
+  .note b { color: var(--ink); }
+  .note.plain { border-left-color: var(--line-strong); background: var(--surface-2); }
+
+  /* ---------- filter ---------- */
+  .filterbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 20px; }
+  .filterbar input {
+    font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+    min-width: 0; flex: 1 1 240px;
+  }
+  .filterbar input::placeholder { color: var(--muted); }
+  .fstat { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ghost {
+    font: inherit; font-size: 12.5px; padding: 7px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2);
+  }
+  .ghost:hover { color: var(--ink); border-color: var(--ink-2); }
+
+  footer {
+    border-top: 1px solid var(--line); padding-block: 26px 44px;
+    font-size: 12.5px; color: var(--muted);
+  }
+  @media (max-width: 560px) {
+    nav.secnav { display: none; }
+    header.page { padding-block: 28px 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="topbar">
+  <div class="wrap">
+    <span class="mark">Fashion AI · Taxonomias v1.0</span>
+    <nav class="secnav">
+      <a href="#limites">Limites</a>
+      <a href="#peca">Peça</a>
+      <a href="#esquema">Esquema</a>
+      <a href="#subcategorias">Subcategorias</a>
+      <a href="#occasion">Occasion</a>
+      <a href="#style">Style</a>
+      <a href="#cores">Cores</a>
+      <a href="#tamanhos">Tamanhos</a>
+      <a href="#estado">Estado</a>
+      <a href="#divergencias">Divergências</a>
+    </nav>
+  </div>
+</div>
+
+<header class="page">
+  <div class="wrap">
+    <div class="eyebrow">Referência única de UI · HU-RF4 e HU-RF5</div>
+    <h1>Entidades e taxonomias do Fashion AI</h1>
+    <p class="lede">
+      Reúne as entidades de <b>peça de roupa</b> e de <b>esquema de vestimenta</b> descritas nos cards
+      HU-RF4 e HU-RF5, com as listas controladas que alimentam a interface: categorias e subcategorias,
+      occasion, style, cores, tamanhos e os demais campos de enumeração. Toda lista aqui é a lista que o
+      usuário vê na tela — código para o banco e a API, rótulo em português para a UI.
+    </p>
+    <div class="sources">
+      <span>Trello · HU-RF4 (card 65) e HU-RF5 (card 66), quadro TCC 2026 (Fashion AI)</span>
+      <span>PDF · FashionAI — Taxonomias controladas, v1.0</span>
+      <span>PDF · FAI — Subcategorias por Categoria (78 assets)</span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 1. LIMITES ============ -->
+<section id="limites">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Limites de cardinalidade</h2></div>
+    <p class="sec-sub">
+      Os únicos campos com cardinalidade máxima são <span class="code">style</span> e
+      <span class="code">occasion</span>. O limite muda conforme a entidade: a peça classifica a si mesma,
+      o esquema sintetiza o conjunto.
+    </p>
+    <div class="tw" style="margin-top:18px">
+      <table>
+        <thead><tr><th>Entidade</th><th>Campo</th><th>Máximo</th><th>Origem permitida</th></tr></thead>
+        <tbody>
+          <tr><td>Esquema de peça</td><td><code>style</code></td><td><b>2</b></td><td>IA do analisador de peças ou edição manual</td></tr>
+          <tr><td>Esquema de peça</td><td><code>occasion</code></td><td><b>2</b></td><td>IA do analisador de peças ou edição manual</td></tr>
+          <tr><td>Esquema de vestimenta</td><td><code>style</code></td><td><b>3</b></td><td>IA a partir das peças inseridas ou edição manual</td></tr>
+          <tr><td>Esquema de vestimenta</td><td><code>occasion</code></td><td><b>3</b></td><td>IA a partir das peças inseridas ou edição manual</td></tr>
+          <tr><td>Esquema de peça</td><td><code>seals</code></td><td><b>2</b></td><td>Sugestão da IA</td></tr>
+          <tr><td>Esquema de vestimenta</td><td><code>seals</code></td><td><b>4</b></td><td>Sugestão da IA ao selecionar as peças</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <b>Regra de síntese.</b> No esquema de vestimenta a IA deve ranquear e sintetizar os valores.
+      Concatenar todas as tags das peças é proibido quando o resultado ultrapassa três — quatro peças com
+      duas tags cada produziriam oito, e o campo aceita três.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. PEÇA ============ -->
+<section id="peca">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Entidade da peça de roupa</h2></div>
+    <p class="sec-sub">Campos do formulário de cadastro (HU-RF4) e campos gerenciados pelo sistema.</p>
+
+    <div class="entity peca" style="margin-top:20px">
+      <span class="entity-name">ClothesPiece</span>
+      <p style="font-size:13.5px;color:var(--ink-2)">Peça individual do guarda-roupa do usuário.</p>
+    </div>
+
+    <h3>Campos de entrada do usuário</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Obrig.</th><th>Controle na UI</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>string</td><td class="req">sim</td><td>Campo de texto — nome ou título da peça</td></tr>
+          <tr><td><code>category</code></td><td>enum</td><td class="req">sim</td><td>Seletor de 4 categorias (§04)</td></tr>
+          <tr><td><code>subcategory</code></td><td>enum</td><td class="req">sim</td><td>Seletor dependente da categoria (§04)</td></tr>
+          <tr><td><code>sex</code></td><td>enum</td><td class="req">sim</td><td>Três opções (§05)</td></tr>
+          <tr><td><code>brandId</code></td><td>UUID</td><td class="req">não</td><td>Busca na tabela Brand, com logotipo</td></tr>
+          <tr><td><code>color</code></td><td>enum</td><td class="req">sim</td><td>Paleta com amostras (§07) — cor dominante</td></tr>
+          <tr><td><code>material</code></td><td>enum</td><td class="req">sim</td><td>Seletor de 7 materiais (§05)</td></tr>
+          <tr><td><code>size</code></td><td>enum</td><td class="req">sim</td><td>Seletor por sistema de tamanho (§08)</td></tr>
+          <tr><td><code>market</code></td><td>enum</td><td class="req">sim</td><td>Seletor único de mercado, estação × gênero (§05)</td></tr>
+          <tr><td><code>occasion</code></td><td>string[]</td><td class="req">sim</td><td>Multisseleção, <b>máx. 2</b> (§06)</td></tr>
+          <tr><td><code>style</code></td><td>string[]</td><td class="req">sim</td><td>Multisseleção, <b>máx. 2</b> (§06)</td></tr>
+          <tr><td><code>price</code></td><td>float</td><td class="req">sim</td><td>Campo monetário em USD</td></tr>
+          <tr><td><code>seals</code></td><td>string[]</td><td class="req">sugerido</td><td>Selos sugeridos pela IA, <b>máx. 2</b> (§05)</td></tr>
+          <tr><td><code>imageUrl</code></td><td>URL</td><td class="req">sim</td><td>Upload JPG/PNG/WebP até 10 MB</td></tr>
+          <tr><td><code>disponivel</code></td><td>boolean</td><td class="req">sim</td><td>Botão “Marcar como indisponível” no modal de editar peça (§10)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Campos de sistema e monitoramento</h3>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:10px">
+      Não aparecem no formulário. Alguns são exibidos como estado no card da peça (Perfil Lookbook, RF6).
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Papel</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code> · <code>userId</code></td><td>UUID</td><td>Identificador e proprietário (FK → User)</td></tr>
+          <tr><td><code>photoProcessingStatus</code></td><td>enum</td><td>Pipeline Flat Lay — ver §05</td></tr>
+          <tr><td><code>photoQualityScores</code> · <code>processingJobId</code> · <code>processingTimeMs</code></td><td>FK / int</td><td>Avaliação e job de processamento da foto</td></tr>
+          <tr><td><code>flatLayMetadata</code></td><td>JSON</td><td>background_removal_confidence, perspective_correction_applied, color_normalization_score, composition_quality, failed_stages, retry_count, fallback_used</td></tr>
+          <tr><td><code>imagePath</code> · <code>imageMimetype</code> · <code>imageFileSize</code> · <code>imageHash</code> · <code>thumbnailUrl</code></td><td>string / long</td><td>Arquivo, deduplicação e miniatura 300×300</td></tr>
+          <tr><td><code>tags</code> · <code>notes</code></td><td>string[] / string</td><td>Organização e anotações pessoais</td></tr>
+          <tr><td><code>wear_count</code> · <code>last_worn_date</code></td><td>int / timestamp</td><td>Uso da peça</td></tr>
+          <tr><td><code>availability_status</code></td><td>enum</td><td>Estado no acervo — ver §05</td></tr>
+          <tr><td><code>condition</code></td><td>enum</td><td>Conservação — ver §05</td></tr>
+          <tr><td><code>is_favorite</code> · <code>for_sale</code></td><td>boolean</td><td>Toggles da faixa superior do card</td></tr>
+          <tr><td><code>marketId</code></td><td>UUID</td><td>FK → Market</td></tr>
+          <tr><td><code>purchaseDate</code> · <code>purchaseLocation</code> · <code>sku</code> · <code>care_instructions</code></td><td>opcionais</td><td>Procedência e cuidados</td></tr>
+          <tr><td><code>createdAt</code> · <code>updatedAt</code></td><td>timestamp</td><td>Auditoria</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. ESQUEMA ============ -->
+<section id="esquema">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Entidade do esquema de vestimenta</h2></div>
+    <p class="sec-sub">Campos do formulário de criação de look (HU-RF5) e campos gerenciados pelo sistema.</p>
+
+    <div class="entity esquema" style="margin-top:20px">
+      <span class="entity-name">ClothesScheme</span>
+      <p style="font-size:13.5px;color:var(--ink-2)">Composição de uma ou mais peças do guarda-roupa do usuário.</p>
+    </div>
+
+    <h3>Campos de entrada do usuário</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Obrig.</th><th>Controle na UI</th></tr></thead>
+        <tbody>
+          <tr><td><code>title</code></td><td>string</td><td class="req">sim</td><td>Campo de texto — nome do look</td></tr>
+          <tr><td><code>description</code></td><td>string</td><td class="req">não</td><td>Área de texto — descrição ou contexto</td></tr>
+          <tr><td><code>occasion</code></td><td>string[]</td><td class="req">sim</td><td>Multisseleção, <b>máx. 3</b> (§06)</td></tr>
+          <tr><td><code>style</code></td><td>string[]</td><td class="req">sim</td><td>Multisseleção, <b>máx. 3</b> (§06)</td></tr>
+          <tr><td><code>season</code></td><td>enum</td><td class="req">não</td><td>Quatro estações (§09)</td></tr>
+          <tr><td><code>mood</code></td><td>enum</td><td class="req">não</td><td>Quatro climas (§09)</td></tr>
+          <tr><td><code>totalPrice</code></td><td>float</td><td class="req">derivado</td><td>Somatório automático das peças, somente leitura</td></tr>
+          <tr><td><code>seals</code></td><td>string[]</td><td class="req">sugerido</td><td>Selos sugeridos pela IA, <b>máx. 4</b> (§09)</td></tr>
+          <tr><td><code>backgroundColor</code></td><td>string</td><td class="req">sim</td><td>Seletor de cor hex — Background Studio (RF11)</td></tr>
+          <tr><td><code>backgroundGradient</code></td><td>string</td><td class="req">não</td><td>Editor de gradiente CSS</td></tr>
+          <tr><td><code>backgroundImageUrl</code></td><td>URL</td><td class="req">não</td><td>Arte gerada pela IA (RF11)</td></tr>
+          <tr><td><code>displayMode</code></td><td>enum</td><td class="req">sim</td><td>Três modos de exibição (§09)</td></tr>
+          <tr><td><code>items</code></td><td>SchemeItem[]</td><td class="req">≥ 1</td><td>Slots do look (§09)</td></tr>
+          <tr><td><code>visibility</code></td><td>enum</td><td class="req">sim</td><td>Três níveis (§09)</td></tr>
+          <tr><td><code>status</code></td><td>enum</td><td class="req">sim</td><td>Rascunho, publicado ou arquivado (§09)</td></tr>
+          <tr><td><code>look_do_dia</code></td><td>boolean</td><td class="req">sim</td><td>Marca o look do dia — exclusivo do esquema (§10)</td></tr>
+          <tr><td><code>disponivel</code></td><td>boolean</td><td class="req">sim</td><td>Botão “Marcar como indisponível” no modal de editar esquema (§10)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Estrutura de <span class="code">SchemeItem</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campo</th><th>Valores</th></tr></thead>
+        <tbody>
+          <tr><td><code>wardrobeItemId</code></td><td>FK → peça do guarda-roupa</td></tr>
+          <tr><td><code>slot</code></td><td><code>TOP</code> · <code>BOTTOM</code> · <code>SHOES</code> · <code>ACCESSORIES</code></td></tr>
+          <tr><td><code>zIndex</code> · <code>positionX</code> · <code>positionY</code> · <code>scale</code> · <code>rotation</code> · <code>opacity</code></td><td>Transformação da peça na composição</td></tr>
+          <tr><td><code>filters</code></td><td><code>blur</code> · <code>saturation</code> · <code>brightness</code> · <code>contrast</code> · <code>hue_shift</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Campos de sistema e monitoramento</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Papel</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code> · <code>userId</code></td><td>UUID</td><td>Identificador e proprietário</td></tr>
+          <tr><td><code>creationMode</code></td><td>enum</td><td><code>MANUAL</code> · <code>AI_ASSISTED</code></td></tr>
+          <tr><td><code>renderingStatus</code></td><td>enum</td><td>Provador 2D (RF18) — ver §09</td></tr>
+          <tr><td><code>virtualTryOnUrl</code> · <code>renderingJobId</code> · <code>cachedUntil</code></td><td>URL / UUID / ts</td><td>Renderização do provador, cache de 1 hora</td></tr>
+          <tr><td><code>renderingQuality</code></td><td>JSON</td><td>overall_score, dimensions, colors_matched, fabric_realism, composition_score</td></tr>
+          <tr><td><code>renderingMetadata</code></td><td>JSON</td><td>model_type, rendering_provider, total_processing_time_ms, cost_usd, stages_completed</td></tr>
+          <tr><td><code>likes</code> · <code>shares</code> · <code>remixes</code></td><td>int</td><td>Interações sociais (RF19)</td></tr>
+          <tr><td><code>view_count</code> · <code>save_count</code></td><td>int</td><td>Monitoramento</td></tr>
+          <tr><td><code>tags</code></td><td>string[]</td><td>Hashtags e palavras-chave de busca</td></tr>
+          <tr><td><code>is_remixed_from</code></td><td>UUID</td><td>FK → esquema original, quando remix (RF19.CA13)</td></tr>
+          <tr><td><code>createdAt</code> · <code>updatedAt</code> · <code>publishedAt</code></td><td>timestamp</td><td>Auditoria e publicação</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note plain">
+      <b>As cinco etapas do Criar Look.</b> 1 · modo de geração &nbsp;→&nbsp; 2 · prompt da IA &nbsp;→&nbsp;
+      3 · formulário manual &nbsp;→&nbsp; 4 · arte de fundo (RF11) &nbsp;→&nbsp; 5 · preview, slots e salvar.
+      As etapas 2 e 3 não são excludentes: os resultados se acumulam e só são gravados na etapa 5.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. SUBCATEGORIAS ============ -->
+<section id="subcategorias">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Categorias e subcategorias</h2></div>
+    <p class="sec-sub">
+      Cada peça recebe uma categoria principal e uma subcategoria controlada. O campo
+      <span class="code">subcategory</span> da UI é filtrado pela categoria escolhida.
+    </p>
+
+    <div class="filterbar">
+      <input id="q" type="search" placeholder="Filtrar subcategorias, occasion, style e cores…" autocomplete="off">
+      <span class="fstat" id="qstat"></span>
+      <button class="ghost" id="qclear" type="button">Limpar</button>
+    </div>
+
+    <div id="cats"></div>
+
+    <div class="note">
+      <b>Atenção ao rótulo “Tênis”.</b> A categoria <span class="code">shoes_piece</span> significa
+      calçados e inclui sapatos, botas, sandálias e chinelos. Se a interface usar o nome “Tênis”, ela deve
+      restringir a seleção às seis subcategorias marcadas com a faixa lateral: casual_sneakers,
+      running_shoes, training_shoes, basketball_shoes, skate_shoes e high_top_sneakers.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. ENUMS DA PEÇA ============ -->
+<section id="enums-peca">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Demais listas da peça</h2></div>
+    <p class="sec-sub">Enumerações restantes da entidade de peça, na ordem em que aparecem no formulário e no card.</p>
+
+    <h3><span class="code">market</span> Mercado <span class="count" id="mktCount"></span></h3>
+    <p style="font-size:13px;color:var(--muted);margin:-4px 0 10px">
+      Enum composto: cada valor é o cruzamento de uma estação com um gênero. Seletor único e obrigatório.
+    </p>
+    <div class="tw" style="margin-bottom:12px">
+      <table id="mktTable">
+        <thead><tr><th>Estação \ Gênero</th><th>Masculino</th><th>Feminino</th><th>Unissex</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="mktChips"></div>
+
+    <div id="enumsPeca"></div>
+  </div>
+</section>
+
+<!-- ============ 6. OCCASION E STYLE ============ -->
+<section id="occasion">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Occasion e Style</h2></div>
+    <p class="sec-sub">
+      As duas taxonomias são compartilhadas entre peça e esquema — os mesmos códigos, para permitir filtro
+      e comparação semântica. O que muda é o limite e o objeto descrito: na peça, a própria peça; no
+      esquema, o efeito do conjunto.
+    </p>
+    <div id="occstyle"></div>
+  </div>
+</section>
+
+<!-- ============ 7. CORES ============ -->
+<section id="cores">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Cores disponíveis</h2></div>
+    <p class="sec-sub">
+      Doze famílias cromáticas, cada uma com a cor principal e suas variações. O campo
+      <span class="code">color</span> da peça guarda o código da variação; a família serve para agrupar a
+      paleta na UI e para filtrar o guarda-roupa por cor aproximada.
+    </p>
+    <div id="cores"></div>
+    <div class="note plain">
+      Os valores hexadecimais são de referência para a amostra exibida na interface, não uma medida
+      colorimétrica da peça real. A cor detectada pela IA deve ser aproximada para a variação mais próxima
+      desta lista antes de ser gravada.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. TAMANHOS ============ -->
+<section id="tamanhos">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Tamanhos</h2></div>
+    <p class="sec-sub">
+      O campo <span class="code">size</span> aceita quatro sistemas. A UI escolhe qual exibir conforme a
+      categoria da peça; <span class="code">one_size</span> está disponível em todos.
+    </p>
+    <div id="tamanhos"></div>
+  </div>
+</section>
+
+<!-- ============ 9. ENUMS DO ESQUEMA ============ -->
+<section id="enums-esquema">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Demais listas do esquema</h2></div>
+    <p class="sec-sub">Enumerações restantes da entidade de esquema de vestimenta.</p>
+    <div id="enumsEsquema"></div>
+  </div>
+</section>
+
+<!-- ============ 10. ESTADO ============ -->
+<section id="estado">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Booleanos de estado</h2></div>
+    <p class="sec-sub">
+      Dois campos booleanos que não são atributos descritivos da peça ou do look: são estados que o
+      usuário liga e desliga depois do cadastro, e que mudam onde o item aparece na interface.
+    </p>
+
+    <h3><span class="code">disponivel</span> <span class="count">peça e esquema</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Aspecto</th><th>Definição</th></tr></thead>
+        <tbody>
+          <tr><td>Tipo</td><td><code>boolean</code>, padrão <code>true</code> — todo item nasce disponível</td></tr>
+          <tr><td>Entidades</td><td>Peça de roupa <b>e</b> esquema de vestimenta</td></tr>
+          <tr><td>Controle</td><td>Botão <b>“Marcar como indisponível”</b> dentro do modal de editar peça / editar esquema. Quando o item já está indisponível, o botão inverte para “Marcar como disponível”.</td></tr>
+          <tr><td>Efeito na navegação</td><td>Alimenta as sub-abas <b>Disponível</b> e <b>Indisponível</b> dentro das abas <b>Meus Looks</b> e <b>Meus Esquemas</b>. Cada item aparece em exatamente uma das duas sub-abas.</td></tr>
+          <tr><td>Efeito no card</td><td>Item indisponível recebe o scrim de indisponível sobre a imagem (pranchas da Coleção D).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span class="code">look_do_dia</span> <span class="count">só esquema</span> <span class="limit e">exclusivo do esquema</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Aspecto</th><th>Definição</th></tr></thead>
+        <tbody>
+          <tr><td>Tipo</td><td><code>boolean</code>, padrão <code>false</code></td></tr>
+          <tr><td>Entidades</td><td>Somente o esquema de vestimenta. A peça de roupa <b>não</b> possui este campo.</td></tr>
+          <tr><td>Controle</td><td>Marcação no card e no modal do esquema</td></tr>
+          <tr><td>Efeito</td><td>Destaca o look escolhido para o dia corrente</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <b>Duas perguntas em aberto sobre <span class="code">look_do_dia</span>.</b>
+      Primeira: é exclusivo, isto é, marcar um look desmarca o anterior? Se sim, o campo é na prática uma
+      referência única por usuário, e não um booleano por esquema. Segunda: ele expira sozinho na virada
+      do dia? Sem uma dessas duas regras, o acervo acumula vários “looks do dia” antigos marcados ao mesmo
+      tempo.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11. DIVERGÊNCIAS ============ -->
+<section id="divergencias">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Divergências entre as fontes</h2></div>
+    <p class="sec-sub">
+      Pontos em que o card do Trello e o PDF de taxonomias não coincidem. Em todos eles esta página adotou
+      o PDF, que é a versão 1.0 do documento funcional — mas a decisão precisa ser confirmada e refletida
+      no card.
+    </p>
+
+    <h3>Parte superior: seis subcategorias diferentes <span class="count">18 vs 18</span></h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Só no PDF (adotado)</th><th>Só no card HU-RF4</th></tr></thead>
+        <tbody>
+          <tr><td><code>shirt</code> Camisa</td><td><code>dress_shirt</code> Camisa social</td></tr>
+          <tr><td><code>bodysuit</code> Body</td><td><code>turtleneck</code> Gola alta</td></tr>
+          <tr><td><code>sweatshirt</code> Moletom sem capuz</td><td><code>camisole</code> Camisete</td></tr>
+          <tr><td><code>parka</code> Parka</td><td><code>corset</code> Corset</td></tr>
+          <tr><td><code>windbreaker</code> Corta-vento</td><td><code>shrug</code> Bolero</td></tr>
+          <tr><td><code>kimono</code> Quimono</td><td><code>poncho</code> Poncho</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-top:10px">
+      Parte inferior, calçados e acessórios são idênticos nas duas fontes.
+    </p>
+
+    <h3>Demais pontos em aberto</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Ponto</th><th>Situação</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Quinta categoria <code>full_body_piece</code></td>
+            <td>Recomendada pelo PDF e já presente no catálogo de 78 assets com 5 subcategorias, mas ausente do enum <code>category</code> do card. Vestido, macacão e jardineira hoje não têm categoria correta.</td>
+          </tr>
+          <tr>
+            <td>Nome da categoria de calçados</td>
+            <td>O card chama <code>TENIS</code>; o PDF chama <code>shoes_piece</code> e alerta que o rótulo “Tênis” exclui 12 das 18 subcategorias. Recomenda-se renomear para “Calçados”.</td>
+          </tr>
+          <tr>
+            <td>Comprimento de saia</td>
+            <td>O PDF sugere um campo separado (<code>mini</code> · <code>midi</code> · <code>maxi</code>) em vez de multiplicar subcategorias. Ainda não existe na entidade.</td>
+          </tr>
+          <tr>
+            <td>Outerwear</td>
+            <td>Casacos, jaquetas, blazers e parkas permanecem em <code>upper_piece</code> enquanto não houver categoria própria.</td>
+          </tr>
+          <tr>
+            <td>Cores e tamanhos</td>
+            <td>Nenhuma das duas fontes define a lista. As listas de §07 e §08 são propostas desta consolidação e precisam de aprovação do time.</td>
+          </tr>
+          <tr>
+            <td><code>market</code> contra <code>marketId</code></td>
+            <td>O card HU-RF4 trata mercado como FK para uma tabela <code>Market</code>; a definição adotada aqui é um enum fechado de 12 valores. São modelagens incompatíveis — o enum dispensa a tabela, mas impede cadastrar um mercado novo sem alterar o código.</td>
+          </tr>
+          <tr>
+            <td><code>market</code> contra <code>season</code> do esquema</td>
+            <td>A peça passa a carregar estação dentro de <code>market</code>, enquanto o esquema tem <code>season</code> isolado. Vale confirmar se são o mesmo conceito com dois formatos ou se a estação da peça é de fato mercado de venda, não de uso.</td>
+          </tr>
+          <tr>
+            <td><code>disponivel</code> contra <code>availability_status</code></td>
+            <td>O card HU-RF4 já define <code>availability_status</code> com três valores (<code>AVAILABLE</code> · <code>UNAVAILABLE</code> · <code>ARCHIVED</code>). O booleano <code>disponivel</code> cobre os dois primeiros e deixa “arquivada” sem representação. Os dois campos não podem coexistir sem regra de sincronia: ou o booleano substitui o enum e “arquivada” vira outro campo, ou a UI grava no enum e apenas exibe um botão de duas posições.</td>
+          </tr>
+          <tr>
+            <td>Nome das abas</td>
+            <td>As sub-abas Disponível / Indisponível foram especificadas sob “Meus Looks” e “Meus Esquemas”, mas o HU-RF6 chama a tela de <b>Perfil Lookbook</b>, com as abas <b>Closet Digital</b> (peças) e <b>Looks Salvos</b> (esquemas). Como <code>disponivel</code> vale para as duas entidades, é preciso fixar um único par de nomes.</td>
+          </tr>
+          <tr>
+            <td>Escopo de <code>look_do_dia</code></td>
+            <td>Falta definir exclusividade por usuário e expiração diária — ver §10.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Fashion AI · TCC 2026 — consolidação de HU-RF4, HU-RF5 e dos dois PDFs de taxonomia.
+    Códigos destinados ao banco de dados e à API; rótulos em português destinados à interface.
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- dados ---------------- */
+
+  var SNEAKERS = ["casual_sneakers","running_shoes","training_shoes","basketball_shoes","skate_shoes","high_top_sneakers"];
+
+  var CATS = [
+    { code: "upper_piece", ui: "PARTE_CIMA", label: "Parte superior",
+      desc: "Peças usadas predominantemente na parte superior do corpo, incluindo camadas externas.",
+      items: [
+        ["t_shirt","Camiseta"],["shirt","Camisa"],["blouse","Blusa"],["tank_top","Regata"],
+        ["crop_top","Cropped"],["polo_shirt","Camisa polo"],["bodysuit","Body"],["sweater","Suéter"],
+        ["sweatshirt","Moletom sem capuz"],["hoodie","Moletom com capuz"],["cardigan","Cardigã"],
+        ["vest","Colete"],["blazer","Blazer"],["jacket","Jaqueta"],["coat","Casaco"],
+        ["parka","Parka"],["windbreaker","Corta-vento"],["kimono","Quimono"]
+      ] },
+    { code: "lower_piece", ui: "PARTE_BAIXO", label: "Parte inferior",
+      desc: "Peças usadas predominantemente na parte inferior do corpo.",
+      items: [
+        ["jeans","Calça jeans"],["tailored_pants","Calça de alfaiataria"],["casual_pants","Calça casual"],
+        ["chino_pants","Calça chino / sarja"],["cargo_pants","Calça cargo"],["jogger_pants","Calça jogger"],
+        ["sweatpants","Calça de moletom"],["leggings","Legging"],["culottes","Pantacourt"],
+        ["shorts","Shorts"],["bermuda_shorts","Bermuda"],["denim_shorts","Shorts jeans"],
+        ["skirt","Saia"],["skort","Saia-short"]
+      ] },
+    { code: "shoes_piece", ui: "TENIS", label: "Calçados",
+      desc: "Todos os tipos de calçado, incluindo seis opções específicas de tênis.",
+      items: [
+        ["casual_sneakers","Tênis casual"],["running_shoes","Tênis de corrida"],["training_shoes","Tênis de treino"],
+        ["basketball_shoes","Tênis de basquete"],["skate_shoes","Tênis de skate"],["high_top_sneakers","Tênis de cano alto"],
+        ["loafers","Loafer"],["moccasins","Mocassim"],["oxford_shoes","Sapato Oxford"],["derby_shoes","Sapato Derby"],
+        ["ankle_boots","Bota de cano curto"],["long_boots","Bota de cano longo"],["combat_boots","Coturno"],
+        ["sandals","Sandália"],["flip_flops","Chinelo"],["heels","Salto alto"],["flats","Sapatilha"],["espadrilles","Alpargata"]
+      ] },
+    { code: "accessory_piece", ui: "ACESSORIO", label: "Acessórios",
+      desc: "Acessórios funcionais, ornamentais e complementares.",
+      items: [
+        ["handbag","Bolsa de mão"],["crossbody_bag","Bolsa transversal"],["tote_bag","Bolsa tote"],
+        ["clutch","Bolsa clutch"],["backpack","Mochila"],["belt","Cinto"],["cap","Boné"],["hat","Chapéu"],
+        ["beanie","Gorro"],["scarf","Cachecol / lenço"],["tie","Gravata"],["bow_tie","Gravata-borboleta"],
+        ["sunglasses","Óculos de sol"],["eyeglasses","Óculos de grau"],["necklace","Colar"],["bracelet","Pulseira"],
+        ["earrings","Brincos"],["ring","Anel"],["watch","Relógio"],["gloves","Luvas"],["socks","Meias"],
+        ["hair_accessory","Acessório de cabelo"]
+      ] },
+    { code: "full_body_piece", ui: "CORPO_INTEIRO", label: "Corpo inteiro", proposed: true,
+      desc: "Categoria recomendada pelo PDF e ainda ausente do enum do card. Acomoda peças que cobrem o corpo todo.",
+      items: [
+        ["dress","Vestido"],["jumpsuit","Macacão"],["romper","Macaquinho"],
+        ["matching_set","Conjunto coordenado"],["overalls","Jardineira"]
+      ] }
+  ];
+
+  var OCCASIONS = [
+    ["casual","Casual"],["work","Trabalho"],["business","Negócios / corporativo"],["formal","Formal"],
+    ["party","Festa"],["night_out","Saída noturna"],["date","Encontro"],["wedding","Casamento"],
+    ["ceremony","Cerimônia"],["sport","Esporte"],["gym","Academia"],["travel","Viagem"],
+    ["beach","Praia"],["vacation","Férias"],["school","Escola"],["university","Universidade"],
+    ["social","Evento social"],["home","Casa"],["outdoor","Atividade ao ar livre"],["festival","Festival"]
+  ];
+
+  var STYLES = [
+    ["classic","Clássico"],["minimalist","Minimalista"],["modern","Moderno"],["chic","Chique"],
+    ["streetwear","Moda urbana / streetwear"],["sporty","Esportivo"],["athleisure","Esportivo casual / athleisure"],
+    ["preppy","Colegial sofisticado / preppy"],["romantic","Romântico"],["boho","Boêmio / boho"],
+    ["vintage","Vintage"],["grunge","Grunge"],["edgy","Ousado / alternativo"],["glam","Glamouroso"],
+    ["luxury","Luxuoso"],["avant_garde","Vanguarda"],["y2k","Anos 2000 / Y2K"],["utility","Utilitário"],
+    ["techwear","Moda tecnológica"],["tailored","Alfaiataria"],["urban","Urbano"],["resort","Resort / veraneio"],
+    ["basic","Básico"],["statement","Marcante / peça de destaque"],["futuristic","Futurista"]
+  ];
+
+  var COLORS = [
+    { family: "Preto", items: [["black","Preto","#12100F"],["charcoal","Grafite","#36373B"],["washed_black","Preto lavado","#2E2B2A"]] },
+    { family: "Branco", items: [["white","Branco","#FFFFFF"],["off_white","Off-white","#F3EFE7"],["ivory","Marfim","#FAF4E4"],["cream","Creme","#F0E4CB"]] },
+    { family: "Cinza", items: [["light_gray","Cinza claro","#D5D2CD"],["gray","Cinza","#8C8A87"],["dark_gray","Cinza escuro","#54524F"],["silver","Prata","#C3C6C9"]] },
+    { family: "Azul", items: [["blue","Azul","#2A5FA8"],["navy","Azul-marinho","#1B2A4A"],["light_blue","Azul-claro","#A9C7E4"],["sky_blue","Azul-céu","#7EC0E8"],["cobalt","Cobalto","#0B4FC4"],["denim","Jeans / denim","#4A6A8C"],["teal","Azul-petróleo","#16666B"]] },
+    { family: "Vermelho", items: [["red","Vermelho","#C62B28"],["crimson","Carmesim","#D6244A"],["burgundy","Bordô","#6B1220"],["maroon","Vinho","#87313F"],["rust","Ferrugem","#B05330"]] },
+    { family: "Rosa", items: [["pink","Rosa","#EFA8BC"],["hot_pink","Rosa-choque","#E0367E"],["rose","Rosé","#D79A9A"],["coral","Coral","#F07F63"],["salmon","Salmão","#F2A18B"]] },
+    { family: "Laranja", items: [["orange","Laranja","#E8722A"],["terracotta","Terracota","#C4674A"],["amber","Âmbar","#D99418"],["apricot","Damasco","#F2C09A"]] },
+    { family: "Amarelo", items: [["yellow","Amarelo","#E8C93C"],["mustard","Mostarda","#B8912A"],["gold","Dourado","#C9A227"],["butter","Manteiga","#F2E5A8"]] },
+    { family: "Verde", items: [["green","Verde","#2F7A45"],["olive","Verde-oliva","#6E7A3C"],["military_green","Verde-militar","#4A5340"],["forest_green","Verde-floresta","#1C4429"],["mint","Verde-menta","#A9DFC2"],["sage","Verde-sálvia","#A3B191"],["emerald","Esmeralda","#187A5F"]] },
+    { family: "Roxo", items: [["purple","Roxo","#6B3F9E"],["violet","Violeta","#8046D6"],["lilac","Lilás","#C4A5D6"],["lavender","Lavanda","#DCD5EC"],["plum","Ameixa","#6E3552"]] },
+    { family: "Marrom", items: [["brown","Marrom","#5B3B28"],["chocolate","Chocolate","#4A2C1A"],["camel","Camelo","#B98E5E"],["tan","Bege-escuro","#C7A175"],["beige","Bege","#DFCDB0"],["taupe","Taupe","#7A6B5D"]] },
+    { family: "Especiais", items: [["metallic_gold","Metálico dourado","#C8A64B"],["metallic_silver","Metálico prateado","#B8BCC0"],["bronze","Bronze","#9C6B3C"],["multicolor","Multicolorido","#9A9A9A"],["print","Estampado","#8A8A8A"]] }
+  ];
+
+  var SIZES = [
+    { group: "Alfanumérico — roupas", note: "Padrão para parte superior, inferior e corpo inteiro.",
+      items: [["xs","PP (extra pequeno)"],["s","P (pequeno)"],["m","M (médio)"],["l","G (grande)"],
+              ["xl","GG (extra grande)"],["xxl","XGG (duplo extra grande)"]] },
+    { group: "Numérico BR — parte inferior", note: "Calças, saias e shorts com numeração.",
+      items: [["br_34","34"],["br_36","36"],["br_38","38"],["br_40","40"],["br_42","42"],
+              ["br_44","44"],["br_46","46"],["br_48","48"],["br_50","50"],["br_52","52"]] },
+    { group: "Numérico BR — calçados", note: "Aplicado somente à categoria de calçados.",
+      items: [["shoe_33","33"],["shoe_34","34"],["shoe_35","35"],["shoe_36","36"],["shoe_37","37"],
+              ["shoe_38","38"],["shoe_39","39"],["shoe_40","40"],["shoe_41","41"],["shoe_42","42"],
+              ["shoe_43","43"],["shoe_44","44"],["shoe_45","45"],["shoe_46","46"]] },
+    { group: "Tamanho único", note: "Disponível em todas as categorias. Padrão para a maioria dos acessórios.",
+      items: [["one_size","Único"]] }
+  ];
+
+  /* market = produto cartesiano estação × gênero, montado a partir das duas listas
+     que já são oficiais nesta página, para não abrir uma terceira lista de estações. */
+  var MKT_SEASONS = [["spring","Primavera"],["summer","Verão"],["autumn","Outono"],["winter","Inverno"]];
+  var MKT_GENDERS = [["male","Masculino"],["female","Feminino"],["unisex","Unissex"]];
+
+  var ENUMS_PECA = [
+    { field: "sex", title: "Sexo da peça", ui: "Seletor de três opções", req: "obrigatório",
+      items: [["MASCULINO","Masculino"],["FEMININO","Feminino"],["UNISSEX","Unissex"]] },
+    { field: "material", title: "Material", ui: "Seletor único", req: "obrigatório",
+      items: [["COTTON","Algodão"],["POLYESTER","Poliéster"],["WOOL","Lã"],["SILK","Seda"],
+              ["LEATHER","Couro"],["SYNTHETIC","Sintético"],["BLEND","Misto"]] },
+    { field: "seals", title: "Selos da peça", ui: "Sugeridos pela IA, editáveis", req: "máx. 2",
+      items: [["premium","Premium"],["eco-friendly","Ecológico"],["trending","Em alta"],
+              ["limited-edition","Edição limitada"],["exclusive","Exclusivo"],["budget-friendly","Bom preço"],
+              ["luxury","Luxo"],["casual-chic","Casual chique"]] },
+    { field: "condition", title: "Condição", ui: "Seletor único no card da peça", req: "sistema",
+      items: [["NEW","Nova"],["GOOD","Boa"],["WORN","Usada"],["DAMAGED","Danificada"]] },
+    { field: "availability_status", title: "Disponibilidade", ui: "Toggle na faixa superior do card", req: "sistema",
+      items: [["AVAILABLE","Disponível"],["UNAVAILABLE","Indisponível"],["ARCHIVED","Arquivada"]] },
+    { field: "photoProcessingStatus", title: "Processamento da foto", ui: "Indicador de estado", req: "sistema",
+      items: [["NEW","Recebida"],["PROCESSING","Processando"],["COMPLETED","Concluída"],["FAILED","Falhou"]] }
+  ];
+
+  var ENUMS_ESQUEMA = [
+    { field: "season", title: "Estação", ui: "Seletor único", req: "opcional",
+      items: [["spring","Primavera"],["summer","Verão"],["autumn","Outono"],["winter","Inverno"]] },
+    { field: "mood", title: "Clima do look", ui: "Seletor único", req: "opcional",
+      items: [["energetic","Energético"],["elegant","Elegante"],["comfortable","Confortável"],["sophisticated","Sofisticado"]] },
+    { field: "displayMode", title: "Modo de exibição", ui: "Três botões no preview", req: "obrigatório",
+      items: [["CAROUSEL","Carrossel"],["GRID","Grade"],["STACKED","Empilhado"]] },
+    { field: "visibility", title: "Visibilidade", ui: "Seletor único ao salvar", req: "obrigatório",
+      items: [["PRIVATE","Privado"],["FOLLOWERS","Seguidores"],["PUBLIC","Público"]] },
+    { field: "status", title: "Estado de publicação", ui: "Rascunho, publicar ou arquivar", req: "obrigatório",
+      items: [["DRAFT","Rascunho"],["PUBLISHED","Publicado"],["ARCHIVED","Arquivado"]] },
+    { field: "seals", title: "Selos do esquema", ui: "Sugeridos pela IA ao selecionar as peças", req: "máx. 4",
+      items: [["affordable-chic","Chique acessível"],["premium-look","Look premium"],["eco-conscious","Consciente"],
+              ["trendy-combo","Combinação em alta"],["casual-elegance","Elegância casual"]] },
+    { field: "items[].slot", title: "Slot da peça no look", ui: "Quatro posições da composição", req: "≥ 1 item",
+      items: [["TOP","Parte de cima"],["BOTTOM","Parte de baixo"],["SHOES","Calçados"],["ACCESSORIES","Acessórios"]] },
+    { field: "creationMode", title: "Modo de criação", ui: "Definido pela etapa 1", req: "sistema",
+      items: [["MANUAL","Manual"],["AI_ASSISTED","Assistido por IA"]] },
+    { field: "renderingStatus", title: "Renderização do provador 2D", ui: "Indicador de estado (RF18)", req: "sistema",
+      items: [["PENDING","Na fila"],["RENDERING","Renderizando"],["ENHANCING","Refinando"],
+              ["COMPOSITING","Compondo"],["COMPLETED","Concluída"],["FAILED","Falhou"]] }
+  ];
+
+  /* ---------------- helpers ---------------- */
+
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function chip(code, label, extraCls) {
+    var c = el("span", "chip" + (extraCls ? " " + extraCls : ""));
+    c.innerHTML = '<span class="c">' + esc(code) + "</span><span>" + esc(label) + "</span>";
+    c.dataset.k = (code + " " + label).toLowerCase();
+    return c;
+  }
+  function chipList(items, decorate) {
+    var box = el("div", "chips");
+    items.forEach(function (it) {
+      box.appendChild(chip(it[0], it[1], decorate ? decorate(it) : ""));
+    });
+    return box;
+  }
+  function heading(text, countLabel, limitLabel, limitKind) {
+    var h = el("h3");
+    h.appendChild(document.createTextNode(text));
+    if (countLabel) h.appendChild(el("span", "count", countLabel));
+    if (limitLabel) h.appendChild(el("span", "limit " + limitKind, limitLabel));
+    return h;
+  }
+
+  /* ---------------- render: categorias ---------------- */
+
+  var catsBox = document.getElementById("cats");
+  CATS.forEach(function (cat) {
+    var h = heading(cat.label, cat.items.length + " subcategorias");
+    h.insertBefore(el("span", "code", cat.code), h.firstChild.nextSibling);
+    catsBox.appendChild(h);
+
+    var meta = el("p");
+    meta.style.cssText = "font-size:13px;color:var(--muted);margin:-4px 0 10px";
+    meta.innerHTML = esc(cat.desc) + (cat.proposed
+      ? ' <b style="color:var(--warn)">Proposta — ainda não implementada.</b>'
+      : ' Enum da UI: <span class="code">' + esc(cat.ui) + "</span>.");
+    catsBox.appendChild(meta);
+
+    catsBox.appendChild(chipList(cat.items, function (it) {
+      return SNEAKERS.indexOf(it[0]) >= 0 ? "sneaker" : "";
+    }));
+  });
+
+  /* ---------------- render: occasion + style ---------------- */
+
+  var os = document.getElementById("occstyle");
+  os.appendChild(heading("Occasion", OCCASIONS.length + " valores", "peça máx. 2 · esquema máx. 3", "p"));
+  os.appendChild(chipList(OCCASIONS));
+  os.appendChild(heading("Style", STYLES.length + " valores", "peça máx. 2 · esquema máx. 3", "e"));
+  os.appendChild(chipList(STYLES));
+
+  /* ---------------- render: cores ---------------- */
+
+  var cores = document.getElementById("cores");
+  var totalCores = 0;
+  COLORS.forEach(function (fam) {
+    totalCores += fam.items.length;
+    var g = el("div", "swgroup");
+    g.appendChild(el("h4", null, esc(fam.family) + ' <span class="count">' + fam.items.length + "</span>"));
+    var grid = el("div", "sw");
+    fam.items.forEach(function (it) {
+      var s = el("div", "swatch");
+      s.dataset.k = (it[0] + " " + it[1] + " " + fam.family).toLowerCase();
+      var d = el("span", "dot");
+      d.style.background = it[2];
+      s.appendChild(d);
+      s.appendChild(el("span", "t",
+        '<span class="n">' + esc(it[1]) + '</span><span class="h">' + esc(it[0]) + "</span>"));
+      grid.appendChild(s);
+    });
+    g.appendChild(grid);
+    cores.appendChild(g);
+  });
+
+  /* ---------------- render: tamanhos ---------------- */
+
+  var tam = document.getElementById("tamanhos");
+  SIZES.forEach(function (grp) {
+    tam.appendChild(heading(grp.group, grp.items.length + " valores"));
+    var p = el("p");
+    p.style.cssText = "font-size:13px;color:var(--muted);margin:-4px 0 10px";
+    p.textContent = grp.note;
+    tam.appendChild(p);
+    tam.appendChild(chipList(grp.items));
+  });
+
+  /* ---------------- render: enums ---------------- */
+
+  function renderEnums(target, defs, kind) {
+    defs.forEach(function (d) {
+      var h = heading(d.title, d.items.length + " valores", d.req, kind);
+      h.insertBefore(el("span", "code", d.field), h.firstChild.nextSibling);
+      target.appendChild(h);
+      var p = el("p");
+      p.style.cssText = "font-size:13px;color:var(--muted);margin:-4px 0 10px";
+      p.textContent = d.ui;
+      target.appendChild(p);
+      target.appendChild(chipList(d.items));
+    });
+  }
+  /* ---------------- render: market ---------------- */
+
+  var MARKETS = [];
+  MKT_SEASONS.forEach(function (s) {
+    MKT_GENDERS.forEach(function (g) {
+      MARKETS.push([s[0] + "_" + g[0], s[1] + " · " + g[1]]);
+    });
+  });
+
+  var mktBody = document.querySelector("#mktTable tbody");
+  MKT_SEASONS.forEach(function (s) {
+    var tr = el("tr");
+    tr.appendChild(el("td", null, "<b>" + esc(s[1]) + "</b>"));
+    MKT_GENDERS.forEach(function (g) {
+      tr.appendChild(el("td", null, "<code>" + esc(s[0] + "_" + g[0]) + "</code>"));
+    });
+    mktBody.appendChild(tr);
+  });
+  document.getElementById("mktCount").textContent = MARKETS.length + " valores";
+  document.getElementById("mktChips").appendChild(chipList(MARKETS));
+
+  renderEnums(document.getElementById("enumsPeca"), ENUMS_PECA, "p");
+  renderEnums(document.getElementById("enumsEsquema"), ENUMS_ESQUEMA, "e");
+
+  /* ---------------- stats ---------------- */
+
+  var subtotal = CATS.reduce(function (a, c) { return a + c.items.length; }, 0);
+  var sizeTotal = SIZES.reduce(function (a, g) { return a + g.items.length; }, 0);
+  var stats = [
+    [CATS.length, "categorias"],
+    [subtotal, "subcategorias"],
+    [OCCASIONS.length, "occasions"],
+    [STYLES.length, "styles"],
+    [totalCores, "cores"],
+    [sizeTotal, "tamanhos"],
+    [MARKETS.length, "markets"]
+  ];
+  var statsBox = document.getElementById("stats");
+  stats.forEach(function (s) {
+    statsBox.appendChild(el("div", "stat", "<b>" + s[0] + "</b><span>" + s[1] + "</span>"));
+  });
+
+  /* ---------------- filtro ---------------- */
+
+  var q = document.getElementById("q");
+  var qstat = document.getElementById("qstat");
+  var targets = [].slice.call(document.querySelectorAll("[data-k]"));
+
+  function applyFilter() {
+    var term = q.value.trim().toLowerCase();
+    if (!term) {
+      targets.forEach(function (t) { t.hidden = false; t.classList.remove("hit"); });
+      qstat.textContent = targets.length + " itens";
+      return;
+    }
+    var n = 0;
+    targets.forEach(function (t) {
+      var hit = t.dataset.k.indexOf(term) >= 0;
+      t.hidden = !hit;
+      t.classList.toggle("hit", hit);
+      if (hit) n++;
+    });
+    qstat.textContent = n + " de " + targets.length + " itens";
+  }
+  q.addEventListener("input", applyFilter);
+  document.getElementById("qclear").addEventListener("click", function () {
+    q.value = "";
+    applyFilter();
+    q.focus();
+  });
+  applyFilter();
+})();
+</script>
