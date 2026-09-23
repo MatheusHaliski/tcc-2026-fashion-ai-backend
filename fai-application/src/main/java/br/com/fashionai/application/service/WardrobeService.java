@@ -61,6 +61,8 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import br.com.fashionai.application.events.DomainEvents;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -111,6 +113,7 @@ public class WardrobeService {
     private final Guard guard;
     private final Audit audit;
     private final boolean feature3d;
+    private final ApplicationEventPublisher events;
 
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
@@ -120,7 +123,8 @@ public class WardrobeService {
                            MediaService media, AssetCatalogService assets, ProjectionService projections,
                            NotificationService notifications, JobQueuePort queue,
                            List<ImageProviderPorts.Model3dPort> model3d, Guard guard, Audit audit,
-                           @Value("${fashionai.features.rf16-3d:false}") boolean feature3d) {
+                           @Value("${fashionai.features.rf16-3d:false}") boolean feature3d,
+                           ApplicationEventPublisher events) {
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -144,6 +148,7 @@ public class WardrobeService {
         this.guard = guard;
         this.audit = audit;
         this.feature3d = feature3d;
+        this.events = events;
     }
 
     // ================================================================== RF4 — análise da foto (rascunho)
@@ -431,7 +436,13 @@ public class WardrobeService {
             w.setModerationReasonsJson(Json.write(mod.get("reasons")));
             w.setPhotoProcessingStatus(bgRemoved ? PhotoProcessingStatus.COMPLETED : PhotoProcessingStatus.PROCESSING);
             w.setPhotoQualityScoresJson(Json.write(r.get("quality")));
-            w.setFlatLayMetadataJson(Json.write(r.get("flatLayMetadata")));
+            Map<String, Object> flatMeta = new LinkedHashMap<>(r.get("flatLayMetadata") instanceof Map<?, ?> fm
+                    ? Json.map(Json.write(fm)) : Map.of());
+            // RF34 §5 — guarda a detecção da IA (valores + confiança) para o antifraude da Catalogação.
+            if (r.get("prefill") instanceof Map<?, ?> pf) {
+                flatMeta.put("detected", pf);
+            }
+            w.setFlatLayMetadataJson(Json.write(flatMeta));
             w.setProcessingJobId(draft.getId());
             w.setProcessingTimeMs(draft.getTotalTimeMs());
             pieces.save(w);
@@ -469,6 +480,8 @@ public class WardrobeService {
                 "Peça adicionada ao guarda-roupa", w.getName() + " já está no seu Closet Digital.", null);
         audit.log(user, AuditActions.CADASTRO_PECA, "piece:" + w.getId(), Map.of("category", w.getCategory(),
                 "defaultImage", w.isDefaultImage()));
+        // RF32.CA02 (endereço automático), RF35 (pontos), RF34 (histórico de disponibilidade)
+        events.publishEvent(new DomainEvents.PieceCreated(owner.getId(), w.getId(), InventoryScoreService.catalogReady(w)));
         return Views.piece(w, viewerState(user, w), Map.of());
     }
 
@@ -714,6 +727,7 @@ public class WardrobeService {
         }
         projections.piece(w);
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of());
+        events.publishEvent(new DomainEvents.PieceUpdated(user.id(), id, InventoryScoreService.completeness(w)));
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -727,8 +741,13 @@ public class WardrobeService {
         }
         if (disponivel != null) {
             // disponível e indisponível são exclusivos entre si (RF31.CA06).
+            boolean changed = w.isDisponivel() != disponivel;
             w.setDisponivel(disponivel);
             w.setAvailabilityStatus(disponivel ? AvailabilityStatus.AVAILABLE : AvailabilityStatus.UNAVAILABLE);
+            if (changed) {
+                // RF34 §3.3 — histórico de transições (população de exposição da Utilização)
+                events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), id, disponivel));
+            }
         }
         if (forSale != null) {
             w.setForSale(forSale);
@@ -740,7 +759,8 @@ public class WardrobeService {
     public Views.PieceView markWorn(CurrentUser user, UUID id) {
         WardrobeItem w = owned(user, id);
         w.setWearCount(w.getWearCount() + 1);
-        w.setLastWornDate(LocalDate.now());
+        w.setLastWornDate(LocalDate.now(FaiPointsService.ZONE));
+        events.publishEvent(new DomainEvents.PieceWorn(user.id(), id, w.getLastWornDate(), null));
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -771,6 +791,7 @@ public class WardrobeService {
         w.setDisponivel(false);
         w.setVisibility(Visibility.PRIVATE);
         projections.removePiece(id);
+        events.publishEvent(new DomainEvents.PieceDeleted(user.id(), id));
         audit.log(user, AuditActions.EXCLUSAO_PECA, "piece:" + id, Map.of("schemesAffected", impact.get("schemesAffected")));
         return impact;
     }

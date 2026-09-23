@@ -40,6 +40,9 @@ import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.domain.model.enums.DailyLookSource;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +53,7 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -86,12 +90,15 @@ public class SchemeService {
     private final AiEngine ai;
     private final Guard guard;
     private final Audit audit;
+    private final DailyLookService dailyLooks;
+    private final ApplicationEventPublisher events;
 
     public SchemeService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                          UserRepository users, ReactionRepository reactions, SavedItemRepository saved,
                          WardrobeService wardrobe, BackgroundStudioService studio, SealService seals,
                          SchemeCardRenderer renderer, ProjectionService projections, NotificationService notifications,
-                         CounterStorePort counters, MediaService media, AiEngine ai, Guard guard, Audit audit) {
+                         CounterStorePort counters, MediaService media, AiEngine ai, Guard guard, Audit audit,
+                         DailyLookService dailyLooks, ApplicationEventPublisher events) {
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -109,6 +116,8 @@ public class SchemeService {
         this.ai = ai;
         this.guard = guard;
         this.audit = audit;
+        this.dailyLooks = dailyLooks;
+        this.events = events;
     }
 
     // ================================================================== etapa 1/3 — compositor
@@ -301,14 +310,30 @@ public class SchemeService {
             counters.increment("scheme", src.getId(), "remixes", 1);
             notifications.notify(src.getUser().getId(), owner.getId(), NotificationType.NEW_REMIX, "SCHEME", s.getId(),
                     "Seu look foi remixado", "@" + owner.getUsername() + " criou um look a partir de \"" + src.getTitle() + "\".", null);
+            events.publishEvent(new DomainEvents.InteractionReceived(src.getUser().getId(), owner.getId(), "REMIX", src.getId()));
         }
         projections.scheme(s, items);
+        List<UUID> pieceIds = items.stream().map(si -> si.getWardrobeItem().getId()).toList();
+        // RF32–RF36: diário de uso, FAI Points, conquistas secretas, progresso de desafios
+        events.publishEvent(new DomainEvents.SchemeSaved(owner.getId(), s.getId(), pieceIds, s.getOrigin().name(), true));
+        String dailyLookWarning = null;
+        if (Boolean.TRUE.equals(form.lookDoDia())) {
+            try {
+                dailyLooks.register(user, s, DailyLookSource.MANUAL, LocalDate.now(FaiPointsService.ZONE));
+            } catch (ApiException ex) {
+                s.setLookDoDia(false);
+                dailyLookWarning = ex.getMessage();
+            }
+        }
         notifications.notify(owner.getId(), null, NotificationType.SCHEME_CREATED, "SCHEME", s.getId(),
                 "Esquema criado com sucesso", "\"" + s.getTitle() + "\" foi adicionado aos seus Looks.", null);
         audit.log(user, AuditActions.CRIACAO_ESQUEMA, "scheme:" + s.getId(), Map.of("items", items.size(),
                 "creationMode", s.getCreationMode().name(), "origin", s.getOrigin().name()));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("scheme", view(user, s, items));
+        if (dailyLookWarning != null) {
+            out.put("dailyLookWarning", dailyLookWarning);
+        }
         // RF20.CA01 — sugestão de vínculo (não bloqueante) ao salvar esquemas com 2+ peças.
         if (items.size() >= 2) {
             try {
@@ -562,6 +587,9 @@ public class SchemeService {
         }
         projections.scheme(s, items);
         audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("itemsChanged", !before.equals(after)));
+        if (!before.equals(after)) {
+            events.publishEvent(new DomainEvents.SchemeSaved(user.id(), id, new ArrayList<>(after), s.getOrigin().name(), false));
+        }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("scheme", view(user, s, items));
         out.put("revalidationPending", s.isRevalidationPending());
