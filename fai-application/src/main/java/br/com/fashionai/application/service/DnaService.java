@@ -674,7 +674,7 @@ public class DnaService {
     public Map<String, Object> getDnaScheme(CurrentUser viewer, UUID id) {
         DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema de DNA"));
         User owner = d.getUser();
-        if (!viewer.id().equals(owner.getId())) {
+        if (viewer == null || !viewer.id().equals(owner.getId())) {
             guard.requireView(viewer, owner.getId(), SchemeService.moreRestrictive(d.getVisibility(), owner.getProfileVisibility()), "dna:" + id);
             if (d.getStatus() != SchemeStatus.PUBLISHED) {
                 throw guard.deny(viewer, "dna:" + id, "Este DNA ainda não foi publicado.");
@@ -745,7 +745,7 @@ public class DnaService {
         out.put("logoCut", logoCut(d));
         out.put("narrative", narrativeData(d, items, itemsBy));
         out.put("counters", Map.of("likes", d.getLikeCount(), "comments", d.getCommentCount(), "shares", d.getShareCount(), "remixes", d.getRemixCount()));
-        out.put("canEdit", viewer.id().equals(d.getUser().getId()));
+        out.put("canEdit", viewer != null && viewer.id().equals(d.getUser().getId()));
         out.put("publishedAt", d.getPublishedAt());
         return out;
     }

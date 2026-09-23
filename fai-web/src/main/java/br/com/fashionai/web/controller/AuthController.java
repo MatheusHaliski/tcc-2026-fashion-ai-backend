@@ -2,7 +2,7 @@ package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.IdentityService;
-import br.com.fashionai.web.support.RequestContextFilter;
+import br.com.fashionai.web.support.CorrelationIdFilter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +30,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF1 — Cadastrar conta (pessoal, marca ou celebridade) e abrir sessão")
     public IdentityService.Session register(@RequestBody IdentityService.RegisterCommand cmd, HttpServletRequest req) {
-        return identity.register(cmd, RequestContextFilter.clientIp(req), req.getHeader("User-Agent"));
+        return identity.register(cmd, CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
     }
 
     @GetMapping("/username-suggestions")
@@ -47,7 +47,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "RF2 — Autenticar por e-mail/username e senha (2FA opcional)")
     public IdentityService.Session login(@RequestBody IdentityService.LoginCommand cmd, HttpServletRequest req) {
-        return identity.login(cmd, RequestContextFilter.clientIp(req), req.getHeader("User-Agent"));
+        return identity.login(cmd, CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
     }
 
     public record RefreshRequest(@NotBlank String refreshToken) {
@@ -56,7 +56,7 @@ public class AuthController {
     @PostMapping("/refresh")
     @Operation(summary = "RF2 — Renovar access token com rotação do refresh token")
     public IdentityService.Session refresh(@RequestBody RefreshRequest body, HttpServletRequest req) {
-        return identity.refresh(body.refreshToken(), RequestContextFilter.clientIp(req), req.getHeader("User-Agent"));
+        return identity.refresh(body.refreshToken(), CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
     }
 
     @PostMapping("/logout")
@@ -89,7 +89,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(summary = "RF2.CA06 — Pedir redefinição de senha (resposta idêntica exista ou não a conta)")
     public Map<String, String> requestReset(@RequestBody EmailRequest body, HttpServletRequest req) {
-        identity.requestPasswordReset(body.email(), RequestContextFilter.clientIp(req), req.getHeader("User-Agent"));
+        identity.requestPasswordReset(body.email(), CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
         return Map.of("message", "Se o e-mail estiver cadastrado, você receberá as instruções em instantes.");
     }
 

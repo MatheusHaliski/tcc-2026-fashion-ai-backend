@@ -16,9 +16,9 @@ import java.util.UUID;
 /** Correlation id por requisição (RNF5): vem do cliente em X-Correlation-Id ou é gerado, volta no header e no log. */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class RequestContextFilter extends OncePerRequestFilter {
+public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String HEADER = "X-Correlation-Id";
-    private static final String ATTRIBUTE = RequestContextFilter.class.getName() + ".correlationId";
+    private static final String ATTRIBUTE = CorrelationIdFilter.class.getName() + ".correlationId";
 
     public static String correlationId(HttpServletRequest request) {
         Object id = request.getAttribute(ATTRIBUTE);

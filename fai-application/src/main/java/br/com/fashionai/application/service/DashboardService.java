@@ -72,7 +72,12 @@ public class DashboardService {
         AnalyticsQueryPort.Filter f = filter(q);
         Map<String, Object> kpis = analytics.kpis(f);
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("filter", Map.of("from", f.from(), "to", f.to(), "country", String.valueOf(f.country()), "profileType", String.valueOf(f.profileType())));
+        Map<String, Object> filter = new LinkedHashMap<>();
+        filter.put("from", f.from());
+        filter.put("to", f.to());
+        filter.put("country", f.country());
+        filter.put("profileType", f.profileType());
+        out.put("filter", filter);
         out.put("kpis", kpis);
         Map<String, Object> series = new LinkedHashMap<>();
         for (String m : List.of("users", "pieces", "schemes", "daily_looks", "ai_calls", "ai_cost")) {

@@ -127,8 +127,13 @@ public class DailyLookService {
         Optional<DailyLook> dl = dailyLooks.findByUserIdAndLookDate(user.id(), LocalDate.now(FaiPointsService.ZONE));
         int hour = java.time.LocalDateTime.now(FaiPointsService.ZONE).getHour();
         boolean pending = dl.isPresent() && dl.get().getFeedback() == null;
-        return Map.of("pending", pending, "evening", hour >= 18, "show", pending && hour >= 18,
-                "message", pending ? "Como foi o look de hoje? Avalie antes da meia-noite." : "", "dailyLook", dl.map(this::view).orElse(null));
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("pending", pending);
+        out.put("evening", hour >= 18);
+        out.put("show", pending && hour >= 18);
+        out.put("message", pending ? "Como foi o look de hoje? Avalie antes da meia-noite." : "");
+        out.put("dailyLook", dl.map(this::view).orElse(null));
+        return out;
     }
 
     public Map<String, Object> view(DailyLook dl) {

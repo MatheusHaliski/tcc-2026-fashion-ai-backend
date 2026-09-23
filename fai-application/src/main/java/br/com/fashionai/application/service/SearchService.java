@@ -161,6 +161,9 @@ public class SearchService {
     // ================================================================== visibilidade (CA05)
     Set<UUID> blockedFor(UUID viewerId) {
         Set<UUID> out = new HashSet<>();
+        if (viewerId == null) {
+            return out;
+        }
         follows.findByFollowingIdAndStatus(viewerId, FollowStatus.BLOQUEADO).forEach(f -> out.add(f.getFollower().getId()));
         follows.findByFollowerIdAndStatus(viewerId, FollowStatus.BLOQUEADO).forEach(f -> out.add(f.getFollowing().getId()));
         return out;
@@ -217,6 +220,9 @@ public class SearchService {
     }
 
     Set<String> dnaStyles(UUID userId) {
+        if (userId == null) {
+            return Set.of();
+        }
         return dnas.findByUserId(userId).map(StyleDna::getStyleKeywords).map(k -> (Set<String>) new HashSet<>(Json.csv(k))).orElse(Set.of());
     }
 
@@ -225,8 +231,8 @@ public class SearchService {
     public Map<String, Object> communityFeed(CurrentUser viewer, String rawCursor, int size, Filters filters) {
         int limit = Math.max(1, Math.min(size <= 0 ? 20 : size, 50));
         Cursor cursor = Cursor.parse(rawCursor);
-        Set<UUID> blocked = blockedFor(viewer.id());
-        Set<String> dna = dnaStyles(viewer.id());
+        Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
+        Set<String> dna = dnaStyles(viewer == null ? null : viewer.id());
         List<Scheme> candidates = schemes.findPublicFeed(PageRequest.of(0, 400)).stream()
                 .filter(s -> cursor == null || cursor.before(s.getPublishedAt(), s.getId()))
                 .sorted(Comparator.comparing(Scheme::getPublishedAt).thenComparing(Scheme::getId).reversed())
@@ -317,7 +323,7 @@ public class SearchService {
             throw ApiException.badRequest("ABA_INVALIDA", "Abas: " + TABS);
         }
         int limit = Math.max(1, Math.min(size <= 0 ? 30 : size, 60));
-        Set<UUID> blocked = blockedFor(viewer.id());
+        Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
         Pageable page = PageRequest.of(0, 200);
         List<?> results = switch (t) {
             case "LOOKS" -> looks(viewer, term, filters, blocked, page, limit);
@@ -408,7 +414,7 @@ public class SearchService {
     public Map<String, Object> publicPieces(CurrentUser viewer, Filters f, String rawCursor, int size) {
         int limit = Math.max(1, Math.min(size <= 0 ? 30 : size, 60));
         Cursor cursor = Cursor.parse(rawCursor);
-        Set<UUID> blocked = blockedFor(viewer.id());
+        Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
         List<WardrobeItem> list = pieces.findAllPublic(PageRequest.of(0, 500)).stream()
                 .filter(w -> cursor == null || cursor.before(w.getCreatedAt(), w.getId()))
                 .sorted(Comparator.comparing(WardrobeItem::getCreatedAt).thenComparing(WardrobeItem::getId).reversed())

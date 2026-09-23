@@ -16,6 +16,7 @@ spring:
     properties:
       hibernate:
         jdbc.time_zone: UTC
+        type.preferred_uuid_jdbc_type: CHAR   # ids UUID gravados como CHAR(36), como nas migrações
   flyway:
     enabled: true
     baseline-on-migrate: true

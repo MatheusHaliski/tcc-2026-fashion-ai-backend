@@ -101,7 +101,10 @@ public class PhotoService {
             w.setThumbnailUrl(null);
         });
         p.setDeletedAt(Instant.now());
-        return Map.of("deleted", 1, "pieceWithoutImage", linked.map(WardrobeItem::getId).orElse(null) == null ? "" : linked.get().getId().toString());
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("deleted", 1);
+        out.put("pieceWithoutImage", linked.map(WardrobeItem::getId).orElse(null));
+        return out;
     }
 
     Optional<WardrobeItem> linkedActivePiece(Photo p) {

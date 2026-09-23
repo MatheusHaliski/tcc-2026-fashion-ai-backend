@@ -96,7 +96,7 @@ public final class Taxonomy {
     }
 
     public static boolean isValidCategory(String category) {
-        return SUBCATEGORIES.containsKey(category);
+        return category != null && SUBCATEGORIES.containsKey(category);
     }
 
     public static String categoryOf(String subcategory) {
@@ -109,16 +109,16 @@ public final class Taxonomy {
         Map<String, Object> errors = new LinkedHashMap<>();
         if (!isValidCategory(category)) {
             errors.put("category", "Categoria inválida.");
-        } else if (!SUBCATEGORIES.get(category).contains(subcategory)) {
+        } else if (subcategory == null || !SUBCATEGORIES.get(category).contains(subcategory)) {
             errors.put("subcategory", "Subcategoria não pertence à categoria escolhida.");
         }
-        if (!SEXES.contains(sex)) {
+        if (sex == null || !SEXES.contains(sex)) {
             errors.put("sex", "Campo sexo é obrigatório (Masculino, Feminino ou Unissex).");
         }
-        if (!COLORS.containsKey(color)) {
+        if (color == null || !COLORS.containsKey(color)) {
             errors.put("color", "Selecione uma cor da paleta oficial.");
         }
-        if (!MATERIALS.contains(material)) {
+        if (material == null || !MATERIALS.contains(material)) {
             errors.put("material", "Selecione um material válido.");
         }
         if (size == null || !SIZES.contains(size)) {

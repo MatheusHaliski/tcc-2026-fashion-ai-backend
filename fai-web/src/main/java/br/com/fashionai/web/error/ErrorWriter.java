@@ -1,6 +1,6 @@
 package br.com.fashionai.web.error;
 
-import br.com.fashionai.web.support.RequestContextFilter;
+import br.com.fashionai.web.support.CorrelationIdFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,7 +22,7 @@ public class ErrorWriter {
 
     public static ApiError of(HttpServletRequest request, int status, String code, String message, Map<String, Object> details) {
         return new ApiError(status, code, message, details == null ? Map.of() : details, request.getRequestURI(),
-                Instant.now(), RequestContextFilter.correlationId(request));
+                Instant.now(), CorrelationIdFilter.correlationId(request));
     }
 
     public void write(HttpServletRequest request, HttpServletResponse response, int status, String code, String message)

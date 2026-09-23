@@ -147,7 +147,7 @@ public class InstitutionalService {
     public Map<String, Object> brandFeed(CurrentUser viewer, String term, String order) {
         List<BrandProfile> list = brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(b -> term == null || term.isBlank() || b.getBrandName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
-        Set<String> styles = dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
+        Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
         boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
         List<Map<String, Object>> cards = new ArrayList<>();
         for (BrandProfile b : list) {
@@ -169,7 +169,7 @@ public class InstitutionalService {
     public Map<String, Object> celebrityFeed(CurrentUser viewer, String term, String order) {
         List<CelebrityProfile> list = celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(c -> term == null || term.isBlank() || c.getStageName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
-        Set<String> styles = dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
+        Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
         boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
         List<Map<String, Object>> cards = new ArrayList<>();
         for (CelebrityProfile c : list) {
@@ -202,7 +202,7 @@ public class InstitutionalService {
     @Transactional(readOnly = true)
     public Map<String, Object> profile(CurrentUser viewer, String slugOrId) {
         User u = institutionalUser(slugOrId);
-        boolean admin = viewer.id().equals(u.getId());
+        boolean admin = viewer != null && viewer.id().equals(u.getId());
         boolean brand = u.getProfileType() == ProfileType.MARCA;
         Map<String, Object> header = new LinkedHashMap<>();
         if (brand) {
@@ -231,7 +231,7 @@ public class InstitutionalService {
         header.put("username", u.getUsername());
         header.put("following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO));
         header.put("activeSeals", seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealStatus.ACTIVE).size());
-        header.put("viewerFollows", follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
+        header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("header", header);
@@ -274,7 +274,7 @@ public class InstitutionalService {
     @Transactional(readOnly = true)
     public Object tab(CurrentUser viewer, String slugOrId, String tab, String filter, UUID groupingId) {
         User u = institutionalUser(slugOrId);
-        boolean admin = viewer.id().equals(u.getId());
+        boolean admin = viewer != null && viewer.id().equals(u.getId());
         String t = tab == null ? "" : tab.toUpperCase(Locale.ROOT);
         if (!admin && Set.of("CADASTRAR_SELO", "MEUS_SELOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS", "MEUS_ESQUEMAS", "MINHAS_PECAS").contains(t)) {
             throw guard.deny(viewer, "institutional-tab:" + t, "Esta aba é do administrador do perfil (RNF1).");

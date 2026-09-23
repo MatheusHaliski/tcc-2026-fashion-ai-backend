@@ -379,6 +379,9 @@ public class SchemeService {
     private List<SchemeItem> replaceItems(CurrentUser user, Scheme s, List<ItemForm> forms) {
         Map<UUID, WardrobeItem> own = new LinkedHashMap<>();
         for (ItemForm f : forms) {
+            if (f.wardrobeItemId() == null) {
+                throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", Map.of("items", "Cada item precisa de wardrobeItemId."));
+            }
             WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound("Peça " + f.wardrobeItemId()));
             if (!w.getUser().getId().equals(user.id())) {
                 // RF5.CA07b / RF30.CA02 — só peças do acervo real do usuário.

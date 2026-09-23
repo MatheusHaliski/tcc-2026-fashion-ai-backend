@@ -137,6 +137,10 @@ public class ExplorerService {
         rankings.put("topCountries", analytics.countries().stream().sorted(Comparator.comparingLong((Map<String, Object> r) ->
                 ((Number) r.get("public_schemes")).longValue()).reversed()).limit(5).map(r -> Map.of("label", r.get("country"), "value", r.get("public_schemes"))).toList());
         String local = LocalAdvisors.insightText(rankings);
+        if (viewer == null) {
+            return Map.of("rankings", rankings, "aiInsight", local, "explanation", "Leitura local (faça login para a leitura por IA).",
+                    "fallbackUsed", false, "note", "Cores de status do dataviz nunca são reaproveitadas como identidade de série.");
+        }
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(viewer.id(), AiCapability.INSIGHT_GENERATOR,
                 "Você é o Insight Generator do Fashion AI. Escreva UMA leitura de tendência (até 2 frases, português) a partir dos rankings agregados. "
                         + "Não invente números; use só os dados.", "Rankings: " + Json.write(rankings), List.of(), 250,

@@ -99,7 +99,7 @@ public class LookbookService {
     @Transactional
     public Map<String, Object> overview(CurrentUser viewer, UUID ownerId) {
         User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
-        boolean self = viewer.id().equals(ownerId);
+        boolean self = viewer != null && viewer.id().equals(ownerId);
         boolean canSee = self || guard.canView(viewer, ownerId, owner.getProfileVisibility());
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(ownerId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
         List<Scheme> looks = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED);
@@ -419,7 +419,7 @@ public class LookbookService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> groupingsOf(CurrentUser viewer, UUID ownerId) {
         User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
-        boolean self = viewer.id().equals(ownerId);
+        boolean self = viewer != null && viewer.id().equals(ownerId);
         Map<UUID, Long> schemeCounts = new HashMap<>();
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED)) {
             boolean visible = self || (s.getStatus() == SchemeStatus.PUBLISHED && guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility())));
@@ -452,7 +452,7 @@ public class LookbookService {
         UUID ownerId = g.getOwner().getId();
         return schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED).stream()
                 .filter(s -> groupingId.equals(s.getGroupingId()))
-                .filter(s -> viewer.id().equals(ownerId) || schemeService.canView(viewer, s))
+                .filter(s -> (viewer != null && viewer.id().equals(ownerId)) || schemeService.canView(viewer, s))
                 .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
     }
 }

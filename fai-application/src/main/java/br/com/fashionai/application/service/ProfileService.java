@@ -76,11 +76,11 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public Map<String, Object> profile(CurrentUser viewer, String idOrUsername) {
         User u = resolve(idOrUsername);
-        boolean self = viewer.id().equals(u.getId());
-        if (!self && relation(u.getId(), viewer.id()) == FollowStatus.BLOQUEADO) {
+        boolean self = viewer != null && viewer.id().equals(u.getId());
+        if (!self && viewer != null && relation(u.getId(), viewer.id()) == FollowStatus.BLOQUEADO) {
             throw ApiException.notFound("Perfil");
         }
-        FollowStatus rel = self ? null : relation(viewer.id(), u.getId());
+        FollowStatus rel = self || viewer == null ? null : relation(viewer.id(), u.getId());
         boolean canSee = self || guard.canView(viewer, u.getId(), u.getProfileVisibility());
         List<Scheme> published = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED).stream()
                 .filter(s -> s.getStatus() == SchemeStatus.PUBLISHED).toList();

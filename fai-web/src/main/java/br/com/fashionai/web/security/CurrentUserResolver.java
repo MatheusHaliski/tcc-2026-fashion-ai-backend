@@ -4,7 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.web.support.RequestContextFilter;
+import br.com.fashionai.web.support.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
@@ -49,7 +49,7 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         return users.findById(UUID.fromString(id))
                 .filter(u -> u.getStatus() != AccountStatus.DELETED)
-                .map(u -> CurrentUser.of(u, request == null ? null : RequestContextFilter.clientIp(request),
+                .map(u -> CurrentUser.of(u, request == null ? null : CorrelationIdFilter.clientIp(request),
                         request == null ? null : request.getHeader("User-Agent")))
                 .orElseThrow(() -> ApiException.unauthorized("Conta não encontrada. Faça login novamente."));
     }
