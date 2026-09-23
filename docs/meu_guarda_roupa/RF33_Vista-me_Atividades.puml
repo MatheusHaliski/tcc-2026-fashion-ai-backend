@@ -1,0 +1,108 @@
+@startuml RF33_Vista-me_Atividades
+title RF33 — Smart Mirror "Vista-me"\nSugestão com peças reais, localização no quarto e Look do Dia
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Usuário|
+start
+:Acionar "✨ Vista-me" no Smart Mirror;
+:Descrever o pedido por texto ou voz\n(ex.: "Tenho uma apresentação hoje");
+
+|Meu Quarto (FE)|
+:Enviar pedido + contexto da visão\n(peças já no espelho, peça em foco, clima);
+
+|Copilot / Motor de IA (RF24)|
+:Interpretar intenção\n{occasion, mood, anchor_item_ids[], constraints[]};
+
+|Sistema|
+:Carregar peças elegíveis\n(disponíveis, estação ativa;\nsem cesto, à venda ou fora de estação);
+if (Há peça superior ou vestido elegível?) then (Não)
+  :Explicar a limitação e\noferecer cadastro de peça (RF4);
+  note right: RF33.CA14 / RF10.CA04
+  stop
+else (Sim)
+endif
+
+if (Serviço de IA disponível e dentro do limite?) then (Sim)
+  |Copilot / Motor de IA (RF24)|
+  :Gerar combinação\n(generateCombinations + âncora + restrições,\nexcluindo composições já exibidas na sessão);
+  |Sistema|
+  if (Todos os IDs pertencem ao conjunto elegível?) then (Sim)
+  else (Não)
+    :Descartar sugestão e registrar evento;
+    note right: RF33.CA09 / RNF5
+    :Montar sugestão por regras locais\n(ocasião × tags);
+  endif
+else (Não)
+  :Montar sugestão por regras locais\n(ocasião × tags) e sinalizar fallback;
+  note right: RF33.CA15 / RNF8
+endif
+
+:Verificar completude\n((upper + lower) ou dress, + shoes);
+if (Falta categoria obrigatória?) then (Sim)
+  :Anexar aviso determinístico\n("Esse look ainda não possui calçado.");
+else (Não)
+endif
+:Resolver endereço de cada peça\n(saiRoomStorageMap → Porta 2, Gaveta 4, Sapateira);
+
+|Meu Quarto (FE)|
+:Acender as posições em sequência\ne mostrar legendas "{peça} — {endereço}";
+:Montar o look no Smart Mirror;
+
+|Usuário|
+if (Escolher ação) then (Usar este look)
+  |Sistema|
+  if (Look já existe como esquema?) then (Não)
+    :Criar esquema com origin = "vista_me"\n(visibilidade padrão do perfil);
+  else (Sim)
+  endif
+  :Registrar saiDailyLooks\n(source = "vista_me");
+  :Lançar FAI Points no ledger\n(idempotente, limite 1/dia);
+  note right: RF35.CA01 — só na Fase 3
+  |Meu Quarto (FE)|
+  :Exibir confirmação no espelho;
+  stop
+elseif () then (Trocar uma peça)
+  |Copilot / Motor de IA (RF24)|
+  :Sugerir até 3 alternativas para o slot,\nmantendo as demais peças;
+  note right: RF33.CA12
+  |Meu Quarto (FE)|
+  :Atualizar espelho e destaques;
+  stop
+elseif () then (Remixar / Criar Look)
+  |Meu Quarto (FE)|
+  :Gravar sai_room_look_draft\n(slots + origin + prompt);
+  :Abrir RF5 — Criar Look\ncom slots preenchidos;
+  note right: RF33.CA07
+  stop
+elseif () then (Salvar)
+  |Sistema|
+  :Criar esquema com origin = "vista_me";
+  stop
+else (Outra sugestão)
+  |Copilot / Motor de IA (RF24)|
+  :Gerar nova combinação\nsem repetir as já exibidas;
+  note right: RF33.CA13 / RF10.CA03
+  |Meu Quarto (FE)|
+  :Atualizar espelho e destaques;
+  stop
+endif
+
+@enduml
