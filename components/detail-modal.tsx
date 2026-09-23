@@ -90,7 +90,7 @@ function SchemeDetail({ id, onPiece, onClose }: { id: string; onPiece: (id: stri
             </button>
           </li>))}</ul>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href={`/schemes/${s.id}`} className="btn" onClick={onClose}><FaiIcon id="ACT-01" size={24} decorative />Abrir página</Link>
+          <Link href={`/schemes/${s.id}`} className="btn" onClick={onClose}><FaiIcon id="SOC-10" size={24} decorative />Abrir página</Link>
           {data.canEdit && <Link href={`/schemes/${s.id}/edit`} className="btn" onClick={onClose}><FaiIcon id="ACT-05" size={24} decorative />{t("common.edit")}</Link>}
           <Link href={`/try-on?scheme=${s.id}`} className="btn" onClick={onClose}><FaiIcon id="NAV-07" size={24} decorative />Provar</Link>
         </div>
@@ -130,7 +130,7 @@ function PieceDetail({ id, onScheme, onClose }: { id: string; onScheme: (id: str
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">{rows.filter(([, v]) => v).map(([k, v]) => <div key={k} className="min-w-0"><dt className="label">{k}</dt><dd className="type-body-sm truncate">{v}</dd></div>)}</dl>
         {(data.originSchemes ?? []).length > 0 && <><h3 className="type-h3 mt-4 mb-1">Looks com esta peça</h3><ul className="flex flex-wrap gap-2">{data.originSchemes!.map((o) => <li key={o.schemeId}><button type="button" className="chip" onClick={() => onScheme(o.schemeId)}>{o.title} →</button></li>)}</ul></>}
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="ACT-01" size={24} decorative />Abrir página</Link>
+          <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="SOC-10" size={24} decorative />Abrir página</Link>
           {data.canEdit && <Link href={`/pieces/${p.id}?edit=1`} className="btn" onClick={onClose}><FaiIcon id="ACT-05" size={24} decorative />{t("common.edit")}</Link>}
           {user && !data.canEdit && <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="NAV-02" size={24} decorative />{t("closet.addToWardrobe")}</Link>}
         </div>

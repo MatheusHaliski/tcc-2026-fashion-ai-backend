@@ -2,6 +2,7 @@
 import Link from "next/link";
 import type { SchemeView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
+import { label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { backgroundStyle, skinStyle } from "@/lib/skins";
 import { Avatar } from "@/components/ui";
@@ -103,7 +104,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
         {(l !== "lista" || hasOwnArt(scheme.layoutAnatomy)) && titleRow}
         {expanded && scheme.description && <div className="c-row"><span className="k">Descrição</span>{scheme.description}</div>}
         {placement.zone === "STUDS" && <SealStuds seals={badges} />}
-        <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
+        <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
       </Link>
       <div className="c-foot">
         <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>

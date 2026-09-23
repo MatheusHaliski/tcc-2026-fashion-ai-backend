@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -18,16 +18,18 @@ const STEPS = ["1 · Cor & gradiente", "2 · Presets AURA & materiais", "3 · Ar
  * Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, Blocos) trazem arte própria e SOBREPÕEM o que foi
  * escolhido nas etapas 2 e 3 (presets AURA/recomendados, materiais, arte com IA e upload) — a etapa fica desativada.
  */
-export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions }: {
+export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel }: {
   value: BgConfig; onChange: (v: BgConfig) => void; skin: string; onSkin: (s: string) => void; anatomy: string; onAnatomy: (a: string) => void; pieceAnatomy?: string; onPieceAnatomy?: (a: string) => void; styles?: string[]; occasions?: string[];
+  /** RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar das anatomias do card v17. */
+  layoutPanel?: ReactNode; ownArt?: boolean; ownArtLabel?: string;
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { data: cat } = useApi<Catalog>((signal) => api.get("/api/backgrounds/catalog", { signal, anonymous: true }), []);
   const { data: rec } = useApi<{ skins?: { id: string; reason?: string }[]; direction?: string; recommended?: string[]; aura?: string; material?: string }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
   const [prompt, setPrompt] = useState(""); const [busy, setBusy] = useState(false); const [step, setStep] = useState(3);
   const set = (p: Partial<BgConfig>) => onChange({ ...value, ...p });
-  const special = hasOwnArt(anatomy);
-  const clearArt = { aura: null, materialId: null, aiArt: null, uploadUrl: null } as Partial<BgConfig>;
+  const special = ownArt ?? hasOwnArt(anatomy);
+  const clearArt = { aura: null, materialId: null, aiArt: null, uploadUrl: null, posterUrl: undefined } as Partial<BgConfig>;
   function chooseAnatomy(a: string) {
     onAnatomy(a);
     // caso especial (seções B/C): a arte da anatomia sobrepõe presets/materiais/arte com IA da etapa 2–3
@@ -37,17 +39,17 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
     setBusy(true);
     try {
       const r = await api.post<{ status: string; url?: string; message?: string }>("/api/backgrounds/art", { prompt, direction: rec?.direction ?? null, passePartout: true });
-      if (r.status === "READY" && r.url) { set({ aiArt: { url: r.url }, uploadUrl: null, aura: null, materialId: null }); toast.success("Arte gerada!"); }
+      if (r.status === "READY" && r.url) { set({ aiArt: { url: r.url }, uploadUrl: null, aura: null, materialId: null, posterUrl: undefined }); toast.success("Arte gerada!"); }
       else { toast.info(r.message ?? "Sem geração remota agora: use a galeria de presets."); setStep(1); }
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function upload(file: File) {
     const fd = new FormData(); fd.append("file", file); fd.append("target", "card");
-    try { const r = await api.upload<{ url: string }>("/api/backgrounds/uploads", fd); set({ uploadUrl: r.url, aiArt: null, aura: null, materialId: null }); toast.success("Imagem enviada!"); } catch (e) { toast.fromError(e); }
+    try { const r = await api.upload<{ url: string }>("/api/backgrounds/uploads", fd); set({ uploadUrl: r.url, aiArt: null, aura: null, materialId: null, posterUrl: undefined }); toast.success("Imagem enviada!"); } catch (e) { toast.fromError(e); }
   }
   const auraPreset = cat?.auraPresets.find((a) => (a.variants ?? []).some((v) => v.id === value.aura?.variantId) || a.id === value.aura?.variantId);
   const recommendedSkins = new Set([...(rec?.recommended ?? []), ...((rec?.skins ?? []).map((s) => s.id))]);
-  const disabledNote = <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">Anatomia <b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b> traz arte própria: presets AURA, recomendados, materiais e arte com IA ficam desativados (a arte da anatomia sobrepõe esta etapa). Escolha uma anatomia da seção A na etapa 4 para reativar.</p>;
+  const disabledNote = <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{ownArtLabel ? <>Narrativa <b>{ownArtLabel}</b></> : <>Anatomia <b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b></>} traz arte própria: presets AURA, recomendados, materiais e arte com IA ficam desativados (a arte da anatomia sobrepõe esta etapa). Escolha uma anatomia da seção A na etapa 4 para reativar.</p>;
   return (
     <div className="surface p-3">
       <ol className="mb-3 flex flex-wrap gap-1" aria-label="etapas do Background Studio">{STEPS.map((s, i) => <li key={s}><button type="button" className="chip" aria-pressed={step === i} onClick={() => setStep(i)}>{s}</button></li>)}</ol>
@@ -63,8 +65,8 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
       {step === 1 && (special ? disabledNote : (
         <div className="grid gap-3">
           {rec?.direction && <p className="type-caption text-muted">Direção recomendada para {(styles ?? []).join(", ") || "o look"}: <b>{cat?.directions?.[rec.direction]?.label ?? rec.direction}</b>{cat?.directions?.[rec.direction]?.aura && <Button size="sm" className="ml-2" onClick={() => { const d = cat!.directions[rec.direction!]; set({ aura: { variantId: d.aura!, format: value.aura?.format }, materialId: d.material ?? null, aiArt: null, uploadUrl: null }); if (d.skin) onSkin(d.skin); }}>Aplicar recomendada</Button>}</p>}
-          <div><p className="label">Preset AURA</p><div className="flex flex-wrap gap-1.5">{(cat?.auraPresets ?? []).map((a) => <Chip key={a.id} active={auraPreset?.id === a.id} title={a.archetype} onClick={() => set({ aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}><span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999"]).join(",")})` }} />{a.name}</Chip>)}</div></div>
-          {auraPreset && (auraPreset.variants ?? []).length > 0 && <div><p className="label">Variação · {auraPreset.name}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className={`rounded border-2 p-0.5 ${value.aura?.variantId === v.id ? "border-mark" : "border-line-soft"}`} title={v.description} onClick={() => set({ aura: { variantId: v.id, format: value.aura?.format } })}>{v.static?.previewUrl ? <img src={v.static.previewUrl} alt={v.theme ?? v.id} className="aspect-[4/3] w-full rounded object-cover" /> : <span className="block p-2 type-caption">{v.theme ?? v.code}</span>}<span className="block truncate type-caption">{v.code} {v.theme}</span></button>)}</div></div>}
+          <div><p className="label">Preset AURA</p><div className="flex flex-wrap gap-1.5">{(cat?.auraPresets ?? []).map((a) => <Chip key={a.id} active={auraPreset?.id === a.id} title={a.archetype} onClick={() => set({ aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, posterUrl: a.variants?.[0]?.static?.previewUrl ?? a.variants?.[0]?.static?.url, aiArt: null, uploadUrl: null })}><span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999"]).join(",")})` }} />{a.name}</Chip>)}</div></div>
+          {auraPreset && (auraPreset.variants ?? []).length > 0 && <div><p className="label">Variação · {auraPreset.name}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className={`rounded border-2 p-0.5 ${value.aura?.variantId === v.id ? "border-mark" : "border-line-soft"}`} title={v.description} onClick={() => set({ aura: { variantId: v.id, format: value.aura?.format }, posterUrl: v.static?.previewUrl ?? v.static?.url })}>{v.static?.previewUrl ? <img src={v.static.previewUrl} alt={v.theme ?? v.id} className="aspect-[4/3] w-full rounded object-cover" /> : <span className="block p-2 type-caption">{v.theme ?? v.code}</span>}<span className="block truncate type-caption">{v.code} {v.theme}</span></button>)}</div></div>}
           <div><p className="label">Material (camada)</p><div className="flex flex-wrap gap-1.5">{(cat?.materials ?? []).map((m) => <Chip key={m.id} active={value.materialId === m.id} title={m.finish} onClick={() => set({ materialId: value.materialId === m.id ? null : m.id })}>{m.name}{auraPreset?.recommendedMaterials?.includes(m.id) && " ★"}</Chip>)}</div></div>
           {value.aura && value.materialId && <div><p className="label">Formato (RF11 §7.6)</p><div className="flex gap-1.5">{(["IMAGEM_UNICA", "MOSAICO"] as const).map((f) => <Chip key={f} active={value.aura?.format === f} onClick={() => set({ aura: { ...value.aura!, format: f } })}>{f === "MOSAICO" ? "Mosaico (modelagem 11)" : "Imagem única"}</Chip>)}</div></div>}
         </div>
@@ -83,14 +85,14 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
       ))}
       {step === 3 && (
         <div className="grid gap-4">
-          <div>
+          {layoutPanel ?? <div>
             <p className="label">Layout do esquema (anatomia do card v17)</p>
             <p className="type-caption text-muted mb-2">Seção A: layouts base. Seção B: variações com arte própria — sobrepõem presets/materiais/arte com IA.</p>
             <div className="grid gap-1.5 sm:grid-cols-2">{SCHEME_ANATOMIES.map((a) => <button key={a.id} type="button" aria-pressed={anatomy === a.id} onClick={() => chooseAnatomy(a.id)} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${anatomy === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><SealZoneDiagram zone={SEAL_PLACEMENT[a.id]?.zone ?? "TITLE_ROW"} pieceRows={SEAL_PLACEMENT[a.id]?.pieceRows} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.section}</span>{a.label}{a.ownArt && " ✦"}</span><span className="block type-caption text-muted">{a.hint}</span></span></button>)}</div>
             <p className="mt-2 rounded-md border border-line-soft p-2 type-body-sm"><b>Selo neste layout:</b> {sealPlacement(anatomy).description} <span className="text-muted">({sealPlacement(anatomy).source === "anatomia" ? "posição escrita na anatomia v17" : "posição derivada da estrutura da prancha"} · medalhão 44 px, tamanho do logo FashionAI; o espaço fica reservado mesmo antes de o look ganhar selo)</span></p>
             {special && <p className="mt-2 type-caption text-chalk">✦ arte própria: sobrepõe as etapas 2 e 3.{anatomy === "BLOCOS" && " Com Blocos, o seletor de material fica desabilitado."}</p>}
-          </div>
-          {onPieceAnatomy && <div><p className="label">Layout das peças (seção C · versão por modelo)</p><div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div><p className="mt-1 type-caption text-muted">Selo da peça (36 px): {pieceSealPlacement(pieceAnatomy).description}</p></div>}
+          </div>}
+          {!layoutPanel && onPieceAnatomy && <div><p className="label">Layout das peças (seção C · versão por modelo)</p><div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div><p className="mt-1 type-caption text-muted">Selo da peça (36 px): {pieceSealPlacement(pieceAnatomy).description}</p></div>}
           <div><p className="label">{t("scheme.skin")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(CARD_SKINS).map(([id, s]) => (
             <button key={id} type="button" aria-pressed={skin === id} onClick={() => onSkin(id)} className={`rounded border-2 p-2 text-left ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: s.bg, color: s.ink }}>
               <span className="block type-caption" style={{ fontWeight: s.titleWeight }}>{cat?.skins?.find((x) => x.id === id)?.displayName ?? id}</span>{recommendedSkins.has(id) && <span className="badge badge-chalk mt-1">recomendada</span>}

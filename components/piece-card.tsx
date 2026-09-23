@@ -34,7 +34,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
       {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
       <div className="c-row flex items-center gap-2">
         <span aria-hidden className="inline-block h-3 w-3 rounded-full border border-line-soft" style={{ background: piece.colorHex ?? "#ccc" }} />
-        <span className="type-data text-muted">{piece.color}</span>
+        <span className="type-data text-muted">{label(piece.color)}</span>
         <span className="ml-auto type-data text-muted">{piece.price != null ? fmtMoney(piece.price) : piece.size?.toUpperCase()}</span>
       </div>
       <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{[label(piece.subcategory) || CATEGORY_LABEL[piece.category], piece.brandName, label(piece.sex?.toLowerCase())].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? " · selos" : ""}</span>{(piece.occasion ?? []).map(label).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>

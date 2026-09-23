@@ -60,8 +60,8 @@ public class DnaScheme extends VersionedAuditableEntity {
     private String colorPaletteJson;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "narrative_type", nullable = false, length = 40)
-    private NarrativeType narrativeType = NarrativeType.TIMELINE;
+    @Column(name = "narrative_type", length = 40)
+    private NarrativeType narrativeType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "seasonal_theme", length = 10)

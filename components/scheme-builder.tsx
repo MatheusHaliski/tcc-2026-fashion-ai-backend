@@ -15,8 +15,12 @@ import Link from "next/link";
 
 interface Builder { totalPieces: number; eligiblePieces: number; hiddenPieces?: number; source?: string; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
 interface Composition { title: string; items: { wardrobeItemId: string; slot: string }[]; occasions?: string[]; styles?: string[]; why?: string; reason?: string; }
-const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "DRESS" };
-const SLOTS = ["OUTER", "TOP", "DRESS", "BOTTOM", "SHOES", "ACCESSORY"];
+// mesmos valores do enum SchemeSlot do backend (um valor diferente faria o POST falhar com JSON_INVALIDO)
+const OUTER_SUBCATEGORIES = new Set(["jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono", "vest"]);
+const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "FULL_BODY" };
+const slotOf = (p: PieceView) => (p.category === "upper_piece" && OUTER_SUBCATEGORIES.has(p.subcategory ?? "") ? "OUTERWEAR" : SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY");
+const SLOTS = ["OUTERWEAR", "TOP", "FULL_BODY", "BOTTOM", "SHOES", "ACCESSORY"];
+const SLOT_LABEL: Record<string, string> = { OUTERWEAR: "Sobreposição", TOP: "Parte de cima", FULL_BODY: "Peça única", BOTTOM: "Parte de baixo", SHOES: "Calçado", ACCESSORY: "Acessório" };
 
 /** Construtor de looks (RF5 criar / RF9 editar): modo → peças → dados → Background Studio → pré-visualização → salvar. */
 export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
@@ -30,7 +34,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const all = useMemo(() => Object.values(b?.lists ?? {}).flat(), [b]);
   const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
   useEffect(() => { if (b && b.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
-  const toggle = (p: PieceView) => setSelected((s) => (s.some((x) => x.id === p.id) ? s.filter((x) => x.id !== p.id) : [...s, { id: p.id, slot: SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY" }]));
+  const toggle = (p: PieceView) => setSelected((s) => (s.some((x) => x.id === p.id) ? s.filter((x) => x.id !== p.id) : [...s, { id: p.id, slot: slotOf(p) }]));
   const toggleTag = (k: "occasion" | "style" | "seals", v: string, max: number) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : f[k].length < max ? [...f[k], v] : f[k] }));
   const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), creationMode: mode === "ai" ? "AI" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
   async function compose() {
@@ -108,7 +112,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
             <ul className="mb-4 divide-y divide-line-soft">{selected.map((s, i) => { const p = byId.get(s.id); return (
               <li key={s.id} className="flex items-center gap-3 py-2"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="flex-1">{p?.name ?? s.id}</span>
-                <Select aria-label="slot" className="w-36" value={s.slot} onChange={(e) => setSelected((arr) => arr.map((x, j) => (j === i ? { ...x, slot: e.target.value } : x)))}>{SLOTS.map((sl) => <option key={sl} value={sl}>{sl}</option>)}</Select>
+                <Select aria-label="slot" className="w-36" value={s.slot} onChange={(e) => setSelected((arr) => arr.map((x, j) => (j === i ? { ...x, slot: e.target.value } : x)))}>{SLOTS.map((sl) => <option key={sl} value={sl}>{SLOT_LABEL[sl]}</option>)}</Select>
                 <Button size="sm" variant="ghost" aria-label={t("common.remove")} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></li>); })}</ul>
             <div className="flex flex-wrap gap-2">
               <Button onClick={doPreview} loading={busy}>{t("scheme.preview")} (PNG)</Button>
