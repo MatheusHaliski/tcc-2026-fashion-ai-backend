@@ -3,15 +3,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>br.com.fashionai</groupId>
         <artifactId>fai-infrastructure</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
-
-    <artifactId>storage-s3</artifactId>
-    <name>storage-s3</name>
+    <artifactId>platform</artifactId>
+    <name>platform</name>
+    <description>Adaptadores que funcionam sem serviços externos (arquivos locais, memória, log) e integrações HTTP leves (Open-Meteo, Resend).</description>
 
     <dependencies>
         <dependency>
@@ -20,12 +19,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
     </dependencies>
 </project>

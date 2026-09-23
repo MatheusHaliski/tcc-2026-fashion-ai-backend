@@ -21,5 +21,6 @@
         <module>search-opensearch</module>
         <module>storage-s3</module>
         <module>ai-providers</module>
+        <module>platform</module>
     </modules>
 </project>

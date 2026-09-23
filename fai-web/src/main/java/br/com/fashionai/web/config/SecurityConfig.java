@@ -34,7 +34,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
-            "/actuator/health", "/actuator/info", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+            "/actuator/health", "/actuator/info", "/actuator/prometheus", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
             "/api/usernames/*/availability", "/api/preferences/options", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",

@@ -1,0 +1,82 @@
+# Ambiente local do Fashion AI. Só o MySQL é obrigatório:
+#   docker compose -f docker-compose.dev.yml up -d mysql
+# Serviços opcionais (perfis): redis, cassandra, opensearch, minio, rembg
+#   docker compose -f docker-compose.dev.yml --profile redis --profile cassandra up -d
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: fai-mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fashionai}
+      MYSQL_USER: ${MYSQL_USER:-fashionai}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci --default-time-zone=+00:00
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - fai-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: fai-redis
+    profiles: ["redis"]
+    ports:
+      - "6379:6379"
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: fai-cassandra
+    profiles: ["cassandra"]
+    environment:
+      CASSANDRA_CLUSTER_NAME: fashionai
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    ports:
+      - "9042:9042"
+    volumes:
+      - fai-cassandra:/var/lib/cassandra
+      - ./fai-infrastructure/persistence-cassandra/src/main/resources/cassandra/schema.cql:/docker-entrypoint-initdb.d/schema.cql:ro
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.0
+    container_name: fai-opensearch
+    profiles: ["opensearch"]
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+
+  minio:
+    image: minio/minio:latest
+    container_name: fai-minio
+    profiles: ["minio"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-fashionai}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-fashionai-secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - fai-minio:/data
+
+  rembg:
+    image: danielgatis/rembg:latest
+    container_name: fai-rembg
+    profiles: ["rembg"]
+    command: s --host 0.0.0.0 --port 7000
+    ports:
+      - "7000:7000"
+
+volumes:
+  fai-mysql:
+  fai-cassandra:
+  fai-minio:
