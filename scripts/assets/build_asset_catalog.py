@@ -181,15 +181,72 @@ SEASONAL_PRESETS = [
     {"id": "bloom", "season": "SPRING", "name": "Bloom", "stops": ["#FDE2EC", "#FFD3E0", "#C9EFCB"], "animation": "PETALS"},
 ]
 
+# Skins de card (presets recomendados do RF11). Tokens visuais por skin; prompts, thumbHint e status vêm dos
+# markdowns de /public/presets_recomendados (fonte: skinRegistry.ts + mockup "Quatro Conceitos").
 CARD_SKINS = [
-    {"id": "atelier", "name": "Atelier", "family": "fine", "nativeContainer": "#FFFFFF", "font": "Inter"},
-    {"id": "spread", "name": "Spread", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Fraunces"},
-    {"id": "index", "name": "Índice", "family": "fine", "nativeContainer": "#FFFFFF", "font": "IBM Plex Mono"},
-    {"id": "trading", "name": "Trading", "family": "framed", "nativeContainer": "#F2F2F2", "font": "Inter"},
-    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFF4EC", "font": "Inter"},
-    {"id": "stub", "name": "Stub", "family": "framed", "nativeContainer": "#FBF7EF", "font": "IBM Plex Mono"},
-    {"id": "specimen", "name": "Specimen", "family": "framed", "nativeContainer": "#F4F7F2", "font": "IBM Plex Mono"},
+    {"id": "atelier", "name": "Atelier", "family": "fine", "nativeContainer": "#FFFFFF", "font": "Inter",
+     "tokens": {"bg": "#FFFFFF", "ink": "#1A1714", "accent": "#1A1714", "border": "#E7E2DA", "radius": 14, "titleWeight": 500}},
+    {"id": "spread", "name": "Spread", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Fraunces",
+     "tokens": {"bg": "#F7F4EE", "ink": "#111111", "accent": "#B4442C", "border": "#D9D1C4", "radius": 6, "titleWeight": 800}},
+    {"id": "index", "name": "Índice", "family": "fine", "nativeContainer": "#FFFFFF", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#FBFAF6", "ink": "#23201C", "accent": "#5B6B7A", "border": "#23201C", "radius": 4, "titleWeight": 600}},
+    {"id": "trading", "name": "Trading", "family": "framed", "nativeContainer": "#F2F2F2", "font": "Inter",
+     "tokens": {"bg": "#F2F2F2", "ink": "#16161A", "accent": "#7C5FC0", "border": "#9A9AA3", "radius": 18, "titleWeight": 800}},
+    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFF4EC", "font": "Inter",
+     "tokens": {"bg": "#FFF4EC", "ink": "#1A0F08", "accent": "#FF6A1A", "border": "#FF6A1A", "radius": 20, "titleWeight": 900}},
+    {"id": "stub", "name": "Stub", "family": "framed", "nativeContainer": "#FBF7EF", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#FBF7EF", "ink": "#2A241C", "accent": "#A0522D", "border": "#2A241C", "radius": 2, "titleWeight": 700}},
+    {"id": "specimen", "name": "Specimen", "family": "framed", "nativeContainer": "#F4F7F2", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#F4F7F2", "ink": "#1F2A22", "accent": "#3D7A5A", "border": "#9FB3A5", "radius": 6, "titleWeight": 600}},
+    {"id": "editorial_ivory", "name": "Editorial Ivory Paper", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Georgia",
+     "tokens": {"bg": "#F7F4EE", "ink": "#1A1410", "accent": "#C4956A", "border": "#D4CEC4", "badgeBg": "#F0EDE8",
+                "radius": 3, "titleWeight": 400, "pieceStripe": "side-3px", "glass": False}},
+    {"id": "show_notes", "name": "Show Notes", "family": "framed", "nativeContainer": "#0A0A0A", "font": "Inter",
+     "tokens": {"bg": "#0A0A0A", "ink": "#F5F5F5", "accent": "#F5F5F5", "border": "rgba(255,255,255,0.18)", "radius": 3,
+                "titleWeight": 900, "watermarkOpacity": 0.028, "pieceStripe": "top-2px", "badges": "outline"}},
+    {"id": "atelier_terracotta", "name": "Atelier Terracota", "family": "framed", "nativeContainer": "#3A2416", "font": "Georgia",
+     "tokens": {"bg": "#3A2416", "ink": "#F3E6D8", "accent": "#C4674A", "border": "rgba(243,230,216,0.28)", "radius": 7,
+                "titleWeight": 300, "pieceGradient": ["#3D2B1F", "#261A11"], "linenOpacity": 0.022, "cutCorner": True}},
+    {"id": "luxury_glass_warm", "name": "Luxury Glass Quente", "family": "framed", "nativeContainer": "#0D1B2A", "font": "Inter",
+     "tokens": {"bg": "rgba(13,27,42,0.97)", "ink": "#EDE6F5", "accent": "#C4956A", "accent2": "#7C5FC0",
+                "border": "rgba(196,149,106,0.22)", "radius": 16, "titleWeight": 200, "hairline": ["#C4956A", "#7C5FC0"]}},
 ]
+PRESET_DOC_BY_SKIN = {"atelier": "01_atelier.md", "spread": "02_spread.md", "index": "03_index.md", "trading": "04_trading.md",
+                      "fai_max": "05_fai_max.md", "stub": "06_stub.md", "specimen": "07_specimen.md",
+                      "editorial_ivory": "09_editorial_ivory_paper.md", "show_notes": "10_show_notes.md",
+                      "atelier_terracotta": "11_atelier_terracota.md", "luxury_glass_warm": "12_luxury_glass_quente.md"}
+PIECE_CONTEXT = "single garment product framing, one clothing item centered as hero subject, isolated product-shot styling"
+SCHEME_CONTEXT = ("full outfit editorial framing, complete look composition with multiple garment pieces styled together, "
+                  "head-to-toe styling context")
+
+# RF4 — imagem padrão da peça quando o usuário deixa a foto vazia (/public/assets_pecas).
+DEFAULT_PIECE_FOLDERS = ["assets_pecas", "assets_peças", "assets_pecas_default"]
+PIECE_CATEGORIES = {
+    "upper_piece": ["t_shirt", "shirt", "blouse", "tank_top", "crop_top", "polo_shirt", "bodysuit", "sweater", "sweatshirt",
+                    "hoodie", "cardigan", "vest", "blazer", "jacket", "coat", "parka", "windbreaker", "kimono"],
+    "lower_piece": ["jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants",
+                    "leggings", "culottes", "shorts", "bermuda_shorts", "denim_shorts", "skirt", "skort"],
+    "shoes_piece": ["casual_sneakers", "running_shoes", "training_shoes", "basketball_shoes", "skate_shoes",
+                    "high_top_sneakers", "loafers", "moccasins", "oxford_shoes", "derby_shoes", "ankle_boots", "long_boots",
+                    "combat_boots", "sandals", "flip_flops", "heels", "flats", "espadrilles"],
+    "accessory_piece": ["handbag", "crossbody_bag", "tote_bag", "clutch", "backpack", "belt", "cap", "hat", "beanie", "scarf",
+                        "tie", "bow_tie", "sunglasses", "eyeglasses", "necklace", "bracelet", "earrings", "ring", "watch",
+                        "gloves", "socks", "hair_accessory"],
+    "full_body_piece": ["dress", "jumpsuit", "romper", "matching_set", "overalls"],
+}
+CATEGORY_ALIASES = {"upper_piece": ["parte_cima", "parte_de_cima", "top", "tops", "upper", "camiseta", "blusa"],
+                    "lower_piece": ["parte_baixo", "parte_de_baixo", "bottom", "bottoms", "lower", "calca", "calcas"],
+                    "shoes_piece": ["tenis", "calcado", "calcados", "shoes", "sapato", "sapatos"],
+                    "accessory_piece": ["acessorio", "acessorios", "accessory", "accessories"],
+                    "full_body_piece": ["corpo_inteiro", "vestido", "full_body", "macacao"]}
+SILHOUETTES = {
+    "upper_piece": "M60 40 L100 22 Q120 36 140 22 L180 40 L200 90 L172 100 L168 78 L168 200 L72 200 L72 78 L68 100 L40 90 Z",
+    "lower_piece": "M72 24 L168 24 L176 216 L130 216 L122 90 L118 90 L110 216 L64 216 Z",
+    "shoes_piece": "M40 150 Q44 110 84 108 L120 104 Q150 120 176 128 Q204 136 204 160 L204 170 L40 170 Z",
+    "accessory_piece": "M70 90 Q70 50 120 50 Q170 50 170 90 L186 90 L194 200 L46 200 L54 90 Z M88 90 Q88 66 120 66 Q152 66 152 90 Z",
+    "full_body_piece": "M92 22 L148 22 L156 70 L190 216 L50 216 L84 70 Z",
+    "generic": "M60 40 L100 22 Q120 36 140 22 L180 40 L200 90 L172 100 L168 78 L168 200 L72 200 L72 78 L68 100 L40 90 Z",
+}
 
 # Nomes semânticos dos fundos do RF23 (arquivos originais sem nome técnico).
 CHROME_BG_NAMES = {
@@ -306,6 +363,107 @@ class Deriver:
         return {"bytes": src.stat().st_size, "sha256": sha256(src), "mime": "video/mp4" if src.suffix.lower() == ".mp4" else "video/webm"}
 
 
+def md_block(text: str, heading: str) -> str | None:
+    """Primeiro bloco ``` depois do cabeçalho indicado (prompts dos presets recomendados)."""
+    idx = text.find(heading)
+    if idx < 0:
+        return None
+    m = re.search(r"```\n?(.*?)```", text[idx:], re.S)
+    return m.group(1).strip() if m else None
+
+
+def md_field(text: str, label: str) -> str | None:
+    m = re.search(r"\*\*" + re.escape(label) + r":\*\*\s*`?([^`|\n]+)`?", text)
+    return m.group(1).strip().strip('"“”') if m else None
+
+
+def build_skins() -> dict:
+    folder = PUBLIC / "presets_recomendados"
+    negative = None
+    notes = {}
+    if (folder / "08_negativo_e_geracao_tecnica.md").is_file():
+        negative = md_block((folder / "08_negativo_e_geracao_tecnica.md").read_text(encoding="utf-8"), "## Prompt negativo")
+    fmt = None
+    if (folder / "00_dimensoes_e_metodologia.md").is_file():
+        fmt = md_block((folder / "00_dimensoes_e_metodologia.md").read_text(encoding="utf-8"), "## Fragmento de formato")
+    skins = []
+    for base in CARD_SKINS:
+        skin = dict(base)
+        doc = folder / PRESET_DOC_BY_SKIN[base["id"]]
+        text = doc.read_text(encoding="utf-8") if doc.is_file() else ""
+        title = re.search(r"^# Preset — (.+)$", text, re.M)
+        skin["doc"] = url_of(doc) if doc.is_file() else None
+        skin["displayName"] = title.group(1).split(" (")[0].strip() if title else base["name"]
+        skin["component"] = md_field(text, "Componente")
+        skin["thumbHint"] = md_field(text, "thumbHint atual")
+        candidate = "ID candidato" in text
+        skin["status"] = "candidate" if candidate else "implemented"
+        skin["styleFragment"] = md_block(text, "## Fragmento de estilo")
+        final = md_block(text, "## Prompt final")
+        if not final and skin["styleFragment"]:
+            final = ", ".join([skin["styleFragment"], SCHEME_CONTEXT, fmt or ""]).strip(", ")
+        if candidate and skin["styleFragment"] and skin["styleFragment"].startswith("Fundo"):
+            # 10–12 descrevem o visual em prosa; o prompt final pronto está no bloco "Prompt final".
+            skin["visualDescription"] = skin["styleFragment"]
+        skin["thumbnailPrompt"] = {"scheme": final, "piece": final.replace(SCHEME_CONTEXT, PIECE_CONTEXT) if final else None}
+        skin["negativePrompt"] = negative
+        skin["thumbnail"] = None
+        for ext in (".webp", ".png", ".jpg"):
+            f = folder / f"{base['id']}{ext}"
+            if f.is_file():
+                skin["thumbnail"] = url_of(f)
+        skin["thumbnailSpec"] = {"aspect": "220:566", "ratio": 0.389, "variant": "Lista vertical — Ampliado",
+                                 "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+                                 "fallback": "live-css-miniature" if skin["thumbnail"] is None else "asset"}
+        collision = re.search(r"(Colisão de nome[^\n]*|Aviso de nomenclatura[^\n]*)", text)
+        skin["namingNote"] = collision.group(1).strip("*> ") if collision and "nenhuma" not in collision.group(1).lower() else None
+        skins.append(skin)
+    return {"skins": skins, "negativePrompt": negative, "formatFragment": fmt,
+            "contextFragments": {"scheme": SCHEME_CONTEXT, "piece": PIECE_CONTEXT},
+            "source": "/presets_recomendados"}
+
+
+def build_default_pieces(d) -> dict:
+    """RF4 — imagem padrão por subcategoria → categoria → genérica. Sem arquivos, gera silhuetas SVG."""
+    folder = next((PUBLIC / n for n in DEFAULT_PIECE_FOLDERS if (PUBLIC / n).is_dir()), None)
+    files = media_files(folder, IMAGE_EXT | {".svg"}) if folder else []
+    by_sub, by_cat, generic, unmatched = {}, {}, None, []
+    sub_to_cat = {sub: cat for cat, subs in PIECE_CATEGORIES.items() for sub in subs}
+    for f in files:
+        key = slug(f.stem)
+        entry = {"url": url_of(f), "previewUrl": d.image(f, DERIVED / "pecas_default" / f"{key}_preview.webp", 360, 80)
+                 if f.suffix.lower() != ".svg" else url_of(f)}
+        sub = next((s for s in sub_to_cat if key == s or key.startswith(s + "_") or key.endswith("_" + s)), None)
+        cat = next((c for c, al in CATEGORY_ALIASES.items() if key == c or key in al or any(key.startswith(a) for a in al)), None)
+        if sub:
+            by_sub[sub] = {**entry, "category": sub_to_cat[sub]}
+        elif cat:
+            by_cat[cat] = entry
+        elif key in ("default", "generic", "generica", "padrao", "peca", "placeholder"):
+            generic = entry
+        else:
+            unmatched.append(url_of(f))
+    generated = {}
+    out_dir = DERIVED / "pecas_default"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for cat, path in SILHOUETTES.items():
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="480" height="480">'
+               f'<rect width="240" height="240" rx="24" fill="#F4F1EC"/><path d="{path}" fill="#D8D1C7" stroke="#A89F93" '
+               f'stroke-width="3" stroke-linejoin="round"/><text x="120" y="232" font-family="Inter,Arial" font-size="11" '
+               f'fill="#8A8176" text-anchor="middle">Fashion AI · sem foto</text></svg>')
+        target = out_dir / f"{cat}.svg"
+        target.write_text(svg, encoding="utf-8")
+        generated[cat] = url_of(target)
+    for cat in PIECE_CATEGORIES:
+        by_cat.setdefault(cat, {"url": generated[cat], "previewUrl": generated[cat], "generated": True})
+    return {"folder": ("/" + folder.name) if folder else None, "acceptedFolderNames": DEFAULT_PIECE_FOLDERS,
+            "found": len(files), "bySubcategory": by_sub, "byCategory": by_cat,
+            "generic": generic or {"url": generated["generic"], "previewUrl": generated["generic"], "generated": True},
+            "unmatchedFiles": unmatched,
+            "resolution": "subcategoria → categoria → genérica; sem arquivo em /public/assets_pecas usa silhueta gerada",
+            "naming": "<subcategoria>.png (ex.: t_shirt.png) ou <categoria>.png (ex.: upper_piece.png / parte_cima.png)"}
+
+
 def build(derived_enabled: bool) -> dict:
     d = Deriver(derived_enabled)
     missing: list[dict] = []
@@ -400,8 +558,11 @@ def build(derived_enabled: bool) -> dict:
         items = []
         for p in media_files(folder, exts):
             stem = p.stem
-            mm = re.match(r"^P(\d{2})_M(\d{2})$", stem)
+            mm = re.match(r"^P(\d{2})_M(\d{2})(?:\s*-\s*(.+?)\s+GIF\s*\+\s*(.+))?$", unicodedata.normalize("NFC", stem))
             aura_v = mat_id = None
+            label = None
+            if mm and mm.group(3):
+                label = {"aura": mm.group(3).strip(), "material": mm.group(4).strip()}
             if mm:
                 pi, mi = int(mm.group(1)), int(mm.group(2))
                 if 1 <= pi <= len(variants_flat) and 1 <= mi <= len(MATERIALS):
@@ -420,8 +581,16 @@ def build(derived_enabled: bool) -> dict:
             item = {"auraVariantId": aura_v, "materialId": mat_id, "url": url_of(p),
                     "code": next((f"{v['code']}_{mt['code']}" for v in variants_flat if v["id"] == aura_v
                                   for mt in materials if mt["id"] == mat_id), None)}
+            if label:
+                preset_name = next((pr["name"] for pr in AURA_PRESETS if aura_v and aura_v.startswith(pr["id"] + "__")), None)
+                item["label"] = label
+                item["labelConflict"] = preset_name is not None and preset_name.lower() != label["aura"].lower()
+                if item["labelConflict"]:
+                    item["labelNote"] = (f"nome do arquivo diz '{label['aura']}', o índice oficial P##→variante "
+                                         f"(indice_de_correspondencia.csv) diz '{preset_name}'")
             if p.suffix.lower() in VIDEO_EXT:
-                item["posterUrl"] = d.poster(p, DERIVED / key / f"{stem}_poster.jpg")
+                code = item["code"] or stem[:7]
+                item["posterUrl"] = d.poster(p, DERIVED / key / f"{code}_poster.jpg")
                 item["mime"] = "video/mp4"
             else:
                 item["previewUrl"] = d.image(p, DERIVED / key / f"{stem}_preview.webp", 360, 78)
@@ -434,6 +603,8 @@ def build(derived_enabled: bool) -> dict:
         "mosaic": combo_items("aura_material_mosaic_animated", VIDEO_EXT | {".gif"}),
     }
 
+    skins = build_skins()
+    default_pieces = build_default_pieces(d)
     counts = {
         "material_static": sum(1 for m in materials if m["static"]),
         "material_animated": sum(1 for m in materials if m["animated"]),
@@ -469,7 +640,12 @@ def build(derived_enabled: bool) -> dict:
         "categories": categories,
         "gradientAuraPresets": GRADIENT_AURA_PRESETS,
         "seasonalPresets": SEASONAL_PRESETS,
-        "cardSkins": CARD_SKINS,
+        "cardSkins": skins["skins"],
+        "skinGeneration": {k: v for k, v in skins.items() if k != "skins"},
+        "defaultPieceImages": default_pieces,
+        "pCodeConflicts": sorted({c["code"].split("_")[0] + ": arquivo='" + c["label"]["aura"] + "' índice='" +
+                                  c["labelNote"].split("diz '")[-1].rstrip("'") + "'"
+                                  for c in combos["animated"] if c.get("labelConflict")}),
         "missing": missing,
         "ignoredFiles": ignored + [{"file": s, "reason": "arquivo solto na raiz de /public"} for s in stray],
     }

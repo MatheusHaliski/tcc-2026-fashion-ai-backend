@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-09-23T15:34:28+00:00",
+ "generatedAt": "2026-09-23T16:21:30+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -1198,7 +1198,2900 @@
  ],
  "auraMaterialCombos": {
   "static": [],
-  "animated": [],
+  "animated": [
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P01_M01 - Tailored Steel GIF + Herringbone.mp4",
+    "code": "P01_M01",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P01_M02 - Tailored Steel GIF + Seda Cetim.mp4",
+    "code": "P01_M02",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P01_M03 - Tailored Steel GIF + Couro Cognac.mp4",
+    "code": "P01_M03",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P01_M04 - Tailored Steel GIF + Veludo Esmeralda.mp4",
+    "code": "P01_M04",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P01_M05 - Tailored Steel GIF + Burlap-Linho.mp4",
+    "code": "P01_M05",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P01_M06 - Tailored Steel GIF + Malha Canelada.mp4",
+    "code": "P01_M06",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P01_M07 - Tailored Steel GIF + Nylon Ripstop.mp4",
+    "code": "P01_M07",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P01_M08 - Tailored Steel GIF + Organza Chiffon.mp4",
+    "code": "P01_M08",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P01_M09 - Tailored Steel GIF + Brocado Jacquard.mp4",
+    "code": "P01_M09",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P01_M10 - Tailored Steel GIF + Índigo Denim.mp4",
+    "code": "P01_M10",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P01_M11 - Tailored Steel GIF + Lã Tweed.mp4",
+    "code": "P01_M11",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_alfaiataria__cabides",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P01_M12 - Tailored Steel GIF + Laminado Metálico.mp4",
+    "code": "P01_M12",
+    "label": {
+     "aura": "Tailored Steel",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P01_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P02_M01 - Editorial Ivory GIF + Herringbone.mp4",
+    "code": "P02_M01",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P02_M02 - Editorial Ivory GIF + Seda Cetim.mp4",
+    "code": "P02_M02",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P02_M03 - Editorial Ivory GIF + Couro Cognac.mp4",
+    "code": "P02_M03",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P02_M04 - Editorial Ivory GIF + Veludo Esmeralda.mp4",
+    "code": "P02_M04",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P02_M05 - Editorial Ivory GIF + Burlap-Linho.mp4",
+    "code": "P02_M05",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P02_M06 - Editorial Ivory GIF + Malha Canelada.mp4",
+    "code": "P02_M06",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P02_M07 - Editorial Ivory GIF + Nylon Ripstop.mp4",
+    "code": "P02_M07",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P02_M08 - Editorial Ivory GIF + Organza Chiffon.mp4",
+    "code": "P02_M08",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P02_M09 - Editorial Ivory GIF + Brocado Jacquard.mp4",
+    "code": "P02_M09",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P02_M10 - Editorial Ivory GIF + Índigo Denim.mp4",
+    "code": "P02_M10",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P02_M11 - Editorial Ivory GIF + Lã Tweed.mp4",
+    "code": "P02_M11",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_editorial_mono__estudio",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P02_M12 - Editorial Ivory GIF + Laminado Metálico.mp4",
+    "code": "P02_M12",
+    "label": {
+     "aura": "Editorial Ivory",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P02_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P03_M01 - Petal Bloom GIF + Herringbone.mp4",
+    "code": "P03_M01",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P03_M02 - Petal Bloom GIF + Seda Cetim.mp4",
+    "code": "P03_M02",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P03_M03 - Petal Bloom GIF + Couro Cognac.mp4",
+    "code": "P03_M03",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P03_M04 - Petal Bloom GIF + Veludo Esmeralda.mp4",
+    "code": "P03_M04",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P03_M05 - Petal Bloom GIF + Burlap-Linho.mp4",
+    "code": "P03_M05",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P03_M06 - Petal Bloom GIF + Malha Canelada.mp4",
+    "code": "P03_M06",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P03_M07 - Petal Bloom GIF + Nylon Ripstop.mp4",
+    "code": "P03_M07",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P03_M08 - Petal Bloom GIF + Organza Chiffon.mp4",
+    "code": "P03_M08",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P03_M09 - Petal Bloom GIF + Brocado Jacquard.mp4",
+    "code": "P03_M09",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P03_M10 - Petal Bloom GIF + Índigo Denim.mp4",
+    "code": "P03_M10",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P03_M11 - Petal Bloom GIF + Lã Tweed.mp4",
+    "code": "P03_M11",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__petalas",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P03_M12 - Petal Bloom GIF + Laminado Metálico.mp4",
+    "code": "P03_M12",
+    "label": {
+     "aura": "Petal Bloom",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P03_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P04_M01 - Terracotta Dune GIF + Herringbone.mp4",
+    "code": "P04_M01",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P04_M02 - Terracotta Dune GIF + Seda Cetim.mp4",
+    "code": "P04_M02",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P04_M03 - Terracotta Dune GIF + Couro Cognac.mp4",
+    "code": "P04_M03",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P04_M04 - Terracotta Dune GIF + Veludo Esmeralda.mp4",
+    "code": "P04_M04",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P04_M05 - Terracotta Dune GIF + Burlap-Linho.mp4",
+    "code": "P04_M05",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P04_M06 - Terracotta Dune GIF + Malha Canelada.mp4",
+    "code": "P04_M06",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P04_M07 - Terracotta Dune GIF + Nylon Ripstop.mp4",
+    "code": "P04_M07",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P04_M08 - Terracotta Dune GIF + Organza Chiffon.mp4",
+    "code": "P04_M08",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P04_M09 - Terracotta Dune GIF + Brocado Jacquard.mp4",
+    "code": "P04_M09",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P04_M10 - Terracotta Dune GIF + Índigo Denim.mp4",
+    "code": "P04_M10",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P04_M11 - Terracotta Dune GIF + Lã Tweed.mp4",
+    "code": "P04_M11",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P04_M12 - Terracotta Dune GIF + Laminado Metálico.mp4",
+    "code": "P04_M12",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P04_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P05_M01 - Concrete Neon GIF + Herringbone.mp4",
+    "code": "P05_M01",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P05_M02 - Concrete Neon GIF + Seda Cetim.mp4",
+    "code": "P05_M02",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P05_M03 - Concrete Neon GIF + Couro Cognac.mp4",
+    "code": "P05_M03",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P05_M04 - Concrete Neon GIF + Veludo Esmeralda.mp4",
+    "code": "P05_M04",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P05_M05 - Concrete Neon GIF + Burlap-Linho.mp4",
+    "code": "P05_M05",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P05_M06 - Concrete Neon GIF + Malha Canelada.mp4",
+    "code": "P05_M06",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P05_M07 - Concrete Neon GIF + Nylon Ripstop.mp4",
+    "code": "P05_M07",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P05_M08 - Concrete Neon GIF + Organza Chiffon.mp4",
+    "code": "P05_M08",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P05_M09 - Concrete Neon GIF + Brocado Jacquard.mp4",
+    "code": "P05_M09",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P05_M10 - Concrete Neon GIF + Índigo Denim.mp4",
+    "code": "P05_M10",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P05_M11 - Concrete Neon GIF + Lã Tweed.mp4",
+    "code": "P05_M11",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__circuitos",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P05_M12 - Concrete Neon GIF + Laminado Metálico.mp4",
+    "code": "P05_M12",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P05_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P06_M01 - Performance Pulse GIF + Herringbone.mp4",
+    "code": "P06_M01",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P06_M02 - Performance Pulse GIF + Seda Cetim.mp4",
+    "code": "P06_M02",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P06_M03 - Performance Pulse GIF + Couro Cognac.mp4",
+    "code": "P06_M03",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P06_M04 - Performance Pulse GIF + Veludo Esmeralda.mp4",
+    "code": "P06_M04",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P06_M05 - Performance Pulse GIF + Burlap-Linho.mp4",
+    "code": "P06_M05",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P06_M06 - Performance Pulse GIF + Malha Canelada.mp4",
+    "code": "P06_M06",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P06_M07 - Performance Pulse GIF + Nylon Ripstop.mp4",
+    "code": "P06_M07",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P06_M08 - Performance Pulse GIF + Organza Chiffon.mp4",
+    "code": "P06_M08",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P06_M09 - Performance Pulse GIF + Brocado Jacquard.mp4",
+    "code": "P06_M09",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P06_M10 - Performance Pulse GIF + Índigo Denim.mp4",
+    "code": "P06_M10",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P06_M11 - Performance Pulse GIF + Lã Tweed.mp4",
+    "code": "P06_M11",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__floresta",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P06_M12 - Performance Pulse GIF + Laminado Metálico.mp4",
+    "code": "P06_M12",
+    "label": {
+     "aura": "Performance Pulse",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Performance Pulse', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Raw Linen'",
+    "posterUrl": "/_derived/aura_material_animated/P06_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P07_M01 - Raw Linen GIF + Herringbone.mp4",
+    "code": "P07_M01",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P07_M02 - Raw Linen GIF + Seda Cetim.mp4",
+    "code": "P07_M02",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P07_M03 - Raw Linen GIF + Couro Cognac.mp4",
+    "code": "P07_M03",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P07_M04 - Raw Linen GIF + Veludo Esmeralda.mp4",
+    "code": "P07_M04",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P07_M05 - Raw Linen GIF + Burlap-Linho.mp4",
+    "code": "P07_M05",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P07_M06 - Raw Linen GIF + Malha Canelada.mp4",
+    "code": "P07_M06",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P07_M07 - Raw Linen GIF + Nylon Ripstop.mp4",
+    "code": "P07_M07",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P07_M08 - Raw Linen GIF + Organza Chiffon.mp4",
+    "code": "P07_M08",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P07_M09 - Raw Linen GIF + Brocado Jacquard.mp4",
+    "code": "P07_M09",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P07_M10 - Raw Linen GIF + Índigo Denim.mp4",
+    "code": "P07_M10",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P07_M11 - Raw Linen GIF + Lã Tweed.mp4",
+    "code": "P07_M11",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__deserto",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P07_M12 - Raw Linen GIF + Laminado Metálico.mp4",
+    "code": "P07_M12",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Terracotta Dune'",
+    "posterUrl": "/_derived/aura_material_animated/P07_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P08_M01 - Terracotta Dune GIF + Herringbone.mp4",
+    "code": "P08_M01",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P08_M02 - Terracotta Dune GIF + Seda Cetim.mp4",
+    "code": "P08_M02",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P08_M03 - Terracotta Dune GIF + Couro Cognac.mp4",
+    "code": "P08_M03",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P08_M04 - Terracotta Dune GIF + Veludo Esmeralda.mp4",
+    "code": "P08_M04",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P08_M05 - Terracotta Dune GIF + Burlap-Linho.mp4",
+    "code": "P08_M05",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P08_M06 - Terracotta Dune GIF + Malha Canelada.mp4",
+    "code": "P08_M06",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P08_M07 - Terracotta Dune GIF + Nylon Ripstop.mp4",
+    "code": "P08_M07",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P08_M08 - Terracotta Dune GIF + Organza Chiffon.mp4",
+    "code": "P08_M08",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P08_M09 - Terracotta Dune GIF + Brocado Jacquard.mp4",
+    "code": "P08_M09",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P08_M10 - Terracotta Dune GIF + Índigo Denim.mp4",
+    "code": "P08_M10",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P08_M11 - Terracotta Dune GIF + Lã Tweed.mp4",
+    "code": "P08_M11",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_romantico_petala__brilho_suave",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P08_M12 - Terracotta Dune GIF + Laminado Metálico.mp4",
+    "code": "P08_M12",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Terracotta Dune', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Petal Bloom'",
+    "posterUrl": "/_derived/aura_material_animated/P08_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P09_M01 - Raw Linen GIF + Herringbone.mp4",
+    "code": "P09_M01",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P09_M02 - Raw Linen GIF + Seda Cetim.mp4",
+    "code": "P09_M02",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P09_M03 - Raw Linen GIF + Couro Cognac.mp4",
+    "code": "P09_M03",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P09_M04 - Raw Linen GIF + Veludo Esmeralda.mp4",
+    "code": "P09_M04",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P09_M05 - Raw Linen GIF + Burlap-Linho.mp4",
+    "code": "P09_M05",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P09_M06 - Raw Linen GIF + Malha Canelada.mp4",
+    "code": "P09_M06",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P09_M07 - Raw Linen GIF + Nylon Ripstop.mp4",
+    "code": "P09_M07",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P09_M08 - Raw Linen GIF + Organza Chiffon.mp4",
+    "code": "P09_M08",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P09_M09 - Raw Linen GIF + Brocado Jacquard.mp4",
+    "code": "P09_M09",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P09_M10 - Raw Linen GIF + Índigo Denim.mp4",
+    "code": "P09_M10",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P09_M11 - Raw Linen GIF + Lã Tweed.mp4",
+    "code": "P09_M11",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P09_M12 - Raw Linen GIF + Laminado Metálico.mp4",
+    "code": "P09_M12",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Raw Linen', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Chrome Iridescent'",
+    "posterUrl": "/_derived/aura_material_animated/P09_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P10_M01 - Midnight Spotlight GIF + Herringbone.mp4",
+    "code": "P10_M01",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P10_M02 - Midnight Spotlight GIF + Seda Cetim.mp4",
+    "code": "P10_M02",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P10_M03 - Midnight Spotlight GIF + Couro Cognac.mp4",
+    "code": "P10_M03",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P10_M04 - Midnight Spotlight GIF + Veludo Esmeralda.mp4",
+    "code": "P10_M04",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P10_M05 - Midnight Spotlight GIF + Burlap-Linho.mp4",
+    "code": "P10_M05",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P10_M06 - Midnight Spotlight GIF + Malha Canelada.mp4",
+    "code": "P10_M06",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P10_M07 - Midnight Spotlight GIF + Nylon Ripstop.mp4",
+    "code": "P10_M07",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P10_M08 - Midnight Spotlight GIF + Organza Chiffon.mp4",
+    "code": "P10_M08",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P10_M09 - Midnight Spotlight GIF + Brocado Jacquard.mp4",
+    "code": "P10_M09",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P10_M10 - Midnight Spotlight GIF + Índigo Denim.mp4",
+    "code": "P10_M10",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P10_M11 - Midnight Spotlight GIF + Lã Tweed.mp4",
+    "code": "P10_M11",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__feixes",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P10_M12 - Midnight Spotlight GIF + Laminado Metálico.mp4",
+    "code": "P10_M12",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Midnight Spotlight', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P10_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P11_M01 - Chrome Iridescent GIF + Herringbone.mp4",
+    "code": "P11_M01",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P11_M02 - Chrome Iridescent GIF + Seda Cetim.mp4",
+    "code": "P11_M02",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P11_M03 - Chrome Iridescent GIF + Couro Cognac.mp4",
+    "code": "P11_M03",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P11_M04 - Chrome Iridescent GIF + Veludo Esmeralda.mp4",
+    "code": "P11_M04",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P11_M05 - Chrome Iridescent GIF + Burlap-Linho.mp4",
+    "code": "P11_M05",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P11_M06 - Chrome Iridescent GIF + Malha Canelada.mp4",
+    "code": "P11_M06",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P11_M07 - Chrome Iridescent GIF + Nylon Ripstop.mp4",
+    "code": "P11_M07",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P11_M08 - Chrome Iridescent GIF + Organza Chiffon.mp4",
+    "code": "P11_M08",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P11_M09 - Chrome Iridescent GIF + Brocado Jacquard.mp4",
+    "code": "P11_M09",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P11_M10 - Chrome Iridescent GIF + Índigo Denim.mp4",
+    "code": "P11_M10",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P11_M11 - Chrome Iridescent GIF + Lã Tweed.mp4",
+    "code": "P11_M11",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P11_M12 - Chrome Iridescent GIF + Laminado Metálico.mp4",
+    "code": "P11_M12",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P11_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P12_M01 - Concrete Neon GIF + Herringbone.mp4",
+    "code": "P12_M01",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P12_M02 - Concrete Neon GIF + Seda Cetim.mp4",
+    "code": "P12_M02",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P12_M03 - Concrete Neon GIF + Couro Cognac.mp4",
+    "code": "P12_M03",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P12_M04 - Concrete Neon GIF + Veludo Esmeralda.mp4",
+    "code": "P12_M04",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P12_M05 - Concrete Neon GIF + Burlap-Linho.mp4",
+    "code": "P12_M05",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P12_M06 - Concrete Neon GIF + Malha Canelada.mp4",
+    "code": "P12_M06",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P12_M07 - Concrete Neon GIF + Nylon Ripstop.mp4",
+    "code": "P12_M07",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P12_M08 - Concrete Neon GIF + Organza Chiffon.mp4",
+    "code": "P12_M08",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P12_M09 - Concrete Neon GIF + Brocado Jacquard.mp4",
+    "code": "P12_M09",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P12_M10 - Concrete Neon GIF + Índigo Denim.mp4",
+    "code": "P12_M10",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P12_M11 - Concrete Neon GIF + Lã Tweed.mp4",
+    "code": "P12_M11",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_esportivo_performance__diagonais",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P12_M12 - Concrete Neon GIF + Laminado Metálico.mp4",
+    "code": "P12_M12",
+    "label": {
+     "aura": "Concrete Neon",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Concrete Neon', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Performance Pulse'",
+    "posterUrl": "/_derived/aura_material_animated/P12_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P13_M01 - Midnight Spotlight GIF + Herringbone.mp4",
+    "code": "P13_M01",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P13_M02 - Midnight Spotlight GIF + Seda Cetim.mp4",
+    "code": "P13_M02",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P13_M03 - Midnight Spotlight GIF + Couro Cognac.mp4",
+    "code": "P13_M03",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P13_M04 - Midnight Spotlight GIF + Veludo Esmeralda.mp4",
+    "code": "P13_M04",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P13_M05 - Midnight Spotlight GIF + Burlap-Linho.mp4",
+    "code": "P13_M05",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P13_M06 - Midnight Spotlight GIF + Malha Canelada.mp4",
+    "code": "P13_M06",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P13_M07 - Midnight Spotlight GIF + Nylon Ripstop.mp4",
+    "code": "P13_M07",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P13_M08 - Midnight Spotlight GIF + Organza Chiffon.mp4",
+    "code": "P13_M08",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P13_M09 - Midnight Spotlight GIF + Brocado Jacquard.mp4",
+    "code": "P13_M09",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P13_M10 - Midnight Spotlight GIF + Índigo Denim.mp4",
+    "code": "P13_M10",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P13_M11 - Midnight Spotlight GIF + Lã Tweed.mp4",
+    "code": "P13_M11",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_glam_noite__palco",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P13_M12 - Midnight Spotlight GIF + Laminado Metálico.mp4",
+    "code": "P13_M12",
+    "label": {
+     "aura": "Midnight Spotlight",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P13_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P14_M01 - Ivy Library GIF + Herringbone.mp4",
+    "code": "P14_M01",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P14_M02 - Ivy Library GIF + Seda Cetim.mp4",
+    "code": "P14_M02",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P14_M03 - Ivy Library GIF + Couro Cognac.mp4",
+    "code": "P14_M03",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P14_M04 - Ivy Library GIF + Veludo Esmeralda.mp4",
+    "code": "P14_M04",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P14_M05 - Ivy Library GIF + Burlap-Linho.mp4",
+    "code": "P14_M05",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P14_M06 - Ivy Library GIF + Malha Canelada.mp4",
+    "code": "P14_M06",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P14_M07 - Ivy Library GIF + Nylon Ripstop.mp4",
+    "code": "P14_M07",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P14_M08 - Ivy Library GIF + Organza Chiffon.mp4",
+    "code": "P14_M08",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P14_M09 - Ivy Library GIF + Brocado Jacquard.mp4",
+    "code": "P14_M09",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P14_M10 - Ivy Library GIF + Índigo Denim.mp4",
+    "code": "P14_M10",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P14_M11 - Ivy Library GIF + Lã Tweed.mp4",
+    "code": "P14_M11",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__escritorio",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P14_M12 - Ivy Library GIF + Laminado Metálico.mp4",
+    "code": "P14_M12",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P14_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P15_M01 - Raw Linen GIF + Herringbone.mp4",
+    "code": "P15_M01",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P15_M02 - Raw Linen GIF + Seda Cetim.mp4",
+    "code": "P15_M02",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P15_M03 - Raw Linen GIF + Couro Cognac.mp4",
+    "code": "P15_M03",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P15_M04 - Raw Linen GIF + Veludo Esmeralda.mp4",
+    "code": "P15_M04",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P15_M05 - Raw Linen GIF + Burlap-Linho.mp4",
+    "code": "P15_M05",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P15_M06 - Raw Linen GIF + Malha Canelada.mp4",
+    "code": "P15_M06",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P15_M07 - Raw Linen GIF + Nylon Ripstop.mp4",
+    "code": "P15_M07",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P15_M08 - Raw Linen GIF + Organza Chiffon.mp4",
+    "code": "P15_M08",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P15_M09 - Raw Linen GIF + Brocado Jacquard.mp4",
+    "code": "P15_M09",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P15_M10 - Raw Linen GIF + Índigo Denim.mp4",
+    "code": "P15_M10",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P15_M11 - Raw Linen GIF + Lã Tweed.mp4",
+    "code": "P15_M11",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_natural_organico__interiores",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P15_M12 - Raw Linen GIF + Laminado Metálico.mp4",
+    "code": "P15_M12",
+    "label": {
+     "aura": "Raw Linen",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P15_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P16_M01 - Terracotta Dune GIF + Herringbone.mp4",
+    "code": "P16_M01",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P16_M02 - Terracotta Dune GIF + Seda Cetim.mp4",
+    "code": "P16_M02",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P16_M03 - Terracotta Dune GIF + Couro Cognac.mp4",
+    "code": "P16_M03",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P16_M04 - Terracotta Dune GIF + Veludo Esmeralda.mp4",
+    "code": "P16_M04",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P16_M05 - Terracotta Dune GIF + Burlap-Linho.mp4",
+    "code": "P16_M05",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P16_M06 - Terracotta Dune GIF + Malha Canelada.mp4",
+    "code": "P16_M06",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P16_M07 - Terracotta Dune GIF + Nylon Ripstop.mp4",
+    "code": "P16_M07",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P16_M08 - Terracotta Dune GIF + Organza Chiffon.mp4",
+    "code": "P16_M08",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P16_M09 - Terracotta Dune GIF + Brocado Jacquard.mp4",
+    "code": "P16_M09",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P16_M10 - Terracotta Dune GIF + Índigo Denim.mp4",
+    "code": "P16_M10",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P16_M11 - Terracotta Dune GIF + Lã Tweed.mp4",
+    "code": "P16_M11",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_boemio_terracota__crepusculo",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P16_M12 - Terracotta Dune GIF + Laminado Metálico.mp4",
+    "code": "P16_M12",
+    "label": {
+     "aura": "Terracotta Dune",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P16_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P17_M01 - Chrome Iridescent GIF + Herringbone.mp4",
+    "code": "P17_M01",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Herringbone"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P17_M02 - Chrome Iridescent GIF + Seda Cetim.mp4",
+    "code": "P17_M02",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P17_M03 - Chrome Iridescent GIF + Couro Cognac.mp4",
+    "code": "P17_M03",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P17_M04 - Chrome Iridescent GIF + Veludo Esmeralda.mp4",
+    "code": "P17_M04",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P17_M05 - Chrome Iridescent GIF + Burlap-Linho.mp4",
+    "code": "P17_M05",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P17_M06 - Chrome Iridescent GIF + Malha Canelada.mp4",
+    "code": "P17_M06",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P17_M07 - Chrome Iridescent GIF + Nylon Ripstop.mp4",
+    "code": "P17_M07",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P17_M08 - Chrome Iridescent GIF + Organza Chiffon.mp4",
+    "code": "P17_M08",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P17_M09 - Chrome Iridescent GIF + Brocado Jacquard.mp4",
+    "code": "P17_M09",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P17_M10 - Chrome Iridescent GIF + Índigo Denim.mp4",
+    "code": "P17_M10",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P17_M11 - Chrome Iridescent GIF + Lã Tweed.mp4",
+    "code": "P17_M11",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_streetwear_neon__diagonais",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P17_M12 - Chrome Iridescent GIF + Laminado Metálico.mp4",
+    "code": "P17_M12",
+    "label": {
+     "aura": "Chrome Iridescent",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": true,
+    "labelNote": "nome do arquivo diz 'Chrome Iridescent', o índice oficial P##→variante (indice_de_correspondencia.csv) diz 'Concrete Neon'",
+    "posterUrl": "/_derived/aura_material_animated/P17_M12_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "la_fria_alfaiataria",
+    "url": "/aura_com_material_com_GIF/P18_M01 - Ivy Library GIF + Herringbone.mp4",
+    "code": "P18_M01",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Herringbone"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M01_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "cetim_liquido",
+    "url": "/aura_com_material_com_GIF/P18_M02 - Ivy Library GIF + Seda Cetim.mp4",
+    "code": "P18_M02",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Seda Cetim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M02_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "couro_nappa",
+    "url": "/aura_com_material_com_GIF/P18_M03 - Ivy Library GIF + Couro Cognac.mp4",
+    "code": "P18_M03",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Couro Cognac"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M03_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "veludo_profundo",
+    "url": "/aura_com_material_com_GIF/P18_M04 - Ivy Library GIF + Veludo Esmeralda.mp4",
+    "code": "P18_M04",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Veludo Esmeralda"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M04_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "linho_natural",
+    "url": "/aura_com_material_com_GIF/P18_M05 - Ivy Library GIF + Burlap-Linho.mp4",
+    "code": "P18_M05",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Burlap-Linho"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M05_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "malha_canelada",
+    "url": "/aura_com_material_com_GIF/P18_M06 - Ivy Library GIF + Malha Canelada.mp4",
+    "code": "P18_M06",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Malha Canelada"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M06_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "acolchoado_azul_marinho",
+    "url": "/aura_com_material_com_GIF/P18_M07 - Ivy Library GIF + Nylon Ripstop.mp4",
+    "code": "P18_M07",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Nylon Ripstop"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M07_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "organza_translucida",
+    "url": "/aura_com_material_com_GIF/P18_M08 - Ivy Library GIF + Organza Chiffon.mp4",
+    "code": "P18_M08",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Organza Chiffon"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M08_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "brocado_floral",
+    "url": "/aura_com_material_com_GIF/P18_M09 - Ivy Library GIF + Brocado Jacquard.mp4",
+    "code": "P18_M09",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Brocado Jacquard"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M09_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "denim_selvagem",
+    "url": "/aura_com_material_com_GIF/P18_M10 - Ivy Library GIF + Índigo Denim.mp4",
+    "code": "P18_M10",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Índigo Denim"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M10_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "tweed_boucle",
+    "url": "/aura_com_material_com_GIF/P18_M11 - Ivy Library GIF + Lã Tweed.mp4",
+    "code": "P18_M11",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Lã Tweed"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M11_poster.jpg",
+    "mime": "video/mp4"
+   },
+   {
+    "auraVariantId": "aura_dark_academia__biblioteca",
+    "materialId": "laminado_metalico",
+    "url": "/aura_com_material_com_GIF/P18_M12 - Ivy Library GIF + Laminado Metálico.mp4",
+    "code": "P18_M12",
+    "label": {
+     "aura": "Ivy Library",
+     "material": "Laminado Metálico"
+    },
+    "labelConflict": false,
+    "posterUrl": "/_derived/aura_material_animated/P18_M12_poster.jpg",
+    "mime": "video/mp4"
+   }
+  ],
   "mosaic": [
    {
     "auraVariantId": "aura_alfaiataria__cabides",
@@ -3001,10 +5894,10 @@
    "acceptedFolderNames": [
     "aura_com_material_com_GIF"
    ],
-   "found": 0,
+   "found": 216,
    "expected": 216,
-   "status": "missing",
-   "renderStrategy": "css-blend(aura_static + material_animated video)"
+   "status": "complete",
+   "renderStrategy": "asset"
   },
   {
    "key": "aura_material_mosaic_animated",
@@ -3167,50 +6060,466 @@
    "name": "Atelier",
    "family": "fine",
    "nativeContainer": "#FFFFFF",
-   "font": "Inter"
+   "font": "Inter",
+   "tokens": {
+    "bg": "#FFFFFF",
+    "ink": "#1A1714",
+    "accent": "#1A1714",
+    "border": "#E7E2DA",
+    "radius": 14,
+    "titleWeight": 500
+   },
+   "doc": "/presets_recomendados/01_atelier.md",
+   "displayName": "Atelier",
+   "component": "CardAtelier.tsx",
+   "thumbHint": "\"Minimal refinado, branco puro\"",
+   "status": "implemented",
+   "styleFragment": "pristine white minimalist atelier mockup, quiet-luxury product studio aesthetic, soft diffused light, generous negative space, fine hairline borders, restrained neutral palette, refined haute couture ambiance",
+   "thumbnailPrompt": {
+    "scheme": "pristine white minimalist atelier mockup, quiet-luxury product studio aesthetic, soft diffused light, generous negative space, fine hairline borders, restrained neutral palette, refined haute couture ambiance, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "pristine white minimalist atelier mockup, quiet-luxury product studio aesthetic, soft diffused light, generous negative space, fine hairline borders, restrained neutral palette, refined haute couture ambiance, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "spread",
    "name": "Spread",
    "family": "fine",
    "nativeContainer": "#F7F4EE",
-   "font": "Fraunces"
+   "font": "Fraunces",
+   "tokens": {
+    "bg": "#F7F4EE",
+    "ink": "#111111",
+    "accent": "#B4442C",
+    "border": "#D9D1C4",
+    "radius": 6,
+    "titleWeight": 800
+   },
+   "doc": "/presets_recomendados/02_spread.md",
+   "displayName": "Spread",
+   "component": "CardSpread.tsx",
+   "thumbHint": "\"Editorial de magazine\"",
+   "status": "implemented",
+   "styleFragment": "high-fashion magazine editorial spread mockup, bold layout typography cues, glossy print aesthetic, dramatic studio lighting, campaign photography mood, confident asymmetric composition",
+   "thumbnailPrompt": {
+    "scheme": "high-fashion magazine editorial spread mockup, bold layout typography cues, glossy print aesthetic, dramatic studio lighting, campaign photography mood, confident asymmetric composition, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "high-fashion magazine editorial spread mockup, bold layout typography cues, glossy print aesthetic, dramatic studio lighting, campaign photography mood, confident asymmetric composition, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "index",
    "name": "Índice",
    "family": "fine",
    "nativeContainer": "#FFFFFF",
-   "font": "IBM Plex Mono"
+   "font": "IBM Plex Mono",
+   "tokens": {
+    "bg": "#FBFAF6",
+    "ink": "#23201C",
+    "accent": "#5B6B7A",
+    "border": "#23201C",
+    "radius": 4,
+    "titleWeight": 600
+   },
+   "doc": "/presets_recomendados/03_index.md",
+   "displayName": "Índice",
+   "component": "CardIndex.tsx",
+   "thumbHint": "\"Cartão de referência\"",
+   "status": "implemented",
+   "styleFragment": "reference index card mockup, archival catalog aesthetic, clean typographic grid, muted paper tones, labeled specimen-like structure, understated utilitarian clarity",
+   "thumbnailPrompt": {
+    "scheme": "reference index card mockup, archival catalog aesthetic, clean typographic grid, muted paper tones, labeled specimen-like structure, understated utilitarian clarity, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "reference index card mockup, archival catalog aesthetic, clean typographic grid, muted paper tones, labeled specimen-like structure, understated utilitarian clarity, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "trading",
    "name": "Trading",
    "family": "framed",
    "nativeContainer": "#F2F2F2",
-   "font": "Inter"
+   "font": "Inter",
+   "tokens": {
+    "bg": "#F2F2F2",
+    "ink": "#16161A",
+    "accent": "#7C5FC0",
+    "border": "#9A9AA3",
+    "radius": 18,
+    "titleWeight": 800
+   },
+   "doc": "/presets_recomendados/04_trading.md",
+   "displayName": "Trading",
+   "component": "CardTrading.tsx",
+   "thumbHint": "\"Card colecionável\"",
+   "status": "implemented",
+   "styleFragment": "collectible trading card mockup, holographic foil accents, bold border frame, vibrant saturated palette, stat-panel game card aesthetic, glossy protective-sleeve sheen",
+   "thumbnailPrompt": {
+    "scheme": "collectible trading card mockup, holographic foil accents, bold border frame, vibrant saturated palette, stat-panel game card aesthetic, glossy protective-sleeve sheen, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "collectible trading card mockup, holographic foil accents, bold border frame, vibrant saturated palette, stat-panel game card aesthetic, glossy protective-sleeve sheen, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "fai_max",
    "name": "FAI Max",
    "family": "framed",
    "nativeContainer": "#FFF4EC",
-   "font": "Inter"
+   "font": "Inter",
+   "tokens": {
+    "bg": "#FFF4EC",
+    "ink": "#1A0F08",
+    "accent": "#FF6A1A",
+    "border": "#FF6A1A",
+    "radius": 20,
+    "titleWeight": 900
+   },
+   "doc": "/presets_recomendados/05_fai_max.md",
+   "displayName": "FAI Max",
+   "component": "CardFAIMax.tsx",
+   "thumbHint": "\"Maximalista laranja FAI\"",
+   "status": "implemented",
+   "styleFragment": "maximalist bold mockup, vivid FashionAI orange brand palette, high-energy layered graphics, saturated high-contrast composition, loud confident streetwear-adjacent editorial energy",
+   "thumbnailPrompt": {
+    "scheme": "maximalist bold mockup, vivid FashionAI orange brand palette, high-energy layered graphics, saturated high-contrast composition, loud confident streetwear-adjacent editorial energy, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "maximalist bold mockup, vivid FashionAI orange brand palette, high-energy layered graphics, saturated high-contrast composition, loud confident streetwear-adjacent editorial energy, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "stub",
    "name": "Stub",
    "family": "framed",
    "nativeContainer": "#FBF7EF",
-   "font": "IBM Plex Mono"
+   "font": "IBM Plex Mono",
+   "tokens": {
+    "bg": "#FBF7EF",
+    "ink": "#2A241C",
+    "accent": "#A0522D",
+    "border": "#2A241C",
+    "radius": 2,
+    "titleWeight": 700
+   },
+   "doc": "/presets_recomendados/06_stub.md",
+   "displayName": "Stub",
+   "component": "CardStub.tsx",
+   "thumbHint": "\"Recibo/ticket perfurado\"",
+   "status": "implemented",
+   "styleFragment": "perforated ticket-stub mockup, zigzag torn-edge divider, dashed rule lines, monospace label typography, raw paper receipt texture, retail ticket aesthetic",
+   "thumbnailPrompt": {
+    "scheme": "perforated ticket-stub mockup, zigzag torn-edge divider, dashed rule lines, monospace label typography, raw paper receipt texture, retail ticket aesthetic, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "perforated ticket-stub mockup, zigzag torn-edge divider, dashed rule lines, monospace label typography, raw paper receipt texture, retail ticket aesthetic, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   },
   {
    "id": "specimen",
    "name": "Specimen",
    "family": "framed",
    "nativeContainer": "#F4F7F2",
-   "font": "IBM Plex Mono"
+   "font": "IBM Plex Mono",
+   "tokens": {
+    "bg": "#F4F7F2",
+    "ink": "#1F2A22",
+    "accent": "#3D7A5A",
+    "border": "#9FB3A5",
+    "radius": 6,
+    "titleWeight": 600
+   },
+   "doc": "/presets_recomendados/07_specimen.md",
+   "displayName": "Specimen",
+   "component": "CardSpecimen.tsx",
+   "thumbHint": "\"Ficha visual de coleção\"",
+   "status": "implemented",
+   "styleFragment": "scientific specimen card mockup, graph-paper grid background, dashed field-label rows, clinical archival aesthetic, muted laboratory tones, precise measured documentation feel",
+   "thumbnailPrompt": {
+    "scheme": "scientific specimen card mockup, graph-paper grid background, dashed field-label rows, clinical archival aesthetic, muted laboratory tones, precise measured documentation feel, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "scientific specimen card mockup, graph-paper grid background, dashed field-label rows, clinical archival aesthetic, muted laboratory tones, precise measured documentation feel, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
+  },
+  {
+   "id": "editorial_ivory",
+   "name": "Editorial Ivory Paper",
+   "family": "fine",
+   "nativeContainer": "#F7F4EE",
+   "font": "Georgia",
+   "tokens": {
+    "bg": "#F7F4EE",
+    "ink": "#1A1410",
+    "accent": "#C4956A",
+    "border": "#D4CEC4",
+    "badgeBg": "#F0EDE8",
+    "radius": 3,
+    "titleWeight": 400,
+    "pieceStripe": "side-3px",
+    "glass": false
+   },
+   "doc": "/presets_recomendados/09_editorial_ivory_paper.md",
+   "displayName": "Editorial Ivory Paper",
+   "component": null,
+   "thumbHint": null,
+   "status": "candidate",
+   "styleFragment": "ivory paper editorial mockup, warm off-white stage background, Georgia serif typography accents with italic caption line, crisp white product cards with a thin colored side-stripe accent by category, soft matte styling, zero glassmorphism, gentle diffused daylight, quiet paper-stage minimalism, understated neutral badges",
+   "thumbnailPrompt": {
+    "scheme": "ivory paper editorial mockup, warm off-white stage background, Georgia serif typography accents with italic caption line, crisp white product cards with a thin colored side-stripe accent by category, soft matte styling, zero glassmorphism, gentle diffused daylight, quiet paper-stage minimalism, understated neutral badges, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "ivory paper editorial mockup, warm off-white stage background, Georgia serif typography accents with italic caption line, crisp white product cards with a thin colored side-stripe accent by category, soft matte styling, zero glassmorphism, gentle diffused daylight, quiet paper-stage minimalism, understated neutral badges, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": "Aviso de nomenclatura.** O título original deste conceito no mockup é \"Editorial Spread\" — o termo \"Spread\" colide parcialmente com o skin já implementado `spread` (`CardSpread.tsx`, \"Editorial de magazine\": glossy print, dramatic studio lighting). São estéticas diferentes (esta é papel ivory fosco/zero-glassmorphism; a existente é glossy/dramática) — por isso o ID candidato aqui usa \"Ivory\" em vez de \"Spread\" puro, para não colidir. Confirme o nome final antes de registrar em `skinRegistry.ts`."
+  },
+  {
+   "id": "show_notes",
+   "name": "Show Notes",
+   "family": "framed",
+   "nativeContainer": "#0A0A0A",
+   "font": "Inter",
+   "tokens": {
+    "bg": "#0A0A0A",
+    "ink": "#F5F5F5",
+    "accent": "#F5F5F5",
+    "border": "rgba(255,255,255,0.18)",
+    "radius": 3,
+    "titleWeight": 900,
+    "watermarkOpacity": 0.028,
+    "pieceStripe": "top-2px",
+    "badges": "outline"
+   },
+   "doc": "/presets_recomendados/10_show_notes.md",
+   "displayName": "Show Notes",
+   "component": null,
+   "thumbHint": null,
+   "status": "candidate",
+   "styleFragment": "deep black backstage show-notes mockup, oversized faint numeric watermark typography barely visible in the background, bold uppercase grotesque display type with tight negative letter-spacing, small portrait framing block set in a top corner grid, thin colored top-edge accent stripes by category on nested item rows, outline-only badge and button styling with no fill, austere backstage documentation aesthetic",
+   "thumbnailPrompt": {
+    "scheme": "deep black backstage show-notes mockup, oversized faint numeric watermark typography barely visible in the background, bold uppercase grotesque display type with tight negative letter-spacing, small portrait framing block set in a top corner grid, thin colored top-edge accent stripes by category on nested item rows, outline-only badge and button styling with no fill, austere backstage documentation aesthetic, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "deep black backstage show-notes mockup, oversized faint numeric watermark typography barely visible in the background, bold uppercase grotesque display type with tight negative letter-spacing, small portrait framing block set in a top corner grid, thin colored top-edge accent stripes by category on nested item rows, outline-only badge and button styling with no fill, austere backstage documentation aesthetic, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
+  },
+  {
+   "id": "atelier_terracotta",
+   "name": "Atelier Terracota",
+   "family": "framed",
+   "nativeContainer": "#3A2416",
+   "font": "Georgia",
+   "tokens": {
+    "bg": "#3A2416",
+    "ink": "#F3E6D8",
+    "accent": "#C4674A",
+    "border": "rgba(243,230,216,0.28)",
+    "radius": 7,
+    "titleWeight": 300,
+    "pieceGradient": [
+     "#3D2B1F",
+     "#261A11"
+    ],
+    "linenOpacity": 0.022,
+    "cutCorner": true
+   },
+   "doc": "/presets_recomendados/11_atelier_terracota.md",
+   "displayName": "Atelier Terracota",
+   "component": null,
+   "thumbHint": null,
+   "status": "candidate",
+   "styleFragment": "warm terracotta leather atelier mockup, deep rust-brown tone with a subtle diagonal linen crosshatch texture, Georgia italic light-weight serif typography with a needle-icon accent, leather-gradient product cards with a folded cut top-right corner, dashed tailoring-chalk inset border on the hero area, artisanal tailor-shop ambiance, handcrafted earthy palette",
+   "thumbnailPrompt": {
+    "scheme": "warm terracotta leather atelier mockup, deep rust-brown tone with a subtle diagonal linen crosshatch texture, Georgia italic light-weight serif typography with a needle-icon accent, leather-gradient product cards with a folded cut top-right corner, dashed tailoring-chalk inset border on the hero area, artisanal tailor-shop ambiance, handcrafted earthy palette, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "warm terracotta leather atelier mockup, deep rust-brown tone with a subtle diagonal linen crosshatch texture, Georgia italic light-weight serif typography with a needle-icon accent, leather-gradient product cards with a folded cut top-right corner, dashed tailoring-chalk inset border on the hero area, artisanal tailor-shop ambiance, handcrafted earthy palette, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": "Colisão de nome — ação necessária antes de registrar.** O mockup nomeia este conceito literalmente **\"Atelier\"**, mas o ID `atelier` já está ocupado em `skinRegistry.ts` por `CardAtelier.tsx` (\"Minimal refinado, branco puro\" — estética oposta: branco puro, minimalista, sem textura). São duas propostas visuais completamente diferentes disputando o mesmo nome. **Não registre este conceito como `atelier`** — use um ID distinto (proposto aqui: `atelier_terracotta`) ou decida com o time qual dos dois deve manter o nome \"Atelier\" puro e renomeie o outro antes de subir ao novo repositório."
+  },
+  {
+   "id": "luxury_glass_warm",
+   "name": "Luxury Glass Quente",
+   "family": "framed",
+   "nativeContainer": "#0D1B2A",
+   "font": "Inter",
+   "tokens": {
+    "bg": "rgba(13,27,42,0.97)",
+    "ink": "#EDE6F5",
+    "accent": "#C4956A",
+    "accent2": "#7C5FC0",
+    "border": "rgba(196,149,106,0.22)",
+    "radius": 16,
+    "titleWeight": 200,
+    "hairline": [
+     "#C4956A",
+     "#7C5FC0"
+    ]
+   },
+   "doc": "/presets_recomendados/12_luxury_glass_quente.md",
+   "displayName": "Luxury Glass Quente",
+   "component": null,
+   "thumbHint": null,
+   "status": "candidate",
+   "styleFragment": "warm luxury glass mockup, deep near-opaque navy glass background, thin rose-gold-to-violet gradient hairline accent along the top edge, soft violet ambient glow surrounding the frame paired with a deeper grounding shadow, gradient product cards blending navy, violet, and rose-gold tones with a warm golden glow on hover, refined uppercase wide-tracked light-weight typography, opulent evening editorial mood",
+   "thumbnailPrompt": {
+    "scheme": "warm luxury glass mockup, deep near-opaque navy glass background, thin rose-gold-to-violet gradient hairline accent along the top edge, soft violet ambient glow surrounding the frame paired with a deeper grounding shadow, gradient product cards blending navy, violet, and rose-gold tones with a warm golden glow on hover, refined uppercase wide-tracked light-weight typography, opulent evening editorial mood, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
+    "piece": "warm luxury glass mockup, deep near-opaque navy glass background, thin rose-gold-to-violet gradient hairline accent along the top edge, soft violet ambient glow surrounding the frame paired with a deeper grounding shadow, gradient product cards blending navy, violet, and rose-gold tones with a warm golden glow on hover, refined uppercase wide-tracked light-weight typography, opulent evening editorial mood, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
   }
+ ],
+ "skinGeneration": {
+  "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+  "formatFragment": "tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566, measured from anatomias_card_v13.html \"Lista vertical — Ampliado\"), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566",
+  "contextFragments": {
+   "scheme": "full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context",
+   "piece": "single garment product framing, one clothing item centered as hero subject, isolated product-shot styling"
+  },
+  "source": "/presets_recomendados"
+ },
+ "defaultPieceImages": {
+  "folder": null,
+  "acceptedFolderNames": [
+   "assets_pecas",
+   "assets_peças",
+   "assets_pecas_default"
+  ],
+  "found": 0,
+  "bySubcategory": {},
+  "byCategory": {
+   "upper_piece": {
+    "url": "/_derived/pecas_default/upper_piece.svg",
+    "previewUrl": "/_derived/pecas_default/upper_piece.svg",
+    "generated": true
+   },
+   "lower_piece": {
+    "url": "/_derived/pecas_default/lower_piece.svg",
+    "previewUrl": "/_derived/pecas_default/lower_piece.svg",
+    "generated": true
+   },
+   "shoes_piece": {
+    "url": "/_derived/pecas_default/shoes_piece.svg",
+    "previewUrl": "/_derived/pecas_default/shoes_piece.svg",
+    "generated": true
+   },
+   "accessory_piece": {
+    "url": "/_derived/pecas_default/accessory_piece.svg",
+    "previewUrl": "/_derived/pecas_default/accessory_piece.svg",
+    "generated": true
+   },
+   "full_body_piece": {
+    "url": "/_derived/pecas_default/full_body_piece.svg",
+    "previewUrl": "/_derived/pecas_default/full_body_piece.svg",
+    "generated": true
+   }
+  },
+  "generic": {
+   "url": "/_derived/pecas_default/generic.svg",
+   "previewUrl": "/_derived/pecas_default/generic.svg",
+   "generated": true
+  },
+  "unmatchedFiles": [],
+  "resolution": "subcategoria → categoria → genérica; sem arquivo em /public/assets_pecas usa silhueta gerada",
+  "naming": "<subcategoria>.png (ex.: t_shirt.png) ou <categoria>.png (ex.: upper_piece.png / parte_cima.png)"
+ },
+ "pCodeConflicts": [
+  "P06: arquivo='Performance Pulse' índice='Raw Linen'",
+  "P07: arquivo='Raw Linen' índice='Terracotta Dune'",
+  "P08: arquivo='Terracotta Dune' índice='Petal Bloom'",
+  "P09: arquivo='Raw Linen' índice='Chrome Iridescent'",
+  "P10: arquivo='Midnight Spotlight' índice='Performance Pulse'",
+  "P12: arquivo='Concrete Neon' índice='Performance Pulse'",
+  "P17: arquivo='Chrome Iridescent' índice='Concrete Neon'"
  ],
  "missing": [
   {
@@ -3307,13 +6616,6 @@
    "category": "aura_material_static",
    "id": "*",
    "expected": "/aura_com_material_sem_GIF/P##_M##.(png|mp4) ou /aura_com_material_sem_GIF/<aura_variante>/<aura>_mais_<material>.(png|mp4)",
-   "found": 0,
-   "total": 216
-  },
-  {
-   "category": "aura_material_animated",
-   "id": "*",
-   "expected": "/aura_com_material_com_GIF/P##_M##.(png|mp4) ou /aura_com_material_com_GIF/<aura_variante>/<aura>_mais_<material>.(png|mp4)",
    "found": 0,
    "total": 216
   }
