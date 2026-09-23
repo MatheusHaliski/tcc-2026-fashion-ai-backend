@@ -53,8 +53,15 @@ public class AesGcmStringConverter implements AttributeConverter<String, String>
         }
     }
 
+    private static volatile SecretKeySpec cachedKey;
+
+    /** Chave configurada por ambiente (RNF3). Aceita também propriedade de sistema para testes locais. */
     private SecretKeySpec key() {
-        String configured = System.getenv("DATA_ENCRYPTION_KEY");
+        SecretKeySpec cached = cachedKey;
+        if (cached != null) {
+            return cached;
+        }
+        String configured = System.getProperty("DATA_ENCRYPTION_KEY", System.getenv("DATA_ENCRYPTION_KEY"));
         if (configured == null || configured.isBlank() || configured.contains("placeholder")) {
             throw new IllegalStateException("DATA_ENCRYPTION_KEY must be a base64 encoded 32-byte AES key");
         }
@@ -62,6 +69,8 @@ public class AesGcmStringConverter implements AttributeConverter<String, String>
         if (raw.length != 32) {
             throw new IllegalStateException("DATA_ENCRYPTION_KEY must decode to 32 bytes");
         }
-        return new SecretKeySpec(raw, "AES");
+        cached = new SecretKeySpec(raw, "AES");
+        cachedKey = cached;
+        return cached;
     }
 }
