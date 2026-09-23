@@ -19,6 +19,61 @@ export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; 
   { id: "CARTELA_SAZONAL", label: "Cartela sazonal", section: "B", ownArt: true, hint: "arte da estação do look (opt-in)" },
   { id: "BLOCOS", label: "Blocos (Lego)", section: "B", ownArt: true, hint: "card em blocos de encaixe; material desativado" },
 ];
+/**
+ * Posição do selo por anatomia (anatomias_card_v17_1.html) — espelha BackgroundStudioService.SEAL_PLACEMENT.
+ * TITLE_ROW = linha "Título · selos · preço"; META_BLOCK = bloco "Selos · descrição · estilo"; COVER_CORNER = canto da
+ * capa/arte própria; HEADER = cabeçalho do card-objeto (ao lado do PREMIUM); STUDS = placas redondas 1×1 dos Blocos.
+ */
+export type SealZone = "TITLE_ROW" | "META_BLOCK" | "COVER_CORNER" | "HEADER" | "STUDS";
+export interface SealPlacement { zone: SealZone; pieceRows?: boolean; source: "anatomia" | "derivada"; description: string; }
+export const SEAL_PLACEMENT: Record<string, SealPlacement> = {
+  LISTA_VERTICAL: { zone: "TITLE_ROW", pieceRows: true, source: "anatomia", description: "Linha “Título · selos · preço” abaixo da foto; cada peça repete “marca · nome · selos · preço”." },
+  GRADE_PECAS: { zone: "TITLE_ROW", pieceRows: true, source: "anatomia", description: "Linha do título; cada célula mostra “selos · preço”." },
+  HERO_LISTA: { zone: "TITLE_ROW", pieceRows: true, source: "anatomia", description: "Linha do título abaixo do hero; a lista lateral traz “peça · selos · preço”." },
+  PASSARELA: { zone: "COVER_CORNER", source: "derivada", description: "Canto superior direito da capa, oposto ao rótulo lateral vertical." },
+  ETIQUETA: { zone: "TITLE_ROW", source: "anatomia", description: "Linha “Título · selos · preço · descrição” abaixo das mini-etiquetas." },
+  RAIO_X: { zone: "COVER_CORNER", source: "derivada", description: "Sobre a foto do scanner, canto superior direito (legenda numerada à esquerda)." },
+  BENTO: { zone: "META_BLOCK", source: "anatomia", description: "Bloco “Selos · descrição · estilo” abaixo da grade." },
+  ESPECTRO: { zone: "TITLE_ROW", source: "anatomia", description: "Linha “Título · selos · preço” acima das faixas de cor." },
+  CUSTO_POR_USO: { zone: "HEADER", source: "derivada", description: "Cabeçalho “FASHIONAI · VALOR DE USO”, ao lado do PREMIUM." },
+  SILHUETA_PROPORCAO: { zone: "TITLE_ROW", source: "derivada", description: "Linha do nome da silhueta, antes de “Descrição · ocasião · estilo”." },
+  HYPE_FOCUS: { zone: "HEADER", source: "derivada", description: "Ao lado do medidor “Peça em destaque”." },
+  CARTELA_SAZONAL: { zone: "COVER_CORNER", source: "derivada", description: "Canto superior direito do hero da estação." },
+  BLOCOS: { zone: "STUDS", source: "anatomia", description: "Placas redondas 1×1 (verde = marca, vermelho = celebridade, amarelo = look) + placa “N selos”." },
+};
+export const PIECE_SEAL_PLACEMENT: Record<string, SealPlacement> = {
+  PECA_AMPLIADO: { zone: "META_BLOCK", source: "anatomia", description: "Linha “Categoria · marca · sexo · selos” abaixo da foto." },
+  PASSARELA: { zone: "COVER_CORNER", source: "derivada", description: "Canto da capa, oposto ao rank e aos holofotes." },
+  ETIQUETA: { zone: "HEADER", source: "derivada", description: "Ao lado do label “FASHION AI” da etiqueta." },
+  RAIO_X: { zone: "COVER_CORNER", source: "derivada", description: "Sobre a foto, canto oposto ao ritmo (bpm)." },
+  BENTO: { zone: "META_BLOCK", source: "derivada", description: "Bloco “Atributos”." },
+  ESPECTRO: { zone: "TITLE_ROW", source: "anatomia", description: "Linha “Título · selos · preço” acima da faixa única." },
+  CUSTO_POR_USO: { zone: "HEADER", source: "derivada", description: "Cabeçalho, ao lado do PREMIUM." },
+  BLOCOS: { zone: "STUDS", source: "anatomia", description: "Placa redonda 1×1 ao lado do bloco de marca." },
+};
+export const sealPlacement = (anatomy?: string | null) => SEAL_PLACEMENT[anatomy ?? ""] ?? SEAL_PLACEMENT.LISTA_VERTICAL;
+export const pieceSealPlacement = (anatomy?: string | null) => PIECE_SEAL_PLACEMENT[anatomy ?? ""] ?? PIECE_SEAL_PLACEMENT.PECA_AMPLIADO;
+
+/** Esquema da zona do selo num card 90 mm (mini-maquete usada na etapa 4 do Background Studio). */
+export function SealZoneDiagram({ zone, pieceRows }: { zone: SealZone; pieceRows?: boolean }) {
+  const dot = (x: number, y: number, r = 5, key?: string) => <circle key={key} cx={x} cy={y} r={r} fill="var(--mark)" stroke="var(--ink)" strokeWidth="1" />;
+  return (
+    <svg viewBox="0 0 60 90" width="42" height="63" aria-hidden className="shrink-0 rounded border border-line-soft bg-surface">
+      <rect x="4" y="4" width="52" height="6" rx="1.5" fill="var(--line-soft)" />
+      <rect x="4" y="13" width="52" height="30" rx="2" fill="var(--surface-3, #e9e4dc)" stroke="var(--line-soft)" strokeDasharray="2 1.5" />
+      <rect x="4" y="47" width="36" height="5" rx="1.5" fill="var(--line-soft)" />
+      <rect x="4" y="56" width="52" height="4" rx="1.5" fill="var(--line-soft)" opacity=".7" />
+      {[64, 71, 78].map((y) => <rect key={y} x="4" y={y} width="40" height="4.5" rx="1.5" fill="var(--line-soft)" opacity=".55" />)}
+      {zone === "TITLE_ROW" && dot(50, 49.5)}
+      {zone === "COVER_CORNER" && dot(49, 20)}
+      {zone === "HEADER" && dot(50, 7, 4.5)}
+      {zone === "META_BLOCK" && dot(50, 58)}
+      {zone === "STUDS" && [0, 1, 2].map((i) => dot(12 + i * 9, 58, 3.6, `s${i}`))}
+      {pieceRows && [64, 71, 78].map((y) => dot(52, y + 2.2, 2.4, `p${y}`))}
+    </svg>
+  );
+}
+
 export const PIECE_ANATOMIES: { id: string; label: string }[] = [
   { id: "PECA_AMPLIADO", label: "Peça ampliada" }, { id: "PASSARELA", label: "Passarela" }, { id: "ETIQUETA", label: "Etiqueta" }, { id: "RAIO_X", label: "Raio-X" },
   { id: "BENTO", label: "Bento" }, { id: "ESPECTRO", label: "Espectro" }, { id: "CUSTO_POR_USO", label: "Custo por uso" }, { id: "BLOCOS", label: "Blocos" },

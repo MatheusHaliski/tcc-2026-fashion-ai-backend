@@ -55,8 +55,8 @@ public final class AiCatalog {
                 "Nunca aprova por omissão: dúvida vai para a fila humana (moderation_queue) com status PENDING.",
                 200, "Implementado — remoto + heurística local + fila humana");
         put(AiCapability.SCHEME_COMPOSER,
-                "Compõe 3 esquemas a partir de ocasião/estilo/orientações livres usando SÓ peças do acervo do usuário.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", "≈4 mil tokens (acervo em contexto) + 1,2 mil de saída", 8000),
+                "Compõe 3 esquemas a partir de ocasião/estilo/orientações livres usando SÓ peças do acervo do usuário; lê todos os atributos das peças (material, cor, padrão, tamanho, estado, preço, uso), as fotos e o DNA de estilo.",
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", "≈4–12 mil tokens (acervo + até 12 fotos) + 1,2 mil de saída", 8000),
                 gemini(Kind.TEXT, "0.0042", "mesma entrada no Gemini Flash", 2500),
                 local("Composição por regras (ocasião, estilo, harmonia de cor, estação)", 40),
                 "Composição por regras locais + aviso ao usuário (RF5.CA04 continua atendido).",

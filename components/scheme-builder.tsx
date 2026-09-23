@@ -13,7 +13,7 @@ import { BackgroundStudio, type BgConfig } from "@/components/background-studio"
 import { FaiIcon } from "@/components/fai-icon";
 import Link from "next/link";
 
-interface Builder { totalPieces: number; eligiblePieces: number; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
+interface Builder { totalPieces: number; eligiblePieces: number; hiddenPieces?: number; source?: string; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
 interface Composition { title: string; items: { wardrobeItemId: string; slot: string }[]; occasions?: string[]; styles?: string[]; why?: string; reason?: string; }
 const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "DRESS" };
 const SLOTS = ["OUTER", "TOP", "DRESS", "BOTTOM", "SHOES", "ACCESSORY"];
@@ -63,10 +63,10 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <div className="flex gap-2"><Chip active={mode === "manual"} onClick={() => setMode("manual")}>{t("scheme.manual")}</Chip><Chip active={mode === "ai"} onClick={() => setMode("ai")}><FaiIcon id="ACT-09" size={24} decorative />{t("scheme.ai")}</Chip></div>
             {mode === "ai" && (
               <div className="mt-4 grid gap-3">
-                <p className="type-body text-muted">Escolha ocasião/estilo e, se quiser, uma orientação livre. A IA compõe até 3 looks só com peças do seu acervo; sem IA remota, o motor local entra em ação.</p>
+                <p className="type-body text-muted">Escolha ocasião/estilo e, se quiser, uma orientação livre. A IA compõe até 3 looks só com peças do seu acervo (RF4) e interpreta tudo o que elas carregam — material, cor, estampa/padrão, fotos, tamanho, estado, preço, frequência de uso, tags e notas — mais o seu DNA de estilo, estação e clima. Sem IA remota, o motor local entra em ação.</p>
                 <div><p className="label">{t("common.occasion")}</p><div className="flex flex-wrap gap-1.5">{(tax?.occasions ?? []).map((o) => <Chip key={o} active={form.occasion.includes(o)} onClick={() => toggleTag("occasion", o, 2)}>{label(o)}</Chip>)}</div></div>
                 <div><p className="label">{t("common.style")}</p><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={form.style.includes(s)} onClick={() => toggleTag("style", s, 2)}>{label(s)}</Chip>)}</div></div>
-                <Field label="Orientação (opcional)" id="prompt"><Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="ex.: quero algo leve para um jantar" maxLength={200} /></Field>
+                <Field label="Orientação (opcional)" id="prompt" hint="pode citar materiais, cores, estampas ou peças: a IA respeita"><Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="ex.: algo leve em linho, tons terrosos, sem estampa, para um jantar ao ar livre" maxLength={500} /></Field>
                 <Button variant="primary" onClick={compose} loading={busy}><FaiIcon id="ACT-09" size={24} decorative />{t("scheme.generate")}</Button>
                 {aiMsg && <p className="type-caption text-muted">{aiMsg}</p>}
                 {comps && <div className="grid gap-2 sm:grid-cols-3">{comps.map((c, i) => (
@@ -80,7 +80,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         )}
         {step === 1 && (
           <div>
-            <p className="type-body text-muted mb-3">{b.eligiblePieces} {t("common.pieces")} disponíveis. Selecione as peças (uma por slot; acessórios livres).</p>
+            <p className="type-body text-muted mb-3">Peças do seu guarda-roupa (RF4): {b.eligiblePieces} {t("common.pieces")} disponíveis{(b.hiddenPieces ?? 0) > 0 ? ` · ${b.hiddenPieces} indisponíveis ou em moderação ficam ocultas` : ""}. Selecione as peças (uma por slot; acessórios livres). <Link href="/pieces/new" className="underline">Cadastrar nova peça</Link></p>
             {Object.entries(b.lists).map(([cat, list]) => list.length > 0 && (
               <section key={cat} className="mb-5"><h3 className="type-h3 mb-2">{label(cat)}</h3><div className="grid-cards">{list.map((p) => <PieceCard key={p.id} piece={p} selectable selected={selected.some((s) => s.id === p.id)} onSelect={toggle} />)}</div></section>
             ))}

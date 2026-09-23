@@ -325,8 +325,7 @@ public class InstitutionalService {
         };
         return list.stream().limit(60).map(s -> Map.<String, Object>of("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())),
                 "seals", bonds.findBySchemeId(s.getId()).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
-                        .map(b -> Map.of("tier", b.getTier().name(), "owner", b.getTargetOwner().getUsername(), "premium",
-                                b.getTargetOwner().getProfileType() == ProfileType.CELEBRIDADE)).toList())).toList();
+                        .map(SealService::badge).toList())).toList();
     }
 
     /**

@@ -1,12 +1,16 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.SealDesignService;
 import br.com.fashionai.application.service.SealService;
 import br.com.fashionai.domain.model.enums.PromotionStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
+import br.com.fashionai.web.support.Uploads;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,9 +21,23 @@ import java.util.UUID;
 @Tag(name = "RF20/RF21 — Selos, vínculos (SealBond) e promoções")
 public class SealController {
     private final SealService seals;
+    private final SealDesignService designs;
 
-    public SealController(SealService seals) {
+    public SealController(SealService seals, SealDesignService designs) {
         this.seals = seals;
+        this.designs = designs;
+    }
+
+    @GetMapping("/api/seals/design-catalog")
+    @Operation(summary = "RF25 — Catálogo do criador de selo: elementos centrais, padrões entre borda e centro, materiais, paletas e proporções do logo")
+    public Map<String, Object> designCatalog() {
+        return designs.catalog();
+    }
+
+    @PostMapping(value = "/api/seals/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF25 — Enviar selo pronto (só é aceito nas proporções do logo FashionAI: 1:1, circular, 256–4096 px)")
+    public Map<String, Object> uploadSeal(CurrentUser user, @RequestPart("file") MultipartFile file) {
+        return designs.upload(user, Uploads.image(file));
     }
 
     @PostMapping("/api/seals")

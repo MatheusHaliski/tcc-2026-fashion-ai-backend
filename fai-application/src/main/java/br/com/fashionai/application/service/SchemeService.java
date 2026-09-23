@@ -3,6 +3,7 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.ai.local.LocalAdvisors;
 import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.audit.Audit;
@@ -23,6 +24,7 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.StyleDna;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.DisplayMode;
@@ -38,6 +40,7 @@ import br.com.fashionai.domain.repository.ReactionRepository;
 import br.com.fashionai.domain.repository.SavedItemRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
+import br.com.fashionai.domain.repository.StyleDnaRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import br.com.fashionai.application.events.DomainEvents;
@@ -92,13 +95,15 @@ public class SchemeService {
     private final Audit audit;
     private final DailyLookService dailyLooks;
     private final ApplicationEventPublisher events;
+    private final StyleDnaRepository dna;
 
     public SchemeService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                          UserRepository users, ReactionRepository reactions, SavedItemRepository saved,
                          WardrobeService wardrobe, BackgroundStudioService studio, SealService seals,
                          SchemeCardRenderer renderer, ProjectionService projections, NotificationService notifications,
                          CounterStorePort counters, MediaService media, AiEngine ai, Guard guard, Audit audit,
-                         DailyLookService dailyLooks, ApplicationEventPublisher events) {
+                         DailyLookService dailyLooks, ApplicationEventPublisher events, StyleDnaRepository dna) {
+        this.dna = dna;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -126,8 +131,13 @@ public class SchemeService {
     public Map<String, Object> builder(CurrentUser user) {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("totalPieces", pieces.countByUserId(user.id()));
+        long total = pieces.countByUserId(user.id());
+        out.put("totalPieces", total);
         out.put("eligiblePieces", eligible.size());
+        // Etapa 3 (formulário): as peças exibidas são SEMPRE as cadastradas pelo usuário no RF4 (guarda-roupa próprio);
+        // as indisponíveis/reprovadas ficam ocultas e o total informa quantas.
+        out.put("source", "RF4");
+        out.put("hiddenPieces", Math.max(0, total - eligible.size()));
         if (eligible.size() < 2) {
             out.put("status", "INSUFICIENTE");
             out.put("message", "Você precisa de ao menos 2 peças disponíveis para criar um look. Cadastre suas peças primeiro.");
@@ -149,6 +159,8 @@ public class SchemeService {
         out.put("moods", Mood.values());
         out.put("seasons", Season.values());
         out.put("anatomies", BackgroundStudioService.ANATOMIES);
+        out.put("sealPlacements", BackgroundStudioService.SEAL_PLACEMENT);
+        out.put("pieceSealPlacements", BackgroundStudioService.PIECE_SEAL_PLACEMENT);
         return out;
     }
 
@@ -186,23 +198,75 @@ public class SchemeService {
             m.put("style", Json.csv(w.getStyleTags()));
             m.put("occasion", Json.csv(w.getOccasionTags()));
             m.put("brand", w.getBrandName());
+            // RF5 etapa 2 — tudo que a peça carrega no RF4 entra na interpretação da IA
+            m.put("size", w.getSizeLabel());
+            m.put("condition", w.getCondition() == null ? null : w.getCondition().name());
+            m.put("price", w.getPrice());
+            m.put("favorite", w.isFavorite());
+            m.put("wearCount", w.getWearCount());
+            m.put("lastWorn", w.getLastWornDate());
+            m.put("hypeScore", w.getHypeScore());
+            m.put("tags", Json.csv(w.getTags()));
+            m.put("notes", InputSanitizer.clean(w.getNotes(), 160));
+            m.put("analysis", pieceAnalysis(w));
             catalog.add(m);
         }
+        List<AiRequest.AiImage> photos = new ArrayList<>();
+        List<String> photoRefs = new ArrayList<>();
+        for (Map.Entry<String, WardrobeItem> e : byRef.entrySet()) {
+            if (photos.size() >= MAX_COMPOSE_PHOTOS) {
+                break;
+            }
+            WardrobeItem w = e.getValue();
+            if (w.isDefaultImage()) {
+                continue;
+            }
+            String url = w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl();
+            if (url == null) {
+                continue;
+            }
+            media.read(url).ifPresent(bytes -> {
+                photos.add(new AiRequest.AiImage(bytes, ImageOps.detectMime(bytes)));
+                photoRefs.add(e.getKey());
+            });
+        }
+        Map<String, Object> profile = new LinkedHashMap<>();
+        users.findById(user.id()).ifPresent(u -> profile.put("country", u.getCountry()));
+        dna.findByUserId(user.id()).ifPresent(d -> profile.put("styleDna", dnaContext(d)));
         String system = """
                 Você é o Scheme Composer do Fashion AI. Monte EXATAMENTE 3 looks distintos usando SOMENTE as peças do
                 acervo informado (referências p1, p2...). Nunca invente peças. Cada look: 2 a 5 peças, no máximo 1 por
-                slot (upper/lower/shoes/full_body; acessórios até 2), sexo coerente. Sintetize ocasião e estilo (máx. 3
-                cada, nunca concatene as tags das peças). Responda SOMENTE com JSON:
+                slot (upper/lower/shoes/full_body; acessórios até 2), sexo coerente.
+                Interprete TUDO que o acervo oferece: materiais (texturas e combinações — linho/algodão para calor, lã/couro
+                para frio, evite três materiais pesados juntos), cores (harmonia, contraste, paleta e estação cromática do
+                DNA de estilo), padrões/estampas (no máximo uma estampa forte por look; leia a estampa real nas fotos),
+                as FOTOS anexadas (caimento, corte, comprimento, brilho, estado real da peça), tamanho/caimento, estado de
+                conservação, preço (coerência entre peças), frequência de uso (varie peças pouco usadas quando o usuário
+                pedir novidade), favoritas, notas/tags do usuário, além de ocasião, estilo, humor, estação e clima do país.
+                As orientações livres do usuário podem citar materiais, cores, estampas ou peças específicas: respeite-as.
+                Sintetize ocasião e estilo (máx. 3 cada, nunca concatene as tags das peças). No rationale, cite os
+                atributos que pesaram (ex.: "linho cru + terracota, sem estampa, clima quente"). Responda SOMENTE com JSON:
                 {"compositions":[{"title":string,"refs":["p1",...],"occasion":[...],"style":[...],"mood":one of
                 [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"seals":[até 4 de affordable-chic, premium-look,
                 eco-conscious, trendy-combo, casual-elegance],"rationale":"até 2 frases"}]}""";
-        String prompt = "Acervo: " + Json.write(catalog) + "\nOcasião: " + req.occasion() + "\nEstilo: " + req.style()
+        String prompt = "Acervo: " + Json.write(catalog)
+                + (photoRefs.isEmpty() ? "" : "\nFotos anexadas, na ordem, das peças: " + photoRefs)
+                + (profile.isEmpty() ? "" : "\nPerfil do usuário: " + Json.write(profile))
+                + "\nOcasião: " + req.occasion() + "\nEstilo: " + req.style()
                 + "\nHumor: " + req.mood() + "\nEstação: " + req.season() + "\nOrientações livres: "
                 + (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500))
                 + (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude);
+        List<String> inputs = new ArrayList<>(List.of(eligible.size()
+                + " peças do acervo com todos os atributos (categoria, cor, material, tamanho, estado, preço, uso, tags, notas, análise da foto)",
+                "ocasião/estilo/humor/estação pedidos", "orientações livres"));
+        if (!photoRefs.isEmpty()) {
+            inputs.add(photoRefs.size() + " fotos das peças (visão)");
+        }
+        if (profile.containsKey("styleDna")) {
+            inputs.add("DNA de estilo (arquétipo, paleta, estação cromática, silhueta)");
+        }
         AiOutcome<List<LocalSchemeComposer.Composition>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), capability,
-                system, prompt, List.of(), 1800, List.of(eligible.size() + " peças disponíveis do acervo (metadados, sem fotos)",
-                "ocasião/estilo/humor pedidos"),
+                system, prompt, photos, 1800, inputs,
                 text -> parseCompositions(text, byRef, req, exclude),
                 () -> LocalSchemeComposer.compose(eligible, req.occasion(), req.style(), req.season(), req.prompt(), 12).stream()
                         .filter(c -> !exclude.contains(combinationKey(c.items().stream().map(LocalSchemeComposer.Pick::wardrobeItemId).toList())))
@@ -215,6 +279,37 @@ public class SchemeService {
         }
         return new ComposeResult(list, message, outcome.explanation(), outcome.inferenceId(), outcome.quota(),
                 outcome.fallbackUsed(), outcome.provider());
+    }
+
+    /** Fotos enviadas à IA na etapa 2 (miniaturas das peças mais recentes). */
+    static final int MAX_COMPOSE_PHOTOS = 12;
+
+    /** Atributos visuais detectados no RF4 (Piece Analyzer / flat lay): padrão, estampa, textura, cores, caimento. */
+    static Map<String, Object> pieceAnalysis(WardrobeItem w) {
+        Map<String, Object> src = Json.map(w.getFlatLayMetadataJson());
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String key : List.of("pattern", "print", "texture", "fit", "colors", "dominantColors", "secondaryColors",
+                "neckline", "sleeve", "length", "finish", "silhouette", "season", "attributes")) {
+            Object v = src.get(key);
+            if (v != null && !(v instanceof Map<?, ?>)) {
+                out.put(key, v instanceof String str ? InputSanitizer.clean(str, 120) : v);
+            }
+        }
+        return out.isEmpty() ? null : out;
+    }
+
+    /** Resumo do DNA de estilo (RF19) que orienta cores, silhueta e arquétipo na composição. */
+    static Map<String, Object> dnaContext(StyleDna d) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("archetype", d.getArchetype() == null ? null : d.getArchetype().name());
+        m.put("boldnessIndex", d.getBoldnessIndex());
+        m.put("identityPhrase", d.getIdentityPhrase());
+        m.put("colorPalette", d.getColorPalette());
+        m.put("colorSeason", d.getColorSeason());
+        m.put("styleKeywords", d.getStyleKeywords());
+        m.put("silhouette", d.getSilhouette());
+        m.put("iconPiece", d.getIconPieceName());
+        return m;
     }
 
     List<LocalSchemeComposer.Composition> parseCompositions(String text, Map<String, WardrobeItem> byRef, ComposeRequest req,

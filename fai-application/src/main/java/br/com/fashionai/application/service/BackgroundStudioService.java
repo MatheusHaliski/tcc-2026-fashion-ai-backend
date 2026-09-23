@@ -54,6 +54,54 @@ public class BackgroundStudioService {
     /** Versão por peça (Seção C): 7 das 10 variações. */
     public static final List<String> PIECE_ANATOMIES = List.of("PECA_AMPLIADO", "PASSARELA", "ETIQUETA", "RAIO_X", "BENTO",
             "ESPECTRO", "CUSTO_POR_USO", "BLOCOS");
+    /**
+     * Posição do selo por anatomia (docs/anatomias/anatomias_card_v17_1.html). Zonas: TITLE_ROW (linha "Título · selos ·
+     * preço"), META_BLOCK (bloco "Selos · descrição · estilo"), COVER_CORNER (canto da capa/arte própria), HEADER
+     * (cabeçalho do card-objeto, ao lado do label PREMIUM), STUDS (placas redondas 1×1 dos Blocos). pieceRows indica que
+     * cada linha/célula de peça também leva selo ("marca · nome · selos · preço"). O medalhão tem o tamanho do logo
+     * FashionAI (44 px no card do look, 36 px no da peça); source diz se a posição está escrita na anatomia ou foi
+     * derivada da estrutura da prancha (quando a prancha não traz a linha de selos).
+     */
+    public static final Map<String, Map<String, Object>> SEAL_PLACEMENT = new LinkedHashMap<>();
+    public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
+
+    static {
+        seal(SEAL_PLACEMENT, "LISTA_VERTICAL", "TITLE_ROW", true, "anatomia", "Linha \"Título · selos · preço\" abaixo da foto; cada peça repete \"marca · nome · selos · preço\".");
+        seal(SEAL_PLACEMENT, "GRADE_PECAS", "TITLE_ROW", true, "anatomia", "Linha do título; cada célula da grade mostra \"selos · preço\" (compacto: \"4 peças · selos · preço\").");
+        seal(SEAL_PLACEMENT, "HERO_LISTA", "TITLE_ROW", true, "anatomia", "Linha do título abaixo do hero; no compacto, cada linha lateral traz \"peça · selos · preço\".");
+        seal(SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", "Canto superior direito da capa, oposto ao rótulo lateral vertical — o trilho de peças fica livre.");
+        seal(SEAL_PLACEMENT, "ETIQUETA", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço · descrição\" logo abaixo das mini-etiquetas.");
+        seal(SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", "Sobre a foto do scanner, canto superior direito (a legenda numerada ocupa a esquerda).");
+        seal(SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "anatomia", "Bloco \"Selos · descrição · estilo\" abaixo da grade assimétrica.");
+        seal(SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço\" acima das faixas de cor.");
+        seal(SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", "Cabeçalho \"FASHIONAI · VALOR DE USO\", ao lado do label PREMIUM (> R$ 600).");
+        seal(SEAL_PLACEMENT, "SILHUETA_PROPORCAO", "TITLE_ROW", false, "derivada", "Linha do nome da silhueta, antes de \"Descrição · ocasião · estilo\".");
+        seal(SEAL_PLACEMENT, "HYPE_FOCUS", "HEADER", false, "derivada", "Ao lado do medidor \"Peça em destaque\" — o selo não disputa com a chama do Hype.");
+        seal(SEAL_PLACEMENT, "CARTELA_SAZONAL", "COVER_CORNER", false, "derivada", "Canto superior direito do hero da estação (o nome da estação fica à esquerda).");
+        seal(SEAL_PLACEMENT, "BLOCOS", "STUDS", false, "anatomia", "Placas redondas 1×1 no container (verde = marca, vermelho = celebridade, amarelo = look) + placa \"N selos\".");
+        seal(PIECE_SEAL_PLACEMENT, "PECA_AMPLIADO", "META_BLOCK", false, "anatomia", "Linha \"Categoria · marca · sexo · selos\" abaixo da foto da peça.");
+        seal(PIECE_SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", "Canto da capa, oposto ao número de rank e aos holofotes.");
+        seal(PIECE_SEAL_PLACEMENT, "ETIQUETA", "HEADER", false, "derivada", "Ao lado do label \"FASHION AI\" da etiqueta (moldura dourada acima de R$ 600).");
+        seal(PIECE_SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", "Sobre a foto, canto oposto ao ritmo (bpm).");
+        seal(PIECE_SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "derivada", "Bloco \"Atributos\" (a grade da peça tem 2 células fixas).");
+        seal(PIECE_SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço\" acima da faixa única.");
+        seal(PIECE_SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", "Cabeçalho, ao lado do label PREMIUM.");
+        seal(PIECE_SEAL_PLACEMENT, "BLOCOS", "STUDS", false, "anatomia", "Placa redonda 1×1 ao lado do bloco de marca (✦ PREMIUM vira bloco dourado).");
+    }
+
+    private static void seal(Map<String, Map<String, Object>> target, String anatomy, String zone, boolean pieceRows, String source,
+                             String description) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("anatomy", anatomy);
+        m.put("zone", zone);
+        m.put("pieceRows", pieceRows);
+        m.put("size", target == PIECE_SEAL_PLACEMENT ? 36 : 44);
+        m.put("maxVisible", "STUDS".equals(zone) ? 4 : 3);
+        m.put("source", source);
+        m.put("description", description);
+        target.put(anatomy, m);
+    }
+
     /** RF11 §7.6 — formato do Preset Aura + material. */
     public static final List<String> AURA_FORMATS = List.of("IMAGEM_UNICA", "MOSAICO");
 
@@ -117,6 +165,8 @@ public class BackgroundStudioService {
         out.put("skinGeneration", assets.manifest().get("skinGeneration"));
         out.put("directions", DIRECTIONS);
         out.put("anatomies", ANATOMIES);
+        out.put("sealPlacements", SEAL_PLACEMENT);
+        out.put("pieceSealPlacements", PIECE_SEAL_PLACEMENT);
         out.put("pieceAnatomies", PIECE_ANATOMIES);
         out.put("auraFormats", AURA_FORMATS);
         out.put("animations", BackgroundAnimation.values());
@@ -403,6 +453,16 @@ public class BackgroundStudioService {
                 throw ApiException.badRequest("ANATOMIA_INVALIDA", "Anatomia de card desconhecida: " + anat);
             }
             s.setLayoutAnatomy(anat);
+            // o layout escolhido na etapa 4 já carrega a posição do selo daquela anatomia
+            scheme.put("sealPlacement", SEAL_PLACEMENT.getOrDefault(anat, SEAL_PLACEMENT.get("LISTA_VERTICAL")).get("zone"));
+        }
+        if (config.get("pieces") instanceof Map<?, ?> pc && pc.get("anatomy") instanceof String pAnat) {
+            if (!PIECE_ANATOMIES.contains(pAnat)) {
+                throw ApiException.badRequest("ANATOMIA_INVALIDA", "Anatomia de peça desconhecida: " + pAnat);
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pieces = (Map<String, Object>) pc;
+            pieces.put("sealPlacement", PIECE_SEAL_PLACEMENT.get(pAnat).get("zone"));
         }
         if (applyRecommendedDirection) {
             String dirId = (String) scheme.getOrDefault("direction", "EDITORIAL_SPREAD");

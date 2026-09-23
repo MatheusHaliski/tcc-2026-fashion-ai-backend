@@ -8,11 +8,13 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Tabs, Textarea, useToast } from "@/components/ui";
-import { SchemeCard, type SealBadge } from "@/components/scheme-card";
+import { SchemeCard, toSealBadges } from "@/components/scheme-card";
+import { SealCreator } from "@/components/seal-creator";
+import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 
-interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; }
+interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
 interface Profile { user: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { following: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; tabs?: { id: string; label: string; adminOnly?: boolean }[]; admin: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 const TIERS = ["LOOK", "PECA", "PERFIL"];
@@ -24,13 +26,14 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const ownerId = data?.user.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
-  type Highlighted = { schemes: { scheme: SchemeView; seals: { tier: string; owner: string; premium: boolean }[] }[]; pieces: { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: { tier: string; owner: string; premium: boolean }[] }[]; empty?: string | null };
+  type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
+  type Highlighted = { schemes: { scheme: SchemeView; seals: SealBadgeSource[] }[]; pieces: { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: { tier: string; owner: string; premium: boolean }[] }[]; empty?: string | null };
   type Catalog = { piece: PieceView; looks: number; neverInLook: boolean }[];
-  type Consecrated = { scheme: SchemeView; seals: { tier: string; owner: string; premium: boolean }[] }[];
+  type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[] }[];
   const tabData = useApi<Highlighted | Catalog | Consecrated>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && admin ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user], { enabled: ["DESTAQUES", "CATALOGO", "LOOKS_CONSAGRADOS"].includes(tab) });
-  const badges = (list?: { tier: string; owner: string; premium: boolean }[]): SealBadge[] => (list ?? []).map((b) => ({ label: b.tier === "PECA" ? "PEÇA" : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier }));
-  const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "" };
-  const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string }>(emptySeal);
+  const badges = toSealBadges;
+  const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign };
+  const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign }>(emptySeal);
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
@@ -39,7 +42,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
-    const body = { name: sealForm.name, tier: sealForm.tier, policyText: sealForm.policyText, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil) };
+    const body = { name: sealForm.name, tier: sealForm.tier, policyText: sealForm.policyText, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design };
     try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); } catch (e) { toast.fromError(e); }
   }
   async function savePromo() {
@@ -71,10 +74,10 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
           {admin && <Button className="mb-3" variant="primary" onClick={() => setSealForm({ ...emptySeal, open: true })}><FaiIcon id={isCeleb ? "ACT-27" : "ACT-26"} size={24} decorative />Novo selo</Button>}
           {seals.loading ? <SkeletonGrid n={3} h="h-32" /> : (seals.data ?? []).length === 0 ? <EmptyState title="Nenhum selo ainda." /> : <div className="grid-cards">{(seals.data ?? []).map((s) => (
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
-              <div className="flex items-start gap-3">{s.iconUrl ? <img src={mediaUrl(s.iconUrl)} alt="" className="h-12 w-12 rounded-full object-cover" /> : <FaiIcon id={isCeleb ? "ACT-27" : "ACT-26"} size={48} decorative />}<div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? "disponível" : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
+              <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? "disponível" : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
               <p className="mt-2 type-data text-faint tabular">{s.usageCount ?? 0}{s.usageLimit ? `/${s.usageLimit}` : ""} emissões{(s.availableFrom || s.availableUntil) && <> · válido {s.availableFrom ? `de ${fmtDate(s.availableFrom)}` : ""} {s.availableUntil ? `até ${fmtDate(s.availableUntil)}` : ""}</>}</p>
-              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier, policyText: s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "" })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? "Desativar" : "Ativar"}</Button></div>}
+              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier, policyText: s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? "Desativar" : "Ativar"}</Button></div>}
             </Card>))}</div>}
         </>
       )}
@@ -90,6 +93,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       {tab === "METRICAS" && admin && <IssuerMetrics />}
       <Dialog open={sealForm.open} onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? "Editar selo" : "Novo selo"} footer={<Button variant="primary" onClick={saveSeal} disabled={sealForm.name.trim().length < 2}>{t("common.save")}</Button>}>
         <Field label="Nome" id="sname" required><Input id="sname" value={sealForm.name} onChange={(e) => setSealForm({ ...sealForm, name: e.target.value })} /></Field>
+        <div className="mb-3"><p className="label mb-1">Desenho do selo (proporções do logo FashionAI)</p><SealCreator value={sealForm.design} onChange={(dd) => setSealForm({ ...sealForm, design: dd })} premium={isCeleb} /></div>
         <Field label="Nível" id="stier"><Select id="stier" value={sealForm.tier} onChange={(e) => setSealForm({ ...sealForm, tier: e.target.value })}>{TIERS.map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
         <Field label="Política / critérios promocionais (a IA usa este texto para detectar looks compatíveis)" id="spolicy"><Textarea id="spolicy" value={sealForm.policyText} onChange={(e) => setSealForm({ ...sealForm, policyText: e.target.value })} maxLength={2000} /></Field>
         <div className="grid grid-cols-2 gap-3"><Field label="Disponível de" id="sfrom" hint="vazio = imediato"><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label="até" id="suntil" hint="vazio = sem fim"><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>

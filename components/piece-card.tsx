@@ -4,29 +4,33 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FaiIcon } from "@/components/fai-icon";
-import { SealSlot, type SealBadge } from "@/components/scheme-card";
+import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
+import { pieceSealPlacement } from "@/components/scheme-anatomies";
 
 /** Card de peça (anatomia "peça de roupa" v17): foto, nome editorial, cor com nome escrito (acessibilidade para daltônicos), estado. */
-export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals }: {
-  piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[];
+export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals, anatomy }: {
+  piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
 }) {
+  // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
+  const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const { t, fmtMoney } = useI18n();
   const img = mediaUrl(piece.thumbnailUrl ?? piece.imageUrl);
   const body = (
     <>
       <div className="c-photo" style={{ aspectRatio: "1" }}>
         {img ? <img src={img} alt={piece.name} loading="lazy" style={{ objectFit: "contain", padding: 8 }} /> : null}
-        <SealSlot size="sm" seals={seals} />
+        {(zone === "COVER_CORNER" || zone === "HEADER") && <SealSlot size="sm" seals={seals} />}
         {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
         {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
       </div>
-      <div className="c-title">{piece.name}</div>
+      <div className="c-title seal-row"><span className="min-w-0 flex-1">{piece.name}</span>{zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}</div>
+      {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
       <div className="c-row flex items-center gap-2">
         <span aria-hidden className="inline-block h-3 w-3 rounded-full border border-line-soft" style={{ background: piece.colorHex ?? "#ccc" }} />
         <span className="type-data text-muted">{piece.color}</span>
         <span className="ml-auto type-data text-muted">{piece.price != null ? fmtMoney(piece.price) : piece.size?.toUpperCase()}</span>
       </div>
-      <div className="c-row"><span className="k">{piece.brandName ?? piece.subcategory}</span>{(piece.occasion ?? []).join(", ") || "—"}</div>
+      <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{[piece.subcategory, piece.brandName, piece.sex].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? " · selos" : ""}</span>{(piece.occasion ?? []).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
     </>
   );
   return (
