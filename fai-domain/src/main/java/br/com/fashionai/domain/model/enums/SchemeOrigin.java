@@ -6,5 +6,7 @@ public enum SchemeOrigin {
     PROVADOR,
     REMIX,
     COPILOT,
-    DNA_DUPLICATE, SMART_MIRROR, VISTA_ME
+    DNA_DUPLICATE, SMART_MIRROR, VISTA_ME,
+    /** HU17/HU18 — Autopiloto de Looks e Semana Planejada. */
+    AUTOPILOTO
 }

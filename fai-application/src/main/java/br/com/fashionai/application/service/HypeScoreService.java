@@ -634,16 +634,4 @@ public class HypeScoreService {
         return Map.of("alpha", ALPHA, "beta", BETA, "calibrationDays", CALIBRATION_DAYS, "trendDays", TREND_DAYS, "weeklyDays", WEEKLY_DAYS,
                 "referenceSchemes", c.n(), "activeUsers", c.activeUsers(), "calibratedAt", c.computedAt(), "weeklyPopulation", weekly().n());
     }
-
-    static Set<String> nonNull(Set<String> s) {
-        return s == null ? Set.of() : s.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-    }
-
-    static String colorFamily(String color) {
-        return Taxonomy.COLOR_FAMILY.get(color);
-    }
-
-    public static boolean isPublic(Scheme s) {
-        return s.getVisibility() == Visibility.PUBLIC && s.getStatus() == SchemeStatus.PUBLISHED;
-    }
 }

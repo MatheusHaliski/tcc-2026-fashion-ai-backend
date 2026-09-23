@@ -455,8 +455,4 @@ public class LookbookService {
                 .filter(s -> viewer.id().equals(ownerId) || schemeService.canView(viewer, s))
                 .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
     }
-
-    public static Visibility visibilityOf(Scheme s) {
-        return s.getVisibility();
-    }
 }

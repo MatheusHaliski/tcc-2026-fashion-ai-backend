@@ -110,4 +110,8 @@ public class UserPreferences extends VersionedAuditableEntity {
     /** RF10.CA16 — uso da Identidade de Vida (Camada 2) no contexto da IA; desligado por padrão. */
     @Column(name = "life_identity_in_ai", nullable = false)
     private boolean lifeIdentityInAi;
+
+    /** Dashboard personalizável — ordem e visibilidade dos widgets e filtro padrão, salvos por usuário. */
+    @Column(name = "dashboard_layout_json", columnDefinition = "json")
+    private String dashboardLayoutJson;
 }
