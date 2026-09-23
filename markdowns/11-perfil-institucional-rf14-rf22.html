@@ -1,0 +1,1631 @@
+<title>Maison &amp; Art Celebrity</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --mm: 2.75px;
+
+    --ground:      #e9eef7;
+    --surface:     #ffffff;
+    --surface-2:   #f3f6fc;
+    --surface-3:   #e7ecf6;
+    --line:        #d3dcee;
+    --line-soft:   #e4eaf5;
+    --ink:         #0b1220;
+    --ink-2:       #46516b;
+    --ink-3:       #7b869f;
+
+    --marca:       #8c6116;
+    --marca-ink:   #6d4a0d;
+    --marca-soft:  #f5e9d1;
+    --marca-line:  #d6b478;
+
+    --celeb:       #6338cf;
+    --celeb-ink:   #4f2bad;
+    --celeb-soft:  #ebe4fc;
+    --celeb-line:  #b8a2f0;
+
+    --ok:          #0d7a4e;
+    --ok-soft:     #dcf0e6;
+    --warn:        #97650a;
+    --warn-soft:   #f8ecd2;
+    --bad:         #ab3228;
+    --bad-soft:    #f8e2df;
+
+    --focus:       #2f55cf;
+
+    --cover-marca: repeating-linear-gradient(48deg, rgba(255,255,255,.07) 0 2px, rgba(0,0,0,.05) 2px 4px),
+                   linear-gradient(132deg, #3a2a0e 0%, #b4883a 46%, #5e4417 100%);
+    --cover-celeb: radial-gradient(120% 90% at 18% 12%, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 52%),
+                   linear-gradient(118deg, #5b34c6 0%, #3fb9d6 38%, #e06bb0 72%, #5b34c6 100%);
+
+    --shadow-frame: 0 18px 40px rgba(11,18,32,.14), 0 2px 6px rgba(11,18,32,.08);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:      #0a1020;
+      --surface:     #141d31;
+      --surface-2:   #1a2439;
+      --surface-3:   #202c45;
+      --line:        #2b3750;
+      --line-soft:   #222d45;
+      --ink:         #e8edf8;
+      --ink-2:       #a6b1c9;
+      --ink-3:       #7b879f;
+
+      --marca:       #e2b872;
+      --marca-ink:   #f0d3a1;
+      --marca-soft:  #2c2214;
+      --marca-line:  #6a5228;
+
+      --celeb:       #bda6ff;
+      --celeb-ink:   #d5c6ff;
+      --celeb-soft:  #211a3c;
+      --celeb-line:  #4b3c8c;
+
+      --ok:          #4fca8e;
+      --ok-soft:     #11301f;
+      --warn:        #e5b355;
+      --warn-soft:   #302511;
+      --bad:         #f18a7e;
+      --bad-soft:    #351a17;
+
+      --focus:       #7d9bff;
+
+      --shadow-frame: 0 20px 44px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4);
+    }
+  }
+
+  :root[data-theme="dark"]{
+    --ground:      #0a1020;
+    --surface:     #141d31;
+    --surface-2:   #1a2439;
+    --surface-3:   #202c45;
+    --line:        #2b3750;
+    --line-soft:   #222d45;
+    --ink:         #e8edf8;
+    --ink-2:       #a6b1c9;
+    --ink-3:       #7b879f;
+
+    --marca:       #e2b872;
+    --marca-ink:   #f0d3a1;
+    --marca-soft:  #2c2214;
+    --marca-line:  #6a5228;
+
+    --celeb:       #bda6ff;
+    --celeb-ink:   #d5c6ff;
+    --celeb-soft:  #211a3c;
+    --celeb-line:  #4b3c8c;
+
+    --ok:          #4fca8e;
+    --ok-soft:     #11301f;
+    --warn:        #e5b355;
+    --warn-soft:   #302511;
+    --bad:         #f18a7e;
+    --bad-soft:    #351a17;
+
+    --focus:       #7d9bff;
+
+    --shadow-frame: 0 20px 44px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4);
+  }
+
+  body{
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap{
+    max-width: 1180px;
+    margin-inline: auto;
+    padding-inline: 20px;
+    padding-block: 40px 64px;
+  }
+
+  h1,h2,h3,h4{ font-family:"Archivo", ui-sans-serif, system-ui, sans-serif; text-wrap: balance; margin:0; }
+  h1{ font-size: clamp(34px, 6vw, 56px); font-weight:700; letter-spacing:-.025em; line-height:1.02; }
+  h2{ font-size: clamp(22px, 3.2vw, 30px); font-weight:700; letter-spacing:-.018em; line-height:1.14; }
+  h3{ font-size: 17px; font-weight:600; letter-spacing:-.008em; }
+  h4{ font-size: 14px; font-weight:600; letter-spacing:-.004em; }
+  p{ margin:0; }
+
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .deck{ font-size: 17px; color: var(--ink-2); max-width: 64ch; }
+  .lede{ color: var(--ink-2); max-width: 68ch; }
+
+  /* ---------- masthead ---------- */
+  .masthead{ display:flex; flex-direction:column; gap:18px; }
+  .rule{ height:1px; background: var(--line); border:0; margin:0; }
+
+  .meta{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap:1px; background: var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .meta div{ background: var(--surface); padding:12px 14px; }
+  .meta dt{ font-family:"IBM Plex Mono", monospace; font-size:10px; letter-spacing:.12em;
+            text-transform:uppercase; color: var(--ink-3); margin:0 0 3px; }
+  .meta dd{ margin:0; font-size:13.5px; font-weight:500; line-height:1.4; }
+
+  .secnav{ display:flex; flex-wrap:wrap; gap:6px; }
+  .secnav a{
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; letter-spacing:.04em;
+    color: var(--ink-2); text-decoration:none; padding:7px 11px;
+    border:1px solid var(--line); border-radius:2px; background: var(--surface);
+  }
+  .secnav a:hover{ color: var(--ink); border-color: var(--ink-3); }
+  a:focus-visible, .secnav a:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  /* ---------- sections ---------- */
+  section{ margin-top: 64px; }
+  .sechead{ display:flex; flex-direction:column; gap:10px; margin-bottom: 26px; }
+  .sechead .eyebrow span{ color: var(--ink-2); }
+
+  .note{
+    border-left: 3px solid var(--ink-3);
+    background: var(--surface);
+    padding: 14px 16px;
+    display:flex; flex-direction:column; gap:8px;
+    font-size:14px; color: var(--ink-2);
+  }
+  .note strong{ color: var(--ink); font-weight:600; }
+  .note.marca{ border-left-color: var(--marca-line); }
+  .note.celeb{ border-left-color: var(--celeb-line); }
+  .note.warn{ border-left-color: var(--warn); }
+
+  .ca{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; font-weight:500;
+    background: var(--surface-3); color: var(--ink-2);
+    padding: 1px 5px; border-radius:2px; white-space:nowrap;
+  }
+
+  /* ---------- device frames ---------- */
+  .rack{
+    display:grid; gap: 34px 26px;
+    grid-template-columns: repeat(auto-fit, minmax(270px, max-content));
+    justify-content: center;
+  }
+  .rack.duo{ grid-template-columns: repeat(auto-fit, minmax(270px, max-content)); }
+
+  .device{ display:flex; flex-direction:column; gap:12px; width: calc(98 * var(--mm)); max-width:100%; }
+  .device > figcaption{ display:flex; flex-direction:column; gap:5px; }
+  .device .cap-k{
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color: var(--ink-3);
+  }
+  .device .cap-t{ font-family:"Archivo", sans-serif; font-weight:600; font-size:15px; letter-spacing:-.01em; }
+  .device .cap-d{ font-size:12.5px; color: var(--ink-2); line-height:1.5; }
+  .device .cap-ca{ display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
+
+  .phone{
+    width: 100%;
+    border: calc(1.2 * var(--mm)) solid var(--ink);
+    border-radius: calc(5 * var(--mm));
+    background: var(--ink);
+    box-shadow: var(--shadow-frame);
+    overflow: hidden;
+  }
+  .screen{
+    height: calc(206 * var(--mm));
+    background: var(--surface);
+    border-radius: calc(3.6 * var(--mm));
+    overflow: hidden;
+    display:flex; flex-direction:column;
+    position: relative;
+    font-size: 9px; line-height:1.35; color: var(--ink);
+  }
+
+  /* status + appbar */
+  .s-status{
+    height: calc(6 * var(--mm)); flex: none;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 0 calc(4 * var(--mm));
+    font-family:"IBM Plex Mono", monospace; font-size:8px; color: var(--ink-2);
+  }
+  .s-appbar{
+    height: calc(9 * var(--mm)); flex:none;
+    display:flex; align-items:center; gap: calc(2.5 * var(--mm));
+    padding: 0 calc(3 * var(--mm));
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .s-appbar .t{ font-family:"Archivo",sans-serif; font-weight:600; font-size:10px; flex:1; }
+  .ic{ width: calc(4.4 * var(--mm)); height: calc(4.4 * var(--mm)); flex:none; stroke-width:1.7; }
+  .ic-sm{ width: calc(3.4 * var(--mm)); height: calc(3.4 * var(--mm)); flex:none; stroke-width:1.8; }
+
+  /* cover + identity */
+  .s-cover{ height: calc(32 * var(--mm)); flex:none; position:relative; }
+  .s-cover.marca{ background-image: var(--cover-marca); }
+  .s-cover.celeb{ background-image: var(--cover-celeb); }
+  .s-cover .badge-era{
+    position:absolute; left: calc(3 * var(--mm)); bottom: calc(2.2 * var(--mm));
+    font-family:"IBM Plex Mono", monospace; font-size:7.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:#fff; background: rgba(8,10,18,.5); padding: 2px 5px; border-radius:2px;
+    backdrop-filter: blur(3px);
+  }
+
+  .s-ident{
+    flex:none; padding: 0 calc(4 * var(--mm));
+    display:flex; gap: calc(3 * var(--mm)); align-items:flex-end;
+    margin-top: calc(-9 * var(--mm));
+  }
+  .ava{
+    width: calc(22 * var(--mm)); height: calc(22 * var(--mm)); flex:none;
+    border-radius: 50%; display:grid; place-items:center;
+    border: calc(1 * var(--mm)) solid var(--surface);
+    font-family:"Archivo",sans-serif; font-weight:700; font-size:15px; letter-spacing:-.02em;
+  }
+  .ava.marca{ background: var(--marca-soft); color: var(--marca-ink); box-shadow: 0 0 0 1px var(--marca-line) inset; }
+  .ava.celeb{ background: var(--celeb-soft); color: var(--celeb-ink); box-shadow: 0 0 0 1px var(--celeb-line) inset; }
+  .ava .slot{ font-size:6.5px; letter-spacing:.06em; }
+
+  .s-name{ padding-bottom: calc(1 * var(--mm)); min-width:0; }
+  .s-name .n{ font-family:"Archivo",sans-serif; font-weight:700; font-size:12px; letter-spacing:-.015em;
+              display:flex; align-items:center; gap: calc(1.4 * var(--mm)); }
+  .s-name .h{ font-family:"IBM Plex Mono", monospace; font-size:8.5px; color: var(--ink-3); }
+
+  .vpill{
+    display:inline-flex; align-items:center; gap:3px;
+    font-family:"IBM Plex Mono", monospace; font-size:7px; letter-spacing:.06em; text-transform:uppercase;
+    padding: 1px 4px; border-radius: 999px; font-weight:500;
+  }
+  .vpill.ok{ background: var(--ok-soft); color: var(--ok); }
+  .vpill.celeb{ background: var(--celeb-soft); color: var(--celeb); }
+  .vpill.warn{ background: var(--warn-soft); color: var(--warn); }
+  .vpill.bad{ background: var(--bad-soft); color: var(--bad); }
+  .vpill.marca{ background: var(--marca-soft); color: var(--marca); }
+
+  .s-bio{ flex:none; padding: calc(2 * var(--mm)) calc(4 * var(--mm)) 0; font-size:8.5px; color: var(--ink-2); }
+
+  .s-actions{ flex:none; display:flex; gap: calc(2 * var(--mm)); padding: calc(2.4 * var(--mm)) calc(4 * var(--mm)); }
+  .btn{
+    flex:1; height: calc(8 * var(--mm)); border-radius: calc(1.2 * var(--mm));
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    font-size:8.5px; font-weight:600; border:1px solid var(--line);
+    background: var(--surface-2); color: var(--ink);
+  }
+  .btn.pri.marca{ background: var(--marca); border-color: var(--marca); color:#fff; }
+  .btn.pri.celeb{ background: var(--celeb); border-color: var(--celeb); color:#fff; }
+  :root[data-theme="dark"] .btn.pri.marca, :root[data-theme="dark"] .btn.pri.celeb{ color:#12182a; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .btn.pri.marca,
+    :root:not([data-theme="light"]) .btn.pri.celeb{ color:#12182a; }
+  }
+  .btn.ghost{ background: transparent; }
+
+  .s-counts{
+    flex:none; display:grid; grid-template-columns: repeat(4,1fr);
+    padding: 0 calc(3 * var(--mm)) calc(2 * var(--mm));
+  }
+  .s-counts div{ text-align:center; }
+  .s-counts .v{ font-family:"Archivo",sans-serif; font-weight:700; font-size:11px; letter-spacing:-.02em;
+                font-variant-numeric: tabular-nums; }
+  .s-counts .l{ font-size:7px; color: var(--ink-3); letter-spacing:.04em; }
+
+  .s-metrics{
+    flex:none; display:flex; align-items:center; gap: calc(2.6 * var(--mm));
+    padding: calc(1.8 * var(--mm)) calc(4 * var(--mm));
+    border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft);
+    background: var(--surface-2);
+    font-size:8px; color: var(--ink-2); overflow:hidden;
+  }
+  .s-metrics span{ display:inline-flex; align-items:center; gap:3px; font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .s-metrics .fade{ margin-left:auto; color: var(--ink-3); font-size:8px; }
+
+  .s-tabs{
+    flex:none; display:flex; gap: calc(3.4 * var(--mm));
+    padding: 0 calc(4 * var(--mm));
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+  }
+  .s-tabs .tab{
+    padding: calc(2.6 * var(--mm)) 0; font-size:8.5px; color: var(--ink-3);
+    white-space:nowrap; border-bottom: 2px solid transparent;
+  }
+  .s-tabs .tab.on{ color: var(--ink); font-weight:600; }
+  .s-tabs .tab.on.marca{ border-bottom-color: var(--marca); }
+  .s-tabs .tab.on.celeb{ border-bottom-color: var(--celeb); }
+
+  .s-body{ flex:1; overflow:hidden; padding: calc(3 * var(--mm)); display:flex; flex-direction:column; gap: calc(2.4 * var(--mm)); background: var(--surface); }
+  .s-body.pad0{ padding: 0; }
+
+  /* list header / filters */
+  .s-filters{ display:flex; align-items:center; gap: calc(1.6 * var(--mm)); flex-wrap:nowrap; overflow:hidden; }
+  .chip{
+    font-size:7.5px; padding: calc(1.2 * var(--mm)) calc(2 * var(--mm)); border-radius:999px;
+    border:1px solid var(--line); color: var(--ink-2); white-space:nowrap; background: var(--surface);
+  }
+  .chip.on{ background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .chip.star{ display:inline-flex; align-items:center; gap:3px; }
+  .search{
+    display:flex; align-items:center; gap: calc(1.6 * var(--mm));
+    border:1px solid var(--line); border-radius: calc(1.2 * var(--mm));
+    padding: calc(1.6 * var(--mm)) calc(2 * var(--mm)); color: var(--ink-3); font-size:8px;
+    background: var(--surface-2);
+  }
+
+  /* generic card of the RF7 spec */
+  .card{ border:1px solid var(--line); border-radius: calc(1.2 * var(--mm)); overflow:hidden; background: var(--surface); }
+  .card-top{
+    display:flex; align-items:center; gap: calc(1.6 * var(--mm));
+    padding: calc(1.4 * var(--mm)) calc(2 * var(--mm));
+    border-bottom:1px solid var(--line-soft); font-size:7.5px; color: var(--ink-3);
+  }
+  .card-top .sep{ margin-left:auto; }
+  .state-pill{ font-family:"IBM Plex Mono",monospace; font-size:7px; letter-spacing:.06em; padding:1px 4px; border-radius:2px; }
+  .state-pill.disp{ background: var(--ok-soft); color: var(--ok); }
+  .state-pill.indisp{ background: var(--bad-soft); color: var(--bad); width:13px; text-align:center; }
+
+  .card-head{
+    display:flex; align-items:center; gap: calc(1.8 * var(--mm));
+    padding: calc(1.6 * var(--mm)) calc(2 * var(--mm));
+  }
+  .dot{ width: calc(5 * var(--mm)); height: calc(5 * var(--mm)); border-radius:50%; background: var(--surface-3); flex:none;
+        display:grid; place-items:center; font-size:6.5px; font-weight:600; color: var(--ink-2); }
+  .card-head .who{ font-size:8px; font-weight:600; }
+  .card-head .when{ font-size:7px; color: var(--ink-3); margin-left:auto; }
+
+  .card-cover{ height: calc(34 * var(--mm)); position:relative; display:grid; place-items:center; }
+  .card-cover.o-trabalho{ background: linear-gradient(140deg,#20304c,#4a5f83); }
+  .card-cover.o-festa{ background: linear-gradient(140deg,#3d1030,#8c2b63); }
+  .card-cover.o-casual{ background: linear-gradient(140deg,#25412f,#5c8a63); }
+  .card-cover.o-academia{ background: linear-gradient(140deg,#123243,#1f7f96); }
+  .card-cover .occ{
+    position:absolute; left: calc(2 * var(--mm)); top: calc(2 * var(--mm));
+    font-family:"IBM Plex Mono",monospace; font-size:7px; letter-spacing:.08em; text-transform:uppercase;
+    color:#fff; background: rgba(8,10,18,.42); padding:1px 4px; border-radius:2px;
+  }
+  .card-cover .seals{ position:absolute; right: calc(2 * var(--mm)); bottom: calc(2 * var(--mm)); display:flex; gap:3px; }
+
+  .seal{
+    width: calc(7.5 * var(--mm)); height: calc(7.5 * var(--mm));
+    display:grid; place-items:center;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    font-family:"IBM Plex Mono",monospace; font-size:6px; font-weight:500; letter-spacing:.02em;
+  }
+  .seal.marca{ background: linear-gradient(140deg,#e2c284,#8c6116); color:#3a2a0e; }
+  .seal.celeb{ background: linear-gradient(140deg,#cfe8ff,#a88df0 55%,#f2a8d4); color:#2b1f52; }
+  .seal.off{ background: var(--surface-3); color: var(--ink-3); }
+
+  .card-meta{ padding: calc(1.6 * var(--mm)) calc(2 * var(--mm)); display:flex; flex-direction:column; gap:2px; }
+  .card-meta .t{ font-size:9px; font-weight:600; }
+  .card-meta .s{ font-size:7.5px; color: var(--ink-3); }
+
+  .card-thumbs{ display:grid; grid-template-columns: repeat(4,1fr); gap:2px; padding: 0 calc(2 * var(--mm)) calc(1.6 * var(--mm)); }
+  .card-thumbs div{ height: calc(11 * var(--mm)); background: var(--surface-3); border-radius:2px;
+                    display:grid; place-items:end center; font-size:6px; color: var(--ink-3); padding-bottom:2px; }
+
+  .card-metrics{
+    display:flex; gap: calc(2.4 * var(--mm)); padding: calc(1.4 * var(--mm)) calc(2 * var(--mm));
+    border-top:1px solid var(--line-soft); font-size:7.5px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+  .card-metrics span{ display:inline-flex; align-items:center; gap:3px; }
+
+  .card-foot{
+    display:flex; align-items:center; gap: calc(3 * var(--mm));
+    padding: calc(1.8 * var(--mm)) calc(2 * var(--mm));
+    border-top:1px solid var(--line-soft); background: var(--surface-2); color: var(--ink-2);
+  }
+  .card-foot .edit{ margin-left:auto; font-size:7.5px; font-weight:600; }
+
+  /* peça compacta — linha única ≤18 mm */
+  .piece{
+    display:flex; align-items:center; gap: calc(2 * var(--mm));
+    border:1px solid var(--line); border-radius: calc(1 * var(--mm));
+    padding: calc(1.6 * var(--mm)) calc(2 * var(--mm)); min-height: calc(16 * var(--mm)); background: var(--surface);
+  }
+  .piece .logo{ width: calc(9 * var(--mm)); height: calc(9 * var(--mm)); border-radius: calc(.8 * var(--mm));
+                background: var(--surface-3); flex:none; display:grid; place-items:center; font-size:6.5px; color: var(--ink-3); }
+  .piece .txt{ min-width:0; flex:1; }
+  .piece .txt .a,
+  .piece .txt .b{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .piece .txt .a{ font-size:8.5px; font-weight:600; }
+  .piece .txt .b{ font-size:7px; color: var(--ink-3); }
+  .piece .tail{ display:flex; align-items:center; gap: calc(1.4 * var(--mm)); flex:none; color: var(--ink-3); font-size:7px; }
+
+  /* selo de coleção */
+  .sealcard{
+    border:1px solid var(--line); border-radius: calc(1.2 * var(--mm)); padding: calc(2 * var(--mm));
+    display:flex; flex-direction:column; gap: calc(1.4 * var(--mm)); align-items:center; text-align:center;
+    background: var(--surface);
+  }
+  .sealcard.revoked{ opacity:.55; }
+  .sealbig{
+    width: calc(17 * var(--mm)); height: calc(17 * var(--mm));
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    display:grid; place-items:center;
+  }
+  .sealbig.marca{ background: linear-gradient(140deg,#efd9a8,#8c6116 70%); }
+  .sealbig.celeb{ background: linear-gradient(140deg,#d8ecff,#a88df0 50%,#f2a8d4); }
+  .sealbig .core{
+    width: calc(8 * var(--mm)); height: calc(8 * var(--mm)); border-radius:50%;
+    border: 1px dashed rgba(20,16,8,.5); display:grid; place-items:center;
+    font-size:5.5px; color: rgba(20,16,8,.72); background: rgba(255,255,255,.5);
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .sealcard .nm{ font-size:8px; font-weight:600; }
+  .sealcard .sub{ font-size:7px; color: var(--ink-3); font-family:"IBM Plex Mono",monospace; }
+
+  /* formulário */
+  .field{ display:flex; flex-direction:column; gap: calc(1 * var(--mm)); }
+  .field .lb{ font-size:7.5px; color: var(--ink-3); letter-spacing:.04em; text-transform:uppercase;
+              font-family:"IBM Plex Mono",monospace; }
+  .field .in{
+    border:1px solid var(--line); border-radius: calc(1 * var(--mm)); background: var(--surface-2);
+    padding: calc(1.8 * var(--mm)) calc(2 * var(--mm)); font-size:8.5px; min-height: calc(8 * var(--mm));
+    display:flex; align-items:center; gap: calc(1.4 * var(--mm));
+  }
+  .field .in.err{ border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+  .field .hint{ font-size:7px; color: var(--ink-3); }
+  .field .hint.err{ color: var(--bad); }
+  .seg{ display:flex; gap:2px; }
+  .seg .op{ flex:1; text-align:center; font-size:8px; padding: calc(1.6 * var(--mm)) 0;
+            border:1px solid var(--line); border-radius: calc(1 * var(--mm)); color: var(--ink-3); background: var(--surface-2); }
+  .seg .op.on{ background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight:600; }
+  .switch{ display:flex; align-items:center; gap: calc(2 * var(--mm)); font-size:8px; }
+  .switch .knob{ width: calc(9 * var(--mm)); height: calc(5 * var(--mm)); border-radius:999px; background: var(--surface-3);
+                 position:relative; flex:none; border:1px solid var(--line); }
+  .switch .knob::after{ content:""; position:absolute; top:50%; left: calc(.6 * var(--mm)); transform:translateY(-50%);
+                        width: calc(3.4 * var(--mm)); height: calc(3.4 * var(--mm)); border-radius:50%; background: var(--ink-3); }
+  .switch.locked{ opacity:.6; }
+  .switch.on .knob{ background: var(--ok-soft); border-color: var(--ok); }
+  .switch.on .knob::after{ left:auto; right: calc(.6 * var(--mm)); background: var(--ok); }
+
+  .banner{
+    display:flex; gap: calc(2 * var(--mm)); align-items:flex-start;
+    padding: calc(2 * var(--mm)); border-radius: calc(1 * var(--mm)); font-size:7.5px; line-height:1.45;
+  }
+  .banner.warn{ background: var(--warn-soft); color: var(--warn); }
+  .banner.info{ background: var(--surface-2); color: var(--ink-2); border:1px solid var(--line); }
+  .banner.bad{ background: var(--bad-soft); color: var(--bad); }
+
+  /* estados */
+  .empty{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap: calc(2.4 * var(--mm));
+          text-align:center; padding: calc(6 * var(--mm)); }
+  .empty .art{ width: calc(24 * var(--mm)); height: calc(24 * var(--mm)); border-radius:50%;
+               background: var(--surface-2); border:1px dashed var(--line); display:grid; place-items:center; color: var(--ink-3); }
+  .empty .t{ font-size:9.5px; font-weight:600; }
+  .empty .d{ font-size:8px; color: var(--ink-3); max-width: 38ch; }
+
+  .skel{ background: var(--surface-2); border:1px solid var(--line-soft); border-radius: calc(1.2 * var(--mm)); }
+  .skel .bar{ height: calc(2.4 * var(--mm)); background: var(--surface-3); border-radius:999px; margin: calc(2 * var(--mm)); }
+  .skel .blk{ height: calc(24 * var(--mm)); background: var(--surface-3); border-radius: calc(1 * var(--mm)); margin: calc(2 * var(--mm)); }
+
+  /* cotas */
+  .cotas{ display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:1px;
+          background: var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .cotas div{ background: var(--surface); padding:10px 13px; display:flex; align-items:baseline; gap:10px; }
+  .cotas .k{ font-size:13px; color: var(--ink-2); flex:1; }
+  .cotas .v{ font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:13px; font-variant-numeric: tabular-nums; }
+  .cotas .tot{ background: var(--surface-2); }
+  .cotas .tot .k, .cotas .tot .v{ color: var(--ink); font-weight:600; }
+
+  /* tabelas */
+  .tablewrap{ overflow-x:auto; border:1px solid var(--line); border-radius:2px; background: var(--surface); }
+  table{ border-collapse:collapse; width:100%; min-width: 620px; font-size:13.5px; }
+  th, td{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+  thead th{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-3); font-weight:500; background: var(--surface-2); border-bottom:1px solid var(--line);
+    position:sticky; top:0;
+  }
+  tbody tr:last-child td{ border-bottom:0; }
+  td.k{ font-family:"IBM Plex Mono",monospace; font-size:12px; white-space:nowrap; color: var(--ink); }
+  td.d{ color: var(--ink-2); }
+
+  ol.gaps{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:12px; color: var(--ink-2); }
+  ol.gaps strong{ color: var(--ink); }
+
+  .colrow{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:18px; }
+
+  footer.page{ margin-top:64px; padding-top:22px; border-top:1px solid var(--line); color: var(--ink-3); font-size:12.5px;
+               display:flex; flex-wrap:wrap; gap:8px 22px; }
+
+  @media (max-width: 460px){
+    :root{ --mm: 2.62px; }
+    .wrap{ padding-block: 28px 48px; }
+  }
+</style>
+
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <g id="i-heart"><path d="M12 20s-7-4.4-7-9.4A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.6C19 15.6 12 20 12 20z"/></g>
+    <g id="i-chat"><path d="M20 12a7 7 0 0 1-9.8 6.4L5 20l1.6-4.6A7 7 0 1 1 20 12z"/></g>
+    <g id="i-save"><path d="M7 4h10v16l-5-3.6L7 20z"/></g>
+    <g id="i-share"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5"/></g>
+    <g id="i-remix"><path d="M4 7h4l8 10h4"/><path d="M4 17h4l3-3.7"/><path d="M17 4l3 3-3 3"/><path d="M17 14l3 3-3 3"/></g>
+    <g id="i-back"><path d="M14 6l-6 6 6 6"/></g>
+    <g id="i-more"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></g>
+    <g id="i-star"><path d="M12 4.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L4.8 9.8l5-.7z"/></g>
+    <g id="i-search"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></g>
+    <g id="i-plus"><path d="M12 5v14"/><path d="M5 12h14"/></g>
+    <g id="i-lock"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></g>
+    <g id="i-alert"><path d="M12 4l8.5 15h-17z"/><path d="M12 10v4"/><circle cx="12" cy="16.6" r=".8"/></g>
+    <g id="i-check"><path d="M5 12.5l4.5 4.5L19 7.5"/></g>
+    <g id="i-tag"><path d="M4 11V4h7l9 9-7 7z"/><circle cx="8" cy="8" r="1.3"/></g>
+    <g id="i-img"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 16l4.5-4.5 4 4 3-3L20 16"/><circle cx="9" cy="9.5" r="1.2"/></g>
+    <g id="i-clock"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></g>
+    <g id="i-ticket"><path d="M4 9V6h16v3a3 3 0 0 0 0 6v3H4v-3a3 3 0 0 0 0-6z"/><path d="M13 6v12"/></g>
+    <g id="i-sparkle"><path d="M12 4l1.8 4.9L19 11l-5.2 2.1L12 18l-1.8-4.9L5 11l5.2-2.1z"/></g>
+    <g id="i-diamond"><path d="M12 4l7 8-7 8-7-8z"/></g>
+    <g id="i-brush"><path d="M15 4l5 5-8.5 8.5H6.5V13z"/><path d="M12 7l5 5"/></g>
+    <g id="i-filter"><path d="M4 6h16l-6 7v6l-4-2v-4z"/></g>
+    <g id="i-queue"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="13" width="16" height="6" rx="1.5"/></g>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <!-- =========================== MASTHEAD =========================== -->
+  <header class="masthead">
+    <p class="eyebrow">Fashion AI · Etapa 7 · Artefato #11 · RF14 &amp; RF22</p>
+    <h1>Maison &amp;<br>Art Celebrity</h1>
+    <p class="deck">
+      O perfil institucional de <strong>marca</strong> (RF14) e de <strong>celebridade verificada</strong> (RF22)
+      é um só layout com dois materiais. Esta prancha desenha o header — foto, identidade e métricas sociais —
+      e as seis abas que pendem dele, em modo administrador do perfil e em modo visitante.
+    </p>
+    <hr class="rule">
+    <dl class="meta">
+      <div><dt>RF cobertos</dt><dd>RF14 · RF22 · RF17 · RF19 · RF20 · RF21 · RF31</dd></div>
+      <div><dt>Escala do desenho</dt><dd>1 mm = 2,75 px<br><span class="mono" style="font-size:12px;color:var(--ink-3)">(produção: 2,5 px)</span></dd></div>
+      <div><dt>Tela de referência</dt><dd class="mono">98 × 206 mm</dd></div>
+      <div><dt>Estados desenhados</dt><dd>vazio · carregando · erro · sem permissão · sem resultado</dd></div>
+      <div><dt>Temas</dt><dd>claro e escuro por tokens</dd></div>
+      <div><dt>Data</dt><dd class="mono">18 · 09 · 2026</dd></div>
+    </dl>
+    <nav class="secnav" aria-label="Seções desta prancha">
+      <a href="#decisao">A decisão de leitura</a>
+      <a href="#header">Header do perfil</a>
+      <a href="#abas">As seis abas</a>
+      <a href="#estados">Estados obrigatórios</a>
+      <a href="#pendencias">Pendências</a>
+      <a href="#rastreabilidade">Rastreabilidade</a>
+    </nav>
+  </header>
+
+  <!-- =========================== DECISÃO =========================== -->
+  <section id="decisao">
+    <div class="sechead">
+      <p class="eyebrow">01 — <span>o que as seis abas são</span></p>
+      <h2>Seis abas do dono, três abas do visitante</h2>
+      <p class="lede">
+        "Cadastrar novo selo", "Meus selos", "Meus esquemas", "Minhas peças", "Esquemas salvos" e "Peças salvas"
+        falam na primeira pessoa. Elas são, portanto, o perfil institucional <strong>em modo administrador</strong> —
+        quem abre é o administrador da marca (RF1.CA06–CA08) ou o perfil verificado da celebridade (RF21.CA18).
+        O visitante abre a mesma URL e recebe o mesmo header, mas só três abas sobrevivem, renomeadas para o que
+        elas são do lado de fora.
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Aba no modo administrador</th><th>O que o visitante vê</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="k">Cadastrar novo selo</td><td class="d">Não existe — a aba não é renderizada</td><td class="d"><span class="ca">RNF1</span> emissão de selo é ato do perfil emissor</td></tr>
+          <tr><td class="k">Meus selos</td><td class="d"><strong>Promoções</strong> — só as campanhas ativas habilitadas pelos selos que <em>o visitante</em> possui</td><td class="d"><span class="ca">RF20.CA11</span> <span class="ca">RF21.CA21</span></td></tr>
+          <tr><td class="k">Meus esquemas</td><td class="d"><strong>Looks consagrados</strong> — galeria dos vínculos aprovados</td><td class="d"><span class="ca">RF14.CA03</span> <span class="ca">RF20.CA15</span></td></tr>
+          <tr><td class="k">Minhas peças</td><td class="d"><strong>Catálogo</strong></td><td class="d"><span class="ca">RF14.CA03</span></td></tr>
+          <tr><td class="k">Esquemas salvos</td><td class="d">Não existe — acervo privado do perfil</td><td class="d"><span class="ca">RNF1</span> <span class="ca">RF19.CA07</span></td></tr>
+          <tr><td class="k">Peças salvas</td><td class="d">Não existe — acervo privado do perfil</td><td class="d"><span class="ca">RNF1</span> <span class="ca">RF19.CA10</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn" style="margin-top:18px">
+      <p><strong>Premissa a confirmar com o time.</strong> Os requisitos não dizem, em nenhum CA, que o perfil de marca
+      ou celebridade tem acervo próprio ("minhas peças", "peças salvas"). Esta prancha assume que tem — é o que a lista
+      de abas pedida implica, e é coerente com RF14.CA03, que já fala em <em>catálogo</em>. Se o time decidir que marca
+      não monta look, as abas "Esquemas salvos" e "Peças salvas" caem e sobram quatro.</p>
+    </div>
+  </section>
+
+  <!-- =========================== HEADER =========================== -->
+  <section id="header">
+    <div class="sechead">
+      <p class="eyebrow">02 — <span>header com foto e métricas</span></p>
+      <h2>Um layout, dois materiais</h2>
+      <p class="lede">
+        A distinção entre os dois perfis é <strong>material, não textual</strong>: a marca é têxtil e dourada,
+        a celebridade é vítrea e holográfica — a mesma regra das pranchas da Coleção E. O usuário identifica
+        o tipo de perfil antes de ler o nome. Os dois headers têm exatamente as mesmas faixas, nas mesmas cotas.
+      </p>
+    </div>
+
+    <div class="rack duo">
+
+      <!-- ---------- HEADER MARCA ---------- -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-status"><span>9:41</span><span>Fashion AI</span></div>
+            <div class="s-appbar">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Maison</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-more"/></svg>
+            </div>
+            <div class="s-cover marca"><span class="badge-era">Coleção Fio Seco · Inverno 26</span></div>
+            <div class="s-ident">
+              <div class="ava marca"><span class="slot">logo_url</span></div>
+              <div class="s-name">
+                <span class="n">MERIDIANO <span class="vpill ok"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-check"/></svg>Validada</span></span>
+                <span class="h">@meridiano.br</span>
+              </div>
+            </div>
+            <p class="s-bio">Alfaiataria urbana feita em São Paulo. Peças de trabalho que aguentam a noite.</p>
+            <div class="s-actions">
+              <span class="btn pri marca">Seguir</span>
+              <span class="btn ghost">Promoções</span>
+              <span class="btn ghost" style="flex:0 0 auto;padding-inline:calc(2.4 * var(--mm))">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-share"/></svg>
+              </span>
+            </div>
+            <div class="s-counts">
+              <div><div class="v">48,2 mil</div><div class="l">Seguidores</div></div>
+              <div><div class="v">312</div><div class="l">Seguindo</div></div>
+              <div><div class="v">1.847</div><div class="l">Vínculos</div></div>
+              <div><div class="v">1.203</div><div class="l">Selos ativos</div></div>
+            </div>
+            <div class="s-metrics">
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>62,4 mil</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-sparkle"/></svg>8,1 mil</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-diamond"/></svg>12,6 mil</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-brush"/></svg>3,9 mil</span>
+              <span class="fade">+3</span>
+            </div>
+            <div class="s-tabs">
+              <span class="tab on marca">Cadastrar selo</span>
+              <span class="tab">Meus selos</span>
+              <span class="tab">Meus esquemas</span>
+              <span class="tab">Minhas peças</span>
+            </div>
+            <div class="s-body">
+              <div class="banner info">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-queue"/></svg>
+                <span><strong>12 vínculos</strong> aguardando sua revisão. A fila fica em Meus selos.</span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Blazer Fio Seco</span><span class="b">Superior · M · unissex</span></span>
+                <span class="tail"><span class="state-pill disp">disponível</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Calça Régua</span><span class="b">Inferior · 42 · feminino</span></span>
+                <span class="tail"><span class="state-pill disp">disponível</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">RF14 · perfil de marca</span>
+          <span class="cap-t">Têxtil e dourado</span>
+          <span class="cap-d">Capa em trama diagonal, avatar com anel dourado e <span class="mono">logo_url</span> no centro
+          vazio — a arte nunca traz logotipo embutido. "Validada" é o status de RF1.CA07: marca em
+          <span class="mono">pendente_validação</span> não chega a ter esta tela pública.</span>
+          <span class="cap-ca"><span class="ca">RF14.CA01</span><span class="ca">RF14.CA05</span><span class="ca">RF17.CA01</span><span class="ca">RF19.CA01–03</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ---------- HEADER CELEBRIDADE ---------- -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-status"><span>9:41</span><span>Fashion AI</span></div>
+            <div class="s-appbar">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Art Celebrity</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-more"/></svg>
+            </div>
+            <div class="s-cover celeb"><span class="badge-era">Era Vitral · 2019–2022</span></div>
+            <div class="s-ident">
+              <div class="ava celeb"><span class="slot">foto</span></div>
+              <div class="s-name">
+                <span class="n">Rosa Venturi <span class="vpill celeb"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-check"/></svg>Verificada</span></span>
+                <span class="h">@rosaventuri</span>
+              </div>
+            </div>
+            <p class="s-bio">Cantora. Turnê Vitral 2026. Assinatura de estilo: silhueta longa, paleta fria, metal fosco.</p>
+            <div class="s-actions">
+              <span class="btn pri celeb">Seguir</span>
+              <span class="btn ghost">Promoções</span>
+              <span class="btn ghost" style="flex:0 0 auto;padding-inline:calc(2.4 * var(--mm))">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-share"/></svg>
+              </span>
+            </div>
+            <div class="s-counts">
+              <div><div class="v">2,4 mi</div><div class="l">Seguidores</div></div>
+              <div><div class="v">89</div><div class="l">Seguindo</div></div>
+              <div><div class="v">5.612</div><div class="l">Vínculos</div></div>
+              <div><div class="v">3.480</div><div class="l">Selos Premium</div></div>
+            </div>
+            <div class="s-metrics">
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>1,1 mi</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-sparkle"/></svg>212 mil</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-diamond"/></svg>318 mil</span>
+              <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-brush"/></svg>96 mil</span>
+              <span class="fade">+3</span>
+            </div>
+            <div class="s-tabs">
+              <span class="tab on celeb">Cadastrar selo</span>
+              <span class="tab">Meus selos</span>
+              <span class="tab">Meus esquemas</span>
+              <span class="tab">Minhas peças</span>
+            </div>
+            <div class="s-body">
+              <div class="banner warn">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-lock"/></svg>
+                <span><strong>Auto-aprovação indisponível.</strong> Todo vínculo com celebridade exige aprovação
+                explícita deste perfil — direito de imagem.</span>
+              </div>
+              <div class="piece">
+                <span class="logo">foto</span>
+                <span class="txt"><span class="a">Vestido Vitral</span><span class="b">Superior · P · feminino</span></span>
+                <span class="tail"><span class="state-pill disp">disponível</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">foto</span>
+                <span class="txt"><span class="a">Bota Coluna</span><span class="b">Calçados · 37 · feminino</span></span>
+                <span class="tail"><span class="state-pill indisp">I</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">RF22 · perfil de celebridade</span>
+          <span class="cap-t">Vítreo e holográfico</span>
+          <span class="cap-d">Mesma malha de faixas, material oposto. A faixa da capa carrega a <strong>era</strong>
+          da assinatura de estilo, que é o insumo da sugestão de vínculo. O banner travado de aprovação humana é
+          permanente: aparece antes de qualquer campo de cadastro de selo.</span>
+          <span class="cap-ca"><span class="ca">RF22</span><span class="ca">RF21.CA17</span><span class="ca">RF21.CA18</span><span class="ca">RF21.CA19</span></span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3 style="margin-top:38px">Cotas do header <span class="mono" style="font-weight:400;color:var(--ink-3);font-size:13px">— proposta a validar</span></h3>
+    <p class="lede" style="margin:8px 0 14px">
+      O Artefato #7 cota o header de perfil pessoal em ≈ 64 mm. O institucional é mais alto porque carrega
+      capa, quatro contadores e a faixa de métricas do RF19. Ao rolar, tudo colapsa numa barra fixa de 22 mm
+      com avatar 14 mm, nome e a barra de abas.
+    </p>
+    <div class="cotas">
+      <div><span class="k">Barra de status + app bar</span><span class="v">15 mm</span></div>
+      <div><span class="k">Capa (com etiqueta de coleção/era)</span><span class="v">32 mm</span></div>
+      <div><span class="k">Identidade: avatar 22 + nome + verificação</span><span class="v">26 mm</span></div>
+      <div><span class="k">Bio (2 linhas, trunca na 3ª)</span><span class="v">10 mm</span></div>
+      <div><span class="k">Ações: seguir · promoções · compartilhar</span><span class="v">12 mm</span></div>
+      <div><span class="k">Contadores (4 colunas)</span><span class="v">12 mm</span></div>
+      <div><span class="k">Métricas RF19 (rolagem horizontal)</span><span class="v">12 mm</span></div>
+      <div><span class="k">Barra de abas</span><span class="v">11 mm</span></div>
+      <div class="tot"><span class="k">Header completo</span><span class="v">130 mm</span></div>
+      <div class="tot"><span class="k">Header colapsado (sticky)</span><span class="v">22 mm</span></div>
+    </div>
+
+    <div class="colrow" style="margin-top:22px">
+      <div class="note">
+        <p><strong>Contadores ≠ métricas.</strong> A faixa de contadores é identidade de rede
+        (<span class="ca">RF17.CA01</span>): seguidores e seguindo mudam por ação de outra pessoa e são
+        atualizados atomicamente nos dois perfis ao seguir <span class="ca">RF17.CA03</span>. "Vínculos" e
+        "Selos ativos" são específicos do perfil institucional <span class="ca">RF14.CA01</span>.</p>
+      </div>
+      <div class="note">
+        <p><strong>A faixa do RF19 tem sete números, não quatro.</strong> Curtidas, as três reações qualitativas
+        (<em>trend</em>, <em>elegante</em>, <em>criativo</em>), comentários, salvamentos e compartilhamentos —
+        cada um com contador próprio <span class="ca">RF19.CA03</span>. Cabem quatro na largura de 98 mm; o
+        resto rola na horizontal, com o "+3" indicando o que ficou fora.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== ABAS =========================== -->
+  <section id="abas">
+    <div class="sechead">
+      <p class="eyebrow">03 — <span>as seis abas, em modo administrador</span></p>
+      <h2>As seis abas</h2>
+      <p class="lede">
+        Cada quadro abaixo mostra o corpo da aba abaixo do header já desenhado. A barra de abas rola na
+        horizontal: seis rótulos não cabem em 98 mm, e cortar rótulo é pior que rolar.
+      </p>
+    </div>
+
+    <div class="rack">
+
+      <!-- ABA 1 — CADASTRAR NOVO SELO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <div class="ava marca" style="width:calc(7 * var(--mm));height:calc(7 * var(--mm));border-width:1px;font-size:8px">M</div>
+            </div>
+            <div class="s-tabs">
+              <span class="tab on marca">Cadastrar selo</span>
+              <span class="tab">Meus selos</span>
+              <span class="tab">Meus esquemas</span>
+            </div>
+            <div class="s-body">
+              <div style="display:flex;gap:calc(2.4 * var(--mm));align-items:center">
+                <div class="sealbig marca" style="width:calc(21 * var(--mm));height:calc(21 * var(--mm))">
+                  <span class="core">logo_url</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:calc(1 * var(--mm))">
+                  <span style="font-size:9px;font-weight:600">Pré-visualização</span>
+                  <span style="font-size:7.5px;color:var(--ink-3)">Centro vazio recebe o logotipo cadastrado. Arte da Coleção E.</span>
+                  <span class="vpill marca">tier LOOK</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="lb">Tier do selo</span>
+                <div class="seg">
+                  <span class="op">PEÇA · 1 peça vinculada</span>
+                  <span class="op on">LOOK · look inteiro</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="lb">Nome do selo</span>
+                <div class="in">Fio Seco · Inverno 26</div>
+              </div>
+
+              <div style="display:flex;gap:calc(2 * var(--mm))">
+                <div class="field" style="flex:1">
+                  <span class="lb">Validade</span>
+                  <div class="in"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-clock"/></svg>12 meses</div>
+                </div>
+                <div class="field" style="flex:1">
+                  <span class="lb">Teto da campanha</span>
+                  <div class="in">2.000 selos</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="lb">Limiar de confiança da IA</span>
+                <div class="in">0,72 — abaixo disso, nenhuma sugestão</div>
+                <span class="hint">Configurável por perfil. Vale para as até 3 sugestões de RF20.CA01.</span>
+              </div>
+
+              <div class="switch on">
+                <span class="knob"></span>
+                <span>Auto-aprovar vínculos acima do limiar</span>
+              </div>
+
+              <div class="field">
+                <span class="lb">Promoção habilitada por este selo</span>
+                <div class="in"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-ticket"/></svg>Desconto e-commerce · 15%</div>
+                <span class="hint">Cota 2.000 · limite 1 por usuário · 01/03 a 30/06</span>
+              </div>
+
+              <span class="btn pri marca" style="height:calc(9 * var(--mm))">Publicar selo e campanha</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 1</span>
+          <span class="cap-t">Cadastrar novo selo</span>
+          <span class="cap-d">Um formulário, quatro decisões: <strong>tier</strong>, <strong>validade</strong>,
+          <strong>política de revisão</strong> e <strong>a promoção que o selo destrava</strong> — selo sem campanha
+          é selo que não faz nada pelo usuário. A pré-visualização mostra o centro vazio, para que ninguém envie
+          arte com logotipo embutido.</span>
+          <span class="cap-ca"><span class="ca">RF20.CA08</span><span class="ca">RF20.CA11</span><span class="ca">RF21.CA23</span><span class="ca">RF24.CA06</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 1 — variante celebridade -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Rosa Venturi</span>
+              <div class="ava celeb" style="width:calc(7 * var(--mm));height:calc(7 * var(--mm));border-width:1px;font-size:8px">R</div>
+            </div>
+            <div class="s-tabs">
+              <span class="tab on celeb">Cadastrar selo</span>
+              <span class="tab">Meus selos</span>
+              <span class="tab">Meus esquemas</span>
+            </div>
+            <div class="s-body">
+              <div class="banner warn">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-lock"/></svg>
+                <span><strong>Revisão humana obrigatória.</strong> O vínculo associa o look de outra pessoa à sua
+                imagem. A auto-aprovação de RF20.CA02 não se aplica e o campo fica travado.</span>
+              </div>
+
+              <div style="display:flex;gap:calc(2.4 * var(--mm));align-items:center">
+                <div class="sealbig celeb" style="width:calc(21 * var(--mm));height:calc(21 * var(--mm))">
+                  <span class="core">foto</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:calc(1 * var(--mm))">
+                  <span style="font-size:9px;font-weight:600">Selo Premium</span>
+                  <span style="font-size:7.5px;color:var(--ink-3)">Visualmente distinto do Selo de Marca: vítreo, holográfico.</span>
+                  <span class="vpill celeb">era Vitral</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="lb">Era do look consagrado</span>
+                <div class="in">Vitral · 2019–2022</div>
+                <span class="hint">Alimenta a justificativa em linguagem natural da sugestão.</span>
+              </div>
+
+              <div class="switch locked">
+                <span class="knob"></span>
+                <span>Auto-aprovar vínculos <span style="color:var(--warn)">— bloqueado por RF21.CA19</span></span>
+              </div>
+
+              <div class="field">
+                <span class="lb">Teto de emissão por campanha</span>
+                <div class="in err"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-alert"/></svg>0</div>
+                <span class="hint err">Informe um teto maior que zero, ou desmarque "limitar emissão".</span>
+              </div>
+
+              <div class="field">
+                <span class="lb">Promoção habilitada</span>
+                <div class="in"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-ticket"/></svg>Pré-venda Turnê Vitral · marca parceira</div>
+                <span class="hint">Código de resgate identifica celebridade emissora e marca executora.</span>
+              </div>
+
+              <span class="btn ghost" style="height:calc(9 * var(--mm));opacity:.55">Publicar selo e campanha</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 1 · variante RF22 · estado de erro</span>
+          <span class="cap-t">Cadastrar Selo Premium</span>
+          <span class="cap-d">Duas diferenças que não são cosméticas: a auto-aprovação é <strong>travada, não
+          escondida</strong> — o perfil precisa entender por que não pode; e o teto de campanha é obrigatório.
+          A mensagem de erro diz o que fazer, não só o que falhou, e o botão de publicar fica inerte até a
+          correção.</span>
+          <span class="cap-ca"><span class="ca">RF21.CA19</span><span class="ca">RF21.CA20</span><span class="ca">RF21.CA22</span><span class="ca">RF21.CA23</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 2 — MEUS SELOS -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-search"/></svg>
+            </div>
+            <div class="s-tabs">
+              <span class="tab">Cadastrar selo</span>
+              <span class="tab on marca">Meus selos</span>
+              <span class="tab">Meus esquemas</span>
+            </div>
+            <div class="s-body">
+              <div class="banner warn">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-queue"/></svg>
+                <span><strong>12 vínculos pendentes de revisão</strong> · abrir fila</span>
+              </div>
+              <div class="s-filters">
+                <span class="chip on">Todos</span>
+                <span class="chip">Ativos</span>
+                <span class="chip">Expirados</span>
+                <span class="chip">Revogados</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(2 * var(--mm))">
+                <div class="sealcard">
+                  <div class="sealbig marca"><span class="core">logo</span></div>
+                  <span class="nm">Fio Seco 26</span>
+                  <span class="sub">tier LOOK</span>
+                  <span class="vpill ok">ativo · 812 emitidos</span>
+                </div>
+                <div class="sealcard">
+                  <div class="sealbig marca"><span class="core">logo</span></div>
+                  <span class="nm">Régua</span>
+                  <span class="sub">tier PEÇA</span>
+                  <span class="vpill ok">ativo · 391 emitidos</span>
+                </div>
+                <div class="sealcard">
+                  <div class="sealbig marca"><span class="core">logo</span></div>
+                  <span class="nm">Verão 25</span>
+                  <span class="sub">tier LOOK</span>
+                  <span class="vpill warn">expirado · 04/25</span>
+                </div>
+                <div class="sealcard revoked">
+                  <div class="sealbig marca"><span class="core">logo</span></div>
+                  <span class="nm">Cápsula X</span>
+                  <span class="sub">tier PEÇA</span>
+                  <span class="vpill bad">revogado</span>
+                </div>
+              </div>
+              <div class="banner info">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-ticket"/></svg>
+                <span>Conversão selo → resgate: <strong>34%</strong> · 1.842 cupons gerados</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 2</span>
+          <span class="cap-t">Meus selos</span>
+          <span class="cap-d">Coleção dos selos que este perfil emite, com o estado no rosto de cada um.
+          Revogado não some — fica na grade, esmaecido, porque os cupons já resgatados continuam valendo até
+          a própria expiração. A fila de revisão mora aqui, no topo, e não numa tela escondida de administração.</span>
+          <span class="cap-ca"><span class="ca">RF20.CA07</span><span class="ca">RF20.CA08</span><span class="ca">RF20.CA12</span><span class="ca">RF20.CA14</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 3 — MEUS ESQUEMAS -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-plus"/></svg>
+            </div>
+            <div class="s-tabs">
+              <span class="tab">Meus selos</span>
+              <span class="tab on marca">Meus esquemas</span>
+              <span class="tab">Minhas peças</span>
+            </div>
+            <div class="s-body">
+              <div class="s-filters">
+                <span class="chip on">Todos</span>
+                <span class="chip star"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg></span>
+                <span class="chip">Trabalho</span>
+                <span class="chip">Festa</span>
+                <span class="chip"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-filter"/></svg></span>
+              </div>
+              <div class="card">
+                <div class="card-top">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg>
+                  <span class="sep"></span>
+                  <span class="state-pill disp">disponível</span>
+                  <span class="state-pill indisp">I</span>
+                </div>
+                <div class="card-head">
+                  <span class="dot">M</span>
+                  <span class="who">MERIDIANO</span>
+                  <span class="when">público · 3 d</span>
+                </div>
+                <div class="card-cover o-trabalho">
+                  <span class="occ">trabalho</span>
+                  <span class="seals">
+                    <span class="seal marca">LOOK</span>
+                    <span class="seal celeb">PRE</span>
+                  </span>
+                </div>
+                <div class="card-meta">
+                  <span class="t">Segunda-feira de Fio Seco</span>
+                  <span class="s">luxury_minimal · público · criado no Provador</span>
+                </div>
+                <div class="card-thumbs">
+                  <div>L1</div><div>L2</div><div>L3</div><div>L4</div>
+                </div>
+                <div class="card-metrics">
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>2.104</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>188</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-save"/></svg>640</span>
+                </div>
+                <div class="card-foot">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-share"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-remix"/></svg>
+                  <span class="edit">editar</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-top">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg>
+                  <span class="sep"></span>
+                  <span class="state-pill disp">disponível</span>
+                </div>
+                <div class="card-head"><span class="dot">M</span><span class="who">MERIDIANO</span><span class="when">público · 9 d</span></div>
+                <div class="card-cover o-festa"><span class="occ">festa</span><span class="seals"><span class="seal marca">LOOK</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 3</span>
+          <span class="cap-t">Meus esquemas</span>
+          <span class="cap-d">Cards compactos de 90 × 164 mm do Artefato #7, sem alteração: toggles do RF31 no
+          <strong>topo</strong>, footer social do RF19 no <strong>rodapé</strong>, "editar" só para o dono.
+          O que esta aba acrescenta é a faixa de selos sobre a capa — um look pode carregar
+          selo de marca e Selo Premium ao mesmo tempo.</span>
+          <span class="cap-ca"><span class="ca">RF6.CA11</span><span class="ca">RF20.CA10</span><span class="ca">RF31.CA01–04</span><span class="ca">RF19.CA01–09</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 4 — MINHAS PEÇAS -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-plus"/></svg>
+            </div>
+            <div class="s-tabs">
+              <span class="tab">Meus esquemas</span>
+              <span class="tab on marca">Minhas peças</span>
+              <span class="tab">Esquemas salvos</span>
+            </div>
+            <div class="s-body">
+              <div class="search">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-search"/></svg>
+                <span>Buscar no catálogo</span>
+              </div>
+              <div class="s-filters">
+                <span class="chip on">Todos</span>
+                <span class="chip">Superior</span>
+                <span class="chip">Inferior</span>
+                <span class="chip">Calçados</span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Blazer Fio Seco</span><span class="b">Superior · M · unissex · 14 looks</span></span>
+                <span class="tail"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg><span class="state-pill disp">disp.</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Calça Régua</span><span class="b">Inferior · 42 · feminino · 9 looks</span></span>
+                <span class="tail"><span class="state-pill disp">disp.</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Camisa Papel</span><span class="b">Superior · G · masculino · 0 looks</span></span>
+                <span class="tail"><span class="state-pill indisp">I</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Mocassim Seco</span><span class="b">Calçados · 39 · unissex · 6 looks</span></span>
+                <span class="tail"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg><span class="state-pill disp">disp.</span></span>
+              </div>
+              <div class="piece">
+                <span class="logo">logo</span>
+                <span class="txt"><span class="a">Cinto Norte</span><span class="b">Acessório · único · unissex · 3 looks</span></span>
+                <span class="tail"><span class="state-pill disp">disp.</span></span>
+              </div>
+              <div class="banner info">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-tag"/></svg>
+                <span><strong>Camisa Papel</strong> nunca entrou num look. Marcar como indisponível a tira das
+                sugestões, mas ela continua no catálogo.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 4</span>
+          <span class="cap-t">Minhas peças</span>
+          <span class="cap-d">Lista de peças no formato compacto do Artefato #7 — linha única de ≤ 18 mm, sem
+          imagem: logo, nome, tipo, tamanho e <strong>sexo</strong>, que é o campo que alimenta o filtro do Provador.
+          O contador de usos ("14 looks") é o badge de uso da Coleção F. Para o visitante, esta aba é o
+          <strong>catálogo</strong> da marca.</span>
+          <span class="cap-ca"><span class="ca">RF14.CA03</span><span class="ca">RF7.CA01</span><span class="ca">RF31.CA02</span><span class="ca">RF31.CA03</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 5 — ESQUEMAS SALVOS -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-search"/></svg>
+            </div>
+            <div class="s-tabs">
+              <span class="tab">Minhas peças</span>
+              <span class="tab on marca">Esquemas salvos</span>
+              <span class="tab">Peças salvas</span>
+            </div>
+            <div class="s-body">
+              <div class="s-filters">
+                <span class="chip on">Todos</span>
+                <span class="chip star"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg></span>
+                <span class="chip">Casual</span>
+                <span class="chip">Academia</span>
+              </div>
+              <div class="card">
+                <div class="card-top">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg>
+                  <span class="sep"></span>
+                  <span class="state-pill disp">disponível</span>
+                </div>
+                <div class="card-head">
+                  <span class="dot">JL</span>
+                  <span class="who">@joana.l</span>
+                  <span class="when">salvo há 2 d</span>
+                </div>
+                <div class="card-cover o-casual">
+                  <span class="occ">casual</span>
+                  <span class="seals"><span class="seal marca">PEÇA</span></span>
+                </div>
+                <div class="card-meta">
+                  <span class="t">Sábado de linho</span>
+                  <span class="s">streetwear · 2 peças MERIDIANO detectadas</span>
+                </div>
+                <div class="card-metrics">
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>91</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>7</span>
+                </div>
+                <div class="card-foot">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-share"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-remix"/></svg>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-top"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-star"/></svg><span class="sep"></span><span class="state-pill disp">disponível</span></div>
+                <div class="card-head"><span class="dot">RV</span><span class="who">@rosaventuri</span><span class="when">salvo há 6 d</span></div>
+                <div class="card-cover o-academia"><span class="occ">academia</span><span class="seals"><span class="seal celeb">PRE</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 5</span>
+          <span class="cap-t">Esquemas salvos</span>
+          <span class="cap-d">Looks de terceiros salvos pelo perfil. Duas regras mandam no desenho: o card
+          <strong>mantém o autor original</strong> no header de autoria, e <strong>não tem "editar"</strong> —
+          conteúdo de outra pessoa não se edita, se remixa. O selo continua visível: é o que permite à marca
+          descobrir quem está usando suas peças.</span>
+          <span class="cap-ca"><span class="ca">RF19.CA07</span><span class="ca">RF19.CA08</span><span class="ca">RF6.CA09</span><span class="ca">RF7.CA02</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ABA 6 — PEÇAS SALVAS -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-search"/></svg>
+            </div>
+            <div class="s-tabs">
+              <span class="tab">Esquemas salvos</span>
+              <span class="tab on marca">Peças salvas</span>
+            </div>
+            <div class="s-body">
+              <div class="s-filters">
+                <span class="chip on">Todos</span>
+                <span class="chip">Superior</span>
+                <span class="chip">Calçados</span>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="dot">JL</span><span class="who">@joana.l</span><span class="when">salvo há 2 d</span></div>
+                <div class="piece" style="border:0;border-radius:0;border-top:1px solid var(--line-soft)">
+                  <span class="logo"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-img"/></svg></span>
+                  <span class="txt"><span class="a">Camisa de linho cru</span><span class="b">Superior · M · feminino</span></span>
+                  <span class="tail">
+                    <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-remix"/></svg>
+                  </span>
+                </div>
+                <div class="card-metrics">
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>412</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>23</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-save"/></svg>77</span>
+                </div>
+                <div class="card-foot">
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-chat"/></svg>
+                  <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-share"/></svg>
+                  <span class="edit" style="display:inline-flex;align-items:center;gap:3px;font-weight:500;color:var(--ink-3)">
+                    <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-remix"/></svg>retornar ao look
+                  </span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="dot">AR</span><span class="who">@ateliê.rio</span><span class="when">salvo há 11 d</span></div>
+                <div class="piece" style="border:0;border-radius:0;border-top:1px solid var(--line-soft)">
+                  <span class="logo"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-img"/></svg></span>
+                  <span class="txt"><span class="a">Bota de cano curto</span><span class="b">Calçados · 38 · feminino</span></span>
+                  <span class="tail"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-remix"/></svg></span>
+                </div>
+                <div class="card-metrics">
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-heart"/></svg>96</span>
+                  <span><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-save"/></svg>18</span>
+                </div>
+              </div>
+
+              <div class="banner info">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-alert"/></svg>
+                <span>Peça excluída pelo autor continua visível como <strong>snapshot</strong>, sem link para o perfil.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Aba 6</span>
+          <span class="cap-t">Peças salvas</span>
+          <span class="cap-d">A peça salva tem <strong>contadores próprios</strong>, independentes do look em que
+          apareceu — é o ponto do RF19.CA10, e é o que justifica esta aba existir separada da anterior.
+          O <em>retornar</em> abre o esquema de origem que usou aquela peça.</span>
+          <span class="cap-ca"><span class="ca">RF19.CA10</span><span class="ca">RF19.CA14</span><span class="ca">RF7.CA03</span></span>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- =========================== ESTADOS =========================== -->
+  <section id="estados">
+    <div class="sechead">
+      <p class="eyebrow">04 — <span>os cinco estados que a especificação exige</span></p>
+      <h2>Estados obrigatórios</h2>
+      <p class="lede">
+        Sem estes quadros a tela não passa: estado vazio sem ilustração vira tela em branco, e "sem permissão"
+        desenhado como erro genérico faz o usuário achar que o app quebrou.
+      </p>
+    </div>
+
+    <div class="rack">
+
+      <!-- VAZIO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+            </div>
+            <div class="s-tabs"><span class="tab on marca">Meus esquemas</span><span class="tab">Minhas peças</span></div>
+            <div class="empty">
+              <span class="art"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:calc(9 * var(--mm));height:calc(9 * var(--mm))"><use href="#i-tag"/></svg></span>
+              <span class="t">Nenhum look vinculado ainda</span>
+              <span class="d">Quando alguém montar um look com peças MERIDIANO, a sugestão de vínculo aparece aqui
+              para você aprovar. Você também pode criar o primeiro.</span>
+              <span class="btn pri marca" style="flex:0 0 auto;padding-inline:calc(4 * var(--mm))">Criar look vinculado</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Estado 1</span>
+          <span class="cap-t">Vazio</span>
+          <span class="cap-d">O CA pede convite, não aviso: o estado vazio termina em uma ação.</span>
+          <span class="cap-ca"><span class="ca">RF14.CA04</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- CARREGANDO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Carregando perfil</span>
+            </div>
+            <div class="s-cover" style="background:var(--surface-3)"></div>
+            <div class="s-ident">
+              <div class="ava" style="background:var(--surface-3);border-color:var(--surface)"></div>
+              <div class="s-name" style="flex:1">
+                <div class="skel" style="border:0"><div class="bar" style="width:60%;margin-left:0"></div><div class="bar" style="width:38%;margin-left:0"></div></div>
+              </div>
+            </div>
+            <div class="s-body">
+              <div class="skel"><div class="bar" style="width:80%"></div><div class="bar" style="width:45%"></div></div>
+              <div class="skel"><div class="blk"></div><div class="bar" style="width:70%"></div></div>
+              <div class="skel"><div class="blk"></div></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Estado 2</span>
+          <span class="cap-t">Carregando</span>
+          <span class="cap-d">Esqueleto com a geometria real das faixas — a tela não deve "pular" quando os dados
+          chegam. Sem animação para quem pediu <span class="mono">prefers-reduced-motion</span>.</span>
+          <span class="cap-ca"><span class="ca">RNF7</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- SEM PERMISSÃO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Rosa Venturi</span>
+            </div>
+            <div class="s-cover celeb"></div>
+            <div class="s-ident">
+              <div class="ava celeb"><span class="slot">foto</span></div>
+              <div class="s-name">
+                <span class="n">Rosa Venturi <span class="vpill celeb">Verificada</span></span>
+                <span class="h">@rosaventuri</span>
+              </div>
+            </div>
+            <div class="s-tabs">
+              <span class="tab on celeb">Looks consagrados</span>
+              <span class="tab">Catálogo</span>
+              <span class="tab">Promoções</span>
+            </div>
+            <div class="empty">
+              <span class="art"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:calc(9 * var(--mm));height:calc(9 * var(--mm))"><use href="#i-lock"/></svg></span>
+              <span class="t">Você está vendo o perfil público</span>
+              <span class="d">As abas de acervo e de emissão de selo pertencem a quem administra este perfil.
+              Siga para receber os looks vinculados no seu feed.</span>
+              <span class="btn pri celeb" style="flex:0 0 auto;padding-inline:calc(4 * var(--mm))">Seguir</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Estado 3</span>
+          <span class="cap-t">Sem permissão</span>
+          <span class="cap-d">Seis abas viram três, com os rótulos do lado de fora. Nada de "403": a tela diz
+          de quem é o que falta e oferece a ação que o visitante <em>pode</em> fazer.</span>
+          <span class="cap-ca"><span class="ca">RNF1</span><span class="ca">RF14.CA03</span><span class="ca">RF17.CA06</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- ERRO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">MERIDIANO</span>
+            </div>
+            <div class="s-tabs"><span class="tab on marca">Meus selos</span><span class="tab">Meus esquemas</span></div>
+            <div class="s-body">
+              <div class="banner bad">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-alert"/></svg>
+                <span><strong>Não foi possível carregar a fila de revisão.</strong> Os selos já emitidos abaixo
+                continuam válidos. Tentar de novo.</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(2 * var(--mm))">
+                <div class="sealcard"><div class="sealbig marca"><span class="core">logo</span></div><span class="nm">Fio Seco 26</span><span class="vpill ok">ativo</span></div>
+                <div class="sealcard"><div class="sealbig marca"><span class="core">logo</span></div><span class="nm">Régua</span><span class="vpill ok">ativo</span></div>
+              </div>
+              <div class="banner info">
+                <svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-clock"/></svg>
+                <span>Resgate bloqueado: campanha <strong>Verão 25</strong> expirou em 30/04. Nenhum código é gerado.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Estado 4</span>
+          <span class="cap-t">Erro parcial</span>
+          <span class="cap-d">O que carregou continua na tela. Erro que apaga a página inteira por causa de uma
+          chamada é regressão, não robustez. A segunda faixa é o motivo específico de RF20.CA13 — expirada,
+          esgotada ou selo revogado são mensagens diferentes.</span>
+          <span class="cap-ca"><span class="ca">RF20.CA13</span><span class="ca">RNF8</span></span>
+        </figcaption>
+      </figure>
+
+      <!-- SEM RESULTADO -->
+      <figure class="device">
+        <div class="phone">
+          <div class="screen">
+            <div class="s-appbar" style="border-bottom:1px solid var(--line)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-back"/></svg>
+              <span class="t">Maison</span>
+            </div>
+            <div class="s-body">
+              <div class="search"><svg class="ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-search"/></svg><span style="color:var(--ink)">meridiann</span></div>
+              <div class="s-filters">
+                <span class="chip on">Afinidade</span>
+                <span class="chip">Mais recentes</span>
+              </div>
+              <div class="empty" style="padding-block:calc(10 * var(--mm))">
+                <span class="art"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:calc(9 * var(--mm));height:calc(9 * var(--mm))"><use href="#i-search"/></svg></span>
+                <span class="t">Nenhuma marca com esse nome</span>
+                <span class="d">Você quis dizer <strong style="color:var(--marca)">MERIDIANO</strong>?
+                Só marcas validadas aparecem nesta busca.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span class="cap-k">Estado 5</span>
+          <span class="cap-t">Busca sem resultado</span>
+          <span class="cap-d">A busca do feed casa por correspondência parcial e nunca lista marca em
+          <span class="mono">pendente_validação</span>. A ordenação padrão é por afinidade com o DNA de Estilo,
+          alternável para "mais recentes".</span>
+          <span class="cap-ca"><span class="ca">RF14.CA02</span><span class="ca">RF1.CA06</span><span class="ca">RF24.CA06</span></span>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- =========================== PENDÊNCIAS =========================== -->
+  <section id="pendencias">
+    <div class="sechead">
+      <p class="eyebrow">05 — <span>o que este desenho descobriu</span></p>
+      <h2>Pendências que esta prancha levanta</h2>
+    </div>
+    <ol class="gaps">
+      <li><strong>O perfil institucional não tem CAs próprios de acervo.</strong> RF14 tem cinco CAs e nenhum
+      fala em "minhas peças", "esquemas salvos" ou "peças salvas" para uma marca. Se as seis abas forem aceitas,
+      RF14 e RF22 ganham CAs novos — ou herdam explicitamente RF6 e RF19.CA07/CA10.</li>
+
+      <li><strong>RF22 não existe como requisito escrito.</strong> Ele aparece só por referência
+      ("aba Art Celebrity", RF17.CA06, os diagramas 8 e 9). Os CAs de RF14 precisam ser espelhados em RF22
+      trocando "marca validada" por "celebridade verificada", ou RF22 vira oficialmente uma seção de RF21.</li>
+
+      <li><strong>Os dois tiers de selo continuam fora do modelo de dados.</strong> A aba "Cadastrar novo selo"
+      é a primeira tela que precisa de <span class="mono">Seal.tier</span> (<span class="mono">PEÇA</span> /
+      <span class="mono">LOOK</span>). Sem o campo, o formulário não tem onde gravar a primeira decisão que pede
+      ao usuário.</li>
+
+      <li><strong>"Meus selos" tem dois significados.</strong> No perfil institucional é a coleção de selos que o
+      perfil <em>emite</em>; no perfil do usuário comum é a coleção de selos que ele <em>recebeu</em> — e é lá que
+      ficam os selos recusados, guardados para aplicação manual posterior. Mesmo rótulo, duas telas. Vale
+      renomear uma das duas antes que a ambiguidade chegue ao código.</li>
+
+      <li><strong>Cota do header não validada.</strong> Os 130 mm acima são proposta, coerente com a grade de
+      2 mm, mas o Artefato #7 só cotou o header de perfil pessoal (≈ 64 mm). Confirmar com quem desenhou antes
+      de tratar como cota oficial.</li>
+    </ol>
+  </section>
+
+  <!-- =========================== RASTREABILIDADE =========================== -->
+  <section id="rastreabilidade">
+    <div class="sechead">
+      <p class="eyebrow">06 — <span>critério de aceite → onde na tela</span></p>
+      <h2>Rastreabilidade</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>CA</th><th>Onde na tela ele é satisfeito</th></tr></thead>
+        <tbody>
+          <tr><td class="k">RF14.CA01</td><td class="d">Faixa de contadores do header: seguidores e nº de vínculos, ao lado do avatar com <span class="mono">logo_url</span> e do nome</td></tr>
+          <tr><td class="k">RF14.CA02</td><td class="d">Campo de busca do feed Maison; estado "Busca sem resultado" cobre a correspondência parcial que falha</td></tr>
+          <tr><td class="k">RF14.CA03</td><td class="d">Bio no header + aba "Minhas peças" (catálogo, para o visitante) + aba "Meus esquemas" (looks consagrados, só vínculos aprovados)</td></tr>
+          <tr><td class="k">RF14.CA04</td><td class="d">Estado vazio da aba "Meus esquemas", terminando no botão "Criar look vinculado"</td></tr>
+          <tr><td class="k">RF14.CA05</td><td class="d">Botão primário "Seguir" na faixa de ações do header</td></tr>
+          <tr><td class="k">RF17.CA01</td><td class="d">Header: avatar, @, bio e contadores de seguidores/seguindo — as mesmas faixas do perfil pessoal</td></tr>
+          <tr><td class="k">RF17.CA03 · CA04</td><td class="d">Botão "Seguir" alterna para "Seguindo"; os contadores dos dois perfis mudam na mesma transação</td></tr>
+          <tr><td class="k">RF17.CA06</td><td class="d">Todo o layout desta prancha: capa, tier de selo e faixa de vínculos não existem no perfil pessoal</td></tr>
+          <tr><td class="k">RF19.CA01 – CA03</td><td class="d">Faixa de métricas do header (curtidas + <em>trend</em> / <em>elegante</em> / <em>criativo</em>, contadores independentes) e footer de cada card</td></tr>
+          <tr><td class="k">RF19.CA04 – CA06</td><td class="d">Ícone de comentário no footer do card; a lista de comentários acrescenta ~116 mm ao card ampliado</td></tr>
+          <tr><td class="k">RF19.CA07</td><td class="d">Aba "Esquemas salvos", com o autor original preservado no header de autoria do card</td></tr>
+          <tr><td class="k">RF19.CA08 · CA09</td><td class="d">Ícone de compartilhar no footer do card, com as duas saídas (feed interno e imagem exportável)</td></tr>
+          <tr><td class="k">RF19.CA10</td><td class="d">Aba "Peças salvas": cada peça traz sua própria linha de métricas, independente do look</td></tr>
+          <tr><td class="k">RF19.CA14</td><td class="d">"Retornar ao look" no footer da peça salva, abrindo o esquema de origem</td></tr>
+          <tr><td class="k">RF20.CA07</td><td class="d">Faixa "12 vínculos pendentes de revisão" no topo da aba "Meus selos"</td></tr>
+          <tr><td class="k">RF20.CA08</td><td class="d">Aba "Cadastrar novo selo" (emissão) e grade da aba "Meus selos" (rastreio: nome, tier, emitidos, validade)</td></tr>
+          <tr><td class="k">RF20.CA10</td><td class="d">Faixa de selos sobre a capa do card em "Meus esquemas": vários selos no mesmo look</td></tr>
+          <tr><td class="k">RF20.CA11</td><td class="d">Bloco "Promoção habilitada por este selo" no cadastro; aba "Promoções" no modo visitante</td></tr>
+          <tr><td class="k">RF20.CA12 · CA13</td><td class="d">Contador de cupons gerados na aba "Meus selos"; faixa de motivo específico no estado de erro</td></tr>
+          <tr><td class="k">RF20.CA14</td><td class="d">Pílulas de estado na grade de selos: ativo, expirado, revogado (esmaecido, mas presente)</td></tr>
+          <tr><td class="k">RF20.CA15</td><td class="d">Modo visitante: esquema privado não aparece na galeria pública, mas o selo segue válido para o dono</td></tr>
+          <tr><td class="k">RF21.CA17</td><td class="d">Etiqueta de era na capa do perfil de celebridade e campo "Era do look consagrado" no cadastro do selo</td></tr>
+          <tr><td class="k">RF21.CA18</td><td class="d">Pílula "Verificada" no header; perfil não verificado não chega a ter a aba de cadastro de selo</td></tr>
+          <tr><td class="k">RF21.CA19</td><td class="d">Banner travado no header e switch de auto-aprovação desabilitado, com o motivo escrito ao lado</td></tr>
+          <tr><td class="k">RF21.CA20</td><td class="d">Selo Premium vítreo/holográfico, materialmente distinto do selo têxtil/dourado da marca</td></tr>
+          <tr><td class="k">RF21.CA22</td><td class="d">Campo de promoção com marca parceira; a dica do campo explica o código de duplo identificador</td></tr>
+          <tr><td class="k">RF21.CA23</td><td class="d">Campo "Teto de emissão por campanha", obrigatório — mostrado no estado de erro de validação</td></tr>
+          <tr><td class="k">RF31.CA01 – CA04</td><td class="d">Faixa de toggles no <strong>topo</strong> do card (⭐ favoritar · disponível · I) e o filtro "Todos" no header da lista, nunca no card</td></tr>
+          <tr><td class="k">RF24.CA06</td><td class="d">Chips "Afinidade" / "Mais recentes" no header do feed Maison e Art Celebrity</td></tr>
+          <tr><td class="k">RF1.CA06 – CA08</td><td class="d">Pílula "Validada" no header; marca em <span class="mono">pendente_validação</span> não aparece no feed nem na busca</td></tr>
+          <tr><td class="k">RNF1</td><td class="d">Estado "sem permissão": seis abas viram três, "editar" só para o dono, acervo privado não é renderizado</td></tr>
+          <tr><td class="k">RNF7 · RF23.CA05 · CA06</td><td class="d">Alvos de toque ≥ 44 px (8 mm na grade), foco visível em todos os controles, contraste AA nos dois temas, esqueleto sem animação sob <span class="mono">prefers-reduced-motion</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="page">
+    <span>Fashion AI · Artefato de interface #11</span>
+    <span class="mono">RF14 · RF22</span>
+    <span>Especificação visual — não é protótipo navegável nem código de produção</span>
+  </footer>
+
+</div>
