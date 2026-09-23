@@ -11,9 +11,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(
         name = "hype_score_metrics",
@@ -93,6 +100,4 @@ public class HypeScoreMetric extends VersionedAuditableEntity {
     @Column(name = "weekly_window_days", nullable = false)
     private int weeklyWindowDays = 7;
 
-    protected HypeScoreMetric() {
-    }
 }

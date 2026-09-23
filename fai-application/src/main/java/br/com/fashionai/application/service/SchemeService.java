@@ -1,0 +1,828 @@
+package br.com.fashionai.application.service;
+
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.local.LocalAdvisors;
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.InputSanitizer;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.imaging.ImageFilters;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.imaging.MannequinGeometry;
+import br.com.fashionai.application.imaging.SchemeCardRenderer;
+import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.ports.CounterStorePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.SchemeItem;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.CreationMode;
+import br.com.fashionai.domain.model.enums.DisplayMode;
+import br.com.fashionai.domain.model.enums.Mood;
+import br.com.fashionai.domain.model.enums.NotificationType;
+import br.com.fashionai.domain.model.enums.SchemeOrigin;
+import br.com.fashionai.domain.model.enums.SchemeSlot;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
+import br.com.fashionai.domain.model.enums.Season;
+import br.com.fashionai.domain.model.enums.TargetType;
+import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.ReactionRepository;
+import br.com.fashionai.domain.repository.SavedItemRepository;
+import br.com.fashionai.domain.repository.SchemeItemRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
+import br.com.fashionai.domain.repository.UserRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * RF5 (Criar Look em 5 etapas: 1 modo · 2 prompt IA · 3 formulário · 4 arte · 5 preview/slots/salvar — etapas
+ * 2 e 3 coexistem e só o salvar da etapa 5 persiste), RF9 (edição + "melhorar com IA" por diff), RF31 (toggles),
+ * RF19.CA13 remixar e a renderização do card (preview e exportação).
+ */
+@Service
+public class SchemeService {
+    private final SchemeRepository schemes;
+    private final SchemeItemRepository schemeItems;
+    private final WardrobeItemRepository pieces;
+    private final UserRepository users;
+    private final ReactionRepository reactions;
+    private final SavedItemRepository saved;
+    private final WardrobeService wardrobe;
+    private final BackgroundStudioService studio;
+    private final SealService seals;
+    private final SchemeCardRenderer renderer;
+    private final ProjectionService projections;
+    private final NotificationService notifications;
+    private final CounterStorePort counters;
+    private final MediaService media;
+    private final AiEngine ai;
+    private final Guard guard;
+    private final Audit audit;
+
+    public SchemeService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
+                         UserRepository users, ReactionRepository reactions, SavedItemRepository saved,
+                         WardrobeService wardrobe, BackgroundStudioService studio, SealService seals,
+                         SchemeCardRenderer renderer, ProjectionService projections, NotificationService notifications,
+                         CounterStorePort counters, MediaService media, AiEngine ai, Guard guard, Audit audit) {
+        this.schemes = schemes;
+        this.schemeItems = schemeItems;
+        this.pieces = pieces;
+        this.users = users;
+        this.reactions = reactions;
+        this.saved = saved;
+        this.wardrobe = wardrobe;
+        this.studio = studio;
+        this.seals = seals;
+        this.renderer = renderer;
+        this.projections = projections;
+        this.notifications = notifications;
+        this.counters = counters;
+        this.media = media;
+        this.ai = ai;
+        this.guard = guard;
+        this.audit = audit;
+    }
+
+    // ================================================================== etapa 1/3 — compositor
+    /** RF5.CA01/CA02/CA07b — listas por parte do corpo espelhando o guarda-roupa real (só disponíveis). */
+    @Transactional(readOnly = true)
+    public Map<String, Object> builder(CurrentUser user) {
+        List<WardrobeItem> eligible = wardrobe.eligible(user.id());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("totalPieces", pieces.countByUserId(user.id()));
+        out.put("eligiblePieces", eligible.size());
+        if (eligible.size() < 2) {
+            out.put("status", "INSUFICIENTE");
+            out.put("message", "Você precisa de ao menos 2 peças disponíveis para criar um look. Cadastre suas peças primeiro.");
+            out.put("action", Map.of("label", "Adicionar nova peça", "href", "/add-piece"));
+        } else {
+            out.put("status", "PRONTO");
+        }
+        Map<String, List<Views.PieceView>> lists = new LinkedHashMap<>();
+        for (String cat : Taxonomy.SUBCATEGORIES.keySet()) {
+            lists.put(cat, eligible.stream().filter(w -> cat.equals(w.getCategory()))
+                    .map(w -> Views.piece(w, null, null)).toList());
+        }
+        out.put("lists", lists);
+        User u = users.findById(user.id()).orElseThrow();
+        out.put("defaultVisibility", AccountService.defaultVisibility(u));
+        out.put("steps", List.of("1 · Modo de geração", "2 · Prompt da IA", "3 · Formulário manual", "4 · Arte de background",
+                "5 · Preview, slots e salvar"));
+        out.put("displayModes", DisplayMode.values());
+        out.put("moods", Mood.values());
+        out.put("seasons", Season.values());
+        out.put("anatomies", BackgroundStudioService.ANATOMIES);
+        return out;
+    }
+
+    // ================================================================== etapa 2 — gerar com IA (RF5.CA04)
+    public record ComposeRequest(List<String> occasion, List<String> style, String mood, String season, String prompt,
+                                 List<String> excludeCombinations) {
+    }
+
+    public record ComposeResult(List<LocalSchemeComposer.Composition> compositions, String message,
+                                AiOutcome.Explanation explanation, UUID inferenceId, AiOutcome.Quota quota,
+                                boolean fallbackUsed, String provider) {
+    }
+
+    public ComposeResult compose(CurrentUser user, ComposeRequest req, AiCapability capability) {
+        List<WardrobeItem> eligible = wardrobe.eligible(user.id());
+        if (eligible.size() < 2) {
+            throw new ApiException(422, "ACERVO_INSUFICIENTE",
+                    "Cadastre ao menos 2 peças disponíveis para gerar looks (RF5.CA02).", Map.of("href", "/add-piece"));
+        }
+        Set<String> exclude = new HashSet<>(req.excludeCombinations() == null ? List.of() : req.excludeCombinations());
+        Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
+        List<Map<String, Object>> catalog = new ArrayList<>();
+        int i = 1;
+        for (WardrobeItem w : eligible) {
+            String ref = "p" + i++;
+            byRef.put(ref, w);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("ref", ref);
+            m.put("name", w.getName());
+            m.put("category", w.getCategory());
+            m.put("subcategory", w.getSubcategory());
+            m.put("color", w.getColor());
+            m.put("material", w.getMaterial());
+            m.put("sex", w.getSex());
+            m.put("style", Json.csv(w.getStyleTags()));
+            m.put("occasion", Json.csv(w.getOccasionTags()));
+            m.put("brand", w.getBrandName());
+            catalog.add(m);
+        }
+        String system = """
+                Você é o Scheme Composer do Fashion AI. Monte EXATAMENTE 3 looks distintos usando SOMENTE as peças do
+                acervo informado (referências p1, p2...). Nunca invente peças. Cada look: 2 a 5 peças, no máximo 1 por
+                slot (upper/lower/shoes/full_body; acessórios até 2), sexo coerente. Sintetize ocasião e estilo (máx. 3
+                cada, nunca concatene as tags das peças). Responda SOMENTE com JSON:
+                {"compositions":[{"title":string,"refs":["p1",...],"occasion":[...],"style":[...],"mood":one of
+                [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"seals":[até 4 de affordable-chic, premium-look,
+                eco-conscious, trendy-combo, casual-elegance],"rationale":"até 2 frases"}]}""";
+        String prompt = "Acervo: " + Json.write(catalog) + "\nOcasião: " + req.occasion() + "\nEstilo: " + req.style()
+                + "\nHumor: " + req.mood() + "\nEstação: " + req.season() + "\nOrientações livres: "
+                + (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500))
+                + (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude);
+        AiOutcome<List<LocalSchemeComposer.Composition>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), capability,
+                system, prompt, List.of(), 1800, List.of(eligible.size() + " peças disponíveis do acervo (metadados, sem fotos)",
+                "ocasião/estilo/humor pedidos"),
+                text -> parseCompositions(text, byRef, req, exclude),
+                () -> LocalSchemeComposer.compose(eligible, req.occasion(), req.style(), req.season(), req.prompt(), 12).stream()
+                        .filter(c -> !exclude.contains(combinationKey(c.items().stream().map(LocalSchemeComposer.Pick::wardrobeItemId).toList())))
+                        .limit(3).toList(), null));
+        List<LocalSchemeComposer.Composition> list = outcome.value() == null ? List.of() : outcome.value();
+        String message = outcome.userMessage();
+        if (list.size() < 3) {
+            message = (message == null ? "" : message + " ") + "Seu acervo permitiu " + list.size()
+                    + " combinação(ões) nova(s) — cadastre mais peças para variar.";
+        }
+        return new ComposeResult(list, message, outcome.explanation(), outcome.inferenceId(), outcome.quota(),
+                outcome.fallbackUsed(), outcome.provider());
+    }
+
+    List<LocalSchemeComposer.Composition> parseCompositions(String text, Map<String, WardrobeItem> byRef, ComposeRequest req,
+                                                            Set<String> exclude) {
+        Map<String, Object> m = WardrobeService.extractJson(text);
+        if (!(m.get("compositions") instanceof List<?> list)) {
+            return null;
+        }
+        List<LocalSchemeComposer.Composition> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>(exclude);
+        for (Object o : list) {
+            if (!(o instanceof Map<?, ?> c) || !(c.get("refs") instanceof List<?> refs)) {
+                continue;
+            }
+            List<WardrobeItem> chosen = refs.stream().map(String::valueOf).map(byRef::get).filter(Objects::nonNull).distinct().toList();
+            if (chosen.size() < 2) {
+                continue;
+            }
+            String key = combinationKey(chosen.stream().map(WardrobeItem::getId).toList());
+            if (!seen.add(key)) {
+                continue;
+            }
+            LocalSchemeComposer.Composition base = LocalSchemeComposer.toComposition(chosen,
+                    strs(c.get("occasion"), Taxonomy.OCCASIONS, 3, req.occasion()), strs(c.get("style"), Taxonomy.STYLES, 3, req.style()),
+                    req.season(), 0);
+            String title = c.get("title") == null ? base.title() : InputSanitizer.clean(String.valueOf(c.get("title")), 120);
+            String mood = c.get("mood") != null && Set.of("ENERGETIC", "ELEGANT", "COMFORTABLE", "SOPHISTICATED")
+                    .contains(String.valueOf(c.get("mood"))) ? String.valueOf(c.get("mood")) : base.mood();
+            List<String> sealsList = c.get("seals") instanceof List<?> sl ? sl.stream().map(String::valueOf).limit(4).toList() : base.seals();
+            String rationale = c.get("rationale") == null ? base.rationale() : InputSanitizer.clean(String.valueOf(c.get("rationale")), 300);
+            out.add(new LocalSchemeComposer.Composition(title, base.items(), base.occasions(), base.styles(), req.season(), mood,
+                    sealsList, base.totalPrice(), 1, rationale));
+            if (out.size() == 3) {
+                break;
+            }
+        }
+        return out.isEmpty() ? null : out;
+    }
+
+    private static List<String> strs(Object o, List<String> allowed, int max, List<String> fallback) {
+        List<String> out = new ArrayList<>();
+        if (o instanceof List<?> l) {
+            l.stream().map(String::valueOf).filter(allowed::contains).distinct().limit(max).forEach(out::add);
+        }
+        return out.isEmpty() && fallback != null ? fallback.stream().limit(max).toList() : out;
+    }
+
+    public static String combinationKey(List<UUID> ids) {
+        return ids.stream().map(UUID::toString).sorted().collect(Collectors.joining("+"));
+    }
+
+    // ================================================================== etapa 5 — salvar (RF5.CA03/CA05/CA06)
+    public record ItemForm(UUID wardrobeItemId, SchemeSlot slot, Integer sortOrder, Integer zIndex, BigDecimal positionX,
+                           BigDecimal positionY, BigDecimal scale, BigDecimal rotation, BigDecimal opacity,
+                           Map<String, Object> filters) {
+    }
+
+    public record SchemeForm(String title, String description, List<String> occasion, List<String> style, Season season,
+                             Mood mood, Visibility visibility, DisplayMode displayMode, List<ItemForm> items,
+                             CreationMode creationMode, SchemeOrigin origin, UUID remixedFromId, Map<String, Object> background,
+                             Boolean applyRecommendedDirection, String cardSkin, String layoutAnatomy, List<String> tags,
+                             List<String> seals, Boolean publish, Boolean lookDoDia) {
+    }
+
+    @Transactional
+    public Map<String, Object> create(CurrentUser user, SchemeForm form) {
+        guard.requireCanCreate(user);
+        User owner = users.findById(user.id()).orElseThrow();
+        if (form.items() == null || form.items().isEmpty()) {
+            throw ApiException.badRequest("SEM_PECAS", "Adicione ao menos 1 peça para salvar o esquema (RF5.CA06).");
+        }
+        Scheme s = new Scheme();
+        s.setUser(owner);
+        s.setCreationMode(form.creationMode() == null ? CreationMode.MANUAL : form.creationMode());
+        s.setOrigin(form.origin() == null ? SchemeOrigin.CRIAR_LOOK : form.origin());
+        s.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
+        applyForm(s, form);
+        if (form.remixedFromId() != null) {
+            Scheme src = schemes.findById(form.remixedFromId()).orElseThrow(() -> ApiException.notFound("Esquema de origem"));
+            guard.requireView(user, src.getUser().getId(), src.getVisibility(), "scheme:" + src.getId());
+            s.setOriginalScheme(src);
+            s.setOrigin(SchemeOrigin.REMIX);
+        }
+        schemes.save(s);
+        List<SchemeItem> items = replaceItems(user, s, form.items());
+        studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
+        if (Boolean.TRUE.equals(form.publish())) {
+            publishInternal(s, items);
+        }
+        if (s.getOriginalScheme() != null) {
+            Scheme src = s.getOriginalScheme();
+            src.setRemixCount(src.getRemixCount() + 1);
+            counters.increment("scheme", src.getId(), "remixes", 1);
+            notifications.notify(src.getUser().getId(), owner.getId(), NotificationType.NEW_REMIX, "SCHEME", s.getId(),
+                    "Seu look foi remixado", "@" + owner.getUsername() + " criou um look a partir de \"" + src.getTitle() + "\".", null);
+        }
+        projections.scheme(s, items);
+        notifications.notify(owner.getId(), null, NotificationType.SCHEME_CREATED, "SCHEME", s.getId(),
+                "Esquema criado com sucesso", "\"" + s.getTitle() + "\" foi adicionado aos seus Looks.", null);
+        audit.log(user, AuditActions.CRIACAO_ESQUEMA, "scheme:" + s.getId(), Map.of("items", items.size(),
+                "creationMode", s.getCreationMode().name(), "origin", s.getOrigin().name()));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("scheme", view(user, s, items));
+        // RF20.CA01 — sugestão de vínculo (não bloqueante) ao salvar esquemas com 2+ peças.
+        if (items.size() >= 2) {
+            try {
+                out.put("sealSuggestions", seals.suggest(user, s.getId()));
+            } catch (RuntimeException ex) {
+                out.put("sealSuggestions", Map.of("suggestions", List.of(), "message", "Sugestão de vínculo indisponível agora."));
+            }
+        }
+        return out;
+    }
+
+    private void applyForm(Scheme s, SchemeForm f) {
+        s.setTitle(InputSanitizer.required("title", InputSanitizer.moderated("title", f.title(), 120), 2, 120));
+        s.setDescription(InputSanitizer.moderated("description", f.description(), 1000));
+        Map<String, Object> errors = new LinkedHashMap<>();
+        Taxonomy.requireTags("occasion", f.occasion(), Taxonomy.OCCASIONS, 3, errors);
+        Taxonomy.requireTags("style", f.style(), Taxonomy.STYLES, 3, errors);
+        if (f.seals() != null && f.seals().size() > 4) {
+            errors.put("seals", "Máximo de 4 selos sugeridos por esquema.");
+        }
+        if (!errors.isEmpty()) {
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+        }
+        s.setOccasion(Json.csv(f.occasion()));
+        s.setStyle(Json.csv(f.style()));
+        s.setSeason(f.season());
+        s.setMood(f.mood());
+        if (f.displayMode() != null) {
+            s.setDisplayMode(f.displayMode());
+        }
+        if (f.cardSkin() != null) {
+            s.setCardSkin(f.cardSkin());
+        }
+        if (f.layoutAnatomy() != null) {
+            s.setLayoutAnatomy(f.layoutAnatomy());
+        }
+        s.setTags(Json.csv(f.tags() == null ? List.of() : f.tags().stream().map(t -> t.replaceFirst("^#", "")).toList()));
+        if (f.lookDoDia() != null) {
+            s.setLookDoDia(f.lookDoDia());
+        }
+    }
+
+    private List<SchemeItem> replaceItems(CurrentUser user, Scheme s, List<ItemForm> forms) {
+        Map<UUID, WardrobeItem> own = new LinkedHashMap<>();
+        for (ItemForm f : forms) {
+            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound("Peça " + f.wardrobeItemId()));
+            if (!w.getUser().getId().equals(user.id())) {
+                // RF5.CA07b / RF30.CA02 — só peças do acervo real do usuário.
+                throw ApiException.badRequest("PECA_DE_OUTRO_USUARIO", "Use apenas peças do seu guarda-roupa.");
+            }
+            if (!w.isDisponivel()) {
+                throw ApiException.badRequest("PECA_INDISPONIVEL", "A peça \"" + w.getName() + "\" está marcada como indisponível (RF31.CA02).");
+            }
+            own.put(w.getId(), w);
+        }
+        List<SchemeItem> existing = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
+        Map<UUID, SchemeItem> byPiece = existing.stream().collect(Collectors.toMap(si -> si.getWardrobeItem().getId(), si -> si, (a, b) -> a));
+        List<SchemeItem> result = new ArrayList<>();
+        int order = 0;
+        Set<UUID> kept = new HashSet<>();
+        for (ItemForm f : forms) {
+            WardrobeItem w = own.get(f.wardrobeItemId());
+            if (!kept.add(w.getId())) {
+                continue;
+            }
+            SchemeItem si = byPiece.getOrDefault(w.getId(), new SchemeItem());
+            boolean created = si.getId() == null;
+            si.setScheme(s);
+            si.setWardrobeItem(w);
+            si.setSlot(f.slot() != null ? f.slot() : LocalSchemeComposer.slotOf(w));
+            si.setTryOnLayer(MannequinGeometry.layerOf(si.getSlot()));
+            si.setSortOrder(f.sortOrder() == null ? order : f.sortOrder());
+            si.setZIndex(f.zIndex() == null ? order : f.zIndex());
+            si.setPositionX(f.positionX());
+            si.setPositionY(f.positionY());
+            si.setScale(f.scale() == null ? BigDecimal.ONE : f.scale());
+            si.setRotation(f.rotation() == null ? BigDecimal.ZERO : f.rotation());
+            si.setOpacity(f.opacity() == null ? BigDecimal.ONE : f.opacity());
+            ImageFilters.Filters filters = ImageFilters.Filters.of(f.filters());
+            si.setFiltersJson(filters.neutral() ? null : Json.write(Map.of("blur", filters.blur(), "saturation", filters.saturation(),
+                    "brightness", filters.brightness(), "contrast", filters.contrast(), "hue_shift", filters.hueShift())));
+            schemeItems.save(si);
+            if (created) {
+                w.setSchemeUsageCount(w.getSchemeUsageCount() + 1);
+            }
+            result.add(si);
+            order++;
+        }
+        for (SchemeItem old : existing) {
+            if (!kept.contains(old.getWardrobeItem().getId())) {
+                // RF9.CA02 — remover do esquema não remove do Closet.
+                schemeItems.delete(old);
+            }
+        }
+        s.setTotalPrice(result.stream().map(si -> si.getWardrobeItem().getPrice()).filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        if (s.getCoverImageUrl() == null && !result.isEmpty()) {
+            s.setCoverImageUrl(result.get(0).getWardrobeItem().getImageUrl());
+        }
+        List<String> tagSeals = LocalSchemeComposer.toComposition(result.stream().map(SchemeItem::getWardrobeItem).toList(),
+                Json.csv(s.getOccasion()), Json.csv(s.getStyle()), s.getSeason() == null ? null : s.getSeason().name(), 0).seals();
+        s.setRenderingMetadataJson(Json.write(Map.of("suggestedSeals", tagSeals)));
+        return result;
+    }
+
+    private void publishInternal(Scheme s, List<SchemeItem> items) {
+        s.setStatus(SchemeStatus.PUBLISHED);
+        if (s.getPublishedAt() == null) {
+            s.setPublishedAt(Instant.now());
+        }
+        s.setCommunityIndexed(s.getVisibility() == Visibility.PUBLIC);
+        for (SchemeItem si : items) {
+            // RF7.CA03 — snapshot da peça no momento da publicação.
+            si.setSnapshotJson(Json.write(Views.snapshot(si.getWardrobeItem())));
+        }
+        projections.published(s);
+    }
+
+    @Transactional
+    public Map<String, Object> publish(CurrentUser user, UUID id, Visibility visibility) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        if (visibility != null) {
+            s.setVisibility(visibility);
+        }
+        List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
+        if (items.isEmpty()) {
+            throw ApiException.badRequest("SEM_PECAS", "Adicione ao menos 1 peça antes de publicar.");
+        }
+        publishInternal(s, items);
+        projections.scheme(s, items);
+        audit.log(user, AuditActions.PUBLICACAO_ESQUEMA, "scheme:" + id, Map.of("visibility", s.getVisibility().name()));
+        return Map.of("scheme", view(user, s, items));
+    }
+
+    // ================================================================== leitura
+    @Transactional
+    public Map<String, Object> get(CurrentUser viewer, UUID id) {
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        requireView(viewer, s);
+        boolean owner = viewer != null && viewer.id().equals(s.getUser().getId());
+        if (!owner) {
+            s.setViewCount(s.getViewCount() + 1);
+            counters.increment("scheme", id, "views", 1);
+        }
+        List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("scheme", view(viewer, s, items));
+        out.put("wearstyles", items.stream().collect(Collectors.toMap(si -> si.getWardrobeItem().getId().toString(),
+                si -> Taxonomy.wearstylesOf(si.getWardrobeItem().getCategory(), Json.csv(si.getWardrobeItem().getOccasionTags())),
+                (a, b) -> a, LinkedHashMap::new)));
+        out.put("seals", sealsOf(s));
+        out.put("remixedFrom", s.getOriginalScheme() == null ? null : Map.of("id", s.getOriginalScheme().getId(),
+                "title", s.getOriginalScheme().getTitle(), "owner", Views.user(s.getOriginalScheme().getUser())));
+        out.put("canEdit", owner);
+        return out;
+    }
+
+    /** RF3.CA13 — a visibilidade do esquema prevalece sobre a do perfil quando for mais restritiva. */
+    public void requireView(CurrentUser viewer, Scheme s) {
+        Visibility effective = moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility());
+        if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))) {
+            throw ApiException.notFound("Esquema");
+        }
+        guard.requireView(viewer, s.getUser().getId(), effective, "scheme:" + s.getId());
+    }
+
+    public boolean canView(CurrentUser viewer, Scheme s) {
+        if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))) {
+            return false;
+        }
+        return guard.canView(viewer, s.getUser().getId(), moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility()));
+    }
+
+    public static Visibility moreRestrictive(Visibility a, Visibility b) {
+        if (a == null) {
+            return b;
+        }
+        if (b == null) {
+            return a;
+        }
+        return a.ordinal() < b.ordinal() ? a : b;
+    }
+
+    private List<Object> sealsOf(Scheme s) {
+        return new ArrayList<>(Json.strings(s.getSealIdsJson()));
+    }
+
+    public Views.SchemeView view(CurrentUser viewer, Scheme s, List<SchemeItem> items) {
+        Views.ViewerState state = Views.ViewerState.NONE;
+        if (viewer != null) {
+            List<String> mine = reactions.findByActorIdAndTargetTypeAndTargetId(viewer.id(), TargetType.SCHEME, s.getId()).stream()
+                    .map(r -> r.getReactionType().name()).toList();
+            boolean isSaved = saved.findByUserIdAndTargetTypeAndTargetId(viewer.id(), TargetType.SCHEME, s.getId()).isPresent();
+            state = new Views.ViewerState(mine.contains("LIKE"), mine.stream().filter(r -> !r.equals("LIKE")).toList(), isSaved,
+                    viewer.id().equals(s.getUser().getId()), false);
+        }
+        return Views.scheme(s, items, state, wardrobe.reactionCounts(TargetType.SCHEME, s.getId()));
+    }
+
+    @Transactional(readOnly = true)
+    public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, int page, int size) {
+        List<Scheme> all = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream()
+                .filter(s -> occasion == null || occasion.isBlank() || Json.csv(s.getOccasion()).contains(occasion))
+                .filter(s -> state == null || state.isBlank() || "todos".equals(state)
+                        || ("favoritos".equals(state) && s.isFavorite()) || ("disponivel".equals(state) && s.isDisponivel())
+                        || ("indisponivel".equals(state) && !s.isDisponivel()))
+                .toList();
+        int sz = Math.max(1, Math.min(60, size <= 0 ? 20 : size));
+        int from = Math.min(all.size(), Math.max(0, page) * sz);
+        int to = Math.min(all.size(), from + sz);
+        List<Views.SchemeView> items = all.subList(from, to).stream()
+                .map(s -> view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
+        return new Views.Page<>(items, page, sz, all.size(), to < all.size());
+    }
+
+    // ================================================================== RF9 — edição
+    @Transactional
+    public Map<String, Object> update(CurrentUser user, UUID id, SchemeForm form) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        Set<UUID> before = schemeItems.findBySchemeIdOrderBySortOrder(id).stream().map(si -> si.getWardrobeItem().getId())
+                .collect(Collectors.toSet());
+        applyForm(s, form);
+        Visibility oldVisibility = s.getVisibility();
+        if (form.visibility() != null) {
+            s.setVisibility(form.visibility());
+        }
+        List<SchemeItem> items = form.items() == null ? schemeItems.findBySchemeIdOrderBySortOrder(id) : replaceItems(user, s, form.items());
+        if (items.isEmpty()) {
+            throw ApiException.badRequest("SEM_PECAS", "O esquema precisa de ao menos 1 peça.");
+        }
+        Set<UUID> after = items.stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet());
+        if (form.background() != null || Boolean.TRUE.equals(form.applyRecommendedDirection())) {
+            studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
+        }
+        if (!before.equals(after) && s.getStatus() == SchemeStatus.PUBLISHED) {
+            seals.flagRevalidation(s);
+            for (SchemeItem si : items) {
+                if (si.getSnapshotJson() == null) {
+                    si.setSnapshotJson(Json.write(Views.snapshot(si.getWardrobeItem())));
+                }
+            }
+        }
+        if (s.getVisibility() == Visibility.PRIVATE && oldVisibility != Visibility.PRIVATE) {
+            // RF20.CA14 — esquema tornado privado revoga os selos.
+            seals.revokeForScheme(s.getId(), "esquema tornado privado");
+        }
+        if (Boolean.TRUE.equals(form.publish()) && s.getStatus() != SchemeStatus.PUBLISHED) {
+            publishInternal(s, items);
+        }
+        projections.scheme(s, items);
+        audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("itemsChanged", !before.equals(after)));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("scheme", view(user, s, items));
+        out.put("revalidationPending", s.isRevalidationPending());
+        return out;
+    }
+
+    /** RF9 / RF24.CA10 — "melhorar com IA": diff estruturado, aceito ou recusado item a item. */
+    public Map<String, Object> improve(CurrentUser user, UUID id, String instruction) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        Map<String, Object> current = new LinkedHashMap<>();
+        current.put("title", s.getTitle());
+        current.put("description", s.getDescription());
+        current.put("occasion", Json.csv(s.getOccasion()));
+        current.put("style", Json.csv(s.getStyle()));
+        current.put("season", s.getSeason() == null ? null : s.getSeason().name());
+        current.put("mood", s.getMood() == null ? null : s.getMood().name());
+        current.put("visibility", s.getVisibility().name());
+        String system = """
+                Você é o Edit Assistant do Fashion AI. Proponha alterações ao esquema a partir da instrução do usuário.
+                Campos editáveis: title, description, occasion (máx 3 códigos), style (máx 3 códigos), season
+                (SPRING/SUMMER/AUTUMN/WINTER), mood (ENERGETIC/ELEGANT/COMFORTABLE/SOPHISTICATED), visibility
+                (PRIVATE/FOLLOWERS/PUBLIC). Responda SOMENTE com JSON:
+                {"changes":[{"field":string,"proposed":valor,"reason":"1 frase"}]}""";
+        AiOutcome<List<LocalAdvisors.FieldChange>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.EDIT_ASSISTANT,
+                system, "Esquema atual: " + Json.write(current) + "\nInstrução: " + InputSanitizer.clean(instruction, 500),
+                List.of(), 900, List.of("campos atuais do esquema", "instrução em linguagem natural"),
+                text -> parseDiff(text, current), () -> LocalAdvisors.proposeEdit(current, instruction == null ? "" : instruction), null));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("changes", outcome.value());
+        out.put("explanation", outcome.explanation());
+        out.put("inferenceId", outcome.inferenceId());
+        out.put("message", outcome.userMessage());
+        return out;
+    }
+
+    List<LocalAdvisors.FieldChange> parseDiff(String text, Map<String, Object> current) {
+        Map<String, Object> m = WardrobeService.extractJson(text);
+        if (!(m.get("changes") instanceof List<?> list)) {
+            return null;
+        }
+        List<LocalAdvisors.FieldChange> out = new ArrayList<>();
+        for (Object o : list) {
+            if (o instanceof Map<?, ?> c && c.get("field") != null && current.containsKey(String.valueOf(c.get("field")))) {
+                String field = String.valueOf(c.get("field"));
+                Object proposed = c.get("proposed");
+                if (!validChange(field, proposed)) {
+                    continue;
+                }
+                out.add(new LocalAdvisors.FieldChange(field, current.get(field), proposed, String.valueOf(c.get("reason"))));
+            }
+        }
+        return out;
+    }
+
+    static boolean validChange(String field, Object v) {
+        return switch (field) {
+            case "occasion" -> v instanceof List<?> l && l.size() <= 3 && l.stream().allMatch(x -> Taxonomy.OCCASIONS.contains(String.valueOf(x)));
+            case "style" -> v instanceof List<?> l && l.size() <= 3 && l.stream().allMatch(x -> Taxonomy.STYLES.contains(String.valueOf(x)));
+            case "season" -> Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(String.valueOf(v));
+            case "mood" -> Set.of("ENERGETIC", "ELEGANT", "COMFORTABLE", "SOPHISTICATED").contains(String.valueOf(v));
+            case "visibility" -> Set.of("PRIVATE", "FOLLOWERS", "PUBLIC").contains(String.valueOf(v));
+            case "title", "description" -> v instanceof String s && !s.isBlank();
+            default -> false;
+        };
+    }
+
+    /** Aplica só os campos do diff que o usuário aceitou. */
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> applyDiff(CurrentUser user, UUID id, Map<String, Object> accepted) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        for (Map.Entry<String, Object> e : accepted.entrySet()) {
+            if (!validChange(e.getKey(), e.getValue())) {
+                throw ApiException.badRequest("DIFF_INVALIDO", "Alteração inválida para o campo " + e.getKey());
+            }
+            switch (e.getKey()) {
+                case "title" -> s.setTitle(InputSanitizer.moderated("title", (String) e.getValue(), 120));
+                case "description" -> s.setDescription(InputSanitizer.moderated("description", (String) e.getValue(), 1000));
+                case "occasion" -> s.setOccasion(Json.csv(((List<Object>) e.getValue()).stream().map(String::valueOf).toList()));
+                case "style" -> s.setStyle(Json.csv(((List<Object>) e.getValue()).stream().map(String::valueOf).toList()));
+                case "season" -> s.setSeason(Season.valueOf(String.valueOf(e.getValue())));
+                case "mood" -> s.setMood(Mood.valueOf(String.valueOf(e.getValue())));
+                case "visibility" -> s.setVisibility(Visibility.valueOf(String.valueOf(e.getValue())));
+                default -> {
+                }
+            }
+        }
+        audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("aiDiffFields", accepted.keySet()));
+        return Map.of("scheme", view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(id)));
+    }
+
+    // ================================================================== RF31 · exclusão
+    @Transactional
+    public Map<String, Object> toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        if (favorite != null) {
+            s.setFavorite(favorite);
+        }
+        if (disponivel != null) {
+            s.setDisponivel(disponivel);
+        }
+        return Map.of("id", id, "favorite", s.isFavorite(), "disponivel", s.isDisponivel());
+    }
+
+    @Transactional
+    public Map<String, Object> archive(CurrentUser user, UUID id) {
+        guard.requireCanCreate(user);
+        Scheme s = owned(user, id);
+        s.setStatus(SchemeStatus.ARCHIVED);
+        seals.revokeForScheme(id, "esquema excluído pelo autor");
+        projections.removeScheme(id);
+        audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("op", "archive"));
+        return Map.of("id", id, "status", s.getStatus());
+    }
+
+    // ================================================================== RF19.CA13 — remixar
+    @Transactional
+    public Map<String, Object> remix(CurrentUser user, UUID sourceId) {
+        guard.requireCanCreate(user);
+        Scheme src = schemes.findById(sourceId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        requireView(user, src);
+        if (!src.isDisponivel()) {
+            throw ApiException.conflict("INDISPONIVEL", "O autor marcou este look como indisponível para remix.");
+        }
+        List<SchemeItem> srcItems = schemeItems.findBySchemeIdOrderBySortOrder(sourceId);
+        List<WardrobeItem> mine = wardrobe.eligible(user.id());
+        List<ItemForm> mapped = new ArrayList<>();
+        List<Map<String, Object>> missing = new ArrayList<>();
+        Set<UUID> used = new HashSet<>();
+        for (SchemeItem si : srcItems) {
+            WardrobeItem target = si.getWardrobeItem();
+            WardrobeItem match = src.getUser().getId().equals(user.id()) ? target : mine.stream()
+                    .filter(w -> !used.contains(w.getId()))
+                    .max(Comparator.comparingDouble(w -> similarity(w, target))).filter(w -> similarity(w, target) >= 1.0).orElse(null);
+            if (match != null) {
+                used.add(match.getId());
+                mapped.add(new ItemForm(match.getId(), si.getSlot(), si.getSortOrder(), si.getZIndex(), si.getPositionX(),
+                        si.getPositionY(), si.getScale(), si.getRotation(), si.getOpacity(), Json.map(si.getFiltersJson())));
+            } else {
+                missing.add(Map.of("sourcePiece", Views.row(si), "action", "Adicionar ao guarda-roupa ou cadastrar peça parecida"));
+            }
+        }
+        Map<String, Object> prefill = new LinkedHashMap<>();
+        prefill.put("title", "Remix de " + src.getTitle());
+        prefill.put("description", src.getDescription());
+        prefill.put("occasion", Json.csv(src.getOccasion()));
+        prefill.put("style", Json.csv(src.getStyle()));
+        prefill.put("season", src.getSeason());
+        prefill.put("mood", src.getMood());
+        prefill.put("items", mapped);
+        prefill.put("background", Json.map(src.getStudioConfigJson()));
+        prefill.put("cardSkin", src.getCardSkin());
+        prefill.put("remixedFromId", src.getId());
+        prefill.put("origin", SchemeOrigin.REMIX);
+        return Map.of("prefill", prefill, "missingPieces", missing, "source", Map.of("id", src.getId(), "title", src.getTitle(),
+                "owner", Views.user(src.getUser())), "next", "/create-look?remix=" + src.getId());
+    }
+
+    private static double similarity(WardrobeItem a, WardrobeItem b) {
+        double s = 0;
+        if (Objects.equals(a.getSubcategory(), b.getSubcategory())) {
+            s += 1;
+        } else if (Objects.equals(a.getCategory(), b.getCategory())) {
+            s += 0.5;
+        }
+        if (Objects.equals(a.getColor(), b.getColor())) {
+            s += 0.5;
+        } else if (Objects.equals(Taxonomy.COLOR_FAMILY.get(a.getColor()), Taxonomy.COLOR_FAMILY.get(b.getColor()))) {
+            s += 0.25;
+        }
+        return s;
+    }
+
+    // ================================================================== render do card (RF5 preview / RF19.CA09)
+    @Transactional(readOnly = true)
+    public byte[] renderCard(CurrentUser viewer, UUID id, boolean expanded) {
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        requireView(viewer, s);
+        List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
+        return renderer.render(card(s, items, expanded));
+    }
+
+    SchemeCardRenderer.Card card(Scheme s, List<SchemeItem> items, boolean expanded) {
+        List<SchemeCardRenderer.CardItem> cardItems = new ArrayList<>();
+        Map<String, Object> studioCfg = Json.map(s.getStudioConfigJson());
+        Map<?, ?> pieceBgs = studioCfg.get("pieces") instanceof Map<?, ?> p ? p : Map.of();
+        for (SchemeItem si : items) {
+            WardrobeItem w = si.getWardrobeItem();
+            BufferedImage img = media.readImage(w.getImageUrl()).orElseGet(() -> placeholder(w));
+            Object bgCfg = pieceBgs.get(w.getId().toString());
+            String pieceBg = bgCfg instanceof Map<?, ?> m && m.get("color") != null ? String.valueOf(m.get("color")) : null;
+            cardItems.add(new SchemeCardRenderer.CardItem(img, si.getSlot(),
+                    si.getPositionX() == null ? null : si.getPositionX().doubleValue(),
+                    si.getPositionY() == null ? null : si.getPositionY().doubleValue(),
+                    si.getScale() == null ? 1 : si.getScale().doubleValue(), si.getRotation() == null ? 0 : si.getRotation().doubleValue(),
+                    si.getOpacity() == null ? 1 : si.getOpacity().doubleValue(), si.getZIndex(),
+                    ImageFilters.Filters.of(Json.map(si.getFiltersJson())), pieceBg));
+        }
+        List<String> chips = new ArrayList<>(Json.csv(s.getOccasion()));
+        chips.addAll(Json.csv(s.getStyle()));
+        String price = s.getTotalPrice() == null ? null : String.format(Locale.US, "US$ %.2f", s.getTotalPrice());
+        String hype = s.getHypeScore() == null ? null : "Hype " + s.getHypeScore().setScale(0, java.math.RoundingMode.HALF_UP) + "%";
+        return new SchemeCardRenderer.Card(s.getTitle(), s.getUser().getUsername(), chips, price, hype, studio.rendererBackground(s),
+                cardItems, expanded ? SchemeCardRenderer.Size.EXPANDED : SchemeCardRenderer.Size.COMPACT);
+    }
+
+    /** Peça sem foto legível (ex.: imagem padrão SVG): bloco com a cor da peça e a subcategoria. */
+    static BufferedImage placeholder(WardrobeItem w) {
+        BufferedImage img = new BufferedImage(420, 420, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        ImageOps.quality(g);
+        g.setColor(new Color(ColorMath.parseHex(Taxonomy.hex(w.getColor()))));
+        g.fill(new RoundRectangle2D.Double(10, 10, 400, 400, 60, 60));
+        g.setColor(ColorMath.isNeutral(w.getColor()) && Taxonomy.hex(w.getColor()).compareTo("#888888") > 0 ? Color.DARK_GRAY : Color.WHITE);
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 34));
+        String label = WardrobeService.humanize(w.getSubcategory() == null ? "peça" : w.getSubcategory());
+        g.drawString(label, 210 - g.getFontMetrics().stringWidth(label) / 2, 220);
+        g.dispose();
+        return img;
+    }
+
+    /** Preview da etapa 5 antes de salvar (nada é persistido). */
+    @Transactional(readOnly = true)
+    public byte[] preview(CurrentUser user, SchemeForm form) {
+        Scheme s = new Scheme();
+        s.setUser(users.findById(user.id()).orElseThrow());
+        s.setTitle(form.title() == null ? "Pré-visualização" : form.title());
+        s.setOccasion(Json.csv(form.occasion()));
+        s.setStyle(Json.csv(form.style()));
+        studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
+        if (form.cardSkin() != null) {
+            s.setCardSkin(form.cardSkin());
+        }
+        List<SchemeItem> items = new ArrayList<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (ItemForm f : form.items() == null ? List.<ItemForm>of() : form.items()) {
+            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound("Peça"));
+            guard.requireOwner(user, w.getUser().getId(), "piece:" + w.getId());
+            SchemeItem si = new SchemeItem();
+            si.setWardrobeItem(w);
+            si.setSlot(f.slot() != null ? f.slot() : LocalSchemeComposer.slotOf(w));
+            si.setPositionX(f.positionX());
+            si.setPositionY(f.positionY());
+            si.setScale(f.scale() == null ? BigDecimal.ONE : f.scale());
+            si.setRotation(f.rotation() == null ? BigDecimal.ZERO : f.rotation());
+            si.setOpacity(f.opacity() == null ? BigDecimal.ONE : f.opacity());
+            si.setZIndex(f.zIndex() == null ? items.size() : f.zIndex());
+            si.setFiltersJson(f.filters() == null ? null : Json.write(f.filters()));
+            items.add(si);
+            total = total.add(w.getPrice() == null ? BigDecimal.ZERO : w.getPrice());
+        }
+        s.setTotalPrice(total);
+        return renderer.render(card(s, items, false));
+    }
+
+    public Scheme owned(CurrentUser user, UUID id) {
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        guard.requireOwner(user, s.getUser().getId(), "scheme:" + id);
+        return s;
+    }
+}

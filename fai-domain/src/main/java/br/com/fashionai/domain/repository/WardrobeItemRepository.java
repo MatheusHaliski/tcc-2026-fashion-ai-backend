@@ -1,0 +1,43 @@
+package br.com.fashionai.domain.repository;
+
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/** Repositório Spring Data de WardrobeItem (MySQL — fonte da verdade). */
+public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID> {
+    List<WardrobeItem> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    Page<WardrobeItem> findByUserId(UUID userId, Pageable pageable);
+
+    long countByUserId(UUID userId);
+
+    List<WardrobeItem> findByUserIdAndDisponivelOrderByCreatedAtDesc(UUID userId, boolean disponivel);
+
+    List<WardrobeItem> findByIdIn(Collection<UUID> ids);
+
+    @Query("select w from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and w.moderationStatus = br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED and (lower(w.name) like lower(concat('%', :term, '%')) or lower(w.tags) like lower(concat('%', :term, '%')) or lower(w.brandName) like lower(concat('%', :term, '%')))") List<WardrobeItem> searchPublic(@Param("term") String term, Pageable pageable);
+
+    List<WardrobeItem> findByDisponivelTrueAndAvailabilityStatusNot(AvailabilityStatus status);
+
+    List<WardrobeItem> findByPhotoProcessingStatus(PhotoProcessingStatus status);
+
+    List<WardrobeItem> findByUserIdAndUpdatedAtAfter(UUID userId, Instant since);
+
+    @Query("select w from WardrobeItem w where w.user.country = :country and w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC") List<WardrobeItem> findPublicByCountry(@Param("country") String country);
+
+    @Query("select w from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC") List<WardrobeItem> findAllPublic(Pageable pageable);
+
+    List<WardrobeItem> findByBrandId(UUID brandId);
+}

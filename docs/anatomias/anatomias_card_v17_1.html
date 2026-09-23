@@ -1,0 +1,2136 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0}</style></head><body>
+<title>FashionAI · Redesenho oficial + Anatomias do Card — v17</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F7F6F2; --surface:#FFFFFF; --surface-2:#F1F0EA;
+  --ink:#191A19; --muted:#5C6058; --faint:#8B8F86;
+  --line:#1A1A18; --line-soft:#D8D6CC;
+  --mark:#C6275E; --mark-soft:#FBE7EE;
+  --thread:#1F7A76; --thread-soft:#E0F0EE;
+  --chalk:#B8862B; --chalk-soft:#FAF0DC;
+  --hype-good:#0ca30c; --hype-warning:#fab219; --hype-serious:#ec835a; --hype-critical:#d03b3b;
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Inter","Helvetica Neue",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --maxw:1320px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:14px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:28px}
+img{max-width:100%}
+
+header.top{border-bottom:2px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px}
+.brand{font-family:var(--serif);font-size:26px;font-weight:600}
+h1{font-family:var(--sans);font-weight:700;font-size:19px;margin:2px 0 2px}
+.lede{margin:0;color:var(--muted);font-size:13px}
+.stampbox{text-align:right;font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.6}
+.stampbox b{color:var(--ink)}
+
+.fixnote{background:var(--thread-soft);border-bottom:1px solid var(--thread);color:#0f3d3a;font-family:var(--mono);font-size:12px}
+.fixnote .wrap{padding-block:9px}
+
+section.band{padding-block:36px 10px}
+section.band.alt{background:var(--surface-2)}
+h2.sec{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+.sec-sub{margin:0 0 26px;color:var(--muted);max-width:78ch;font-size:13px}
+
+/* ---- group block (Section A) ---- */
+.group{margin-bottom:44px;padding-bottom:36px;border-bottom:1px solid var(--line-soft)}
+.group:last-child{border-bottom:none}
+.group-title{font-family:var(--serif);font-size:22px;font-weight:600;margin:0 0 14px}
+.variants{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.variant{display:flex;flex-direction:column;gap:10px}
+.variant-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.variant-label b{color:var(--ink);font-weight:600;text-transform:none;font-family:var(--sans);font-size:13px}
+.zoom-badge{font-family:var(--mono);font-size:9.5px;background:var(--mark);color:#fff;padding:1px 6px;border-radius:3px;letter-spacing:.02em}
+.v8-badge{font-family:var(--mono);font-size:9.5px;background:var(--chalk);color:#fff;padding:1px 6px;border-radius:3px;letter-spacing:.02em}
+.dim{font-family:var(--mono);font-size:11px;color:var(--mark);font-weight:600}
+.dim-w{display:flex;align-items:center;gap:6px;margin-top:2px}
+.dim-w::before,.dim-w::after{content:"";flex:1;border-top:1px solid var(--mark)}
+
+/* ---- card base ---- */
+.card{
+  background:var(--surface);border:1.6px solid var(--line);border-radius:6px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.c-header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.c-avatar{width:16px;height:16px;border-radius:50%;background:#D9D6CC;flex:none}
+.c-meta{font-size:10.5px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-fav{width:13px;height:13px;flex:none;color:var(--faint)}
+.c-fav svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6}
+
+/* ---- Container do esquema: borda interna que agrupa TODO o conteúdo do ClothesScheme (RF5) ---- */
+.scheme-container{
+  margin:14px 8px 8px;border:1.5px dashed var(--mark);border-radius:4px;
+  position:relative;
+}
+.scheme-container .c-photo{border-radius:3px 3px 0 0}
+.scheme-container::before{
+  content:"container do esquema";position:absolute;top:-7px;left:7px;z-index:2;
+  background:var(--surface);font-family:var(--mono);font-size:7px;font-weight:700;
+  letter-spacing:.05em;color:var(--mark);padding:0 4px;text-transform:uppercase;
+}
+.scheme-container>.c-photo,.scheme-container>.hero-lateral-row{margin:0}
+.scheme-container>*:last-child{border-bottom:none}
+
+.c-photo{
+  aspect-ratio:4/3;background:repeating-linear-gradient(135deg,var(--surface-2),var(--surface-2) 8px,var(--surface) 8px,var(--surface) 16px);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--faint);
+  border-bottom:1px solid var(--line-soft);
+}
+.c-photo svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.3}
+.c-photo span{font-size:10px}
+
+.c-row{padding:8px 10px;border-bottom:1px solid var(--line-soft);font-size:11px;color:var(--ink)}
+.c-row:last-child{border-bottom:none}
+.c-row .k{color:var(--muted);display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-family:var(--mono)}
+.c-foot{padding:8px 10px;background:var(--surface-2);font-size:10px;color:var(--muted)}
+.c-foot .metrics{margin-bottom:4px;font-family:var(--mono);font-size:9.5px}
+.c-foot .actions{font-weight:500;color:var(--ink);font-size:10px}
+
+/* ---- compact line item ---- */
+.line-item{display:flex;align-items:flex-start;gap:10px;padding:9px 10px}
+.line-thumb{width:34px;height:34px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;flex:none;color:var(--muted);margin-top:1px;font-family:var(--mono);font-size:9px}
+.line-thumb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.4}
+.line-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.line-text .t1{font-size:11px;line-height:1.35}
+.line-text .t2{font-size:10px;color:var(--muted);line-height:1.35}
+
+/* ---- comprimido (resumo) ---- */
+.summary-card .c-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.summary-card .c-row .k{margin:0}
+
+/* ---- piece row: two-line item with brand logo ---- */
+.piece2{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-bottom:1px solid var(--line-soft)}
+.piece2:last-child{border-bottom:none}
+.piece2 .logo-chip{width:22px;height:22px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-soft);flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;color:var(--muted);font-weight:600}
+.piece2 .ptxt{flex:1;min-width:0;display:flex;flex-direction:column}
+.piece2 .ptxt .l1{font-size:10.5px}
+.piece2 .ptxt .l2{font-size:9.5px;color:var(--muted)}
+
+.piece-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line-soft);font-size:10.5px}
+.piece-row:last-child{border-bottom:none}
+.piece-row .p1{color:var(--ink)}
+.piece-row .p2{color:var(--muted);font-family:var(--mono);font-size:10px}
+
+.brandline{padding:8px 10px;font-size:11px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid var(--line-soft)}
+.brandrow-logos{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+.brandrow-logos .lg{flex:1;height:22px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7.5px;font-weight:600;color:var(--muted)}
+
+/* ---- Foto hero + lista lateral: photo and piece list truly side-by-side ---- */
+.hero-lateral-row{display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft)}
+.hero-lateral-photo{flex:1.15;height:172px;aspect-ratio:auto;border-bottom:none;border-right:1px solid var(--line-soft);margin:0}
+.hero-lateral-photo svg{width:26px;height:26px}
+.hero-lateral-list{flex:1;display:flex;flex-direction:column;min-width:0}
+.piece2-sm{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:4px 8px;border-bottom:1px solid var(--line-soft);min-width:0}
+.piece2-sm:last-child{border-bottom:none}
+.piece2-sm b{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.piece2-sm span{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- Etiqueta: mini-tag piece selector (segmented, shaped like small clothing tags) ---- */
+.minitag-row{display:flex;gap:9px;padding:10px 12px 2px;flex-wrap:wrap}
+.minitag{position:relative;padding:5px 9px 5px 15px;background:var(--surface);border:1.4px solid var(--line);border-radius:1px 5px 5px 1px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.02em;cursor:pointer;clip-path:polygon(9px 0,100% 0,100% 100%,9px 100%,0 50%);transition:background .15s,color .15s,border-color .15s}
+.minitag::after{content:"";position:absolute;left:4px;top:50%;transform:translateY(-50%);width:3px;height:3px;border-radius:50%;background:var(--ground);border:1px solid var(--muted)}
+.minitag:hover{border-color:var(--chalk)}
+.minitag.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.minitag.active::after{border-color:#fff}
+
+/* ---- Raio-X: scanner with central hero photo + thick color-coded lines to callouts ---- */
+.xray-stage{position:relative;height:172px;overflow:hidden;border-bottom:1px solid var(--line-soft)}
+.xray-stage .c-photo{border-bottom:none;height:100%;aspect-ratio:auto;margin:0}
+.xray-stage .c-photo svg{width:28px;height:28px}
+.xray-lines{position:absolute;inset:0;z-index:1;pointer-events:none}
+.xray-sweep{position:absolute;left:0;right:0;height:26px;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.16),rgba(255,255,255,0));animation:xraysweep 3.6s linear infinite}
+@keyframes xraysweep{0%{top:-26px}100%{top:172px}}
+.xray-callout{position:absolute;left:4px;z-index:2;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.9);padding:2px 7px 2px 2px;border-radius:20px}
+.xray-callout .xn{width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;flex:none}
+.xray-callout b{font-size:8.5px;letter-spacing:.02em;white-space:nowrap}
+
+/* ---- caption note ---- */
+.note{font-size:11.5px;color:var(--muted);max-width:34ch}
+.v8-note{background:var(--chalk-soft);border-left:3px solid var(--chalk);border-radius:0 4px 4px 0;padding:8px 10px;font-size:11px;color:#5c4413;max-width:34ch}
+.v8-note b{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;font-family:var(--mono)}
+
+/* ---- 07 Silhueta & Proporção (NOVO) ---- */
+.sil-wrap{padding:14px 12px;display:flex;flex-direction:column;gap:7px}
+.sil-row{display:flex;align-items:center;gap:8px}
+.sil-lbl{font-family:var(--mono);font-size:8px;color:var(--muted);width:44px;flex:none;text-transform:uppercase}
+.sil-track{flex:1;height:14px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.sil-bar{height:100%;background:linear-gradient(90deg,var(--thread),#2a9d94);border-radius:0 3px 3px 0}
+.sil-pct{font-family:var(--mono);font-size:8px;color:var(--ink);width:24px;text-align:right;flex:none}
+.sil-tag{margin-top:5px;padding:7px 10px;background:var(--thread-soft);border:1px solid var(--thread);border-radius:5px;font-size:10.5px;color:#0d4a47}
+.sil-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.sil-chip{font-family:var(--mono);font-size:7px;padding:2px 7px;border-radius:99px;border:1px solid var(--line-soft);color:var(--muted)}
+.sil-chip.active{background:var(--thread);color:#fff;border-color:var(--thread)}
+
+/* ---- 08 Hype Focus (NOVO) — status colors fixos (nunca temáticos), espelha B10 de anatomia_cards_DNA_v2.html ---- */
+.hf-wrap{padding:12px;display:flex;flex-direction:column;gap:7px}
+.hf-hero{display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px dashed var(--line-soft);flex:none}
+.hf-gauge{flex:none;width:66px;height:40px}
+.hf-gauge .track{fill:none;stroke:var(--line-soft);stroke-width:7;stroke-linecap:round}
+.hf-gauge .fill{fill:none;stroke-width:7;stroke-linecap:round}
+.hf-hero-tx{min-width:0;flex:1}
+.hf-hero-tx .lbl-top{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);display:block;margin-bottom:1px}
+.hf-hero-tx .tt{font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hf-hero-tx .sb{font-size:9px;color:var(--muted)}
+.hf-row{display:flex;align-items:center;gap:8px}
+.hf-row .ph{width:30px;height:30px;flex:none;border-radius:4px;background:linear-gradient(155deg,#E4DEF0,#C9BEE0);border:1px solid var(--line-soft)}
+.hf-row-tx{min-width:0;flex:1}
+.hf-row-tx .tt{font-size:9.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hf-row-tx .sb{font-size:8.5px;color:var(--muted)}
+.hf-meter{flex:none;width:56px;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.hf-meter .pct{font-family:var(--mono);font-weight:700;font-size:9.5px}
+.hf-bar-track{width:100%;height:4px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.hf-bar-fill{height:100%;border-radius:99px}
+.hf-flame{font-size:9px;line-height:1}
+
+/* ================= SECTION B: plates ================= */
+.plates{display:flex;flex-direction:column;gap:0}
+.plate{padding-block:38px;border-bottom:1px solid var(--line-soft)}
+.plate:last-child{border-bottom:none}
+.plate-top{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.plate-n{font-family:var(--mono);font-size:12px;background:var(--line);color:#fff;padding:3px 8px;border-radius:3px;font-weight:600}
+.plate-name{font-family:var(--serif);font-size:24px;font-weight:600;margin:0}
+.plate-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.plate-body{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.plate-col{display:flex;flex-direction:column;gap:10px}
+.plate-notes{max-width:32ch;display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.plate-notes .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+
+.amp-card{width:220px}
+.amp-cover{aspect-ratio:4/5;position:relative;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(150deg,#2F3E46,#52616B 55%,#C9B79C);color:rgba(255,255,255,.92);border-bottom:1px solid var(--line-soft)}
+.amp-cover .cap{padding:10px;font-size:12px;font-weight:600;background:linear-gradient(0deg,rgba(0,0,0,.45),transparent)}
+.amp-cover>svg{position:absolute;top:14px;left:14px;width:26px;height:26px;fill:none;stroke:#fff;stroke-width:1.3;opacity:.85}
+
+/* ---- Passarela rail: pieces ordered by likes, flash-gif intensity inverse to width ---- */
+.rail-passarela{display:flex;gap:2px}
+.rail-thumb{position:relative;height:44px;flex:none;overflow:hidden;border-top:1px solid rgba(255,255,255,.3)}
+.rail-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
+.rail-thumb .glyph{position:relative;z-index:1;width:100%;height:100%;padding:11px;box-sizing:border-box;fill:none;stroke:#fff;stroke-width:1.4;opacity:.95}
+.rail-thumb .like-badge{position:absolute;bottom:2px;right:3px;z-index:2;font-family:var(--mono);font-size:6.5px;line-height:1;color:#fff;background:rgba(0,0,0,.4);padding:2px 3px;border-radius:6px}
+.rail-thumb .rank-badge{position:absolute;top:2px;left:2px;z-index:2;font-family:var(--mono);font-size:6.5px;line-height:1;color:#191A19;background:rgba(255,255,255,.85);padding:1px 3px;border-radius:6px;font-weight:700}
+
+/* ---- Passarela runway: staged scene (ceiling rig + light cones + side bleacher crowd + perspective floor) ---- */
+.runway-wrap{position:relative;overflow:hidden;background:#0d0f13}
+.runway-wrap .stage-svg{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+.runway-wrap .audience-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated;z-index:0}
+.runway-floor{position:absolute;left:0;right:0;bottom:0;height:38%;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0));z-index:1;pointer-events:none}
+.runway-items{position:relative;z-index:2;display:flex;align-items:flex-end;gap:2px;height:100%;padding:0 3px 4px;box-sizing:border-box}
+.flash-dot{fill:#fff;opacity:0}
+.flash-dot.f1{animation:flashpop 2.6s ease-in-out infinite}
+.flash-dot.f2{animation:flashpop 3.1s ease-in-out infinite .8s}
+.flash-dot.f3{animation:flashpop 2.2s ease-in-out infinite 1.5s}
+@keyframes flashpop{0%,88%{opacity:0}90%{opacity:1}94%{opacity:.2}96%{opacity:.9}100%{opacity:0}}
+.cones polygon{animation:conepulse 4.5s ease-in-out infinite}
+.cones polygon:nth-child(2n){animation-delay:.6s}
+.cones polygon:nth-child(3n){animation-delay:1.3s}
+@keyframes conepulse{0%,100%{opacity:.85}50%{opacity:1}}
+.runway-item{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;padding-top:12px;box-sizing:border-box}
+.runway-item .glyph{width:62%;fill:none;stroke:#fff;stroke-width:1.5;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55))}
+.runway-item .shadow-ellipse{display:block;width:58%;height:3px;background:rgba(0,0,0,.4);border-radius:50%;margin-top:2px;filter:blur(.5px)}
+.runway-item .rank-badge{position:absolute;top:0;left:1px;font-family:var(--mono);font-size:6.5px;line-height:1;color:#191A19;background:rgba(255,255,255,.85);padding:1px 3px;border-radius:6px;font-weight:700}
+.runway-item .like-badge{position:absolute;bottom:6px;right:1px;font-family:var(--mono);font-size:6px;line-height:1;color:#fff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:6px}
+.runway-wrap-sm{width:86px;height:30px;flex:none;border-radius:4px}
+.runway-item-sm{padding-top:4px}
+.runway-item-sm .glyph{width:60%}
+
+/* ---- Espectro: proportional color bars, click reveals color name (Trello-style) ---- */
+.spectrum-list{display:flex;flex-direction:column}
+.spectrum-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line-soft);position:relative}
+.spectrum-row:last-child{border-bottom:none}
+.spectrum-bar{height:14px;border-radius:3px;cursor:pointer;flex:none;position:relative;border:none;padding:0;transition:filter .15s,transform .1s}
+.spectrum-bar:hover{filter:brightness(1.1)}
+.spectrum-bar:active{transform:scaleY(.9)}
+.spectrum-bar:focus-visible{outline:2px solid var(--mark);outline-offset:1px}
+.color-tip{position:absolute;bottom:100%;left:0;margin-bottom:5px;background:var(--ink);color:#fff;font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transform:translateY(3px);transition:opacity .15s,transform .15s;z-index:5}
+.color-tip::after{content:"";position:absolute;top:100%;left:9px;border:4px solid transparent;border-top-color:var(--ink)}
+.color-tip.show{opacity:1;transform:translateY(0)}
+.spectrum-pct{font-family:var(--mono);font-size:8px;color:var(--faint);flex:none}
+
+.seal{width:12px;height:12px;border-radius:50%;border:1.4px solid;flex:none}
+.s-brand{border-color:var(--thread);background:var(--thread-soft)}
+.s-celeb{border-color:var(--mark);background:var(--mark-soft)}
+.s-look{border-color:var(--chalk);background:var(--chalk-soft)}
+
+.compact-zoom{position:relative}
+
+/* ---- 03 raio-x brand rows ---- */
+.xrow{display:flex;gap:7px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line-soft)}
+.xrow:last-child{border-bottom:none}
+.xrow .xn{width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7.5px;font-weight:700;flex:none}
+.pulse-wrap{width:50px;height:18px;flex:none;overflow:hidden;position:relative}
+.pulse-wrap-lg{width:170px;height:34px;flex:none;overflow:hidden;position:relative}
+.pulse-wrap-lg .pulse-svg{height:100%}
+
+/* ---- Price-tier quality: premium (gold) vs comum (plain), for Etiqueta and Recibo ---- */
+:root{--gold:#B8912E;--gold-soft:#E8D18A;--gold-bg:#FFFDF5}
+.tier-premium{border-color:#C9A227!important;background:linear-gradient(180deg,var(--gold-bg),var(--surface) 60%);position:relative}
+.tier-premium::after{content:"";position:absolute;inset:3px;border:1px solid var(--gold-soft);border-radius:3px;pointer-events:none}
+.tier-premium .c-row{border-bottom-color:#F0E4BE}
+.tier-premium .c-row b{color:#7A5C12}
+.gold-label{font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--gold);font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px}
+.gold-label::before,.gold-label::after{content:"✦";font-size:7px;color:var(--gold-soft)}
+.tier-badge{font-family:var(--mono);font-size:9px;padding:1px 7px;border-radius:3px;font-weight:700;letter-spacing:.04em}
+.tier-badge.premium{background:linear-gradient(120deg,#E8D18A,#C9A227);color:#4a3a0c}
+.tier-badge.comum{background:var(--surface-2);color:var(--muted);border:1px solid var(--line-soft)}
+.pulse-svg{position:absolute;top:0;left:0;height:100%;width:200%;animation-name:pulseScroll;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes pulseScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.xrow .xtxt,.spectrum-row .xtxt{flex:1;min-width:0}
+.xrow .xtxt b,.spectrum-row .xtxt b{font-size:10.5px}
+.xrow .xtxt span,.spectrum-row .xtxt span{display:block;font-size:9.5px;color:var(--muted)}
+
+/* ================= BENTO INTERACTIVE ================= */
+.bento-selector{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.bento-logo{flex:1;border:1px solid var(--line-soft);background:var(--surface);border-radius:4px;padding:5px 2px;font-family:var(--mono);font-size:8.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
+.bento-logo:hover{border-color:var(--chalk);color:var(--ink)}
+.bento-logo.active{background:var(--chalk);border-color:var(--chalk);color:#fff}
+.bento-state{padding:6px 10px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--line-soft)}
+.bento-state b{color:var(--chalk)}
+.bento-grid{display:grid;gap:1px;background:var(--line-soft);min-height:100px;transition:grid-template-columns .25s}
+.bento-grid[data-asym="0"]{grid-template-columns:2fr 1fr;grid-template-areas:"cover price" "cover meta"}
+.bento-grid[data-asym="1"]{grid-template-columns:1fr 2fr;grid-template-areas:"price cover" "meta cover"}
+.bento-grid[data-asym="2"]{grid-template-columns:1fr 1fr;grid-template-areas:"cover cover" "price meta"}
+.bento-grid[data-asym="3"]{grid-template-columns:1.3fr 1fr;grid-template-areas:"cover price" "cover meta"}
+.bg-cover{grid-area:cover;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;padding:6px}
+.bg-price{grid-area:price;background:var(--chalk-soft);padding:8px;display:flex;flex-direction:column;justify-content:center}
+.bg-price .pv{font-family:var(--serif);font-size:15px;color:var(--chalk);font-weight:600;line-height:1.1}
+.bg-price .pl{font-size:8.5px;color:#8a6417;font-family:var(--mono)}
+.bg-meta{grid-area:meta;background:var(--surface);padding:8px;font-size:9.5px;display:flex;flex-direction:column;gap:2px;justify-content:center}
+.bg-meta .row{display:flex;justify-content:space-between;gap:6px}
+.bg-meta .row span:first-child{color:var(--muted);font-size:8.5px;font-family:var(--mono);text-transform:uppercase}
+.bento-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-2);font-size:9.5px}
+.bento-foot .asym-tag{font-family:var(--mono);font-size:8.5px;background:var(--thread);color:#fff;padding:2px 6px;border-radius:10px}
+
+footer.fin{padding-block:30px 50px;border-top:2px solid var(--line);margin-top:20px}
+footer.fin .wrap{display:flex;flex-direction:column;gap:10px}
+footer.fin h3{font-size:13px;margin:0}
+footer.fin p{margin:0;color:var(--muted);font-size:12.5px;max-width:90ch}
+
+/* ---- 09 Cartela Sazonal (NOVO, pedido do usuário 2026-09-22) — mesmo sistema de anatomia_cards_DNA_v2.html prancha 11, aqui como toggle opt-in ---- */
+.season-hero{position:relative;height:78px;overflow:hidden;background:linear-gradient(165deg,#E8F1F8,#B9D4E8 55%,#5C7A99)}
+.season-hero-label{position:absolute;left:9px;bottom:7px;z-index:2;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.season-hero-label .tt{font-family:var(--serif);font-size:13px;font-weight:600;display:block}
+.season-hero-label .sb{font-family:var(--mono);font-size:7px;letter-spacing:.03em;opacity:.92;display:block;margin-top:1px}
+.snow-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.snow-layer span{position:absolute;top:-8px;display:block;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.85;animation:snowfall linear infinite}
+@keyframes snowfall{
+  0%{transform:translate(0,-8px);opacity:0}
+  12%{opacity:.9}
+  100%{transform:translate(var(--drift,10px),90px);opacity:.15}
+}
+.season-list{padding:7px 10px;background:var(--surface-2)}
+.season-swatch-row{display:flex;gap:6px;margin-top:2px}
+.season-swatch{flex:1;border-radius:5px;padding:7px 7px 6px;font-family:var(--mono)}
+.season-swatch .tt{font-family:var(--serif);font-size:10.5px;font-weight:600;display:block;margin-bottom:1px}
+.season-swatch .sb{font-size:6.8px;letter-spacing:.02em;opacity:.9}
+.season-swatch.spring{background:linear-gradient(155deg,#FDE2EC,#C9EFCB);color:#3B3B36}
+.season-swatch.summer{background:linear-gradient(155deg,#FFF3B0,#FF7A45);color:#3B2408}
+.season-swatch.autumn{background:linear-gradient(155deg,#F2C879,#7A3B1E);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.season-swatch.winter{background:linear-gradient(155deg,#E8F1F8,#5C7A99);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.season-swatch.active{outline:2px solid var(--thread);outline-offset:2px}
+.season-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 9px;background:var(--surface);border-top:1px dashed var(--line-soft);border-bottom:1px dashed var(--line-soft);font-family:var(--mono);font-size:8.5px;color:var(--muted)}
+.season-toggle .sw{width:24px;height:13px;border-radius:8px;background:var(--thread);position:relative;flex:none}
+.season-toggle .sw::after{content:"";position:absolute;top:1.5px;right:1.5px;width:10px;height:10px;border-radius:50%;background:#fff}
+
+/* ================= LEGO (NOVO) — todo o card em blocos de montar, exceto as fotos =================
+   Regras: bloco (brick) = estrutura, tem pinos; placa lisa (tile) = superfície impressa, sem pinos, é onde o texto mora;
+   placa redonda 1×1 = selos e avatar. Cor do bloco = cor dominante da peça, quantizada para 10 cores clássicas de blocos.
+   Fotos NUNCA viram blocos: ficam como foto, encaixadas numa moldura de blocos. */
+:root{
+  --lgo-red:#C91A09; --lgo-blue:#0055BF; --lgo-yellow:#F2CD37; --lgo-green:#237841;
+  --lgo-white:#F4F4F4; --lgo-black:#1B2A34; --lgo-tan:#E4CD9E; --lgo-orange:#FE8A18;
+  --lgo-lbg:#A0A5A9; --lgo-dbg:#6C6E68; --lgo-gold:#AA7F2E;
+}
+.lgo-card{
+  width:220px;border:1.6px solid var(--line);border-radius:6px;overflow:hidden;
+  background-color:var(--lgo-lbg);
+  background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.30) 0 1.4px,rgba(0,0,0,.20) 2.5px,transparent 3.1px);
+  background-size:10px 10px;padding:6px 6px 8px;display:flex;flex-direction:column;gap:2px;
+}
+.lgo-card .scheme-container{margin:12px 0 3px;padding:1px 3px 4px;border-color:var(--lgo-white)}
+.lgo-card .scheme-container::before{background:var(--lgo-lbg);color:#fff}
+.lgo-brick,.lgo-tile{
+  --c:var(--lgo-white);position:relative;background:var(--c);color:var(--ink);font-size:10px;line-height:1.35;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -2.5px 0 rgba(0,0,0,.22),inset 1px 0 0 rgba(255,255,255,.14),inset -1px 0 0 rgba(0,0,0,.14),0 1.5px 0 rgba(0,0,0,.30);
+}
+.lgo-brick{margin-top:4px;border-radius:2px;padding:5px 6px 6px}
+/* pinos vistos de lado: domos da mesma cor do bloco, com brilho */
+.lgo-brick::before{
+  content:"";position:absolute;left:2px;right:2px;top:-4px;height:4px;pointer-events:none;
+  background:
+    radial-gradient(1.3px 1.1px at 38% 72%,rgba(255,255,255,.7) 0 80%,transparent 100%) 0 0/10px 4px repeat-x,
+    radial-gradient(3.3px 4px at 50% 100%,var(--c) 0 94%,transparent 100%) 0 0/10px 4px repeat-x;
+  filter:drop-shadow(0 -.5px 0 rgba(0,0,0,.28));
+}
+.lgo-tile{margin-top:2px;border-radius:1.5px;padding:4px 6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1.5px 0 rgba(0,0,0,.14),0 1px 0 rgba(0,0,0,.28)}
+.lgo-dk{color:#fff}
+.lgo-row{display:flex;gap:3px;align-items:flex-end}
+.lgo-row>*{flex:1;min-width:0}
+/* texto sempre "impresso" numa placa lisa branca dentro do bloco colorido: legível em qualquer cor */
+.lgo-print{display:block;background:var(--lgo-white);color:var(--ink);border-radius:1.5px;padding:1px 5px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgo-print b{font-size:9.5px}
+.lgo-print span{font-size:8.5px;color:var(--muted)}
+.lgo-round{--c:var(--lgo-white);width:14px;height:14px;border-radius:50%;background:var(--c);flex:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1.5px 0 rgba(0,0,0,.28),0 1px 0 rgba(0,0,0,.3)}
+.lgo-round.stud{background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 2px,var(--c) 2.5px 3.3px,rgba(0,0,0,.18) 3.6px,var(--c) 4.2px)}
+/* aparelho de "running bond": blocos alternam o recuo, como uma parede montada */
+.lgo-bond>.lgo-brick:nth-child(odd){margin-right:12px}
+.lgo-bond>.lgo-brick:nth-child(even){margin-left:12px}
+.lgo-piece{display:flex;align-items:center;gap:5px}
+/* foto preservada: não vira bloco, fica encaixada numa moldura de blocos */
+.lgo-frame{padding:4px 4px 5px}
+.lgo-photo{position:relative;border-radius:1px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.lgo-photo .c-photo,.lgo-photo .dna-hero{margin:0;border-bottom:none}
+.lgo-photo-tag{position:absolute;top:3px;right:3px;z-index:3;font-family:var(--mono);font-size:6.5px;font-weight:700;letter-spacing:.04em;background:rgba(255,255,255,.9);color:var(--ink);padding:1px 4px;border-radius:2px;text-transform:uppercase}
+.lgo-thumb{width:24px;height:24px;flex:none;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.3);
+  background:repeating-linear-gradient(135deg,#EDEBE4,#EDEBE4 4px,#FFF 4px,#FFF 8px)}
+.lgo-thumb.ph{background:linear-gradient(155deg,#E4DEF0,#C9BEE0)}
+.lgo-btn{cursor:pointer;text-align:center;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.04em;padding:4px 3px 5px;transition:transform .08s}
+.lgo-btn:active{transform:translateY(1.5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(0,0,0,.2)}
+.lgo-gold{--c:var(--lgo-gold);background:linear-gradient(135deg,#D2AE5A,#AA7F2E 48%,#83601F)}
+.lgo-gold-lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.22em;font-weight:700;color:#4a3a0c;text-align:center}
+/* montagem: cada peça cai e encaixa em sequência */
+.lgo-build .lgo-brick,.lgo-build .lgo-tile,.lgo-build .lgo-round{animation:lgoDrop .44s cubic-bezier(.3,1.45,.5,1) both;animation-delay:calc(var(--i,0) * 60ms)}
+@keyframes lgoDrop{0%{transform:translateY(-24px);opacity:0}60%{opacity:1}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.lgo-build .lgo-brick,.lgo-build .lgo-tile,.lgo-build .lgo-round{animation:none}}
+.lgo-replay{all:unset;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--ink);border:1px solid var(--line-soft);background:var(--surface);border-radius:4px;padding:3px 8px;align-self:flex-start}
+.lgo-replay:hover{border-color:var(--line)}
+.lgo-palette{display:flex;gap:4px;flex-wrap:wrap}
+.lgo-palette .lgo-round{width:16px;height:16px}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="brand">FashionAI</div>
+      <h1>Redesenho oficial + Anatomias do Card — v17</h1>
+      <p class="lede">Consolida todas as edições da v8 (metadados de marca/logo em cada card, notas de refino) sobre a base de largura corrigida da v3, adiciona o Bento assimétrico compacto interativo, na v13 o container do esquema — a borda interna que isola o conteúdo do <code>ClothesScheme</code> (RF5) do chrome social do post —, na v14 uma revisão contra bibliografia real de design de moda: Passarela e Raio-X reformulados, Recibo virou Custo por uso, e a nova prancha Silhueta &amp; Proporção; na v15 a nova prancha Hype Focus, espelhando a narrativa homônima do DNA de Estilo (RF13) um nível abaixo — por peça, não por esquema; e na v16 a nova prancha Cartela Sazonal, reaproveitando como toggle opt-in o mesmo catálogo de presets sazonais da narrativa homônima do DNA; e na v17 a nova prancha Lego (10) e sua versão por peça (C7): o card inteiro montado em blocos de encaixe, com exceção das fotos.</p>
+    </div>
+    <div class="stampbox">
+      Prancha técnica<br><b>SVG consolidado v17</b><br>outubro 2026
+    </div>
+  </div>
+</header>
+
+<div class="fixnote">
+  <div class="wrap">✓ Base v3 mantida: todo <b>Compacto</b> usa a mesma largura do <b>Ampliado</b>. ✓ v8 incorporada: logos de marca em peças, faixas de metadados (ocasião · estilo · cor · tamanho), notas de refino. ✓ Novo: Bento assimétrico compacto agora é <b>interativo</b> — clique num logo para trocar os dados e a assimetria da grade.</div>
+</div>
+
+<main>
+<!-- ============ SECTION A ============ -->
+<section class="band">
+  <div class="wrap">
+    <h2 class="sec">A. Cards oficiais já implementados</h2>
+    <p class="sec-sub">Cada grupo mostra o mesmo card em diferentes densidades de conteúdo, largura sempre igual dentro do grupo. Peças agora trazem o logo da marca junto ao nome, e os comprimidos viraram "preview comprimido ampliado" com mais espaço entre linhas.</p>
+
+    <!-- GROUP 0: Container do esquema -->
+    <div class="group" style="border-bottom-color:var(--mark)">
+      <h3 class="group-title">Container do esquema<span class="zoom-badge" style="background:var(--mark);margin-left:10px">novo</span></h3>
+      <p class="sec-sub" style="margin-bottom:18px;max-width:74ch">Todo card de <b>esquema de vestimenta</b> (<code>ClothesScheme</code>, RF5) embrulhava dois níveis de conteúdo sob a mesma borda: o <b>chrome social do post</b> (quem publicou, quando, curtidas, ações) e o <b>esquema em si</b> — a composição renderizada pelo Background Studio (RF11), título, selos, preço, descrição e a lista de peças. Esta anatomia formaliza a borda que separa os dois: a <b>borda interna, tracejada em rosa</b>, abaixo. Ela vale para os três grupos seguintes (Lista vertical, Grade de peças, Foto hero + lista lateral) — não para "Peça de roupa", que descreve uma <code>ClothesPiece</code>, entidade diferente.</p>
+      <div class="variants">
+        <div class="variant">
+          <span class="variant-label"><b>Anatomia anotada — Lista vertical</b></span>
+          <div class="card" style="width:260px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="scheme-container">
+              <div class="c-photo"><svg viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Foto/composição do esquema (RF11)</span></div>
+              <div class="c-row"><span class="k">Título · selos · preço</span>Título do look · R$ 1.290</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span>casual · minimal</div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+            </div>
+            <div class="c-foot">
+              <div class="metrics">likes · comentários · shares · remixes</div>
+              <div class="actions">Curtir · Comentar · Compartilhar · Remixar · Editar · Retornar</div>
+            </div>
+          </div>
+        </div>
+        <div class="plate-notes" style="max-width:40ch">
+          <span class="lbl">Borda externa — chrome social do post</span>
+          <p class="note"><code>c-header</code> e <code>c-foot</code> ficam <b>fora</b> do container: são metadados de quem publicou e como a rede reage — não pertencem ao esquema. É o que muda de dono quando o esquema é remixado (RF7): o post é novo, mas o conteúdo dentro do container pode nascer idêntico ao original.</p>
+          <span class="lbl">Borda interna — o esquema (ClothesScheme)</span>
+          <p class="note">Tudo dentro da borda tracejada é o próprio <code>ClothesScheme</code>: a composição renderizada (fundo + peças posicionadas), <code>title</code>, <code>seals</code>, <code>totalPrice</code>, <code>description</code>, <code>occasion</code>/<code>style</code> e os <code>SchemeItem</code>. É este container — não o card inteiro — que o RF9 edita, que o RF13 referencia célula a célula dentro do DNA de Estilo, e sobre o qual o RF20/RF21 posicionam o selo emitido.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 1: Peça de roupa -->
+    <div class="group">
+      <h3 class="group-title">Peça de roupa</h3>
+      <div class="variants">
+        <div class="variant">
+          <span class="variant-label"><b>Peça — Ampliado</b></span>
+          <div class="card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="c-photo"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 4 4 13H6l4-13z"/></svg><span>Foto da peça</span></div>
+            <div class="c-row"><span class="k">Categoria · marca · sexo · selos</span>Preço · ocasião · estilo</div>
+            <div class="c-row"><span class="k">Identificação</span>Nome · tamanho · cor · material · subcategoria</div>
+            <div class="c-foot">
+              <div class="metrics">likes · comentários · shares · remixes</div>
+              <div class="actions">Curtir · Comentar · Compartilhar · Remixar · Editar · Retornar</div>
+            </div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+        </div>
+
+        <div class="variant">
+          <span class="variant-label"><b>Peça — Compacto</b><span class="zoom-badge">mesma largura</span><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="line-item">
+              <div class="line-thumb">logo</div>
+              <div class="line-text">
+                <span class="t1"><b>marca</b> · nome · selos · preço</span>
+                <span class="t2">tipo · tamanho</span>
+              </div>
+            </div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+        </div>
+
+        <div class="variant">
+          <span class="variant-label"><b>Peça — Foto</b><span class="zoom-badge">thumbnail 1:1</span></span>
+          <div class="card" style="width:110px">
+            <div class="c-photo" style="aspect-ratio:1"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 4 4 13H6l4-13z"/></svg><span>Foto</span></div>
+          </div>
+          <div class="dim-w"><span class="dim">45 mm</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 2: Lista vertical -->
+    <div class="group">
+      <h3 class="group-title">Lista vertical</h3>
+      <div class="variants">
+        <div class="variant">
+          <span class="variant-label"><b>Lista vertical — Ampliado</b><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="scheme-container">
+              <div class="c-photo"><svg viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Foto do esquema</span></div>
+              <div class="c-row"><span class="k">Título · selos · preço</span>Título do look · R$ 1.290</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span>casual · minimal</div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+              <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+            </div>
+            <div class="c-foot">
+              <div class="metrics">likes · comentários · shares · remixes</div>
+              <div class="actions">Curtir · Comentar · Compartilhar · Remixar · Editar · Retornar</div>
+            </div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+        </div>
+
+        <div class="variant">
+          <span class="variant-label"><b>Lista vertical — Preview comprimido ampliado</b><span class="zoom-badge">mesma largura</span><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+            <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+            <div class="piece2"><div class="logo-chip">logo</div><div class="ptxt"><span class="l1">marca · nome · selos · preço</span><span class="l2">tipo · tamanho</span></div></div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+          <div class="v8-note"><b>Benefício da v8</b>Mais espaço entre linhas e maior largura total — consolida os ajustes recentes sem perder clareza estrutural.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 3: Grade de peças -->
+    <div class="group">
+      <h3 class="group-title">Grade de peças</h3>
+      <div class="variants">
+        <div class="variant">
+          <span class="variant-label"><b>Grade de peças — Ampliado</b><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="scheme-container">
+              <div class="c-photo"><svg viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Foto do esquema</span></div>
+              <div class="c-row"><span class="k">Título · selos · preço</span>Título do look · R$ 1.290</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span>casual · minimal</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft)">
+                <div style="background:var(--surface);padding:8px;font-size:10px"><b>peça · marca</b><br><span style="color:var(--muted)">selos · preço</span></div>
+                <div style="background:var(--surface);padding:8px;font-size:10px"><b>peça · marca</b><br><span style="color:var(--muted)">selos · preço</span></div>
+                <div style="background:var(--surface);padding:8px;font-size:10px"><b>peça · marca</b><br><span style="color:var(--muted)">selos · preço</span></div>
+                <div style="background:var(--surface);padding:8px;font-size:10px"><b>peça · marca</b><br><span style="color:var(--muted)">selos · preço</span></div>
+              </div>
+            </div>
+            <div class="c-foot">
+              <div class="metrics">likes · comentários · shares · remixes</div>
+              <div class="actions">Curtir · Comentar · Compartilhar · Remixar · Editar · Retornar</div>
+            </div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+        </div>
+
+        <div class="variant">
+          <span class="variant-label"><b>Grade de peças — Preview comprimido ampliado</b><span class="zoom-badge">mesma largura</span><span class="v8-badge">v8</span></span>
+          <div class="card summary-card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="c-row"><span class="k">Título do look</span></div>
+            <div class="c-row">4 peças · selos · preço</div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+          <div class="v8-note"><b>Benefício da v8</b>Mais espaço para nome do look e resumo — consolida os ajustes recentes sem perder clareza estrutural.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP 4: Foto hero + lista lateral -->
+    <div class="group">
+      <h3 class="group-title">Foto hero + lista lateral</h3>
+      <div class="variants">
+        <div class="variant">
+          <span class="variant-label"><b>Foto hero + lista lateral — Ampliado</b><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="c-header">
+              <div class="c-avatar"></div>
+              <div class="c-meta">autor · data · visibilidade</div>
+              <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+            </div>
+            <div class="scheme-container">
+              <div class="hero-lateral-row">
+                <div class="c-photo hero-lateral-photo"><svg viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Foto do esquema</span></div>
+                <div class="hero-lateral-list">
+                  <div class="piece2-sm"><b>ZARA</b><span>peça · tipo · tam.</span></div>
+                  <div class="piece2-sm"><b>LEVI'S</b><span>peça · tipo · tam.</span></div>
+                  <div class="piece2-sm"><b>NIKE</b><span>peça · tipo · tam.</span></div>
+                  <div class="piece2-sm"><b>COACH</b><span>peça · tipo · tam.</span></div>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Título · selos · preço</span>Título do look · R$ 1.290</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span>casual · minimal</div>
+              <div class="c-row"><span class="k">Marcas das peças</span></div>
+              <div class="brandrow-logos"><span class="lg">ZARA</span><span class="lg">LEVI'S</span><span class="lg">NIKE</span><span class="lg">COACH</span></div>
+            </div>
+            <div class="c-foot">
+              <div class="metrics">likes · comentários · shares · remixes</div>
+              <div class="actions">Curtir · Comentar · Compartilhar · Remixar · Editar · Retornar</div>
+            </div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+        </div>
+
+        <div class="variant">
+          <span class="variant-label"><b>Foto hero + lista lateral — Preview comprimido ampliado</b><span class="zoom-badge">mesma largura</span><span class="v8-badge">v8</span></span>
+          <div class="card" style="width:220px">
+            <div class="c-photo" style="aspect-ratio:16/9"><svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Hero</span></div>
+            <div class="piece-row"><span class="p1"><b>Z</b> peça · selos · preço</span></div>
+            <div class="piece-row"><span class="p1"><b>L</b> peça · selos · preço</span></div>
+            <div class="piece-row"><span class="p1"><b>N</b> peça · selos · preço</span></div>
+            <div class="piece-row"><span class="p1"><b>C</b> peça · selos · preço</span></div>
+            <div class="c-row"><span class="k">Metadados do look</span>ocasião · estilo · cor · tamanho</div>
+          </div>
+          <div class="dim-w"><span class="dim">90 mm</span></div>
+          <div class="v8-note"><b>Benefício da v8</b>Lista lateral compacta sem nomes de marca redundantes, com faixa horizontal de ocasião, estilo, cor e tamanho.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ SECTION B ============ -->
+<section class="band alt">
+  <div class="wrap">
+    <h2 class="sec">B. Variações de anatomia oficiais e implementadas</h2>
+    <p class="sec-sub"><b>Oficializadas nesta versão</b> — deixam de ser propostas e passam a ter o mesmo status de anatomia vigente da Seção A, container do esquema incluído. Seis pranchas de layout para o card de esquema, todas com largura de compacto idêntica ao ampliado (90&nbsp;mm). Cada prancha recebeu a consolidação de metadados de marca da v8. Destaque: o <b>Bento assimétrico</b> agora tem um seletor de marca interativo.</p>
+
+    <div class="plates">
+
+      <!-- 01 PASSARELA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">01</span>
+          <h3 class="plate-name">Passarela</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×34 mm</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="scheme-container">
+              <div class="amp-cover">
+                <div class="cap">Fim de tarde — ocasião · estilo · paleta</div>
+                <div class="runway-wrap" style="height:58px">
+                  <svg class="stage-svg" viewBox="0 0 220 58" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="coneGrad1" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#FFEFC8" stop-opacity="0.48"/>
+          <stop offset="100%" stop-color="#FFEFC8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="floorGrad1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a4f57"/>
+          <stop offset="55%" stop-color="#8c8478"/>
+          <stop offset="100%" stop-color="#d9cbb0"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="220" height="58" fill="#0d0f13"/>
+      <g class="cones">
+      <polygon points="19.8,5 24.2,5 53.9,23.2 -9.9,23.2" fill="url(#coneGrad1)"/>
+      <polygon points="63.8,5 68.2,5 97.9,23.2 34.1,23.2" fill="url(#coneGrad1)"/>
+      <polygon points="107.8,5 112.2,5 141.9,23.2 78.1,23.2" fill="url(#coneGrad1)"/>
+      <polygon points="151.8,5 156.2,5 185.9,23.2 122.1,23.2" fill="url(#coneGrad1)"/>
+      <polygon points="195.8,5 200.2,5 229.9,23.2 166.1,23.2" fill="url(#coneGrad1)"/>
+      </g>
+      <rect x="0" y="0" width="220" height="2.3" fill="#22252b"/>
+      <g class="fixtures" fill="#3a3d44">
+      <rect x="18.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="22.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="62.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="66.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="106.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="110.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="150.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="154.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="194.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="198.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      </g>
+      <g class="crowd" fill="#1b1d22" stroke="rgba(255,255,255,.08)" stroke-width="0.3">
+      <ellipse cx="5.1" cy="11.3" rx="2.0" ry="2.3"/>
+      <ellipse cx="17.1" cy="11.3" rx="1.7" ry="2.0"/>
+      <ellipse cx="29.6" cy="11.3" rx="1.9" ry="2.3"/>
+      <ellipse cx="6.4" cy="15.3" rx="1.6" ry="1.9"/>
+      <ellipse cx="18.0" cy="15.3" rx="1.8" ry="2.2"/>
+      <ellipse cx="30.1" cy="15.3" rx="1.6" ry="2.0"/>
+      <ellipse cx="6.8" cy="19.3" rx="2.8" ry="3.3"/>
+      <ellipse cx="18.1" cy="19.3" rx="3.0" ry="3.7"/>
+      <ellipse cx="29.0" cy="19.3" rx="2.7" ry="3.3"/>
+      <ellipse cx="191.6" cy="11.3" rx="2.0" ry="2.4"/>
+      <ellipse cx="203.2" cy="11.3" rx="2.0" ry="2.4"/>
+      <ellipse cx="213.4" cy="11.3" rx="1.5" ry="1.9"/>
+      <ellipse cx="191.1" cy="15.3" rx="2.5" ry="3.0"/>
+      <ellipse cx="203.1" cy="15.3" rx="2.3" ry="2.7"/>
+      <ellipse cx="214.3" cy="15.3" rx="2.5" ry="3.0"/>
+      <ellipse cx="190.7" cy="19.3" rx="2.6" ry="3.2"/>
+      <ellipse cx="201.7" cy="19.3" rx="2.6" ry="3.1"/>
+      <ellipse cx="214.5" cy="19.3" rx="2.4" ry="2.8"/>
+      </g>
+      <g class="flashes">
+      <circle class="flash-dot f2" cx="28.9" cy="9.6" r="0.63"/>
+      <circle class="flash-dot f2" cx="30.2" cy="13.8" r="0.71"/>
+      <circle class="flash-dot f3" cx="203.4" cy="9.5" r="0.76"/>
+      <circle class="flash-dot f2" cx="190.3" cy="17.0" r="0.62"/>
+      </g>
+      <polygon class="floor" points="66.0,23.2 154.0,23.2 220.0,58.0 0,58.0" fill="url(#floorGrad1)"/>
+      <g class="persp-lines" stroke="rgba(255,255,255,.16)" stroke-width="0.66" fill="none">
+      <line x1="66.0" y1="23.2" x2="0.0" y2="58.0"/>
+      <line x1="88.0" y1="23.2" x2="55.0" y2="58.0"/>
+      <line x1="110.0" y1="23.2" x2="110.0" y2="58.0"/>
+      <line x1="132.0" y1="23.2" x2="165.0" y2="58.0"/>
+      <line x1="154.0" y1="23.2" x2="220.0" y2="58.0"/>
+      </g>
+    </svg>
+                  <div class="runway-items">
+                    <div class="runway-item" style="width:42px"><span class="rank-badge">1</span><svg class="glyph" viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span class="shadow-ellipse"></span><span class="like-badge">♥ 1.240</span></div>
+                    <div class="runway-item" style="width:50px"><span class="rank-badge">2</span><svg class="glyph" viewBox="0 0 24 24"><path d="M7 3h10l1 18h-4.2L12 11.5 10.2 21H6z"/></svg><span class="shadow-ellipse"></span><span class="like-badge">♥ 890</span></div>
+                    <div class="runway-item" style="width:58px"><span class="rank-badge">3</span><svg class="glyph" viewBox="0 0 24 24"><path d="M2.5 15.5h6.5l3.5 2.2H20a1.5 1.5 0 0 1 1.5 1.5v1.3h-19z"/><path d="M2.5 15.5V12"/></svg><span class="shadow-ellipse"></span><span class="like-badge">♥ 540</span></div>
+                    <div class="runway-item" style="width:64px"><span class="rank-badge">4</span><svg class="glyph" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0z"/><path d="M3 15h18v2.5H3z"/></svg><span class="shadow-ellipse"></span><span class="like-badge">♥ 210</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Rótulo lateral</span>"Fim de tarde" (vertical, sobre a capa)</div>
+              <div class="c-row"><span class="k">Trilho ordenado por</span><b>curtidas</b> (decrescente) — passarela <b>democratizada</b>, não curada por um diretor de estilo</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:13px">
+              <div class="scheme-container">
+                <div class="line-item" style="align-items:center;gap:8px">
+                  <div class="runway-wrap runway-wrap-sm">
+                    <svg class="stage-svg" viewBox="0 0 86 30" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="coneGrad2" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#FFEFC8" stop-opacity="0.48"/>
+          <stop offset="100%" stop-color="#FFEFC8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="floorGrad2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a4f57"/>
+          <stop offset="55%" stop-color="#8c8478"/>
+          <stop offset="100%" stop-color="#d9cbb0"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="86" height="30" fill="#0d0f13"/>
+      <g class="cones">
+      <polygon points="12.1,5 16.5,5 30.8,13.2 -2.2,13.2" fill="url(#coneGrad2)"/>
+      <polygon points="40.8,5 45.2,5 59.5,13.2 26.5,13.2" fill="url(#coneGrad2)"/>
+      <polygon points="69.5,5 73.9,5 88.2,13.2 55.2,13.2" fill="url(#coneGrad2)"/>
+      </g>
+      <rect x="0" y="0" width="86" height="2.3" fill="#22252b"/>
+      <g class="fixtures" fill="#3a3d44">
+      <rect x="11.1" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="14.3" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="39.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="43.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="68.5" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="71.7" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      </g>
+      <g class="crowd" fill="#1b1d22" stroke="rgba(255,255,255,.08)" stroke-width="0.3">
+      <ellipse cx="4.4" cy="6.0" rx="2.0" ry="2.4"/>
+      <ellipse cx="10.7" cy="6.0" rx="1.5" ry="1.8"/>
+      <ellipse cx="3.7" cy="8.5" rx="2.2" ry="2.6"/>
+      <ellipse cx="11.0" cy="8.5" rx="2.1" ry="2.5"/>
+      <ellipse cx="4.3" cy="10.9" rx="2.5" ry="3.0"/>
+      <ellipse cx="11.1" cy="10.9" rx="2.4" ry="2.8"/>
+      <ellipse cx="76.5" cy="6.0" rx="1.6" ry="1.9"/>
+      <ellipse cx="81.9" cy="6.0" rx="1.4" ry="1.7"/>
+      <ellipse cx="75.0" cy="8.5" rx="1.8" ry="2.1"/>
+      <ellipse cx="82.3" cy="8.5" rx="2.1" ry="2.5"/>
+      <ellipse cx="76.7" cy="10.9" rx="2.5" ry="2.9"/>
+      <ellipse cx="82.6" cy="10.9" rx="3.0" ry="3.6"/>
+      </g>
+      <g class="flashes">
+      <circle class="flash-dot f1" cx="3.7" cy="4.2" r="0.72"/>
+      <circle class="flash-dot f2" cx="3.5" cy="6.5" r="0.74"/>
+      </g>
+      <polygon class="floor" points="25.8,13.2 60.2,13.2 86.0,30.0 0,30.0" fill="url(#floorGrad2)"/>
+      <g class="persp-lines" stroke="rgba(255,255,255,.16)" stroke-width="0.40" fill="none">
+      <line x1="25.8" y1="13.2" x2="0.0" y2="30.0"/>
+      <line x1="34.4" y1="13.2" x2="21.5" y2="30.0"/>
+      <line x1="43.0" y1="13.2" x2="43.0" y2="30.0"/>
+      <line x1="51.6" y1="13.2" x2="64.5" y2="30.0"/>
+      <line x1="60.2" y1="13.2" x2="86.0" y2="30.0"/>
+      </g>
+    </svg>
+                    <div class="runway-items">
+                      <div class="runway-item runway-item-sm" style="width:16px"><svg class="glyph" viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg></div>
+                      <div class="runway-item runway-item-sm" style="width:19px"><svg class="glyph" viewBox="0 0 24 24"><path d="M7 3h10l1 18h-4.2L12 11.5 10.2 21H6z"/></svg></div>
+                      <div class="runway-item runway-item-sm" style="width:22px"><svg class="glyph" viewBox="0 0 24 24"><path d="M2.5 15.5h6.5l3.5 2.2H20a1.5 1.5 0 0 1 1.5 1.5v1.3h-19z"/><path d="M2.5 15.5V12"/></svg></div>
+                      <div class="runway-item runway-item-sm" style="width:25px"><svg class="glyph" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0z"/><path d="M3 15h18v2.5H3z"/></svg></div>
+                    </div>
+                  </div>
+                  <div class="line-text">
+                    <span class="t1"><b>Passarela</b> · look em destaque</span>
+                    <span class="t2">passarela com teto, luzes e plateia · trilho democratizado por curtidas</span>
+                    <span class="t2">R$ 1.290 →</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Ordenação por curtidas — passarela democratizada, não curada</span>
+            <p class="note">O trilho não segue a ordem padrão de <code>tipo</code> (parte do corpo). As 4 peças são reordenadas por <b>curtidas decrescentes</b>: rank 1 = mais curtida, rank 4 = menos curtida. <b>Ressalva de moda:</b> num desfile real, a ordem dos looks é uma decisão autoral do diretor de estilo — o look de abertura define o tom da coleção, o de fechamento é o <i>showstopper</i> — nunca uma votação do público. Esta prancha assume conscientemente o oposto: é a <b>passarela do público</b>, ordenada pela reação de quem vê, não pela intenção de quem monta o look. As duas lógicas são válidas, mas são diferentes — o rótulo "democratizada" existe para não travestir uma de outra.</p>
+            <span class="lbl">Cenário de passarela (SVG vetorial)</span>
+            <p class="note">O fundo agora é um <b>cenário completo</b>, não mais um GIF genérico: treliça de <b>holofotes no teto</b> com feixe cônico de luz por peça (pulsando suavemente), <b>plateia em arquibancada lateral</b> (silhuetas + flashes de câmera piscando aleatoriamente) e <b>chão com perspectiva</b> (linhas convergentes, como um piso refletivo de passarela real). Cada peça "desfila" sobre esse chão, com sombra e badges de posição/curtidas por cima.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 ETIQUETA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">02</span>
+          <h3 class="plate-name">Etiqueta</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×16 mm</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card" id="etiquetaCard">
+              <div class="scheme-container">
+              <div class="minitag-row">
+                <button class="minitag active" data-i="0" onclick="setEtiqueta(0)">ZARA</button>
+                <button class="minitag" data-i="1" onclick="setEtiqueta(1)">LEVI'S</button>
+                <button class="minitag" data-i="2" onclick="setEtiqueta(2)">NIKE</button>
+                <button class="minitag" data-i="3" onclick="setEtiqueta(3)">COACH</button>
+              </div>
+              <div style="text-align:center;padding:8px 10px 6px;border-bottom:1px dashed var(--line-soft)">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--muted)">FASHION AI</div>
+                <div style="font-family:var(--serif);font-size:32px;margin:6px 0 0" id="etqPreco">R$ 249,90</div>
+                <div style="font-size:10px;color:var(--muted)" id="etqSub">blusa de linho</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca</span><b id="etqMarca">ZARA</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Título</span><b id="etqTitulo">Blusa de linho</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Tamanho</span><b id="etqTamanho">M</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Cores</span><b id="etqCores">Preto / Cinza</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Coleção</span><b id="etqColecao">Outono 2024</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Código</span><b id="etqCodigo">ZU2024-01</b></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div style="text-align:center;padding:6px 8px;border-bottom:1px dashed var(--line-soft);font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--muted)">COMPACTO ETIQUETA</div>
+                <div class="c-row" style="text-align:center"><b>R$ 1.290</b> · look completo</div>
+                <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca <b>ZARA</b></span><span>Coleção <b>Out/2024</b></span></div>
+                <div class="c-row" style="font-size:10px;color:var(--muted)">Título · selos · preço · descrição</div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Seletor de peças (mini-etiquetas)</span>
+            <p class="note">Fileira de <b>mini-etiquetas segmentadas</b> (cada uma com o furo de fixação como numa etiqueta real) no topo do card. Tocar numa marca troca todos os campos abaixo — preço, título, tamanho, cores, coleção e código — para os dados daquela peça. O preço permanece o elemento de maior destaque tipográfico.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 RAIO-X -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">03</span>
+          <h3 class="plate-name">Raio-X</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×22 mm</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="xray-stage">
+                <div class="c-photo"><svg viewBox="0 0 24 24"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg><span>Foto do esquema</span></div>
+                <div class="xray-sweep"></div>
+                <svg class="xray-lines" viewBox="0 0 220 172" preserveAspectRatio="none">
+                  <line x1="56" y1="28" x2="168" y2="28" stroke="#C9B79C" stroke-width="4" stroke-linecap="round"/>
+                  <line x1="64" y1="66" x2="190" y2="66" stroke="#2F3E46" stroke-width="5.5" stroke-linecap="round"/>
+                  <line x1="56" y1="110" x2="158" y2="110" stroke="#7A4B3A" stroke-width="3" stroke-linecap="round"/>
+                  <line x1="64" y1="148" x2="178" y2="148" stroke="#C9BFAE" stroke-width="2.4" stroke-linecap="round"/>
+                  <circle cx="168" cy="28" r="2.6" fill="#C9B79C"/>
+                  <circle cx="190" cy="66" r="3" fill="#2F3E46"/>
+                  <circle cx="158" cy="110" r="2.3" fill="#7A4B3A"/>
+                  <circle cx="178" cy="148" r="2" fill="#C9BFAE"/>
+                </svg>
+                <div class="xray-callout" style="top:20px"><span class="xn" style="background:#C9B79C;color:#5a4620">01</span><b>ZARA</b></div>
+                <div class="xray-callout" style="top:58px"><span class="xn" style="background:#2F3E46;color:#fff">02</span><b>LEVI'S</b></div>
+                <div class="xray-callout" style="top:102px"><span class="xn" style="background:#7A4B3A;color:#fff">03</span><b>NIKE</b></div>
+                <div class="xray-callout" style="top:140px"><span class="xn" style="background:#C9BFAE;color:#4a4438">04</span><b>COACH</b></div>
+              </div>
+              <div class="c-row"><span class="k">Legenda</span>01 topo · 02 base · 03 sapato · 04 acessório</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge">v8</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="xrow">
+                  <span class="xn" style="background:#C9B79C;color:#5a4620">01</span>
+                  <div class="pulse-wrap">
+                    <svg class="pulse-svg" style="animation-duration:2.3s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                      <defs><path id="ekgU1" d="M0,10 H9 L12,10 L14,4.5 L16,15.5 L18,2.5 L20,10 H25 L29,8 L33,12 L37,10 H80" fill="none"/></defs>
+                      <use href="#ekgU1" x="0" stroke="#C9B79C" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                      <use href="#ekgU1" x="80" stroke="#C9B79C" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="xtxt"><b>ZARA</b><span>estilo minimal · ocasião casual · tam M</span></div>
+                </div>
+                <div class="xrow">
+                  <span class="xn" style="background:#2F3E46;color:#fff">02</span>
+                  <div class="pulse-wrap">
+                    <svg class="pulse-svg" style="animation-duration:1.9s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                      <defs><path id="ekgU2" d="M0,10 H9 L12,10 L14,4.5 L16,15.5 L18,2.5 L20,10 H25 L29,8 L33,12 L37,10 H80" fill="none"/></defs>
+                      <use href="#ekgU2" x="0" stroke="#2F3E46" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/>
+                      <use href="#ekgU2" x="80" stroke="#2F3E46" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="xtxt"><b>LEVI'S</b><span>estilo urbano · ocasião trabalho · tam 40</span></div>
+                </div>
+                <div class="xrow">
+                  <span class="xn" style="background:#7A4B3A;color:#fff">03</span>
+                  <div class="pulse-wrap">
+                    <svg class="pulse-svg" style="animation-duration:2.6s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                      <defs><path id="ekgU3" d="M0,10 H9 L12,10 L14,4.5 L16,15.5 L18,2.5 L20,10 H25 L29,8 L33,12 L37,10 H80" fill="none"/></defs>
+                      <use href="#ekgU3" x="0" stroke="#7A4B3A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+                      <use href="#ekgU3" x="80" stroke="#7A4B3A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="xtxt"><b>NIKE</b><span>estilo sport · ocasião lazer · tam 39</span></div>
+                </div>
+                <div class="xrow">
+                  <span class="xn" style="background:#C9BFAE;color:#4a4438">04</span>
+                  <div class="pulse-wrap">
+                    <svg class="pulse-svg" style="animation-duration:2.1s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                      <defs><path id="ekgU4" d="M0,10 H9 L12,10 L14,4.5 L16,15.5 L18,2.5 L20,10 H25 L29,8 L33,12 L37,10 H80" fill="none"/></defs>
+                      <use href="#ekgU4" x="0" stroke="#9c9484" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                      <use href="#ekgU4" x="80" stroke="#9c9484" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="xtxt"><b>COACH</b><span>estilo elegante · ocasião social · tam U</span></div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Scanner: foto central + linhas grossas coloridas</span>
+            <p class="note">A <b>foto do esquema</b> agora é o elemento central do scanner, com um <b>sweep</b> de varredura passando por cima. Quatro linhas grossas saem dos balões numerados (esquerda) e "escaneiam" a foto até um ponto de leitura — <b>cor da linha = cor da marca</b>, <b>espessura da linha = peso compositivo da peça no look</b> (LEVI'S é a mais grossa, a <b>peça-âncora</b>). Acima de cada linha: estilo, ocasião e tamanho daquela peça.</p>
+            <span class="lbl">"Peça-âncora" não é a mais curtida</span>
+            <p class="note">Diferente da Passarela, a espessura aqui <b>não</b> é uma métrica social. "Peça-âncora" é termo de styling real: a peça que ancora visualmente a composição — normalmente a de maior volume, cor mais saturada ou posição estrutural mais central (aqui, a calça) — a mesma lógica de "peça focal" usada em consultoria de imagem para decidir em torno de que peça o resto do look se organiza. O Raio-X é, deliberadamente, o único dos seis modelos que expõe construção, não popularidade.</p>
+            <span class="lbl">Compacto: linha em pulso de ECG</span>
+            <p class="note">No compacto, cada linha virou um <b>pulso cardíaco animado</b> (estilo monitor de ECG, looping infinito) — a cor do traço é a mesma cor da peça/marca usada no scanner do ampliado (COACH ganhou um tom levemente mais escuro do bege só para manter legibilidade sobre fundo branco). Cada peça pulsa numa velocidade ligeiramente diferente (1,9–2,6s), reforçando a leitura de "quatro sinais vitais" distintos.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 04 BENTO — INTERATIVO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">04</span>
+          <h3 class="plate-name">Bento assimétrico</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×28 mm (3 células)</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:1px;background:var(--line-soft)">
+                <div style="background:var(--surface-2);aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)">CAPA 3×2</div>
+                <div style="background:var(--chalk-soft);padding:8px;font-size:11px;font-weight:600;color:var(--chalk)">R$ 1.290</div>
+              </div>
+              <div class="c-row"><span class="k">Título · ocasião · estilo</span>1 / 3 looks</div>
+              <div class="c-row"><span class="k">Selos · descrição · estilo</span></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto — interativo</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge">v8 · novo</span></span>
+            <div class="compact-zoom">
+              <div class="card" id="bentoCard" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="c-row" style="padding:6px 10px 4px;font-size:9.5px;color:var(--muted);border-bottom:none">Seleção por marca</div>
+                <div class="bento-selector" role="tablist" aria-label="Selecionar marca do Bento">
+                  <button class="bento-logo" data-i="0" type="button">ZARA</button>
+                  <button class="bento-logo" data-i="1" type="button">LEVI'S</button>
+                  <button class="bento-logo" data-i="2" type="button">NIKE</button>
+                  <button class="bento-logo" data-i="3" type="button">COACH</button>
+                </div>
+                <div class="bento-state">Estado exibido: clique no logo <b id="bentoStateN">2</b></div>
+                <div class="bento-grid" id="bentoGrid" data-asym="1">
+                  <div class="bg-cover" id="bgCover">CAPA<br>look</div>
+                  <div class="bg-price">
+                    <span class="pv" id="bgTitulo">Look Levi's</span>
+                    <span class="pl" id="bgPreco">R$ 1.290</span>
+                  </div>
+                  <div class="bg-meta">
+                    <div class="row"><span>Coleção</span><b id="bgColecao">—</b></div>
+                    <div class="row"><span>Ocasião</span><b id="bgOcasiao">—</b></div>
+                    <div class="row"><span>Estilo</span><b id="bgEstilo">urbano</b></div>
+                    <div class="row"><span>Tamanho</span><b id="bgTamanho">40</b></div>
+                  </div>
+                </div>
+                <div class="bento-foot">
+                  <span id="bentoCounter">2 / 4 marcas</span>
+                  <span class="asym-tag">assimetria ativa</span>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Como funciona</span>
+            <p class="note">Ao clicar em outro logo, a grade muda (assimetria) e passa a exibir os dados da marca selecionada. Ex.: logo 3 → bloco reorganizado com dados Nike. Teste clicando nos logos ao lado.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 ESPECTRO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">05</span>
+          <h3 class="plate-name">Espectro</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×14 mm</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b><span class="v8-badge">v8</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="card amp-card">
+              <div class="scheme-container">
+              <div class="c-row"><span class="k">Título · selos · preço</span>Look monocromático</div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span></div>
+              <div class="spectrum-list">
+                <div class="spectrum-row">
+                  <button class="spectrum-bar" style="width:58px;background:#C9B79C" onclick="toggleColorTip(this)" aria-label="Cor: Areia"><span class="color-tip">Areia</span></button>
+                  <span class="spectrum-pct">32%</span>
+                  <div class="xtxt"><b>ZARA</b><span>blusa · M · minimal · casual</span></div>
+                </div>
+                <div class="spectrum-row">
+                  <button class="spectrum-bar" style="width:74px;background:#2F3E46" onclick="toggleColorTip(this)" aria-label="Cor: Grafite azulado"><span class="color-tip">Grafite azulado</span></button>
+                  <span class="spectrum-pct">41%</span>
+                  <div class="xtxt"><b>LEVI'S</b><span>calça · 40 · urbano · trabalho</span></div>
+                </div>
+                <div class="spectrum-row">
+                  <button class="spectrum-bar" style="width:34px;background:#7A4B3A" onclick="toggleColorTip(this)" aria-label="Cor: Terracota"><span class="color-tip">Terracota</span></button>
+                  <span class="spectrum-pct">19%</span>
+                  <div class="xtxt"><b>NIKE</b><span>tênis · 39 · sport · lazer</span></div>
+                </div>
+                <div class="spectrum-row">
+                  <button class="spectrum-bar" style="width:14px;background:#E6E2DB;border:1px solid var(--line-soft)" onclick="toggleColorTip(this)" aria-label="Cor: Marfim"><span class="color-tip">Marfim</span></button>
+                  <span class="spectrum-pct">8%</span>
+                  <div class="xtxt"><b>COACH</b><span>bolsa · U · elegante · social</span></div>
+                </div>
+              </div>
+              <div class="c-row" style="font-size:10px;color:var(--muted)">paleta · estilo · marcas</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="c-row" style="padding:7px 10px 5px"><b>Look monocromático</b></div>
+                <div class="spectrum-list">
+                  <div class="spectrum-row" style="padding:4px 10px">
+                    <button class="spectrum-bar" style="width:40px;background:#C9B79C" onclick="toggleColorTip(this)" aria-label="Cor: Areia"><span class="color-tip">Areia</span></button>
+                    <span class="logo-chip" style="width:auto;padding:1px 6px">ZARA</span>
+                  </div>
+                  <div class="spectrum-row" style="padding:4px 10px">
+                    <button class="spectrum-bar" style="width:50px;background:#2F3E46" onclick="toggleColorTip(this)" aria-label="Cor: Grafite azulado"><span class="color-tip">Grafite azulado</span></button>
+                    <span class="logo-chip" style="width:auto;padding:1px 6px">LEVI'S</span>
+                  </div>
+                  <div class="spectrum-row" style="padding:4px 10px">
+                    <button class="spectrum-bar" style="width:24px;background:#7A4B3A" onclick="toggleColorTip(this)" aria-label="Cor: Terracota"><span class="color-tip">Terracota</span></button>
+                    <span class="logo-chip" style="width:auto;padding:1px 6px">NIKE</span>
+                  </div>
+                  <div class="spectrum-row" style="padding:4px 10px">
+                    <button class="spectrum-bar" style="width:10px;background:#E6E2DB;border:1px solid var(--line-soft)" onclick="toggleColorTip(this)" aria-label="Cor: Marfim"><span class="color-tip">Marfim</span></button>
+                    <span class="logo-chip" style="width:auto;padding:1px 6px">COACH</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Coerência peça + cor</span>
+            <p class="note">A <b>largura de cada faixa</b> acompanha o peso da peça no look (% de área na composição) — não é decorativa. LEVI'S domina o visual (41%), COACH quase não aparece (8%).</p>
+            <span class="lbl">Compacto reduz ao essencial</span>
+            <p class="note">No compacto, cada linha mantém a faixa proporcional, mas troca todo o detalhe (tipo, tamanho, estilo, ocasião) por apenas o <b>nome da marca</b>.</p>
+            <span class="lbl">Clique revela a cor</span>
+            <p class="note">Tocar/clicar numa faixa mostra o <b>nome da cor</b> num balão, como as etiquetas de cor do Trello. Clicar em outra faixa troca o balão; clicar fora fecha.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 RECIBO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">06</span>
+          <h3 class="plate-name">Custo por uso</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×15 mm</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card" style="font-family:var(--mono)">
+              <div class="scheme-container">
+              <div style="text-align:center;padding:12px 10px;border-bottom:1px dashed var(--line-soft)">
+                <div style="font-size:11px;letter-spacing:.14em">FIM DE TARDE — CUSTO POR USO</div>
+                <div style="font-size:9px;color:var(--muted);margin-top:3px">FASHIONAI · VALOR DE USO</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Blusa · R$ 329 · 7 usos</span><b>R$ 47,00</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Calça · R$ 489 · 12 usos</span><b>R$ 40,75</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Tênis · R$ 472 · 4 usos</span><b>R$ 118,00</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;border-top:1px dashed var(--line-soft);padding-top:10px">
+                <span>MÉDIA/USO</span><span>R$ 68,58</span>
+              </div>
+              <div class="c-foot" style="display:flex;gap:6px">
+                <span style="border:1px dashed var(--thread);color:var(--thread);border-radius:3px;padding:2px 6px;font-size:9px">VER LOOK</span>
+                <span style="border:1px dashed var(--mark);color:var(--mark);border-radius:3px;padding:2px 6px;font-size:9px">SALVAR</span>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge">v8</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px;font-family:var(--mono)">
+              <div class="scheme-container">
+                <div style="text-align:center;padding:6px 8px;border-bottom:1px dashed var(--line-soft);font-size:9.5px;letter-spacing:.1em;color:var(--muted)">CUSTO/USO — RESUMO</div>
+                <div class="c-row" style="display:flex;justify-content:space-between"><span>Look urbano</span><b>23 usos</b></div>
+                <div class="c-row" style="display:flex;justify-content:space-between;font-size:10.5px"><span>Blusa</span><span>R$ 47/uso</span></div>
+                <div class="c-row" style="display:flex;justify-content:space-between;font-size:10.5px"><span>Calça</span><span>R$ 41/uso</span></div>
+                <div class="c-row" style="display:flex;justify-content:space-between;font-size:10.5px"><span>Tênis</span><span>R$ 118/uso</span></div>
+                <div class="c-row" style="display:flex;justify-content:space-between;font-weight:600;border-top:1px dashed var(--line-soft)"><span>MÉDIA</span><span>R$ 68,58</span></div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Por que não é mais um recibo</span>
+            <p class="note">A versão anterior desta prancha era um <b>recibo de compra</b> (cliente, vendedor, coleção, total pago) — um artefato de comércio, sem relação com estilo, corte ou uso real da peça. Esta versão troca preço-de-compra por <b>preço ÷ número de vezes usada</b> (<code>ClothesPiece.wear_count</code>, já existente no sistema), a métrica central do movimento de moda consciente — o mesmo raciocínio do <i>30 Wears Challenge</i> (Livia Firth / Fashion Revolution): uma peça cara usada 30 vezes pode custar menos por uso que uma peça barata usada 2 vezes e esquecida no armário.</p>
+            <span class="lbl">Leitura do card</span>
+            <p class="note">Quanto <b>mais alto</b> o custo por uso, menos a peça está "se pagando" — um sinal de estilo tanto quanto financeiro: peças de custo/uso alto são candidatas a remix (RF7) ou a repensar a combinação, não a substituição imediata.</p>
+            <div class="v8-note"><b>Refino da v8</b>Consolidação das interações visuais e dos metadados resumidos de cada anatomia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 SILHUETA & PROPORÇÃO -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">07</span>
+          <h3 class="plate-name">Silhueta &amp; Proporção</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×20 mm <span class="v8-badge" style="background:var(--thread)">novo</span></span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="sil-wrap">
+                <div class="sil-row"><span class="sil-lbl">Ombro</span><div class="sil-track"><div class="sil-bar" style="width:68%"></div></div><span class="sil-pct">68%</span></div>
+                <div class="sil-row"><span class="sil-lbl">Busto</span><div class="sil-track"><div class="sil-bar" style="width:62%"></div></div><span class="sil-pct">62%</span></div>
+                <div class="sil-row"><span class="sil-lbl">Cintura</span><div class="sil-track"><div class="sil-bar" style="width:38%"></div></div><span class="sil-pct">38%</span></div>
+                <div class="sil-row"><span class="sil-lbl">Quadril</span><div class="sil-track"><div class="sil-bar" style="width:72%"></div></div><span class="sil-pct">72%</span></div>
+                <div class="sil-tag"><b>Silhueta: Ampulheta</b> — cintura marcada, ombro e quadril equilibrados entre si</div>
+                <div class="sil-chips">
+                  <span class="sil-chip active">Ampulheta</span>
+                  <span class="sil-chip">Coluna</span>
+                  <span class="sil-chip">Trapézio · A-line</span>
+                  <span class="sil-chip">Triângulo invertido</span>
+                  <span class="sil-chip">Oversized</span>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="c-row" style="display:flex;justify-content:space-between;align-items:center">
+                  <span><b>Ampulheta</b> · cintura marcada</span>
+                  <span style="font-family:var(--mono);font-size:9px;color:var(--thread)">68·62·38·72</span>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Fundamentação</span>
+            <p class="note">Silhueta e proporção são, em qualquer manual de design de moda (ex. Sorger &amp; Udale, <i>The Fundamentals of Fashion Design</i>), o <b>primeiro</b> elemento de análise de um look — antes de cor, antes de tecido. É a lacuna mais evidente entre os modelos anteriores: nenhum deles falava da forma que o conjunto desenha no corpo.</p>
+            <span class="lbl">Como funciona</span>
+            <p class="note">Quatro barras (ombro, busto, cintura, quadril) mostram a <b>largura visual relativa</b> de cada zona, derivada das peças do esquema por slot (<code>SchemeItem.slot</code>) — o mesmo padrão de largura-por-zona usado em pranchas técnicas de moldes. O perfil resultante (largo-estreito-largo, reto, estreito-largo etc.) classifica a silhueta em uma das cinco famílias clássicas.</p>
+            <span class="lbl">Por que a Seção C não tem esta prancha</span>
+            <p class="note">Silhueta é, por definição, uma leitura do <b>conjunto</b> — uma peça isolada não tem silhueta própria no mesmo sentido (uma calça sozinha não é "ampulheta"). Diferente das outras seis pranchas, esta não é adaptada à versão por peça.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 HYPE FOCUS (NOVO) -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">08</span>
+          <h3 class="plate-name">Hype Focus</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×20 mm <span class="v8-badge" style="background:var(--thread)">novo</span></span>
+        </div>
+        <p class="thesis">Espelha, um nível abaixo, a narrativa Hype Focus do DNA de Estilo (RF13, <code>anatomia_cards_DNA_v2.html</code>, prancha B10): lá, o medidor é por <b>esquema referenciado no DNA</b>; aqui, é por <b>peça que compõe este esquema</b>. Só existe porque a Fase I generalizou <code>hypeScore</code>/<code>hypeScoreGlobal</code> para toda <code>ClothesPiece</code>, não só esquemas marcados Look do Dia — sem essa generalização, este dado não existiria por peça.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="hf-wrap" aria-label="Hype Focus — Hype Score global por peça, role para ver mais">
+                <div class="hf-hero">
+                  <svg class="hf-gauge" viewBox="0 0 100 56">
+                    <path class="track" d="M10,48 A40,40 0 0 1 90,48"/>
+                    <path class="fill" d="M10,48 A40,40 0 0 1 90,48" stroke="var(--hype-good)" stroke-dasharray="125.66" stroke-dashoffset="27.65"/>
+                  </svg>
+                  <div class="hf-hero-tx">
+                    <span class="lbl-top">Peça em destaque</span>
+                    <div class="tt">Tênis branco</div>
+                    <div class="sb">🔥 78% · Muito Estiloso · NIKE</div>
+                  </div>
+                </div>
+                <div class="hf-row">
+                  <div class="ph"></div>
+                  <div class="hf-row-tx"><div class="tt">Blusa</div><div class="sb">ZARA</div></div>
+                  <div class="hf-meter">
+                    <span class="pct"><span class="hf-flame">🔥</span> 71%</span>
+                    <div class="hf-bar-track"><div class="hf-bar-fill" style="width:71%;background:var(--hype-good)"></div></div>
+                  </div>
+                </div>
+                <div class="hf-row">
+                  <div class="ph"></div>
+                  <div class="hf-row-tx"><div class="tt">Calça</div><div class="sb">LEVI'S</div></div>
+                  <div class="hf-meter">
+                    <span class="pct"><span class="hf-flame">🔥</span> 55%</span>
+                    <div class="hf-bar-track"><div class="hf-bar-fill" style="width:55%;background:var(--hype-warning)"></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="c-row" style="display:flex;justify-content:space-between;align-items:center">
+                  <span><span class="hf-flame">🔥</span> <b>Tênis branco</b> · 78%</span>
+                  <span style="font-family:var(--mono);font-size:9px;color:var(--hype-good)">média 68%</span>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Medidor grande (a peça com maior Hype Score global deste esquema) + uma linha por peça restante, cada uma com mini-medidor (chama, percentual, barra) — mesmo layout da prancha B10 do DNA, um nível abaixo: lá a lista é de esquemas, aqui é de peças (<code>SchemeItem.wardrobeItemId</code>).</p>
+            <span class="lbl">O que é exibido — global, não pessoal</span>
+            <p class="note"><b>Hype Score pessoal</b> da peça (0–100%, fórmula em <code>RF6_HYPE_SCORE_CALCULO.md</code> §9.2) mede o engajamento e alinhamento de tendência <b>desta peça específica</b>. <b>Hype Score global</b> — mesma Seção 9, <code>HypeGroup</code> com <code>entityType = PIECE</code> — agrupa peças <b>de qualquer usuário</b> iguais ou semelhantes a esta e faz a média dos Hype Scores pessoais do grupo. É o número global — não o pessoal do dono do esquema — que aparece em cada linha.</p>
+            <span class="lbl">Cor do medidor</span>
+            <p class="note">Mesma paleta de status fixa da prancha B10 do DNA (nunca temática): <span style="color:var(--hype-critical)">●</span> 0–29% crítico, <span style="color:var(--hype-serious)">●</span> 30–49% sério, <span style="color:var(--hype-warning)">●</span> 50–69% atenção, <span style="color:var(--hype-good)">●</span> 70–100% bom.</p>
+            <span class="lbl">Não é <code>narrativeType</code></span>
+            <p class="note">Diferente do Hype Focus do DNA (uma de 10 opções do campo persistido <code>DNAScheme.narrativeType</code>), <code>ClothesScheme</code> não tem campo de narrativa — esta prancha é uma <b>visão opcional</b> do card do esquema (como as demais 7 da Seção B), não um valor armazenado a escolher.</p>
+            <span class="lbl">Por que a Seção C não tem esta prancha</span>
+            <p class="note">Mesma razão da Silhueta &amp; Proporção: uma peça isolada já <i>é</i> a unidade medida aqui (seu próprio <code>hypeScoreGlobal</code>) — não há uma lista de sub-itens para ranquear dentro de uma única peça, então não sobra conteúdo para uma versão "por peça" desta prancha.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 09 CARTELA SAZONAL (NOVO) -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">09</span>
+          <h3 class="plate-name">Cartela sazonal</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×20 mm <span class="v8-badge" style="background:var(--thread)">novo</span></span>
+        </div>
+        <p class="thesis">Mesmo catálogo de 4 presets sazonais do DNA (RF13, <code>anatomia_cards_DNA_v2.html</code>, prancha 11 — Frost/Solstice/Ember/Bloom), reaproveitado aqui como um <b>toggle opt-in</b> no Background Studio (Etapa 4): diferente do DNA, <code>ClothesScheme</code> não tem campo de narrativa a escolher — o usuário liga "Aplicar arte sazonal automática" quando <code>season</code> já está preenchido, e o preset sobrescreve o fundo manual até que o usuário desligue de novo.</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="season-hero">
+                <div class="snow-layer" aria-hidden="true">
+                  <span style="left:6%;--drift:14px;width:4px;height:4px;animation-duration:5.2s;animation-delay:0s"></span>
+                  <span style="left:16%;--drift:-10px;animation-duration:6.4s;animation-delay:.6s"></span>
+                  <span style="left:27%;--drift:8px;width:3px;height:3px;animation-duration:4.6s;animation-delay:1.3s"></span>
+                  <span style="left:38%;--drift:-14px;animation-duration:7s;animation-delay:.2s"></span>
+                  <span style="left:49%;--drift:10px;width:6px;height:6px;animation-duration:5.8s;animation-delay:2.1s"></span>
+                  <span style="left:60%;--drift:-8px;animation-duration:4.9s;animation-delay:1.7s"></span>
+                  <span style="left:71%;--drift:12px;width:3px;height:3px;animation-duration:6.7s;animation-delay:.9s"></span>
+                  <span style="left:82%;--drift:-11px;animation-duration:5.4s;animation-delay:2.6s"></span>
+                  <span style="left:91%;--drift:9px;width:5px;height:5px;animation-duration:6.1s;animation-delay:1.1s"></span>
+                </div>
+                <div class="season-hero-label">
+                  <span class="tt">❄ Inverno · Frost</span>
+                  <span class="sb">season = WINTER · backgroundAnimationType = SNOW</span>
+                </div>
+              </div>
+              <div class="season-toggle"><span>Aplicar arte sazonal automática</span><span class="sw"></span></div>
+              <div class="c-row"><span class="k">Descrição · ocasião · estilo</span></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="compact-zoom">
+              <div class="card" style="width:220px;font-size:12.5px">
+              <div class="scheme-container">
+                <div class="c-row" style="display:flex;justify-content:space-between;align-items:center">
+                  <span>❄ <b>Frost</b> · Inverno</span>
+                  <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">SNOW</span>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Hero de estação (gradiente + camada de animação) no lugar do hero de arte de fundo manual, seguido da linha de toggle — o mesmo hero visual da prancha 11 do DNA, aqui em altura reduzida (não ocupa a narrativa inteira, só a região de background do card do esquema).</p>
+            <span class="lbl">As 4 estações — mesmo catálogo do DNA</span>
+            <div class="season-swatch-row">
+              <div class="season-swatch spring"><span class="tt">🌸 Bloom</span><span class="sb">Primavera</span></div>
+              <div class="season-swatch summer"><span class="tt">☀ Solstice</span><span class="sb">Verão</span></div>
+              <div class="season-swatch autumn"><span class="tt">🍂 Ember</span><span class="sb">Outono</span></div>
+              <div class="season-swatch winter active"><span class="tt">❄ Frost</span><span class="sb">Inverno</span></div>
+            </div>
+            <p class="note" style="margin-top:8px">Catálogo completo (paleta, animação CSS, justificativa) em <code>RF11/RF11_PRESETS_SAZONAIS.md</code> — o <b>mesmo</b> catálogo de 4 presets é reaproveitado na narrativa Cartela Sazonal do DNA de Estilo (RF13, <code>anatomia_cards_DNA_v2.html</code>, prancha 11), lá como valor intrínseco de uma narrativa escolhida, aqui como opção opt-in.</p>
+            <span class="lbl">Opt-in, nunca automático por omissão</span>
+            <p class="note">O toggle só aparece quando <code>ClothesScheme.season</code> já está preenchido (Etapa 3), e começa desligado. Ligá-lo sobrescreve <code>backgroundGradient</code>/<code>backgroundAnimationType</code> com o preset da estação; desligá-lo restaura a escolha manual anterior, guardada em memória durante a sessão de edição — nunca aplicado silenciosamente.</p>
+            <span class="lbl">Não confundir com as "paletas sazonais" do RF11 (AURA)</span>
+            <p class="note">O sistema de presets AURA já usa "Spring/Summer/Autumn/Winter" como <i>análise de cor pessoal</i> (quente/claro/vívido etc.), sem relação com a época real do ano. Esta prancha é sobre o <code>Season</code> enum literal — a mesma estação já usada em <code>ClothesScheme.season</code> desde a taxonomia original (não confundir com <code>ClothesPiece.market: Market</code>, enum não relacionado). Os dois sistemas são combináveis, não concorrentes.</p>
+            <span class="lbl">Não é <code>narrativeType</code></span>
+            <p class="note">Diferente da Cartela Sazonal do DNA (uma de 11 opções do campo persistido <code>DNAScheme.narrativeType</code>), <code>ClothesScheme</code> não tem campo de narrativa — esta prancha é uma <b>visão opcional</b> do card do esquema (como as demais 7 da Seção B), reaproveitando <code>season</code> + <code>backgroundAnimationType</code>, campos de configuração já existentes.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10 LEGO (NOVO, v17) -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">10</span>
+          <h3 class="plate-name">Lego</h3>
+          <span class="plate-meta">Ampliado 90×220 mm · Compacto 90×20 mm <span class="v8-badge" style="background:var(--thread)">novo</span></span>
+        </div>
+        <p class="thesis">O card inteiro — chrome social, container do esquema, título, selos, lista de peças, metadados, métricas e ações — é <b>montado em blocos de encaixe</b>, sobre uma placa-base cinza com pinos. A <b>única exceção são as fotos</b>: a composição do esquema e as miniaturas das peças continuam fotos reais, encaixadas numa moldura de blocos. É a primeira prancha da Seção B que não muda <i>o que</i> o card mostra, e sim <i>de que matéria</i> ele é feito — a contraparte estrutural do <code>lego_material</code> que o RF11 já oferece como textura de superfície (<code>app/lib/materialPresets.ts</code>).</p>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Ampliado</b></span>
+            <div class="lgo-card">
+              <!-- chrome social: fora do container -->
+              <div class="lgo-brick" style="--c:var(--lgo-white)">
+                <div class="lgo-row" style="align-items:center">
+                  <span class="lgo-round stud" style="--c:var(--lgo-tan)"></span>
+                  <span style="font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">autor · data · visibilidade</span>
+                  <span class="lgo-round" style="--c:var(--lgo-red);flex:none;width:12px;height:12px"></span>
+                </div>
+              </div>
+              <div class="scheme-container">
+                <div class="lgo-brick lgo-frame" style="--c:var(--lgo-white)">
+                  <div class="lgo-photo">
+                    <span class="lgo-photo-tag">foto original</span>
+                    <div class="c-photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span>composição do esquema (RF11)</span></div>
+                  </div>
+                </div>
+                <div class="lgo-tile" style="--c:var(--lgo-white)">
+                  <div style="font-family:var(--serif);font-size:13px;font-weight:600;line-height:1.2">Fim de tarde</div>
+                  <div style="font-size:9px;color:var(--muted)">casual · minimal · neutros</div>
+                </div>
+                <div class="lgo-row" style="align-items:center;margin-top:3px">
+                  <span class="lgo-round stud" style="--c:var(--lgo-green)" title="selo de marca"></span>
+                  <span class="lgo-round stud" style="--c:var(--lgo-red)" title="selo de celebridade"></span>
+                  <span class="lgo-round stud" style="--c:var(--lgo-yellow)" title="selo de look"></span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);flex:none;margin:0 0 0 auto;font-family:var(--mono);font-size:9px;font-weight:600">3 selos</span>
+                </div>
+                <div class="lgo-bond">
+                  <div class="lgo-brick lgo-dk" style="--c:var(--lgo-black)"><div class="lgo-piece"><div class="lgo-thumb"></div><span class="lgo-print"><b>Blusa de linho</b> <span>· ZARA</span></span></div></div>
+                  <div class="lgo-brick lgo-dk" style="--c:var(--lgo-blue)"><div class="lgo-piece"><div class="lgo-thumb"></div><span class="lgo-print"><b>Calça reta</b> <span>· LEVI'S</span></span></div></div>
+                  <div class="lgo-brick" style="--c:var(--lgo-white)"><div class="lgo-piece"><div class="lgo-thumb"></div><span class="lgo-print" style="box-shadow:0 0 0 1px var(--line-soft)"><b>Tênis urbano</b> <span>· NIKE</span></span></div></div>
+                  <div class="lgo-brick" style="--c:var(--lgo-tan)"><div class="lgo-piece"><div class="lgo-thumb"></div><span class="lgo-print"><b>Bolsa tote</b> <span>· COACH</span></span></div></div>
+                </div>
+                <div class="lgo-row" style="margin-top:2px">
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">casual</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">minimal</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">neutros</span>
+                </div>
+              </div>
+              <!-- rodapé social: fora do container -->
+              <div class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8.5px;color:var(--muted)">♡ 128 · 💬 34 · ↻ 12 · ⟲ 5</div>
+              <div class="lgo-row">
+                <span class="lgo-brick lgo-btn" style="--c:var(--lgo-yellow)">CURTIR</span>
+                <span class="lgo-brick lgo-btn lgo-dk" style="--c:var(--lgo-blue)">COMENTAR</span>
+                <span class="lgo-brick lgo-btn lgo-dk" style="--c:var(--lgo-red)">REMIX</span>
+              </div>
+            </div>
+            <button class="lgo-replay" type="button">▸ montar de novo</button>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Compacto</b><span class="zoom-badge">zoom 1.6× · mesma largura</span><span class="v8-badge" style="background:var(--thread)">novo</span></span>
+            <div class="compact-zoom">
+              <div class="lgo-card" style="font-size:12.5px">
+                <div class="scheme-container">
+                  <div class="lgo-brick" style="--c:var(--lgo-white)">
+                    <div class="lgo-row" style="align-items:center">
+                      <span class="lgo-print" style="flex:1;padding-left:0"><b style="font-size:11px">Fim de tarde</b></span>
+                      <span class="lgo-round stud" style="--c:var(--lgo-black)"></span>
+                      <span class="lgo-round stud" style="--c:var(--lgo-blue)"></span>
+                      <span class="lgo-round stud" style="--c:var(--lgo-white);box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.28),0 0 0 1px var(--line-soft)"></span>
+                      <span class="lgo-round stud" style="--c:var(--lgo-tan)"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="note" style="max-width:30ch">No compacto, cada peça vira <b>um pino 1×1</b> na cor dominante dela: o look inteiro cabe numa fileira de 4 pinos.</p>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Layout</span>
+            <p class="note">Placa-base cinza com pinos vista de cima, como fundo do card. Sobre ela, a mesma ordem da anatomia oficial: chrome social → container do esquema (foto, título, selos, peças, metadados) → métricas e ações. As peças ficam em <b>aparelho de amarração</b> (cada bloco recua para o lado oposto do anterior), como uma parede de blocos de verdade.</p>
+            <span class="lbl">Bloco × placa lisa × placa redonda</span>
+            <p class="note">Mesma lógica das peças reais de montar: <b>bloco com pinos</b> = estrutura (moldura da foto, uma linha por peça, botões); <b>placa lisa</b>, sem pinos = superfície impressa, onde o texto mora (título, metadados, métricas); <b>placa redonda 1×1</b> = selos e avatar. Nos blocos coloridos, o texto vai numa placa lisa branca impressa dentro do bloco, então a legibilidade não depende da cor da peça.</p>
+            <span class="lbl">Cor dos blocos = cor da peça</span>
+            <p class="note">A cor de cada bloco é a <b>cor dominante da peça</b> (a mesma que alimenta o Espectro), quantizada para a mais próxima de 10 cores clássicas de blocos:</p>
+            <div class="lgo-palette" aria-label="paleta de 10 cores de bloco">
+              <span class="lgo-round stud" style="--c:var(--lgo-white)" title="branco"></span><span class="lgo-round stud" style="--c:var(--lgo-black)" title="preto"></span><span class="lgo-round stud" style="--c:var(--lgo-red)" title="vermelho"></span><span class="lgo-round stud" style="--c:var(--lgo-blue)" title="azul"></span><span class="lgo-round stud" style="--c:var(--lgo-yellow)" title="amarelo"></span><span class="lgo-round stud" style="--c:var(--lgo-green)" title="verde"></span><span class="lgo-round stud" style="--c:var(--lgo-tan)" title="bege"></span><span class="lgo-round stud" style="--c:var(--lgo-orange)" title="laranja"></span><span class="lgo-round stud" style="--c:var(--lgo-lbg)" title="cinza claro"></span><span class="lgo-round stud" style="--c:var(--lgo-dbg)" title="cinza escuro"></span>
+            </div>
+            <p class="note">Blusa preta → bloco preto, calça jeans → azul, tênis branco → branco, bolsa caramelo → bege. O selo mantém as três cores de sistema (marca, celebridade, look) mapeadas para verde, vermelho e amarelo.</p>
+            <span class="lbl">Por que as fotos não viram blocos</span>
+            <p class="note">A foto é o registro fiel da peça — é o que o pipeline do RF4 trabalha para padronizar. Pixelizar a foto num mosaico de blocos destruiria justamente a informação que o card existe para mostrar (caimento, textura, estampa). Por isso tudo que é <b>interface</b> vira bloco e tudo que é <b>registro</b> continua foto.</p>
+            <span class="lbl">Montagem animada</span>
+            <p class="note">Ao entrar na tela, os blocos caem e encaixam em sequência, de cima para baixo (60 ms entre peças). "▸ montar de novo" repete a montagem. Com "reduzir movimento" ativo, o card aparece já montado.</p>
+            <span class="lbl">Relação com <code>lego_material</code> (RF11)</span>
+            <p class="note">O material do RF11 é uma <b>textura</b> aplicada à superfície de um card com anatomia comum. Esta prancha é uma <b>anatomia</b>: muda a estrutura. Os dois não se somam — com esta anatomia ativa, o seletor de material do Background Studio fica desabilitado, porque a placa-base já é o material.</p>
+            <span class="lbl">Nome no produto</span>
+            <p class="note">"LEGO" é marca registrada. No seletor do app, a opção deve se chamar <b>Blocos</b>; "Lego" fica só como nome de trabalho desta prancha.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION C: PEÇA DE ROUPA — VERSÃO POR MODELO ============ -->
+<section class="band" id="secaoC">
+  <div class="wrap">
+    <h2 class="sec">C. Peça de roupa — versão por modelo — oficial</h2>
+    <p class="sec-sub"><b>Oficializada nesta versão</b>, junto com a Seção B. As mesmas <b>7 das 10</b> anatomias da seção B (todas exceto Silhueta &amp; Proporção, Hype Focus e Cartela Sazonal — ver a nota em cada prancha; Lego entra como C7), adaptadas para exibir <b>uma única peça</b> em vez do look completo de 4 peças. Onde a intensidade varia por curtidas (Passarela, Raio-X), a <b>peça 1</b> — a mais curtida — recebe o tratamento mais intenso do sistema; a <b>peça 4</b> — a menos curtida — recebe o mínimo possível.</p>
+
+    <div class="plates">
+
+      <!-- C1 PASSARELA — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C1</span>
+          <h3 class="plate-name">Passarela — peça</h3>
+          <span class="plate-meta">Peça 1 (máx. de holofotes) · Peça 4 (mín. de holofotes)</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça 1 · mais curtida</b><span class="v8-badge" style="background:var(--thread)">8 focos</span></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="runway-wrap" style="height:150px">
+                <svg class="stage-svg" viewBox="0 0 220 176" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="coneGrad31" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#FFEFC8" stop-opacity="0.48"/>
+          <stop offset="100%" stop-color="#FFEFC8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="floorGrad31" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a4f57"/>
+          <stop offset="55%" stop-color="#8c8478"/>
+          <stop offset="100%" stop-color="#d9cbb0"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="220" height="176" fill="#0d0f13"/>
+      <g class="cones">
+      <polygon points="11.6,5 15.9,5 110.6,73.9 -83.1,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="39.0,5 43.5,5 138.1,73.9 -55.6,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="66.5,5 71.0,5 165.6,73.9 -28.1,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="94.0,5 98.5,5 193.1,73.9 -0.6,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="121.5,5 126.0,5 220.6,73.9 26.9,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="149.1,5 153.4,5 248.1,73.9 54.4,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="176.6,5 180.9,5 275.6,73.9 81.9,73.9" fill="url(#coneGrad31)"/>
+      <polygon points="204.1,5 208.4,5 303.1,73.9 109.4,73.9" fill="url(#coneGrad31)"/>
+      </g>
+      <rect x="0" y="0" width="220" height="2.3" fill="#22252b"/>
+      <g class="fixtures" fill="#3a3d44">
+      <rect x="10.6" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="13.8" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="38.0" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="41.2" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="65.5" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="68.8" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="93.0" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="96.2" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="120.5" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="123.8" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="148.1" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="151.2" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="175.6" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="178.8" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      <rect x="203.1" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="206.2" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      </g>
+      <g class="crowd" fill="#1b1d22" stroke="rgba(255,255,255,.08)" stroke-width="0.3">
+      <ellipse cx="4.9" cy="34.8" rx="1.4" ry="1.6"/>
+      <ellipse cx="18.0" cy="34.8" rx="1.4" ry="1.7"/>
+      <ellipse cx="29.8" cy="34.8" rx="1.8" ry="2.2"/>
+      <ellipse cx="5.3" cy="48.1" rx="2.2" ry="2.6"/>
+      <ellipse cx="17.0" cy="48.1" rx="2.0" ry="2.4"/>
+      <ellipse cx="28.8" cy="48.1" rx="2.3" ry="2.8"/>
+      <ellipse cx="6.2" cy="61.4" rx="2.0" ry="2.4"/>
+      <ellipse cx="18.3" cy="61.4" rx="3.1" ry="3.7"/>
+      <ellipse cx="28.8" cy="61.4" rx="2.9" ry="3.5"/>
+      <ellipse cx="190.1" cy="34.8" rx="1.8" ry="2.2"/>
+      <ellipse cx="202.5" cy="34.8" rx="1.7" ry="2.0"/>
+      <ellipse cx="213.8" cy="34.8" rx="1.5" ry="1.7"/>
+      <ellipse cx="189.9" cy="48.1" rx="2.4" ry="2.8"/>
+      <ellipse cx="202.5" cy="48.1" rx="2.5" ry="3.0"/>
+      <ellipse cx="213.7" cy="48.1" rx="1.8" ry="2.1"/>
+      <ellipse cx="189.9" cy="61.4" rx="2.4" ry="2.9"/>
+      <ellipse cx="202.7" cy="61.4" rx="3.1" ry="3.7"/>
+      <ellipse cx="214.7" cy="61.4" rx="2.6" ry="3.1"/>
+      </g>
+      <g class="flashes">
+      <circle class="flash-dot f1" cx="17.5" cy="33.5" r="0.54"/>
+      <circle class="flash-dot f2" cx="29.9" cy="33.2" r="0.66"/>
+      <circle class="flash-dot f2" cx="5.7" cy="46.1" r="0.60"/>
+      <circle class="flash-dot f1" cx="5.7" cy="59.6" r="0.56"/>
+      <circle class="flash-dot f2" cx="18.6" cy="58.6" r="0.70"/>
+      <circle class="flash-dot f2" cx="189.3" cy="33.2" r="0.59"/>
+      <circle class="flash-dot f2" cx="214.2" cy="46.5" r="0.71"/>
+      <circle class="flash-dot f2" cx="202.6" cy="58.6" r="0.63"/>
+      <circle class="flash-dot f3" cx="214.1" cy="59.0" r="0.54"/>
+      </g>
+      <polygon class="floor" points="66.0,73.9 154.0,73.9 220.0,176.0 0,176.0" fill="url(#floorGrad31)"/>
+      <g class="persp-lines" stroke="rgba(255,255,255,.16)" stroke-width="0.66" fill="none">
+      <line x1="66.0" y1="73.9" x2="0.0" y2="176.0"/>
+      <line x1="88.0" y1="73.9" x2="55.0" y2="176.0"/>
+      <line x1="110.0" y1="73.9" x2="110.0" y2="176.0"/>
+      <line x1="132.0" y1="73.9" x2="165.0" y2="176.0"/>
+      <line x1="154.0" y1="73.9" x2="220.0" y2="176.0"/>
+      </g>
+    </svg>
+                <div class="runway-items" style="justify-content:center;padding-bottom:6px">
+                  <div class="runway-item" style="width:72px;padding-top:0">
+                    <span class="rank-badge">1</span>
+                    <svg class="glyph" viewBox="0 0 24 24" style="width:46%"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg>
+                    <span class="shadow-ellipse"></span>
+                    <span class="like-badge">♥ 1.240</span>
+                  </div>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Peça</span>Blusa de linho · ZARA</div>
+              <div class="c-row"><span class="k">Holofotes</span>8 focos — o <b>máximo</b> do sistema, reservado à peça mais curtida do look</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça 4 · menos curtida</b><span class="v8-badge" style="background:var(--faint)">1 foco</span></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div class="runway-wrap" style="height:150px">
+                <svg class="stage-svg" viewBox="0 0 220 176" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="coneGrad34" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#FFEFC8" stop-opacity="0.48"/>
+          <stop offset="100%" stop-color="#FFEFC8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="floorGrad34" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a4f57"/>
+          <stop offset="55%" stop-color="#8c8478"/>
+          <stop offset="100%" stop-color="#d9cbb0"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="220" height="176" fill="#0d0f13"/>
+      <g class="cones">
+      <polygon points="107.8,5 112.2,5 206.8,73.9 13.2,73.9" fill="url(#coneGrad34)"/>
+      </g>
+      <rect x="0" y="0" width="220" height="2.3" fill="#22252b"/>
+      <g class="fixtures" fill="#3a3d44">
+      <rect x="106.8" y="2.3" width="6.4" height="2.6" rx="1"/><circle cx="110.0" cy="5.2" r="1.5" fill="#FFE8B0"/>
+      </g>
+      <g class="crowd" fill="#1b1d22" stroke="rgba(255,255,255,.08)" stroke-width="0.3">
+      <ellipse cx="8.9" cy="34.8" rx="1.7" ry="2.1"/>
+      <ellipse cx="27.2" cy="34.8" rx="2.0" ry="2.4"/>
+      <ellipse cx="9.7" cy="48.1" rx="2.0" ry="2.4"/>
+      <ellipse cx="25.6" cy="48.1" rx="2.1" ry="2.5"/>
+      <ellipse cx="8.1" cy="61.4" rx="2.5" ry="3.1"/>
+      <ellipse cx="26.1" cy="61.4" rx="2.8" ry="3.4"/>
+      <ellipse cx="192.7" cy="34.8" rx="1.6" ry="1.9"/>
+      <ellipse cx="210.8" cy="34.8" rx="1.4" ry="1.7"/>
+      <ellipse cx="193.8" cy="48.1" rx="2.2" ry="2.6"/>
+      <ellipse cx="211.0" cy="48.1" rx="1.8" ry="2.2"/>
+      <ellipse cx="193.8" cy="61.4" rx="2.8" ry="3.4"/>
+      <ellipse cx="210.8" cy="61.4" rx="2.1" ry="2.5"/>
+      </g>
+      <g class="flashes">
+      <circle class="flash-dot f3" cx="25.2" cy="46.2" r="0.50"/>
+      <circle class="flash-dot f2" cx="193.3" cy="33.4" r="0.59"/>
+      </g>
+      <polygon class="floor" points="66.0,73.9 154.0,73.9 220.0,176.0 0,176.0" fill="url(#floorGrad34)"/>
+      <g class="persp-lines" stroke="rgba(255,255,255,.16)" stroke-width="0.66" fill="none">
+      <line x1="66.0" y1="73.9" x2="0.0" y2="176.0"/>
+      <line x1="88.0" y1="73.9" x2="55.0" y2="176.0"/>
+      <line x1="110.0" y1="73.9" x2="110.0" y2="176.0"/>
+      <line x1="132.0" y1="73.9" x2="165.0" y2="176.0"/>
+      <line x1="154.0" y1="73.9" x2="220.0" y2="176.0"/>
+      </g>
+    </svg>
+                <div class="runway-items" style="justify-content:center;padding-bottom:6px">
+                  <div class="runway-item" style="width:92px;padding-top:0">
+                    <span class="rank-badge">4</span>
+                    <svg class="glyph" viewBox="0 0 24 24" style="width:40%"><path d="M5 15a7 7 0 0 1 14 0z"/><path d="M3 15h18v2.5H3z"/></svg>
+                    <span class="shadow-ellipse"></span>
+                    <span class="like-badge">♥ 210</span>
+                  </div>
+                </div>
+              </div>
+              <div class="c-row"><span class="k">Peça</span>Chapéu de palha</div>
+              <div class="c-row"><span class="k">Holofotes</span>1 foco — o <b>mínimo</b> possível entre todas as peças do look</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Regra de escala</span>
+            <p class="note">O número de holofotes na treliça escala com o rank de curtidas: <b>8 na peça 1</b>, <b>1 na peça 4</b> — as duas peças intermediárias (2 e 3) ficam entre esses extremos, interpolando linearmente.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C2 ETIQUETA — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C2</span>
+          <h3 class="plate-name">Etiqueta — peça</h3>
+          <span class="plate-meta">Qualidade da etiqueta escala com o preço da peça</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Comum</b><span class="tier-badge comum">R$ 249,90</span></span>
+            <div class="card amp-card">
+              <div class="scheme-container">
+              <div style="text-align:center;padding:14px 10px 6px;border-bottom:1px dashed var(--line-soft)">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--muted)">FASHION AI</div>
+                <div style="font-family:var(--serif);font-size:32px;margin:6px 0 0">R$ 249,90</div>
+                <div style="font-size:10px;color:var(--muted)">blusa de linho</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca</span><b>ZARA</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Título</span><b>Blusa de linho</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Tamanho</span><b>M</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Cores</span><b>Preto / Cinza</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Coleção</span><b>Outono 2024</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Código</span><b>ZU2024-01</b></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Premium</b><span class="tier-badge premium">R$ 899,90</span></span>
+            <div class="card amp-card tier-premium">
+              <div class="scheme-container">
+              <div style="text-align:center;padding:14px 10px 6px;border-bottom:1px solid var(--gold-soft)">
+                <div class="gold-label">FASHION AI</div>
+                <div style="font-family:var(--serif);font-size:32px;margin:6px 0 0;color:#7A5C12">R$ 899,90</div>
+                <div style="font-size:10px;color:var(--muted)">bolsa tote</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca</span><b>COACH</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Título</span><b>Bolsa tote</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Tamanho</span><b>U</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Cores</span><b>Caramelo</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Coleção</span><b>Resort 2024</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Código</span><b>CO2024-04</b></div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Regra de qualidade por preço</span>
+            <p class="note">A moldura da etiqueta responde ao <b>preço da peça</b>: acima de <b>R$ 600</b>, borda dupla dourada, label ladeado por ✦ e valores em tom âmbar (<b>Premium</b>). Abaixo disso, moldura simples e tracejada preta (<b>Comum</b>). LEVI'S (R$ 349,90) e NIKE (R$ 399,90) cairiam num terceiro nível intermediário — <b>Padrão</b> — com borda prateada, não ilustrado aqui.</p>
+            <span class="lbl">Já era peça de roupa</span>
+            <p class="note">A Etiqueta sempre descreveu <b>uma peça por vez</b> — o seletor de mini-etiquetas (seção B) é só um atalho para trocar entre peças sem sair do card.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C3 RAIO-X — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C3</span>
+          <h3 class="plate-name">Raio-X — peça</h3>
+          <span class="plate-meta">Peça 1 (ritmo máximo) · Peça 4 (ritmo mínimo)</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça 1 · mais curtida</b><span class="v8-badge" style="background:var(--thread)">142 bpm</span></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div style="padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:12px">
+                <div class="line-thumb" style="width:44px;height:44px;border-radius:8px"><svg viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg></div>
+                <div class="pulse-wrap-lg">
+                  <svg class="pulse-svg" style="animation-duration:1.0s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                    <defs><path id="ekgC1" d="M0,10 H2.8 L4.5,4.5 L5.9,15.5 L7.4,7.5 L8.8,10 H20.0 H22.8 L24.5,4.5 L25.9,15.5 L27.4,7.5 L28.8,10 H40.0 H42.8 L44.5,4.5 L45.9,15.5 L47.4,7.5 L48.8,10 H60.0 H62.8 L64.5,4.5 L65.9,15.5 L67.4,7.5 L68.8,10 H80.0" fill="none"/></defs>
+                    <use href="#ekgC1" x="0" stroke="#C9B79C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                    <use href="#ekgC1" x="80" stroke="#C9B79C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--thread);font-weight:600">142 bpm · ritmo máximo do sistema</div>
+              </div>
+              <div class="c-row"><span class="k">Peça</span>Blusa de linho · ZARA · ♥ 1.240</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça 4 · menos curtida</b><span class="v8-badge" style="background:var(--faint)">28 bpm</span></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div style="padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:12px">
+                <div class="line-thumb" style="width:44px;height:44px;border-radius:8px"><svg viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M5 15a7 7 0 0 1 14 0z"/><path d="M3 15h18v2.5H3z"/></svg></div>
+                <div class="pulse-wrap-lg">
+                  <svg class="pulse-svg" style="animation-duration:4.6s" viewBox="0 0 160 20" preserveAspectRatio="none">
+                    <defs><path id="ekgC4" d="M0,10 H11.2 L17.9,4.5 L23.7,15.5 L29.4,7.5 L35.2,10 H80.0" fill="none"/></defs>
+                    <use href="#ekgC4" x="0" stroke="#9c9484" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                    <use href="#ekgC4" x="80" stroke="#9c9484" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:600">28 bpm · ritmo mínimo do sistema</div>
+              </div>
+              <div class="c-row"><span class="k">Peça</span>Chapéu de palha · ♥ 210</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Regra de escala</span>
+            <p class="note">Ritmo e densidade de batimentos escalam juntos com o rank de curtidas: a <b>peça 1</b> pulsa em <b>1,0s por ciclo</b> com <b>4 batimentos</b> comprimidos na faixa; a <b>peça 4</b> pulsa em <b>4,6s</b> com <b>1 batimento só</b> — o "sinal vital" mais fraco do look.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C4 BENTO — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C4</span>
+          <h3 class="plate-name">Bento — peça</h3>
+          <span class="plate-meta">Sem seletor de marca: uma peça, uma grade</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça individual</b></span>
+            <div class="card amp-card">
+              <div class="c-header">
+                <div class="c-avatar"></div>
+                <div class="c-meta">autor · data · visibilidade</div>
+                <div class="c-fav"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+              </div>
+              <div class="scheme-container">
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:1px;background:var(--line-soft)">
+                <div style="background:var(--surface-2);aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--muted)"><svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.3"><path d="M4 6.5 9 4l1.4 1.4a2.3 2.3 0 0 0 3.2 0L15 4l5 2.5-1.6 4.2-2-.9V20H7.6V9.8l-2 .9z"/></svg></div>
+                <div style="background:var(--chalk-soft);padding:8px;font-size:12px;font-weight:600;color:var(--chalk);display:flex;align-items:center">R$ 249,90</div>
+              </div>
+              <div class="c-row"><span class="k">Peça · marca · tamanho</span>Blusa de linho · ZARA · M</div>
+              <div class="c-row"><span class="k">Atributos</span>minimal · casual · linho</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Diferença para a versão look</span>
+            <p class="note">A grade perde a assimetria multi-marca (não há o que alternar) e vira <b>2 células fixas</b>: capa da peça + preço. O seletor de logos (seção B) só existe quando há mais de uma marca disputando o card.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C5 ESPECTRO — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C5</span>
+          <h3 class="plate-name">Espectro — peça</h3>
+          <span class="plate-meta">Uma faixa, 100% da largura</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Peça individual</b></span>
+            <div class="card amp-card">
+              <div class="scheme-container">
+              <div class="c-row"><span class="k">Título · selos · preço</span>Blusa de linho · R$ 249,90</div>
+              <div class="spectrum-list">
+                <div class="spectrum-row">
+                  <button class="spectrum-bar" style="width:76px;background:#C9B79C" onclick="toggleColorTip(this)" aria-label="Cor: Areia"><span class="color-tip">Areia</span></button>
+                  <span class="spectrum-pct">100%</span>
+                  <div class="xtxt"><b>ZARA</b><span>linho · M · minimal</span></div>
+                </div>
+              </div>
+              <div class="c-row" style="font-size:10px;color:var(--muted)">cor única · sem mistura de marcas</div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Diferença para a versão look</span>
+            <p class="note">Sem outras peças para dividir a largura, a faixa de cor ocupa <b>100%</b> — a barra deixa de ser proporcional (não há nada para comparar) e vira uma amostra de cor pura. O clique ainda revela o nome da cor.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C6 CUSTO POR USO — PEÇA -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C6</span>
+          <h3 class="plate-name">Custo por uso — peça</h3>
+          <span class="plate-meta">Qualidade do card escala com o preço da peça</span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Comum</b><span class="tier-badge comum">R$ 249,90</span></span>
+            <div class="card amp-card" style="font-family:var(--mono)">
+              <div class="scheme-container">
+              <div style="text-align:center;padding:12px 10px;border-bottom:1px dashed var(--line-soft)">
+                <div style="font-size:11px;letter-spacing:.14em">BLUSA DE LINHO</div>
+                <div style="font-size:9px;color:var(--muted);margin-top:3px">FASHIONAI · VALOR DE USO</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca</span><b>ZARA</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Preço</span><b>R$ 249,90</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Usos</span><b>6</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;border-top:1px dashed var(--line-soft);padding-top:10px">
+                <span>CUSTO/USO</span><span>R$ 41,65</span>
+              </div>
+              <div class="c-foot" style="display:flex;gap:6px">
+                <span style="border:1px dashed var(--thread);color:var(--thread);border-radius:3px;padding:2px 6px;font-size:9px">VER PEÇA</span>
+                <span style="border:1px dashed var(--mark);color:var(--mark);border-radius:3px;padding:2px 6px;font-size:9px">SALVAR</span>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Premium</b><span class="tier-badge premium">R$ 899,90</span></span>
+            <div class="card amp-card tier-premium" style="font-family:var(--mono)">
+              <div class="scheme-container">
+              <div style="text-align:center;padding:12px 10px;border-bottom:1px solid var(--gold-soft)">
+                <div class="gold-label" style="margin-bottom:3px">PREMIUM</div>
+                <div style="font-size:11px;letter-spacing:.14em;color:#4a3a0c">BOLSA TOTE</div>
+                <div style="font-size:9px;color:var(--muted);margin-top:3px">FASHIONAI · VALOR DE USO</div>
+              </div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Marca</span><b>COACH</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Preço</span><b>R$ 899,90</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between"><span>Usos</span><b>30</b></div>
+              <div class="c-row" style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;border-top:1px solid var(--gold-soft);padding-top:10px;color:#7A5C12">
+                <span>CUSTO/USO</span><span>R$ 30,00</span>
+              </div>
+              <div class="c-foot" style="display:flex;gap:6px;background:var(--gold-bg)">
+                <span style="border:1px solid var(--gold);color:#7A5C12;border-radius:3px;padding:2px 6px;font-size:9px">VER PEÇA</span>
+                <span style="border:1px solid var(--gold);color:#7A5C12;border-radius:3px;padding:2px 6px;font-size:9px;background:linear-gradient(120deg,#E8D18A,#C9A227)">SALVAR</span>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Regra de qualidade por preço</span>
+            <p class="note">Mesma régua da Etiqueta: acima de <b>R$ 600</b>, borda dourada dupla, cabeçalho com label PREMIUM ladeado por ✦, divisórias sólidas douradas e botões com o mesmo acabamento (<b>Premium</b>). Abaixo disso, borda simples e divisórias tracejadas em preto (<b>Comum</b>).</p>
+            <span class="lbl">O ponto do exemplo</span>
+            <p class="note">A bolsa <b>premium</b> (R$ 899,90) tem custo por uso <b>menor</b> que a blusa comum (R$ 30,00 vs. R$ 41,65) — porque foi usada 5× mais. É exatamente o argumento central do <i>30 Wears Challenge</i>: preço de etiqueta sozinho não mede valor; frequência de uso, sim.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- C7 LEGO — PEÇA (NOVO, v17) -->
+      <div class="plate">
+        <div class="plate-top">
+          <span class="plate-n">C7</span>
+          <h3 class="plate-name">Lego — peça</h3>
+          <span class="plate-meta">Qualidade do card escala com o preço da peça <span class="v8-badge" style="background:var(--thread)">novo</span></span>
+        </div>
+        <div class="plate-body">
+          <div class="plate-col">
+            <span class="variant-label"><b>Comum</b><span class="tier-badge comum">R$ 249,90</span></span>
+            <div class="lgo-card">
+              <div class="scheme-container">
+                <div class="lgo-brick lgo-frame" style="--c:var(--lgo-black)">
+                  <div class="lgo-photo">
+                    <span class="lgo-photo-tag">foto original</span>
+                    <div class="c-photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span>blusa de linho</span></div>
+                  </div>
+                </div>
+                <div class="lgo-brick lgo-dk" style="--c:var(--lgo-black)"><span class="lgo-print"><b>ZARA</b> <span>· Outono 2024</span></span></div>
+                <div class="lgo-tile" style="--c:var(--lgo-white)"><div style="font-family:var(--serif);font-size:13px;font-weight:600">Blusa de linho</div></div>
+                <div class="lgo-row">
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">TAM M</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">PRETO / CINZA</span>
+                </div>
+                <div class="lgo-brick" style="--c:var(--lgo-white)"><div class="lgo-row" style="align-items:center"><span style="font-family:var(--mono);font-size:8.5px;color:var(--muted)">PREÇO</span><b style="text-align:right;font-family:var(--mono);font-size:11px">R$ 249,90</b></div></div>
+              </div>
+              <div class="lgo-row">
+                <span class="lgo-brick lgo-btn lgo-dk" style="--c:var(--lgo-blue)">VER PEÇA</span>
+                <span class="lgo-brick lgo-btn lgo-dk" style="--c:var(--lgo-red)">SALVAR</span>
+              </div>
+            </div>
+          </div>
+          <div class="plate-col">
+            <span class="variant-label"><b>Premium</b><span class="tier-badge premium">R$ 899,90</span></span>
+            <div class="lgo-card" style="background-color:#B9B3A3">
+              <div class="scheme-container">
+                <div class="lgo-brick lgo-frame lgo-gold">
+                  <div class="lgo-photo">
+                    <span class="lgo-photo-tag">foto original</span>
+                    <div class="c-photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span>bolsa tote</span></div>
+                  </div>
+                </div>
+                <div class="lgo-tile lgo-gold"><div class="lgo-gold-lbl">✦ PREMIUM ✦</div></div>
+                <div class="lgo-brick" style="--c:var(--lgo-tan)"><span class="lgo-print"><b>COACH</b> <span>· Resort 2024</span></span></div>
+                <div class="lgo-tile" style="--c:var(--lgo-white)"><div style="font-family:var(--serif);font-size:13px;font-weight:600;color:#4a3a0c">Bolsa tote</div></div>
+                <div class="lgo-row">
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">TAM U</span>
+                  <span class="lgo-tile" style="--c:var(--lgo-white);font-family:var(--mono);font-size:8px;text-align:center">CARAMELO</span>
+                </div>
+                <div class="lgo-brick lgo-gold"><div class="lgo-row" style="align-items:center"><span style="font-family:var(--mono);font-size:8.5px;color:#4a3a0c">PREÇO</span><b style="text-align:right;font-family:var(--mono);font-size:11px;color:#2e2406">R$ 899,90</b></div></div>
+              </div>
+              <div class="lgo-row">
+                <span class="lgo-brick lgo-btn lgo-gold" style="color:#2e2406">VER PEÇA</span>
+                <span class="lgo-brick lgo-btn lgo-gold" style="color:#2e2406">SALVAR</span>
+              </div>
+            </div>
+            <button class="lgo-replay" type="button">▸ montar de novo</button>
+          </div>
+          <div class="plate-notes">
+            <span class="lbl">Versão por peça</span>
+            <p class="note">Mesmo sistema da prancha 10, para uma única peça: foto original na moldura, bloco de marca, placa lisa com o nome, placas de atributos (tamanho, cor) e bloco de preço. A cor da moldura e do bloco de marca é a cor dominante da peça (blusa preta → blocos pretos; bolsa caramelo → bege).</p>
+            <span class="lbl">Regra de qualidade por preço</span>
+            <p class="note">Mesma régua da Etiqueta e do Custo por uso: acima de <b>R$ 600</b>, a moldura, o selo PREMIUM, o bloco de preço e os botões passam a ser <b>blocos dourados perolados</b>, e a placa-base fica num cinza mais quente. Abaixo disso, blocos comuns. O dourado substitui a borda dupla das outras pranchas porque, num card de blocos, o acabamento de luxo é a própria peça, não um contorno.</p>
+            <span class="lbl">Por que tem versão por peça</span>
+            <p class="note">Diferente de Silhueta &amp; Proporção, Hype Focus e Cartela sazonal, nada nesta prancha depende de haver várias peças: uma peça sozinha também se monta em blocos.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="fin">
+  <div class="wrap">
+    <h3>v17: Lego — o card inteiro em blocos de encaixe, exceto as fotos</h3>
+    <p>Nova prancha 10 e sua versão por peça, C7. Todo elemento de interface do card — chrome social, container do esquema, título, selos, lista de peças, metadados, métricas e ações — vira peça de montar sobre uma placa-base com pinos: <b>blocos com pinos</b> para estrutura, <b>placas lisas</b> para texto impresso e <b>placas redondas 1×1</b> para selos e avatar. A cor de cada bloco é a cor dominante da peça, quantizada para 10 cores clássicas de blocos. As <b>fotos são a exceção</b>: continuam fotos, encaixadas em molduras de blocos, porque são o registro fiel da peça que o pipeline do RF4 padroniza. Na C7, a régua de preço (acima de R$ 600) troca os blocos comuns por blocos dourados perolados. A montagem é animada (os blocos caem e encaixam em sequência) e respeita "reduzir movimento". É a contraparte estrutural do <code>lego_material</code> do RF11 (textura de superfície) — com esta anatomia ativa, o seletor de material fica desabilitado. No produto, a opção se chama <b>Blocos</b> ("LEGO" é marca registrada).</p>
+    <h3>v13: container do esquema, agora em todo o documento</h3>
+    <p>Novo elemento de anatomia: uma <b>borda interna tracejada</b> separa, dentro do card, o <b>chrome social do post</b> (avatar, autor/data/visibilidade, curtidas e ações — tudo fora da borda) do <b><code>ClothesScheme</code> em si</b> (foto/composição do RF11, título, selos, preço, descrição, ocasião/estilo e a lista de peças — tudo dentro dela). Aplicado aos três grupos ampliados da Seção A (Lista vertical, Grade de peças, Foto hero + lista lateral) <b>e a todas as pranchas das Seções B e C</b> — a arte de cada uma (cenário de passarela, scanner de raio-X, bento interativo, etiqueta, espectro, custo por uso, silhueta &amp; proporção) segue dentro do mesmo limite, ela só é visualmente mais elaborada. Não se aplica a "Peça de roupa" na Seção A, que descreve uma <code>ClothesPiece</code>, entidade diferente. É este container — não o card inteiro — que RF9 edita, RF13 referencia célula a célula no DNA de Estilo, e RF20/RF21 usam para posicionar o selo emitido.</p>
+    <h3 style="margin-top:6px">Seções B e C: de proposta a anatomia oficial</h3>
+    <p>As pranchas da Seção B deixam de ser "variações ainda não implementadas" e passam a ter o mesmo status vigente da Seção A — mesma anatomia oficial do card de esquema, container do esquema incluído. A Seção C (versão por peça de 6 das 9 pranchas) acompanha a mudança.</p>
+    <h3 style="margin-top:6px">v15: Hype Focus — espelha a narrativa do DNA, um nível abaixo</h3>
+    <p>Nova prancha 08. Depois que a Fase I generalizou <code>hypeScore</code>/<code>hypeScoreGlobal</code> para toda <code>ClothesPiece</code> (não só esquemas marcados Look do Dia), o esquema de vestimenta (RF5) ganha a mesma narrativa Hype Focus que o DNA de Estilo (RF13, <code>anatomia_cards_DNA_v2.html</code>, prancha B10) já tinha — só que um nível abaixo: em vez de ranquear os esquemas referenciados no DNA, ranqueia as peças que compõem este esquema. Mesmo layout (medidor semicircular em destaque + lista com mini-medidores), mesma paleta de status fixa, mesma distinção pessoal×global. Diferente do DNA, não é um <code>narrativeType</code> persistido — é uma visão opcional do card, como as demais 7 pranchas da Seção B.</p>
+    <h3 style="margin-top:6px">v16: Cartela sazonal — mesmo catálogo do DNA, aqui como toggle opt-in</h3>
+    <p>Nova prancha 09, pedido do usuário 2026-09-22: "a análise sazonal (primavera, verão, outono, inverno) é enorme no TikTok brasileiro". Reaproveita o mesmo catálogo de 4 presets sazonais (Frost/Solstice/Ember/Bloom — gradiente + animação CSS, <code>RF11/RF11_PRESETS_SAZONAIS.md</code>) criado para a nova narrativa Cartela Sazonal do DNA de Estilo (RF13, <code>anatomia_cards_DNA_v2.html</code>, prancha 11), mas aqui como um <b>toggle opt-in</b> no Background Studio (Etapa 4 de RF5), habilitado só quando <code>ClothesScheme.season</code> já está preenchido — não um <code>narrativeType</code> persistido, já que o esquema não tem esse campo. Ligar o toggle sobrescreve <code>backgroundGradient</code>/<code>backgroundAnimationType</code> com o preset da estação; desligar restaura a escolha manual anterior. Como Hype Focus e Silhueta &amp; Proporção, não tem versão na Seção C: <code>ClothesPiece</code> não tem campo de estação equivalente a <code>ClothesScheme.season</code>.</p>
+    <h3 style="margin-top:6px">Revisão de moda: o que mudou e por quê</h3>
+    <p>Avaliação das sete pranchas originais da Seção B contra bibliografia real de design de moda (semiótica do vestuário, teoria da cor, styling, sustentabilidade) resultou em três ajustes e uma adição: <b>Passarela</b> — o texto agora deixa explícito que a ordenação por curtidas é uma <b>passarela democratizada pelo público</b>, distinta da curadoria autoral de um desfile real (onde a ordem dos looks é decisão do diretor de estilo, não votação). <b>Raio-X</b> — a espessura da linha, que já não era uma métrica social, ganhou nota explícita: representa <b>peso compositivo/peça-âncora</b> (termo real de styling), não popularidade — o único modelo dos sete que expõe construção, não engajamento. <b>Recibo → Custo por uso</b> — o recibo de compra (artefato de comércio, sem relação com moda) foi substituído por um ledger de <b>preço ÷ número de usos</b>, fundamentado no <i>30 Wears Challenge</i> de moda sustentável (Livia Firth/Fashion Revolution) — mesma régua de qualidade-por-preço, dado completamente diferente. <b>Silhueta &amp; Proporção (nova, 07)</b> — preenche a lacuna mais evidente do conjunto anterior: nenhuma prancha falava da forma que o look desenha no corpo, o primeiro elemento de qualquer manual de design de moda.</p>
+    <h3 style="margin-top:6px">Resumo da v12</h3>
+    <p>Base de largura da <b>v3</b> mantida (todo compacto = 90&nbsp;mm, igual ao ampliado) · edições do PDF de referência "v8" incorporadas · <b>v5</b>: Passarela reordenada por curtidas · <b>v6</b>: Espectro com barras proporcionais clicáveis · <b>v7</b>: cenário de passarela sofisticado em SVG · <b>v9</b>: Etiqueta com mini-etiquetas, lista lateral corrigida, Raio-X como scanner · <b>v10</b>: pulso de ECG no Raio-X compacto · <b>v11</b>: nova <b>Seção C — versão "peça de roupa"</b> para as 6 anatomias · <b>v12</b>: Etiqueta e Recibo (seção C) ganham níveis de <b>qualidade por preço</b> (comum vs. premium dourado).</p>
+    <h3 style="margin-top:6px">Seção C: peça de roupa — versão por modelo</h3>
+    <p>Cada uma das 6 anatomias da seção B ganhou uma versão para <b>uma única peça</b> (em vez do look de 4 peças). Em <b>Passarela</b> e <b>Raio-X</b>, onde a intensidade escala com curtidas, a peça 1 (mais curtida) recebe o tratamento máximo e a peça 4 (menos curtida) o mínimo: <b>Passarela</b> vai de <b>8 holofotes</b> (peça 1) a <b>1 holofote</b> (peça 4) na treliça; <b>Raio-X</b> vai de <b>142&nbsp;bpm com 4 batimentos</b> comprimidos (peça 1) a <b>28&nbsp;bpm com 1 batimento</b> isolado (peça 4). As outras quatro anatomias (Etiqueta, Bento, Espectro, Custo por uso) perdem o que só faz sentido com múltiplas peças e viram versões estáticas de uma peça só.</p>
+    <h3 style="margin-top:6px">Etiqueta e Custo por uso: qualidade escala com o preço</h3>
+    <p>Nova régua de <b>tier por preço</b>, aplicada aos dois modelos que já se pareciam com objetos físicos de valor variável: acima de <b>R$ 600</b> (peça mais cara do conjunto, COACH R$ 899,90) o card vira <b>Premium</b> — borda dourada dupla, label ladeado por ✦, divisórias sólidas em vez de tracejadas, total em tom âmbar, botões com acabamento dourado. Abaixo disso (peça mais barata, ZARA R$ 249,90) o card permanece <b>Comum</b> — moldura simples, tracejado preto, mono neutro. LEVI'S (R$ 349,90) e NIKE (R$ 399,90) cairiam num terceiro nível — <b>Padrão</b>, borda prateada — mencionado nas notas mas não ilustrado, seguindo o mesmo princípio de interpolação usado no Passarela e no Raio-X.</p>
+    <h3 style="margin-top:6px">Etiqueta: seletor de mini-etiquetas</h3>
+    <p>Fileira de <b>mini-etiquetas segmentadas</b> (formato de etiqueta real, com furo de fixação) no topo do card ampliado — ZARA · LEVI'S · NIKE · COACH. Tocar numa marca troca preço, título, tamanho, cores, coleção e código para os dados daquela peça específica.</p>
+    <h3 style="margin-top:6px">Foto hero + lista lateral: lista agora é lateral de verdade</h3>
+    <p>Corrigido: a lista de 4 peças estava empilhada <i>abaixo</i> da foto, não ao lado. Agora foto e lista dividem a mesma faixa horizontal, lado a lado, como o nome da anatomia sempre descreveu.</p>
+    <h3 style="margin-top:6px">Raio-X: scanner com foto central + pulso de ECG no compacto</h3>
+    <p>A grade vazia com linhas finas virou um <b>scanner de verdade</b> no ampliado: a foto do esquema ocupa o centro, com um sweep de varredura animado por cima, e 4 linhas <b>grossas e coloridas</b> (cor = marca, espessura = peso da peça) saem dos balões numerados até pontos de leitura na foto. No <b>compacto</b>, cada linha agora é um <b>pulso de ECG animado em loop infinito</b>, com a mesma cor da peça e velocidade levemente distinta por marca — visualmente confirmado que a animação avança continuamente, como um monitor cardíaco real.</p>
+    <h3 style="margin-top:6px">Bento assimétrico compacto interativo</h3>
+    <p>Seletor horizontal de logos (ZARA · LEVI'S · NIKE · COACH) que troca os dados exibidos e a assimetria da grade ao clicar.</p>
+    <h3 style="margin-top:6px">Passarela: trilho por curtidas + cenário completo</h3>
+    <p>As 4 peças do trilho seguem <b>ordem decrescente de curtidas</b> (não a numeração padrão de tipo/parte do corpo), com largura crescente do rank 1 ao 4. O fundo deixou de ser um GIF genérico e virou um <b>cenário de passarela em SVG</b>: treliça de <b>holofotes no teto</b> com feixe cônico por peça (pulsando), <b>plateia em arquibancada lateral</b> (silhuetas com flashes de câmera piscando) e <b>chão com perspectiva</b> (linhas convergentes). Intensidade de luz ainda maior perto do rank 1 (mais curtido) e menor perto do rank 4. Vale para ampliado e compacto — e o arquivo ficou mais leve, já que SVG substitui os GIFs pesados.</p>
+    <h3 style="margin-top:6px">Espectro: barras proporcionais + clique revela a cor</h3>
+    <p>A largura de cada faixa de cor agora <b>acompanha o peso real da peça no look</b> (% de área na composição — LEVI'S 41%, ZARA 32%, NIKE 19%, COACH 8%), coerência peça+cor que antes era só decorativa. No compacto, cada linha mantém a faixa proporcional mas reduz o texto a apenas o <b>nome da marca</b>. Clicar numa faixa revela o <b>nome da cor</b> num balão flutuante, replicando o comportamento de clique nas etiquetas de cor do Trello.</p>
+  </div>
+</footer>
+
+<script>
+var etiquetaData = [
+  {brand:'ZARA',   titulo:'Blusa de linho', sub:'blusa de linho',  tamanho:'M',  cores:'Preto / Cinza',   colecao:'Outono 2024', codigo:'ZU2024-01', preco:'R$ 249,90'},
+  {brand:"LEVI'S", titulo:'Calça reta',     sub:'calça reta',      tamanho:'40', cores:'Azul jeans',      colecao:'Inverno 2024', codigo:'LV2024-02', preco:'R$ 349,90'},
+  {brand:'NIKE',   titulo:'Tênis urbano',   sub:'tênis urbano',    tamanho:'39', cores:'Branco / Preto',  colecao:'Verão 2024',   codigo:'NK2024-03', preco:'R$ 399,90'},
+  {brand:'COACH',  titulo:'Bolsa tote',     sub:'bolsa tote',      tamanho:'U',  cores:'Caramelo',        colecao:'Resort 2024',  codigo:'CO2024-04', preco:'R$ 899,90'}
+];
+function setEtiqueta(i){
+  var d = etiquetaData[i];
+  document.getElementById('etqPreco').textContent = d.preco;
+  document.getElementById('etqSub').textContent = d.sub;
+  document.getElementById('etqMarca').textContent = d.brand;
+  document.getElementById('etqTitulo').textContent = d.titulo;
+  document.getElementById('etqTamanho').textContent = d.tamanho;
+  document.getElementById('etqCores').textContent = d.cores;
+  document.getElementById('etqColecao').textContent = d.colecao;
+  document.getElementById('etqCodigo').textContent = d.codigo;
+  document.querySelectorAll('#etiquetaCard .minitag').forEach(function(b){ b.classList.toggle('active', +b.dataset.i === i); });
+}
+function toggleColorTip(el){
+  var tip = el.querySelector('.color-tip');
+  var wasShown = tip.classList.contains('show');
+  document.querySelectorAll('.color-tip.show').forEach(function(t){ t.classList.remove('show'); });
+  if(!wasShown) tip.classList.add('show');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.spectrum-bar')){
+    document.querySelectorAll('.color-tip.show').forEach(function(t){ t.classList.remove('show'); });
+  }
+});
+(function(){
+  var bentoData = [
+    {brand:'ZARA',   titulo:'Look Zara',   colecao:'Outono 24', ocasiao:'casual', estilo:'minimal',  tamanho:'M'},
+    {brand:"LEVI'S", titulo:"Look Levi's", colecao:'—',         ocasiao:'—',      estilo:'urbano',   tamanho:'40'},
+    {brand:'NIKE',   titulo:'Look Nike',   colecao:'—',         ocasiao:'lazer',  estilo:'sport',    tamanho:'39'},
+    {brand:'COACH',  titulo:'Look Coach',  colecao:'—',         ocasiao:'social', estilo:'elegante', tamanho:'U'}
+  ];
+  var btns = document.querySelectorAll('.bento-logo');
+  var grid = document.getElementById('bentoGrid');
+  function setBento(i){
+    var d = bentoData[i];
+    document.getElementById('bentoStateN').textContent = (i+1);
+    document.getElementById('bgCover').innerHTML = 'CAPA<br>' + d.brand;
+    document.getElementById('bgTitulo').textContent = d.titulo;
+    document.getElementById('bgColecao').textContent = d.colecao;
+    document.getElementById('bgOcasiao').textContent = d.ocasiao;
+    document.getElementById('bgEstilo').textContent = d.estilo;
+    document.getElementById('bgTamanho').textContent = d.tamanho;
+    document.getElementById('bentoCounter').textContent = (i+1) + ' / 4 marcas';
+    grid.setAttribute('data-asym', i);
+    btns.forEach(function(b){ b.classList.toggle('active', +b.dataset.i === i); });
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ setBento(+b.dataset.i); });
+  });
+  setBento(1);
+})();
+</script>
+
+<script>
+(function(){
+  function index(card){ var i=0; card.querySelectorAll('.lgo-brick,.lgo-tile,.lgo-round').forEach(function(el){ el.style.setProperty('--i', i++); }); }
+  function build(card){ card.classList.remove('lgo-build'); void card.offsetWidth; card.classList.add('lgo-build'); }
+  document.querySelectorAll('.lgo-card').forEach(function(card){ index(card); build(card); });
+  document.querySelectorAll('.lgo-replay').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var col = btn.closest('.plate-col');
+      if(col) col.querySelectorAll('.lgo-card').forEach(build);
+    });
+  });
+})();
+</script>
+
+</body></html>
