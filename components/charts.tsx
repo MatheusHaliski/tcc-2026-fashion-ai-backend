@@ -6,8 +6,21 @@ export const SERIES = ["#1F7A76", "#C6275E", "#B8862B", "#5B6B7A", "#7C5FC0", "#
 type Row = Record<string, unknown>;
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0));
 
-export function TimeSeries({ data, x = "day", keys, kind = "line", height = 220 }: { data: Row[]; x?: string; keys: { key: string; label: string }[]; kind?: "line" | "area" | "bar"; height?: number }) {
-  const rows = data.map((r) => ({ ...r, [x]: String(r[x] ?? "").slice(0, 10) }));
+/** Completa com zero os dias sem registro entre from e to (a série diária do MySQL só traz dias com dados). */
+export function fillDays(data: Row[], from?: string, to?: string, x = "day", keys: string[] = ["value"]): Row[] {
+  if (!from || !to) return data;
+  const byDay = new Map(data.map((r) => [String(r[x] ?? "").slice(0, 10), r]));
+  const out: Row[] = [];
+  const end = new Date(`${to.slice(0, 10)}T00:00:00Z`);
+  for (let d = new Date(`${from.slice(0, 10)}T00:00:00Z`); d <= end && out.length < 400; d.setUTCDate(d.getUTCDate() + 1)) {
+    const day = d.toISOString().slice(0, 10);
+    out.push(byDay.get(day) ?? Object.fromEntries([[x, day], ...keys.map((k) => [k, 0])]));
+  }
+  return out;
+}
+
+export function TimeSeries({ data, x = "day", keys, kind = "line", height = 220, from, to }: { data: Row[]; x?: string; keys: { key: string; label: string }[]; kind?: "line" | "area" | "bar"; height?: number; from?: string; to?: string }) {
+  const rows = fillDays(data, from, to, x, keys.map((k) => k.key)).map((r) => ({ ...r, [x]: String(r[x] ?? "").slice(0, 10) }));
   const common = { data: rows, margin: { top: 8, right: 8, left: 0, bottom: 0 } };
   const axes = (<><CartesianGrid strokeDasharray="3 3" stroke="var(--line-soft)" /><XAxis dataKey={x} tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} width={36} /><Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--line-soft)", color: "var(--ink)" }} /><Legend wrapperStyle={{ fontSize: 11 }} /></>);
   return (

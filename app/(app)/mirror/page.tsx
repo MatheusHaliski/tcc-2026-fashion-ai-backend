@@ -25,7 +25,7 @@ function MirrorInner() {
   const worn = Object.entries(data.slots).flatMap(([slot, v]) => (Array.isArray(v) ? v.map((p) => ({ slot, p })) : v ? [{ slot, p: v }] : []));
   return (
     <>
-      <PageHeader title={t("nav.mirror")} kicker="RF33" lead={data.restriction ? `Desafio ativo: ${data.restriction.challenge} — só as peças permitidas aparecem.` : "Monte o look no espelho ou peça: “Vista-me para um jantar”."} />
+      <PageHeader title={t("nav.mirror")} kicker="RF28" lead={data.restriction ? `Desafio ativo: ${data.restriction.challenge} — só as peças permitidas aparecem.` : "Monte o look no espelho ou peça: “Vista-me para um jantar”."} />
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
         <Card pad={false} className="overflow-hidden">
           <div className="relative flex min-h-[420px] flex-col items-center justify-center gap-1 p-4" style={{ background: `radial-gradient(circle at 50% 20%, ${data.light && data.light.kelvin < 3500 ? "#fff1dc" : data.light && data.light.kelvin > 5000 ? "#e8f2ff" : "#f7f4ec"}, var(--surface-2))` }} aria-label="espelho">

@@ -30,7 +30,7 @@ function RoomInner() {
   const gridPieces = (m: Module) => { const fromSlots = modulePieces(m).filter((x) => x.piece); if (fromSlots.length) return fromSlots.map((x) => x.piece!); return Object.values(data.pieces).filter((p) => p.moduleId === m.id); };
   return (
     <>
-      <PageHeader title={t("nav.room")} kicker="RF32" lead={`Nível ${data.level} · ${data.levelInfo.aesthetic} · ${data.capacity?.pieces ?? 0} peças em ${data.capacity?.positions ?? 0} posições${data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : ""}`}
+      <PageHeader title={t("nav.room")} kicker="RF27" lead={`Nível ${data.level} · ${data.levelInfo.aesthetic} · ${data.capacity?.pieces ?? 0} peças em ${data.capacity?.positions ?? 0} posições${data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : ""}`}
         actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />Organizar</Button><Link href="/mirror" className="btn"><FaiIcon id="ACT-32" size={24} decorative />{t("nav.mirror")}</Link><Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />Loja</Link></>} />
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">🎉 Conquista: {data.celebrations.map((c) => c.code).join(", ")}</p> : null}
       <Tabs tabs={[{ id: "room", label: "Quarto" }, { id: "list", label: "Lista" }]} value={tab} onChange={setTab} />

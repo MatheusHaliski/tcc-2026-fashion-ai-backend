@@ -30,9 +30,9 @@ function AdminDashboard() {
     if (!data) return null;
     switch (w) {
       case "kpis": return <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{Object.entries(data.kpis).map(([k, v]) => <Card key={k} className="p-3"><p className="label">{KPI_LABEL[k] ?? k}</p><p className="hero-number text-2xl">{k === "ai_cost_usd" ? fmtMoney(v, "USD") : k.endsWith("pct") ? `${fmtNumber(v)}%` : fmtNumber(v)}</p></Card>)}</div>;
-      case "growth": return <TimeSeries data={data.series.users ?? data.series.growth ?? []} keys={[{ key: "value", label: "novos usuários" }]} kind="area" />;
-      case "content": return <TimeSeries data={(data.series.pieces ?? []).map((r, i) => ({ day: r.day, pecas: r.value, looks: (data.series.schemes ?? [])[i]?.value ?? 0, publicados: (data.series.published ?? [])[i]?.value ?? 0 }))} keys={[{ key: "pecas", label: "peças" }, { key: "looks", label: "looks" }, { key: "publicados", label: "publicados" }]} />;
-      case "ai_cost": return <TimeSeries data={data.series.ai_cost ?? data.series.aiCost ?? []} keys={[{ key: "value", label: "USD" }]} kind="bar" />;
+      case "growth": return <TimeSeries data={data.series.users ?? data.series.growth ?? []} keys={[{ key: "value", label: "novos usuários" }]} kind="area" from={data.filter.from} to={data.filter.to} />;
+      case "content": return <TimeSeries data={(data.series.pieces ?? []).map((r, i) => ({ day: r.day, pecas: r.value, looks: (data.series.schemes ?? [])[i]?.value ?? 0, publicados: (data.series.published ?? [])[i]?.value ?? 0 }))} keys={[{ key: "pecas", label: "peças" }, { key: "looks", label: "looks" }, { key: "publicados", label: "publicados" }]} from={data.filter.from} to={data.filter.to} />;
+      case "ai_cost": return <TimeSeries data={data.series.ai_cost ?? data.series.aiCost ?? []} keys={[{ key: "value", label: "USD" }]} kind="bar" from={data.filter.from} to={data.filter.to} />;
       case "ai_usage": return <Bars data={data.aiUsage} x="capability" y="calls" horizontal height={Math.max(200, data.aiUsage.length * 26)} />;
       case "brands": return <Bars data={data.brands} x="brand" y="pieces" horizontal />;
       case "countries": return <Bars data={data.countries} x="country" y="users" />;

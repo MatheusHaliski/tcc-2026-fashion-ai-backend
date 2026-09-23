@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@Tag(name = "RF8/RF15/RF25/RF26 — Feed, busca e Explorador Global")
+@Tag(name = "RF8/RF26 — Feed, busca e Explorador Global")
 public class DiscoveryController {
     private final SearchService search;
     private final ExplorerService explorer;
@@ -63,13 +63,13 @@ public class DiscoveryController {
     }
 
     @GetMapping("/api/explorer/global")
-    @Operation(summary = "RF25 — Painel global por país (cores, hype, marcas)")
+    @Operation(summary = "RF26 — Painel global por país (cores, hype, marcas)")
     public Map<String, Object> global(CurrentUser viewer, @RequestParam(required = false) String country) {
         return explorer.globalPanel(viewer, country);
     }
 
     @GetMapping("/api/explorer/brands")
-    @Operation(summary = "RF25 — Marcas e lojas por país/categoria")
+    @Operation(summary = "RF26 — Marcas e lojas por país/categoria")
     public Map<String, Object> brands(CurrentUser viewer, @RequestParam(required = false) String term,
                                       @RequestParam(required = false) String country,
                                       @RequestParam(required = false) String category,

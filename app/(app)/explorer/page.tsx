@@ -22,7 +22,7 @@ export default function ExplorerPage() {
   const list = (brands.data?.items ?? (brands.data?.brands as Brands["items"]) ?? []);
   return (
     <>
-      <PageHeader title={t("nav.explorer")} kicker="RF25 · RF26" lead={global.data?.legend} />
+      <PageHeader title={t("nav.explorer")} kicker="RF26" lead={global.data?.legend} />
       <Tabs tabs={[{ id: "map", label: "Painel global" }, { id: "brands", label: "Marcas & lojas" }, { id: "insights", label: "Insights" }]} value={tab} onChange={setTab} />
       {tab === "map" && (global.error ? <ErrorState error={global.error} onRetry={global.reload} /> : global.loading ? <Skeleton className="h-64" /> : (
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">

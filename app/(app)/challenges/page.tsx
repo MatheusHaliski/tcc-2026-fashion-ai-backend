@@ -31,7 +31,7 @@ function ChallengesInner() {
   );
   return (
     <>
-      <PageHeader title={t("nav.challenges")} kicker="RF36" lead={cat.data?.note} actions={cat.data ? <Badge>{cat.data.activeCount}/{cat.data.maxActive} ativos</Badge> : undefined} />
+      <PageHeader title={t("nav.challenges")} kicker="RF32" lead={cat.data?.note} actions={cat.data ? <Badge>{cat.data.activeCount}/{cat.data.maxActive} ativos</Badge> : undefined} />
       <Tabs tabs={[{ id: "catalog", label: "Catálogo" }, { id: "mine", label: "Meus desafios", count: (mine.data?.active?.length ?? 0) + (mine.data?.invites?.length ?? 0) }, { id: "votes", label: "Votação", count: votes.data?.length }, { id: "propose", label: "Propor" }]} value={tab} onChange={setTab} />
       {tab === "catalog" && (cat.error ? <ErrorState error={cat.error} onRetry={cat.reload} /> : cat.loading ? <Skeleton className="h-64" /> : <div className="grid-looks">{(cat.data?.challenges ?? []).map((c) => (
         <Card key={c.code} className={startCode === c.code ? "ring-2 ring-mark" : ""}>{c.highlight && <Badge tone="mark" className="mb-1">{c.highlight}</Badge>}<p className="type-h3">{c.name}</p><p className="type-body-sm text-muted">{c.todayRule ?? c.weeklyTheme ?? c.rule}</p>
