@@ -9,6 +9,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { AnatomyBody, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CommentButton } from "@/components/interactions";
+import { useDetailModal } from "@/components/detail-modal";
+import type { ReactNode } from "react";
 
 export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-good)" : (h ?? 0) >= 50 ? "var(--status-warning)" : (h ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)";
 
@@ -48,7 +50,10 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
   );
 }
 
-export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[] }) {
+export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode }) {
+  const detail = useDetailModal();
+  // Clique no card abre o modal com o esquema ampliado (RF7); a página continua acessível por "Abrir página"/nova aba.
+  const openModal = (e: React.MouseEvent) => { if (!detail || expanded || href === "#" || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
   const { t, fmtMoney, relative } = useI18n();
   const l = layout ?? (scheme.layoutAnatomy?.toLowerCase().includes("grade") ? "grade" : scheme.layoutAnatomy?.toLowerCase().includes("lateral") ? "lateral" : "lista");
   const items = scheme.items ?? [];
@@ -68,7 +73,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
         {scheme.lookDoDia && <span className="badge badge-chalk" title={t("lookbook.daily")}>LDD</span>}
         <span className="c-fav" aria-hidden><FaiIcon id="SOC-06" size={24} active={scheme.viewer?.saved} decorative /></span>
       </div>
-      <Link href={link} className="scheme-container block" data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
+      <Link href={link} onClick={openModal} className="scheme-container block" data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
         {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
         {hasOwnArt(scheme.layoutAnatomy) ? (
           <AnatomyBody scheme={scheme} pieces={toAnatomyPieces(scheme)} />
@@ -85,8 +90,9 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
           <>
             <div className="c-photo" style={backgroundStyle(scheme.background)}>{cover && <img src={cover} alt="" loading="lazy" />}</div>
             {titleRow}
-            {!compact && pieces.slice(0, 4).map((p, i) => (
-              <div key={i} className="piece2">
+            {!compact && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
+              <div key={i} className={`piece2 ${onPiece ? "cursor-pointer hover:bg-surface-2" : ""}`} role={onPiece ? "button" : undefined} tabIndex={onPiece ? 0 : undefined}
+                onClick={onPiece ? (e) => { e.preventDefault(); e.stopPropagation(); onPiece(p.id); } : undefined} onKeyDown={onPiece ? (e) => { if (e.key === "Enter") { e.preventDefault(); onPiece(p.id); } } : undefined}>
                 <span className="logo-chip">{p.logo ? <img src={p.logo} alt="" /> : p.img ? <img src={p.img} alt="" /> : (p.brand ?? "FAI").slice(0, 3).toUpperCase()}</span>
                 <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.price != null ? fmtMoney(p.price) : null].filter(Boolean).join(" · ") || p.slot}</span></span>
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
@@ -95,6 +101,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
           </>
         )}
         {(l !== "lista" || hasOwnArt(scheme.layoutAnatomy)) && titleRow}
+        {expanded && scheme.description && <div className="c-row"><span className="k">Descrição</span>{scheme.description}</div>}
         {placement.zone === "STUDS" && <SealStuds seals={badges} />}
         <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
       </Link>
@@ -102,6 +109,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals }: { scheme: S
         <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>
         {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
       </div>
+      {extra && <div className="c-extra">{extra}</div>}
     </article>
   );
 }

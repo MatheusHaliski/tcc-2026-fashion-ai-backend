@@ -74,6 +74,13 @@ public class AutopilotController {
         return autopilot.discardWeek(user);
     }
 
+    @GetMapping("/api/copilot/suggestions")
+    @Operation(summary = "RF10 — Sugestões visuais do Copilot: looks prontos, combinações novas, peças esquecidas, peças para o clima e looks em alta")
+    public Map<String, Object> suggestions(CurrentUser user, @RequestParam(required = false) String city,
+                                           @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lon) {
+        return copilot.suggestions(user, city, lat, lon);
+    }
+
     @GetMapping("/api/copilot/context")
     @Operation(summary = "RF10.CA08 — Contexto do Copilot para a tela atual (prompts sugeridos, clima, seleção)")
     public Map<String, Object> context(CurrentUser user, @RequestParam(required = false) String view,

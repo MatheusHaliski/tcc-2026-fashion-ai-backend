@@ -11,6 +11,8 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.DailyLook;
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.StyleDna;
@@ -132,12 +134,14 @@ public class CopilotService {
     private final WeatherService weather;
     private final AiEngine ai;
     private final Audit audit;
+    private final SchemeService schemeService;
     private final Map<UUID, Deque<String>> shown = new ConcurrentHashMap<>();
 
     public CopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                           DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, RoomService room,
                           MirrorService mirror, InventoryScoreService inventory, ChallengeService challenges, AutopilotService autopilot,
-                          DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit) {
+                          DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService) {
+        this.schemeService = schemeService;
         this.wardrobe = wardrobe;
         this.pieces = pieces;
         this.schemes = schemes;
@@ -187,6 +191,63 @@ public class CopilotService {
         out.put("selection", selection == null ? List.of() : selection);
         out.put("suggestedPrompts", promptsFor(view));
         out.put("activeChallenges", challenges.activeSummary(user.id()));
+        return out;
+    }
+
+    // ================================================================== sugestões visuais (RF10 — "mais sugestivo")
+    /**
+     * Painel do Copilot antes de qualquer pergunta: looks prontos do usuário para hoje, combinações novas montadas só com
+     * o acervo (motor local, sem custo), peças esquecidas, peças que combinam com o clima/estação e looks em alta na rede.
+     * Tudo volta como esquema/peça completos para o card abrir o detalhe ampliado (RF7) no modal.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> suggestions(CurrentUser user, String city, Double lat, Double lon) {
+        List<WardrobeItem> eligible = wardrobe.eligible(user.id());
+        WeatherService.Context w = weather.resolve(lat, lon, city);
+        String season = w.season();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("weather", WeatherService.view(w));
+        // 1) looks prontos: favoritos, Look do Dia recente e os menos repetidos primeiro
+        List<Scheme> mine = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream()
+                .filter(Scheme::isDisponivel)
+                .sorted(Comparator.comparing((Scheme s) -> !s.isFavorite()).thenComparing(Scheme::getLookDoDiaCount))
+                .limit(6).toList();
+        out.put("readyLooks", mine.stream().map(s -> schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
+        // 2) combinações novas (não salvas) com peças do acervo — o usuário salva com um clique
+        List<Map<String, Object>> fresh = new ArrayList<>();
+        if (eligible.size() >= 2) {
+            Map<UUID, WardrobeItem> byId = eligible.stream().collect(Collectors.toMap(WardrobeItem::getId, x -> x, (a, b) -> a));
+            for (LocalSchemeComposer.Composition c : LocalSchemeComposer.compose(eligible, List.of(), List.of(), season, null, 3)) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("title", c.title());
+                m.put("rationale", c.rationale());
+                m.put("occasions", c.occasions());
+                m.put("styles", c.styles());
+                m.put("totalPrice", c.totalPrice());
+                m.put("pieces", c.items().stream().map(pk -> byId.get(pk.wardrobeItemId())).filter(Objects::nonNull)
+                        .map(x -> Views.piece(x, null, null)).toList());
+                m.put("pieceIds", c.items().stream().map(LocalSchemeComposer.Pick::wardrobeItemId).toList());
+                fresh.add(m);
+            }
+        }
+        out.put("newCombinations", fresh);
+        // 3) peças esquecidas: disponíveis e sem uso há 30+ dias (ou nunca usadas)
+        LocalDate limit = LocalDate.now().minusDays(30);
+        out.put("forgottenPieces", eligible.stream().filter(x -> x.getLastWornDate() == null || x.getLastWornDate().isBefore(limit))
+                .sorted(Comparator.comparing((WardrobeItem x) -> x.getLastWornDate() == null ? LocalDate.MIN : x.getLastWornDate()))
+                .limit(6).map(x -> Views.piece(x, null, null)).toList());
+        // 4) peças para o clima: mesma régua do Autopiloto (faixa de temperatura → descarta peças inadequadas; camadas no frio)
+        String band = w.band();
+        out.put("weatherBand", band);
+        out.put("weatherPieces", eligible.stream().filter(x -> !WeatherService.unsuitable(x.getSubcategory(), band))
+                .sorted(Comparator.comparing((WardrobeItem x) -> !("CAMADAS".equals(band) || "INVERNO_PESADO".equals(band)) || !WeatherService.isLayer(x.getSubcategory())))
+                .limit(6).map(x -> Views.piece(x, null, null)).toList());
+        // 5) em alta na rede: looks públicos de outras pessoas, os de maior Hype primeiro
+        out.put("trendingLooks", schemes.findPublicFeed(org.springframework.data.domain.PageRequest.of(0, 30)).stream()
+                .filter(s -> !s.getUser().getId().equals(user.id()) && schemeService.canView(user, s))
+                .sorted(Comparator.comparing((Scheme s) -> s.getHypeScore() == null ? java.math.BigDecimal.ZERO : s.getHypeScore()).reversed())
+                .limit(4).map(s -> schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
+        out.put("suggestedPrompts", promptsFor("COPILOT"));
         return out;
     }
 

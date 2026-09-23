@@ -46,6 +46,11 @@
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
 :root[data-density="compact"] { --radius: 6px; }
+/* RF23 — todo conteúdo navegável pelo menu fica num container (branco por padrão; cor configurável em Configurações → Aparência) */
+.page-container { background: var(--content-bg, var(--surface)); border: 1px solid var(--line-soft); border-radius: 18px; box-shadow: var(--shadow); padding: clamp(12px, 2.2vw, 28px); min-height: calc(100vh - 7rem); color: var(--ink); }
+:root[data-content-tone="light"] .page-container { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #8B8F86; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
+:root[data-content-tone="dark"] .page-container { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
+.page-container .page-container { border: 0; box-shadow: none; padding: 0; min-height: 0; }
 :root[data-density="compact"] .card-pad { padding: 0.5rem 0.75rem; }
 
 @theme inline {
@@ -116,6 +121,10 @@ h1, h2, h3, h4 { margin: 0; }
 :root[data-theme="contrast"] .toast { border: 2px solid var(--line); }
 .dialog-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .dialog { background: var(--surface); color: var(--ink); border-radius: var(--radius); border: 1.5px solid var(--line-soft); box-shadow: var(--shadow); max-width: 560px; width: 100%; max-height: 90dvh; overflow: auto; }
+.dialog.dialog-xl { max-width: 1080px; }
+.hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 250px); gap: 12px; overflow-x: auto; padding-bottom: 6px; align-items: start; scroll-snap-type: x proximity; }
+.hscroll > * { scroll-snap-align: start; }
+.detail-card-expanded { width: 100%; max-width: 440px; }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: .9rem; }
 .grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
 .hero-number { font-family: var(--font-editorial); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -140,7 +149,13 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card .piece2 .logo-chip img { width: 100%; height: 100%; object-fit: contain; }
 .fai-card .piece2 .ptxt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .fai-card .piece2 .l1 { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fai-card .piece2 .l2 { font-size: 9.5px; color: var(--muted); font-family: var(--font-data); }
+.fai-card .piece2 .l2 { font-size: 9.5px; color: var(--muted); font-family: var(--font-data); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* RF6 — nenhum texto sai do card: rótulos cortam com reticências e legendas/ações extras ficam dentro do card */
+.fai-card .c-title, .fai-card .c-row { min-width: 0; overflow-wrap: anywhere; }
+.fai-card .c-row .k { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.fai-card .c-extra { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px 8px; border-top: 1px solid var(--line-soft); font-size: 11px; min-width: 0; }
+.fai-card .c-extra .caption { flex: 1 1 100%; min-width: 0; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fai-card .c-extra .btn { min-width: 0; }
 .fai-card .c-foot { padding: 7px 10px; background: color-mix(in srgb, var(--card-bg, var(--surface)) 85%, var(--ink) 4%); font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .fai-card .c-foot .metrics { font-family: var(--font-data); font-size: 9.5px; display: flex; gap: 8px; }
 .fai-card .c-foot .metrics button { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; border-radius: 4px; padding: 0 2px; }

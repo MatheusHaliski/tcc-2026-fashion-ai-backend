@@ -6,11 +6,18 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { FaiIcon } from "@/components/fai-icon";
 import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
+import { useDetailModal } from "@/components/detail-modal";
+import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
+import type { ReactNode } from "react";
 
 /** Card de peça (anatomia "peça de roupa" v17): foto, nome editorial, cor com nome escrito (acessibilidade para daltônicos), estado. */
-export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals, anatomy }: {
+export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals, anatomy, extra }: {
   piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
+  /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
+  extra?: ReactNode;
 }) {
+  const detail = useDetailModal();
+  const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const { t, fmtMoney } = useI18n();
@@ -30,7 +37,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
         <span className="type-data text-muted">{piece.color}</span>
         <span className="ml-auto type-data text-muted">{piece.price != null ? fmtMoney(piece.price) : piece.size?.toUpperCase()}</span>
       </div>
-      <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{[piece.subcategory, piece.brandName, piece.sex].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? " · selos" : ""}</span>{(piece.occasion ?? []).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
+      <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{[label(piece.subcategory) || CATEGORY_LABEL[piece.category], piece.brandName, label(piece.sex?.toLowerCase())].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? " · selos" : ""}</span>{(piece.occasion ?? []).map(label).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
     </>
   );
   return (
@@ -38,7 +45,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
       {selectable ? (
         <button type="button" className="text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>{body}</button>
       ) : (
-        <Link href={href ?? `/pieces/${piece.id}`}>{body}</Link>
+        <Link href={href ?? `/pieces/${piece.id}`} onClick={openModal}>{body}</Link>
       )}
       {(onFavorite || onAvailability) && (
         <div className="c-foot">
@@ -47,6 +54,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
           <span className="ml-auto type-data text-faint tabular">{piece.wearCount} {t("closet.wearCount")}</span>
         </div>
       )}
+      {extra && <div className="c-extra">{extra}</div>}
     </article>
   );
 }

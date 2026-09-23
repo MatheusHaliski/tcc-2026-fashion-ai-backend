@@ -44,6 +44,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => { alive = false; clearInterval(h); };
   }, [user, pathname]);
   useEffect(() => { setDrawer(false); setMenu(false); }, [pathname]);
+  // RF23.CA02 — ao entrar, aplica as preferências salvas no servidor (tema, fundo do chrome, cor dos containers…)
+  useEffect(() => {
+    if (!user) return;
+    api.get<{ theme?: string; density?: string; fontScale?: number; highContrast?: boolean; reduceMotion?: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null }>("/api/me/preferences")
+      .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
+      .catch(() => undefined);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const items = NAV.filter((n) => !n.auth || user);
   const isActive = (href: string) => pathname === href || (href !== "/feed" && pathname.startsWith(href));
   const cycleTheme = () => update({ theme: prefs.theme === "LIGHT" ? "DARK" : prefs.theme === "DARK" ? "HIGH_CONTRAST" : "LIGHT", highContrast: false });
@@ -124,7 +131,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <nav aria-label={t("a11y.menu")} className="absolute left-0 top-0 h-full w-72 overflow-auto bg-surface p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
           </div>
         )}
-        <main id="conteudo" className="min-w-0 flex-1 pb-20 lg:pb-6">{children}</main>
+        <main id="conteudo" className="min-w-0 flex-1 pb-20 lg:pb-6"><div className="page-container">{children}</div></main>
       </div>
       <nav aria-label={t("a11y.menu")} className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-line-soft bg-surface/95 py-1 backdrop-blur lg:hidden">
         {NAV.filter((n) => PRIMARY.includes(n.href) && (!n.auth || user)).map((n) => (
