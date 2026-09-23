@@ -25,8 +25,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "promotions")
 public class Promotion extends VersionedAuditableEntity {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "seal_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seal_id")
     private Seal seal;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,7 +37,7 @@ public class Promotion extends VersionedAuditableEntity {
     @Column(nullable = false, length = 30)
     private PromotionType type;
 
-    @Column(nullable = false, unique = true, length = 40)
+    @Column(length = 40, unique = true)
     private String code;
 
     @Column(length = 512)
@@ -71,4 +71,27 @@ public class Promotion extends VersionedAuditableEntity {
 
     @Column(name = "redeemed_at")
     private Instant redeemedAt;
+
+    @Column(length = 160)
+    private String title;
+
+    @Column(length = 2048)
+    private String rules;
+
+    /** BRAND_SEAL ou PREMIUM_SEAL. */
+    @Column(name = "required_seal_kind", length = 20)
+    private String requiredSealKind;
+
+    @Column(name = "starts_at")
+    private java.time.Instant startsAt;
+
+    /** RF20.CA12 — estoque da campanha; null = ilimitado. */
+    @Column(name = "total_quota")
+    private Integer totalQuota;
+
+    @Column(name = "per_user_limit", nullable = false)
+    private int perUserLimit = 1;
+
+    @Column(name = "redeemed_count", nullable = false)
+    private int redeemedCount;
 }

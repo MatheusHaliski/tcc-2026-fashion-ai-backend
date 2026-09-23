@@ -200,4 +200,12 @@ public class Scheme extends VersionedAuditableEntity {
 
     @Column(name = "published_at")
     private Instant publishedAt;
+
+    /** RF31 — ⭐ favoritar (faixa superior do card). */
+    @Column(nullable = false)
+    private boolean favorite;
+
+    /** RF11 — Direção recomendada aplicada (Editorial Spread, Luxury Glass, Atelier, Show Notes). */
+    @Column(name = "recommended_direction", length = 40)
+    private String recommendedDirection;
 }

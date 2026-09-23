@@ -1,5 +1,6 @@
 package br.com.fashionai.domain.model;
 
+import br.com.fashionai.domain.model.enums.SealBondOrigin;
 import br.com.fashionai.domain.model.enums.SealBondBasis;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
 import br.com.fashionai.domain.model.enums.SealTier;
@@ -83,4 +84,26 @@ public class SealBond extends VersionedAuditableEntity {
 
     @Column(name = "review_note", length = 1024)
     private String reviewNote;
+
+    /** RF20.CA16 — origem do vínculo: sugestão da IA ou escolha manual. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SealBondOrigin origin = SealBondOrigin.AI_SUGGESTION;
+
+    /** RF20.CA08 — identificador único e rastreável do selo emitido. */
+    @Column(name = "seal_code", length = 40, unique = true)
+    private String sealCode;
+
+    @Column(name = "issued_at")
+    private java.time.Instant issuedAt;
+
+    @Column(name = "expires_at")
+    private java.time.Instant expiresAt;
+
+    @Column(name = "reviewed_by", length = 36)
+    private java.util.UUID reviewedBy;
+
+    /** RF21.CA20 — era do look consagrado exibida no Selo Premium. */
+    @Column(name = "era_label", length = 80)
+    private String eraLabel;
 }

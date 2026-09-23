@@ -1,5 +1,6 @@
 package br.com.fashionai.domain.model;
 
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
 import br.com.fashionai.domain.model.enums.ProfileType;
@@ -131,4 +132,9 @@ public class User extends VersionedAuditableEntity {
     public boolean canWrite() {
         return status == AccountStatus.ACTIVE;
     }
+
+    /** RF3.CA12 — visibilidade do perfil em três níveis; nasce PRIVATE (RF3.CA19 · Privacy by Default). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile_visibility", nullable = false, length = 20)
+    private Visibility profileVisibility = Visibility.PRIVATE;
 }

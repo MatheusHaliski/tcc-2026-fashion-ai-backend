@@ -103,4 +103,8 @@ public class CelebrityProfile extends VersionedAuditableEntity {
 
     @Column(name = "requires_seal_review", nullable = false)
     private boolean requiresSealReview;
+
+    /** RF20 regra 2 — limiar de confiança da sugestão configurável por perfil emissor. */
+    @Column(name = "seal_confidence_threshold", nullable = false, precision = 4, scale = 3)
+    private java.math.BigDecimal sealConfidenceThreshold = new java.math.BigDecimal("0.600");
 }

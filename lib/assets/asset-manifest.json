@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-09-23T16:21:30+00:00",
+ "generatedAt": "2026-09-23T16:21:49+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -6072,7 +6072,7 @@
    "doc": "/presets_recomendados/01_atelier.md",
    "displayName": "Atelier",
    "component": "CardAtelier.tsx",
-   "thumbHint": "\"Minimal refinado, branco puro\"",
+   "thumbHint": "Minimal refinado, branco puro",
    "status": "implemented",
    "styleFragment": "pristine white minimalist atelier mockup, quiet-luxury product studio aesthetic, soft diffused light, generous negative space, fine hairline borders, restrained neutral palette, refined haute couture ambiance",
    "thumbnailPrompt": {
@@ -6107,7 +6107,7 @@
    "doc": "/presets_recomendados/02_spread.md",
    "displayName": "Spread",
    "component": "CardSpread.tsx",
-   "thumbHint": "\"Editorial de magazine\"",
+   "thumbHint": "Editorial de magazine",
    "status": "implemented",
    "styleFragment": "high-fashion magazine editorial spread mockup, bold layout typography cues, glossy print aesthetic, dramatic studio lighting, campaign photography mood, confident asymmetric composition",
    "thumbnailPrompt": {
@@ -6142,7 +6142,7 @@
    "doc": "/presets_recomendados/03_index.md",
    "displayName": "Índice",
    "component": "CardIndex.tsx",
-   "thumbHint": "\"Cartão de referência\"",
+   "thumbHint": "Cartão de referência",
    "status": "implemented",
    "styleFragment": "reference index card mockup, archival catalog aesthetic, clean typographic grid, muted paper tones, labeled specimen-like structure, understated utilitarian clarity",
    "thumbnailPrompt": {
@@ -6177,7 +6177,7 @@
    "doc": "/presets_recomendados/04_trading.md",
    "displayName": "Trading",
    "component": "CardTrading.tsx",
-   "thumbHint": "\"Card colecionável\"",
+   "thumbHint": "Card colecionável",
    "status": "implemented",
    "styleFragment": "collectible trading card mockup, holographic foil accents, bold border frame, vibrant saturated palette, stat-panel game card aesthetic, glossy protective-sleeve sheen",
    "thumbnailPrompt": {
@@ -6212,7 +6212,7 @@
    "doc": "/presets_recomendados/05_fai_max.md",
    "displayName": "FAI Max",
    "component": "CardFAIMax.tsx",
-   "thumbHint": "\"Maximalista laranja FAI\"",
+   "thumbHint": "Maximalista laranja FAI",
    "status": "implemented",
    "styleFragment": "maximalist bold mockup, vivid FashionAI orange brand palette, high-energy layered graphics, saturated high-contrast composition, loud confident streetwear-adjacent editorial energy",
    "thumbnailPrompt": {
@@ -6247,7 +6247,7 @@
    "doc": "/presets_recomendados/06_stub.md",
    "displayName": "Stub",
    "component": "CardStub.tsx",
-   "thumbHint": "\"Recibo/ticket perfurado\"",
+   "thumbHint": "Recibo/ticket perfurado",
    "status": "implemented",
    "styleFragment": "perforated ticket-stub mockup, zigzag torn-edge divider, dashed rule lines, monospace label typography, raw paper receipt texture, retail ticket aesthetic",
    "thumbnailPrompt": {
@@ -6282,7 +6282,7 @@
    "doc": "/presets_recomendados/07_specimen.md",
    "displayName": "Specimen",
    "component": "CardSpecimen.tsx",
-   "thumbHint": "\"Ficha visual de coleção\"",
+   "thumbHint": "Ficha visual de coleção",
    "status": "implemented",
    "styleFragment": "scientific specimen card mockup, graph-paper grid background, dashed field-label rows, clinical archival aesthetic, muted laboratory tones, precise measured documentation feel",
    "thumbnailPrompt": {
@@ -6468,7 +6468,7 @@
   "source": "/presets_recomendados"
  },
  "defaultPieceImages": {
-  "folder": null,
+  "folder": "/assets_pecas",
   "acceptedFolderNames": [
    "assets_pecas",
    "assets_peças",

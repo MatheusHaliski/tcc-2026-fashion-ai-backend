@@ -63,4 +63,30 @@ public class StyleDna extends VersionedAuditableEntity {
     public StyleDna(User user) {
         this.user = user;
     }
+
+    /** HU20 — padrão de silhueta (oversized, fitted, layering…). */
+    @Column(length = 60)
+    private String silhouette;
+
+    /** RF13.CA08 — Identidade de Vida (lugares, pessoas, animais, objetos) cifrada em repouso; nunca vai ao payload de imagem. */
+    @Convert(converter = AesGcmStringConverter.class)
+    @Column(name = "life_identity_ciphertext", columnDefinition = "TEXT")
+    private String lifeIdentityJson;
+
+    /** RF13.CA06 / HU20.C7 — campos da Camada 2 ocultos no card exportado. */
+    @Column(name = "life_private_fields_json", columnDefinition = "json")
+    private String lifePrivateFieldsJson;
+
+    @Column(name = "interactions_at_synthesis", nullable = false)
+    private int interactionsAtSynthesis;
+
+    @Column(name = "card_image_url", length = 1024)
+    private String cardImageUrl;
+
+    @Column(name = "card_expires_at")
+    private java.time.Instant cardExpiresAt;
+
+    /** STYLE_ONLY (Camada 1) ou STYLE_AND_LIFE (duas camadas). */
+    @Column(name = "phrase_source", length = 20)
+    private String phraseSource;
 }

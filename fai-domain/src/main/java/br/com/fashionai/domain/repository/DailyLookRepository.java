@@ -24,4 +24,8 @@ public interface DailyLookRepository extends JpaRepository<DailyLook, UUID> {
     List<DailyLook> findTop30ByUserIdOrderByLookDateDesc(UUID userId);
 
     List<DailyLook> findByLookDate(LocalDate date);
+
+    long countByUserIdAndFeedback(UUID userId, br.com.fashionai.domain.model.enums.DailyLookFeedback feedback);
+
+    List<DailyLook> findTop60ByUserIdOrderByLookDateDesc(UUID userId);
 }

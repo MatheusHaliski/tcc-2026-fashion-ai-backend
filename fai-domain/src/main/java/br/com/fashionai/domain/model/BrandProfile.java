@@ -107,4 +107,8 @@ public class BrandProfile extends VersionedAuditableEntity {
 
     @Column(name = "country", length = 2)
     private String country;
+
+    /** RF20 regra 2 — limiar de confiança da sugestão configurável por perfil emissor. */
+    @Column(name = "seal_confidence_threshold", nullable = false, precision = 4, scale = 3)
+    private java.math.BigDecimal sealConfidenceThreshold = new java.math.BigDecimal("0.600");
 }

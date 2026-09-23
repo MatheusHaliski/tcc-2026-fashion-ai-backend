@@ -42,4 +42,8 @@ public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
     @Query("select s from Scheme s where s.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and s.status = br.com.fashionai.domain.model.enums.SchemeStatus.PUBLISHED") List<Scheme> findAllPublic(Pageable pageable);
 
     List<Scheme> findByOriginalSchemeId(UUID originalSchemeId);
+
+    List<Scheme> findByUserIdAndFavoriteTrue(UUID userId);
+
+    long countByUserIdAndStatus(UUID userId, br.com.fashionai.domain.model.enums.SchemeStatus status);
 }

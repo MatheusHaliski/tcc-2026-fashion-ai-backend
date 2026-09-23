@@ -26,4 +26,6 @@ public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
     long countByCampaignId(UUID campaignId);
 
     List<Promotion> findBySealBondId(UUID sealBondId);
+
+    List<Promotion> findByOwnerUserIdAndStatusOrderByCreatedAtDesc(UUID ownerUserId, br.com.fashionai.domain.model.enums.PromotionStatus status);
 }

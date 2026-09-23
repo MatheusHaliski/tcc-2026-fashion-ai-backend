@@ -93,7 +93,8 @@ public class SchemeCardRenderer {
         int cw = W - 2 * pad;
         int ch = H - headerH - footerH - pad / 2;
         Color container = containerColor(card.background());
-        boolean darkContainer = luminance(container.getRGB()) < 0.45;
+        boolean darkContainer = container == null ? luminance(averageBackground(card.background())) < 0.45
+                : luminance(container.getRGB()) < 0.45;
         Color ink = darkContainer ? new Color(0xF5F3EF) : new Color(0x1A1714);
         Color bgInk = luminance(averageBackground(card.background())) < 0.5 ? new Color(0xFAF8F5) : new Color(0x1A1714);
 
@@ -119,8 +120,10 @@ public class SchemeCardRenderer {
 
         // container (área de composição)
         RoundRectangle2D box = new RoundRectangle2D.Double(cx, cy, cw, ch, 44, 44);
-        g.setColor(new Color(container.getRed(), container.getGreen(), container.getBlue(), 236));
-        g.fill(box);
+        if (container != null) {
+            g.setColor(new Color(container.getRed(), container.getGreen(), container.getBlue(), 240));
+            g.fill(box);
+        }
         Shape previous = g.getClip();
         g.clip(box);
         List<CardItem> items = new ArrayList<>(card.items());
@@ -271,29 +274,15 @@ public class SchemeCardRenderer {
     }
 
     /**
-     * Regra automática do container (RF11): usa a cor nativa da skin, a não ser que o contraste com o
-     * fundo fique abaixo de 1,5:1 — então alterna para quase-branco ou quase-preto.
+     * Container do esquema (RF11_PROPOSTA_CONTAINER_EDITORIAL_VS_AURA): origem INDEFINIDA → sem preenchimento
+     * próprio (herda o fundo, só hairline); MANUAL → cor escolhida; AUTO (Direção recomendada) → cor nativa do
+     * skin travada, com a arte virando passe-partout em volta. Retorna null quando não há preenchimento.
      */
     public Color containerColor(Background bg) {
         if (bg != null && bg.containerColor() != null && !bg.containerColor().isBlank()) {
             return new Color(ColorMath.parseHex(bg.containerColor()));
         }
-        String nativeHex = bg == null ? null : assets.cardSkin(bg.cardSkin()).map(s -> (String) s.get("nativeContainer")).orElse(null);
-        Color candidate = new Color(ColorMath.parseHex(nativeHex == null ? "#FFFFFF" : nativeHex));
-        int avg = averageBackground(bg);
-        if (contrast(candidate.getRGB(), avg) < 1.5) {
-            return luminance(avg) > 0.5 ? new Color(0x1C1A18) : new Color(0xFBFAF8);
-        }
-        return candidate;
-    }
-
-    public static String autoContainerHex(String backgroundHex, String nativeHex) {
-        int bg = ColorMath.parseHex(backgroundHex);
-        int nat = ColorMath.parseHex(nativeHex == null ? "#FFFFFF" : nativeHex);
-        if (contrast(nat, bg) < 1.5) {
-            return luminance(bg) > 0.5 ? "#1C1A18" : "#FBFAF8";
-        }
-        return String.format("#%06X", nat & 0xFFFFFF);
+        return null;
     }
 
     private int averageBackground(Background bg) {

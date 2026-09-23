@@ -28,4 +28,14 @@ public interface SealBondRepository extends JpaRepository<SealBond, UUID> {
     List<SealBond> findBySchemeIdAndTargetOwnerIdAndStatusIn(UUID schemeId, UUID targetOwnerId, Collection<SealBondStatus> statuses);
 
     List<SealBond> findByTargetOwnerIdAndStatusIn(UUID targetOwnerId, Collection<SealBondStatus> statuses);
+
+    List<SealBond> findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(UUID targetOwnerId, SealBondStatus status);
+
+    List<SealBond> findBySchemeId(UUID schemeId);
+
+    java.util.Optional<SealBond> findBySealCode(String sealCode);
+
+    long countByTargetOwnerIdAndStatus(UUID targetOwnerId, SealBondStatus status);
+
+    long countByTargetOwnerId(UUID targetOwnerId);
 }

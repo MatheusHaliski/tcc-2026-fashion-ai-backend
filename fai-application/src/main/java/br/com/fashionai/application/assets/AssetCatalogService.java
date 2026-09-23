@@ -124,23 +124,38 @@ public class AssetCatalogService {
                 && materialId != null && materialId.equals(m.get("materialId"))).findFirst();
     }
 
+    @SuppressWarnings("unchecked")
+    public Optional<Map<String, Object>> combo(String kind, String auraVariantId, String materialId) {
+        Object combos = manifest.get("auraMaterialCombos");
+        if (!(combos instanceof Map<?, ?> m) || !(m.get(kind) instanceof List<?> l)) {
+            return Optional.empty();
+        }
+        return ((List<Map<String, Object>>) l).stream().filter(c -> auraVariantId != null
+                && auraVariantId.equals(c.get("auraVariantId")) && materialId != null && materialId.equals(c.get("materialId")))
+                .findFirst();
+    }
+
     /**
      * Resolução de uma combinação AURA × material conforme a disponibilidade real das pastas:
-     * mosaico animado (asset real) → combinação estática/animada (hoje ausentes → fallback css-blend).
+     * mosaico animado (/aura_com_material_mosaico_com_GIF) → material com aura animado
+     * (/aura_com_material_com_GIF) → material com aura estático (pasta ainda ausente → fallback css-blend).
      */
     public Map<String, Object> resolveCombination(String auraVariantId, String materialId, boolean animated, boolean mosaic) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("auraVariantId", auraVariantId);
         out.put("materialId", materialId);
-        if (mosaic) {
-            Optional<Map<String, Object>> m = mosaic(auraVariantId, materialId);
-            if (m.isPresent()) {
-                out.put("strategy", "asset");
-                out.put("kind", "mosaic-animated");
-                out.put("url", m.get().get("url"));
-                out.put("posterUrl", m.get().get("posterUrl"));
-                return out;
+        String kind = mosaic ? "mosaic" : animated ? "animated" : "static";
+        Optional<Map<String, Object>> asset = combo(kind, auraVariantId, materialId);
+        if (asset.isPresent()) {
+            out.put("strategy", "asset");
+            out.put("kind", mosaic ? "mosaic-animated" : animated ? "aura-material-animated" : "aura-material-static");
+            out.put("url", asset.get().get("url"));
+            out.put("posterUrl", asset.get().getOrDefault("posterUrl", asset.get().get("previewUrl")));
+            out.put("code", asset.get().get("code"));
+            if (Boolean.TRUE.equals(asset.get().get("labelConflict"))) {
+                out.put("labelNote", asset.get().get("labelNote"));
             }
+            return out;
         }
         Optional<Map<String, Object>> aura = auraVariant(auraVariantId);
         Optional<Map<String, Object>> material = material(materialId);
@@ -151,6 +166,41 @@ public class AssetCatalogService {
         out.put("blendMode", "soft-light");
         out.put("materialOpacity", 0.42);
         return out;
+    }
+
+    public List<Map<String, Object>> skins() {
+        return list("cardSkins");
+    }
+
+    public Optional<Map<String, Object>> skin(String id) {
+        return cardSkin(id);
+    }
+
+    /** Cor nativa do container do skin (usada quando a Direção recomendada trava o container — RF11). */
+    public String nativeContainer(String skinId) {
+        return cardSkin(skinId).map(s -> (String) s.get("nativeContainer")).orElse("#FFFFFF");
+    }
+
+    /**
+     * RF4 — imagem padrão da peça quando o usuário deixa a foto vazia: /public/assets_pecas por
+     * subcategoria → categoria → genérica (silhueta gerada enquanto a pasta não tiver arquivos).
+     */
+    @SuppressWarnings("unchecked")
+    public String defaultPieceImage(String category, String subcategory) {
+        Object d = manifest.get("defaultPieceImages");
+        if (!(d instanceof Map<?, ?> m)) {
+            return "/_derived/pecas_default/generic.svg";
+        }
+        Map<String, Object> bySub = (Map<String, Object>) m.get("bySubcategory");
+        if (bySub != null && bySub.get(subcategory) instanceof Map<?, ?> e) {
+            return (String) e.get("url");
+        }
+        Map<String, Object> byCat = (Map<String, Object>) m.get("byCategory");
+        if (byCat != null && byCat.get(category) instanceof Map<?, ?> e) {
+            return (String) e.get("url");
+        }
+        Object generic = m.get("generic");
+        return generic instanceof Map<?, ?> g ? (String) g.get("url") : "/_derived/pecas_default/generic.svg";
     }
 
     /** Arquivo físico em /public para renderização no servidor (card RF5); vazio quando a pasta não existe. */

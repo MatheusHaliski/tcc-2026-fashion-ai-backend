@@ -1,5 +1,6 @@
 package br.com.fashionai.domain.model;
 
+import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import br.com.fashionai.domain.model.enums.DailyLookSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,4 +52,15 @@ public class DailyLook extends VersionedAuditableEntity {
         this.lookDate = lookDate;
         this.source = source;
     }
+
+    /** HU19 — avaliação do look do dia. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private DailyLookFeedback feedback;
+
+    @Column(name = "feedback_at")
+    private java.time.Instant feedbackAt;
+
+    @Column(name = "week_plan_day_id", length = 36)
+    private java.util.UUID weekPlanDayId;
 }

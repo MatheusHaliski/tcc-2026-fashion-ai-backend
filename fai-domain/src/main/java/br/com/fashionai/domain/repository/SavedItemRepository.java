@@ -24,4 +24,6 @@ public interface SavedItemRepository extends JpaRepository<SavedItem, UUID> {
     long countByUserIdAndTargetType(UUID userId, TargetType targetType);
 
     long countByTargetTypeAndTargetId(TargetType targetType, UUID targetId);
+
+    void deleteByTargetTypeAndTargetId(TargetType targetType, UUID targetId);
 }
