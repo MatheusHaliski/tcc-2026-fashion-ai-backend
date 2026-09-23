@@ -14,3 +14,11 @@ keys/
 **/*secret*.json
 node_modules/
 tmp/
+.next/
+out/
+next-env.d.ts
+.vercel
+*.tsbuildinfo
+.env.local
+data/
+backups/

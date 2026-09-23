@@ -30,7 +30,7 @@
         <springdoc.version>2.6.0</springdoc.version>
         <testcontainers.version>1.20.3</testcontainers.version>
         <aws-sdk.version>2.29.6</aws-sdk.version>
-        <opensearch-java.version>2.14.0</opensearch-java.version>
+        <anthropic-java.version>2.34.0</anthropic-java.version>
         <bouncycastle.version>1.79</bouncycastle.version>
         <lombok.version>1.18.34</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
@@ -132,5 +132,27 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <!-- Cobertura de testes (rubrica): relatório por módulo em target/site/jacoco após `mvn verify` -->
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

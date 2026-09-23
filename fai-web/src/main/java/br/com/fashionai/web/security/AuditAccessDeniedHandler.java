@@ -3,6 +3,7 @@ package br.com.fashionai.web.security;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.audit.AuditEvent;
 import br.com.fashionai.application.audit.AuditService;
+import br.com.fashionai.web.error.ErrorWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,9 +21,11 @@ import java.util.UUID;
 @Component
 public class AuditAccessDeniedHandler implements AccessDeniedHandler {
     private final AuditService auditService;
+    private final ErrorWriter errors;
 
-    public AuditAccessDeniedHandler(AuditService auditService) {
+    public AuditAccessDeniedHandler(AuditService auditService, ErrorWriter errors) {
         this.auditService = auditService;
+        this.errors = errors;
     }
 
     @Override
@@ -40,6 +43,6 @@ public class AuditAccessDeniedHandler implements AccessDeniedHandler {
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),
                 Map.of("method", request.getMethod())
         ));
-        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        errors.write(request, response, 403, "ACESSO_NEGADO", "Você não tem permissão para esta ação.");
     }
 }

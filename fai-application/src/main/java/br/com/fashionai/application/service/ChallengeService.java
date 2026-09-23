@@ -526,8 +526,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         Optional<ChallengeParticipant> existing = participants.findByInstanceIdAndUserId(i.getId(), user.id());
         if (existing.isEmpty() || !P_ATIVO.equals(existing.get().getStatus())) {
             requireSlot(user.id());
-            ChallengeParticipant p = existing.orElseGet(() -> participant(instance(0, null), user.id(), P_ATIVO, null));
-            p.setInstanceId(i.getId());
+            ChallengeInstance joined = i;
+            ChallengeParticipant p = existing.orElseGet(() -> participant(joined, user.id(), P_ATIVO, null));
             p.setStatus(P_ATIVO);
             p.setJoinedAt(Instant.now());
             p.setLeftAt(null);
@@ -535,12 +535,6 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             participants.save(p);
         }
         return detail(user, i.getId());
-    }
-
-    private ChallengeInstance instance(int unused, Object ignored) {
-        ChallengeInstance tmp = new ChallengeInstance();
-        tmp.setId(UUID.randomUUID());
-        return tmp;
     }
 
     // ================================================================== convites, saída e cancelamento
@@ -1785,9 +1779,5 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                     "fraction", round2(p.getProgressFraction().doubleValue())));
         }
         return out;
-    }
-
-    public static LocalDateTime nowLocal() {
-        return LocalDateTime.now(FaiPointsService.ZONE);
     }
 }

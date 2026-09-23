@@ -1,53 +1,171 @@
+# Fashion AI — configuração da API. Todo valor sensível vem de variável de ambiente (ver .env.example).
 spring:
   application:
     name: fashion-ai-api
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:fashionai}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:fashionai}?useSSL=${MYSQL_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${MYSQL_USER:fashionai}
     password: ${MYSQL_PASSWORD:change-me}
     hikari:
       maximum-pool-size: ${MYSQL_POOL_SIZE:10}
+      connection-timeout: 10000
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: none          # o schema é 100% Flyway (V1..Vn)
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
+        jdbc.time_zone: UTC
+        type.preferred_uuid_jdbc_type: CHAR   # ids UUID gravados como CHAR(36), como nas migrações
   flyway:
     enabled: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080}
+    baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 80MB
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cassandra:
+    contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+    port: ${CASSANDRA_PORT:9042}
+    local-datacenter: ${CASSANDRA_LOCAL_DATACENTER:datacenter1}
+    keyspace-name: ${CASSANDRA_KEYSPACE:fashionai_feed}
+    username: ${CASSANDRA_USERNAME:}
+    password: ${CASSANDRA_PASSWORD:}
+  autoconfigure:
+    # Cassandra só é ligado pelo perfil "cassandra"; sem ele o driver nem tenta conectar.
+    exclude:
+      - org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration
 
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework   # atrás de proxy/CDN (Railway, Render, Vercel)
+  error:
+    include-stacktrace: never
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    redis:
+      enabled: ${REDIS_ENABLED:false}
+    cassandra:
+      enabled: ${CASSANDRA_ENABLED:false}
+  metrics:
+    tags:
+      application: fashion-ai-api
 
-resilience4j:
-  timelimiter:
-    instances:
-      aiProvider:
-        timeout-duration: ${AI_REQUEST_TIMEOUT_SECONDS:30}s
-  retry:
-    instances:
-      aiProvider:
-        max-attempts: 2
-        wait-duration: 500ms
-  circuitbreaker:
-    instances:
-      aiProvider:
-        failure-rate-threshold: ${AI_CIRCUIT_BREAKER_FAILURE_RATE:50}
-  ratelimiter:
-    instances:
-      aiProvider:
-        limit-for-period: ${AI_DAILY_QUOTA_PER_USER:50}
-        limit-refresh-period: 1d
-        timeout-duration: 0
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    br.com.fashionai: ${LOG_LEVEL_APP:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{correlationId:-}] %logger{30} - %msg%n"
+
+fashionai:
+  app:
+    base-url: ${APP_BASE_URL:http://localhost:8080}        # usado nas URLs de mídia local
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}      # links de e-mail (confirmar e-mail, redefinir senha)
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  jwt:
+    issuer: ${JWT_ISSUER:fashionai}
+    access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
+    private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
+    public-key-pem: ${JWT_PUBLIC_KEY_PEM:}
+  assets:
+    public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
+  storage:
+    type: ${STORAGE_TYPE:local}                            # local | s3
+    local-dir: ${STORAGE_LOCAL_DIR:./data/media}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    s3:
+      endpoint: ${S3_ENDPOINT:}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET:fashionai-media}
+      access-key: ${S3_ACCESS_KEY_ID:}
+      secret-key: ${S3_SECRET_ACCESS_KEY:}
+  redis:
+    enabled: ${REDIS_ENABLED:false}
+  cassandra:
+    enabled: ${CASSANDRA_ENABLED:false}
+    timeline-ttl-days: 90
+    notification-ttl-days: 30
+  opensearch:
+    enabled: ${OPENSEARCH_ENABLED:false}
+    url: ${OPENSEARCH_URL:http://localhost:9200}
+    username: ${OPENSEARCH_USERNAME:}
+    password: ${OPENSEARCH_PASSWORD:}
+    index-prefix: fai-
+  email:
+    provider: ${EMAIL_PROVIDER:log}                        # log | resend
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${RESEND_FROM_EMAIL:nao-responda@fashionai.app}
+  weather:
+    enabled: ${WEATHER_ENABLED:true}                       # Open-Meteo (gratuito, sem chave)
+  ai:
+    remote-enabled: ${AI_REMOTE_ENABLED:true}              # false = só motores locais (demonstração offline)
+    timeout-seconds: ${AI_REQUEST_TIMEOUT_SECONDS:30}
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}
+    google-ai-api-key: ${GOOGLE_AI_API_KEY:}
+    replicate-api-token: ${REPLICATE_API_TOKEN:${REPLICATE_API_KEY:}}
+    fashn-api-key: ${FASHN_API_KEY:}
+    meshy-api-key: ${MESHY_API_KEY:}
+    remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
+    rembg-url: ${REMBG_URL:}
+  features:
+    rf16-3d: ${FEATURE_RF16_3D:false}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cassandra
+  autoconfigure:
+    exclude:
+fashionai:
+  cassandra:
+    enabled: true
+management:
+  health:
+    cassandra:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: redis
+fashionai:
+  redis:
+    enabled: true
+management:
+  health:
+    redis:
+      enabled: true

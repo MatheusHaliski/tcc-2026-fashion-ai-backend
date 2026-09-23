@@ -1289,12 +1289,4 @@ public class InventoryScoreService {
         return Map.of("weights", WEIGHTS, "bands", BANDS, "window", WINDOW_DAYS, "minPieces", MIN_PIECES, "saturation", SATURATION,
                 "cacheTtlMinutes", CACHE_TTL.toMinutes(), "kAnonymity", CITY_K_ANONYMITY);
     }
-
-    public static Map<String, String> addressLabels(Map<UUID, RoomService.Location> where) {
-        return where.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().label()));
-    }
-
-    static Optional<RoomAddress> address(Map<UUID, RoomService.Location> where, UUID id) {
-        return Optional.ofNullable(where.get(id)).map(RoomService.Location::address);
-    }
 }

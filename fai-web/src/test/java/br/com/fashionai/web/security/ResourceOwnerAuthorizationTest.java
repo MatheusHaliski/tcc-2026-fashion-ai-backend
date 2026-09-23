@@ -3,6 +3,7 @@ package br.com.fashionai.web.security;
 import br.com.fashionai.application.audit.AuditService;
 import br.com.fashionai.web.config.SecurityConfig;
 import br.com.fashionai.web.controller.AccountController;
+import br.com.fashionai.web.error.ErrorWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AccountController.class)
-@Import({AccountController.class, SecurityConfig.class, FashionAuthorization.class, AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class})
+@Import({AccountController.class, SecurityConfig.class, FashionAuthorization.class, AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class})
 class ResourceOwnerAuthorizationTest {
     @Autowired
     private MockMvc mockMvc;
