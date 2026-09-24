@@ -12,6 +12,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { DNA_LAYOUTS, DNA_NARRATIVES, DnaCard, SEASON_PRESETS, dnaNarrativeLabel, narrativeHasOwnArt, type DnaView } from "@/components/dna-card";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface Builder { totalSchemes: number; status: string; message?: string; action?: { label: string; href: string }; schemes: SchemeView[]; dna?: { archetypeLabel?: string; palette?: { color: string; hex: string }[]; phrase?: string; boldnessIndex?: number }; defaultVisibility: string; steps?: string[]; }
 interface Cell { schemeId: string; eraLabel: string; milestone: boolean; }
@@ -31,6 +32,18 @@ function LayoutGlyph({ id }: { id: string }) {
       {id === "LATERAL" && <span className={`${box} h-1.5`} />}
     </span>
   );
+}
+
+/**
+ * Marcas de um esquema dentro do DNA: vêm das peças que ocupam os slots do esquema (RF4 → RF5); não há campo de marca
+ * para o esquema nem para o DNA.
+ */
+function SchemeBrands({ scheme }: { scheme?: SchemeView }) {
+  const seen = new Map<string, string | null | undefined>();
+  (scheme?.items ?? []).forEach((it) => { const p = it.piece; if (p?.brandName && !seen.has(p.brandName)) seen.set(p.brandName, p.brandLogoUrl); });
+  if (!scheme) return null;
+  if (seen.size === 0) return <span className="slot-brand text-muted" title="nenhuma peça deste esquema tem marca">sem marca</span>;
+  return <span className="flex flex-wrap gap-1" aria-label="marcas das peças do esquema">{[...seen].slice(0, 3).map(([n, logo]) => <span key={n} className="slot-brand" title="marca preenchida pelas peças do esquema (não editável)"><BrandLogo name={n} src={logo} size={20} />{n}<span className="lock" aria-hidden>🔒</span></span>)}</span>;
 }
 
 /**
@@ -144,12 +157,13 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
         )}
         {step === 1 && (
           <div>
-            <p className="type-body text-muted mb-3">Esquemas de vestimenta seus (RF5): {b.totalSchemes} disponíveis. Escolha de 2 a 6 — clique no card para ver os detalhes e em “Adicionar ao DNA” para incluir. <Link href="/schemes/new" className="underline">Criar novo esquema</Link></p>
+            <p className="type-body text-muted mb-3">Esquemas de vestimenta seus (RF5): {b.totalSchemes} disponíveis. Escolha de 2 a 6 — clique no card para ver os detalhes e em “Adicionar ao DNA” para incluir. As marcas de cada esquema vêm das peças dos slots (não há campo de marca). <Link href="/schemes/new" className="underline">Criar novo esquema</Link></p>
             {cells.length > 0 && (
               <ol className="surface mb-4 divide-y divide-line-soft" aria-label="esquemas do DNA">
                 {cells.map((c, i) => { const s = byId.get(c.schemeId); return (
                   <li key={c.schemeId} className="flex flex-wrap items-center gap-2 p-2">
                     <span className="badge">{i + 1}</span><span className="min-w-0 flex-1 truncate type-body-sm font-medium">{s?.title ?? c.schemeId}</span>
+                    <SchemeBrands scheme={s} />
                     <input aria-label="época (eraLabel)" className="input w-40 py-1" value={c.eraLabel} placeholder="época · ex.: 2024 · formatura" onChange={(e) => setCells((cs) => cs.map((x, j) => (j === i ? { ...x, eraLabel: e.target.value } : x)))} maxLength={60} />
                     <label className="flex items-center gap-1 type-caption"><input type="radio" name="milestone" checked={c.milestone} onChange={() => setCells((cs) => cs.map((x, j) => ({ ...x, milestone: j === i })))} />marco</label>
                     <Button size="sm" variant="ghost" aria-label="subir" onClick={() => move(i, -1)}>↑</Button><Button size="sm" variant="ghost" aria-label="descer" onClick={() => move(i, 1)}>↓</Button>

@@ -63,6 +63,18 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "brand_name", length = 160)
     private String brandName;
 
+    /** RF4 — logo da marca escolhido no buscador web, já filtrado (fundo branco, letras pretas nítidas) e guardado no storage próprio. */
+    @Column(name = "brand_logo_url", length = 1024)
+    private String brandLogoUrl;
+
+    /** RF4 — fonte da marca: WIKIDATA · SIMPLE_ICONS · IA_BUSCA_WEB · PLATAFORMA · TEXTO_LIVRE. */
+    @Column(name = "brand_source", length = 40)
+    private String brandSource;
+
+    /** RF4 — referência externa da marca (id do Wikidata, slug do Simple Icons ou URL de origem). */
+    @Column(name = "brand_ref", length = 255)
+    private String brandRef;
+
     @Column(nullable = false, length = 80)
     private String color;
 

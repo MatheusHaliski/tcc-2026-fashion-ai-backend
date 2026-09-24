@@ -1,0 +1,240 @@
+@startuml RF5_Criar_Look_v4
+title RF5 — Criar Look (v4)\nMarca do slot preenchida automaticamente pela peça inserida — o esquema não tem campo de marca
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  DiamondBackgroundColor #FBF0DC
+  DiamondBorderColor #8A5A12
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleBackgroundColor #F4F2EF
+}
+skinparam note {
+  BackgroundColor #FBF0DC
+  BorderColor #8A5A12
+}
+
+|Usuário|
+start
+:Usuário acessa "Criar Look" (RF5);
+
+partition "Etapa 1 — Escolher modo de geração\ne elemento a ser editado" {
+  :Usuário escolhe o modo de geração:\n- Geração manual\n- Geração com IA;
+  if (Qual elemento será editado?) then (Conjunto completo)
+    |Sistema|
+    :Fixar elemento-alvo **conjunto**;
+  else (Peça específica)
+    |Sistema|
+    :Fixar elemento-alvo **peça específica**;
+  endif
+}
+
+|Usuário|
+if (Qual é o modo de geração?) then (Manual)
+  partition "Etapa 2 — Selecionar peças manualmente" {
+    :Sistema lista peças elegíveis:\nsomente ClothesPiece com\nuserId = usuário atual (sub-aba\n"Minhas Peças", RF6) — exclui\n"Peças Salvas" (SavedItem de\noutros usuários);
+    :Usuário seleciona uma peça\npara cada slot (TOP/BOTTOM/SHOES/ACCESSORIES)\ndentre as elegíveis;
+    |Sistema|
+    :Preencher automaticamente a marca\ndo slot com a marca da peça inserida\n(nome + logo buscado na web no RF4)\n— somente leitura;
+    note right
+      **Mudança (pedido do usuário, 2026-09-24).**
+      No RF5 o usuário não escolhe marca: não
+      existe campo de marca para o esquema.
+      Cada slot mostra a marca da peça que o
+      ocupa (🔒). Trocar a peça troca a marca;
+      peça sem marca → "sem marca na peça".
+      Para mudar a marca, edita-se a peça (RF4/RF7).
+    end note
+    :Sistema verifica disponibilidade\ne compatibilidade das peças;
+    :Sistema apresenta pré-visualização\nnas respectivas posições;
+    note right
+      **Correção (pedido do usuário,
+      2026-09-21).** "Peças Salvas" são
+      peças públicas de outros usuários,
+      favoritadas via "Adicionar ao
+      guarda-roupa" (RF19) — ficam como
+      SavedItem (bookmark), nunca viram
+      ClothesPiece própria. Para usar a
+      peça de outro usuário em um look
+      novo, o caminho é Remixar (RF7),
+      que clona a peça para "Minhas
+      Peças" — só então ela entra no
+      pool selecionável aqui.
+
+      RF5 também não tem upload de
+      imagem original próprio — as
+      peças elegíveis já passaram pela
+      moderação de conteúdo do RF4
+      (Content Moderator, RF24).
+    end note
+  }
+else (IA)
+  partition "Etapa 2 — Descrever intenção do look" {
+    |Usuário|
+    :Usuário informa occasion, style\ne orientações livres;
+    |Serviço de IA|
+    :IA seleciona peças compatíveis\nsomente dentre "Minhas Peças"\ndo usuário (mesma restrição do\nmodo manual, acima) — nunca de\n"Peças Salvas";
+    :A marca de cada slot vem da peça\nque a IA escolheu (mesma regra do\nmodo manual); nenhum catálogo de\nmarcas é consultado ou criado —\nmarcas citadas nas orientações só\norientam a escolha das peças;
+    |Sistema|
+    :Sistema valida e apresenta a sugestão;
+  }
+endif
+
+|Usuário|
+partition "Etapa 3 — Revisar composição (formulário)" {
+  repeat
+    :Usuário revisa title, description,\noccasion, style, season, mood;
+    :Usuário define disponivel\n(padrão: disponível);
+
+    if (Usuário aciona "Detectar via IA"\nem occasion/style/season/mood?) then (Sim)
+      |Serviço de IA|
+      :Sistema envia as peças da\ncomposição ao motor de IA\ntransversal (RF24) para sugerir\nvalores agregados do campo\nacionado, a partir de style/\noccasion/season das peças;
+      |Sistema|
+      :Preencher o campo com a\nsugestão, mantendo-o editável;
+      note right
+        IA acionada por botão — distinta
+        de uma eventual pré-sugestão
+        automática ao montar a
+        composição (Etapa 2). Reutiliza
+        o mesmo motor referenciado em
+        RF20/RF21 (Etapa 5, abaixo).
+      end note
+      |Usuário|
+    endif
+
+    |Sistema|
+    :Sistema valida a composição\n(máx. 3 occasion, máx. 3 style,\nmáx. 4 seals);
+    |Usuário|
+    if (Deseja alterar a composição?) then (Sim)
+      :Usuário adiciona, remove\nou substitui peças;
+    else (Não)
+      :Usuário aprova a composição;
+    endif
+  repeat while (Deseja realizar novos ajustes?) is (Sim) not (Não)
+}
+
+|Usuário|
+partition "Etapa 4 — Configurar a arte de fundo" {
+  |Sistema|
+  :Sistema abre o Background Studio (RF11),\nrestrito ao elemento-alvo fixado na Etapa 1;
+  |Usuário|
+  :Usuário escolhe direção visual\n(cor, gradiente, prompt, IA, preset);
+
+  if (ClothesScheme.season já está\npreenchido (§10/§13)?) then (Sim)
+    |Sistema|
+    :Sistema exibe o toggle "Aplicar\narte sazonal automática" (novo,\npedido do usuário 2026-09-22);
+    |Usuário|
+    if (Usuário liga o toggle?) then (Sim)
+      |Sistema|
+      :Sistema resolve o preset sazonal\ncorrespondente a season\n(RF11_PRESETS_SAZONAIS.md) —\nFrost/Solstice/Ember/Bloom;
+      :Sistema sobrescreve\nbackgroundGradient e\nbackgroundAnimationType com\no preset — mantém a escolha\nmanual anterior em memória,\ncaso o usuário desligue de novo;
+      note right #FBF0DC
+        Mesmo catálogo de 4 presets
+        sazonais usado pela narrativa
+        Cartela Sazonal do RF13 — aqui
+        é opt-in (toggle), lá é intrínseco
+        à narrativa escolhida. Nunca
+        aplicado sem ação explícita.
+      end note
+    else (Não)
+      |Sistema|
+      :Sistema mantém a direção\nvisual escolhida manualmente;
+    endif
+  else (Não)
+  endif
+
+  :Usuário confirma a arte de fundo;
+  |Sistema|
+  :Sistema gera pré-visualização do card;
+}
+
+|Usuário|
+partition "Etapa 5 — Analisar & Resgatar Selo" {
+  note right #FBF0DC
+    **Nova etapa (RF20/RF21), taxonomia v3.1.**
+    Antes, "Revisar, salvar e concluir" era a
+    Etapa 5 — agora vira Etapa 6. Detalhe
+    completo do mecanismo em RF20-atividades.puml
+    e RF21-atividades.puml.
+  end note
+  |Sistema|
+  :Sistema envia a composição para o motor\nde IA transversal (RF24) comparar contra\nmarcas cadastradas e celebridades\nverificadas com política ativa;
+  |Serviço de IA|
+  :IA gera até 3 propostas de vínculo,\ncada uma com alvo (marca/celebridade),\ntier (PECA/LOOK), confiança e justificativa;
+  |Sistema|
+  if (Há alguma proposta com confiança\nsuficiente? (CA05)) then (Não)
+    :Sistema exibe "Nenhum selo disponível\ndesta vez" e segue direto;
+  else (Sim)
+    :Sistema cria um SealBond (SUGGESTED)\npor proposta e as apresenta ao usuário;
+    |Usuário|
+    repeat
+      :Usuário avalia uma proposta de selo;
+      if (Ação do usuário?) then (Aceitar)
+        :SealBond → ACCEPTED;
+      elseif (Editar) then
+        :Usuário ajusta tier/peças vinculadas\n(dentro do tier PECA);
+        :SealBond → EDITED;
+      elseif (Recusar) then
+        :SealBond → REFUSED;
+        note right #FBF0DC
+          CA04 — a recusa não descarta o
+          SealBond: ele fica disponível na
+          aba Meus Selos (RF14) para
+          aplicação manual futura.
+        end note
+      else (Marca não cadastrada)
+        :Sistema registra sugestão de\ncadastro da marca (CA06) —\nnenhum vínculo é criado agora;
+      endif
+      |Sistema|
+    repeat while (Ainda há propostas\na avaliar?) is (Sim) not (Não)
+
+    |Sistema|
+    repeat
+      :Sistema processa cada SealBond\nACCEPTED/EDITED;
+      if (Já existe SealBond aprovado\npara este par esquema×marca?\n(CA09)) then (Sim)
+        :Sistema descarta — selo único\npor par;
+      elseif (targetOwner.requiresReview?\n(CA07)) then (Não)
+        :Sistema **auto-aprova** —\nemite Seal (status ACTIVE, tier),\nadiciona a ClothesScheme.sealIds\n(respeitando máx. 4);
+        :Sistema cria Promotion vinculada\nao selo (código único, CA11/CA12);
+      else (Sim)
+        :SealBond → PENDING_REVIEW —\nentra na fila de revisão do\nperfil da marca/celebridade;
+        note right #FBF0DC
+          Fora deste fluxo: aprovação
+          fica a cargo do dono do perfil
+          (RF14) — quando aprovada, emite
+          o Seal do mesmo jeito.
+        end note
+      endif
+    repeat while (Ainda há SealBonds\na processar?) is (Sim) not (Não)
+  endif
+}
+
+|Usuário|
+partition "Etapa 6 — Revisar, salvar e concluir" {
+  |Sistema|
+  :Sistema apresenta preview final,\ncom os selos emitidos posicionados\nconforme a anatomia dos cards;
+  repeat
+    :Sistema valida campos obrigatórios,\nslots preenchidos e background;
+    if (Look válido para conclusão?) then (Sim)
+      break
+    else (Não)
+      :Sistema aponta inconsistências;
+      |Usuário|
+      :Usuário corrige;
+      |Sistema|
+    endif
+  repeat while (Ainda existem inconsistências?) is (Sim) not (Não)
+  |Usuário|
+  if (Look será público na rede social?) then (Sim)
+    :Sistema define visibility = PUBLIC\ne status = PUBLISHED;
+  else (Não)
+    :Sistema define visibility conforme\nescolha (PRIVATE/FOLLOWERS)\ne status = DRAFT ou PUBLISHED;
+  endif
+  :Sistema persiste ClothesScheme\ne SchemeItem[], com disponivel\ndefinido na Etapa 3 e sealIds\ndefinidos na Etapa 5;
+  :Sistema confirma "Look criado com sucesso";
+}
+stop
+@enduml

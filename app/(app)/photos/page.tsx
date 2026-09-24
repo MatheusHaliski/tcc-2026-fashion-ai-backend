@@ -143,7 +143,7 @@ function Photos() {
       <Dialog open={!!pending} onClose={() => setPending(null)} title={pending?.kind === "many" ? `Excluir ${pending.ids.length} foto(s)?` : "Excluir esta foto?"}
         footer={<><Button onClick={() => setPending(null)}>{t("common.cancel")}</Button><Button variant="danger" loading={deleting} onClick={confirmDelete}>{pending?.kind === "many" ? `Excluir ${pending.ids.length}` : pending?.link?.activeImage ? "Excluir mesmo assim" : t("common.delete")}</Button></>}>
         {pending?.kind === "one" && (pending.link?.activeImage
-          ? <p className="type-body"><b>Esta foto é a imagem da peça «{pending.link.pieceName}».</b> Se excluir, a peça ficará sem imagem até você enviar outra. Confirme para continuar.</p>
+          ? <p className="type-body"><b>Esta foto é a imagem da peça «{pending.link.pieceName}».</b> Se excluir, a peça volta para a imagem padrão da categoria até você enviar outra foto. Confirme para continuar.</p>
           : <p className="type-body">A foto sai de Minhas Fotos. Esta ação não pode ser desfeita.</p>)}
         {pending?.kind === "many" && <p className="type-body">{pending.message}{pending.linked > 0 ? " Essas peças ficarão sem imagem." : ""}</p>}
       </Dialog>

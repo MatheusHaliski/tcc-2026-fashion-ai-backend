@@ -11,6 +11,7 @@ import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
 import { PHOTO_PRESETS, photoFilterCss, studioOf, type PhotoFilters } from "@/lib/card-art";
 import Link from "next/link";
 
@@ -22,6 +23,17 @@ const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_pie
 const slotOf = (p: PieceView) => (p.category === "upper_piece" && OUTER_SUBCATEGORIES.has(p.subcategory ?? "") ? "OUTERWEAR" : SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY");
 const SLOTS = ["OUTERWEAR", "TOP", "FULL_BODY", "BOTTOM", "SHOES", "ACCESSORY"];
 const SLOT_LABEL: Record<string, string> = { OUTERWEAR: "Sobreposição", TOP: "Parte de cima", FULL_BODY: "Peça única", BOTTOM: "Parte de baixo", SHOES: "Calçado", ACCESSORY: "Acessório" };
+
+/**
+ * Marca do slot: o esquema não tem campo de marca — ao inserir a peça do guarda-roupa no slot, a marca (nome + logo
+ * buscado na internet no RF4) vem da própria peça e não é editável aqui.
+ */
+export function SlotBrand({ piece }: { piece?: PieceView | null }) {
+  if (!piece) return null;
+  return piece.brandName
+    ? <span className="slot-brand" title="marca preenchida automaticamente pela peça (não editável no esquema)"><BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={22} /><span className="truncate">{piece.brandName}</span><span className="lock" aria-hidden>🔒</span><span className="sr-only">(preenchida pela peça)</span></span>
+    : <span className="slot-brand text-muted" title="a peça não tem marca cadastrada">sem marca na peça</span>;
+}
 
 /** Construtor de looks (RF5 criar / RF9 editar): modo → peças → dados → Background Studio → pré-visualização → salvar. */
 export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
@@ -92,6 +104,14 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         )}
         {step === 1 && (
           <div>
+            {selected.length > 0 && (
+              <section className="surface mb-4 p-3" aria-label="slots do look">
+                <p className="label">Slots do look · a marca vem da peça</p>
+                <ul className="grid gap-2 sm:grid-cols-2">{selected.map((s) => { const p = byId.get(s.id); return (
+                  <li key={s.id} className="flex min-w-0 items-center gap-2"><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-9 w-9 shrink-0 rounded bg-surface-2 object-contain" /><span className="min-w-0 flex-1 truncate type-body-sm">{p?.name ?? s.id}</span><SlotBrand piece={p} /></li>); })}</ul>
+                <p className="mt-2 type-caption text-muted">O esquema não tem campo de marca: cada slot mostra a marca da peça inserida (cadastrada no RF4, com o logo buscado na internet).</p>
+              </section>
+            )}
             <p className="type-body text-muted mb-3">Peças do seu guarda-roupa (RF4): {b.eligiblePieces} {t("common.pieces")} disponíveis{(b.hiddenPieces ?? 0) > 0 ? ` · ${b.hiddenPieces} indisponíveis ou em moderação ficam ocultas` : ""}. Selecione as peças (uma por slot; acessórios livres). <Link href="/pieces/new" className="underline">Cadastrar nova peça</Link></p>
             {Object.entries(b.lists).map(([cat, list]) => list.length > 0 && (
               <section key={cat} className="mb-5"><h3 className="type-h3 mb-2">{label(cat)}</h3><div className="grid-cards">{list.map((p) => <PieceCard key={p.id} piece={p} selectable selected={selected.some((s) => s.id === p.id)} onSelect={toggle} />)}</div></section>
@@ -130,7 +150,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
             <ul className="mb-4 divide-y divide-line-soft">{selected.map((s, i) => { const p = byId.get(s.id); return (
-              <li key={s.id} className="flex items-center gap-3 py-2"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="flex-1">{p?.name ?? s.id}</span>
+              <li key={s.id} className="flex items-center gap-3 py-2"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="min-w-0 flex-1 truncate">{p?.name ?? s.id}</span><SlotBrand piece={p} />
                 <Select aria-label="slot" className="w-36" value={s.slot} onChange={(e) => setSelected((arr) => arr.map((x, j) => (j === i ? { ...x, slot: e.target.value } : x)))}>{SLOTS.map((sl) => <option key={sl} value={sl}>{SLOT_LABEL[sl]}</option>)}</Select>
                 <Button size="sm" variant="ghost" aria-label={t("common.remove")} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></li>); })}</ul>
             <div className="flex flex-wrap gap-2">

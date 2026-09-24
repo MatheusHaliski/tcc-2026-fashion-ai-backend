@@ -14,11 +14,21 @@ import java.util.Map;
 @Tag(name = "Logos de marca (busca na internet pela IA)")
 public class BrandLogoController {
     private final BrandLogoService logos;
+    private final br.com.fashionai.application.service.BrandWebSearchService search;
     private final Guard guard;
 
-    public BrandLogoController(BrandLogoService logos, Guard guard) {
+    public BrandLogoController(BrandLogoService logos, br.com.fashionai.application.service.BrandWebSearchService search,
+                               Guard guard) {
         this.logos = logos;
+        this.search = search;
         this.guard = guard;
+    }
+
+    @GetMapping("/api/brand-search")
+    @Operation(summary = "RF4 — Buscar marca na internet (Wikidata, Simple Icons no GitHub e IA com busca na web): nome, site e logo já filtrado (fundo branco, letras pretas nítidas); sem catálogo pré-cadastrado")
+    public Map<String, Object> searchBrands(CurrentUser user, @RequestParam String q) {
+        // o texto digitado é dado público (nome de marca): a capacidade BRAND_LOGO_FINDER não exige consentimento; o motor de IA decide se há provedor
+        return search.search(user.id(), q, true);
     }
 
     @GetMapping("/api/brand-logos")

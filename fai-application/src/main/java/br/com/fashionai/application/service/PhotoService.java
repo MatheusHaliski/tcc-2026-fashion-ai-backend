@@ -132,14 +132,9 @@ public class PhotoService {
         Optional<WardrobeItem> linked = linkedActivePiece(p);
         if (linked.isPresent() && !confirmed) {
             throw new ApiException(409, "CONFIRMACAO_NECESSARIA", "Esta foto é a imagem da peça «" + linked.get().getName()
-                    + "». Se excluir, a peça ficará sem imagem. Confirme para continuar.", Map.of("pieceId", linked.get().getId()));
+                    + "». Se excluir, a peça volta para a imagem padrão da categoria. Confirme para continuar.", Map.of("pieceId", linked.get().getId()));
         }
-        linked.ifPresent(w -> {
-            w.setImageUrl(null);
-            w.setThumbnailUrl(null);
-            w.setStudioImageUrl(null);
-            w.setStudioDetailUrl(null);
-        });
+        linked.ifPresent(wardrobe::useDefaultImageAfterPhotoDeletion);
         p.setDeletedAt(Instant.now());
         Map<String, Object> out = new java.util.LinkedHashMap<>();
         out.put("deleted", 1);
@@ -165,12 +160,7 @@ public class PhotoService {
                     "message", "Excluir " + list.size() + " foto(s)?" + (linked > 0 ? " " + linked + " são imagens de peças ativas." : ""));
         }
         for (Photo p : list) {
-            linkedActivePiece(p).ifPresent(w -> {
-                w.setImageUrl(null);
-                w.setThumbnailUrl(null);
-                w.setStudioImageUrl(null);
-                w.setStudioDetailUrl(null);
-            });
+            linkedActivePiece(p).ifPresent(wardrobe::useDefaultImageAfterPhotoDeletion);
             p.setDeletedAt(Instant.now());
         }
         return Map.of("deleted", list.size());

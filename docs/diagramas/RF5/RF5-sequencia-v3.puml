@@ -1,0 +1,50 @@
+@startuml RF5_Sequencia_v3
+!pragma layout smetana
+title RF5 — Criar Look (v3) — marca do slot vem da peça (sem campo de marca no esquema)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+actor Usuário as U
+participant "Construtor de looks\n(SchemeBuilder + SlotBrand)" as App
+participant "SchemeController /\nSchemeService" as SS
+participant "Scheme Composer (IA)" as AI
+participant "Background Studio" as BG
+database "MySQL" as DB
+
+U -> App: Etapa 1 — modo (manual ou IA)
+App -> SS: GET /api/schemes/builder
+SS -> DB: SELECT wardrobe_items do usuário\n(brand_name, brand_logo_url, brand_source)
+SS --> App: peças elegíveis por categoria\n(cada PieceView já traz brandName + brandLogoUrl do RF4)
+
+alt modo manual
+  U -> App: Etapa 2 — insere uma peça em cada slot
+else modo IA
+  U -> App: ocasião, estilo, orientações
+  App -> SS: POST /api/schemes/compositions
+  SS -> AI: compor só com "Minhas Peças"
+  AI --> SS: peças por slot
+  SS --> App: até 3 composições
+  U -> App: escolhe uma composição
+end
+App -> App: SlotBrand: marca do slot = marca da peça\n(nome + logo, 🔒 somente leitura; sem requisição)
+App --> U: slots com peça + marca preenchida
+
+U -> App: Etapa 3 — título, ocasião, estilo, estação,\nhumor, selos (nenhum campo de marca)
+U -> App: Etapa 4 — Background Studio
+App -> BG: arte de fundo do card
+U -> App: Etapa 5 — revisar (cada linha: peça, marca da peça, slot)
+App -> SS: POST /api/schemes {title, items[wardrobeItemId, slot], ...}
+note right
+  O payload não tem marca: ela é lida
+  das peças (scheme_items → wardrobe_items)
+  sempre que o card é montado.
+end note
+SS -> DB: INSERT schemes + scheme_items
+SS -> DB: SELECT wardrobe_items (marcas das peças)\npara sugerir vínculo de selo (RF20)
+SS --> App: 201 {scheme, sealSuggestions}
+App --> U: card do look com as marcas das peças
+@enduml

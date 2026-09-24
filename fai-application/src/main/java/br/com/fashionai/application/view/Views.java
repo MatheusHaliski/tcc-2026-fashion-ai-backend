@@ -56,7 +56,7 @@ public final class Views {
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
-                            String mannequinImageUrl, String mannequinImageFace) {
+                            String mannequinImageUrl, String mannequinImageFace, String brandSource) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -64,10 +64,18 @@ public final class Views {
         return studioUrl == null || !studioUrl.endsWith(".jpg") ? studioUrl : studioUrl.substring(0, studioUrl.length() - 4) + ".thumb.jpg";
     }
 
+    /** Logo da marca da peça: o escolhido no buscador web (RF4) ou o da marca cadastrada na plataforma. */
+    public static String brandLogo(WardrobeItem w) {
+        if (w.getBrandLogoUrl() != null) {
+            return w.getBrandLogoUrl();
+        }
+        return w.getBrand() != null ? w.getBrand().getLogoUrl() : null;
+    }
+
     public static PieceView piece(WardrobeItem w, ViewerState viewer, Map<String, Long> reactions) {
         return new PieceView(w.getId(), user(w.getUser()), w.getName(), w.getCategory(), w.getSubcategory(), w.getSex(),
                 w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
-                w.getBrand() != null ? w.getBrand().getId() : null, w.getBrand() != null ? w.getBrand().getLogoUrl() : null,
+                w.getBrand() != null ? w.getBrand().getId() : null, brandLogo(w),
                 w.getColor(), Taxonomy.hex(w.getColor()), w.getMaterial(), w.getSizeLabel(), w.getMarket(),
                 Json.csv(w.getStyleTags()), Json.csv(w.getOccasionTags()), Json.strings(w.getSealIdsJson()), w.getPrice(),
                 w.getImageUrl(), w.getOriginalImageUrl(), w.getThumbnailUrl(), w.isDefaultImage(),
@@ -83,7 +91,7 @@ public final class Views {
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
-                w.getMannequinImageUrl(), w.getMannequinImageFace());
+                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource());
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */
@@ -105,7 +113,7 @@ public final class Views {
                     w == null ? null : w.getUser().getId());
         }
         return new PieceRow(w.getId(), w.getName(), w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
-                w.getBrand() != null ? w.getBrand().getLogoUrl() : null, w.getSubcategory(), w.getCategory(), w.getSizeLabel(),
+                brandLogo(w), w.getSubcategory(), w.getCategory(), w.getSizeLabel(),
                 w.getSex(), w.getColor(), Taxonomy.hex(w.getColor()), w.getImageUrl(), w.getThumbnailUrl(), w.getPrice(), gone,
                 w.getUser().getId());
     }
@@ -114,7 +122,8 @@ public final class Views {
         java.util.LinkedHashMap<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("name", w.getName());
         m.put("brandName", w.getBrand() != null ? w.getBrand().getName() : w.getBrandName());
-        m.put("brandLogoUrl", w.getBrand() != null ? w.getBrand().getLogoUrl() : null);
+        m.put("brandLogoUrl", brandLogo(w));
+        m.put("brandSource", w.getBrandSource());
         m.put("category", w.getCategory());
         m.put("subcategory", w.getSubcategory());
         m.put("size", w.getSizeLabel());

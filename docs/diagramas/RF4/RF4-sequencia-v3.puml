@@ -1,0 +1,65 @@
+@startuml RF4_Sequencia_v3
+!pragma layout smetana
+title RF4 — Criar Peça (v3) — campo marca com buscador web e logo filtrado
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+actor Usuário as U
+participant "Formulário da peça\n(PieceForm + BrandSearchInput)" as App
+participant "WardrobeController /\nWardrobeService" as WS
+participant "BrandLogoController /\nBrandWebSearchService" as BS
+participant "Wikidata" as WD
+participant "Simple Icons\n(raw.githubusercontent.com)" as SI
+participant "IA com busca na web\n(BRAND_LOGO_FINDER)" as AI
+participant "LogoFilter /\nSvgPathRenderer" as LF
+participant "MediaStorage\n(local / S3)" as ST
+participant "BrandLogoService" as BL
+database "MySQL" as DB
+
+U -> App: envia a foto (opcional)
+App -> WS: POST /api/pieces/analysis
+WS --> App: rascunho + pré-preenchimento\n(marca identificada, se houver)
+
+U -> App: digita a marca (≥ 2 letras)
+App -> BS: GET /api/brand-search?q=zar
+par fontes em paralelo
+  BS -> WD: wbsearchentities + EntityData (P154, P856)
+  WD --> BS: itens de moda (ou indisponível)
+else
+  BS -> SI: data/simple-icons.json (índice em memória, 12 h)
+  SI --> BS: marcas que casam com o texto
+end
+opt menos de 2 marcas com nome igual/começando pelo texto
+  BS -> AI: até 4 marcas de moda + site + URL do logo
+  AI --> BS: candidatos (ou indisponível)
+end
+BS -> BS: juntar a mesma marca, ordenar
+loop até 6 resultados
+  BS -> SI: GET icons/<slug>.svg (ou PNG do Commons / URL da IA)
+  BS -> LF: filtrar (vetor → preto no branco;\nPNG → fundo, contraste, nitidez, recorte)
+  alt logo aprovado
+    LF --> BS: quadrado 320 + faixa 160 + métricas
+    BS -> ST: brands/logos/web/zara-simple-icons.png
+  else recusado
+    LF --> BS: motivo (SEM_NITIDEZ, RESOLUCAO_BAIXA...)
+  end
+end
+BS --> App: 200 {results[nome, descrição, site, fonte, logoUrl,\nlogoWideUrl, logo.metrics], sources[status por fonte]}
+App --> U: lista com logo + nome + fonte\n+ "usar texto sem logo"
+U -> App: escolhe "Zara"
+App --> U: slot do logo preenchido\n(fundo branco, letras pretas)
+
+U -> App: salvar
+App -> WS: POST /api/pieces {..., brandName, brandLogoUrl,\nbrandSource, brandRef}
+WS -> ST: o logo está no storage próprio? (media.read)
+WS -> BL: acceptWebLogo(marca, logo, fonte)
+BL -> DB: UPSERT brand_logos (status FOUND, fonte)
+WS -> DB: INSERT wardrobe_items (brand_name, brand_logo_url,\nbrand_source, brand_ref, ...)
+DB --> WS: id
+WS --> App: 201 Created (PieceView com brandLogoUrl, brandSource)
+App --> U: peça no guarda-roupa com a marca e o logo
+@enduml

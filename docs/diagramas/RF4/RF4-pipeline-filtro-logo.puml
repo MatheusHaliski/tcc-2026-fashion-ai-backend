@@ -1,0 +1,74 @@
+@startuml RF4_Pipeline_Filtro_Logo
+!pragma layout smetana
+title RF4 — Pipeline de filtro do logo da marca\n(LogoFilter · SvgPathRenderer) — fundo branco, letras pretas nítidas; borrado é recusado
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 16
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+start
+:Baixar o logo do resultado\n(WebFetchPort: só https, host público,\naté 3 MB, 8 s, 3 redirecionamentos);
+if (Baixou?) then (Não)
+  :Recusar — LOGO_NAO_BAIXOU;
+  stop
+endif
+if (É vetor (SVG)?) then (Sim)
+  :Ler só o viewBox e os <path d>\n(nada de script, estilo, imagem\nembutida ou link externo);
+  :Desenhar o vetor em preto sobre branco,\n1024 px, com antisserrilhado;
+  note right: vetor nunca perde nitidez
+else (Não — PNG/JPG)
+  :Validar a imagem (tipo real, tamanho);
+  if (Lado maior ≥ 96 px?) then (Não)
+    :Recusar — RESOLUCAO_BAIXA;
+    stop
+  endif
+endif
+:Achatar a transparência sobre branco;
+:Estimar o fundo: PNG transparente → branco;\nsenão, a cor mais comum da moldura;
+if (≥ 60% da moldura tem a cor do fundo?) then (Não)
+  :Recusar — FUNDO_NAO_UNIFORME\n(foto, banner ou recorte ruim);
+  stop
+endif
+:Tinta = distância de cada pixel à cor do fundo\n(serve para logo colorido, claro no escuro\ne escuro no claro — o desenho vira preto);
+if (Contraste do desenho ≥ 0,35?) then (Não)
+  :Recusar — CONTRASTE_BAIXO;
+  stop
+endif
+:Limiar de Otsu separa desenho e fundo;
+:Medir a nitidez no contorno:\nlargura da transição (pixels de meio-tom\npor pixel de contorno) e gradiente;
+if (Borda ≤ 2,2 px e gradiente ≥ 0,30?) then (Não)
+  :Recusar — SEM_NITIDEZ\n(logo borrado não é exibido);
+  stop
+endif
+:Recorte justo no desenho;
+if (Cobertura do recorte > 92%?) then (Sim)
+  :Recusar — BLOCO_SOLIDO;
+  stop
+endif
+if (Precisaria ampliar mais de 2×\ne o recorte tem menos de 192 px?) then (Sim)
+  :Recusar — RESOLUCAO_BAIXA;
+  stop
+endif
+:Escalar (reduções pela metade, bicúbica)\ne binarizar com curva em S estreita:\npreto puro no desenho, branco puro no fundo,\n1 px de antisserrilhado no contorno;
+:Gerar as saídas:\n- quadrado 320×320 (avatar do logo)\n- faixa 160 px de altura (slot do formulário);
+:Conferir a borda final (métrica larguraDaBordaFinalPx);
+:Guardar no storage próprio\n(brands/logos/web/<marca>-<fonte>.png)\ne devolver url, wideUrl, métricas e etapas;
+stop
+note right
+  Testes: LogoFilterTest (vetor aceito e nítido,
+  borrado recusado, miniatura recusada, fundo
+  escuro invertido, logo colorido vira preto,
+  foto recusada) e BrandWebSearchServiceTest.
+end note
+@enduml
