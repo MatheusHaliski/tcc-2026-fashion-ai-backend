@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { PieceSnapshot } from "@/components/piece-snapshot";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
@@ -15,15 +16,15 @@ import { SchemeCard } from "@/components/scheme-card";
  * com os dados completos, a barra social e o atalho para a página. Dentro do modal, uma peça da lista do esquema abre
  * o detalhe da peça e "voltar" retorna ao esquema (pilha de navegação).
  */
-type Target = { kind: "scheme" | "piece"; id: string };
-interface Ctx { openScheme: (id: string) => void; openPiece: (id: string) => void; }
+type Target = { kind: "scheme" | "piece"; id: string; from?: string };
+interface Ctx { openScheme: (id: string) => void; openPiece: (id: string, fromScheme?: string) => void; }
 const DetailCtx = createContext<Ctx | null>(null);
 export const useDetailModal = () => useContext(DetailCtx);
 
 export function DetailModalProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<Target[]>([]);
   const openScheme = useCallback((id: string) => setStack((s) => [...s, { kind: "scheme", id }]), []);
-  const openPiece = useCallback((id: string) => setStack((s) => [...s, { kind: "piece", id }]), []);
+  const openPiece = useCallback((id: string, fromScheme?: string) => setStack((s) => [...s, { kind: "piece", id, from: fromScheme }]), []);
   const close = useCallback(() => setStack([]), []);
   const back = useCallback(() => setStack((s) => s.slice(0, -1)), []);
   const value = useMemo(() => ({ openScheme, openPiece }), [openScheme, openPiece]);
@@ -46,7 +47,7 @@ export function DetailModalProvider({ children }: { children: ReactNode }) {
               <p className="type-label text-muted flex-1">{top.kind === "scheme" ? "Esquema de vestimenta · ampliado" : "Peça de roupa · ampliada"}</p>
               <button type="button" className="btn btn-ghost btn-icon" aria-label="fechar" onClick={close}>✕</button>
             </div>
-            <div className="p-4">{top.kind === "scheme" ? <SchemeDetail key={top.id} id={top.id} onPiece={openPiece} onClose={close} /> : <PieceDetail key={top.id} id={top.id} onScheme={openScheme} onClose={close} />}</div>
+            <div className="p-4">{top.kind === "scheme" ? <SchemeDetail key={top.id} id={top.id} onPiece={(pid) => openPiece(pid, top.id)} onClose={close} /> : <PieceDetail key={top.id} id={top.id} from={top.from} onScheme={openScheme} onClose={close} />}</div>
           </div>
         </div>
       )}
@@ -91,7 +92,7 @@ function SchemeDetail({ id, onPiece, onClose }: { id: string; onPiece: (id: stri
           </li>))}</ul>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link href={`/schemes/${s.id}`} className="btn" onClick={onClose}><FaiIcon id="SOC-10" size={24} decorative />Abrir página</Link>
-          {data.canEdit && <Link href={`/schemes/${s.id}/edit`} className="btn" onClick={onClose}><FaiIcon id="ACT-05" size={24} decorative />{t("common.edit")}</Link>}
+          {data.canEdit && <Link href={`/schemes/${s.id}/edit`} className="btn" onClick={onClose}><FaiIcon id="SOC-11" size={24} decorative />{t("common.edit")}</Link>}
           <Link href={`/try-on?scheme=${s.id}`} className="btn" onClick={onClose}><FaiIcon id="NAV-07" size={24} decorative />Provar</Link>
         </div>
         <p className="mt-3 type-caption text-faint tabular">♥ {s.counters.likes} · 💬 {s.counters.comments} · ↻ {s.counters.remixes} · {s.counters.views} views</p>
@@ -105,12 +106,12 @@ function ExpandedScheme({ scheme, onPiece }: { scheme: SchemeView; onPiece: (id:
   return <SchemeCard scheme={scheme} href={`/schemes/${scheme.id}`} expanded onPiece={onPiece} />;
 }
 
-function PieceDetail({ id, onScheme, onClose }: { id: string; onScheme: (id: string) => void; onClose: () => void }) {
+function PieceDetail({ id, from, onScheme, onClose }: { id: string; from?: string; onScheme: (id: string) => void; onClose: () => void }) {
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
-  const { data, error, loading } = useDetail<{ piece?: PieceView; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; canEdit?: boolean; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown> }>(`/api/pieces/${id}`);
+  const { data, error, loading } = useDetail<{ piece?: PieceView; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; canEdit?: boolean; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown> }>(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`);
   if (error) return <ErrorState error={error as never} />;
   if (loading || !data) return <Skeleton className="h-96" />;
-  if (!data.piece) return <p className="type-body">Esta peça não está mais disponível no guarda-roupa do autor.</p>;
+  if (!data.piece) return data.snapshot ? <PieceSnapshot snapshot={data.snapshot} /> : <p className="type-body">Esta peça não está mais disponível no guarda-roupa do autor.</p>;
   const p = data.piece;
   const rows: [string, string | null | undefined][] = [["Categoria", CATEGORY_LABEL[p.category] ?? label(p.category)], ["Subcategoria", label(p.subcategory)], ["Marca", p.brandName], ["Sexo", label(p.sex?.toLowerCase())],
     ["Tamanho", p.size?.toUpperCase().replace(/^(BR|SHOE)_/, "")], ["Cor", label(p.color)], ["Material", label(p.material?.toLowerCase())], ["Estado", label(p.condition?.toLowerCase())], ["Usos", String(p.wearCount)]];
@@ -130,9 +131,9 @@ function PieceDetail({ id, onScheme, onClose }: { id: string; onScheme: (id: str
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">{rows.filter(([, v]) => v).map(([k, v]) => <div key={k} className="min-w-0"><dt className="label">{k}</dt><dd className="type-body-sm truncate">{v}</dd></div>)}</dl>
         {(data.originSchemes ?? []).length > 0 && <><h3 className="type-h3 mt-4 mb-1">Looks com esta peça</h3><ul className="flex flex-wrap gap-2">{data.originSchemes!.map((o) => <li key={o.schemeId}><button type="button" className="chip" onClick={() => onScheme(o.schemeId)}>{o.title} →</button></li>)}</ul></>}
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="SOC-10" size={24} decorative />Abrir página</Link>
-          {data.canEdit && <Link href={`/pieces/${p.id}?edit=1`} className="btn" onClick={onClose}><FaiIcon id="ACT-05" size={24} decorative />{t("common.edit")}</Link>}
-          {user && !data.canEdit && <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="NAV-02" size={24} decorative />{t("closet.addToWardrobe")}</Link>}
+          <Link href={`/pieces/${p.id}${from ? `?fromScheme=${from}` : ""}`} className="btn" onClick={onClose}><FaiIcon id="SOC-10" size={24} decorative />Abrir página</Link>
+          {data.canEdit && <Link href={`/pieces/${p.id}?edit=1`} className="btn" onClick={onClose}><FaiIcon id="SOC-11" size={24} decorative />{t("common.edit")}</Link>}
+          {user && !data.canEdit && <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addToWardrobe")}</Link>}
         </div>
         <p className="mt-3 type-caption text-faint tabular">♥ {p.counters.likes} · 💬 {p.counters.comments} · {p.counters.views} views</p>
       </div>

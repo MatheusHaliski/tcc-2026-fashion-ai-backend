@@ -5,39 +5,105 @@ import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { Avatar, Card, Chip, ErrorState, Input, PageHeader, Select, Skeleton, Tabs } from "@/components/ui";
+import { label, useTaxonomy } from "@/lib/api/taxonomy";
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Tabs } from "@/components/ui";
+import { Globe, countryName, type GlobePoint } from "@/components/globe";
 
-interface Country { country: string; users: number; public_schemes: number; avg_hype?: number | null; dominantColor?: string | null; dominantColorHex?: string | null; intensity: number; }
-interface Global { countries: Country[]; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number }[]; colorRanking?: { color: string; total: number }[]; brands?: { brand: string; pieces: number }[] }; legend?: string; }
-interface Brands { items?: { id?: string; slug?: string; name: string; logoUrl?: string; country?: string; category?: string; pieces?: number; seals?: number; storeUrl?: string }[]; brands?: unknown[]; countries?: string[]; categories?: string[]; }
+interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
+interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
+interface Brands { brands: BrandCard[]; countries?: string[]; categories?: string[]; seasons?: string[]; }
 interface Insights { rankings: Record<string, { label: string; value: number; hex?: string }[]>; aiInsight?: string; explanation?: unknown; fallbackUsed?: boolean; note?: string; }
+const BAND_LABEL: Record<string, string> = { DESPRETENSIOSO: "Despretensioso (0–14)", EM_CONSTRUCAO: "Em construção (15–29)", NOTADO: "Notado (30–49)", COM_ESTILO: "Com estilo (50–69)", MUITO_ESTILOSO: "Muito estiloso (70–84)", ARRASANDO_NO_LOOK: "Arrasando no look (85–95)", ICONE_DE_ESTILO: "Ícone de estilo (96+)" };
+const RANK_LABEL: Record<string, string> = { topBrands: "Marcas mais usadas (peças)", hypeBySeason: "Maior hype médio por estação", topColors: "Cores mais usadas", hypeByColor: "Maior hype médio por cor", hypeByBrand: "Maior hype médio por marca", topCountries: "Países com mais looks públicos" };
 
+/**
+ * RF26 — Explorador Global: Painel global (globo interativo com um ponto luminoso por país), Buscar marcas & lojas
+ * (perfis BRAND com filtros de país, categoria, cor, estação e hype) e Insights globais (rankings + leitura da IA).
+ * A região vem sempre do país do dono (User.country) — peças e esquemas não têm campo de região.
+ */
 export default function ExplorerPage() {
-  const { t, fmtNumber } = useI18n(); const { user } = useAuth();
-  const [tab, setTab] = useState<"map" | "brands" | "insights">("map"); const [country, setCountry] = useState(""); const [f, setF] = useState({ term: "", country: "", category: "", sort: "" });
-  const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country })}`, { signal, anonymous: !user }), [country, !!user]);
+  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy();
+  const [tab, setTab] = useState<"map" | "brands" | "insights">("map");
+  const [country, setCountry] = useState(""); const [g, setG] = useState({ season: "", color: "", hypeBand: "" });
+  const [f, setF] = useState({ term: "", country: "", category: "", color: "", season: "", hypeMin: "", sort: "HYPE" });
+  const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country, ...g })}`, { signal, anonymous: !user }), [country, JSON.stringify(g), !!user]);
   const brands = useApi<Brands>((signal) => api.get(`/api/explorer/brands${qs(f)}`, { signal, anonymous: !user }), [JSON.stringify(f), !!user], { enabled: tab === "brands" });
   const insights = useApi<Insights>((signal) => api.get("/api/explorer/insights", { signal, anonymous: !user }), [!!user], { enabled: tab === "insights" });
-  const max = Math.max(1, ...(global.data?.countries ?? []).map((c) => c.public_schemes));
-  const list = (brands.data?.items ?? (brands.data?.brands as Brands["items"]) ?? []);
+  const points = global.data?.countries ?? []; const lit = points.filter((p) => p.sufficient);
+  const maxTotal = Math.max(1, ...points.map((p) => p.total));
   return (
     <>
-      <PageHeader title={t("nav.explorer")} kicker="RF26" lead={global.data?.legend} />
-      <Tabs tabs={[{ id: "map", label: "Painel global" }, { id: "brands", label: "Marcas & lojas" }, { id: "insights", label: "Insights" }]} value={tab} onChange={setTab} />
-      {tab === "map" && (global.error ? <ErrorState error={global.error} onRetry={global.reload} /> : global.loading ? <Skeleton className="h-64" /> : (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <Card><p className="label mb-2">Países (intensidade = hype médio; largura = looks públicos)</p><ul className="grid gap-2">{(global.data?.countries ?? []).map((c) => <li key={c.country}><button type="button" className={`flex w-full items-center gap-3 rounded p-2 text-left hover:bg-surface-2 ${country === c.country ? "bg-surface-2" : ""}`} onClick={() => setCountry(c.country)}><span className="w-10 type-data font-bold">{c.country}</span><span className="h-5 rounded" style={{ width: `${Math.max(4, (100 * c.public_schemes) / max)}%`, background: c.dominantColorHex ?? "var(--thread)", opacity: 0.4 + 0.6 * Math.min(1, c.intensity / 100) }} /><span className="ml-auto type-caption text-muted tabular">{fmtNumber(c.users)} usuários · {fmtNumber(c.public_schemes)} looks{c.avg_hype != null ? ` · hype ${Math.round(c.avg_hype)}` : ""}{c.dominantColor ? ` · ${c.dominantColor}` : ""}</span></button></li>)}</ul></Card>
-          <Card>{global.data?.selected ? <><p className="type-h3 mb-2">{global.data.selected.country}</p><p className="label">Hype por estação</p><ul className="mb-3 type-body-sm">{(global.data.selected.hypeBySeason ?? []).map((s) => <li key={s.season} className="flex justify-between"><span>{s.season}</span><span className="type-data">{s.avg_hype != null ? Math.round(s.avg_hype) : "—"}</span></li>)}</ul><p className="label">Cores</p><ul className="mb-3 type-body-sm">{(global.data.selected.colorRanking ?? []).map((c) => <li key={c.color} className="flex justify-between"><span>{c.color}</span><span className="type-data">{c.total}</span></li>)}</ul><p className="label">Marcas</p><ul className="type-body-sm">{(global.data.selected.brands ?? []).map((b) => <li key={b.brand} className="flex justify-between"><span>{b.brand}</span><span className="type-data">{b.pieces}</span></li>)}</ul></> : <p className="type-body text-muted">Selecione um país para ver hype por estação, cores e marcas.</p>}</Card>
-        </div>
-      ))}
+      <PageHeader title={t("nav.explorer")} kicker="RF26 · Explorador Global" lead="Tendências agregadas por país, estação, cor e faixa de hype — a região vem do país de quem publicou." />
+      <Tabs tabs={[{ id: "map", label: "Painel global" }, { id: "brands", label: "Buscar marcas & lojas" }, { id: "insights", label: "Insights globais" }]} value={tab} onChange={setTab} />
+      {tab === "map" && (
+        <>
+          <div className="mb-3 grid gap-2 sm:grid-cols-4" aria-label="recorte do painel">
+            <Select aria-label="estação" value={g.season} onChange={(e) => setG({ ...g, season: e.target.value })}><option value="">Todas as estações</option>{(global.data?.facets?.seasons ?? ["SPRING", "SUMMER", "AUTUMN", "WINTER"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select>
+            <Select aria-label="cor" value={g.color} onChange={(e) => setG({ ...g, color: e.target.value })}><option value="">Todas as cores</option>{(global.data?.facets?.colors ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
+            <Select aria-label="faixa de hype" value={g.hypeBand} onChange={(e) => setG({ ...g, hypeBand: e.target.value })}><option value="">Todas as faixas de hype</option>{(global.data?.facets?.hypeBands ?? Object.keys(BAND_LABEL)).map((b) => <option key={b} value={b}>{BAND_LABEL[b] ?? b}</option>)}</Select>
+            {(g.season || g.color || g.hypeBand) ? <Button onClick={() => setG({ season: "", color: "", hypeBand: "" })}>Limpar recorte</Button> : <span />}
+          </div>
+          {global.error ? <ErrorState error={global.error} onRetry={global.reload} /> : global.loading && !global.data ? <Skeleton className="h-96" /> : (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+              <Card className="flex flex-col items-center"><Globe points={points} selected={country} onSelect={setCountry} size={420} /><p className="mt-1 type-caption text-muted text-center">{global.data?.legend}</p></Card>
+              <div className="grid content-start gap-4">
+                <Card>
+                  {global.data?.selected ? (<>
+                    <p className="type-h3 mb-2">{countryName(global.data.selected.country)}</p>
+                    <p className="label">Hype médio por estação</p>
+                    <ul className="mb-3 type-body-sm">{(global.data.selected.hypeBySeason ?? []).map((s) => <li key={s.season} className="flex justify-between"><span>{label(String(s.season).toLowerCase())}</span><span className="type-data">{s.avg_hype != null ? Math.round(s.avg_hype) : "—"}</span></li>)}{!(global.data.selected.hypeBySeason ?? []).length && <li className="text-muted">sem looks com estação</li>}</ul>
+                    <p className="label">Cores mais usadas</p>
+                    <ul className="type-body-sm">{(global.data.selected.topColors ?? []).map((c) => <li key={c.color} className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c.color] ?? "#999" }} /><span className="flex-1">{label(c.color)}</span><span className="type-data">{c.total}</span></li>)}</ul>
+                    <Button size="sm" className="mt-3" onClick={() => setCountry("")}>Fechar país</Button>
+                  </>) : <p className="type-body text-muted">Clique num ponto do globo ou num país da lista para ver o hype por estação e as cores mais usadas.</p>}
+                </Card>
+                <Card>
+                  <p className="label">{lit.length} de {points.length} países com dados suficientes (≥ {global.data?.minData ?? 3} peças/looks)</p>
+                  {points.length === 0 ? <EmptyState title="Nada neste recorte." hint="Troque a estação, a cor ou a faixa de hype." /> : (
+                    <ul className="grid gap-1">{points.map((c) => (
+                      <li key={c.country}><button type="button" aria-pressed={country === c.country} className={`grid w-full grid-cols-[8rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded p-1.5 text-left hover:bg-surface-2 ${country === c.country ? "bg-surface-2" : ""}`} onClick={() => setCountry(c.country)}>
+                        <span className="truncate type-body-sm font-semibold">{countryName(c.country)}</span>
+                        <span className="h-3.5 flex-1 overflow-hidden rounded bg-surface-2"><span className="block h-full rounded" style={{ width: `${(100 * c.total) / maxTotal}%`, background: c.dominantColorHex ?? "var(--thread)", opacity: c.sufficient ? 1 : 0.4, boxShadow: "inset 0 0 0 1px rgba(0,0,0,.22)" }} /></span>
+                        <span className="text-right type-caption text-muted tabular whitespace-nowrap">{c.schemes} looks · {c.pieces} peças · hype {c.avg_hype != null ? Math.round(c.avg_hype) : "—"}{!c.sufficient && <Badge className="ml-1">poucos dados</Badge>}</span>
+                      </button></li>))}</ul>
+                  )}
+                </Card>
+              </div>
+            </div>
+          )}
+        </>
+      )}
       {tab === "brands" && (<>
-        <div className="mb-3 grid gap-2 sm:grid-cols-4"><Input aria-label={t("common.search")} placeholder={t("common.search") + "…"} value={f.term} onChange={(e) => setF({ ...f, term: e.target.value })} /><Select aria-label="país" value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })}><option value="">País</option>{(brands.data?.countries ?? ["BR", "US", "FR", "IT"]).map((c) => <option key={c} value={c}>{c}</option>)}</Select><Select aria-label="categoria" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">Categoria</option>{(brands.data?.categories ?? []).map((c) => <option key={c} value={c}>{c}</option>)}</Select><div className="flex gap-1">{["", "pieces", "seals", "name"].map((s) => <Chip key={s} active={f.sort === s} onClick={() => setF({ ...f, sort: s })}>{s === "" ? "relevância" : s === "pieces" ? "peças" : s === "seals" ? "selos" : "A–Z"}</Chip>)}</div></div>
-        {brands.loading ? <Skeleton className="h-48" /> : <div className="grid-cards">{list.map((b, i) => <Card key={b.id ?? b.slug ?? i} className="flex flex-col items-center text-center"><Avatar src={mediaUrl(b.logoUrl)} name={b.name} size={56} /><p className="type-h3 mt-2">{b.name}</p><p className="type-caption text-muted">{[b.country, b.category].filter(Boolean).join(" · ")}</p><p className="type-data text-faint tabular">{b.pieces ?? 0} peças · {b.seals ?? 0} selos</p><div className="mt-2 flex gap-2">{b.slug && <Link href={`/brands/${b.slug}`} className="btn btn-sm">{t("common.see")}</Link>}{b.storeUrl && <a href={b.storeUrl} target="_blank" rel="noreferrer" className="btn btn-sm">Loja ↗</a>}</div></Card>)}</div>}
+        <div className="mb-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-7" aria-label="filtros de marcas">
+          <Input aria-label={t("common.search")} placeholder="Nome da marca…" value={f.term} onChange={(e) => setF({ ...f, term: e.target.value })} />
+          <Select aria-label="país" value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })}><option value="">País</option>{(brands.data?.countries ?? []).map((c) => <option key={c} value={c}>{countryName(c)}</option>)}</Select>
+          <Select aria-label="categoria" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">Categoria</option>{(brands.data?.categories ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
+          <Select aria-label="cor" value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })}><option value="">Cor</option>{(global.data?.facets?.colors ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
+          <Select aria-label="estação" value={f.season} onChange={(e) => setF({ ...f, season: e.target.value })}><option value="">Estação</option>{(brands.data?.seasons ?? ["spring", "summer", "autumn", "winter"]).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
+          <Select aria-label="hype mínimo" value={f.hypeMin} onChange={(e) => setF({ ...f, hypeMin: e.target.value })}><option value="">Hype mínimo</option>{[30, 50, 70, 85].map((h) => <option key={h} value={h}>≥ {h}</option>)}</Select>
+          <Select aria-label="ordenar" value={f.sort} onChange={(e) => setF({ ...f, sort: e.target.value })}><option value="HYPE">Mais hype</option><option value="SCHEMES">Mais looks com selo</option></Select>
+        </div>
+        {brands.error ? <ErrorState error={brands.error} onRetry={brands.reload} /> : brands.loading ? <Skeleton className="h-48" /> : (brands.data?.brands ?? []).length === 0 ? <EmptyState title="Nenhuma marca com esses filtros." /> : (
+          <div className="grid-cards">{(brands.data?.brands ?? []).map((b, i) => (
+            <Card key={b.slug ?? i} className="flex flex-col items-center text-center">
+              <Avatar src={mediaUrl(b.logoUrl)} name={b.name} size={56} />
+              <p className="type-h3 mt-2">{b.name}</p>
+              <p className="type-caption text-muted">{[b.country ? countryName(b.country) : null, b.category ? label(b.category) : null].filter(Boolean).join(" · ")}</p>
+              <p className="type-data text-faint tabular">{b.pieces ?? 0} peças · {b.schemes ?? 0} looks com selo · hype {b.hypeScore ?? 0}</p>
+              <p aria-label={`${b.stars ?? 1} de 5 estrelas`} className="text-[13px] text-chalk">{"★".repeat(b.stars ?? 1)}<span className="text-line">{"★".repeat(5 - (b.stars ?? 1))}</span></p>
+              {b.colors?.length ? <p className="mt-1 flex gap-1">{b.colors.map((c) => <span key={c.color} title={label(c.color)} className="h-3.5 w-3.5 rounded-full border border-line-soft" style={{ background: c.hex }} />)}</p> : null}
+              {b.seasons?.length ? <p className="mt-1 type-caption text-muted">{b.seasons.map((s) => label(s)).join(" · ")}</p> : null}
+              <div className="mt-2 flex gap-2">{b.slug && <Link href={`/brands/${b.slug}`} className="btn btn-sm">Ver perfil</Link>}{b.storeUrl && <a href={b.storeUrl} target="_blank" rel="noreferrer" className="btn btn-sm">Loja ↗</a>}</div>
+            </Card>))}</div>
+        )}
       </>)}
-      {tab === "insights" && (insights.loading ? <Skeleton className="h-48" /> : insights.data && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="lg:col-span-2"><p className="label">Leitura de tendência {insights.data.fallbackUsed ? "(local)" : "(IA)"}</p><p className="type-h2">{insights.data.aiInsight}</p>{insights.data.note && <p className="type-caption text-faint mt-2">{insights.data.note}</p>}</Card>
-          {Object.entries(insights.data.rankings).map(([k, rows]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><ul className="type-body-sm">{rows.map((r, i) => <li key={i} className="flex items-center gap-2 py-0.5">{r.hex && <span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: r.hex }} />}<span className="flex-1">{r.label}</span><span className="type-data tabular">{fmtNumber(Number(r.value))}</span></li>)}</ul></Card>)}
+      {tab === "insights" && (insights.error ? <ErrorState error={insights.error} onRetry={insights.reload} /> : insights.loading || !insights.data ? <Skeleton className="h-48" /> : (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-3"><p className="label">Leitura de tendência {insights.data.fallbackUsed ? "(motor local)" : "(IA · RF24)"}</p><p className="type-h2">{insights.data.aiInsight}</p>{insights.data.note && <p className="type-caption text-faint mt-2">{insights.data.note}</p>}</Card>
+          {Object.entries(insights.data.rankings).map(([k, rows]) => { const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0)); return (
+            <Card key={k}><p className="label">{RANK_LABEL[k] ?? k}</p>{rows.length === 0 ? <p className="type-caption text-muted">sem dados suficientes</p> : <ul className="grid gap-1.5 type-body-sm">{rows.map((r, i) => (
+              <li key={i} className="grid grid-cols-[minmax(0,1fr)_90px_36px] items-center gap-2"><span className="flex min-w-0 items-center gap-1.5 truncate">{r.hex && <span className="h-3 w-3 shrink-0 rounded-full border border-line-soft" style={{ background: r.hex }} />}{k === "topCountries" ? countryName(String(r.label)) : k.includes("Season") ? label(String(r.label).toLowerCase()) : k.includes("Color") ? label(String(r.label)) : String(r.label)}</span>
+                <span className="h-2.5 overflow-hidden rounded bg-surface-2"><span className="block h-full rounded bg-[var(--thread)]" style={{ width: `${(100 * (Number(r.value) || 0)) / max}%`, background: r.hex ?? undefined }} /></span><span className="text-right type-data tabular">{fmtNumber(Number(r.value))}</span></li>))}</ul>}</Card>); })}
         </div>
       ))}
     </>

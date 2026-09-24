@@ -25,6 +25,7 @@ import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
 import br.com.fashionai.domain.model.enums.ShareChannel;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
+import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -136,11 +137,13 @@ public class SearchService {
     private final SchemeService schemeService;
     private final ChallengeService challenges;
     private final Guard guard;
+    private final BrandRepository catalog;
 
     public SearchService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces, UserRepository users,
                          BrandProfileRepository brands, CelebrityProfileRepository celebrities, FollowRepository follows, ShareRepository shares,
                          SealBondRepository bonds, StyleDnaRepository dnas, ObjectProvider<SearchIndexPort> searchIndex,
-                         ObjectProvider<TimelineProjectionPort> timeline, SchemeService schemeService, ChallengeService challenges, Guard guard) {
+                         ObjectProvider<TimelineProjectionPort> timeline, SchemeService schemeService, ChallengeService challenges, Guard guard,
+                         BrandRepository catalog) {
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -156,6 +159,7 @@ public class SearchService {
         this.schemeService = schemeService;
         this.challenges = challenges;
         this.guard = guard;
+        this.catalog = catalog;
     }
 
     // ================================================================== visibilidade (CA05)
@@ -317,39 +321,114 @@ public class SearchService {
     // ================================================================== busca segmentada (CA02–CA05)
     @Transactional(readOnly = true)
     public Map<String, Object> search(CurrentUser viewer, String rawTerm, String tab, Filters filters, int size) {
+        return search(viewer, rawTerm, tab, filters, size, null);
+    }
+
+    /**
+     * RF8.CA02–CA06 — busca segmentada por abas com cursor opaco (deslocamento na lista filtrada e estável), para que a
+     * rolagem carregue a próxima página sem repetir itens.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> search(CurrentUser viewer, String rawTerm, String tab, Filters filters, int size, String rawCursor) {
         String term = InputSanitizer.clean(rawTerm == null ? "" : rawTerm, 80).trim();
         String t = tab == null ? "LOOKS" : tab.toUpperCase(Locale.ROOT);
         if (!TABS.contains(t)) {
             throw ApiException.badRequest("ABA_INVALIDA", "Abas: " + TABS);
         }
         int limit = Math.max(1, Math.min(size <= 0 ? 30 : size, 60));
+        int offset = offsetOf(rawCursor);
         Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
-        Pageable page = PageRequest.of(0, 200);
-        List<?> results = switch (t) {
-            case "LOOKS" -> looks(viewer, term, filters, blocked, page, limit);
-            case "PECAS" -> pieces(viewer, term, filters, blocked, page, limit);
-            case "PESSOAS" -> users.searchByUsername(term, PageRequest.of(0, limit)).stream()
+        Pageable page = PageRequest.of(0, 400);
+        int want = offset + limit + 1; // um a mais para saber se existe próxima página
+        String needle = term.toLowerCase(Locale.ROOT);
+        List<?> all = switch (t) {
+            case "LOOKS" -> looks(viewer, term, filters, blocked, page, want);
+            case "PECAS" -> pieces(viewer, term, filters, blocked, page, want);
+            case "PESSOAS" -> users.searchByUsername(term, PageRequest.of(0, want)).stream()
                     .filter(u -> u.getProfileType() == ProfileType.PESSOAL && u.getStatus() == AccountStatus.ACTIVE && !blocked.contains(u.getId()))
                     .map(Views::user).toList();
-            case "MARCAS" -> brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
-                    .filter(b -> term.isEmpty() || b.getBrandName().toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT)))
-                    .limit(limit).map(b -> Map.of("userId", b.getOwner().getId(), "name", b.getBrandName(), "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList();
+            case "MARCAS" -> brandResults(needle, want);
             default -> celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
-                    .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT)))
-                    .limit(limit).map(c -> Map.of("userId", c.getOwner().getId(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()))).toList();
+                    .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(needle))
+                    .limit(want).map(c -> Map.of("userId", c.getOwner().getId(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()))).toList();
         };
+        List<?> results = all.size() <= offset ? List.of() : all.subList(offset, Math.min(all.size(), offset + limit));
+        String nextCursor = all.size() > offset + limit ? encodeOffset(offset + limit) : null;
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("term", term);
         out.put("tab", t);
         out.put("tabs", TABS);
         out.put("results", results);
+        out.put("nextCursor", nextCursor);
         out.put("chips", filters == null ? List.of() : filters.chips());
         out.put("engine", searchIndex.getIfAvailable() != null && searchIndex.getIfAvailable().enabled() ? "opensearch" : "mysql");
-        if (results.isEmpty()) {
-            out.put("empty", Map.of("message", "Nada encontrado para \"" + term + "\".", "alternatives", alternatives(term),
-                    "trending", trending(viewer, blocked)));
+        if (results.isEmpty() && offset == 0) {
+            List<Views.SchemeView> hot = trending(viewer, blocked);
+            List<String> alts = alternatives(term);
+            if (alts.isEmpty()) {
+                // nenhum termo parecido: sugere os estilos e ocasiões que mais aparecem nos looks em alta
+                Map<String, Long> freq = new LinkedHashMap<>();
+                hot.forEach(v -> { v.style().forEach(x -> freq.merge(x, 1L, Long::sum)); v.occasion().forEach(x -> freq.merge(x, 1L, Long::sum)); });
+                alts = freq.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(5).map(Map.Entry::getKey).toList();
+            }
+            out.put("empty", Map.of("message", "Nada encontrado para \"" + term + "\".", "alternatives", alts, "trending", hot));
         }
         return out;
+    }
+
+    static int offsetOf(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return 0;
+        }
+        try {
+            String v = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8);
+            return v.startsWith("o:") ? Math.max(0, Math.min(Integer.parseInt(v.substring(2)), 10_000)) : 0;
+        } catch (RuntimeException ex) {
+            throw ApiException.badRequest("CURSOR_INVALIDO", "Cursor de paginação inválido.");
+        }
+    }
+
+    static String encodeOffset(int offset) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(("o:" + offset).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Aba Marcas: perfis de marca aprovados no Fashion AI e, depois deles, as marcas do catálogo (sem perfil) que casam com o
+     * termo — com o número de peças públicas de cada uma, para a busca nunca ignorar uma marca conhecida.
+     */
+    List<Map<String, Object>> brandResults(String needle, int want) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (var b : brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO)) {
+            if (!needle.isEmpty() && !b.getBrandName().toLowerCase(Locale.ROOT).contains(needle)) {
+                continue;
+            }
+            seen.add(b.getBrandName().toLowerCase(Locale.ROOT));
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("userId", b.getOwner().getId());
+            m.put("name", b.getBrandName());
+            m.put("slug", b.getSlug());
+            m.put("logoUrl", b.getLogoUrl());
+            m.put("registered", true);
+            out.add(m);
+        }
+        for (var c : catalog.findAllByOrderByName()) {
+            if (out.size() >= want) {
+                break;
+            }
+            String key = c.getName().toLowerCase(Locale.ROOT);
+            if ((!needle.isEmpty() && !key.contains(needle)) || !seen.add(key)) {
+                continue;
+            }
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", c.getName());
+            m.put("slug", c.getSlug());
+            m.put("logoUrl", c.getLogoUrl());
+            m.put("registered", false);
+            m.put("publicPieces", pieces.countPublicByBrandName(c.getName()));
+            out.add(m);
+        }
+        return out.size() > want ? out.subList(0, want) : out;
     }
 
     List<Views.SchemeView> looks(CurrentUser viewer, String term, Filters f, Set<UUID> blocked, Pageable page, int limit) {
@@ -420,7 +499,10 @@ public class SearchService {
                 .sorted(Comparator.comparing(WardrobeItem::getCreatedAt).thenComparing(WardrobeItem::getId).reversed())
                 .filter(w -> visible(viewer, w, blocked)).filter(w -> matches(f, w)).limit(limit).toList();
         String next = list.size() == limit ? new Cursor(list.get(limit - 1).getCreatedAt(), list.get(limit - 1).getId()).encode() : null;
-        return Map.of("items", list.stream().map(w -> Views.piece(w, null, null)).toList(), "nextCursor", String.valueOf(next),
-                "chips", f == null ? List.of() : f.chips());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("items", list.stream().map(w -> Views.piece(w, null, null)).toList());
+        out.put("nextCursor", next); // null na última página (RF8.CA06): o cliente para de pedir
+        out.put("chips", f == null ? List.of() : f.chips());
+        return out;
     }
 }

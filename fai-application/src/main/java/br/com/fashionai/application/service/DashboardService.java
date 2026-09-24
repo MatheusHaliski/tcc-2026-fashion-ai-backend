@@ -30,8 +30,8 @@ import java.util.Set;
  */
 @Service
 public class DashboardService {
-    public static final List<String> WIDGETS = List.of("kpis", "growth", "content", "ai_cost", "ai_usage", "brands", "countries", "hype_bands",
-            "inventory_bands", "seal_funnel", "challenges", "points", "profiles");
+    public static final List<String> WIDGETS = List.of("alerts", "kpis", "growth", "content", "countries", "ai_by_country", "ai_cost", "ai_usage", "brands",
+            "hype_bands", "inventory_bands", "seal_funnel", "challenges", "points", "profiles");
     static final Set<String> METRICS = Set.of("users", "pieces", "schemes", "daily_looks", "ai_calls", "ai_cost");
 
     private final AnalyticsQueryPort analytics;
@@ -86,10 +86,11 @@ public class DashboardService {
         out.put("series", series);
         List<Map<String, Object>> aiUsage = analytics.aiUsage(f);
         out.put("aiUsage", aiUsage);
+        out.put("aiByCountry", analytics.aiCostByCountry(f));
         out.put("aiProviders", ai.providerAvailability());
         out.put("brands", analytics.brandUsage(10));
         out.put("countries", analytics.countries());
-        out.put("hypeBands", analytics.hypeBands());
+        out.put("hypeBands", analytics.hypeBands(f));
         out.put("inventoryBands", analytics.inventoryBands());
         out.put("sealFunnel", analytics.sealFunnel(f));
         out.put("challenges", analytics.challengeStats());
@@ -164,7 +165,12 @@ public class DashboardService {
         if (saved.isEmpty()) {
             return Map.of("widgets", WIDGETS, "hidden", List.of(), "defaultFilter", Map.of("days", 30));
         }
-        return saved;
+        // widgets novos entram no fim de um layout salvo antes deles existirem
+        List<String> order = new ArrayList<>(Json.strings(Json.write(saved.getOrDefault("widgets", List.of()))));
+        WIDGETS.stream().filter(w -> !order.contains(w)).forEach(order::add);
+        Map<String, Object> out = new LinkedHashMap<>(saved);
+        out.put("widgets", order);
+        return out;
     }
 
     @Transactional

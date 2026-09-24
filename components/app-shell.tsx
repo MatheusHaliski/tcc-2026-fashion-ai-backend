@@ -66,6 +66,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </li>
       ))}
+      {user && user.profileType !== "PESSOAL" && (
+        <li><Link href="/dashboard" aria-current={pathname === "/dashboard" ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname === "/dashboard" && "bg-surface-2 font-semibold")}>
+          <FaiIcon id="NAV-01" size={24} active={pathname === "/dashboard"} decorative />{!compact && <span>Painel do emissor</span>}</Link></li>
+      )}
       {isAdmin && (
         <li><Link href="/admin/dashboard" aria-current={pathname.startsWith("/admin") ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname.startsWith("/admin") && "bg-surface-2 font-semibold")}>
           <FaiIcon id="NAV-01" size={24} active={pathname.startsWith("/admin")} decorative />{!compact && <span>{t("nav.dashboard")}</span>}</Link></li>
@@ -149,6 +153,12 @@ export function RequireAuth({ children, admin }: { children: ReactNode; admin?: 
   const { user, ready, isAdmin, me } = useAuth(); const router = useRouter(); const pathname = usePathname(); const { t } = useI18n();
   useEffect(() => { if (ready && !user) router.replace(`/login?next=${encodeURIComponent(pathname)}`); }, [ready, user, router, pathname]);
   if (!ready || !user) return <p className="type-body text-muted p-6">{t("common.loading")}</p>;
-  if (admin && me && !isAdmin) return <p role="alert" className="surface p-6">Área restrita a administradores.</p>;
+  if (admin && me && !isAdmin) return (
+    <div role="alert" className="surface mx-auto mt-6 max-w-lg p-6 text-center">
+      <p className="type-label text-mark">403 · acesso negado</p>
+      <h1 className="type-h2 mt-1">Área restrita a administradores</h1>
+      <p className="type-body mt-2 text-muted">Seu perfil não tem o papel ADMIN. O servidor também recusa estas rotas (/api/admin/**) com 403, mesmo que o endereço seja digitado direto.</p>
+      <Link href="/feed" className="btn mt-4">Voltar ao feed</Link>
+    </div>);
   return <>{children}</>;
 }

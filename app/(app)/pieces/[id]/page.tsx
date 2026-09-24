@@ -11,10 +11,10 @@ import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Dialog, ErrorState, Skeleton, useToast } from "@/components/ui";
 import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 import { InteractionBar } from "@/components/interactions";
-import { SchemeCard } from "@/components/scheme-card";
 import { FaiIcon } from "@/components/fai-icon";
+import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 
-interface Detail { piece: PieceView; origin?: SchemeView | null; schemes?: SchemeView[]; usedIn?: SchemeView[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
+interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
 export default function PiecePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params); const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter(); const sp = useSearchParams();
@@ -38,11 +38,15 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   }
   async function saveEdit() { setSaving(true); setSaveError(null); try { setPiece(await api.put<PieceView>(`/api/pieces/${id}`, toPayload(form))); setEditing(false); toast.success(t("common.saved")); } catch (e) { setSaveError(e as import("@/lib/api/client").ApiError); } finally { setSaving(false); } }
   if (error) return <ErrorState error={error} onRetry={reload} />;
+  // RF7.CA01 — contexto do esquema de origem para o "voltar"; RF7.CA03 — snapshot da peça excluída.
+  const usedIn = (data?.originSchemes ?? []).filter((s) => s.title && s.title !== "null");
+  const originId = fromScheme ?? data?.fromSchemeId ?? null; const origin = originId ? { id: originId, title: usedIn.find((s) => s.schemeId === originId)?.title } : null;
+  const back = origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />Voltar ao look{origin.title ? ` «${origin.title}»` : ""}</Link></p>;
+  if (!loading && data && !p && data.snapshot) return <>{back}<PieceSnapshot snapshot={data.snapshot} /></>;
   if (loading || !p) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="aspect-square" /><Skeleton className="h-80" /></div>;
-  const origin = data?.origin ?? null; const usedIn = data?.usedIn ?? data?.schemes ?? [];
   return (
     <>
-      {origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />Voltar ao look «{origin.title}»</Link></p>}
+      {back}
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <Card pad={false} className="overflow-hidden">
           <div className="relative aspect-square bg-surface-2"><img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />
@@ -64,8 +68,8 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 type-body sm:grid-cols-3">
             <div><dt className="label">{t("common.color")}</dt><dd className="flex items-center gap-2"><span aria-hidden className="h-4 w-4 rounded-full border border-line-soft" style={{ background: p.colorHex ?? "#ccc" }} />{label(p.color)}</dd></div>
             <div><dt className="label">{t("common.material")}</dt><dd>{label((p.material ?? "").toLowerCase()) || "—"}</dd></div>
-            <div><dt className="label">{t("common.size")}</dt><dd className="type-data">{p.size?.toUpperCase() ?? "—"}</dd></div>
-            <div><dt className="label">{t("common.price")}</dt><dd className="type-data">{p.price != null ? fmtMoney(p.price, "USD") : "—"}</dd></div>
+            <div><dt className="label">{t("common.size")}</dt><dd className="type-data">{sizeLabel(p.size)}</dd></div>
+            <div><dt className="label">{t("common.price")}</dt><dd className="type-data">{p.price != null ? fmtMoney(p.price, "BRL") : "—"}</dd></div>
             <div><dt className="label">{t("common.occasion")}</dt><dd>{(p.occasion ?? []).map(label).join(", ") || "—"}</dd></div>
             <div><dt className="label">{t("common.style")}</dt><dd>{(p.style ?? []).map(label).join(", ") || "—"}</dd></div>
             <div><dt className="label">{t("closet.wearCount")}</dt><dd className="type-data">{p.wearCount} · {t("closet.lastWorn")}: {p.lastWornDate ? fmtDate(p.lastWornDate) : t("common.never")}</dd></div>
@@ -92,7 +96,8 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
           <div className="mt-4"><InteractionBar type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} onChange={reload} title={p.name} /></div>
         </div>
       </div>
-      {usedIn.length > 0 && <section className="mt-8"><h2 className="type-h2 mb-3">Looks com esta peça</h2><div className="grid-looks">{usedIn.map((s) => <SchemeCard key={s.id} scheme={s} compact />)}</div></section>}
+      {usedIn.length > 0 && <section className="mt-8"><h2 className="type-h2 mb-3">Looks com esta peça</h2><div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">{usedIn.map((s) => (
+        <Link key={s.schemeId} href={`/schemes/${s.schemeId}`} className="surface flex items-center gap-3 p-2 hover:bg-surface-2"><span className="h-14 w-14 shrink-0 overflow-hidden rounded bg-surface-2">{s.coverImageUrl && s.coverImageUrl !== "null" && <img src={mediaUrl(s.coverImageUrl)} alt="" className="h-full w-full object-cover" />}</span><span className="min-w-0 flex-1 truncate type-body-sm font-medium">{s.title}</span></Link>))}</div></section>}
       <Dialog open={editing} onClose={() => setEditing(false)} title={t("common.edit")}>
         <PieceForm value={form} onChange={setForm} onSubmit={saveEdit} busy={saving} error={saveError} submitLabel={t("common.save")} />
       </Dialog>

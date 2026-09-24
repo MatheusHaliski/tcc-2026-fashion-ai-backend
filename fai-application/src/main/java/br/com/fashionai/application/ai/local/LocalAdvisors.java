@@ -47,19 +47,22 @@ public final class LocalAdvisors {
         StringBuilder sb = new StringBuilder();
         Object countries = rankings.get("topCountries");
         Object brands = rankings.get("topBrands");
-        Object colors = rankings.get("topColors");
+        Object colors = rankings.get("hypeByColor") instanceof List<?> l && !l.isEmpty() ? rankings.get("hypeByColor") : null;
+        Object used = rankings.get("topColors");
         Object seasons = rankings.get("hypeBySeason");
         if (countries instanceof List<?> list && !list.isEmpty()) {
-            sb.append("O país com mais atividade no período é ").append(label(list.get(0))).append(". ");
+            sb.append("O país com mais atividade no período é ").append(countryPt(label(list.get(0)))).append(". ");
         }
         if (brands instanceof List<?> list && !list.isEmpty()) {
             sb.append("A marca mais usada nos looks é ").append(label(list.get(0))).append(". ");
         }
-        if (colors instanceof List<?> list && !list.isEmpty()) {
-            sb.append("A cor com maior Hype Score médio é ").append(label(list.get(0))).append(". ");
+        if (colors instanceof List<?> list) {
+            sb.append("A cor com maior Hype Score médio é ").append(colorPt(label(list.get(0)))).append(". ");
+        } else if (used instanceof List<?> list && !list.isEmpty()) {
+            sb.append("A cor mais presente nas peças públicas é ").append(colorPt(label(list.get(0)))).append(". ");
         }
         if (seasons instanceof List<?> list && !list.isEmpty()) {
-            sb.append("Entre as estações, ").append(label(list.get(0))).append(" lidera o Hype Score médio.");
+            sb.append("Entre as estações, ").append(seasonPt(label(list.get(0)))).append(" lidera o Hype Score médio.");
         }
         return sb.length() == 0 ? "Ainda não há dados suficientes para leituras globais neste recorte." : sb.toString().trim();
     }
@@ -70,6 +73,45 @@ public final class LocalAdvisors {
             return String.valueOf(k);
         }
         return String.valueOf(o);
+    }
+
+    private static final Map<String, String> COLOR_PT = Map.ofEntries(
+            Map.entry("black", "preto"), Map.entry("charcoal", "grafite"), Map.entry("washed_black", "preto lavado"), Map.entry("white", "branco"),
+            Map.entry("off_white", "off-white"), Map.entry("ivory", "marfim"), Map.entry("cream", "creme"), Map.entry("light_gray", "cinza-claro"),
+            Map.entry("gray", "cinza"), Map.entry("dark_gray", "cinza-escuro"), Map.entry("silver", "prata"), Map.entry("blue", "azul"),
+            Map.entry("navy", "azul-marinho"), Map.entry("light_blue", "azul-claro"), Map.entry("sky_blue", "azul-céu"), Map.entry("cobalt", "azul-cobalto"),
+            Map.entry("denim", "jeans"), Map.entry("teal", "azul-petróleo"), Map.entry("red", "vermelho"), Map.entry("crimson", "carmim"),
+            Map.entry("burgundy", "bordô"), Map.entry("maroon", "vinho"), Map.entry("rust", "ferrugem"), Map.entry("pink", "rosa"),
+            Map.entry("hot_pink", "pink"), Map.entry("rose", "rosé"), Map.entry("coral", "coral"), Map.entry("salmon", "salmão"),
+            Map.entry("orange", "laranja"), Map.entry("terracotta", "terracota"), Map.entry("amber", "âmbar"), Map.entry("apricot", "damasco"),
+            Map.entry("yellow", "amarelo"), Map.entry("mustard", "mostarda"), Map.entry("gold", "dourado"), Map.entry("butter", "manteiga"),
+            Map.entry("green", "verde"), Map.entry("olive", "oliva"), Map.entry("military_green", "verde-militar"), Map.entry("forest_green", "verde-floresta"),
+            Map.entry("mint", "menta"), Map.entry("sage", "sálvia"), Map.entry("emerald", "esmeralda"), Map.entry("purple", "roxo"),
+            Map.entry("violet", "violeta"), Map.entry("lilac", "lilás"), Map.entry("lavender", "lavanda"), Map.entry("plum", "ameixa"),
+            Map.entry("brown", "marrom"), Map.entry("chocolate", "chocolate"), Map.entry("camel", "caramelo"), Map.entry("tan", "castanho"),
+            Map.entry("beige", "bege"), Map.entry("taupe", "taupe"), Map.entry("metallic_gold", "dourado metálico"),
+            Map.entry("metallic_silver", "prata metálico"), Map.entry("bronze", "bronze"), Map.entry("multicolor", "multicolorido"), Map.entry("print", "estampado"));
+
+    static String colorPt(String code) {
+        return COLOR_PT.getOrDefault(code, code.replace('_', ' '));
+    }
+
+    static String seasonPt(String code) {
+        return switch (code.toUpperCase(Locale.ROOT)) {
+            case "SPRING", "PRIMAVERA" -> "a primavera";
+            case "SUMMER", "VERAO" -> "o verão";
+            case "AUTUMN", "FALL", "OUTONO" -> "o outono";
+            case "WINTER", "INVERNO" -> "o inverno";
+            default -> code.toLowerCase(Locale.ROOT);
+        };
+    }
+
+    static String countryPt(String iso) {
+        if (iso == null || iso.length() != 2) {
+            return String.valueOf(iso);
+        }
+        String name = new Locale("", iso.toUpperCase(Locale.ROOT)).getDisplayCountry(Locale.forLanguageTag("pt-BR"));
+        return name == null || name.isBlank() ? iso : name;
     }
 
     // ---------------------------------------------------------------- #9 Brand Resolver
