@@ -10,6 +10,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, PageHeader, Select, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { DeckSummary, FlairCardView, RARITY_META, SEASON_LABEL, STAT_META, type FlairCard, type FlairDeck, type FlairRound } from "@/components/flair/flair-card";
+import { FlairModes } from "@/components/flair/modes";
 import { checkLabel, couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 
 interface Rank { code: string; label: string; points: number; next?: { label: string; at: number } | null; }
@@ -57,7 +58,7 @@ function Rounds({ rounds, a, b }: { rounds: FlairRound[]; a: string; b: string }
 
 function FlairInner() {
   const toast = useToast(); const sp = useSearchParams();
-  const initial = (sp.get("tab") ?? "jogar") as "jogar" | "cartas" | "decks" | "lojas" | "carteira" | "quests";
+  const initial = (sp.get("tab") ?? "modos") as "modos" | "jogar" | "cartas" | "decks" | "lojas" | "carteira" | "quests";
   const [tab, setTab] = useState(initial);
   const me = useApi<Me>((signal) => api.get("/api/flair/me", { signal }), []);
   const decks = useApi<FlairDeck[]>((signal) => api.get("/api/flair/decks", { signal }), []);
@@ -93,7 +94,7 @@ function FlairInner() {
   return (
     <>
       <PageHeader title="FLAIR" kicker="RF37 · Jogo de cartas"
-        lead="Suas peças viram cartas e seus esquemas viram decks. Duele, jogue em equipe e complete as combinações das lojas participantes para ganhar cupons."
+        lead="O guarda-roupa é a coleção de cartas, os looks são as unidades de combate e vários looks formam um time. 15 modos, do duelo 1×1 aos campeonatos — e combinações das lojas que viram cupons."
         actions={m ? <div className="flex flex-wrap items-center gap-2"><Badge tone="thread">{m.rank.label}</Badge><Badge>{m.coins} coins</Badge><Badge tone="chalk">{m.wins}V · {m.draws}E · {m.losses}D</Badge></div> : undefined} />
       {m && (
         <div className="surface mb-4 flex flex-wrap items-center gap-4 p-3">
@@ -105,7 +106,9 @@ function FlairInner() {
           {m.team && <p className="type-caption">Equipe <b style={{ color: m.team.color }}>{m.team.name}</b> · {m.team.points} pts</p>}
         </div>
       )}
-      <Tabs tabs={[{ id: "jogar", label: "Jogar" }, { id: "cartas", label: "Cartas e álbum" }, { id: "decks", label: "Decks", count: decks.data?.length }, { id: "lojas", label: "Combinações das lojas" }, { id: "carteira", label: "Carteira" }, { id: "quests", label: "Quests" }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: "modos", label: "Modos de jogo" }, { id: "jogar", label: "Duelos e equipes" }, { id: "cartas", label: "Cartas e álbum" }, { id: "decks", label: "Decks", count: decks.data?.length }, { id: "lojas", label: "Combinações das lojas" }, { id: "carteira", label: "Carteira" }, { id: "quests", label: "Quests" }]} value={tab} onChange={setTab} />
+
+      {tab === "modos" && <FlairModes initial={sp.get("mode")} />}
 
       {tab === "jogar" && (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -255,7 +258,7 @@ function FlairInner() {
       {tab === "carteira" && (
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <h2 className="type-h3 mb-2">Cupons</h2>
+            <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">Cupons</h2><Link href="/lookbook?tab=cupons" className="btn btn-sm">Meus cupons resgatados</Link></div>
             {vouchers.loading ? <Skeleton className="h-32" /> : (vouchers.data ?? []).length === 0 ? <EmptyState title="Nenhum cupom ainda." hint="Complete uma combinação de loja para trocar o deck por um cupom." action={<Button size="sm" onClick={() => setTab("lojas")}>Ver combinações</Button>} /> :
               <ul className="grid gap-2">{vouchers.data!.map((v) => (
                 <li key={v.id}><button type="button" className="flair-voucher w-full text-left" style={{ borderColor: v.combination.accentColor }} onClick={() => setVoucher(v)}>

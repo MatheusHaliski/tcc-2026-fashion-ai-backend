@@ -1,0 +1,213 @@
+@startuml RF38_Classes
+title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class CouponRight {
+  +user: User
+  +owner: User
+  +sourceType: String
+  +sourceId: UUID
+  +title: String
+  +detail: String
+  +status: String
+  +schemeId: UUID
+  +couponRef: UUID
+  +decidedAt: Instant
+}
+class Promotion {
+  +seal: Seal
+  +sealBond: SealBond
+  +type: PromotionType
+  +code: String
+  +description: String
+  +discountPercent: Integer
+  +partnerBrandUserId: UUID
+  +campaignId: UUID
+  +campaignLimit: Integer
+  +status: PromotionStatus
+  +visibility: Visibility
+  +ownerUserId: UUID
+  +expiresAt: Instant
+  +redeemedAt: Instant
+  .. +8 campos ..
+}
+class PromotionRedemption {
+  +promotion: Promotion
+  +sealBond: SealBond
+  +user: User
+  +code: String
+  +issuerUserId: UUID
+  +partnerBrandUserId: UUID
+  +status: RedemptionStatus
+  +redeemedAt: Instant
+  +expiresAt: Instant
+}
+class FlairCombination {
+  +brand: User
+  +name: String
+  +description: String
+  +gameType: String
+  +requiredCategoriesJson: String
+  +requiredStylesJson: String
+  +requiredOccasionsJson: String
+  +minBrandPieces: int
+  +minDeckPower: int
+  +minRarity: String
+  +minWins: int
+  +couponTitle: String
+  +discountPercent: Integer
+  +discountAmount: BigDecimal
+  .. +9 campos ..
+}
+class FlairRedemption {
+  +combination: FlairCombination
+  +user: User
+  +scheme: Scheme
+  +code: String
+  +status: String
+  +deckPower: Integer
+  +expiresAt: Instant
+  +usedAt: Instant
+}
+class Notification {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +title: String
+  +body: String
+  +payloadJson: String
+  +read: boolean
+  +readAt: Instant
+  +delivered: boolean
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +coverUrl: String
+  +bio: String
+  +storeUrl: String
+  +cnpj: String
+  +razaoSocial: String
+  +nomeFantasia: String
+  +fashionCategory: String
+  +commercialContact: String
+  +officialHashtag: String
+  +activityProofUrl: String
+  .. +11 campos ..
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +avatarUrl: String
+  +coverUrl: String
+  +bio: String
+  +realName: String
+  +areasJson: String
+  +verifiableFollowersJson: String
+  +identityProofUrl: String
+  +verificationUrl: String
+  +professionalHistory: String
+  +representationContact: String
+  +fashionInterestsJson: String
+  .. +10 campos ..
+}
+}
+package "fai-domain · enums" {
+enum PromotionType {
+  DESCONTO_ECOMMERCE
+  CUPOM_LOJA
+  EVENTO
+  SHOW
+  FRETE_GRATIS
+  BRINDE
+  ACESSO_ANTECIPADO
+  MEET_GREET
+  PRE_VENDA
+  CONTEUDO_EXCLUSIVO
+}
+enum PromotionStatus {
+  AVAILABLE
+  REDEEMED
+  EXPIRED
+  REVOKED
+}
+enum RedemptionStatus {
+  ISSUED
+  USED
+  EXPIRED
+}
+enum NotificationType {
+  PASSWORD_RESET
+  TWO_FACTOR_CODE
+  NEW_LOGIN_DEVICE
+  EMAIL_CONFIRMATION
+  DATA_EXPORT_READY
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_LIKE
+  NEW_REACTION
+  NEW_REMIX
+  SEAL_GRANTED
+  FEATURED_SCHEME
+  ..
+}
+}
+BrandProfile "1" --> "1" User : owner
+CelebrityProfile "1" --> "1" User : owner
+CouponRight "*" --> "1" User : owner
+CouponRight "*" --> "1" User : user
+FlairCombination "*" --> "1" User : brand
+FlairRedemption "*" --> "1" FlairCombination : combination
+FlairRedemption "*" --> "1" User : user
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Notification --> NotificationType
+Promotion --> PromotionStatus
+Promotion --> PromotionType
+Promotion ..> User : partnerBrandUserId
+PromotionRedemption "*" --> "1" Promotion : promotion
+PromotionRedemption "*" --> "1" User : user
+PromotionRedemption --> RedemptionStatus
+PromotionRedemption ..> User : issuerUserId
+PromotionRedemption ..> User : partnerBrandUserId
+note top of User : tabela users
+note top of CouponRight : tabela coupon_rights
+note top of Promotion : tabela promotions
+note top of PromotionRedemption : tabela promotion_redemptions
+note top of FlairCombination : tabela flair_combinations
+note top of FlairRedemption : tabela flair_redemptions
+note top of Notification : tabela notifications
+note top of BrandProfile : tabela brand_profiles
+note top of CelebrityProfile : tabela celebrity_profiles
+@enduml

@@ -1,0 +1,51 @@
+@startuml RF28_Componentes
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "mirror — Smart Mirror" as FE0
+  component "room — Vista-me no espelho do quarto" as FE1
+}
+package "fai-web (REST)" {
+  [MirrorController] as MirrorController
+}
+package "fai-application (casos de uso)" {
+  [MirrorService] as MirrorService
+  [WardrobeService] as WardrobeService #FAFAFA
+  [RoomService] as RoomService #FAFAFA
+  [SchemeService] as SchemeService #FAFAFA
+  [DailyLookService] as DailyLookService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [MirrorStateRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB
+cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
+[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+
+FE0 --> MirrorController : HTTPS/JSON
+FE1 --> MirrorController : HTTPS/JSON
+MirrorController --> MirrorService
+MirrorService ..> WardrobeService
+MirrorService ..> RoomService
+MirrorService ..> SchemeService
+MirrorService ..> DailyLookService
+MirrorService --> REPOS
+MirrorService --> P_ai
+MirrorService --> P_events
+REPOS --> DB : JPA/Flyway
+@enduml

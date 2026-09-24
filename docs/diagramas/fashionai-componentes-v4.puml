@@ -1,0 +1,149 @@
+@startuml FashionAI_Componentes_v4
+title Fashion AI — Diagrama de Componentes v4 (RF25–RF39)\nControllers → serviços de aplicação → adaptadores de infraestrutura — gerado do código
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js 15 · React Three Fiber)" {
+  component "App Fashion AI (web/mobile)" as FE
+}
+package "fai-web (REST · Spring Boot)" {
+  component "SealController\n(RF25)" as SealController
+  component "DiscoveryController\n(RF26)" as DiscoveryController
+  component "RoomController\n(RF27)" as RoomController
+  component "MirrorController\n(RF28)" as MirrorController
+  component "HighlightsController\n(RF29, RF30, RF39)" as HighlightsController
+  component "WardrobeController\n(RF31)" as WardrobeController
+  component "ChallengeController\n(RF32)" as ChallengeController
+  component "ShowcaseController\n(RF33, RF34, RF35, RF36)" as ShowcaseController
+  component "LookbookController\n(RF34, RF35)" as LookbookController
+  component "FlairController\n(RF37)" as FlairController
+  component "FlairModesController\n(RF37)" as FlairModesController
+  component "CouponController\n(RF38)" as CouponController
+  component "RoomCreatorController\n(RF39)" as RoomCreatorController
+}
+package "fai-application (casos de uso)" {
+  [SealService] as SealService
+  [SealDesignService] as SealDesignService
+  [SearchService] as SearchService
+  [ExplorerService] as ExplorerService
+  [RoomService] as RoomService
+  [MirrorService] as MirrorService
+  [InventoryScoreService] as InventoryScoreService
+  [FaiPointsService] as FaiPointsService
+  [AchievementService] as AchievementService
+  [WardrobeService] as WardrobeService
+  [ChallengeService] as ChallengeService
+  [ShowcaseService] as ShowcaseService
+  [LookbookService] as LookbookService
+  [DailyLookService] as DailyLookService
+  [HypeScoreService] as HypeScoreService
+  [FlairService] as FlairService
+  [FlairModesService] as FlairModesService
+  [CouponService] as CouponService
+  [WardrobeCreatorService] as WardrobeCreatorService
+  [FlairEngine + FlairLooks\n(atributos de carta e de look)] as FlairCore
+  [WorldRegions\n(país → região)] as WR
+}
+package "fai-infrastructure (adaptadores + fallbacks)" {
+  database "MySQL 8 · Flyway V1–V20\n(persistence-mysql)" as DB
+  database "Storage de mídia\n(storage-s3 · fallback disco local)" as MS
+  cloud "Motor de IA (ai-providers)\nprovedores externos · fallback local" as AI
+  database "Redis (cache-redis)\ncontadores, rate limit, cache\nfallback em memória" as RD
+  database "OpenSearch (índice de busca)\nCassandra (projeções de timeline)\nopcionais · fallback no-op" as OS
+}
+FE --> SealController : HTTPS/JSON
+SealController --> SealService
+SealController --> SealDesignService
+FE --> DiscoveryController : HTTPS/JSON
+DiscoveryController --> SearchService
+DiscoveryController --> ExplorerService
+FE --> RoomController : HTTPS/JSON
+RoomController --> RoomService
+FE --> MirrorController : HTTPS/JSON
+MirrorController --> MirrorService
+FE --> HighlightsController : HTTPS/JSON
+HighlightsController --> InventoryScoreService
+HighlightsController --> FaiPointsService
+HighlightsController --> AchievementService
+FE --> WardrobeController : HTTPS/JSON
+WardrobeController --> WardrobeService
+FE --> ChallengeController : HTTPS/JSON
+ChallengeController --> ChallengeService
+FE --> ShowcaseController : HTTPS/JSON
+ShowcaseController --> ShowcaseService
+FE --> LookbookController : HTTPS/JSON
+LookbookController --> LookbookService
+LookbookController --> DailyLookService
+LookbookController --> HypeScoreService
+FE --> FlairController : HTTPS/JSON
+FlairController --> FlairService
+FE --> FlairModesController : HTTPS/JSON
+FlairModesController --> FlairModesService
+FE --> CouponController : HTTPS/JSON
+CouponController --> CouponService
+FE --> RoomCreatorController : HTTPS/JSON
+RoomCreatorController --> WardrobeCreatorService
+SealService --> DB
+SealService --> AI
+SealDesignService --> DB
+SearchService --> DB
+SearchService ..> ChallengeService
+ExplorerService --> DB
+ExplorerService --> AI
+ExplorerService --> DB : AnalyticsQueryPort
+RoomService --> DB
+RoomService --> AI
+MirrorService --> DB
+MirrorService --> AI
+MirrorService ..> WardrobeService
+MirrorService ..> RoomService
+MirrorService ..> DailyLookService
+InventoryScoreService --> DB
+InventoryScoreService ..> RoomService
+InventoryScoreService ..> AchievementService
+FaiPointsService --> DB
+FaiPointsService ..> WardrobeCreatorService
+AchievementService --> DB
+AchievementService ..> FaiPointsService
+WardrobeService --> DB
+WardrobeService --> MS
+WardrobeService --> AI
+ChallengeService --> DB
+ChallengeService --> MS
+ChallengeService ..> RoomService
+ChallengeService ..> FaiPointsService
+ShowcaseService --> DB
+ShowcaseService --> MS
+ShowcaseService ..> DailyLookService
+LookbookService --> DB
+LookbookService --> AI
+LookbookService ..> WardrobeService
+LookbookService ..> DailyLookService
+LookbookService ..> HypeScoreService
+DailyLookService --> DB
+HypeScoreService --> DB
+HypeScoreService --> AI
+FlairService --> DB
+FlairModesService --> DB
+FlairModesService ..> FlairService
+CouponService --> DB
+CouponService ..> SealService
+CouponService ..> FlairService
+WardrobeCreatorService --> DB
+WardrobeCreatorService --> MS
+FlairModesService ..> FlairCore
+ShowcaseService ..> WR
+@enduml

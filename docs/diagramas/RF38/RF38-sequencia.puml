@@ -1,0 +1,37 @@
+@startuml RF38_Sequencia
+title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+actor Loja as L
+participant "Frontend" as FE
+participant "CouponController" as C
+participant "CouponService" as S
+participant "SealService / FlairService" as SRC
+participant "NotificationService" as N
+database "MySQL" as DB
+SRC ->> S: CouponRightsCheck(userId) (AFTER_COMMIT)
+S -> SRC: eligiblePromotions(userId)
+S -> DB: INSERT coupon_rights (sem duplicar)
+S -> N: COUPON_AVAILABLE
+N -> DB: INSERT notifications
+U -> FE: notificação → "Sim, resgatar"
+FE -> C: POST /api/me/coupon-rights/{id}/redeem
+C -> S: redeem(user, id)
+S -> DB: INSERT promotion_redemptions / flair_redemptions\nUPDATE coupon_rights (RESGATADO)
+S --> FE: cupom (código, desconto, validade, storeUrl)
+U -> FE: Meus cupons resgatados
+FE -> C: GET /api/me/coupons
+U -> FE: toca no cupom → abre storeUrl (nova aba)
+L -> FE: Meus cupons promocionais
+FE -> C: GET /api/me/coupons/admin
+L -> FE: valida código no caixa
+FE -> C: POST /api/me/coupons/validate
+S -> DB: UPDATE status = USED
+@enduml

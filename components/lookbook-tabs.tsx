@@ -7,13 +7,14 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
+import { MyCoupons } from "@/components/coupons/my-coupons";
 import { Avatar, Button, Card, Chip, EmptyState, ErrorState, Field, Input, Pagination, Select, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { SchemeCard, hypeColor } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
-type TabId = "closet" | "looks" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups";
+type TabId = "closet" | "looks" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
 
 /** Lookbook (RF6) — usado no próprio perfil (/lookbook) e no perfil de terceiros (/u/[username]). */
 export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: string; initialTab?: TabId }) {
@@ -27,7 +28,8 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
   const count = (id: string) => ov.tabs.find((x) => x.id === id)?.count;
   const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: count("looks") },
     ...(ov.self ? [{ id: "saved_looks" as TabId, label: t("lookbook.savedLooks"), count: count("saved_looks") }, { id: "saved_pieces" as TabId, label: t("lookbook.savedPieces"), count: count("saved_pieces") },
-      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }];
+      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") },
+    ...(ov.self ? [{ id: "coupons" as TabId, label: "Meus cupons resgatados" }] : [])];
   return (
     <>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
@@ -37,6 +39,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
       {tab === "saved_pieces" && ov.self && <SavedPiecesTab />}
       {tab === "daily" && ov.self && <DailyTab />}
       {tab === "capsule" && ov.self && <CapsuleTab />}
+      {tab === "coupons" && ov.self && <MyCoupons />}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
     </>
   );

@@ -8,6 +8,7 @@ import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
@@ -46,6 +47,7 @@ import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
 import br.com.fashionai.domain.repository.SealRepository;
 import br.com.fashionai.domain.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,11 +91,14 @@ public class SealService {
     private final AiEngine ai;
     private final Guard guard;
     private final Audit audit;
+    private final ApplicationEventPublisher events;
 
     public SealService(SealRepository seals, SealBondRepository bonds, PromotionRepository promotions,
                        PromotionRedemptionRepository redemptions, SchemeRepository schemes, SchemeItemRepository schemeItems,
                        BrandProfileRepository brandProfiles, CelebrityProfileRepository celebrityProfiles,
-                       UserRepository users, NotificationService notifications, AiEngine ai, Guard guard, Audit audit) {
+                       UserRepository users, NotificationService notifications, AiEngine ai, Guard guard, Audit audit,
+                       ApplicationEventPublisher events) {
+        this.events = events;
         this.seals = seals;
         this.bonds = bonds;
         this.promotions = promotions;
@@ -549,6 +554,8 @@ public class SealService {
                 b.getId(), (seal.isPremium() ? "Selo Premium" : "Selo de Marca") + " emitido!",
                 "Seu look \"" + scheme.getTitle() + "\" recebeu o selo " + seal.getName() + ". Veja as promoções em Meus Selos.", null);
         logBond(null, b, "EMITIDO");
+        // o selo pode liberar promoções da marca/celebridade: direitos a cupom + notificação (card RF38)
+        events.publishEvent(new DomainEvents.CouponRightsCheck(b.getRequestedBy().getId()));
     }
 
     // ================================================================== CA07 revisão · CA14 revogação
@@ -691,7 +698,39 @@ public class SealService {
     // ================================================================== promoções (CA11–CA13, CA21–CA23, RNF12)
     public record PromotionForm(PromotionType type, String title, String description, String rules, Integer discountPercent,
                                 UUID sealId, String requiredSealKind, Instant startsAt, Instant expiresAt,
-                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility) {
+                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl) {
+    }
+
+    /** Link http(s) de loja terceira (ou nulo). */
+    public static String storeUrl(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String v = raw.trim();
+        if (!v.matches("(?i)https?://[^\\s]{3,500}")) {
+            throw ApiException.badRequest("LINK_INVALIDO", "Informe o link da loja começando com https://");
+        }
+        return v;
+    }
+
+    /** Card RF38 — promoções que o usuário pode resgatar agora (selo válido, período, estoque e limite por pessoa). */
+    @Transactional(readOnly = true)
+    public List<Promotion> eligiblePromotions(UUID userId) {
+        Instant now = Instant.now();
+        List<SealBond> mine = bonds.findByRequestedByIdAndStatusOrderByCreatedAtDesc(userId, SealBondStatus.APPROVED);
+        Set<UUID> owners = new java.util.LinkedHashSet<>();
+        mine.forEach(b -> owners.add(b.getTargetOwner().getId()));
+        List<Promotion> out = new ArrayList<>();
+        for (UUID owner : owners) {
+            List<SealBond> ownerBonds = mine.stream().filter(b -> b.getTargetOwner().getId().equals(owner)).toList();
+            for (Promotion p : promotions.findByOwnerUserIdAndStatusOrderByCreatedAtDesc(owner, PromotionStatus.AVAILABLE)) {
+                if (unavailable(p, now) == null && eligibleBond(p, ownerBonds) != null
+                        && redemptions.countByPromotionIdAndUserId(p.getId(), userId) < p.getPerUserLimit()) {
+                    out.add(p);
+                }
+            }
+        }
+        return out;
     }
 
     @Transactional
@@ -768,6 +807,7 @@ public class SealService {
             p.setPartnerBrandUserId(partner.getId());
         }
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
+        p.setStoreUrl(storeUrl(f.storeUrl()));
     }
 
     /** Promoções do perfil, filtradas pelos selos do solicitante (CA11/CA21). */
@@ -814,6 +854,7 @@ public class SealService {
         m.put("perUserLimit", p.getPerUserLimit());
         m.put("partnerBrandUserId", p.getPartnerBrandUserId());
         m.put("status", p.getStatus());
+        m.put("storeUrl", p.getStoreUrl());
         m.put("eligible", eligible != null && unavailable(p, now) == null);
         m.put("unavailableReason", eligible == null ? "É preciso ter um selo válido deste perfil para resgatar." : unavailable(p, now));
         m.put("eligibleBondId", eligible == null ? null : eligible.getId());

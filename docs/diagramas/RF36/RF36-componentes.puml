@@ -1,0 +1,51 @@
+@startuml RF36_Componentes
+title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "pieces/[id] e schemes/[id] — botão "Foto com meu manequim"" as FE0
+  component "MannequinPhotoDialog + LookViewer (Three.js)" as FE1
+  component "edit-profile — ajuste do rosto" as FE2
+}
+package "fai-web (REST)" {
+  [ShowcaseController] as ShowcaseController
+}
+package "fai-application (casos de uso)" {
+  [ShowcaseService] as ShowcaseService
+  [DailyLookService] as DailyLookService #FAFAFA
+  [SchemeService] as SchemeService #FAFAFA
+  [InstitutionalService] as InstitutionalService #FAFAFA
+  [Model3dService] as Model3dService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [CelebrityProfileRepository\nDailyLookRepository\nFollowRepository\nSchemeGroupingRepository\nSchemeItemRepository\nSchemeRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• celebrity_profiles\n• daily_looks\n• follows\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB
+database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+
+FE0 --> ShowcaseController : HTTPS/JSON
+FE1 --> ShowcaseController : HTTPS/JSON
+FE2 --> ShowcaseController : HTTPS/JSON
+ShowcaseController --> ShowcaseService
+ShowcaseService ..> DailyLookService
+ShowcaseService ..> SchemeService
+ShowcaseService ..> InstitutionalService
+ShowcaseService ..> Model3dService
+ShowcaseService --> REPOS
+ShowcaseService --> P_media
+REPOS --> DB : JPA/Flyway
+@enduml

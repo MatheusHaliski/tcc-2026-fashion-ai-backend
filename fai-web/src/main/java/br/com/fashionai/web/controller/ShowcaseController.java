@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,9 +48,13 @@ public class ShowcaseController {
     }
 
     @GetMapping("/api/explorer/runway")
-    @Operation(summary = "Passarela 3D — desfile do dia com o Look do Dia de cada perfil visível (atualiza todo dia)")
-    public Map<String, Object> runway(CurrentUser viewer, @RequestParam(required = false) Integer limit) {
-        return showcase.runway(viewer, limit);
+    @Operation(summary = "Passarela 3D (RF33) — Look do Dia visível: Top 100 Global/Regional/País, Seguindo, Em alta e Recentes; filtros por região do mundo, cores, ocasiões, estilos e manequim; desfile em lotes (limit ≤ 24, offset)")
+    public Map<String, Object> runway(CurrentUser viewer, @RequestParam(required = false) Integer limit, @RequestParam(required = false) Integer offset,
+                                      @RequestParam(required = false) String ranking, @RequestParam(required = false) String region,
+                                      @RequestParam(required = false) String country, @RequestParam(required = false) List<String> colors,
+                                      @RequestParam(required = false) List<String> occasions, @RequestParam(required = false) List<String> styles,
+                                      @RequestParam(required = false) String sex) {
+        return showcase.runway(viewer, new ShowcaseService.RunwayFilter(ranking, region, country, colors, occasions, styles, sex, limit, offset));
     }
 
     @GetMapping("/api/institutional/{slug}/showcase/{kind}")

@@ -1,0 +1,57 @@
+@startuml RF30_Atividades
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Usuário|
+start
+:Usa o app (cadastra bem, gera 3D,\ncria looks, resgata peças esquecidas…);
+|Sistema (FaiPointsService)|
+:Credita no ledger append-only e idempotente\n(limite diário por regra);
+:Recalcula nível pelo acumulado vitalício\n(Estreia → Studio → Loft → Closet →\nAtelier → Penthouse → Maison);
+|Usuário|
+:Abre FAI Points → Loja do quarto;
+:Filtra por tipo, bloco, material,\norigem, marca e cor;
+if (Provar antes?) then (sim)
+  :Prévia no módulo (nada é cobrado);
+endif
+:Comprar;
+|Sistema (FaiPointsService)|
+if (Nível, estoque, janela, limite\npor pessoa e selo OK?) then (sim)
+  if (Saldo suficiente?) then (sim)
+    :Debita (SHOP_PURCHASE, não conta no vitalício);
+    :Cria unidade no inventário (serial se limitada);
+  else (não)
+    #FFE3E3:409 SALDO_INSUFICIENTE;
+    stop
+  endif
+else (não)
+  #FFE3E3:409 com o motivo do bloqueio;
+  stop
+endif
+|Usuário|
+:Escolhe o módulo (ou "guarda-roupa inteiro");
+|Sistema (RoomService)|
+:Aplica o acabamento no módulo;
+stop
+@enduml

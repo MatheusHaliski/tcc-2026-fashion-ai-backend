@@ -88,4 +88,8 @@ public class FlairCombination extends VersionedAuditableEntity {
     @Column(name = "accent_color", length = 20)
     private String accentColor;
 
+
+    /** Link da loja terceira onde o cupom é usado (sobrepõe o site da marca). */
+    @Column(name = "store_url", length = 512)
+    private String storeUrl;
 }

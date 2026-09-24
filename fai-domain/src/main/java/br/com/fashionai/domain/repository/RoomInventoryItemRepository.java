@@ -16,4 +16,8 @@ public interface RoomInventoryItemRepository extends JpaRepository<RoomInventory
     List<RoomInventoryItem> findByUserId(UUID userId);
 
     boolean existsByUserIdAndSku(UUID userId, String sku);
+
+    long countByUserIdAndSku(UUID userId, String sku);
+
+    List<RoomInventoryItem> findBySku(String sku);
 }

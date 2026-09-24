@@ -1,0 +1,49 @@
+@startuml RF38_Componentes
+title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "brands/[slug] — aba Meus cupons promocionais" as FE0
+  component "lookbook?tab=cupons — Meus cupons resgatados" as FE1
+  component "FaiCoupon (desenho com logo FAI)" as FE2
+  component "notifications — "Parabéns! Deseja resgatar o CUPOM?"" as FE3
+}
+package "fai-web (REST)" {
+  [CouponController] as CouponController
+}
+package "fai-application (casos de uso)" {
+  [CouponService] as CouponService
+  [SealService] as SealService #FAFAFA
+  [FlairService] as FlairService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [BrandProfileRepository\nCelebrityProfileRepository\nCouponRightRepository\nFlairCombinationRepository\nFlairRedemptionRepository\nPromotionRedemptionRepository\nPromotionRepository\nUserRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• brand_profiles\n• celebrity_profiles\n• coupon_rights\n• flair_combinations\n• flair_redemptions\n• promotion_redemptions\n• promotions\n• users" as DB
+[NotificationService\n(RNF10)] as P_notif
+
+FE0 --> CouponController : HTTPS/JSON
+FE1 --> CouponController : HTTPS/JSON
+FE2 --> CouponController : HTTPS/JSON
+FE3 --> CouponController : HTTPS/JSON
+CouponController --> CouponService
+CouponService ..> SealService
+CouponService ..> FlairService
+CouponService --> REPOS
+CouponService --> P_notif
+REPOS --> DB : JPA/Flyway
+@enduml

@@ -1,0 +1,36 @@
+@startuml RF27_Sequencia
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\nroom/page + RoomScene" as FE
+participant "RoomController" as C
+participant "RoomService" as S
+participant "AiEngine (RF24)" as AI
+database "MySQL" as DB
+U -> FE: abre Meu Quarto
+FE -> C: GET /api/me/room
+C -> S: room(user)
+S -> DB: SELECT room_layouts, wardrobe_items,\nschemes, daily_looks, room_inventory
+S --> FE: módulos (acabamentos), peças por endereço,\nnível, decorações, unboxing, luz
+U -> FE: abre a Porta 2
+FE -> C: GET /api/me/room/modules/door:2
+C --> FE: peças do módulo
+U -> FE: Organizar
+FE -> C: GET /api/me/room/organization/preview?useAi=true
+C -> S: preview
+S -> AI: sugere rótulos/agrupamentos (opt-in)
+S --> FE: movimentos + explicação
+U -> FE: Aplicar
+FE -> C: POST /api/me/room/organization
+S -> DB: UPDATE room_layouts (+ previous_map_json)
+U -> FE: renomeia gaveta
+FE -> C: PUT /api/me/room/drawers/{n}
+S -> DB: UPDATE room_layouts.drawer_labels_json
+@enduml

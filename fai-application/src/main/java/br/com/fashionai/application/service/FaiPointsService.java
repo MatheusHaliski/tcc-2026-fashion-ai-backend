@@ -80,10 +80,12 @@ public class FaiPointsService {
     private final RoomInventoryItemRepository inventory;
     private final RoomLayoutAccess layouts;
     private final NotificationService notifications;
+    private final WardrobeCreatorService creator;
 
     public FaiPointsService(FaiPointsLedgerEntryRepository ledger, FaiPointsRuleRepository rules,
                             RoomCatalogItemRepository catalog, RoomInventoryItemRepository inventory, RoomLayoutAccess layouts,
-                            NotificationService notifications) {
+                            NotificationService notifications, WardrobeCreatorService creator) {
+        this.creator = creator;
         this.ledger = ledger;
         this.rules = rules;
         this.catalog = catalog;
@@ -174,28 +176,34 @@ public class FaiPointsService {
     }
 
     // ------------------------------------------------------------------ loja do quarto (Molde de Fábrica)
+    /**
+     * Loja do quarto: todos os blocos do móvel por material, cor e selo de identidade (fábrica FAI e itens criados por
+     * marcas/celebridades no "Criar guarda-roupa 3D"), com as condições de compra de cada item.
+     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> shop(CurrentUser user) {
         Level lvl = level(user.id());
         long bal = balance(user.id());
-        return catalog.findByActiveTrueOrderByPricePoints().stream().map(c -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("sku", c.getSku());
-            m.put("name", c.getName());
-            m.put("moldId", c.getMoldId());
-            m.put("slotType", c.getSlotType());
-            m.put("widthCm", c.getWidthCm());
-            m.put("finish", Json.map(c.getFinishJson()));
-            m.put("rarity", c.getRarity());
-            m.put("pricePoints", c.getPricePoints());
-            m.put("requiredLevel", c.getRequiredLevel());
-            m.put("levelOk", lvl.atLeast(Level.valueOf(c.getRequiredLevel())));
-            m.put("affordable", bal >= c.getPricePoints());
-            m.put("owned", inventory.existsByUserIdAndSku(user.id(), c.getSku()));
-            m.put("stockLeft", c.getStockLimit() == null ? null : Math.max(0, c.getStockLimit() - c.getSoldCount()));
-            m.put("compatibleModules", layouts.compatibleModules(user.id(), c));
-            return m;
-        }).toList();
+        Map<String, List<Map<String, Object>>> mine = new java.util.HashMap<>();
+        for (RoomInventoryItem i : inventory.findByUserId(user.id())) {
+            Map<String, Object> e = new LinkedHashMap<>();
+            e.put("inventoryId", i.getId());
+            e.put("appliedModule", i.getAppliedModule());
+            e.put("serial", i.getSerial());
+            e.put("acquiredAt", i.getAcquiredAt());
+            mine.computeIfAbsent(i.getSku(), k -> new ArrayList<>()).add(e);
+        }
+        return catalog.findByActiveTrueOrderByPricePoints().stream()
+                .filter(c -> !"EXPIRADO".equals(WardrobeCreatorService.availability(c, Instant.now())) || mine.containsKey(c.getSku()))
+                .map(c -> {
+                    Map<String, Object> m = creator.view(c, user.id());
+                    m.put("levelOk", lvl.atLeast(Level.valueOf(c.getRequiredLevel())));
+                    m.put("affordable", bal >= c.getPricePoints());
+                    m.put("owned", mine.containsKey(c.getSku()));
+                    m.put("inventory", mine.getOrDefault(c.getSku(), List.of()));   // unidades compradas e onde estão aplicadas
+                    m.put("compatibleModules", layouts.compatibleModules(user.id(), c));
+                    return m;
+                }).toList();
     }
 
     /** RF35.CA06 — "Provar no meu quarto": prévia aplicada na cena, sem compra, saldo intacto. */
@@ -219,6 +227,10 @@ public class FaiPointsService {
         }
         if (c.getStockLimit() != null && c.getSoldCount() >= c.getStockLimit()) {
             throw new ApiException(409, "ESGOTADO", "Edição limitada esgotada (item cosmético — ETI-01).");
+        }
+        String blocker = creator.blocker(user.id(), c);
+        if (blocker != null) {
+            throw new ApiException(409, "CONDICAO_DE_COMPRA", blocker);
         }
         long bal = balance(user.id());
         if (bal < c.getPricePoints()) {

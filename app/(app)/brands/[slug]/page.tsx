@@ -13,10 +13,13 @@ import { SealCreator } from "@/components/seal-creator";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
+import { BrandCouponsTab, BRAND_PROMO_TYPES, CELEB_PROMO_TYPES } from "@/components/coupons/brand-coupons-tab";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { ProfileHeader } from "@/components/profile-header";
 import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
+import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
+import { RoomStore } from "@/components/room3d/room-store";
 
 interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
@@ -26,7 +29,7 @@ const TIERS = ["LOOK", "PECA", "PERFIL"];
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params); const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
-  const [tab, setTab] = useState("ESQUEMAS_DESTAQUE");
+  const [tab, setTab] = useState("ESQUEMAS_DESTAQUE"); const [flairNew, setFlairNew] = useState(0);
   useEffect(() => { const q = new URLSearchParams(window.location.search).get("tab"); if (q) setTab(q.toUpperCase()); }, []);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
@@ -42,13 +45,13 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign };
   const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign }>(emptySeal);
-  const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO", title: "", description: "", rules: "", discountPercent: "" });
+  const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
   const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
-  const tabs = [...(isCeleb ? [{ id: "ERAS", label: "Eras" }] : [{ id: "COLECOES", label: "Coleções" }]), { id: "ESQUEMAS_DESTAQUE", label: "Esquemas em destaque" }, { id: "PECAS_DESTAQUE", label: "Peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" }, ...(!isCeleb ? [{ id: "FLAIR", label: admin ? "Minhas combinações FLAIR" : "Combinações FLAIR" }] : []),
+  const tabs = [...(isCeleb ? [{ id: "ERAS", label: "Eras" }] : [{ id: "COLECOES", label: "Coleções" }]), { id: "ESQUEMAS_DESTAQUE", label: "Esquemas em destaque" }, { id: "PECAS_DESTAQUE", label: "Peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" }, { id: "FLAIR", label: admin ? "Minhas combinações FLAIR" : "Combinações FLAIR" }, ...(admin ? [{ id: "CUPONS", label: "Meus cupons promocionais" }] : []), { id: "GUARDA_ROUPA", label: admin ? "Criar guarda-roupa 3D" : "Guarda-roupa 3D" },
     ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: "Esquemas salvos" }, { id: "PECAS_SALVAS", label: "Peças salvas" }, { id: "REVISAO", label: "Revisão de vínculos" }, { id: "METRICAS", label: "Métricas" }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
@@ -77,7 +80,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
-      {tab === "FLAIR" && !isCeleb && <BrandFlairTab slug={slug} />}
+      {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
+      {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title="Entre para ver os itens de guarda-roupa desta marca." hint="Componentes e guarda-roupas inteiros são comprados com FAI Points na loja do quarto." />)}
+      {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
       {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">Looks de qualquer usuário que conquistaram um selo deste perfil (política do selo + aprovação).</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div></> : <EmptyState title="Nenhum esquema em destaque ainda." hint="Aparecem aqui os looks que conquistaram um selo deste perfil." />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">Peças que compõem os looks com selo deste perfil.</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">no look <Link className="underline" href={`/schemes/${e.schemeId}`}>{e.schemeTitle}</Link>{e.author ? ` · @${e.author.username}` : ""}</span>} />)}</div></> : <EmptyState title="Nenhuma peça em destaque ainda." hint="As peças dos looks com selo deste perfil aparecem aqui." />)}
       {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title="Nenhum esquema salvo." />)}
@@ -99,7 +104,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       )}
       {tab === "PROMOCOES" && (
         <>
-          {admin && <Button className="mb-3" variant="primary" onClick={() => setPromoForm({ open: true, type: "DESCONTO", title: "", description: "", rules: "", discountPercent: "" })}>Nova promoção</Button>}
+          {admin && <Button className="mb-3" variant="primary" onClick={() => setPromoForm({ open: true, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" })}>Nova promoção</Button>}
           {promos.loading ? <SkeletonGrid n={3} h="h-32" /> : (promos.data ?? []).length === 0 ? <EmptyState title="Nenhuma promoção ativa." /> : <div className="grid-cards">{(promos.data ?? []).map((p) => (
             <Card key={p.id}><Badge tone="chalk">{label(p.type.toLowerCase())}</Badge><p className="type-h3 mt-2">{p.title}</p>{p.description && <p className="type-body-sm text-muted mt-1">{p.description}</p>}{p.discountPercent != null && <p className="hero-number text-3xl mt-2">{p.discountPercent}%</p>}{p.rules && <p className="type-caption text-faint mt-1">{p.rules}</p>}
               <div className="mt-3 flex flex-wrap gap-2">{!admin && user && <Button size="sm" variant="primary" disabled={p.eligible === false} onClick={() => redeem(p)}>{p.eligible === false ? "Precisa do selo" : "Resgatar"}</Button>}{admin && <><Button size="sm" onClick={() => setPromoForm({ open: true, id: p.id, type: p.type, title: p.title, description: p.description ?? "", rules: p.rules ?? "", discountPercent: p.discountPercent?.toString() ?? "" })}>{t("common.edit")}</Button><Select aria-label="status" className="w-auto py-1" value={p.status} onChange={async (e) => { try { await api.put(`/api/promotions/${p.id}/status`, { status: e.target.value }); promos.reload(); } catch (err) { toast.fromError(err); } }}>{["DRAFT", "ACTIVE", "PAUSED", "ENDED"].map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></>}</div></Card>))}</div>}
@@ -112,11 +117,11 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         <div className="mb-3"><p className="label mb-1">Desenho do selo (proporções do logo FashionAI)</p><SealCreator value={sealForm.design} onChange={(dd) => setSealForm({ ...sealForm, design: dd })} premium={isCeleb} /></div>
         <Field label="Nível" id="stier"><Select id="stier" value={sealForm.tier} onChange={(e) => setSealForm({ ...sealForm, tier: e.target.value })}>{TIERS.map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
         <Field label="Política / critérios promocionais (a IA usa este texto para detectar looks compatíveis)" id="spolicy"><Textarea id="spolicy" value={sealForm.policyText} onChange={(e) => setSealForm({ ...sealForm, policyText: e.target.value })} maxLength={2000} /></Field>
-        <div className="grid grid-cols-2 gap-3"><Field label="Disponível de" id="sfrom" hint="vazio = imediato"><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label="até" id="suntil" hint="vazio = sem fim"><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>
+        <div className="grid grid-cols-2 gap-3"><Field label="Disponível a partir de" id="sfrom" hint="vazio = imediato"><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label="Expira em" id="suntil" hint="vazio = sem expiração"><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>
         <Field label="Limite de emissões" id="slimit"><Input id="slimit" type="number" min={1} value={sealForm.usageLimit} onChange={(e) => setSealForm({ ...sealForm, usageLimit: e.target.value })} /></Field>
       </Dialog>
       <Dialog open={promoForm.open} onClose={() => setPromoForm({ ...promoForm, open: false })} title={promoForm.id ? "Editar promoção" : "Nova promoção"} footer={<Button variant="primary" onClick={savePromo} disabled={!promoForm.title.trim()}>{t("common.save")}</Button>}>
-        <Field label="Tipo" id="ptype"><Select id="ptype" value={promoForm.type} onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value })}>{["DESCONTO", "BRINDE", "ACESSO_ANTECIPADO", "EVENTO"].map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
+        <Field label="Tipo" id="ptype"><Select id="ptype" value={promoForm.type} onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value })}>{(isCeleb ? CELEB_PROMO_TYPES : BRAND_PROMO_TYPES).map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
         <Field label="Título" id="ptitle" required><Input id="ptitle" value={promoForm.title} onChange={(e) => setPromoForm({ ...promoForm, title: e.target.value })} /></Field>
         <Field label="Descrição" id="pdesc"><Textarea id="pdesc" value={promoForm.description} onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })} /></Field>
         <Field label="Regras" id="prules"><Textarea id="prules" value={promoForm.rules} onChange={(e) => setPromoForm({ ...promoForm, rules: e.target.value })} /></Field>

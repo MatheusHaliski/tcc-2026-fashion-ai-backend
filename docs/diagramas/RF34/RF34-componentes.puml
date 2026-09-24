@@ -1,0 +1,75 @@
+@startuml RF34_Componentes
+title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "brands/[slug] — aba Eras (ErasTab)" as FE0
+  component "Insights de Eras (palcos 2D)" as FE1
+  component "My Stage 3D" as FE2
+}
+package "fai-web (REST)" {
+  [ShowcaseController] as ShowcaseController
+  [LookbookController] as LookbookController
+}
+package "fai-application (casos de uso)" {
+  [ShowcaseService] as ShowcaseService
+  [LookbookService] as LookbookService
+  [DailyLookService] as DailyLookService
+  [HypeScoreService] as HypeScoreService
+  [SchemeService] as SchemeService #FAFAFA
+  [InstitutionalService] as InstitutionalService #FAFAFA
+  [Model3dService] as Model3dService #FAFAFA
+  [WardrobeService] as WardrobeService #FAFAFA
+  [SocialService] as SocialService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [AcervoGroupRepository\nCelebrityProfileRepository\nDailyLookRepository\nFollowRepository\nHypeGroupRepository\nHypeScoreMetricRepository\nMetricSnapshotRepository\nSavedItemRepository\nSchemeGroupingRepository\nSchemeItemRepository\nSchemeRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• HypeScoreMetric\n• acervo_groups\n• celebrity_profiles\n• daily_looks\n• follows\n• hype_groups\n• metric_snapshots\n• saved_items\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB
+cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
+[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+
+FE0 --> ShowcaseController : HTTPS/JSON
+FE0 --> LookbookController : HTTPS/JSON
+FE1 --> ShowcaseController : HTTPS/JSON
+FE1 --> LookbookController : HTTPS/JSON
+FE2 --> ShowcaseController : HTTPS/JSON
+FE2 --> LookbookController : HTTPS/JSON
+ShowcaseController --> ShowcaseService
+LookbookController --> LookbookService
+LookbookController --> DailyLookService
+LookbookController --> HypeScoreService
+ShowcaseService ..> DailyLookService
+ShowcaseService ..> SchemeService
+ShowcaseService ..> InstitutionalService
+ShowcaseService ..> Model3dService
+ShowcaseService --> REPOS
+ShowcaseService --> P_media
+LookbookService ..> WardrobeService
+LookbookService ..> SchemeService
+LookbookService ..> SocialService
+LookbookService ..> DailyLookService
+LookbookService ..> HypeScoreService
+LookbookService --> REPOS
+LookbookService --> P_ai
+DailyLookService --> REPOS
+DailyLookService --> P_events
+HypeScoreService --> REPOS
+HypeScoreService --> P_ai
+REPOS --> DB : JPA/Flyway
+@enduml

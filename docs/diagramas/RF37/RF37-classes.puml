@@ -1,0 +1,193 @@
+@startuml RF37_Classes
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class FlairProfile {
+  +user: User
+  +coins: int
+  +rankPoints: int
+  +wins: int
+  +losses: int
+  +draws: int
+  +skinsJson: String
+  +activeSkin: String
+}
+class FlairCoinEntry {
+  +user: User
+  +delta: int
+  +reason: String
+  +ref: String
+}
+class FlairMatch {
+  +mode: String
+  +status: String
+  +theme: String
+  +playDate: LocalDate
+  +createdByUser: User
+  +teamAId: UUID
+  +teamBId: UUID
+  +winnerSide: String
+  +resultJson: String
+}
+class FlairMatchEntry {
+  +match: FlairMatch
+  +user: User
+  +scheme: Scheme
+  +side: String
+  +deckPower: int
+  +score: BigDecimal
+  +brandPiecesJson: String
+}
+class FlairTeam {
+  +name: String
+  +code: String
+  +owner: User
+  +color: String
+  +points: int
+}
+class FlairTeamMember {
+  +team: FlairTeam
+  +user: User
+  +role: String
+}
+class FlairCombination {
+  +brand: User
+  +name: String
+  +description: String
+  +gameType: String
+  +requiredCategoriesJson: String
+  +requiredStylesJson: String
+  +requiredOccasionsJson: String
+  +minBrandPieces: int
+  +minDeckPower: int
+  +minRarity: String
+  +minWins: int
+  +couponTitle: String
+  +discountPercent: Integer
+  +discountAmount: BigDecimal
+  .. +9 campos ..
+}
+class FlairRedemption {
+  +combination: FlairCombination
+  +user: User
+  +scheme: Scheme
+  +code: String
+  +status: String
+  +deckPower: Integer
+  +expiresAt: Instant
+  +usedAt: Instant
+}
+class FlairModeState {
+  +user: User
+  +mode: String
+  +seasonKey: String
+  +stateJson: String
+}
+class FlairTerritory {
+  +mapCode: String
+  +territoryCode: String
+  +owner: User
+  +defenderJson: String
+  +capturedAt: Instant
+  +defenses: int
+}
+class FlairTrophy {
+  +user: User
+  +mode: String
+  +title: String
+  +seasonKey: String
+  +detailJson: String
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+}
+FlairCoinEntry "*" --> "1" User : user
+FlairCombination "*" --> "1" User : brand
+FlairMatch "*" --> "1" User : createdByUser
+FlairMatch ..> FlairTeam : teamAId
+FlairMatch ..> FlairTeam : teamBId
+FlairMatchEntry "*" --> "1" FlairMatch : match
+FlairMatchEntry "*" --> "1" Scheme : scheme
+FlairMatchEntry "*" --> "1" User : user
+FlairModeState "*" --> "1" User : user
+FlairProfile "*" --> "1" User : user
+FlairRedemption "*" --> "1" FlairCombination : combination
+FlairRedemption "*" --> "1" Scheme : scheme
+FlairRedemption "*" --> "1" User : user
+FlairTeam "*" --> "1" User : owner
+FlairTeamMember "*" --> "1" FlairTeam : team
+FlairTeamMember "*" --> "1" User : user
+FlairTerritory "*" --> "1" User : owner
+FlairTrophy "*" --> "1" User : user
+Scheme "*" --> "1" User : user
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of FlairProfile : tabela flair_profiles
+note top of FlairCoinEntry : tabela flair_coin_entries
+note top of FlairMatch : tabela flair_matches
+note top of FlairMatchEntry : tabela flair_match_entries
+note top of FlairTeam : tabela flair_teams
+note top of FlairTeamMember : tabela flair_team_members
+note top of FlairCombination : tabela flair_combinations
+note top of FlairRedemption : tabela flair_redemptions
+note top of FlairModeState : tabela flair_mode_states
+note top of FlairTerritory : tabela flair_territories
+note top of FlairTrophy : tabela flair_trophies
+note top of Scheme : tabela schemes
+note top of WardrobeItem : tabela wardrobe_items
+@enduml

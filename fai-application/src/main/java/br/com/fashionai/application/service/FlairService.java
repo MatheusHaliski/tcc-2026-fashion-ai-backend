@@ -105,13 +105,15 @@ public class FlairService {
     private final SchemeService schemeService;
     private final InstitutionalService institutional;
     private final Guard guard;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
                         FlairMatchRepository matches, FlairMatchEntryRepository entries, UserRepository users,
                         WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                         BrandProfileRepository brands, ReactionRepository reactions, SchemeService schemeService,
-                        InstitutionalService institutional, Guard guard) {
+                        InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.profiles = profiles;
         this.coins = coins;
         this.combinations = combinations;
@@ -437,6 +439,7 @@ public class FlairService {
         out.put("coins", coinsWon);
         out.put("rewardCapReached", !rewarded);
         out.put("profile", me(user));
+        rightsCheck(user.id());
         return out;
     }
 
@@ -521,6 +524,7 @@ public class FlairService {
         FlairMatch m = arenaMatch(d, user.id());
         entry(m, users.findById(user.id()).orElseThrow(), s, "SOLO", deck, score);
         award(user.id(), 10 + (int) Math.round(score / 5), 5, "ARENA", d.toString());
+        rightsCheck(user.id());
         return arena(user);
     }
 
@@ -687,15 +691,21 @@ public class FlairService {
         out.put("duels", duels);
         out.put("score", Map.of("a", wa, "b", wb));
         out.put("winner", winner);
+        members.findByTeamIdOrderByCreatedAtAsc(mine.getId()).forEach(x -> rightsCheck(x.getUser().getId()));
         return out;
+    }
+
+    /** Card RF38 — uma vitória pode completar uma combinação: reavalia os direitos a cupom depois do commit. */
+    public void rightsCheck(UUID userId) {
+        events.publishEvent(new br.com.fashionai.application.events.DomainEvents.CouponRightsCheck(userId));
     }
 
     // ================================================================== combinações das lojas (cupons)
 
     private User brandOwner(CurrentUser user) {
         User u = users.findById(user.id()).orElseThrow();
-        if (u.getProfileType() != ProfileType.MARCA) {
-            throw guard.deny(user, "flair:combinations", "Só perfis de marca (lojas participantes) criam combinações FLAIR.");
+        if (u.getProfileType() != ProfileType.MARCA && u.getProfileType() != ProfileType.CELEBRIDADE) {
+            throw guard.deny(user, "flair:combinations", "Só perfis de marca ou celebridade (participantes) criam combinações FLAIR.");
         }
         return u;
     }
@@ -704,7 +714,7 @@ public class FlairService {
                                   List<String> requiredStyles, List<String> requiredOccasions, Integer minBrandPieces,
                                   Integer minDeckPower, String minRarity, Integer minWins, String couponTitle,
                                   Integer discountPercent, BigDecimal discountAmount, BigDecimal minPurchase, Integer validDays,
-                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor) {
+                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl) {
     }
 
     @Transactional
@@ -747,6 +757,7 @@ public class FlairService {
         c.setStartsAt(f.startsAt());
         c.setEndsAt(f.endsAt());
         c.setAccentColor(f.accentColor() != null && f.accentColor().matches("#[0-9A-Fa-f]{6}") ? f.accentColor().toUpperCase(Locale.ROOT) : null);
+        c.setStoreUrl(SealService.storeUrl(f.storeUrl()));
         combinations.save(c);
         return combinationView(c, null, null);
     }
@@ -817,7 +828,7 @@ public class FlairService {
         if ("DUELO_PATROCINADO".equals(c.getGameType()) && user != null) {
             Instant since = today().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay(FaiPointsService.ZONE).toInstant();
             long wins = entries.findByUserIdAndCreatedAtAfter(user.id(), since).stream()
-                    .filter(e -> Objects.equals(e.getSide(), e.getMatch().getWinnerSide()) && ("DUEL".equals(e.getMatch().getMode()) || "TEAM".equals(e.getMatch().getMode())))
+                    .filter(e -> Objects.equals(e.getSide(), e.getMatch().getWinnerSide()) && FlairModesService.COMPETITIVE.contains(e.getMatch().getMode()))
                     .filter(e -> Json.strings(e.getBrandPiecesJson()).contains(bn.toLowerCase(Locale.ROOT))).count();
             out.add(req("WINS", String.valueOf(wins), c.getMinWins() + " vitória(s) nesta semana com peça " + bn + " no deck (" + wins + ")", wins >= c.getMinWins()));
         }
@@ -853,6 +864,7 @@ public class FlairService {
         m.put("startsAt", c.getStartsAt());
         m.put("endsAt", c.getEndsAt());
         m.put("accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor());
+        m.put("storeUrl", c.getStoreUrl());
         if (viewer != null) {
             m.put("redemption", redemptions.findByCombinationIdAndUserId(c.getId(), viewer.id()).map(this::redemptionView).orElse(null));
         }
@@ -979,7 +991,7 @@ public class FlairService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("admin", admin);
         out.put("brandName", brandNameOf(owner));
-        out.put("participating", owner.getProfileType() == ProfileType.MARCA);
+        out.put("participating", owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE);
         out.put("combinations", cs.stream().filter(c -> admin || available(c)).map(c -> combinationView(c, viewer, null)).toList());
         if (admin) {
             List<FlairRedemption> rs = redemptions.findByCombinationBrandIdOrderByCreatedAtDesc(owner.getId());

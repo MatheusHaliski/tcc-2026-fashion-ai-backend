@@ -1,0 +1,134 @@
+@startuml RF34_Classes
+title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +avatarUrl: String
+  +coverUrl: String
+  +bio: String
+  +realName: String
+  +areasJson: String
+  +verifiableFollowersJson: String
+  +identityProofUrl: String
+  +verificationUrl: String
+  +professionalHistory: String
+  +representationContact: String
+  +fashionInterestsJson: String
+  .. +10 campos ..
+}
+class SchemeGrouping {
+  +owner: User
+  +type: GroupingType
+  +label: String
+  +description: String
+  +coverUrl: String
+  +atmospherePrompt: String
+  +periodFrom: Integer
+  +periodTo: Integer
+  +accentColor: String
+  +sortOrder: int
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+class UserPreferences {
+  +user: User
+  +theme: ThemeMode
+  +language: UiLanguage
+  +density: UiDensity
+  +fontScale: int
+  +highContrast: boolean
+  +reduceMotion: boolean
+  +chromeBackgroundId: String
+  +sizeSystem: SizeSystem
+  +unitSystem: UnitSystem
+  +mannequinSex: MannequinSex
+  +mannequinSkinTone: String
+  +mannequinBuild: BodyBuild
+  +contentContainerColor: String
+  .. +10 campos ..
+}
+}
+package "fai-domain · enums" {
+enum GroupingType {
+  COLLECTION
+  PROMOTION
+  SIGNATURE_SERIES
+  EVOLUTION
+  STYLE_LINE
+  ERA
+  PHASE
+  SEASON
+  TOUR
+}
+}
+CelebrityProfile "1" --> "1" User : owner
+Scheme "*" --> "1" User : user
+SchemeGrouping "*" --> "1" User : owner
+SchemeGrouping --> GroupingType
+UserPreferences "1" --> "1" User : user
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of CelebrityProfile : tabela celebrity_profiles
+note top of SchemeGrouping : tabela scheme_groupings
+note top of Scheme : tabela schemes
+note top of WardrobeItem : tabela wardrobe_items
+note top of UserPreferences : tabela user_preferences
+@enduml

@@ -1,0 +1,123 @@
+@startuml RF32_Classes
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class ChallengeTemplate {
+  +code: String
+  +name: String
+  +ruleText: String
+  +ruleBlocksJson: String
+  +modesAllowedJson: String
+  +durationDays: Integer
+  +scoreDimensionsJson: String
+  +rewardPoints: int
+  +effort: String
+  +minParticipants: int
+  +maxParticipants: int
+  +origin: String
+  +authorUserId: UUID
+  +roomDecoration: String
+  .. +1 campos ..
+}
+class ChallengeInstance {
+  +id: UUID
+  +templateCode: String
+  +mode: String
+  +state: String
+  +paramsJson: String
+  +startsAt: Instant
+  +endsAt: Instant
+  +acceptDeadline: Instant
+  +resultJson: String
+  +createdAt: Instant
+  +updatedAt: Instant
+}
+class ChallengeParticipant {
+  +id: UUID
+  +instanceId: UUID
+  +userId: UUID
+  +team: String
+  +status: String
+  +joinedAt: Instant
+  +leftAt: Instant
+  +personalGoalJson: String
+  +progressFraction: BigDecimal
+  +bestRecord: int
+}
+class ChallengeEvent {
+  +id: UUID
+  +instanceId: UUID
+  +userId: UUID
+  +evidenceType: String
+  +refId: UUID
+  +createdAt: Instant
+}
+class ChallengeNote {
+  +id: UUID
+  +instanceId: UUID
+  +userId: UUID
+  +kind: String
+  +content: String
+  +createdAt: Instant
+}
+class ChallengeVote {
+  +id: UUID
+  +instanceId: UUID
+  +voterUserId: UUID
+  +entrySchemeId: UUID
+  +createdAt: Instant
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+}
+ChallengeEvent ..> User : userId
+ChallengeNote ..> User : userId
+ChallengeParticipant ..> User : userId
+Scheme "*" --> "1" User : user
+note top of User : tabela users
+note top of ChallengeTemplate : tabela challenge_templates
+note top of ChallengeInstance : tabela challenge_instances
+note top of ChallengeParticipant : tabela challenge_participants
+note top of ChallengeEvent : tabela challenge_events
+note top of ChallengeNote : tabela challenge_notes
+note top of ChallengeVote : tabela challenge_votes
+note top of Scheme : tabela schemes
+@enduml

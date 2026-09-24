@@ -1,0 +1,63 @@
+@startuml RF27_Atividades
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Usuário|
+start
+:Meu Guarda-Roupa → "Meu Quarto";
+|Sistema (RoomService)|
+:Carrega o layout do nível (Estreia…Maison)\ne endereça cada peça (Porta 2, Gaveta 4 · Jeans);
+:Calcula estados: esquecida (poeira),\nindisponível (cesto), favorita (cabide especial),\nPeça Ícone (vitrine), esquemas (caixas no maleiro);
+if (WebGL disponível?) then (sim)
+  |Usuário|
+  :Quarto 3D: câmera 3/4 limitada,\nabre portas e gavetas;
+else (não)
+  :Visão 2.5D / Lista (fallback);
+endif
+|Usuário|
+split
+  :Toca numa peça → ficha / etiqueta costurada;
+split again
+  :Renomeia gaveta / monograma / luz guiada;
+  |Sistema (RoomService)|
+  :Salva em room_layouts;
+split again
+  |Usuário|
+  :"Organizar" → prévia (com ou sem IA);
+  |Sistema (RoomService)|
+  :Gera movimentos e rótulos;
+  |Usuário|
+  if (Aplicar?) then (sim)
+    |Sistema (RoomService)|
+    :Aplica e guarda o mapa anterior\n(permite desfazer);
+  else (não)
+  endif
+split again
+  |Usuário|
+  :Caixa de entrega (item comprado);
+  |Sistema (RoomService)|
+  :Monta sozinho no módulo compatível\n(guarda-roupa inteiro → todos os blocos);
+end split
+stop
+@enduml

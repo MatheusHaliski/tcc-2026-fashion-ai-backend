@@ -1,0 +1,29 @@
+@startuml RF35_Sequencia
+title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Visitante as V
+actor Marca as M
+participant "Frontend\nCollectionsTab" as FE
+participant "ShowcaseController" as C
+participant "LookbookController" as LC
+participant "ShowcaseService" as S
+database "MySQL" as DB
+V -> FE: aba Coleções
+FE -> C: GET /api/institutional/{slug}/showcase/collections
+C -> S: list(viewer, slug, COLLECTIONS)
+S -> DB: SELECT scheme_groupings (COLLECTION)
+V -> FE: Collections Insights
+FE -> C: GET .../showcase/collections/insights
+S --> FE: ranking + mini lojas 3D
+M -> FE: nova coleção
+FE -> LC: POST /api/groupings
+M -> FE: arte da coleção
+FE -> C: POST /api/groupings/{id}/cover
+@enduml

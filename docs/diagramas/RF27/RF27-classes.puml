@@ -1,0 +1,156 @@
+@startuml RF27_Classes
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class RoomLayout {
+  +user: User
+  +level: String
+  +modulesJson: String
+  +drawerLabelsJson: String
+  +previousMapJson: String
+}
+class RoomStorageEntry {
+  +userId: UUID
+  +wardrobeItemId: UUID
+  +address: String
+  +assignedBy: String
+}
+class RoomCatalogItem {
+  +sku: String
+  +name: String
+  +moldId: String
+  +slotType: String
+  +widthCm: int
+  +finishJson: String
+  +rarity: String
+  +pricePoints: int
+  +requiredLevel: String
+  +stockLimit: Integer
+  +soldCount: int
+  +maisonBrandUserId: UUID
+  +active: boolean
+  +kind: String
+  .. +14 campos ..
+}
+class RoomInventoryItem {
+  +id: UUID
+  +userId: UUID
+  +sku: String
+  +serial: Integer
+  +source: String
+  +appliedModule: String
+  +acquiredAt: Instant
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+class DailyLook {
+  +user: User
+  +scheme: Scheme
+  +materializedFrom: DailyLook
+  +lookDate: LocalDate
+  +source: DailyLookSource
+  +feedback: DailyLookFeedback
+  +feedbackAt: Instant
+  +weekPlanDayId: UUID
+}
+class UserPreferences {
+  +user: User
+  +theme: ThemeMode
+  +language: UiLanguage
+  +density: UiDensity
+  +fontScale: int
+  +highContrast: boolean
+  +reduceMotion: boolean
+  +chromeBackgroundId: String
+  +sizeSystem: SizeSystem
+  +unitSystem: UnitSystem
+  +mannequinSex: MannequinSex
+  +mannequinSkinTone: String
+  +mannequinBuild: BodyBuild
+  +contentContainerColor: String
+  .. +10 campos ..
+}
+}
+package "fai-domain · enums" {
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+}
+}
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+RoomCatalogItem ..> User : maisonBrandUserId
+RoomInventoryItem ..> User : userId
+RoomLayout "*" --> "1" User : user
+RoomStorageEntry ..> User : userId
+RoomStorageEntry ..> WardrobeItem : wardrobeItemId
+Scheme "*" --> "1" User : user
+User --> ProfileType
+UserPreferences "1" --> "1" User : user
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of RoomLayout : tabela room_layouts
+note top of RoomStorageEntry : tabela room_storage_map
+note top of RoomCatalogItem : tabela room_catalog
+note top of RoomInventoryItem : tabela room_inventory
+note top of WardrobeItem : tabela wardrobe_items
+note top of Scheme : tabela schemes
+note top of DailyLook : tabela daily_looks
+note top of UserPreferences : tabela user_preferences
+@enduml

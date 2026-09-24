@@ -1,0 +1,34 @@
+@startuml RF32_Sequencia
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+actor Convidado as G
+participant "Frontend\nchallenges" as FE
+participant "ChallengeController" as C
+participant "ChallengeService" as S
+participant "FaiPointsService" as P
+participant "NotificationService" as N
+database "MySQL" as DB
+U -> FE: iniciar duelo
+FE -> C: POST /api/challenges
+C -> S: start(template, mode, invitees)
+S -> DB: INSERT challenge_instances + participants
+S -> N: convite
+G -> FE: aceitar
+FE -> C: POST /api/challenges/{id}/accept
+U -> FE: enviar look
+FE -> C: POST /api/challenges/{id}/entries
+S -> DB: INSERT challenge_events
+G -> FE: votar
+FE -> C: POST /api/challenges/{id}/votes
+S -> DB: INSERT challenge_votes
+S -> P: credita pontos ao encerrar
+FE -> C: GET /api/challenges/{id}/result-card
+@enduml

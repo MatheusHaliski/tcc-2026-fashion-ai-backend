@@ -14,4 +14,6 @@ import java.util.UUID;
 
 public interface RoomCatalogItemRepository extends JpaRepository<RoomCatalogItem, String> {
     List<RoomCatalogItem> findByActiveTrueOrderByPricePoints();
+
+    List<RoomCatalogItem> findByCreatorUserIdOrderByCreatedAtDesc(java.util.UUID creatorUserId);
 }

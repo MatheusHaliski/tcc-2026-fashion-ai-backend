@@ -1,0 +1,42 @@
+@startuml RF39_Sequencia
+title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Marca/Celebridade" as M
+actor Comprador as U
+participant "Frontend\nWardrobeCreatorTab" as FE
+participant "RoomCreatorController" as RC
+participant "WardrobeCreatorService" as W
+participant "HighlightsController" as HC
+participant "FaiPointsService" as P
+participant "RoomService" as R
+database "MySQL" as DB
+database "Storage de mídia" as MS
+M -> FE: aba Criar guarda-roupa 3D
+FE -> RC: GET /api/room-creator/options
+RC -> W: options(user)
+M -> FE: envia logo e arte
+FE -> RC: POST /api/room-creator/uploads?kind=logo|art
+W -> MS: put(png/jpg)
+M -> FE: Publicar (bundle de blocos + condições)
+FE -> RC: POST /api/room-creator/items
+RC -> W: save(user, null, ItemForm)
+W -> DB: INSERT room_catalog (BRD-…)
+U -> FE: Loja do quarto
+FE -> HC: GET /api/points/shop
+HC -> P: shop(user)
+P -> W: view + blocker
+U -> FE: Comprar
+FE -> HC: POST /api/points/shop/{sku}/purchase
+P -> DB: INSERT fai_points_ledger, room_inventory
+U -> FE: Montar (guarda-roupa inteiro)
+FE -> HC: POST /api/me/room-inventory/{id}/apply {moduleId: ALL}
+P -> R: applyFinish → todos os módulos de cada bloco
+R -> DB: UPDATE room_layouts.modules_json
+@enduml

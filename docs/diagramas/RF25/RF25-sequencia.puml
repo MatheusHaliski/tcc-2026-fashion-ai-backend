@@ -1,0 +1,45 @@
+@startuml RF25_Sequencia
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Marca/Celebridade" as M
+actor "Usuário" as U
+participant "Frontend\nbrands/[slug]" as FE
+participant "SealController" as C
+participant "SealService" as S
+participant "AiEngine (RF24)" as AI
+participant "CouponService" as CS
+database "MySQL" as DB
+M -> FE: Novo selo (nome, tipo, política, arte,\ndisponível de / expira em)
+FE -> C: POST /api/seals
+C -> S: createSeal(user, SealForm)
+S -> S: requireIssuer + valida janela
+S -> DB: INSERT seals
+S --> FE: 201 selo
+M -> FE: Nova promoção (tipo, desconto, cota,\nselo exigido, storeUrl)
+FE -> C: POST /api/promotions
+C -> S: createPromotion(user, PromotionForm)
+S -> DB: INSERT promotions
+U -> FE: publica look
+FE -> C: GET /api/schemes/{id}/seal-suggestions
+C -> S: suggest(user, schemeId)
+S -> AI: SealBond Matcher (política × look)
+AI --> S: selos compatíveis
+U -> FE: aceita sugestão
+FE -> C: POST /api/schemes/{id}/seal-bonds
+M -> FE: aprova na fila de revisão
+FE -> C: POST /api/seal-bonds/{id}/review
+C -> S: review(user, bondId, approve=true)
+S -> DB: UPDATE seal_bonds (APPROVED)
+S ->> CS: CouponRightsCheck (evento AFTER_COMMIT)
+CS -> DB: INSERT coupon_rights (se houver promoção elegível)
+CS -> DB: INSERT notifications (COUPON_AVAILABLE)
+FE -> C: GET /api/users/{ownerId}/seals
+C --> FE: selos com available, unavailableReason,\navailableFrom/Until e emissões
+@enduml

@@ -1,0 +1,141 @@
+@startuml RF28_Classes
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class MirrorState {
+  +userId: UUID
+  +slotsJson: String
+  +shownCombinationsJson: String
+  +lastPrompt: String
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +tryOnLayer: TryOnLayer
+  +sortOrder: int
+  +zIndex: int
+  +positionX: BigDecimal
+  +positionY: BigDecimal
+  +scale: BigDecimal
+  +rotation: BigDecimal
+  +opacity: BigDecimal
+  +filtersJson: String
+  +snapshotJson: String
+}
+class DailyLook {
+  +user: User
+  +scheme: Scheme
+  +materializedFrom: DailyLook
+  +lookDate: LocalDate
+  +source: DailyLookSource
+  +feedback: DailyLookFeedback
+  +feedbackAt: Instant
+  +weekPlanDayId: UUID
+}
+class PieceUsageDiaryEntry {
+  +id: UUID
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +usedOn: LocalDate
+  +occasion: String
+  +note: String
+  +source: String
+  +schemeId: UUID
+  +createdAt: Instant
+}
+class StyleDna {
+  +user: User
+  +archetype: StyleArchetype
+  +boldnessIndex: int
+  +identityPhrase: String
+  +colorPalette: String
+  +styleKeywords: String
+  +occasionKeywords: String
+  +iconPieceName: String
+  +latestDnaSchemeId: UUID
+  +synthesizedAt: Instant
+  +silhouette: String
+  +lifeIdentityJson: String
+  +lifePrivateFieldsJson: String
+  +interactionsAtSynthesis: int
+  .. +4 campos ..
+}
+}
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+MirrorState ..> User : userId
+PieceUsageDiaryEntry ..> Scheme : schemeId
+PieceUsageDiaryEntry ..> User : userId
+PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
+Scheme "*" --> "1" User : user
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+StyleDna "1" --> "1" User : user
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of MirrorState : tabela mirror_states
+note top of WardrobeItem : tabela wardrobe_items
+note top of Scheme : tabela schemes
+note top of SchemeItem : tabela scheme_items
+note top of DailyLook : tabela daily_looks
+note top of PieceUsageDiaryEntry : tabela piece_usage_diary
+note top of StyleDna : tabela style_dna
+@enduml

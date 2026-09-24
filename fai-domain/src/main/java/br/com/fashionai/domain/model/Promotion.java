@@ -94,4 +94,8 @@ public class Promotion extends VersionedAuditableEntity {
 
     @Column(name = "redeemed_count", nullable = false)
     private int redeemedCount;
+
+    /** Link da loja terceira onde o cupom é usado (sobrepõe o site da marca). */
+    @Column(name = "store_url", length = 512)
+    private String storeUrl;
 }

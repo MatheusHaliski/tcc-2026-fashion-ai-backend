@@ -11,7 +11,7 @@ import { Avatar, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, Swi
 interface Notification { id: string; type: string; category: string; actor?: UserCard | null; resourceType?: string; resourceId?: string; title: string; body: string; payload?: Record<string, unknown>; read: boolean; createdAt: string; }
 interface Inbox { unread: number; items: Notification[]; groups?: Record<string, Notification[]>; }
 interface Pref { type: string; enabled: boolean; category?: string; label?: string; }
-const hrefFor = (n: Notification) => n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
+const hrefFor = (n: Notification) => n.resourceType === "COUPON_RIGHT" ? String(n.payload?.href ?? `/coupons?right=${n.resourceId}`) : n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
 
 function Inbox() {
   const { t, relative } = useI18n(); const toast = useToast(); const [tab, setTab] = useState<"inbox" | "prefs">("inbox"); const [cat, setCat] = useState("ALL");

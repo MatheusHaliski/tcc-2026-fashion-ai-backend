@@ -1,0 +1,101 @@
+@startuml RF30_Classes
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class FaiPointsLedgerEntry {
+  +id: UUID
+  +userId: UUID
+  +delta: int
+  +actionCode: String
+  +refType: String
+  +refId: String
+  +idempotencyKey: String
+  +countsLifetime: boolean
+  +createdAt: Instant
+}
+class FaiPointsRule {
+  +actionCode: String
+  +points: int
+  +dailyCap: Integer
+  +weeklyCap: Integer
+  +oncePerRef: boolean
+  +active: boolean
+  +description: String
+}
+class RoomCatalogItem {
+  +sku: String
+  +name: String
+  +moldId: String
+  +slotType: String
+  +widthCm: int
+  +finishJson: String
+  +rarity: String
+  +pricePoints: int
+  +requiredLevel: String
+  +stockLimit: Integer
+  +soldCount: int
+  +maisonBrandUserId: UUID
+  +active: boolean
+  +kind: String
+  .. +14 campos ..
+}
+class RoomInventoryItem {
+  +id: UUID
+  +userId: UUID
+  +sku: String
+  +serial: Integer
+  +source: String
+  +appliedModule: String
+  +acquiredAt: Instant
+}
+class RoomLayout {
+  +user: User
+  +level: String
+  +modulesJson: String
+  +drawerLabelsJson: String
+  +previousMapJson: String
+}
+class UserAchievement {
+  +id: UUID
+  +userId: UUID
+  +achievementCode: String
+  +secret: boolean
+  +grantedAt: Instant
+}
+}
+FaiPointsLedgerEntry ..> User : userId
+RoomCatalogItem ..> User : maisonBrandUserId
+RoomInventoryItem ..> User : userId
+RoomLayout "*" --> "1" User : user
+UserAchievement ..> User : userId
+note top of User : tabela users
+note top of FaiPointsLedgerEntry : tabela fai_points_ledger
+note top of FaiPointsRule : tabela fai_points_rules
+note top of RoomCatalogItem : tabela room_catalog
+note top of RoomInventoryItem : tabela room_inventory
+note top of RoomLayout : tabela room_layouts
+note top of UserAchievement : tabela user_achievements
+@enduml

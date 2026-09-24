@@ -1,0 +1,39 @@
+@startuml RF37_Sequencia
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Jogador as J
+actor Loja as L
+participant "Frontend\nflair" as FE
+participant "FlairModesController" as MC
+participant "FlairController" as C
+participant "FlairModesService" as MS
+participant "FlairService" as S
+participant "CouponService" as CS
+database "MySQL" as DB
+J -> FE: FLAIR Runway (tema do dia)
+FE -> MC: GET /api/flair/modes/runway
+MC -> MS: runwayState(user)
+MS -> DB: SELECT flair_mode_states, schemes
+J -> FE: inscreve look
+FE -> MC: POST /api/flair/modes/runway
+MC -> MS: enterRunway(user, schemeId)
+MS -> MS: FlairLooks.score (40% IA, 30% tema,\n20% votos, 10% originalidade)
+MS -> DB: INSERT flair_matches + entries\nUPSERT flair_mode_states
+MS -> DB: INSERT flair_coin_entries (MODE_RUNWAY,\nsó as 3 primeiras partidas do dia)
+MS -> DB: INSERT flair_trophies (se vencer)
+MS ->> CS: CouponRightsCheck (AFTER_COMMIT)
+L -> FE: nova combinação (requisitos + cupom)
+FE -> C: POST /api/flair/brand/combinations
+C -> S: saveCombination
+S -> DB: INSERT flair_combinations
+J -> FE: trocar deck pelo cupom
+FE -> C: POST /api/flair/combinations/{id}/redeem
+S -> DB: INSERT flair_redemptions (código único)
+@enduml
