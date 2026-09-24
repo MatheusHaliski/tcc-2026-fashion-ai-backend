@@ -95,7 +95,8 @@ function RoomInner() {
     const items = (data as unknown as { unboxing?: Unbox[] }).unboxing ?? []; const it = items[0]; if (!it || unboxing) return;
     setUnboxing(true);
     await new Promise((r) => setTimeout(r, 1300));
-    const target = data!.modules.find((m) => m.slotType === it.slotType);
+    // guarda-roupa inteiro de marca/celebridade (RF39) monta em todos os blocos de uma vez
+    const target = it.slotType === "WARDROBE" ? { id: "ALL", label: "todo o guarda-roupa" } : data!.modules.find((m) => m.slotType === it.slotType);
     try {
       if (!target) { toast.info(`${it.name}: nenhum módulo compatível no seu nível — aplique pela loja.`); return; }
       await api.post(`/api/me/room-inventory/${it.inventoryId}/apply`, { moduleId: target.id });

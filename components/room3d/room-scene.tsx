@@ -16,7 +16,7 @@ import {
  * elementos dos desafios ativos. Unidades em metros. */
 
 export interface RoomPiece3D { id: string; name: string; category: string; subcategory: string; colorHex?: string | null; imageUrl?: string | null; thumbnailUrl?: string | null; model3dUrl?: string | null; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; salePrice?: number | null; origin?: string | null; }
-export interface RoomModule3D { id: string; slotType: string; label: string; capacity?: number; category?: string | null; empty?: boolean; finish?: { color?: string; roughness?: number; texture?: string; kelvin?: number; guided?: boolean } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
+export interface RoomModule3D { id: string; slotType: string; label: string; capacity?: number; category?: string | null; empty?: boolean; finish?: { color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
 export interface RoomDecoration { type: string; name?: string; days?: number; polaroids?: { schemeId: string; coverImageUrl?: string | null }[]; tapedPieceIds?: string[]; taggedPieceIds?: string[]; theme?: string; }
 export interface RoomData3D {
   modules: RoomModule3D[]; pieces: Record<string, RoomPiece3D>; basket?: RoomPiece3D[]; chair?: RoomPiece3D[]; saleRack?: { name: string; pieces: RoomPiece3D[] } | null;
@@ -69,7 +69,7 @@ function useTex(url?: string | null) {
   return t;
 }
 
-interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; }
+interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; }
 
 /**
  * Peça: plano com a foto sem fundo; GLB quando existir. Estados: esquecida (poeira + teia, "puff" ao resgatar),
@@ -120,8 +120,8 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   );
 }
 
-function Hanger({ gold }: { gold?: boolean }) {
-  const mat = <meshStandardMaterial color={gold ? "#C9A227" : "#6b5a4a"} metalness={gold ? 0.9 : 0.2} roughness={gold ? 0.25 : 0.6} />;
+function Hanger({ gold, finish }: { gold?: boolean; finish?: THREE.MeshStandardMaterialParameters }) {
+  const mat = gold ? <meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.25} /> : <meshStandardMaterial color={finish?.color ?? "#6b5a4a"} metalness={finish?.metalness ?? 0.2} roughness={finish?.roughness ?? 0.6} />;
   return (
     <group>
       <mesh position={[0, 0.03, 0]}><torusGeometry args={[0.022, 0.004, 8, 16, Math.PI * 1.4]} />{mat}</mesh>
@@ -138,23 +138,33 @@ function HangingPiece({ p, x, z, pw, ph, ctx }: { p: RoomPiece3D; x: number; z: 
   useFrame(() => { if (!g.current) return; const t = swing.current < 0 ? 99 : (performance.now() - swing.current) / 1000; g.current.rotation.z = t < 1.6 ? Math.sin(t * 14) * 0.12 * (1 - t / 1.6) : 0; });
   return (
     <group ref={g} position={[x, 0, z]}>
-      <Hanger gold={p.states?.includes("FAVORITA")} />
+      <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} />
       <group position={[0, -ph / 2 - 0.05, 0.01]}><PieceMesh p={p} w={pw} h={ph} ctx={ctx} onPuff={() => { if (!ctx.reduced) swing.current = performance.now(); }} /></group>
     </group>
   );
 }
 
 /** Frente com o logo de fábrica, ou o monograma a partir do Studio (DET-K03). */
-function DoorMark({ text, w, h, position }: { text: string; w: number; h: number; position: [number, number, number] }) {
-  return <Label3D text={text} w={w} h={h} px={128} fg="rgba(0,0,0,.2)" font={`700 ${text.length > 3 ? 30 : 44}px Georgia, serif`} position={position} />;
+function DoorMark({ text, w, h, position, plate }: { text: string; w: number; h: number; position: [number, number, number]; plate?: RoomModule3D["finish"] }) {
+  const logo = useTex(plate?.logoUrl);
+  if (!plate) return <Label3D text={text} w={w} h={h} px={128} fg="rgba(0,0,0,.2)" font={`700 ${text.length > 3 ? 30 : 44}px Georgia, serif`} position={position} />;
+  // placa de logo comprada na loja (RF39): material/cor da placa + logo da marca ou nome gravado
+  return (
+    <group position={position}>
+      <mesh position={[0, 0, 0.002]}><boxGeometry args={[w + 0.03, h + 0.02, 0.006]} /><meshStandardMaterial color={plate.color ?? "#C9A227"} metalness={plate.metalness ?? 0.6} roughness={plate.roughness ?? 0.3} /></mesh>
+      {logo ? <mesh position={[0, 0, 0.0055]}><planeGeometry args={[h * 0.9, h * 0.9]} /><meshBasicMaterial map={logo} transparent /></mesh>
+        : <Label3D text={(plate.labelText ?? text).slice(0, 12)} w={w} h={h} px={256} fg="rgba(0,0,0,.6)" font="700 56px Georgia, serif" position={[0, 0, 0.0055]} />}
+    </group>
+  );
 }
 
 /** Porta com cabideiro atrás: dobradiça na borda externa do par; abre com animação e acende quando o Vista-me aponta. */
-function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle, mark, taped, light, ctx }: {
+function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle, mark, taped, light, ctx, plate }: {
   m: RoomModule3D; x0: number; doorW: number; hingeLeft: boolean; open: boolean; lit: boolean; onToggle: () => void; finish: THREE.MeshStandardMaterialParameters; handle: string;
-  mark: string; taped: boolean; light: string; ctx: Ctx;
+  mark: string; taped: boolean; light: string; ctx: Ctx; plate?: RoomModule3D["finish"];
 }) {
   const h = Y.doors1 - Y.drawers1;
+  const art = useTex(m.finish?.artUrl); // arte da marca/celebridade aplicada na porta (RF39)
   const door = useRef<THREE.Group>(null); const front = useRef<THREE.Mesh>(null);
   const target = open ? (hingeLeft ? -deg(105) : deg(105)) : 0;
   useFrame(({ clock }, dt) => {
@@ -164,7 +174,7 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
   const pieces = m.pieces ?? []; const n = Math.min(doorW > 0.7 ? 8 : 6, pieces.length);
   return (
     <group position={[x0, Y.drawers1, 0]}>
-      <mesh position={[doorW / 2, h - 0.12, -D / 2 + 0.28]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, doorW - 0.04, 12]} /><meshStandardMaterial color="#b7b7b7" metalness={0.8} roughness={0.3} /></mesh>
+      <mesh position={[doorW / 2, h - 0.12, -D / 2 + 0.28]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, doorW - 0.04, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
       {pieces.slice(0, n).map((p, i) => (
         <group key={p.id} position={[0, h - 0.16, 0]}>
           <HangingPiece p={p} x={n === 1 ? doorW / 2 : 0.1 + (i * (doorW - 0.2)) / Math.max(1, n - 1)} z={-D / 2 + 0.28 + (i % 2) * 0.02} pw={0.42} ph={0.62} ctx={ctx} />
@@ -173,10 +183,10 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
       {(open || lit) && <pointLight position={[doorW / 2, h - 0.05, 0]} intensity={lit ? 1.4 : 0.8} distance={1.4} color={lit ? "#ffe6a0" : light} />}
       <group ref={door} position={[hingeLeft ? 0 : doorW, 0, D / 2]}>
         <mesh ref={front} position={[hingeLeft ? doorW / 2 : -doorW / 2, h / 2, 0.01]} castShadow onClick={(e) => { e.stopPropagation(); onToggle(); }} {...pointer}>
-          <boxGeometry args={[doorW - 0.006, h - 0.006, 0.02]} /><meshStandardMaterial {...finish} emissive="#ffd27a" emissiveIntensity={0} />
+          <boxGeometry args={[doorW - 0.006, h - 0.006, 0.02]} /><meshStandardMaterial key={art ? art.uuid : "plain"} {...finish} color={art ? "#ffffff" : finish.color} map={art ?? undefined} emissive="#ffd27a" emissiveIntensity={0} />
         </mesh>
         <mesh position={[hingeLeft ? doorW - 0.03 : -doorW + 0.03, h / 2, 0.021]}><boxGeometry args={[0.012, 0.28, 0.004]} /><meshStandardMaterial color={handle} roughness={0.9} /></mesh>
-        <DoorMark text={mark} w={0.16} h={0.08} position={[hingeLeft ? doorW / 2 : -doorW / 2, h * 0.72, 0.0215]} />
+        <DoorMark text={mark} w={0.16} h={0.08} plate={plate} position={[hingeLeft ? doorW / 2 : -doorW / 2, h * 0.72, 0.0215]} />
         {taped && <TailorTape width={0.2} position={[hingeLeft ? doorW - 0.03 : -doorW + 0.03, h / 2, 0.028]} rotation={[0, 0, 0.5]} />}
       </group>
     </group>
@@ -422,9 +432,14 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const byId = useMemo(() => Object.fromEntries(data.modules.map((m) => [m.id, m])), [data.modules]);
   const doorFinish = byId["door:1"]?.finish ?? { color: "#F4F2EF", roughness: 0.8 };
   const signature = atLeast(level, "MAISON") && !!byId["signature"];
-  const finishOf = (m?: RoomModule3D): THREE.MeshStandardMaterialParameters => ({ color: m?.finish?.color ?? doorFinish.color ?? "#F4F2EF", roughness: m?.finish?.roughness ?? doorFinish.roughness ?? 0.8, metalness: 0.02 });
-  const carcass = finishOf(byId["door:1"]);
+  const finishOf = (m?: RoomModule3D): THREE.MeshStandardMaterialParameters => {
+    const f: NonNullable<RoomModule3D["finish"]> = m?.finish ?? doorFinish; const glass = f?.material === "VIDRO" || f?.material === "ACRILICO";
+    return { color: f?.color ?? doorFinish.color ?? "#F4F2EF", roughness: f?.roughness ?? doorFinish.roughness ?? 0.8, metalness: f?.metalness ?? 0.02, transparent: glass, opacity: glass ? 0.6 : 1 };
+  };
+  const carcass = { ...finishOf(byId["door:1"]), transparent: false, opacity: 1 };
   const handle = byId["handles"]?.finish?.color ?? "#d6d2ca";
+  const plate = byId["logo"]?.finish && (byId["logo"].finish.logoUrl || byId["logo"].finish.labelText || byId["logo"].finish.material) ? byId["logo"].finish : undefined;
+  const hangerFinish = byId["hangers"]?.finish ? finishOf(byId["hangers"]) : undefined;
   const kelvin = data.light?.guided ? data.light.kelvin ?? 4000 : 4000;
   const lightColor = kelvinColor(kelvin);
   const mark = atLeast(level, "STUDIO") && data.monogram ? data.monogram : "FAI";
@@ -438,7 +453,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const tagged = useMemo(() => new Set(deco("etiqueta_2a_chance")?.taggedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const tapedIds = useMemo(() => new Set(deco("fita_alfaiate")?.tapedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const taped = (m?: RoomModule3D) => !!m && tapedIds.size > 0 && (m.pieces ?? []).some((p) => tapedIds.has(p.id));
-  const ctx: Ctx = { highlight, onPick, reduced, tagged };
+  const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish };
   const boxes = byId["top"]?.lookBoxes ?? [];
   const penthouse = atLeast(level, "PENTHOUSE") && !!byId["season"];
   const pointAt = copilotPoint ? moduleAnchor(copilotPoint, level) : null;
@@ -474,8 +489,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       </group>
 
       {/* portas 1–4 (e 5–6 do Loft) com cabideiro */}
-      {[1, 2, 3, 4].map((n) => { const m = byId[`door:${n}`]; return m ? <DoorBay key={n} m={m} x0={-W / 2 + (n - 1) * DOOR_W} doorW={DOOR_W} hingeLeft={(n - 1) % 2 === 0} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} mark={mark} taped={taped(m)} light={lightColor} ctx={ctx} /> : null; })}
-      {L.ext > 0 && [5, 6].map((n) => { const m = byId[`door:${n}`]; return m ? <DoorBay key={n} m={m} x0={W / 2 + 0.02 + (n - 5) * (EXT_W / 2)} doorW={EXT_W / 2} hingeLeft={n === 5} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} mark={mark} taped={taped(m)} light={lightColor} ctx={ctx} /> : null; })}
+      {[1, 2, 3, 4].map((n) => { const m = byId[`door:${n}`]; return m ? <DoorBay key={n} m={m} x0={-W / 2 + (n - 1) * DOOR_W} doorW={DOOR_W} hingeLeft={(n - 1) % 2 === 0} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} mark={mark} taped={taped(m)} light={lightColor} ctx={ctx} plate={plate} /> : null; })}
+      {L.ext > 0 && [5, 6].map((n) => { const m = byId[`door:${n}`]; return m ? <DoorBay key={n} m={m} x0={W / 2 + 0.02 + (n - 5) * (EXT_W / 2)} doorW={EXT_W / 2} hingeLeft={n === 5} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} mark={mark} taped={taped(m)} light={lightColor} ctx={ctx} plate={plate} /> : null; })}
       {/* 24 gavetas (+12 do Loft) */}
       {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => { const m = byId[`drawer:${n}`]; if (!m) return null; const col = (n - 1) % 8, row = Math.floor((n - 1) / 8);
         return <Drawer key={n} m={m} x={-W / 2 + col * DRAWER_W + DRAWER_W / 2} y={Y.drawers1 - (row + 0.5) * DRAWER_H} w={DRAWER_W} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} taped={taped(m)} onAdd={() => onAddToDrawer?.(m.id)} ctx={ctx} />; })}

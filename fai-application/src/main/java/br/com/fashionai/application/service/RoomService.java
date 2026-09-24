@@ -191,6 +191,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
         mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, "Iluminação", null, Map.of("kelvin", 4000, "guided", false)));
         mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
+        mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
+        mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, "Logo das portas", null, null));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
                 mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, "Porta " + d, null, white));
@@ -308,6 +310,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
 
     @Override
     public List<String> compatibleModules(UUID userId, RoomCatalogItem item) {
+        if ("WARDROBE".equals(item.getKind())) {
+            return List.of("ALL");                               // guarda-roupa inteiro: cada bloco vai para todos os módulos do tipo
+        }
         return modules(layout(userId)).stream()
                 .filter(m -> item.getSlotType().equals(String.valueOf(m.get("slotType"))))
                 .filter(m -> item.getWidthCm() == 0 || (m.get("widthCm") instanceof Number n && n.intValue() == item.getWidthCm()))
@@ -320,6 +325,22 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public void applyFinish(UUID userId, String moduleId, RoomCatalogItem item) {
         RoomLayout l = layout(userId);
         List<Map<String, Object>> mods = modules(l);
+        if ("WARDROBE".equals(item.getKind())) {
+            for (Map<String, Object> part : Json.list(item.getBundleJson())) {
+                String slot = String.valueOf(part.get("slotType"));
+                for (Map<String, Object> m : mods) {
+                    if (slot.equals(String.valueOf(m.get("slotType")))) {
+                        m.put("sku", item.getSku());
+                        m.put("finish", part.get("finish"));
+                        m.put("mold", part.get("moldId"));
+                        m.put("rarity", item.getRarity());
+                    }
+                }
+            }
+            l.setModulesJson(Json.write(mods));
+            layouts.save(l);
+            return;
+        }
         for (Map<String, Object> m : mods) {
             if (moduleId.equals(String.valueOf(m.get("id")))) {
                 m.put("sku", item.getSku());

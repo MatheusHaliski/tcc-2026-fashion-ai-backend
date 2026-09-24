@@ -56,4 +56,52 @@ public class RoomCatalogItem {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    /** COMPONENT (um bloco do móvel) ou WARDROBE (guarda-roupa inteiro: um acabamento por tipo de bloco). */
+    @Column(nullable = false, length = 20)
+    private String kind = "COMPONENT";
+
+    @Column(length = 30)
+    private String material;
+
+    @Column(name = "color_name", length = 40)
+    private String colorName;
+
+    @Column(length = 400)
+    private String description;
+
+    /** Marca ou celebridade que criou o item (nulo = fábrica FAI). */
+    @Column(name = "creator_user_id", length = 36)
+    private java.util.UUID creatorUserId;
+
+    /** Selo de identidade da marca/celebridade gravado no item. */
+    @Column(name = "seal_id", length = 36)
+    private java.util.UUID sealId;
+
+    @Column(name = "logo_url", length = 1024)
+    private String logoUrl;
+
+    @Column(name = "art_url", length = 1024)
+    private String artUrl;
+
+    @Column(name = "label_text", length = 60)
+    private String labelText;
+
+    @Column(name = "bundle_json", columnDefinition = "json")
+    private String bundleJson;
+
+    @Column(name = "available_from")
+    private java.time.Instant availableFrom;
+
+    @Column(name = "available_until")
+    private java.time.Instant availableUntil;
+
+    @Column(name = "per_user_limit")
+    private Integer perUserLimit;
+
+    @Column(name = "requires_seal", nullable = false)
+    private boolean requiresSeal;
+
+    @Column(name = "created_at")
+    private java.time.Instant createdAt;
 }
