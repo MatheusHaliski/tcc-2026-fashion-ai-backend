@@ -6,11 +6,12 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, useToast } from "@/components/ui";
+import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
+import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
-import type { RoomData3D } from "@/components/room3d/room-scene";
+import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">montando o quarto em 3D…</div> });
@@ -23,6 +24,13 @@ function webglOk(): boolean {
 interface RoomPiece { id: string; name: string; category: string; subcategory: string; color: string; colorHex?: string; imageUrl?: string; thumbnailUrl?: string; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; costPerUse?: number | null; }
 interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
 interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string }; monogram?: string; }
+interface MirrorPieceView { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; moduleId?: string | null; addressLabel?: string | null; }
+interface MirrorState { slots: Record<string, MirrorPieceView | MirrorPieceView[] | null>; complete: boolean; postIt?: string | null; sequence?: { pieceId: string; name: string; moduleId: string; legend: string }[]; message?: string | null; }
+interface PieceTag { id: string; name: string; composition?: string | null; care?: string | null; origin?: string | null; garimpo: boolean; wearCount: number; thirtyWears: boolean; costPerUse?: number | null; location?: { address: string; label: string } | null; diary: { date: string; occasion: string }[]; }
+interface Unbox { inventoryId: string; sku: string; name: string; slotType: string; }
+const CARE: Record<string, string> = { COTTON: "🫧 30° · 🔥 médio · ▢ secar à sombra", WOOL: "✋ lavar à mão · ⊘ secadora · 🔥 baixo", SILK: "✋ à mão · ⊘ torcer · 🔥 baixo", LEATHER: "⊘ água · pano úmido · hidratar", POLYESTER: "🫧 40° · 🔥 baixo", SYNTHETIC: "🫧 30° · 🔥 baixo", BLEND: "🫧 30° · 🔥 médio" };
+const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", FEITA_A_MAO: "feita à mão", TROCADA: "trocada" };
+const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []));
 interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
 
 const ZONE_ICON: Record<string, string> = { DOOR: "🚪", DRAWER: "🗄️", TOP: "🧢", BASE: "👜", SHOE: "👟", BAGS: "👜", JEWELRY: "💍", CHAIR: "🪑", SEASON: "📦" };
@@ -34,6 +42,66 @@ function RoomInner() {
   const [tab, setTab] = useState<"3d" | "room" | "list">("room"); const [gl, setGl] = useState<boolean | null>(null);
   const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const modal = useDetailModal();
+  const theme = useTheme(); const dark = theme.resolved !== "light";
+  const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
+  const [lit, setLit] = useState<Set<string>>(new Set()); const [closingKey, setClosingKey] = useState(0); const [celebrate, setCelebrate] = useState(false);
+  const [vista, setVista] = useState<{ open: boolean; prompt: string; busy: boolean; result: MirrorState | null }>({ open: false, prompt: "", busy: false, result: null });
+  const [copilot, setCopilot] = useState<{ open: boolean; q: string; busy: boolean; text: string | null; point: string | null }>({ open: false, q: "", busy: false, text: null, point: null });
+  const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
+  const [unboxing, setUnboxing] = useState(false); const [addTo, setAddTo] = useState<string | null>(null); const [addPiece, setAddPiece] = useState("");
+  // Luzes do closet: um marco novo do Inventory Score acende uma luz e faz a animação de conquista no espelho
+  useEffect(() => {
+    const cl = (data as unknown as RoomData3D | null)?.closetLights; if (!cl) return;
+    let before = 0; try { before = Number(localStorage.getItem("fai.room.lights") ?? "0"); } catch { /* sem storage */ }
+    if (cl.lit > before) { setCelebrate(true); const m = cl.milestones.filter((x) => x.lit).pop(); if (before > 0 && m) toast.success(`Nova luz do closet acesa: ${m.label} ✨`); setTimeout(() => setCelebrate(false), 6000); }
+    try { localStorage.setItem("fai.room.lights", String(cl.lit)); } catch { /* sem storage */ }
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function toggleTheme() {
+    const next = dark ? "LIGHT" : "DARK";
+    theme.update({ theme: next as typeof theme.prefs.theme, highContrast: false });
+    try { await api.put("/api/me/preferences", { theme: next, clientUpdatedAt: new Date().toISOString() }); } catch (e) { toast.fromError(e); }
+  }
+  async function runVistaMe(path = "/api/me/mirror/vista-me") {
+    setVista((v) => ({ ...v, busy: true }));
+    try {
+      const r = await api.post<MirrorState>(path, path.endsWith("vista-me") ? { prompt: vista.prompt || "look para hoje" } : {});
+      const mods = new Set((r.sequence ?? []).map((x) => x.moduleId).filter(Boolean));
+      setLit(mods); setOpenSet(new Set([...mods].filter((m) => m.startsWith("door:") || m.startsWith("drawer:"))));
+      setVista((v) => ({ ...v, busy: false, result: r })); mirror.setData(r);
+    } catch (e) { toast.fromError(e); setVista((v) => ({ ...v, busy: false })); }
+  }
+  async function acceptLook() {
+    try {
+      const r = await api.post<{ message?: string }>("/api/me/mirror/use");
+      // fecho do Vista-me (DET-D07): portas fecham, a luz do espelho sobe e aparece a foto do look
+      setOpenSet(new Set()); setLit(new Set()); setClosingKey((k) => k + 1); setVista({ open: false, prompt: "", busy: false, result: null }); setFocusModule("mirror");
+      toast.success(r.message ?? "Look do Dia registrado."); reload(); mirror.reload();
+    } catch (e) { toast.fromError(e); }
+  }
+  async function askCopilot() {
+    setCopilot((c) => ({ ...c, busy: true, point: null }));
+    try {
+      const r = await api.post<{ text?: string; roomHighlight?: { pieceId: string; moduleId: string } | null }>("/api/copilot/messages", { message: copilot.q, view: "ROOM" });
+      const mod = r.roomHighlight?.moduleId ?? null;
+      setCopilot((c) => ({ ...c, busy: false, text: r.text ?? "", point: mod }));
+      if (r.roomHighlight) { setHighlight(r.roomHighlight.pieceId); setFocusModule(mod); if (mod && (mod.startsWith("door:") || mod.startsWith("drawer:"))) setOpenSet(new Set([mod])); }
+    } catch (e) { toast.fromError(e); setCopilot((c) => ({ ...c, busy: false })); }
+  }
+  async function openTag(pid: string) {
+    if (!data?.owner) { modal?.openPiece(pid); return; }
+    try { setTag(await api.get<PieceTag>(`/api/pieces/${pid}/tag`)); } catch { modal?.openPiece(pid); }
+  }
+  async function unbox() {
+    const items = (data as unknown as { unboxing?: Unbox[] }).unboxing ?? []; const it = items[0]; if (!it || unboxing) return;
+    setUnboxing(true);
+    await new Promise((r) => setTimeout(r, 1300));
+    const target = data!.modules.find((m) => m.slotType === it.slotType);
+    try {
+      if (!target) { toast.info(`${it.name}: nenhum módulo compatível no seu nível — aplique pela loja.`); return; }
+      await api.post(`/api/me/room-inventory/${it.inventoryId}/apply`, { moduleId: target.id });
+      toast.success(`${it.name} montado sozinho em ${target.label} ✨`); reload();
+    } catch (e) { toast.fromError(e); } finally { setUnboxing(false); }
+  }
   useEffect(() => { const ok = webglOk(); setGl(ok); setTab(ok ? "3d" : "room"); }, []); const [open, setOpen] = useState<Module | null>(null); const [movePiece, setMovePiece] = useState<RoomPiece | null>(null); const [address, setAddress] = useState("");
   const [preview, setPreview] = useState<{ moves?: { pieceId: string; from?: string; to: string; why?: string }[]; labels?: Record<string, string>; message?: string; explanation?: unknown } | null>(null); const [highlight, setHighlight] = useState<string | null>(sp.get("piece"));
   // RF32.CA09 — "Mostrar no quarto": enquadra a posição, abre a porta/gaveta e destaca a peça com luz
@@ -58,11 +126,20 @@ function RoomInner() {
           <div className="room3d-stage">
             <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
-              onPick={(pid) => modal?.openPiece(pid)} />
+              onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
+              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate } satisfies MirrorOverlay}
+              onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
+              onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
             <div className="room3d-hud">
               <Button size="sm" onClick={() => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); }}>Vista 3/4</Button>
               <Button size="sm" onClick={() => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id)))}>Abrir portas</Button>
               <Button size="sm" onClick={() => { if (!canvas) return; const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "meu-quarto.png"; a.click(); }}>Foto do quarto</Button>
+              <Button size="sm" variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}>+ ✨ Vista-me</Button>
+              <Button size="sm" onClick={() => setCopilot((c) => ({ ...c, open: true }))}>Busto · Copilot</Button>
+              <Button size="sm" onClick={toggleTheme} aria-pressed={dark}>{dark ? "💡 Acender" : "🌙 Apagar"}</Button>
+              {["STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"].includes(data.level) && <label className="flex items-center gap-1 type-caption">Luz
+                <input type="range" min={2700} max={6500} step={100} defaultValue={(data as unknown as RoomData3D).light?.kelvin ?? 4000} aria-label="Iluminação guiada (kelvin)"
+                  onChange={(e) => { const k = Number(e.target.value); clearTimeout((window as unknown as { __lt?: number }).__lt); (window as unknown as { __lt?: number }).__lt = window.setTimeout(() => act(() => api.put("/api/me/room/light", { kelvin: k })), 400); }} /></label>}
             </div>
             <p className="room3d-hint">arraste para girar (enquadramento 3/4 limitado) · toque numa porta ou gaveta para abrir · toque numa peça para ver os detalhes</p>
           </div>
@@ -116,6 +193,47 @@ function RoomInner() {
         <ul className="max-h-64 overflow-auto type-body-sm">{(preview?.moves ?? []).map((m, i) => <li key={i}>• {data.pieces[m.pieceId]?.name ?? m.pieceId}: {m.from ?? "?"} → <b>{m.to}</b>{m.why ? ` · ${m.why}` : ""}</li>)}{(preview?.moves ?? []).length === 0 && <li>Nada a mover.</li>}</ul>
         {preview?.labels && Object.keys(preview.labels).length > 0 && <p className="mt-2 type-caption text-muted">Rótulos: {Object.entries(preview.labels).map(([k, v]) => `gaveta ${k} = ${v}`).join(", ")}</p>}
         <Button className="mt-3" size="sm" variant="ghost" onClick={() => act(() => api.delete("/api/me/room/organization"), "Última organização desfeita.")}>Desfazer última organização</Button>
+      </Dialog>
+      <Dialog open={vista.open} onClose={() => setVista((v) => ({ ...v, open: false }))} size="lg" title="✨ Vista-me"
+        footer={vista.result ? <><Button onClick={() => runVistaMe("/api/me/mirror/another")} loading={vista.busy}>Outra sugestão</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>Usar este look</Button></>
+          : <Button variant="primary" loading={vista.busy} onClick={() => runVistaMe()}>Montar look</Button>}>
+        <Field label="O que você vai fazer hoje?" id="vm-prompt"><Input id="vm-prompt" value={vista.prompt} placeholder="reunião às 10h e jantar depois" onChange={(e) => setVista((v) => ({ ...v, prompt: e.target.value }))} /></Field>
+        <p className="type-caption text-muted">O Vista-me usa só as suas peças; as portas e gavetas onde cada peça está acendem no quarto.</p>
+        {vista.result && <>
+          {vista.result.message && <p className="type-body-sm mt-2">{vista.result.message}</p>}
+          <ul className="mt-2 grid gap-1">{(vista.result.sequence ?? []).map((x) => <li key={x.pieceId} className="flex items-center gap-2 type-body-sm"><span className="inline-block h-2 w-2 rounded-full bg-mark" />{x.legend}</li>)}</ul>
+          {vista.result.postIt && <p className="mt-2 rounded bg-chalk-soft p-2 type-caption">📝 {vista.result.postIt}</p>}
+        </>}
+      </Dialog>
+      <Dialog open={copilot.open} onClose={() => setCopilot((c) => ({ ...c, open: false, point: null }))} title="Busto de costura · Copilot"
+        footer={<Button variant="primary" loading={copilot.busy} disabled={!copilot.q.trim()} onClick={askCopilot}>Perguntar</Button>}>
+        <Field label="Pergunte ao Copilot" id="cp-q"><Textarea id="cp-q" rows={2} value={copilot.q} placeholder="onde está meu blazer azul?" onChange={(e) => setCopilot((c) => ({ ...c, q: e.target.value }))} /></Field>
+        {copilot.text && <p className="type-body-sm whitespace-pre-line">{copilot.text}</p>}
+        {copilot.point && <p className="type-caption text-muted mt-1">O busto está apontando para {copilot.point.replace("door:", "Porta ").replace("drawer:", "Gaveta ")}.</p>}
+      </Dialog>
+      <Dialog open={!!tag} onClose={() => setTag(null)} title="Etiqueta costurada" footer={tag ? <><Button onClick={() => act(() => api.post("/api/me/mirror/pieces", { pieceId: tag.id }), "Peça no espelho.").then(() => mirror.reload())}>Levar ao espelho</Button><Button variant="primary" onClick={() => { const id = tag.id; setTag(null); modal?.openPiece(id); }}>Ver peça completa</Button></> : undefined}>
+        {tag && <div className="sewn-tag">
+          <p className="sewn-tag-brand">FAI · {tag.name}</p>
+          <dl>
+            <dt>Composição</dt><dd>{tag.composition ?? "—"}</dd>
+            <dt>Lavagem</dt><dd>{tag.care ?? CARE[tag.composition ?? ""] ?? "siga a etiqueta original"}</dd>
+            <dt>Origem</dt><dd>{tag.origin ? ORIGIN[tag.origin] ?? tag.origin.toLowerCase() : "—"}{tag.garimpo && <span className="sewn-tag-seal">Garimpo</span>}</dd>
+            <dt>Usos</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title="30 usos" />}{tag.costPerUse != null && <span className="text-muted"> · R$ {Number(tag.costPerUse).toFixed(2)} por uso (só você vê)</span>}</dd>
+            <dt>No quarto</dt><dd>{tag.location?.label ?? "—"}</dd>
+          </dl>
+          {tag.diary.length > 0 && <p className="type-caption text-muted mt-2">Último uso: {tag.diary[0].date}{tag.diary[0].occasion !== "null" ? ` · ${tag.diary[0].occasion}` : ""}</p>}
+        </div>}
+      </Dialog>
+      <Dialog open={keysOpen} onClose={() => setKeysOpen(false)} title="Gancho da Chave do Quarto"
+        footer={<Button variant="primary" disabled={!guest.trim()} onClick={() => act(async () => { const prof = await api.get<{ user?: { id: string }; id?: string }>(`/api/profiles/${encodeURIComponent(guest.replace(/^@/, ""))}`); await api.post("/api/me/room/keys", { guestId: prof.user?.id ?? prof.id }); setGuest(""); }, "Chave entregue.")}>Dar a chave</Button>}>
+        <p className="type-body-sm mb-2">Quem tem a chave pode visitar o seu quarto (Room Tour) e ser convidado para desafios.</p>
+        <ul className="mb-3 flex flex-wrap gap-1">{((data as unknown as RoomData3D).keys ?? []).map((k) => <li key={k.id} className="chip">🔑 @{k.username}</li>)}{((data as unknown as RoomData3D).keys ?? []).length === 0 && <li className="type-caption text-muted">Nenhuma chave entregue ainda.</li>}</ul>
+        <Field label="Entregar a chave para (@usuário)" id="key-guest"><Input id="key-guest" value={guest} onChange={(e) => setGuest(e.target.value)} placeholder="@paris_lea" /></Field>
+      </Dialog>
+      <Dialog open={!!addTo} onClose={() => setAddTo(null)} title={`Adicionar peça a esta gaveta${addTo ? ` (${addTo.replace("drawer:", "Gaveta ")})` : ""}`}
+        footer={<><Link className="btn" href="/pieces/new">Cadastrar peça nova</Link><Button variant="primary" disabled={!addPiece} onClick={() => act(() => api.put(`/api/pieces/${addPiece}/room-address`, { address: addTo }), "Peça guardada na gaveta.").then(() => setAddTo(null))}>Guardar aqui</Button></>}>
+        <p className="type-body-sm mb-2">Gaveta vazia: só um sachê de lavanda e uma meia sem par. Escolha uma peça para guardar aqui.</p>
+        <Select aria-label="peça" value={addPiece} onChange={(e) => setAddPiece(e.target.value)}><option value="">—</option>{Object.values(data.pieces).filter((p) => p.moduleId !== addTo && ["lower_piece", "accessory_piece"].includes(p.category)).map((p) => <option key={p.id} value={p.id}>{p.name} · {p.addressLabel ?? "sem lugar"}</option>)}</Select>
       </Dialog>
     </>
   );

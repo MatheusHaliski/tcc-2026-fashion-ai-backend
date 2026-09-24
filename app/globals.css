@@ -711,3 +711,13 @@ button.flair-card:hover { transform: translateY(-3px); }
 .flair-slot.on { border-style: solid; border-color: transparent; }
 @keyframes flair-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .flair-round { animation: none; } .flair-card { transition: none; } }
+
+/* Etiqueta costurada (DET-M02): ficha da peça no quarto */
+.sewn-tag { position: relative; padding: 18px 18px 14px; border-radius: 6px; background: repeating-linear-gradient(90deg, #fbf8f1 0 6px, #f6f1e6 6px 7px); color: #2f2a22; border: 1px solid #d8cfbd; box-shadow: inset 0 0 0 6px #fbf8f1, inset 0 0 0 7px rgba(47,42,34,.25); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.sewn-tag::before, .sewn-tag::after { content: ""; position: absolute; left: 10px; right: 10px; border-top: 2px dashed rgba(47,42,34,.35); }
+.sewn-tag::before { top: 4px; } .sewn-tag::after { bottom: 4px; }
+.sewn-tag-brand { font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; }
+.sewn-tag dl { display: grid; grid-template-columns: 96px 1fr; gap: 4px 10px; font-size: 13px; }
+.sewn-tag dt { color: #7a705e; text-transform: uppercase; font-size: 10px; letter-spacing: .06em; padding-top: 2px; }
+.sewn-tag-seal { margin-left: 6px; padding: 0 6px; border-radius: 4px; background: #1F7A76; color: #fff; font-size: 10px; font-weight: 700; }
+.sewn-tag-dot { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3c4, #E9B949 60%, #b8860b); vertical-align: middle; }

@@ -17,6 +17,8 @@ import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.DailyLook;
 import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
 import br.com.fashionai.domain.model.RoomCatalogItem;
+import br.com.fashionai.domain.model.RoomInventoryItem;
+import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.RoomLayout;
 import br.com.fashionai.domain.model.RoomStorageEntry;
 import br.com.fashionai.domain.model.Scheme;
@@ -31,6 +33,8 @@ import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.DailyLookRepository;
 import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
 import br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository;
+import br.com.fashionai.domain.repository.RoomCatalogItemRepository;
+import br.com.fashionai.domain.repository.RoomInventoryItemRepository;
 import br.com.fashionai.domain.repository.RoomLayoutRepository;
 import br.com.fashionai.domain.repository.RoomStorageEntryRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -55,6 +59,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -122,6 +127,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     private final ObjectProvider<DecorationsProvider> decorations;
     private final AiEngine ai;
     private final Guard guard;
+    private final ObjectProvider<InventoryScoreService> inventoryScore;
+    private final RoomInventoryItemRepository roomInventory;
+    private final RoomCatalogItemRepository roomCatalog;
     private final ApplicationEventPublisher events;
 
     public RoomService(RoomLayoutRepository layouts, RoomStorageEntryRepository storage, WardrobeItemRepository pieces,
@@ -129,8 +137,12 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                        StyleDnaRepository dnas, PieceUsageDiaryEntryRepository diary, UserAchievementRepository achievements,
                        UserPreferencesRepository preferences, UserRepository users, FaiPointsLedgerEntryRepository ledger,
                        ObjectProvider<DecorationsProvider> decorations, AiEngine ai, Guard guard, ApplicationEventPublisher events,
-            SideEffectRunner sideEffects) {
+            SideEffectRunner sideEffects, ObjectProvider<InventoryScoreService> inventoryScore, RoomInventoryItemRepository roomInventory,
+            RoomCatalogItemRepository roomCatalog) {
         this.sideEffects = sideEffects;
+        this.inventoryScore = inventoryScore;
+        this.roomInventory = roomInventory;
+        this.roomCatalog = roomCatalog;
         this.layouts = layouts;
         this.storage = storage;
         this.pieces = pieces;
@@ -318,6 +330,52 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         l.setModulesJson(Json.write(mods));
         layouts.save(l);
+    }
+
+    /**
+     * Luzes do closet (RF29): uma fileira de luzes por marco de faixa do FAI Inventory Score (Organizado → Maison Closet).
+     * Cada faixa alcançada acende uma luz; a última acesa ganha a animação de conquista no espelho.
+     */
+    Map<String, Object> closetLights(UUID userId) {
+        InventoryScoreService iss = inventoryScore.getIfAvailable();
+        Integer score = null;
+        String band = null;
+        boolean eligible = false;
+        if (iss != null) {
+            try {
+                InventoryScoreService.Result r = iss.compute(userId, true);
+                score = r.score();
+                band = r.band();
+                eligible = r.eligible();
+            } catch (RuntimeException e) {
+                // a cena do quarto nunca quebra por causa da nota: sem nota, as luzes ficam apagadas
+            }
+        }
+        int value = score == null ? 0 : score;
+        List<Map<String, Object>> milestones = InventoryScoreService.BANDS.stream().skip(1)
+                .map(b -> Map.<String, Object>of("at", b.min(), "label", b.label(), "lit", value >= b.min())).toList();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("score", score);
+        out.put("band", band);
+        out.put("eligible", eligible);
+        out.put("milestones", milestones);
+        out.put("lit", milestones.stream().filter(m -> Boolean.TRUE.equals(m.get("lit"))).count());
+        return out;
+    }
+
+    /** Iluminação guiada (nível Studio): temperatura de cor da luz do móvel, de 2700 K (quente) a 6500 K (fria). */
+    @Transactional
+    public Map<String, Object> setLight(CurrentUser user, int kelvin) {
+        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", "A iluminação guiada é liberada no nível Studio.");
+        }
+        int k = Math.max(2700, Math.min(6500, kelvin));
+        RoomLayout l = layout(user.id());
+        List<Map<String, Object>> mods = modules(l);
+        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", Map.of("kelvin", k, "guided", true)));
+        l.setModulesJson(Json.write(mods));
+        layouts.save(l);
+        return Map.of("kelvin", k, "guided", true);
     }
 
     /** DET-K03 — monograma nas portas a partir do Studio (até 3 iniciais em baixo-relevo). */
@@ -670,6 +728,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         m.put("states", states);
         m.put("wearCount", w.getWearCount());
         m.put("origin", w.getPieceOrigin());
+        if (w.isForSale() && w.getPrice() != null) {
+            m.put("salePrice", w.getPrice());                 // etiqueta de preço na Arara do Desapego (peça à venda é pública)
+        }
         if (owner) {
             m.put("costPerUse", w.getPrice() != null && w.getWearCount() > 0
                     ? w.getPrice().divide(BigDecimal.valueOf(w.getWearCount()), 2, RoundingMode.HALF_UP) : null);
@@ -895,6 +956,14 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             out.put("ambient", Map.of("period", reduceMotion ? "fixed" : period(now), "seasonal", String.valueOf(seasonalDecoration(today)),
                     "reduceMotion", reduceMotion, "sound", sound, "haptics", haptics));
             out.put("monogram", module(layout, "monogram").map(m -> String.valueOf(m.get("initials"))).orElse(null));
+            out.put("closetLights", closetLights(userId));
+            out.put("unboxing", roomInventory.findByUserId(userId).stream().filter(i -> i.getAppliedModule() == null)
+                    .sorted(Comparator.comparing(RoomInventoryItem::getAcquiredAt, Comparator.nullsLast(Comparator.reverseOrder()))).limit(6)
+                    .map(i -> Map.of("inventoryId", i.getId(), "sku", i.getSku(), "name", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getName).orElse(i.getSku()),
+                            "slotType", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getSlotType).orElse(""))).toList());
+            List<UUID> keyIds = keys(layout).stream().map(UUID::fromString).toList();
+            out.put("keys", users.findAllById(keyIds).stream().map(Views::user).toList());
+            out.put("light", module(layout, "light").map(m -> m.get("finish")).orElse(Map.of("kelvin", 4000, "guided", false)));
         }
         out.put("camera", Map.of("preset", "editorial_3_4", "azimuth", List.of(-35, 35), "polar", List.of(55, 80), "zoom", List.of(0.8, 1.6),
                 "free", false));
