@@ -58,7 +58,9 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   // Clique no card abre o modal com o esquema ampliado (RF7); a página continua acessível por "Abrir página"/nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || href === "#" || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
   const { t, fmtMoney, relative } = useI18n();
-  const l = layout ?? (scheme.layoutAnatomy?.toLowerCase().includes("grade") ? "grade" : scheme.layoutAnatomy?.toLowerCase().includes("lateral") ? "lateral" : "lista");
+  // anatomias da Seção A: LISTA_VERTICAL → lista, GRADE_PECAS → grade, HERO_LISTA (foto hero + lista lateral) → lateral
+  const anat = (scheme.layoutAnatomy ?? "").toUpperCase();
+  const l = layout ?? (anat.includes("GRADE") ? "grade" : anat === "HERO_LISTA" || anat.includes("LATERAL") ? "lateral" : "lista");
   const items = scheme.items ?? [];
   const cover = mediaUrl(scheme.coverImageUrl) ?? mediaUrl(items[0]?.piece?.imageUrl ?? (items[0]?.imageUrl as string));
   const link = href ?? `/schemes/${scheme.id}`;
