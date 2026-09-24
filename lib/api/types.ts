@@ -22,6 +22,8 @@ export interface PieceView {
   lastWornDate?: string | null; moderationStatus?: string; photoProcessingStatus?: string; photoQuality?: Record<string, unknown>;
   flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>; hypeScore?: number | null; hypeScoreGlobal?: number | null;
   tags: string[]; notes?: string | null; purchaseDate?: string | null; model3dStatus?: string | null; model3dUrl?: string | null;
+  /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) + miniatura 640 px para grades */
+  studioImageUrl?: string | null; studioBackdrop?: string | null; studioThumbUrl?: string | null;
   counters: Counters; viewer: ViewerState; notAvailableAnymore: boolean; createdAt: string; updatedAt: string;
 }
 export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: string; sortOrder?: number; zIndex?: number; piece?: PieceView | null; name?: string; imageUrl?: string | null; [k: string]: unknown; }

@@ -23,13 +23,14 @@ public enum AiCapability {
     EDIT_ASSISTANT(12, "Edit Assistant", "RF9", ConsentPurpose.AI_RECOMMENDATION, true),
     ACERVO_GROUPING(13, "Acervo Grouping AI", "RF6", null, true),
     AFFINITY(14, "Affinity AI", "RF8", ConsentPurpose.HISTORY_FOR_RECOMMENDATION, true),
-    THREE_D_GENERATOR(15, "3D Generator (Meshy)", "RF16", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, false),
+    THREE_D_GENERATOR(15, "3D Generator (Meshy / Stable Fast 3D / relevo local)", "RF16", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     TRY_ON(16, "Try-on AI (FASHN.ai)", "RF18", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     TRY_ON_POLISH(17, "Try-on Polish AI", "RF18", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     CATEGORY_FALLBACK_COMPOSITOR(18, "Category Fallback Compositor", "RF18", null, true),
     PHOTO_CURATOR(19, "Photo Curator AI", "RF12", ConsentPurpose.HISTORY_FOR_RECOMMENDATION, true),
     FLAT_LAY_STANDARDIZER(20, "Flat Lay Standardizer (pipeline RF4)", "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
-    BRAND_LOGO_FINDER(21, "Brand Logo Finder (busca na web)", "RF4/RF14/RF26", null, true);
+    BRAND_LOGO_FINDER(21, "Brand Logo Finder (busca na web)", "RF4/RF14/RF26", null, true),
+    STUDIO_ENHANCER(22, "Studio Enhancer (foto de estúdio da peça)", "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true);
 
     private final int number;
     private final String officialName;

@@ -89,18 +89,21 @@ public class FlatLayPipeline {
             cutout = ImageOps.removeBackgroundLocal(original);
             fallback = allowExternal && backgroundRemovers.stream().anyMatch(BackgroundRemovalPort::available);
             stages.add(new Stage("REMOCAO_FUNDO", "local-floodfill", ms(t), BigDecimal.ZERO, cutout.confidence() >= 0.45,
-                    true, String.format("confiança %.2f", cutout.confidence())));
+                    true, String.format("confiança %.2f", cutout.confidence())
+                    + (cutout.warning() == null ? "" : " — " + cutout.warning())));
         }
         boolean backgroundRemoved = cutout.confidence() >= 0.45;
 
         // 3 — correção de perspectiva (deskew pela PCA da máscara)
         t = System.nanoTime();
-        double principal = ImageOps.principalAngle(cutout.image());
-        double correction = ImageOps.deskewAngle(principal);
+        double[] axis = ImageOps.principalAxis(cutout.image());
+        double principal = axis[0];
+        // forma sem eixo dominante (peça quase "quadrada"): o ângulo da PCA é ruído → não gira
+        double correction = axis[1] >= ImageOps.DESKEW_MIN_ELONGATION ? ImageOps.deskewAngle(principal) : 0;
         BufferedImage straight = ImageOps.rotate(cutout.image(), correction);
         BufferedImage cropped = ImageOps.crop(straight, ImageOps.alphaBounds(straight));
         stages.add(new Stage("CORRECAO_PERSPECTIVA", "local-pca", ms(t), BigDecimal.ZERO, true, false,
-                String.format("eixo %.1f°, correção %.1f°", principal, correction)));
+                String.format("eixo %.1f°, alongamento %.2f, correção %.1f°", principal, axis[1], correction)));
 
         // 4 — normalização de cor
         t = System.nanoTime();
@@ -155,6 +158,9 @@ public class FlatLayPipeline {
         boolean anyFallback = fallback || stages.stream().anyMatch(Stage::fallback);
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("background_removal_confidence", round(cutout.confidence()));
+        if (cutout.warning() != null) {
+            meta.put("background_removal_warning", cutout.warning());
+        }
         meta.put("perspective_correction_applied", correction != 0);
         meta.put("perspective_correction_degrees", round(correction));
         meta.put("color_normalization_score", round(colorScore));

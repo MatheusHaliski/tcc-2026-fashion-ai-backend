@@ -22,10 +22,18 @@ function Closet() {
   async function toggle(p: PieceView, field: "favorite" | "disponivel") {
     try { patch(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); }
   }
+  // RF4 · Estúdio: leva ao estúdio as peças que ainda estão só com o recorte (até 40 por vez)
+  const [studioBusy, setStudioBusy] = useState(false);
+  async function studioAll() {
+    setStudioBusy(true);
+    try { const r = await api.post<{ generated: number; skipped: number }>("/api/me/pieces/studio"); toast.success(r.generated ? `${r.generated} foto(s) de estúdio prontas` : "Todas as peças com foto própria já estão no estúdio."); reload(); }
+    catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+  }
+  const missingStudio = (data?.items ?? []).some((p) => !p.studioImageUrl && !p.defaultImage && p.photoProcessingStatus === "COMPLETED");
   return (
     <>
       <PageHeader title={t("closet.title")} kicker="RF7 · RF31" lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
-        actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link></>} />
+        actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title="Gera a foto de produto (fundo de estúdio, luz e sombra) das peças que ainda não têm"><FaiIcon id="ACT-08" size={24} decorative />Levar peças ao estúdio</Button>}</>} />
       <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("closet.state")}>
         {STATES.map(([v, k]) => <Chip key={v} active={f.state === v} onClick={() => set("state", v)}>{t(k)}</Chip>)}
       </div>

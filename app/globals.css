@@ -108,8 +108,9 @@ h1, h2, h3, h4 { margin: 0; }
 .badge-thread { background: var(--thread-soft); color: var(--thread); border-color: transparent; }
 .badge-chalk { background: var(--chalk-soft); color: var(--chalk); border-color: transparent; }
 .chip { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .8rem; border-radius: 999px; border: 1.5px solid var(--line-soft); background: var(--surface); font-size: var(--text-body-sm); cursor: pointer; }
-.chip[aria-pressed="true"], .chip.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-:root[data-theme="contrast"] .chip[aria-pressed="true"] { background: var(--line); color: #000; }
+.chip[aria-pressed="true"], .chip.active, .chip.is-active, .chip[aria-selected="true"], .chip[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+:root[data-theme="contrast"] .chip[aria-pressed="true"], :root[data-theme="contrast"] .chip.is-active, :root[data-theme="contrast"] .chip[aria-selected="true"], :root[data-theme="contrast"] .chip[aria-checked="true"] { background: var(--line); color: #000; }
+.chip:disabled { opacity: .55; cursor: progress; }
 .tabs { display: flex; gap: .25rem; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scrollbar-width: none; }
 .tab { padding: .6rem .9rem; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }

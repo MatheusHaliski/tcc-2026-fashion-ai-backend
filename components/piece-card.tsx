@@ -22,11 +22,13 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const { t, fmtMoney } = useI18n();
-  const img = mediaUrl(piece.thumbnailUrl ?? piece.imageUrl);
+  // RF4 · Estúdio: com foto de estúdio, o card mostra a foto de produto de ponta a ponta (fundo faz parte da imagem)
+  const studio = mediaUrl(piece.studioThumbUrl ?? piece.studioImageUrl);
+  const img = studio ?? mediaUrl(piece.thumbnailUrl ?? piece.imageUrl);
   const body = (
     <>
       <div className="c-photo" style={{ aspectRatio: "1" }}>
-        {img ? <img src={img} alt={piece.name} loading="lazy" style={{ objectFit: "contain", padding: 8 }} /> : null}
+        {img ? <img src={img} alt={piece.name} loading="lazy" style={studio ? { objectFit: "cover" } : { objectFit: "contain", padding: 8 }} /> : null}
         {(zone === "COVER_CORNER" || zone === "HEADER") && <SealSlot size="sm" seals={seals} />}
         {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
         {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}

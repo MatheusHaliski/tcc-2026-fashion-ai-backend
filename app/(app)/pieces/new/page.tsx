@@ -10,14 +10,18 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, PageHeader, useToast } from "@/components/ui";
 import { EMPTY_PIECE, PieceForm, toPayload, type PieceFormValue } from "@/components/piece-form";
 import { FaiIcon } from "@/components/fai-icon";
+import { BackdropChips, StudioReport, type StudioInfo } from "@/components/studio";
 
-interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; overall?: number; manualFillRequired?: boolean; warning?: string }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; }
+interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; overall?: number; manualFillRequired?: boolean; warning?: string }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
+type Preview = "studio" | "flat" | "original";
+const PREVIEW_LABEL: Record<Preview, string> = { studio: "Estúdio", flat: "Flat Lay", original: "Original" };
 
 function NewPiece() {
   const { t } = useI18n(); const router = useRouter(); const toast = useToast(); const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft | null>(null); const [preview, setPreview] = useState<string | null>(null);
   const [value, setValue] = useState<PieceFormValue>(EMPTY_PIECE);
   const [batch, setBatch] = useState<{ file: File; draft?: Draft }[]>([]);
+  const [mode, setMode] = useState<Preview>("studio"); const [studioBusy, setStudioBusy] = useState(false);
   const analyze = useAction(async (file: File) => { const fd = new FormData(); fd.append("file", file); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const create = useAction(async () => api.post<PieceView>("/api/pieces", toPayload(value)));
 
@@ -27,10 +31,19 @@ function NewPiece() {
     const file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null);
     const d = await analyze.run(file);
     if (!d) return;
-    setDraft(d);
+    setDraft(d); setMode(d.studio ? "studio" : "flat");
     const p = d.prefill;
     setValue((v) => ({ ...v, draftId: d.draftId, useDefaultImage: false, name: p?.name ?? v.name, category: p?.category ?? v.category, subcategory: p?.subcategory ?? v.subcategory, color: p?.color ?? v.color, material: p?.material ?? v.material, brandName: p?.brand ?? v.brandName, sex: p?.sex ?? v.sex, occasion: p?.occasion ?? v.occasion, style: p?.style ?? v.style, seals: p?.seals ?? v.seals }));
     if (p?.manualFillRequired) toast.info(t("piece.lowConfidence"));
+  }
+  /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
+  async function studio(backdrop: string, force = false) {
+    if (!draft) return;
+    setStudioBusy(true);
+    try {
+      const info = await api.post<StudioInfo>(`/api/pieces/analysis/${draft.draftId}/studio?backdrop=${encodeURIComponent(backdrop)}${force ? "&force=true" : ""}`);
+      setDraft({ ...draft, studio: info }); setMode("studio"); setValue((v) => ({ ...v, studio: true }));
+    } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
   }
   async function submit() {
     const p = await create.run();
@@ -46,7 +59,9 @@ function NewPiece() {
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); router.push("/closet");
     } catch (e) { toast.fromError(e); }
   }
-  const imgSrc = draft ? mediaUrl(draft.flatLayUrl ?? draft.processedUrl ?? draft.thumbnailUrl) : preview;
+  const modes = draft ? ([draft.studio ? "studio" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
+  const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
+  const imgSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF4" lead="Envie uma foto: removemos o fundo, padronizamos o flat lay e a IA pré-preenche os campos (você sempre confere antes de salvar)." />
@@ -54,7 +69,7 @@ function NewPiece() {
         <Card>
           <div className="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-md border border-dashed border-line-soft bg-surface-2"
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}>
-            {imgSrc ? <img src={imgSrc} alt="" className="h-full w-full object-contain" /> : <button type="button" className="p-6 text-center type-body text-muted" onClick={() => fileRef.current?.click()}><FaiIcon id="ACT-07" size={48} decorative /><br />{t("piece.dropHere")}<br /><span className="type-caption">{t("piece.maxFiles")}</span></button>}
+            {imgSrc ? <img src={imgSrc} alt={draft ? `prévia: ${PREVIEW_LABEL[shown]}` : ""} className={`h-full w-full ${shown === "studio" && draft?.studio ? "object-cover" : "object-contain"}`} /> : <button type="button" className="p-6 text-center type-body text-muted" onClick={() => fileRef.current?.click()}><FaiIcon id="ACT-07" size={48} decorative /><br />{t("piece.dropHere")}<br /><span className="type-caption">{t("piece.maxFiles")}</span></button>}
           </div>
           <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => onFiles(e.target.files)} aria-label={t("piece.analyze")} />
           <div className="flex flex-col gap-2">
@@ -62,6 +77,30 @@ function NewPiece() {
             <Button onClick={() => { setDraft(null); setPreview(null); setValue((v) => ({ ...v, draftId: null, useDefaultImage: true })); }} aria-pressed={value.useDefaultImage}>{t("piece.useDefault")}</Button>
           </div>
           {analyze.error && <p role="alert" className="error-text mt-2">{analyze.error.message}</p>}
+          {draft && modes.length > 1 && (
+            <div className="mb-2 flex gap-1" role="tablist" aria-label="versão da foto">
+              {modes.map((m) => <button key={m} type="button" role="tab" aria-selected={shown === m} className={`chip ${shown === m ? "is-active" : ""}`} onClick={() => setMode(m)}>{PREVIEW_LABEL[m]}</button>)}
+            </div>
+          )}
+          {draft && !draft.backgroundRemoved && !draft.studio?.forced && (
+            <div role="status" className="mb-2 rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
+              <p className="font-medium">O fundo não saiu com segurança.</p>
+              <p className="mt-1 type-caption text-muted">{draft.backgroundWarning ?? "A peça e o fundo ficaram parecidos demais para o recorte automático."} Guardamos a foto original e a remoção de fundo será refeita depois (RF4.CA06).</p>
+              <ul className="mt-1 list-disc pl-4 type-caption text-muted"><li>Fotografe sobre um fundo de cor diferente da peça (lençol escuro para peça clara e vice-versa).</li><li>Luz lateral suave, sem flash; peça inteira no quadro.</li></ul>
+              <Button size="sm" className="mt-2" loading={studioBusy} onClick={() => { setMode("flat"); studio("auto", true); }}>Conferi o recorte — usar mesmo assim</Button>
+            </div>
+          )}
+          {draft && (draft.backgroundRemoved || draft.studio) && (
+            <div className="mb-2">
+              <p className="mb-1 type-label text-muted">Estúdio · fundo</p>
+              <BackdropChips value={draft.studio?.backdrop ?? "auto"} busy={studioBusy} onPick={(b) => studio(b, !!draft.studio?.forced)} />
+              {studioBusy && <p className="mt-1 type-caption text-muted" aria-live="polite">montando o estúdio…</p>}
+              {draft.studio && <>
+                <label className="mt-2 flex items-center gap-2 type-body-sm"><input type="checkbox" checked={value.studio !== false} onChange={(e) => setValue((v) => ({ ...v, studio: e.target.checked }))} />Usar a foto de estúdio como capa da peça</label>
+                <div className="mt-2"><StudioReport info={draft.studio} /></div>
+              </>}
+            </div>
+          )}
           {draft && (
             <dl className="mt-3 type-caption text-muted">
               <div className="flex justify-between"><dt>Fundo removido</dt><dd>{draft.backgroundRemoved ? t("common.yes") : t("common.no")}</dd></div>

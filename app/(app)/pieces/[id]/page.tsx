@@ -15,11 +15,14 @@ import { FaiIcon } from "@/components/fai-icon";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { BrandLogo } from "@/components/brand-logo";
 import { PhotoEditor } from "@/components/photo-editor";
+import { Model3dPanel } from "@/components/model3d-panel";
+import { BackdropChips } from "@/components/studio";
 import dynamic from "next/dynamic";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">carregando o modelo 3D…</div> });
-/** RF16.CA01 — estados visíveis do job de geração 3D. */
-const MODEL3D_LABEL: Record<string, string> = { ENFILEIRADO: "enfileirado", QUEUED: "enfileirado", PROCESSANDO: "processando", PROCESSING: "processando", CONCLUIDO: "concluído", COMPLETED: "concluído", DONE: "concluído", FALHOU: "falhou", FAILED: "falhou", DESLIGADO: "tema futuro (desligado)" };
+/** Visualizações da peça: foto de estúdio (RF4), recorte padronizado (2D) e modelo 3D (RF16.CA02 — a 2D continua disponível). */
+type HeroView = "studio" | "cut" | "3d";
+const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", cut: "Recorte 2D", "3d": "Modelo 3D" };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -30,7 +33,8 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<import("@/lib/api/client").ApiError | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
-  const [view, setView] = useState<"2d" | "3d">("2d"); const [editingPhoto, setEditingPhoto] = useState(false);
+  const [view, setView] = useState<HeroView | null>(null); const [editingPhoto, setEditingPhoto] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false); const [studioBusy, setStudioBusy] = useState(false);
   const setPiece = (np: PieceView) => setData((d) => (d ? { ...d, piece: np } : d));
   async function flag(field: "favorite" | "disponivel" | "forSale") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function worn() { if (!p) return; try { setPiece(await api.post<PieceView>(`/api/pieces/${p.id}/worn`)); toast.success(t("closet.worn") + " ✓"); } catch (e) { toast.fromError(e); } }
@@ -38,6 +42,11 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   async function askDelete() { try { const impact = await api.get<{ schemes?: SchemeView[]; count?: number; message?: string }>(`/api/pieces/${id}/deletion-impact`); setConfirmDelete({ open: true, impact }); } catch (e) { toast.fromError(e); } }
   async function doDelete() { try { await api.delete(`/api/pieces/${id}`); toast.success(t("common.delete") + " ✓"); router.push("/closet"); } catch (e) { toast.fromError(e); } }
   async function copyToWardrobe() { try { const np = await api.post<PieceView>(`/api/pieces/${id}/copy`); toast.success(t("closet.addToWardrobe") + " ✓"); router.push(`/pieces/${np.id}`); } catch (e) { toast.fromError(e); } }
+  async function studioShot(backdrop: string) {
+    setStudioBusy(true);
+    try { setPiece(await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`)); setView("studio"); toast.success("Foto de estúdio pronta ✓"); }
+    catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+  }
   async function replaceImage(file: File) { const fd = new FormData(); fd.append("file", file); try { setPiece(await api.upload<PieceView>(`/api/pieces/${id}/image`, fd, "PUT")); toast.success(t("closet.replaceImage") + " ✓"); } catch (e) { toast.fromError(e); } }
   function startEdit() {
     if (!p) return;
@@ -52,25 +61,38 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const back = origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />Voltar ao look{origin.title ? ` «${origin.title}»` : ""}</Link></p>;
   if (!loading && data && !p && data.snapshot) return <>{back}<PieceSnapshot snapshot={data.snapshot} /></>;
   if (loading || !p) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="aspect-square" /><Skeleton className="h-80" /></div>;
+  const views = ([p.studioImageUrl ? "studio" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
+  const hero: HeroView = view && views.includes(view) ? view : views[0];
+  const canStudio = !p.defaultImage && !!p.imageUrl && p.photoProcessingStatus !== "PROCESSING";
   return (
     <>
       {back}
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <Card pad={false} className="overflow-hidden">
-          {p.model3dUrl && <div className="flex gap-1 border-b border-line-soft p-2" role="tablist" aria-label="visualização da peça">{(["2d", "3d"] as const).map((v) => <button key={v} role="tab" type="button" aria-selected={view === v} className={`chip ${view === v ? "is-active" : ""}`} onClick={() => setView(v)}>{v === "2d" ? "Foto 2D" : "Modelo 3D"}</button>)}</div>}
-          <div className="relative aspect-square bg-surface-2">{view === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} /> : <img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />}
+          {views.length > 1 && <div className="flex gap-1 border-b border-line-soft p-2" role="tablist" aria-label="visualização da peça">{views.map((v) => <button key={v} role="tab" type="button" aria-selected={hero === v} className={`chip ${hero === v ? "is-active" : ""}`} onClick={() => setView(v)}>{HERO_LABEL[v]}</button>)}</div>}
+          <div className="relative aspect-square bg-surface-2">
+            {hero === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} />
+              : hero === "studio" && p.studioImageUrl ? <img src={mediaUrl(p.studioImageUrl)} alt={`${p.name} — foto de estúdio`} className="h-full w-full object-cover" />
+              : <img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />}
             {!p.disponivel && <Badge className="absolute left-3 top-3">{t("common.unavailable")}</Badge>}
             {p.defaultImage && <Badge className="absolute right-3 top-3">imagem padrão</Badge>}
+            {studioBusy && <div className="absolute inset-0 grid place-items-center bg-surface/70 type-body" aria-live="polite">montando o estúdio…</div>}
           </div>
           {mine && (
             <div className="flex flex-wrap gap-2 p-3">
               <label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />{t("closet.replaceImage")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && replaceImage(e.target.files[0])} /></label>
               <Button size="sm" onClick={() => act("background-removal", t("closet.removeBg") + " ✓")}>{t("closet.removeBg")}</Button>
+              {canStudio && <Button size="sm" aria-expanded={studioOpen} onClick={() => setStudioOpen((o) => !o)}><FaiIcon id="ACT-08" size={24} decorative />{p.studioImageUrl ? "Refazer estúdio" : "Levar ao estúdio"}</Button>}
               <Button size="sm" onClick={() => setEditingPhoto(true)} disabled={!p.imageUrl && !p.thumbnailUrl}><FaiIcon id="SOC-11" size={24} decorative />Editar foto (Canvas 2D)</Button>
-              <Button size="sm" onClick={() => act("model3d", t("closet.request3d") + " ✓")} disabled={p.model3dStatus === "ENFILEIRADO" || p.model3dStatus === "PROCESSANDO" || p.model3dStatus === "QUEUED" || p.model3dStatus === "PROCESSING"}><FaiIcon id="ACT-20" size={24} decorative />{p.model3dUrl ? "Gerar 3D de novo" : t("closet.request3d")}</Button>
-              {p.model3dStatus && <Badge tone={/FALH|FAIL/.test(p.model3dStatus) ? "mark" : /CONCL|DONE|COMPLETED/.test(p.model3dStatus) ? "thread" : "chalk"}>3D: {MODEL3D_LABEL[p.model3dStatus] ?? p.model3dStatus.toLowerCase()}</Badge>}
             </div>
           )}
+          {mine && studioOpen && canStudio && (
+            <div className="border-t border-line-soft px-3 py-2">
+              <p className="mb-1.5 type-caption text-muted">Escolha o fundo: a peça ganha nitidez, volume, luz de estúdio e sombra.</p>
+              <BackdropChips value={p.studioBackdrop ?? "auto"} busy={studioBusy} onPick={studioShot} />
+            </div>
+          )}
+          {mine && !p.defaultImage && <div className="border-t border-line-soft p-3"><Model3dPanel pieceId={p.id} initialStatus={p.model3dStatus} onCompleted={() => { reload(); setView("3d"); }} onView={() => setView("3d")} /></div>}
         </Card>
         <div>
           <p className="type-label text-muted">{label(p.category)} · {label(p.subcategory)}</p>

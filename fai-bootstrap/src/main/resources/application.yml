@@ -137,10 +137,13 @@ fashionai:
     replicate-api-token: ${REPLICATE_API_TOKEN:${REPLICATE_API_KEY:}}
     fashn-api-key: ${FASHN_API_KEY:}
     meshy-api-key: ${MESHY_API_KEY:}
+    stability-api-key: ${STABILITY_API_KEY:}               # RF16 (Stable Fast 3D) e RF4 estúdio (upscale)
+    photoroom-api-key: ${PHOTOROOM_API_KEY:}               # RF4 estúdio (fundo + reiluminação + sombra por IA)
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
   features:
-    rf16-3d: ${FEATURE_RF16_3D:false}
+    rf16-3d: ${FEATURE_RF16_3D:true}                       # sem chave de 3D, o gerador local em relevo assume
+    rf16-3d-timeout-minutes: ${RF16_3D_TIMEOUT_MINUTES:10}
 
 ---
 spring:

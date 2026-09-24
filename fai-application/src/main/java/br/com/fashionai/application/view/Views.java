@@ -54,7 +54,13 @@ public final class Views {
                             BigDecimal hypeScoreGlobal, UUID remixedFromPieceId, List<String> tags, String notes,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
-                            boolean notAvailableAnymore, Instant createdAt, Instant updatedAt) {
+                            boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
+                            String studioBackdrop, String studioThumbUrl) {
+    }
+
+    /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
+    public static String studioThumb(String studioUrl) {
+        return studioUrl == null || !studioUrl.endsWith(".jpg") ? studioUrl : studioUrl.substring(0, studioUrl.length() - 4) + ".thumb.jpg";
     }
 
     public static PieceView piece(WardrobeItem w, ViewerState viewer, Map<String, Long> reactions) {
@@ -75,7 +81,7 @@ public final class Views {
                 w.getModel3dUrl(), new Counters(w.getLikesCount(), w.getCommentCount(), w.getSharesCount(),
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
-                w.getCreatedAt(), w.getUpdatedAt());
+                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()));
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */

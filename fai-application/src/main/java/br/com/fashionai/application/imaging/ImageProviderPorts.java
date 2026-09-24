@@ -21,6 +21,20 @@ public final class ImageProviderPorts {
         Optional<ProviderImage> removeBackground(byte[] image, String mimeType);
     }
 
+    /** RF4 · estúdio — ampliação/nitidez por IA (Stability Upscale). */
+    public interface UpscalePort {
+        boolean available();
+
+        Optional<ProviderImage> upscale(byte[] png);
+    }
+
+    /** RF4 · estúdio — foto de produto por IA: fundo de estúdio, reiluminação e sombra (Photoroom). */
+    public interface StudioShotPort {
+        boolean available();
+
+        Optional<ProviderImage> studio(byte[] cutoutPng, String backgroundHex, int size);
+    }
+
     /** Normalização de cor/transformações — Cloudinary. */
     public interface ColorNormalizationPort {
         boolean available();
@@ -50,10 +64,38 @@ public final class ImageProviderPorts {
     }
 
     /** RF16 — geração 3D (Meshy). Tema futuro: permanece desabilitado por feature flag. */
+    /**
+     * RF16 — provedor de imagem → 3D. Assíncrono (Meshy): {@link #submit} devolve o id da tarefa e {@link #poll}
+     * acompanha até o GLB ficar pronto. Síncrono (Stability SF3D): {@link #generateNow} devolve o GLB na hora.
+     */
     public interface Model3dPort {
         boolean available();
 
         Optional<String> submit(byte[] image);
+
+        default String providerId() {
+            return getClass().getSimpleName();
+        }
+
+        default boolean async() {
+            return true;
+        }
+
+        default Optional<TaskStatus> poll(String taskId) {
+            return Optional.empty();
+        }
+
+        default Optional<byte[]> generateNow(byte[] image) {
+            return Optional.empty();
+        }
+
+        default java.math.BigDecimal costUsd() {
+            return java.math.BigDecimal.ZERO;
+        }
+    }
+
+    /** Estado de uma tarefa externa de 3D: PENDING, RUNNING, SUCCEEDED ou FAILED; progresso 0–100. */
+    public record TaskStatus(String state, int progress, String glbUrl, String error) {
     }
 
     public record ProviderImage(byte[] bytes, String mimeType, String provider, BigDecimal costUsd, long latencyMs,

@@ -137,6 +137,7 @@ public class PhotoService {
         linked.ifPresent(w -> {
             w.setImageUrl(null);
             w.setThumbnailUrl(null);
+            w.setStudioImageUrl(null);
         });
         p.setDeletedAt(Instant.now());
         Map<String, Object> out = new java.util.LinkedHashMap<>();
@@ -166,6 +167,7 @@ public class PhotoService {
             linkedActivePiece(p).ifPresent(w -> {
                 w.setImageUrl(null);
                 w.setThumbnailUrl(null);
+                w.setStudioImageUrl(null);
             });
             p.setDeletedAt(Instant.now());
         }

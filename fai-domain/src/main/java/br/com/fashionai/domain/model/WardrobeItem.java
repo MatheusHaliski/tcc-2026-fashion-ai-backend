@@ -227,6 +227,13 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "model3d_url", length = 1024)
     private String model3dUrl;
 
+    /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) exibida na vitrine; o recorte segue em imageUrl. */
+    @Column(name = "studio_image_url", length = 1024)
+    private String studioImageUrl;
+
+    @Column(name = "studio_backdrop", length = 30)
+    private String studioBackdrop;
+
     @Column(name = "model3d_generated_at")
     private Instant model3dGeneratedAt;
 
