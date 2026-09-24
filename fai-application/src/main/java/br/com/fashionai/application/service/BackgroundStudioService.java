@@ -262,7 +262,10 @@ public class BackgroundStudioService {
         }
         AiOutcome<byte[]> outcome = ai.execute(user.id(), AiCapability.BACKGROUND_GENERATOR,
                 List.of("prompt de arte", direction == null ? "sem direção" : "direção " + direction,
-                        req.era() == null ? "sem era" : "era: " + req.era()), prompt, protectedNames, steps, () -> null);
+                        req.era() == null ? "sem era" : "era: " + req.era()),
+                // valida só o texto do usuário (e a era): o sufixo de segurança "no people, no faces" que o sistema
+                // acrescenta ao prompt final não pode ser lido como pedido de rosto
+                req.prompt().trim() + (req.era() != null ? " " + req.era() : ""), protectedNames, steps, () -> null);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("inferenceId", outcome.inferenceId());
         out.put("explanation", outcome.explanation());

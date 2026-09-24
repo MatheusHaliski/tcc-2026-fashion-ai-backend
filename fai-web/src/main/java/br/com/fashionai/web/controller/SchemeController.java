@@ -44,7 +44,12 @@ public class SchemeController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF5 — Salvar esquema (manual, IA, autopiloto, remix)")
     public Map<String, Object> create(CurrentUser user, @RequestBody SchemeService.SchemeForm form) {
-        return schemes.create(user, form);
+        Map<String, Object> out = schemes.create(user, form);
+        // RF20.CA01 — sugestão de vínculo depois do commit, em transação própria (não bloqueia nem desfaz o salvamento)
+        if (form.items() != null && form.items().size() >= 2 && out.get("scheme") instanceof Views.SchemeView v) {
+            out.put("sealSuggestions", schemes.suggestSealsAfterSave(user, v.id()));
+        }
+        return out;
     }
 
     @PostMapping(value = "/api/schemes/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

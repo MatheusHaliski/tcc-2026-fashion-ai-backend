@@ -94,6 +94,12 @@ public class FaiPointsService {
         this.notifications = notifications;
     }
 
+    /** Igual a {@link #award}, em transação própria: para chamadores que tratam a falha sem desfazer o próprio trabalho. */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public Award awardIsolated(UUID userId, String actionCode, String refType, String refId, Integer pointsOverride) {
+        return award(userId, actionCode, refType, refId, pointsOverride);
+    }
+
     /** Lança pontos de forma idempotente; points > 0 sobrescreve o valor da regra (conquistas, desafios). */
     @Transactional
     public Award award(UUID userId, String actionCode, String refType, String refId, Integer pointsOverride) {

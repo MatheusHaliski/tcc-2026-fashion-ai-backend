@@ -74,7 +74,14 @@ public class TryOnCompositor {
         MannequinGeometry.Body body = MannequinGeometry.body(sex, build);
         String skinHex = MannequinGeometry.SKIN_TONES.getOrDefault(skinTone, MannequinGeometry.SKIN_TONES.get("media"));
         BufferedImage canvas = drawMannequin(body, new Color(ColorMath.parseHex(skinHex)));
-        List<Garment> ordered = new ArrayList<>(garments);
+        List<Garment> ordered = new ArrayList<>();
+        for (Garment g : garments) {
+            if (g.cutout() == null) {            // imagem ilegível ou ausente: não derruba a prova, avisa
+                warnings.add("A peça " + g.slot() + " ficou de fora: a imagem dela não pôde ser lida.");
+                continue;
+            }
+            ordered.add(g);
+        }
         ordered.sort(Comparator.comparingInt(g -> MannequinGeometry.layerOf(g.slot()).ordinal()));
 
         // RENDERING — peças de tecido

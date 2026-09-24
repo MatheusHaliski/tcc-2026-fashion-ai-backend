@@ -434,6 +434,12 @@ public class InventoryScoreService {
         return null;
     }
 
+    /** Mesma conta em transação própria: para quem usa o score como dado opcional e trata a falha (ex.: Copilot). */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public Result computeIsolated(UUID userId, boolean useCache) {
+        return compute(userId, useCache);
+    }
+
     @Transactional
     public Result compute(UUID userId, boolean useCache) {
         Cached c = cache.get(userId);

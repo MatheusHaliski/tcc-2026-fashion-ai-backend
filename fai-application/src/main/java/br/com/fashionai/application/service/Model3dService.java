@@ -369,7 +369,7 @@ public class Model3dService {
         notifications.notify(w.getUser().getId(), null, NotificationType.AI_JOB_FINISHED, "PIECE", w.getId(),
                 "Modelo 3D pronto", "«" + w.getName() + "» já pode ser girada em 3D.", Map.of("href", "/pieces/" + w.getId()));
         try {
-            points.award(w.getUser().getId(), "PIECE_3D", "PIECE", w.getId().toString(), null);   // +15, 1× por peça (§5.2)
+            points.awardIsolated(w.getUser().getId(), "PIECE_3D", "PIECE", w.getId().toString(), null);   // +15, 1× por peça (§5.2)
         } catch (RuntimeException e) {
             log.debug("FAI Points do 3D não concedidos: {}", e.getMessage());
         }

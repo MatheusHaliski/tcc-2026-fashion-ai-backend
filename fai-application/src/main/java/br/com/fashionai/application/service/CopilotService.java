@@ -704,7 +704,7 @@ public class CopilotService {
             }
         });
         try {
-            InventoryScoreService.Result r = inventory.compute(user.id(), true);
+            InventoryScoreService.Result r = inventory.computeIsolated(user.id(), true);   // falha não afeta esta transação
             m.put("inventoryScore", r.score());
             m.put("inventoryDims", r.dims());
         } catch (RuntimeException ex) {

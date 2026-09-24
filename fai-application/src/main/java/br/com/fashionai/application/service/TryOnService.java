@@ -56,9 +56,11 @@ public class TryOnService {
     private final TryOnCompositor compositor;
     private final MediaService media;
     private final AiEngine ai;
+    private final br.com.fashionai.application.assets.AssetCatalogService assets;
 
     public TryOnService(WardrobeItemRepository pieces, UserPreferencesRepository preferences, UserRepository users, SchemeRepository schemes,
-                        WardrobeService wardrobe, SchemeService schemeService, TryOnCompositor compositor, MediaService media, AiEngine ai) {
+                        WardrobeService wardrobe, SchemeService schemeService, TryOnCompositor compositor, MediaService media, AiEngine ai,
+                        br.com.fashionai.application.assets.AssetCatalogService assets) {
         this.pieces = pieces;
         this.preferences = preferences;
         this.users = users;
@@ -68,6 +70,18 @@ public class TryOnService {
         this.compositor = compositor;
         this.media = media;
         this.ai = ai;
+        this.assets = assets;
+    }
+
+    /** Bytes da imagem da peça: storage de mídia ou, para a imagem padrão (RF4), o arquivo em /public/assets_pecas. */
+    byte[] imageBytes(WardrobeItem w) {
+        return media.read(w.getImageUrl()).or(() -> assets.publicFile(w.getImageUrl()).map(p -> {
+            try {
+                return java.nio.file.Files.readAllBytes(p);
+            } catch (java.io.IOException e) {
+                return null;
+            }
+        })).orElse(null);
     }
 
     UserPreferences prefs(UUID userId) {
@@ -176,7 +190,7 @@ public class TryOnService {
         List<WardrobeItem> dressed = (List<WardrobeItem>) resolved.get("pieces");
         List<TryOnCompositor.Garment> garments = new ArrayList<>();
         for (WardrobeItem w : dressed) {
-            byte[] bytes = media.read(w.getImageUrl()).orElse(null);
+            byte[] bytes = imageBytes(w);
             BufferedImage img = bytes == null ? null : ImageOps.decode(bytes);
             boolean removed = w.getPhotoProcessingStatus() == PhotoProcessingStatus.COMPLETED && !w.isDefaultImage();
             BufferedImage cutout = img == null ? null : removed ? ImageOps.toArgb(img) : ImageOps.removeBackgroundLocal(img).image();
