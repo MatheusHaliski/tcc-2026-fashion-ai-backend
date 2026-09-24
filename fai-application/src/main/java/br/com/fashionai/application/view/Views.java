@@ -54,7 +54,13 @@ public final class Views {
                             BigDecimal hypeScoreGlobal, UUID remixedFromPieceId, List<String> tags, String notes,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
-                            boolean notAvailableAnymore, Instant createdAt, Instant updatedAt) {
+                            boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
+                            String studioBackdrop, String studioThumbUrl) {
+    }
+
+    /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
+    public static String studioThumb(String studioUrl) {
+        return studioUrl == null || !studioUrl.endsWith(".jpg") ? studioUrl : studioUrl.substring(0, studioUrl.length() - 4) + ".thumb.jpg";
     }
 
     public static PieceView piece(WardrobeItem w, ViewerState viewer, Map<String, Long> reactions) {
@@ -75,7 +81,7 @@ public final class Views {
                 w.getModel3dUrl(), new Counters(w.getLikesCount(), w.getCommentCount(), w.getSharesCount(),
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
-                w.getCreatedAt(), w.getUpdatedAt());
+                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()));
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */
@@ -140,10 +146,17 @@ public final class Views {
                              String renderingStatus, String virtualTryOnUrl, Map<String, Object> renderingQuality,
                              Map<String, Object> renderingMetadata, BigDecimal hypeScore, BigDecimal hypeScoreGlobal,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
-                             Instant publishedAt, Instant createdAt, Instant updatedAt) {
+                             Instant publishedAt, Instant createdAt, Instant updatedAt,
+                             List<Map<String, Object>> sealBadges) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
+        return scheme(s, items, viewer, reactions, List.of());
+    }
+
+    /** sealBadges = medalhões dos vínculos APROVADOS (SealService.badge) — o card mostra no espaço reservado ao selo. */
+    public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions,
+                                    List<Map<String, Object>> sealBadges) {
         java.util.LinkedHashMap<String, Object> bg = new java.util.LinkedHashMap<>(Json.map(s.getStudioConfigJson()));
         bg.putIfAbsent("color", s.getBackgroundColor());
         bg.putIfAbsent("gradient", s.getBackgroundGradient());
@@ -161,7 +174,8 @@ public final class Views {
                 s.getHypeScore(), s.getHypeScoreGlobal(), s.getOriginalScheme() == null ? null : s.getOriginalScheme().getId(),
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
-                viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt());
+                viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
+                sealBadges == null ? List.of() : sealBadges);
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

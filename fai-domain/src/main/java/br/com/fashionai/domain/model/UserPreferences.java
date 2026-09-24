@@ -79,6 +79,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(name = "mannequin_build", length = 20)
     private BodyBuild mannequinBuild;
 
+    /** RF23 — cor dos containers que envolvem o conteúdo de cada página (nulo = branco padrão). */
+    @Column(name = "content_container_color", length = 9)
+    private String contentContainerColor;
+
     @Column(name = "default_card_skin", length = 20)
     private String defaultCardSkin = "atelier";
 

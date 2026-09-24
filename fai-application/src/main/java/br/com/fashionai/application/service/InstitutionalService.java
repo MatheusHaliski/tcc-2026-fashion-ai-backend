@@ -298,6 +298,9 @@ public class InstitutionalService {
                             "snapshot", w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED, "savedAt", si.getSavedAt())).orElse(null))
                     .filter(Objects::nonNull).toList();
             case "PROMOCOES" -> sealService.promotionsOf(viewer, u.getId());
+            // Peças e esquemas em abas separadas (RF14/RF22): cada aba devolve só um tipo de conteúdo.
+            case "ESQUEMAS_DESTAQUE" -> highlightedSchemes(viewer, u, filter, groupingId);
+            case "PECAS_DESTAQUE" -> highlightedPieces(viewer, u, filter, groupingId);
             case "DESTAQUES", "ESQUEMAS_PECAS_DESTAQUE" -> highlighted(viewer, u, filter, groupingId);
             default -> throw ApiException.badRequest("ABA_INVALIDA", "Aba desconhecida.");
         };
@@ -325,12 +328,11 @@ public class InstitutionalService {
         };
         return list.stream().limit(60).map(s -> Map.<String, Object>of("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())),
                 "seals", bonds.findBySchemeId(s.getId()).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
-                        .map(b -> Map.of("tier", b.getTier().name(), "owner", b.getTargetOwner().getUsername(), "premium",
-                                b.getTargetOwner().getProfileType() == ProfileType.CELEBRIDADE)).toList())).toList();
+                        .map(SealService::badge).toList())).toList();
     }
 
     /**
-     * Aba "Esquemas & peças em destaque": looks de qualquer usuário que conquistaram um selo deste perfil
+     * Abas "Esquemas em destaque" e "Peças em destaque": looks de qualquer usuário que conquistaram um selo deste perfil
      * (vínculo APPROVED — política do selo + revisão do emissor) e as peças que compõem esses looks.
      * Vale igual para o dono do perfil e para visitantes: destaque é o que passou pela política do selo.
      */
@@ -338,6 +340,14 @@ public class InstitutionalService {
         return consecrated(viewer, u, filter, groupingId, false);
     }
 
+    /** Peças que compõem os looks em destaque (cada peça aponta para o look e os selos que ele conquistou). */
+    List<Map<String, Object>> highlightedPieces(CurrentUser viewer, User u, String filter, UUID groupingId) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) highlighted(viewer, u, filter, groupingId).get("pieces");
+        return list;
+    }
+
+    /** Legado: as duas listas juntas (mantido para compatibilidade da API; a interface usa as abas separadas). */
     Map<String, Object> highlighted(CurrentUser viewer, User u, String filter, UUID groupingId) {
         List<Map<String, Object>> looks = highlightedSchemes(viewer, u, filter, groupingId);
         Map<UUID, Map<String, Object>> piecesOut = new LinkedHashMap<>();
@@ -348,7 +358,7 @@ public class InstitutionalService {
                 if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED || piecesOut.containsKey(w.getId())) {
                     continue;
                 }
-                if (!guard.canView(viewer, w.getUser().getId(), w.getVisibility())) {
+                if (!guard.canView(viewer, w.getUser().getId(), WardrobeService.effectiveVisibility(w))) {
                     continue;
                 }
                 piecesOut.put(w.getId(), Map.of("piece", Views.piece(w, null, null), "author", Views.user(w.getUser()),

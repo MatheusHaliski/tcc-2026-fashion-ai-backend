@@ -5,13 +5,16 @@ import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Photo;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
 import br.com.fashionai.domain.repository.PhotoRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
@@ -51,20 +54,33 @@ public class PhotoService {
     private final MediaService media;
     private final AiEngine ai;
     private final Guard guard;
+    private final WardrobeService wardrobe;
+    private final FlatLayPipeline flatLay;
 
-    public PhotoService(PhotoRepository photos, WardrobeItemRepository pieces, MediaService media, AiEngine ai, Guard guard) {
+    public PhotoService(PhotoRepository photos, WardrobeItemRepository pieces, MediaService media, AiEngine ai, Guard guard,
+                        WardrobeService wardrobe, FlatLayPipeline flatLay) {
         this.photos = photos;
         this.pieces = pieces;
         this.media = media;
         this.ai = ai;
         this.guard = guard;
+        this.wardrobe = wardrobe;
+        this.flatLay = flatLay;
     }
 
+    /**
+     * CA01/CA06 — página de fotos (mais recentes primeiro) agrupada por origem. O filtro de origem vai para o banco
+     * (índice user_id, origin, created_at) e a contagem por origem é uma consulta agrupada; cada foto de peça traz a
+     * peça vinculada para o aviso do CA03 aparecer antes da exclusão.
+     */
     @Transactional(readOnly = true)
     public Map<String, Object> list(CurrentUser user, PhotoOrigin origin, int page, int size) {
+        long started = System.nanoTime();
         int s = Math.max(1, Math.min(size <= 0 ? 48 : size, 96));
-        Page<Photo> p = photos.findByUserIdAndDeletedAtIsNull(user.id(), PageRequest.of(Math.max(0, page), s, Sort.by(Sort.Direction.DESC, "createdAt")));
-        List<Photo> items = p.getContent().stream().filter(x -> origin == null || x.getOrigin() == origin).toList();
+        PageRequest req = PageRequest.of(Math.max(0, page), s, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Photo> p = origin == null ? photos.findByUserIdAndDeletedAtIsNull(user.id(), req)
+                : photos.findByUserIdAndOriginAndDeletedAtIsNull(user.id(), origin, req);
+        List<Photo> items = p.getContent();
         Map<String, List<Views.PhotoView>> groups = new LinkedHashMap<>();
         for (PhotoOrigin o : PhotoOrigin.values()) {
             List<Views.PhotoView> g = items.stream().filter(x -> x.getOrigin() == o).map(Views::photo).toList();
@@ -72,12 +88,34 @@ public class PhotoService {
                 groups.put(o.name(), g);
             }
         }
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (Object[] row : photos.countByOrigin(user.id())) {
+            counts.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        Set<UUID> pieceIds = items.stream().filter(x -> x.getOrigin() == PhotoOrigin.WARDROBE_ITEM || x.getOrigin() == PhotoOrigin.EDITOR)
+                .map(Photo::getSourceEntityId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+        Map<UUID, WardrobeItem> linked = pieces.findAllById(pieceIds).stream().filter(w -> w.getUser().getId().equals(user.id()))
+                .collect(Collectors.toMap(WardrobeItem::getId, w -> w));
+        Map<String, Object> links = new LinkedHashMap<>();
+        for (Photo x : items) {
+            WardrobeItem w = x.getSourceEntityId() == null ? null : linked.get(x.getSourceEntityId());
+            if (w == null) {
+                continue;
+            }
+            boolean active = w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED && x.getPublicUrl() != null
+                    && (x.getPublicUrl().equals(w.getImageUrl()) || x.getPublicUrl().equals(w.getOriginalImageUrl()));
+            links.put(x.getId().toString(), Map.of("pieceId", w.getId(), "pieceName", w.getName(), "activeImage", active));
+        }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("groups", groups);
+        out.put("links", links);
+        out.put("counts", counts);
         out.put("page", p.getNumber());
+        out.put("size", s);
         out.put("hasMore", p.hasNext());
         out.put("total", p.getTotalElements());
         out.put("lazy", true);
+        out.put("serverMs", (System.nanoTime() - started) / 1_000_000);
         return out;
     }
 
@@ -99,6 +137,7 @@ public class PhotoService {
         linked.ifPresent(w -> {
             w.setImageUrl(null);
             w.setThumbnailUrl(null);
+            w.setStudioImageUrl(null);
         });
         p.setDeletedAt(Instant.now());
         Map<String, Object> out = new java.util.LinkedHashMap<>();
@@ -128,6 +167,7 @@ public class PhotoService {
             linkedActivePiece(p).ifPresent(w -> {
                 w.setImageUrl(null);
                 w.setThumbnailUrl(null);
+                w.setStudioImageUrl(null);
             });
             p.setDeletedAt(Instant.now());
         }
@@ -228,6 +268,55 @@ public class PhotoService {
         Map<String, Map<String, Long>> byMonth = photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id()).stream()
                 .collect(Collectors.groupingBy(p -> YearMonth.from(p.getCreatedAt().atZone(zone)).toString(), java.util.TreeMap::new,
                         Collectors.groupingBy(p -> p.getOrigin().name(), Collectors.counting())));
-        return Map.of("months", byMonth);
+        List<Map<String, Object>> moments = new ArrayList<>();
+        for (Photo p : photos.findByUserIdAndKeyMomentTrueAndDeletedAtIsNullOrderByCreatedAtDesc(user.id())) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("photo", Views.photo(p));
+            m.put("date", p.getCreatedAt());
+            m.put("origin", p.getOrigin().name());
+            moments.add(m);
+        }
+        return Map.of("months", byMonth, "moments", moments);
+    }
+
+    /**
+     * RF12.CA02 → RF15.CA02 — salva o resultado do Editor Canvas 2D. Foto de peça ativa: a edição vira a imagem exibida na
+     * peça e a original continua em "Minhas Fotos". Demais fotos: a edição entra como nova foto (origem EDITOR) apontando
+     * para a original, que nunca é sobrescrita.
+     */
+    @Transactional
+    public Map<String, Object> saveEdit(CurrentUser user, UUID id, byte[] bytes) {
+        Photo original = owned(user, id);
+        guard.requireCanCreate(user);
+        Optional<WardrobeItem> piece = original.getSourceEntityId() == null || (original.getOrigin() != PhotoOrigin.WARDROBE_ITEM && original.getOrigin() != PhotoOrigin.EDITOR)
+                ? Optional.empty()
+                : pieces.findById(original.getSourceEntityId()).filter(w -> w.getUser().getId().equals(user.id()) && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED);
+        if (piece.isPresent()) {
+            Views.PieceView view = wardrobe.replaceImage(user, piece.get().getId(), bytes, id);
+            return Map.of("replacedPieceImage", true, "piece", Map.of("id", view.id(), "name", view.name(), "imageUrl", String.valueOf(view.imageUrl())),
+                    "message", "A imagem editada agora é a da peça «" + view.name() + "». A original continua em Minhas Fotos.");
+        }
+        String mime = ImageOps.requireAcceptedImage(bytes);
+        BufferedImage img = ImageOps.decode(bytes);
+        String base = "users/" + user.id() + "/photos/edit-" + System.currentTimeMillis();
+        MediaStoragePort.StoredObject stored = media.put(base + ".png", ImageOps.png(img), "image/png");
+        MediaStoragePort.StoredObject thumb = media.put(base + "-thumb.png", ImageOps.png(ImageOps.scale(img, Math.max(1, Math.min(360, img.getWidth())),
+                Math.max(1, (int) Math.round(img.getHeight() * (Math.min(360.0, img.getWidth()) / img.getWidth()))))), "image/png");
+        Photo edited = media.register(original.getUser(), PhotoOrigin.EDITOR, original.getSourceEntityId(), stored, original.getOriginalUrl() != null ? original.getOriginalUrl() : original.getPublicUrl(),
+                thumb.url(), bytes, img.getWidth(), img.getHeight(), null, ModerationStatus.APPROVED, Map.of("sourceMime", mime, "editedFrom", id.toString()));
+        edited.setEditedFromPhotoId(id);
+        return Map.of("replacedPieceImage", false, "photo", Views.photo(edited), "message", "Cópia editada salva em Minhas Fotos; a original ficou intacta.");
+    }
+
+    /** RF15.CA01/CA04 — remoção de fundo sob demanda para o editor; a falha é informada e as outras ferramentas seguem. */
+    public Map<String, Object> removeBackground(CurrentUser user, byte[] bytes) {
+        guard.requireCanCreate(user);
+        FlatLayPipeline.Result r = flatLay.run(bytes, true);
+        if (!r.backgroundRemoved() || r.processedPng() == null) {
+            return Map.of("ok", false, "message", "A remoção de fundo não está disponível agora. As outras ferramentas continuam funcionando.");
+        }
+        return Map.of("ok", true, "png", java.util.Base64.getEncoder().encodeToString(r.processedPng()),
+                "provider", r.stages().stream().filter(x -> "REMOCAO_FUNDO".equals(x.name()) && x.ok())
+                        .map(FlatLayPipeline.Stage::provider).findFirst().orElse("local"));
     }
 }

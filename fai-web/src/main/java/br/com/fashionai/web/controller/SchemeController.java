@@ -47,6 +47,13 @@ public class SchemeController {
         return schemes.create(user, form);
     }
 
+    @PostMapping(value = "/api/schemes/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "RF5 — Foto do look (como um post): pipeline de validação, redimensionamento e remoção de metadados")
+    public Map<String, Object> photo(CurrentUser user, @RequestPart("file") org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        return schemes.uploadLookPhoto(user, file.getBytes());
+    }
+
     @PostMapping(value = "/api/schemes/preview", produces = MediaType.IMAGE_PNG_VALUE)
     @Operation(summary = "RF5/RF11 — Pré-visualizar o card antes de salvar")
     public byte[] preview(CurrentUser user, @RequestBody SchemeService.SchemeForm form) {

@@ -8,6 +8,17 @@ import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import dynamic from "next/dynamic";
+import { useDetailModal } from "@/components/detail-modal";
+import type { RoomData3D } from "@/components/room3d/room-scene";
+
+// three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
+const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">montando o quarto em 3D…</div> });
+/** RF32.CA08 — sem WebGL (ou aparelho muito fraco) o quarto abre em 2.5D com as mesmas interações. */
+function webglOk(): boolean {
+  if (typeof window === "undefined") return false;
+  try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
+}
 
 interface RoomPiece { id: string; name: string; category: string; subcategory: string; color: string; colorHex?: string; imageUrl?: string; thumbnailUrl?: string; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; costPerUse?: number | null; }
 interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
@@ -20,9 +31,16 @@ function RoomInner() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
   const { data, loading, error, reload } = useApi<Room>((signal) => api.get("/api/me/room", { signal }), []);
   const list = useApi<ListRow[]>((signal) => api.get("/api/me/room/list", { signal }), []);
-  const [tab, setTab] = useState<"room" | "list">("room"); const [open, setOpen] = useState<Module | null>(null); const [movePiece, setMovePiece] = useState<RoomPiece | null>(null); const [address, setAddress] = useState("");
+  const [tab, setTab] = useState<"3d" | "room" | "list">("room"); const [gl, setGl] = useState<boolean | null>(null);
+  const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const modal = useDetailModal();
+  useEffect(() => { const ok = webglOk(); setGl(ok); setTab(ok ? "3d" : "room"); }, []); const [open, setOpen] = useState<Module | null>(null); const [movePiece, setMovePiece] = useState<RoomPiece | null>(null); const [address, setAddress] = useState("");
   const [preview, setPreview] = useState<{ moves?: { pieceId: string; from?: string; to: string; why?: string }[]; labels?: Record<string, string>; message?: string; explanation?: unknown } | null>(null); const [highlight, setHighlight] = useState<string | null>(sp.get("piece"));
-  useEffect(() => { const pid = sp.get("piece"); if (pid && data) { const p = data.pieces[pid]; if (p?.moduleId) { const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } setHighlight(pid); } }, [sp, data]);
+  // RF32.CA09 — "Mostrar no quarto": enquadra a posição, abre a porta/gaveta e destaca a peça com luz
+  useEffect(() => {
+    const pid = sp.get("piece"); if (!pid || !data || gl === null) return; const p = data.pieces[pid]; setHighlight(pid);
+    if (p?.moduleId) { if (gl) { setFocusModule(p.moduleId); setOpenSet(new Set([p.moduleId])); } else { const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }
+  }, [sp, data, gl]);
   const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); list.reload(); } catch (e) { toast.fromError(e); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
@@ -30,10 +48,37 @@ function RoomInner() {
   const gridPieces = (m: Module) => { const fromSlots = modulePieces(m).filter((x) => x.piece); if (fromSlots.length) return fromSlots.map((x) => x.piece!); return Object.values(data.pieces).filter((p) => p.moduleId === m.id); };
   return (
     <>
-      <PageHeader title={t("nav.room")} kicker="RF32" lead={`Nível ${data.level} · ${data.levelInfo.aesthetic} · ${data.capacity?.pieces ?? 0} peças em ${data.capacity?.positions ?? 0} posições${data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : ""}`}
+      <PageHeader title={t("nav.room")} kicker="RF27" lead={`Nível ${data.level} · ${data.levelInfo.aesthetic} · ${data.capacity?.pieces ?? 0} peças em ${data.capacity?.positions ?? 0} posições${data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : ""}`}
         actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />Organizar</Button><Link href="/mirror" className="btn"><FaiIcon id="ACT-32" size={24} decorative />{t("nav.mirror")}</Link><Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />Loja</Link></>} />
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">🎉 Conquista: {data.celebrations.map((c) => c.code).join(", ")}</p> : null}
-      <Tabs tabs={[{ id: "room", label: "Quarto" }, { id: "list", label: "Lista" }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[...(gl ? [{ id: "3d" as const, label: "Quarto 3D" }] : []), { id: "room" as const, label: gl ? "2.5D" : "Quarto (2.5D)" }, { id: "list" as const, label: "Lista" }]} value={tab} onChange={setTab} />
+      {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">Este aparelho não tem WebGL: o quarto abre em 2.5D com as mesmas ações (RF32.CA08).</p>}
+      {tab === "3d" && (
+        <div className="room3d">
+          <div className="room3d-stage">
+            <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
+              onToggle={(id) => { setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
+              onPick={(pid) => modal?.openPiece(pid)} />
+            <div className="room3d-hud">
+              <Button size="sm" onClick={() => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); }}>Vista 3/4</Button>
+              <Button size="sm" onClick={() => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id)))}>Abrir portas</Button>
+              <Button size="sm" onClick={() => { if (!canvas) return; const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "meu-quarto.png"; a.click(); }}>Foto do quarto</Button>
+            </div>
+            <p className="room3d-hint">arraste para girar (enquadramento 3/4 limitado) · toque numa porta ou gaveta para abrir · toque numa peça para ver os detalhes</p>
+          </div>
+          <nav className="room3d-positions" aria-label="posições do quarto">
+            <p className="label mb-1">Posições</p>
+            <ul>{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = m.slotType === "TOP" ? ((m as { totalLooks?: number }).totalLooks ?? 0) : gridPieces(m).length; return (
+              <li key={m.id}><button type="button" aria-label={(m as { accessibleLabel?: string }).accessibleLabel ?? `${m.label}, ${n}`} aria-pressed={focusModule === m.id}
+                onClick={() => { setFocusModule(m.id); if (m.slotType === "DOOR" || m.slotType === "DRAWER") setOpenSet(new Set([m.id])); }}>
+                <span>{ZONE_ICON[m.slotType] ?? "▢"} {m.slotType === "DRAWER" ? `Gaveta ${m.id.split(":")[1]} · ${m.label}` : m.label}</span><b className="tabular">{n}</b></button></li>); })}
+              {(data.basket?.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("basket")}><span>🧺 Cesto (indisponíveis)</span><b>{data.basket!.length}</b></button></li>}
+              {(data.chair?.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("chair")}><span>🪑 Cadeira (excedente)</span><b>{data.chair!.length}</b></button></li>}
+              {(data.saleRack?.pieces.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("sale")}><span>🏷️ {data.saleRack!.name}</span><b>{data.saleRack!.pieces.length}</b></button></li>}
+            </ul>
+          </nav>
+        </div>
+      )}
       {tab === "room" && (
         <div className="rounded-xl p-3" style={{ background: data.ambient?.period === "night" ? "linear-gradient(180deg,#1b1d2a,#2a2c3a)" : "linear-gradient(180deg,#f3efe6,#e6e0d2)", perspective: "900px" }} aria-label="Meu Quarto">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" style={{ transform: "rotateX(4deg)" }}>

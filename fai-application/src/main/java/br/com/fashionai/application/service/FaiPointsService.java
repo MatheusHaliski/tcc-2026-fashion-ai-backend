@@ -166,7 +166,7 @@ public class FaiPointsService {
         }
         m.put("levels", levels);
         m.put("rules", rules.findAll().stream().filter(FaiPointsRule::isActive).map(r -> Map.of("action", r.getActionCode(),
-                "points", r.getPoints(), "dailyCap", String.valueOf(r.getDailyCap()), "description", String.valueOf(r.getDescription()))).toList());
+                "points", r.getPoints(), "dailyCap", r.getDailyCap() == null ? "" : r.getDailyCap(), "description", String.valueOf(r.getDescription()))).toList());
         m.put("recent", ledger.findTop100ByUserIdOrderByCreatedAtDesc(user.id()).stream().limit(30).map(e -> Map.of("delta", e.getDelta(),
                 "action", e.getActionCode(), "ref", String.valueOf(e.getRefId()), "at", e.getCreatedAt())).toList());
         m.put("note", "FAI Points não são vendidos por dinheiro real e não compram posição em ranking (RF35.CA08).");

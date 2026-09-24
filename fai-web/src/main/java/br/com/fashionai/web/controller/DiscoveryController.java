@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@Tag(name = "RF8/RF15/RF25/RF26 — Feed, busca e Explorador Global")
+@Tag(name = "RF8/RF26 — Feed, busca e Explorador Global")
 public class DiscoveryController {
     private final SearchService search;
     private final ExplorerService explorer;
@@ -48,8 +48,8 @@ public class DiscoveryController {
                                       @RequestParam(defaultValue = "20") int size,
                                       @RequestParam(required = false) String style, @RequestParam(required = false) String occasion,
                                       @RequestParam(required = false) String color, @RequestParam(required = false) String brand,
-                                      @RequestParam(required = false) String category) {
-        return search.search(viewer, term, tab, filters(style, occasion, color, brand, category), size);
+                                      @RequestParam(required = false) String category, @RequestParam(required = false) String cursor) {
+        return search.search(viewer, term, tab, filters(style, occasion, color, brand, category), size, cursor);
     }
 
     @GetMapping("/api/public-pieces")
@@ -63,18 +63,21 @@ public class DiscoveryController {
     }
 
     @GetMapping("/api/explorer/global")
-    @Operation(summary = "RF25 — Painel global por país (cores, hype, marcas)")
-    public Map<String, Object> global(CurrentUser viewer, @RequestParam(required = false) String country) {
-        return explorer.globalPanel(viewer, country);
+    @Operation(summary = "RF26 — Painel global por país (cores, hype, marcas)")
+    public Map<String, Object> global(CurrentUser viewer, @RequestParam(required = false) String country,
+                                      @RequestParam(required = false) String season, @RequestParam(required = false) String color,
+                                      @RequestParam(required = false) String hypeBand) {
+        return explorer.globalPanel(viewer, country, season, color, hypeBand);
     }
 
     @GetMapping("/api/explorer/brands")
-    @Operation(summary = "RF25 — Marcas e lojas por país/categoria")
+    @Operation(summary = "RF26 — Marcas e lojas por país/categoria")
     public Map<String, Object> brands(CurrentUser viewer, @RequestParam(required = false) String term,
                                       @RequestParam(required = false) String country,
                                       @RequestParam(required = false) String category,
-                                      @RequestParam(required = false) String sort) {
-        return explorer.brandsAndStores(viewer, term, country, category, sort);
+                                      @RequestParam(required = false) String sort, @RequestParam(required = false) String color,
+                                      @RequestParam(required = false) String season, @RequestParam(required = false) Integer hypeMin) {
+        return explorer.brandsAndStores(viewer, term, country, category, sort, color, season, hypeMin);
     }
 
     @GetMapping("/api/explorer/insights")

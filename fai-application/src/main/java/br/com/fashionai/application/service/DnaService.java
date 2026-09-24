@@ -55,6 +55,7 @@ import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -70,11 +71,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * RF13 / HU20 — DNA de Estilo: pré-requisitos (≥ 10 peças e ≥ 5 avaliações positivas), Camada 1 inferida
+ * RF13 / HU20 — DNA de Estilo: sempre disponível (bloco 12 — não precisa ser destravado; ≥ 10 peças e ≥ 5 avaliações
+ * positivas só tornam a síntese mais precisa), Camada 1 inferida
  * (arquétipo, paleta de 5 cores ΔE-agrupada, silhueta, índice de ousadia em percentil, peça ícone que nunca é acessório
  * básico), Camada 2 declarada e cifrada (lugares ≤ 3, pessoas ≤ 3, animais ≤ 2, objetos ≤ 4; 30 caracteres),
  * Frase de Identidade sintetizada pela IA, versões, recálculo a cada 10 interações, card PNG com marca d'água só com
- * campos visíveis (link expira em 30 dias) — e os Esquemas de DNA (anatomias A1–A4 e 12 narrativas do DNA v4).
+ * campos visíveis (link expira em 30 dias) — e os Esquemas de DNA (anatomias A1–A4 e 12 narrativas do DNA v4), criados
+ * com o mesmo construtor do RF5 (modo manual/IA → esquemas → dados → Background Studio → revisar e salvar).
  */
 @Service
 public class DnaService {
@@ -107,11 +110,12 @@ public class DnaService {
     private final NotificationService notifications;
     private final AiEngine ai;
     private final Guard guard;
+    private final SchemeService schemeService;
 
     public DnaService(StyleDnaRepository dnas, StyleDnaVersionRepository versions, DnaSchemeRepository dnaSchemes, DnaSchemeItemRepository dnaItems,
                       WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems, DailyLookRepository dailyLooks,
                       UserRepository users, MediaService media,
-                      NotificationService notifications, AiEngine ai, Guard guard) {
+                      NotificationService notifications, AiEngine ai, Guard guard, SchemeService schemeService) {
         this.dnas = dnas;
         this.versions = versions;
         this.dnaSchemes = dnaSchemes;
@@ -125,6 +129,7 @@ public class DnaService {
         this.notifications = notifications;
         this.ai = ai;
         this.guard = guard;
+        this.schemeService = schemeService;
     }
 
     // ================================================================== pré-requisitos (CA01/CA02)
@@ -146,22 +151,15 @@ public class DnaService {
         long p = activePieces(user.id());
         long f = positiveFeedbacks(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
-        boolean ready = p >= MIN_PIECES && f >= MIN_POSITIVE;
-        out.put("prerequisites", Map.of("pieces", p, "piecesRequired", MIN_PIECES, "positiveFeedbacks", f, "feedbacksRequired", MIN_POSITIVE,
-                "missingPieces", Math.max(0, MIN_PIECES - p), "missingFeedbacks", Math.max(0, MIN_POSITIVE - f), "ready", ready));
-        Optional<StyleDna> dna = dnas.findByUserId(user.id()).filter(d -> d.getSynthesizedAt() != null);
-        out.put("generated", dna.isPresent());
-        if (!ready && dna.isEmpty()) {
-            out.put("progressMessage", "Faltam " + Math.max(0, MIN_PIECES - p) + " peça(s) e " + Math.max(0, MIN_POSITIVE - f)
-                    + " avaliação(ões) \"adorei\" para destravar seu DNA de Estilo.");
-            out.put("actions", List.of(Map.of("label", "Adicionar peça", "href", "/add-piece"), Map.of("label", "Avaliar Look do Dia", "href", "/profile?tab=daily")));
-            return out;
+        // Bloco 12: o DNA de Estilo não precisa ser destravado. A Camada 1 é sintetizada com o que houver no acervo e o
+        // construtor de Esquemas de DNA fica sempre disponível; peças e looks "adorei" só deixam a síntese mais precisa.
+        out.put("prerequisites", Map.of("pieces", p, "positiveFeedbacks", f, "ready", true, "unlockRequired", false));
+        if (p < MIN_PIECES || f < MIN_POSITIVE) {
+            out.put("precisionNote", "Seu DNA fica mais preciso com " + MIN_PIECES + "+ peças e " + MIN_POSITIVE
+                    + "+ looks avaliados como \"adorei\" (hoje: " + p + " peça(s) e " + f + " avaliação(ões)).");
         }
-        if (dna.isEmpty()) {
-            out.put("lifeForm", lifeFormSpec());
-            return out;
-        }
-        StyleDna d = dna.get();
+        StyleDna d = ensureDna(user);
+        out.put("generated", true);
         if (interactions(user.id()) - d.getInteractionsAtSynthesis() >= RECALC_INTERACTIONS) {
             synthesize(user, d, true, "EVOLUCAO");
             notifications.notify(user.id(), null, NotificationType.AI_JOB_FINISHED, "DNA", d.getId(), "Sua identidade evoluiu ✨",
@@ -172,6 +170,18 @@ public class DnaService {
                 "snapshot", Json.map(v.getSnapshotJson()))).toList());
         out.put("lifeForm", lifeFormSpec());
         return out;
+    }
+
+    /** DNA sintetizado do usuário; na primeira vez é gerado na hora (só Camada 1), sem pré-requisitos. */
+    StyleDna ensureDna(CurrentUser user) {
+        Optional<StyleDna> found = dnas.findByUserId(user.id());
+        if (found.isPresent() && found.get().getSynthesizedAt() != null) {
+            return found.get();
+        }
+        StyleDna d = found.orElseGet(() -> new StyleDna(users.findById(user.id()).orElseThrow()));
+        dnas.save(d);
+        synthesize(user, d, true, "GERACAO");
+        return d;
     }
 
     static Map<String, Object> lifeFormSpec() {
@@ -211,12 +221,6 @@ public class DnaService {
 
     @Transactional
     public Map<String, Object> generate(CurrentUser user, LifeForm form) {
-        long p = activePieces(user.id());
-        long f = positiveFeedbacks(user.id());
-        if (p < MIN_PIECES || f < MIN_POSITIVE) {
-            throw new ApiException(422, "PRE_REQUISITOS", "Faltam " + Math.max(0, MIN_PIECES - p) + " peça(s) e " + Math.max(0, MIN_POSITIVE - f)
-                    + " avaliação(ões) positiva(s) para gerar o DNA.", Map.of("missingPieces", Math.max(0, MIN_PIECES - p), "missingFeedbacks", Math.max(0, MIN_POSITIVE - f)));
-        }
         User owner = users.findById(user.id()).orElseThrow();
         StyleDna d = dnas.findByUserId(user.id()).orElseGet(() -> new StyleDna(owner));
         boolean skip = form == null || Boolean.TRUE.equals(form.skip()) || form.fields() == null || form.fields().values().stream().allMatch(l -> l == null || l.isEmpty());
@@ -542,21 +546,21 @@ public class DnaService {
 
     public record DnaSchemeForm(String title, List<DnaCellForm> cells, String cardLayout, String targetElement, NarrativeType narrativeType,
                                 String occasion, String style, Season seasonalTheme, Visibility visibility, Map<String, Object> background,
-                                Boolean publish) {
+                                Boolean publish, String creationMode) {
+    }
+
+    /** Célula do DNA (persistida ou transitória na pré-visualização): esquema referenciado + rótulo de época + marco. */
+    record CellRef(DnaCell cell, Scheme scheme, String eraLabel, boolean milestone) {
     }
 
     @Transactional
     public Map<String, Object> createDnaScheme(CurrentUser user, DnaSchemeForm f) {
         guard.requireCanCreate(user);
-        StyleDna dna = dnas.findByUserId(user.id()).filter(x -> x.getSynthesizedAt() != null)
-                .orElseThrow(() -> new ApiException(409, "SEM_DNA", "Gere o seu DNA de Estilo antes de montar um Esquema de DNA."));
+        StyleDna dna = ensureDna(user);
         DnaScheme d = new DnaScheme();
         d.setUser(users.findById(user.id()).orElseThrow());
-        d.setArchetype(dna.getArchetype());
-        d.setBoldnessIndex(dna.getBoldnessIndex());
-        d.setIdentityPhrase(dna.getIdentityPhrase());
-        d.setColorPaletteJson(Json.write(Json.csv(dna.getColorPalette())));
-        d.setCreationMode(CreationMode.MANUAL);
+        stamp(d, dna);
+        d.setCreationMode("AI".equalsIgnoreCase(f.creationMode()) ? CreationMode.AI_ASSISTED : CreationMode.MANUAL);
         d.setStatus(SchemeStatus.DRAFT);
         apply(user, d, f, true);
         dnaSchemes.save(d);
@@ -567,6 +571,14 @@ public class DnaService {
             d.setPublishedAt(Instant.now());
         }
         return dnaSchemeView(user, d);
+    }
+
+    /** Identidade do DNA (arquétipo, ousadia, frase, paleta) copiada para o esquema no momento em que ele é montado. */
+    static void stamp(DnaScheme d, StyleDna dna) {
+        d.setArchetype(dna.getArchetype());
+        d.setBoldnessIndex(dna.getBoldnessIndex());
+        d.setIdentityPhrase(dna.getIdentityPhrase());
+        d.setColorPaletteJson(Json.write(Json.csv(dna.getColorPalette())));
     }
 
     @Transactional
@@ -607,8 +619,9 @@ public class DnaService {
                 throw ApiException.badRequest("NARRATIVA_INDISPONIVEL", "As narrativas só aparecem quando o elemento-alvo é o DNA completo.");
             }
             d.setNarrativeType(f.narrativeType());
-        } else if (creating) {
-            d.setNarrativeType(NarrativeType.TIMELINE);
+        } else if (creating || f.cardLayout() != null || !"DNA_COMPLETO".equals(target)) {
+            // sem narrativa: o card usa só a anatomia base da Seção A escolhida na etapa 4
+            d.setNarrativeType(null);
         }
         if (f.occasion() != null) {
             d.setOccasion(InputSanitizer.clean(f.occasion(), 120));
@@ -685,9 +698,8 @@ public class DnaService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> myDnaSchemes(CurrentUser user) {
-        return dnaSchemes.findByUserIdOrderByCreatedAtDesc(user.id()).stream().map(d -> Map.<String, Object>of("id", d.getId(), "title", String.valueOf(d.getTitle()),
-                "cardLayout", String.valueOf(d.getCardLayout()), "narrativeType", String.valueOf(d.getNarrativeType()), "status", d.getStatus().name(),
-                "visibility", d.getVisibility().name(), "createdAt", d.getCreatedAt())).toList();
+        return dnaSchemes.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(d -> d.getStatus() != SchemeStatus.ARCHIVED)
+                .map(d -> dnaSchemeView(user, d)).toList();
     }
 
     @Transactional
@@ -699,34 +711,47 @@ public class DnaService {
     }
 
     Map<String, Object> dnaSchemeView(CurrentUser viewer, DnaScheme d) {
-        List<DnaSchemeItem> items = dnaItems.findByDnaSchemeIdOrderByCell(d.getId());
-        Map<UUID, List<SchemeItem>> itemsBy = items.isEmpty() ? Map.of() : schemeItems.findBySchemeIdIn(items.stream().map(i -> i.getScheme().getId()).toList())
-                .stream().collect(Collectors.groupingBy(si -> si.getScheme().getId()));
+        List<CellRef> refs = dnaItems.findByDnaSchemeIdOrderByCell(d.getId()).stream()
+                .map(i -> new CellRef(i.getCell(), i.getScheme(), i.getEraLabel(), i.isMilestone())).toList();
+        return dnaSchemeView(viewer, d, refs);
+    }
+
+    Map<String, Object> dnaSchemeView(CurrentUser viewer, DnaScheme d, List<CellRef> items) {
+        Map<UUID, List<SchemeItem>> itemsBy = groupItems(items.stream().map(CellRef::scheme).toList());
         List<Map<String, Object>> cells = new ArrayList<>();
-        for (DnaSchemeItem it : items) {
-            Scheme s = it.getScheme();
+        for (CellRef it : items) {
+            Scheme s = it.scheme();
             List<SchemeItem> sItems = itemsBy.getOrDefault(s.getId(), List.of());
+            List<Map<String, Object>> ranking = logoRanking(sItems);
             Map<String, Object> c = new LinkedHashMap<>();
-            c.put("cell", it.getCell().name());
+            c.put("cell", it.cell().name());
             c.put("schemeId", s.getId());
             c.put("title", s.getTitle());
-            c.put("coverImageUrl", s.getCoverImageUrl());
+            c.put("description", s.getDescription());
+            c.put("coverImageUrl", s.getCoverImageUrl() != null ? s.getCoverImageUrl()
+                    : sItems.stream().map(si -> si.getWardrobeItem().getImageUrl()).filter(Objects::nonNull).findFirst().orElse(null));
             c.put("occasion", Json.csv(s.getOccasion()));
             c.put("style", Json.csv(s.getStyle()));
-            c.put("eraLabel", it.getEraLabel());
-            c.put("milestone", it.isMilestone());
+            c.put("season", s.getSeason() == null ? null : s.getSeason().name());
+            c.put("eraLabel", it.eraLabel());
+            c.put("milestone", it.milestone());
             c.put("createdAt", s.getCreatedAt());
-            c.put("dominantBrand", dominantBrand(sItems));
+            c.put("dominantBrand", ranking.isEmpty() ? null : ranking.get(0).get("brand"));
+            c.put("dominantBrandLogoUrl", ranking.isEmpty() ? null : ranking.get(0).get("logoUrl"));
             c.put("dominantColor", dominantColor(sItems));
-            c.put("hypeScoreGlobal", s.getHypeScoreGlobal() == null ? s.getHypeScore() : s.getHypeScoreGlobal());
+            c.put("hypeScoreGlobal", hypeOf(s));
+            c.put("pieces", sItems.stream().map(si -> pieceBrief(si.getWardrobeItem())).toList());
             cells.add(c);
         }
         List<SchemeItem> allItems = itemsBy.values().stream().flatMap(List::stream).toList();
+        Map<String, Object> bg = Json.map(d.getStudioConfigJson());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", d.getId());
         out.put("owner", Views.user(d.getUser()));
         out.put("title", d.getTitle());
-        out.put("archetype", d.getArchetype().name());
+        out.put("archetype", d.getArchetype() == null ? null : d.getArchetype().name());
+        out.put("archetypeLabel", d.getArchetype() == null ? null : ARCHETYPE_LABEL.get(d.getArchetype()));
+        out.put("boldnessIndex", d.getBoldnessIndex());
         out.put("identityPhrase", d.getIdentityPhrase());
         out.put("palette", Json.strings(d.getColorPaletteJson()));
         out.put("cardLayout", d.getCardLayout());
@@ -735,9 +760,11 @@ public class DnaService {
         out.put("seasonalTheme", d.getSeasonalTheme() == null ? null : d.getSeasonalTheme().name());
         out.put("occasion", d.getOccasion());
         out.put("style", d.getStyle());
+        out.put("creationMode", d.getCreationMode() == null ? null : d.getCreationMode().name());
         out.put("visibility", d.getVisibility().name());
         out.put("status", d.getStatus().name());
-        out.put("background", Json.map(d.getStudioConfigJson()));
+        out.put("background", bg);
+        out.put("cardSkin", bg.get("skin"));
         out.put("backgroundVideoUrl", d.getBackgroundVideoUrl());
         out.put("cells", cells);
         List<Map<String, Object>> logos = logoRanking(allItems);
@@ -746,8 +773,419 @@ public class DnaService {
         out.put("narrative", narrativeData(d, items, itemsBy));
         out.put("counters", Map.of("likes", d.getLikeCount(), "comments", d.getCommentCount(), "shares", d.getShareCount(), "remixes", d.getRemixCount()));
         out.put("canEdit", viewer != null && viewer.id().equals(d.getUser().getId()));
+        out.put("createdAt", d.getCreatedAt());
         out.put("publishedAt", d.getPublishedAt());
         return out;
+    }
+
+    /** Itens de cada esquema na ordem dos slots (a mesma ordem do card do RF5). */
+    Map<UUID, List<SchemeItem>> groupItems(List<Scheme> list) {
+        if (list.isEmpty()) {
+            return Map.of();
+        }
+        return schemeItems.findBySchemeIdIn(list.stream().map(Scheme::getId).distinct().toList()).stream()
+                .sorted(Comparator.comparingInt(SchemeItem::getSortOrder))
+                .collect(Collectors.groupingBy(si -> si.getScheme().getId(), LinkedHashMap::new, Collectors.toList()));
+    }
+
+    static double hypeOf(Scheme s) {
+        java.math.BigDecimal h = s.getHypeScoreGlobal() != null ? s.getHypeScoreGlobal() : s.getHypeScore();
+        return h == null ? 0 : h.doubleValue();
+    }
+
+    static Map<String, Object> pieceBrief(WardrobeItem w) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", w.getId());
+        m.put("name", w.getName());
+        m.put("imageUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+        m.put("brand", w.getBrand() != null ? w.getBrand().getName() : w.getBrandName());
+        m.put("category", w.getCategory());
+        m.put("color", w.getColor());
+        return m;
+    }
+
+    // ================================================================== construtor igual ao RF5 (bloco 12)
+    static final List<String> BUILDER_STEPS = List.of("1 · Modo", "2 · Esquemas", "3 · Dados", "4 · Background Studio", "5 · Revisar e salvar");
+
+    /** Etapas 1–2: os "itens" de um Esquema de DNA são os esquemas de vestimenta do próprio usuário (RF5), de 2 a 6. */
+    @Transactional
+    public Map<String, Object> builder(CurrentUser user) {
+        StyleDna dna = ensureDna(user);
+        List<Scheme> own = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("totalSchemes", own.size());
+        out.put("source", "RF5");
+        if (own.size() < 2) {
+            out.put("status", "INSUFICIENTE");
+            out.put("message", "Um DNA de estilo referencia de 2 a 6 esquemas de vestimenta seus. Crie ao menos 2 esquemas (RF5) primeiro.");
+            out.put("action", Map.of("label", "Criar esquema de vestimenta", "href", "/schemes/new"));
+        } else {
+            out.put("status", "PRONTO");
+        }
+        Map<UUID, List<SchemeItem>> itemsBy = groupItems(own);
+        out.put("schemes", own.stream().map(s -> schemeService.view(user, s, itemsBy.getOrDefault(s.getId(), List.of()))).toList());
+        out.put("dna", view(dna, false));
+        out.put("defaultVisibility", AccountService.defaultVisibility(users.findById(user.id()).orElseThrow()));
+        out.put("steps", BUILDER_STEPS);
+        out.put("layouts", LAYOUTS);
+        out.put("narratives", NarrativeType.values());
+        out.put("seasons", Season.values());
+        out.put("minCells", 2);
+        out.put("maxCells", 6);
+        return out;
+    }
+
+    /** Etapa 5 / pré-visualização ao vivo: monta o card do DNA sem salvar (células transitórias). */
+    @Transactional
+    public Map<String, Object> preview(CurrentUser user, DnaSchemeForm f) {
+        StyleDna dna = ensureDna(user);
+        DnaScheme d = new DnaScheme();
+        d.setUser(users.findById(user.id()).orElseThrow());
+        stamp(d, dna);
+        d.setCreationMode("AI".equalsIgnoreCase(f.creationMode()) ? CreationMode.AI_ASSISTED : CreationMode.MANUAL);
+        String title = f.title() == null || f.title().strip().length() < 2 ? "Sem título" : f.title(); // a prévia aparece antes da etapa 3
+        apply(user, d, new DnaSchemeForm(title, f.cells(), f.cardLayout(), f.targetElement(), f.narrativeType(), f.occasion(), f.style(),
+                f.seasonalTheme(), f.visibility(), f.background(), false, f.creationMode()), true);
+        List<CellRef> refs = new ArrayList<>();
+        DnaCell[] slots = DnaCell.values();
+        Set<UUID> seen = new HashSet<>();
+        for (DnaCellForm c : f.cells() == null ? List.<DnaCellForm>of() : f.cells()) {
+            if (refs.size() == slots.length || c.schemeId() == null || !seen.add(c.schemeId())) {
+                continue;
+            }
+            Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound("Esquema"));
+            guard.requireOwner(user, s.getUser().getId(), "scheme:" + s.getId());
+            refs.add(new CellRef(slots[refs.size()], s, c.eraLabel() == null ? null : InputSanitizer.clean(c.eraLabel(), 120), Boolean.TRUE.equals(c.milestone())));
+        }
+        return dnaSchemeView(user, d, refs);
+    }
+
+    public record DnaComposeRequest(String prompt, List<String> occasion, List<String> style, NarrativeType narrativeType, Season season) {
+    }
+
+    public record DnaProposal(String title, NarrativeType narrativeType, String cardLayout, List<DnaCellForm> cells, List<String> occasion,
+                              List<String> style, Season seasonalTheme, String rationale) {
+    }
+
+    static final java.time.format.DateTimeFormatter ERA = java.time.format.DateTimeFormatter.ofPattern("MMM/yy", Locale.forLanguageTag("pt-BR"))
+            .withZone(java.time.ZoneOffset.UTC);
+
+    /**
+     * Etapa 1 (modo IA): propõe até 3 DNAs a partir dos esquemas do usuário, interpretando tudo o que eles carregam —
+     * materiais, cores, estampas, marcas, ocasiões, estilos, estação, datas, hype — mais o DNA sintetizado e as
+     * orientações livres. Sem IA remota, o motor local monta as propostas.
+     */
+    @Transactional
+    public Map<String, Object> compositions(CurrentUser user, DnaComposeRequest req) {
+        DnaComposeRequest r = req == null ? new DnaComposeRequest(null, List.of(), List.of(), null, null) : req;
+        StyleDna dna = ensureDna(user);
+        List<Scheme> own = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream().limit(40).toList();
+        if (own.size() < 2) {
+            throw new ApiException(422, "ESQUEMAS_INSUFICIENTES", "Crie ao menos 2 esquemas de vestimenta (RF5) para montar um DNA de estilo.",
+                    Map.of("action", "/schemes/new"));
+        }
+        Map<UUID, List<SchemeItem>> itemsBy = groupItems(own);
+        Map<String, Scheme> byRef = new LinkedHashMap<>();
+        List<Map<String, Object>> catalog = new ArrayList<>();
+        for (Scheme s : own) {
+            String ref = "s" + (byRef.size() + 1);
+            byRef.put(ref, s);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("ref", ref);
+            m.put("title", s.getTitle());
+            m.put("date", s.getCreatedAt() == null ? null : s.getCreatedAt().toString().substring(0, 10));
+            m.put("occasion", Json.csv(s.getOccasion()));
+            m.put("style", Json.csv(s.getStyle()));
+            m.put("season", s.getSeason() == null ? null : s.getSeason().name());
+            m.put("hype", hypeOf(s));
+            m.put("likes", s.getLikeCount());
+            m.put("pieces", itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> {
+                WardrobeItem w = si.getWardrobeItem();
+                Map<String, Object> pm = new LinkedHashMap<>(pieceBrief(w));
+                pm.remove("id");
+                pm.remove("imageUrl");
+                pm.put("material", w.getMaterial());
+                pm.put("analysis", SchemeService.pieceAnalysis(w)); // estampa, textura, caimento lidos da foto (RF4)
+                return pm;
+            }).toList());
+            catalog.add(m);
+        }
+        String system = """
+                Você monta Esquemas de DNA de Estilo do Fashion AI (RF13). Um DNA referencia de 2 a 6 esquemas de vestimenta do PRÓPRIO
+                usuário (use só os refs fornecidos) e conta uma história com eles. narrativeType: TIMELINE, MOMENTOS_MARCANTES,
+                PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS,
+                HYPE_FOCUS, CARTELA_SAZONAL, LEGO ou null (só a anatomia base). cardLayout: AMPLIADO, GRADE, HORIZONTAL, LATERAL.
+                Interprete TUDO o que os esquemas carregam: materiais, cores, estampas, marcas, ocasiões, estilos, estação, datas e hype,
+                além do DNA sintetizado e das orientações livres (que podem citar cores, materiais, marcas, épocas ou momentos: respeite-as).
+                MOMENTOS_MARCANTES exige exatamente um marco; CARTELA_SAZONAL exige seasonalTheme (SPRING, SUMMER, AUTUMN, WINTER).
+                Proponha até 3 DNAs diferentes entre si. Responda SOMENTE com JSON:
+                {"compositions":[{"title":string,"narrativeType":string|null,"cardLayout":string,"refs":["s1",...],
+                "eraLabels":{"s1":"2024 · primeiro emprego"},"milestone":"s2"|null,"seasonalTheme":string|null,
+                "occasion":[...],"style":[...],"rationale":"até 2 frases"}]}""";
+        String prompt = "Esquemas: " + Json.write(catalog)
+                + "\nDNA sintetizado: " + Json.write(Map.of("archetype", String.valueOf(dna.getArchetype()), "palette", Json.csv(dna.getColorPalette()),
+                "styles", Json.csv(dna.getStyleKeywords()), "silhouette", String.valueOf(dna.getSilhouette())))
+                + "\nOcasião: " + r.occasion() + "\nEstilo: " + r.style() + "\nNarrativa desejada: " + r.narrativeType()
+                + "\nEstação: " + r.season() + "\nOrientações livres: " + (r.prompt() == null ? "" : InputSanitizer.clean(r.prompt(), 500));
+        List<String> inputs = List.of(own.size() + " esquemas de vestimenta seus (peças, materiais, cores, estampas, marcas, ocasiões, datas e hype)",
+                "DNA sintetizado (arquétipo, paleta, estilos)", "ocasião/estilo/narrativa/estação pedidos", "orientações livres");
+        AiOutcome<List<DnaProposal>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.DNA_SYNTHESIZER, system, prompt, List.of(), 1400,
+                inputs, text -> parseProposals(text, byRef), () -> localProposals(own, itemsBy, r), null));
+        List<DnaProposal> list = outcome.value() == null || outcome.value().isEmpty() ? localProposals(own, itemsBy, r) : outcome.value();
+        Map<UUID, Scheme> byId = own.stream().collect(Collectors.toMap(Scheme::getId, s -> s));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("compositions", list.stream().map(pr -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("title", pr.title());
+            m.put("narrativeType", pr.narrativeType() == null ? null : pr.narrativeType().name());
+            m.put("cardLayout", pr.cardLayout());
+            m.put("cells", pr.cells().stream().map(c -> {
+                Map<String, Object> cm = new LinkedHashMap<>();
+                cm.put("schemeId", c.schemeId());
+                cm.put("title", byId.containsKey(c.schemeId()) ? byId.get(c.schemeId()).getTitle() : null);
+                cm.put("eraLabel", c.eraLabel());
+                cm.put("milestone", Boolean.TRUE.equals(c.milestone()));
+                return cm;
+            }).toList());
+            m.put("occasion", pr.occasion());
+            m.put("style", pr.style());
+            m.put("seasonalTheme", pr.seasonalTheme() == null ? null : pr.seasonalTheme().name());
+            m.put("rationale", pr.rationale());
+            return m;
+        }).toList());
+        out.put("message", outcome.userMessage());
+        out.put("fallbackUsed", outcome.fallbackUsed());
+        out.put("provider", outcome.provider());
+        out.put("explanation", outcome.explanation());
+        return out;
+    }
+
+    List<DnaProposal> parseProposals(String text, Map<String, Scheme> byRef) {
+        Map<String, Object> m = WardrobeService.extractJson(text);
+        if (!(m.get("compositions") instanceof List<?> list)) {
+            return null;
+        }
+        List<DnaProposal> out = new ArrayList<>();
+        for (Object o : list) {
+            if (!(o instanceof Map<?, ?> c) || !(c.get("refs") instanceof List<?> refs)) {
+                continue;
+            }
+            List<String> chosen = refs.stream().map(String::valueOf).filter(byRef::containsKey).distinct().limit(6).toList();
+            if (chosen.size() < 2) {
+                continue;
+            }
+            NarrativeType nt = enumOr(NarrativeType.class, c.get("narrativeType"), null);
+            String layout = LAYOUTS.contains(String.valueOf(c.get("cardLayout"))) ? String.valueOf(c.get("cardLayout")) : "AMPLIADO";
+            Map<?, ?> eras = c.get("eraLabels") instanceof Map<?, ?> em ? em : Map.of();
+            String milestone = c.get("milestone") == null ? null : String.valueOf(c.get("milestone"));
+            if (nt == NarrativeType.MOMENTOS_MARCANTES && (milestone == null || !chosen.contains(milestone))) {
+                milestone = chosen.get(0);
+            }
+            final String mk = milestone;
+            List<DnaCellForm> cells = chosen.stream().map(ref -> new DnaCellForm(byRef.get(ref).getId(),
+                    eras.get(ref) == null ? era(byRef.get(ref)) : InputSanitizer.clean(String.valueOf(eras.get(ref)), 60), ref.equals(mk))).toList();
+            Season season = enumOr(Season.class, c.get("seasonalTheme"), nt == NarrativeType.CARTELA_SAZONAL ? Season.AUTUMN : null);
+            out.add(new DnaProposal(c.get("title") == null ? "Meu DNA" : InputSanitizer.clean(String.valueOf(c.get("title")), 120), nt, layout, cells,
+                    strs(c.get("occasion"), Taxonomy.OCCASIONS), strs(c.get("style"), Taxonomy.STYLES),
+                    season, c.get("rationale") == null ? null : InputSanitizer.clean(String.valueOf(c.get("rationale")), 300)));
+            if (out.size() == 3) {
+                break;
+            }
+        }
+        return out.isEmpty() ? null : out;
+    }
+
+    static <E extends Enum<E>> E enumOr(Class<E> type, Object raw, E fallback) {
+        if (raw == null) {
+            return fallback;
+        }
+        try {
+            return Enum.valueOf(type, String.valueOf(raw).trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return fallback;
+        }
+    }
+
+    static List<String> strs(Object raw, Collection<String> allowed) {
+        return raw instanceof List<?> l ? l.stream().map(String::valueOf).filter(allowed::contains).distinct().limit(3).toList() : List.of();
+    }
+
+    static String era(Scheme s) {
+        return s.getCreatedAt() == null ? null : ERA.format(s.getCreatedAt()).replace(".", "");
+    }
+
+    /** Motor local: escolhe a narrativa pelas orientações/pedido e seleciona os esquemas que melhor a contam. */
+    static List<DnaProposal> localProposals(List<Scheme> own, Map<UUID, List<SchemeItem>> itemsBy, DnaComposeRequest r) {
+        String q = (r.prompt() == null ? "" : r.prompt()).toLowerCase(Locale.ROOT);
+        // filtro pelas orientações: cores, materiais, marcas, estampas, ocasiões e estilos citados
+        List<Scheme> pool = own.stream().filter(s -> matches(s, itemsBy.getOrDefault(s.getId(), List.of()), q, r)).toList();
+        if (pool.size() < 2) {
+            pool = own;
+        }
+        List<NarrativeType> order = new ArrayList<>();
+        if (r.narrativeType() != null) {
+            order.add(r.narrativeType());
+        }
+        Map<String, NarrativeType> keywords = new LinkedHashMap<>();
+        keywords.put("tempo|evolu|histór|histor|trajet", NarrativeType.TIMELINE);
+        keywords.put("marco|formatura|momento|conquista", NarrativeType.MOMENTOS_MARCANTES);
+        keywords.put("primeir|estreia", NarrativeType.PRIMEIRA_VEZ);
+        keywords.put("cápsula|capsula|versát|versat|poucas peças", NarrativeType.CAPSULA_VERSATILIDADE);
+        keywords.put("ocasi|trabalho|festa|papel", NarrativeType.POR_OCASIAO);
+        keywords.put("mood|inspira|afinidade", NarrativeType.MOOD_BOARD);
+        keywords.put("paleta|cores|tons|cor ", NarrativeType.PALETA_DOMINANTE);
+        keywords.put("harmonia|contraste|complement", NarrativeType.HARMONIA_CROMATICA);
+        keywords.put("marca", NarrativeType.MARCAS_FAVORITAS);
+        keywords.put("hype|alta|tendên|tenden|bombando", NarrativeType.HYPE_FOCUS);
+        keywords.put("inverno|verão|verao|outono|primavera|estaç|estac|sazon", NarrativeType.CARTELA_SAZONAL);
+        keywords.put("lego|bloco", NarrativeType.LEGO);
+        keywords.forEach((re, nt) -> {
+            if (java.util.regex.Pattern.compile(re).matcher(q).find() && !order.contains(nt)) {
+                order.add(nt);
+            }
+        });
+        for (NarrativeType nt : List.of(NarrativeType.TIMELINE, NarrativeType.POR_OCASIAO, NarrativeType.CAPSULA_VERSATILIDADE, NarrativeType.HYPE_FOCUS,
+                NarrativeType.PALETA_DOMINANTE, NarrativeType.MOMENTOS_MARCANTES)) {
+            if (!order.contains(nt)) {
+                order.add(nt);
+            }
+        }
+        Season season = r.season() != null ? r.season() : q.contains("inverno") ? Season.WINTER : q.contains("verão") || q.contains("verao") ? Season.SUMMER
+                : q.contains("primavera") ? Season.SPRING : Season.AUTUMN;
+        List<DnaProposal> out = new ArrayList<>();
+        Set<String> used = new HashSet<>();
+        for (NarrativeType nt : order) {
+            List<Scheme> pick = pickFor(nt, pool, itemsBy, season);
+            if (pick.size() < 2 || !used.add(pick.stream().map(s -> s.getId().toString()).sorted().collect(Collectors.joining(",")) + nt)) {
+                continue;
+            }
+            Scheme milestone = nt == NarrativeType.MOMENTOS_MARCANTES ? pick.get(0) : null;
+            List<DnaCellForm> cells = pick.stream().map(s -> new DnaCellForm(s.getId(), era(s), s == milestone)).toList();
+            List<String> occ = pick.stream().flatMap(s -> Json.csv(s.getOccasion()).stream()).distinct().limit(3).toList();
+            List<String> sty = pick.stream().flatMap(s -> Json.csv(s.getStyle()).stream()).distinct().limit(3).toList();
+            String layout = switch (nt) {
+                case MARCAS_FAVORITAS, HYPE_FOCUS -> "HORIZONTAL";
+                case PALETA_DOMINANTE, CARTELA_SAZONAL, CAPSULA_VERSATILIDADE -> "GRADE";
+                case MOMENTOS_MARCANTES -> "LATERAL";
+                default -> "AMPLIADO";
+            };
+            out.add(new DnaProposal(TITLES.getOrDefault(nt, "Meu DNA"), nt, layout, cells, occ, sty, nt == NarrativeType.CARTELA_SAZONAL ? season : null,
+                    RATIONALE.getOrDefault(nt, "") + (q.isBlank() ? "" : " Considerou as suas orientações: \"" + InputSanitizer.clean(r.prompt(), 80) + "\".")));
+            if (out.size() == 3) {
+                break;
+            }
+        }
+        return out;
+    }
+
+    static final Map<NarrativeType, String> TITLES = new EnumMap<>(Map.of(NarrativeType.TIMELINE, "Minha linha do tempo",
+            NarrativeType.MOMENTOS_MARCANTES, "Momentos que me vestiram", NarrativeType.PRIMEIRA_VEZ, "Minhas estreias",
+            NarrativeType.CAPSULA_VERSATILIDADE, "Cápsula que rende", NarrativeType.POR_OCASIAO, "Eu em cada ocasião",
+            NarrativeType.MOOD_BOARD, "Mood board do meu estilo", NarrativeType.PALETA_DOMINANTE, "Minha paleta",
+            NarrativeType.HARMONIA_CROMATICA, "Cores que conversam", NarrativeType.MARCAS_FAVORITAS, "Marcas que me vestem",
+            NarrativeType.HYPE_FOCUS, "Em alta agora"));
+    static final Map<NarrativeType, String> RATIONALE = new EnumMap<>(Map.of(NarrativeType.TIMELINE, "Looks em ordem cronológica, espaçados para mostrar a evolução do guarda-roupa.",
+            NarrativeType.MOMENTOS_MARCANTES, "O look mais curtido vira o marco da capa; os demais ficam na fileira de apoio.",
+            NarrativeType.PRIMEIRA_VEZ, "Um look por estreia: primeira ocasião nova ou primeira peça de uma marca.",
+            NarrativeType.CAPSULA_VERSATILIDADE, "Looks que reaproveitam as mesmas peças-base — alta versatilidade.",
+            NarrativeType.POR_OCASIAO, "Um grupo por ocasião predominante: como você se veste em cada papel.",
+            NarrativeType.MOOD_BOARD, "Looks agrupados por afinidade de estilo ao redor do seu arquétipo.",
+            NarrativeType.PALETA_DOMINANTE, "Looks cuja cor dominante reforça a sua paleta sintetizada.",
+            NarrativeType.HARMONIA_CROMATICA, "Looks cujas cores formam uma harmonia legível no círculo cromático.",
+            NarrativeType.MARCAS_FAVORITAS, "Looks que mostram as marcas mais presentes no seu acervo.",
+            NarrativeType.HYPE_FOCUS, "Looks com o maior Hype Score global hoje (popularidade, não qualidade)."));
+
+    static boolean matches(Scheme s, List<SchemeItem> items, String q, DnaComposeRequest r) {
+        if (r.occasion() != null && !r.occasion().isEmpty() && Json.csv(s.getOccasion()).stream().noneMatch(r.occasion()::contains)) {
+            return false;
+        }
+        if (r.style() != null && !r.style().isEmpty() && Json.csv(s.getStyle()).stream().noneMatch(r.style()::contains)) {
+            return false;
+        }
+        if (q.isBlank()) {
+            return true;
+        }
+        List<String> terms = new ArrayList<>();
+        for (SchemeItem si : items) {
+            WardrobeItem w = si.getWardrobeItem();
+            terms.add(String.valueOf(w.getColor()));
+            terms.add(String.valueOf(w.getMaterial()));
+            terms.add(String.valueOf(w.getBrand() != null ? w.getBrand().getName() : w.getBrandName()));
+            terms.add(String.valueOf(w.getName()));
+        }
+        terms.addAll(Json.csv(s.getOccasion()));
+        terms.addAll(Json.csv(s.getStyle()));
+        terms.add(String.valueOf(s.getTitle()));
+        // só filtra quando a orientação cita algo que existe em algum look; caso contrário a orientação guia só a narrativa
+        return terms.stream().map(t -> t.toLowerCase(Locale.ROOT)).filter(t -> t.length() > 2 && !"null".equals(t)).anyMatch(q::contains);
+    }
+
+    static List<Scheme> pickFor(NarrativeType nt, List<Scheme> pool, Map<UUID, List<SchemeItem>> itemsBy, Season season) {
+        List<Scheme> chrono = pool.stream().sorted(Comparator.comparing(Scheme::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))).toList();
+        return switch (nt) {
+            case TIMELINE, PRIMEIRA_VEZ, LEGO, MOOD_BOARD, MARCAS_FAVORITAS -> spread(chrono, 5);
+            case MOMENTOS_MARCANTES -> pool.stream().sorted(Comparator.comparingLong(Scheme::getLikeCount).reversed()).limit(4).toList();
+            case HYPE_FOCUS -> pool.stream().sorted(Comparator.comparingDouble(DnaService::hypeOf).reversed()).limit(4).toList();
+            case POR_OCASIAO -> {
+                Map<String, List<Scheme>> byOcc = new LinkedHashMap<>();
+                pool.forEach(s -> byOcc.computeIfAbsent(Json.csv(s.getOccasion()).stream().findFirst().orElse("livre"), k -> new ArrayList<>()).add(s));
+                List<Scheme> out = new ArrayList<>();
+                byOcc.values().stream().limit(3).forEach(l -> out.addAll(l.stream().limit(2).toList()));
+                yield out.size() >= 2 && byOcc.size() >= 2 ? out : List.of();
+            }
+            case CAPSULA_VERSATILIDADE -> {
+                Map<UUID, Set<UUID>> piecesOf = new HashMap<>();
+                pool.forEach(s -> piecesOf.put(s.getId(), itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet())));
+                List<Scheme> out = new ArrayList<>();
+                Set<UUID> base = new HashSet<>();
+                List<Scheme> rest = new ArrayList<>(pool);
+                while (out.size() < 5 && !rest.isEmpty()) {
+                    Scheme best = rest.stream().max(Comparator.comparingLong((Scheme s) -> piecesOf.get(s.getId()).stream()
+                            .filter(id -> base.isEmpty() || base.contains(id)).count())).orElseThrow();
+                    if (!base.isEmpty() && piecesOf.get(best.getId()).stream().noneMatch(base::contains)) {
+                        break;
+                    }
+                    out.add(best);
+                    base.addAll(piecesOf.get(best.getId()));
+                    rest.remove(best);
+                }
+                yield out.size() >= 2 ? out : List.of();
+            }
+            case CARTELA_SAZONAL -> {
+                List<Scheme> inSeason = pool.stream().filter(s -> s.getSeason() == season).toList();
+                List<Scheme> out = new ArrayList<>(inSeason.stream().limit(4).toList());
+                pool.stream().filter(s -> !out.contains(s)).limit(Math.max(0, 4 - out.size())).forEach(out::add);
+                yield out;
+            }
+            case PALETA_DOMINANTE, HARMONIA_CROMATICA -> {
+                Map<String, List<Scheme>> byFam = new LinkedHashMap<>();
+                pool.forEach(s -> {
+                    String c = itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> si.getWardrobeItem().getColor()).filter(Objects::nonNull)
+                            .collect(Collectors.groupingBy(x -> x, Collectors.counting())).entrySet().stream().max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey).orElse("");
+                    byFam.computeIfAbsent(String.valueOf(Taxonomy.COLOR_FAMILY.getOrDefault(c, "Neutro")), k -> new ArrayList<>()).add(s);
+                });
+                List<Scheme> out = new ArrayList<>();
+                byFam.values().stream().sorted(Comparator.comparingInt((List<Scheme> l) -> l.size()).reversed()).forEach(l -> {
+                    if (out.size() < 4) {
+                        out.addAll(l.stream().limit(4 - out.size()).toList());
+                    }
+                });
+                yield out;
+            }
+        };
+    }
+
+    /** Até n esquemas espaçados na ordem dada (primeiro e último sempre entram). */
+    static List<Scheme> spread(List<Scheme> list, int n) {
+        if (list.size() <= n) {
+            return list;
+        }
+        List<Scheme> out = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            out.add(list.get((int) Math.round(i * (list.size() - 1) / (double) (n - 1))));
+        }
+        return out.stream().distinct().toList();
     }
 
     /** Regra transversal de logos: nº de peças por marca; empate → mais peças em superior/inferior. */
@@ -770,7 +1208,14 @@ public class DnaService {
             }
         }
         return counts.entrySet().stream().sorted((a, b) -> a.getValue()[0] != b.getValue()[0] ? b.getValue()[0] - a.getValue()[0] : b.getValue()[1] - a.getValue()[1])
-                .map(e -> Map.<String, Object>of("brand", e.getKey(), "pieces", e.getValue()[0], "structural", e.getValue()[1], "logoUrl", String.valueOf(logo.get(e.getKey()))))
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("brand", e.getKey());
+                    m.put("pieces", e.getValue()[0]);
+                    m.put("structural", e.getValue()[1]);
+                    m.put("logoUrl", logo.get(e.getKey()));
+                    return m;
+                })
                 .toList();
     }
 
@@ -786,7 +1231,7 @@ public class DnaService {
                 case MOOD_BOARD -> Map.of("shown", 3, "counter", false);
                 case MARCAS_FAVORITAS -> Map.of("shown", "all", "counter", false, "isContent", true);
                 case HYPE_FOCUS, HARMONIA_CROMATICA, CARTELA_SAZONAL -> Map.of("shown", 1, "counter", true);
-                case BLOCOS -> Map.of("shown", 3, "counter", true);
+                case LEGO -> Map.of("shown", 3, "counter", true);
             };
         }
         return switch (String.valueOf(d.getCardLayout())) {
@@ -800,34 +1245,40 @@ public class DnaService {
         return logoRanking(items).stream().findFirst().map(m -> String.valueOf(m.get("brand"))).orElse(null);
     }
 
+    /** Cor dominante do esquema: média ponderada — peças estruturais (superior, inferior, peça única) pesam 3, as demais 1. */
     static String dominantColor(List<SchemeItem> items) {
-        return items.stream().map(si -> si.getWardrobeItem().getColor()).filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(c -> c, Collectors.counting())).entrySet().stream().max(Map.Entry.comparingByValue())
-                .map(e -> Taxonomy.hex(e.getKey())).orElse(null);
+        Map<String, Integer> weight = new LinkedHashMap<>();
+        for (SchemeItem si : items) {
+            WardrobeItem w = si.getWardrobeItem();
+            if (w.getColor() != null) {
+                weight.merge(w.getColor(), Set.of("upper_piece", "lower_piece", "full_body_piece").contains(w.getCategory()) ? 3 : 1, Integer::sum);
+            }
+        }
+        return weight.entrySet().stream().max(Map.Entry.comparingByValue()).map(e -> Taxonomy.hex(e.getKey())).orElse(null);
     }
 
     /** Dados específicos de cada narrativa (Seção B): ordenação, agrupamento e elementos gráficos. */
-    Map<String, Object> narrativeData(DnaScheme d, List<DnaSchemeItem> items, Map<UUID, List<SchemeItem>> itemsBy) {
+    Map<String, Object> narrativeData(DnaScheme d, List<CellRef> items, Map<UUID, List<SchemeItem>> itemsBy) {
         if (!"DNA_COMPLETO".equals(d.getTargetElement()) || d.getNarrativeType() == null) {
             return Map.of();
         }
         Map<String, Object> n = new LinkedHashMap<>();
         switch (d.getNarrativeType()) {
-            case TIMELINE -> n.put("order", items.stream().sorted(Comparator.comparing((DnaSchemeItem i) -> i.getScheme().getCreatedAt()))
-                    .map(i -> i.getScheme().getId()).toList());
+            case TIMELINE -> n.put("order", items.stream().sorted(Comparator.comparing((CellRef i) -> i.scheme().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder())))
+                    .map(i -> i.scheme().getId()).toList());
             case MOMENTOS_MARCANTES -> {
-                Optional<DnaSchemeItem> cover = items.stream().filter(DnaSchemeItem::isMilestone).findFirst();
-                n.put("cover", cover.map(i -> i.getScheme().getId()).orElse(items.isEmpty() ? null : items.get(0).getScheme().getId()));
-                n.put("coverLabel", cover.map(DnaSchemeItem::getEraLabel).orElse(null));
+                Optional<CellRef> cover = items.stream().filter(CellRef::milestone).findFirst();
+                n.put("cover", cover.map(i -> i.scheme().getId()).orElse(items.isEmpty() ? null : items.get(0).scheme().getId()));
+                n.put("coverLabel", cover.map(CellRef::eraLabel).orElse(null));
             }
             case PRIMEIRA_VEZ -> {
                 List<Map<String, Object>> firsts = new ArrayList<>();
                 Set<String> occ = new HashSet<>(), brands = new HashSet<>();
-                List<DnaSchemeItem> chrono = items.stream().sorted(Comparator.comparing((DnaSchemeItem i) -> i.getScheme().getCreatedAt())).toList();
+                List<CellRef> chrono = items.stream().sorted(Comparator.comparing((CellRef i) -> i.scheme().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()))).toList();
                 for (int i = 0; i < chrono.size(); i++) {
-                    Scheme s = chrono.get(i).getScheme();
+                    Scheme s = chrono.get(i).scheme();
                     if (i == 0) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1º esquema salvo"));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", "1º esquema salvo", "kind", "PRIMEIRO"));
                         occ.addAll(Json.csv(s.getOccasion()));
                         itemsBy.getOrDefault(s.getId(), List.of()).forEach(si -> brands.add(String.valueOf(si.getWardrobeItem().getBrandName())));
                         continue;
@@ -836,9 +1287,9 @@ public class DnaService {
                     String newBrand = itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> si.getWardrobeItem().getBrandName())
                             .filter(b -> b != null && !brands.contains(b)).findFirst().orElse(null);
                     if (newOcc != null) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª vez em " + newOcc));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª vez em " + newOcc, "kind", "OCASIAO", "value", newOcc));
                     } else if (newBrand != null) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª peça " + newBrand));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª peça " + newBrand, "kind", "MARCA", "value", newBrand));
                     }
                     occ.addAll(Json.csv(s.getOccasion()));
                     itemsBy.getOrDefault(s.getId(), List.of()).forEach(si -> brands.add(String.valueOf(si.getWardrobeItem().getBrandName())));
@@ -855,12 +1306,15 @@ public class DnaService {
                 n.put("basePieces", use.entrySet().stream().sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed()).limit(6)
                         .map(e -> Map.of("pieceId", e.getKey(), "name", String.valueOf(byId.get(e.getKey()).getName()), "looks", e.getValue(),
                                 "imageUrl", String.valueOf(byId.get(e.getKey()).getImageUrl()))).toList());
+                // fator de versatilidade = looks ÷ peças-base; "rende em média" = em quantos looks cada peça-base aparece
                 n.put("factor", use.isEmpty() ? 0 : Math.round(10.0 * items.size() / use.size()) / 10.0);
+                n.put("baseCount", use.size());
+                n.put("avgUses", use.isEmpty() ? 0 : Math.round(10.0 * use.values().stream().mapToInt(Integer::intValue).sum() / use.size()) / 10.0);
             }
-            case POR_OCASIAO -> n.put("groups", items.stream().collect(Collectors.groupingBy(i -> Json.csv(i.getScheme().getOccasion()).stream().findFirst().orElse("livre"),
-                    LinkedHashMap::new, Collectors.mapping(i -> i.getScheme().getId(), Collectors.toList()))));
-            case MOOD_BOARD -> n.put("orbits", items.stream().map(i -> Map.of("schemeId", i.getScheme().getId(), "orbit",
-                    Json.csv(i.getScheme().getStyle()).stream().anyMatch(s -> Json.csv(d.getStyle() == null ? "" : d.getStyle()).contains(s)) ? 1 : 2)).toList());
+            case POR_OCASIAO -> n.put("groups", items.stream().collect(Collectors.groupingBy(i -> Json.csv(i.scheme().getOccasion()).stream().findFirst().orElse("livre"),
+                    LinkedHashMap::new, Collectors.mapping(i -> i.scheme().getId(), Collectors.toList()))));
+            case MOOD_BOARD -> n.put("orbits", items.stream().map(i -> Map.of("schemeId", i.scheme().getId(), "orbit",
+                    Json.csv(i.scheme().getStyle()).stream().anyMatch(s -> Json.csv(d.getStyle() == null ? "" : d.getStyle()).contains(s)) ? 1 : 2)).toList());
             case PALETA_DOMINANTE -> {
                 Map<String, Long> freq = itemsBy.values().stream().flatMap(List::stream).map(si -> si.getWardrobeItem().getColor()).filter(Objects::nonNull)
                         .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
@@ -870,16 +1324,15 @@ public class DnaService {
             }
             case HARMONIA_CROMATICA -> n.put("harmony", harmony(itemsBy.values().stream().flatMap(List::stream).map(si -> si.getWardrobeItem().getColor()).toList()));
             case MARCAS_FAVORITAS -> n.put("ranking", logoRanking(itemsBy.values().stream().flatMap(List::stream).toList()));
-            case HYPE_FOCUS -> n.put("meters", items.stream().map(i -> Map.of("schemeId", i.getScheme().getId(), "hype",
-                    i.getScheme().getHypeScoreGlobal() == null ? (i.getScheme().getHypeScore() == null ? 0 : i.getScheme().getHypeScore()) : i.getScheme().getHypeScoreGlobal())).toList());
+            case HYPE_FOCUS -> n.put("meters", items.stream().map(i -> Map.of("schemeId", i.scheme().getId(), "hype", hypeOf(i.scheme()))).toList());
             case CARTELA_SAZONAL -> n.put("season", Map.of("theme", String.valueOf(d.getSeasonalTheme()), "preset", switch (d.getSeasonalTheme() == null ? Season.AUTUMN : d.getSeasonalTheme()) {
                 case WINTER -> "frost";
                 case SUMMER -> "solstice";
                 case AUTUMN -> "ember";
                 default -> "bloom";
             }, "note", "Escolher a Cartela Sazonal sobrescreve a arte de fundo manual da Etapa 4."));
-            case BLOCOS -> n.put("blocks", Map.of("order", List.of("chrome", "hero", "titulo", "lista", "logos", "frase"), "socialOutsideContainer", true,
-                    "note", "Blocos muda a forma, não o conteúdo; LEGO é marca registrada."));
+            case LEGO -> n.put("blocks", Map.of("order", List.of("chrome", "hero", "titulo", "lista", "logos", "frase"), "socialOutsideContainer", true,
+                    "note", "LEGO muda a forma, não o conteúdo; LEGO é marca registrada."));
         }
         return n;
     }

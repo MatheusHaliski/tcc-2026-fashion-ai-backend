@@ -25,7 +25,8 @@ Fonte explicitamente descartada para entidades: `ENTIDADES_RF4_RF5_DIAGRAMA_CLAS
 | Edit Assistant | RF9, RF15, RF24 | Gemini / Claude | Validacoes locais | Pedido de edicao + objeto fashion | Patch sugerido, tags e validacoes | Caso de uso criado; falta politica de patch. |
 | Acervo Grouping AI | RF4, RF8, RF13, RF24 | Embeddings locais | Clustering local | Pecas/fotos/tags | Grupos de acervo e colecoes | Portas de busca/storage prontas; falta job de clustering. |
 | Affinity AI | RF17, RF19, RF20, RF21, RF24 | Embeddings locais | Heuristica por follows/reacoes/tags | Grafo social e interacoes | Ranking de usuarios/marcas/celebridades | Cassandra/Redis previstos; falta algoritmo. |
-| 3D Generator / Meshy | RF16, RF24 | Meshy | Fora de escopo operacional inicial | Imagem/prompt/modelo base | Asset 3D | RF16 tratado como fronteira futura; sem chamada real ainda. |
+| 3D Generator | RF16, RF24 | Meshy image-to-3D → Stability Stable Fast 3D | Relevo local (silhueta → malha frente/verso + foto como textura) | Recorte sem fundo do RF4 | Modelo `.glb` (glTF 2.0) | Implementado: job assíncrono com estados, 1 reprocessamento grátis. Ver `docs/rf16-estudio`. |
+| Studio Enhancer | RF4, RF24 | Photoroom (fundo + AI lighting/shadow) / Stability Upscale | Java2D: nitidez, luz por campo de altura, fundo de estúdio, sombra | Recorte do Flat Lay | Foto de produto 1600 px + miniatura 640 px | Implementado. Ver `docs/rf16-estudio`. |
 | Outfit Render / Try-on AI | RF18, RF24 | FASHN.ai | Replicate/Miralabs ou modelo proprio futuro | Scheme + pecas principais | Manequim 2D vestido com peca base | `PipelineJobType.OUTFIT_RENDER` modelado. Recomendado: base FASHN.ai em 2-3 s, US$0.05-0.10. |
 | Try-on Polish AI | RF18, RF24 | Cleanup.ai | Pos-processamento local simples | Resultado FASHN.ai | Imagem refinada sem artefatos | Recomendado para reduzir distorcoes em ~80%; custo adicional US$0.02-0.05/img. |
 | Accessory/Canvas Compositor | RF18, RF24 | Local Canvas 2D | Rembg.com para isolar camadas | Imagem refinada + calcados/acessorios | Outfit completo com tenis/acessorios | Etapa local do pipeline RF18; cobre lacuna de FASHN.ai para shoes/accessories. |
@@ -61,7 +62,9 @@ Fonte explicitamente descartada para entidades: `ENTIDADES_RF4_RF5_DIAGRAMA_CLAS
 | `AI_REPLICATE_API_KEY` | Geracao/edicao de imagem e possiveis modelos hospedados. |
 | `AI_FASHN_API_KEY` | Try-on RF18. |
 | `AI_FIREFLY_API_KEY` | Background generator RF11/RF23, se aprovado. |
-| `AI_MESHY_API_KEY` | RF16 futuro. |
+| `MESHY_API_KEY` | RF16 (Meshy). |
+| `STABILITY_API_KEY` | RF16 (Stable Fast 3D) e RF4 estúdio (upscale). |
+| `PHOTOROOM_API_KEY` | RF4 estúdio (fundo, luz e sombra por IA). |
 
 ## Eventos de auditoria obrigatorios nas chamadas IA
 

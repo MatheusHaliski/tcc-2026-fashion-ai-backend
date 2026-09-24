@@ -63,6 +63,24 @@ public class DnaController {
         return dna.shareCard(user);
     }
 
+    @GetMapping("/api/dna-schemes/builder")
+    @Operation(summary = "RF13 — Construtor do Esquema de DNA (mesmas etapas do RF5): esquemas do usuário, anatomias e narrativas")
+    public Map<String, Object> builder(CurrentUser user) {
+        return dna.builder(user);
+    }
+
+    @PostMapping("/api/dna-schemes/preview")
+    @Operation(summary = "RF13 — Pré-visualizar o card do Esquema de DNA sem salvar")
+    public Map<String, Object> preview(CurrentUser user, @RequestBody DnaService.DnaSchemeForm form) {
+        return dna.preview(user, form);
+    }
+
+    @PostMapping("/api/dna-schemes/compositions")
+    @Operation(summary = "RF13 — Modo IA: até 3 propostas de DNA a partir dos esquemas do usuário")
+    public Map<String, Object> compositions(CurrentUser user, @RequestBody(required = false) DnaService.DnaComposeRequest req) {
+        return dna.compositions(user, req);
+    }
+
     @PostMapping("/api/dna-schemes")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "HU20 — Criar esquema de DNA (linha do tempo de looks)")

@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -73,6 +76,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RoomService implements FaiPointsService.RoomLayoutAccess {
+    private SideEffectRunner sideEffects;
     public static final ZoneId ZONE = FaiPointsService.ZONE;
     /** Esquecida: sem uso há 60+ dias (FORGOTTEN_DAYS, MyWardrobeView.tsx:61). */
     public static final int FORGOTTEN_DAYS = 60;
@@ -124,7 +128,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                        SchemeRepository schemes, SchemeItemRepository schemeItems, DailyLookRepository dailyLooks,
                        StyleDnaRepository dnas, PieceUsageDiaryEntryRepository diary, UserAchievementRepository achievements,
                        UserPreferencesRepository preferences, UserRepository users, FaiPointsLedgerEntryRepository ledger,
-                       ObjectProvider<DecorationsProvider> decorations, AiEngine ai, Guard guard, ApplicationEventPublisher events) {
+                       ObjectProvider<DecorationsProvider> decorations, AiEngine ai, Guard guard, ApplicationEventPublisher events,
+            SideEffectRunner sideEffects) {
+        this.sideEffects = sideEffects;
         this.layouts = layouts;
         this.storage = storage;
         this.pieces = pieces;
@@ -565,14 +571,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return a;
     }
 
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceCreated(DomainEvents.PieceCreated ev) {
-        try {
-            autoAssign(ev.userId(), ev.pieceId());
-        } catch (RuntimeException ex) {
-            // o quarto nunca bloqueia o cadastro (CA07)
-        }
+        // o quarto nunca bloqueia o cadastro (CA07): endereço automático depois do commit, em transação própria
+        sideEffects.run("quarto:PieceCreated", () -> autoAssign(ev.userId(), ev.pieceId()));
     }
 
     @EventListener

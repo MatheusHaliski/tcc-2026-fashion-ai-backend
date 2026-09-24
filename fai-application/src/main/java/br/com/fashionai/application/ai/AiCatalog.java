@@ -55,8 +55,8 @@ public final class AiCatalog {
                 "Nunca aprova por omissão: dúvida vai para a fila humana (moderation_queue) com status PENDING.",
                 200, "Implementado — remoto + heurística local + fila humana");
         put(AiCapability.SCHEME_COMPOSER,
-                "Compõe 3 esquemas a partir de ocasião/estilo/orientações livres usando SÓ peças do acervo do usuário.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", "≈4 mil tokens (acervo em contexto) + 1,2 mil de saída", 8000),
+                "Compõe 3 esquemas a partir de ocasião/estilo/orientações livres usando SÓ peças do acervo do usuário; lê todos os atributos das peças (material, cor, padrão, tamanho, estado, preço, uso), as fotos e o DNA de estilo.",
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", "≈4–12 mil tokens (acervo + até 12 fotos) + 1,2 mil de saída", 8000),
                 gemini(Kind.TEXT, "0.0042", "mesma entrada no Gemini Flash", 2500),
                 local("Composição por regras (ocasião, estilo, harmonia de cor, estação)", 40),
                 "Composição por regras locais + aviso ao usuário (RF5.CA04 continua atendido).",
@@ -142,14 +142,14 @@ public final class AiCatalog {
                 "Sem embeddings suficientes, ordena por mais recentes.",
                 200, "Implementado — local");
         put(AiCapability.THREE_D_GENERATOR,
-                "Gera modelo 3D da peça a partir da foto processada (opt-in, feature flag).",
-                option("meshy", "Meshy image-to-3D", "meshy-5", CostMode.P, "0.3000",
-                        "estimativa por modelo em créditos", 60000, "MESHY_API_KEY", Kind.THREE_D),
-                option("blender", "Blender headless auto-hospedado", "—", CostMode.G, "0.0000",
-                        "infra própria", 120000, "—", Kind.THREE_D),
-                local("Mantém a peça em 2D", 1),
-                "Mantém a peça em 2D com nova tentativa (RF16.CA03).",
-                3, "Tema futuro — atrás de feature flag (FEATURE_RF16_3D=false)");
+                "Gera o modelo 3D (GLB texturizado) da peça a partir do recorte do RF4; job assíncrono com estado visível.",
+                option("meshy", "Meshy image-to-3D", "meshy-5", CostMode.P, "0.4000",
+                        "≈20 créditos por modelo com textura PBR; 1–3 min", 120000, "MESHY_API_KEY", Kind.THREE_D),
+                option("stability-sf3d", "Stability AI · Stable Fast 3D", "stable-fast-3d", CostMode.P, "0.1000",
+                        "10 créditos por modelo; poucos segundos", 8000, "STABILITY_API_KEY", Kind.THREE_D),
+                local("Relevo inflado local: silhueta do recorte → malha frente/verso + foto como textura (glTF binário)", 400),
+                "Sem provedor ou com falha, gera o relevo local; erro sem saída vira FALHOU com motivo e 1 reprocessamento grátis (RF16.CA03).",
+                3, "Implementado — Meshy (assíncrono) + Stable Fast 3D + relevo local");
         put(AiCapability.TRY_ON,
                 "Sobrepõe os slots TOP/BOTTOM/OUTER no manequim virtual (masculino/feminino).",
                 option("fashn", "FASHN.ai", "tryon-v1.6", CostMode.P, "0.0750",
@@ -191,6 +191,24 @@ public final class AiCatalog {
                 local("Java2D: flood fill de borda + PCA de orientação + gray-world + composição 1024px", 450),
                 "Salva com a foto original e enfileira reprocessamento (RF4.CA06).",
                 60, "Implementado — rembg/remove.bg + Cloudinary + pipeline local");
+        put(AiCapability.STUDIO_ENHANCER,
+                "Depois do Flat Lay, leva a foto da peça a acabamento de estúdio: ampliação/nitidez, reiluminação com volume, "
+                        + "fundo de estúdio em cor harmônica, sombra suave e composição 1600 px.",
+                option("photoroom", "Photoroom Image Editing API (fundo + AI lighting + AI shadow)", "photoroom-v2-edit", CostMode.P, "0.1000",
+                        "por imagem (plano Plus); 2–5 s", 5000, "PHOTOROOM_API_KEY", Kind.IMAGE_PROCESSING),
+                option("stability-upscale", "Stability AI · Upscale Fast (4×)", "stable-upscale-fast", CostMode.P, "0.0200",
+                        "2 créditos por imagem; ~1 s", 2500, "STABILITY_API_KEY", Kind.IMAGE_PROCESSING),
+                local("Java2D: bicúbica progressiva + clarity + nitidez + vibração, luz por campo de altura, gradiente radial, sombra projetada/contato", 900),
+                "Sem provedor, o estúdio local assume; a foto do Flat Lay continua disponível e nada trava o cadastro (RNF8).",
+                200, "Implementado — Photoroom + Stability Upscale + estúdio local");
+        put(AiCapability.BRAND_LOGO_FINDER,
+                "Procura na internet o logo oficial da marca: Wikidata/Wikimedia Commons (logo P154 e site P856) → busca na web "
+                        + "pela IA (Claude + web_search) → ícone do site oficial; baixa, valida e guarda no storage próprio.",
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", "até 3 buscas na web (US$ 10 / mil buscas) + ≈3 mil tokens", 15000),
+                null,
+                local("Monograma SVG com as iniciais e uma cor estável por marca", 5),
+                "Sem logo confiável, a interface mostra o monograma e uma nova busca é feita depois de 3 dias.",
+                200, "Implementado — Wikidata + Claude com busca na web + ícone do site + monograma");
     }
 
     private AiCatalog() {

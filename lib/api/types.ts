@@ -22,6 +22,8 @@ export interface PieceView {
   lastWornDate?: string | null; moderationStatus?: string; photoProcessingStatus?: string; photoQuality?: Record<string, unknown>;
   flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>; hypeScore?: number | null; hypeScoreGlobal?: number | null;
   tags: string[]; notes?: string | null; purchaseDate?: string | null; model3dStatus?: string | null; model3dUrl?: string | null;
+  /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) + miniatura 640 px para grades */
+  studioImageUrl?: string | null; studioBackdrop?: string | null; studioThumbUrl?: string | null;
   counters: Counters; viewer: ViewerState; notAvailableAnymore: boolean; createdAt: string; updatedAt: string;
 }
 export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: string; sortOrder?: number; zIndex?: number; piece?: PieceView | null; name?: string; imageUrl?: string | null; [k: string]: unknown; }
@@ -29,7 +31,7 @@ export interface SchemeView {
   id: string; owner: UserCard; title: string; description?: string | null; creationMode: string; origin: string; style: string[]; occasion: string[];
   season?: string | null; mood?: string | null; visibility: string; status: string; displayMode?: string; disponivel: boolean; lookDoDia: boolean;
   coverImageUrl?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
-  containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; tags: string[]; renderingStatus?: string;
+  containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
   virtualTryOnUrl?: string | null; hypeScore?: number | null; hypeScoreGlobal?: number | null; remixedFromId?: string | null; revalidationPending: boolean;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }

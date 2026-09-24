@@ -23,6 +23,15 @@ public interface PhotoRepository extends JpaRepository<Photo, UUID> {
 
     long countByUserIdAndDeletedAtIsNull(UUID userId);
 
+    /** RF12.CA01/CA06 — filtro por origem feito no banco (usa idx_photos_user_origin_created), não depois da página. */
+    Page<Photo> findByUserIdAndOriginAndDeletedAtIsNull(UUID userId, PhotoOrigin origin, Pageable pageable);
+
+    /** RF12.CA01 — contagem por origem para os filtros da galeria (consulta agrupada). */
+    @Query("select p.origin, count(p) from Photo p where p.user.id = :userId and p.deletedAt is null group by p.origin")
+    List<Object[]> countByOrigin(@Param("userId") UUID userId);
+
+    List<Photo> findByUserIdAndKeyMomentTrueAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId);
+
     List<Photo> findByUserIdAndSourceEntityId(UUID userId, UUID sourceEntityId);
 
     List<Photo> findByIdInAndUserId(Collection<UUID> ids, UUID userId);

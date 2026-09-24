@@ -20,7 +20,7 @@ function Highlights() {
   if (loading || !data) return <Skeleton className="h-80" />;
   return (
     <>
-      <PageHeader title={t("nav.highlights")} kicker="RF34" lead={data.manifesto} actions={data.eligible ? <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />Rankings</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></> : undefined} />
+      <PageHeader title={t("nav.highlights")} kicker="RF29" lead={data.manifesto} actions={data.eligible ? <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />Rankings</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></> : undefined} />
       {!data.eligible && data.progress && <Card><p className="type-body mb-2">{data.progress.message}</p><ul className="mb-3">{data.progress.steps.map((s) => <li key={s.label} className="type-body">{s.done ? "✅" : "⬜"} {s.label}</li>)}</ul><Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link></Card>}
       {data.eligible && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">

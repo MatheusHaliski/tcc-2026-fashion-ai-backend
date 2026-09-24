@@ -1,6 +1,7 @@
 package br.com.fashionai.infrastructure.mysql.analytics;
 
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
+import br.com.fashionai.application.ports.AnalyticsQueryPort.GlobalFilter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -43,8 +44,15 @@ public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
         return jdbc.queryForList("""
                 SELECT capability, provider, result, COUNT(*) AS calls, ROUND(COALESCE(SUM(estimated_cost_usd), 0), 4) AS cost_usd,
                        ROUND(AVG(latency_ms)) AS avg_latency_ms, SUM(CASE WHEN fallback_used THEN 1 ELSE 0 END) AS fallbacks
-                FROM ai_inference_log WHERE created_at BETWEEN :from AND :to
+                FROM ai_inference_log a WHERE a.created_at BETWEEN :from AND :to
+                  AND (:country IS NULL AND :profile IS NULL OR EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id
+                       AND (:country IS NULL OR u.country = :country) AND (:profile IS NULL OR u.profile_type = :profile)))
                 GROUP BY capability, provider, result ORDER BY calls DESC""", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> aiCostByCountry(Filter f) {
+        return jdbc.queryForList("CALL sp_ai_cost_by_country(:from, :to, :profile)", params(f));
     }
 
     @Override
@@ -93,6 +101,21 @@ public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
                             WHEN hype_score < 70 THEN 'COM_ESTILO' WHEN hype_score < 85 THEN 'MUITO_ESTILOSO' WHEN hype_score < 96 THEN 'ARRASANDO_NO_LOOK'
                             ELSE 'ICONE_DE_ESTILO' END AS band, COUNT(*) AS total
                 FROM schemes WHERE hype_score IS NOT NULL AND visibility = 'PUBLIC' GROUP BY band ORDER BY MIN(hype_score)""", new MapSqlParameterSource());
+    }
+
+    @Override
+    public List<Map<String, Object>> hypeBands(Filter f) {
+        if (f.country() == null && f.profileType() == null) {
+            return hypeBands();
+        }
+        return jdbc.queryForList("""
+                SELECT CASE WHEN s.hype_score < 15 THEN 'DESPRETENSIOSO' WHEN s.hype_score < 30 THEN 'EM_CONSTRUCAO' WHEN s.hype_score < 50 THEN 'NOTADO'
+                            WHEN s.hype_score < 70 THEN 'COM_ESTILO' WHEN s.hype_score < 85 THEN 'MUITO_ESTILOSO' WHEN s.hype_score < 96 THEN 'ARRASANDO_NO_LOOK'
+                            ELSE 'ICONE_DE_ESTILO' END AS band, COUNT(*) AS total
+                FROM schemes s JOIN users u ON u.id = s.user_id
+                WHERE s.hype_score IS NOT NULL AND s.visibility = 'PUBLIC'
+                  AND (:country IS NULL OR u.country = :country) AND (:profile IS NULL OR u.profile_type = :profile)
+                GROUP BY band ORDER BY MIN(s.hype_score)""", params(f));
     }
 
     @Override
@@ -147,5 +170,62 @@ public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
     public int purgeNotifications(int days) {
         List<Map<String, Object>> rows = jdbc.queryForList("CALL sp_purge_notifications(:days)", new MapSqlParameterSource("days", days));
         return rows.isEmpty() ? 0 : ((Number) rows.get(0).getOrDefault("removed", 0)).intValue();
+    }
+
+    private static MapSqlParameterSource global(GlobalFilter f) {
+        return new MapSqlParameterSource().addValue("season", f.season()).addValue("color", f.color())
+                .addValue("hmin", f.hypeMin()).addValue("hmax", f.hypeMax());
+    }
+
+    @Override
+    public List<Map<String, Object>> schemesByCountry(GlobalFilter f) {
+        return jdbc.queryForList("""
+                SELECT u.country AS country, COUNT(*) AS schemes, ROUND(AVG(s.hype_score), 1) AS avg_hype
+                FROM schemes s JOIN users u ON u.id = s.user_id
+                WHERE s.visibility = 'PUBLIC' AND s.status = 'PUBLISHED' AND u.country IS NOT NULL
+                  AND (:season IS NULL OR s.season = :season)
+                  AND (:hmin IS NULL OR s.hype_score >= :hmin) AND (:hmax IS NULL OR s.hype_score < :hmax)
+                  AND (:color IS NULL OR EXISTS (SELECT 1 FROM scheme_items si JOIN wardrobe_items w ON w.id = si.wardrobe_item_id
+                                                 WHERE si.scheme_id = s.id AND w.color = :color))
+                GROUP BY u.country""", global(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> piecesByCountry(GlobalFilter f) {
+        return jdbc.queryForList("""
+                SELECT u.country AS country, COUNT(*) AS pieces
+                FROM wardrobe_items w JOIN users u ON u.id = w.user_id
+                WHERE w.visibility = 'PUBLIC' AND u.country IS NOT NULL
+                  AND (:season IS NULL OR LOWER(w.market) = LOWER(:season))
+                  AND (:color IS NULL OR w.color = :color)
+                  AND (:hmin IS NULL OR w.hype_score >= :hmin) AND (:hmax IS NULL OR w.hype_score < :hmax)
+                GROUP BY u.country""", global(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> brandFacets() {
+        return jdbc.queryForList("""
+                SELECT LOWER(w.brand_name) AS brand, COUNT(*) AS pieces, ROUND(AVG(w.hype_score), 1) AS avg_hype,
+                       GROUP_CONCAT(DISTINCT w.color) AS colors, GROUP_CONCAT(DISTINCT LOWER(w.market)) AS seasons
+                FROM wardrobe_items w WHERE w.brand_name IS NOT NULL AND w.brand_name <> ''
+                GROUP BY LOWER(w.brand_name)""", new MapSqlParameterSource());
+    }
+
+    @Override
+    public List<Map<String, Object>> hypeByColor(int limit) {
+        return jdbc.queryForList("""
+                SELECT w.color AS color, ROUND(AVG(s.hype_score), 1) AS avg_hype, COUNT(DISTINCT s.id) AS looks
+                FROM schemes s JOIN scheme_items si ON si.scheme_id = s.id JOIN wardrobe_items w ON w.id = si.wardrobe_item_id
+                WHERE s.visibility = 'PUBLIC' AND s.status = 'PUBLISHED' AND s.hype_score IS NOT NULL AND w.color IS NOT NULL
+                GROUP BY w.color HAVING COUNT(DISTINCT s.id) >= 2 ORDER BY avg_hype DESC LIMIT :limit""", new MapSqlParameterSource("limit", limit));
+    }
+
+    @Override
+    public List<Map<String, Object>> hypeByBrand(int limit) {
+        return jdbc.queryForList("""
+                SELECT w.brand_name AS brand, ROUND(AVG(s.hype_score), 1) AS avg_hype, COUNT(DISTINCT s.id) AS looks
+                FROM schemes s JOIN scheme_items si ON si.scheme_id = s.id JOIN wardrobe_items w ON w.id = si.wardrobe_item_id
+                WHERE s.visibility = 'PUBLIC' AND s.status = 'PUBLISHED' AND s.hype_score IS NOT NULL AND w.brand_name IS NOT NULL AND w.brand_name <> ''
+                GROUP BY w.brand_name ORDER BY avg_hype DESC LIMIT :limit""", new MapSqlParameterSource("limit", limit));
     }
 }

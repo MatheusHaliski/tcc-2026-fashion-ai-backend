@@ -81,6 +81,7 @@ public class PreferencesService {
         out.put("highContrast", p.isHighContrast());
         out.put("reduceMotion", p.isReduceMotion());
         out.put("chromeBackgroundId", p.getChromeBackgroundId());
+        out.put("contentContainerColor", p.getContentContainerColor());
         out.put("sizeSystem", p.getSizeSystem());
         out.put("unitSystem", p.getUnitSystem());
         out.put("mannequinSex", p.getMannequinSex());
@@ -112,7 +113,8 @@ public class PreferencesService {
     public record Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
                          Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
-                         String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt) {
+                         String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
+                         String contentContainerColor) {
     }
 
     @Transactional
@@ -150,6 +152,14 @@ public class PreferencesService {
             }
             p.setChromeBackgroundId(id);
             p.getUser().setInterfaceBackgroundPresetId(id);
+        }
+        if (u.contentContainerColor() != null) {
+            // "" volta ao padrão (branco); qualquer outro valor precisa ser #RRGGBB
+            String c = u.contentContainerColor().trim();
+            if (!c.isEmpty() && !c.matches("^#[0-9A-Fa-f]{6}$")) {
+                throw ApiException.badRequest("COR_INVALIDA", "Cor dos containers em hexadecimal (#RRGGBB).");
+            }
+            p.setContentContainerColor(c.isEmpty() ? null : c.toUpperCase(java.util.Locale.ROOT));
         }
         if (u.sizeSystem() != null) {
             p.setSizeSystem(u.sizeSystem());

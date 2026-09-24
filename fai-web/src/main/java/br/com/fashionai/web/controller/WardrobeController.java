@@ -133,6 +133,31 @@ public class WardrobeController {
         return wardrobe.removeBackground(user, id);
     }
 
+    @GetMapping("/api/studio/backdrops")
+    @Operation(summary = "RF4 · Estúdio — fundos disponíveis para a foto de produto")
+    public List<Map<String, Object>> studioBackdrops() {
+        return wardrobe.studioBackdrops();
+    }
+
+    @PostMapping("/api/pieces/analysis/{draftId}/studio")
+    @Operation(summary = "RF4 · Estúdio — refaz a foto de estúdio do rascunho com outro fundo (force=true usa o recorte incerto)")
+    public Map<String, Object> studioDraft(CurrentUser user, @PathVariable UUID draftId, @RequestParam(defaultValue = "auto") String backdrop,
+                                           @RequestParam(defaultValue = "false") boolean force) {
+        return wardrobe.studioDraft(user, draftId, backdrop, force);
+    }
+
+    @PostMapping("/api/pieces/{id}/studio")
+    @Operation(summary = "RF4 · Estúdio — gera/refaz a foto de estúdio de uma peça cadastrada")
+    public Views.PieceView studioPiece(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "auto") String backdrop) {
+        return wardrobe.studioPiece(user, id, backdrop);
+    }
+
+    @PostMapping("/api/me/pieces/studio")
+    @Operation(summary = "RF4 · Estúdio — leva ao estúdio as peças que ainda não têm foto de estúdio (até 40)")
+    public Map<String, Object> studioAll(CurrentUser user, @RequestParam(defaultValue = "auto") String backdrop) {
+        return wardrobe.studioAll(user, backdrop);
+    }
+
     @PostMapping("/api/pieces/{id}/model3d")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(summary = "RF16 — Solicitar modelo 3D da peça")

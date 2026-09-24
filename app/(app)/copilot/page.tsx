@@ -7,6 +7,10 @@ import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Input, PageHeader, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { SchemeCard } from "@/components/scheme-card";
+import { PieceCard } from "@/components/piece-card";
+import { useDetailModal } from "@/components/detail-modal";
+import type { PieceView, SchemeView } from "@/lib/api/types";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
@@ -14,9 +18,19 @@ interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: str
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
 interface Ctx { view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
 
+interface Suggestions { weather?: { available?: boolean; temperatureC?: number; city?: string; description?: string }; weatherBand?: string; readyLooks: SchemeView[]; newCombinations: { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number }[]; forgottenPieces: PieceView[]; weatherPieces: PieceView[]; trendingLooks: SchemeView[]; }
+
+/** Seção rolável de sugestões (cards de esquema ou peça — clique abre o detalhe ampliado em modal). */
+function Row({ title, hint, children, empty }: { title: string; hint?: string; children: React.ReactNode; empty?: boolean }) {
+  if (empty) return null;
+  return (<section className="mb-5"><div className="mb-2 flex items-baseline gap-2"><h2 className="type-h3">{title}</h2>{hint && <span className="type-caption text-muted">{hint}</span>}</div><div className="hscroll">{children}</div></section>);
+}
+
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
   const { data: ctx } = useApi<Ctx>((signal) => api.get("/api/copilot/context?view=copilot", { signal }), []);
+  const sug = useApi<Suggestions>((signal) => api.get("/api/copilot/suggestions", { signal }), []);
+  const detail = useDetailModal();
   const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
   async function ask(text: string) {
@@ -35,14 +49,31 @@ function Copilot() {
       <PageHeader title={t("nav.copilot")} kicker="RF10 · CA08–CA16" lead="Pergunte onde está uma peça, o que vestir, o que anda esquecido ou como melhorar seu inventário. Sugestões de compra só depois de esgotar o que você já tem." />
       {ctx?.limitation && <p className="mb-3 rounded-md bg-chalk-soft p-3 type-body-sm">{ctx.limitation.message} <Link href="/pieces/new" className="underline">{t("closet.addPiece")}</Link></p>}
       {ctx?.weather?.available && <p className="mb-3 type-caption text-muted">{ctx.weather.city} · {ctx.weather.temperatureC}°C · {ctx.weather.description}</p>}
-      <div className="surface flex min-h-[60vh] flex-col">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="min-w-0">
+        {sug.loading ? <p className="type-body text-muted">Montando sugestões…</p> : sug.data && <>
+          <Row title="Looks prontos para hoje" hint="seus looks — clique para ver ampliado" empty={!sug.data.readyLooks.length}>{sug.data.readyLooks.map((sc) => <SchemeCard key={sc.id} scheme={sc} />)}</Row>
+          <Row title="Combinações novas com o seu acervo" hint={`só peças suas${sug.data.weather?.available ? ` · ${sug.data.weather.temperatureC}°C` : ""}`} empty={!sug.data.newCombinations.length}>{sug.data.newCombinations.map((c, i) => (
+            <article key={i} className="fai-card" aria-label={c.title}>
+              <div className="c-header"><span className="c-meta">sugestão do Copilot</span></div>
+              <div className="grid grid-cols-2 gap-1 p-2">{c.pieces.map((p) => <button key={p.id} type="button" className="aspect-square overflow-hidden rounded bg-surface-2 hover:ring-2 hover:ring-mark" title={p.name} onClick={() => detail?.openPiece(p.id)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} className="h-full w-full object-contain p-1" /></button>)}</div>
+              <div className="c-title">{c.title}</div>
+              {c.rationale && <div className="c-row">{c.rationale}</div>}
+              <div className="c-extra"><Button size="sm" variant="primary" onClick={() => accept({ pieceIds: c.pieceIds, title: c.title })}><FaiIcon id="ACT-10" size={24} decorative />Salvar como look</Button></div>
+            </article>))}</Row>
+          <Row title="Peças esquecidas" hint="sem uso há 30+ dias" empty={!sug.data.forgottenPieces.length}>{sug.data.forgottenPieces.map((p) => <PieceCard key={p.id} piece={p} />)}</Row>
+          <Row title="Para o clima de hoje" hint={sug.data.weather?.available ? `${sug.data.weather.city ?? ""} · ${sug.data.weather.description ?? ""}` : "sem clima: peças versáteis"} empty={!sug.data.weatherPieces.length}>{sug.data.weatherPieces.map((p) => <PieceCard key={p.id} piece={p} />)}</Row>
+          <Row title="Em alta na rede" hint="looks públicos com mais Hype" empty={!sug.data.trendingLooks.length}>{sug.data.trendingLooks.map((sc) => <SchemeCard key={sc.id} scheme={sc} />)}</Row>
+        </>}
+      </div>
+      <div className="surface flex min-h-[60vh] flex-col xl:sticky xl:top-16 xl:self-start xl:max-h-[calc(100vh-6rem)]">
         <div className="flex-1 space-y-3 overflow-auto p-4" role="log" aria-live="polite">
           {msgs.length === 0 && <p className="type-body text-muted">Olá! Sou o Copilot do seu guarda-roupa ({ctx?.available ?? 0} peças disponíveis).</p>}
           {msgs.map((m, i) => (
             <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
-              {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}</Link>)}</div> : null}
-              {m.reply?.looks?.length ? <div className="mt-2 grid gap-2 sm:grid-cols-2">{m.reply.looks.map((l, j) => <Card key={j}><p className="type-h3">{l.title}</p><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <img key={p.pieceId} src={mediaUrl(p.imageUrl)} alt={p.name} title={p.name} className="h-12 w-12 rounded bg-surface object-contain" />)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept({ pieceIds: l.pieceIds ?? (l.pieces ?? []).map((p) => p.pieceId), title: l.title })}>Salvar como look</Button></Card>)}</div> : null}
+              {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}</Link>)}</div> : null}
+              {m.reply?.looks?.length ? <div className="mt-2 grid gap-2 sm:grid-cols-2">{m.reply.looks.map((l, j) => <Card key={j}><p className="type-h3">{l.title}</p><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={`ver ${p.name}`} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept({ pieceIds: l.pieceIds ?? (l.pieces ?? []).map((p) => p.pieceId), title: l.title })}>Salvar como look</Button></Card>)}</div> : null}
               {m.reply?.purchases?.length ? <div className="mt-2 rounded border border-line-soft p-2"><p className="label">Sugestões de compra (genéricas)</p><ul className="type-body-sm">{m.reply.purchases.map((p, j) => <li key={j}>• {p.name}{p.delta != null ? ` — +${p.delta} combinações` : ""}{p.reason ? ` · ${p.reason}` : ""}{p.sponsored && <span className="badge ml-1">patrocinado</span>}</li>)}</ul></div> : null}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? "Criar look"}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}
               {m.reply?.challengeNotice && <p className="mt-2 type-caption text-chalk">{m.reply.challengeNotice}</p>}
@@ -56,6 +87,7 @@ function Copilot() {
           {prompts?.length ? <div className="mb-2 flex flex-wrap gap-1.5">{prompts.map((p) => <button key={p} type="button" className="chip" onClick={() => ask(p)}>{p}</button>)}</div> : null}
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask(input); }}><Input aria-label="mensagem" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Onde está meu jeans? O que visto hoje?" /><Button type="submit" variant="primary" loading={busy}><FaiIcon id="ACT-13" size={24} decorative />Enviar</Button></form>
         </div>
+      </div>
       </div>
     </>
   );

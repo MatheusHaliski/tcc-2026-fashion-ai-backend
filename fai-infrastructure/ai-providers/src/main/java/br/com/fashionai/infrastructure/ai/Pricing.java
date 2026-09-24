@@ -22,6 +22,11 @@ public final class Pricing {
     private Pricing() {
     }
 
+    /** Busca na web do Claude: US$ 10 por mil buscas (cobrada à parte dos tokens). */
+    public static BigDecimal webSearch(long searches) {
+        return BigDecimal.valueOf(searches).multiply(new BigDecimal("0.01"));
+    }
+
     public static BigDecimal estimate(String model, long inputTokens, long outputTokens) {
         Price p = PRICES.entrySet().stream().filter(e -> model != null && model.startsWith(e.getKey())).map(Map.Entry::getValue)
                 .findFirst().orElse(model != null && model.startsWith("claude") ? PRICES.get("claude-opus-5") : PRICES.get("gemini-2.5-flash"));

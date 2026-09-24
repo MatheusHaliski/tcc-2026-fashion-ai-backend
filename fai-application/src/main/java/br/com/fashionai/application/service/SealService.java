@@ -11,6 +11,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.seal.SealDesigns;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
@@ -110,7 +111,8 @@ public class SealService {
 
     // ================================================================== RF25 — selos do perfil emissor
     public record SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
-                           Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status) {
+                           Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status,
+                           Map<String, Object> design) {
     }
 
     @Transactional
@@ -139,8 +141,17 @@ public class SealService {
         s.setName(InputSanitizer.required("name", f.name(), 2, 160));
         s.setTier(f.tier() == null ? SealTier.LOOK : f.tier());
         s.setPolicyText(InputSanitizer.clean(f.policyText(), 2048));
-        s.setIconUrl(f.iconUrl());
-        s.setBackgroundConfigJson(f.background() == null ? null : Json.write(f.background()));
+        // RF25 — desenho do medalhão (validado contra o catálogo) guardado junto da arte de fundo do selo.
+        Map<String, Object> design = SealDesigns.normalize(f.design());
+        if (design == null) {
+            Object existing = Json.map(s.getBackgroundConfigJson()).get("design");
+            design = existing instanceof Map<?, ?> em ? SealDesigns.normalize(castMap(em))
+                    : SealDesigns.defaultDesign(owner.getProfileType() == ProfileType.CELEBRIDADE, s.getTier());
+        }
+        Map<String, Object> cfg = new LinkedHashMap<>(f.background() == null ? Map.of() : f.background());
+        cfg.put("design", design);
+        s.setBackgroundConfigJson(Json.write(cfg));
+        s.setIconUrl("UPLOAD".equals(design.get("mode")) ? String.valueOf(design.get("uploadUrl")) : f.iconUrl());
         if (f.availableFrom() != null && f.availableUntil() != null && f.availableUntil().isBefore(f.availableFrom())) {
             throw ApiException.badRequest("PERIODO_INVALIDO", "A disponibilidade termina antes de começar.");
         }
@@ -195,7 +206,10 @@ public class SealService {
         m.put("visualFamily", s.isPremium() ? "vitreo-holografico" : "textil-dourado");
         m.put("policyText", s.getPolicyText());
         m.put("iconUrl", s.getIconUrl());
-        m.put("background", Json.map(s.getBackgroundConfigJson()));
+        Map<String, Object> cfg = Json.map(s.getBackgroundConfigJson());
+        Object design = cfg.remove("design");
+        m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(s.isPremium(), s.getTier()));
+        m.put("background", cfg);
         m.put("status", s.getStatus());
         m.put("availableFrom", s.getAvailableFrom());
         m.put("availableUntil", s.getAvailableUntil());
@@ -203,6 +217,34 @@ public class SealService {
         m.put("usageCount", s.getUsageCount());
         m.put("available", available(s, Instant.now()));
         m.put("unavailableReason", unavailableReason(s, Instant.now()));
+        return m;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> castMap(Map<?, ?> m) {
+        return (Map<String, Object>) m;
+    }
+
+    /** Medalhões dos vínculos APROVADOS de um esquema — o que o card mostra no espaço reservado ao selo. */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> approvedBadges(UUID schemeId) {
+        return bonds.findBySchemeId(schemeId).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
+                .map(SealService::badge).toList();
+    }
+
+    /** Medalhão de um vínculo aprovado (cards, aba de destaques): tier, emissor, Premium e o desenho do selo. */
+    public static Map<String, Object> badge(SealBond b) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("tier", b.getTier().name());
+        m.put("owner", b.getTargetOwner().getUsername());
+        boolean premium = b.getTargetOwner().getProfileType() == ProfileType.CELEBRIDADE;
+        m.put("premium", premium);
+        Seal seal = b.getSeal();
+        m.put("name", seal == null ? null : seal.getName());
+        m.put("iconUrl", seal == null ? null : seal.getIconUrl());
+        Object design = seal == null ? null : Json.map(seal.getBackgroundConfigJson()).get("design");
+        m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(premium, b.getTier()));
+        m.put("linkedPieceIds", Json.strings(b.getLinkedPieceIdsJson()));
         return m;
     }
 
@@ -221,6 +263,7 @@ public class SealService {
             s.setPremium(premium);
             s.setAutoIssued(true);
             s.setPolicyText(tier == SealTier.PECA ? "Concedido a looks com 1 peça vinculada." : "Concedido a looks com várias peças vinculadas ou o look inteiro.");
+            s.setBackgroundConfigJson(Json.write(Map.of("design", SealDesigns.defaultDesign(premium, tier))));
             seals.save(s);
         }
     }
@@ -930,8 +973,8 @@ public class SealService {
         m.put("linkedPieceIds", Json.strings(b.getLinkedPieceIdsJson()));
         m.put("requiresReview", b.isRequiresReview());
         m.put("sealCode", b.getSealCode());
-        m.put("seal", b.getSeal() == null ? null : Map.of("id", b.getSeal().getId(), "name", b.getSeal().getName(),
-                "iconUrl", String.valueOf(b.getSeal().getIconUrl()), "premium", b.getSeal().isPremium()));
+        m.put("seal", b.getSeal() == null ? null : sealView(b.getSeal()));
+        m.put("badge", badge(b));
         m.put("eraLabel", b.getEraLabel());
         m.put("issuedAt", b.getIssuedAt());
         m.put("expiresAt", b.getExpiresAt());

@@ -63,6 +63,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import br.com.fashionai.application.events.DomainEvents;
 import org.springframework.context.ApplicationEventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,6 +92,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class WardrobeService {
+    private static final Logger log = LoggerFactory.getLogger(WardrobeService.class);
     private final WardrobeItemRepository pieces;
     private final UserRepository users;
     private final BrandRepository brands;
@@ -103,16 +106,16 @@ public class WardrobeService {
     private final SavedItemRepository saved;
     private final PhotoRepository photos;
     private final FlatLayPipeline flatLay;
+    private final br.com.fashionai.application.imaging.StudioPipeline studio;
     private final AiEngine ai;
     private final MediaService media;
     private final AssetCatalogService assets;
     private final ProjectionService projections;
     private final NotificationService notifications;
     private final JobQueuePort queue;
-    private final List<ImageProviderPorts.Model3dPort> model3d;
+    private final Model3dService model3d;
     private final Guard guard;
     private final Audit audit;
-    private final boolean feature3d;
     private final ApplicationEventPublisher events;
 
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
@@ -122,8 +125,7 @@ public class WardrobeService {
                            SavedItemRepository saved, PhotoRepository photos, FlatLayPipeline flatLay, AiEngine ai,
                            MediaService media, AssetCatalogService assets, ProjectionService projections,
                            NotificationService notifications, JobQueuePort queue,
-                           List<ImageProviderPorts.Model3dPort> model3d, Guard guard, Audit audit,
-                           @Value("${fashionai.features.rf16-3d:false}") boolean feature3d,
+                           Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
                            ApplicationEventPublisher events) {
         this.pieces = pieces;
         this.users = users;
@@ -138,6 +140,7 @@ public class WardrobeService {
         this.saved = saved;
         this.photos = photos;
         this.flatLay = flatLay;
+        this.studio = studio;
         this.ai = ai;
         this.media = media;
         this.assets = assets;
@@ -147,7 +150,6 @@ public class WardrobeService {
         this.model3d = model3d;
         this.guard = guard;
         this.audit = audit;
-        this.feature3d = feature3d;
         this.events = events;
     }
 
@@ -161,7 +163,7 @@ public class WardrobeService {
                         Prefill prefill, Map<String, Object> quality, Map<String, Object> moderation,
                         List<FlatLayPipeline.Stage> stages, BigDecimal costUsd, long totalMs, boolean backgroundRemoved,
                         boolean reprocessPending, AiOutcome.Explanation explanation, String aiMessage,
-                        AiOutcome.Quota quota) {
+                        AiOutcome.Quota quota, Map<String, Object> studio, String backgroundWarning) {
     }
 
     /** RF4.CA01–CA03/CA06: valida, padroniza (Flat Lay), modera e pré-preenche; nada vai ao acervo ainda. */
@@ -211,6 +213,8 @@ public class WardrobeService {
         MediaStoragePort.StoredObject processed = media.put(base + "processed.png", r.processedPng(), "image/png");
         MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg", r.processedWhiteJpeg(), "image/jpeg");
         MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png", r.thumbnailPng(), "image/png");
+        // RF4 · Estúdio: com o recorte pronto, gera a foto de produto (vitrine) — nunca trava o cadastro (RNF8)
+        Map<String, Object> studioInfo = r.backgroundRemoved() ? studioShot(user.id(), ImageOps.decode(r.processedPng()), "auto", base) : null;
 
         // Moderação (#2) — nunca aprova por omissão.
         ImageOps.Cutout cutout = r.cutout();
@@ -256,11 +260,17 @@ public class WardrobeService {
         result.put("bytes", bytes.length);
         result.put("hash", Hashing.sha256(bytes));
         result.put("backgroundRemoved", r.backgroundRemoved());
+        if (r.cutout().warning() != null) {
+            result.put("backgroundWarning", r.cutout().warning());
+        }
         result.put("flatLayMetadata", r.metadata());
         result.put("quality", quality);
         result.put("moderation", mod);
         result.put("prefill", prefill);
         result.put("aiInferences", List.of(pipeline.inferenceId(), moderation.inferenceId(), analysis.inferenceId()));
+        if (studioInfo != null) {
+            result.put("studio", studioInfo);
+        }
         job.setResultJson(Json.write(result));
         job.setStagesJson(Json.write(r.stages()));
         job.setQualityScore(BigDecimal.valueOf(r.quality().overall()));
@@ -272,7 +282,7 @@ public class WardrobeService {
         String message = analysis.userMessage() != null ? analysis.userMessage() : pipeline.userMessage();
         return new Draft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), prefill, quality, mod,
                 r.stages(), job.getTotalCostUsd(), r.totalMs(), r.backgroundRemoved(), !r.backgroundRemoved(),
-                analysis.explanation(), message, analysis.quota());
+                analysis.explanation(), message, analysis.quota(), studioInfo, r.cutout().warning());
     }
 
     /** RF4.CA05 — várias fotos: um rascunho por foto, revisáveis antes de confirmar o lote. */
@@ -386,7 +396,7 @@ public class WardrobeService {
                             String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                            Boolean forSale) {
+                            Boolean forSale, Boolean studio) {
     }
 
     @Transactional
@@ -423,10 +433,17 @@ public class WardrobeService {
             if (moderation == ModerationStatus.REJECTED_POLICY) {
                 throw ApiException.badRequest("CONTEUDO_BLOQUEADO", "A foto viola a política de conteúdo e não pode ser usada.");
             }
-            boolean bgRemoved = Boolean.TRUE.equals(r.get("backgroundRemoved"));
+            // recorte incerto que a pessoa conferiu e mandou ao estúdio mesmo assim ("usar mesmo assim") vale como recorte
+            boolean forcedCut = r.get("studio") instanceof Map<?, ?> fs && Boolean.TRUE.equals(fs.get("forced"))
+                    && !Boolean.FALSE.equals(form.studio());
+            boolean bgRemoved = Boolean.TRUE.equals(r.get("backgroundRemoved")) || forcedCut;
             w.setImageUrl(bgRemoved ? (String) r.get("processedUrl") : (String) r.get("originalUrl"));
             w.setOriginalImageUrl((String) r.get("originalUrl"));
             w.setThumbnailUrl((String) r.get("thumbnailUrl"));
+            if (r.get("studio") instanceof Map<?, ?> st && st.get("url") != null && !Boolean.FALSE.equals(form.studio())) {
+                w.setStudioImageUrl(String.valueOf(st.get("url")));
+                w.setStudioBackdrop(st.get("backdrop") == null ? null : String.valueOf(st.get("backdrop")));
+            }
             w.setDefaultImage(false);
             w.setImageHash((String) r.get("hash"));
             w.setImageMimetype((String) r.get("mime"));
@@ -619,7 +636,7 @@ public class WardrobeService {
         boolean self = viewer != null && viewer.id().equals(owner);
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(owner).stream()
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
-                .filter(w -> self || guard.canView(viewer, owner, w.getVisibility()))
+                .filter(w -> self || guard.canView(viewer, owner, effectiveVisibility(w)))
                 .filter(w -> self || w.getModerationStatus() == ModerationStatus.APPROVED)
                 .filter(w -> blank(f.category()) || f.category().equals(w.getCategory()))
                 .filter(w -> blank(f.color()) || f.color().equals(w.getColor())
@@ -675,11 +692,10 @@ public class WardrobeService {
             out.put("fromSchemeId", fromSchemeId);
             return out;
         }
-        guard.requireView(viewer, w.getUser().getId(), w.getVisibility(), "piece:" + id);
-        if (!owner) {
-            w.setViewCount(w.getViewCount() + 1);
-        }
-        w.setLastViewedAt(Instant.now());
+        guard.requireView(viewer, w.getUser().getId(), effectiveVisibility(w), "piece:" + id);
+        // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
+        // e mexer na entidade gerava conflito de versão (409) num simples GET.
+        pieces.touchView(w.getId(), owner ? 0 : 1, Instant.now());
         out.put("piece", Views.piece(w, viewerState(viewer, w), reactionCounts(TargetType.PIECE, w.getId())));
         out.put("fromSchemeId", fromSchemeId);
         out.put("wearstyles", Taxonomy.wearstylesOf(w.getCategory(), Json.csv(w.getOccasionTags())));
@@ -694,6 +710,11 @@ public class WardrobeService {
         out.put("originSchemes", origins);
         out.put("canEdit", owner);
         return out;
+    }
+
+    /** Visibilidade efetiva da peça: a mais restritiva entre a da peça e a do perfil do dono (mesma regra dos esquemas). */
+    public static Visibility effectiveVisibility(WardrobeItem w) {
+        return SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility());
     }
 
     public Views.ViewerState viewerState(CurrentUser viewer, WardrobeItem w) {
@@ -817,6 +838,13 @@ public class WardrobeService {
         w.setThumbnailUrl(thumb.url());
         w.setDefaultImage(false);
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
+        // a foto de estúdio acompanha a imagem nova (recorte com transparência) ou sai (foto opaca não vai ao estúdio)
+        if (hasTransparency(img)) {
+            refreshStudio(w, img, false);
+        } else {
+            w.setStudioImageUrl(null);
+            w.setStudioBackdrop(null);
+        }
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "image"));
         return Views.piece(w, viewerState(user, w), null);
     }
@@ -841,6 +869,7 @@ public class WardrobeService {
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
         w.setFlatLayMetadataJson(Json.write(r.metadata()));
         w.setPhotoQualityScoresJson(Json.write(Map.of("overall", r.quality().overall(), "metrics", r.quality().metrics())));
+        refreshStudio(w, ImageOps.decode(r.processedPng()), false);
         return Map.of("ok", true, "imageUrl", processed.url(), "thumbnailUrl", thumb.url(), "stages", r.stages());
     }
 
@@ -873,6 +902,7 @@ public class WardrobeService {
                     w.setThumbnailUrl(media.put(base + "-thumb.png", r.thumbnailPng(), "image/png").url());
                     w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
                     w.setFlatLayMetadataJson(Json.write(r.metadata()));
+                    refreshStudio(w, ImageOps.decode(r.processedPng()), true);      // agora com recorte: ganha o estúdio
                     job.setStatus(PipelineJobStatus.COMPLETED);
                     notifications.notify(w.getUser().getId(), null, NotificationType.AI_JOB_FINISHED, "PIECE", w.getId(),
                             "Foto da peça padronizada", "O fundo de " + w.getName() + " foi removido.", null);
@@ -889,41 +919,186 @@ public class WardrobeService {
         return done;
     }
 
-    // ================================================================== RF16 — 3D (tema futuro, feature flag)
+    // ================================================================== RF4 · Estúdio (foto de produto)
+    /**
+     * Refaz a foto de estúdio quando a imagem da peça muda (mesmo fundo de antes). {@code createIfMissing}: peça que não
+     * tinha estúdio passa a ter. Se o estúdio falhar, a foto antiga sai — estúdio de outra imagem é pior que nenhum.
+     */
+    void refreshStudio(WardrobeItem w, BufferedImage cutout, boolean createIfMissing) {
+        if (w.getStudioImageUrl() == null && !createIfMissing) {
+            return;
+        }
+        Map<String, Object> info = studioShot(w.getUser().getId(), cutout, w.getStudioBackdrop() == null ? "auto" : w.getStudioBackdrop(),
+                "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/");
+        w.setStudioImageUrl(info == null ? null : String.valueOf(info.get("url")));
+        w.setStudioBackdrop(info == null ? null : String.valueOf(info.get("backdrop")));
+    }
+
+    private static boolean hasTransparency(BufferedImage img) {
+        if (!img.getColorModel().hasAlpha()) {
+            return false;
+        }
+        for (int y = 0; y < img.getHeight(); y += 4) {
+            if ((img.getRGB(0, y) >>> 24) < 16 || (img.getRGB(img.getWidth() - 1, y) >>> 24) < 16) {
+                return true;
+            }
+        }
+        for (int x = 0; x < img.getWidth(); x += 4) {
+            if ((img.getRGB(x, 0) >>> 24) < 16 || (img.getRGB(x, img.getHeight() - 1) >>> 24) < 16) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Roda o pipeline de estúdio na governança de IA (Photoroom/Stability → local) e guarda estúdio + recorte realçado. */
+    Map<String, Object> studioShot(UUID userId, java.awt.image.BufferedImage cutout, String backdrop, String basePath) {
+        try {
+            AiOutcome<br.com.fashionai.application.imaging.StudioPipeline.Result> out = ai.execute(userId, AiCapability.STUDIO_ENHANCER,
+                    List.of("recorte da peça (PNG sem fundo)", "cor de fundo " + backdrop), null, null,
+                    List.of(new AiEngine.RemoteStep<>() {
+                        public String provider() {
+                            return "photoroom/stability";
+                        }
+
+                        public String model() {
+                            return "studio-hybrid";
+                        }
+
+                        public boolean available() {
+                            return studio.externalAvailable();
+                        }
+
+                        public AiEngine.RemoteResult<br.com.fashionai.application.imaging.StudioPipeline.Result> call() {
+                            var res = studio.run(cutout, backdrop, true);
+                            return new AiEngine.RemoteResult<>(res, res.costUsd(), "estúdio " + res.backdrop().id());
+                        }
+                    }), () -> studio.run(cutout, backdrop, false));
+            var res = out.value();
+            long stamp = System.currentTimeMillis();
+            MediaStoragePort.StoredObject shot = media.put(basePath + "studio-" + res.backdrop().id() + "-" + stamp + ".jpg", res.studioJpeg(), "image/jpeg");
+            // miniatura para grades (closet, feed, busca) — mesma URL com ".thumb.jpg"
+            media.put(basePath + "studio-" + res.backdrop().id() + "-" + stamp + ".thumb.jpg",
+                    ImageOps.jpeg(ImageOps.scaleToFit(ImageOps.decode(res.studioJpeg()), 640, 640), 0.86f), "image/jpeg");
+            MediaStoragePort.StoredObject enhanced = media.put(basePath + "enhanced-" + stamp + ".png", res.enhancedPng(), "image/png");
+            Map<String, Object> info = new LinkedHashMap<>();
+            info.put("url", shot.url());
+            info.put("thumbUrl", Views.studioThumb(shot.url()));
+            info.put("enhancedUrl", enhanced.url());
+            info.put("backdrop", res.backdrop().id());
+            info.put("backdropLabel", res.backdrop().label());
+            info.put("stages", res.stages());
+            info.put("metrics", res.metrics());
+            info.put("provider", out.provider());
+            info.put("fallbackUsed", out.fallbackUsed() || res.fallbackUsed());
+            info.put("costUsd", res.costUsd());
+            return info;
+        } catch (RuntimeException e) {
+            log.warn("estúdio falhou (segue só com o Flat Lay): {}", e.toString());
+            return null;
+        }
+    }
+
+    /** Fundos de estúdio disponíveis (+ "auto", que escolhe pela cor da peça). */
+    public List<Map<String, Object>> studioBackdrops() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        out.add(Map.of("id", "auto", "label", "Automático (contraste com a peça)"));
+        for (var b : br.com.fashionai.application.imaging.StudioPipeline.BACKDROPS) {
+            out.add(Map.of("id", b.id(), "label", b.label(), "hex", b.hex(), "edge", String.format("#%06X", b.edge())));
+        }
+        return out;
+    }
+
+    /**
+     * Refaz o estúdio do rascunho com outro fundo (antes de salvar a peça). {@code force}: o recorte local foi marcado
+     * como incerto (fundo parecido com a peça), mas a pessoa conferiu e quer usar mesmo assim.
+     */
+    @Transactional
+    public Map<String, Object> studioDraft(CurrentUser user, UUID draftId, String backdrop, boolean force) {
+        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
+        if (!draft.getUser().getId().equals(user.id())) {
+            throw guard.deny(user, "draft:" + draftId, "Rascunho de outro usuário.");
+        }
+        Map<String, Object> r = new LinkedHashMap<>(Json.map(draft.getResultJson()));
+        if (!Boolean.TRUE.equals(r.get("backgroundRemoved")) && !force) {
+            throw new ApiException(422, "SEM_RECORTE", r.get("backgroundWarning") != null
+                    ? "O recorte automático ficou incerto: " + r.get("backgroundWarning") + ". Fotografe sobre um fundo de outra cor ou use o recorte mesmo assim."
+                    : "O estúdio precisa do fundo removido. Tente outra foto, com a peça sobre um fundo liso.");
+        }
+        byte[] png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound("Recorte do rascunho"));
+        Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
+                "users/" + user.id() + "/drafts/" + draftId + "/");
+        if (info == null) {
+            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. A foto padronizada continua valendo.");
+        }
+        if (!Boolean.TRUE.equals(r.get("backgroundRemoved"))) {
+            info.put("forced", true);
+        }
+        r.put("studio", info);
+        draft.setResultJson(Json.write(r));
+        return info;
+    }
+
+    /** Gera (ou refaz) a foto de estúdio de uma peça já cadastrada a partir do recorte atual. */
+    @Transactional
+    public Views.PieceView studioPiece(CurrentUser user, UUID id, String backdrop) {
+        guard.requireCanCreate(user);
+        WardrobeItem w = owned(user, id);
+        if (w.isDefaultImage() || w.getImageUrl() == null || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED) {
+            throw new ApiException(422, "SEM_RECORTE", "A peça precisa de uma foto própria com o fundo removido para ir ao estúdio.");
+        }
+        byte[] png = media.read(w.getImageUrl()).orElseThrow(() -> ApiException.notFound("Foto da peça"));
+        Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
+                "users/" + user.id() + "/pieces/" + id + "/");
+        if (info == null) {
+            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. Tente de novo em instantes.");
+        }
+        w.setStudioImageUrl(String.valueOf(info.get("url")));
+        w.setStudioBackdrop(String.valueOf(info.get("backdrop")));
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        meta.put("studio", Map.of("stages", info.get("stages"), "metrics", info.get("metrics"), "provider", String.valueOf(info.get("provider"))));
+        w.setFlatLayMetadataJson(Json.write(meta));
+        return Views.piece(w, viewerState(user, w), null);
+    }
+
+    /** Leva ao estúdio as peças do usuário que ainda não têm foto de estúdio (até 40 por chamada). */
+    @Transactional
+    public Map<String, Object> studioAll(CurrentUser user, String backdrop) {
+        guard.requireCanCreate(user);
+        int done = 0, skipped = 0;
+        for (WardrobeItem w : pieces.findByUserIdOrderByCreatedAtDesc(user.id())) {
+            if (done >= 40) {
+                break;
+            }
+            if (w.getStudioImageUrl() != null || w.isDefaultImage() || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED
+                    || w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) {
+                skipped++;
+                continue;
+            }
+            byte[] png = media.read(w.getImageUrl()).orElse(null);
+            Map<String, Object> info = png == null ? null : studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
+                    "users/" + user.id() + "/pieces/" + w.getId() + "/");
+            if (info == null) {
+                skipped++;
+                continue;
+            }
+            w.setStudioImageUrl(String.valueOf(info.get("url")));
+            w.setStudioBackdrop(String.valueOf(info.get("backdrop")));
+            done++;
+        }
+        return Map.of("generated", done, "skipped", skipped);
+    }
+
+    // ================================================================== RF16 — 3D (job assíncrono; ver Model3dService)
     @Transactional
     public Map<String, Object> request3d(CurrentUser user, UUID id) {
         guard.requireCanCreate(user);
-        WardrobeItem w = owned(user, id);
-        if (!feature3d) {
-            throw new ApiException(409, "RECURSO_FUTURO",
-                    "A geração 3D (RF16) é tema futuro e está desligada nesta versão. A peça continua em 2D.");
-        }
-        boolean retryFree = w.getModel3dStatus() == Model3dStatus.FAILED;
-        PipelineJob job = new PipelineJob();
-        job.setUser(w.getUser());
-        job.setType(PipelineJobType.THREE_D_GENERATION);
-        job.setStatus(PipelineJobStatus.PENDING);
-        job.setInputResourceId(id);
-        job.setTargetType("PIECE");
-        job.setQueuedAt(Instant.now());
-        job.setRetryCount(retryFree ? 1 : 0);
-        jobs.save(job);
-        w.setModel3dStatus(Model3dStatus.QUEUED);
-        Optional<ImageProviderPorts.Model3dPort> port = model3d.stream().filter(ImageProviderPorts.Model3dPort::available).findFirst();
-        if (port.isPresent()) {
-            media.read(w.getImageUrl()).flatMap(b -> port.get().submit(b)).ifPresent(ext -> {
-                job.setExternalJobId(ext);
-                job.setStatus(PipelineJobStatus.RUNNING);
-                w.setModel3dStatus(Model3dStatus.PROCESSING);
-            });
-        }
-        return Map.of("jobId", job.getId(), "status", w.getModel3dStatus(), "freeRetry", retryFree);
+        return model3d.request(owned(user, id));
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> status3d(CurrentUser user, UUID id) {
-        WardrobeItem w = owned(user, id);
-        return Map.of("status", String.valueOf(w.getModel3dStatus()), "modelUrl", String.valueOf(w.getModel3dUrl()),
-                "featureEnabled", feature3d);
+        return model3d.status(owned(user, id));
     }
 
     // ================================================================== "Adicionar" (copiar peça pública)
@@ -953,6 +1128,8 @@ public class WardrobeService {
         copy.setPrice(src.getPrice());
         copy.setImageUrl(src.getImageUrl());
         copy.setThumbnailUrl(src.getThumbnailUrl());
+        copy.setStudioImageUrl(src.getStudioImageUrl());
+        copy.setStudioBackdrop(src.getStudioBackdrop());
         copy.setDefaultImage(src.isDefaultImage());
         copy.setModerationStatus(src.getModerationStatus());
         copy.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);

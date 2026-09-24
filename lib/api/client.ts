@@ -111,7 +111,8 @@ export const api = {
   upload: <T,>(path: string, form: FormData, method: "POST" | "PUT" = "POST") => request<T>(method, path, form),
   /** Busca um binário autenticado (card.png privado, foto) e devolve uma object URL. */
   async blobUrl(path: string): Promise<string> {
-    const blob = await request<Blob>("GET", path);
+    // imagens (card.png, exportações): o Accept padrão é JSON e o servidor responderia 406
+    const blob = await request<Blob>("GET", path, undefined, { headers: { Accept: "image/png,image/*;q=0.9,*/*;q=0.8" } });
     return URL.createObjectURL(blob);
   },
 };

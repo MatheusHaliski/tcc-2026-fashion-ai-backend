@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { setLabelLocale } from "@/lib/api/taxonomy";
 import { DICTIONARIES, LOCALES, type Dictionary, type Locale } from "./dictionaries";
 
 interface I18n {
@@ -27,6 +28,7 @@ export function I18nProvider({ children, initial }: { children: ReactNode; initi
   }, []);
   const setLocale = useCallback((l: Locale) => { setLocaleState(l); try { localStorage.setItem(STORAGE, l); } catch { /* ignore */ } }, []);
   useEffect(() => { document.documentElement.lang = locale; }, [locale]);
+  setLabelLocale(locale); // antes do render dos filhos: rótulos de taxonomia no idioma atual
   const value = useMemo<I18n>(() => {
     const meta = LOCALES.find((x) => x.code === locale) ?? LOCALES[0];
     const dict = DICTIONARIES[locale];

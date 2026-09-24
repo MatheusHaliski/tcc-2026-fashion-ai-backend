@@ -1,7 +1,9 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.service.PhotoService;
+import br.com.fashionai.web.support.Uploads;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -46,10 +49,27 @@ public class PhotoController {
     }
 
     @GetMapping("/api/photos/{id}/file")
-    @Operation(summary = "RF12 — Baixar a foto original")
+    @Operation(summary = "RF12.CA05 — Baixar a foto original (sem marca d'água, só o dono)")
     public ResponseEntity<byte[]> download(CurrentUser user, @PathVariable UUID id) {
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"foto-" + id + ".jpg\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM).body(photos.download(user, id));
+        byte[] bytes = photos.download(user, id);
+        String mime = ImageOps.detectMime(bytes);
+        String type = mime == null ? MediaType.APPLICATION_OCTET_STREAM_VALUE : mime;
+        String ext = mime == null ? "bin" : mime.substring(mime.indexOf('/') + 1).replace("jpeg", "jpg");
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"foto-" + id + "." + ext + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .contentType(MediaType.parseMediaType(type)).body(bytes);
+    }
+
+    @PostMapping(value = "/api/photos/{id}/edits", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF12.CA02 / RF15.CA02 — Salvar a edição do Editor Canvas 2D (a original é preservada)")
+    public Map<String, Object> saveEdit(CurrentUser user, @PathVariable UUID id, @RequestPart("file") MultipartFile file) {
+        return photos.saveEdit(user, id, Uploads.image(file));
+    }
+
+    @PostMapping(value = "/api/photos/background-removal", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF15.CA01/CA04 — Remoção de fundo sob demanda para o editor")
+    public Map<String, Object> removeBackground(CurrentUser user, @RequestPart("file") MultipartFile file) {
+        return photos.removeBackground(user, Uploads.image(file));
     }
 
     public record KeyMoment(boolean key) {

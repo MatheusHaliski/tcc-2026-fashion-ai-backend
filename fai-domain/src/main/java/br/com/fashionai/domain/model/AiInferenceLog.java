@@ -39,7 +39,7 @@ public class AiInferenceLog {
     @Column(nullable = false, length = 50)
     private String capability;
 
-    @Column(name = "host_rf", length = 10)
+    @Column(name = "host_rf", length = 40)
     private String hostRf;
 
     @Column(nullable = false, length = 60)
