@@ -814,3 +814,6 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .mode-team-rating b { font-size: 24px; color: #ffe29a; }
 @media (max-width: 480px) { .mode-chess { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 108px); } .mode-stats { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .mode-card { transition: none; } }
+
+/* Passarela 3D (RF33): barra de filtros e rankings */
+.runway-filters { display: grid; gap: 8px; margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }

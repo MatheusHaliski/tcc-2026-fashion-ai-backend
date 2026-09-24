@@ -1,5 +1,10 @@
 package br.com.fashionai.application.service;
 
+import java.util.HashSet;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.taxonomy.WorldRegions;
+import br.com.fashionai.domain.model.enums.FollowStatus;
+import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -77,8 +82,9 @@ public class ShowcaseService {
     private final Guard guard;
     private final UserRepository users;
     private final MediaService media;
+    private final FollowRepository follows;
 
-    public ShowcaseService(UserRepository users, MediaService media, SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
+    public ShowcaseService(FollowRepository follows, UserRepository users, MediaService media, SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                            SchemeGroupingRepository groupings, DailyLookRepository dailyLooks, DailyLookService dailyLookService,
                            UserPreferencesRepository preferences, CelebrityProfileRepository celebrities,
                            SchemeService schemeService, InstitutionalService institutional, Model3dService model3d, Guard guard) {
@@ -96,6 +102,7 @@ public class ShowcaseService {
         this.guard = guard;
         this.users = users;
         this.media = media;
+        this.follows = follows;
     }
 
     // ================================================================== look no manequim ("Gerar 3D")
@@ -320,57 +327,184 @@ public class ShowcaseService {
 
     // ================================================================== Passarela 3D (Explorar)
 
-    /**
-     * O desfile do dia: o Look do Dia de hoje de cada perfil visível, do maior para o menor Hype Score. Quem registrou
-     * look na última semana e não trocou hoje continua desfilando com o último (mesma virada de dia do RF6).
-     */
+    /** Rankings da Passarela: o desfile mostra um lote por vez (nunca "todo mundo") e a tabela vai até o Top 100. */
+    public static final List<String> RUNWAY_RANKINGS = List.of("TOP100_GLOBAL", "TOP100_REGIONAL", "TOP100_PAIS", "SEGUINDO", "EM_ALTA", "RECENTES");
+    static final int RUNWAY_TOP = 100;
+
+    public record RunwayFilter(String ranking, String region, String country, List<String> colors, List<String> occasions, List<String> styles,
+                               String sex, Integer limit, Integer offset) {
+        public static RunwayFilter of(Integer limit) {
+            return new RunwayFilter(null, null, null, List.of(), List.of(), List.of(), null, limit, 0);
+        }
+    }
+
+    /** Atributos de um Look do Dia usados nos filtros (país/região do dono, famílias de cor, ocasiões e estilos). */
+    record RunwayEntry(DailyLook dl, String country, String region, Set<String> colors, Set<String> occasions, Set<String> styles, String sex) {
+    }
+
+    RunwayEntry entry(DailyLook dl) {
+        Scheme s = dl.getScheme();
+        List<WardrobeItem> ws = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).toList();
+        Set<String> colors = new java.util.TreeSet<>(), occ = new java.util.TreeSet<>(), styles = new java.util.TreeSet<>();
+        for (WardrobeItem w : ws) {
+            if (w.getColor() != null) {
+                colors.add(Taxonomy.COLOR_FAMILY.getOrDefault(w.getColor(), w.getColor()));
+            }
+            occ.addAll(Json.csv(w.getOccasionTags()));
+            styles.addAll(Json.csv(w.getStyleTags()));
+        }
+        occ.addAll(Json.csv(s.getOccasion()));
+        styles.addAll(Json.csv(s.getStyle()));
+        User u = dl.getUser();
+        String country = u.getCountry() == null ? null : u.getCountry().toUpperCase(Locale.ROOT);
+        return new RunwayEntry(dl, country, WorldRegions.of(country), colors, occ, styles, u.getSex() == null ? null : u.getSex().name());
+    }
+
     @Transactional
     public Map<String, Object> runway(CurrentUser viewer, Integer limit) {
+        return runway(viewer, RunwayFilter.of(limit));
+    }
+
+    /**
+     * O desfile do dia: o Look do Dia de hoje de cada perfil visível. Quem registrou look na última semana e não trocou
+     * hoje continua desfilando com o último (mesma virada de dia do RF6). Rankings: Top 100 Global (Hype Score), Top 100
+     * Regional (região do mundo), Top 100 do país, Seguindo, Em alta (curtidas) e Recentes; filtros por região, cores,
+     * ocasiões, estilos e manequim. Como seria inviável desfilar todo mundo, a passarela 3D mostra um lote de até 24
+     * looks por vez ({@code limit}/{@code offset}) e a tabela lateral vai até o Top 100.
+     */
+    @Transactional
+    public Map<String, Object> runway(CurrentUser viewer, RunwayFilter f) {
         LocalDate today = LocalDate.now(FaiPointsService.ZONE);
         Set<UUID> recent = new LinkedHashSet<>();
         for (DailyLook dl : dailyLooks.findByLookDateGreaterThanEqual(today.minusDays(7))) {
             recent.add(dl.getUser().getId());
         }
         recent.forEach(dailyLookService::today);
-        int max = Math.max(1, Math.min(RUNWAY_MAX, limit == null ? 12 : limit));
-        List<DailyLook> todays = dailyLooks.findByLookDate(today).stream()
+        int max = Math.max(1, Math.min(RUNWAY_MAX, f.limit() == null ? 12 : f.limit()));
+        int offset = Math.max(0, f.offset() == null ? 0 : f.offset());
+        String ranking = f.ranking() == null || f.ranking().isBlank() ? "TOP100_GLOBAL" : f.ranking().toUpperCase(Locale.ROOT);
+        if (!RUNWAY_RANKINGS.contains(ranking)) {
+            throw ApiException.badRequest("RANKING_INVALIDO", "Rankings: " + RUNWAY_RANKINGS);
+        }
+        User me = viewer == null ? null : users.findById(viewer.id()).orElse(null);
+        List<RunwayEntry> pool = dailyLooks.findByLookDate(today).stream()
                 .filter(dl -> dl.getUser().getStatus() == AccountStatus.ACTIVE && !dl.getUser().isRunwayOptOut())
                 .filter(dl -> dl.getScheme().getStatus() != SchemeStatus.ARCHIVED && schemeService.canView(viewer, dl.getScheme()))
-                .sorted(Comparator.comparing((DailyLook dl) -> hype(dl.getScheme().getHypeScore())).reversed()
-                        .thenComparing(dl -> -dl.getScheme().getLikeCount()))
+                .map(this::entry).toList();
+
+        // escopo do ranking
+        String region = f.region() == null || f.region().isBlank() ? null : f.region().toUpperCase(Locale.ROOT);
+        String country = f.country() == null || f.country().isBlank() ? null : f.country().toUpperCase(Locale.ROOT);
+        if ("TOP100_REGIONAL".equals(ranking) && region == null) {
+            region = me == null ? "AMERICA_DO_SUL" : WorldRegions.of(me.getCountry());
+        }
+        if ("TOP100_PAIS".equals(ranking) && country == null) {
+            country = me == null || me.getCountry() == null ? "BR" : me.getCountry().toUpperCase(Locale.ROOT);
+        }
+        Set<UUID> following = new HashSet<>();
+        if ("SEGUINDO".equals(ranking)) {
+            if (viewer == null) {
+                throw ApiException.unauthorized("Entre na conta para ver quem você segue na passarela.");
+            }
+            follows.findByFollowerIdAndStatus(viewer.id(), FollowStatus.ACEITO).forEach(x -> following.add(x.getFollowing().getId()));
+            following.add(viewer.id());
+        }
+        final String fr = region, fc = country;
+        List<RunwayEntry> scoped = pool.stream()
+                .filter(e -> fr == null || fr.equals(e.region()))
+                .filter(e -> fc == null || fc.equals(e.country()))
+                .filter(e -> following.isEmpty() || following.contains(e.dl().getUser().getId()))
                 .toList();
-        List<Map<String, Object>> looks = new ArrayList<>();
+        // facetas (contagens do escopo, antes dos filtros de cor/ocasião/estilo)
+        Map<String, Object> facets = new LinkedHashMap<>();
+        facets.put("regions", WorldRegions.codes().stream().map(c -> Map.of("code", c, "label", WorldRegions.label(c), "count", pool.stream().filter(e -> c.equals(e.region())).count()))
+                .filter(m -> ((Long) m.get("count")) > 0 || "AMERICA_DO_SUL".equals(m.get("code"))).toList());
+        facets.put("countries", count(scoped.stream().map(RunwayEntry::country).filter(Objects::nonNull).toList()));
+        facets.put("colors", count(scoped.stream().flatMap(e -> e.colors().stream()).toList()));
+        facets.put("occasions", count(scoped.stream().flatMap(e -> e.occasions().stream()).toList()));
+        facets.put("styles", count(scoped.stream().flatMap(e -> e.styles().stream()).toList()));
+        // filtros
+        List<String> colors = f.colors() == null ? List.of() : f.colors(), occ = f.occasions() == null ? List.of() : f.occasions(),
+                styles = f.styles() == null ? List.of() : f.styles();
+        String sex = f.sex() == null || f.sex().isBlank() ? null : f.sex().toUpperCase(Locale.ROOT);
+        Comparator<RunwayEntry> order = switch (ranking) {
+            case "EM_ALTA" -> Comparator.comparingLong((RunwayEntry e) -> e.dl().getScheme().getLikeCount() + 2 * e.dl().getScheme().getSaveCount()).reversed()
+                    .thenComparing(e -> -hype(e.dl().getScheme().getHypeScore()));
+            case "RECENTES" -> Comparator.comparing((RunwayEntry e) -> e.dl().getCreatedAt() == null ? java.time.Instant.EPOCH : e.dl().getCreatedAt()).reversed();
+            default -> Comparator.comparing((RunwayEntry e) -> hype(e.dl().getScheme().getHypeScore())).reversed()
+                    .thenComparing(e -> -e.dl().getScheme().getLikeCount());
+        };
+        List<RunwayEntry> ranked = scoped.stream()
+                .filter(e -> colors.isEmpty() || colors.stream().anyMatch(e.colors()::contains))
+                .filter(e -> occ.isEmpty() || occ.stream().anyMatch(e.occasions()::contains))
+                .filter(e -> styles.isEmpty() || styles.stream().anyMatch(e.styles()::contains))
+                .filter(e -> sex == null || sex.equals(e.sex()))
+                .sorted(order).limit(RUNWAY_TOP).toList();
+
         Integer yourPosition = null;
-        for (int i = 0; i < todays.size(); i++) {
-            DailyLook dl = todays.get(i);
-            boolean you = viewer != null && viewer.id().equals(dl.getUser().getId());
+        List<Map<String, Object>> table = new ArrayList<>();
+        for (int i = 0; i < ranked.size(); i++) {
+            RunwayEntry e = ranked.get(i);
+            boolean you = viewer != null && viewer.id().equals(e.dl().getUser().getId());
             if (you) {
                 yourPosition = i + 1;
             }
-            if (looks.size() < max || you) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("position", i + 1);
-                m.put("you", you);
-                m.put("source", dl.getSource().name());
-                m.put("carriedOver", dl.getMaterializedFrom() != null);
-                m.put("look", look(dl.getScheme(), viewer));
-                looks.add(m);
-            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("position", i + 1);
+            row.put("schemeId", e.dl().getScheme().getId());
+            row.put("title", e.dl().getScheme().getTitle());
+            row.put("owner", Views.user(e.dl().getUser()));
+            row.put("hypeScore", e.dl().getScheme().getHypeScore());
+            row.put("likes", e.dl().getScheme().getLikeCount());
+            row.put("country", e.country());
+            row.put("region", WorldRegions.label(e.region()));
+            row.put("you", you);
+            table.add(row);
+        }
+        List<Map<String, Object>> looks = new ArrayList<>();
+        for (int i = offset; i < Math.min(ranked.size(), offset + max); i++) {
+            RunwayEntry e = ranked.get(i);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("position", i + 1);
+            m.put("you", viewer != null && viewer.id().equals(e.dl().getUser().getId()));
+            m.put("source", e.dl().getSource().name());
+            m.put("carriedOver", e.dl().getMaterializedFrom() != null);
+            m.put("country", e.country());
+            m.put("region", WorldRegions.label(e.region()));
+            m.put("look", look(e.dl().getScheme(), viewer));
+            looks.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("date", today);
         out.put("nextUpdate", ZonedDateTime.now(FaiPointsService.ZONE).toLocalDate().plusDays(1).atStartOfDay(FaiPointsService.ZONE).toInstant());
-        out.put("total", todays.size());
+        out.put("totalToday", pool.size());
+        out.put("total", ranked.size());
+        out.put("ranking", ranking);
+        out.put("rankings", RUNWAY_RANKINGS);
+        out.put("applied", Map.of("region", region == null ? "" : region, "country", country == null ? "" : country, "colors", colors, "occasions", occ, "styles", styles,
+                "sex", sex == null ? "" : sex));
+        out.put("batch", Map.of("offset", offset, "limit", max, "from", ranked.isEmpty() ? 0 : offset + 1, "to", Math.min(ranked.size(), offset + max),
+                "hasNext", offset + max < ranked.size(), "hasPrev", offset > 0));
         out.put("looks", looks);
+        out.put("table", table);
+        out.put("facets", facets);
         if (viewer != null) {
-            User me = users.findById(viewer.id()).orElse(null);
             Map<String, Object> you = new LinkedHashMap<>();
             you.put("optedOut", me != null && me.isRunwayOptOut());
             you.put("hasLook", dailyLooks.findByUserIdAndLookDate(viewer.id(), today).isPresent());
             you.put("position", yourPosition);
+            you.put("region", me == null ? null : WorldRegions.of(me.getCountry()));
+            you.put("country", me == null ? null : me.getCountry());
             out.put("you", you);
         }
         return out;
+    }
+
+    static List<Map<String, Object>> count(List<String> values) {
+        Map<String, Long> c = new java.util.TreeMap<>();
+        values.forEach(v -> c.merge(v, 1L, Long::sum));
+        return c.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(e -> Map.<String, Object>of("value", e.getKey(), "count", e.getValue())).toList();
     }
 
     private static double hype(BigDecimal b) {
