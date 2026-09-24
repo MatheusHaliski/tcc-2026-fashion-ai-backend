@@ -146,6 +146,10 @@ class StudioFramingGhostLogoTest {
         assertThat(detail.getWidth()).isEqualTo(1200);
         assertThat(detail.getHeight()).isEqualTo(1500);
         assertThat(r.logo()).containsEntry("source", "local");
-        assertThat(r.ghost()).anyMatch(n -> n.contains("decote"));
+        assertThat(r.ghost()).noneMatch(n -> n.contains("decote"));             // padrão: sem manequim fantasma
+        StudioPipeline withGhost = new StudioPipeline(java.util.List.of(), java.util.List.of());
+        withGhost.setGhostFill(true);
+        assertThat(withGhost.run(tee(true, null), "auto", false, new StudioPipeline.Hints("TOP", Set.of(), null, null)).ghost())
+                .anyMatch(n -> n.contains("decote"));
     }
 }

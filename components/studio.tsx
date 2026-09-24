@@ -16,7 +16,7 @@ export interface StudioInfo {
 const SIDE_LABEL: Record<string, string> = { bottom: "base", top: "topo", left: "esquerda", right: "direita" };
 
 const STAGE_LABEL: Record<string, string> = {
-  LIMPEZA: "Limpeza", NITIDEZ: "Nitidez e contorno", MANEQUIM_INVISIVEL: "Manequim invisível", LOGO: "Logo", ESTUDIO_IA: "Estúdio por IA",
+  LIMPEZA: "Limpeza", NITIDEZ: "Nitidez e contorno", MANEQUIM_INVISIVEL: "Sem manequim fantasma", LOGO: "Logo", ESTUDIO_IA: "Estúdio por IA",
   VOLUME_LUZ: "Volume e luz", ENQUADRAMENTO: "Enquadramento", FUNDO_ESTUDIO: "Fundo de estúdio", SOMBRA: "Sombra",
   COMPOSICAO: "Composição", DETALHE: "Detalhe do logo", VALIDACAO: "Validação",
 };
@@ -94,8 +94,8 @@ export function StudioReport({ info }: { info: StudioInfo }) {
       </dl>
       <ul className="mt-2 space-y-0.5">
         {info.framing && <li><strong className="text-ink">Enquadramento:</strong> {info.framing.aspect} · a peça ocupa {Math.round((info.framing.fill ?? 0) * 100)}% do quadro{info.framing.bleed?.length ? (info.framing.bleed.every((b) => info.framing?.flush?.includes(b)) ? ` · rente à ${info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ")} (nada cortado)` : ` · sangra na ${info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ")} (o corte da foto fica fora do quadro)`) : " · peça inteira, margem mínima"}</li>}
-        <li><strong className="text-ink">Manequim invisível:</strong> {info.ghost?.length ? info.ghost.join(" · ") : "nada a preencher"}</li>
-        <li><strong className="text-ink">Logo:</strong> {info.logo ? `encontrado (${info.logo.source === "ia" ? "IA de visão" : "detector local"}) · foco e foto de detalhe` : "nenhum identificado"}</li>
+        <li><strong className="text-ink">Manequim:</strong> {info.ghost?.length ? info.ghost.join(" · ") : "sem manequim fantasma — peça superior e vestido ganham a Foto com meu manequim"}</li>
+        <li><strong className="text-ink">Logo:</strong> {info.logo ? `encontrado (${info.logo.source === "ia" ? "IA de visão" : info.logo.source === "catalogo" ? "selo FAI da arte padrão" : "detector local"}) · foco e foto de detalhe` : "nenhum identificado"}</li>
       </ul>
       <p className="mt-1">Motor: {info.provider ?? "local"}{info.fallbackUsed ? " (plano B local)" : ""}{info.forced ? " · recorte conferido por você" : ""}</p>
     </div>

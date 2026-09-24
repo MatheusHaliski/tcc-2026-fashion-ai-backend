@@ -39,7 +39,7 @@ public class SecurityConfig {
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
-            "/api/schemes/*", "/api/schemes/*/card.png", "/api/pieces/*", "/api/dna-schemes/*",
+            "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
             "/api/users/*/groupings", "/api/users/*/connections", "/api/groupings/*/schemes",
@@ -61,8 +61,9 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/media/restricted/**").hasRole("ADMIN")   // documentos do cadastro (RF1)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh",
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/uploads", "/api/auth/login", "/api/auth/refresh",
                                 "/api/auth/password-reset/request", "/api/auth/password-reset/confirm").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/username-suggestions").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

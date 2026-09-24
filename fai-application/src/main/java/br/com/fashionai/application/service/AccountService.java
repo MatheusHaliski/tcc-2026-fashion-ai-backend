@@ -174,6 +174,10 @@ public class AccountService {
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
         out.put("defaultSchemeVisibility", defaultVisibility(u));
         out.put("profileVisibility", u.getProfileVisibility());
+        out.put("sex", u.getSex());
+        out.put("runwayOptOut", u.isRunwayOptOut());
+        out.put("pronouns", u.getPronouns());
+        out.put("links", Json.list(u.getLinksJson()));
         if (u.getProfileType() == ProfileType.MARCA) {
             brands.findByOwnerId(u.getId()).ifPresent(b -> out.put("brandProfile", Map.of("id", b.getId(), "slug", b.getSlug(),
                     "approvalStatus", b.getApprovalStatus(), "brandName", b.getBrandName())));

@@ -3,14 +3,17 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.IdentityService;
 import br.com.fashionai.web.support.CorrelationIdFilter;
+import br.com.fashionai.web.support.Uploads;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,14 @@ public class AuthController {
     @Operation(summary = "RF1 — Cadastrar conta (pessoal, marca ou celebridade) e abrir sessão")
     public IdentityService.Session register(@RequestBody IdentityService.RegisterCommand cmd, HttpServletRequest req) {
         return identity.register(cmd, CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
+    }
+
+    @PostMapping(value = "/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "RF1 — Enviar foto de perfil (ou logo, foto oficial, documento) durante o cadastro, antes da conta existir")
+    public Map<String, Object> preRegistrationUpload(@RequestParam String kind, @RequestPart("file") MultipartFile file,
+                                                     HttpServletRequest req) {
+        return identity.preRegistrationUpload(Uploads.image(file), kind, CorrelationIdFilter.clientIp(req));
     }
 
     @GetMapping("/username-suggestions")

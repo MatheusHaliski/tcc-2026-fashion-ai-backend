@@ -4,6 +4,7 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FaiIcon } from "@/components/fai-icon";
+import { Generate3DButton } from "@/components/generate-3d";
 import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
@@ -50,10 +51,11 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
       ) : (
         <Link href={href ?? `/pieces/${piece.id}`} onClick={openModal}>{body}</Link>
       )}
-      {(onFavorite || onAvailability) && (
+      {!selectable && (
         <div className="c-foot">
           {onFavorite && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onFavorite(piece)} aria-pressed={piece.favorite}><FaiIcon id="SOC-06" size={24} active={piece.favorite} /></button>}
           {onAvailability && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onAvailability(piece)} aria-pressed={piece.disponivel}><FaiIcon id={piece.disponivel ? "SOC-14" : "SOC-15"} size={24} active={piece.disponivel} /></button>}
+          <Generate3DButton targets={piece.id ? [{ kind: "piece", id: piece.id, title: piece.name }] : []} />
           <span className="ml-auto type-data text-faint tabular">{piece.wearCount} {t("closet.wearCount")}</span>
         </div>
       )}

@@ -456,6 +456,7 @@ public class WardrobeService {
             w.setModerationStatus(ModerationStatus.APPROVED);
             w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
             pieces.save(w);
+            defaultStudio(w);                       // a imagem padrão também sai de estúdio: quadro cheio, foco no logo FAI
         } else {
             Map<String, Object> r = Json.map(draft.getResultJson());
             Map<?, ?> mod = (Map<?, ?>) r.getOrDefault("moderation", Map.of());
@@ -1150,6 +1151,58 @@ public class WardrobeService {
         }
     }
 
+    /**
+     * RF4 · Estúdio da peça sem foto: a imagem padrão de {@code /public/assets_pecas} (arte da peça com o logo FAI) passa
+     * pelo mesmo estúdio das fotos enviadas — a peça ocupa o quadro inteiro e o logo ganha a foto de detalhe. O resultado
+     * é o mesmo para todas as peças que usam o arquivo, então é gerado uma vez e reaproveitado. Nunca usa a foto de
+     * referência do estúdio como imagem padrão.
+     */
+    void defaultStudio(WardrobeItem w) {
+        if (!w.isDefaultImage() || w.getImageUrl() == null) {
+            return;
+        }
+        var done = pieces.findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(w.getImageUrl());
+        if (done.isPresent() && !done.get().getId().equals(w.getId())) {
+            WardrobeItem src = done.get();
+            w.setStudioImageUrl(src.getStudioImageUrl());
+            w.setStudioBackdrop(src.getStudioBackdrop());
+            w.setStudioDetailUrl(src.getStudioDetailUrl());
+            Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+            Object st = Json.map(src.getFlatLayMetadataJson()).get("studio");
+            if (st != null) {
+                meta.put("studio", st);
+            }
+            w.setFlatLayMetadataJson(Json.write(meta));
+            return;
+        }
+        BufferedImage art;
+        try {
+            var file = assets.publicFile(w.getImageUrl());
+            art = file.isEmpty() ? null : javax.imageio.ImageIO.read(file.get().toFile());
+        } catch (java.io.IOException e) {
+            art = null;
+        }
+        if (art == null) {
+            return;
+        }
+        String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
+        Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
+                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
+                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo"));
+        if (info != null) {
+            applyStudio(w, info);
+        }
+    }
+
+    /** Peças com imagem padrão cadastradas antes do estúdio da imagem padrão: 20 por rodada, a cada 10 min. */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelayString = "${fashionai.studio.default-backfill-ms:600000}", initialDelay = 30000)
+    @Transactional
+    public void backfillDefaultStudio() {
+        for (WardrobeItem w : pieces.findTop20ByDefaultImageTrueAndStudioImageUrlIsNull()) {
+            defaultStudio(w);
+        }
+    }
+
     /** Fundos de estúdio disponíveis (+ "auto", que escolhe pela cor da peça). */
     public List<Map<String, Object>> studioBackdrops() {
         List<Map<String, Object>> out = new ArrayList<>();
@@ -1227,9 +1280,18 @@ public class WardrobeService {
             if (done >= 40) {
                 break;
             }
-            if (w.getStudioImageUrl() != null || w.isDefaultImage() || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED
+            if (w.getStudioImageUrl() != null || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED
                     || w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) {
                 skipped++;
+                continue;
+            }
+            if (w.isDefaultImage()) {
+                defaultStudio(w);
+                if (w.getStudioImageUrl() != null) {
+                    done++;
+                } else {
+                    skipped++;
+                }
                 continue;
             }
             BufferedImage source = studioSource(w);

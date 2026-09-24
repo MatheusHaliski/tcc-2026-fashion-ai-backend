@@ -118,4 +118,8 @@ public class UserPreferences extends VersionedAuditableEntity {
     /** Dashboard personalizável — ordem e visibilidade dos widgets e filtro padrão, salvos por usuário. */
     @Column(name = "dashboard_layout_json", columnDefinition = "json")
     private String dashboardLayoutJson;
+
+    /** Foto com meu manequim — enquadramento do rosto na cabeça 3D: {offsetX, offsetY, scale}. */
+    @Column(name = "mannequin_face_json", columnDefinition = "json")
+    private String mannequinFaceJson;
 }

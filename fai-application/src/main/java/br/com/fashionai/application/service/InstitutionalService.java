@@ -232,6 +232,11 @@ public class InstitutionalService {
         }
         header.put("username", u.getUsername());
         header.put("following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO));
+        // header estilo Instagram (RF22): foto de perfil + seguidores/seguindo + peças + esquemas criados
+        header.put("userAvatarUrl", u.getAvatarUrl());
+        header.put("pieces", pieces.countByUserIdAndAvailabilityStatusNot(u.getId(), AvailabilityStatus.ARCHIVED));
+        header.put("schemes", schemes.countByUserIdAndStatusNot(u.getId(), SchemeStatus.ARCHIVED));
+        header.put("kind", brand ? "MARCA" : "CELEBRIDADE");
         header.put("activeSeals", seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealStatus.ACTIVE).size());
         header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));

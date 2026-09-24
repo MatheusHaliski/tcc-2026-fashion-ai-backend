@@ -6,7 +6,9 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.identity.PasswordHasherPort;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.EmailSenderPort;
+import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.ports.RateLimitPort;
 import br.com.fashionai.application.ports.TokenIssuerPort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -19,6 +21,7 @@ import br.com.fashionai.domain.model.UserPreferences;
 import br.com.fashionai.domain.model.VerificationCode;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
+import br.com.fashionai.domain.model.enums.MannequinSex;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.VerificationPurpose;
@@ -71,12 +74,15 @@ public class IdentityService {
     private final Audit audit;
     private final String frontendUrl;
     private final String dummyHash;
+    private final MediaStoragePort storage;
 
     public IdentityService(UserRepository users, UserPreferencesRepository preferences, BrandProfileRepository brands,
                            CelebrityProfileRepository celebrities, RefreshTokenRepository refreshTokens,
                            VerificationCodeRepository codes, PasswordHasherPort hasher, TokenIssuerPort tokens,
                            RateLimitPort rateLimit, EmailSenderPort email, NotificationService notifications, Audit audit,
+                           MediaStoragePort storage,
                            @Value("${fashionai.frontend-url:http://localhost:3000}") String frontendUrl) {
+        this.storage = storage;
         this.users = users;
         this.preferences = preferences;
         this.brands = brands;
@@ -94,6 +100,45 @@ public class IdentityService {
     }
 
     // ------------------------------------------------------------------ RF1
+    /** Tipos de arquivo que o formulário de cadastro envia antes de a conta existir. */
+    private static final Map<String, Integer> PRE_UPLOAD_SIZE = Map.of("avatar", 640, "logo", 640, "official-photo", 1024,
+            "identity", 1600, "activity-proof", 1600);
+
+    /**
+     * RF1 — foto de perfil (e logo/foto oficial/documentos de marca e celebridade) enviada pelo formulário de cadastro,
+     * antes de existir conta. Limite por IP; imagem validada pelo conteúdo e recodificada em JPEG (tira EXIF/GPS).
+     * Documentos ficam em {@code restricted/}, que só administradores leem.
+     */
+    public Map<String, Object> preRegistrationUpload(byte[] bytes, String kind, String ip) {
+        Integer size = PRE_UPLOAD_SIZE.get(kind == null ? "" : kind);
+        if (size == null) {
+            throw ApiException.badRequest("TIPO_INVALIDO", "Tipo de arquivo inválido.", Map.of("allowed", PRE_UPLOAD_SIZE.keySet()));
+        }
+        if (bytes.length > 8L * 1024 * 1024) {
+            throw ApiException.badRequest("ARQUIVO_GRANDE", "A imagem deve ter até 8 MB.");
+        }
+        UUID bucketOwner = UUID.nameUUIDFromBytes(("pre-upload:" + (ip == null ? "?" : ip)).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (!rateLimit.tryAcquire(bucketOwner, "pre-registration-upload", 30, Duration.ofHours(1))) {
+            throw new ApiException(429, "LIMITE_ENVIOS", "Muitos envios em pouco tempo. Tente de novo em alguns minutos.");
+        }
+        ImageOps.requireAcceptedImage(bytes);
+        java.awt.image.BufferedImage img = ImageOps.decode(bytes);
+        if ("avatar".equals(kind)) {
+            img = ImageOps.centerSquare(img);                  // avatar: recorte quadrado (círculo no header do perfil)
+        }
+        img = ImageOps.scaleToFit(img, size, size);
+        byte[] jpeg = ImageOps.jpeg(img, 0.9f);
+        boolean sensitive = "identity".equals(kind) || "activity-proof".equals(kind);
+        String key = (sensitive ? "restricted/" : "") + "pending/" + UUID.randomUUID() + "/" + kind + ".jpg";
+        MediaStoragePort.StoredObject stored = storage.put(key, jpeg, "image/jpeg");
+        return Map.of("url", stored.url(), "kind", kind, "width", img.getWidth(), "height", img.getHeight());
+    }
+
+    /** URL aceita no cadastro: emitida pelo storage (upload acima) ou https externo (logo encontrado na internet). */
+    private boolean preRegistrationUpload(String url) {
+        return url.startsWith("https://") || storage.keyOf(url).isPresent();
+    }
+
     public record BrandData(String razaoSocial, String cnpj, String nomeFantasia, String logoUrl, String fashionCategory,
                             String storeUrl, String commercialContact, String officialHashtag, String activityProofUrl) {
     }
@@ -104,9 +149,14 @@ public class IdentityService {
                                 boolean sealConsentGranted) {
     }
 
+    /**
+     * @param avatarUrl foto de perfil enviada antes do cadastro ({@code POST /api/auth/uploads}); constrói o manequim
+     *                  da Passarela 3D. Sem foto, o manequim é o padrão masculino/feminino.
+     * @param sex       sexo do manequim (Passarela 3D e provador)
+     */
     public record RegisterCommand(ProfileType profileType, String fullName, String username, String email, String password,
                                   String confirmPassword, boolean acceptTerms, String birthDate, String country,
-                                  BrandData brand, CelebrityData celebrity) {
+                                  BrandData brand, CelebrityData celebrity, String avatarUrl, MannequinSex sex) {
     }
 
     public record Session(String accessToken, long expiresInSeconds, String refreshToken, Instant refreshExpiresAt,
@@ -166,6 +216,18 @@ public class IdentityService {
                 errors.put("celebrity.officialPhotoUrl", "Envie a foto oficial.");
             }
         }
+        if (type != ProfileType.MARCA && cmd.sex() == null) {
+            errors.put("sex", "Escolha o manequim (feminino ou masculino): ele desfila o seu Look do Dia na Passarela 3D.");
+        }
+        for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl()},
+                {"brand.logoUrl", cmd.brand() == null ? null : cmd.brand().logoUrl()},
+                {"brand.activityProofUrl", cmd.brand() == null ? null : cmd.brand().activityProofUrl()},
+                {"celebrity.officialPhotoUrl", cmd.celebrity() == null ? null : cmd.celebrity().officialPhotoUrl()},
+                {"celebrity.identityProofUrl", cmd.celebrity() == null ? null : cmd.celebrity().identityProofUrl()}}) {
+            if (!blank(f[1]) && !preRegistrationUpload(f[1])) {
+                errors.put(f[0], "Envie o arquivo pelo formulário de cadastro.");
+            }
+        }
         if (!errors.isEmpty()) {
             throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
         }
@@ -201,9 +263,16 @@ public class IdentityService {
         if (type == ProfileType.CELEBRIDADE && cmd.celebrity() != null) {
             u.setAvatarUrl(cmd.celebrity().officialPhotoUrl());
         }
+        if (!blank(cmd.avatarUrl())) {
+            u.setAvatarUrl(cmd.avatarUrl());       // a foto de perfil escolhida vence o logo/foto oficial no avatar
+        }
+        u.setSex(cmd.sex());
         users.save(u);
         UserPreferences prefs = new UserPreferences();
         prefs.setUser(u);
+        if (cmd.sex() != null) {
+            prefs.setMannequinSex(cmd.sex());
+        }
         preferences.save(prefs);
         if (type == ProfileType.MARCA) {
             BrandData b = cmd.brand();

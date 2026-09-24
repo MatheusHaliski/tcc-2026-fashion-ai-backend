@@ -116,6 +116,13 @@ public final class ImageOps {
         }
     }
 
+    /** Recorte quadrado para avatar: centro na horizontal e terço superior na vertical (onde o rosto costuma estar). */
+    public static BufferedImage centerSquare(BufferedImage img) {
+        int w = img.getWidth(), h = img.getHeight(), side = Math.min(w, h);
+        int x = (w - side) / 2, y = (int) Math.round((h - side) * 0.3);
+        return img.getSubimage(x, y, side, side);
+    }
+
     public static BufferedImage scaleToFit(BufferedImage img, int maxW, int maxH) {
         double s = Math.min(maxW / (double) img.getWidth(), maxH / (double) img.getHeight());
         if (s >= 1) {

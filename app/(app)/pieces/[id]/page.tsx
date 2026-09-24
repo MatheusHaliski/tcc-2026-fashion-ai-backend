@@ -12,6 +12,7 @@ import { Badge, Button, Card, Dialog, ErrorState, Skeleton, useToast } from "@/c
 import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 import { InteractionBar } from "@/components/interactions";
 import { FaiIcon } from "@/components/fai-icon";
+import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton } from "@/components/mannequin-photo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { BrandLogo } from "@/components/brand-logo";
 import { PhotoEditor } from "@/components/photo-editor";
@@ -21,8 +22,8 @@ import dynamic from "next/dynamic";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">carregando o modelo 3D…</div> });
 /** Visualizações da peça: foto de estúdio (RF4), recorte padronizado (2D) e modelo 3D (RF16.CA02 — a 2D continua disponível). */
-type HeroView = "studio" | "detail" | "cut" | "3d";
-const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", detail: "Detalhe do logo", cut: "Recorte 2D", "3d": "Modelo 3D" };
+type HeroView = "studio" | "detail" | "mannequin" | "cut" | "3d";
+const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", detail: "Detalhe do logo", mannequin: "No manequim", cut: "Recorte 2D", "3d": "Modelo 3D" };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -62,7 +63,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const back = origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />Voltar ao look{origin.title ? ` «${origin.title}»` : ""}</Link></p>;
   if (!loading && data && !p && data.snapshot) return <>{back}<PieceSnapshot snapshot={data.snapshot} /></>;
   if (loading || !p) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="aspect-square" /><Skeleton className="h-80" /></div>;
-  const views = ([p.studioImageUrl ? "studio" : null, p.studioImageUrl && p.studioDetailUrl ? "detail" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
+  const views = ([p.studioImageUrl ? "studio" : null, p.studioImageUrl && p.studioDetailUrl ? "detail" : null, p.mannequinImageUrl ? "mannequin" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
   const edge = backdropEdge(backdrops, p.studioBackdrop);
   const framing = ((p.flatLayMetadata as { studio?: { framing?: StudioInfo["framing"] } } | undefined)?.studio?.framing) ?? null;
   const gallery = [p.studioImageUrl ? { src: mediaUrl(p.studioImageUrl)!, alt: `${p.name} — Estúdio`, anchor: sangria(framing) } : null, p.studioDetailUrl ? { src: mediaUrl(p.studioDetailUrl)!, alt: `${p.name} — Detalhe do logo`, anchor: [] as string[], cover: true } : null].filter((g): g is { src: string; alt: string; anchor: string[]; cover?: boolean } => !!g);
@@ -77,6 +78,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
           {/* foto de estúdio no formato dela (5:4, 4:5, 9:16…): nada de faixas; recorte e 3D ficam no quadrado */}
           <div className={`relative ${(hero === "studio" || hero === "detail") && p.studioImageUrl ? "" : "aspect-square"} bg-surface-2`} style={hero === "studio" || hero === "detail" ? { background: edge } : undefined}>
             {hero === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} />
+              : hero === "mannequin" && p.mannequinImageUrl ? <img src={mediaUrl(p.mannequinImageUrl)} alt={`${p.name} no manequim${p.mannequinImageFace === "FOTO" ? " com o rosto da foto de perfil" : " padrão"}`} className="block h-auto w-full" />
               : (hero === "studio" || hero === "detail") && p.studioImageUrl ? (
                 // a foto inteira, no formato dela (4:5, 5:4…); a cor do fundo continua nas sobras
                 <button type="button" className="h-full w-full cursor-zoom-in" onClick={() => setFullscreen(hero === "detail" ? 1 : 0)} aria-label="ver em tela cheia">
@@ -95,6 +97,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
               <Button size="sm" onClick={() => act("background-removal", t("closet.removeBg") + " ✓")}>{t("closet.removeBg")}</Button>
               {canStudio && <Button size="sm" aria-expanded={studioOpen} onClick={() => setStudioOpen((o) => !o)}><FaiIcon id="ACT-08" size={24} decorative />{p.studioImageUrl ? "Refazer estúdio" : "Levar ao estúdio"}</Button>}
               <Button size="sm" onClick={() => setEditingPhoto(true)} disabled={!p.imageUrl && !p.thumbnailUrl}><FaiIcon id="SOC-11" size={24} decorative />Editar foto (Canvas 2D)</Button>
+              {MANNEQUIN_PHOTO_CATEGORIES.has(p.category) && <MannequinPhotoButton kind="piece" id={p.id} title={p.name} current={p.mannequinImageUrl} onSaved={() => { reload(); setView("mannequin"); }} />}
             </div>
           )}
           {mine && studioOpen && canStudio && (

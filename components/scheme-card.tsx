@@ -9,6 +9,7 @@ import { containerColorOf, inkOn, photoFilterCss, resolveCardArt, studioOf } fro
 import { CardArtLayer } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { Generate3DButton } from "@/components/generate-3d";
 import { AnatomyBody, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CommentButton } from "@/components/interactions";
@@ -124,7 +125,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       </Link>
       </div>
       <div className="c-foot">
-        <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>
+        <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span><Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} /></span>
         {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
       </div>
       {extra && <div className="c-extra">{extra}</div>}

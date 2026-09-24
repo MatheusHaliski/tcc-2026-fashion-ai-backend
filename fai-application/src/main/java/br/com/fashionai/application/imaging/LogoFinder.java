@@ -138,9 +138,109 @@ final class LogoFinder {
             }
         }
         if (bestBox == null || bestScore < 4) {
-            return null;
+            return detectDetail(img, in, dist, gb, minSide, margin, L);
         }
         return new Logo(bestBox, Math.min(0.8, 0.35 + bestScore / 40), "local");
+    }
+
+    /**
+     * Segundo detector: selo, patch bordado ou etiqueta sobre peça em color block (onde "cor diferente do entorno"
+     * marca a peça inteira). Um logo concentra <b>contraste de luminância</b> numa área pequena e redonda — letras
+     * claras sobre fundo escuro (ou o contrário), bordas de selo —, enquanto divisas de cor (cadarço, zíper, vivo,
+     * bolso) mudam a cor mas pouco a luminância, e são linhas. Mede o desvio-padrão local da luminância e pega a
+     * mancha compacta de maior desvio longe do contorno.
+     */
+    static Logo detectDetail(BufferedImage img, boolean[][] in, double[][] dist, ImageOps.Box gb, int minSide, int margin, float[] L) {
+        int w = img.getWidth(), h = img.getHeight(), n = w * h;
+        int r = Math.max(3, (int) (minSide * 0.025));
+        float[] m1 = new float[n], m2 = new float[n], wt = new float[n];
+        for (int i = 0; i < n; i++) {
+            if (in[i / w][i % w]) {
+                wt[i] = 1;
+                m1[i] = L[i];
+                m2[i] = L[i] * L[i];
+            }
+        }
+        float[] bw = StudioPipeline.boxBlur(wt, w, h, r, 2), b1 = StudioPipeline.boxBlur(m1, w, h, r, 2), b2 = StudioPipeline.boxBlur(m2, w, h, r, 2);
+        float[] sd = new float[n];
+        double inner = margin * 0.6;
+        float peak = 0;
+        for (int i = 0; i < n; i++) {
+            if (bw[i] < 0.95f || dist[i / w][i % w] <= inner) {
+                continue;                                   // janela que pega a parede: o contorno não é logo
+            }
+            float mean = b1[i] / bw[i];
+            sd[i] = (float) Math.sqrt(Math.max(0, b2[i] / bw[i] - mean * mean));
+            peak = Math.max(peak, sd[i]);
+        }
+        if (peak < 14) {
+            return null;                                    // peça lisa: nada de logo inventado
+        }
+        float t = Math.max(11f, peak * 0.55f);
+        int[] label = new int[n];
+        java.util.ArrayDeque<Integer> q = new java.util.ArrayDeque<>();
+        double bestScore = 0;
+        double[] bestBox = null;
+        int id = 0;
+        for (int s0 = 0; s0 < n; s0++) {
+            if (label[s0] != 0 || sd[s0] < t) {
+                continue;
+            }
+            id++;
+            int x0 = w, y0 = h, x1 = -1, y1 = -1, area = 0;
+            double sumSd = 0, sumX = 0, sumY = 0;
+            q.add(s0);
+            label[s0] = id;
+            while (!q.isEmpty()) {
+                int i = q.poll(), x = i % w, y = i / w;
+                x0 = Math.min(x0, x);
+                y0 = Math.min(y0, y);
+                x1 = Math.max(x1, x);
+                y1 = Math.max(y1, y);
+                area++;
+                sumSd += sd[i];
+                sumX += x;
+                sumY += y;
+                int[] nb = {x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w};
+                for (int j : nb) {
+                    if (j >= 0 && j < n && label[j] == 0 && sd[j] >= t) {
+                        label[j] = id;
+                        q.add(j);
+                    }
+                }
+            }
+            int bw0 = x1 - x0 + 1, bh0 = y1 - y0 + 1, size = Math.max(bw0, bh0);
+            double aspect = size / (double) Math.max(1, Math.min(bw0, bh0));
+            double compact = area / (double) (bw0 * bh0);
+            int cx = (int) Math.round(sumX / area), cy = (int) Math.round(sumY / area);
+            if (size < minSide * 0.05 || size > minSide * 0.36 || aspect > 2.0 || compact < 0.5 || dist[cy][cx] <= margin) {
+                continue;                                   // pontinho, área grande, linha (zíper, cadarço) ou borda
+            }
+            double score = (sumSd / area) / 10.0 * Math.sqrt(area) * compact * (1.0 / aspect);
+            if (score > bestScore) {
+                bestScore = score;
+                // a janela do desvio alarga a mancha em r px de cada lado: a caixa volta ao tamanho do selo
+                double pad = Math.max(size * 0.06, minSide * 0.01) - r * 0.5;
+                bestBox = new double[]{
+                        clamp01((x0 - pad - gb.x()) / gb.w()), clamp01((y0 - pad - gb.y()) / gb.h()),
+                        clamp01((x1 + pad - gb.x()) / gb.w()), clamp01((y1 + pad - gb.y()) / gb.h())};
+            }
+        }
+        if (bestBox == null || bestScore < 20) {
+            return null;
+        }
+        return new Logo(bestBox, Math.min(0.75, 0.3 + bestScore / 400), "local");
+    }
+
+    private static int percentile(int[] hist, int total, double p) {
+        long target = Math.round(total * p), acc = 0;
+        for (int v = 0; v < hist.length; v++) {
+            acc += hist[v];
+            if (acc >= target) {
+                return v;
+            }
+        }
+        return hist.length - 1;
     }
 
     private static double clamp01(double v) {

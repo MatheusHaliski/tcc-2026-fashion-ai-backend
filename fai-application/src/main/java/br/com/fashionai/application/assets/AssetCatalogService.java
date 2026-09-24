@@ -35,24 +35,26 @@ public class AssetCatalogService {
     private final AssetPresetRepository repository;
     private final Path publicDir;
     private final Map<String, Object> manifest;
+    private final Map<String, Object> defaultLogos;
 
     public AssetCatalogService(AssetPresetRepository repository,
                                @Value("${fashionai.assets.public-dir:public}") String publicDir) {
         this.repository = repository;
         this.publicDir = Path.of(publicDir).toAbsolutePath().normalize();
-        this.manifest = load();
+        this.manifest = load("catalog/asset-manifest.json");
+        this.defaultLogos = load("catalog/default-piece-logos.json");
     }
 
-    private Map<String, Object> load() {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("catalog/asset-manifest.json")) {
+    private Map<String, Object> load(String resource) {
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream(resource)) {
             if (in == null) {
-                log.warn("catalog/asset-manifest.json não encontrado no classpath — catálogo vazio");
+                log.warn("{} não encontrado no classpath — catálogo vazio", resource);
                 return new LinkedHashMap<>();
             }
             return Json.MAPPER.readValue(in, new TypeReference<LinkedHashMap<String, Object>>() {
             });
         } catch (IOException ex) {
-            throw new IllegalStateException("Manifesto de assets inválido", ex);
+            throw new IllegalStateException("Catálogo de assets inválido: " + resource, ex);
         }
     }
 
@@ -201,6 +203,17 @@ public class AssetCatalogService {
         }
         Object generic = m.get("generic");
         return generic instanceof Map<?, ?> g ? (String) g.get("url") : "/_derived/pecas_default/generic.svg";
+    }
+
+    /**
+     * RF4 · Estúdio da imagem padrão — caixa do selo FAI na arte (relativa à peça, 0–1), conferida nas folhas de
+     * contato; vazio para arquivos fora do catálogo.
+     */
+    public java.util.Optional<double[]> defaultPieceLogo(String url) {
+        if (url == null || !(defaultLogos.get(url) instanceof Map<?, ?> m) || !(m.get("box") instanceof List<?> b) || b.size() != 4) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray());
     }
 
     /** Arquivo físico em /public para renderização no servidor (card RF5); vazio quando a pasta não existe. */

@@ -81,9 +81,21 @@ public class StudioPipeline {
     private final List<UpscalePort> upscalers;
     private final List<StudioShotPort> studios;
 
+    /**
+     * Manequim invisível (preencher decote e aberturas com um interior falso): desligado por padrão — peça sem corpo
+     * não deve parecer vestida por um fantasma. A peça superior/de corpo inteiro ganha a "Foto com meu manequim",
+     * vestindo o manequim da pessoa (rosto da foto de perfil) ou o padrão masculino/feminino.
+     */
+    private boolean ghostFill;
+
     public StudioPipeline(List<UpscalePort> upscalers, List<StudioShotPort> studios) {
         this.upscalers = upscalers;
         this.studios = studios;
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${fashionai.studio.ghost-mannequin:false}")
+    public void setGhostFill(boolean ghostFill) {
+        this.ghostFill = ghostFill;
     }
 
     public boolean externalAvailable() {
@@ -187,12 +199,16 @@ public class StudioPipeline {
 
         // 2) manequim invisível: decote e aberturas
         long tg = System.nanoTime();
-        GhostMannequin.Result ghost = GhostMannequin.fill(enhanced, hint.kind());
-        enhanced = ghost.image();
         List<String> ghostNotes = new ArrayList<>(clean.notes());
-        ghostNotes.addAll(ghost.notes());
-        stages.add(new Stage("MANEQUIM_INVISIVEL", "local", ms(tg), BigDecimal.ZERO, true, false,
-                ghostNotes.isEmpty() ? (GhostMannequin.neckGarment(hint.kind()) ? "gola e mangas sem vazios a preencher" : "não se aplica a este tipo de peça")
+        if (ghostFill) {
+            GhostMannequin.Result ghost = GhostMannequin.fill(enhanced, hint.kind());
+            enhanced = ghost.image();
+            ghostNotes.addAll(ghost.notes());
+        }
+        stages.add(new Stage("MANEQUIM_INVISIVEL", "local", ms(tg), BigDecimal.ZERO, ghostFill, false,
+                !ghostFill ? (GhostMannequin.neckGarment(hint.kind()) ? "sem manequim fantasma: a peça veste o manequim na Foto com meu manequim"
+                        + (clean.notes().isEmpty() ? "" : " · " + String.join(" · ", clean.notes())) : "não se aplica a este tipo de peça")
+                        : ghostNotes.isEmpty() ? (GhostMannequin.neckGarment(hint.kind()) ? "gola e mangas sem vazios a preencher" : "não se aplica a este tipo de peça")
                         : String.join(" · ", ghostNotes)));
 
         // 3) logo: da IA (quando veio) ou do detector local

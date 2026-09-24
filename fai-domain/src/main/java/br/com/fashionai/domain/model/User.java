@@ -137,4 +137,21 @@ public class User extends VersionedAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "profile_visibility", nullable = false, length = 20)
     private Visibility profileVisibility = Visibility.PRIVATE;
+
+    /** RF1 — sexo informado no cadastro: escolhe o manequim (masculino/feminino) da Passarela 3D e do provador. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private br.com.fashionai.domain.model.enums.MannequinSex sex;
+
+    /** Passarela 3D (Explorar) — o Look do Dia da pessoa só desfila enquanto ela não sair da passarela. */
+    @Column(name = "runway_opt_out", nullable = false)
+    private boolean runwayOptOut;
+
+    /** RF23 · Editar perfil — pronomes (opcional, texto livre curto). */
+    @Column(length = 40)
+    private String pronouns;
+
+    /** RF23 · Editar perfil — links do perfil: [{title, url}], até 5, só http(s). */
+    @Column(name = "links_json", columnDefinition = "json")
+    private String linksJson;
 }

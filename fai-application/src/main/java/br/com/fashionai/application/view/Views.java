@@ -55,7 +55,8 @@ public final class Views {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
-                            String studioBackdrop, String studioThumbUrl, String studioDetailUrl) {
+                            String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
+                            String mannequinImageUrl, String mannequinImageFace) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -81,7 +82,8 @@ public final class Views {
                 w.getModel3dUrl(), new Counters(w.getLikesCount(), w.getCommentCount(), w.getSharesCount(),
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
-                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl());
+                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
+                w.getMannequinImageUrl(), w.getMannequinImageFace());
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */
@@ -147,7 +149,7 @@ public final class Views {
                              Map<String, Object> renderingMetadata, BigDecimal hypeScore, BigDecimal hypeScoreGlobal,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
-                             List<Map<String, Object>> sealBadges) {
+                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -175,7 +177,7 @@ public final class Views {
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
-                sealBadges == null ? List.of() : sealBadges);
+                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace());
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

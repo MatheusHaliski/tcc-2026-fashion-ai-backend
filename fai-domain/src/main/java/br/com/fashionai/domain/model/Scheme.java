@@ -212,4 +212,12 @@ public class Scheme extends VersionedAuditableEntity {
     /** RF11 §7.6 — vídeo em loop do Preset Aura + material (formato imagem única ou mosaico); o quadro estático vai para a arte de fundo. */
     @Column(name = "background_video_url", length = 1024)
     private String backgroundVideoUrl;
+
+    /** Foto com meu manequim (RF4/RF5): a peça ou o look vestindo o manequim da pessoa (ou o padrão masc./fem.). */
+    @Column(name = "mannequin_image_url", length = 1024)
+    private String mannequinImageUrl;
+
+    /** FOTO (rosto da foto de perfil) ou PADRAO (manequim padrão, sem foto de perfil). */
+    @Column(name = "mannequin_image_face", length = 20)
+    private String mannequinImageFace;
 }

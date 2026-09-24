@@ -5,6 +5,7 @@ import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
+import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.MannequinGeometry;
 import br.com.fashionai.application.ports.MediaStoragePort;
@@ -32,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -193,7 +195,13 @@ public class PreferencesService {
         return get(user);
     }
 
-    public record ProfileUpdate(String displayName, String bio, String avatarUrl, String coverUrl, String country) {
+    /**
+     * @param sex          RF1 — sexo do manequim (Passarela 3D e provador); atualiza também a preferência do provador
+     * @param runwayOptOut Passarela 3D — true tira o Look do Dia da pessoa da passarela do Explorar
+     */
+    public record ProfileUpdate(String displayName, String bio, String avatarUrl, String coverUrl, String country,
+                                br.com.fashionai.domain.model.enums.MannequinSex sex, Boolean runwayOptOut, String pronouns,
+                                List<Map<String, String>> links, Map<String, Object> mannequinFace) {
     }
 
     /** RF23.CA03 — vitrine do perfil sem reautenticação. */
@@ -219,8 +227,53 @@ public class PreferencesService {
             }
             u.setCountry(c.isEmpty() ? null : c);
         }
+        if (cmd.sex() != null) {
+            u.setSex(cmd.sex());
+            preferences.findByUserId(u.getId()).ifPresent(p -> p.setMannequinSex(cmd.sex()));
+        }
+        if (cmd.runwayOptOut() != null) {
+            u.setRunwayOptOut(cmd.runwayOptOut());
+        }
+        if (cmd.pronouns() != null) {
+            u.setPronouns(cmd.pronouns().isBlank() ? null : InputSanitizer.moderated("pronouns", cmd.pronouns(), 40));
+        }
+        if (cmd.links() != null) {
+            u.setLinksJson(Json.write(validLinks(cmd.links())));
+        }
+        if (cmd.mannequinFace() != null) {
+            Map<String, Object> face = new java.util.LinkedHashMap<>();
+            face.put("offsetX", clampNum(cmd.mannequinFace().get("offsetX"), -0.3, 0.3, 0));
+            face.put("offsetY", clampNum(cmd.mannequinFace().get("offsetY"), -0.3, 0.3, 0));
+            face.put("scale", clampNum(cmd.mannequinFace().get("scale"), 0.6, 1.8, 1));
+            preferences.findByUserId(u.getId()).ifPresent(p -> p.setMannequinFaceJson(Json.write(face)));
+        }
         audit.log(user, AuditActions.ALTERACAO_PERFIL, "user:" + u.getId(), Map.of());
         return Views.user(u);
+    }
+
+    /** Links do perfil (Editar perfil, formato do Instagram): até 5, só http(s), título curto. */
+    static List<Map<String, String>> validLinks(List<Map<String, String>> links) {
+        if (links.size() > 5) {
+            throw ApiException.badRequest("LINKS_DEMAIS", "Use até 5 links.");
+        }
+        List<Map<String, String>> out = new java.util.ArrayList<>();
+        for (Map<String, String> l : links) {
+            String url = l.get("url") == null ? "" : l.get("url").trim();
+            if (url.isEmpty()) {
+                continue;
+            }
+            if (!url.matches("(?i)https?://[^\\s<>\"]{3,300}")) {
+                throw ApiException.badRequest("LINK_INVALIDO", "Link inválido: use um endereço que comece com http:// ou https://.");
+            }
+            String title = l.get("title") == null || l.get("title").isBlank() ? url.replaceFirst("(?i)^https?://", "") : l.get("title").trim();
+            out.add(Map.of("title", InputSanitizer.clean(title.length() > 40 ? title.substring(0, 40) : title, 40), "url", url));
+        }
+        return out;
+    }
+
+    private static double clampNum(Object v, double min, double max, double def) {
+        double d = v instanceof Number n ? n.doubleValue() : def;
+        return Math.max(min, Math.min(max, d));
     }
 
     /** RF23.CA04 — @ já em uso é recusado com sugestões. */

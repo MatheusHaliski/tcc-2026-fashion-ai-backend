@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -87,12 +88,13 @@ public class ProfileService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("user", Views.user(u));
         out.put("bio", u.getBio());
+        out.put("pronouns", u.getPronouns());
+        out.put("links", Json.list(u.getLinksJson()));
         out.put("coverUrl", u.getCoverUrl());
         out.put("layout", u.getProfileType() == ProfileType.PESSOAL ? "PESSOAL" : "INSTITUCIONAL");
         out.put("self", self);
         out.put("relation", rel == null ? "NENHUMA" : rel.name());
-        out.put("counters", Map.of("followers", follows.countByFollowingIdAndStatus(u.getId(), FollowStatus.ACEITO),
-                "following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO), "published", published.size()));
+        out.put("counters", counters(u.getId(), published.size()));
         out.put("visibility", u.getProfileVisibility().name());
         out.put("contentVisible", canSee);
         if (!canSee) {
@@ -108,6 +110,14 @@ public class ProfileService {
                 .filter(w -> self || guard.canView(viewer, u.getId(), SchemeService.moreRestrictive(w.getVisibility(), u.getProfileVisibility())))
                 .limit(60).map(w -> Views.piece(w, null, null)).toList());
         return out;
+    }
+
+    /** Header do perfil (estilo Instagram, RF14/RF22): seguidores, seguindo, peças e esquemas criados. */
+    public Map<String, Object> counters(UUID userId, long published) {
+        return Map.of("followers", follows.countByFollowingIdAndStatus(userId, FollowStatus.ACEITO),
+                "following", follows.countByFollowerIdAndStatus(userId, FollowStatus.ACEITO), "published", published,
+                "pieces", pieces.countByUserIdAndAvailabilityStatusNot(userId, AvailabilityStatus.ARCHIVED),
+                "schemes", schemes.countByUserIdAndStatusNot(userId, SchemeStatus.ARCHIVED));
     }
 
     /** CA03 — seguir: conta pública vira ACEITO na hora; privada/restrita vira pedido PENDENTE. */

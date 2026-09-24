@@ -40,4 +40,18 @@ public class SchemeGrouping extends VersionedAuditableEntity {
     /** RF6.CA19 — a era de celebridade é atmosfera, nunca retrato: prompt validado antes do envio. */
     @Column(name = "atmosphere_prompt", length = 1024)
     private String atmospherePrompt;
+
+    /** Eras/Coleções (RF22): período da era ou ano da coleção (de–até), usado no filtro e no ranking de insights. */
+    @Column(name = "period_from")
+    private Integer periodFrom;
+
+    @Column(name = "period_to")
+    private Integer periodTo;
+
+    /** Cor de destaque da era/coleção: palco 2D, mini loja 3D e header da busca. */
+    @Column(name = "accent_color", length = 20)
+    private String accentColor;
+
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
 }
