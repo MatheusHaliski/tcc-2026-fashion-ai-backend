@@ -43,8 +43,12 @@ public class FlatLayPipeline {
     public record Result(byte[] processedPng, byte[] processedWhiteJpeg, byte[] thumbnailPng, String mimeType,
                          int originalWidth, int originalHeight, ImageOps.Cutout cutout, QualityMetrics.Report quality,
                          List<Stage> stages, BigDecimal totalCostUsd, long totalMs, boolean fallbackUsed,
-                         boolean backgroundRemoved, Map<String, Object> metadata, BufferedImage original) {
+                         boolean backgroundRemoved, Map<String, Object> metadata, BufferedImage original,
+                         BufferedImage studioSource, java.util.Set<String> truncated) {
     }
+
+    /** Lado maior da fonte do estúdio: o Flat Lay (1024 px) jogaria fora o detalhe de uma foto de celular de 12 MP. */
+    public static final int STUDIO_SOURCE_MAX = 2400;
 
     public boolean externalAvailable() {
         return backgroundRemovers.stream().anyMatch(BackgroundRemovalPort::available)
@@ -93,6 +97,8 @@ public class FlatLayPipeline {
                     + (cutout.warning() == null ? "" : " — " + cutout.warning())));
         }
         boolean backgroundRemoved = cutout.confidence() >= 0.45;
+        // lados em que a peça encosta na borda da foto (foto cortou a barra/mangas): o estúdio faz a peça "sangrar" ali
+        java.util.Set<String> truncated = truncatedSides(cutout.image());
 
         // 3 — correção de perspectiva (deskew pela PCA da máscara)
         t = System.nanoTime();
@@ -109,6 +115,7 @@ public class FlatLayPipeline {
         t = System.nanoTime();
         BufferedImage normalized = null;
         double colorScore = 0.7;
+        boolean externalColor = false;
         if (allowExternal) {
             for (ColorNormalizationPort port : colorNormalizers) {
                 if (!port.available()) {
@@ -119,6 +126,7 @@ public class FlatLayPipeline {
                     if (res.isPresent()) {
                         normalized = ImageOps.decode(res.get().bytes());
                         colorScore = Math.max(0.8, res.get().confidence());
+                        externalColor = true;
                         stages.add(new Stage("NORMALIZACAO_COR", res.get().provider(), ms(t), res.get().costUsd(), true, false, "ok"));
                         break;
                     }
@@ -135,6 +143,19 @@ public class FlatLayPipeline {
             stages.add(new Stage("NORMALIZACAO_COR", "local-grayworld", ms(t), BigDecimal.ZERO, true,
                     allowExternal && colorNormalizers.stream().anyMatch(ColorNormalizationPort::available),
                     String.format("ganhos R%.2f G%.2f B%.2f", nr.gainR(), nr.gainG(), nr.gainB())));
+        }
+
+        // 4b — fonte do estúdio em alta resolução: máscara do recorte aplicada à foto original (≤ 2400 px), mesma
+        // correção de inclinação e mesma normalização de cor
+        BufferedImage hi = hiResCutout(original, cutout.image());
+        BufferedImage studioSource;
+        if (hi != cutout.image()) {
+            BufferedImage hs = ImageOps.rotate(hi, correction);
+            hs = ImageOps.crop(hs, ImageOps.alphaBounds(hs));
+            // a cor do provedor externo não é reproduzível aqui: a fonte fica com a cor da foto (o estúdio realça depois)
+            studioSource = externalColor ? hs : ImageFilters.normalize(hs).image();
+        } else {
+            studioSource = normalized;
         }
 
         // 5 — composição 1024 (transparente para o card + fundo branco para compartilhar)
@@ -169,9 +190,76 @@ public class FlatLayPipeline {
         meta.put("retry_count", 0);
         meta.put("fallback_used", anyFallback);
         meta.put("canvas", CANVAS);
+        meta.put("truncated_sides", List.copyOf(truncated));
+        meta.put("studio_source", studioSource.getWidth() + "×" + studioSource.getHeight());
         return new Result(ImageOps.png(composed), ImageOps.jpeg(white, 0.9f), ImageOps.png(thumb), mime,
                 original.getWidth(), original.getHeight(), cutout, quality, stages, cost, ms(started), anyFallback,
-                backgroundRemoved, meta, original);
+                backgroundRemoved, meta, original, studioSource, truncated);
+    }
+
+    /**
+     * Lados do recorte que encostam na borda da foto: pelo menos 3% do lado (e 8 px) com peça nas 2 linhas/colunas
+     * externas. É o caso da foto que cortou a barra ou as mangas — o estúdio não pode deixar esse corte "flutuando".
+     */
+    public static java.util.Set<String> truncatedSides(BufferedImage cut) {
+        int w = cut.getWidth(), h = cut.getHeight();
+        int top = 0, bottom = 0, left = 0, right = 0;
+        for (int x = 0; x < w; x++) {
+            if (opaque(cut, x, 0) || opaque(cut, x, 1)) {
+                top++;
+            }
+            if (opaque(cut, x, h - 1) || opaque(cut, x, h - 2)) {
+                bottom++;
+            }
+        }
+        for (int y = 0; y < h; y++) {
+            if (opaque(cut, 0, y) || opaque(cut, 1, y)) {
+                left++;
+            }
+            if (opaque(cut, w - 1, y) || opaque(cut, w - 2, y)) {
+                right++;
+            }
+        }
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        if (top >= Math.max(8, w * 0.03)) {
+            out.add("top");
+        }
+        if (bottom >= Math.max(8, w * 0.03)) {
+            out.add("bottom");
+        }
+        if (left >= Math.max(8, h * 0.03)) {
+            out.add("left");
+        }
+        if (right >= Math.max(8, h * 0.03)) {
+            out.add("right");
+        }
+        return out;
+    }
+
+    private static boolean opaque(BufferedImage img, int x, int y) {
+        return x >= 0 && y >= 0 && x < img.getWidth() && y < img.getHeight() && (img.getRGB(x, y) >>> 24) > 128;
+    }
+
+    /**
+     * A remoção local trabalha em ≤ 1600 px; aqui a máscara é ampliada e aplicada sobre a foto original reduzida a
+     * {@link #STUDIO_SOURCE_MAX}. Se a original não for maior (ou a proporção não bater), devolve o próprio recorte.
+     */
+    static BufferedImage hiResCutout(BufferedImage original, BufferedImage cut) {
+        BufferedImage target = ImageOps.scaleToFit(original, STUDIO_SOURCE_MAX, STUDIO_SOURCE_MAX);
+        int tw = target.getWidth(), th = target.getHeight();
+        double ratioCut = cut.getWidth() / (double) cut.getHeight(), ratioOrig = tw / (double) th;
+        if (tw <= cut.getWidth() * 1.1 || Math.abs(ratioCut - ratioOrig) > 0.02 * ratioOrig) {
+            return cut;
+        }
+        BufferedImage mask = ImageOps.scale(cut, tw, th);
+        int[] m = mask.getRGB(0, 0, tw, th, null, 0, tw);
+        int[] o = ImageOps.toArgb(target).getRGB(0, 0, tw, th, null, 0, tw);
+        for (int i = 0; i < o.length; i++) {
+            o[i] = (m[i] & 0xFF000000) | (o[i] & 0x00FFFFFF);
+        }
+        BufferedImage out = new BufferedImage(tw, th, BufferedImage.TYPE_INT_ARGB);
+        out.setRGB(0, 0, tw, th, o, 0, tw);
+        return out;
     }
 
     private static long ms(long startNanos) {

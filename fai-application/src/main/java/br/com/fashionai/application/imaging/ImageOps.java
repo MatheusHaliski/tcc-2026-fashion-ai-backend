@@ -180,9 +180,12 @@ public final class ImageOps {
         L = StudioPipeline.boxBlur(L, w, h, 1, 2);
         A = StudioPipeline.boxBlur(A, w, h, 1, 2);
         B = StudioPipeline.boxBlur(B, w, h, 1, 2);
-        // 1) tons de fundo: k-means (k=3) sobre a borda
+        // 1) tons de fundo: k-means (k=3) sobre a borda — sem os lados que a peça atravessa (foto que cortou a barra
+        // ou a manga): ali a "borda" é a própria peça e viraria cor de fundo, abrindo buracos nela
         int[] border = borderIndices(w, h);
         double[][] centers = kmeansLab(border, L, A, B, 3);
+        border = cleanSides(border, w, h, L, A, B, centers[0]);
+        centers = kmeansLab(border, L, A, B, 3);
         double[] borderDist = new double[border.length];
         for (int k = 0; k < border.length; k++) {
             borderDist[k] = nearest(centers, L[border[k]], A[border[k]], B[border[k]])[0];
@@ -195,10 +198,11 @@ public final class ImageOps {
         double stepTol = Math.max(2.2, Math.min(8, p80 * 0.9 + 1.6));
         boolean[] background = new boolean[n];
         Deque<Integer> queue = new ArrayDeque<>();
-        for (int k = 0; k < border.length; k++) {
-            if (borderDist[k] < tol || ((px[border[k]] >>> 24) & 0xFF) < 16) {
-                background[border[k]] = true;
-                queue.add(border[k]);
+        // sementes: toda a borda (inclusive os lados ocupados) que tem a cor do fundo limpo
+        for (int i : borderIndices(w, h)) {
+            if (nearest(centers, L[i], A[i], B[i])[0] < tol || ((px[i] >>> 24) & 0xFF) < 16) {
+                background[i] = true;
+                queue.add(i);
             }
         }
         // 3–4) crescimento com barreira de borda + sombra
@@ -410,6 +414,50 @@ public final class ImageOps {
 
     private static long cross(long[] o, long[] a, long[] b) {
         return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    }
+
+    /**
+     * Borda sem os lados "ocupados": um lado com menos de 55% dos pixels perto do tom dominante da borda é peça
+     * atravessando a foto. Sobra pelo menos um lado (o mais limpo) para o modelo de fundo.
+     */
+    static int[] cleanSides(int[] border, int w, int h, float[] L, float[] A, float[] B, double[] wall) {
+        int[][] sides = {new int[w], new int[w], new int[h], new int[h]};
+        for (int x = 0; x < w; x++) {
+            sides[0][x] = x;
+            sides[1][x] = (h - 1) * w + x;
+        }
+        for (int y = 0; y < h; y++) {
+            sides[2][y] = y * w;
+            sides[3][y] = y * w + w - 1;
+        }
+        double[] share = new double[4];
+        for (int s = 0; s < 4; s++) {
+            int near = 0;
+            for (int i : sides[s]) {
+                if (Math.sqrt(sq(L[i] - wall[0]) + sq(A[i] - wall[1]) + sq(B[i] - wall[2])) < 12) {
+                    near++;
+                }
+            }
+            share[s] = near / (double) sides[s].length;
+        }
+        int best = 0;
+        for (int s = 1; s < 4; s++) {
+            if (share[s] > share[best]) {
+                best = s;
+            }
+        }
+        java.util.List<Integer> keep = new java.util.ArrayList<>();
+        for (int s = 0; s < 4; s++) {
+            if (share[s] >= 0.55 || s == best) {
+                for (int i : sides[s]) {
+                    keep.add(i);
+                }
+            }
+        }
+        if (keep.size() == border.length) {
+            return border;
+        }
+        return keep.stream().mapToInt(Integer::intValue).distinct().toArray();
     }
 
     private static double sq(double v) {

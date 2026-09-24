@@ -20,8 +20,10 @@ public final class LocalVision {
     private LocalVision() {
     }
 
+    /** @param logoBox caixa do logo na imagem enviada à IA (0–1000: x0, y0, x1, y1); null quando não há logo */
     public record PieceGuess(String category, String subcategory, String color, String material, String brand,
-                             String sex, Map<String, Double> confidence, double overall, List<String> palette) {
+                             String sex, Map<String, Double> confidence, double overall, List<String> palette,
+                             double[] logoBox) {
     }
 
     public static PieceGuess analyzePiece(ImageOps.Cutout cutout) {
@@ -70,7 +72,7 @@ public final class LocalVision {
         conf.put("material", 0.0);
         conf.put("brand", 0.0);
         double overall = round((catConf + colorConf) / 2);
-        return new PieceGuess(category, subcategory, color, null, null, null, conf, overall, palette);
+        return new PieceGuess(category, subcategory, color, null, null, null, conf, overall, palette, null);
     }
 
     public record ModerationVerdict(ModerationStatus status, double confidence, List<String> reasons, boolean needsHumanReview) {

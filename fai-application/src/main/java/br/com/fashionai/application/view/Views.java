@@ -55,7 +55,7 @@ public final class Views {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
-                            String studioBackdrop, String studioThumbUrl) {
+                            String studioBackdrop, String studioThumbUrl, String studioDetailUrl) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -81,7 +81,7 @@ public final class Views {
                 w.getModel3dUrl(), new Counters(w.getLikesCount(), w.getCommentCount(), w.getSharesCount(),
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
-                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()));
+                w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl());
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */

@@ -18,7 +18,8 @@ import java.util.Optional;
 /**
  * Photoroom Image Editing API v2 (RF4 · estúdio): recebe o recorte e devolve a foto de produto com fundo na cor do
  * estúdio, reiluminação por IA ({@code lighting.mode=ai.auto}), sombra suave por IA ({@code shadow.mode=ai.soft}) e
- * enquadramento com margem, em {@code size}×{@code size}.
+ * enquadramento: margem pequena nos lados inteiros e, nos lados que a foto cortou, a peça encosta na borda
+ * ({@code ignorePaddingAndSnapOnCroppedSides}), no quadro escolhido pelo estúdio (4:5, 1:1…).
  */
 @Component
 public class PhotoroomStudioAdapter implements StudioShotPort {
@@ -38,14 +39,15 @@ public class PhotoroomStudioAdapter implements StudioShotPort {
     }
 
     @Override
-    public Optional<ProviderImage> studio(byte[] cutoutPng, String backgroundHex, int size) {
+    public Optional<ProviderImage> studio(byte[] cutoutPng, String backgroundHex, int width, int height, double padding) {
         long started = System.nanoTime();
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("background.color", backgroundHex.replace("#", ""));
         fields.put("lighting.mode", "ai.auto");
         fields.put("shadow.mode", "ai.soft");
-        fields.put("padding", "0.08");
-        fields.put("outputSize", size + "x" + size);
+        fields.put("padding", String.format(java.util.Locale.ROOT, "%.3f", padding));
+        fields.put("ignorePaddingAndSnapOnCroppedSides", "true");
+        fields.put("outputSize", width + "x" + height);
         fields.put("export.format", "jpeg");
         try {
             byte[] out = ProviderCircuit.run(ID, () -> client.post().uri("/v2/edit")
