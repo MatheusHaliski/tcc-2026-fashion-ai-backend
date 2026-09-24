@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { type FormEvent } from "react";
 import type { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Field, Input, Select, Textarea } from "@/components/ui";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandSearchInput } from "@/components/brand-search-input";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -12,11 +12,15 @@ export interface PieceFormValue {
   tags: string; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
+  /** RF4 · buscador web de marcas: logo filtrado (fundo branco, letras pretas), fonte e referência externa */
+  brandLogoUrl?: string | null; brandLogoWideUrl?: string | null; brandSource?: string | null; brandRef?: string | null; brandDomain?: string | null; brandEdgePx?: number | null;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false };
 
 export function toPayload(v: PieceFormValue) {
-  return { ...v, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null };
+  // só o que o backend guarda: o logo largo, o domínio e a medida de nitidez são apenas do slot do formulário
+  const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, ...rest } = v; void _w; void _d; void _e;
+  return { ...rest, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null };
 }
 
 /** Formulário da peça (RF4/RF7) dirigido pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
@@ -24,14 +28,11 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
   value: PieceFormValue; onChange: (v: PieceFormValue) => void; onSubmit: () => void; busy?: boolean; error?: ApiError | null; submitLabel: string; prefilledNote?: string;
 }) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err = error?.fields ?? {};
-  const [brandQuery, setBrandQuery] = useState(value.brandName);
-  useEffect(() => setBrandQuery(value.brandName), [value.brandName]);
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const toggleIn = (k: "occasion" | "style" | "seals", v: string, max: number) => {
     const cur = value[k]; if (cur.includes(v)) set(k, cur.filter((x) => x !== v)); else if (cur.length < max) set(k, [...cur, v]);
   };
   const occasions = value.category ? tax?.allowedOccasionsByCategory?.[value.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
-  const brands = (tax?.brands ?? []).filter((b) => b.name.toLowerCase().includes(brandQuery.toLowerCase())).slice(0, 6);
   function submit(e: FormEvent) { e.preventDefault(); onSubmit(); }
   return (
     <form onSubmit={submit} noValidate className="grid gap-x-4 sm:grid-cols-2">
@@ -52,11 +53,10 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
       <Field label={t("common.material")} id="material" required error={err.material}><Select id="material" value={value.material} onChange={(e) => set("material", e.target.value)}><option value="">—</option>{(tax?.materials ?? []).map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
       <Field label="Sexo" id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
       <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
-      <Field label={t("common.brand")} id="brand" error={err.brandName} hint={value.brandId ? "Marca do catálogo" : "Digite para buscar no catálogo ou informe livremente"}>
-        {value.brandName?.trim() && <span className="mb-1 block"><BrandLogo name={value.brandName} size={26} withName title="logo buscado na internet pela IA" /></span>}
-        <Input id="brand" value={brandQuery} onChange={(e) => { setBrandQuery(e.target.value); onChange({ ...value, brandName: e.target.value, brandId: null }); }} list="brand-options" />
-        <datalist id="brand-options">{brands.map((b) => <option key={b.id} value={b.name} />)}</datalist>
-        {brands.length > 0 && brandQuery && !value.brandId && <div className="mt-1 flex flex-wrap gap-1">{brands.map((b) => <Chip key={b.id} onClick={() => { onChange({ ...value, brandName: b.name, brandId: b.id }); setBrandQuery(b.name); }}><BrandLogo name={b.name} size={18} />{b.name}</Chip>)}</div>}
+      <Field label={t("common.brand")} id="brand" error={err.brandName} className="sm:col-span-2" hint="Busca na internet (Wikidata, Simple Icons e IA com busca na web): escolha a marca e o logo entra no slot, já com fundo branco e letras pretas nítidas.">
+        <BrandSearchInput error={err.brandName}
+          value={{ brandName: value.brandName, brandLogoUrl: value.brandLogoUrl ?? null, brandLogoWideUrl: value.brandLogoWideUrl ?? null, brandSource: value.brandSource ?? null, brandRef: value.brandRef ?? null, brandDomain: value.brandDomain ?? null, edgePx: value.brandEdgePx ?? null }}
+          onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
       </Field>
       <Field label={`${t("common.price")} (USD)`} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
       <Field label={`${t("common.occasion")} (até 2)`} error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>

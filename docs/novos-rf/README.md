@@ -22,6 +22,13 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF38 | Cupons Fashion AI (Meus cupons promocionais / resgatados) | RF38 | [RF36-RF39.md](RF36-RF39.md) | `docs/diagramas/RF38/` |
 | RF39 | Criar guarda-roupa 3D + loja do guarda-roupa | RF39 | [RF39_Criar_Guarda_Roupa_3D.md](RF39_Criar_Guarda_Roupa_3D.md) | `docs/diagramas/RF39/` |
 
+## Mudanças em RF antigos (2026-09-24)
+
+| RF | Mudança | Documento | Diagramas |
+|---|---|---|---|
+| RF4 | Campo marca = buscador web de marcas (Wikidata, Simple Icons no GitHub, IA com busca na web), sem catálogo pré-cadastrado; logo filtrado (fundo branco, letras pretas nítidas) no slot | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF4/` (v3) |
+| RF5 / RF13 | Sem campo de marca no esquema/DNA: a marca de cada slot vem da peça inserida (somente leitura) | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF5/` (v4) |
+
 > Atenção à colisão: no código, "RF33" nos `@Operation` do `MirrorController` é o **Smart Mirror/Vista-me** (Trello
 > RF28), e "RF33" no `ShowcaseController` é a **Passarela 3D** (Trello RF33). O Swagger continua funcionando; a
 > renumeração dos comentários pode ser feita num passo só de refatoração, se o time quiser.

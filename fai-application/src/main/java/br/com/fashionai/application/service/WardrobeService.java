@@ -117,6 +117,8 @@ public class WardrobeService {
     private final Guard guard;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    private final BrandLogoService brandLogos;
+    private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
 
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
@@ -126,7 +128,8 @@ public class WardrobeService {
                            MediaService media, AssetCatalogService assets, ProjectionService projections,
                            NotificationService notifications, JobQueuePort queue,
                            Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
-                           ApplicationEventPublisher events) {
+                           ApplicationEventPublisher events, BrandLogoService brandLogos,
+                           br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles) {
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -151,6 +154,8 @@ public class WardrobeService {
         this.guard = guard;
         this.audit = audit;
         this.events = events;
+        this.brandLogos = brandLogos;
+        this.brandProfiles = brandProfiles;
     }
 
     // ================================================================== RF4 — análise da foto (rascunho)
@@ -427,7 +432,7 @@ public class WardrobeService {
                             String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                            Boolean forSale, Boolean studio) {
+                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef) {
     }
 
     @Transactional
@@ -640,10 +645,29 @@ public class WardrobeService {
         if (f.forSale() != null) {
             w.setForSale(f.forSale());
         }
+        String previousBrand = w.getBrandName();
         resolveBrand(w, f.brandId(), f.brandName());
+        brandFromWebSearch(w, f, previousBrand);
     }
 
-    /** Brand Resolver (#9): brandId → match fuzzy local → texto livre. Nunca cria Brand por omissão. */
+    /**
+     * RF12.CA03 — a foto que era a imagem da peça foi excluída: a peça volta para a imagem padrão da subcategoria
+     * (image_url é obrigatório; a peça nunca fica sem imagem).
+     */
+    public void useDefaultImageAfterPhotoDeletion(WardrobeItem w) {
+        String url = assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
+        w.setImageUrl(url);
+        w.setThumbnailUrl(url);
+        w.setStudioImageUrl(null);
+        w.setStudioDetailUrl(null);
+        w.setDefaultImage(true);
+    }
+
+    /**
+     * Marca da peça (RF4): {@code brandId} só quando o cliente aponta uma marca já ligada; fora isso, o nome vem do
+     * buscador web (ou texto livre) e <b>não depende de catálogo pré-cadastrado</b>. Se o nome for de uma marca com
+     * perfil aprovado na plataforma (conta MARCA), a peça é ligada a esse perfil (selos, cupons, página da marca).
+     */
     private void resolveBrand(WardrobeItem w, UUID brandId, String brandName) {
         if (brandId != null) {
             Brand b = brands.findById(brandId).orElseThrow(() -> ApiException.badRequest("MARCA_INVALIDA", "Marca não encontrada."));
@@ -652,19 +676,53 @@ public class WardrobeService {
             w.setBrandProfile(b.getBrandProfile());
             return;
         }
+        w.setBrand(null);
         if (brandName == null || brandName.isBlank()) {
-            w.setBrand(null);
             w.setBrandName(null);
+            w.setBrandProfile(null);
             return;
         }
-        LocalAdvisors.BrandResolution res = LocalAdvisors.resolveBrand(brandName, brands.findAllByOrderByName());
-        if (res.match() != null) {
-            w.setBrand(res.match());
-            w.setBrandName(res.match().getName());
-            w.setBrandProfile(res.match().getBrandProfile());
+        String name = InputSanitizer.clean(brandName, 80);
+        w.setBrandName(name);
+        String key = BrandLogoService.keyOf(name);
+        w.setBrandProfile(brandProfiles.findByApprovalStatus(br.com.fashionai.domain.model.enums.ApprovalStatus.APROVADO).stream()
+                .filter(bp -> key.equals(BrandLogoService.keyOf(bp.getNomeFantasia())) || key.equals(BrandLogoService.keyOf(bp.getBrandName())))
+                .findFirst().orElse(null));
+    }
+
+    static final java.util.Set<String> WEB_BRAND_SOURCES = java.util.Set.of("WIKIDATA", "SIMPLE_ICONS", "IA_BUSCA_WEB");
+
+    /**
+     * RF4 — marca escolhida no buscador web: a peça guarda o logo já filtrado (fundo branco, letras pretas) e a fonte.
+     * Só aceita logo que esteja no storage próprio (a URL vem do próprio buscador, nunca de terceiros). Sem logo da
+     * web, a marca fica como texto livre (monograma) ou ligada à marca cadastrada na plataforma.
+     */
+    private void brandFromWebSearch(WardrobeItem w, PieceForm f, String previousBrand) {
+        if (w.getBrandName() == null) {
+            w.setBrandLogoUrl(null);
+            w.setBrandSource(null);
+            w.setBrandRef(null);
+            return;
+        }
+        String logo = f.brandLogoUrl() == null ? null : f.brandLogoUrl().trim();
+        if (f.brandSource() == null && w.getBrandName().equals(previousBrand)
+                && (logo == null || logo.isEmpty() || logo.equals(w.getBrandLogoUrl()))) {
+            return;                                   // edição sem mexer na marca: mantém logo e fonte
+        }
+        String source = f.brandSource() == null ? null : f.brandSource().trim().toUpperCase(Locale.ROOT);
+        if (logo != null && !logo.isEmpty() && media.read(logo).isPresent()) {
+            w.setBrandLogoUrl(logo);
+            w.setBrandSource(source != null && WEB_BRAND_SOURCES.contains(source) ? source : "WEB");
+            w.setBrandRef(f.brandRef() == null ? null : InputSanitizer.clean(f.brandRef(), 255));
+            brandLogos.acceptWebLogo(w.getBrandName(), logo, w.getBrandSource(), null, w.getBrandRef());
+        } else if (w.getBrandProfile() != null || w.getBrand() != null) {
+            w.setBrandLogoUrl(null);
+            w.setBrandSource("PLATAFORMA");
+            w.setBrandRef(w.getBrandProfile() != null ? w.getBrandProfile().getSlug() : w.getBrand().getId().toString());
         } else {
-            w.setBrand(null);
-            w.setBrandName(InputSanitizer.clean(brandName, 80));
+            w.setBrandLogoUrl(null);
+            w.setBrandSource("TEXTO_LIVRE");
+            w.setBrandRef(null);
         }
     }
 

@@ -1,0 +1,325 @@
+@startuml RF4_Criar_Peca_v3
+title RF4 — Criar Peça (v3)\nCampo marca = buscador web de marcas (sem catálogo pré-cadastrado) com logo filtrado — substitui RF4-atividades-v2.puml
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Usuário|
+start
+:Etapa 1 — Acessar\n"Adicionar Nova Peça";
+:Etapa 2 — Selecionar e enviar\nfotografias (opcional);
+
+|Sistema|
+if (Usuário enviou ao menos uma foto?) then (Sim)
+
+  :Validar individualmente:\n- Formato JPG, PNG ou WebP\n- Tamanho máximo de 10 MB\n- Arquivo legível\n- Presença de imagem;
+
+  if (Existe pelo menos uma foto válida?) then (Sim)
+
+    if (Existem fotos inválidas no lote?) then (Sim)
+      :Rejeitar somente\nos arquivos inválidos;
+      :Informar o nome de cada arquivo\ne o motivo da rejeição;
+      note right
+        RF4.CA01
+        Arquivos inválidos não devem gerar rascunhos.
+      end note
+    else (Não)
+      :Manter todas as fotos enviadas;
+    endif
+
+    |Serviço de IA|
+    :Para cada foto tecnicamente válida,\nacionar o Content Moderator\n(RF24) — política de conteúdo\n(nudez/violência/impróprio) **e**\nverificação "é foto de peça de\nroupa?" (exclusiva do RF4);
+
+    repeat
+      :Avaliar moderationStatus\nda foto;
+      if (Aprovada?) then (Sim — APPROVED)
+        :Foto segue para criação\nde rascunho (Etapa 3);
+      else (Não)
+        if (Reprovada por política\nde conteúdo?) then (Sim — REJECTED_POLICY)
+          :Rejeitar somente este arquivo;
+          :Informar motivo — conteúdo\nnão permitido;
+        else (Não — REJECTED_NOT_CLOTHING)
+          :Rejeitar somente este arquivo;
+          :Informar motivo — a imagem\nnão parece ser de uma peça\nde roupa;
+        endif
+        note right
+          RF24 — Content Moderator nunca
+          aprova por omissão: se o motor
+          de IA não responder a tempo,
+          moderationStatus permanece
+          PENDING e a foto é reenfileirada
+          (RF24-sequencia.puml), nunca
+          cria rascunho enquanto pendente.
+        end note
+      endif
+    repeat while (Restam fotos\na moderar?) is (Sim) not (Não)
+
+    |Sistema|
+    if (Restou ao menos 1 foto\naprovada (ou lote iniciado\nsem foto)?) then (Sim)
+      :Prosseguir com as fotos\naprovadas;
+    else (Não)
+      :Recusar o envio;
+      :Apresentar mensagem — nenhuma\nfoto aprovada na moderação;
+      stop
+    endif
+
+  else (Não)
+    :Recusar o envio;
+    :Apresentar mensagem clara\nsobre formato, tamanho ou arquivo inválido;
+    note right: RF4.CA01
+    stop
+  endif
+
+else (Não — sem fotos)
+  :Registrar peça sem\nfotografia de origem;
+  note right
+    RF4.CA07 — Upload opcional
+    O cadastro pode prosseguir sem foto.
+    A imagem padrão é definida mais
+    adiante, a partir da subcategoria
+    informada no formulário (Etapa 4/6).
+  end note
+endif
+
+:Etapa 3 — Criar um rascunho\npara cada foto válida\n(ou um único rascunho, quando\no cadastro é feito sem foto);
+note right
+  RF4.CA05 — Cadastro em lote
+end note
+
+while (Existem rascunhos pendentes?) is (Sim)
+
+  :Selecionar o próximo rascunho;
+
+  if (Rascunho possui fotografia?) then (Sim)
+
+    |Serviço de IA|
+    :Enviar a imagem para\no serviço de análise;
+    :IA tenta identificar:\n- Categoria\n- Subcategoria\n- Tipo da peça\n- Cores predominantes\n- Materiais\n- Marca, quando identificável\n- Índices de confiança;
+
+    if (Serviço de IA respondeu?) then (Sim)
+      :Registrar o resultado\nretornado pela IA;
+
+      if (Confiança igual ou superior ao limite?) then (Sim)
+        |Sistema|
+        :Etapa 4 — Pré-preencher formulário:\n- Categoria\n- Subcategoria\n- Tipo da peça\n- Cores\n- Materiais\n- Marca identificada (vira o texto\n  inicial do buscador web de marcas);
+        note right
+          RF4.CA02
+          Todos os campos permanecem editáveis.
+        end note
+      else (Não)
+        |Sistema|
+        :Etapa 4 — Apresentar formulário\nsem preenchimento automático;
+        :Informar que a confiança\nda análise foi insuficiente;
+        note right
+          RF4.CA03
+          A baixa confiança não bloqueia o cadastro.
+        end note
+      endif
+
+    else (Timeout ou erro)
+      |Sistema|
+      :Registrar indisponibilidade\nou falha da análise;
+      :Etapa 4 — Apresentar formulário\npara preenchimento manual;
+      :Informar que a análise automática\nnão está disponível;
+    endif
+
+  else (Não)
+    |Sistema|
+    :Etapa 4 — Apresentar formulário\nsem preenchimento automático\n(sem imagem para análise);
+    :Informar que categoria,\nsubcategoria, tipo e cores\ndevem ser selecionados manualmente;
+  endif
+
+  repeat
+    |Usuário|
+    :Etapa 5 — Revisar e editar:\n- Nome\n- Categoria\n- Subcategoria (obrigatória)\n- Tipo da peça\n- Cores\n- Materiais\n- Marca (buscador web)\n- Estilo — máximo de 2 valores\n- Ocasião — máximo de 2 valores;
+
+    if (Usuário aciona "Detectar via IA"\nem categoria/subcategoria/cor/\nmaterial/marca?) then (Sim)
+      |Serviço de IA|
+      :Reprocessar o campo\nacionado (RF24) a partir da\nfoto do rascunho — mesma análise\nda Etapa 4, agora sob demanda\npara um campo específico;
+      |Sistema|
+      :Preencher o campo com a\nnova sugestão, mantendo-o\neditável;
+      note right
+        RF24.CA16 — IA acionada por
+        botão, distinta da análise
+        automática da Etapa 4 (roda
+        uma vez, ao enviar a foto).
+        Aqui o usuário re-aciona a
+        IA sob demanda, campo a
+        campo, a qualquer momento
+        da revisão — útil após
+        editar manualmente ou
+        quando o rascunho não tinha
+        foto na Etapa 2.
+      end note
+      |Usuário|
+    endif
+
+      :**Campo marca — buscador web de marcas**\nDigitar a marca no campo "Marca"\n(ou partir da marca que a IA\nidentificou na foto);
+      note left
+        Sem catálogo de marcas pré-cadastrado
+        no backend: cada termo é buscado na
+        internet (cache de 30 min só em memória).
+        Só a marca escolhida é gravada — na peça
+        e no cache de logos (brand_logos).
+        Fonte indisponível (rede, chave, cota)
+        não trava o campo: aparece o status de
+        cada fonte e o texto livre continua valendo.
+      end note
+      |Sistema|
+      if (Texto com 2 a 60 caracteres?) then (Sim)
+        :Chamar GET /api/brand-search?q=texto\n(380 ms depois da última tecla);
+        |Busca web de marcas|
+        fork
+          :Wikidata — itens de moda:\nnome, descrição, logo oficial\n(P154, PNG do Wikimedia Commons)\ne site oficial (P856);
+        fork again
+          :Simple Icons (GitHub) — catálogo\naberto de logos vetoriais, lido\nna hora (índice só em memória);
+        end fork
+        if (Menos de 2 marcas com nome igual\nou começando pelo texto?) then (Sim)
+          :IA com busca na web\n(BRAND_LOGO_FINDER, RF24):\naté 4 marcas de moda com site\ne URL direta do logo;
+        else (Não)
+        endif
+        :Juntar a mesma marca vinda de\nfontes diferentes e ordenar:\nnome igual → começa com → contém;\nmoda confirmada; Wikidata > IA >\nSimple Icons;
+        :Filtrar o logo de até 6 resultados\n(ver RF4-pipeline-filtro-logo):\nfundo branco, letras pretas nítidas;
+        if (Logo aprovado no filtro?) then (Sim)
+          :Guardar no storage próprio:\nquadrado 320×320 e faixa 160 px;
+        else (Não)
+          :Marcar o motivo da recusa\n(SEM_NITIDEZ, RESOLUCAO_BAIXA,\nFUNDO_NAO_UNIFORME...);
+        endif
+        |Sistema|
+        :Mostrar a lista: logo filtrado, nome,\ndescrição, site e fonte de cada marca\n+ opção "Usar o texto sem logo da web";
+        |Usuário|
+        if (Escolheu uma marca da lista?) then (Sim)
+          |Sistema|
+          :Preencher o nome da marca e o\nslot "logo da marca" com a imagem\nfiltrada (fundo branco, preto nítido);
+        else (Texto livre)
+          |Sistema|
+          :Manter o nome digitado;\no slot do logo mostra o monograma;
+        endif
+      else (Não)
+        :Aguardar mais caracteres;
+      endif
+      |Usuário|
+
+    :Solicitar salvamento da peça;
+
+    |Sistema|
+    :Validar campos obrigatórios\ne regras do cadastro;
+
+    if (Existem campos inválidos?) then (Sim)
+      :Destacar os campos\nque precisam de correção;
+    else (Não)
+      :Aceitar os dados\ninformados pelo usuário;
+    endif
+  repeat while (Existem campos inválidos?) is (Sim)
+
+  |Sistema|
+  if (Rascunho possui fotografia\nenviada pelo usuário?) then (Sim)
+
+    |Processamento de imagem|
+    :Etapa 6 — Solicitar\nremoção do fundo;
+
+    if (Serviço de remoção disponível?) then (Sim)
+      :Processar a imagem;
+
+      if (Remoção concluída?) then (Sim)
+        :Salvar imagem\ncom fundo removido;
+      else (Não)
+        :Manter a imagem original;
+        :Enfileirar tentativa\nde reprocessamento;
+        note right: RF4.CA06
+      endif
+
+    else (Não)
+      :Manter a imagem original;
+      :Enfileirar tentativa\nde reprocessamento;
+      note right: RF4.CA06
+    endif
+
+    |Sistema|
+    :Marcar imagem como\nfoto enviada pelo usuário\n(is_default_image = false);
+
+  else (Não)
+    |Sistema|
+    :Etapa 6 — Selecionar o asset padrão\ncorrespondente à subcategoria\ninformada, dentre os 59 desenhos\noficiais ilustrados do FashionAI;
+    :Aplicar o asset padrão\ncomo imagem processada da peça;
+    :Marcar imagem como\nasset padrão\n(is_default_image = true);
+    note right
+      RF4.CA08 — Foto padrão por subcategoria
+      Biblioteca fixa de 59 assets oficiais
+      (um desenho por subcategoria de peça).
+      Caso a subcategoria seja alterada depois,
+      o asset padrão é atualizado de acordo —
+      apenas quando is_default_image = true.
+    end note
+  endif
+
+  |Sistema|
+  :Etapa 7 — Persistir cadastro:\n- wardrobe_items\n- wardrobe_item_colors\n- wardrobe_item_materials\n- Marca: brand_name, brand_logo_url,\n  brand_source (WIKIDATA · SIMPLE_ICONS ·\n  IA_BUSCA_WEB · TEXTO_LIVRE), brand_ref\n- brand_logos (logo escolhido vale\n  para a marca em todas as telas)\n- URL da imagem original (quando houver)\n- URL da imagem processada ou do asset padrão\n- is_default_image\n- Status do processamento;
+
+  :Etapa 8 — Registrar inferência:\n- Resultado da IA (quando executada)\n- Índices de confiança\n- Modelo utilizado\n- Data e hora\n- Status da análise;
+  note right: RF24.CA16
+
+  :Etapa 9 — Disponibilizar peça\nno guarda-roupa;
+  note right: RF4.CA04
+
+  :Marcar rascunho como concluído;
+
+endwhile (Não)
+
+|Usuário|
+:Visualizar as peças adicionadas\nao guarda-roupa;
+
+repeat
+  :Abrir o card ampliado\nde uma peça (Peça — Ampliado);
+
+  if (Deseja adicionar ou substituir\na fotografia da peça?) then (Sim)
+    :Fazer upload de uma nova fotografia\npelo formulário de edição da peça;
+
+    |Serviço de IA|
+    :Content Moderator (RF24) modera\na nova foto — mesmo gate de\npolítica de conteúdo + "é roupa?"\nda criação (RF4);
+    |Sistema|
+    if (moderationStatus = APPROVED?) then (Sim)
+      :Marcar a fotografia enviada\ncomo foto oficial da peça;
+
+      |Processamento de imagem|
+      :Solicitar remoção de fundo\nda nova fotografia;
+
+      |Sistema|
+      :Atualizar image_url\ne is_default_image = false;
+      :Propagar a nova foto para\nos cards de RF5 (Criar Look)\ne RF11 (Configurar Visual)\nque referenciam esta peça;
+      note right
+        RF4.CA09
+        A foto configurada para o card em
+        RF5/RF11 passa a vir do upload;
+        se nenhum upload existir, permanece
+        o asset padrão por subcategoria.
+      end note
+    else (Não)
+      :Rejeitar a nova foto;
+      :Manter a foto atual da peça;
+      note right: mesma regra do RF4 —\nnunca aprova por omissão
+    endif
+  else (Não)
+    :Manter o asset padrão\nou a foto atual da peça;
+  endif
+repeat while (Deseja revisar a foto\nde outra peça?) is (Sim)
+
+stop
+
+@enduml

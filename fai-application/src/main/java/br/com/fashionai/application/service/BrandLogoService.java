@@ -135,6 +135,25 @@ public class BrandLogoService {
         return view(tx.execute(st -> persist(key, clean(rawName), f)), rawName);
     }
 
+    /**
+     * RF4 — logo escolhido no buscador web (já filtrado: fundo branco, letras pretas) passa a ser o logo da marca em todas
+     * as telas. Não sobrescreve logo enviado pela própria marca nem o corrigido pelo admin.
+     */
+    public void acceptWebLogo(String rawName, String url, String source, String domain, String originUrl) {
+        String key = keyOf(rawName);
+        if (key.isEmpty() || url == null) {
+            return;
+        }
+        tx.executeWithoutResult(st -> {
+            BrandLogo cur = logos.findByNameKey(key).orElse(null);
+            if (cur != null && "FOUND".equals(cur.getStatus()) && ("PERFIL_MARCA".equals(cur.getSource()) || "MANUAL".equals(cur.getSource()))) {
+                return;
+            }
+            BigDecimal conf = "WIKIDATA".equals(source) ? new BigDecimal("0.9500") : "SIMPLE_ICONS".equals(source) ? new BigDecimal("0.8500") : new BigDecimal("0.7000");
+            persist(key, clean(rawName), new Found(url, source == null ? "WEB" : source, domain, originUrl, conf, null));
+        });
+    }
+
     /** Lista para o admin: o que foi encontrado, de onde e o que ainda é monograma. */
     public List<Map<String, Object>> all() {
         return logos.findAllByOrderByDisplayName().stream().map(l -> view(l, l.getDisplayName())).toList();
