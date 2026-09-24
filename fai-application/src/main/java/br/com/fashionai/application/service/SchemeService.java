@@ -433,15 +433,21 @@ public class SchemeService {
         if (dailyLookWarning != null) {
             out.put("dailyLookWarning", dailyLookWarning);
         }
-        // RF20.CA01 — sugestão de vínculo (não bloqueante) ao salvar esquemas com 2+ peças.
-        if (items.size() >= 2) {
-            try {
-                out.put("sealSuggestions", seals.suggest(user, s.getId()));
-            } catch (RuntimeException ex) {
-                out.put("sealSuggestions", Map.of("suggestions", List.of(), "message", "Sugestão de vínculo indisponível agora."));
-            }
-        }
+        // RF20.CA01 — a sugestão de vínculo roda depois do commit (SchemeController → suggestSealsAfterSave): uma falha
+        // na sugestão não pode marcar esta transação como rollback-only e derrubar o salvamento do esquema.
         return out;
+    }
+
+    /**
+     * RF20.CA01 — sugestão de vínculo não bloqueante, chamada fora da transação do salvamento (o esquema já está
+     * gravado). {@code seals.suggest} abre a própria transação; se falhar, devolve a mensagem sem afetar o esquema.
+     */
+    public Map<String, Object> suggestSealsAfterSave(CurrentUser user, UUID schemeId) {
+        try {
+            return seals.suggest(user, schemeId);
+        } catch (RuntimeException ex) {
+            return Map.of("suggestions", List.of(), "message", "Sugestão de vínculo indisponível agora.");
+        }
     }
 
     private void applyForm(Scheme s, SchemeForm f) {

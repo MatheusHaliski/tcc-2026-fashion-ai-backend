@@ -50,7 +50,7 @@ public class DailyLookService {
     }
 
     /** Registra (ou substitui) o Look do Dia da data. Peças indisponíveis não viram Look do Dia (RF33.CA05). */
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)   // chamada em try/catch pelo SchemeService: recusa vira aviso, não erro 500
     public DailyLook register(CurrentUser user, Scheme scheme, DailyLookSource source, LocalDate date) {
         guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + scheme.getId());
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(scheme.getId());
