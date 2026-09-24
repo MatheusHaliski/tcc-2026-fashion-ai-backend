@@ -10,6 +10,7 @@ import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import { Badge, Button, ErrorState, Skeleton } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
+import { BrandLogo } from "@/components/brand-logo";
 
 /**
  * Modal de detalhe (RF7): clicar num esquema ou numa peça em qualquer lista abre o card SEMPRE AMPLIADO num modal,
@@ -86,6 +87,7 @@ function SchemeDetail({ id, onPiece, onClose }: { id: string; onPiece: (id: stri
           <li key={it.wardrobeItemId}>
             <button type="button" className="flex w-full min-w-0 items-center gap-3 p-2 text-left hover:bg-surface-2" onClick={() => onPiece(it.wardrobeItemId)}>
               <img src={mediaUrl(it.piece?.thumbnailUrl ?? it.piece?.imageUrl)} alt="" className="h-11 w-11 shrink-0 rounded object-contain bg-surface-2" />
+              {it.piece?.brandName && <BrandLogo name={it.piece.brandName} src={it.piece.brandLogoUrl} size={24} />}
               <span className="min-w-0 flex-1"><span className="block truncate type-body">{it.piece?.name ?? it.slot}</span><span className="block truncate type-caption text-muted">{label(it.slot.toLowerCase())}{it.piece?.brandName ? ` · ${it.piece.brandName}` : ""}{it.piece?.price != null ? ` · ${fmtMoney(it.piece.price, "BRL")}` : ""}</span></span>
               <span className="type-caption text-muted">ver peça →</span>
             </button>
@@ -121,7 +123,7 @@ function PieceDetail({ id, from, onScheme, onClose }: { id: string; from?: strin
         <div className="c-header"><span className="c-meta">@{p.owner.username}</span></div>
         <div className="c-photo" style={{ aspectRatio: "1" }}>{(p.imageUrl || p.thumbnailUrl) && <img src={mediaUrl(p.imageUrl ?? p.thumbnailUrl)} alt={p.name} style={{ objectFit: "contain", padding: 12 }} />}</div>
         <div className="c-title">{p.name}</div>
-        <div className="c-row"><span className="k">Categoria · marca · sexo · selos</span>{[CATEGORY_LABEL[p.category] ?? label(p.category), p.brandName, label(p.sex?.toLowerCase())].filter(Boolean).join(" · ")}{p.seals.length ? ` · ${p.seals.map(label).join(", ")}` : ""}</div>
+        <div className="c-row"><span className="k">Categoria · marca · sexo · selos</span>{p.brandName && <BrandLogo name={p.brandName} src={p.brandLogoUrl} size={22} className="mr-1.5" />}{[CATEGORY_LABEL[p.category] ?? label(p.category), p.brandName, label(p.sex?.toLowerCase())].filter(Boolean).join(" · ")}{p.seals.length ? ` · ${p.seals.map(label).join(", ")}` : ""}</div>
         <div className="c-row"><span className="k">Preço · ocasião · estilo</span>{[p.price != null ? fmtMoney(p.price, "BRL") : null, p.occasion.map(label).join(", "), p.style.map(label).join(", ")].filter(Boolean).join(" · ")}</div>
         <div className="c-row"><span className="k">Identificação</span>{[p.name, p.size?.toUpperCase(), label(p.color), label(p.material?.toLowerCase()), label(p.subcategory)].filter(Boolean).join(" · ")}</div>
       </article>

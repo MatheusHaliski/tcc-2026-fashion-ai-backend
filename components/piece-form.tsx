@@ -4,6 +4,7 @@ import type { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Field, Input, Select, Textarea } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -50,9 +51,10 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
       <Field label="Sexo" id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
       <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
       <Field label={t("common.brand")} id="brand" error={err.brandName} hint={value.brandId ? "Marca do catálogo" : "Digite para buscar no catálogo ou informe livremente"}>
+        {value.brandName?.trim() && <span className="mb-1 block"><BrandLogo name={value.brandName} size={26} withName title="logo buscado na internet pela IA" /></span>}
         <Input id="brand" value={brandQuery} onChange={(e) => { setBrandQuery(e.target.value); onChange({ ...value, brandName: e.target.value, brandId: null }); }} list="brand-options" />
         <datalist id="brand-options">{brands.map((b) => <option key={b.id} value={b.name} />)}</datalist>
-        {brands.length > 0 && brandQuery && !value.brandId && <div className="mt-1 flex flex-wrap gap-1">{brands.map((b) => <Chip key={b.id} onClick={() => { onChange({ ...value, brandName: b.name, brandId: b.id }); setBrandQuery(b.name); }}>{b.name}</Chip>)}</div>}
+        {brands.length > 0 && brandQuery && !value.brandId && <div className="mt-1 flex flex-wrap gap-1">{brands.map((b) => <Chip key={b.id} onClick={() => { onChange({ ...value, brandName: b.name, brandId: b.id }); setBrandQuery(b.name); }}><BrandLogo name={b.name} size={18} />{b.name}</Chip>)}</div>}
       </Field>
       <Field label={`${t("common.price")} (USD)`} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
       <Field label={`${t("common.occasion")} (até 2)`} error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>

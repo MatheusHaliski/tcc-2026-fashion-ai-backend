@@ -4,11 +4,17 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, PageHeader, Skeleton, useToast } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
+import type { BrandLogoInfo } from "@/lib/brand-logos";
+
+type LogoRow = BrandLogoInfo & { confidence?: number | null; checkedAt?: string | null; nextAttemptAt?: string | null };
+const LOGO_SOURCE: Record<string, string> = { WIKIDATA: "Wikidata / Commons", IA_BUSCA_WEB: "IA · busca na web", FAVICON_SITE: "ícone do site oficial", PERFIL_MARCA: "perfil da marca", MANUAL: "admin", MONOGRAMA: "monograma (aguardando)" };
 
 interface AiOverview { remoteEnabled: boolean; providers: Record<string, boolean>; catalog: { capability: string; name: string; primary: string; status: string; fallback?: string; dailyQuota?: number; hostRf?: string }[]; recent?: { capability?: string; provider?: string; result?: string; latencyMs?: number; costUsd?: number; fallback?: boolean; createdAt?: string }[]; }
 function System() {
   const { fmtDateTime, fmtMoney } = useI18n(); const toast = useToast();
   const ai = useApi<AiOverview>((signal) => api.get("/api/admin/ai", { signal }), []);
+  const logos = useApi<LogoRow[]>((signal) => api.get("/api/admin/brand-logos", { signal }), []);
   const backups = useApi<{ id?: string; kind?: string; fileKey?: string; sizeBytes?: number; ok?: boolean; createdAt?: string; checksum?: string }[]>((signal) => api.get("/api/admin/backups", { signal }), []);
   const run = async (fn: () => Promise<unknown>, ok: string, after?: () => void) => { try { const r = await fn(); toast.success(ok + (r && typeof r === "object" && "message" in (r as object) ? `: ${(r as { message?: string }).message}` : "")); after?.(); } catch (e) { toast.fromError(e); } };
   return (
@@ -22,6 +28,20 @@ function System() {
           <Card><h2 className="type-h3 mb-2">Inferências recentes</h2><ul className="divide-y divide-line-soft type-caption">{(ai.data?.recent ?? []).slice(0, 15).map((r, i) => <li key={i} className="flex justify-between py-1"><span>{r.capability} · {r.provider}{r.fallback ? " (fallback)" : ""} · {r.result}</span><span className="type-data">{r.latencyMs ?? 0} ms · {r.costUsd != null ? fmtMoney(r.costUsd, "USD") : ""}</span></li>)}{(ai.data?.recent ?? []).length === 0 && <li className="py-1 text-muted">Sem chamadas ainda.</li>}</ul></Card>
         </div>
       </div>
+      <Card className="mt-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2"><h2 className="type-h3 mr-auto">Logos de marcas (busca na internet pela IA)</h2>
+          <Button size="sm" onClick={() => run(() => api.post("/api/admin/brand-logos/refresh-pending"), "Busca dos pendentes executada", logos.reload)}>Buscar pendentes agora</Button></div>
+        <p className="mb-3 type-caption text-muted">Ordem: logo do perfil da marca → Wikidata/Wikimedia Commons → Claude com busca na web → ícone do site oficial → monograma. O arquivo encontrado é baixado, validado e guardado no storage próprio.</p>
+        {logos.loading ? <Skeleton className="h-24" /> : (logos.data ?? []).length === 0 ? <p className="type-body text-muted">Nenhuma marca consultada ainda.</p> : (
+          <ul className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">{(logos.data ?? []).map((l) => (
+            <li key={l.name} className="flex items-center gap-2 rounded-md border border-line-soft p-2">
+              <BrandLogo name={l.name} src={l.url} size={34} />
+              <div className="min-w-0 flex-1"><p className="truncate type-body-sm font-semibold">{l.name}</p>
+                <p className="truncate type-caption text-muted">{LOGO_SOURCE[l.source] ?? l.source}{l.domain ? ` · ${l.domain}` : ""}{l.confidence != null ? ` · ${Math.round(Number(l.confidence) * 100)}%` : ""}{l.status !== "FOUND" && l.nextAttemptAt ? ` · nova busca ${fmtDateTime(l.nextAttemptAt)}` : ""}</p></div>
+              <Button size="sm" variant="ghost" onClick={() => run(() => api.post(`/api/admin/brand-logos/refresh?name=${encodeURIComponent(l.name)}`), `Nova busca de ${l.name}`, logos.reload)}>Buscar</Button>
+              <label className="btn btn-sm btn-ghost cursor-pointer" title="enviar o logo correto">Enviar<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const form = new FormData(); form.append("file", f); run(() => api.upload(`/api/admin/brand-logos/upload?name=${encodeURIComponent(l.name)}`, form), `Logo de ${l.name} atualizado`, logos.reload); }} /></label>
+            </li>))}</ul>)}
+      </Card>
     </>
   );
 }

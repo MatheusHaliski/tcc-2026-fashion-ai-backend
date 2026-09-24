@@ -14,6 +14,7 @@ import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CommentButton } from "@/components/interactions";
 import { useDetailModal } from "@/components/detail-modal";
 import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-good)" : (h ?? 0) >= 50 ? "var(--status-warning)" : (h ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)";
 
@@ -42,7 +43,7 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
   );
 }
 
-/** Blocos (Lego): selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look. */
+/** LEGO: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look. */
 export function SealStuds({ seals }: { seals: SealBadge[] }) {
   const color = (s: SealBadge) => (s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
   return (
@@ -64,7 +65,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const items = scheme.items ?? [];
   const cover = mediaUrl(scheme.coverImageUrl) ?? mediaUrl(items[0]?.piece?.imageUrl ?? (items[0]?.imageUrl as string));
   const link = href ?? `/schemes/${scheme.id}`;
-  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: mediaUrl(it.piece?.imageUrl ?? (it.imageUrl as string)), brand: it.piece?.brandName, logo: mediaUrl(it.piece?.brandLogoUrl), price: it.piece?.price, slot: it.slot }));
+  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: mediaUrl(it.piece?.imageUrl ?? (it.imageUrl as string)), brand: it.piece?.brandName, logo: it.piece?.brandLogoUrl ?? null, price: it.piece?.price, slot: it.slot }));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(scheme.layoutAnatomy ?? (l === "grade" ? "GRADE_PECAS" : l === "lateral" ? "HERO_LISTA" : "LISTA_VERTICAL"));
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
@@ -109,7 +110,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             {!compact && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${onPiece ? "cursor-pointer hover:bg-surface-2" : ""}`} role={onPiece ? "button" : undefined} tabIndex={onPiece ? 0 : undefined}
                 onClick={onPiece ? (e) => { e.preventDefault(); e.stopPropagation(); onPiece(p.id); } : undefined} onKeyDown={onPiece ? (e) => { if (e.key === "Enter") { e.preventDefault(); onPiece(p.id); } } : undefined}>
-                <span className="logo-chip">{p.logo ? <img src={p.logo} alt="" /> : p.img ? <img src={p.img} alt="" /> : (p.brand ?? "FAI").slice(0, 3).toUpperCase()}</span>
+                <span className="logo-chip">{p.brand ? <BrandLogo name={p.brand} src={p.logo} size={26} shape="square" /> : p.img ? <img src={p.img} alt="" /> : "FAI"}</span>
                 <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.price != null ? fmtMoney(p.price) : null].filter(Boolean).join(" · ") || p.slot}</span></span>
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>

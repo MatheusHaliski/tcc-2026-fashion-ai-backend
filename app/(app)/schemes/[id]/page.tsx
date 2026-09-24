@@ -13,6 +13,7 @@ import { Badge, Button, Card, Dialog, ErrorState, Field, Input, Skeleton, useToa
 import { toSealBadges, SchemeCard, hypeColor } from "@/components/scheme-card";
 import { InteractionBar } from "@/components/interactions";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface Detail { scheme: SchemeView; seals?: { id: string; name: string; tier?: string; iconUrl?: string; ownerName?: string; status?: string }[]; bonds?: unknown[]; hype?: { hype?: number; band?: { label: string } }; [k: string]: unknown; }
 
@@ -65,7 +66,7 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
             {s.items.map((it) => (
               <li key={it.wardrobeItemId} className="flex items-center gap-3 p-2">
                 <img src={mediaUrl(it.piece?.thumbnailUrl ?? it.piece?.imageUrl ?? (it.imageUrl as string))} alt="" className="h-12 w-12 rounded bg-surface-2 object-contain" />
-                <div className="min-w-0 flex-1"><p className="truncate type-body">{it.piece?.name ?? (it.name as string) ?? it.slot}</p><p className="type-caption text-muted">{it.slot} · {it.piece?.brandName ?? label(it.piece?.subcategory)}{it.piece?.notAvailableAnymore && " · indisponível"}</p></div>
+                <div className="min-w-0 flex-1"><p className="truncate type-body">{it.piece?.name ?? (it.name as string) ?? it.slot}</p><p className="flex items-center gap-1.5 type-caption text-muted">{label(it.slot.toLowerCase())} · {it.piece?.brandName ? <BrandLogo name={it.piece.brandName} src={it.piece.brandLogoUrl} size={18} withName /> : label(it.piece?.subcategory)}{it.piece?.notAvailableAnymore && " · indisponível"}</p></div>
                 <Link href={`/pieces/${it.wardrobeItemId}?fromScheme=${s.id}`} className="btn btn-sm">{t("common.see")}</Link>
               </li>
             ))}

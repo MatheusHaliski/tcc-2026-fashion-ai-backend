@@ -12,6 +12,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
+import { BrandLogo } from "@/components/brand-logo";
 
 type Tab = "LOOKS" | "PECAS" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
@@ -99,7 +100,7 @@ function SearchInner() {
         : tab === "PECAS" ? <div className="grid-cards">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
         : tab === "PESSOAS" ? <ul className="surface divide-y divide-line-soft">{(items as (UserCard & { relation?: string })[]).map((u) => <li key={u.id} className="flex items-center gap-3 p-3"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={40} /><div className="min-w-0 flex-1"><p className="type-body truncate"><b>{u.displayName}</b> · @{u.username}</p><p className="type-caption text-muted">{u.country ?? ""}{u.relation ? ` · ${u.relation}` : ""}</p></div><Link href={`/u/${u.username}`} className="btn btn-sm">Ver perfil</Link></li>)}</ul>
         : <ul className="surface divide-y divide-line-soft">{(items as Brand[]).map((b, i) => (
-            <li key={keyOf(b, i)} className="flex items-center gap-3 p-3"><Avatar src={mediaUrl(b.logoUrl ?? b.avatarUrl)} name={b.name} size={40} />
+            <li key={keyOf(b, i)} className="flex items-center gap-3 p-3">{tab === "MARCAS" ? <BrandLogo name={b.name} src={b.logoUrl} size={40} /> : <Avatar src={mediaUrl(b.logoUrl ?? b.avatarUrl)} name={b.name} size={40} />}
               <div className="min-w-0 flex-1"><p className="type-body truncate"><b>{b.name}</b></p><p className="type-caption text-muted">{tab === "CELEBRIDADES" ? "celebridade verificada" : b.registered === false ? `marca do catálogo · sem perfil no Fashion AI · ${b.publicPieces ?? 0} peça(s) pública(s)` : "perfil de marca no Fashion AI"}</p></div>
               {b.registered === false ? <Button size="sm" onClick={() => { setTab("PECAS"); setF({ ...NO_FILTERS, brand: b.name ?? "" }); }}>Ver peças</Button> : b.slug ? <Link href={tab === "CELEBRIDADES" ? `/u/${b.slug}` : `/brands/${b.slug}`} className="btn btn-sm">Abrir perfil</Link> : null}
             </li>))}</ul>

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api/client";
+import { api, mediaUrl } from "@/lib/api/client";
 import { Button, Dialog, Spinner, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 
@@ -37,7 +37,7 @@ function draw(img: HTMLImageElement, s: Step, out: HTMLCanvasElement) {
  * original (CA01/CA03). Salvar troca a imagem da peça e preserva a original em Minhas Fotos (CA02); a falha da remoção de
  * fundo é avisada sem travar as outras ferramentas (CA04); sair com edições pendentes pede confirmação (CA05).
  */
-export function PhotoEditor({ photoId, title, onClose, onSaved }: { photoId: string; title?: string; onClose: () => void; onSaved: (message: string) => void }) {
+export function PhotoEditor({ photoId, pieceId, imageUrl, title, onClose, onSaved }: { photoId?: string; pieceId?: string; imageUrl?: string | null; title?: string; onClose: () => void; onSaved: (message: string) => void }) {
   const toast = useToast();
   const [steps, setSteps] = useState<Step[]>([]); const [at, setAt] = useState(0);
   const [draft, setDraft] = useState<Partial<Step>>({});
@@ -46,11 +46,14 @@ export function PhotoEditor({ photoId, title, onClose, onSaved }: { photoId: str
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let url = ""; let alive = true;
-    api.blobUrl(`/api/photos/${photoId}/file`).then((u) => { url = u; if (alive) { setSteps([{ src: u, rotation: 0, crop: null, brightness: 100, contrast: 100, label: "Original" }]); setAt(0); } })
+    // foto de Minhas Fotos (original do dono) ou a imagem atual da peça (RF15.CA01 a partir da página da peça)
+    const source = photoId ? api.blobUrl(`/api/photos/${photoId}/file`)
+      : fetch(mediaUrl(imageUrl ?? null) ?? "", { mode: "cors" }).then((r) => { if (!r.ok) throw new Error("imagem indisponível"); return r.blob(); }).then((b) => URL.createObjectURL(b));
+    source.then((u) => { url = u; if (alive) { setSteps([{ src: u, rotation: 0, crop: null, brightness: 100, contrast: 100, label: "Original" }]); setAt(0); } })
       .catch((e) => { toast.fromError(e); onClose(); });
     return () => { alive = false; if (url) URL.revokeObjectURL(url); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoId]);
+  }, [photoId, imageUrl]);
   const cur: Step | undefined = steps[at] ? { ...steps[at], ...draft } : undefined;
   const img = useImage(cur?.src);
   useEffect(() => { if (img && cur && canvas.current) draw(img, cur, canvas.current); }, [img, cur?.rotation, cur?.crop, cur?.brightness, cur?.contrast, cur?.src]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -85,8 +88,8 @@ export function PhotoEditor({ photoId, title, onClose, onSaved }: { photoId: str
     try {
       const blob = await new Promise<Blob | null>((ok) => canvas.current!.toBlob(ok, "image/png")); if (!blob) throw new Error("canvas vazio");
       const form = new FormData(); form.append("file", blob, "edicao.png");
-      const r = await api.upload<{ message?: string }>(`/api/photos/${photoId}/edits`, form);
-      onSaved(r.message ?? "Edição salva.");
+      if (photoId) { const r = await api.upload<{ message?: string }>(`/api/photos/${photoId}/edits`, form); onSaved(r.message ?? "Edição salva."); }
+      else { await api.upload(`/api/pieces/${pieceId}/image`, form, "PUT"); onSaved("A imagem editada agora é a da peça. A original continua em Minhas Fotos."); }
     } catch (e) { toast.fromError(e); } finally { setBusy(null); }
   }
   const close = () => (dirty ? setLeaving(true) : onClose());

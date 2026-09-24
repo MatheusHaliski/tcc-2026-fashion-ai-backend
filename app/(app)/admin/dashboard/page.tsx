@@ -10,6 +10,7 @@ import { Bars, Donut, TimeSeries } from "@/components/charts";
 import { FaiIcon } from "@/components/fai-icon";
 import { Globe, countryName } from "@/components/globe";
 import { label } from "@/lib/api/taxonomy";
+import { BrandLogo } from "@/components/brand-logo";
 
 type Row = Record<string, unknown>;
 interface Dash { filter: { from: string; to: string; country?: string | null; profileType?: string | null }; kpis: Record<string, number>; series: Record<string, Row[]>; aiUsage: Row[]; aiByCountry: Row[]; aiProviders: Record<string, boolean>; brands: Row[]; countries: Row[]; hypeBands: Row[]; inventoryBands: Row[]; sealFunnel: Row[]; challenges: Row[]; points: Row[]; profiles: Row[]; alerts: { level: string; title: string; action?: string }[]; layout: { widgets: string[]; hidden: string[]; defaultFilter?: { days?: number } }; }
@@ -28,9 +29,13 @@ function AdminDashboard() {
   const today = new Date().toISOString().slice(0, 10); const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const [f, setF] = useState({ from: monthAgo, to: today, country: "", profileType: "" }); const [applied, setApplied] = useState(f);
   const { data, loading, error, reload } = useApi<Dash>((signal) => api.get(`/api/admin/dashboard${qs(applied)}`, { signal }), [JSON.stringify(applied)]);
-  const [custom, setCustom] = useState(false); const [layout, setLayout] = useState<{ widgets: string[]; hidden: string[] }>({ widgets: [], hidden: [] });
+  const [custom, setCustom] = useState(false); const [dragging, setDragging] = useState<string | null>(null); const [layout, setLayout] = useState<{ widgets: string[]; hidden: string[] }>({ widgets: [], hidden: [] });
   useEffect(() => { if (data?.layout) setLayout({ widgets: data.layout.widgets, hidden: data.layout.hidden }); }, [data]);
   async function saveLayout() { try { await api.put("/api/me/dashboard-layout", { widgets: layout.widgets, hidden: layout.hidden, defaultFilter: { days: 30, country: applied.country || null, profileType: applied.profileType || null } }); toast.success(t("dashboard.layoutSaved")); setCustom(false); } catch (e) { toast.fromError(e); } }
+  async function hideWidget(w: string) {
+    const next = { widgets: layout.widgets.length ? layout.widgets : Object.keys(WIDGET_LABEL), hidden: [...layout.hidden, w] }; setLayout(next);
+    try { await api.put("/api/me/dashboard-layout", { ...next, defaultFilter: { days: 30, country: applied.country || null, profileType: applied.profileType || null } }); toast.info(`“${WIDGET_LABEL[w] ?? w}” oculto — reative em Personalizar.`); } catch (e) { toast.fromError(e); }
+  }
   const move = (w: string, dir: -1 | 1) => setLayout((l) => { const i = l.widgets.indexOf(w); const j = i + dir; if (i < 0 || j < 0 || j >= l.widgets.length) return l; const arr = [...l.widgets]; [arr[i], arr[j]] = [arr[j], arr[i]]; return { ...l, widgets: arr }; });
   const exportCsv = () => { if (!data) return; const rows = Object.entries(data.kpis).map(([k, v]) => `${k},${v}`); const csv = `metric,value\n${rows.join("\n")}`; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `fashionai-kpis-${applied.from}-${applied.to}.csv`; a.click(); };
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -52,7 +57,8 @@ function AdminDashboard() {
             <tbody>{data.aiByCountry.map((r, i) => <tr key={String(r.country)} className="border-t border-line-soft"><td>{i === 0 ? <b>{countryName(String(r.country))}</b> : countryName(String(r.country))}</td><td className="text-right type-data">{fmtNumber(Number(r.users))}</td><td className="text-right type-data">{fmtNumber(Number(r.calls))}</td><td className="text-right type-data">{usd(Number(r.cost_usd ?? 0))}</td><td className="text-right type-data">{usd(Number(r.cost_per_user ?? 0))}</td><td className="text-right type-data">{fmtNumber(Number(r.fallback_pct ?? 0))}%</td></tr>)}</tbody></table>
           <p className="type-caption text-muted lg:col-span-2">Resposta: <b>{countryName(String(data.aiByCountry[0].country))}</b> — {usd(Number(data.aiByCountry[0].cost_per_user ?? 0))} por usuário no período (procedure sp_ai_cost_by_country).</p>
         </div>);
-      case "brands": return <Bars data={data.brands.map((r) => ({ name: String(r.brand), value: Number(r.pieces) }))} x="name" y="value" horizontal height={Math.max(200, data.brands.length * 24)} />;
+      case "brands": { const max = Math.max(1, ...data.brands.map((r) => Number(r.pieces)));
+        return <ul className="grid gap-1.5">{data.brands.map((r) => <li key={String(r.brand)} className="grid grid-cols-[minmax(0,180px)_minmax(0,1fr)_auto] items-center gap-3 type-caption"><BrandLogo name={String(r.brand)} size={24} withName /><span className="h-2.5 rounded bg-surface-2"><span className="block h-full rounded bg-thread" style={{ width: `${(Number(r.pieces) / max) * 100}%` }} /></span><span className="whitespace-nowrap text-right type-data">{fmtNumber(Number(r.pieces))} peças · {fmtNumber(Number(r.owners ?? 0))} donos · hype {r.avg_hype != null ? Math.round(Number(r.avg_hype)) : "—"}</span></li>)}</ul>; }
       case "countries": { const max = Math.max(1, ...data.countries.map((c) => Number(c.users) + Number(c.public_schemes)));
         return (
           <div className="grid items-start gap-3 lg:grid-cols-[360px_1fr]">
@@ -81,10 +87,14 @@ function AdminDashboard() {
         <div className="flex items-end"><Button type="submit" variant="primary" className="w-full"><FaiIcon id="ACT-12" size={24} decorative />{t("dashboard.apply")}</Button></div>
       </form>
       {loading && <Skeleton className="h-96" />}
-      {data && <div className="grid gap-4">{widgets.map((w) => <section key={w} aria-label={WIDGET_LABEL[w]}>{w !== "kpis" ? <Card><h2 className="type-h3 mb-2">{WIDGET_LABEL[w] ?? w}</h2>{render(w)}</Card> : render(w)}</section>)}</div>}
+      {data && <div className="grid gap-4">{widgets.map((w) => <section key={w} aria-label={WIDGET_LABEL[w]}>{w !== "kpis" ? <Card><div className="mb-2 flex items-start gap-2"><h2 className="type-h3 flex-1">{WIDGET_LABEL[w] ?? w}</h2><Button size="sm" variant="ghost" aria-label={`ocultar ${WIDGET_LABEL[w] ?? w}`} onClick={() => hideWidget(w)}>ocultar</Button></div>{render(w)}</Card> : render(w)}</section>)}</div>}
       {data && <p className="mt-3 type-caption text-faint">Provedores de IA: {Object.entries(data.aiProviders).map(([k, v]) => `${k} ${v ? "✓" : "✗"}`).join(" · ")}</p>}
       <Dialog open={custom} onClose={() => setCustom(false)} title={t("dashboard.customize")} footer={<Button variant="primary" onClick={saveLayout}>{t("common.save")}</Button>}>
-        <ul className="divide-y divide-line-soft">{(layout.widgets.length ? layout.widgets : Object.keys(WIDGET_LABEL)).map((w) => <li key={w} className="flex items-center gap-2 py-1"><span className="flex-1 type-body">{WIDGET_LABEL[w] ?? w}</span><Button size="sm" variant="ghost" onClick={() => move(w, -1)} aria-label="subir">↑</Button><Button size="sm" variant="ghost" onClick={() => move(w, 1)} aria-label="descer">↓</Button><Switch checked={!layout.hidden.includes(w)} onChange={(v) => setLayout((l) => ({ ...l, hidden: v ? l.hidden.filter((x) => x !== w) : [...l.hidden, w] }))} label="" /></li>)}</ul>
+        <p className="mb-2 type-caption text-muted">Arraste as linhas para mudar a ordem; desligue para ocultar. O layout fica salvo no seu perfil.</p>
+        <ul className="divide-y divide-line-soft">{(layout.widgets.length ? layout.widgets : Object.keys(WIDGET_LABEL)).map((w) => <li key={w} className={`flex items-center gap-2 py-1 ${dragging === w ? "opacity-40" : ""}`} draggable
+          onDragStart={(e) => { setDragging(w); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragging(null)}
+          onDragOver={(e) => { e.preventDefault(); if (!dragging || dragging === w) return; setLayout((l) => { const arr = [...(l.widgets.length ? l.widgets : Object.keys(WIDGET_LABEL))].filter((x) => x !== dragging); arr.splice(arr.indexOf(w), 0, dragging); return { ...l, widgets: arr }; }); }}>
+          <span className="cursor-grab select-none text-faint" aria-hidden>⋮⋮</span><span className="flex-1 type-body">{WIDGET_LABEL[w] ?? w}</span><Button size="sm" variant="ghost" onClick={() => move(w, -1)} aria-label="subir">↑</Button><Button size="sm" variant="ghost" onClick={() => move(w, 1)} aria-label="descer">↓</Button><Switch checked={!layout.hidden.includes(w)} onChange={(v) => setLayout((l) => ({ ...l, hidden: v ? l.hidden.filter((x) => x !== w) : [...l.hidden, w] }))} label="" /></li>)}</ul>
       </Dialog>
     </>
   );

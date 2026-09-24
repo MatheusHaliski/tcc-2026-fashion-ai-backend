@@ -8,6 +8,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Tabs } from "@/components/ui";
 import { Globe, countryName, type GlobePoint } from "@/components/globe";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
 interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
@@ -86,7 +87,7 @@ export default function ExplorerPage() {
         {brands.error ? <ErrorState error={brands.error} onRetry={brands.reload} /> : brands.loading ? <Skeleton className="h-48" /> : (brands.data?.brands ?? []).length === 0 ? <EmptyState title="Nenhuma marca com esses filtros." /> : (
           <div className="grid-cards">{(brands.data?.brands ?? []).map((b, i) => (
             <Card key={b.slug ?? i} className="flex flex-col items-center text-center">
-              <Avatar src={mediaUrl(b.logoUrl)} name={b.name} size={56} />
+              <BrandLogo name={b.name} src={b.logoUrl} size={56} />
               <p className="type-h3 mt-2">{b.name}</p>
               <p className="type-caption text-muted">{[b.country ? countryName(b.country) : null, b.category ? label(b.category) : null].filter(Boolean).join(" · ")}</p>
               <p className="type-data text-faint tabular">{b.pieces ?? 0} peças · {b.schemes ?? 0} looks com selo · hype {b.hypeScore ?? 0}</p>
@@ -102,7 +103,7 @@ export default function ExplorerPage() {
           <Card className="lg:col-span-3"><p className="label">Leitura de tendência {insights.data.fallbackUsed ? "(motor local)" : "(IA · RF24)"}</p><p className="type-h2">{insights.data.aiInsight}</p>{insights.data.note && <p className="type-caption text-faint mt-2">{insights.data.note}</p>}</Card>
           {Object.entries(insights.data.rankings).map(([k, rows]) => { const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0)); return (
             <Card key={k}><p className="label">{RANK_LABEL[k] ?? k}</p>{rows.length === 0 ? <p className="type-caption text-muted">sem dados suficientes</p> : <ul className="grid gap-1.5 type-body-sm">{rows.map((r, i) => (
-              <li key={i} className="grid grid-cols-[minmax(0,1fr)_90px_36px] items-center gap-2"><span className="flex min-w-0 items-center gap-1.5 truncate">{r.hex && <span className="h-3 w-3 shrink-0 rounded-full border border-line-soft" style={{ background: r.hex }} />}{k === "topCountries" ? countryName(String(r.label)) : k.includes("Season") ? label(String(r.label).toLowerCase()) : k.includes("Color") ? label(String(r.label)) : String(r.label)}</span>
+              <li key={i} className="grid grid-cols-[minmax(0,1fr)_90px_36px] items-center gap-2"><span className="flex min-w-0 items-center gap-1.5 truncate">{r.hex && <span className="h-3 w-3 shrink-0 rounded-full border border-line-soft" style={{ background: r.hex }} />}{k.includes("Brand") && <BrandLogo name={String(r.label)} size={20} />}{k === "topCountries" ? countryName(String(r.label)) : k.includes("Season") ? label(String(r.label).toLowerCase()) : k.includes("Color") ? label(String(r.label)) : String(r.label)}</span>
                 <span className="h-2.5 overflow-hidden rounded bg-surface-2"><span className="block h-full rounded bg-[var(--thread)]" style={{ width: `${(100 * (Number(r.value) || 0)) / max}%`, background: r.hex ?? undefined }} /></span><span className="text-right type-data tabular">{fmtNumber(Number(r.value))}</span></li>))}</ul>}</Card>); })}
         </div>
       ))}

@@ -50,14 +50,14 @@ import java.util.UUID;
 public class BackgroundStudioService {
     /** anatomias_card_v17: 3 anatomias base (Seção A) + 10 variações oficiais (Seção B). */
     public static final List<String> ANATOMIES = List.of("LISTA_VERTICAL", "GRADE_PECAS", "HERO_LISTA", "PASSARELA", "ETIQUETA",
-            "RAIO_X", "BENTO", "ESPECTRO", "CUSTO_POR_USO", "SILHUETA_PROPORCAO", "HYPE_FOCUS", "CARTELA_SAZONAL", "BLOCOS");
+            "RAIO_X", "BENTO", "ESPECTRO", "CUSTO_POR_USO", "SILHUETA_PROPORCAO", "HYPE_FOCUS", "CARTELA_SAZONAL", "LEGO");
     /** Versão por peça (Seção C): 7 das 10 variações. */
     public static final List<String> PIECE_ANATOMIES = List.of("PECA_AMPLIADO", "PASSARELA", "ETIQUETA", "RAIO_X", "BENTO",
-            "ESPECTRO", "CUSTO_POR_USO", "BLOCOS");
+            "ESPECTRO", "CUSTO_POR_USO", "LEGO");
     /**
      * Posição do selo por anatomia (docs/anatomias/anatomias_card_v17_1.html). Zonas: TITLE_ROW (linha "Título · selos ·
      * preço"), META_BLOCK (bloco "Selos · descrição · estilo"), COVER_CORNER (canto da capa/arte própria), HEADER
-     * (cabeçalho do card-objeto, ao lado do label PREMIUM), STUDS (placas redondas 1×1 dos Blocos). pieceRows indica que
+     * (cabeçalho do card-objeto, ao lado do label PREMIUM), STUDS (placas redondas 1×1 do LEGO). pieceRows indica que
      * cada linha/célula de peça também leva selo ("marca · nome · selos · preço"). O medalhão tem o tamanho do logo
      * FashionAI (44 px no card do look, 36 px no da peça); source diz se a posição está escrita na anatomia ou foi
      * derivada da estrutura da prancha (quando a prancha não traz a linha de selos).
@@ -78,7 +78,7 @@ public class BackgroundStudioService {
         seal(SEAL_PLACEMENT, "SILHUETA_PROPORCAO", "TITLE_ROW", false, "derivada", "Linha do nome da silhueta, antes de \"Descrição · ocasião · estilo\".");
         seal(SEAL_PLACEMENT, "HYPE_FOCUS", "HEADER", false, "derivada", "Ao lado do medidor \"Peça em destaque\" — o selo não disputa com a chama do Hype.");
         seal(SEAL_PLACEMENT, "CARTELA_SAZONAL", "COVER_CORNER", false, "derivada", "Canto superior direito do hero da estação (o nome da estação fica à esquerda).");
-        seal(SEAL_PLACEMENT, "BLOCOS", "STUDS", false, "anatomia", "Placas redondas 1×1 no container (verde = marca, vermelho = celebridade, amarelo = look) + placa \"N selos\".");
+        seal(SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", "Placas redondas 1×1 no container (verde = marca, vermelho = celebridade, amarelo = look) + placa \"N selos\".");
         seal(PIECE_SEAL_PLACEMENT, "PECA_AMPLIADO", "META_BLOCK", false, "anatomia", "Linha \"Categoria · marca · sexo · selos\" abaixo da foto da peça.");
         seal(PIECE_SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", "Canto da capa, oposto ao número de rank e aos holofotes.");
         seal(PIECE_SEAL_PLACEMENT, "ETIQUETA", "HEADER", false, "derivada", "Ao lado do label \"FASHION AI\" da etiqueta (moldura dourada acima de R$ 600).");
@@ -86,7 +86,7 @@ public class BackgroundStudioService {
         seal(PIECE_SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "derivada", "Bloco \"Atributos\" (a grade da peça tem 2 células fixas).");
         seal(PIECE_SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço\" acima da faixa única.");
         seal(PIECE_SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", "Cabeçalho, ao lado do label PREMIUM.");
-        seal(PIECE_SEAL_PLACEMENT, "BLOCOS", "STUDS", false, "anatomia", "Placa redonda 1×1 ao lado do bloco de marca (✦ PREMIUM vira bloco dourado).");
+        seal(PIECE_SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", "Placa redonda 1×1 ao lado do bloco de marca (✦ PREMIUM vira bloco dourado).");
     }
 
     private static void seal(Map<String, Map<String, Object>> target, String anatomy, String zone, boolean pieceRows, String source,
@@ -391,9 +391,9 @@ public class BackgroundStudioService {
             throw ApiException.badRequest("PRESET_INVALIDO", "Material desconhecido: " + material);
         }
         String anatomy = scheme.get("layoutAnatomy") instanceof String a2 ? a2 : s.getLayoutAnatomy();
-        if ("BLOCOS".equals(anatomy) && material != null) {
-            // v17 prancha 10: com a anatomia Blocos a placa-base já é o material — o seletor fica desabilitado.
-            throw ApiException.badRequest("MATERIAL_INDISPONIVEL", "Com a anatomia Blocos o seletor de material fica desabilitado.");
+        if ("LEGO".equals(anatomy) && material != null) {
+            // v17 prancha 10: com a anatomia LEGO a placa-base já é o material — o seletor fica desabilitado.
+            throw ApiException.badRequest("MATERIAL_INDISPONIVEL", "Com a anatomia LEGO o seletor de material fica desabilitado.");
         }
         String format = aura == null ? null : (String) aura.get("format");
         if (format != null && !AURA_FORMATS.contains(format)) {

@@ -13,6 +13,13 @@ import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/compon
 import { InteractionBar } from "@/components/interactions";
 import { FaiIcon } from "@/components/fai-icon";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
+import { BrandLogo } from "@/components/brand-logo";
+import { PhotoEditor } from "@/components/photo-editor";
+import dynamic from "next/dynamic";
+
+const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">carregando o modelo 3D…</div> });
+/** RF16.CA01 — estados visíveis do job de geração 3D. */
+const MODEL3D_LABEL: Record<string, string> = { ENFILEIRADO: "enfileirado", QUEUED: "enfileirado", PROCESSANDO: "processando", PROCESSING: "processando", CONCLUIDO: "concluído", COMPLETED: "concluído", DONE: "concluído", FALHOU: "falhou", FAILED: "falhou", DESLIGADO: "tema futuro (desligado)" };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -23,6 +30,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<import("@/lib/api/client").ApiError | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
+  const [view, setView] = useState<"2d" | "3d">("2d"); const [editingPhoto, setEditingPhoto] = useState(false);
   const setPiece = (np: PieceView) => setData((d) => (d ? { ...d, piece: np } : d));
   async function flag(field: "favorite" | "disponivel" | "forSale") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function worn() { if (!p) return; try { setPiece(await api.post<PieceView>(`/api/pieces/${p.id}/worn`)); toast.success(t("closet.worn") + " ✓"); } catch (e) { toast.fromError(e); } }
@@ -49,7 +57,8 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
       {back}
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <Card pad={false} className="overflow-hidden">
-          <div className="relative aspect-square bg-surface-2"><img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />
+          {p.model3dUrl && <div className="flex gap-1 border-b border-line-soft p-2" role="tablist" aria-label="visualização da peça">{(["2d", "3d"] as const).map((v) => <button key={v} role="tab" type="button" aria-selected={view === v} className={`chip ${view === v ? "is-active" : ""}`} onClick={() => setView(v)}>{v === "2d" ? "Foto 2D" : "Modelo 3D"}</button>)}</div>}
+          <div className="relative aspect-square bg-surface-2">{view === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} /> : <img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />}
             {!p.disponivel && <Badge className="absolute left-3 top-3">{t("common.unavailable")}</Badge>}
             {p.defaultImage && <Badge className="absolute right-3 top-3">imagem padrão</Badge>}
           </div>
@@ -57,14 +66,16 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
             <div className="flex flex-wrap gap-2 p-3">
               <label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />{t("closet.replaceImage")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && replaceImage(e.target.files[0])} /></label>
               <Button size="sm" onClick={() => act("background-removal", t("closet.removeBg") + " ✓")}>{t("closet.removeBg")}</Button>
-              <Button size="sm" onClick={() => act("model3d", t("closet.request3d") + " ✓")}><FaiIcon id="ACT-20" size={24} decorative />{t("closet.request3d")}</Button>
+              <Button size="sm" onClick={() => setEditingPhoto(true)} disabled={!p.imageUrl && !p.thumbnailUrl}><FaiIcon id="SOC-11" size={24} decorative />Editar foto (Canvas 2D)</Button>
+              <Button size="sm" onClick={() => act("model3d", t("closet.request3d") + " ✓")} disabled={p.model3dStatus === "ENFILEIRADO" || p.model3dStatus === "PROCESSANDO" || p.model3dStatus === "QUEUED" || p.model3dStatus === "PROCESSING"}><FaiIcon id="ACT-20" size={24} decorative />{p.model3dUrl ? "Gerar 3D de novo" : t("closet.request3d")}</Button>
+              {p.model3dStatus && <Badge tone={/FALH|FAIL/.test(p.model3dStatus) ? "mark" : /CONCL|DONE|COMPLETED/.test(p.model3dStatus) ? "thread" : "chalk"}>3D: {MODEL3D_LABEL[p.model3dStatus] ?? p.model3dStatus.toLowerCase()}</Badge>}
             </div>
           )}
         </Card>
         <div>
           <p className="type-label text-muted">{label(p.category)} · {label(p.subcategory)}</p>
           <h1 className="type-display text-ink">{p.name}</h1>
-          <p className="type-body text-muted mt-1">por <Link href={`/u/${p.owner.username}`} className="underline">@{p.owner.username}</Link>{p.brandName && <> · {p.brandName}</>}</p>
+          <p className="type-body text-muted mt-1">por <Link href={`/u/${p.owner.username}`} className="underline">@{p.owner.username}</Link>{p.brandName && <> · <BrandLogo name={p.brandName} src={p.brandLogoUrl} size={22} withName /></>}</p>
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 type-body sm:grid-cols-3">
             <div><dt className="label">{t("common.color")}</dt><dd className="flex items-center gap-2"><span aria-hidden className="h-4 w-4 rounded-full border border-line-soft" style={{ background: p.colorHex ?? "#ccc" }} />{label(p.color)}</dd></div>
             <div><dt className="label">{t("common.material")}</dt><dd>{label((p.material ?? "").toLowerCase()) || "—"}</dd></div>
@@ -105,6 +116,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
         <p className="type-body">{confirmDelete.impact?.message ?? `Esta peça aparece em ${confirmDelete.impact?.count ?? confirmDelete.impact?.schemes?.length ?? 0} look(s).`}</p>
         {confirmDelete.impact?.schemes?.length ? <ul className="mt-2 list-disc pl-5 type-body-sm">{confirmDelete.impact.schemes.map((s) => <li key={s.id}>{s.title}</li>)}</ul> : null}
       </Dialog>
+      {editingPhoto && p && <PhotoEditor pieceId={p.id} imageUrl={p.originalImageUrl ?? p.imageUrl ?? p.thumbnailUrl} title={p.name} onClose={() => setEditingPhoto(false)} onSaved={(msg) => { setEditingPhoto(false); toast.success(msg); reload(); }} />}
     </>
   );
 }

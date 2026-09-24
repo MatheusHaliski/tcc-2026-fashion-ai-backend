@@ -191,6 +191,14 @@ public final class AiCatalog {
                 local("Java2D: flood fill de borda + PCA de orientação + gray-world + composição 1024px", 450),
                 "Salva com a foto original e enfileira reprocessamento (RF4.CA06).",
                 60, "Implementado — rembg/remove.bg + Cloudinary + pipeline local");
+        put(AiCapability.BRAND_LOGO_FINDER,
+                "Procura na internet o logo oficial da marca: Wikidata/Wikimedia Commons (logo P154 e site P856) → busca na web "
+                        + "pela IA (Claude + web_search) → ícone do site oficial; baixa, valida e guarda no storage próprio.",
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", "até 3 buscas na web (US$ 10 / mil buscas) + ≈3 mil tokens", 15000),
+                null,
+                local("Monograma SVG com as iniciais e uma cor estável por marca", 5),
+                "Sem logo confiável, a interface mostra o monograma e uma nova busca é feita depois de 3 dias.",
+                200, "Implementado — Wikidata + Claude com busca na web + ícone do site + monograma");
     }
 
     private AiCatalog() {

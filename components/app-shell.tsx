@@ -68,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       ))}
       {user && user.profileType !== "PESSOAL" && (
         <li><Link href="/dashboard" aria-current={pathname === "/dashboard" ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname === "/dashboard" && "bg-surface-2 font-semibold")}>
-          <FaiIcon id="NAV-01" size={24} active={pathname === "/dashboard"} decorative />{!compact && <span>Painel do emissor</span>}</Link></li>
+          <FaiIcon id="NAV-01" size={24} active={pathname === "/dashboard"} decorative />{!compact && <span>{t("nav.issuer")}</span>}</Link></li>
       )}
       {isAdmin && (
         <li><Link href="/admin/dashboard" aria-current={pathname.startsWith("/admin") ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname.startsWith("/admin") && "bg-surface-2 font-semibold")}>

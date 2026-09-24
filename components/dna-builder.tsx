@@ -107,7 +107,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
           <div className="grid gap-1.5 sm:grid-cols-2">{DNA_NARRATIVES.map((nv) => <button key={nv.id} type="button" aria-pressed={effNarrative === nv.id} onClick={() => { setNarrative(nv.id); if (nv.id === "CARTELA_SAZONAL" && !form.season) setForm((f) => ({ ...f, season: "AUTUMN" })); }} className={`rounded-md border-2 p-2 text-left ${effNarrative === nv.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><span className="block type-body font-semibold"><span className="badge mr-1">{nv.code}</span>{nv.label}{nv.ownArt && " ✦"}</span><span className="block type-caption text-muted">{nv.hint}</span></button>)}</div>
         )}
         {effNarrative === "CARTELA_SAZONAL" && <div className="mt-2 rounded-md border border-line-soft p-2"><p className="type-body-sm mb-1"><b>Estação real do card</b> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio).</p><div className="flex flex-wrap gap-1.5">{SEASONS.map((s) => <Chip key={s} active={form.season === s} onClick={() => setForm({ ...form, season: s })}>{SEASON_PRESETS[s].icon} {SEASON_PRESETS[s].label}</Chip>)}</div></div>}
-        {effNarrative === "BLOCOS" && <p className="mt-2 type-caption text-muted">Blocos muda a forma, não o conteúdo: tudo vira bloco de encaixe, exceto as fotos. (“LEGO” é marca registrada.)</p>}
+        {effNarrative === "LEGO" && <p className="mt-2 type-caption text-muted">LEGO muda a forma, não o conteúdo: tudo vira bloco de encaixe, exceto as fotos. (“LEGO” é marca registrada.)</p>}
       </div>
     </div>
   );

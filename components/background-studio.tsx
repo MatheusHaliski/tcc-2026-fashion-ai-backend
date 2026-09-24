@@ -32,7 +32,7 @@ function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: 
 
 /**
  * Background Studio (RF11) em 4 etapas. Regra da etapa 4: anatomias das seções B/C (Passarela, Etiqueta, Raio-X, Bento,
- * Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, Blocos) trazem arte própria e SOBREPÕEM o que foi
+ * Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, LEGO) trazem arte própria e SOBREPÕEM o que foi
  * escolhido nas etapas 2 e 3 (presets AURA/recomendados, materiais, arte com IA e upload) — a etapa fica desativada.
  */
 export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel }: {
@@ -108,7 +108,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
             <p className="type-caption text-muted mb-2">Seção A: layouts base. Seção B: variações com arte própria — sobrepõem presets/materiais/arte com IA.</p>
             <div className="grid gap-1.5 sm:grid-cols-2">{SCHEME_ANATOMIES.map((a) => <button key={a.id} type="button" aria-pressed={anatomy === a.id} onClick={() => chooseAnatomy(a.id)} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${anatomy === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><SealZoneDiagram zone={SEAL_PLACEMENT[a.id]?.zone ?? "TITLE_ROW"} pieceRows={SEAL_PLACEMENT[a.id]?.pieceRows} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.section}</span>{a.label}{a.ownArt && " ✦"}</span><span className="block type-caption text-muted">{a.hint}</span></span></button>)}</div>
             <p className="mt-2 rounded-md border border-line-soft p-2 type-body-sm"><b>Selo neste layout:</b> {sealPlacement(anatomy).description} <span className="text-muted">({sealPlacement(anatomy).source === "anatomia" ? "posição escrita na anatomia v17" : "posição derivada da estrutura da prancha"} · medalhão 44 px, tamanho do logo FashionAI; o espaço fica reservado mesmo antes de o look ganhar selo)</span></p>
-            {special && <p className="mt-2 type-caption text-chalk">✦ arte própria: sobrepõe as etapas 2 e 3.{anatomy === "BLOCOS" && " Com Blocos, o seletor de material fica desabilitado."}</p>}
+            {special && <p className="mt-2 type-caption text-chalk">✦ arte própria: sobrepõe as etapas 2 e 3.{anatomy === "LEGO" && " Com LEGO, o seletor de material fica desabilitado."}</p>}
           </div>}
           {!layoutPanel && onPieceAnatomy && <div><p className="label">Layout das peças (seção C · versão por modelo)</p><div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div><p className="mt-1 type-caption text-muted">Selo da peça (36 px): {pieceSealPlacement(pieceAnatomy).description}</p></div>}
           <div><p className="label">{t("scheme.skin")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(CARD_SKINS).map(([id, s]) => (

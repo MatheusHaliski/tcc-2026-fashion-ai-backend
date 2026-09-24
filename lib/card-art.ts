@@ -120,7 +120,7 @@ export function photoFilterCss(f?: PhotoFilters | null): string | undefined {
   return parts.length ? parts.join(" ") : undefined;
 }
 
-/** 10 cores clássicas de blocos de encaixe: a cor dominante é quantizada para a mais próxima (anatomia/narrativa Blocos). */
+/** 10 cores clássicas de blocos de encaixe: a cor dominante é quantizada para a mais próxima (anatomia/narrativa LEGO). */
 export const BRICKS = ["#C91A09", "#0055BF", "#F2CD37", "#237841", "#1B2A34", "#F4F4F4", "#FE8A18", "#E4CD9E", "#6C6E68", "#582A12"];
 const rgbOf = (hex: string) => { const n = parseInt(hex.replace("#", "").slice(0, 6).padEnd(6, "0"), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 export const brickColor = (hex?: string | null) => {
@@ -130,5 +130,5 @@ export const brickColor = (hex?: string | null) => {
 };
 /** Matiz (0–360) e croma (0–1) de uma cor #RRGGBB. */
 export function hueChroma(hex: string) { const [r, g, b] = rgbOf(hex).map((v) => v / 255); const max = Math.max(r, g, b), min = Math.min(r, g, b), c = max - min; let h = 0; if (c) h = max === r ? ((g - b) / c) % 6 : max === g ? (b - r) / c + 2 : (r - g) / c + 4; return { hue: (h * 60 + 360) % 360, chroma: c }; }
-/** Textura da placa-base dos Blocos (imagem enviada pelo time; os pinos trazem a marca LEGO em relevo). */
-export const BLOCKS_TEXTURE = "/textures/blocos_placa_base_card.webp";
+/** Textura da placa-base LEGO (imagem enviada pelo time; os pinos trazem a marca LEGO em relevo). */
+export const BLOCKS_TEXTURE = "/textures/lego_placa_base_card.webp";

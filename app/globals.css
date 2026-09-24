@@ -337,7 +337,7 @@ h1, h2, h3, h4 { margin: 0; }
 @keyframes dna-fall { to { transform: translateY(40px); } }
 :root[data-reduce-motion="true"] .dna-season::after { animation: none; }
 @media (prefers-reduced-motion: reduce) { .dna-season::after { animation: none; } }
-/* B12 · Blocos: placa-base com pinos; cada parte vira um bloco, fotos em molduras */
+/* B12 · LEGO: placa-base com pinos; cada parte vira um bloco, fotos em molduras */
 .dna-blocks .dna-container { border-style: solid; border-width: 2px; background: #237841 radial-gradient(circle at 50% 50%, rgba(255,255,255,.28) 3px, rgba(0,0,0,.15) 3.6px, transparent 4.2px) 0 0 / 14px 14px; padding: 8px; }
 .dna-plate { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .dna-plate .brick { --brick: #C91A09; position: relative; background: var(--brick); border-radius: 3px; padding: 12px 6px 6px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); min-width: 0; }
@@ -537,18 +537,18 @@ h1, h2, h3, h4 { margin: 0; }
 .season-polaroid em { font-style: normal; font-size: 7px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 .season-palette { display: flex; align-items: center; gap: 3px; margin: 0; padding: 2px 8px 6px; font-size: 7.5px; color: var(--muted); }
 .season-palette i { width: 14px; height: 8px; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); } .season-palette span { margin-left: 4px; font-family: var(--font-data); }
-/* Blocos: placa-base com a textura enviada */
+/* LEGO: placa-base com a textura enviada */
 .blocks-plate { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; background-size: 150px 150px; background-repeat: repeat; }
 .brick-piece { --brick: #C91A09; position: relative; background: var(--brick); border-radius: 3px; padding: 12px 6px 6px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.22), 0 3px 0 rgba(0,0,0,.28); min-width: 0; }
 .brick-piece::before { content: ""; position: absolute; top: 3px; left: 6px; right: 6px; height: 7px; background: radial-gradient(circle, color-mix(in srgb, var(--brick) 72%, #fff) 2.6px, rgba(0,0,0,.28) 3.2px, transparent 3.6px) 0 0 / 14px 7px repeat-x; }
 .brick-photo { display: block; aspect-ratio: 4 / 3; background: #fff; border: 3px solid rgba(255,255,255,.9); border-radius: 2px; overflow: hidden; }
 .brick-photo img { width: 100%; height: 100%; object-fit: contain; }
 .brick-label { display: block; margin-top: 4px; background: rgba(255,255,255,.92); color: #1B2A34; font-family: var(--font-data); font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.scheme-container[data-anatomy="BLOCOS"] { background: url("/textures/blocos_placa_base_card.webp") 0 0 / 150px 150px; }
-.scheme-container[data-anatomy="BLOCOS"] :is(.c-title, .c-row) { background: rgba(255,255,255,.93); color: #1B2A34; margin: 6px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18), 0 2px 0 rgba(0,0,0,.25); border-bottom: none; }
-.scheme-container[data-anatomy="BLOCOS"] .seal-studs { background: rgba(255,255,255,.85); margin: 0 8px; border-radius: 3px; }
-/* DNA · B12 Blocos com a mesma textura e B11 com a decoração da estação */
-.dna-blocks .dna-container { background: url("/textures/blocos_placa_base_card.webp") 0 0 / 150px 150px; border-color: #7C3AED; }
+.scheme-container[data-anatomy="LEGO"] { background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; }
+.scheme-container[data-anatomy="LEGO"] :is(.c-title, .c-row) { background: rgba(255,255,255,.93); color: #1B2A34; margin: 6px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18), 0 2px 0 rgba(0,0,0,.25); border-bottom: none; }
+.scheme-container[data-anatomy="LEGO"] .seal-studs { background: rgba(255,255,255,.85); margin: 0 8px; border-radius: 3px; }
+/* DNA · B12 LEGO com a mesma textura e B11 com a decoração da estação */
+.dna-blocks .dna-container { background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; border-color: #7C3AED; }
 .dna-season .season-decor { z-index: 0; } .dna-season > :not(.season-decor) { position: relative; z-index: 1; }
 .dna-season::after { content: none; }
 
@@ -603,3 +603,23 @@ h1, h2, h3, h4 { margin: 0; }
 .photo-tile .photo-actions button:hover, .photo-tile .photo-actions a:hover { background: rgba(255,255,255,.18); }
 .photo-tile .photo-link { position: absolute; right: 6px; top: 6px; max-width: calc(100% - 40px); overflow: hidden; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .photo-batch { position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 12px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+
+/* Logos de marca (buscados na internet pela IA e guardados no storage) — monograma enquanto não há imagem */
+.brand-logo { display: inline-flex; min-width: 0; align-items: center; gap: 6px; vertical-align: middle; }
+.brand-logo-mark { display: inline-flex; flex: none; align-items: center; justify-content: center; overflow: hidden; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.12); color: #fff; font-weight: 700; letter-spacing: .02em; line-height: 1; }
+.brand-logo.is-square .brand-logo-mark { border-radius: 6px; }
+.brand-logo-mark img { width: 82%; height: 82%; object-fit: contain; }
+.brand-logo-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* RF32 — Meu Quarto 3D: palco WebGL + painel de posições acessível (mesmas ações da lista) */
+.room3d { display: grid; gap: 12px; }
+@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } }
+.room3d-stage { position: relative; height: min(72vh, 680px); min-height: 420px; overflow: hidden; border-radius: 14px; border: 1px solid var(--line-soft); background: #efe9df; }
+.room3d-stage canvas { touch-action: none; }
+.room3d-loading { display: grid; height: 100%; place-items: center; color: var(--muted); font-size: 14px; }
+.room3d-hud { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.room3d-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.5); color: #fff; font-size: 11px; text-align: center; pointer-events: none; }
+.room3d-positions { max-height: min(72vh, 680px); overflow: auto; padding: 10px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
+.room3d-positions ul { display: grid; gap: 2px; }
+.room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
+.room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }

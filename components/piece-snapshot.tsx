@@ -3,6 +3,7 @@ import { mediaUrl } from "@/lib/api/client";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Badge } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
 
 /** Tamanho legível (br_40 → 40, shoe_39 → 39, one_size → Único). */
 export const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? "Único" : s.replace(/^(br|shoe)_/i, "").toUpperCase());
@@ -25,7 +26,7 @@ export function PieceSnapshot({ snapshot }: { snapshot: Record<string, unknown> 
         <h2 className="type-display">{s.name ?? "Peça"}</h2>
         <p className="type-body text-muted">O autor removeu esta peça do guarda-roupa depois de publicar o look. Estes são os dados guardados no momento da publicação{s.capturedAt ? ` (${fmtDate(s.capturedAt)})` : ""}.</p>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 type-body sm:grid-cols-3">
-          <div><dt className="label">Marca</dt><dd>{s.brandName ?? "—"}</dd></div>
+          <div><dt className="label">Marca</dt><dd>{s.brandName ? <BrandLogo name={s.brandName} size={22} withName /> : "—"}</dd></div>
           <div><dt className="label">Cor</dt><dd>{s.color ? label(s.color) : "—"}</dd></div>
           <div><dt className="label">Tamanho</dt><dd className="type-data">{sizeLabel(s.size)}</dd></div>
           <div><dt className="label">Preço</dt><dd className="type-data">{s.price != null ? fmtMoney(Number(s.price), "BRL") : "—"}</dd></div>

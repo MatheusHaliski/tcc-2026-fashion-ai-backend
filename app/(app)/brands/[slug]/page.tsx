@@ -13,6 +13,7 @@ import { SealCreator } from "@/components/seal-creator";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
@@ -62,7 +63,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <Avatar src={mediaUrl((brand.logoUrl as string) ?? (brand.officialPhotoUrl as string) ?? owner.avatarUrl)} name={owner.displayName} size={72} />
+        {isCeleb ? <Avatar src={mediaUrl((brand.officialPhotoUrl as string) ?? owner.avatarUrl)} name={owner.displayName} size={72} /> : <BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={brand.logoUrl as string} size={72} />}
         <div className="min-w-0 flex-1"><p className="type-label text-muted">{isCeleb ? "Celebridade" : "Marca"}{owner.verified && " · verificada"}</p><h1 className="type-display">{(brand.brandName as string) ?? (brand.stageName as string) ?? owner.displayName}</h1>
           <p className="type-body text-muted">{(brand.fashionCategory as string) ?? ((brand.areas as string[]) ?? []).join(", ")}{brand.officialHashtag ? ` · #${String(brand.officialHashtag).replace(/^#/, "")}` : ""}</p>
           <p className="mt-1 type-body-sm tabular">{data.header.following} seguidores · {data.header.activeSeals} selos ativos</p></div>

@@ -80,7 +80,13 @@ public class AiEngine {
     /** Chamada textual/multimodal padrão: prompt → provedor (catálogo) → parser → valor. */
     public record TextCall<T>(UUID userId, AiCapability capability, String system, String prompt,
                               List<AiRequest.AiImage> images, long maxTokens, List<String> inputsUsed,
-                              Function<String, T> parser, Supplier<T> local, Collection<String> protectedNames) {
+                              Function<String, T> parser, Supplier<T> local, Collection<String> protectedNames,
+                              boolean webSearch) {
+        public TextCall(UUID userId, AiCapability capability, String system, String prompt, List<AiRequest.AiImage> images,
+                        long maxTokens, List<String> inputsUsed, Function<String, T> parser, Supplier<T> local,
+                        Collection<String> protectedNames) {
+            this(userId, capability, system, prompt, images, maxTokens, inputsUsed, parser, local, protectedNames, false);
+        }
     }
 
     public <T> AiOutcome<T> text(TextCall<T> call) {
@@ -113,7 +119,7 @@ public class AiEngine {
                 @Override
                 public RemoteResult<T> call() {
                     AiResponse response = port.invoke(new AiRequest(call.userId(), call.capability(), option.model(),
-                            call.system(), call.prompt(), call.images(), call.maxTokens(), true));
+                            call.system(), call.prompt(), call.images(), call.maxTokens(), true, call.webSearch()));
                     T value = call.parser().apply(response.text());
                     if (value == null) {
                         throw new IllegalStateException("Resposta do provedor fora do contrato JSON");

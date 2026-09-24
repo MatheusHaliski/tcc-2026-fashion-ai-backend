@@ -6,6 +6,7 @@ import { useState } from "react";
 import { hypeColor } from "@/components/scheme-card";
 import { CameraFlashes, SeasonDecor, Spotlights } from "@/components/card-art";
 import { BLOCKS_TEXTURE, brickColor, hueChroma } from "@/lib/card-art";
+import { BrandLogo } from "@/components/brand-logo";
 
 /** Anatomias oficiais do card (docs/anatomias/anatomias_card_v17_1): seção A (base) e seção B (variações com arte própria). */
 export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; ownArt?: boolean; hint: string }[] = [
@@ -21,12 +22,12 @@ export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; 
   { id: "SILHUETA_PROPORCAO", label: "Silhueta & Proporção", section: "B", ownArt: true, hint: "barras de proporção do corpo do look" },
   { id: "HYPE_FOCUS", label: "Hype Focus", section: "B", ownArt: true, hint: "medidor de Hype + peças ranqueadas" },
   { id: "CARTELA_SAZONAL", label: "Cartela sazonal", section: "B", ownArt: true, hint: "arte da estação do look (opt-in)" },
-  { id: "BLOCOS", label: "Blocos (Lego)", section: "B", ownArt: true, hint: "card em blocos de encaixe; material desativado" },
+  { id: "LEGO", label: "LEGO", section: "B", ownArt: true, hint: "card em blocos de encaixe; material desativado" },
 ];
 /**
  * Posição do selo por anatomia (anatomias_card_v17_1.html) — espelha BackgroundStudioService.SEAL_PLACEMENT.
  * TITLE_ROW = linha "Título · selos · preço"; META_BLOCK = bloco "Selos · descrição · estilo"; COVER_CORNER = canto da
- * capa/arte própria; HEADER = cabeçalho do card-objeto (ao lado do PREMIUM); STUDS = placas redondas 1×1 dos Blocos.
+ * capa/arte própria; HEADER = cabeçalho do card-objeto (ao lado do PREMIUM); STUDS = placas redondas 1×1 do LEGO.
  */
 export type SealZone = "TITLE_ROW" | "META_BLOCK" | "COVER_CORNER" | "HEADER" | "STUDS";
 export interface SealPlacement { zone: SealZone; pieceRows?: boolean; source: "anatomia" | "derivada"; description: string; }
@@ -43,7 +44,7 @@ export const SEAL_PLACEMENT: Record<string, SealPlacement> = {
   SILHUETA_PROPORCAO: { zone: "TITLE_ROW", source: "derivada", description: "Linha do nome da silhueta, antes de “Descrição · ocasião · estilo”." },
   HYPE_FOCUS: { zone: "HEADER", source: "derivada", description: "Ao lado do medidor “Peça em destaque”." },
   CARTELA_SAZONAL: { zone: "COVER_CORNER", source: "derivada", description: "Canto superior direito do hero da estação." },
-  BLOCOS: { zone: "STUDS", source: "anatomia", description: "Placas redondas 1×1 (verde = marca, vermelho = celebridade, amarelo = look) + placa “N selos”." },
+  LEGO: { zone: "STUDS", source: "anatomia", description: "Placas redondas 1×1 (verde = marca, vermelho = celebridade, amarelo = look) + placa “N selos”." },
 };
 export const PIECE_SEAL_PLACEMENT: Record<string, SealPlacement> = {
   PECA_AMPLIADO: { zone: "META_BLOCK", source: "anatomia", description: "Linha “Categoria · marca · sexo · selos” abaixo da foto." },
@@ -53,7 +54,7 @@ export const PIECE_SEAL_PLACEMENT: Record<string, SealPlacement> = {
   BENTO: { zone: "META_BLOCK", source: "derivada", description: "Bloco “Atributos”." },
   ESPECTRO: { zone: "TITLE_ROW", source: "anatomia", description: "Linha “Título · selos · preço” acima da faixa única." },
   CUSTO_POR_USO: { zone: "HEADER", source: "derivada", description: "Cabeçalho, ao lado do PREMIUM." },
-  BLOCOS: { zone: "STUDS", source: "anatomia", description: "Placa redonda 1×1 ao lado do bloco de marca." },
+  LEGO: { zone: "STUDS", source: "anatomia", description: "Placa redonda 1×1 ao lado do bloco de marca." },
 };
 export const sealPlacement = (anatomy?: string | null) => SEAL_PLACEMENT[anatomy ?? ""] ?? SEAL_PLACEMENT.LISTA_VERTICAL;
 export const pieceSealPlacement = (anatomy?: string | null) => PIECE_SEAL_PLACEMENT[anatomy ?? ""] ?? PIECE_SEAL_PLACEMENT.PECA_AMPLIADO;
@@ -80,7 +81,7 @@ export function SealZoneDiagram({ zone, pieceRows }: { zone: SealZone; pieceRows
 
 export const PIECE_ANATOMIES: { id: string; label: string }[] = [
   { id: "PECA_AMPLIADO", label: "Peça ampliada" }, { id: "PASSARELA", label: "Passarela" }, { id: "ETIQUETA", label: "Etiqueta" }, { id: "RAIO_X", label: "Raio-X" },
-  { id: "BENTO", label: "Bento" }, { id: "ESPECTRO", label: "Espectro" }, { id: "CUSTO_POR_USO", label: "Custo por uso" }, { id: "BLOCOS", label: "Blocos" },
+  { id: "BENTO", label: "Bento" }, { id: "ESPECTRO", label: "Espectro" }, { id: "CUSTO_POR_USO", label: "Custo por uso" }, { id: "LEGO", label: "LEGO" },
 ];
 export const hasOwnArt = (anatomy?: string | null) => !!SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.ownArt;
 
@@ -113,7 +114,7 @@ export function AnatomyBody({ scheme, pieces }: { scheme: SchemeView; pieces: An
     case "SILHUETA_PROPORCAO": return <Silhouette pieces={pieces} />;
     case "HYPE_FOCUS": return <HypeFocus pieces={pieces} scheme={scheme} />;
     case "CARTELA_SAZONAL": return <SeasonCard pieces={pieces} season={scheme.season} />;
-    case "BLOCOS": return <Blocks pieces={pieces} />;
+    case "LEGO": return <Blocks pieces={pieces} />;
     default: return null;
   }
 }
@@ -154,7 +155,7 @@ function HangTags({ pieces }: { pieces: AnatomyPiece[] }) {
       <div className="tags">{pieces.slice(0, 4).map((p, i) => (
         <div key={p.id} className="hang-tag" style={{ ["--tilt" as string]: `${(i % 2 ? 1 : -1) * (2 + i)}deg` }} title={p.name}>
           <span className="tag-hole" aria-hidden />
-          <b className="tag-brand">{(p.brand ?? "FAI").toUpperCase()}</b>
+          <b className="tag-brand">{p.brand && <BrandLogo name={p.brand} size={18} shape="square" className="mr-1" />}{(p.brand ?? "FAI").toUpperCase()}</b>
           <span className="tag-name">{p.name}</span>
           <span className="tag-row"><em>TAM</em>{sizeLabel(p.size)}</span>
           <span className="tag-row"><em>MAT</em>{p.material ? label(p.material.toLowerCase()) : "—"}</span>
@@ -196,7 +197,7 @@ function Bento({ pieces }: { pieces: AnatomyPiece[] }) {
         <button key={p.id} type="button" className={`bento-cell ${k === 0 ? "hero" : ""}`} onClick={(e) => { stop(e); setHero(i); }} aria-pressed={k === 0} title={k === 0 ? p.name : `Destacar ${p.name}`}>
           {p.img && <img src={p.img} alt={p.name} />}
           <span className="bento-chip">{CATEGORY_LABEL[p.category ?? ""] ?? label(p.slot.toLowerCase())}</span>
-          <span className="bento-label"><b>{p.name}</b><em>{[p.brand, money(p.price)].filter(Boolean).join(" · ")}</em></span>
+          <span className="bento-label">{p.brand && <BrandLogo name={p.brand} size={20} className="bento-brand" />}<b>{p.name}</b><em>{[p.brand, money(p.price)].filter(Boolean).join(" · ")}</em></span>
         </button>); })}
       <div className="bento-cell stat"><b>{pieces.length}</b><span>peças</span><b className="mt-1">{money(total)}</b><span>no look</span></div>
     </div>
@@ -310,7 +311,7 @@ function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season?: strin
   );
 }
 
-/** Blocos: o miolo montado sobre a placa-base de blocos de encaixe (textura enviada pelo time); as fotos seguem fotos. */
+/** LEGO: o miolo montado sobre a placa-base de blocos de encaixe (textura enviada pelo time); as fotos seguem fotos. */
 function Blocks({ pieces }: { pieces: AnatomyPiece[] }) {
   return (
     <div className="blocks-plate" style={{ backgroundImage: `url("${BLOCKS_TEXTURE}")` }} aria-label="card em blocos de encaixe">

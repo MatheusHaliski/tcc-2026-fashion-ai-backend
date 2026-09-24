@@ -11,6 +11,7 @@ import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
 import { CommentButton } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
+import { BrandLogo } from "@/components/brand-logo";
 
 /** Célula do Esquema de DNA: um esquema de vestimenta (RF5) referenciado — sempre foto + título (nunca vazio). */
 export interface DnaCellView {
@@ -47,7 +48,7 @@ export const DNA_NARRATIVES = [
   { id: "MARCAS_FAVORITAS", code: "B9", label: "Marcas favoritas", hint: "ranking de marcas — o logo é o conteúdo", ownArt: false },
   { id: "HYPE_FOCUS", code: "B10", label: "Hype Focus", hint: "medidor do Hype Score global (popularidade, não qualidade)", ownArt: false },
   { id: "CARTELA_SAZONAL", code: "B11", label: "Cartela sazonal", hint: "a estação assume o card e sobrescreve a arte manual", ownArt: true },
-  { id: "BLOCOS", code: "B12", label: "Blocos", hint: "o DNA inteiro em blocos de encaixe, exceto as fotos", ownArt: true },
+  { id: "LEGO", code: "B12", label: "LEGO", hint: "o DNA inteiro em blocos de encaixe, exceto as fotos", ownArt: true },
 ] as const;
 export const dnaLayoutLabel = (id?: string | null) => DNA_LAYOUTS.find((l) => l.id === id)?.label ?? id ?? "—";
 export const dnaNarrativeLabel = (id?: string | null) => DNA_NARRATIVES.find((n) => n.id === id)?.label ?? id ?? "—";
@@ -80,8 +81,7 @@ function Thumb({ c, className, style }: { c: DnaCellView; className?: string; st
   return <span className={`dna-thumb ${className ?? ""}`} style={style}>{src ? <img src={src} alt={c.title} loading="lazy" /> : <span className="dna-thumb-fallback">{c.title.slice(0, 2).toUpperCase()}</span>}</span>;
 }
 function LogoChip({ l, withName = true }: { l: { brand: string; logoUrl?: string | null }; withName?: boolean }) {
-  const src = mediaUrl(l.logoUrl ?? null);
-  return <span className="dna-logo" title={l.brand}>{src ? <img src={src} alt="" /> : <b>{l.brand.slice(0, 1).toUpperCase()}</b>}{withName && <span>{l.brand.toUpperCase()}</span>}</span>;
+  return <span className="dna-logo" title={l.brand}><BrandLogo name={l.brand} src={l.logoUrl} size={22} />{withName && <span>{l.brand.toUpperCase()}</span>}</span>;
 }
 const era = (c: DnaCellView, fmt: (d?: string | null) => string) => c.eraLabel || (c.createdAt ? fmt(c.createdAt) : "");
 
@@ -95,10 +95,10 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const narrative = dna.targetElement === "DNA_COMPLETO" ? dna.narrativeType ?? null : null;
   const skin = (dna.cardSkin ?? (dna.background?.skin as string | undefined)) ?? "atelier";
   // Arte do Background Studio no palco do card, atrás do container roxo (passe-partout); as fotos dos esquemas ficam
-  // sempre sem arte. Cartela sazonal e Blocos trazem arte própria e sobrescrevem a manual.
+  // sempre sem arte. Cartela sazonal e LEGO trazem arte própria e sobrescrevem a manual.
   const heroStyle: CSSProperties = {};
   const studio = studioOf(dna.background);
-  const art = narrative === "CARTELA_SAZONAL" || narrative === "BLOCOS" ? null : resolveCardArt(dna.background);
+  const art = narrative === "CARTELA_SAZONAL" || narrative === "LEGO" ? null : resolveCardArt(dna.background);
   const hasArt = !!art && art.kind !== "none";
   const boxColor = containerColorOf(skin, studio.container?.color);
   const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(studio.container?.color ? { "--card-ink": inkOnBox(boxColor) } : {}) } as CSSProperties) : undefined;
@@ -110,7 +110,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const containerLabel = narrative ? `DNA · ${dnaNarrativeLabel(narrative)}` : `DNA de estilo · ${dnaLayoutLabel(dna.cardLayout)}`;
   const body = narrative ? <NarrativeBody dna={dna} narrative={narrative} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} /> : <LayoutBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} />;
   return (
-    <article className={`fai-card dna-card ${narrative === "BLOCOS" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""} ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(skin), ...stageVars }} aria-label={`DNA de estilo: ${dna.title}`} data-art={art?.label}>
+    <article className={`fai-card dna-card ${narrative === "LEGO" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""} ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(skin), ...stageVars }} aria-label={`DNA de estilo: ${dna.title}`} data-art={art?.label}>
       <div className="c-header">
         <span className="c-avatar"><Avatar src={mediaUrl(dna.owner?.avatarUrl)} name={dna.owner?.displayName} size={18} /></span>
         <span className="c-meta">@{dna.owner?.username} · {relative(dna.publishedAt ?? dna.createdAt ?? new Date().toISOString())} · {label(dna.visibility.toLowerCase())}</span>
@@ -120,7 +120,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
       {hasArt && art && <CardArtLayer art={art} />}
       <div className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
         {cells.length === 0 ? <div className="dna-empty">Selecione de 2 a 6 esquemas para montar o DNA.</div> : body}
-        {narrative !== "BLOCOS" && <>
+        {narrative !== "LEGO" && <>
           <div className="c-title"><span className="min-w-0 flex-1">{dna.title}</span></div>
           <div className="c-row"><span className="k">Ocasião · estilo</span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</div>
           <LogosRow dna={dna} narrative={narrative} />
@@ -144,7 +144,7 @@ function LogosRow({ dna, narrative }: { dna: DnaView; narrative: string | null }
   if (narrative === "MARCAS_FAVORITAS" || narrative === "MOMENTOS_MARCANTES") return null; // conteúdo do corpo / logo só na capa
   if (narrative === "HYPE_FOCUS" || narrative === "HARMONIA_CROMATICA") return <div className="c-row dna-logos"><span className="k">Marcas</span>{logos.slice(0, 4).map((l) => l.brand.toUpperCase()).join(" · ")}</div>;
   let shown = 1;
-  if (narrative === "MOOD_BOARD" || narrative === "BLOCOS") shown = 3; else if (narrative === "CAPSULA_VERSATILIDADE" || (!narrative && dna.cardLayout === "LATERAL") || narrative === "CARTELA_SAZONAL") shown = 2;
+  if (narrative === "MOOD_BOARD" || narrative === "LEGO") shown = 3; else if (narrative === "CAPSULA_VERSATILIDADE" || (!narrative && dna.cardLayout === "LATERAL") || narrative === "CARTELA_SAZONAL") shown = 2;
   else if (narrative === "PRIMEIRA_VEZ") { const firsts = (dna.narrative?.firsts as { label: string }[] | undefined) ?? []; shown = Math.max(1, Math.min(logos.length, firsts.filter((f) => f.label.startsWith("1ª peça")).length + 1)); }
   const counter = narrative !== "PRIMEIRA_VEZ" && narrative !== "MOOD_BOARD" && narrative !== "POR_OCASIAO";
   const rest = logos.length - shown;
@@ -251,12 +251,12 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
       return (<><div className={`dna-season anim-${p.animation.toLowerCase()}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} /><span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>seasonalTheme = {season} · animação {p.animation}</em></div>
         <div className="dna-grid">{ordered.slice(0, expanded ? 6 : 4).map((c) => <div key={c.schemeId} className={`dna-grid-cell ${c.season === season ? "" : "secondary"}`}><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? label(c.occasion[0] ?? "livre")).toUpperCase()}</span></div>)}</div></>);
     }
-    case "BLOCOS": return <BlocksBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} />;
+    case "LEGO": return <BlocksBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} />;
     default: return <LayoutBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} />;
   }
 }
 
-/** B12 — o DNA em blocos de encaixe sobre placa-base; só as fotos continuam fotos. */
+/** B12 · LEGO — o DNA em blocos de encaixe sobre placa-base; só as fotos continuam fotos. */
 function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSProperties; fmtEra: (d?: string | null) => string }) {
   const occasion = (dna.occasion ?? "").split(",").map((s) => s.trim()).filter(Boolean); const style = (dna.style ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   return (
@@ -264,7 +264,7 @@ function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSPr
       <div className="brick hero-brick" style={{ ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag="foto original" /></div>
       <div className="brick title-brick" style={{ ["--brick" as string]: "#F4F4F4" }}><b>{dna.title}</b><span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</span></div>
       {dna.cells.map((c) => { const col = brickColor(c.dominantColor); return <div key={c.schemeId} className="brick cell-brick" style={{ ["--brick" as string]: col, color: inkOn(col) }}><Thumb c={c} /><span className="plate-label">{c.title} · {era(c, fmtEra)}</span></div>; })}
-      <div className="brick logo-brick" style={{ ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label">{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>
+      <div className="brick logo-brick" style={{ ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label"><BrandLogo name={l.brand} src={l.logoUrl} size={16} className="mr-1" />{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>
       <div className="brick phrase-brick" style={{ ["--brick" as string]: "#1B2A34", color: "#fff" }}><span className="k">Frase de identidade</span>“{dna.identityPhrase ?? "—"}”</div>
     </div>
   );

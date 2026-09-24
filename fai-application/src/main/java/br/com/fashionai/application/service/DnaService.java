@@ -914,7 +914,7 @@ public class DnaService {
                 Você monta Esquemas de DNA de Estilo do Fashion AI (RF13). Um DNA referencia de 2 a 6 esquemas de vestimenta do PRÓPRIO
                 usuário (use só os refs fornecidos) e conta uma história com eles. narrativeType: TIMELINE, MOMENTOS_MARCANTES,
                 PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS,
-                HYPE_FOCUS, CARTELA_SAZONAL, BLOCOS ou null (só a anatomia base). cardLayout: AMPLIADO, GRADE, HORIZONTAL, LATERAL.
+                HYPE_FOCUS, CARTELA_SAZONAL, LEGO ou null (só a anatomia base). cardLayout: AMPLIADO, GRADE, HORIZONTAL, LATERAL.
                 Interprete TUDO o que os esquemas carregam: materiais, cores, estampas, marcas, ocasiões, estilos, estação, datas e hype,
                 além do DNA sintetizado e das orientações livres (que podem citar cores, materiais, marcas, épocas ou momentos: respeite-as).
                 MOMENTOS_MARCANTES exige exatamente um marco; CARTELA_SAZONAL exige seasonalTheme (SPRING, SUMMER, AUTUMN, WINTER).
@@ -1038,7 +1038,7 @@ public class DnaService {
         keywords.put("marca", NarrativeType.MARCAS_FAVORITAS);
         keywords.put("hype|alta|tendên|tenden|bombando", NarrativeType.HYPE_FOCUS);
         keywords.put("inverno|verão|verao|outono|primavera|estaç|estac|sazon", NarrativeType.CARTELA_SAZONAL);
-        keywords.put("lego|bloco", NarrativeType.BLOCOS);
+        keywords.put("lego|bloco", NarrativeType.LEGO);
         keywords.forEach((re, nt) -> {
             if (java.util.regex.Pattern.compile(re).matcher(q).find() && !order.contains(nt)) {
                 order.add(nt);
@@ -1123,7 +1123,7 @@ public class DnaService {
     static List<Scheme> pickFor(NarrativeType nt, List<Scheme> pool, Map<UUID, List<SchemeItem>> itemsBy, Season season) {
         List<Scheme> chrono = pool.stream().sorted(Comparator.comparing(Scheme::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))).toList();
         return switch (nt) {
-            case TIMELINE, PRIMEIRA_VEZ, BLOCOS, MOOD_BOARD, MARCAS_FAVORITAS -> spread(chrono, 5);
+            case TIMELINE, PRIMEIRA_VEZ, LEGO, MOOD_BOARD, MARCAS_FAVORITAS -> spread(chrono, 5);
             case MOMENTOS_MARCANTES -> pool.stream().sorted(Comparator.comparingLong(Scheme::getLikeCount).reversed()).limit(4).toList();
             case HYPE_FOCUS -> pool.stream().sorted(Comparator.comparingDouble(DnaService::hypeOf).reversed()).limit(4).toList();
             case POR_OCASIAO -> {
@@ -1231,7 +1231,7 @@ public class DnaService {
                 case MOOD_BOARD -> Map.of("shown", 3, "counter", false);
                 case MARCAS_FAVORITAS -> Map.of("shown", "all", "counter", false, "isContent", true);
                 case HYPE_FOCUS, HARMONIA_CROMATICA, CARTELA_SAZONAL -> Map.of("shown", 1, "counter", true);
-                case BLOCOS -> Map.of("shown", 3, "counter", true);
+                case LEGO -> Map.of("shown", 3, "counter", true);
             };
         }
         return switch (String.valueOf(d.getCardLayout())) {
@@ -1331,8 +1331,8 @@ public class DnaService {
                 case AUTUMN -> "ember";
                 default -> "bloom";
             }, "note", "Escolher a Cartela Sazonal sobrescreve a arte de fundo manual da Etapa 4."));
-            case BLOCOS -> n.put("blocks", Map.of("order", List.of("chrome", "hero", "titulo", "lista", "logos", "frase"), "socialOutsideContainer", true,
-                    "note", "Blocos muda a forma, não o conteúdo; LEGO é marca registrada."));
+            case LEGO -> n.put("blocks", Map.of("order", List.of("chrome", "hero", "titulo", "lista", "logos", "frase"), "socialOutsideContainer", true,
+                    "note", "LEGO muda a forma, não o conteúdo; LEGO é marca registrada."));
         }
         return n;
     }
