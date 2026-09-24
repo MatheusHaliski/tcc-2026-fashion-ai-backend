@@ -1,0 +1,29 @@
+@startuml RF36_Sequencia
+title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário (dono)" as U
+participant "Frontend\nMannequinPhotoDialog" as FE
+participant "ShowcaseController" as C
+participant "ShowcaseService" as S
+database "MySQL" as DB
+database "Storage de mídia" as MS
+U -> FE: Foto com meu manequim
+FE -> C: GET /api/schemes/{id}/look3d
+C -> S: look3d(viewer, schemeId)
+S -> DB: SELECT users (sexo, avatar), user_preferences\n(rosto), scheme_items, wardrobe_items (GLB/recorte)
+S --> FE: manequim + peças por slot
+FE -> FE: Three.js renderiza, usuário ajusta o rosto
+U -> FE: Gerar foto (usar como capa)
+FE -> C: POST /api/schemes/{id}/mannequin-photo?asCover=true
+C -> S: schemeMannequinPhoto(bytes, asCover)
+S -> MS: put(users/…/schemes/{id}.png)
+S -> DB: UPDATE schemes.mannequin_image_url (+ capa)
+FE -> C: PUT /api/me/preferences (mannequinFace)
+@enduml

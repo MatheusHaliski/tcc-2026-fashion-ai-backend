@@ -1,0 +1,71 @@
+@startuml RF39_Componentes
+title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "brands/[slug] — aba Criar guarda-roupa 3D (WardrobeCreatorTab)" as FE0
+  component "WardrobePreview (criador de blocos 3D)" as FE1
+  component "points — RoomStore" as FE2
+  component "room — RoomScene (acabamentos, arte, placa de logo)" as FE3
+}
+package "fai-web (REST)" {
+  [RoomCreatorController] as RoomCreatorController
+  [HighlightsController] as HighlightsController
+}
+package "fai-application (casos de uso)" {
+  [WardrobeCreatorService] as WardrobeCreatorService
+  [InventoryScoreService] as InventoryScoreService
+  [FaiPointsService] as FaiPointsService
+  [AchievementService] as AchievementService
+  [RoomService] as RoomService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [BrandProfileRepository\nCelebrityProfileRepository\nChallengeTemplateRepository\nFaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nInventoryScoreSnapshotRepository\nPieceUsageDiaryEntryRepository\nRankingOptInRepository\nRankingPositionRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nSealRepository\nStyleDnaRepository\nUserAchievementRepository\nUserRepository\nWardrobeAvailabilityChangeRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• brand_profiles\n• celebrity_profiles\n• challenge_templates\n• fai_points_ledger\n• fai_points_rules\n• inventory_score_snapshots\n• piece_usage_diary\n• ranking_opt_ins\n• ranking_positions\n• room_catalog\n• room_inventory\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• style_dna\n• user_achievements\n• users\n• wardrobe_availability_log\n• wardrobe_items" as DB
+[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+[NotificationService\n(RNF10)] as P_notif
+[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+
+FE0 --> RoomCreatorController : HTTPS/JSON
+FE0 --> HighlightsController : HTTPS/JSON
+FE1 --> RoomCreatorController : HTTPS/JSON
+FE1 --> HighlightsController : HTTPS/JSON
+FE2 --> RoomCreatorController : HTTPS/JSON
+FE2 --> HighlightsController : HTTPS/JSON
+FE3 --> RoomCreatorController : HTTPS/JSON
+FE3 --> HighlightsController : HTTPS/JSON
+RoomCreatorController --> WardrobeCreatorService
+HighlightsController --> InventoryScoreService
+HighlightsController --> FaiPointsService
+HighlightsController --> AchievementService
+WardrobeCreatorService --> REPOS
+WardrobeCreatorService --> P_media
+InventoryScoreService ..> RoomService
+InventoryScoreService ..> AchievementService
+InventoryScoreService --> REPOS
+FaiPointsService ..> WardrobeCreatorService
+FaiPointsService --> REPOS
+FaiPointsService --> P_notif
+AchievementService ..> FaiPointsService
+AchievementService --> REPOS
+AchievementService --> P_notif
+AchievementService --> P_events
+AchievementService --> P_side
+REPOS --> DB : JPA/Flyway
+@enduml

@@ -1,0 +1,52 @@
+@startuml RF34_Atividades
+title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Visitante|
+start
+:Abre o perfil da celebridade (RF22) → aba "Eras";
+|Sistema (ShowcaseService)|
+:Lista as eras (agrupamentos type=ERA)\ncom foto, período e contagem;
+|Visitante|
+split
+  :Busca por era, texto e ano;
+  |Sistema (ShowcaseService)|
+  :Esquemas e peças da era;
+split again
+  |Visitante|
+  :"Insights de Eras";
+  |Sistema (ShowcaseService)|
+  :Ranking das eras (hype, looks, salvamentos)\nem palcos 2D;
+split again
+  |Visitante|
+  :My Stage 3D;
+  |Sistema (ShowcaseService)|
+  :Foto da celebridade no manequim, no palco 3D;
+end split
+|Celebridade (dona)|
+:Cria/edita era, adiciona looks\ne envia a foto da era;
+|Sistema (LookbookService)|
+:Salva o agrupamento e os itens;
+stop
+@enduml

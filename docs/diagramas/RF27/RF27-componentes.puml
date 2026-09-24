@@ -1,0 +1,47 @@
+@startuml RF27_Componentes
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "room — Quarto 3D (RoomScene)" as FE0
+  component "room — 2.5D e Lista" as FE1
+  component "RoomProps (espelho, cesto, cadeira, arara)" as FE2
+}
+package "fai-web (REST)" {
+  [RoomController] as RoomController
+}
+package "fai-application (casos de uso)" {
+  [RoomService] as RoomService
+}
+package "fai-domain (repositórios JPA)" {
+  [DailyLookRepository\nFaiPointsLedgerEntryRepository\nPieceUsageDiaryEntryRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nRoomLayoutRepository\nRoomStorageEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserAchievementRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• daily_looks\n• fai_points_ledger\n• piece_usage_diary\n• room_catalog\n• room_inventory\n• room_layouts\n• room_storage_map\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• user_preferences\n• users\n• wardrobe_items" as DB
+cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
+[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+
+FE0 --> RoomController : HTTPS/JSON
+FE1 --> RoomController : HTTPS/JSON
+FE2 --> RoomController : HTTPS/JSON
+RoomController --> RoomService
+RoomService --> REPOS
+RoomService --> P_ai
+RoomService --> P_events
+RoomService --> P_side
+REPOS --> DB : JPA/Flyway
+@enduml

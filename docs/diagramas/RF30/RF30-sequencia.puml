@@ -1,0 +1,38 @@
+@startuml RF30_Sequencia
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\npoints + RoomStore" as FE
+participant "HighlightsController" as C
+participant "FaiPointsService" as P
+participant "WardrobeCreatorService" as W
+participant "RoomService" as R
+database "MySQL" as DB
+U -> FE: abre FAI Points
+FE -> C: GET /api/me/points
+C -> P: account(user)
+P -> DB: SUM fai_points_ledger (saldo e vitalício)
+FE -> C: GET /api/points/shop
+C -> P: shop(user)
+P -> DB: SELECT room_catalog ativos + room_inventory
+P -> W: view(item, buyer) + blocker
+P -> R: compatibleModules
+P --> FE: itens com condições e motivo do bloqueio
+U -> FE: Comprar
+FE -> C: POST /api/points/shop/{sku}/purchase
+C -> P: buy(user, sku)
+P -> W: blocker(buyer, item)
+P -> DB: INSERT fai_points_ledger (−preço)\nINSERT room_inventory\nUPDATE room_catalog.sold_count
+U -> FE: Montar em "Porta 1"
+FE -> C: POST /api/me/room-inventory/{id}/apply
+C -> P: apply
+P -> R: applyFinish(user, moduleId, item)
+R -> DB: UPDATE room_layouts.modules_json
+@enduml

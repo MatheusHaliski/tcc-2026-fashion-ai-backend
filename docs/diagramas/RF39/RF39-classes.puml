@@ -1,0 +1,177 @@
+@startuml RF39_Classes
+title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class RoomCatalogItem {
+  +sku: String
+  +name: String
+  +moldId: String
+  +slotType: String
+  +widthCm: int
+  +finishJson: String
+  +rarity: String
+  +pricePoints: int
+  +requiredLevel: String
+  +stockLimit: Integer
+  +soldCount: int
+  +maisonBrandUserId: UUID
+  +active: boolean
+  +kind: String
+  .. +14 campos ..
+}
+class RoomInventoryItem {
+  +id: UUID
+  +userId: UUID
+  +sku: String
+  +serial: Integer
+  +source: String
+  +appliedModule: String
+  +acquiredAt: Instant
+}
+class RoomLayout {
+  +user: User
+  +level: String
+  +modulesJson: String
+  +drawerLabelsJson: String
+  +previousMapJson: String
+}
+class Seal {
+  +owner: User
+  +name: String
+  +tier: SealTier
+  +policyText: String
+  +status: SealStatus
+  +iconUrl: String
+  +premium: boolean
+  +backgroundConfigJson: String
+  +availableFrom: Instant
+  +availableUntil: Instant
+  +usageLimit: Integer
+  +usageCount: int
+  +autoIssued: boolean
+}
+class SealBond {
+  +scheme: Scheme
+  +targetOwner: User
+  +requestedBy: User
+  +tier: SealTier
+  +linkedPieceIdsJson: String
+  +confidence: BigDecimal
+  +justification: String
+  +basis: SealBondBasis
+  +status: SealBondStatus
+  +requiresReview: boolean
+  +seal: Seal
+  +imageRightsConsent: Boolean
+  +aiInferenceId: UUID
+  +respondedAt: Instant
+  .. +8 campos ..
+}
+class FaiPointsLedgerEntry {
+  +id: UUID
+  +userId: UUID
+  +delta: int
+  +actionCode: String
+  +refType: String
+  +refId: String
+  +idempotencyKey: String
+  +countsLifetime: boolean
+  +createdAt: Instant
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +coverUrl: String
+  +bio: String
+  +storeUrl: String
+  +cnpj: String
+  +razaoSocial: String
+  +nomeFantasia: String
+  +fashionCategory: String
+  +commercialContact: String
+  +officialHashtag: String
+  +activityProofUrl: String
+  .. +11 campos ..
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +avatarUrl: String
+  +coverUrl: String
+  +bio: String
+  +realName: String
+  +areasJson: String
+  +verifiableFollowersJson: String
+  +identityProofUrl: String
+  +verificationUrl: String
+  +professionalHistory: String
+  +representationContact: String
+  +fashionInterestsJson: String
+  .. +10 campos ..
+}
+}
+package "fai-domain · enums" {
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+}
+BrandProfile "1" --> "1" User : owner
+CelebrityProfile "1" --> "1" User : owner
+FaiPointsLedgerEntry ..> User : userId
+RoomCatalogItem ..> User : maisonBrandUserId
+RoomInventoryItem ..> User : userId
+RoomLayout "*" --> "1" User : user
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
+User --> ProfileType
+note top of User : tabela users
+note top of RoomCatalogItem : tabela room_catalog
+note top of RoomInventoryItem : tabela room_inventory
+note top of RoomLayout : tabela room_layouts
+note top of Seal : tabela seals
+note top of SealBond : tabela seal_bonds
+note top of FaiPointsLedgerEntry : tabela fai_points_ledger
+note top of BrandProfile : tabela brand_profiles
+note top of CelebrityProfile : tabela celebrity_profiles
+@enduml

@@ -1,0 +1,63 @@
+@startuml RF39_Atividades
+title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca/Celebridade|
+start
+:Perfil → "Criar guarda-roupa 3D";
+|Sistema (WardrobeCreatorService)|
+if (Perfil MARCA ou CELEBRIDADE?) then (não)
+  #FFE3E3:403 ACESSO_NEGADO;
+  stop
+endif
+:Opções: 13 blocos, 22 materiais com cores,\nníveis, identidade e selos ativos;
+|Marca/Celebridade|
+if (Componente ou guarda-roupa inteiro?) then (componente)
+  :Escolhe um bloco (modelo, material, cor);
+else (inteiro)
+  :Toca nos blocos da pré-visualização 3D\ne define material/cor de cada um;
+endif
+:Envia logo (PNG) e arte da marca;
+:Nome gravado na placa e selo de identidade (RF25);
+:Condições: preço (sugerido), nível, estoque,\nlimite por pessoa, disponível de / expira em,\nexige selo;
+|Sistema (WardrobeCreatorService)|
+if (Material aceito pelo bloco, janela e preço válidos?) then (sim)
+  :Calcula o nível final\n(maior entre escolhido, bloco e material);
+  :Salva no catálogo (room_catalog, kind\nCOMPONENT/WARDROBE, bundle_json);
+else (não)
+  #FFE3E3:400 com o erro;
+  stop
+endif
+|Usuário comum|
+:Loja do quarto → filtra e compra;
+|Sistema (FaiPointsService)|
+if (Condições OK?) then (sim)
+  :Debita FAI Points e cria a unidade;
+  |Sistema (RoomService)|
+  :Monta no módulo (ou em todos: moduleId=ALL);
+else (não)
+  #FFE3E3:409 com o motivo;
+endif
+stop
+@enduml

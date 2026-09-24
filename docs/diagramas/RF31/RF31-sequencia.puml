@@ -1,0 +1,27 @@
+@startuml RF31_Sequencia
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\ncloset / pieces" as FE
+participant "WardrobeController" as C
+participant "WardrobeService" as S
+database "MySQL" as DB
+U -> FE: filtra "Indisponíveis"
+FE -> C: GET /api/me/closet?state=indisponivel
+C -> S: closet(filter)
+S -> DB: SELECT wardrobe_items
+U -> FE: marca "Indisponível"
+FE -> C: PATCH /api/pieces/{id}/flags
+C -> S: toggles(user, id, favorite,\ndisponivel, forSale)
+S -> DB: UPDATE wardrobe_items
+S ->> S: AvailabilityChanged (AFTER_COMMIT)
+S -> DB: INSERT wardrobe_availability_changes\n(WardrobeEventListeners)
+S --> FE: peça atualizada
+@enduml

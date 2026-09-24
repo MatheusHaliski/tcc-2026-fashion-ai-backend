@@ -1,0 +1,49 @@
+@startuml RF32_Componentes
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "challenges — catálogo" as FE0
+  component "challenges/[id] — progresso, mural e votação" as FE1
+}
+package "fai-web (REST)" {
+  [ChallengeController] as ChallengeController
+}
+package "fai-application (casos de uso)" {
+  [ChallengeService] as ChallengeService
+  [RoomService] as RoomService #FAFAFA
+  [FaiPointsService] as FaiPointsService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [ChallengeEventRepository\nChallengeInstanceRepository\nChallengeNoteRepository\nChallengeParticipantRepository\nChallengeTemplateRepository\nChallengeVoteRepository\nDailyLookRepository\nFollowRepository\nPieceUsageDiaryEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• challenge_events\n• challenge_instances\n• challenge_notes\n• challenge_participants\n• challenge_templates\n• challenge_votes\n• daily_looks\n• follows\n• piece_usage_diary\n• scheme_items\n• schemes\n• style_dna\n• users\n• wardrobe_items" as DB
+database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+[NotificationService\n(RNF10)] as P_notif
+[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+
+FE0 --> ChallengeController : HTTPS/JSON
+FE1 --> ChallengeController : HTTPS/JSON
+ChallengeController --> ChallengeService
+ChallengeService ..> RoomService
+ChallengeService ..> FaiPointsService
+ChallengeService --> REPOS
+ChallengeService --> P_notif
+ChallengeService --> P_media
+ChallengeService --> P_side
+REPOS --> DB : JPA/Flyway
+@enduml

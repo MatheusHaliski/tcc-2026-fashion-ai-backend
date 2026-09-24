@@ -1,0 +1,61 @@
+@startuml RF37_Atividades
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Jogador|
+start
+:Abre o FLAIR;
+|Sistema (FlairService)|
+:Gera cartas das peças (EDGE, RANGE, CLOUT,\nGLOW, ART, SYNC) e decks dos esquemas;
+|Sistema (FlairLooks)|
+:Look = 10 atributos (HYPE, STYLE, COLOR, OCCASION,\nORIGINALITY, BRAND, RARITY, TREND, COMMUNITY, AI)\n+ sinergias (Streetwear, Classic Formal,\nMonocromático, Brand Loyalty, Mix & Match, Vintage);
+|Jogador|
+:Escolhe um dos 15 modos;
+note right
+Battle of Looks · Squad · League · Runway ·
+World Tour · Monopoly · Conquest · Draft ·
+Deck Battle · Combo · Tag Team · Boss ·
+Wardrobe Wars · Chess · Ultimate Team
+end note
+:Monta a escalação (looks, deck, time, tabuleiro…);
+|Sistema (FlairModesService)|
+:Pontua pelo tema de ocasião (18 temas com pesos);
+:Registra a partida e o estado do modo;
+if (Partida premiada do dia (até 3 por modo)?) then (sim)
+  :Credita coins: vitória 20 · empate 8 · derrota 3\n(sem apostas);
+endif
+if (Conquista?) then (sim)
+  :Troféu (Runway Winner, Boss derrotado,\nregião conquistada…);
+  :CouponRightsCheck → direito a cupom (RF38);
+endif
+|Loja (marca/celebridade)|
+:Publica combinação (requisitos + cupom + link);
+|Jogador|
+:Confere o melhor deck contra o checklist;
+if (Completa a combinação?) then (sim)
+  |Sistema (FlairService)|
+  :Troca o deck pelo cupom da loja;
+endif
+stop
+@enduml

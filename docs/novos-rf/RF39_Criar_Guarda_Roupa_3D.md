@@ -2,7 +2,7 @@
 
 **Ator:** perfil de marca ou celebridade (cria) · usuário comum (compra).
 **Onde:** aba **"Criar guarda-roupa 3D"** do perfil da marca/celebridade (`/brands/{slug}?tab=GUARDA_ROUPA`) e **Loja do quarto** em FAI Points (`/points`).
-**Moeda:** FAI Points. Não são vendidos por dinheiro real e não compram posição em ranking (RF35.CA08).
+**Moeda:** FAI Points. Não são vendidos por dinheiro real e não compram posição em ranking (RF30).
 
 ## Critérios de aceite
 

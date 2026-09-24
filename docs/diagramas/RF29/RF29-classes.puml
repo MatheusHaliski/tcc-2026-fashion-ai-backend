@@ -1,0 +1,116 @@
+@startuml RF29_Classes
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class InventoryScoreSnapshot {
+  +id: UUID
+  +userId: UUID
+  +periodType: String
+  +periodDate: LocalDate
+  +score: Integer
+  +dimensionsJson: String
+  +metricsJson: String
+  +eligible: boolean
+  +computedAt: Instant
+}
+class RankingOptIn {
+  +userId: UUID
+  +optedIn: boolean
+  +shareCity: boolean
+  +city: String
+  +updatedAt: Instant
+}
+class RankingPosition {
+  +id: UUID
+  +segment: String
+  +userId: UUID
+  +position: int
+  +total: int
+  +topPercent: BigDecimal
+  +value: BigDecimal
+  +computedAt: Instant
+}
+class UserAchievement {
+  +id: UUID
+  +userId: UUID
+  +achievementCode: String
+  +secret: boolean
+  +grantedAt: Instant
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+class PieceUsageDiaryEntry {
+  +id: UUID
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +usedOn: LocalDate
+  +occasion: String
+  +note: String
+  +source: String
+  +schemeId: UUID
+  +createdAt: Instant
+}
+class WardrobeAvailabilityChange {
+  +id: UUID
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +available: boolean
+  +changedAt: Instant
+}
+}
+InventoryScoreSnapshot ..> User : userId
+PieceUsageDiaryEntry ..> User : userId
+PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
+RankingOptIn ..> User : userId
+RankingPosition ..> User : userId
+UserAchievement ..> User : userId
+WardrobeAvailabilityChange ..> User : userId
+WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of InventoryScoreSnapshot : tabela inventory_score_snapshots
+note top of RankingOptIn : tabela ranking_opt_ins
+note top of RankingPosition : tabela ranking_positions
+note top of UserAchievement : tabela user_achievements
+note top of WardrobeItem : tabela wardrobe_items
+note top of PieceUsageDiaryEntry : tabela piece_usage_diary
+note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
+@enduml

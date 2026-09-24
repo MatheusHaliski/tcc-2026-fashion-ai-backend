@@ -1,0 +1,64 @@
+@startuml RF25_Atividades
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca/Celebridade|
+start
+:Abre o próprio perfil (RF14/RF22)\n→ aba "Selos";
+if (É o dono do perfil?) then (não)
+  :Vê só os selos públicos\n(disponíveis ou não, com motivo);
+  stop
+else (sim)
+endif
+:Toca em "Novo selo" ou "Editar";
+:Preenche nome, tipo (PEÇA/LOOK),\npolítica, limite de emissões e status;
+:Monta o medalhão no catálogo de desenhos\n(forma, cores, ícone) ou envia a arte;
+:Define a janela de validade\n"Disponível a partir de" / "Expira em";
+|Sistema (SealService)|
+if (Fim antes do início?) then (sim)
+  #FFE3E3:400 PERIODO_INVALIDO;
+  stop
+endif
+:Salva o selo (MySQL · seals)\ne audita a alteração;
+|Marca/Celebridade|
+:Aba "Promoções" → "Nova promoção";
+:Escolhe tipo, título, regras, desconto,\ncota, limite por pessoa, período,\nselo exigido e link da loja externa;
+|Sistema (SealService)|
+:Salva a promoção (MySQL · promotions);
+|Usuário comum|
+:Publica um look compatível com a política;
+|Sistema (SealService)|
+:SealBond Matcher (IA RF24) sugere o vínculo;
+:A marca aprova o vínculo (RF20/RF21);
+if (Selo dentro da janela e com emissões?) then (sim)
+  :Emite o selo no look\n(seal_bonds APPROVED);
+  :Publica CouponRightsCheck (AFTER_COMMIT);
+  |Sistema (CouponService)|
+  :Cria o direito ao cupom (coupon_rights)\ne notifica "Parabéns! Deseja resgatar o CUPOM?";
+  note right: o resgate segue no RF38
+else (não)
+  :Selo indisponível (motivo exibido);
+endif
+stop
+@enduml

@@ -1,0 +1,58 @@
+@startuml RF28_Atividades
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Usuário|
+start
+:Abre o Smart Mirror (ou o espelho do quarto);
+|Sistema (MirrorService)|
+:Carrega o estado do espelho\n(slots, peças vestidas, restrições de desafio);
+|Usuário|
+if (Montar sozinho ou pedir ao Vista-me?) then (sozinho)
+  :Veste/tira peças por slot;
+  |Sistema (MirrorService)|
+  :Sugestões para o slot\n(só peças disponíveis do próprio acervo);
+else (Vista-me)
+  |Usuário|
+  :Pedido em linguagem natural\n("jantar sexta, frio, algo leve");
+  |Sistema (MirrorService)|
+  :Motor de IA (RF24) interpreta ocasião,\nclima e DNA de Estilo;
+  if (IA indisponível?) then (sim)
+    :Fallback determinístico\n(regras de ocasião + cores);
+  endif
+  :Monta look completo com peças\ndisponíveis do guarda-roupa;
+endif
+|Usuário|
+repeat
+  :Outro look / trocar só uma peça /\n"Tira uma coisa";
+repeat while (Satisfeito?) is (não)
+split
+  :Usar hoje → Look do Dia + diário de uso;
+split again
+  :Salvar como esquema (RF5);
+split again
+  :Storyboard GRWM;
+end split
+stop
+@enduml

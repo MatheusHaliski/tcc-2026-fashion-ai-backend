@@ -1,0 +1,29 @@
+@startuml RF29_Sequencia
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\nhighlights" as FE
+participant "HighlightsController" as C
+participant "InventoryScoreService" as S
+database "MySQL" as DB
+U -> FE: abre Destaques
+FE -> C: GET /api/me/highlights
+C -> S: highlightsTab(user)
+S -> DB: SELECT wardrobe_items, piece_usage_diary,\navailability_changes, schemes
+S -> DB: INSERT inventory_score_snapshots
+S --> FE: score, dimensões, dicas, álbum
+U -> FE: explicar uma dimensão
+FE -> C: GET /api/me/inventory-score/dimensions/{code}
+U -> FE: entrar nos rankings
+FE -> C: PUT /api/me/rankings/opt-in
+S -> DB: UPSERT ranking_opt_in
+FE -> C: GET /api/me/rankings
+S -> DB: SELECT ranking_positions (k ≥ 50)
+@enduml

@@ -1,0 +1,36 @@
+@startuml RF28_Sequencia
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\nmirror" as FE
+participant "MirrorController" as C
+participant "MirrorService" as S
+participant "AiEngine (RF24)" as AI
+participant "DailyLookService" as DL
+database "MySQL" as DB
+U -> FE: abre o espelho
+FE -> C: GET /api/me/mirror
+C -> S: state(user)
+S -> DB: SELECT mirror_state
+U -> FE: "Vista-me: jantar sexta, frio"
+FE -> C: POST /api/me/mirror/vista-me
+C -> S: vistaMe(user, prompt, ...)
+S -> AI: interpretar pedido + DNA (opt-in)
+AI --> S: ocasião, clima, paleta\n(ou fallback local)
+S -> DB: SELECT wardrobe_items disponíveis
+S --> FE: look completo + explicação
+U -> FE: trocar só o calçado
+FE -> C: POST /api/me/mirror/slots/SHOES/swap
+U -> FE: Usar hoje
+FE -> C: POST /api/me/mirror/use
+C -> S: useLook(user)
+S -> DL: marca Look do Dia
+DL -> DB: INSERT daily_looks + piece_usage_diary
+@enduml

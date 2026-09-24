@@ -1,0 +1,182 @@
+@startuml RF25_Classes
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class Seal {
+  +owner: User
+  +name: String
+  +tier: SealTier
+  +policyText: String
+  +status: SealStatus
+  +iconUrl: String
+  +premium: boolean
+  +backgroundConfigJson: String
+  +availableFrom: Instant
+  +availableUntil: Instant
+  +usageLimit: Integer
+  +usageCount: int
+  +autoIssued: boolean
+}
+class SealBond {
+  +scheme: Scheme
+  +targetOwner: User
+  +requestedBy: User
+  +tier: SealTier
+  +linkedPieceIdsJson: String
+  +confidence: BigDecimal
+  +justification: String
+  +basis: SealBondBasis
+  +status: SealBondStatus
+  +requiresReview: boolean
+  +seal: Seal
+  +imageRightsConsent: Boolean
+  +aiInferenceId: UUID
+  +respondedAt: Instant
+  .. +8 campos ..
+}
+class Promotion {
+  +seal: Seal
+  +sealBond: SealBond
+  +type: PromotionType
+  +code: String
+  +description: String
+  +discountPercent: Integer
+  +partnerBrandUserId: UUID
+  +campaignId: UUID
+  +campaignLimit: Integer
+  +status: PromotionStatus
+  +visibility: Visibility
+  +ownerUserId: UUID
+  +expiresAt: Instant
+  +redeemedAt: Instant
+  .. +8 campos ..
+}
+class PromotionRedemption {
+  +promotion: Promotion
+  +sealBond: SealBond
+  +user: User
+  +code: String
+  +issuerUserId: UUID
+  +partnerBrandUserId: UUID
+  +status: RedemptionStatus
+  +redeemedAt: Instant
+  +expiresAt: Instant
+}
+class CouponRight {
+  +user: User
+  +owner: User
+  +sourceType: String
+  +sourceId: UUID
+  +title: String
+  +detail: String
+  +status: String
+  +schemeId: UUID
+  +couponRef: UUID
+  +decidedAt: Instant
+}
+class Notification {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +title: String
+  +body: String
+  +payloadJson: String
+  +read: boolean
+  +readAt: Instant
+  +delivered: boolean
+}
+}
+package "fai-domain · enums" {
+enum SealTier {
+  PECA
+  LOOK
+}
+enum SealStatus {
+  ACTIVE
+  INACTIVE
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+enum PromotionType {
+  DESCONTO_ECOMMERCE
+  CUPOM_LOJA
+  EVENTO
+  SHOW
+  FRETE_GRATIS
+  BRINDE
+  ACESSO_ANTECIPADO
+  MEET_GREET
+  PRE_VENDA
+  CONTEUDO_EXCLUSIVO
+}
+enum PromotionStatus {
+  AVAILABLE
+  REDEEMED
+  EXPIRED
+  REVOKED
+}
+}
+CouponRight "*" --> "1" User : owner
+CouponRight "*" --> "1" User : user
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Promotion "*" --> "1" Seal : seal
+Promotion "*" --> "1" SealBond : sealBond
+Promotion --> PromotionStatus
+Promotion --> PromotionType
+Promotion ..> User : partnerBrandUserId
+PromotionRedemption "*" --> "1" Promotion : promotion
+PromotionRedemption "*" --> "1" SealBond : sealBond
+PromotionRedemption "*" --> "1" User : user
+PromotionRedemption ..> User : issuerUserId
+PromotionRedemption ..> User : partnerBrandUserId
+Seal "*" --> "1" User : owner
+Seal --> SealStatus
+Seal --> SealTier
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
+SealBond --> SealTier
+note top of User : tabela users
+note top of Seal : tabela seals
+note top of SealBond : tabela seal_bonds
+note top of Promotion : tabela promotions
+note top of PromotionRedemption : tabela promotion_redemptions
+note top of CouponRight : tabela coupon_rights
+note top of Notification : tabela notifications
+@enduml

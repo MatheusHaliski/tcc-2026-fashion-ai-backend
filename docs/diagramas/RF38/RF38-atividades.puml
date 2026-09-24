@@ -1,0 +1,57 @@
+@startuml RF38_Atividades
+title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Loja (marca/celebridade)|
+start
+:Cadastra selo com promoção (RF25)\nou jogo/combinação FLAIR (RF37);
+|Usuário|
+:Conquista direitos usando o app\n(selo aprovado num look, vitória no FLAIR…);
+|Sistema (CouponService)|
+:CouponRightsCheck (após o commit)\n→ procura promoções elegíveis;
+if (Já existe direito para esta fonte?) then (sim)
+  :Não duplica;
+  stop
+endif
+:Cria o direito (coupon_rights PENDENTE);
+:Notifica COUPON_AVAILABLE:\n"Parabéns! Deseja resgatar o CUPOM?";
+|Usuário|
+if (Resgatar?) then (sim)
+  |Sistema (CouponService)|
+  :Emite o cupom Fashion AI\n(código único, desconto, validade, storeUrl);
+  |Usuário|
+  :Cupom aparece em "Meus cupons resgatados"\n(desenho sempre com o logo do FAI);
+  :Toca no cupom → abre a loja externa\n(fora do app);
+  |Loja (marca/celebridade)|
+  :Confere o código no caixa;
+  |Sistema (CouponService)|
+  :Marca o cupom como usado;
+else (não)
+  |Sistema (CouponService)|
+  :Direito dispensado;
+endif
+|Loja (marca/celebridade)|
+:"Meus cupons promocionais":\ncupons emitidos, direitos pendentes\ne "Todas as promoções" (ativas/inativas);
+stop
+@enduml

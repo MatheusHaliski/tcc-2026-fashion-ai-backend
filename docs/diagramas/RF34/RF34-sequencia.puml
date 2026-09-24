@@ -1,0 +1,34 @@
+@startuml RF34_Sequencia
+title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Visitante as V
+actor "Celebridade" as CEL
+participant "Frontend\nErasTab" as FE
+participant "ShowcaseController" as C
+participant "LookbookController" as LC
+participant "ShowcaseService" as S
+database "MySQL" as DB
+database "Storage de mídia" as MS
+V -> FE: aba Eras
+FE -> C: GET /api/institutional/{slug}/showcase/eras
+C -> S: list(viewer, slug, ERAS)
+S -> DB: SELECT scheme_groupings (ERA) + schemes
+V -> FE: busca "Tour 2024"
+FE -> C: GET .../showcase/eras/items?q=&year=
+V -> FE: Insights de Eras
+FE -> C: GET .../showcase/eras/insights
+V -> FE: My Stage 3D
+FE -> C: GET /api/institutional/{slug}/stage
+CEL -> FE: nova era + looks
+FE -> LC: POST /api/groupings ; POST /api/groupings/{id}/items
+CEL -> FE: foto da era
+FE -> C: POST /api/groupings/{id}/cover
+C -> MS: put(imagem)
+@enduml

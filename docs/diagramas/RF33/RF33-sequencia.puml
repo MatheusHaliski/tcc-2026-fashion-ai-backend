@@ -1,0 +1,28 @@
+@startuml RF33_Sequencia
+title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Usuário as U
+participant "Frontend\nRunwayPanel" as FE
+participant "ShowcaseController" as C
+participant "ShowcaseService" as S
+participant "WorldRegions" as WR
+database "MySQL" as DB
+U -> FE: ranking=TOP100_REGIONAL, region=EUROPA,\ncolors=preto, limit=12
+FE -> C: GET /api/explorer/runway?...
+C -> S: runway(viewer, RunwayFilter)
+S -> DB: SELECT daily_looks do dia\nJOIN users, schemes, scheme_items, wardrobe_items
+S -> WR: of(user.country) → região
+S -> S: filtros + ordenação + corte Top 100
+S -> S: lote (offset, limit ≤ 24) + facetas
+S --> FE: looks[] (posição, manequim, peças),\nbatch, facets, table (Top 100), you
+FE -> FE: RF33 desfile 3D do lote
+U -> FE: próximo lote
+FE -> C: GET /api/explorer/runway?...&offset=12
+@enduml

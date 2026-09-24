@@ -1,0 +1,116 @@
+@startuml RF35_Classes
+title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +phone: String
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  .. +20 campos ..
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +coverUrl: String
+  +bio: String
+  +storeUrl: String
+  +cnpj: String
+  +razaoSocial: String
+  +nomeFantasia: String
+  +fashionCategory: String
+  +commercialContact: String
+  +officialHashtag: String
+  +activityProofUrl: String
+  .. +11 campos ..
+}
+class SchemeGrouping {
+  +owner: User
+  +type: GroupingType
+  +label: String
+  +description: String
+  +coverUrl: String
+  +atmospherePrompt: String
+  +periodFrom: Integer
+  +periodTo: Integer
+  +accentColor: String
+  +sortOrder: int
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  .. +41 campos ..
+}
+class WardrobeItem {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +brandName: String
+  +color: String
+  +material: String
+  +sizeLabel: String
+  +market: String
+  +styleTags: String
+  +occasionTags: String
+  .. +54 campos ..
+}
+}
+package "fai-domain · enums" {
+enum GroupingType {
+  COLLECTION
+  PROMOTION
+  SIGNATURE_SERIES
+  EVOLUTION
+  STYLE_LINE
+  ERA
+  PHASE
+  SEASON
+  TOUR
+}
+}
+BrandProfile "1" --> "1" User : owner
+Scheme "*" --> "1" User : user
+SchemeGrouping "*" --> "1" User : owner
+SchemeGrouping --> GroupingType
+WardrobeItem "*" --> "1" BrandProfile : brandProfile
+WardrobeItem "*" --> "1" User : user
+note top of User : tabela users
+note top of BrandProfile : tabela brand_profiles
+note top of SchemeGrouping : tabela scheme_groupings
+note top of Scheme : tabela schemes
+note top of WardrobeItem : tabela wardrobe_items
+@enduml

@@ -23,7 +23,7 @@ function Points() {
   const a = acc.data;
   return (
     <>
-      <PageHeader title={t("nav.points")} kicker="RF35 · RF39" lead="Pontos por usar o que você tem — nunca por comprar mais. Gaste na loja do quarto: blocos do guarda-roupa em vários materiais e cores, da fábrica FAI e de marcas e celebridades." />
+      <PageHeader title={t("nav.points")} kicker="RF30 · RF39" lead="Pontos por usar o que você tem — nunca por comprar mais. Gaste na loja do quarto: blocos do guarda-roupa em vários materiais e cores, da fábrica FAI e de marcas e celebridades." />
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <div className="grid content-start gap-3">
           <Card className="text-center"><p className="label">Saldo</p><p className="hero-number text-6xl">{fmtNumber(a.balance)}</p><p className="type-caption text-muted">acumulado {fmtNumber(a.lifetime)} · nível <b>{a.level}</b></p>{a.nextLevel && <><div className="hype-bar mt-3"><i style={{ width: `${Math.min(100, (100 * a.lifetime) / Math.max(1, a.nextLevel.threshold))}%`, background: "var(--chalk)" }} /></div><p className="mt-1 type-caption">faltam {a.nextLevel.missing} para {a.nextLevel.level}: {a.nextLevel.unlocks}</p></>}{a.note && <p className="mt-2 type-caption text-faint">{a.note}</p>}</Card>

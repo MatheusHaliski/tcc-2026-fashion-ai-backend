@@ -1,0 +1,47 @@
+@startuml RF35_Atividades
+title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Visitante|
+start
+:Abre o perfil da marca (RF14) → aba "Coleções";
+|Sistema (ShowcaseService)|
+:Lista as coleções (type=COLLECTION)\ncom arte, temporada e contagem;
+|Visitante|
+split
+  :Busca por coleção, texto e ano;
+  |Sistema (ShowcaseService)|
+  :Esquemas e peças da coleção;
+split again
+  |Visitante|
+  :"Collections Insights";
+  |Sistema (ShowcaseService)|
+  :Ranking das coleções como mini lojas 3D\n(vitrine com a arte da coleção);
+end split
+|Marca (dona)|
+:Cria/edita coleção, adiciona peças/looks\ne envia a arte da coleção;
+|Sistema (LookbookService)|
+:Salva o agrupamento e os itens;
+stop
+@enduml

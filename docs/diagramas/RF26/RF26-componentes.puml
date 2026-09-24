@@ -1,0 +1,52 @@
+@startuml RF26_Componentes
+title RF26 — Explorador Global: painel por país, marcas & lojas e insights\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "explorer — Painel global" as FE0
+  component "explorer — Buscar marcas & lojas" as FE1
+  component "explorer — Insights globais" as FE2
+}
+package "fai-web (REST)" {
+  [DiscoveryController] as DiscoveryController
+}
+package "fai-application (casos de uso)" {
+  [SearchService] as SearchService
+  [ExplorerService] as ExplorerService
+  [SchemeService] as SchemeService #FAFAFA
+  [ChallengeService] as ChallengeService #FAFAFA
+}
+package "fai-domain (repositórios JPA)" {
+  [BrandProfileRepository\nBrandRepository\nCelebrityProfileRepository\nFollowRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nShareRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• scheme_items\n• schemes\n• seal_bonds\n• shares\n• style_dna\n• users\n• wardrobe_items" as DB
+cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
+database "AnalyticsQueryPort\n(MysqlAnalyticsAdapter · agregados)" as P_analytics
+
+FE0 --> DiscoveryController : HTTPS/JSON
+FE1 --> DiscoveryController : HTTPS/JSON
+FE2 --> DiscoveryController : HTTPS/JSON
+DiscoveryController --> SearchService
+DiscoveryController --> ExplorerService
+SearchService ..> SchemeService
+SearchService ..> ChallengeService
+SearchService --> REPOS
+ExplorerService --> REPOS
+ExplorerService --> P_analytics
+ExplorerService --> P_ai
+REPOS --> DB : JPA/Flyway
+@enduml
