@@ -11,6 +11,7 @@ import { CARD_SKINS } from "@/lib/skins";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
 interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; [k: string]: unknown; }
@@ -41,16 +42,12 @@ function Settings() {
       {tab === "account" && (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
-            <h2 className="type-h3 mb-3">Perfil</h2>
-            <div className="mb-3 flex items-center gap-3"><Avatar src={mediaUrl(me.user.avatarUrl)} name={me.user.displayName} size={56} />
-              <label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />Foto<input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); call(() => api.upload("/api/me/avatar", fd), t("common.saved")); }} /></label>
-              <label className="btn btn-sm cursor-pointer">Capa<input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); call(() => api.upload("/api/me/cover", fd), t("common.saved")); }} /></label></div>
-            <Field label="Nome de exibição" id="displayName"><Input id="displayName" value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })} /></Field>
-            <Field label="Bio" id="bio"><Textarea id="bio" value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} maxLength={280} /></Field>
-            <Field label={t("auth.country")} id="country"><Input id="country" value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value.toUpperCase() })} maxLength={2} /></Field>
-            <Button variant="primary" onClick={() => call(() => api.patch("/api/me/profile", profile), t("common.saved"))}>{t("common.save")}</Button>
-            <hr className="my-4 border-line-soft" />
-            <Field label={t("auth.username")} id="username" hint="Trocas limitadas por período"><div className="flex gap-2"><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} /><Button onClick={() => call(() => api.put("/api/me/username", { username }), t("common.saved"))}>{t("common.save")}</Button></div></Field>
+            <h2 className="type-h3 mb-3">Editar perfil</h2>
+            <EditProfileForm />
+            <Switch checked={!me.runwayOptOut} onChange={(v) => call(() => api.patch("/api/me/profile", { runwayOptOut: !v }), v ? "Seu Look do Dia volta à Passarela 3D" : "Você saiu da Passarela 3D")} label="Desfilar meu Look do Dia na Passarela 3D do Explorar" />
+            <div className="mt-2 flex flex-wrap gap-2"><label className="btn btn-sm cursor-pointer">Imagem de capa<input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); call(() => api.upload("/api/me/cover", fd), t("common.saved")); }} /></label></div>
+            <Field label={t("auth.country")} id="country"><div className="flex gap-2"><Input id="country" value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value.toUpperCase() })} maxLength={2} /><Button onClick={() => call(() => api.patch("/api/me/profile", { country: profile.country }), t("common.saved"))}>{t("common.save")}</Button></div></Field>
+
           </Card>
           <Card>
             <h2 className="type-h3 mb-3">Dados sensíveis <span className="type-caption text-faint">(pede a senha atual)</span></h2>

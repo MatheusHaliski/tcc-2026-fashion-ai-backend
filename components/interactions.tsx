@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { Avatar, Button, Dialog, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { Generate3DButton } from "@/components/generate-3d";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
@@ -40,6 +41,7 @@ export function InteractionBar({ type, id, counters, viewer, onChange, remixHref
       <button type="button" className="btn btn-ghost btn-sm" aria-pressed={viewer?.saved} onClick={save}><FaiIcon id="SOC-05" size={24} active={viewer?.saved} /><span className="tabular">{counters?.saves ?? 0}</span></button>
       <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShare(true)}><FaiIcon id="SOC-03" size={24} /><span className="tabular">{counters?.shares ?? 0}</span></button>
       {!mine && <button type="button" className="btn btn-ghost btn-sm" onClick={remix}><FaiIcon id="SOC-04" size={24} /><span className="tabular">{counters?.remixes ?? 0}</span></button>}
+      {(type === "SCHEME" || type === "PIECE") && <Generate3DButton compact={false} targets={[{ kind: type === "SCHEME" ? "scheme" : "piece", id, title: title ?? "" }]} />}
       <span className="ml-auto type-caption text-faint tabular">{counters?.views ?? 0} views</span>
       <CommentsDialog type={type} id={id} open={comments} onClose={() => { setComments(false); onChange?.(); }} title={title} />
       <Dialog open={share} onClose={() => setShare(false)} title={t("common.share")} footer={<><Button onClick={() => doShare("EXTERNAL")}>{t("common.copy")} link</Button><Button variant="primary" onClick={() => doShare("FEED")}>Feed</Button></>}>

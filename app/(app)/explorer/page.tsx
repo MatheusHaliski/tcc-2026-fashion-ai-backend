@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
@@ -9,6 +10,7 @@ import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Tabs } from "@/components/ui";
 import { Globe, countryName, type GlobePoint } from "@/components/globe";
 import { BrandLogo } from "@/components/brand-logo";
+import { RunwayPanel } from "@/components/showcase/runway-panel";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
 interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
@@ -22,12 +24,15 @@ const RANK_LABEL: Record<string, string> = { topBrands: "Marcas mais usadas (pe�
  * (perfis BRAND com filtros de país, categoria, cor, estação e hype) e Insights globais (rankings + leitura da IA).
  * A região vem sempre do país do dono (User.country) — peças e esquemas não têm campo de região.
  */
-export default function ExplorerPage() {
-  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy();
-  const [tab, setTab] = useState<"map" | "brands" | "insights">("map");
+export default function ExplorerPage() { return <Suspense><Explorer /></Suspense>; }
+
+function Explorer() {
+  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy(); const sp = useSearchParams();
+  const [tab, setTab] = useState<"runway" | "map" | "brands" | "insights">("runway");
+  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map") setTab(q); }, [sp]);
   const [country, setCountry] = useState(""); const [g, setG] = useState({ season: "", color: "", hypeBand: "" });
   const [f, setF] = useState({ term: "", country: "", category: "", color: "", season: "", hypeMin: "", sort: "HYPE" });
-  const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country, ...g })}`, { signal, anonymous: !user }), [country, JSON.stringify(g), !!user]);
+  const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country, ...g })}`, { signal, anonymous: !user }), [country, JSON.stringify(g), !!user], { enabled: tab === "map" });
   const brands = useApi<Brands>((signal) => api.get(`/api/explorer/brands${qs(f)}`, { signal, anonymous: !user }), [JSON.stringify(f), !!user], { enabled: tab === "brands" });
   const insights = useApi<Insights>((signal) => api.get("/api/explorer/insights", { signal, anonymous: !user }), [!!user], { enabled: tab === "insights" });
   const points = global.data?.countries ?? []; const lit = points.filter((p) => p.sufficient);
@@ -35,7 +40,8 @@ export default function ExplorerPage() {
   return (
     <>
       <PageHeader title={t("nav.explorer")} kicker="RF26 · Explorador Global" lead="Tendências agregadas por país, estação, cor e faixa de hype — a região vem do país de quem publicou." />
-      <Tabs tabs={[{ id: "map", label: "Painel global" }, { id: "brands", label: "Buscar marcas & lojas" }, { id: "insights", label: "Insights globais" }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: "runway", label: "Passarela 3D" }, { id: "map", label: "Painel global" }, { id: "brands", label: "Buscar marcas & lojas" }, { id: "insights", label: "Insights globais" }]} value={tab} onChange={setTab} />
+      {tab === "runway" && <RunwayPanel />}
       {tab === "map" && (
         <>
           <div className="mb-3 grid gap-2 sm:grid-cols-4" aria-label="recorte do painel">

@@ -12,6 +12,7 @@ import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Dialog, ErrorState, Field, Input, Skeleton, useToast } from "@/components/ui";
 import { toSealBadges, SchemeCard, hypeColor } from "@/components/scheme-card";
 import { InteractionBar } from "@/components/interactions";
+import { MannequinPhotoButton } from "@/components/mannequin-photo";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 
@@ -82,6 +83,7 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
                 {!s.lookDoDia && <Button onClick={async () => { try { await api.post("/api/me/daily-look", { schemeId: s.id }); toast.success("Look do Dia ✓"); reload(); } catch (e) { toast.fromError(e); } }}>{t("scheme.dailyLook")}</Button>}
                 <Button onClick={suggestSeals}><FaiIcon id="ACT-26" size={24} decorative />Selos</Button>
                 <Link href={`/try-on?scheme=${s.id}`} className="btn"><FaiIcon id="NAV-07" size={24} decorative />{t("scheme.tryOn")}</Link>
+                <MannequinPhotoButton kind="scheme" id={s.id} title={s.title} current={s.mannequinImageUrl} onSaved={reload} />
                 <Button variant="danger" onClick={async () => { await post("archive", undefined, t("scheme.archive") + " ✓"); router.push("/lookbook"); }}>{t("scheme.archive")}</Button>
               </>
             )}

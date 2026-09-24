@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * RF4 · Estúdio — depois do Flat Lay, leva a foto da peça a um acabamento de foto de produto de estúdio:
@@ -35,7 +36,7 @@ import java.util.Optional;
 public class StudioPipeline {
     private static final Logger log = LoggerFactory.getLogger(StudioPipeline.class);
     public static final int SIZE = 1600;
-    static final int WORK = 1400;
+    static final int WORK = 1800;
 
     public record Backdrop(String id, String label, int center, int edge, int shadow) {
         public String hex() {
@@ -55,16 +56,46 @@ public class StudioPipeline {
     public record Stage(String name, String provider, long ms, BigDecimal costUsd, boolean ok, boolean fallback, String note) {
     }
 
-    public record Result(byte[] studioJpeg, byte[] enhancedPng, Backdrop backdrop, List<Stage> stages, BigDecimal costUsd,
-                         boolean fallbackUsed, Map<String, Object> metrics) {
+    /**
+     * Dicas do cadastro para o estúdio.
+     *
+     * @param kind      TOP, OUTERWEAR, FULL_BODY, BOTTOM, SHOES, ACCESSORY ou null (manequim invisível só em peças com gola)
+     * @param truncated lados que a foto original cortou (top/bottom/left/right); null = deduzir do recorte
+     * @param logoBox   caixa do logo relativa à peça (x0, y0, x1, y1 em 0–1), vinda da IA de visão; null = detector local
+     */
+    public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource) {
+        public static final Hints NONE = new Hints(null, null, null, null);
     }
+
+    /**
+     * @param studioJpeg foto principal (quadro adaptado à peça) · @param thumbJpeg miniatura 640×640 para grades
+     * @param detailJpeg foto de detalhe do logo (null sem logo) · @param enhancedPng peça realçada, sem fundo
+     */
+    public record Result(byte[] studioJpeg, byte[] thumbJpeg, byte[] detailJpeg, byte[] enhancedPng, Backdrop backdrop,
+                         List<Stage> stages, BigDecimal costUsd, boolean fallbackUsed, Map<String, Object> metrics,
+                         Map<String, Object> framing, Map<String, Object> logo, List<String> ghost) {
+    }
+
+    public static final int THUMB = 640;
 
     private final List<UpscalePort> upscalers;
     private final List<StudioShotPort> studios;
 
+    /**
+     * Manequim invisível (preencher decote e aberturas com um interior falso): desligado por padrão — peça sem corpo
+     * não deve parecer vestida por um fantasma. A peça superior/de corpo inteiro ganha a "Foto com meu manequim",
+     * vestindo o manequim da pessoa (rosto da foto de perfil) ou o padrão masculino/feminino.
+     */
+    private boolean ghostFill;
+
     public StudioPipeline(List<UpscalePort> upscalers, List<StudioShotPort> studios) {
         this.upscalers = upscalers;
         this.studios = studios;
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${fashionai.studio.ghost-mannequin:false}")
+    public void setGhostFill(boolean ghostFill) {
+        this.ghostFill = ghostFill;
     }
 
     public boolean externalAvailable() {
@@ -75,12 +106,16 @@ public class StudioPipeline {
         return BACKDROPS.stream().filter(b -> b.id().equalsIgnoreCase(id == null ? "" : id)).findFirst();
     }
 
-    /** @param cutout recorte ARGB sem fundo (saída do Flat Lay) · @param backdropId id de {@link #BACKDROPS} ou "auto" */
     public Result run(BufferedImage cutout, String backdropId, boolean allowExternal) {
+        return run(cutout, backdropId, allowExternal, Hints.NONE);
+    }
+
+    /** @param cutout recorte ARGB sem fundo · @param backdropId id de {@link #BACKDROPS} ou "auto" */
+    public Result run(BufferedImage cutout, String backdropId, boolean allowExternal, Hints hints) {
+        Hints hint = hints == null ? Hints.NONE : hints;
         List<Stage> stages = new ArrayList<>();
         BigDecimal cost = BigDecimal.ZERO;
         boolean fallback = false;
-        long t = System.nanoTime();
         ImageOps.Box box = ImageOps.alphaBounds(cutout);
         if (box.empty()) {
             throw new IllegalArgumentException("recorte vazio");
@@ -89,9 +124,40 @@ public class StudioPipeline {
         double sharpBefore = sharpness(piece);
         double contrastBefore = contrast(piece);
         int wBefore = piece.getWidth(), hBefore = piece.getHeight();
-        Backdrop bd = backdrop(backdropId).orElseGet(() -> autoBackdrop(piece));
+        final BufferedImage original = piece;
+        Backdrop bd = backdrop(backdropId).orElseGet(() -> autoBackdrop(original));
 
-        // 1) ampliação + nitidez
+        // 0) limpeza: cabide/manequim + ruído da câmera
+        long t0 = System.nanoTime();
+        List<String> cleanNotes0 = new ArrayList<>();
+        GhostMannequin.Result clean = GhostMannequin.cleanup(piece, hint.kind());
+        double[] logoBox = hint.logoBox() == null ? null : reframe(hint.logoBox(), piece, clean);
+        piece = clean.image();
+        // lados cortados: os que a foto cortou (metadado do Flat Lay) + cortes retos no próprio recorte; um corte
+        // inclinado (celular torto) nivela a peça antes, para a sangria esconder o corte inteiro
+        java.util.Map<String, Double> cuts = StudioFraming.cuts(piece);
+        double level = cuts.containsKey("bottom") ? cuts.get("bottom") : cuts.containsKey("top") ? cuts.get("top")
+                : cuts.containsKey("left") ? cuts.get("left") : cuts.getOrDefault("right", 0.0);
+        if (Math.abs(level) >= 0.3 && Math.abs(level) <= 6) {
+            BufferedImage rotated = ImageOps.rotate(piece, -level);
+            piece = ImageOps.crop(rotated, ImageOps.alphaBounds(rotated));
+            cleanNotes0.add(String.format(java.util.Locale.ROOT, "peça nivelada pelo corte da foto (%.1f°)", level));
+            cuts = StudioFraming.cuts(piece);
+        }
+        Set<String> bleed = new java.util.LinkedHashSet<>(hint.truncated() == null ? Set.of() : hint.truncated());
+        bleed.addAll(cuts.keySet());
+        if (clean.hanger()) {
+            bleed.remove("top");                                    // o que encostava no topo era o gancho
+        }
+        double sigma = StudioQuality.noiseSigma(piece);
+        piece = StudioQuality.denoise(piece, sigma);
+        List<String> cleanNotes = new ArrayList<>(clean.notes());
+        cleanNotes.addAll(cleanNotes0);
+        cleanNotes.add(sigma < 1.6 ? String.format(java.util.Locale.ROOT, "ruído baixo (σ %.1f): sem filtro", sigma)
+                : String.format(java.util.Locale.ROOT, "ruído σ %.1f → filtro bilateral (preserva costuras)", sigma));
+        stages.add(new Stage("LIMPEZA", "local", ms(t0), BigDecimal.ZERO, true, false, String.join(" · ", cleanNotes)));
+
+        // 1) ampliação + contorno + nitidez com limiar
         BufferedImage up = null;
         if (allowExternal) {
             for (UpscalePort port : upscalers) {
@@ -116,18 +182,67 @@ public class StudioPipeline {
         }
         long t2 = System.nanoTime();
         boolean localUp = up == null;
-        if (up == null) {
-            up = upscaleLocal(piece);
-        } else if (Math.max(up.getWidth(), up.getHeight()) > WORK * 2) {
-            up = ImageOps.scaleToFit(up, WORK * 2, WORK * 2);
+        up = localUp ? upscaleLocal(piece) : up;
+        if (Math.max(up.getWidth(), up.getHeight()) > WORK) {
+            int lw = (int) Math.round(up.getWidth() * WORK / (double) Math.max(up.getWidth(), up.getHeight()));
+            int lh = (int) Math.round(up.getHeight() * WORK / (double) Math.max(up.getWidth(), up.getHeight()));
+            up = StudioFraming.downscale(up, lw, lh);
         }
-        BufferedImage enhanced = enhance(up);
-        stages.add(new Stage("NITIDEZ", "local", ms(t2), BigDecimal.ZERO, true, false, (localUp ? "ampliação bicúbica progressiva · " : "") + "clarity 0,35 · nitidez 0,6 · vibração +18% · "
-                + enhanced.getWidth() + "×" + enhanced.getHeight()));
+        double upFactor = up.getWidth() / (double) piece.getWidth();
+        up = StudioQuality.refineEdges(up, upFactor);
+        int fineRadius = (int) Math.max(1, Math.min(3, Math.round(upFactor * 0.6)));
+        BufferedImage enhanced = StudioQuality.sharpen(up, 0.25f, 0.9f, 0.18f, fineRadius);
+        stages.add(new Stage("NITIDEZ", "local", ms(t2), BigDecimal.ZERO, true, false,
+                (localUp ? String.format(java.util.Locale.ROOT, "ampliação bicúbica progressiva %.1f× · ", upFactor) : "")
+                        + "contorno suavizado sem franja · nitidez só nas bordas · clarity 0,25 · vibração +18% · "
+                        + enhanced.getWidth() + "×" + enhanced.getHeight()));
 
-        // 2–4) com IA: fundo + luz + sombra de uma vez
+        // 2) manequim invisível: decote e aberturas
+        long tg = System.nanoTime();
+        List<String> ghostNotes = new ArrayList<>(clean.notes());
+        if (ghostFill) {
+            GhostMannequin.Result ghost = GhostMannequin.fill(enhanced, hint.kind());
+            enhanced = ghost.image();
+            ghostNotes.addAll(ghost.notes());
+        }
+        stages.add(new Stage("MANEQUIM_INVISIVEL", "local", ms(tg), BigDecimal.ZERO, ghostFill, false,
+                !ghostFill ? (GhostMannequin.neckGarment(hint.kind()) ? "sem manequim fantasma: a peça veste o manequim na Foto com meu manequim"
+                        + (clean.notes().isEmpty() ? "" : " · " + String.join(" · ", clean.notes())) : "não se aplica a este tipo de peça")
+                        : ghostNotes.isEmpty() ? (GhostMannequin.neckGarment(hint.kind()) ? "gola e mangas sem vazios a preencher" : "não se aplica a este tipo de peça")
+                        : String.join(" · ", ghostNotes)));
+
+        // 3) logo: da IA (quando veio) ou do detector local
+        long tl = System.nanoTime();
+        LogoFinder.Logo logo = logoBox != null ? new LogoFinder.Logo(logoBox, 0.85, hint.logoSource() == null ? "ia" : hint.logoSource())
+                : LogoFinder.detect(enhanced);
+        stages.add(new Stage("LOGO", logo == null ? "local" : logo.source(), ms(tl), BigDecimal.ZERO, true, false,
+                logo == null ? "nenhum logo identificado" : String.format(java.util.Locale.ROOT, "logo em (%.0f%%, %.0f%%) · confiança %.2f · foco aplicado",
+                        (logo.box()[0] + logo.box()[2]) * 50, (logo.box()[1] + logo.box()[3]) * 50, logo.confidence())));
+
+        // 4) volume e luz (+ nitidez extra no logo)
+        long t4 = System.nanoTime();
+        BufferedImage lit = relight(enhanced);
+        if (logo != null) {
+            lit = LogoFinder.focus(lit, logo.box());
+        }
+        stages.add(new Stage("VOLUME_LUZ", "local", ms(t4), BigDecimal.ZERO, true, false, "luz-chave 45° superior esquerda · preenchimento 0,88 · luz de borda"));
+
+        // 5) enquadramento: a peça inteira ocupando o quadro; lados cortados pela foto sangram
+        // corte confirmado pela borda da foto sangra; corte só deduzido pela forma (barra reta) fica rente, sem perder nada
+        Set<String> flush = new java.util.LinkedHashSet<>(bleed);
+        if (hint.truncated() != null) {
+            flush.removeAll(hint.truncated());
+        }
+        StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, true);
+        StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
+        stages.add(new Stage("ENQUADRAMENTO", "local", 0, BigDecimal.ZERO, true, false,
+                String.format(java.util.Locale.ROOT, "%s (%d×%d) · peça ocupa %.0f%% do quadro", frame.aspect(), frame.width(), frame.height(), frame.fill() * 100)
+                        + (bleed.isEmpty() ? " · peça inteira com margem mínima"
+                        : flush.containsAll(bleed) ? " · rente à borda em " + String.join(", ", sides(bleed)) + " (barra reta encostada no quadro, nada cortado)"
+                        : " · sangra em " + String.join(", ", sides(bleed)) + " (corte da foto fica fora do quadro)")));
+
+        // 6) fundo + luz + sombra: IA (Photoroom) no mesmo quadro, ou composição local
         BufferedImage finalShot = null;
-        BufferedImage lit = null;
         if (allowExternal) {
             for (StudioShotPort port : studios) {
                 if (!port.available()) {
@@ -135,12 +250,12 @@ public class StudioPipeline {
                 }
                 long t3 = System.nanoTime();
                 try {
-                    Optional<ProviderImage> res = port.studio(ImageOps.png(enhanced), bd.hex(), SIZE);
+                    Optional<ProviderImage> res = port.studio(ImageOps.png(padForProvider(lit, bleed)), bd.hex(), frame.width(), frame.height(), StudioFraming.SIDE);
                     if (res.isPresent()) {
                         finalShot = ImageOps.decode(res.get().bytes());
                         cost = cost.add(res.get().costUsd());
                         stages.add(new Stage("ESTUDIO_IA", res.get().provider(), ms(t3), res.get().costUsd(), true, false,
-                                "fundo " + bd.label() + " + reiluminação + sombra suave"));
+                                "fundo " + bd.label() + " + reiluminação + sombra suave, " + frame.aspect()));
                         break;
                     }
                 } catch (RuntimeException e) {
@@ -150,33 +265,97 @@ public class StudioPipeline {
                 fallback = true;
             }
         }
-        long t4 = System.nanoTime();
-        lit = relight(enhanced);
-        stages.add(new Stage("VOLUME_LUZ", "local", ms(t4), BigDecimal.ZERO, true, false, "luz-chave 45° superior esquerda · preenchimento 0,88 · luz de borda"));
         if (finalShot == null) {
             long t5 = System.nanoTime();
-            finalShot = compose(lit, bd);
+            finalShot = StudioFraming.compose(lit, bd, frame);
             stages.add(new Stage("FUNDO_ESTUDIO", "local", 0, BigDecimal.ZERO, true, !studios.isEmpty() && allowExternal,
                     bd.label() + " (" + bd.hex() + ") · gradiente radial + vinheta"));
-            stages.add(new Stage("SOMBRA", "local", 0, BigDecimal.ZERO, true, false, "projetada (desfoque 3× caixa) + contato"));
-            stages.add(new Stage("COMPOSICAO", "local", ms(t5), BigDecimal.ZERO, true, false, SIZE + "×" + SIZE + ", peça em 84%"));
+            stages.add(new Stage("SOMBRA", "local", 0, BigDecimal.ZERO, true, false, bleed.contains("bottom")
+                    ? "sem sombra no chão: a peça continua além da base do quadro" : "projetada (desfoque 3× caixa) + contato"));
+            stages.add(new Stage("COMPOSICAO", "local", ms(t5), BigDecimal.ZERO, true, false, frame.width() + "×" + frame.height() + " + miniatura " + THUMB + "×" + THUMB));
+        }
+        BufferedImage thumb = StudioFraming.compose(lit, bd, thumbFrame);
+        byte[] detail = null;
+        if (logo != null) {
+            long t7 = System.nanoTime();
+            detail = ImageOps.jpeg(LogoFinder.detail(lit, logo.box(), bd), 0.92f);
+            stages.add(new Stage("DETALHE", "local", ms(t7), BigDecimal.ZERO, true, false, "1200×1500 no logo · foco seletivo"));
         }
 
-        // 6) validação antes × depois
+        // 7) validação antes × depois
         long t6 = System.nanoTime();
-        double sharpAfter = sharpness(lit);
+        // nitidez medida na mesma escala da entrada (a variância do laplaciano cai quando a imagem só é ampliada)
+        double sharpAfter = sharpness(StudioFraming.downscale(lit, wBefore, hBefore));
         double contrastAfter = contrast(lit);
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("sharpnessBefore", round(sharpBefore));
         metrics.put("sharpnessAfter", round(sharpAfter));
         metrics.put("contrastBefore", round(contrastBefore));
         metrics.put("contrastAfter", round(contrastAfter));
+        metrics.put("noiseSigma", round(sigma));
         metrics.put("resolutionBefore", wBefore + "×" + hBefore);
         metrics.put("resolutionAfter", finalShot.getWidth() + "×" + finalShot.getHeight());
+        metrics.put("fillPercent", Math.round(frame.fill() * 100));
         metrics.put("backdrop", bd.id());
         stages.add(new Stage("VALIDACAO", "local", ms(t6), BigDecimal.ZERO, sharpAfter >= sharpBefore * 0.95, false,
                 String.format("nitidez %.0f → %.0f · contraste %.1f → %.1f", sharpBefore, sharpAfter, contrastBefore, contrastAfter)));
-        return new Result(ImageOps.jpeg(finalShot, 0.93f), ImageOps.png(lit), bd, stages, cost, fallback, metrics);
+        Map<String, Object> framing = new LinkedHashMap<>();
+        framing.put("aspect", frame.aspect());
+        framing.put("width", finalShot.getWidth());
+        framing.put("height", finalShot.getHeight());
+        framing.put("fill", Math.round(frame.fill() * 100) / 100.0);
+        framing.put("bleed", List.copyOf(bleed));
+        framing.put("flush", List.copyOf(flush));
+        Map<String, Object> logoInfo = null;
+        if (logo != null) {
+            logoInfo = new LinkedHashMap<>();
+            logoInfo.put("box", java.util.Arrays.stream(logo.box()).map(v -> Math.round(v * 1000) / 1000.0).boxed().toList());
+            logoInfo.put("confidence", Math.round(logo.confidence() * 100) / 100.0);
+            logoInfo.put("source", logo.source());
+        }
+        return new Result(ImageOps.jpeg(finalShot, 0.93f), ImageOps.jpeg(thumb, 0.88f), detail, ImageOps.png(lit), bd, stages,
+                cost, fallback, metrics, framing, logoInfo, ghostNotes);
+    }
+
+    /** Caixa do logo (relativa à peça original) levada para a peça depois da limpeza (que pode ter cortado o gancho). */
+    private static double[] reframe(double[] box, BufferedImage before, GhostMannequin.Result clean) {
+        if (box.length != 4) {
+            return null;
+        }
+        ImageOps.Box c = clean.crop();
+        if (c == null) {
+            return box.clone();
+        }
+        double bw = before.getWidth(), bh = before.getHeight();
+        double[] out = {(box[0] * bw - c.x()) / c.w(), (box[1] * bh - c.y()) / c.h(), (box[2] * bw - c.x()) / c.w(), (box[3] * bh - c.y()) / c.h()};
+        for (int i = 0; i < 4; i++) {
+            out[i] = Math.max(0, Math.min(1, out[i]));
+        }
+        return out[2] - out[0] < 0.01 || out[3] - out[1] < 0.01 ? null : out;
+    }
+
+    /** Para o provedor: margem transparente só nos lados inteiros (os cortados continuam encostando na borda). */
+    static BufferedImage padForProvider(BufferedImage lit, Set<String> bleed) {
+        int w = lit.getWidth(), h = lit.getHeight(), m = (int) Math.round(Math.max(w, h) * 0.06);
+        int l = bleed.contains("left") ? 0 : m, r = bleed.contains("right") ? 0 : m, t = bleed.contains("top") ? 0 : m, b = bleed.contains("bottom") ? 0 : m;
+        BufferedImage out = new BufferedImage(w + l + r, h + t + b, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = out.createGraphics();
+        g.drawImage(lit, l, t, null);
+        g.dispose();
+        return out;
+    }
+
+    private static List<String> sides(Set<String> bleed) {
+        List<String> out = new ArrayList<>();
+        for (String s : bleed) {
+            out.add(switch (s) {
+                case "top" -> "cima";
+                case "bottom" -> "baixo";
+                case "left" -> "esquerda";
+                default -> "direita";
+            });
+        }
+        return out;
     }
 
     // ================================================================== escolhas
@@ -225,40 +404,6 @@ public class StudioPipeline {
             cur = ImageOps.scale(cur, (int) Math.round(cur.getWidth() * f), (int) Math.round(cur.getHeight() * f));
         }
         return cur;
-    }
-
-    static BufferedImage enhance(BufferedImage src) {
-        int w = src.getWidth(), h = src.getHeight();
-        int[] px = src.getRGB(0, 0, w, h, null, 0, w);
-        float[] y = new float[w * h];
-        for (int i = 0; i < px.length; i++) {
-            int p = px[i];
-            y[i] = 0.299f * ((p >> 16) & 255) + 0.587f * ((p >> 8) & 255) + 0.114f * (p & 255);
-        }
-        float[] wide = boxBlur(y, w, h, Math.max(4, Math.max(w, h) / 70), 3);   // contraste local
-        float[] fine = boxBlur(y, w, h, 1, 2);                                    // nitidez fina
-        int[] out = new int[px.length];
-        for (int i = 0; i < px.length; i++) {
-            int p = px[i];
-            int a = p >>> 24;
-            if (a == 0) {
-                out[i] = 0;
-                continue;
-            }
-            float delta = 0.35f * (y[i] - wide[i]) + 0.6f * (y[i] - fine[i]);
-            float r = ((p >> 16) & 255) + delta, g = ((p >> 8) & 255) + delta, b = (p & 255) + delta;
-            // vibração: realça mais o que é pouco saturado, sem estourar o que já é vivo
-            float mean = (r + g + b) / 3f, mx = Math.max(r, Math.max(g, b)), mn = Math.min(r, Math.min(g, b));
-            float sat = mx <= 0 ? 0 : (mx - mn) / Math.max(1f, mx);
-            float k = 1f + 0.18f * (1f - Math.min(1f, sat));
-            r = mean + (r - mean) * k;
-            g = mean + (g - mean) * k;
-            b = mean + (b - mean) * k;
-            out[i] = (a << 24) | (clamp(soft(r)) << 16) | (clamp(soft(g)) << 8) | clamp(soft(b));
-        }
-        BufferedImage res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        res.setRGB(0, 0, w, h, out, 0, w);
-        return res;
     }
 
     // ================================================================== 2) volume e luz
@@ -336,89 +481,6 @@ public class StudioPipeline {
         }
         BufferedImage res = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         res.setRGB(0, 0, w, h, out, 0, w);
-        return res;
-    }
-
-    // ================================================================== 3–5) fundo, sombra e composição
-
-    static BufferedImage compose(BufferedImage piece, Backdrop bd) {
-        int n = SIZE;
-        double fit = Math.min(n * 0.84 / piece.getHeight(), n * 0.86 / piece.getWidth());
-        int pw = (int) Math.round(piece.getWidth() * fit), ph = (int) Math.round(piece.getHeight() * fit);
-        BufferedImage scaled = ImageOps.scale(piece, pw, ph);
-        int ox = (n - pw) / 2, oy = (int) Math.round(n * 0.52 - ph / 2.0);
-        int[] bg = new int[n * n];
-        int cr = (bd.center() >> 16) & 255, cg = (bd.center() >> 8) & 255, cb = bd.center() & 255;
-        int er = (bd.edge() >> 16) & 255, eg = (bd.edge() >> 8) & 255, eb = bd.edge() & 255;
-        for (int y = 0; y < n; y++) {
-            for (int x = 0; x < n; x++) {
-                double dx = (x - n * 0.5) / (n * 0.78), dy = (y - n * 0.40) / (n * 0.78);
-                double t = Math.min(1, Math.sqrt(dx * dx + dy * dy));
-                t = t * t * (3 - 2 * t);                                  // smoothstep
-                double floor = y > n * 0.80 ? 0.06 * (y - n * 0.80) / (n * 0.20) : 0;   // piso levemente mais escuro
-                double m = Math.min(1, t + floor);
-                bg[y * n + x] = 0xFF000000 | (lerp(cr, er, m) << 16) | (lerp(cg, eg, m) << 8) | lerp(cb, eb, m);
-            }
-        }
-        // sombra projetada: alfa da peça desfocado, deslocado para baixo/direita
-        int s = 4, sn = n / s;
-        float[] alpha = new float[sn * sn];
-        int[] sp = scaled.getRGB(0, 0, pw, ph, null, 0, pw);
-        for (int y = 0; y < ph; y += s) {
-            for (int x = 0; x < pw; x += s) {
-                int ax = (ox + x) / s + 3, ay = (oy + y) / s + 5;             // +12 px, +20 px
-                if (ax >= 0 && ay >= 0 && ax < sn && ay < sn) {
-                    alpha[ay * sn + ax] = Math.max(alpha[ay * sn + ax], (sp[y * pw + x] >>> 24) / 255f);
-                }
-            }
-        }
-        alpha = boxBlur(alpha, sn, sn, 7, 3);
-        // sombra de contato: elipse achatada na base da peça
-        float[] contact = new float[sn * sn];
-        double ccx = (ox + pw / 2.0) / s, ccy = (oy + ph) / s - 2, rx = pw * 0.40 / s, ry = Math.max(3, n * 0.012 / s);
-        for (int y = 0; y < sn; y++) {
-            for (int x = 0; x < sn; x++) {
-                double ex = (x - ccx) / rx, ey = (y - ccy) / ry;
-                double v = 1 - (ex * ex + ey * ey);
-                contact[y * sn + x] = (float) Math.max(0, v);
-            }
-        }
-        contact = boxBlur(contact, sn, sn, 4, 3);
-        int shr = (bd.shadow() >> 16) & 255, shg = (bd.shadow() >> 8) & 255, shb = bd.shadow() & 255;
-        int[] out = bg;
-        for (int y = 0; y < n; y++) {
-            for (int x = 0; x < n; x++) {
-                float sa = 0.42f * bilinear(alpha, sn, sn, (x + 0.5f) / s - 0.5f, (y + 0.5f) / s - 0.5f)
-                        + 0.35f * bilinear(contact, sn, sn, (x + 0.5f) / s - 0.5f, (y + 0.5f) / s - 0.5f);
-                sa = Math.min(0.62f, sa);
-                if (sa > 0.002f) {
-                    int p = out[y * n + x];
-                    out[y * n + x] = 0xFF000000 | (lerp((p >> 16) & 255, shr, sa) << 16) | (lerp((p >> 8) & 255, shg, sa) << 8) | lerp(p & 255, shb, sa);
-                }
-            }
-        }
-        for (int y = 0; y < ph; y++) {
-            int cy = oy + y;
-            if (cy < 0 || cy >= n) {
-                continue;
-            }
-            for (int x = 0; x < pw; x++) {
-                int cx = ox + x;
-                if (cx < 0 || cx >= n) {
-                    continue;
-                }
-                int p = sp[y * pw + x];
-                float a = (p >>> 24) / 255f;
-                if (a <= 0) {
-                    continue;
-                }
-                int q = out[cy * n + cx];
-                out[cy * n + cx] = 0xFF000000 | (lerp((q >> 16) & 255, (p >> 16) & 255, a) << 16)
-                        | (lerp((q >> 8) & 255, (p >> 8) & 255, a) << 8) | lerp(q & 255, p & 255, a);
-            }
-        }
-        BufferedImage res = new BufferedImage(n, n, BufferedImage.TYPE_INT_RGB);
-        res.setRGB(0, 0, n, n, out, 0, n);
         return res;
     }
 

@@ -58,6 +58,31 @@ Lay continuam guardados. API: `GET /api/studio/backdrops`, `POST /api/pieces/ana
 `POST /api/pieces/{id}/studio?backdrop=`, `POST /api/me/pieces/studio`. A migração V14 cria `studio_image_url` e
 `studio_backdrop` e adiciona índices de `pipeline_jobs` por tipo e estado.
 
+### Estúdio v2: enquadramento, manequim invisível e foco no logo
+
+Folhas: [`estudio_v2_entradas_e_saidas.jpg`](../telas-rf16-estudio/estudio_v2_entradas_e_saidas.jpg),
+[`estudio_v2_detalhe_vs_referencia.jpg`](../telas-rf16-estudio/estudio_v2_detalhe_vs_referencia.jpg),
+[`estudio_v2_telas.jpg`](../telas-rf16-estudio/estudio_v2_telas.jpg) e
+[`estudio_v2_tela_cheia.jpg`](../telas-rf16-estudio/estudio_v2_tela_cheia.jpg).
+
+| Pedido | Como está resolvido |
+|---|---|
+| Qualidade de imagem | **A fonte é o recorte em alta**, não o Flat Lay de 1024 px: a máscara do recorte é aplicada à foto original, com até 2400 px (`FlatLayPipeline.hiResCutout`). O arquivo fica guardado (`studio_source_url`) para refazer o estúdio depois. Em seguida, `StudioQuality` faz o acabamento. **Ruído**: é medido (Immerkær) e, quando existe, um filtro bilateral tira o grão sem amolecer costuras. **Contorno**: o alfa é suavizado e recortado de novo, o que tira os degraus da ampliação, e as bordas recebem a cor de dentro da peça (some a franja da parede). **Nitidez com limiar**: só onde há borda de verdade, com raio proporcional à ampliação. |
+| Peça inteira ocupando a tela | `StudioFraming`: margens de 4–6,5% e quadro escolhido pela peça (9:16, 2:3, 4:5, 1:1 ou 5:4). O 9:16 é a tela inteira do celular, para vestidos e calças. A miniatura dos cards é sempre quadrada. Na página e na prévia, a foto aparece no formato dela, sem faixas. A **tela cheia** desenha atrás da foto o mesmo degradê radial do estúdio, alinhado à foto, e o fundo continua sem emenda. |
+| Sem vazio em mangas e barra cortadas | O Flat Lay registra os lados em que a peça encosta na borda da foto (`truncated_sides`). Esses lados **sangram**: passam da borda do quadro, sem sombra no chão, e na tela cheia a foto encosta naquele lado da tela. Um corte reto também é detectado pela forma, mesmo inclinado até 6°, e a peça é **nivelada** pelo corte (celular torto). Uma barra reta que a foto não cortou fica **rente** à borda, sem perder nenhum pixel. Um corte lateral só vale no mesmo ângulo da câmera, então a lateral reta de uma manga não conta. |
+| Pescoço e gola sem vazio (sem manequim) | `GhostMannequin`, só para peças com gola (parte de cima, casaco, peça inteira). **Cabide**: o gancho é removido, inclusive a haste dentro do decote. **Manequim**: é removido quando uma coluna central sobe acima dos ombros com cor de manequim diferente do corpo e superfície lisa; gola alta e capuz, com a mesma malha, ficam. **Decote aberto**: entre as pontas da gola entra o interior das costas, feito da cor da própria peça mais escura, com a borda da gola de trás e a trama espelhada. **Abertura fechada da gola**: o mesmo preenchimento. **Furinhos do recorte**: são reparados. O espaço legítimo entre manga e corpo continua vazio, e tecidos vazados (renda) são preservados. |
+| Foco no logo | O Piece Analyzer (IA de visão) passa a devolver a caixa do logo, convertida para coordenadas da peça. Sem IA, `LogoFinder` procura uma mancha compacta com cor bem diferente do tecido em volta e descarta zíper, costuras, blocos de cor e bordas. Com logo, o logo ganha nitidez extra na foto principal e é gerada a **foto de detalhe** 1200×1500, centrada nele, com foco seletivo (o resto desfoca aos poucos). Ela aparece como aba "Detalhe do logo" e na tela cheia (V15: `studio_detail_url`). |
+
+O Photoroom também recebe o quadro escolhido, margem pequena e
+`ignorePaddingAndSnapOnCroppedSides=true`: a peça encosta nos lados cortados. Nos lados inteiros, o PNG enviado leva margem
+transparente, para o provedor não confundir recorte com corte.
+
+Limites desta versão:
+- **Manequim ou pessoa da mesma cor da peça** (camiseta cinza-clara num manequim branco, ΔE ≈ 6) não é removido. O critério é conservador para não apagar golas altas. Um manequim preto, de pele ou de madeira sai. Quando a remoção de fundo já apagou o manequim, pode sobrar uma faixa escura atrás da gola.
+- **Peça vestida por uma pessoa** exige segmentação de roupa por IA (a de fundo não separa corpo e roupa).
+- O detector local de logo acha estampas e etiquetas contrastantes, mas não logos tom sobre tom. A jaqueta de referência não tem logo claro, e o detector local não inventou um (a primeira versão marcava uma junção de costuras e foi corrigida).
+- O detalhe depende da resolução da foto: numa foto de celular de 12 MP, o estúdio trabalha com até 2400 px.
+
 ### Autocrítica do recorte local
 
 Sem remoção de fundo por IA (rembg/remove.bg), o recorte local (k-means dos tons da borda + crescimento com barreira de
@@ -75,11 +100,13 @@ jaqueta com mangas o eixo da PCA é ruído, e antes ela saía inclinada.
 
 - O estúdio local chega a uma foto de produto limpa: fundo de estúdio, luz, sombra, nitidez e 1600 px. A referência enviada, porém, tem volume de manequim invisível e luz real de estúdio. Esse nível pede um provedor generativo (**Photoroom** com AI lighting/shadow) e remoção de fundo por IA. Os dois estão integrados e entram só com a chave configurada.
 - Não houve teste contra os provedores reais (Meshy, Stability, Photoroom), porque este ambiente de desenvolvimento bloqueia a saída de rede para eles. Os adaptadores seguem a documentação pública de cada API. Tudo o que está nas telas saiu do caminho local.
-- As "fotos de celular" da folha comparativa foram **simuladas** a partir da imagem de referência (reduzida, com ruído, parede cinza ou bege), porque não havia foto real de celular da peça.
+- As "fotos de celular" das folhas foram **simuladas**. As da jaqueta vieram da imagem de referência (máscara limpa, parede cinza, ruído e JPEG), e as camisetas foram desenhadas com logo, cabide e manequim. Não havia foto real de celular dessas peças.
 
 ## Verificação
 
-- `StudioAndReliefTest` (6 testes): estúdio 1600² no royal, recorte creme sobre bege, autocrítica do recorte (peça partida × par de sapatos), escolha automática de fundo, deskew só com eixo dominante e GLB válido (cabeçalho, JSON e buffers).
+- `StudioAndReliefTest` (6 testes): estúdio no royal com quadro adaptado e miniatura quadrada, recorte creme sobre bege, autocrítica do recorte (peça partida × par de sapatos), escolha automática de fundo, deskew só com eixo dominante e GLB válido (cabeçalho, JSON e buffers).
+- `StudioFramingGhostLogoTest` (5 testes): decote preenchido com o interior da peça (e o vão entre manga e corpo continua vazio), gancho e manequim removidos com gola alta preservada, sangria × rente × quadro retrato, corte inclinado com ângulo, e logo estampado encontrado com foto de detalhe (camiseta lisa não ganha logo inventado).
 - `Model3dServiceTest` (2 testes): enfileirado → concluído com GLB, pedido repetido sem duplicar, falha legível, reprocessamento grátis só uma vez e fora da cota.
 - Teste de ponta a ponta pela API: rascunho com estúdio, recorte incerto (422 legível e depois `force`), cadastro, miniatura, troca de fundo, job 3D concluído com `glTF` válido, notificação e falha seguida de reprocessamento grátis.
-- Suíte do backend: 60 testes, 0 falhas. Frontend: `tsc` e `next build` sem erros. As capturas não registraram nenhum erro de console ou HTTP.
+- Ponta a ponta do estúdio v2 pela API: a jaqueta cortada pela foto sai em 5:4 sangrando na base; a camiseta no cabide sai em 1:1 com o gancho removido, o decote preenchido, o logo encontrado e a foto de detalhe; a fonte em alta fica guardada e é reutilizada ao refazer com outro fundo; miniatura e detalhe são servidos (200).
+- Suíte do backend: 65 testes, 0 falhas. Frontend: `tsc` e `next build` sem erros. As capturas não registraram nenhum erro de console ou HTTP.

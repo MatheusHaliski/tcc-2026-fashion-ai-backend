@@ -49,4 +49,12 @@ public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID
     int touchView(@Param("id") UUID id, @Param("inc") long inc, @Param("now") Instant now);
 
     List<WardrobeItem> findByBrandId(UUID brandId);
+
+    /** Header do perfil (estilo Instagram): peças no guarda-roupa, sem as arquivadas. */
+    long countByUserIdAndAvailabilityStatusNot(UUID userId, AvailabilityStatus status);
+
+    /** RF4 · Estúdio da imagem padrão: reaproveita a foto de estúdio já gerada para o mesmo arquivo de /public/assets_pecas. */
+    Optional<WardrobeItem> findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(String imageUrl);
+
+    List<WardrobeItem> findTop20ByDefaultImageTrueAndStudioImageUrlIsNull();
 }

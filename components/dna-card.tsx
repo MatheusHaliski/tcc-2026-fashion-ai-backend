@@ -1,4 +1,5 @@
 "use client";
+import { Generate3DButton } from "@/components/generate-3d";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { mediaUrl } from "@/lib/api/client";
@@ -129,7 +130,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
       </div>
       </div>
       <div className="c-foot">
-        <span className="metrics tabular"><span title="curtidas">♥ {dna.counters?.likes ?? 0}</span>{dna.id ? <CommentButton type="DNA_SCHEME" id={dna.id} count={dna.counters?.comments} title={dna.title} /> : <span>💬 0</span>}<span title="remixes">↻ {dna.counters?.remixes ?? 0}</span><span title="compartilhamentos">⤴ {dna.counters?.shares ?? 0}</span></span>
+        <span className="metrics tabular"><span title="curtidas">♥ {dna.counters?.likes ?? 0}</span>{dna.id ? <CommentButton type="DNA_SCHEME" id={dna.id} count={dna.counters?.comments} title={dna.title} /> : <span>💬 0</span>}<span title="remixes">↻ {dna.counters?.remixes ?? 0}</span><span title="compartilhamentos">⤴ {dna.counters?.shares ?? 0}</span><Generate3DButton targets={cells.map((c) => ({ kind: "scheme" as const, id: c.schemeId, title: c.title }))} /></span>
         <span className="truncate">{dna.archetypeLabel ?? ""}{dna.boldnessIndex != null ? ` · ousadia ${dna.boldnessIndex}` : ""}</span>
       </div>
       {extra && <div className="c-extra">{extra}</div>}
@@ -259,13 +260,16 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
 /** B12 · LEGO — o DNA em blocos de encaixe sobre placa-base; só as fotos continuam fotos. */
 function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSProperties; fmtEra: (d?: string | null) => string }) {
   const occasion = (dna.occasion ?? "").split(",").map((s) => s.trim()).filter(Boolean); const style = (dna.style ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const [round, setRound] = useState(0);
+  let k = 0; const drop = () => ({ animationDelay: `${(k++) * 60}ms` });   // cai de cima para baixo, 60 ms entre blocos
   return (
-    <div className="dna-plate">
-      <div className="brick hero-brick" style={{ ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag="foto original" /></div>
-      <div className="brick title-brick" style={{ ["--brick" as string]: "#F4F4F4" }}><b>{dna.title}</b><span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</span></div>
-      {dna.cells.map((c) => { const col = brickColor(c.dominantColor); return <div key={c.schemeId} className="brick cell-brick" style={{ ["--brick" as string]: col, color: inkOn(col) }}><Thumb c={c} /><span className="plate-label">{c.title} · {era(c, fmtEra)}</span></div>; })}
-      <div className="brick logo-brick" style={{ ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label"><BrandLogo name={l.brand} src={l.logoUrl} size={16} className="mr-1" />{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>
-      <div className="brick phrase-brick" style={{ ["--brick" as string]: "#1B2A34", color: "#fff" }}><span className="k">Frase de identidade</span>“{dna.identityPhrase ?? "—"}”</div>
+    <div className="dna-plate" key={round}>
+      <div className="brick brick-drop hero-brick" style={{ ...drop(), ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag="foto original" /></div>
+      <div className="brick brick-drop title-brick" style={{ ...drop(), ["--brick" as string]: "#F4F4F4" }}><b>{dna.title}</b><span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</span></div>
+      {dna.cells.map((c) => { const col = brickColor(c.dominantColor); return <div key={c.schemeId} className="brick brick-drop cell-brick" style={{ ...drop(), ["--brick" as string]: col, color: inkOn(col) }}><Thumb c={c} /><span className="plate-label">{c.title} · {era(c, fmtEra)}</span></div>; })}
+      <div className="brick brick-drop logo-brick" style={{ ...drop(), ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label"><BrandLogo name={l.brand} src={l.logoUrl} size={16} className="mr-1" />{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>
+      <div className="brick brick-drop phrase-brick" style={{ ...drop(), ["--brick" as string]: "#1B2A34", color: "#fff" }}><span className="k">Frase de identidade</span>“{dna.identityPhrase ?? "—"}”</div>
+      <button type="button" className="brick-replay" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRound((r) => r + 1); }}>▸ montar de novo</button>
     </div>
   );
 }

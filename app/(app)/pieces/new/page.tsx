@@ -10,11 +10,11 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, PageHeader, useToast } from "@/components/ui";
 import { EMPTY_PIECE, PieceForm, toPayload, type PieceFormValue } from "@/components/piece-form";
 import { FaiIcon } from "@/components/fai-icon";
-import { BackdropChips, StudioReport, type StudioInfo } from "@/components/studio";
+import { BackdropChips, StudioLightbox, StudioReport, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 
 interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; overall?: number; manualFillRequired?: boolean; warning?: string }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
-type Preview = "studio" | "flat" | "original";
-const PREVIEW_LABEL: Record<Preview, string> = { studio: "Estúdio", flat: "Flat Lay", original: "Original" };
+type Preview = "studio" | "detail" | "flat" | "original";
+const PREVIEW_LABEL: Record<Preview, string> = { studio: "Estúdio", detail: "Detalhe do logo", flat: "Flat Lay", original: "Original" };
 
 function NewPiece() {
   const { t } = useI18n(); const router = useRouter(); const toast = useToast(); const fileRef = useRef<HTMLInputElement>(null);
@@ -22,6 +22,7 @@ function NewPiece() {
   const [value, setValue] = useState<PieceFormValue>(EMPTY_PIECE);
   const [batch, setBatch] = useState<{ file: File; draft?: Draft }[]>([]);
   const [mode, setMode] = useState<Preview>("studio"); const [studioBusy, setStudioBusy] = useState(false);
+  const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const analyze = useAction(async (file: File) => { const fd = new FormData(); fd.append("file", file); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const create = useAction(async () => api.post<PieceView>("/api/pieces", toPayload(value)));
 
@@ -59,17 +60,20 @@ function NewPiece() {
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); router.push("/closet");
     } catch (e) { toast.fromError(e); }
   }
-  const modes = draft ? ([draft.studio ? "studio" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
+  const modes = draft ? ([draft.studio ? "studio" : null, draft.studio?.detailUrl ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
   const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
-  const imgSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
+  const isStudio = !!draft?.studio && (shown === "studio" || shown === "detail");
+  const edge = backdropEdge(backdrops, draft?.studio?.backdrop);
+  const imgSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "detail" ? draft.studio?.detailUrl : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
+  const gallery = draft?.studio ? [{ src: mediaUrl(draft.studio.url)!, alt: "Prévia — Estúdio", anchor: sangria(draft.studio.framing) }, ...(draft.studio.detailUrl ? [{ src: mediaUrl(draft.studio.detailUrl)!, alt: "Prévia — Detalhe do logo", cover: true }] : [])] : [];
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF4" lead="Envie uma foto: removemos o fundo, padronizamos o flat lay e a IA pré-preenche os campos (você sempre confere antes de salvar)." />
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <Card>
-          <div className="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-md border border-dashed border-line-soft bg-surface-2"
+          <div className={`mb-3 flex ${isStudio ? "" : "aspect-square"} items-center justify-center overflow-hidden rounded-md border border-dashed border-line-soft bg-surface-2`}
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}>
-            {imgSrc ? <img src={imgSrc} alt={draft ? `prévia: ${PREVIEW_LABEL[shown]}` : ""} className={`h-full w-full ${shown === "studio" && draft?.studio ? "object-cover" : "object-contain"}`} /> : <button type="button" className="p-6 text-center type-body text-muted" onClick={() => fileRef.current?.click()}><FaiIcon id="ACT-07" size={48} decorative /><br />{t("piece.dropHere")}<br /><span className="type-caption">{t("piece.maxFiles")}</span></button>}
+            {imgSrc ? <img src={imgSrc} alt={draft ? `prévia: ${PREVIEW_LABEL[shown]}` : ""} className={isStudio ? "block h-auto w-full cursor-zoom-in" : "h-full w-full object-contain"} onClick={isStudio ? () => setFullscreen(shown === "detail" ? 1 : 0) : undefined} /> : <button type="button" className="p-6 text-center type-body text-muted" onClick={() => fileRef.current?.click()}><FaiIcon id="ACT-07" size={48} decorative /><br />{t("piece.dropHere")}<br /><span className="type-caption">{t("piece.maxFiles")}</span></button>}
           </div>
           <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => onFiles(e.target.files)} aria-label={t("piece.analyze")} />
           <div className="flex flex-col gap-2">
@@ -123,6 +127,7 @@ function NewPiece() {
         </Card>
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
+      {fullscreen !== null && gallery.length > 0 && <StudioLightbox images={gallery} edge={edge} center={backdropCenter(backdrops, draft?.studio?.backdrop)} start={Math.min(fullscreen, gallery.length - 1)} onClose={() => setFullscreen(null)} />}
     </>
   );
 }

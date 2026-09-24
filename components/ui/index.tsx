@@ -129,7 +129,7 @@ export function Pagination({ page, hasMore, onPage, total, size }: { page: numbe
 }
 
 /* ---------- Dialog ---------- */
-export function Dialog({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode }) {
+export function Dialog({ open, onClose, title, children, footer, size }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -142,7 +142,7 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   if (!open) return null;
   return (
     <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="dialog">
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`dialog ${size ? `dialog-${size}` : ""}`}>
         <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
           <h2 className="type-h3">{title}</h2>
           <button type="button" className="btn btn-ghost btn-icon" aria-label="fechar" onClick={onClose}>✕</button>

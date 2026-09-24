@@ -156,7 +156,8 @@ public class WardrobeService {
     // ================================================================== RF4 — análise da foto (rascunho)
     public record Prefill(String name, String category, String subcategory, String color, String material, String brand,
                           String sex, List<String> occasion, List<String> style, List<String> seals,
-                          Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning) {
+                          Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning,
+                          Map<String, Object> logo) {
     }
 
     public record Draft(UUID draftId, String processedUrl, String flatLayUrl, String thumbnailUrl, String originalUrl,
@@ -213,8 +214,6 @@ public class WardrobeService {
         MediaStoragePort.StoredObject processed = media.put(base + "processed.png", r.processedPng(), "image/png");
         MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg", r.processedWhiteJpeg(), "image/jpeg");
         MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png", r.thumbnailPng(), "image/png");
-        // RF4 · Estúdio: com o recorte pronto, gera a foto de produto (vitrine) — nunca trava o cadastro (RNF8)
-        Map<String, Object> studioInfo = r.backgroundRemoved() ? studioShot(user.id(), ImageOps.decode(r.processedPng()), "auto", base) : null;
 
         // Moderação (#2) — nunca aprova por omissão.
         ImageOps.Cutout cutout = r.cutout();
@@ -232,7 +231,21 @@ public class WardrobeService {
                 List.of(new AiRequest.AiImage(ImageOps.png(ImageOps.scaleToFit(ImageOps.composeCentered(
                         ImageOps.crop(cutout.image(), ImageOps.alphaBounds(cutout.image())), 768, 0.06, java.awt.Color.WHITE, false), 768, 768)), "image/png")),
                 600, List.of("foto padronizada da peça", "vocabulário da taxonomia v3.7"), this::parseAnalysis, () -> localGuess, null));
-        Prefill prefill = prefill(analysis.value());
+        // logo apontado pela IA: caixa da imagem enviada (0–1000) → caixa relativa à peça (a mesma em qualquer escala)
+        ImageOps.Box cutBox = ImageOps.alphaBounds(cutout.image());
+        double[] logoRel = logoRelative(analysis.value() == null ? null : analysis.value().logoBox(), cutBox.w(), cutBox.h());
+        Map<String, Object> logo = logoRel == null ? null : Map.of("box", java.util.Arrays.stream(logoRel).boxed().toList(), "source", "ia");
+        Prefill prefill = prefill(analysis.value(), logo);
+
+        // RF4 · Estúdio: foto de produto a partir da fonte em alta resolução, com o tipo da peça (manequim invisível),
+        // os lados que a foto cortou (sangria) e o logo (foco) — nunca trava o cadastro (RNF8)
+        String studioSourceUrl = null;
+        Map<String, Object> studioInfo = null;
+        if (r.backgroundRemoved()) {
+            studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
+            studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
+                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia"));
+        }
 
         Map<String, Object> quality = new LinkedHashMap<>();
         quality.put("metrics", r.quality().metrics());
@@ -271,6 +284,9 @@ public class WardrobeService {
         if (studioInfo != null) {
             result.put("studio", studioInfo);
         }
+        if (studioSourceUrl != null) {
+            result.put("studioSourceUrl", studioSourceUrl);
+        }
         job.setResultJson(Json.write(result));
         job.setStagesJson(Json.write(r.stages()));
         job.setQualityScore(BigDecimal.valueOf(r.quality().overall()));
@@ -308,7 +324,9 @@ public class WardrobeService {
              "material": one of [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
              "brand": string ou null (só se o logotipo for legível), "sex": one of [MASCULINO, FEMININO, UNISSEX],
              "occasion": até 2 códigos, "style": até 2 códigos,
-             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1}}
+             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1},
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (logotipo, etiqueta de marca ou estampa de marca na
+                     peça; caixa em 0–1000 relativa à imagem inteira) ou null se não houver}
             Nunca descreva pessoas. Se não houver peça de roupa, devolva confidence 0 em tudo.""";
 
     static final String MODERATION_SYSTEM = """
@@ -340,10 +358,23 @@ public class WardrobeService {
             cm.forEach((k, v) -> conf.put(String.valueOf(k), v instanceof Number n ? n.doubleValue() : 0.0));
         }
         double overall = conf.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.5);
-        LocalVision.PieceGuess g = new LocalVision.PieceGuess(category, sub, color, material, str(m.get("brand")), sex, conf,
-                Math.round(overall * 100) / 100.0, List.of());
-        return new LocalVision.PieceGuess(g.category(), g.subcategory(), g.color(), g.material(), g.brand(), g.sex(),
-                g.confidence(), g.overall(), List.of());
+        return new LocalVision.PieceGuess(category, sub, color, material, str(m.get("brand")), sex, conf,
+                Math.round(overall * 100) / 100.0, List.of(), logoBox(m.get("logo")));
+    }
+
+    /** Caixa do logo devolvida pela IA (0–1000), validada: 4 números em ordem, com área mínima. */
+    static double[] logoBox(Object logo) {
+        if (!(logo instanceof Map<?, ?> lm) || Boolean.FALSE.equals(lm.get("visible")) || !(lm.get("box") instanceof List<?> b) || b.size() != 4) {
+            return null;
+        }
+        double[] v = new double[4];
+        for (int i = 0; i < 4; i++) {
+            if (!(b.get(i) instanceof Number n)) {
+                return null;
+            }
+            v[i] = Math.max(0, Math.min(1000, n.doubleValue()));
+        }
+        return v[2] - v[0] >= 8 && v[3] - v[1] >= 8 ? v : null;
     }
 
     LocalVision.ModerationVerdict parseModeration(String text) {
@@ -367,7 +398,7 @@ public class WardrobeService {
                 List.of("peça de roupa, sem violação"), conf < 0.6);
     }
 
-    private Prefill prefill(LocalVision.PieceGuess g) {
+    private Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo) {
         Map<String, Double> c = g.confidence() == null ? Map.of() : g.confidence();
         boolean manual = g.overall() < LocalVision.PREFILL_CONFIDENCE;
         String category = keep(g.category(), c.get("category"));
@@ -378,7 +409,7 @@ public class WardrobeService {
         String name = sub == null ? null : humanize(sub) + (color == null ? "" : " " + humanize(color));
         return new Prefill(manual ? null : name, manual ? null : category, manual ? null : sub, color, manual ? null : material,
                 brand, manual ? null : g.sex(), List.of(), List.of(), List.of(), c, g.overall(), manual,
-                manual ? "A IA não reconheceu a peça com confiança suficiente. Preencha os campos manualmente." : null);
+                manual ? "A IA não reconheceu a peça com confiança suficiente. Preencha os campos manualmente." : null, logo);
     }
 
     private static String keep(String value, Double confidence) {
@@ -425,6 +456,7 @@ public class WardrobeService {
             w.setModerationStatus(ModerationStatus.APPROVED);
             w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
             pieces.save(w);
+            defaultStudio(w);                       // a imagem padrão também sai de estúdio: quadro cheio, foco no logo FAI
         } else {
             Map<String, Object> r = Json.map(draft.getResultJson());
             Map<?, ?> mod = (Map<?, ?>) r.getOrDefault("moderation", Map.of());
@@ -443,6 +475,7 @@ public class WardrobeService {
             if (r.get("studio") instanceof Map<?, ?> st && st.get("url") != null && !Boolean.FALSE.equals(form.studio())) {
                 w.setStudioImageUrl(String.valueOf(st.get("url")));
                 w.setStudioBackdrop(st.get("backdrop") == null ? null : String.valueOf(st.get("backdrop")));
+                w.setStudioDetailUrl(st.get("detailUrl") == null ? null : String.valueOf(st.get("detailUrl")));
             }
             w.setDefaultImage(false);
             w.setImageHash((String) r.get("hash"));
@@ -458,6 +491,16 @@ public class WardrobeService {
             // RF34 §5 — guarda a detecção da IA (valores + confiança) para o antifraude da Catalogação.
             if (r.get("prefill") instanceof Map<?, ?> pf) {
                 flatMeta.put("detected", pf);
+            }
+            if (r.get("studioSourceUrl") != null) {
+                flatMeta.put("studio_source_url", r.get("studioSourceUrl"));        // refazer o estúdio em alta depois
+            }
+            if (r.get("studio") instanceof Map<?, ?> st && !Boolean.FALSE.equals(form.studio())) {
+                Map<String, Object> summary = new LinkedHashMap<>();
+                summary.put("framing", st.get("framing"));
+                summary.put("logo", st.get("logo"));
+                summary.put("metrics", st.get("metrics"));
+                flatMeta.put("studio", summary);
             }
             w.setFlatLayMetadataJson(Json.write(flatMeta));
             w.setProcessingJobId(draft.getId());
@@ -839,11 +882,13 @@ public class WardrobeService {
         w.setDefaultImage(false);
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
         // a foto de estúdio acompanha a imagem nova (recorte com transparência) ou sai (foto opaca não vai ao estúdio)
+        Map<String, Object> editedMeta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        editedMeta.remove("studio_source_url");                                  // a fonte agora é a imagem editada
+        w.setFlatLayMetadataJson(Json.write(editedMeta));
         if (hasTransparency(img)) {
-            refreshStudio(w, img, false);
+            refreshStudio(w, img, false, false);
         } else {
-            w.setStudioImageUrl(null);
-            w.setStudioBackdrop(null);
+            applyStudio(w, null);
         }
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "image"));
         return Views.piece(w, viewerState(user, w), null);
@@ -869,7 +914,8 @@ public class WardrobeService {
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
         w.setFlatLayMetadataJson(Json.write(r.metadata()));
         w.setPhotoQualityScoresJson(Json.write(Map.of("overall", r.quality().overall(), "metrics", r.quality().metrics())));
-        refreshStudio(w, ImageOps.decode(r.processedPng()), false);
+        w.setFlatLayMetadataJson(Json.write(withStudioSource(w, r, base)));
+        refreshStudio(w, r.studioSource(), false, true);
         return Map.of("ok", true, "imageUrl", processed.url(), "thumbnailUrl", thumb.url(), "stages", r.stages());
     }
 
@@ -902,7 +948,8 @@ public class WardrobeService {
                     w.setThumbnailUrl(media.put(base + "-thumb.png", r.thumbnailPng(), "image/png").url());
                     w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
                     w.setFlatLayMetadataJson(Json.write(r.metadata()));
-                    refreshStudio(w, ImageOps.decode(r.processedPng()), true);      // agora com recorte: ganha o estúdio
+                    w.setFlatLayMetadataJson(Json.write(withStudioSource(w, r, base)));
+                    refreshStudio(w, r.studioSource(), true, true);                 // agora com recorte: ganha o estúdio
                     job.setStatus(PipelineJobStatus.COMPLETED);
                     notifications.notify(w.getUser().getId(), null, NotificationType.AI_JOB_FINISHED, "PIECE", w.getId(),
                             "Foto da peça padronizada", "O fundo de " + w.getName() + " foi removido.", null);
@@ -920,18 +967,115 @@ public class WardrobeService {
     }
 
     // ================================================================== RF4 · Estúdio (foto de produto)
+    /** Metadados do Flat Lay refeito + a nova fonte do estúdio em alta resolução; a detecção da IA (logo) é mantida. */
+    private Map<String, Object> withStudioSource(WardrobeItem w, FlatLayPipeline.Result r, String base) {
+        Map<String, Object> meta = new LinkedHashMap<>(r.metadata());
+        Object detected = Json.map(w.getFlatLayMetadataJson()).get("detected");
+        if (detected != null) {
+            meta.put("detected", detected);
+        }
+        meta.put("studio_source_url", media.put(base + "-studio-source.png", ImageOps.png(r.studioSource()), "image/png").url());
+        return meta;
+    }
+
+    /** Tipo da peça para o estúdio (manequim invisível só em peças com gola): categoria/subcategoria → slot. */
+    static String studioKind(String category, String subcategory) {
+        if (category == null) {
+            return null;
+        }
+        return switch (category) {
+            case "upper_piece" -> java.util.Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono")
+                    .contains(subcategory) ? "OUTERWEAR" : "TOP";
+            case "lower_piece" -> "BOTTOM";
+            case "shoes_piece" -> "SHOES";
+            case "full_body_piece" -> "FULL_BODY";
+            case "accessory_piece" -> "ACCESSORY";
+            default -> null;
+        };
+    }
+
+    /**
+     * Caixa do logo devolvida pela IA sobre a imagem enviada (768 px, peça centralizada com margem de 6%) → caixa
+     * relativa à peça, que vale para o recorte em qualquer resolução.
+     */
+    static double[] logoRelative(double[] box1000, int cw, int ch) {
+        if (box1000 == null || cw <= 0 || ch <= 0) {
+            return null;
+        }
+        int size = 768, inner = (int) Math.round(size * (1 - 2 * 0.06));
+        double sc = Math.min(inner / (double) cw, inner / (double) ch);
+        int gw = (int) Math.round(cw * sc), gh = (int) Math.round(ch * sc);
+        int x0 = (size - gw) / 2, y0 = (size - gh) / 2;
+        double[] out = new double[4];
+        for (int i = 0; i < 4; i++) {
+            double px = box1000[i] * size / 1000.0;
+            out[i] = Math.max(0, Math.min(1, i % 2 == 0 ? (px - x0) / gw : (px - y0) / gh));
+        }
+        return out[2] - out[0] >= 0.01 && out[3] - out[1] >= 0.01 ? out : null;
+    }
+
+    /** Dicas do estúdio a partir do que já foi guardado: lados cortados (Flat Lay) e logo apontado pela IA. */
+    static br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(String kind, Object truncatedSides, Object logo) {
+        java.util.Set<String> truncated = truncatedSides instanceof List<?> l
+                ? l.stream().map(String::valueOf).collect(Collectors.toCollection(java.util.LinkedHashSet::new)) : null;
+        double[] box = null;
+        if (logo instanceof Map<?, ?> lm && lm.get("box") instanceof List<?> b && b.size() == 4
+                && b.stream().allMatch(v -> v instanceof Number)) {
+            box = b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray();
+        }
+        return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia");
+    }
+
+    br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(WardrobeItem w) {
+        Map<String, Object> meta = Json.map(w.getFlatLayMetadataJson());
+        Object logo = meta.get("detected") instanceof Map<?, ?> d ? d.get("logo") : null;
+        return studioHints(studioKind(w.getCategory(), w.getSubcategory()), meta.get("truncated_sides"), logo);
+    }
+
+    /** Fonte do estúdio da peça: o recorte em alta resolução guardado no cadastro ou, sem ele, a imagem atual. */
+    private BufferedImage studioSource(WardrobeItem w) {
+        Object url = Json.map(w.getFlatLayMetadataJson()).get("studio_source_url");
+        byte[] png = url == null ? null : media.read(String.valueOf(url)).orElse(null);
+        if (png == null) {
+            png = media.read(w.getImageUrl()).orElse(null);
+        }
+        return png == null ? null : ImageOps.decode(png);
+    }
+
+    /** Grava o resultado do estúdio na peça (foto, fundo, detalhe do logo) e o resumo nos metadados. */
+    private void applyStudio(WardrobeItem w, Map<String, Object> info) {
+        w.setStudioImageUrl(info == null ? null : String.valueOf(info.get("url")));
+        w.setStudioBackdrop(info == null ? null : String.valueOf(info.get("backdrop")));
+        w.setStudioDetailUrl(info == null || info.get("detailUrl") == null ? null : String.valueOf(info.get("detailUrl")));
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        if (info == null) {
+            meta.remove("studio");
+        } else {
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("stages", info.get("stages"));
+            summary.put("metrics", info.get("metrics"));
+            summary.put("framing", info.get("framing"));
+            summary.put("logo", info.get("logo"));
+            summary.put("provider", String.valueOf(info.get("provider")));
+            meta.put("studio", summary);
+        }
+        w.setFlatLayMetadataJson(Json.write(meta));
+    }
+
     /**
      * Refaz a foto de estúdio quando a imagem da peça muda (mesmo fundo de antes). {@code createIfMissing}: peça que não
-     * tinha estúdio passa a ter. Se o estúdio falhar, a foto antiga sai — estúdio de outra imagem é pior que nenhum.
+     * tinha estúdio passa a ter. {@code sameSource}: a foto de origem é a mesma (logo e cortes continuam valendo); numa
+     * imagem editada eles são recalculados. Se o estúdio falhar, a foto antiga sai — estúdio de outra imagem é pior que nenhum.
      */
-    void refreshStudio(WardrobeItem w, BufferedImage cutout, boolean createIfMissing) {
+    void refreshStudio(WardrobeItem w, BufferedImage cutout, boolean createIfMissing, boolean sameSource) {
         if (w.getStudioImageUrl() == null && !createIfMissing) {
             return;
         }
+        var hints = sameSource ? studioHints(w) : new br.com.fashionai.application.imaging.StudioPipeline.Hints(
+                studioKind(w.getCategory(), w.getSubcategory()), null, null, null);
         Map<String, Object> info = studioShot(w.getUser().getId(), cutout, w.getStudioBackdrop() == null ? "auto" : w.getStudioBackdrop(),
-                "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/");
-        w.setStudioImageUrl(info == null ? null : String.valueOf(info.get("url")));
-        w.setStudioBackdrop(info == null ? null : String.valueOf(info.get("backdrop")));
+                "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/", hints);
+        applyStudio(w, info);
     }
 
     private static boolean hasTransparency(BufferedImage img) {
@@ -951,8 +1095,12 @@ public class WardrobeService {
         return false;
     }
 
-    /** Roda o pipeline de estúdio na governança de IA (Photoroom/Stability → local) e guarda estúdio + recorte realçado. */
-    Map<String, Object> studioShot(UUID userId, java.awt.image.BufferedImage cutout, String backdrop, String basePath) {
+    /**
+     * Roda o pipeline de estúdio na governança de IA (Photoroom/Stability → local) e guarda: foto principal (quadro
+     * adaptado à peça), miniatura 640 px ({@code .thumb.jpg}), foto de detalhe do logo e recorte realçado.
+     */
+    Map<String, Object> studioShot(UUID userId, BufferedImage cutout, String backdrop, String basePath,
+                                   br.com.fashionai.application.imaging.StudioPipeline.Hints hints) {
         try {
             AiOutcome<br.com.fashionai.application.imaging.StudioPipeline.Result> out = ai.execute(userId, AiCapability.STUDIO_ENHANCER,
                     List.of("recorte da peça (PNG sem fundo)", "cor de fundo " + backdrop), null, null,
@@ -970,25 +1118,29 @@ public class WardrobeService {
                         }
 
                         public AiEngine.RemoteResult<br.com.fashionai.application.imaging.StudioPipeline.Result> call() {
-                            var res = studio.run(cutout, backdrop, true);
+                            var res = studio.run(cutout, backdrop, true, hints);
                             return new AiEngine.RemoteResult<>(res, res.costUsd(), "estúdio " + res.backdrop().id());
                         }
-                    }), () -> studio.run(cutout, backdrop, false));
+                    }), () -> studio.run(cutout, backdrop, false, hints));
             var res = out.value();
             long stamp = System.currentTimeMillis();
-            MediaStoragePort.StoredObject shot = media.put(basePath + "studio-" + res.backdrop().id() + "-" + stamp + ".jpg", res.studioJpeg(), "image/jpeg");
-            // miniatura para grades (closet, feed, busca) — mesma URL com ".thumb.jpg"
-            media.put(basePath + "studio-" + res.backdrop().id() + "-" + stamp + ".thumb.jpg",
-                    ImageOps.jpeg(ImageOps.scaleToFit(ImageOps.decode(res.studioJpeg()), 640, 640), 0.86f), "image/jpeg");
+            String name = basePath + "studio-" + res.backdrop().id() + "-" + stamp;
+            MediaStoragePort.StoredObject shot = media.put(name + ".jpg", res.studioJpeg(), "image/jpeg");
+            media.put(name + ".thumb.jpg", res.thumbJpeg(), "image/jpeg");       // miniatura: mesma URL com ".thumb.jpg"
+            String detailUrl = res.detailJpeg() == null ? null : media.put(name + ".detail.jpg", res.detailJpeg(), "image/jpeg").url();
             MediaStoragePort.StoredObject enhanced = media.put(basePath + "enhanced-" + stamp + ".png", res.enhancedPng(), "image/png");
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("url", shot.url());
             info.put("thumbUrl", Views.studioThumb(shot.url()));
+            info.put("detailUrl", detailUrl);
             info.put("enhancedUrl", enhanced.url());
             info.put("backdrop", res.backdrop().id());
             info.put("backdropLabel", res.backdrop().label());
             info.put("stages", res.stages());
             info.put("metrics", res.metrics());
+            info.put("framing", res.framing());
+            info.put("logo", res.logo());
+            info.put("ghost", res.ghost());
             info.put("provider", out.provider());
             info.put("fallbackUsed", out.fallbackUsed() || res.fallbackUsed());
             info.put("costUsd", res.costUsd());
@@ -996,6 +1148,58 @@ public class WardrobeService {
         } catch (RuntimeException e) {
             log.warn("estúdio falhou (segue só com o Flat Lay): {}", e.toString());
             return null;
+        }
+    }
+
+    /**
+     * RF4 · Estúdio da peça sem foto: a imagem padrão de {@code /public/assets_pecas} (arte da peça com o logo FAI) passa
+     * pelo mesmo estúdio das fotos enviadas — a peça ocupa o quadro inteiro e o logo ganha a foto de detalhe. O resultado
+     * é o mesmo para todas as peças que usam o arquivo, então é gerado uma vez e reaproveitado. Nunca usa a foto de
+     * referência do estúdio como imagem padrão.
+     */
+    void defaultStudio(WardrobeItem w) {
+        if (!w.isDefaultImage() || w.getImageUrl() == null) {
+            return;
+        }
+        var done = pieces.findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(w.getImageUrl());
+        if (done.isPresent() && !done.get().getId().equals(w.getId())) {
+            WardrobeItem src = done.get();
+            w.setStudioImageUrl(src.getStudioImageUrl());
+            w.setStudioBackdrop(src.getStudioBackdrop());
+            w.setStudioDetailUrl(src.getStudioDetailUrl());
+            Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+            Object st = Json.map(src.getFlatLayMetadataJson()).get("studio");
+            if (st != null) {
+                meta.put("studio", st);
+            }
+            w.setFlatLayMetadataJson(Json.write(meta));
+            return;
+        }
+        BufferedImage art;
+        try {
+            var file = assets.publicFile(w.getImageUrl());
+            art = file.isEmpty() ? null : javax.imageio.ImageIO.read(file.get().toFile());
+        } catch (java.io.IOException e) {
+            art = null;
+        }
+        if (art == null) {
+            return;
+        }
+        String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
+        Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
+                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
+                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo"));
+        if (info != null) {
+            applyStudio(w, info);
+        }
+    }
+
+    /** Peças com imagem padrão cadastradas antes do estúdio da imagem padrão: 20 por rodada, a cada 10 min. */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelayString = "${fashionai.studio.default-backfill-ms:600000}", initialDelay = 30000)
+    @Transactional
+    public void backfillDefaultStudio() {
+        for (WardrobeItem w : pieces.findTop20ByDefaultImageTrueAndStudioImageUrlIsNull()) {
+            defaultStudio(w);
         }
     }
 
@@ -1025,9 +1229,16 @@ public class WardrobeService {
                     ? "O recorte automático ficou incerto: " + r.get("backgroundWarning") + ". Fotografe sobre um fundo de outra cor ou use o recorte mesmo assim."
                     : "O estúdio precisa do fundo removido. Tente outra foto, com a peça sobre um fundo liso.");
         }
-        byte[] png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound("Recorte do rascunho"));
+        byte[] png = r.get("studioSourceUrl") == null ? null : media.read(String.valueOf(r.get("studioSourceUrl"))).orElse(null);
+        if (png == null) {
+            png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound("Recorte do rascunho"));
+        }
+        Map<?, ?> pf = r.get("prefill") instanceof Map<?, ?> m ? m : Map.of();
+        Map<?, ?> flat = r.get("flatLayMetadata") instanceof Map<?, ?> m ? m : Map.of();
+        var hints = studioHints(studioKind(pf.get("category") == null ? null : String.valueOf(pf.get("category")),
+                pf.get("subcategory") == null ? null : String.valueOf(pf.get("subcategory"))), flat.get("truncated_sides"), pf.get("logo"));
         Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
-                "users/" + user.id() + "/drafts/" + draftId + "/");
+                "users/" + user.id() + "/drafts/" + draftId + "/", hints);
         if (info == null) {
             throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. A foto padronizada continua valendo.");
         }
@@ -1039,7 +1250,7 @@ public class WardrobeService {
         return info;
     }
 
-    /** Gera (ou refaz) a foto de estúdio de uma peça já cadastrada a partir do recorte atual. */
+    /** Gera (ou refaz) a foto de estúdio de uma peça já cadastrada a partir do recorte (em alta, quando guardado). */
     @Transactional
     public Views.PieceView studioPiece(CurrentUser user, UUID id, String backdrop) {
         guard.requireCanCreate(user);
@@ -1047,17 +1258,16 @@ public class WardrobeService {
         if (w.isDefaultImage() || w.getImageUrl() == null || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED) {
             throw new ApiException(422, "SEM_RECORTE", "A peça precisa de uma foto própria com o fundo removido para ir ao estúdio.");
         }
-        byte[] png = media.read(w.getImageUrl()).orElseThrow(() -> ApiException.notFound("Foto da peça"));
-        Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
-                "users/" + user.id() + "/pieces/" + id + "/");
+        BufferedImage source = studioSource(w);
+        if (source == null) {
+            throw ApiException.notFound("Foto da peça");
+        }
+        Map<String, Object> info = studioShot(user.id(), source, backdrop == null ? "auto" : backdrop,
+                "users/" + user.id() + "/pieces/" + id + "/", studioHints(w));
         if (info == null) {
             throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. Tente de novo em instantes.");
         }
-        w.setStudioImageUrl(String.valueOf(info.get("url")));
-        w.setStudioBackdrop(String.valueOf(info.get("backdrop")));
-        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
-        meta.put("studio", Map.of("stages", info.get("stages"), "metrics", info.get("metrics"), "provider", String.valueOf(info.get("provider"))));
-        w.setFlatLayMetadataJson(Json.write(meta));
+        applyStudio(w, info);
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -1070,20 +1280,28 @@ public class WardrobeService {
             if (done >= 40) {
                 break;
             }
-            if (w.getStudioImageUrl() != null || w.isDefaultImage() || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED
+            if (w.getStudioImageUrl() != null || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED
                     || w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) {
                 skipped++;
                 continue;
             }
-            byte[] png = media.read(w.getImageUrl()).orElse(null);
-            Map<String, Object> info = png == null ? null : studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
-                    "users/" + user.id() + "/pieces/" + w.getId() + "/");
+            if (w.isDefaultImage()) {
+                defaultStudio(w);
+                if (w.getStudioImageUrl() != null) {
+                    done++;
+                } else {
+                    skipped++;
+                }
+                continue;
+            }
+            BufferedImage source = studioSource(w);
+            Map<String, Object> info = source == null ? null : studioShot(user.id(), source, backdrop == null ? "auto" : backdrop,
+                    "users/" + user.id() + "/pieces/" + w.getId() + "/", studioHints(w));
             if (info == null) {
                 skipped++;
                 continue;
             }
-            w.setStudioImageUrl(String.valueOf(info.get("url")));
-            w.setStudioBackdrop(String.valueOf(info.get("backdrop")));
+            applyStudio(w, info);
             done++;
         }
         return Map.of("generated", done, "skipped", skipped);
@@ -1130,6 +1348,7 @@ public class WardrobeService {
         copy.setThumbnailUrl(src.getThumbnailUrl());
         copy.setStudioImageUrl(src.getStudioImageUrl());
         copy.setStudioBackdrop(src.getStudioBackdrop());
+        copy.setStudioDetailUrl(src.getStudioDetailUrl());
         copy.setDefaultImage(src.isDefaultImage());
         copy.setModerationStatus(src.getModerationStatus());
         copy.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);

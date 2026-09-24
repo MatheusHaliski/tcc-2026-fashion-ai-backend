@@ -122,6 +122,11 @@ h1, h2, h3, h4 { margin: 0; }
 :root[data-theme="contrast"] .toast { border: 2px solid var(--line); }
 .dialog-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .dialog { background: var(--surface); color: var(--ink); border-radius: var(--radius); border: 1.5px solid var(--line-soft); box-shadow: var(--shadow); max-width: 560px; width: 100%; max-height: 90dvh; overflow: auto; }
+.dialog.dialog-lg { max-width: 900px; }
+.dialog.dialog-xl { max-width: 1180px; }
+/* "Gerar 3D" nas anatomias: mesmo peso visual dos ícones sociais do rodapé */
+.gen3d-btn { gap: 4px; font-weight: 600; letter-spacing: .02em; }
+.c-foot .gen3d-btn { padding: 2px 8px; min-height: 28px; }
 .dialog.dialog-xl { max-width: 1080px; }
 .hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 250px); gap: 12px; overflow-x: auto; padding-bottom: 6px; align-items: start; scroll-snap-type: x proximity; }
 .hscroll > * { scroll-snap-align: start; }
@@ -624,3 +629,85 @@ h1, h2, h3, h4 { margin: 0; }
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
+
+/* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
+   peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */
+.brick-drop { animation: brick-drop .42s cubic-bezier(.2, .9, .3, 1.25) both; }
+@keyframes brick-drop { 0% { transform: translateY(-38px); opacity: 0; } 70% { transform: translateY(3px); opacity: 1; } 100% { transform: none; opacity: 1; } }
+:root[data-reduce-motion="true"] .brick-drop { animation: none; }
+@media (prefers-reduced-motion: reduce) { .brick-drop { animation: none; } }
+/* peça acima de R$ 600: bloco dourado perolado */
+.brick-piece.brick-gold { background: linear-gradient(135deg, #F7E7A6 0%, #D4AF37 38%, #FFF4C8 55%, #B8901F 100%); box-shadow: inset 0 -3px 0 rgba(120, 85, 0, .35), 0 3px 0 rgba(0, 0, 0, .28), 0 0 0 1px rgba(255, 244, 200, .6); }
+.brick-replay { grid-column: 1 / -1; justify-self: end; background: #F2CD37; color: #1B2A34; font-family: var(--font-data); font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); text-transform: uppercase; }
+.brick-replay:hover { filter: brightness(1.05); }
+
+/* Vitrines 3D: Passarela, My Stage, mini lojas */
+.showcase-3d { position: relative; overflow: hidden; border-radius: var(--radius); border: 1.5px solid var(--line-soft); background: #0b0e16; }
+.showcase-3d-loading { display: grid; place-items: center; height: 100%; color: #c9d4ff; font-size: 13px; background: #0b0e16; }
+.showcase-hero { position: relative; overflow: hidden; border-radius: var(--radius); min-height: 220px; background: var(--accent); color: #fff; }
+.showcase-hero > img, .showcase-hero-fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.showcase-hero-fallback { background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 60%, #fff), var(--accent) 55%, #111); }
+.showcase-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, color-mix(in srgb, var(--accent) 35%, rgba(0,0,0,.78)) 100%); }
+.showcase-hero-text { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: flex-end; min-height: 220px; padding: 18px; gap: 4px; }
+.showcase-hero-text h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 800; line-height: 1.05; text-shadow: 0 2px 12px rgba(0,0,0,.35); }
+.showcase-hero-text p { max-width: 60ch; font-size: 14px; opacity: .92; }
+.showcase-mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.showcase-mosaic-tile { position: relative; overflow: hidden; border-radius: 10px; aspect-ratio: 4 / 3; color: #fff; text-align: left; }
+.showcase-mosaic-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.showcase-mosaic-tile span { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px; background: linear-gradient(transparent, rgba(0,0,0,.72)); display: flex; flex-direction: column; font-size: 13px; }
+.showcase-mosaic-tile em { font-style: normal; font-size: 11px; opacity: .85; }
+.era-rank { border-left: 4px solid var(--accent); }
+.era-rank-n { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border-radius: 10px; background: var(--accent, var(--thread)); color: #fff; font-weight: 800; font-size: 16px; }
+.stage-spot { animation: stage-spot 2.4s ease-in-out infinite alternate; }
+@keyframes stage-spot { from { opacity: .35; } to { opacity: 1; } }
+:root[data-reduce-motion="true"] .stage-spot { animation: none; }
+@media (prefers-reduced-motion: reduce) { .stage-spot { animation: none; } }
+
+/* ===================================================== FLAIR — cartas, decks, duelos e cupons */
+.flair-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); }
+.flair-card { display: block; padding: 4px; border-radius: 14px; width: 100%; max-width: 220px; transition: transform .18s ease; }
+.flair-card-sm { width: 128px; min-width: 128px; }
+button.flair-card:hover { transform: translateY(-3px); }
+.flair-card-selected { outline: 3px solid var(--thread); outline-offset: 2px; }
+.flair-card-inner { border-radius: 11px; background: var(--surface, #fff); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+.flair-rarity { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-muted, #666); }
+.flair-power { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 12px; }
+.flair-art { position: relative; margin: 4px 6px; aspect-ratio: 1 / 1; border-radius: 8px; background: #f3f1ec; display: grid; place-items: center; overflow: hidden; }
+.flair-art img { width: 100%; height: 100%; object-fit: contain; }
+.flair-brand { position: absolute; left: 4px; bottom: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(17,17,17,.78); color: #fff; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-name { font-weight: 700; font-size: 13px; line-height: 1.2; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-card-sm .flair-name { font-size: 11px; }
+.flair-sub { font-size: 10px; color: var(--ink-muted, #666); padding: 0 8px 4px; }
+.flair-stats { list-style: none; margin: 0; padding: 2px 8px 4px; display: grid; gap: 2px; }
+.flair-stats li { display: grid; grid-template-columns: 40px 1fr 22px; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; }
+.flair-stats i { height: 5px; border-radius: 3px; background: rgba(0,0,0,.08); overflow: hidden; display: block; }
+.flair-stats b { display: block; height: 100%; border-radius: 3px; }
+.flair-stats em { font-style: normal; text-align: right; }
+.flair-ability { margin: auto 6px 6px; padding: 3px 6px; font-size: 10px; font-weight: 700; border-radius: 6px; background: #111; color: #ffe29a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-combo { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2, #f1efe9); }
+.flair-avg { display: grid; justify-items: center; padding: 4px 0; border-radius: 8px; background: var(--surface-2, #f1efe9); font-size: 10px; }
+.flair-avg b { font-size: 15px; }
+.flair-round { padding: 8px 10px; border-radius: 10px; background: var(--surface-2, #f1efe9); animation: flair-in .35s ease both; }
+.flair-round-bars { display: grid; grid-template-columns: minmax(60px, 140px) 1fr 44px; align-items: center; gap: 4px 8px; margin: 4px 0; font-size: 12px; }
+.flair-round-bars span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-round-bars span.win { font-weight: 800; }
+.flair-round-bars i { height: 10px; border-radius: 5px; background: rgba(0,0,0,.07); display: block; overflow: hidden; }
+.flair-round-bars b { display: block; height: 100%; background: var(--thread, #2D55C9); border-radius: 5px; transition: width .4s ease; }
+.flair-round-bars b.alt { background: var(--mark, #E0457B); }
+.flair-round-bars em { font-style: normal; text-align: right; font-weight: 700; }
+.flair-result { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line, #ccc); }
+.flair-result b { font-size: 22px; }
+.flair-combo-head { padding: 12px 14px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.flair-coupon { margin-top: 6px; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.92); color: #111; text-shadow: none; font-weight: 700; font-size: 13px; border: 1px dashed rgba(0,0,0,.35); }
+.flair-coupon span { font-weight: 500; font-size: 11px; color: #555; }
+.flair-check { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; font-weight: 800; background: rgba(224,69,123,.14); color: var(--mark, #E0457B); flex: none; }
+.flair-check.ok { background: rgba(31,122,118,.16); color: #1F7A76; }
+.flair-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: var(--surface-2, #f1efe9); }
+.flair-code-lg { display: inline-block; font-size: 26px; padding: 10px 18px; border: 2px dashed currentColor; }
+.flair-voucher { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid; border-left-width: 6px; background: var(--surface, #fff); }
+.flair-album { border-collapse: separate; border-spacing: 6px; font-size: 12px; }
+.flair-album th { text-align: left; font-weight: 600; white-space: nowrap; }
+.flair-slot { display: inline-grid; place-items: center; width: 34px; height: 44px; border-radius: 6px; border: 1.5px dashed var(--line, #bbb); color: #111; font-weight: 800; }
+.flair-slot.on { border-style: solid; border-color: transparent; }
+@keyframes flair-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .flair-round { animation: none; } .flair-card { transition: none; } }

@@ -234,6 +234,10 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "studio_backdrop", length = 30)
     private String studioBackdrop;
 
+    /** RF4 · Estúdio: foto de detalhe 4:5 enquadrada no logo (null quando a peça não tem logo identificado). */
+    @Column(name = "studio_detail_url", length = 1024)
+    private String studioDetailUrl;
+
     @Column(name = "model3d_generated_at")
     private Instant model3dGeneratedAt;
 
@@ -248,4 +252,12 @@ public class WardrobeItem extends VersionedAuditableEntity {
     /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA. */
     @Column(name = "piece_origin", length = 20)
     private String pieceOrigin;
+
+    /** Foto com meu manequim (RF4/RF5): a peça ou o look vestindo o manequim da pessoa (ou o padrão masc./fem.). */
+    @Column(name = "mannequin_image_url", length = 1024)
+    private String mannequinImageUrl;
+
+    /** FOTO (rosto da foto de perfil) ou PADRAO (manequim padrão, sem foto de perfil). */
+    @Column(name = "mannequin_image_face", length = 20)
+    private String mannequinImageFace;
 }

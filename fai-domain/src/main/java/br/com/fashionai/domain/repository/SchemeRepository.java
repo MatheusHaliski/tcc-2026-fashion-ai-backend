@@ -46,4 +46,7 @@ public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
     List<Scheme> findByUserIdAndFavoriteTrue(UUID userId);
 
     long countByUserIdAndStatus(UUID userId, br.com.fashionai.domain.model.enums.SchemeStatus status);
+
+    /** Header do perfil (estilo Instagram): esquemas criados, sem os arquivados. */
+    long countByUserIdAndStatusNot(UUID userId, SchemeStatus status);
 }

@@ -32,7 +32,11 @@ public final class ImageProviderPorts {
     public interface StudioShotPort {
         boolean available();
 
-        Optional<ProviderImage> studio(byte[] cutoutPng, String backgroundHex, int size);
+        /**
+         * @param cutoutPng recorte com margem transparente só nos lados inteiros (lados cortados encostam na borda)
+         * @param padding   margem dos lados inteiros (fração) · @param width, height quadro de saída
+         */
+        Optional<ProviderImage> studio(byte[] cutoutPng, String backgroundHex, int width, int height, double padding);
     }
 
     /** Normalização de cor/transformações — Cloudinary. */

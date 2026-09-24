@@ -369,7 +369,12 @@ public class LookbookService {
     }
 
     // ================================================================== agrupamentos editoriais (coleções, eras, fases, temporadas, turnês)
-    public record GroupingForm(GroupingType type, String label, String description, String coverUrl, String atmospherePrompt) {
+    /**
+     * @param periodFrom/periodTo período da era (anos) ou ano da coleção — filtro e ranking de insights (RF22)
+     * @param accentColor         cor do palco 2D / mini loja 3D e do header da busca por era/coleção
+     */
+    public record GroupingForm(GroupingType type, String label, String description, String coverUrl, String atmospherePrompt,
+                               Integer periodFrom, Integer periodTo, String accentColor, Integer sortOrder) {
     }
 
     static final Set<GroupingType> PERSONAL = Set.of(GroupingType.COLLECTION, GroupingType.EVOLUTION, GroupingType.STYLE_LINE, GroupingType.SEASON);
@@ -390,8 +395,37 @@ public class LookbookService {
         g.setDescription(f.description() == null ? null : InputSanitizer.clean(f.description(), 300));
         g.setCoverUrl(f.coverUrl());
         g.setAtmospherePrompt(f.atmospherePrompt() == null ? null : InputSanitizer.clean(f.atmospherePrompt(), 300));
+        applyPeriod(g, f);
         groupings.save(g);
         return groupingView(g);
+    }
+
+    private static void applyPeriod(SchemeGrouping g, GroupingForm f) {
+        if (f.periodFrom() != null) {
+            g.setPeriodFrom(year(f.periodFrom()));
+        }
+        if (f.periodTo() != null) {
+            g.setPeriodTo(year(f.periodTo()));
+        }
+        if (g.getPeriodFrom() != null && g.getPeriodTo() != null && g.getPeriodTo() < g.getPeriodFrom()) {
+            throw ApiException.badRequest("PERIODO_INVALIDO", "O fim do período vem antes do início.");
+        }
+        if (f.accentColor() != null) {
+            if (!f.accentColor().isBlank() && !f.accentColor().matches("#[0-9A-Fa-f]{6}")) {
+                throw ApiException.badRequest("COR_INVALIDA", "Use a cor em hexadecimal (#RRGGBB).");
+            }
+            g.setAccentColor(f.accentColor().isBlank() ? null : f.accentColor().toUpperCase(java.util.Locale.ROOT));
+        }
+        if (f.sortOrder() != null) {
+            g.setSortOrder(f.sortOrder());
+        }
+    }
+
+    private static int year(int y) {
+        if (y < 1900 || y > 2100) {
+            throw ApiException.badRequest("PERIODO_INVALIDO", "Ano fora do intervalo 1900–2100.");
+        }
+        return y;
     }
 
     @Transactional
@@ -410,6 +444,7 @@ public class LookbookService {
         if (f.atmospherePrompt() != null) {
             g.setAtmospherePrompt(InputSanitizer.clean(f.atmospherePrompt(), 300));
         }
+        applyPeriod(g, f);
         groupings.save(g);
         return groupingView(g);
     }
@@ -477,6 +512,10 @@ public class LookbookService {
         m.put("description", g.getDescription());
         m.put("coverUrl", g.getCoverUrl());
         m.put("atmospherePrompt", g.getAtmospherePrompt());
+        m.put("periodFrom", g.getPeriodFrom());
+        m.put("periodTo", g.getPeriodTo());
+        m.put("accentColor", g.getAccentColor());
+        m.put("sortOrder", g.getSortOrder());
         return m;
     }
 

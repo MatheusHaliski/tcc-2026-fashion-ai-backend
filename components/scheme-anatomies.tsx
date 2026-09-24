@@ -311,15 +311,22 @@ function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season?: strin
   );
 }
 
-/** LEGO: o miolo montado sobre a placa-base de blocos de encaixe (textura enviada pelo time); as fotos seguem fotos. */
+/**
+ * LEGO (prancha 10): o miolo montado sobre a placa-base de blocos de encaixe; as fotos seguem fotos. Cada bloco tem a
+ * cor dominante da peça quantizada para as 10 cores clássicas; peça acima de R$ 600 vira bloco dourado perolado. Ao
+ * aparecer, os blocos caem e encaixam de cima para baixo (60 ms entre peças); "montar de novo" repete. Com "reduzir
+ * movimento", o card já aparece montado.
+ */
 function Blocks({ pieces }: { pieces: AnatomyPiece[] }) {
+  const [round, setRound] = useState(0);
   return (
-    <div className="blocks-plate" style={{ backgroundImage: `url("${BLOCKS_TEXTURE}")` }} aria-label="card em blocos de encaixe">
-      {pieces.slice(0, 6).map((p) => { const c = brickColor(p.colorHex); return (
-        <div key={p.id} className="brick-piece" style={{ ["--brick" as string]: c }}>
+    <div className="blocks-plate" key={round} style={{ backgroundImage: `url("${BLOCKS_TEXTURE}")` }} aria-label="card em blocos de encaixe">
+      {pieces.slice(0, 6).map((p, i) => { const c = brickColor(p.colorHex); const gold = (p.price ?? 0) > 600; return (
+        <div key={p.id} className={`brick-piece brick-drop ${gold ? "brick-gold" : ""}`} style={{ ["--brick" as string]: gold ? "#D4AF37" : c, animationDelay: `${i * 60}ms` }} title={gold ? "peça acima de R$ 600: bloco dourado perolado" : undefined}>
           <span className="brick-photo">{p.img && <img src={p.img} alt={p.name} />}</span>
-          <span className="brick-label">{p.name}</span>
+          <span className="brick-label">{gold && "✦ "}{p.name}</span>
         </div>); })}
+      <button type="button" className="brick-replay" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRound((r) => r + 1); }}>▸ montar de novo</button>
     </div>
   );
 }

@@ -57,8 +57,12 @@ class StudioAndReliefTest {
         StudioPipeline studio = new StudioPipeline(List.of(), List.of());
         StudioPipeline.Result r = studio.run(jacket(), "auto", true);
         BufferedImage shot = ImageIO.read(new ByteArrayInputStream(r.studioJpeg()));
-        assertThat(shot.getWidth()).isEqualTo(StudioPipeline.SIZE);
-        assertThat(shot.getHeight()).isEqualTo(StudioPipeline.SIZE);
+        // quadro adaptado à peça (lado maior 1600) + miniatura quadrada para grades
+        assertThat(Math.max(shot.getWidth(), shot.getHeight())).isEqualTo(StudioPipeline.SIZE);
+        assertThat(r.framing().get("aspect")).isIn("9:16", "2:3", "4:5", "1:1", "5:4");
+        BufferedImage thumb = ImageIO.read(new ByteArrayInputStream(r.thumbJpeg()));
+        assertThat(thumb.getWidth()).isEqualTo(StudioPipeline.THUMB);
+        assertThat(thumb.getHeight()).isEqualTo(StudioPipeline.THUMB);
         assertThat(r.backdrop().id()).isEqualTo("royal");
         // canto do quadro = fundo de estúdio azul (não branco, não transparente)
         int corner = shot.getRGB(20, 20);
@@ -67,9 +71,12 @@ class StudioAndReliefTest {
         BufferedImage cut = ImageIO.read(new ByteArrayInputStream(r.enhancedPng()));
         assertThat(cut.getRGB(0, 0) >>> 24).isZero();
         assertThat(Math.max(cut.getWidth(), cut.getHeight())).isGreaterThanOrEqualTo(StudioPipeline.WORK);
-        assertThat(r.stages()).extracting(StudioPipeline.Stage::name).contains("NITIDEZ", "VOLUME_LUZ", "FUNDO_ESTUDIO", "SOMBRA", "COMPOSICAO", "VALIDACAO");
+        assertThat(r.stages()).extracting(StudioPipeline.Stage::name).contains("LIMPEZA", "NITIDEZ", "MANEQUIM_INVISIVEL", "LOGO",
+                "VOLUME_LUZ", "ENQUADRAMENTO", "FUNDO_ESTUDIO", "SOMBRA", "COMPOSICAO", "VALIDACAO");
         Map<String, Object> m = r.metrics();
-        assertThat((double) m.get("contrastAfter")).isGreaterThan((double) m.get("contrastBefore"));
+        // limpeza + luz não podem lavar a foto (contraste mantido) e a nitidez, na mesma escala, não cai
+        assertThat((double) m.get("contrastAfter")).isGreaterThanOrEqualTo((double) m.get("contrastBefore") * 0.97);
+        assertThat((double) m.get("sharpnessAfter")).isGreaterThanOrEqualTo((double) m.get("sharpnessBefore") * 0.95);
         String sample = System.getProperty("studio.sample");
         if (sample != null) {       // execução manual: -Dstudio.sample=foto.png grava target/studio-sample-*.jpg
             for (String bd : List.of("auto", "areia", "grafite")) {
@@ -118,11 +125,20 @@ class StudioAndReliefTest {
                     System.out.printf("%s -> confianca %.2f, aviso: %s, métricas %s%n", path, c.confidence(), c.warning(),
                             Arrays.toString(ImageOps.shapeStats(alphaMask(c.image()), c.image().getWidth(), c.image().getHeight())));
                     FlatLayPipeline.Result r = flat.run(Files.readAllBytes(new File(path).toPath()), false);
-                    StudioPipeline.Result s = studio.run(ImageOps.decode(r.processedPng()), "auto", false);
                     String base = "target/" + new File(path).getName().replace(".jpg", "");
                     Files.write(new File(base + "-flat.jpg").toPath(), r.processedWhiteJpeg());
-                    Files.write(new File(base + "-studio.jpg").toPath(), s.studioJpeg());
-                    Files.write(new File(base + "-studio-royal.jpg").toPath(), studio.run(ImageOps.decode(r.processedPng()), "royal", false).studioJpeg());
+                    System.out.printf("  cortes da foto: %s · fonte do estúdio %dx%d%n", r.truncated(), r.studioSource().getWidth(), r.studioSource().getHeight());
+                    for (String bd : List.of("auto", "areia")) {
+                        StudioPipeline.Result s = studio.run(r.studioSource(), bd, false,
+                                new StudioPipeline.Hints(path.contains("camiseta") ? "TOP" : "OUTERWEAR", r.truncated(), null, null));
+                        Files.write(new File(base + "-studio-" + bd + ".jpg").toPath(), s.studioJpeg());
+                        Files.write(new File(base + "-thumb-" + bd + ".jpg").toPath(), s.thumbJpeg());
+                        if (s.detailJpeg() != null) {
+                            Files.write(new File(base + "-detail-" + bd + ".jpg").toPath(), s.detailJpeg());
+                        }
+                        System.out.printf("  %s: %s · logo %s%n", bd, s.framing(), s.logo());
+                        s.stages().forEach(st -> System.out.printf("    %s [%s] %s%n", st.name(), st.provider(), st.note()));
+                    }
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
                 }

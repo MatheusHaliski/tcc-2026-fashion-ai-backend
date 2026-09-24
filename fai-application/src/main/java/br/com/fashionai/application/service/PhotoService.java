@@ -138,6 +138,7 @@ public class PhotoService {
             w.setImageUrl(null);
             w.setThumbnailUrl(null);
             w.setStudioImageUrl(null);
+            w.setStudioDetailUrl(null);
         });
         p.setDeletedAt(Instant.now());
         Map<String, Object> out = new java.util.LinkedHashMap<>();
@@ -168,6 +169,7 @@ public class PhotoService {
                 w.setImageUrl(null);
                 w.setThumbnailUrl(null);
                 w.setStudioImageUrl(null);
+                w.setStudioDetailUrl(null);
             });
             p.setDeletedAt(Instant.now());
         }

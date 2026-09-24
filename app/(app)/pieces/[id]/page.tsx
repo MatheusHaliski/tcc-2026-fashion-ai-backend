@@ -12,17 +12,18 @@ import { Badge, Button, Card, Dialog, ErrorState, Skeleton, useToast } from "@/c
 import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 import { InteractionBar } from "@/components/interactions";
 import { FaiIcon } from "@/components/fai-icon";
+import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton } from "@/components/mannequin-photo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { BrandLogo } from "@/components/brand-logo";
 import { PhotoEditor } from "@/components/photo-editor";
 import { Model3dPanel } from "@/components/model3d-panel";
-import { BackdropChips } from "@/components/studio";
+import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import dynamic from "next/dynamic";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">carregando o modelo 3D…</div> });
 /** Visualizações da peça: foto de estúdio (RF4), recorte padronizado (2D) e modelo 3D (RF16.CA02 — a 2D continua disponível). */
-type HeroView = "studio" | "cut" | "3d";
-const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", cut: "Recorte 2D", "3d": "Modelo 3D" };
+type HeroView = "studio" | "detail" | "mannequin" | "cut" | "3d";
+const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", detail: "Detalhe do logo", mannequin: "No manequim", cut: "Recorte 2D", "3d": "Modelo 3D" };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -35,6 +36,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const [view, setView] = useState<HeroView | null>(null); const [editingPhoto, setEditingPhoto] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false); const [studioBusy, setStudioBusy] = useState(false);
+  const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const setPiece = (np: PieceView) => setData((d) => (d ? { ...d, piece: np } : d));
   async function flag(field: "favorite" | "disponivel" | "forSale") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function worn() { if (!p) return; try { setPiece(await api.post<PieceView>(`/api/pieces/${p.id}/worn`)); toast.success(t("closet.worn") + " ✓"); } catch (e) { toast.fromError(e); } }
@@ -61,7 +63,10 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const back = origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />Voltar ao look{origin.title ? ` «${origin.title}»` : ""}</Link></p>;
   if (!loading && data && !p && data.snapshot) return <>{back}<PieceSnapshot snapshot={data.snapshot} /></>;
   if (loading || !p) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="aspect-square" /><Skeleton className="h-80" /></div>;
-  const views = ([p.studioImageUrl ? "studio" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
+  const views = ([p.studioImageUrl ? "studio" : null, p.studioImageUrl && p.studioDetailUrl ? "detail" : null, p.mannequinImageUrl ? "mannequin" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
+  const edge = backdropEdge(backdrops, p.studioBackdrop);
+  const framing = ((p.flatLayMetadata as { studio?: { framing?: StudioInfo["framing"] } } | undefined)?.studio?.framing) ?? null;
+  const gallery = [p.studioImageUrl ? { src: mediaUrl(p.studioImageUrl)!, alt: `${p.name} — Estúdio`, anchor: sangria(framing) } : null, p.studioDetailUrl ? { src: mediaUrl(p.studioDetailUrl)!, alt: `${p.name} — Detalhe do logo`, anchor: [] as string[], cover: true } : null].filter((g): g is { src: string; alt: string; anchor: string[]; cover?: boolean } => !!g);
   const hero: HeroView = view && views.includes(view) ? view : views[0];
   const canStudio = !p.defaultImage && !!p.imageUrl && p.photoProcessingStatus !== "PROCESSING";
   return (
@@ -70,10 +75,18 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <Card pad={false} className="overflow-hidden">
           {views.length > 1 && <div className="flex gap-1 border-b border-line-soft p-2" role="tablist" aria-label="visualização da peça">{views.map((v) => <button key={v} role="tab" type="button" aria-selected={hero === v} className={`chip ${hero === v ? "is-active" : ""}`} onClick={() => setView(v)}>{HERO_LABEL[v]}</button>)}</div>}
-          <div className="relative aspect-square bg-surface-2">
+          {/* foto de estúdio no formato dela (5:4, 4:5, 9:16…): nada de faixas; recorte e 3D ficam no quadrado */}
+          <div className={`relative ${(hero === "studio" || hero === "detail") && p.studioImageUrl ? "" : "aspect-square"} bg-surface-2`} style={hero === "studio" || hero === "detail" ? { background: edge } : undefined}>
             {hero === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} />
-              : hero === "studio" && p.studioImageUrl ? <img src={mediaUrl(p.studioImageUrl)} alt={`${p.name} — foto de estúdio`} className="h-full w-full object-cover" />
+              : hero === "mannequin" && p.mannequinImageUrl ? <img src={mediaUrl(p.mannequinImageUrl)} alt={`${p.name} no manequim${p.mannequinImageFace === "FOTO" ? " com o rosto da foto de perfil" : " padrão"}`} className="block h-auto w-full" />
+              : (hero === "studio" || hero === "detail") && p.studioImageUrl ? (
+                // a foto inteira, no formato dela (4:5, 5:4…); a cor do fundo continua nas sobras
+                <button type="button" className="h-full w-full cursor-zoom-in" onClick={() => setFullscreen(hero === "detail" ? 1 : 0)} aria-label="ver em tela cheia">
+                  <img src={mediaUrl(hero === "detail" ? p.studioDetailUrl : p.studioImageUrl)} alt={`${p.name} — ${hero === "detail" ? "detalhe do logo" : "foto de estúdio"}`} className="block h-auto w-full" />
+                </button>
+              )
               : <img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />}
+            {(hero === "studio" || hero === "detail") && p.studioImageUrl && <button type="button" className="chip absolute bottom-3 right-3" onClick={() => setFullscreen(hero === "detail" ? 1 : 0)}>⤢ Tela cheia</button>}
             {!p.disponivel && <Badge className="absolute left-3 top-3">{t("common.unavailable")}</Badge>}
             {p.defaultImage && <Badge className="absolute right-3 top-3">imagem padrão</Badge>}
             {studioBusy && <div className="absolute inset-0 grid place-items-center bg-surface/70 type-body" aria-live="polite">montando o estúdio…</div>}
@@ -84,6 +97,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
               <Button size="sm" onClick={() => act("background-removal", t("closet.removeBg") + " ✓")}>{t("closet.removeBg")}</Button>
               {canStudio && <Button size="sm" aria-expanded={studioOpen} onClick={() => setStudioOpen((o) => !o)}><FaiIcon id="ACT-08" size={24} decorative />{p.studioImageUrl ? "Refazer estúdio" : "Levar ao estúdio"}</Button>}
               <Button size="sm" onClick={() => setEditingPhoto(true)} disabled={!p.imageUrl && !p.thumbnailUrl}><FaiIcon id="SOC-11" size={24} decorative />Editar foto (Canvas 2D)</Button>
+              {MANNEQUIN_PHOTO_CATEGORIES.has(p.category) && <MannequinPhotoButton kind="piece" id={p.id} title={p.name} current={p.mannequinImageUrl} onSaved={() => { reload(); setView("mannequin"); }} />}
             </div>
           )}
           {mine && studioOpen && canStudio && (
@@ -138,6 +152,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
         <p className="type-body">{confirmDelete.impact?.message ?? `Esta peça aparece em ${confirmDelete.impact?.count ?? confirmDelete.impact?.schemes?.length ?? 0} look(s).`}</p>
         {confirmDelete.impact?.schemes?.length ? <ul className="mt-2 list-disc pl-5 type-body-sm">{confirmDelete.impact.schemes.map((s) => <li key={s.id}>{s.title}</li>)}</ul> : null}
       </Dialog>
+      {fullscreen !== null && gallery.length > 0 && <StudioLightbox images={gallery} edge={edge} center={backdropCenter(backdrops, p.studioBackdrop)} start={Math.min(fullscreen, gallery.length - 1)} onClose={() => setFullscreen(null)} />}
       {editingPhoto && p && <PhotoEditor pieceId={p.id} imageUrl={p.originalImageUrl ?? p.imageUrl ?? p.thumbnailUrl} title={p.name} onClose={() => setEditingPhoto(false)} onSaved={(msg) => { setEditingPhoto(false); toast.success(msg); reload(); }} />}
     </>
   );

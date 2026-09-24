@@ -28,4 +28,7 @@ public interface DailyLookRepository extends JpaRepository<DailyLook, UUID> {
     long countByUserIdAndFeedback(UUID userId, br.com.fashionai.domain.model.enums.DailyLookFeedback feedback);
 
     List<DailyLook> findTop60ByUserIdOrderByLookDateDesc(UUID userId);
+
+    /** Passarela 3D — quem registrou Look do Dia na última semana (materializa o de hoje de forma preguiçosa). */
+    List<DailyLook> findByLookDateGreaterThanEqual(LocalDate since);
 }
