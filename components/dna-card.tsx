@@ -5,7 +5,9 @@ import { mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
-import { backgroundStyle, skinStyle } from "@/lib/skins";
+import { skinStyle } from "@/lib/skins";
+import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
+import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
 import { CommentButton } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
@@ -60,9 +62,7 @@ export const SEASON_PRESETS: Record<string, { preset: string; label: string; ico
 };
 
 /** 10 cores clássicas de blocos: a cor dominante do esquema é quantizada para a mais próxima (B12). */
-const BRICKS = ["#C91A09", "#0055BF", "#F2CD37", "#237841", "#1B2A34", "#F4F4F4", "#FE8A18", "#E4CD9E", "#6C6E68", "#582A12"];
 const rgb = (hex: string) => { const n = parseInt(hex.replace("#", "").slice(0, 6).padEnd(6, "0"), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-export const brickColor = (hex?: string | null) => { if (!hex || !hex.startsWith("#")) return BRICKS[8]; const [r, g, b] = rgb(hex); return BRICKS.reduce((best, c) => { const [x, y, z] = rgb(c); const [p, q, s] = rgb(best); return (x - r) ** 2 + (y - g) ** 2 + (z - b) ** 2 < (p - r) ** 2 + (q - g) ** 2 + (s - b) ** 2 ? c : best; }, BRICKS[0]); };
 const inkOn = (hex?: string | null) => { if (!hex || !hex.startsWith("#")) return "#1A1714"; const [r, g, b] = rgb(hex); return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1A1714" : "#FFFFFF"; };
 /** Matiz (0–360) e croma (0–1) de uma cor — posição do marcador na roda de Itten (B8). */
 function hueChroma(hex: string) { const [r, g, b] = rgb(hex).map((v) => v / 255); const max = Math.max(r, g, b), min = Math.min(r, g, b), c = max - min; let h = 0; if (c) h = max === r ? ((g - b) / c) % 6 : max === g ? (b - r) / c + 2 : (r - g) / c + 4; return { hue: (h * 60 + 360) % 360, chroma: c }; }
@@ -94,9 +94,14 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const { relative, fmtDate } = useI18n(); const router = useRouter();
   const narrative = dna.targetElement === "DNA_COMPLETO" ? dna.narrativeType ?? null : null;
   const skin = (dna.cardSkin ?? (dna.background?.skin as string | undefined)) ?? "atelier";
-  const bg = dna.background ?? {};
-  const artUrl = ((bg.aiArt as { url?: string } | undefined)?.url ?? (bg.uploadUrl as string | undefined)) || undefined;
-  const heroStyle = narrative === "CARTELA_SAZONAL" ? {} : backgroundStyle(artUrl ? { ...bg, url: artUrl } : bg);
+  // Arte do Background Studio no palco do card, atrás do container roxo (passe-partout); as fotos dos esquemas ficam
+  // sempre sem arte. Cartela sazonal e Blocos trazem arte própria e sobrescrevem a manual.
+  const heroStyle: CSSProperties = {};
+  const studio = studioOf(dna.background);
+  const art = narrative === "CARTELA_SAZONAL" || narrative === "BLOCOS" ? null : resolveCardArt(dna.background);
+  const hasArt = !!art && art.kind !== "none";
+  const boxColor = containerColorOf(skin, studio.container?.color);
+  const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(studio.container?.color ? { "--card-ink": inkOnBox(boxColor) } : {}) } as CSSProperties) : undefined;
   const cells = dna.cells;
   const occasion = (dna.occasion ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const style = (dna.style ?? "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -105,12 +110,14 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const containerLabel = narrative ? `DNA · ${dnaNarrativeLabel(narrative)}` : `DNA de estilo · ${dnaLayoutLabel(dna.cardLayout)}`;
   const body = narrative ? <NarrativeBody dna={dna} narrative={narrative} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} /> : <LayoutBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} />;
   return (
-    <article className={`fai-card dna-card ${narrative === "BLOCOS" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""}`} style={skinStyle(skin)} aria-label={`DNA de estilo: ${dna.title}`}>
+    <article className={`fai-card dna-card ${narrative === "BLOCOS" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""} ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(skin), ...stageVars }} aria-label={`DNA de estilo: ${dna.title}`} data-art={art?.label}>
       <div className="c-header">
         <span className="c-avatar"><Avatar src={mediaUrl(dna.owner?.avatarUrl)} name={dna.owner?.displayName} size={18} /></span>
         <span className="c-meta">@{dna.owner?.username} · {relative(dna.publishedAt ?? dna.createdAt ?? new Date().toISOString())} · {label(dna.visibility.toLowerCase())}</span>
         <span className="badge dna-badge">DNA</span>
       </div>
+      <div className="scheme-stage">
+      {hasArt && art && <CardArtLayer art={art} />}
       <div className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
         {cells.length === 0 ? <div className="dna-empty">Selecione de 2 a 6 esquemas para montar o DNA.</div> : body}
         {narrative !== "BLOCOS" && <>
@@ -119,6 +126,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
           <LogosRow dna={dna} narrative={narrative} />
           <div className="c-row dna-phrase"><span className="k">{narrative === "MOOD_BOARD" ? "Arquétipo" : "Frase de identidade"}</span>{narrative === "MOOD_BOARD" ? `${dna.archetypeLabel ?? dna.archetype ?? "—"}, ousadia ${dna.boldnessIndex ?? 0}/100` : dna.identityPhrase ? `“${dna.identityPhrase}”` : "—"}</div>
         </>}
+      </div>
       </div>
       <div className="c-foot">
         <span className="metrics tabular"><span title="curtidas">♥ {dna.counters?.likes ?? 0}</span>{dna.id ? <CommentButton type="DNA_SCHEME" id={dna.id} count={dna.counters?.comments} title={dna.title} /> : <span>💬 0</span>}<span title="remixes">↻ {dna.counters?.remixes ?? 0}</span><span title="compartilhamentos">⤴ {dna.counters?.shares ?? 0}</span></span>
@@ -240,7 +248,7 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
     case "CARTELA_SAZONAL": {
       const season = dna.seasonalTheme ?? "AUTUMN"; const p = SEASON_PRESETS[season] ?? SEASON_PRESETS.AUTUMN;
       const ordered = [...cells].sort((a, b) => Number(b.season === season) - Number(a.season === season));
-      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>seasonalTheme = {season} · animação {p.animation}</em></div>
+      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} /><span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>seasonalTheme = {season} · animação {p.animation}</em></div>
         <div className="dna-grid">{ordered.slice(0, expanded ? 6 : 4).map((c) => <div key={c.schemeId} className={`dna-grid-cell ${c.season === season ? "" : "secondary"}`}><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? label(c.occasion[0] ?? "livre")).toUpperCase()}</span></div>)}</div></>);
     }
     case "BLOCOS": return <BlocksBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} />;

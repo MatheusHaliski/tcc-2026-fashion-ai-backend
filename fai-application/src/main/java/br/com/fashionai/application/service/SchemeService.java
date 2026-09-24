@@ -13,6 +13,9 @@ import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.imaging.ImageFilters;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.model.enums.PhotoOrigin;
+import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.imaging.MannequinGeometry;
 import br.com.fashionai.application.imaging.SchemeCardRenderer;
 import br.com.fashionai.application.ai.local.ColorMath;
@@ -396,6 +399,7 @@ public class SchemeService {
         schemes.save(s);
         List<SchemeItem> items = replaceItems(user, s, form.items());
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
+        applyLookPhoto(user, s, form.background(), items);
         if (Boolean.TRUE.equals(form.publish())) {
             publishInternal(s, items);
         }
@@ -537,6 +541,57 @@ public class SchemeService {
         return result;
     }
 
+    // ================================================================== foto do look (como a foto de um post)
+    static final List<String> PHOTO_PIPELINE = List.of("formato validado (JPEG/PNG/WebP)", "tamanho mínimo 400 × 400 px",
+            "proporção de post (entre 1:2 e 2:1)", "redimensionada para no máximo 1600 px", "metadados removidos (EXIF/GPS)",
+            "registrada na moderação de mídia", "filtros aplicados na exibição, sem alterar o arquivo");
+
+    /**
+     * RF5 — a foto do conjunto é enviada pelo usuário, como a foto de um post. Passa pelo pipeline (validação, redimensionamento,
+     * reencode sem metadados, registro na moderação); os filtros escolhidos (brilho, contraste, saturação, matiz, desfoque)
+     * ficam no config e são aplicados na exibição. A arte do Background Studio nunca é aplicada sobre ela (RF11).
+     */
+    @Transactional
+    public Map<String, Object> uploadLookPhoto(CurrentUser user, byte[] bytes) {
+        guard.requireCanCreate(user);
+        ImageOps.requireAcceptedImage(bytes);
+        BufferedImage img = ImageOps.decode(bytes);
+        if (img.getWidth() < 400 || img.getHeight() < 400) {
+            throw ApiException.badRequest("IMAGEM_PEQUENA", "A foto do look precisa ter ao menos 400 × 400 px.");
+        }
+        double ratio = img.getWidth() / (double) img.getHeight();
+        if (ratio > 2.0 || ratio < 0.5) {
+            throw ApiException.badRequest("PROPORCAO_INVALIDA", "Use uma foto com proporção de post (entre 1:2 e 2:1 — por exemplo 4:5, 1:1 ou 3:4).");
+        }
+        BufferedImage normalized = ImageOps.scaleToFit(img, 1600, 1600);
+        byte[] jpeg = ImageOps.jpeg(normalized, 0.88f);
+        User owner = users.findById(user.id()).orElseThrow();
+        MediaStoragePort.StoredObject stored = media.put("users/" + user.id() + "/looks/photo-" + UUID.randomUUID() + ".jpg", jpeg, "image/jpeg");
+        media.register(owner, PhotoOrigin.SCHEME, null, stored, null, null, bytes, normalized.getWidth(), normalized.getHeight(), null,
+                ModerationStatus.APPROVED, Map.of("kind", "look_photo"));
+        return Map.of("url", stored.url(), "width", normalized.getWidth(), "height", normalized.getHeight(), "pipeline", PHOTO_PIPELINE);
+    }
+
+    /** Aplica a foto do look vinda do config ({@code scheme.photo.url}); sem foto própria, a capa volta para a primeira peça. */
+    void applyLookPhoto(CurrentUser user, Scheme s, Map<String, Object> background, List<SchemeItem> items) {
+        if (background == null) {
+            return;
+        }
+        Object inner = background.get("scheme") instanceof Map<?, ?> m ? m : background;
+        if (!(inner instanceof Map<?, ?> scheme) || !scheme.containsKey("photo")) {
+            return;
+        }
+        String url = scheme.get("photo") instanceof Map<?, ?> p && p.get("url") instanceof String u && !u.isBlank() ? u : null;
+        if (url == null) {
+            s.setCoverImageUrl(items.isEmpty() ? null : items.get(0).getWardrobeItem().getImageUrl());
+            return;
+        }
+        if (!url.contains("/users/" + user.id() + "/looks/")) {
+            throw ApiException.badRequest("FOTO_INVALIDA", "Envie a foto do look pelo pipeline de fotos do RF5.");
+        }
+        s.setCoverImageUrl(url);
+    }
+
     private void publishInternal(Scheme s, List<SchemeItem> items) {
         s.setStatus(SchemeStatus.PUBLISHED);
         if (s.getPublishedAt() == null) {
@@ -668,6 +723,7 @@ public class SchemeService {
         Set<UUID> after = items.stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet());
         if (form.background() != null || Boolean.TRUE.equals(form.applyRecommendedDirection())) {
             studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
+            applyLookPhoto(user, s, form.background(), items);
         }
         if (!before.equals(after) && s.getStatus() == SchemeStatus.PUBLISHED) {
             seals.flagRevalidation(s);

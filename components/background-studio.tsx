@@ -8,10 +8,27 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement } from "@/components/scheme-anatomies";
 
-export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; posterUrl?: string; }
+export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; posterUrl?: string; container?: { color?: string | null } | null; photo?: { url?: string | null; filters?: import("@/lib/card-art").PhotoFilters; preset?: string } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 interface Catalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 const STEPS = ["1 · Cor & gradiente", "2 · Presets AURA & materiais", "3 · Arte com IA / upload", "4 · Layout & peças"];
+
+/** Cor do container do esquema (RF11 · "3. Cor do container"): com arte de fundo ele fica sempre visível por cima dela. */
+const BOX_SWATCHES = ["#FFFFFF", "#F7F4EE", "#FBF7EF", "#EEF2F6", "#141414", "#0D1B2A", "#3A2416"];
+function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; skin: string }) {
+  const current = value.container?.color ?? null;
+  return (
+    <div>
+      <p className="label">Cor do container</p>
+      <p className="type-caption text-muted mb-1.5">Com preset AURA, material ou arte, a arte vira moldura (passe-partout) e o container do esquema fica sempre visível por cima — nunca sobre a foto do look. Padrão: a cor nativa do skin <b>{skin}</b>.</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Chip active={!current} onClick={() => onChange({ container: { color: null } })}>Nativa do skin</Chip>
+        {BOX_SWATCHES.map((c) => <button key={c} type="button" aria-label={`container ${c}`} aria-pressed={current === c} className={`h-7 w-7 rounded-md border-2 ${current === c ? "border-mark" : "border-line-soft"}`} style={{ background: c }} onClick={() => onChange({ container: { color: c } })} />)}
+        <input type="color" aria-label="cor personalizada do container" className="h-7 w-10 rounded border border-line-soft" value={current ?? "#ffffff"} onChange={(e) => onChange({ container: { color: e.target.value.toUpperCase() } })} />
+      </div>
+    </div>
+  );
+}
 
 /**
  * Background Studio (RF11) em 4 etapas. Regra da etapa 4: anatomias das seções B/C (Passarela, Etiqueta, Raio-X, Bento,
@@ -65,10 +82,11 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
       {step === 1 && (special ? disabledNote : (
         <div className="grid gap-3">
           {rec?.direction && <p className="type-caption text-muted">Direção recomendada para {(styles ?? []).join(", ") || "o look"}: <b>{cat?.directions?.[rec.direction]?.label ?? rec.direction}</b>{cat?.directions?.[rec.direction]?.aura && <Button size="sm" className="ml-2" onClick={() => { const d = cat!.directions[rec.direction!]; set({ aura: { variantId: d.aura!, format: value.aura?.format }, materialId: d.material ?? null, aiArt: null, uploadUrl: null }); if (d.skin) onSkin(d.skin); }}>Aplicar recomendada</Button>}</p>}
-          <div><p className="label">Preset AURA</p><div className="flex flex-wrap gap-1.5">{(cat?.auraPresets ?? []).map((a) => <Chip key={a.id} active={auraPreset?.id === a.id} title={a.archetype} onClick={() => set({ aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, posterUrl: a.variants?.[0]?.static?.previewUrl ?? a.variants?.[0]?.static?.url, aiArt: null, uploadUrl: null })}><span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999"]).join(",")})` }} />{a.name}</Chip>)}</div></div>
-          {auraPreset && (auraPreset.variants ?? []).length > 0 && <div><p className="label">Variação · {auraPreset.name}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className={`rounded border-2 p-0.5 ${value.aura?.variantId === v.id ? "border-mark" : "border-line-soft"}`} title={v.description} onClick={() => set({ aura: { variantId: v.id, format: value.aura?.format }, posterUrl: v.static?.previewUrl ?? v.static?.url })}>{v.static?.previewUrl ? <img src={v.static.previewUrl} alt={v.theme ?? v.id} className="aspect-[4/3] w-full rounded object-cover" /> : <span className="block p-2 type-caption">{v.theme ?? v.code}</span>}<span className="block truncate type-caption">{v.code} {v.theme}</span></button>)}</div></div>}
+          <div><p className="label">Preset AURA</p><div className="flex flex-wrap gap-1.5">{(cat?.auraPresets ?? []).map((a) => <Chip key={a.id} active={auraPreset?.id === a.id} title={a.archetype} onClick={() => set({ aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}><span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999"]).join(",")})` }} />{a.name}</Chip>)}</div></div>
+          {auraPreset && (auraPreset.variants ?? []).length > 0 && <div><p className="label">Variação · {auraPreset.name}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className={`rounded border-2 p-0.5 ${value.aura?.variantId === v.id ? "border-mark" : "border-line-soft"}`} title={v.description} onClick={() => set({ aura: { variantId: v.id, format: value.aura?.format } })}>{v.static?.previewUrl ? <img src={v.static.previewUrl} alt={v.theme ?? v.id} className="aspect-[4/3] w-full rounded object-cover" /> : <span className="block p-2 type-caption">{v.theme ?? v.code}</span>}<span className="block truncate type-caption">{v.code} {v.theme}</span></button>)}</div></div>}
           <div><p className="label">Material (camada)</p><div className="flex flex-wrap gap-1.5">{(cat?.materials ?? []).map((m) => <Chip key={m.id} active={value.materialId === m.id} title={m.finish} onClick={() => set({ materialId: value.materialId === m.id ? null : m.id })}>{m.name}{auraPreset?.recommendedMaterials?.includes(m.id) && " ★"}</Chip>)}</div></div>
           {value.aura && value.materialId && <div><p className="label">Formato (RF11 §7.6)</p><div className="flex gap-1.5">{(["IMAGEM_UNICA", "MOSAICO"] as const).map((f) => <Chip key={f} active={value.aura?.format === f} onClick={() => set({ aura: { ...value.aura!, format: f } })}>{f === "MOSAICO" ? "Mosaico (modelagem 11)" : "Imagem única"}</Chip>)}</div></div>}
+          <ContainerColor value={value} onChange={set} skin={skin} />
         </div>
       ))}
       {step === 2 && (special ? disabledNote : (

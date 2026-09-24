@@ -4,7 +4,9 @@ import type { SchemeView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
-import { backgroundStyle, skinStyle } from "@/lib/skins";
+import { skinStyle } from "@/lib/skins";
+import { containerColorOf, inkOn, photoFilterCss, resolveCardArt, studioOf } from "@/lib/card-art";
+import { CardArtLayer } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { AnatomyBody, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
@@ -65,31 +67,42 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const placement = sealPlacement(scheme.layoutAnatomy ?? (l === "grade" ? "GRADE_PECAS" : l === "lateral" ? "HERO_LISTA" : "LISTA_VERTICAL"));
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
   const pieceSeals = (id?: string) => (id ? badges.filter((b) => b.tier === "PECA" && (b.linkedPieceIds ?? []).includes(id)) : []);
+  // Arte do Background Studio fica no palco do card, atrás do container (passe-partout) — nunca sobre a foto do conjunto.
+  const ownArt = hasOwnArt(scheme.layoutAnatomy);
+  const studio = studioOf(scheme.background);
+  const art = ownArt ? null : resolveCardArt(scheme.background, { season: scheme.season });
+  const hasArt = !!art && art.kind !== "none";
+  const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
+  const manualBox = !!(scheme.containerColor ?? studio.container?.color);
+  const photoFilter = photoFilterCss(studio.photo?.filters);
+  const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(manualBox ? { "--card-ink": inkOn(boxColor) } : {}) } as React.CSSProperties) : undefined;
   const titleRow = <div className="c-title seal-row"><span className="min-w-0 flex-1">{scheme.title}</span>{placement.zone === "TITLE_ROW" && <SealSlot inline seals={badges} />}</div>;
   return (
-    <article className="fai-card" style={skinStyle(scheme.cardSkin)} aria-label={scheme.title}>
+    <article className={`fai-card ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <div className="c-header">
         <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={18} /></span>
         <span className="c-meta">@{scheme.owner?.username} · {relative(scheme.publishedAt ?? scheme.createdAt)}</span>
         {scheme.lookDoDia && <span className="badge badge-chalk" title={t("lookbook.daily")}>LDD</span>}
         <span className="c-fav" aria-hidden><FaiIcon id="SOC-06" size={24} active={scheme.viewer?.saved} decorative /></span>
       </div>
-      <Link href={link} onClick={openModal} className="scheme-container block" data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
+      <div className="scheme-stage">
+      {hasArt && art && <CardArtLayer art={art} />}
+      <Link href={link} onClick={openModal} className="scheme-container block" data-anatomy={scheme.layoutAnatomy ?? "LISTA_VERTICAL"} data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
         {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
         {hasOwnArt(scheme.layoutAnatomy) ? (
           <AnatomyBody scheme={scheme} pieces={toAnatomyPieces(scheme)} />
         ) : l === "grade" ? (
-          <div className="grid-pieces" style={backgroundStyle(scheme.background)}>
+          <div className="grid-pieces">
             {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}{pieceSeals(p.id).length > 0 && <span className="absolute bottom-1 right-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
           </div>
         ) : l === "lateral" ? (
           <div className="hero-lateral-row">
-            <div className="c-photo" style={backgroundStyle(scheme.background)}>{cover && <img src={cover} alt="" loading="lazy" />}</div>
+            <div className="c-photo">{cover && <img src={cover} alt="" loading="lazy" style={{ filter: photoFilter }} />}</div>
             <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><b>{p.name}</b><span>{p.brand ?? p.slot}</span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>
           </div>
         ) : (
           <>
-            <div className="c-photo" style={backgroundStyle(scheme.background)}>{cover && <img src={cover} alt="" loading="lazy" />}</div>
+            <div className="c-photo">{cover && <img src={cover} alt="" loading="lazy" style={{ filter: photoFilter }} />}</div>
             {titleRow}
             {!compact && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${onPiece ? "cursor-pointer hover:bg-surface-2" : ""}`} role={onPiece ? "button" : undefined} tabIndex={onPiece ? 0 : undefined}
@@ -106,6 +119,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
         {placement.zone === "STUDS" && <SealStuds seals={badges} />}
         <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
       </Link>
+      </div>
       <div className="c-foot">
         <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span></span>
         {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
