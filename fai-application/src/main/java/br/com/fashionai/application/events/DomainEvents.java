@@ -45,6 +45,10 @@ public final class DomainEvents {
     public record MirrorAction(UUID userId, String action) {
     }
 
+    /** Card Trello RF38 — reavaliar os direitos promocionais (cupons) do usuário depois de uma conquista. */
+    public record CouponRightsCheck(UUID userId) {
+    }
+
     public record RoomOrganized(UUID userId) {
     }
 }

@@ -31,7 +31,9 @@ public enum NotificationType {
     CHALLENGE_RESULT(NotificationCategory.ACHIEVEMENT, true),
     /** RF34 §4.3 / RF35 §5.3 — conquista desbloqueada e evolução do quarto. */
     ACHIEVEMENT_UNLOCKED(NotificationCategory.ACHIEVEMENT, true),
-    ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true);
+    ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true),
+    /** Card Trello RF38 — "Parabéns! Deseja resgatar o CUPOM?" (direito promocional conquistado no app). */
+    COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true);
 
     private final NotificationCategory category;
     private final boolean optOutAllowed;

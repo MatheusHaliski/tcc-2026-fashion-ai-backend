@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { label, useTaxonomy, CATEGORY_LABEL } from "@/lib/api/taxonomy";
@@ -12,10 +12,10 @@ interface Tab { admin: boolean; brandName: string; participating: boolean; combi
 interface Form {
   id?: string; name: string; description: string; gameType: string; requiredCategories: string[]; requiredStyles: string[]; requiredOccasions: string[];
   minBrandPieces: string; minDeckPower: string; minRarity: string; minWins: string; couponTitle: string; discountKind: "percent" | "amount"; discount: string;
-  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string;
+  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string;
 }
 const EMPTY: Form = { name: "", description: "", gameType: "COMBINACAO", requiredCategories: [], requiredStyles: [], requiredOccasions: [], minBrandPieces: "1", minDeckPower: "0", minRarity: "",
-  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9" };
+  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "" };
 const toggle = (xs: string[], x: string) => (xs.includes(x) ? xs.filter((y) => y !== x) : xs.length >= 6 ? xs : [...xs, x]);
 
 /**
@@ -23,21 +23,22 @@ const toggle = (xs: string[], x: string) => (xs.includes(x) ? xs.filter((y) => y
  * (categorias, estilos, ocasiões, peças da marca, poder, raridade ou vitórias) completa o jogo e qual cupom entrega;
  * acompanha os cupons emitidos e confere o código no caixa. Para visitantes, a aba mostra as combinações ativas.
  */
-export function BrandFlairTab({ slug }: { slug: string }) {
+export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: number }) {
   const { user } = useAuth(); const toast = useToast(); const tax = useTaxonomy();
   const tab = useApi<Tab>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/flair`, { signal, anonymous: !user }), [slug, !!user]);
   const [form, setForm] = useState<Form | null>(null); const [saving, setSaving] = useState(false);
   const [code, setCode] = useState(""); const [validated, setValidated] = useState<Voucher | null>(null);
+  useEffect(() => { if (autoNew > 0) setForm({ ...EMPTY }); }, [autoNew]);
   if (tab.error) return <ErrorState error={tab.error} onRetry={tab.reload} />;
   if (tab.loading || !tab.data) return <Skeleton className="h-64" />;
   const d = tab.data;
-  if (!d.participating) return <EmptyState title="Este perfil não participa do FLAIR." hint="Só lojas (perfis de marca) publicam combinações que viram cupons." />;
+  if (!d.participating) return <EmptyState title="Este perfil não participa do FLAIR." hint="Só marcas e celebridades publicam combinações que viram cupons." />;
 
   const edit = (c: Combination) => setForm({
     id: c.id, name: c.name, description: c.description ?? "", gameType: c.gameType, requiredCategories: c.requiredCategories, requiredStyles: c.requiredStyles, requiredOccasions: c.requiredOccasions,
     minBrandPieces: String(c.minBrandPieces), minDeckPower: String(c.minDeckPower), minRarity: c.minRarity ?? "", minWins: String(c.minWins || 2), couponTitle: c.coupon.title,
     discountKind: c.coupon.discountPercent !== "" ? "percent" : "amount", discount: String(c.coupon.discountPercent !== "" ? c.coupon.discountPercent : c.coupon.discountAmount),
-    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor,
+    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "",
   });
   async function save() {
     if (!form) return;
@@ -46,7 +47,7 @@ export function BrandFlairTab({ slug }: { slug: string }) {
     const body = { name: form.name, description: form.description || null, gameType: form.gameType, requiredCategories: form.requiredCategories, requiredStyles: form.requiredStyles,
       requiredOccasions: form.requiredOccasions, minBrandPieces: n(form.minBrandPieces), minDeckPower: n(form.minDeckPower), minRarity: form.minRarity || null, minWins: n(form.minWins),
       couponTitle: form.couponTitle, discountPercent: form.discountKind === "percent" ? n(form.discount) : null, discountAmount: form.discountKind === "amount" ? n(form.discount) : null,
-      minPurchase: n(form.minPurchase), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor };
+      minPurchase: n(form.minPurchase), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null };
     try {
       if (form.id) await api.put(`/api/flair/brand/combinations/${form.id}`, body); else await api.post("/api/flair/brand/combinations", body);
       toast.success("Combinação salva."); setForm(null); tab.reload();
@@ -131,6 +132,7 @@ export function BrandFlairTab({ slug }: { slug: string }) {
             <Field label="Estoque de cupons" id="fc-st" hint="vazio = ilimitado"><Input id="fc-st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
             <Field label="Cor" id="fc-col"><Input id="fc-col" type="color" className="h-10 w-16 p-1" value={form.accentColor} onChange={(e) => setForm({ ...form, accentColor: e.target.value })} /></Field>
           </div>
+          <Field label="Link da loja onde o cupom é usado" id="fc-url" hint="Opcional — sem ele, vale o site cadastrado no perfil."><Input id="fc-url" type="url" placeholder="https://" value={form.storeUrl} onChange={(e) => setForm({ ...form, storeUrl: e.target.value })} /></Field>
           <Switch checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label="Ativa (visível no FLAIR)" />
         </div>}
       </Dialog>

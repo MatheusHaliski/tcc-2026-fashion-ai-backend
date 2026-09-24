@@ -1,0 +1,77 @@
+@startuml RF25_Selos_Promocoes_Cupons_Atividades
+title RF25 — Selo / jogo FLAIR → direito promocional → cupom Fashion AI\n(atualizado com o card RF38 — Meus cupons promocionais e Meus cupons resgatados)
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Marca / Celebridade|
+start
+:Abrir o perfil (RF14/RF22) →\naba "Meus cupons promocionais";
+:Sub-aba "Todas as promoções" →\n"Criar promoção";
+if (Qual fonte de cupom?) then (Selo)
+  :Criar & editar o selo pelo formulário\ne arte de background (RF25);
+  :Definir a política de promoção do selo\n(tipo, % ou benefício, período, estoque,\nlimite por pessoa, link da loja);
+else (Jogo FLAIR)
+  :Aba "Minhas combinações FLAIR":\ncategorias, styles, occasions, peças da marca,\npoder mínimo, raridade ou vitórias na semana;
+  :Definir o cupom (título, % ou R$,\nvalidade, estoque, link da loja);
+endif
+:Promoção fica ATIVA\n(ou inativa fora do período / sem estoque);
+note right
+  "Todas as promoções" lista ativas e inativas
+  das duas fontes; o botão "Criar promoção"
+  leva direto ao formulário do RF25 ou ao FLAIR.
+end note
+
+|Usuário|
+:Usar o app normalmente\n(montar looks, publicar, jogar FLAIR);
+
+|Sistema|
+if (Conquistou o direito?) then (Selo)
+  :Look recebe o selo da marca/celebridade\n(vínculo aprovado — RF20/RF21);
+else (FLAIR)
+  :Deck/guarda-roupa completa a combinação\n(ou vence os duelos patrocinados);
+endif
+:Criar o direito promocional PENDENTE\n(coupon_rights: usuário, fonte, promoção);
+:Notificar o usuário (COUPON_AVAILABLE);
+
+|Usuário|
+:Receber a notificação:\n"Parabéns! Deseja resgatar o CUPOM?";
+if (Resgatar agora?) then (Sim)
+  |Sistema|
+  :Emitir o cupom Fashion AI da marca/celebridade\n(código único, validade, estoque, limite por pessoa);
+  :Registrar o resgate (promotion_redemptions\nou flair_redemptions) e contar na promoção;
+  |Usuário|
+  :Cupom aparece na aba\n"Meus cupons resgatados" (lookbook);
+  :Tocar no cupom;
+  :Abrir a loja terceira, fora do app FAI\n(link da promoção → site da marca → link do perfil);
+  |Marca / Celebridade|
+  :Conferir o código no caixa ou no e-commerce\n("Meus cupons promocionais" → validar);
+  :Cupom marcado como USADO;
+  stop
+else (Agora não / Dispensar)
+  |Usuário|
+  if (Dispensar?) then (Sim)
+    :Direito DISPENSADO;
+    stop
+  else (Agora não)
+    :Continua em "Cupons conquistados"\npara decidir depois;
+    stop
+  endif
+endif
+@enduml
