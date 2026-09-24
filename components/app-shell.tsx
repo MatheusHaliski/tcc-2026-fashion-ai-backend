@@ -24,6 +24,7 @@ const NAV = [
   { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
   { href: "/highlights", key: "nav.highlights", icon: "ACT-37", auth: true },
   { href: "/challenges", key: "nav.challenges", icon: "ACT-43", auth: true },
+  { href: "/flair", key: "nav.flair", icon: "ACT-46", auth: true },
   { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
   { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
   { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },

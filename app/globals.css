@@ -662,3 +662,52 @@ h1, h2, h3, h4 { margin: 0; }
 @keyframes stage-spot { from { opacity: .35; } to { opacity: 1; } }
 :root[data-reduce-motion="true"] .stage-spot { animation: none; }
 @media (prefers-reduced-motion: reduce) { .stage-spot { animation: none; } }
+
+/* ===================================================== FLAIR — cartas, decks, duelos e cupons */
+.flair-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); }
+.flair-card { display: block; padding: 4px; border-radius: 14px; width: 100%; max-width: 220px; transition: transform .18s ease; }
+.flair-card-sm { width: 128px; min-width: 128px; }
+button.flair-card:hover { transform: translateY(-3px); }
+.flair-card-selected { outline: 3px solid var(--thread); outline-offset: 2px; }
+.flair-card-inner { border-radius: 11px; background: var(--surface, #fff); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+.flair-rarity { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-muted, #666); }
+.flair-power { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 12px; }
+.flair-art { position: relative; margin: 4px 6px; aspect-ratio: 1 / 1; border-radius: 8px; background: #f3f1ec; display: grid; place-items: center; overflow: hidden; }
+.flair-art img { width: 100%; height: 100%; object-fit: contain; }
+.flair-brand { position: absolute; left: 4px; bottom: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(17,17,17,.78); color: #fff; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-name { font-weight: 700; font-size: 13px; line-height: 1.2; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-card-sm .flair-name { font-size: 11px; }
+.flair-sub { font-size: 10px; color: var(--ink-muted, #666); padding: 0 8px 4px; }
+.flair-stats { list-style: none; margin: 0; padding: 2px 8px 4px; display: grid; gap: 2px; }
+.flair-stats li { display: grid; grid-template-columns: 40px 1fr 22px; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; }
+.flair-stats i { height: 5px; border-radius: 3px; background: rgba(0,0,0,.08); overflow: hidden; display: block; }
+.flair-stats b { display: block; height: 100%; border-radius: 3px; }
+.flair-stats em { font-style: normal; text-align: right; }
+.flair-ability { margin: auto 6px 6px; padding: 3px 6px; font-size: 10px; font-weight: 700; border-radius: 6px; background: #111; color: #ffe29a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-combo { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2, #f1efe9); }
+.flair-avg { display: grid; justify-items: center; padding: 4px 0; border-radius: 8px; background: var(--surface-2, #f1efe9); font-size: 10px; }
+.flair-avg b { font-size: 15px; }
+.flair-round { padding: 8px 10px; border-radius: 10px; background: var(--surface-2, #f1efe9); animation: flair-in .35s ease both; }
+.flair-round-bars { display: grid; grid-template-columns: minmax(60px, 140px) 1fr 44px; align-items: center; gap: 4px 8px; margin: 4px 0; font-size: 12px; }
+.flair-round-bars span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flair-round-bars span.win { font-weight: 800; }
+.flair-round-bars i { height: 10px; border-radius: 5px; background: rgba(0,0,0,.07); display: block; overflow: hidden; }
+.flair-round-bars b { display: block; height: 100%; background: var(--thread, #2D55C9); border-radius: 5px; transition: width .4s ease; }
+.flair-round-bars b.alt { background: var(--mark, #E0457B); }
+.flair-round-bars em { font-style: normal; text-align: right; font-weight: 700; }
+.flair-result { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line, #ccc); }
+.flair-result b { font-size: 22px; }
+.flair-combo-head { padding: 12px 14px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.flair-coupon { margin-top: 6px; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.92); color: #111; text-shadow: none; font-weight: 700; font-size: 13px; border: 1px dashed rgba(0,0,0,.35); }
+.flair-coupon span { font-weight: 500; font-size: 11px; color: #555; }
+.flair-check { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; font-weight: 800; background: rgba(224,69,123,.14); color: var(--mark, #E0457B); flex: none; }
+.flair-check.ok { background: rgba(31,122,118,.16); color: #1F7A76; }
+.flair-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: var(--surface-2, #f1efe9); }
+.flair-code-lg { display: inline-block; font-size: 26px; padding: 10px 18px; border: 2px dashed currentColor; }
+.flair-voucher { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid; border-left-width: 6px; background: var(--surface, #fff); }
+.flair-album { border-collapse: separate; border-spacing: 6px; font-size: 12px; }
+.flair-album th { text-align: left; font-weight: 600; white-space: nowrap; }
+.flair-slot { display: inline-grid; place-items: center; width: 34px; height: 44px; border-radius: 6px; border: 1.5px dashed var(--line, #bbb); color: #111; font-weight: 800; }
+.flair-slot.on { border-style: solid; border-color: transparent; }
+@keyframes flair-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .flair-round { animation: none; } .flair-card { transition: none; } }

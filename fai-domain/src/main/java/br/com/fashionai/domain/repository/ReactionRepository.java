@@ -27,5 +27,7 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
 
     long countByActorIdAndReactionType(UUID actorId, ReactionType type);
 
+    long countByActorIdAndCreatedAtAfter(UUID actorId, Instant since);
+
     @Query("select r.targetId, count(r) from Reaction r where r.targetType = :type and r.reactionType = br.com.fashionai.domain.model.enums.ReactionType.LIKE and r.createdAt >= :since group by r.targetId") List<Object[]> countLikesSince(@Param("type") TargetType type, @Param("since") Instant since);
 }

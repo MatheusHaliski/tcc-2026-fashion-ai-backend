@@ -1,5 +1,5 @@
 "use client";
-import { use, useState } from "react";
+import { useEffect, use, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
@@ -12,6 +12,7 @@ import { SchemeCard, toSealBadges } from "@/components/scheme-card";
 import { SealCreator } from "@/components/seal-creator";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
+import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { ProfileHeader } from "@/components/profile-header";
@@ -26,6 +27,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const { slug } = use(params); const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
   const [tab, setTab] = useState("ESQUEMAS_DESTAQUE");
+  useEffect(() => { const q = new URLSearchParams(window.location.search).get("tab"); if (q) setTab(q.toUpperCase()); }, []);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
@@ -46,7 +48,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
-  const tabs = [...(isCeleb ? [{ id: "ERAS", label: "Eras" }] : [{ id: "COLECOES", label: "Coleções" }]), { id: "ESQUEMAS_DESTAQUE", label: "Esquemas em destaque" }, { id: "PECAS_DESTAQUE", label: "Peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" },
+  const tabs = [...(isCeleb ? [{ id: "ERAS", label: "Eras" }] : [{ id: "COLECOES", label: "Coleções" }]), { id: "ESQUEMAS_DESTAQUE", label: "Esquemas em destaque" }, { id: "PECAS_DESTAQUE", label: "Peças em destaque" }, { id: "LOOKS_CONSAGRADOS", label: admin ? "Meus looks" : "Looks consagrados" }, { id: "CATALOGO", label: "Catálogo de peças" }, { id: "SELOS", label: `Selos (${seals.data?.length ?? data.header.activeSeals})` }, { id: "PROMOCOES", label: "Promoções" }, ...(!isCeleb ? [{ id: "FLAIR", label: admin ? "Minhas combinações FLAIR" : "Combinações FLAIR" }] : []),
     ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: "Esquemas salvos" }, { id: "PECAS_SALVAS", label: "Peças salvas" }, { id: "REVISAO", label: "Revisão de vínculos" }, { id: "METRICAS", label: "Métricas" }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
@@ -75,6 +77,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
+      {tab === "FLAIR" && !isCeleb && <BrandFlairTab slug={slug} />}
       {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">Looks de qualquer usuário que conquistaram um selo deste perfil (política do selo + aprovação).</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div></> : <EmptyState title="Nenhum esquema em destaque ainda." hint="Aparecem aqui os looks que conquistaram um selo deste perfil." />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">Peças que compõem os looks com selo deste perfil.</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">no look <Link className="underline" href={`/schemes/${e.schemeId}`}>{e.schemeTitle}</Link>{e.author ? ` · @${e.author.username}` : ""}</span>} />)}</div></> : <EmptyState title="Nenhuma peça em destaque ainda." hint="As peças dos looks com selo deste perfil aparecem aqui." />)}
       {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title="Nenhum esquema salvo." />)}
