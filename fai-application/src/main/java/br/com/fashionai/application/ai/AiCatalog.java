@@ -203,7 +203,9 @@ public final class AiCatalog {
                 200, "Implementado — Photoroom + Stability Upscale + estúdio local");
         put(AiCapability.BRAND_LOGO_FINDER,
                 "Procura na internet o logo oficial da marca: Wikidata/Wikimedia Commons (logo P154 e site P856) → busca na web "
-                        + "pela IA (Claude + web_search) → ícone do site oficial; baixa, valida e guarda no storage próprio.",
+                        + "pela IA (Claude + web_search) → ícone do site oficial; baixa, valida e guarda no storage próprio. No RF4 também "
+                        + "lista marcas para o campo marca (buscador web: Wikidata, Simple Icons e IA), com o logo passado pelo filtro "
+                        + "de nitidez (fundo branco, letras pretas).",
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", "até 3 buscas na web (US$ 10 / mil buscas) + ≈3 mil tokens", 15000),
                 null,
                 local("Monograma SVG com as iniciais e uma cor estável por marca", 5),

@@ -1,5 +1,7 @@
 # Fashion AI - Servicos de IA por RF
 
+> **Atualizado em 24/09/2026 (etapa 12):** a versão atual, gerada do código e do teste ponta a ponta e com RF1–RF39 na numeração do Trello, está em `docs/planilhas/IA_por_RF_RNF.xlsx` (resumo em `docs/planilhas/ETAPA12_IA_E_ENTIDADES_POR_RF.md`). Este arquivo fica como registro do desenho inicial.
+
 Status: porta `AiProviderPort` e adaptador resiliente inicial criados. As chamadas passam por timeout de 30 s, retry com uma nova tentativa, circuit breaker, rate limit por usuario e auditoria RNF5 com provedor, modelo, latencia e custo estimado. Nenhuma chave de API deve sair do backend.
 
 Fontes usadas: `RF24_MAPEAMENTO_IAS.md`, `RF24_mapa_ia_completo.xlsx`, Trello JSON exportado, diagramas do pacote oficial, `README_RF4.md`, `ANALISE_RF4_Flat_Lay_Pipeline.md`, `ANALISE_RF18_Provador_Virtual_2D.md`, `RFC_COMPLETE_ARCHITECTURE_RF4_RF18.md`, `DRESS_TESTER_PIPELINE_OUTLINE.md`, documentos RF6 Look do Dia/Hype Score e anatomias de cards.

@@ -129,16 +129,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <div className="mx-auto flex max-w-[1400px] gap-6 px-3 py-4 sm:px-5">
-        <nav aria-label={t("a11y.menu")} className="hidden w-56 shrink-0 lg:block"><div className="sticky top-16"><NavList /></div></nav>
+        <nav aria-label={t("a11y.menu")} className="hidden w-56 shrink-0 lg:block"><div className="side-nav-box sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto"><NavList /></div></nav>
         {drawer && (
           <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setDrawer(false)}>
             <div className="absolute inset-0 bg-black/40" />
-            <nav aria-label={t("a11y.menu")} className="absolute left-0 top-0 h-full w-72 overflow-auto bg-surface p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
+            <nav aria-label={t("a11y.menu")} className="side-nav-box absolute left-0 top-0 h-full w-72 overflow-auto rounded-none p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
           </div>
         )}
         <main id="conteudo" className="min-w-0 flex-1 pb-20 lg:pb-6"><div className="page-container">{children}</div></main>
       </div>
-      <nav aria-label={t("a11y.menu")} className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-line-soft bg-surface/95 py-1 backdrop-blur lg:hidden">
+      <nav aria-label={t("a11y.menu")} className="side-nav-box fixed bottom-0 left-0 right-0 z-40 flex justify-around rounded-none border-t py-1 lg:hidden">
         {NAV.filter((n) => PRIMARY.includes(n.href) && (!n.auth || user)).map((n) => (
           <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? "page" : undefined} className="flex flex-col items-center gap-0.5 px-2 py-1 text-[10px]">
             <FaiIcon id={n.icon} size={24} active={isActive(n.href)} decorative /><span className={cn(isActive(n.href) && "font-semibold")}>{t(n.key)}</span>

@@ -13,162 +13,175 @@ OUT = ROOT / "docs" / "rubricas"
 OBRIGATORIOS = [
     dict(
         criterio="≥ 80% do escopo acordado com os professores",
-        status="PARCIAL",
-        evidencia="Serviços de aplicação para RF1–RF36 e RNF1–RNF12 em fai-application/.../service; "
-                  "entidades e migrações V1–V6; docs/novo-projeto/tabela-*.md.",
-        falta_codigo="Bloco 8 (API REST de todos os serviços) e bloco 11 (frontend com todas as telas).",
-        falta_equipe="Levar aos professores a lista de RFs do escopo acordado e marcar, RF a RF, onde está a tela e o endpoint "
-                     "(a planilha de IA/entidades do bloco 12 serve de checklist).",
+        status="OK",
+        evidencia="39 RFs do Trello (RF1–RF39) com endpoint e tela; 368 endpoints REST no inventário; teste ponta a ponta "
+                  "com 452 passos cobrindo todos os endpoints (docs/testes/TABELA_ENDPOINTS_POR_RF.md/.xlsx: RF, CA, endpoint, "
+                  "status, banco em que salvou, tela que exibe). Planilhas da etapa 12 (docs/planilhas/) servem de checklist RF a RF.",
+        falta_codigo="—",
+        falta_equipe="Levar aos professores a lista de RFs do escopo acordado e a tabela de endpoints por RF; confirmar se RF33–RF39 "
+                     "(Passarela 3D, Eras, Coleções, Foto com manequim, FLAIR, Cupons, Criar guarda-roupa 3D) entram no escopo.",
     ),
     dict(
         criterio="Processo ágil documentado no TDE (sprints)",
         status="PENDENTE",
-        evidencia="Board do Trello com HUs/RFs; HUs e critérios de aceite em markdowns/HU*.md e "
-                  "markdowns/02-rf-reestruturados-e-criterios-aceite.md.",
+        evidencia="Board do Trello com RF1–RF39 (critérios de aceite nos cards); HUs e CAs em markdowns/; histórico de commits por RF.",
         falta_codigo="—",
         falta_equipe="Para cada sprint: objetivo, cards comprometidos x entregues, print do board no início e no fim, "
                      "review/retrospectiva curta, link dos commits/PRs da sprint. Preencher o modelo do TDE.",
     ),
     dict(
         criterio="Frontend bem acabado, mensagens informativas e resiliente a erros",
-        status="PENDENTE",
-        evidencia="Backend já devolve erros de negócio com código e mensagem (ApiException, ex.: 409 PECA_INDISPONIVEL, "
-                  "429 cota de IA, 422 validação); tipografia oficial (lib/design/typography.css) e 77 ícones FAI.",
-        falta_codigo="Bloco 11: toasts de sucesso/erro, estados vazios, skeletons de carregamento, error boundary por página, "
-                     "retry em falha de rede, mensagens de fallback de IA.",
-        falta_equipe="Na demo, provocar um erro de propósito (ex.: sem internet, campo inválido) e mostrar a mensagem.",
+        status="OK",
+        evidencia="Next.js com toasts de sucesso/erro (useToast), EmptyState, ErrorState com 'tentar de novo', Skeleton de "
+                  "carregamento, mensagens de negócio vindas da API (409/422/429), aviso de fallback de IA (motor local) e status "
+                  "por fonte no buscador de marcas; capturas em docs/novos-rf/telas-*/.",
+        falta_codigo="—",
+        falta_equipe="Na demo, provocar um erro de propósito (campo inválido, peça indisponível no look) e mostrar a mensagem.",
     ),
     dict(
         criterio="Backend RESTful comunicando via JSON",
-        status="PARCIAL",
-        evidencia="Casos de uso prontos e compilando; DTOs/records em JSON; módulo fai-web.",
-        falta_codigo="Bloco 8: controllers REST (substantivos no plural, verbos HTTP, 201/204/404/409/422), "
-                     "GlobalExceptionHandler com application/problem+json, OpenAPI.",
+        status="OK",
+        evidencia="368 endpoints REST (fai-web/.../controller) com verbos e códigos HTTP (200/201/202/204/400/403/404/409/422/429), "
+                  "GlobalExceptionHandler com JSON de erro (code, message, details, correlationId), springdoc-openapi + Swagger UI.",
+        falta_codigo="—",
         falta_equipe="Mostrar o Swagger UI e uma chamada no DevTools (Network) com o JSON.",
     ),
     dict(
         criterio="Dados relevantes persistidos em banco",
         status="OK",
-        evidencia="MySQL via Flyway V1–V6 (JPA, UUID CHAR(36), campos sensíveis cifrados com AES-GCM); "
-                  "auditoria em audit_log; log de inferência de IA; Cassandra (timeline) e Redis (contadores/cache).",
-        falta_codigo="Bloco 10: subir a aplicação contra o MySQL e validar ponta a ponta.",
-        falta_equipe="Levar o diagrama ER (docs/novo-projeto/tabela-entidades-rf-bancos.md + markdowns/uml-casos-er-classes.md).",
+        evidencia="MySQL com Flyway V1–V21 (79 entidades JPA; campos sensíveis cifrados com AES-GCM); audit_log; ai_inference_log; "
+                  "prova por endpoint do que foi gravado (general_log do MySQL) em docs/testes/; projeções Redis/Cassandra/OpenSearch e "
+                  "mídia em S3 atrás de feature flags (docs/planilhas/Entidades_BD_por_RF_RNF.xlsx).",
+        falta_codigo="—",
+        falta_equipe="Levar o diagrama de classes v4 (docs/diagramas/fashionai-classes-v4.puml) e a planilha de entidades por RF.",
     ),
     dict(
         criterio="≥ 2 perfis de acesso validados no frontend E no backend",
-        status="PARCIAL",
-        evidencia="Perfis PESSOAL, MARCA e CELEBRIDADE (ProfileType) + papel USER/ADMIN (User.role); "
-                  "guard.requireAdmin em AdminService/ChallengeService/BackgroundStudioService; "
-                  "dashboard de emissor só para MARCA/CELEBRIDADE; ResourceOwnerAuthorizationTest.",
-        falta_codigo="Bloco 8: @PreAuthorize/filtros por papel e 403 JSON. Bloco 11: guarda de rota e menus ocultos por perfil.",
+        status="OK",
+        evidencia="Perfis PESSOAL, MARCA e CELEBRIDADE + papel ADMIN; guard.requireAdmin/requireOwner no backend (403 ACESSO_NEGADO testado "
+                  "no E2E, ex.: usuário comum no criador de guarda-roupa RF39 e no admin); menus e rotas por perfil no frontend "
+                  "(aba Criar guarda-roupa 3D só para MARCA/CELEBRIDADE; /admin só para ADMIN); ResourceOwnerAuthorizationTest.",
+        falta_codigo="—",
         falta_equipe="Na demo: logar como PESSOAL e tentar abrir /admin (bloqueado na tela e 403 na API); logar como ADMIN e abrir.",
     ),
     dict(
         criterio="Dashboard gerencial com informações, filtros e gráficos",
-        status="PARCIAL",
-        evidencia="DashboardService (admin e emissor), filtros período/país/tipo de perfil, alertas, layout de widgets salvo "
-                  "por usuário; V6 com procedures sp_admin_kpis/sp_timeseries, views vw_country_insights/vw_brand_usage e índices.",
-        falta_codigo="Bloco 8 (endpoint /api/admin/dashboard) e bloco 11 (gráficos de linha/barra/pizza/mapa).",
+        status="OK",
+        evidencia="/admin/dashboard e dashboard do emissor (marca/celebridade) com filtros período/país/tipo de perfil, gráficos e "
+                  "widgets salvos por usuário; procedures sp_admin_kpis/sp_timeseries e views (V6); endpoints testados no E2E.",
+        falta_codigo="—",
         falta_equipe="Preparar 2–3 perguntas gerenciais que o dashboard responde (ex.: 'em qual país a IA custa mais por usuário?').",
     ),
     dict(
         criterio="Git organizado (branches, commits) com participação de TODOS os alunos",
         status="RISCO",
-        evidencia="Branches por feature e PRs (#8, #12); commits no padrão Conventional Commits (feat/fix/chore com RF no escopo). "
-                  "ATENÇÃO: `git shortlog -sn --all` neste repositório mostra commits só de Matheus + bots; nenhum do Bryan.",
+        evidencia="Branch por frente e commits no padrão Conventional Commits com o RF no escopo. ATENÇÃO: `git shortlog -sn --all` "
+                  "mostrava em 24/09 Matheus (82), Claude (42) e copilot (10); nenhum commit do Bryan.",
         falta_codigo="—",
         falta_equipe="Bryan precisa commitar com a própria conta (docs das sprints, testes, telas, revisões de PR). "
-                     "Todo PR revisado/aprovado pelo outro integrante. Apresentar também o histórico do repositório "
-                     "SAI-TCC-2026. Confirmar com os professores a política sobre commits assistidos por IA (co-autoria aparece no log).",
+                     "Todo PR revisado/aprovado pelo outro integrante. Confirmar com os professores a política sobre commits "
+                     "assistidos por IA (a co-autoria aparece no log).",
     ),
 ]
 
 # prioridade: A = recomendado (maior retorno pelo esforço) | B = reserva | C = não recomendado
 OPCIONAIS = [
     dict(criterio="Engenharia de requisitos (UML/BDD/jornadas) em ≥80% das sprints", area="Eng. software", valor=1.0,
-         prioridade="A", meta="100%", status="PARCIAL",
-         evidencia="HU01–HU20 com critérios de aceite, casos de uso e ER (markdowns/uml-*.md), diagramas de atividade "
-                   "(markdowns/05-diagramas-atividade.md, RF33_Vista-me_Atividades.puml), diagramas de sequência dos pipelines RF4/RF18.",
-         acao="Marcar em cada sprint do TDE qual HU/diagrama modelou os cards daquela sprint."),
+         prioridade="A", meta="100%", status="OK",
+         evidencia="Pacote de diagramas 13 (atividades, sequência, estados, classes e componentes de RF1–RF39; RF25–RF39 gerados do "
+                   "código; RF4 v3 e RF5 v4 com o buscador de marcas); CAs por RF nos cards do Trello.",
+         acao="Marcar em cada sprint do TDE qual diagrama modelou os cards daquela sprint."),
     dict(criterio="Processo de qualidade (plano de testes, revisão no git, reprovações de QA)", area="Eng. software", valor=1.0,
-         prioridade="B", meta="60–100%", status="PENDENTE",
-         evidencia="Critérios de aceite por RF (CA01..) já servem de casos de teste.",
+         prioridade="B", meta="60–100%", status="PARCIAL",
+         evidencia="Teste ponta a ponta por CA (452 passos, 368 endpoints) com a tabela RF × CA × endpoint × banco × tela e até 5 "
+                   "fotos de evidência por endpoint (docs/testes/); bugs achados e corrigidos registrados nos commits 'fix(...)'.",
          acao="Plano de testes por sprint a partir dos CAs; coluna 'QA' no Trello com cards reprovados; revisão obrigatória em PR."),
     dict(criterio="Prototipação no Figma + checklist de usabilidade + teste filmado", area="Eng. software", valor=1.5,
          prioridade="B", meta="60–100%", status="PARCIAL",
-         evidencia="Anatomias dos cards (docs/anatomias), pranchas de telas (markdowns/04-telas-artefatos-e-pranchas.md).",
+         evidencia="Anatomias dos cards (v17), anatomia do DNA (v4), telas capturadas por RF em docs/.",
          acao="Exportar telas para o Figma; aplicar checklist das 10 heurísticas de Nielsen; filmar 1 usuário usando o app (5 min)."),
     dict(criterio="Cobertura de testes do backend (JaCoCo)", area="Backend", valor=1.0,
-         prioridade="B", meta="50% (0,6)", status="PENDENTE",
-         evidencia="Serviços puros e testáveis (Hype, Inventory Score, RoomAddress, faixas de clima, cursor de busca).",
-         acao="Bloco 10: JaCoCo no pom + testes unitários das regras de cálculo; relatório HTML como evidência."),
+         prioridade="B", meta="50% (0,6)", status="OK",
+         evidencia="JaCoCo medido com o agente no backend durante o teste ponta a ponta (452 passos, 368 endpoints): 74,4% das linhas "
+                   "e 47,9% dos ramos do backend; 75,2% das linhas do fai-application e 90,5% do fai-web (docs/testes/COBERTURA_E2E.md, "
+                   "relatório HTML no pacote de evidências). Só com testes unitários a cobertura é baixa (3% no fai-application).",
+         acao="Mostrar o relatório HTML e explicar como foi medido (agente JaCoCo + scripts/e2e/jacoco_report.jsh); "
+              "se os professores exigirem cobertura só por testes unitários, escrever testes de serviço com H2/Testcontainers."),
     dict(criterio="Documentação: OpenAPI com sumário/descrição, payloads reais, README completo", area="Backend", valor=1.0,
-         prioridade="A", meta="100%", status="PENDENTE",
-         evidencia="—",
-         acao="Bloco 8: springdoc-openapi com @Operation/@ExampleObject por endpoint; README.md (o que é, como subir, como rodar)."),
+         prioridade="A", meta="100%", status="OK",
+         evidencia="springdoc-openapi com @Operation (RF/CA no sumário) em todos os endpoints; README; payloads reais de cada "
+                   "endpoint nos cartões de evidência do teste ponta a ponta (docs/testes/).",
+         acao="Mostrar o Swagger UI e um cartão de evidência (requisição → resposta → SQL)."),
     dict(criterio="Migrações profissionais (evidência em ≥50% das sprints)", area="Backend", valor=1.0,
          prioridade="A", meta="30% agora → 100%", status="PARCIAL",
-         evidencia="Flyway V1–V6 (baseline, RFs completos, seed de marcas, critérios, Meu Guarda-Roupa, dashboard). "
-                   "Hoje todas as migrações têm a mesma data de commit, o que só garante a faixa de 30%.",
-         acao="A partir desta sprint, toda mudança de banco entra como V7, V8…, commitada na sprint em que foi feita; "
+         evidencia="Flyway V1–V21, uma migração por mudança (ex.: V20 loja/criador do guarda-roupa, V21 marca da peça pela busca web). "
+                   "As migrações foram commitadas em 2 dias (23 e 24/09), o que só garante a faixa de 30%.",
+         acao="A partir desta sprint, toda mudança de banco entra como V22, V23…, commitada na sprint em que foi feita; "
               "tabela 'migração × sprint' no TDE."),
     dict(criterio="SQL avançado: grouped queries, índices de regra de negócio, procedures", area="Backend", valor=1.5,
          prioridade="A", meta="100%", status="OK",
          evidencia="a) GROUP BY no MysqlAnalyticsAdapter (uso de IA, marcas, países, faixas de Hype/Inventory, funil de selos); "
-                   "b) índices UNIQUE que impõem regras (username/e-mail únicos, seguir 1×, 1 Look do Dia por dia, 1 reação por alvo, 1 voto por entrada de desafio, ledger idempotente de FAI Points) "
-                   "+ índices de V6; c) procedures sp_admin_kpis, sp_timeseries, sp_purge_notifications e views.",
+                   "b) índices UNIQUE que impõem regras (username/e-mail únicos, seguir 1×, 1 Look do Dia por dia, 1 reação por alvo, "
+                   "1 voto por entrada de desafio, ledger idempotente de FAI Points); c) procedures sp_admin_kpis, sp_timeseries, "
+                   "sp_purge_notifications e views; EXPLAIN em docs/banco/EXPLAIN_DASHBOARD.md.",
          acao="Mostrar o EXPLAIN de uma consulta do dashboard usando o índice."),
     dict(criterio="NoSQL avançado (JSON Schema, índices/TTL, aggregation/sharding)", area="Backend", valor=1.5,
          prioridade="C", meta="30–60%", status="PARCIAL",
-         evidencia="Cassandra (timeline particionada por usuário) e Redis com TTL (cache, rate limit).",
-         acao="Só vale se sobrar tempo: TTL explícito nas tabelas do Cassandra + validação de schema do payload."),
+         evidencia="Cassandra (timeline_by_user e notifications_by_user com TTL de 90/30 dias) e Redis (contadores, rate limit) "
+                   "atrás de feature flags; desligados no ambiente de teste.",
+         acao="Só vale se sobrar tempo: subir Cassandra/Redis no docker-compose e mostrar a timeline particionada."),
     dict(criterio="Microsserviços", area="Backend", valor=1.5, prioridade="C", meta="—", status="NÃO SE APLICA",
          evidencia="Arquitetura é monólito modular hexagonal (decisão consciente).", acao="Não perseguir."),
     dict(criterio="Service Discovery + API Gateway", area="Backend", valor=1.0, prioridade="C", meta="—", status="NÃO SE APLICA",
          evidencia="—", acao="Não perseguir."),
     dict(criterio="Serviços cloud relevantes (≥4)", area="Backend", valor=1.5,
          prioridade="A", meta="100%", status="PARCIAL",
-         evidencia="Hospedagem Vercel; storage S3/Vercel Blob (fotos e cards); IA generativa (Claude, Gemini, FASHN, Meshy); "
-                   "e-mail transacional Resend; login federado Google; MySQL gerenciado.",
-         acao="Bloco 9 (adaptadores) + deploy; no TDE, justificar cada serviço pelo problema de negócio."),
+         evidencia="Adaptadores prontos: S3 (mídia), Claude/Gemini/FASHN/Meshy/Photoroom (IA), Resend (e-mail), Open-Meteo (clima), "
+                   "Wikidata/GitHub (buscador de marcas); frontend na Vercel. Neste ambiente só o GitHub é alcançável (rede restrita) "
+                   "e não há chaves de IA: tudo roda no fallback local.",
+         acao="Deploy com as chaves reais; no TDE, justificar cada serviço pelo problema de negócio e mostrar 1 chamada real de cada."),
     dict(criterio="Padrões de projeto e arquitetura limpa (backend)", area="Backend", valor=1.0,
          prioridade="A", meta="100%", status="OK",
-         evidencia="Hexagonal em módulos Maven (domain/application/infrastructure/web/bootstrap), ports & adapters, "
-                   "Strategy + Chain of Responsibility no AiEngine (provedor principal → fallback → local), Observer (DomainEvents), "
-                   "Repository, Circuit Breaker/Retry (resilience4j), Facade (DashboardService).",
+         evidencia="Hexagonal em módulos Maven (domain/application/infrastructure/web/bootstrap), ports & adapters, Strategy + Chain "
+                   "of Responsibility no AiEngine (primário → alternativa → local) e no buscador de marcas (Wikidata → Simple Icons → IA), "
+                   "Pipeline (LogoFilter, Flat Lay, Estúdio), Observer (eventos AFTER_COMMIT), Repository, Circuit Breaker/Retry, Facade.",
          acao="Escrever docs/arquitetura/PADROES.md com um trecho de código por padrão e o motivo."),
     dict(criterio="Cobertura de testes do frontend", area="Frontend", valor=1.0, prioridade="C", meta="20% (0,3)", status="PENDENTE",
-         evidencia="—", acao="Opcional: Vitest nos componentes utilitários."),
+         evidencia="Capturas automatizadas com Playwright (fluxos RF4/RF5/RF13/RF39), mas sem testes unitários de componentes.",
+         acao="Opcional: Vitest nos componentes utilitários."),
     dict(criterio="Responsivo e customizável (temas, mobile, tela customizável salva)", area="Frontend", valor=1.5,
-         prioridade="A", meta="100%", status="PARCIAL",
-         evidencia="Layout de widgets do dashboard salvo por usuário (user_preferences.dashboard_layout_json); "
-                   "Background Studio/skins de cards; tokens de tipografia.",
-         acao="Bloco 11: temas claro/escuro/alto contraste, breakpoints mobile, arrastar/ocultar widgets com salvamento."),
+         prioridade="A", meta="100%", status="OK",
+         evidencia="Temas claro/escuro/alto contraste (data-theme), cor do container e fundo da interface salvos em user_preferences, "
+                   "widgets do dashboard salvos por usuário, Background Studio/skins de cards, layout mobile com menu recolhível.",
+         acao="Na demo, trocar o tema e mostrar a tela no celular."),
     dict(criterio="Internacionalização (textos, formatos, dados e moeda)", area="Frontend", valor=1.5,
-         prioridade="B", meta="60–100%", status="PENDENTE",
-         evidencia="Locale do usuário já existe nas preferências.",
-         acao="Bloco 11: PT-BR/EN/ES com arquivos de mensagens; Intl.DateTimeFormat/NumberFormat; preços com moeda da loja."),
+         prioridade="B", meta="60–100%", status="PARCIAL",
+         evidencia="Dicionários PT-BR/EN/ES (lib/i18n) e seletor de idioma no topo; formatos de data/número por locale.",
+         acao="Completar a tradução das telas novas (RF25–RF39) e mostrar a troca de idioma na demo."),
     dict(criterio="Padrões de projeto e arquitetura limpa (frontend)", area="Frontend", valor=1.0,
-         prioridade="B", meta="100%", status="PENDENTE",
-         evidencia="—", acao="Bloco 11: camadas api/ (client), hooks/, components/, features/; Adapter para a API; Provider para tema/i18n."),
+         prioridade="B", meta="100%", status="PARCIAL",
+         evidencia="Camadas lib/api (client), lib/hooks (useApi), components/ui, components/<área>; Provider de i18n e de tema.",
+         acao="Documentar as camadas e o padrão Adapter da API em docs/arquitetura."),
     dict(criterio="Acessibilidade (público, estratégias, teste com o público)", area="Frontend", valor=1.5,
-         prioridade="B", meta="60–100%", status="PENDENTE",
-         evidencia="—",
-         acao="Público sugerido: pessoas com daltonismo (moda depende de cor). Estratégias: nome da cor em texto em toda peça, "
-              "alto contraste, foco visível/teclado, alt text gerado. Teste com 3 pessoas e registrar."),
+         prioridade="B", meta="60–100%", status="PARCIAL",
+         evidencia="Nome da cor em texto em toda peça, tema de alto contraste, combobox do buscador de marcas navegável por teclado "
+                   "(role=combobox/listbox), rótulos ARIA nos controles.",
+         acao="Teste com 3 pessoas daltônicas e registrar."),
     dict(criterio="CI/CD por ambiente (dev, test, prod)", area="DevOps", valor=1.5,
          prioridade="B", meta="60–100%", status="PARCIAL",
-         evidencia="Frontend já com deploys automáticos Preview/Production na Vercel e variáveis por ambiente.",
+         evidencia="Frontend com deploys automáticos Preview/Production na Vercel. Não há workflow do GitHub Actions no repositório.",
          acao="GitHub Actions: build + testes + JaCoCo em PR (test); deploy do backend em dev (branch) e prod (main)."),
-    dict(criterio="Infraestrutura como código", area="DevOps", valor=1.0, prioridade="C", meta="30–60%", status="PENDENTE",
-         evidencia="—", acao="docker-compose.dev.yml (bloco 9) conta como parcial; Terraform só se sobrar tempo."),
+    dict(criterio="Infraestrutura como código", area="DevOps", valor=1.0, prioridade="C", meta="30–60%", status="PARCIAL",
+         evidencia="docker-compose.dev.yml com MySQL/Redis/Cassandra/OpenSearch/MinIO.", acao="Terraform só se sobrar tempo."),
     dict(criterio="Monitoramento e observabilidade", area="DevOps", valor=1.5,
          prioridade="B", meta="60%", status="PARCIAL",
-         evidencia="Actuator (health/metrics), audit_log, ai_inference_log com custo/latência, alertas no dashboard.",
-         acao="Expor /actuator/prometheus e um painel Grafana Cloud com 1 alerta (erro 5xx ou custo de IA)."),
+         evidencia="Actuator com health/info/metrics/prometheus expostos, audit_log, ai_inference_log com custo/latência, "
+                   "correlationId em todo erro, alertas no dashboard.",
+         acao="Painel Grafana Cloud lendo /actuator/prometheus com 1 alerta (erro 5xx ou custo de IA)."),
     dict(criterio="Técnica/tecnologia livre (acordada até a 3ª sprint)", area="Livre", valor=1.5,
          prioridade="B", meta="100% se acordado", status="PARCIAL",
-         evidencia="Pipelines de IA generativa: flat lay (RF4), provador virtual 2D (RF18), modelo 3D (Meshy), mosaico RF11.",
+         evidencia="Pipelines de imagem e IA: flat lay e estúdio (RF4), filtro de nitidez de logos (RF4), provador 2D (RF18), "
+                   "modelo 3D (RF16), quarto 3D e guarda-roupa 3D em WebGL (RF27/RF39), FLAIR (RF37).",
          acao="Confirmar com os professores se essa tecnologia foi registrada até a 3ª sprint."),
 ]
 
@@ -240,10 +253,30 @@ def markdown():
         "",
         "1. **Hoje:** Bryan começa a commitar com a própria conta (obrigatório nº 8). Toda PR passa a ter revisão do outro integrante.",
         "2. **Sprint atual:** preencher o TDE de todas as sprints já feitas (obrigatório nº 2) usando o histórico do Trello.",
-        "3. **Após os blocos 8–11:** gravar a demo dos perfis (PESSOAL × ADMIN) e do dashboard com filtros (obrigatórios nº 6 e 7).",
-        "4. **Toda sprint:** nova migração Flyway versionada na própria sprint (opcional de migrações).",
-        "5. **Antes da banca:** README, Swagger com exemplos, docs/arquitetura/PADROES.md, EXPLAIN de uma consulta indexada.",
-        "6. **Reserva:** teste de acessibilidade com 3 pessoas daltônicas, pipeline do GitHub Actions, painel Grafana.",
+        "3. **Demo:** perfis (PESSOAL × MARCA × ADMIN), dashboard com filtros, e a tabela de endpoints por RF com as fotos de evidência (docs/testes/).",
+        "4. **Toda sprint:** nova migração Flyway versionada na própria sprint (V22 em diante).",
+        "5. **Antes da banca:** docs/arquitetura/PADROES.md, EXPLAIN de uma consulta indexada, deploy com chaves reais de IA e rede liberada.",
+        "6. **Reserva:** GitHub Actions com o E2E e o JaCoCo, teste de acessibilidade, painel Grafana.",
+        "",
+        "## 4. RF25–RF39 (numeração do Trello) no escopo",
+        "",
+        "| RF | Requisito | Evidência |",
+        "|---|---|---|",
+        "| RF25 | Selos de marca/celebridade + promoções | docs/diagramas/RF25, E2E RF25 |",
+        "| RF26 | Explorador Global | docs/diagramas/RF26, E2E RF26 |",
+        "| RF27 | Meu Quarto 3D | docs/meu-quarto, docs/diagramas/RF27, E2E RF27 |",
+        "| RF28 | Smart Mirror + Vista-me | docs/diagramas/RF28, E2E RF28 |",
+        "| RF29 | FAI Inventory Score, destaques e rankings | docs/meu_guarda_roupa/02-inventory-score-calculo.md, E2E RF29 |",
+        "| RF30 | FAI Points, níveis e loja do quarto | docs/diagramas/RF30, E2E RF30 |",
+        "| RF31 | Estados do acervo | docs/diagramas/RF31, E2E RF31 |",
+        "| RF32 | Desafios | docs/meu_guarda_roupa/03-desafios-e-games.md, E2E RF32 |",
+        "| RF33 | Passarela 3D | docs/novos-rf/RF33-RF35.md, E2E RF33 |",
+        "| RF34 | Eras da celebridade | docs/novos-rf/RF33-RF35.md, E2E RF34 |",
+        "| RF35 | Coleções da marca | docs/novos-rf/RF33-RF35.md, E2E RF35 |",
+        "| RF36 | Foto com meu manequim | docs/novos-rf/RF36-RF39.md, E2E RF36 |",
+        "| RF37 | FLAIR | docs/novos-rf/RF36-RF39.md, E2E RF37 |",
+        "| RF38 | Cupons Fashion AI | docs/novos-rf/RF36-RF39.md, E2E RF38 |",
+        "| RF39 | Criar guarda-roupa 3D + loja | docs/novos-rf/RF39_Criar_Guarda_Roupa_3D.md, E2E RF39 |",
         "",
     ]
     return "\n".join(linhas)
