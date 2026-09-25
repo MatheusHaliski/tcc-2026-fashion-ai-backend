@@ -69,11 +69,11 @@ const inkOn = (hex?: string | null) => { if (!hex || !hex.startsWith("#")) retur
 /** Matiz (0–360) e croma (0–1) de uma cor — posição do marcador na roda de Itten (B8). */
 function hueChroma(hex: string) { const [r, g, b] = rgb(hex).map((v) => v / 255); const max = Math.max(r, g, b), min = Math.min(r, g, b), c = max - min; let h = 0; if (c) h = max === r ? ((g - b) / c) % 6 : max === g ? (b - r) / c + 2 : (r - g) / c + 4; return { hue: (h * 60 + 360) % 360, chroma: c }; }
 const HARMONY_TEXT: Record<string, string> = {
-  MONOCROMATICA: "monocromática/neutra — todas as cores perto do centro ou da mesma família, a paleta “segura” mais comum na moda",
-  COMPLEMENTAR: "complementar — dois polos quase opostos no círculo, ancorados por neutros",
-  ANALOGA: "análoga — cores vizinhas no círculo (< 60° de arco), leitura suave",
-  TRIADICA: "tríade — três matizes a ≈120° entre si, contraste equilibrado",
-  MULTICOLOR: "multicolor — várias famílias sem relação geométrica dominante",
+  get MONOCROMATICA() { return tr("dnaCard.monocromatica_neutra_todas_as_cores"); },
+  get COMPLEMENTAR() { return tr("dnaCard.complementar_dois_polos_quase_opostos"); },
+  get ANALOGA() { return tr("dnaCard.analoga_cores_vizinhas_no_circulo"); },
+  get TRIADICA() { return tr("dnaCard.triade_tres_matizes_a_120"); },
+  get MULTICOLOR() { return tr("dnaCard.multicolor_varias_familias_sem_relacao"); },
 };
 
 function cellImg(c: DnaCellView) { return mediaUrl(c.coverImageUrl ?? c.pieces.find((p) => p.imageUrl)?.imageUrl ?? null); }
@@ -108,7 +108,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const style = (dna.style ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const fmtEra = (d?: string | null) => fmtDate(d, { month: "short", year: "2-digit" });
   const open = (e: React.MouseEvent) => { if (!href || expanded) return; if ((e.target as HTMLElement).closest("button,a,input,select")) return; router.push(href); };
-  const containerLabel = narrative ? `DNA · ${dnaNarrativeLabel(narrative)}` : `DNA de estilo · ${dnaLayoutLabel(dna.cardLayout)}`;
+  const containerLabel = narrative ? t("dnaCard.dna", { dnaNarrativeLabel: dnaNarrativeLabel(narrative) }) : t("dnaCard.dna_de_estilo_2", { dnaLayoutLabel: dnaLayoutLabel(dna.cardLayout) });
   const body = narrative ? <NarrativeBody dna={dna} narrative={narrative} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} /> : <LayoutBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} />;
   return (
     <article className={`fai-card dna-card ${narrative === "LEGO" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""} ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(skin), ...stageVars }} aria-label={t("dnaCard.dna_de_estilo", { title: dna.title })} data-art={art?.label}>
@@ -171,7 +171,7 @@ function LayoutBody({ dna, heroStyle, fmtEra, expanded }: { dna: DnaView; heroSt
   const head = <p className="dna-list-head">{t("dnaCard.esquemas_do_dna", { cellsCount: cells.length })}</p>;
   switch (dna.cardLayout) {
     case "GRADE": return (<><Hero dna={dna} cells={cells} heroStyle={heroStyle} />{head}<div className="dna-grid">{cells.map((c) => <div key={c.schemeId} className="dna-grid-cell"><Thumb c={c} /><b>{c.title}</b><span>{label(c.occasion[0] ?? "livre")}</span></div>)}</div></>);
-    case "HORIZONTAL": return (<><Hero dna={dna} cells={cells} heroStyle={heroStyle} />{head}<div className="dna-hrow">{cells.map((c) => <div key={c.schemeId} className="dna-hcell"><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? "sem marca").toUpperCase()}</span></div>)}</div></>);
+    case "HORIZONTAL": return (<><Hero dna={dna} cells={cells} heroStyle={heroStyle} />{head}<div className="dna-hrow">{cells.map((c) => <div key={c.schemeId} className="dna-hcell"><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? t("dnaBuilder.sem_marca")).toUpperCase()}</span></div>)}</div></>);
     case "LATERAL": {
       const f = cells[Math.min(focus, cells.length - 1)];
       return (<div className="dna-lateral"><Hero dna={dna} cells={cells} heroStyle={heroStyle} focus={f} tag={<>{f.title}{f.dominantBrand ? ` · ${f.dominantBrand.toUpperCase()}` : ""}</>} tall />

@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Tabs } from "@/components/ui";
@@ -16,8 +16,8 @@ interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]
 interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
 interface Brands { brands: BrandCard[]; countries?: string[]; categories?: string[]; seasons?: string[]; }
 interface Insights { rankings: Record<string, { label: string; value: number; hex?: string }[]>; aiInsight?: string; explanation?: unknown; fallbackUsed?: boolean; note?: string; }
-const BAND_LABEL: Record<string, string> = { DESPRETENSIOSO: "Despretensioso (0–14)", EM_CONSTRUCAO: "Em construção (15–29)", NOTADO: "Notado (30–49)", COM_ESTILO: "Com estilo (50–69)", MUITO_ESTILOSO: "Muito estiloso (70–84)", ARRASANDO_NO_LOOK: "Arrasando no look (85–95)", ICONE_DE_ESTILO: "Ícone de estilo (96+)" };
-const RANK_LABEL: Record<string, string> = { topBrands: "Marcas mais usadas (peças)", hypeBySeason: "Maior hype médio por estação", topColors: "Cores mais usadas", hypeByColor: "Maior hype médio por cor", hypeByBrand: "Maior hype médio por marca", topCountries: "Países com mais looks públicos" };
+const BAND_LABEL: Record<string, string> = { get DESPRETENSIOSO() { return tr("explorer.despretensioso_0_14"); }, get EM_CONSTRUCAO() { return tr("explorer.em_construcao_15_29"); }, get NOTADO() { return tr("explorer.notado_30_49"); }, get COM_ESTILO() { return tr("explorer.com_estilo_50_69"); }, get MUITO_ESTILOSO() { return tr("explorer.muito_estiloso_70_84"); }, get ARRASANDO_NO_LOOK() { return tr("explorer.arrasando_no_look_85_95"); }, get ICONE_DE_ESTILO() { return tr("explorer.icone_de_estilo_96"); } };
+const RANK_LABEL: Record<string, string> = { get topBrands() { return tr("explorer.marcas_mais_usadas_pecas"); }, get hypeBySeason() { return tr("explorer.maior_hype_medio_por_estacao"); }, get topColors() { return tr("explorer.cores_mais_usadas"); }, get hypeByColor() { return tr("explorer.maior_hype_medio_por_cor"); }, get hypeByBrand() { return tr("explorer.maior_hype_medio_por_marca"); }, get topCountries() { return tr("explorer.paises_com_mais_looks_publicos"); } };
 
 /**
  * RF26 — Explorador Global: Painel global (globo interativo com um ponto luminoso por país), Buscar marcas & lojas

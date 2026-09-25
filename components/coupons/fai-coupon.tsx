@@ -2,7 +2,8 @@
 import { mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { cn } from "@/components/ui";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 /** Card Trello RF38 — Cupom Fashion AI (tipos compartilhados pela carteira do usuário e pela aba da marca). */
 export interface CouponOwner { user: UserCard; name: string; kind: "MARCA" | "CELEBRIDADE" | "PESSOAL"; logoUrl?: string | null; slug?: string | null; storeUrl?: string | null; }
@@ -13,8 +14,8 @@ export interface Coupon {
 }
 export interface CouponRight { id: string; source: "SELO" | "FLAIR"; title: string; detail?: string | null; status: string; createdAt: string; owner: CouponOwner; question: string; }
 
-const SOURCE_LABEL: Record<string, string> = { SELO: "Selo", FLAIR: "Jogo FLAIR" };
-const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString("pt-BR") : "sem validade");
+const SOURCE_LABEL: Record<string, string> = { get SELO() { return tr("coupons.faiCoupon.selo"); }, get FLAIR() { return tr("common.jogo_flair"); } };
+const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString(currentIntl()) : tr("coupons.faiCoupon.sem_validade"));
 
 /** Valor em destaque: "15%", "R$ 60" ou o texto do benefício. */
 function bigValue(c: Pick<Coupon, "discountPercent" | "discountAmount" | "discount">) {

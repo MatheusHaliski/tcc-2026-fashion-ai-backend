@@ -47,12 +47,13 @@ function Audience({ seed = 7 }: { seed?: number }) {
 }
 
 function Backdrop({ date }: { date: string }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, "#101522"); grad.addColorStop(1, "#2D55C9");
     g.fillStyle = grad; g.fillRect(0, 0, w, h);
     g.fillStyle = "rgba(255,255,255,0.06)"; for (let x = 0; x < w; x += 32) g.fillRect(x, 0, 2, h);
-    g.fillStyle = "#F1E8D8"; g.textAlign = "center"; g.font = "700 120px Inter, Arial, sans-serif"; g.fillText("PASSARELA FAI", w / 2, h * 0.48);
-    g.font = "500 44px Inter, Arial, sans-serif"; g.fillStyle = "#c9d4ff"; g.fillText(`Look do Dia · ${date}`, w / 2, h * 0.72);
+    g.fillStyle = "#F1E8D8"; g.textAlign = "center"; g.font = "700 120px Inter, Arial, sans-serif"; g.fillText(t("three.runwayScene.passarela_fai"), w / 2, h * 0.48);
+    g.font = "500 44px Inter, Arial, sans-serif"; g.fillStyle = "#c9d4ff"; g.fillText(t("three.runwayScene.look_do_dia", { date }), w / 2, h * 0.72);
   }, 1024, 384, [date]);
   return <mesh position={[0, 1.9, -LEN / 2 - 0.6]}><planeGeometry args={[6, 2.25]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>;
 }

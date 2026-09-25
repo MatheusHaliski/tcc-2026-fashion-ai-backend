@@ -39,9 +39,11 @@ function scan(file) {
     } else if (ts.isCallExpression(node)) { const callee = node.expression.getText(sf); if (R.TEXT_CALLS.has(callee)) node.arguments.forEach((a) => checkExpr(a, "call:" + callee, R.isText)); }
     else if (wide && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && !seen.has(node)) {
       const p = node.parent;
-      const skip = ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || (ts.isPropertyAssignment(p) && p.name === node) || ts.isComputedPropertyName(p) || ts.isElementAccessExpression(p) || ts.isLiteralTypeNode(p) || ts.isCaseClause(p) || ts.isJsxAttribute(p) || ts.isExpressionStatement(p) || ts.isEnumMember(p) || ts.isTemplateSpan(p)
+      let attrAnc = p; while (attrAnc && !ts.isJsxAttribute(attrAnc) && !ts.isJsxElement(attrAnc) && !ts.isBlock(attrAnc)) attrAnc = attrAnc.parent;
+      const inBlockedAttr = attrAnc && ts.isJsxAttribute(attrAnc) && (R.ATTR_BLOCKLIST.has(attrAnc.name.getText(sf)) || /^(data-|aria-)/.test(attrAnc.name.getText(sf)));
+      const skip = inBlockedAttr || (ts.isCallExpression(p) && R.SKIP_CALLEES.test(p.expression.getText(sf))) || ts.isNewExpression(p) || ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || (ts.isPropertyAssignment(p) && p.name === node) || ts.isComputedPropertyName(p) || ts.isElementAccessExpression(p) || ts.isLiteralTypeNode(p) || ts.isCaseClause(p) || ts.isJsxAttribute(p) || ts.isExpressionStatement(p) || ts.isEnumMember(p) || ts.isTemplateSpan(p)
         || (ts.isBinaryExpression(p) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(p.operatorToken.kind));
-      if (!skip) { const txt = ts.isTemplateExpression(node) ? [node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join("…") : node.text; if (R.isNatural(txt.replace(/…/g, " "))) report(file, node, sf, txt, "literal:" + ts.SyntaxKind[p.kind]); }
+      if (!skip) { const parts = ts.isTemplateExpression(node) ? [node.head.text, ...node.templateSpans.map((s) => s.literal.text)] : [node.text]; if (parts.some((x) => R.isNatural(x))) report(file, node, sf, parts.join("…"), "literal:" + ts.SyntaxKind[p.kind]); }
     }
     ts.forEachChild(node, visit);
   };

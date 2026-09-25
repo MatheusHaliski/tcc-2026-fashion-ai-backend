@@ -7,6 +7,7 @@ import { Avatar, Badge, Button, Card, cn, ErrorState, Field, Input, Select, Skel
 import { FlairCardView, type FlairCard } from "@/components/flair/flair-card";
 import { LookPicker, LookTile, OpponentField, PlayButton, ResultView, STAT_LABEL, ThemeBadge, type ModeLook, type ModeResult, type Theme } from "@/components/flair/modes-shared";
 import { tr, trRich, useI18n } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 interface Mode { code: string; name: string; emoji: string; group: "NUCLEO" | "ESPECIAL"; summary: string; how: string; }
 interface Square { index: number; city: string; title: string; emoji: string; type: string; theme: string; target: number; reward: number; rule: string; }
@@ -130,7 +131,7 @@ function LeaguePanel({ looks, onDone }: PanelProps) {
       <p className="type-body-sm">{rich("flair.modes.temporada_sua_divisao", { season: d.season }, { 0: ($c) => <b>{$c}</b> })}{" "}<Badge tone="thread">{d.division.label}</Badge></p>
       <p className="type-caption text-muted">{d.rule}</p>
       <div className="overflow-x-auto"><table className="mode-table"><thead><tr><th>#</th><th>{t("flair.modes.jogador")}</th><th>J</th><th>V</th><th>E</th><th>D</th><th>{t("common.pts")}</th><th>{t("common.hype")}</th><th>{t("flair.modes.divisao")}</th></tr></thead>
-        <tbody>{d.table.map((r) => <tr key={r.user.id} className={r.you ? "font-semibold" : ""}><td>{r.position}</td><td><span className="flex items-center gap-1"><Avatar src={r.user.avatarUrl} name={r.user.displayName} size={20} />@{r.user.username}</span></td><td>{r.played}</td><td>{r.wins}</td><td>{r.draws}</td><td>{r.losses}</td><td><b>{r.points}</b></td><td>{r.hype.toLocaleString("pt-BR")}</td><td>{r.division.label}</td></tr>)}
+        <tbody>{d.table.map((r) => <tr key={r.user.id} className={r.you ? "font-semibold" : ""}><td>{r.position}</td><td><span className="flex items-center gap-1"><Avatar src={r.user.avatarUrl} name={r.user.displayName} size={20} />@{r.user.username}</span></td><td>{r.played}</td><td>{r.wins}</td><td>{r.draws}</td><td>{r.losses}</td><td><b>{r.points}</b></td><td>{r.hype.toLocaleString(currentIntl())}</td><td>{r.division.label}</td></tr>)}
           {d.table.length === 0 && <tr><td colSpan={9} className="text-muted">{t("flair.modes.ninguem_escalou_o_elenco_nesta")}</td></tr>}</tbody></table></div>
       <LookPicker looks={looks} value={starters} onChange={(v) => { setStarters(v); setReserves(reserves.filter((x) => !v.includes(x))); }} max={5} label={t("flair.modes.titulares")} />
       <LookPicker looks={looks.filter((l) => !starters.includes(l.schemeId ?? ""))} value={reserves} onChange={setReserves} max={3} label={t("flair.modes.reservas")} />
@@ -160,7 +161,7 @@ function TourPanel({ looks, onDone }: PanelProps) {
           <div className="mode-squares">{t.board.filter((s) => s.city === city).map((s) => <div key={s.index} className={cn("mode-square", `mode-square-${s.type.toLowerCase()}`, s.index === t.position && "mode-square-here")} title={`${s.title} — ${s.rule}`}><span aria-hidden>{s.emoji}</span><small>{s.title}</small>{s.index === t.position && <b className="mode-pawn" aria-label={tr("flair.modes.voce_esta_aqui")}>●</b>}</div>)}</div></div>))}</div>
       {pending ? <div className="surface p-3"><p className="type-body">{trRich("flair.modes.alvo_vale", { emoji: pending.emoji, title: pending.title, rule: pending.rule, target: pending.target, reward: pending.reward }, { 0: ($c) => <b>{$c}</b> })}</p><LookPicker looks={looks} value={pick} onChange={setPick} /><div className="mt-2"><PlayButton busy={busy} disabled={!pick[0]} onClick={() => play(async () => { const r = await api.post<ModeResult & { tour: TourState }>("/api/flair/modes/tour/resolve", { schemeId: pick[0] }); tour.setData(r.tour); onDone(); return r; })}>{tr("flair.modes.cumprir_o_desafio")}</PlayButton></div></div>
         : <div><Button variant="primary" loading={rolling} disabled={t.rollsLeft === 0} onClick={roll}>{tr("flair.modes.rolar_o_dado")}</Button></div>}
-      <ResultView result={result} labelB="Nota-alvo" />
+      <ResultView result={result} labelB={tr("flair.modes.nota_alvo")} />
       <ul className="type-caption grid gap-0.5">{t.log.slice(0, 8).map((l, i) => <li key={i}>{l.text}</li>)}</ul>
       <p className="type-caption text-muted">{t.rule}</p>
     </div>
@@ -189,7 +190,7 @@ function TerritoryPanel({ map, looks, onDone }: PanelProps & { map: string }) {
       {target && <><LookPicker looks={looks} value={pick} onChange={setPick} max={need} label={map === "CONQUEST" ? "3 looks de ataque" : t("flair.modes.look_de_ataque")} />
         <div><PlayButton busy={busy} disabled={pick.length !== need} onClick={() => play(() => api.post(`/api/flair/modes/territories/${map}/${target}/attack`, { schemeIds: pick })).then(() => { data.reload(); onDone(); })}>{map === "CONQUEST" ? t("flair.modes.conquistar_regiao") : t("flair.modes.tomar_o_distrito")}</PlayButton></div></>}
       {result && (result as ModeResult & { captured?: boolean }).captured && <p className="mode-banner">🎉 {map === "CONQUEST" ? t("flair.modes.seu_lookbook_conquistou_a_regiao") : t("flair.modes.o_distrito_agora_e_seu")}</p>}
-      <ResultView result={result} labelB="Defensor" />
+      <ResultView result={result} labelB={t("flair.modes.defensor")} />
     </div>
   );
 }
@@ -216,7 +217,7 @@ function DeckPanel({ onDone }: PanelProps) {
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1">{game.hand.map((c) => <FlairCardView key={c.id} card={c} size="sm" selected={hand.includes(c.id)} onClick={() => setHand(hand.includes(c.id) ? hand.filter((x) => x !== c.id) : hand.length >= 5 ? hand : [...hand, c.id])} />)}</div>
         <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setHand(game.hint)}>{t("flair.modes.dica_da_ia")}</Button><PlayButton busy={busy} disabled={hand.length < 2} onClick={() => play(() => api.post(`/api/flair/modes/deck/battle/${game.id}/play`, { pieceIds: hand })).then(onDone)}>{t("flair.modes.jogar_look")}</PlayButton></div>
       </div>}
-      <ResultView result={result} labelB="A Casa" />
+      <ResultView result={result} labelB={t("flair.modes.a_casa")} />
     </div>
   );
 }
@@ -275,7 +276,7 @@ function DraftPanel({ onDone }: PanelProps) {
         {d.turn === "COMPOSE" && <><p className="type-caption text-muted">{t("flair.modes.toque_numa_escolha_para_manda")}</p>
           <PlayButton busy={busy} disabled={[1, 2, 3].some((n) => looksOf(n).length < 2)} onClick={() => play(() => api.post(`/api/flair/modes/draft/${d.id}/looks`, { looks: [looksOf(1), looksOf(2), looksOf(3)] })).then(onDone)}>{t("flair.modes.enfrentar_a_ia")}</PlayButton></>}
       </>}
-      <ResultView result={result} labelB="IA do Draft" />
+      <ResultView result={result} labelB={t("flair.modes.ia_do_draft")} />
     </div>
   );
 }
@@ -292,7 +293,7 @@ function TagPanel({ looks, onDone }: PanelProps) {
       <div className="grid gap-2 sm:grid-cols-3"><Field label={t("flair.modes.sua_dupla_usuario")} id="tt-p"><Input id="tt-p" value={partner} onChange={(e) => setPartner(e.target.value)} /></Field><Field label={t("flair.modes.adversario_1_opcional")} id="tt-1"><Input id="tt-1" value={o1} onChange={(e) => setO1(e.target.value)} /></Field><Field label={t("flair.modes.adversario_2_opcional")} id="tt-2"><Input id="tt-2" value={o2} onChange={(e) => setO2(e.target.value)} /></Field></div>
       <div><PlayButton busy={busy} disabled={!pick[0] || !partner.trim()} onClick={() => play(() => api.post("/api/flair/modes/tag-team", { schemeId: pick[0], partner, opponents: o1 && o2 ? [o1, o2] : [] })).then(onDone)}>{t("flair.modes.jogar_em_dupla")}</PlayButton></div>
       {r?.teamA && <p className="type-body-sm">{rich("flair.modes.team_harmony", { harmony: r.teamA.harmony, harmony2: r.teamB?.harmony }, { 0: ($c) => <b>{$c}</b> })}</p>}
-      <ResultView result={result} labelA="Sua dupla" labelB="Dupla adversária" />
+      <ResultView result={result} labelA={t("flair.modes.sua_dupla")} labelB={t("flair.modes.dupla_adversaria")} />
     </div>
   );
 }
@@ -323,13 +324,13 @@ function ComboPanel({ looks, onDone }: PanelProps) {
       <OpponentField value={opp} onChange={setOpp} />
       <div><PlayButton busy={busy} disabled={!pick[0]} onClick={() => play(() => api.post("/api/flair/modes/combo", { schemeId: pick[0], opponent: opp || "CASA" })).then(onDone)}>{t("flair.modes.combo_battle")}</PlayButton></div>
       <ResultView result={result} />
-      <ul className="type-caption grid gap-0.5">{(book ?? ["⚡ Streetwear Combo: tênis + cargo/jeans + camiseta/moletom → +15 Style", "👔 Classic Formal: blazer + camisa + sapato de couro → +18 Style", "🖤 Monochrome: 3 peças da mesma família de cor → +12 Style", "🏷️ Brand Loyalty: 3 da mesma marca → +10 Brand Power", "🎨 Mix & Match: 3 marcas diferentes → +10 Originality", "📻 Vintage Revival: 2 peças vintage → +15 Trend em eventos retrô"]).map((x) => <li key={x}>{x}</li>)}</ul>
+      <ul className="type-caption grid gap-0.5">{(book ?? [t("flair.modes.streetwear_combo_tenis_cargo_jeans"), t("flair.modes.classic_formal_blazer_camisa_sapato"), t("flair.modes.monochrome_3_pecas_da_mesma"), t("flair.modes.brand_loyalty_3_da_mesma"), t("flair.modes.mix_match_3_marcas_diferentes"), t("flair.modes.vintage_revival_2_pecas_vintage")]).map((x) => <li key={x}>{x}</li>)}</ul>
     </div>
   );
 }
 
 // ------------------------------------------------------------------ Chess
-const SLOT_LABEL: Record<string, string> = { ACCESSORY_L: "Acessório", TOP: "Top", ACCESSORY_R: "Acessório", BOTTOM: "Bottom", HERO: "HERO ×1,25", OUTERWEAR: "Outerwear", SHOES_L: "Calçado", SUPPORT: "Support", SHOES_R: "Calçado" };
+const SLOT_LABEL: Record<string, string> = { get ACCESSORY_L() { return tr("common.acessorio"); }, get TOP() { return tr("flair.modes.top"); }, get ACCESSORY_R() { return tr("common.acessorio"); }, get BOTTOM() { return tr("flair.modes.bottom"); }, get HERO() { return tr("flair.modes.hero_1_25"); }, get OUTERWEAR() { return tr("flair.modes.outerwear"); }, get SHOES_L() { return tr("common.calcado"); }, get SUPPORT() { return tr("flair.modes.support"); }, get SHOES_R() { return tr("common.calcado"); } };
 function ChessPanel({ onDone }: PanelProps) {
   const { t } = useI18n();
   const info = useApi<{ slots: string[]; cards: FlairCard[]; suggestion: Record<string, string>; rules: string[] }>((signal) => api.get("/api/flair/modes/chess", { signal }), []);
@@ -348,7 +349,7 @@ function ChessPanel({ onDone }: PanelProps) {
         <div className="flex gap-2 overflow-x-auto pb-1">{info.data.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" selected={hand === c.id} dim={Object.values(board).includes(c.id)} onClick={() => setHand(c.id)} />)}</div>
         <div className="flex flex-wrap gap-2"><Button onClick={() => setBoard(info.data!.suggestion)}>{t("flair.modes.sugestao")}</Button><PlayButton busy={busy} disabled={Object.keys(board).length < 3} onClick={() => play(() => api.post("/api/flair/modes/chess", { board })).then(onDone)}>{t("flair.modes.jogar_contra_a_ia")}</PlayButton></div>
         <ul className="type-caption grid gap-0.5 text-muted">{info.data.rules.map((x) => <li key={x}>{x}</li>)}</ul>
-        <ResultView result={result} labelB="IA estrategista" />
+        <ResultView result={result} labelB={t("flair.modes.ia_estrategista")} />
         {r?.me && <div className="grid gap-2 md:grid-cols-2"><div><p className="label">{t("flair.modes.seus_bonus")}</p><ul className="type-caption">{r.me.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div><div><p className="label">{t("flair.modes.bonus_da_ia")}</p><ul className="type-caption">{r.opponent?.board.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div></div>}
       </div>
     </div>
@@ -356,7 +357,7 @@ function ChessPanel({ onDone }: PanelProps) {
 }
 
 // ------------------------------------------------------------------ Ultimate Team
-const ROLE_LABEL: Record<string, string> = { ICON: "ICON", TREND: "TREND", SOCIAL: "SOCIAL", CREATIVE: "CREATIVE", CLASSIC: "CLASSIC", WILD_CARD: "WILD CARD", SPECIAL: "SPECIAL" };
+const ROLE_LABEL: Record<string, string> = { ICON: "ICON", TREND: "TREND", SOCIAL: "SOCIAL", CREATIVE: "CREATIVE", CLASSIC: "CLASSIC", get WILD_CARD() { return tr("flair.modes.wild_card"); }, SPECIAL: "SPECIAL" };
 function UltimatePanel({ looks, onDone }: PanelProps) {
   const { t } = useI18n();
   const toast = useToast();

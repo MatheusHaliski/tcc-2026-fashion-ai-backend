@@ -70,18 +70,18 @@ export function PhotoEditor({ photoId, pieceId, imageUrl, title, onClose, onSave
     const onKey = (e: KeyboardEvent) => { if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z") return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   });
-  function rotate() { if (!cur) return; push({ rotation: ((cur.rotation + 90) % 360) as Step["rotation"], crop: cur.crop ? rotateRect(cur.crop) : null }, "Girar 90°"); }
+  function rotate() { if (!cur) return; push({ rotation: ((cur.rotation + 90) % 360) as Step["rotation"], crop: cur.crop ? rotateRect(cur.crop) : null }, t("photoEditor.girar_90_2")); }
   function point(e: React.PointerEvent) { const b = (e.currentTarget as HTMLElement).getBoundingClientRect(); return { x: Math.min(1, Math.max(0, (e.clientX - b.left) / b.width)), y: Math.min(1, Math.max(0, (e.clientY - b.top) / b.height)) }; }
   function applyCrop() {
     if (!cur || !sel || sel.w < 0.03 || sel.h < 0.03) { setCropping(false); setSel(null); return; }
-    const c = cur.crop ?? FULL; push({ crop: { x: c.x + sel.x * c.w, y: c.y + sel.y * c.h, w: sel.w * c.w, h: sel.h * c.h } }, "Recortar"); setCropping(false); setSel(null);
+    const c = cur.crop ?? FULL; push({ crop: { x: c.x + sel.x * c.w, y: c.y + sel.y * c.h, w: sel.w * c.w, h: sel.h * c.h } }, t("photoEditor.recortar_2")); setCropping(false); setSel(null);
   }
   async function removeBg() {
     if (!cur) return; setBusy("bg");
     try {
       const blob = await (await fetch(cur.src)).blob(); const form = new FormData(); form.append("file", blob, "foto.png");
       const r = await api.upload<{ ok: boolean; png?: string; message?: string; provider?: string }>("/api/photos/background-removal", form);
-      if (r.ok && r.png) { push({ src: `data:image/png;base64,${r.png}` }, "Remover fundo"); toast.success(t("photoEditor.fundo_removido", { value: r.provider ?? "local" })); }
+      if (r.ok && r.png) { push({ src: `data:image/png;base64,${r.png}` }, t("photoEditor.remover_fundo")); toast.success(t("photoEditor.fundo_removido", { value: r.provider ?? "local" })); }
       else toast.info(r.message ?? t("photoEditor.nao_deu_para_remover_o"));
     } catch { toast.info(t("photoEditor.a_remocao_de_fundo_falhou")); } finally { setBusy(null); }
   }
@@ -90,8 +90,8 @@ export function PhotoEditor({ photoId, pieceId, imageUrl, title, onClose, onSave
     try {
       const blob = await new Promise<Blob | null>((ok) => canvas.current!.toBlob(ok, "image/png")); if (!blob) throw new Error("canvas vazio");
       const form = new FormData(); form.append("file", blob, "edicao.png");
-      if (photoId) { const r = await api.upload<{ message?: string }>(`/api/photos/${photoId}/edits`, form); onSaved(r.message ?? "Edição salva."); }
-      else { await api.upload(`/api/pieces/${pieceId}/image`, form, "PUT"); onSaved("A imagem editada agora é a da peça. A original continua em Minhas Fotos."); }
+      if (photoId) { const r = await api.upload<{ message?: string }>(`/api/photos/${photoId}/edits`, form); onSaved(r.message ?? t("photoEditor.edicao_salva")); }
+      else { await api.upload(`/api/pieces/${pieceId}/image`, form, "PUT"); onSaved(t("photoEditor.a_imagem_editada_agora_e")); }
     } catch (e) { toast.fromError(e); } finally { setBusy(null); }
   }
   const close = () => (dirty ? setLeaving(true) : onClose());
@@ -129,8 +129,8 @@ export function PhotoEditor({ photoId, pieceId, imageUrl, title, onClose, onSave
               <label key={k} className="grid gap-1"><span className="label">{k === "brightness" ? t("common.brilho") : t("common.contraste")} · {cur?.[k] ?? 100}%</span>
                 <input type="range" min={40} max={180} value={cur?.[k] ?? 100} disabled={!cur}
                   onChange={(e) => setDraft((d) => ({ ...d, [k]: Number(e.target.value) }))}
-                  onPointerUp={() => draft[k] !== undefined && push({}, k === "brightness" ? "Brilho" : "Contraste")}
-                  onKeyUp={() => draft[k] !== undefined && push({}, k === "brightness" ? "Brilho" : "Contraste")} />
+                  onPointerUp={() => draft[k] !== undefined && push({}, k === "brightness" ? t("common.brilho") : t("common.contraste"))}
+                  onKeyUp={() => draft[k] !== undefined && push({}, k === "brightness" ? t("common.brilho") : t("common.contraste"))} />
               </label>
             ))}
             <div>

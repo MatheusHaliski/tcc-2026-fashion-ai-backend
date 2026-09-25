@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Avatar, Button, Chip, EmptyState, ErrorState, Input, PageHeader, Select, SkeletonGrid, Tabs } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
@@ -20,7 +20,7 @@ type Row = SchemeView | PieceView | (UserCard & { relation?: string }) | Brand;
 interface Page { items: Row[]; nextCursor: string | null; empty?: { message?: string; alternatives?: string[]; trending?: SchemeView[] }; engine?: string; }
 type Filters = { style: string; occasion: string; color: string; brand: string; category: string };
 const NO_FILTERS: Filters = { style: "", occasion: "", color: "", brand: "", category: "" };
-const FILTER_LABEL: Record<keyof Filters, string> = { style: "Estilo", occasion: "Ocasião", color: "Cor", brand: "Marca", category: "Categoria" };
+const FILTER_LABEL: Record<keyof Filters, string> = { get style() { return tr("common.style"); }, get occasion() { return tr("common.occasion"); }, get color() { return tr("common.color"); }, get brand() { return tr("auth.profileBrand"); }, get category() { return tr("common.category"); } };
 const keyOf = (r: Row, i: number) => (r as { id?: string }).id ?? (r as Brand).slug ?? String(i);
 
 /**

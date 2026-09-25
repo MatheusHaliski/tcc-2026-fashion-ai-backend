@@ -21,7 +21,7 @@ interface Runway {
   facets: { regions: { code: string; label: string; count: number }[]; countries: Facet[]; colors: Facet[]; occasions: Facet[]; styles: Facet[] };
   you?: { optedOut: boolean; hasLook: boolean; position: number | null; region?: string | null; country?: string | null };
 }
-const RANKING_LABEL: Record<string, string> = { TOP100_GLOBAL: "Top 100 Global", TOP100_REGIONAL: "Top 100 Regional", TOP100_PAIS: "Top 100 do país", SEGUINDO: "Seguindo", EM_ALTA: "Em alta", RECENTES: "Recentes" };
+const RANKING_LABEL: Record<string, string> = { get TOP100_GLOBAL() { return tr("showcase.runwayPanel.top_100_global"); }, get TOP100_REGIONAL() { return tr("showcase.runwayPanel.top_100_regional"); }, get TOP100_PAIS() { return tr("showcase.runwayPanel.top_100_do_pais"); }, get SEGUINDO() { return tr("showcase.runwayPanel.seguindo"); }, get EM_ALTA() { return tr("showcase.runwayPanel.em_alta"); }, get RECENTES() { return tr("brands.recentes"); } };
 const BATCH = 12;
 
 /**

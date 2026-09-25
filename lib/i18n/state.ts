@@ -37,3 +37,5 @@ export const detectLocale = (language?: string | null): Locale => {
 let current: Locale = DEFAULT_LOCALE;
 export const getCurrentLocale = () => current;
 export const setCurrentLocale = (l: Locale) => { current = l; };
+/** Tag BCP-47 do idioma corrente para Intl.* e toLocale*() fora de componentes. */
+export const currentIntl = () => intlOf(current);

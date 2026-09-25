@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { ApiError } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 export const cn = (...xs: Array<string | false | null | undefined>) => xs.filter(Boolean).join(" ");
 
@@ -182,6 +182,6 @@ export function useToast() {
   return {
     info: (t: string) => push("info", t), success: (t: string) => push("success", t), error: (t: string) => push("error", t),
     /** Mostra a mensagem tratada do backend (ApiError) ou uma genérica. */
-    fromError: (e: unknown, fallback = "Algo deu errado. Tente de novo.") => push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
+    fromError: (e: unknown, fallback = tr("ui.index.algo_deu_errado_tente_de")) => push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
   };
 }

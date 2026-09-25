@@ -31,8 +31,8 @@ interface InsightsRes { ranking: Rank[]; mostLiked?: string | null; mostHype?: s
 interface StageRes { celebrity: UserCard; photoUrl?: string | null; look: Look3d | null; mannequin?: Mannequin3d; eras: { id: string; label: string; accentColor: string }[]; looks: { id: string; title: string }[] }
 
 const WORD: Record<Kind, { one: string; many: string; all: string }> = {
-  eras: { one: "era", many: "eras", all: "Todas as eras" },
-  collections: { one: "coleção", many: "coleções", all: "Todas as coleções" },
+  eras: { one: "era", many: "eras", get all() { return tr("showcase.showcaseTabs.todas_as_eras"); } },
+  collections: { get one() { return tr("showcase.showcaseTabs.colecao"); }, get many() { return tr("showcase.showcaseTabs.colecoes"); }, get all() { return tr("showcase.showcaseTabs.todas_as_colecoes"); } },
 };
 
 export function ErasTab({ slug, admin }: { slug: string; admin: boolean }) {
@@ -127,7 +127,7 @@ function GroupingHero({ g, kind }: { g: Grouping; kind: Kind }) {
   const { t } = useI18n();
   return (
     <header className="showcase-hero mb-4" style={{ ["--accent" as string]: g.accentColor }}>
-      {g.coverUrl ? <img src={mediaUrl(g.coverUrl)} alt={`${kind === "eras" ? "Foto da era" : "Arte da coleção"} ${g.label}`} /> : <div className="showcase-hero-fallback" aria-hidden />}
+      {g.coverUrl ? <img src={mediaUrl(g.coverUrl)} alt={`${kind === "eras" ? t("showcase.showcaseTabs.foto_da_era") : t("showcase.showcaseTabs.arte_da_colecao")} ${g.label}`} /> : <div className="showcase-hero-fallback" aria-hidden />}
       <div className="showcase-hero-text">
         <span className="badge">{kind === "eras" ? (g.type === "TOUR" ? t("showcase.showcaseTabs.turne") : g.type === "PHASE" ? t("showcase.showcaseTabs.fase") : t("showcase.showcaseTabs.era")) : t("showcase.showcaseTabs.colecao")}{g.period ? ` · ${g.period}` : ""}</span>
         <h2>{g.label}</h2>
@@ -186,7 +186,7 @@ function AssignDialog({ g, kind, onClose }: { g: Grouping; kind: Kind; onClose: 
     try { await api.post(`/api/groupings/${g.id}/items`, { schemeIds: [...sel.s], pieceIds: [...sel.p] }); toast.success(t("showcase.showcaseTabs.ligados")); onClose(true); } catch (e) { toast.fromError(e); }
   }
   return (
-    <Dialog open onClose={() => onClose(false)} size="lg" title={t("showcase.showcaseTabs.ligar_a", { value: kind === "eras" ? "era" : "coleção", label: g.label })} footer={<Button variant="primary" disabled={sel.s.size + sel.p.size === 0} onClick={save}>{t("showcase.showcaseTabs.ligar_item_ns", { value: sel.s.size + sel.p.size })}</Button>}>
+    <Dialog open onClose={() => onClose(false)} size="lg" title={t("showcase.showcaseTabs.ligar_a", { value: kind === "eras" ? "era" : t("showcase.showcaseTabs.colecao"), label: g.label })} footer={<Button variant="primary" disabled={sel.s.size + sel.p.size === 0} onClick={save}>{t("showcase.showcaseTabs.ligar_item_ns", { value: sel.s.size + sel.p.size })}</Button>}>
       <p className="label mb-1">{t("showcase.showcaseTabs.esquemas_2")}</p>
       <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">{(schemes.data?.items ?? []).map((s) => <button key={s.id} type="button" aria-pressed={sel.s.has(s.id)} onClick={() => toggle("s", s.id)} className={`surface overflow-hidden text-left ${sel.s.has(s.id) ? "ring-2 ring-mark" : ""}`}><span className="block aspect-square bg-surface-2">{s.coverImageUrl && <img src={mediaUrl(s.coverImageUrl)} alt="" className="h-full w-full object-cover" />}</span><span className="block truncate p-1 type-caption">{s.title}</span></button>)}</div>
       <p className="label mb-1">{t("common.pecas")}</p>

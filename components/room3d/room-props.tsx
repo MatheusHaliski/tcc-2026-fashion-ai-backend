@@ -4,7 +4,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { mediaUrl } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 /*
  * Objetos e detalhes do Meu Quarto (docs/meu-quarto/05-elementos-do-quarto.md), todos procedurais — sem modelos
@@ -30,7 +30,7 @@ export function useCanvasTex(key: string, w: number, h: number, draw: (g: Canvas
 export function textTex(text: string, o: { w?: number; h?: number; bg?: string; fg?: string; font?: string; align?: CanvasTextAlign } = {}) {
   return (g: CanvasRenderingContext2D, w: number, h: number) => {
     if (o.bg) { g.fillStyle = o.bg; g.fillRect(0, 0, w, h); }
-    g.fillStyle = o.fg ?? "#3a3a3a"; g.font = o.font ?? `600 ${Math.round(h * 0.42)}px Inter, Arial, sans-serif`; g.textAlign = o.align ?? "center"; g.textBaseline = "middle";
+    g.fillStyle = o.fg ?? "#3a3a3a"; g.font = o.font ?? tr("room3d.roomProps.n600_px_inter_arial_sans", { Math: Math.round(h * 0.42) }); g.textAlign = o.align ?? "center"; g.textBaseline = "middle";
     const lines = text.split("\n"); const lh = h / (lines.length + 0.4);
     lines.forEach((l, i) => g.fillText(l.length > 30 ? l.slice(0, 29) + "…" : l, o.align === "left" ? 8 : w / 2, lh * (i + 0.7)));
   };
@@ -57,7 +57,7 @@ export function sketchDraw(category: string) {
     else if (category === "accessory_piece") { P([[.22, .4], [.78, .4], [.84, .86], [.16, .86]]); g.beginPath(); g.arc(.5 * w, .4 * h, .18 * w, Math.PI, 0); g.stroke(); }
     else if (category === "full_body_piece") { P([[.38, .08], [.62, .08], [.66, .3], [.84, .92], [.16, .92], [.34, .3]]); P([[.35, .3], [.65, .3]], false); }
     else { P([[.34, .1], [.66, .1], [.9, .26], [.8, .42], [.7, .36], [.7, .9], [.3, .9], [.3, .36], [.2, .42], [.1, .26]]); g.beginPath(); g.arc(.5 * w, .1 * h, .08 * w, 0, Math.PI); g.stroke(); }
-    g.fillStyle = "#2b3440"; g.font = `600 ${Math.round(h * 0.055)}px Inter, Arial`; g.textAlign = "center"; g.fillText("croqui · aguardando foto", w / 2, h * 0.97);
+    g.fillStyle = "#2b3440"; g.font = tr("room3d.roomProps.n600_px_inter_arial", { Math: Math.round(h * 0.055) }); g.textAlign = "center"; g.fillText(tr("room3d.roomProps.croqui_aguardando_foto"), w / 2, h * 0.97);
   };
 }
 function cobwebDraw(g: CanvasRenderingContext2D, w: number, h: number) {
@@ -319,9 +319,10 @@ function Polaroid({ index, url, filled }: { index: number; url: string | null; f
 
 /** Calendário de parede do Sem Repetir: dias seguidos marcados com X. */
 export function WallCalendar({ position, days }: { position: [number, number, number]; days: number }) {
+  const { t } = useI18n();
   const tex = useCanvasTex(`cal-${days}`, 256, 300, (g, w, h) => {
     g.fillStyle = "#fbfaf6"; g.fillRect(0, 0, w, h); g.fillStyle = "#C6275E"; g.fillRect(0, 0, w, 54);
-    g.fillStyle = "#fff"; g.font = "700 26px Inter, Arial"; g.textAlign = "center"; g.fillText("Sem Repetir", w / 2, 36);
+    g.fillStyle = "#fff"; g.font = "700 26px Inter, Arial"; g.textAlign = "center"; g.fillText(t("room3d.roomProps.sem_repetir"), w / 2, 36);
     for (let i = 0; i < 28; i++) {
       const x = 14 + (i % 7) * 33, y = 70 + Math.floor(i / 7) * 52;
       g.strokeStyle = "#d8d2c6"; g.strokeRect(x, y, 30, 46); g.fillStyle = "#6b5a4a"; g.font = "500 12px Inter"; g.textAlign = "left"; g.fillText(String(i + 1), x + 3, y + 13);

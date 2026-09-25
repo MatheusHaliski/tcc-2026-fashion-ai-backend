@@ -46,7 +46,7 @@ export function SealCreator({ value, onChange, premium }: { value?: SealDesign |
       fd.append("file", file);
       const r = await api.upload<{ url: string; width: number; height: number; circular: boolean; warning?: string | null }>("/api/seals/uploads", fd);
       onChange({ ...d, mode: "UPLOAD", uploadUrl: r.url });
-      setUploadInfo(r.warning ?? `Selo salvo em ${r.width} × ${r.height} px${r.circular ? " · conteúdo circular OK" : ""}.`);
+      setUploadInfo(r.warning ?? t("sealCreator.selo_salvo_em_px", { width: r.width, height: r.height, value: r.circular ? t("sealCreator.conteudo_circular_ok") : "" }));
     } catch (e) { toast.fromError(e); } finally { setUploading(false); }
   }
 

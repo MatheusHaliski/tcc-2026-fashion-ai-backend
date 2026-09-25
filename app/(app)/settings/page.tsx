@@ -44,7 +44,7 @@ function Settings() {
           <Card>
             <h2 className="type-h3 mb-3">{t("common.editar_perfil")}</h2>
             <EditProfileForm />
-            <Switch checked={!me.runwayOptOut} onChange={(v) => call(() => api.patch("/api/me/profile", { runwayOptOut: !v }), v ? "Seu Look do Dia volta à Passarela 3D" : "Você saiu da Passarela 3D")} label={t("settings.desfilar_meu_look_do_dia")} />
+            <Switch checked={!me.runwayOptOut} onChange={(v) => call(() => api.patch("/api/me/profile", { runwayOptOut: !v }), v ? t("settings.seu_look_do_dia_volta") : t("settings.voce_saiu_da_passarela_3d"))} label={t("settings.desfilar_meu_look_do_dia")} />
             <div className="mt-2 flex flex-wrap gap-2"><label className="btn btn-sm cursor-pointer">{t("settings.imagem_de_capa")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); call(() => api.upload("/api/me/cover", fd), t("common.saved")); }} /></label></div>
             <Field label={t("auth.country")} id="country"><div className="flex gap-2"><Input id="country" value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value.toUpperCase() })} maxLength={2} /><Button onClick={() => call(() => api.patch("/api/me/profile", { country: profile.country }), t("common.saved"))}>{t("common.save")}</Button></div></Field>
 
@@ -62,7 +62,7 @@ function Settings() {
             <h2 className="type-h3 mb-3">{t("settings.changePassword")}</h2>
             <Field label={t("settings.senha_atual")} id="p1"><Input id="p1" type="password" autoComplete="current-password" value={pwd.currentPassword} onChange={(e) => setPwd({ ...pwd, currentPassword: e.target.value })} /></Field>
             <div className="grid grid-cols-2 gap-3"><Field label={t("auth.newPassword")} id="p2"><Input id="p2" type="password" autoComplete="new-password" value={pwd.newPassword} onChange={(e) => setPwd({ ...pwd, newPassword: e.target.value })} /></Field><Field label={t("auth.confirmPassword")} id="p3"><Input id="p3" type="password" autoComplete="new-password" value={pwd.confirmPassword} onChange={(e) => setPwd({ ...pwd, confirmPassword: e.target.value })} /></Field></div>
-            <Button onClick={() => call(() => api.put("/api/auth/password", pwd), "Senha alterada; outras sessões encerradas.")}>{t("settings.changePassword")}</Button>
+            <Button onClick={() => call(() => api.put("/api/auth/password", pwd), t("settings.senha_alterada_outras_sessoes_encerradas"))}>{t("settings.changePassword")}</Button>
           </Card>
         </div>
       )}
@@ -111,12 +111,12 @@ function Settings() {
           <Card>
             <h2 className="type-h3 mb-2">{t("settings.export")}</h2>
             <p className="type-body text-muted mb-3">{t("settings.geramos_um_pacote_com_todos")}</p>
-            <Button variant="primary" onClick={() => call(() => api.post("/api/me/exports"), "Exportação solicitada.").then(exports.reload)}>{t("settings.export")}</Button>
+            <Button variant="primary" onClick={() => call(() => api.post("/api/me/exports"), t("settings.exportacao_solicitada")).then(exports.reload)}>{t("settings.export")}</Button>
             <ul className="mt-3 divide-y divide-line-soft">{(exports.data ?? []).map((x) => <li key={x.id} className="flex items-center justify-between py-2 type-body-sm"><span>{x.status} · {x.requestedAt?.slice(0, 10)}</span>{x.status === "READY" && <a className="btn btn-sm" href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}/api/me/exports/${x.id}/file`} onClick={async (e) => { e.preventDefault(); const u = await api.blobUrl(`/api/me/exports/${x.id}/file`); window.open(u); }}>{t("settings.baixar")}</a>}</li>)}</ul>
           </Card>
           <Card>
             <h2 className="type-h3 mb-2">{t("settings.deleteAccount")}</h2>
-            {me.deletionScheduledFor ? <><p className="type-body text-critical mb-3">{t("settings.exclusao_agendada_para", { slice: me.deletionScheduledFor.slice(0, 10) })}</p><Button onClick={() => call(() => api.delete("/api/me/deletion"), "Exclusão cancelada.")}>{t("settings.cancelDeletion")}</Button></>
+            {me.deletionScheduledFor ? <><p className="type-body text-critical mb-3">{t("settings.exclusao_agendada_para", { slice: me.deletionScheduledFor.slice(0, 10) })}</p><Button onClick={() => call(() => api.delete("/api/me/deletion"), t("settings.exclusao_cancelada"))}>{t("settings.cancelDeletion")}</Button></>
               : <><p className="type-body text-muted mb-3">{t("settings.a_conta_fica_30_dias")}</p><Button variant="danger" onClick={() => setDel({ open: true, password: "" })}>{t("settings.deleteAccount")}</Button></>}
           </Card>
         </div>
@@ -125,11 +125,11 @@ function Settings() {
         <Card>
           <h2 className="type-h3 mb-3">{t("settings.sessions")}</h2>
           {sessions.loading && <Skeleton className="h-32" />}
-          <ul className="divide-y divide-line-soft">{(sessions.data ?? []).map((s) => <li key={s.id} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.deviceName ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.id}`), "Sessão encerrada.").then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
-          <Button className="mt-3" variant="danger" onClick={() => call(() => api.delete("/api/auth/sessions"), "Outras sessões encerradas.").then(sessions.reload)}>{t("settings.sair_de_todos_os_outros")}</Button>
+          <ul className="divide-y divide-line-soft">{(sessions.data ?? []).map((s) => <li key={s.id} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.deviceName ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.id}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
+          <Button className="mt-3" variant="danger" onClick={() => call(() => api.delete("/api/auth/sessions"), t("settings.outras_sessoes_encerradas")).then(sessions.reload)}>{t("settings.sair_de_todos_os_outros")}</Button>
         </Card>
       )}
-      <Dialog open={del.open} onClose={() => setDel({ open: false, password: "" })} title={t("settings.deleteAccount")} footer={<><Button onClick={() => setDel({ open: false, password: "" })}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => call(() => api.post("/api/me/deletion", { password: del.password }), "Exclusão agendada.").then(() => setDel({ open: false, password: "" }))}>{t("common.confirm")}</Button></>}>
+      <Dialog open={del.open} onClose={() => setDel({ open: false, password: "" })} title={t("settings.deleteAccount")} footer={<><Button onClick={() => setDel({ open: false, password: "" })}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => call(() => api.post("/api/me/deletion", { password: del.password }), t("settings.exclusao_agendada")).then(() => setDel({ open: false, password: "" }))}>{t("common.confirm")}</Button></>}>
         <Field label={t("auth.password")} id="delpwd"><Input id="delpwd" type="password" value={del.password} onChange={(e) => setDel({ ...del, password: e.target.value })} /></Field>
       </Dialog>
     </>

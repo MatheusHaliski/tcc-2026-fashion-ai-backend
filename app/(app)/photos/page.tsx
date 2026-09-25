@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, ApiError, mediaUrl, qs } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Chip, Dialog, EmptyState, ErrorState, PageHeader, SkeletonGrid, Tabs, useToast } from "@/components/ui";
@@ -17,8 +17,10 @@ interface Curation { duplicateGroups: { photos: Photo[]; suggestKeep: string; su
 interface Timeline { months: Record<string, Record<string, number>>; moments: { photo: Photo; date: string; origin: string }[]; }
 
 /** Ordem e nomes das origens (RF12.CA01): peça, esquema, provador, DNA e as demais fontes de foto. */
-const ORIGINS: [string, string][] = [["WARDROBE_ITEM", "Peças"], ["EDITOR", "Edições"], ["SCHEME", "Looks"], ["TRY_ON", "Provador"], ["STYLE_DNA", "DNA de estilo"], ["PROFILE", "Perfil"], ["BACKGROUND_STUDIO", "Estúdio de fundo"], ["LOOSE", "Soltas"]];
-const ORIGIN_LABEL = Object.fromEntries(ORIGINS);
+const ORIGINS: [string, string][] = [["WARDROBE_ITEM", "common.pecas"], ["EDITOR", "photos.origin.edicoes"], ["SCHEME", "search.looks"], ["TRY_ON", "nav.tryon"], ["STYLE_DNA", "photos.origin.dna_de_estilo"], ["PROFILE", "photos.origin.perfil"], ["BACKGROUND_STUDIO", "photos.origin.estudio_de_fundo"], ["LOOSE", "photos.origin.soltas"]];
+const ORIGIN_KEY = Object.fromEntries(ORIGINS);
+/** Rótulo da origem no idioma corrente. */
+const originLabel = (o?: string | null) => (o && ORIGIN_KEY[o] ? tr(ORIGIN_KEY[o]) : o ?? "");
 const PAGE = 60;
 type Pending = { kind: "one"; photo: Photo; link?: Link_ } | { kind: "many"; ids: string[]; message: string; linked: number };
 
@@ -88,7 +90,7 @@ function Photos() {
       {tab === "gallery" && (<>
         <div className="mb-3 flex flex-wrap gap-1.5" aria-label={t("photos.filtrar_por_origem")}>
           <Chip active={origin === ""} onClick={() => setOrigin("")}>{t("common.all")} · {total}</Chip>
-          {ORIGINS.filter(([o]) => head?.counts[o]).map(([o, l]) => <Chip key={o} active={origin === o} onClick={() => setOrigin(o)}>{l} · {head?.counts[o]}</Chip>)}
+          {ORIGINS.filter(([o]) => head?.counts[o]).map(([o, l]) => <Chip key={o} active={origin === o} onClick={() => setOrigin(o)}>{t(l)} · {head?.counts[o]}</Chip>)}
         </div>
         {sel.length > 0 && (
           <div className="photo-batch" role="region" aria-label={t("photos.selecao")}>
@@ -102,13 +104,13 @@ function Photos() {
         {loading && !pages.length && <SkeletonGrid n={12} h="h-32" />}
         {!loading && !error && head && loaded === 0 && <EmptyState title={t("common.empty")} hint={t("photos.as_fotos_das_pecas_dos")} />}
         {groups.map(([o, list]) => (
-          <section key={o} className="mb-5" aria-label={ORIGIN_LABEL[o] ?? o}>
-            <h2 className="type-h3 mb-2">{ORIGIN_LABEL[o] ?? o} <span className="type-caption text-muted">· {head?.counts[o] ?? list.length}</span></h2>
+          <section key={o} className="mb-5" aria-label={originLabel(o)}>
+            <h2 className="type-h3 mb-2">{originLabel(o)} <span className="type-caption text-muted">· {head?.counts[o] ?? list.length}</span></h2>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
               {list.map((p) => { const link = links[p.id]; const on = sel.includes(p.id); return (
                 <figure key={p.id} className={`photo-tile ${on ? "is-selected" : ""}`}>
                   <button type="button" className="block w-full" onClick={() => (sel.length ? toggle(p.id) : setEditing(p))} aria-label={sel.length ? t("photos.selecionar_foto") : t("photos.editar_foto")}>
-                    <img src={mediaUrl(p.thumbnailUrl ?? p.url)} alt={link?.pieceName ?? ORIGIN_LABEL[p.origin] ?? t("photos.foto")} className="aspect-square w-full object-cover" loading="lazy" decoding="async" width={200} height={200} />
+                    <img src={mediaUrl(p.thumbnailUrl ?? p.url)} alt={link?.pieceName ?? (originLabel(p.origin) || t("photos.foto"))} className="aspect-square w-full object-cover" loading="lazy" decoding="async" width={200} height={200} />
                   </button>
                   <input type="checkbox" className="photo-check" checked={on} onChange={() => toggle(p.id)} aria-label={t("photos.selecionar_foto")} />
                   {link && <Link href={`/pieces/${link.pieceId}`} className="photo-link" title={link.activeImage ? t("photos.imagem_atual_da_peca") : t("photos.foto_da_peca")}>{link.activeImage ? "● " : ""}{link.pieceName}</Link>}
@@ -131,12 +133,12 @@ function Photos() {
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
           {(timeline.data?.moments ?? []).length === 0 ? <EmptyState title={t("photos.nenhum_momento_chave_ainda")} hint={t("photos.marque_fotos_com_na_galeria")} /> : (
             <ol className="relative ml-2 border-l-2 border-line-soft pl-6">{timeline.data!.moments.map((m) => (
-              <li key={m.photo.id} className="relative mb-6"><span className="absolute -left-[33px] top-1 h-4 w-4 rounded-full bg-mark" /><p className="label">{fmtDate(m.date)} · {ORIGIN_LABEL[m.origin] ?? m.origin}</p>
+              <li key={m.photo.id} className="relative mb-6"><span className="absolute -left-[33px] top-1 h-4 w-4 rounded-full bg-mark" /><p className="label">{fmtDate(m.date)} · {originLabel(m.origin)}</p>
                 <img src={mediaUrl(m.photo.thumbnailUrl ?? m.photo.url)} alt="" className="mt-2 h-40 rounded object-cover" loading="lazy" /></li>))}</ol>
           )}
           <aside className="surface p-3"><p className="label mb-2">{t("photos.fotos_por_mes")}</p>
             <ul className="grid gap-1.5">{Object.entries(timeline.data?.months ?? {}).reverse().map(([mo, byOrigin]) => { const n = Object.values(byOrigin).reduce((a, b) => a + b, 0); const max = Math.max(1, ...Object.values(timeline.data?.months ?? {}).map((x) => Object.values(x).reduce((a, b) => a + b, 0))); return (
-              <li key={mo} className="grid grid-cols-[64px_1fr_32px] items-center gap-2 type-caption"><span>{mo}</span><span className="h-2 rounded bg-mark" style={{ width: `${(n / max) * 100}%` }} title={Object.entries(byOrigin).map(([o, c]) => `${ORIGIN_LABEL[o] ?? o}: ${c}`).join(" · ")} /><span className="text-right type-data">{n}</span></li>); })}</ul>
+              <li key={mo} className="grid grid-cols-[64px_1fr_32px] items-center gap-2 type-caption"><span>{mo}</span><span className="h-2 rounded bg-mark" style={{ width: `${(n / max) * 100}%` }} title={Object.entries(byOrigin).map(([o, c]) => `${originLabel(o)}: ${c}`).join(" · ")} /><span className="text-right type-data">{n}</span></li>); })}</ul>
           </aside>
         </div>
       ))}
@@ -158,7 +160,7 @@ function Photos() {
         </>)}
         {curation?.note && <p className="mt-2 type-caption text-muted">{curation.note}</p>}
       </Dialog>
-      {editing && <PhotoEditor photoId={editing.id} title={links[editing.id]?.pieceName ?? ORIGIN_LABEL[editing.origin]} onClose={() => setEditing(null)} onSaved={(msg) => { setEditing(null); toast.success(msg); setNonce((n) => n + 1); }} />}
+      {editing && <PhotoEditor photoId={editing.id} title={links[editing.id]?.pieceName ?? originLabel(editing.origin)} onClose={() => setEditing(null)} onSaved={(msg) => { setEditing(null); toast.success(msg); setNonce((n) => n + 1); }} />}
     </>
   );
 }

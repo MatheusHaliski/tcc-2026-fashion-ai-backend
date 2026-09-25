@@ -57,7 +57,7 @@ export function resolveCardArt(bg?: Record<string, unknown> | null, opts?: { sea
   // camada base: cor → gradiente → cartela sazonal (sobrescreve o fundo manual)
   let base: string | undefined = s.color ?? undefined;
   let kind: ArtKind = base ? "color" : "none";
-  let label = base ? `cor ${base}` : "sem arte";
+  let label = base ? `cor ${base}` : tr("common.sem_arte");
   let season: string | null = null;
   const grad = gradientCss(s.gradient) ?? (s.gradientPresetId && ART_INDEX.gradients[s.gradientPresetId] ? gradientCss({ type: ART_INDEX.gradients[s.gradientPresetId].type, stops: ART_INDEX.gradients[s.gradientPresetId].stops }) : undefined);
   if (grad) { base = grad; kind = "gradient"; label = s.gradientPresetId ? `gradiente ${ART_INDEX.gradients[s.gradientPresetId]?.name ?? s.gradientPresetId}` : "gradiente"; }

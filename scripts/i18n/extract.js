@@ -27,7 +27,7 @@ const opt = { dry: args.includes("--dry"), wide: args.includes("--wide"), verbos
 const DIRS = ["app", "components", "lib"].map((d) => path.join(ROOT, d));
 const SKIP = [/\/lib\/i18n\//, /\/lib\/api\/labels-/, /\/lib\/api\/client\.ts$/, /\/lib\/api\/types\.ts$/, /\.d\.ts$/, /\/app\/layout\.tsx$/];
 const INLINE = new Set(["b", "strong", "i", "em", "span", "a", "code", "small", "u", "s", "kbd", "sup", "sub", "mark", "abbr", "br", "wbr", "Link", "time", "q", "cite", "del", "ins"]);
-const SKIP_CALLEES = /(^|\.)(get|post|put|patch|delete|del|upload|fetch|cn|clsx|classNames|querySelector|querySelectorAll|getElementById|closest|matches|getItem|setItem|removeItem|push|replace|redirect|require|import|startsWith|endsWith|includes|indexOf|lastIndexOf|split|match|test|exec|padStart|padEnd|localeCompare|toLocaleString|toLocaleDateString|toLocaleTimeString|addEventListener|removeEventListener|dispatchEvent|setAttribute|getAttribute|hasAttribute|removeAttribute|createElement|matchMedia|getComputedStyle|open|postMessage|encodeURIComponent|decodeURIComponent|atob|btoa|charAt|charCodeAt|codePointAt|normalize|search|hasOwnProperty|has|is|isValid|log|warn|error|info|debug|assert|trace|group|time|timeEnd|Error|TypeError|RangeError|URL|URLSearchParams|Date|RegExp|Intl|NumberFormat|DateTimeFormat|Blob|File|Image|Audio|Worker|WebSocket|EventSource|Headers|Request|Response|FormData|append|set|label|mediaUrl|chromeTile|dynamic|lazy|memo|forwardRef|createContext|useSearchParams|useParams|usePathname|useRouter|useApi|useSWR|useQuery|useMutation|keyframes|css|styled|getPropertyValue|setProperty|removeProperty|join|repeat|slice|substring|substr|trim|toUpperCase|toLowerCase|find|filter|map|some|every|reduce|sort|flatMap|forEach|entries|keys|values|from|of|parse|stringify|toString|valueOf|then|catch|finally|resolve|reject|all|race|setTimeout|setInterval|requestAnimationFrame|cancelAnimationFrame|clearTimeout|clearInterval|Symbol|for|new)$/;
+const SKIP_CALLEES = R.SKIP_CALLEES;
 
 // ---------------------------------------------------------------- catálogo e chaves
 const catalog = JSON.parse(fs.readFileSync(CATALOG, "utf8"));
@@ -123,9 +123,10 @@ function shadowed(node, name, stopAt) {
   }
   return false;
 }
+function inParameter(node, comp) { let p = node.parent; while (p && p !== comp) { if (ts.isParameter(p)) return true; p = p.parent; } return false; }
 function translatorFor(node) {
   const comp = componentOf(node);
-  if (comp && !shadowed(node, "t", comp)) return { fn: "t", rich: "rich", comp };
+  if (comp && !shadowed(node, "t", comp) && !inParameter(node, comp)) return { fn: "t", rich: "rich", comp };
   return { fn: "tr", rich: "trRich", comp: null };
 }
 function applyEdits(src, edits) {
@@ -140,7 +141,7 @@ const within = (node, ranges) => ranges.some(([s, e]) => node.getStart() >= s &&
 // ---------------------------------------------------------------- passo A
 function passA(src, file) {
   const sf = sfOf(file, src); const edits = []; const consumed = []; let touched = 0;
-  const wide = opt.wide && /\/(app|components)\//.test(file);
+  const wide = opt.wide;
   const emit = (node, text) => { edits.push({ start: node.getStart(sf), end: node.end, text }); consumed.push([node.getStart(sf), node.end]); touched++; };
   /** Troca as folhas textuais de `e`; `test` decide o que é texto; `fn` é t ou tr. Devolve true se trocou algo. */
   function transformExpr(e, test, fn, target = edits) {
@@ -154,8 +155,7 @@ function passA(src, file) {
     }
     if (ts.isTemplateExpression(e)) {
       const parts = [e.head.text, ...e.templateSpans.map((s) => s.literal.text)];
-      if (!parts.some((p) => test(p) || (hasLetters(p) && test(R.clean(p)))) && !parts.some((p) => R.isText(p))) return false;
-      if (!parts.some(hasLetters)) return false;
+      if (!parts.some((p) => hasLetters(p) && test(R.clean(p)))) return false;
       const used = new Set(); const vars = []; let msg = esc(e.head.text);
       for (const s of e.templateSpans) { const n = nameFor(s.expression, used); vars.push([n, s.expression.getText(sf)]); msg += `{${n}}` + esc(s.literal.text); }
       const key = keyFor(msg.replace(/\s+/g, " "), file);
@@ -218,16 +218,18 @@ function passA(src, file) {
       if (R.TEXT_CALLS.has(callee)) node.arguments.forEach((a) => transformExpr(a, R.isText, translatorFor(node).fn));
       ts.forEachChild(node, visit); return;
     }
-    if (wide && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && componentOf(node)) {
+    if (wide && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && inAnyFunction(node)) {
       const p = node.parent;
-      const skip = ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || ts.isPropertyAssignment(p) && p.name === node || ts.isComputedPropertyName(p) || ts.isElementAccessExpression(p) || ts.isLiteralTypeNode(p)
+      let attrAnc = p; while (attrAnc && !ts.isJsxAttribute(attrAnc) && !ts.isJsxElement(attrAnc) && !ts.isBlock(attrAnc) && !isFnLike(attrAnc)) attrAnc = attrAnc.parent;
+      const inBlockedAttr = attrAnc && ts.isJsxAttribute(attrAnc) && (R.ATTR_BLOCKLIST.has(attrAnc.name.getText(sf)) || /^(data-|aria-)/.test(attrAnc.name.getText(sf)));
+      const skip = inBlockedAttr || ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || ts.isPropertyAssignment(p) || (ts.isArrayLiteralExpression(p) && !inAnyFunction(p)) || ts.isComputedPropertyName(p) || ts.isElementAccessExpression(p) || ts.isLiteralTypeNode(p)
         || ts.isCaseClause(p) || ts.isJsxAttribute(p) || ts.isTemplateSpan(p) || ts.isExpressionStatement(p) || ts.isTypeAssertionExpression(p) || ts.isEnumMember(p) || ts.isModuleDeclaration(p)
         || (ts.isBinaryExpression(p) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken, ts.SyntaxKind.InKeyword].includes(p.operatorToken.kind))
         || (ts.isCallExpression(p) && SKIP_CALLEES.test(p.expression.getText(sf))) || (ts.isNewExpression(p)) || (ts.isPropertyAccessExpression(p))
         || (ts.isVariableDeclaration(p) && /^(id|key|code|slug|url|href|path|route|src|type|kind|className|cls|style|hex|color|sku|storageKey|endpoint|query|selector|pattern|regex|fmt)$/i.test(p.name.getText(sf)))
-        || (ts.isArrayLiteralExpression(p) && p.parent && (ts.isAsExpression(p.parent) || ts.isSatisfiesExpression(p.parent)));
-      if (!skip) transformExpr(node, R.isNatural, translatorFor(node).fn);
-      return;
+        ;
+      if (!skip) { let target = node; while (ts.isBinaryExpression(target.parent) && target.parent.operatorToken.kind === ts.SyntaxKind.PlusToken) target = target.parent; if (transformExpr(target, R.isNatural, translatorFor(node).fn)) return; }
+      ts.forEachChild(node, visit); return;
     }
     ts.forEachChild(node, visit);
   };

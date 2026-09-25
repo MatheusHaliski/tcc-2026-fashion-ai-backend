@@ -14,7 +14,7 @@ import { BackdropChips, StudioLightbox, StudioReport, backdropCenter, backdropEd
 
 interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; overall?: number; manualFillRequired?: boolean; warning?: string }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
 type Preview = "studio" | "detail" | "flat" | "original";
-const PREVIEW_LABEL: Record<Preview, string> = { studio: "Estúdio", get detail() { return tr("common.detalhe_do_logo"); }, flat: "Flat Lay", original: "Original" };
+const PREVIEW_LABEL: Record<Preview, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get flat() { return tr("pieces.new.flat_lay"); }, get original() { return tr("common.original"); } };
 
 function NewPiece() {
   const { t } = useI18n(); const router = useRouter(); const toast = useToast(); const fileRef = useRef<HTMLInputElement>(null);

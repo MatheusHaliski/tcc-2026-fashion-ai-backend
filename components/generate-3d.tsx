@@ -39,7 +39,7 @@ export function Generate3DButton({ targets, compact = true, className = "" }: { 
   );
 }
 
-const SLOT: Record<string, string> = { upper: "Superior", outer_layer: "Camada externa", dress: "Corpo inteiro", lower: "Inferior", shoes: "Calçado", accessory: "Acessório" };
+const SLOT: Record<string, string> = { get upper() { return tr("common.superior"); }, get outer_layer() { return tr("common.camada_externa"); }, get dress() { return tr("generate3d.corpo_inteiro"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("common.calcado"); }, get accessory() { return tr("common.acessorio"); } };
 
 export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; onClose: () => void }) {
   const { user } = useAuth(); const toast = useToast(); const webgl = useWebGL();
@@ -48,7 +48,7 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
   const path = t.kind === "scheme" ? `/api/schemes/${t.id}/look3d` : `/api/pieces/${t.id}/look3d`;
   useEffect(() => {
     let alive = true; setLook(null); setErr(null);
-    api.get<Look3d>(path, { anonymous: !user }).then((l) => alive && setLook(l)).catch((e) => alive && setErr(e?.message ?? "Não foi possível montar o 3D."));
+    api.get<Look3d>(path, { anonymous: !user }).then((l) => alive && setLook(l)).catch((e) => alive && setErr(e?.message ?? tr("generate3d.nao_foi_possivel_montar_o")));
     return () => { alive = false; };
   }, [path, user]);
   // enquanto houver peça na fila do RF16, atualiza a cada 5 s

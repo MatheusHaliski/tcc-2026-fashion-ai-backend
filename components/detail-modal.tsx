@@ -116,8 +116,8 @@ function PieceDetail({ id, from, onScheme, onClose }: { id: string; from?: strin
   if (loading || !data) return <Skeleton className="h-96" />;
   if (!data.piece) return data.snapshot ? <PieceSnapshot snapshot={data.snapshot} /> : <p className="type-body">{t("detailModal.esta_peca_nao_esta_mais")}</p>;
   const p = data.piece;
-  const rows: [string, string | null | undefined][] = [["Categoria", CATEGORY_LABEL[p.category] ?? label(p.category)], ["Subcategoria", label(p.subcategory)], ["Marca", p.brandName], ["Sexo", label(p.sex?.toLowerCase())],
-    ["Tamanho", p.size?.toUpperCase().replace(/^(BR|SHOE)_/, "")], ["Cor", label(p.color)], ["Material", label(p.material?.toLowerCase())], ["Estado", label(p.condition?.toLowerCase())], ["Usos", String(p.wearCount)]];
+  const rows: [string, string | null | undefined][] = [[t("common.category"), CATEGORY_LABEL[p.category] ?? label(p.category)], [t("common.subcategory"), label(p.subcategory)], [t("auth.profileBrand"), p.brandName], [t("pieceForm.sexo"), label(p.sex?.toLowerCase())],
+    [t("common.size"), p.size?.toUpperCase().replace(/^(BR|SHOE)_/, "")], [t("a11y.colorName"), label(p.color)], [t("common.material"), label(p.material?.toLowerCase())], [t("closet.state"), label(p.condition?.toLowerCase())], [t("room.usos_2"), String(p.wearCount)]];
   return (
     <div className="grid gap-5 md:grid-cols-[minmax(300px,400px)_1fr]">
       <article className="fai-card detail-card-expanded" aria-label={p.name}>

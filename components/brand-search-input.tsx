@@ -2,7 +2,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { localMonogram } from "@/lib/brand-logos";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 /** Resultado do buscador web de marcas (GET /api/brand-search). */
 export interface BrandHit {
@@ -14,11 +14,11 @@ interface BrandSearch { query: string; results: BrandHit[]; sources: { source: s
 export interface BrandChoice { brandName: string; brandLogoUrl: string | null; brandLogoWideUrl?: string | null; brandSource: string | null; brandRef: string | null; brandDomain?: string | null; edgePx?: number | null; }
 
 const REASON: Record<string, string> = {
-  SEM_NITIDEZ: "logo recusado: sem nitidez", RESOLUCAO_BAIXA: "logo recusado: resolução baixa", FUNDO_NAO_UNIFORME: "logo recusado: não é logo (foto/banner)",
-  CONTRASTE_BAIXO: "logo recusado: contraste baixo", BLOCO_SOLIDO: "logo recusado: bloco sólido", SEM_DESENHO: "logo recusado: vazio",
-  LOGO_NAO_BAIXOU: "logo não baixou", SEM_LOGO_NA_FONTE: "fonte sem logo", LOGO_INVALIDO: "arquivo de logo inválido", NAO_PROCESSADO: "logo não processado",
+  get SEM_NITIDEZ() { return tr("brandSearchInput.logo_recusado_sem_nitidez"); }, get RESOLUCAO_BAIXA() { return tr("brandSearchInput.logo_recusado_resolucao_baixa"); }, get FUNDO_NAO_UNIFORME() { return tr("brandSearchInput.logo_recusado_nao_e_logo"); },
+  CONTRASTE_BAIXO: "logo recusado: contraste baixo", get BLOCO_SOLIDO() { return tr("brandSearchInput.logo_recusado_bloco_solido"); }, SEM_DESENHO: "logo recusado: vazio",
+  get LOGO_NAO_BAIXOU() { return tr("brandSearchInput.logo_nao_baixou"); }, get SEM_LOGO_NA_FONTE() { return tr("brandSearchInput.fonte_sem_logo"); }, get LOGO_INVALIDO() { return tr("brandSearchInput.arquivo_de_logo_invalido"); }, get NAO_PROCESSADO() { return tr("brandSearchInput.logo_nao_processado"); },
 };
-const STATUS: Record<string, string> = { OK: "ok", SEM_RESULTADO: "sem resultado", INDISPONIVEL: "indisponível", NAO_USADA: "não usada" };
+const STATUS: Record<string, string> = { OK: "ok", get SEM_RESULTADO() { return tr("brandSearchInput.sem_resultado"); }, get INDISPONIVEL() { return tr("challenges.indisponivel"); }, get NAO_USADA() { return tr("brandSearchInput.nao_usada"); } };
 
 /**
  * Campo marca do RF4: busca a marca na internet enquanto a pessoa digita (Wikidata, Simple Icons no GitHub e IA com
@@ -46,7 +46,7 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
     const h = setTimeout(async () => {
       setBusy(true); setFailed(null);
       try { const r = await api.get<BrandSearch>(`/api/brand-search?q=${encodeURIComponent(term)}`, { signal: ctl.signal }); if (n === seq.current) { setRes(r); setActive(0); } }
-      catch (e) { if (n === seq.current && !(e instanceof DOMException)) setFailed("Não foi possível buscar agora. Você pode usar o nome digitado."); }
+      catch (e) { if (n === seq.current && !(e instanceof DOMException)) setFailed(t("brandSearchInput.nao_foi_possivel_buscar_agora")); }
       finally { if (n === seq.current) setBusy(false); }
     }, 380);
     return () => { clearTimeout(h); ctl.abort(); };
@@ -125,5 +125,5 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
 }
 
 function labelOf(source?: string | null) {
-  return source === "WIKIDATA" ? "Wikidata" : source === "SIMPLE_ICONS" ? "Simple Icons (GitHub)" : source === "IA_BUSCA_WEB" ? "IA com busca na web" : source === "PLATAFORMA" ? "perfil da marca" : "internet";
+  return source === "WIKIDATA" ? "Wikidata" : source === "SIMPLE_ICONS" ? tr("brandSearchInput.simple_icons_github") : source === "IA_BUSCA_WEB" ? tr("brandSearchInput.ia_com_busca_na_web") : source === "PLATAFORMA" ? tr("common.perfil_da_marca") : "internet";
 }

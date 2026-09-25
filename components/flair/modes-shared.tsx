@@ -5,7 +5,7 @@ import { Badge, Button, Chip, cn, Field, Input } from "@/components/ui";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
 /** Tipos e peças de interface compartilhados pelos modos do FLAIR (PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO). */
-export const STAT_LABEL: Record<string, string> = { HYPE: "HypeScore", STYLE: "Style", COLOR: "Color Harmony", OCCASION: "Occasion Fit", ORIGINALITY: "Originality", BRAND: "Brand Power", RARITY: "Rarity", TREND: "Trend", COMMUNITY: "Community", AI: "AI Score" };
+export const STAT_LABEL: Record<string, string> = { HYPE: "HypeScore", get STYLE() { return tr("flair.modesShared.style"); }, get COLOR() { return tr("flair.modesShared.color_harmony"); }, get OCCASION() { return tr("flair.modesShared.occasion_fit"); }, get ORIGINALITY() { return tr("flair.modesShared.originality"); }, get BRAND() { return tr("flair.modesShared.brand_power"); }, get RARITY() { return tr("flair.modesShared.rarity"); }, get TREND() { return tr("flair.modesShared.trend"); }, get COMMUNITY() { return tr("flair.modesShared.community"); }, get AI() { return tr("flair.modesShared.ai_score"); } };
 export const STAT_COLOR: Record<string, string> = { HYPE: "#C6275E", STYLE: "#E0457B", COLOR: "#E9B949", OCCASION: "#2D55C9", ORIGINALITY: "#7B4FD6", BRAND: "#B8860B", RARITY: "#8a6a1c", TREND: "#1F7A76", COMMUNITY: "#F08DB1", AI: "#3a86ff" };
 export interface Synergy { code: string; label: string; emoji: string; stat: string; bonus: number; }
 export interface LookCardMini { id: string; name: string; imageUrl: string; category: string; rarity: string; power: number; }
@@ -37,7 +37,7 @@ export function LookTile({ look, selected, onClick, compact }: { look: ModeLook;
 }
 
 /** Seleção de looks (1 ou vários) entre os looks do jogador. */
-export function LookPicker({ looks, value, onChange, max = 1, label = "Seu look" }: { looks: ModeLook[]; value: string[]; onChange: (ids: string[]) => void; max?: number; label?: string }) {
+export function LookPicker({ looks, value, onChange, max = 1, label = tr("flair.modesShared.seu_look") }: { looks: ModeLook[]; value: string[]; onChange: (ids: string[]) => void; max?: number; label?: string }) {
   const { t } = useI18n();
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((x) => x !== id) : max === 1 ? [id] : value.length >= max ? value : [...value, id]);
   return (
@@ -49,7 +49,7 @@ export function LookPicker({ looks, value, onChange, max = 1, label = "Seu look"
   );
 }
 
-export function OpponentField({ value, onChange, allowHouse = true, label = "Oponente" }: { value: string; onChange: (v: string) => void; allowHouse?: boolean; label?: string }) {
+export function OpponentField({ value, onChange, allowHouse = true, label = tr("flair.modesShared.oponente") }: { value: string; onChange: (v: string) => void; allowHouse?: boolean; label?: string }) {
   const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-end gap-2">
@@ -65,7 +65,7 @@ export function ThemeBadge({ theme }: { theme?: Theme | null }) {
 }
 
 /** Resultado de qualquer modo: placar, rodadas com barras A × B, notas (combos, bônus do tema) e recompensa. */
-export function ResultView({ result, labelA = "Você", labelB }: { result: ModeResult | null; labelA?: string; labelB?: string }) {
+export function ResultView({ result, labelA = tr("flair.voce"), labelB }: { result: ModeResult | null; labelA?: string; labelB?: string }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<number | null>(null);
   if (!result) return null;
@@ -83,7 +83,7 @@ export function ResultView({ result, labelA = "Você", labelB }: { result: ModeR
       {rounds.length > 0 && <ol className="mt-3 grid gap-2">{rounds.map((r, i) => (
         <li key={i} className="flair-round">
           <button type="button" className="flex w-full items-center justify-between gap-2 text-left" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
-            <b className="type-body-sm">{r.label}</b><span className="type-caption">{r.winner === "DRAW" ? t("common.empate") : r.winner === "A" ? `✔ ${labelA}` : `✔ ${labelB ?? "Oponente"}`}</span>
+            <b className="type-body-sm">{r.label}</b><span className="type-caption">{r.winner === "DRAW" ? t("common.empate") : r.winner === "A" ? `✔ ${labelA}` : `✔ ${labelB ?? t("flair.modesShared.oponente")}`}</span>
           </button>
           <div className="flair-round-bars">
             <span className={r.winner === "A" ? "win" : ""}>{r.a || labelA}</span><i><b style={{ width: `${(r.scoreA / max) * 100}%` }} /></i><em className="tabular">{r.scoreA}</em>

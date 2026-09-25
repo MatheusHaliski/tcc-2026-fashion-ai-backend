@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 /** RF4 · Estúdio — fundo de estúdio (cor do centro + cor da borda do degradê). */
 export interface StudioBackdrop { id: string; label: string; hex?: string; edge?: string; }
@@ -17,9 +17,9 @@ export interface StudioInfo {
 const SIDE_LABEL: Record<string, string> = { bottom: "base", top: "topo", left: "esquerda", right: "direita" };
 
 const STAGE_LABEL: Record<string, string> = {
-  LIMPEZA: "Limpeza", NITIDEZ: "Nitidez e contorno", MANEQUIM_INVISIVEL: "Sem manequim fantasma", LOGO: "Logo", ESTUDIO_IA: "Estúdio por IA",
-  VOLUME_LUZ: "Volume e luz", ENQUADRAMENTO: "Enquadramento", FUNDO_ESTUDIO: "Fundo de estúdio", SOMBRA: "Sombra",
-  COMPOSICAO: "Composição", DETALHE: "Detalhe do logo", VALIDACAO: "Validação",
+  get LIMPEZA() { return tr("studio.limpeza"); }, get NITIDEZ() { return tr("studio.nitidez_e_contorno"); }, get MANEQUIM_INVISIVEL() { return tr("studio.sem_manequim_fantasma"); }, get LOGO() { return tr("room3d.wardrobeCreator.logo_2"); }, get ESTUDIO_IA() { return tr("studio.estudio_por_ia"); },
+  get VOLUME_LUZ() { return tr("studio.volume_e_luz"); }, get ENQUADRAMENTO() { return tr("studio.enquadramento"); }, get FUNDO_ESTUDIO() { return tr("studio.fundo_de_estudio"); }, get SOMBRA() { return tr("studio.sombra"); },
+  get COMPOSICAO() { return tr("room.composicao"); }, get DETALHE() { return tr("common.detalhe_do_logo"); }, get VALIDACAO() { return tr("studio.validacao"); },
 };
 
 /** Cor da borda do degradê do fundo (preenche as sobras quando a foto não tem o formato do quadro). */
@@ -55,7 +55,7 @@ export function useStudioBackdrops(): StudioBackdrop[] {
 }
 
 /** Chips de fundo: amostra do degradê + nome (a cor nunca é o único indicador). */
-export function BackdropChips({ value, onPick, busy, label = "Fundo do estúdio" }: { value?: string | null; onPick: (id: string) => void; busy?: boolean; label?: string }) {
+export function BackdropChips({ value, onPick, busy, label = tr("studio.fundo_do_estudio") }: { value?: string | null; onPick: (id: string) => void; busy?: boolean; label?: string }) {
   const { t } = useI18n();
   const list = useStudioBackdrops();
   if (!list.length) return null;
@@ -98,7 +98,7 @@ export function StudioReport({ info }: { info: StudioInfo }) {
       <ul className="mt-2 space-y-0.5">
         {info.framing && <li>{rich("studio.enquadramento_a_peca_ocupa_do", { aspect: info.framing.aspect, Math: Math.round((info.framing.fill ?? 0) * 100) }, { 0: ($c) => <strong className="text-ink">{$c}</strong> })}{info.framing.bleed?.length ? (info.framing.bleed.every((b) => info.framing?.flush?.includes(b)) ? t("studio.rente_a_nada_cortado", { join: info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ") }) : t("studio.sangra_na_o_corte_da", { join: info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ") })) : t("studio.peca_inteira_margem_minima")}</li>}
         <li><strong className="text-ink">{t("studio.manequim")}</strong> {info.ghost?.length ? info.ghost.join(" · ") : t("studio.sem_manequim_fantasma_peca_superior")}</li>
-        <li><strong className="text-ink">{t("studio.logo")}</strong> {info.logo ? t("studio.encontrado_foco_e_foto_de", { value: info.logo.source === "ia" ? "IA de visão" : info.logo.source === "catalogo" ? "selo FAI da arte padrão" : "detector local" }) : t("studio.nenhum_identificado")}</li>
+        <li><strong className="text-ink">{t("studio.logo")}</strong> {info.logo ? t("studio.encontrado_foco_e_foto_de", { value: info.logo.source === "ia" ? t("studio.ia_de_visao") : info.logo.source === "catalogo" ? t("studio.selo_fai_da_arte_padrao") : "detector local" }) : t("studio.nenhum_identificado")}</li>
       </ul>
       <p className="mt-1">{t("studio.motor", { value: info.provider ?? t("common.local"), value2: info.fallbackUsed ? t("common.plano_b_local") : "", value3: info.forced ? t("studio.recorte_conferido_por_voce") : "" })}</p>
     </div>

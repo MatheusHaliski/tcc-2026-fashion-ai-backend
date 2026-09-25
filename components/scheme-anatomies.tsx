@@ -8,6 +8,7 @@ import { CameraFlashes, SeasonDecor, Spotlights } from "@/components/card-art";
 import { BLOCKS_TEXTURE, brickColor, hueChroma } from "@/lib/card-art";
 import { BrandLogo } from "@/components/brand-logo";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 /** Anatomias oficiais do card (docs/anatomias/anatomias_card_v17_1): seção A (base) e seção B (variações com arte própria). */
 export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; ownArt?: boolean; hint: string }[] = [
@@ -96,10 +97,10 @@ const SEASON_NAME: Record<string, { icon: string; label: string; palette: string
   WINTER: { icon: "❄", get label() { return tr("common.inverno_frost"); }, palette: ["#E8F1F8", "#B9D4E8", "#5C7A99", "#2E4057"] }, SUMMER: { icon: "☀", get label() { return tr("common.verao_solstice"); }, palette: ["#FFF3B0", "#FFC259", "#FF7A45", "#2FA3C2"] },
   AUTUMN: { icon: "🍂", get label() { return tr("common.outono_ember"); }, palette: ["#F2C879", "#C97C3D", "#7A3B1E", "#4A2511"] }, SPRING: { icon: "🌸", get label() { return tr("common.primavera_bloom"); }, palette: ["#FDE2EC", "#F9A8D4", "#C9EFCB", "#7BC67E"] },
 };
-const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brl = { format: (v: number) => new Intl.NumberFormat(currentIntl(), { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v) };
 const money = (v?: number | null) => (v == null ? "—" : brl.format(v));
 /** Tamanho legível (br_40 → 40, shoe_39 → 39, one_size → Único). */
-const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? "Único" : s.replace(/^(br|shoe)_/i, "").toUpperCase());
+const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? tr("common.unico") : s.replace(/^(br|shoe)_/i, "").toUpperCase());
 const stop = (e: { preventDefault: () => void; stopPropagation: () => void }) => { e.preventDefault(); e.stopPropagation(); };
 const tint = (hex?: string | null) => (hex && hex.startsWith("#") ? hex : "#9A958C");
 
@@ -217,7 +218,7 @@ function Spectrum({ pieces }: { pieces: AnatomyPiece[] }) {
   const list = [...groups.values()].sort((a, b) => b.pieces.length - a.pieces.length); const total = pieces.length || 1;
   const chromatic = list.map((g) => hueChroma(g.hex)).filter((c) => c.chroma > 0.18).map((c) => c.hue);
   const spread = chromatic.length < 2 ? 0 : Math.max(...chromatic.map((h) => Math.max(...chromatic.map((k) => Math.min(Math.abs(h - k), 360 - Math.abs(h - k))))));
-  const harmony = chromatic.length < 2 ? "monocromática / neutra — base segura, destaque pela textura" : spread > 150 ? "complementar — contraste de polos opostos no círculo" : spread < 60 ? "análoga — cores vizinhas, leitura suave" : "contraste livre — combinação de matizes distantes";
+  const harmony = chromatic.length < 2 ? t("schemeAnatomies.monocromatica_neutra_base_segura") : spread > 150 ? t("schemeAnatomies.complementar_contraste_de_polos_opostos") : spread < 60 ? t("schemeAnatomies.analoga_cores_vizinhas_leitura_suave") : t("schemeAnatomies.contraste_livre_combinacao_de_matizes");
   return (
     <div className="spectrum" aria-label={t("schemeAnatomies.espectro_de_cores_do_look")}>
       <div className="spectrum-band">{list.map((g) => <i key={g.hex} style={{ background: g.hex, flexGrow: g.pieces.length }} title={`${g.name} · ${Math.round((100 * g.pieces.length) / total)}%`} />)}</div>
@@ -264,8 +265,8 @@ function Silhouette({ pieces }: { pieces: AnatomyPiece[] }) {
   const full = by("full_body_piece")[0]; const upper = by("upper_piece"); const lower = by("lower_piece")[0]; const shoes = by("shoes_piece")[0]; const acc = by("accessory_piece");
   const top = tint(full?.colorHex ?? upper[upper.length - 1]?.colorHex); const layer = upper.length > 1 ? tint(upper[0].colorHex) : null;
   const bottom = tint(full?.colorHex ?? lower?.colorHex); const feet = tint(shoes?.colorHex);
-  const ratio = full ? "coluna única (peça inteira)" : upper.length && lower ? "1/3 : 2/3 — regra dos terços" : "proporção livre";
-  const verdict = full ? "fluida" : upper.length > 1 ? "em camadas" : "equilibrada";
+  const ratio = full ? t("schemeAnatomies.coluna_unica_peca_inteira") : upper.length && lower ? "1/3 : 2/3 — regra dos terços" : t("schemeAnatomies.proporcao_livre");
+  const verdict = full ? "fluida" : upper.length > 1 ? t("schemeAnatomies.em_camadas") : "equilibrada";
   return (
     <div className="silhouette" aria-label={t("schemeAnatomies.silhueta_e_proporcao")}>
       <svg viewBox="0 0 80 170" className="mannequin" aria-hidden>

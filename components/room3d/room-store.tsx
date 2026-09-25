@@ -9,8 +9,8 @@ import { AVAILABILITY, SLOT_LABELS, StoreSwatch, type StoreItem } from "@/compon
 
 type ShopItem = StoreItem & { inventory?: { inventoryId: string; appliedModule?: string | null; serial?: number | null }[] };
 
-const MODULE_LABELS: Record<string, string> = { ALL: "Guarda-roupa inteiro", handles: "Puxadores", top: "Maleiro", base: "Base", hangers: "Cabides", logo: "Placa de logo", rug: "Tapete", shoe: "Sapateira", bags: "Vitrine de bolsas", jewelry: "Porta-joias", island: "Ilha central", light: "Iluminação", season: "Maleiro da estação", signature: "Closet de assinatura" };
-export const moduleLabel = (id?: string | null) => !id ? "—" : MODULE_LABELS[id] ?? id.replace(/^door:(\d+)$/, "Porta $1").replace(/^drawer:(\d+)$/, "Gaveta $1");
+const MODULE_LABELS: Record<string, string> = { get ALL() { return tr("room3d.wardrobeCreator.guarda_roupa_inteiro"); }, get handles() { return tr("common.puxadores"); }, get top() { return tr("common.maleiro"); }, get base() { return tr("common.base"); }, get hangers() { return tr("common.cabides"); }, get logo() { return tr("common.placa_de_logo"); }, get rug() { return tr("common.tapete"); }, get shoe() { return tr("room3d.roomScene.sapateira"); }, get bags() { return tr("room3d.roomScene.vitrine_de_bolsas"); }, get jewelry() { return tr("common.porta_joias"); }, get island() { return tr("common.ilha_central"); }, get light() { return tr("room3d.roomStore.iluminacao"); }, get season() { return tr("room3d.roomStore.maleiro_da_estacao"); }, get signature() { return tr("room3d.roomStore.closet_de_assinatura"); } };
+export const moduleLabel = (id?: string | null) => !id ? "—" : MODULE_LABELS[id] ?? id.replace(/^door:(\d+)$/, tr("room3d.roomStore.porta_1")).replace(/^drawer:(\d+)$/, tr("room3d.roomStore.gaveta_1"));
 const KINDS = [{ id: "", get label() { return tr("room3d.roomStore.tudo"); } }, { id: "COMPONENT", get label() { return tr("room3d.roomStore.componentes"); } }, { id: "WARDROBE", get label() { return tr("room3d.roomStore.guarda_roupas_inteiros"); } }];
 const ORIGINS = [{ id: "", get label() { return tr("room3d.roomStore.todas_as_origens"); } }, { id: "FAI", get label() { return tr("room3d.roomStore.fabrica_fai"); } }, { id: "MARCA", get label() { return tr("nav.brands"); } }, { id: "CELEBRIDADE", get label() { return tr("common.celebridades"); } }];
 const SORTS = [{ id: "price", get label() { return tr("room3d.roomStore.menor_preco"); } }, { id: "-price", get label() { return tr("room3d.roomStore.maior_preco"); } }, { id: "new", get label() { return tr("room3d.roomStore.marcas_primeiro"); } }];
@@ -48,7 +48,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
     } catch (e) { toast.fromError(e); } finally { setBusy(null); }
   }
   async function tryOn(i: ShopItem) {
-    try { const r = await api.post<{ module?: string; note?: string }>(`/api/points/shop/${i.sku}/try-on`, {}); toast.info(t("room3d.roomStore.previa_em", { moduleLabel: moduleLabel(r.module), value: r.note ?? "nada foi comprado." })); } catch (e) { toast.fromError(e); }
+    try { const r = await api.post<{ module?: string; note?: string }>(`/api/points/shop/${i.sku}/try-on`, {}); toast.info(t("room3d.roomStore.previa_em", { moduleLabel: moduleLabel(r.module), value: r.note ?? t("room3d.roomStore.nada_foi_comprado") })); } catch (e) { toast.fromError(e); }
   }
   function openApply(i: ShopItem, inventoryId: string) { setApply({ item: i, inventoryId }); setTarget(i.compatibleModules?.[0] ?? ""); }
   async function doApply() {
@@ -89,7 +89,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
                 {i.requiresSeal && <Badge tone="mark">{t("room3d.roomStore.exige_selo")}</Badge>}
               </div>
               <p className="mt-1 type-data text-faint tabular">{i.stockLeft != null ? t("room3d.roomStore.restam", { stockLeft: i.stockLeft, stock: i.stock }) : ""}{i.perUserLimit ? t("room3d.roomStore.max_pessoa", { perUserLimit: i.perUserLimit }) : ""}{i.availableFrom ? t("room3d.roomStore.de", { date: fmtDate(i.availableFrom) }) : ""}{i.availableUntil ? t("common.ate", { date: fmtDate(i.availableUntil) }) : ""}</p>
-              {units.length > 0 && <p className="type-caption text-muted">{t("room3d.roomStore.voce_tem", { unitsCount: units.length })}{" "}{units.map((u) => moduleLabel(u.appliedModule) === "—" ? "na caixa" : moduleLabel(u.appliedModule)).join(", ")}</p>}
+              {units.length > 0 && <p className="type-caption text-muted">{t("room3d.roomStore.voce_tem", { unitsCount: units.length })}{" "}{units.map((u) => moduleLabel(u.appliedModule) === "—" ? t("room3d.roomStore.na_caixa") : moduleLabel(u.appliedModule)).join(", ")}</p>}
               {i.blocker && <p className="type-caption" style={{ color: "var(--mark)" }}>{i.blocker}</p>}
               <div className="mt-auto flex flex-wrap gap-1 pt-2">
                 {loose && <Button size="sm" variant="accent" onClick={() => openApply(i, loose.inventoryId)}>{t("room3d.roomStore.montar_no_quarto")}</Button>}

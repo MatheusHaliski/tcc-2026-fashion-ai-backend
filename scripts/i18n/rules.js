@@ -37,18 +37,22 @@ const STOP = new Set(["de", "da", "do", "das", "dos", "com", "para", "por", "em"
 function clean(s) { return s.replace(/\s+/g, " ").trim(); }
 /** Texto de interface em contexto textual (texto JSX, placeholder, título…): qualquer coisa com letras que não seja técnica. */
 function isText(s) { const c = clean(s); return c.length >= 2 && HAS_LETTERS.test(c) && !IGNORE.test(c) && !ALLOW.has(c) && !/[{}`]/.test(c) && !/^[\w.-]+=[\w.-]*$/.test(c); }
-const TW = (w) => /^[!a-z0-9\-\/:\[\]\.%#(),']+$/.test(w);
+const TW = (w) => /^[!a-zA-Z0-9_\-\/:\[\]\.%#(),']+$/.test(w) && !/^[A-Z][a-z]+$/.test(w);
+const CSS_FN = /\b(rgba?|hsla?|var|calc|url|attr|env|min|max|clamp|linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|translate[XYZ]?|rotate[XYZ]?|scale[XYZ]?|matrix|cubic-bezier|steps|blur|brightness|contrast|drop-shadow|saturate|hue-rotate|polygon|inset|circle|ellipse|color-mix|light-dark)\(/;
 /** Texto em linguagem natural (contexto ambíguo): acento, frase com maiúscula/pontuação, palavra capitalizada ou palavras funcionais do português. */
 function isNatural(s) {
   const c = clean(s);
   if (!isText(c)) return false;
   if (/^[\w.\-]+\/[\w.\-\/]+$/.test(c)) return false;                       // caminhos e tipos MIME
+  if (CSS_FN.test(c) || /^\d+(\.\d+)?(px|rem|em|%|vh|vw|deg|ms|s)\b/.test(c)) return false; // valores CSS
   if (/[À-ÿ]/.test(c)) return true;                                          // acento: português
   const words = c.split(" ");
+  if (!words.some((w) => /^[A-Za-zÀ-ÿ'’\-]{2,}[.,:;!?…)]*$/.test(w.replace(/^[(«“"']+/, "")))) return false; // nenhuma palavra alfabética: cores hex, números, símbolos
   if (words.every(TW) && !words.some((w) => STOP.has(w)) && (words.some((w) => /[:\/\[]/.test(w)) || words.filter((w) => w.includes("-")).length >= 2)) return false; // classes utilitárias (tailwind)
   if (/^[A-Z][a-zà-ÿ]{2,}(-[a-zà-ÿ]+)*$/.test(c)) return true;                 // "Salvar", "Momentos-chave"
   if (words.length >= 2 && (/^[A-Z]/.test(c) || /[.,:;!?…]/.test(c) || words.length >= 3)) return true;
   if (words.length >= 2 && words.some((w) => STOP.has(w.toLowerCase()))) return true;
   return false;
 }
-module.exports = { TEXT_ATTRS, ATTR_BLOCKLIST, TEXT_PROPS, PROP_BLOCKLIST, TEXT_CALLS, HAS_LETTERS, IGNORE, ALLOW, STOP, clean, isText, isNatural };
+const SKIP_CALLEES = /(^|\.)(get|post|put|patch|delete|del|upload|fetch|cn|clsx|classNames|querySelector|querySelectorAll|getElementById|closest|matches|getItem|setItem|removeItem|redirect|require|import|startsWith|endsWith|includes|indexOf|lastIndexOf|split|match|test|exec|padStart|padEnd|localeCompare|toLocaleString|toLocaleDateString|toLocaleTimeString|addEventListener|removeEventListener|dispatchEvent|setAttribute|getAttribute|hasAttribute|removeAttribute|createElement|matchMedia|getComputedStyle|open|postMessage|encodeURIComponent|decodeURIComponent|atob|btoa|charAt|charCodeAt|codePointAt|normalize|search|hasOwnProperty|has|is|isValid|log|warn|error|info|debug|assert|trace|group|time|timeEnd|Error|TypeError|RangeError|URL|URLSearchParams|Date|RegExp|Intl|NumberFormat|DateTimeFormat|Blob|File|Image|Audio|Worker|WebSocket|EventSource|Headers|Request|Response|FormData|append|set|label|mediaUrl|chromeTile|dynamic|lazy|memo|forwardRef|createContext|useSearchParams|useParams|usePathname|useRouter|useApi|useSWR|useQuery|useMutation|keyframes|css|styled|getPropertyValue|setProperty|removeProperty|join|repeat|slice|substring|substr|trim|toUpperCase|toLowerCase|find|filter|map|some|every|reduce|sort|flatMap|forEach|entries|keys|values|from|of|parse|stringify|toString|valueOf|then|catch|finally|resolve|reject|all|race|setTimeout|setInterval|requestAnimationFrame|cancelAnimationFrame|clearTimeout|clearInterval|Symbol|for|new|t|tr|rich|trRich|translate|getCurrentLocale|isLocale|detectLocale|measureText|loadFont|classList|add|remove|toggle|contains|createPattern|drawImage|getContext|toDataURL|toBlob|createObjectURL|revokeObjectURL|useState|useRef)$/;
+module.exports = { SKIP_CALLEES, TEXT_ATTRS, ATTR_BLOCKLIST, TEXT_PROPS, PROP_BLOCKLIST, TEXT_CALLS, HAS_LETTERS, IGNORE, ALLOW, STOP, clean, isText, isNatural };

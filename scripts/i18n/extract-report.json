@@ -1,8 +1,16 @@
 {
  "files": {
   "app/(app)/admin/dashboard/page.tsx": {
-   "a": 2,
-   "b": 1
+   "a": 32,
+   "b": 0
+  },
+  "app/(app)/admin/system/page.tsx": {
+   "a": 9,
+   "b": 0
+  },
+  "app/(app)/admin/users/page.tsx": {
+   "a": 6,
+   "b": 0
   },
   "app/(app)/autopilot/page.tsx": {
    "a": 2,
@@ -12,119 +20,183 @@
    "a": 2,
    "b": 0
   },
-  "app/(app)/dashboard/page.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "app/(app)/explorer/page.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "app/(app)/flair/page.tsx": {
-   "a": 0,
-   "b": 2
-  },
-  "app/(app)/highlights/page.tsx": {
-   "a": 1,
-   "b": 1
-  },
-  "app/(app)/mirror/page.tsx": {
-   "a": 0,
-   "b": 2
-  },
-  "app/(app)/photos/page.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "app/(app)/pieces/new/page.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "app/(app)/room/page.tsx": {
-   "a": 2,
-   "b": 1
-  },
-  "app/(app)/schemes/[id]/page.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "app/(app)/settings/page.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "app/(app)/try-on/page.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "app/(app)/u/[username]/page.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "components/app-shell.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "components/background-studio.tsx": {
-   "a": 1,
-   "b": 1
-  },
-  "components/coupons/brand-coupons-tab.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "components/detail-modal.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "components/dna-builder.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "components/dna-card.tsx": {
-   "a": 3,
-   "b": 1
-  },
-  "components/edit-profile.tsx": {
-   "a": 0,
-   "b": 2
-  },
-  "components/flair/brand-flair-tab.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "components/flair/flair-card.tsx": {
-   "a": 1,
-   "b": 0
-  },
-  "components/flair/modes-shared.tsx": {
-   "a": 0,
-   "b": 1
-  },
-  "components/flair/modes.tsx": {
-   "a": 1,
-   "b": 1
-  },
-  "components/room3d/wardrobe-creator.tsx": {
-   "a": 4,
-   "b": 0
-  },
-  "components/scheme-anatomies.tsx": {
+  "app/(app)/challenges/[id]/page.tsx": {
    "a": 5,
    "b": 0
   },
+  "app/(app)/dashboard/page.tsx": {
+   "a": 7,
+   "b": 0
+  },
+  "app/(app)/explorer/page.tsx": {
+   "a": 13,
+   "b": 0
+  },
+  "app/(app)/flair/page.tsx": {
+   "a": 9,
+   "b": 0
+  },
+  "app/(app)/mirror/page.tsx": {
+   "a": 8,
+   "b": 0
+  },
+  "app/(app)/pieces/[id]/page.tsx": {
+   "a": 8,
+   "b": 0
+  },
+  "app/(app)/pieces/new/page.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "app/(app)/room/page.tsx": {
+   "a": 17,
+   "b": 0
+  },
+  "app/(app)/schemes/[id]/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "app/(app)/search/page.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "app/(app)/settings/page.tsx": {
+   "a": 8,
+   "b": 0
+  },
+  "app/(app)/try-on/page.tsx": {
+   "a": 14,
+   "b": 0
+  },
+  "app/(auth)/register/page.tsx": {
+   "a": 11,
+   "b": 0
+  },
+  "components/brand-logo.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/brand-search-input.tsx": {
+   "a": 15,
+   "b": 0
+  },
+  "components/coupons/brand-coupons-tab.tsx": {
+   "a": 19,
+   "b": 0
+  },
+  "components/coupons/fai-coupon.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/detail-modal.tsx": {
+   "a": 9,
+   "b": 0
+  },
+  "components/dna-builder.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "components/dna-card.tsx": {
+   "a": 8,
+   "b": 0
+  },
+  "components/edit-profile.tsx": {
+   "a": 10,
+   "b": 0
+  },
+  "components/flair/flair-card.tsx": {
+   "a": 5,
+   "b": 0
+  },
+  "components/flair/flair-shared.tsx": {
+   "a": 5,
+   "b": 0
+  },
+  "components/flair/modes-shared.tsx": {
+   "a": 13,
+   "b": 0
+  },
+  "components/flair/modes.tsx": {
+   "a": 23,
+   "b": 0
+  },
+  "components/generate-3d.tsx": {
+   "a": 7,
+   "b": 0
+  },
+  "components/globe.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/infinite-sentinel.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/mannequin-photo.tsx": {
+   "a": 4,
+   "b": 0
+  },
+  "components/model3d-panel.tsx": {
+   "a": 11,
+   "b": 0
+  },
+  "components/photo-editor.tsx": {
+   "a": 9,
+   "b": 0
+  },
+  "components/piece-snapshot.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/profile-header.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/room3d/room-props.tsx": {
+   "a": 4,
+   "b": 0
+  },
+  "components/room3d/room-scene.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/room3d/room-store.tsx": {
+   "a": 18,
+   "b": 0
+  },
+  "components/room3d/wardrobe-creator.tsx": {
+   "a": 13,
+   "b": 0
+  },
+  "components/scheme-anatomies.tsx": {
+   "a": 8,
+   "b": 0
+  },
   "components/scheme-builder.tsx": {
-   "a": 0,
-   "b": 1
+   "a": 13,
+   "b": 0
   },
   "components/seal-creator.tsx": {
-   "a": 0,
-   "b": 4
+   "a": 1,
+   "b": 0
   },
   "components/showcase/runway-panel.tsx": {
-   "a": 0,
-   "b": 1
+   "a": 6,
+   "b": 0
   },
   "components/showcase/showcase-tabs.tsx": {
+   "a": 7,
+   "b": 0
+  },
+  "components/studio.tsx": {
+   "a": 15,
+   "b": 0
+  },
+  "components/three/runway-scene.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "components/ui/index.tsx": {
    "a": 1,
    "b": 0
   },
@@ -144,57 +216,320 @@
   }
  ],
  "stats": {
-  "edits": 59,
-  "keys": 46,
-  "files": 33
+  "edits": 401,
+  "keys": 309,
+  "files": 51
  },
- "renamed": 5,
+ "renamed": 23,
  "newKeys": [
-  "admin.dashboard.arraste_as_linhas_para_mudar",
-  "autopilot.look_do_dia_por_ocasiao",
-  "autopilot.open_meteo_sem_cidade_ignora",
-  "common.vazio_imediato",
-  "common.vazio_sem_expiracao",
-  "common.n403_acesso_negado",
-  "common.passarela_3d",
-  "flair.n5_rodadas_edge_range_clout",
-  "flair.vitoria_3_pontos_na_liga",
-  "highlights.participar_dos_rankings_anonimo_k",
-  "highlights.n7_dimensoes",
-  "mirror.vista_me",
-  "photos.momentos_chave",
-  "pieces.new.luz_lateral_suave_sem_flash",
-  "room.todo_o_guarda_roupa",
-  "room.o_vista_me_usa_so",
-  "settings.todo_o_conteudo_das_paginas",
-  "tryOn.nao_deu_para_remover_o",
-  "backgroundStudio.cartela_sazonal_automatica_usa_a",
-  "backgroundStudio.medalhao_44_px_tamanho_do",
-  "common.vazio_ilimitado",
-  "dnaBuilder.como_a_lista_de_esquemas",
-  "dnaCard.fileira_rolavel_cada_item_vira",
-  "dnaCard.hero_lista_lateral_clicavel_fileira",
-  "dnaCard.o_marco_vira_capa_a",
-  "dnaCard.seasonaltheme_animacao",
-  "editProfile.o_e_unico_e_aparece",
-  "editProfile.o_rosto_3d_tem_nariz",
-  "flair.flairCard.qualidade_da_foto_estudio_88",
-  "flair.modesShared.cartas",
-  "flair.modes.seu_fashion_squad_vazio_o",
-  "flair.modes.o_hypescore_e_a_forca",
-  "room3d.wardrobeCreator.vazio_sem_limite",
-  "schemeAnatomies.card_em_blocos_de_encaixe_2",
-  "schemeAnatomies.linha_titulo_selos_preco_abaixo",
-  "schemeAnatomies.linha_do_titulo_cada_celula",
-  "schemeAnatomies.linha_do_titulo_abaixo_do",
-  "schemeAnatomies.placas_redondas_1_1_verde",
-  "schemeBuilder.pecas_do_seu_guarda_roupa",
-  "sealCreator.n1_elemento_central",
-  "sealCreator.n2_entre_a_borda_e",
-  "sealCreator.n3_disco_central",
-  "sealCreator.n4_borda_bisel",
-  "showcase.runwayPanel.manequim",
-  "showcase.showcaseTabs.salve_primeiro_depois_envie_a",
-  "lib.cardArt.imagem_enviada"
+  "admin.dashboard.alertas_para_decisao",
+  "admin.dashboard.indicadores_do_periodo",
+  "admin.dashboard.novos_usuarios_por_dia",
+  "admin.dashboard.conteudo_criado_por_dia",
+  "admin.dashboard.mapa_usuarios_e_looks_por",
+  "admin.dashboard.em_qual_pais_a_ia",
+  "admin.dashboard.custo_de_ia_por_dia",
+  "admin.dashboard.uso_de_ia_por_capacidade",
+  "admin.dashboard.marcas_mais_usadas_no_acervo",
+  "admin.dashboard.faixas_de_hype_score_looks",
+  "admin.dashboard.faixas_de_inventory_score",
+  "admin.dashboard.funil_de_selos_vinculos_por",
+  "admin.dashboard.desafios_participantes",
+  "admin.dashboard.fai_points_por_acao",
+  "admin.dashboard.usuarios_por_tipo_de_perfil",
+  "admin.dashboard.novos_usuarios_2",
+  "admin.dashboard.usuarios_ativos",
+  "admin.dashboard.pecas_cadastradas",
+  "admin.dashboard.looks_criados",
+  "admin.dashboard.looks_publicados",
+  "admin.dashboard.looks_do_dia",
+  "admin.dashboard.chamadas_de_ia",
+  "admin.dashboard.custo_de_ia_usd",
+  "admin.dashboard.fallback_de_ia",
+  "admin.dashboard.moderacao_pendente",
+  "admin.dashboard.vinculos_aprovados",
+  "common.resgates",
+  "admin.dashboard.pontos_emitidos",
+  "admin.dashboard.aprovacoes_pendentes",
+  "admin.system.wikidata_commons",
+  "admin.system.ia_busca_na_web",
+  "admin.system.icone_do_site_oficial",
+  "common.perfil_da_marca",
+  "admin.system.job_executado",
+  "admin.system.backup_solicitado",
+  "admin.system.busca_dos_pendentes_executada",
+  "admin.system.nova_busca_de",
+  "admin.system.logo_de_atualizado",
+  "admin.users.aprovado",
+  "admin.users.documentacao_insuficiente",
+  "admin.users.rejeitado",
+  "admin.users.papel_atualizado",
+  "admin.users.suspenso",
+  "admin.users.reativado",
+  "autopilot.romantico",
+  "autopilot.energico",
+  "challenges.id.comecou",
+  "challenges.id.voce_entrou",
+  "challenges.id.voce_saiu",
+  "challenges.id.entrada_enviada",
+  "challenges.id.foto_enviada_como_evidencia",
+  "dashboard.vinculos_sugeridos",
+  "dashboard.aceitos_pelos_usuarios",
+  "dashboard.aprovados_por_voce",
+  "dashboard.aguardando_sua_revisao",
+  "dashboard.selos_ativos",
+  "dashboard.conversao_selo_resgate",
+  "explorer.despretensioso_0_14",
+  "explorer.em_construcao_15_29",
+  "explorer.notado_30_49",
+  "explorer.com_estilo_50_69",
+  "explorer.muito_estiloso_70_84",
+  "explorer.arrasando_no_look_85_95",
+  "explorer.icone_de_estilo_96",
+  "explorer.marcas_mais_usadas_pecas",
+  "explorer.maior_hype_medio_por_estacao",
+  "explorer.maior_hype_medio_por_cor",
+  "explorer.maior_hype_medio_por_marca",
+  "explorer.paises_com_mais_looks_publicos",
+  "flair.duelo_1_1",
+  "flair.treino_com_a_casa",
+  "flair.batalha_de_ocasiao",
+  "flair.equipes_3_3",
+  "flair.moldura_de_marca",
+  "flair.campeao",
+  "flair.duelo",
+  "common.camada_externa",
+  "common.superior",
+  "mirror.vestido",
+  "common.inferior",
+  "mirror.calcados",
+  "mirror.acessorios",
+  "mirror.tirei_uma_coisa",
+  "mirror.look_do_dia_registrado",
+  "common.estudio",
+  "pieces.id.recorte_2d",
+  "pieces.id.com_o_rosto_da_foto",
+  "pieces.id.detalhe_do_logo",
+  "pieces.id.foto_de_estudio",
+  "pieces.new.flat_lay",
+  "room.n30_medio_secar_a_sombra",
+  "room.lavar_a_mao_secadora_baixo",
+  "room.a_mao_torcer_baixo",
+  "room.agua_pano_umido_hidratar",
+  "room.n40_baixo",
+  "room.n30_baixo",
+  "room.n30_medio",
+  "room.feita_a_mao",
+  "room.peca_movida",
+  "room.quarto_organizado",
+  "room.ultima_organizacao_desfeita",
+  "room.porta",
+  "room.gaveta_2",
+  "room.peca_no_espelho",
+  "room.chave_entregue",
+  "room.peca_guardada_na_gaveta",
+  "schemes.id.mudancas_propostas",
+  "settings.seu_look_do_dia_volta",
+  "settings.voce_saiu_da_passarela_3d",
+  "settings.senha_alterada_outras_sessoes_encerradas",
+  "settings.exportacao_solicitada",
+  "settings.exclusao_cancelada",
+  "settings.sessao_encerrada",
+  "settings.outras_sessoes_encerradas",
+  "settings.exclusao_agendada",
+  "common.base",
+  "tryOn.intermediaria",
+  "tryOn.externa",
+  "common.acessorio",
+  "tryOn.magro",
+  "tryOn.medio",
+  "tryOn.atletico",
+  "tryOn.curvilineo",
+  "tryOn.plus_size",
+  "tryOn.substituiu_na_camada",
+  "tryOn.peca_inteira_substituiu",
+  "tryOn.substituiu_a_peca_inteira",
+  "tryOn.o_render_final_usa_try",
+  "tryOn.o_render_final_usa_o",
+  "register.razao_social",
+  "register.nome_fantasia",
+  "register.categoria_de_moda",
+  "register.loja_site",
+  "register.contato_comercial",
+  "register.hashtag_oficial",
+  "register.nome_artistico",
+  "register.nome_real",
+  "register.areas_separe_por_virgula",
+  "register.link_para_verificacao",
+  "register.contato_da_representacao",
+  "brandLogo.logo_via",
+  "brandLogo.busca_na_web_ia",
+  "brandSearchInput.logo_recusado_sem_nitidez",
+  "brandSearchInput.logo_recusado_resolucao_baixa",
+  "brandSearchInput.logo_recusado_nao_e_logo",
+  "brandSearchInput.logo_recusado_bloco_solido",
+  "brandSearchInput.logo_nao_baixou",
+  "brandSearchInput.fonte_sem_logo",
+  "brandSearchInput.arquivo_de_logo_invalido",
+  "brandSearchInput.logo_nao_processado",
+  "brandSearchInput.sem_resultado",
+  "brandSearchInput.nao_usada",
+  "brandSearchInput.nao_foi_possivel_buscar_agora",
+  "brandSearchInput.simple_icons_github",
+  "brandSearchInput.ia_com_busca_na_web",
+  "coupons.brandCouponsTab.desconto_no_e_commerce",
+  "coupons.brandCouponsTab.cupom_na_loja",
+  "coupons.brandCouponsTab.frete_gratis",
+  "coupons.brandCouponsTab.brinde",
+  "coupons.brandCouponsTab.acesso_antecipado",
+  "coupons.brandCouponsTab.evento",
+  "coupons.brandCouponsTab.show",
+  "coupons.brandCouponsTab.meet_greet",
+  "coupons.brandCouponsTab.pre_venda",
+  "coupons.brandCouponsTab.conteudo_exclusivo",
+  "coupons.brandCouponsTab.combinacao_deck",
+  "common.colecao_guarda_roupa",
+  "common.duelo_patrocinado",
+  "coupons.brandCouponsTab.fora_do_periodo",
+  "coupons.brandCouponsTab.desativada",
+  "coupons.brandCouponsTab.esgotada",
+  "coupons.brandCouponsTab.encerrada",
+  "coupons.brandCouponsTab.revogada",
+  "coupons.faiCoupon.selo",
+  "coupons.faiCoupon.sem_validade",
+  "common.motor_local_ia_remota_indisponivel",
+  "common.gerado_por",
+  "dnaCard.monocromatica_neutra_todas_as_cores",
+  "dnaCard.complementar_dois_polos_quase_opostos",
+  "dnaCard.analoga_cores_vizinhas_no_circulo",
+  "dnaCard.triade_tres_matizes_a_120",
+  "dnaCard.multicolor_varias_familias_sem_relacao",
+  "dnaCard.dna",
+  "dnaCard.dna_de_estilo_2",
+  "editProfile.nome_de_usuario",
+  "editProfile.sugestoes",
+  "editProfile.bio",
+  "editProfile.links",
+  "editProfile.genero",
+  "common.horizontal",
+  "common.vertical",
+  "flair.flairCard.verao",
+  "flair.flairCard.outono",
+  "flair.flairCard.inverno",
+  "flair.flairCard.primavera",
+  "flair.flairShared.combinacao_um_deck",
+  "flair.flairShared.compra_minima_r",
+  "flair.flairShared.ocasiao",
+  "flair.modesShared.style",
+  "flair.modesShared.color_harmony",
+  "flair.modesShared.occasion_fit",
+  "flair.modesShared.originality",
+  "flair.modesShared.brand_power",
+  "flair.modesShared.rarity",
+  "flair.modesShared.trend",
+  "flair.modesShared.community",
+  "flair.modesShared.ai_score",
+  "flair.modesShared.seu_look",
+  "flair.modes.nota_alvo",
+  "flair.modes.defensor",
+  "flair.modes.a_casa",
+  "flair.modes.ia_do_draft",
+  "flair.modes.sua_dupla",
+  "flair.modes.dupla_adversaria",
+  "flair.modes.streetwear_combo_tenis_cargo_jeans",
+  "flair.modes.classic_formal_blazer_camisa_sapato",
+  "flair.modes.monochrome_3_pecas_da_mesma",
+  "flair.modes.brand_loyalty_3_da_mesma",
+  "flair.modes.mix_match_3_marcas_diferentes",
+  "flair.modes.vintage_revival_2_pecas_vintage",
+  "flair.modes.top",
+  "flair.modes.bottom",
+  "flair.modes.hero_1_25",
+  "flair.modes.outerwear",
+  "common.calcado",
+  "flair.modes.support",
+  "flair.modes.ia_estrategista",
+  "flair.modes.wild_card",
+  "generate3d.corpo_inteiro",
+  "generate3d.nao_foi_possivel_montar_o",
+  "globe.poucos_dados",
+  "infiniteSentinel.carregar_mais",
+  "mannequinPhoto.nao_foi_possivel_montar_o",
+  "model3dPanel.foto_sem_fundo",
+  "model3dPanel.enviado_ao_provedor",
+  "model3dPanel.malha",
+  "model3dPanel.textura",
+  "model3dPanel.arquivo_glb_salvo",
+  "model3dPanel.tempo_limite",
+  "model3dPanel.relevo_local",
+  "model3dPanel.relevo_local_sem_provedor_externo",
+  "model3dPanel.o_motor_3d",
+  "photoEditor.girar_90_2",
+  "photoEditor.recortar_2",
+  "photoEditor.edicao_salva",
+  "photoEditor.a_imagem_editada_agora_e",
+  "common.unico",
+  "room3d.roomProps.n600_px_inter_arial_sans",
+  "room3d.roomProps.n600_px_inter_arial",
+  "room3d.roomProps.croqui_aguardando_foto",
+  "room3d.roomProps.sem_repetir",
+  "room3d.roomScene.o_look_continua_pendurado_aqui",
+  "room3d.roomScene.fora_de_estacao",
+  "room3d.roomScene.fora_da_capsula",
+  "common.puxadores",
+  "common.maleiro",
+  "common.cabides",
+  "common.placa_de_logo",
+  "common.tapete",
+  "common.porta_joias",
+  "common.ilha_central",
+  "room3d.roomStore.iluminacao",
+  "room3d.roomStore.maleiro_da_estacao",
+  "room3d.roomStore.closet_de_assinatura",
+  "room3d.roomStore.porta_1",
+  "room3d.roomStore.gaveta_1",
+  "room3d.roomStore.nada_foi_comprado",
+  "room3d.roomStore.na_caixa",
+  "room3d.wardrobeCreator.portas",
+  "room3d.wardrobeCreator.gavetas",
+  "room3d.wardrobeCreator.publicado_na_loja_do_quarto",
+  "schemeAnatomies.monocromatica_neutra_base_segura",
+  "schemeAnatomies.complementar_contraste_de_polos_opostos",
+  "schemeAnatomies.analoga_cores_vizinhas_leitura_suave",
+  "schemeAnatomies.contraste_livre_combinacao_de_matizes",
+  "schemeAnatomies.coluna_unica_peca_inteira",
+  "schemeAnatomies.proporcao_livre",
+  "schemeAnatomies.em_camadas",
+  "schemeBuilder.sobreposicao",
+  "schemeBuilder.parte_de_cima",
+  "schemeBuilder.peca_unica",
+  "schemeBuilder.parte_de_baixo",
+  "schemeBuilder.saturacao",
+  "schemeBuilder.matiz",
+  "schemeBuilder.desfoque",
+  "sealCreator.selo_salvo_em_px",
+  "showcase.runwayPanel.top_100_global",
+  "showcase.runwayPanel.top_100_regional",
+  "showcase.runwayPanel.top_100_do_pais",
+  "showcase.runwayPanel.seguindo",
+  "showcase.runwayPanel.em_alta",
+  "showcase.showcaseTabs.todas_as_eras",
+  "showcase.showcaseTabs.colecoes",
+  "showcase.showcaseTabs.todas_as_colecoes",
+  "studio.limpeza",
+  "studio.nitidez_e_contorno",
+  "studio.sem_manequim_fantasma",
+  "studio.estudio_por_ia",
+  "studio.volume_e_luz",
+  "studio.enquadramento",
+  "studio.fundo_de_estudio",
+  "studio.sombra",
+  "studio.validacao",
+  "studio.fundo_do_estudio",
+  "studio.ia_de_visao",
+  "studio.selo_fai_da_arte_padrao",
+  "three.runwayScene.passarela_fai",
+  "three.runwayScene.look_do_dia",
+  "ui.index.algo_deu_errado_tente_de"
  ]
 }

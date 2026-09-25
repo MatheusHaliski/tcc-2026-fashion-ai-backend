@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
@@ -21,8 +21,8 @@ interface State { mannequin: Mannequin; sex: Sex; skinTones: Record<string, stri
 interface Render { imageUrl: string; photoId?: string; pieceIds: string[]; warnings?: string[]; replaced?: string[]; stages?: { name: string; provider?: string; ms?: number }[]; costUsd?: number; totalMs?: number; fallbackUsed?: boolean; message?: string; explanation?: { provider?: string }; }
 
 const LAYER_ORDER: Layer[] = ["BASE", "INTERMEDIATE", "OUTER", "ACCESSORY"];
-const LAYER_LABEL: Record<Layer, string> = { BASE: "Base", INTERMEDIATE: "Intermediária", OUTER: "Externa", ACCESSORY: "Acessório" };
-const BUILD_LABEL: Record<string, string> = { SLIM: "Magro", MEDIUM: "Médio", ATHLETIC: "Atlético", CURVY: "Curvilíneo", PLUS: "Plus size" };
+const LAYER_LABEL: Record<Layer, string> = { get BASE() { return tr("common.base"); }, get INTERMEDIATE() { return tr("tryOn.intermediaria"); }, get OUTER() { return tr("tryOn.externa"); }, get ACCESSORY() { return tr("common.acessorio"); } };
+const BUILD_LABEL: Record<string, string> = { get SLIM() { return tr("tryOn.magro"); }, get MEDIUM() { return tr("tryOn.medio"); }, get ATHLETIC() { return tr("tryOn.atletico"); }, get CURVY() { return tr("tryOn.curvilineo"); }, get PLUS() { return tr("tryOn.plus_size"); } };
 const DRAG_TYPE = "text/fai-piece";
 
 /**
@@ -35,9 +35,9 @@ function dress(current: string[], id: string, byId: Map<string, Entry>): { next:
   const next = current.filter((other) => {
     if (other === id) return false;
     const o = byId.get(other); if (!o) return false;
-    if (o.replacementKey === e.replacementKey) { notices.push(`«${e.piece.name}» substituiu «${o.piece.name}» na camada ${LAYER_LABEL[e.layer].toLowerCase()}.`); return false; }
-    if (e.slot === "FULL_BODY" && (o.slot === "TOP" || o.slot === "BOTTOM")) { notices.push(`«${e.piece.name}» (peça inteira) substituiu «${o.piece.name}».`); return false; }
-    if (o.slot === "FULL_BODY" && (e.slot === "TOP" || e.slot === "BOTTOM")) { notices.push(`«${e.piece.name}» substituiu a peça inteira «${o.piece.name}».`); return false; }
+    if (o.replacementKey === e.replacementKey) { notices.push(tr("tryOn.substituiu_na_camada", { name: e.piece.name, name2: o.piece.name, toLowerCase: LAYER_LABEL[e.layer].toLowerCase() })); return false; }
+    if (e.slot === "FULL_BODY" && (o.slot === "TOP" || o.slot === "BOTTOM")) { notices.push(tr("tryOn.peca_inteira_substituiu", { name: e.piece.name, name2: o.piece.name })); return false; }
+    if (o.slot === "FULL_BODY" && (e.slot === "TOP" || e.slot === "BOTTOM")) { notices.push(tr("tryOn.substituiu_a_peca_inteira", { name: e.piece.name, name2: o.piece.name })); return false; }
     return true;
   });
   return { next: [...next, id], notices };
@@ -122,7 +122,7 @@ function TryOnInner() {
   const skin = m.skinTone ?? "media";
   return (
     <>
-      <PageHeader title={t("nav.tryon")} kicker="RF18" lead={t("tryOn.arraste_uma_peca_ate_o", { value: data.externalAvailable ? "O render final usa try-on por IA (FASHN) com o compositor local de reserva." : "O render final usa o compositor local por camadas (IA externa desligada ou sem chave)." })} />
+      <PageHeader title={t("nav.tryon")} kicker="RF18" lead={t("tryOn.arraste_uma_peca_ate_o", { value: data.externalAvailable ? t("tryOn.o_render_final_usa_try") : t("tryOn.o_render_final_usa_o") })} />
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
         <div className="grid content-start gap-3">
           <Card pad={false}>

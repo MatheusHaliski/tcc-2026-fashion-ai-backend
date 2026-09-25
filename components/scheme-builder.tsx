@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
@@ -22,7 +22,7 @@ const OUTER_SUBCATEGORIES = new Set(["jacket", "coat", "parka", "blazer", "windb
 const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "FULL_BODY" };
 const slotOf = (p: PieceView) => (p.category === "upper_piece" && OUTER_SUBCATEGORIES.has(p.subcategory ?? "") ? "OUTERWEAR" : SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY");
 const SLOTS = ["OUTERWEAR", "TOP", "FULL_BODY", "BOTTOM", "SHOES", "ACCESSORY"];
-const SLOT_LABEL: Record<string, string> = { OUTERWEAR: "Sobreposição", TOP: "Parte de cima", FULL_BODY: "Peça única", BOTTOM: "Parte de baixo", SHOES: "Calçado", ACCESSORY: "Acessório" };
+const SLOT_LABEL: Record<string, string> = { get OUTERWEAR() { return tr("schemeBuilder.sobreposicao"); }, get TOP() { return tr("schemeBuilder.parte_de_cima"); }, get FULL_BODY() { return tr("schemeBuilder.peca_unica"); }, get BOTTOM() { return tr("schemeBuilder.parte_de_baixo"); }, get SHOES() { return tr("common.calcado"); }, get ACCESSORY() { return tr("common.acessorio"); } };
 
 /**
  * Marca do slot: o esquema não tem campo de marca — ao inserir a peça do guarda-roupa no slot, a marca (nome + logo
@@ -60,7 +60,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const setFilter = (k: keyof PhotoFilters, v: number) => setPhoto((p) => ({ ...p, preset: "personalizado", filters: { ...p.filters, [k]: v } }));
   async function compose() {
     setBusy(true); setComps(null);
-    try { const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null }); setComps(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? "Motor local (IA remota indisponível)." : r.provider ? `Gerado por ${r.provider}` : null)); }
+    try { const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null }); setComps(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null)); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function doPreview() { setBusy(true); try { const blob = await api.post<Blob>("/api/schemes/preview", payload(), { headers: { Accept: "image/png" } }); setPreview(URL.createObjectURL(blob)); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
@@ -76,7 +76,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("scheme.insufficient")} hint={b.message} action={<Link href={b.action?.href === "/add-piece" ? "/pieces/new" : b.action?.href ?? "/pieces/new"} className="btn btn-primary">{b.action?.label ?? t("closet.addPiece")}</Link>} />;
-  const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: "você", displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode.toUpperCase(), origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: form.seals, tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo } as Record<string, unknown> };
+  const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode.toUpperCase(), origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: form.seals, tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo } as Record<string, unknown> };
   const steps = ["1 · Modo", "2 · Peças", "3 · Dados", "4 · Background Studio", "5 · Revisar e salvar"];
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
@@ -137,7 +137,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
                 <div className="grid min-w-0 flex-1 gap-2">
                   <div className="flex flex-wrap gap-2"><label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />{t("schemeBuilder.enviar_foto")}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={t("schemeBuilder.enviar_foto_do_look")} onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} /></label>{photo.url && <Button size="sm" onClick={() => setPhoto({ url: null, filters: {}, preset: "original" })}>{t("common.remove")}</Button>}</div>
                   <div className="flex flex-wrap gap-1.5" aria-label={t("schemeBuilder.filtros_da_foto")}>{PHOTO_PRESETS.map((f) => <Chip key={f.id} active={photo.preset === f.id} onClick={() => setPhoto((p) => ({ ...p, preset: f.id, filters: f.filters }))}>{f.label}</Chip>)}</div>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 type-caption sm:grid-cols-3">{([["brightness", "Brilho", 60, 140, 100], ["contrast", "Contraste", 60, 140, 100], ["saturation", "Saturação", 0, 180, 100], ["hue", "Matiz", -45, 45, 0], ["blur", "Desfoque", 0, 4, 0]] as const).map(([k, lbl, min, max, def]) => <label key={k} className="flex flex-col">{lbl} <input type="range" min={min} max={max} step={k === "blur" ? 0.5 : 1} value={photo.filters[k] ?? def} onChange={(e) => setFilter(k, Number(e.target.value))} aria-label={lbl} /></label>)}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 type-caption sm:grid-cols-3">{([["brightness", t("common.brilho"), 60, 140, 100], ["contrast", t("common.contraste"), 60, 140, 100], ["saturation", t("schemeBuilder.saturacao"), 0, 180, 100], ["hue", t("schemeBuilder.matiz"), -45, 45, 0], ["blur", t("schemeBuilder.desfoque"), 0, 4, 0]] as const).map(([k, lbl, min, max, def]) => <label key={k} className="flex flex-col">{lbl} <input type="range" min={min} max={max} step={k === "blur" ? 0.5 : 1} value={photo.filters[k] ?? def} onChange={(e) => setFilter(k, Number(e.target.value))} aria-label={lbl} /></label>)}</div>
                   {photo.pipeline && <p className="type-caption text-muted">{t("schemeBuilder.pipeline", { join: photo.pipeline.join(" · ") })}</p>}
                 </div>
               </div>

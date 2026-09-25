@@ -26,8 +26,8 @@ interface TeamSide { user: UserCard; deck: string; power: number; }
 interface TeamBattle { teamA: Team; teamB: Team; duels: { slot: number; a: TeamSide | null; b: TeamSide | null; winner: string; rounds: FlairRound[] }[]; score: { a: number; b: number }; winner: string; }
 
 const OUTCOME: Record<string, { label: string; tone: "mark" | "thread" | "chalk" }> = { WIN: { get label() { return tr("common.vitoria"); }, tone: "thread" }, LOSS: { get label() { return tr("common.derrota"); }, tone: "mark" }, DRAW: { get label() { return tr("common.empate"); }, tone: "chalk" } };
-const MODE_LABEL: Record<string, string> = { DUEL: "Duelo 1×1", TREINO: "Treino com a Casa", ARENA: "Batalha de ocasião", TEAM: "Equipes 3×3" };
-const SKIN_LABEL: Record<string, string> = { BRAND_FRAME: "Moldura de marca", HOLOGRAFICO: "Holográfico", CHAMPION: "Campeão" };
+const MODE_LABEL: Record<string, string> = { get DUEL() { return tr("flair.duelo_1_1"); }, get TREINO() { return tr("flair.treino_com_a_casa"); }, get ARENA() { return tr("flair.batalha_de_ocasiao"); }, get TEAM() { return tr("flair.equipes_3_3"); } };
+const SKIN_LABEL: Record<string, string> = { get BRAND_FRAME() { return tr("flair.moldura_de_marca"); }, get HOLOGRAFICO() { return tr("sealMedallion.holografico"); }, get CHAMPION() { return tr("flair.campeao"); } };
 
 
 /** Rodadas do duelo reveladas uma a uma (sem animação com "reduzir movimento"). */
@@ -295,14 +295,14 @@ function FlairInner() {
             onClick={() => run(q.code, () => api.post<Me>(`/api/flair/quests/${q.code}/claim`), (r) => { me.setData(r); quests.reload(); })}>{q.claimed ? t("flair.resgatada") : q.done ? t("common.resgatar") : t("flair.em_andamento")}</Button>
         </Card>))}</div>)}
 
-      <Dialog open={!!duel} onClose={() => setDuel(null)} size="xl" title={duel ? `${MODE_LABEL[duel.mode] ?? "Duelo"} · ${duel.opponent.label}` : ""}
+      <Dialog open={!!duel} onClose={() => setDuel(null)} size="xl" title={duel ? `${MODE_LABEL[duel.mode] ?? t("flair.duelo")} · ${duel.opponent.label}` : ""}
         footer={<Button variant="primary" onClick={() => setDuel(null)}>{t("common.close")}</Button>}>
         {duel && <div className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="surface p-3"><p className="type-caption text-muted">{t("flair.voce")}</p><DeckSummary deck={duel.me} compact /><div className="mt-2 flex gap-2 overflow-x-auto">{duel.me.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" skin={skin} />)}</div></div>
             <div className="surface p-3"><p className="type-caption text-muted">{duel.opponent.label}</p><DeckSummary deck={duel.opponent.deck} compact /><div className="mt-2 flex gap-2 overflow-x-auto">{duel.opponent.deck.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" />)}</div></div>
           </div>
-          <Rounds rounds={duel.rounds} a="Você" b={duel.opponent.label} />
+          <Rounds rounds={duel.rounds} a={t("flair.voce")} b={duel.opponent.label} />
           <div className="flair-result"><Badge tone={OUTCOME[duel.outcome].tone}>{OUTCOME[duel.outcome].label}</Badge><b className="tabular">{duel.score.me} × {duel.score.opponent}</b>
             <span className="type-caption">{duel.rewardCapReached ? t("flair.teto_diario_de_duelos_premiados") : t("common.coins", { coins: duel.coins })}</span></div>
         </div>}

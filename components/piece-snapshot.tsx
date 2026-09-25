@@ -1,12 +1,12 @@
 "use client";
 import { mediaUrl } from "@/lib/api/client";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 
 /** Tamanho legível (br_40 → 40, shoe_39 → 39, one_size → Único). */
-export const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? "Único" : s.replace(/^(br|shoe)_/i, "").toUpperCase());
+export const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? tr("common.unico") : s.replace(/^(br|shoe)_/i, "").toUpperCase());
 
 /**
  * RF7.CA03 — a peça foi excluída pelo autor depois da publicação do esquema: mostra o snapshot guardado no momento da

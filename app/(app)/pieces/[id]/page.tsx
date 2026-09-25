@@ -23,7 +23,7 @@ import dynamic from "next/dynamic";
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 /** Visualizações da peça: foto de estúdio (RF4), recorte padronizado (2D) e modelo 3D (RF16.CA02 — a 2D continua disponível). */
 type HeroView = "studio" | "detail" | "mannequin" | "cut" | "3d";
-const HERO_LABEL: Record<HeroView, string> = { studio: "Estúdio", get detail() { return tr("common.detalhe_do_logo"); }, mannequin: "No manequim", cut: "Recorte 2D", "3d": "Modelo 3D" };
+const HERO_LABEL: Record<HeroView, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get mannequin() { return tr("tryOn.no_manequim"); }, get cut() { return tr("pieces.id.recorte_2d"); }, get "3d"() { return tr("model3dPanel.modelo_3d"); } };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -78,11 +78,11 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
           {/* foto de estúdio no formato dela (5:4, 4:5, 9:16…): nada de faixas; recorte e 3D ficam no quadrado */}
           <div className={`relative ${(hero === "studio" || hero === "detail") && p.studioImageUrl ? "" : "aspect-square"} bg-surface-2`} style={hero === "studio" || hero === "detail" ? { background: edge } : undefined}>
             {hero === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} />
-              : hero === "mannequin" && p.mannequinImageUrl ? <img src={mediaUrl(p.mannequinImageUrl)} alt={t("pieces.id.no_manequim", { name: p.name, value: p.mannequinImageFace === "FOTO" ? " com o rosto da foto de perfil" : " padrão" })} className="block h-auto w-full" />
+              : hero === "mannequin" && p.mannequinImageUrl ? <img src={mediaUrl(p.mannequinImageUrl)} alt={t("pieces.id.no_manequim", { name: p.name, value: p.mannequinImageFace === "FOTO" ? t("pieces.id.com_o_rosto_da_foto") : t("common.padrao") })} className="block h-auto w-full" />
               : (hero === "studio" || hero === "detail") && p.studioImageUrl ? (
                 // a foto inteira, no formato dela (4:5, 5:4…); a cor do fundo continua nas sobras
                 <button type="button" className="h-full w-full cursor-zoom-in" onClick={() => setFullscreen(hero === "detail" ? 1 : 0)} aria-label={t("pieces.id.ver_em_tela_cheia")}>
-                  <img src={mediaUrl(hero === "detail" ? p.studioDetailUrl : p.studioImageUrl)} alt={`${p.name} — ${hero === "detail" ? "detalhe do logo" : "foto de estúdio"}`} className="block h-auto w-full" />
+                  <img src={mediaUrl(hero === "detail" ? p.studioDetailUrl : p.studioImageUrl)} alt={`${p.name} — ${hero === "detail" ? t("pieces.id.detalhe_do_logo") : t("pieces.id.foto_de_estudio")}`} className="block h-auto w-full" />
                 </button>
               )
               : <img src={mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl)} alt={p.name} className="h-full w-full object-contain p-4" />}

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/session";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 import { couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { useI18n } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 interface Tab { admin: boolean; brandName: string; participating: boolean; combinations: Combination[]; redemptions?: Voucher[]; stats?: { issued: number; used: number }; gameTypes?: { id: string; label: string }[]; }
 interface Form {
@@ -104,7 +105,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
       {d.admin && (d.redemptions?.length ?? 0) > 0 && (
         <Card><h3 className="type-h3 mb-2">{t("common.cupons_emitidos")}</h3>
           <div className="overflow-x-auto"><table className="w-full type-body-sm"><thead><tr className="text-left type-caption text-muted"><th>{t("auth.code")}</th><th>{t("flair.brandFlairTab.pessoa")}</th><th>{t("flair.brandFlairTab.combinacao")}</th><th>Deck</th><th>{t("common.status")}</th><th>{t("flair.brandFlairTab.validade")}</th></tr></thead>
-            <tbody>{d.redemptions!.map((r) => <tr key={r.id}><td><code className="flair-code">{r.code}</code></td><td>@{r.user.username}</td><td>{r.combination.name}</td><td>{r.deck ?? "guarda-roupa"}{r.deckPower ? ` (${r.deckPower})` : ""}</td><td><Badge tone={r.status === "USADO" ? "chalk" : r.status === "EMITIDO" ? "thread" : "mark"}>{r.status}</Badge></td><td className="tabular">{new Date(r.expiresAt).toLocaleDateString("pt-BR")}</td></tr>)}</tbody></table></div>
+            <tbody>{d.redemptions!.map((r) => <tr key={r.id}><td><code className="flair-code">{r.code}</code></td><td>@{r.user.username}</td><td>{r.combination.name}</td><td>{r.deck ?? "guarda-roupa"}{r.deckPower ? ` (${r.deckPower})` : ""}</td><td><Badge tone={r.status === "USADO" ? "chalk" : r.status === "EMITIDO" ? "thread" : "mark"}>{r.status}</Badge></td><td className="tabular">{new Date(r.expiresAt).toLocaleDateString(currentIntl())}</td></tr>)}</tbody></table></div>
         </Card>
       )}
 

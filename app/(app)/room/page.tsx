@@ -28,8 +28,8 @@ interface MirrorPieceView { id: string; name: string; imageUrl?: string | null; 
 interface MirrorState { slots: Record<string, MirrorPieceView | MirrorPieceView[] | null>; complete: boolean; postIt?: string | null; sequence?: { pieceId: string; name: string; moduleId: string; legend: string }[]; message?: string | null; }
 interface PieceTag { id: string; name: string; composition?: string | null; care?: string | null; origin?: string | null; garimpo: boolean; wearCount: number; thirtyWears: boolean; costPerUse?: number | null; location?: { address: string; label: string } | null; diary: { date: string; occasion: string }[]; }
 interface Unbox { inventoryId: string; sku: string; name: string; slotType: string; }
-const CARE: Record<string, string> = { COTTON: "🫧 30° · 🔥 médio · ▢ secar à sombra", WOOL: "✋ lavar à mão · ⊘ secadora · 🔥 baixo", SILK: "✋ à mão · ⊘ torcer · 🔥 baixo", LEATHER: "⊘ água · pano úmido · hidratar", POLYESTER: "🫧 40° · 🔥 baixo", SYNTHETIC: "🫧 30° · 🔥 baixo", BLEND: "🫧 30° · 🔥 médio" };
-const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", FEITA_A_MAO: "feita à mão", TROCADA: "trocada" };
+const CARE: Record<string, string> = { get COTTON() { return tr("room.n30_medio_secar_a_sombra"); }, get WOOL() { return tr("room.lavar_a_mao_secadora_baixo"); }, get SILK() { return tr("room.a_mao_torcer_baixo"); }, get LEATHER() { return tr("room.agua_pano_umido_hidratar"); }, get POLYESTER() { return tr("room.n40_baixo"); }, get SYNTHETIC() { return tr("room.n30_baixo"); }, get BLEND() { return tr("room.n30_medio"); } };
+const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", get FEITA_A_MAO() { return tr("room.feita_a_mao"); }, TROCADA: "trocada" };
 const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []));
 interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
 
@@ -184,15 +184,15 @@ function RoomInner() {
           {open.slotType === "SEASON" && <p className="mt-2 type-caption text-muted">{t("room.bau_de_estacao_pecas_fora")}</p>}
         </>)}
       </Dialog>
-      <Dialog open={!!movePiece} onClose={() => setMovePiece(null)} title={t("room.mover", { value: movePiece?.name ?? "" })} footer={<Button variant="primary" onClick={() => act(() => api.put(`/api/pieces/${movePiece!.id}/room-address`, { address }), "Peça movida.").then(() => setMovePiece(null))}>{t("room.mover_2")}</Button>}>
+      <Dialog open={!!movePiece} onClose={() => setMovePiece(null)} title={t("room.mover", { value: movePiece?.name ?? "" })} footer={<Button variant="primary" onClick={() => act(() => api.put(`/api/pieces/${movePiece!.id}/room-address`, { address }), t("room.peca_movida")).then(() => setMovePiece(null))}>{t("room.mover_2")}</Button>}>
         <Field label={t("room.endereco")} id="addr" hint={t("room.door_1_hanger_3_drawer")}><Select id="addr" value={address} onChange={(e) => setAddress(e.target.value)}><option value="">—</option>{data.modules.flatMap((m) => (m.hangers ?? m.slots ?? []).length ? (m.hangers ?? m.slots ?? []).map((h) => <option key={h.address} value={h.address}>{m.label} · {h.address}{h.pieceId ? t("room.ocupado") : ""}</option>) : [<option key={m.id} value={m.id.includes(":") ? m.id : `${m.id}:1`}>{m.label}</option>])}</Select></Field>
         <Input aria-label={t("room.endereco_manual")} value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("room.ou_digite_o_endereco")} />
       </Dialog>
-      <Dialog open={!!preview} onClose={() => setPreview(null)} title={t("room.organizacao_automatica_rf32_ca08")} footer={<><Button onClick={() => setPreview(null)}>{t("common.cancel")}</Button><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=true")))}>{t("scheme.ai")}</Button><Button variant="primary" onClick={() => act(() => api.post("/api/me/room/organization", { labels: preview?.labels ?? {}, moves: preview?.moves ?? [] }), "Quarto organizado!").then(() => setPreview(null))}>{t("dashboard.apply")}</Button></>}>
+      <Dialog open={!!preview} onClose={() => setPreview(null)} title={t("room.organizacao_automatica_rf32_ca08")} footer={<><Button onClick={() => setPreview(null)}>{t("common.cancel")}</Button><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=true")))}>{t("scheme.ai")}</Button><Button variant="primary" onClick={() => act(() => api.post("/api/me/room/organization", { labels: preview?.labels ?? {}, moves: preview?.moves ?? [] }), t("room.quarto_organizado")).then(() => setPreview(null))}>{t("dashboard.apply")}</Button></>}>
         {preview?.message && <p className="type-body mb-2">{preview.message}</p>}
         <ul className="max-h-64 overflow-auto type-body-sm">{(preview?.moves ?? []).map((m, i) => <li key={i}>• {data.pieces[m.pieceId]?.name ?? m.pieceId}: {m.from ?? "?"} → <b>{m.to}</b>{m.why ? ` · ${m.why}` : ""}</li>)}{(preview?.moves ?? []).length === 0 && <li>{t("room.nada_a_mover")}</li>}</ul>
         {preview?.labels && Object.keys(preview.labels).length > 0 && <p className="mt-2 type-caption text-muted">{t("room.rotulos")}{" "}{Object.entries(preview.labels).map(([k, v]) => `gaveta ${k} = ${v}`).join(", ")}</p>}
-        <Button className="mt-3" size="sm" variant="ghost" onClick={() => act(() => api.delete("/api/me/room/organization"), "Última organização desfeita.")}>{t("room.desfazer_ultima_organizacao")}</Button>
+        <Button className="mt-3" size="sm" variant="ghost" onClick={() => act(() => api.delete("/api/me/room/organization"), t("room.ultima_organizacao_desfeita"))}>{t("room.desfazer_ultima_organizacao")}</Button>
       </Dialog>
       <Dialog open={vista.open} onClose={() => setVista((v) => ({ ...v, open: false }))} size="lg" title={t("common.vista_me")}
         footer={vista.result ? <><Button onClick={() => runVistaMe("/api/me/mirror/another")} loading={vista.busy}>{t("room.outra_sugestao")}</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>{t("room.usar_este_look")}</Button></>
@@ -209,9 +209,9 @@ function RoomInner() {
         footer={<Button variant="primary" loading={copilot.busy} disabled={!copilot.q.trim()} onClick={askCopilot}>{t("room.perguntar")}</Button>}>
         <Field label={t("room.pergunte_ao_copilot")} id="cp-q"><Textarea id="cp-q" rows={2} value={copilot.q} placeholder={t("room.onde_esta_meu_blazer_azul")} onChange={(e) => setCopilot((c) => ({ ...c, q: e.target.value }))} /></Field>
         {copilot.text && <p className="type-body-sm whitespace-pre-line">{copilot.text}</p>}
-        {copilot.point && <p className="type-caption text-muted mt-1">{t("room.o_busto_esta_apontando_para", { replace: copilot.point.replace("door:", "Porta ").replace("drawer:", "Gaveta ") })}</p>}
+        {copilot.point && <p className="type-caption text-muted mt-1">{t("room.o_busto_esta_apontando_para", { replace: copilot.point.replace("door:", t("room.porta")).replace("drawer:", t("room.gaveta_2")) })}</p>}
       </Dialog>
-      <Dialog open={!!tag} onClose={() => setTag(null)} title={t("room.etiqueta_costurada")} footer={tag ? <><Button onClick={() => act(() => api.post("/api/me/mirror/pieces", { pieceId: tag.id }), "Peça no espelho.").then(() => mirror.reload())}>{t("room.levar_ao_espelho")}</Button><Button variant="primary" onClick={() => { const id = tag.id; setTag(null); modal?.openPiece(id); }}>{t("room.ver_peca_completa")}</Button></> : undefined}>
+      <Dialog open={!!tag} onClose={() => setTag(null)} title={t("room.etiqueta_costurada")} footer={tag ? <><Button onClick={() => act(() => api.post("/api/me/mirror/pieces", { pieceId: tag.id }), t("room.peca_no_espelho")).then(() => mirror.reload())}>{t("room.levar_ao_espelho")}</Button><Button variant="primary" onClick={() => { const id = tag.id; setTag(null); modal?.openPiece(id); }}>{t("room.ver_peca_completa")}</Button></> : undefined}>
         {tag && <div className="sewn-tag">
           <p className="sewn-tag-brand">{t("room.fai", { name: tag.name })}</p>
           <dl>
@@ -225,13 +225,13 @@ function RoomInner() {
         </div>}
       </Dialog>
       <Dialog open={keysOpen} onClose={() => setKeysOpen(false)} title={t("room.gancho_da_chave_do_quarto")}
-        footer={<Button variant="primary" disabled={!guest.trim()} onClick={() => act(async () => { const prof = await api.get<{ user?: { id: string }; id?: string }>(`/api/profiles/${encodeURIComponent(guest.replace(/^@/, ""))}`); await api.post("/api/me/room/keys", { guestId: prof.user?.id ?? prof.id }); setGuest(""); }, "Chave entregue.")}>{t("room.dar_a_chave")}</Button>}>
+        footer={<Button variant="primary" disabled={!guest.trim()} onClick={() => act(async () => { const prof = await api.get<{ user?: { id: string }; id?: string }>(`/api/profiles/${encodeURIComponent(guest.replace(/^@/, ""))}`); await api.post("/api/me/room/keys", { guestId: prof.user?.id ?? prof.id }); setGuest(""); }, t("room.chave_entregue"))}>{t("room.dar_a_chave")}</Button>}>
         <p className="type-body-sm mb-2">{t("room.quem_tem_a_chave_pode")}</p>
         <ul className="mb-3 flex flex-wrap gap-1">{((data as unknown as RoomData3D).keys ?? []).map((k) => <li key={k.id} className="chip">🔑 @{k.username}</li>)}{((data as unknown as RoomData3D).keys ?? []).length === 0 && <li className="type-caption text-muted">{t("room.nenhuma_chave_entregue_ainda")}</li>}</ul>
         <Field label={t("room.entregar_a_chave_para_usuario")} id="key-guest"><Input id="key-guest" value={guest} onChange={(e) => setGuest(e.target.value)} placeholder="@paris_lea" /></Field>
       </Dialog>
-      <Dialog open={!!addTo} onClose={() => setAddTo(null)} title={t("room.adicionar_peca_a_esta_gaveta", { value: addTo ? ` (${addTo.replace("drawer:", "Gaveta ")})` : "" })}
-        footer={<><Link className="btn" href="/pieces/new">{t("room.cadastrar_peca_nova")}</Link><Button variant="primary" disabled={!addPiece} onClick={() => act(() => api.put(`/api/pieces/${addPiece}/room-address`, { address: addTo }), "Peça guardada na gaveta.").then(() => setAddTo(null))}>{t("room.guardar_aqui")}</Button></>}>
+      <Dialog open={!!addTo} onClose={() => setAddTo(null)} title={t("room.adicionar_peca_a_esta_gaveta", { value: addTo ? ` (${addTo.replace("drawer:", t("room.gaveta_2"))})` : "" })}
+        footer={<><Link className="btn" href="/pieces/new">{t("room.cadastrar_peca_nova")}</Link><Button variant="primary" disabled={!addPiece} onClick={() => act(() => api.put(`/api/pieces/${addPiece}/room-address`, { address: addTo }), t("room.peca_guardada_na_gaveta")).then(() => setAddTo(null))}>{t("room.guardar_aqui")}</Button></>}>
         <p className="type-body-sm mb-2">{t("room.gaveta_vazia_so_um_sache")}</p>
         <Select aria-label={t("common.peca_2")} value={addPiece} onChange={(e) => setAddPiece(e.target.value)}><option value="">—</option>{Object.values(data.pieces).filter((p) => p.moduleId !== addTo && ["lower_piece", "accessory_piece"].includes(p.category)).map((p) => <option key={p.id} value={p.id}>{p.name} · {p.addressLabel ?? t("room.sem_lugar")}</option>)}</Select>
       </Dialog>

@@ -70,7 +70,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   return (
     <>
       <ProfileHeader username={h.username ?? owner.username} displayName={(brand.brandName as string) ?? (brand.stageName as string) ?? h.name ?? owner.displayName}
-        verified={owner.verified || h.status === "Validada" || h.status === "Verificada"} kindLabel={isCeleb ? "Celebridade" : "Marca"} cover={h.coverUrl}
+        verified={owner.verified || h.status === "Validada" || h.status === "Verificada"} kindLabel={isCeleb ? t("auth.profileCelebrity") : t("auth.profileBrand")} cover={h.coverUrl}
         category={[(brand.fashionCategory as string) ?? h.category ?? ((brand.areas as string[]) ?? []).join(", "), brand.officialHashtag ? `#${String(brand.officialHashtag).replace(/^#/, "")}` : null, `${data.header.activeSeals} selos ativos`].filter(Boolean).join(" · ")}
         bio={h.bio} link={data.store?.url ? { href: data.store.url, label: data.store.url.replace(/^https?:\/\//, "") } : h.storeUrl ? { href: h.storeUrl, label: h.storeUrl.replace(/^https?:\/\//, "") } : null}
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}

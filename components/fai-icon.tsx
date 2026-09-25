@@ -1,6 +1,7 @@
 "use client";
 import catalog from "@/lib/icons/fai-icons.json";
 import { useI18n } from "@/lib/i18n/i18n";
+import { toServerLanguage } from "@/lib/i18n/state";
 
 type Icon = { id: string; slug: string; family: string; label: Record<string, string>; states: string[]; files: Record<string, Record<string, string>>; glyph?: string; };
 const ICONS: Record<string, Icon> = Object.fromEntries((catalog as { icons: Icon[] }).icons.map((i) => [i.id, i]));
@@ -19,7 +20,7 @@ interface Props { id: string; size?: 24 | 48 | 96 | 512; active?: boolean; class
 export function FaiIcon({ id, size = 24, active = false, className, title, decorative }: Props) {
   const { locale } = useI18n();
   const icon = ICONS[id];
-  const key = locale === "pt-BR" ? "PT_BR" : locale.toUpperCase();
+  const key = toServerLanguage(locale);
   const label = title ?? icon?.label?.[key] ?? icon?.label?.PT_BR ?? id;
   const state = active && icon?.states?.includes("ativo") ? "ativo" : "normal";
   const file = icon?.files?.[state]?.[String(size)] ?? icon?.files?.normal?.[String(size)];

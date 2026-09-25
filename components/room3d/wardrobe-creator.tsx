@@ -28,7 +28,7 @@ export const AVAILABILITY: Record<string, { label: string; tone?: "mark" | "thre
   DISPONIVEL: { get label() { return tr("room3d.wardrobeCreator.a_venda"); }, tone: "thread" }, EM_BREVE: { get label() { return tr("room3d.wardrobeCreator.em_breve"); }, tone: "chalk" }, EXPIRADO: { label: "expirado", tone: "mark" }, ESGOTADO: { label: "esgotado", tone: "mark" }, INATIVO: { get label() { return tr("room3d.wardrobeCreator.fora_da_loja"); } },
 };
 /** Blocos da pré-visualização: o FAI Origem e os móveis à parte (sapateira, vitrine, porta-joias, ilha). */
-export const SLOT_LABELS: Record<string, string> = { DOOR: "Portas", DRAWER: "Gavetas", HANDLE: "Puxadores", TOP: "Maleiro", BASE: "Base", HANGER: "Cabides", LOGO: "Placa de logo", LIGHT: "LED", RUG: "Tapete", SHOE_RACK: "Sapateira", BAG_DISPLAY: "Vitrine de bolsas", JEWELRY: "Porta-joias", ISLAND: "Ilha central" };
+export const SLOT_LABELS: Record<string, string> = { get DOOR() { return tr("room3d.wardrobeCreator.portas"); }, get DRAWER() { return tr("room3d.wardrobeCreator.gavetas"); }, get HANDLE() { return tr("common.puxadores"); }, get TOP() { return tr("common.maleiro"); }, get BASE() { return tr("common.base"); }, get HANGER() { return tr("common.cabides"); }, get LOGO() { return tr("common.placa_de_logo"); }, LIGHT: "LED", get RUG() { return tr("common.tapete"); }, get SHOE_RACK() { return tr("room3d.roomScene.sapateira"); }, get BAG_DISPLAY() { return tr("room3d.roomScene.vitrine_de_bolsas"); }, get JEWELRY() { return tr("common.porta_joias"); }, get ISLAND() { return tr("common.ilha_central"); } };
 const PREVIEW_SLOTS = ["DOOR", "DRAWER", "HANDLE", "TOP", "BASE", "HANGER", "LOGO", "LIGHT", "RUG", "SHOE_RACK", "BAG_DISPLAY", "JEWELRY", "ISLAND"];
 const LV = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
 const higher = (a: string, b: string) => (LV.indexOf(a) >= LV.indexOf(b) ? a : b);
@@ -124,7 +124,7 @@ export function WardrobeCreatorTab() {
     setBusy(true);
     try {
       const r = editing ? await api.put<StoreItem>(`/api/room-creator/items/${editing}`, body) : await api.post<StoreItem>("/api/room-creator/items", body);
-      toast.success(t("room3d.wardrobeCreator.fai_pts_nivel", { name: r.name, value: editing ? "atualizado" : "publicado na loja do quarto", pricePoints: r.pricePoints, requiredLevel: r.requiredLevel })); setEditing(r.sku); mine.reload();
+      toast.success(t("room3d.wardrobeCreator.fai_pts_nivel", { name: r.name, value: editing ? "atualizado" : t("room3d.wardrobeCreator.publicado_na_loja_do_quarto"), pricePoints: r.pricePoints, requiredLevel: r.requiredLevel })); setEditing(r.sku); mine.reload();
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function remove(i: StoreItem) {

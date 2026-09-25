@@ -260,7 +260,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { positi
       {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.35 - Math.floor(i / 2) * 0.4, 0.026]} />)}
       <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.5} h={0.06} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
       {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.5} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, 1.72, 0.026]} />}
-      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt.replace(" — o look continua pendurado aqui.", "")} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
+      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt.replace(t("room3d.roomScene.o_look_continua_pendurado_aqui"), "")} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
       {/* botão "+" do Vista-me ao lado do móvel */}
@@ -507,8 +507,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
 
       {/* maleiro: caixas de look; no Penthouse, as caixas da troca de estação; na Cápsula, a caixa trancada com fita */}
       {boxes.slice(0, penthouse ? 6 : tapedIds.size ? 7 : 8).map((b, i) => <LookBox key={b.id} b={b} x={-W / 2 + 0.16 + i * 0.3} />)}
-      {penthouse && <LookBox x={-W / 2 + 0.16 + 6 * 0.3} season="Fora de estação" count={(byId["season"]?.pieces ?? []).length} />}
-      {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season="Fora da cápsula" count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
+      {penthouse && <LookBox x={-W / 2 + 0.16 + 6 * 0.3} season={t("room3d.roomScene.fora_de_estacao")} count={(byId["season"]?.pieces ?? []).length} />}
+      {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season={t("room3d.roomScene.fora_da_capsula")} count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
       {L.ext > 0 && boxes.slice(8, 13).map((b, i) => <LookBox key={b.id} b={b} x={W / 2 + 0.2 + i * 0.32} />)}
 
       {/* base de calçados (vira Sapateira no Closet) com LED que acende no Vista-me */}

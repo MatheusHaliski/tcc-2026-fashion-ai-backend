@@ -78,7 +78,7 @@ export function Globe({ points, selected, onSelect, size = 420 }: { points: Glob
           const glow = Math.max(0.35, Math.min(1, (p.avg_hype ?? 30) / 100 + 0.25));
           return (
             <g key={p.country} className={`globe-point ${p.sufficient ? "lit" : "dim"} ${on ? "on" : ""}`} transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); onSelect(p.country); }} style={{ cursor: "pointer" }}>
-              <title>{t("globe.looks_pecas_hype", { countryName: countryName(p.country), schemes: p.schemes, pieces: p.pieces, value: p.avg_hype ?? "—", value2: p.sufficient ? "" : " · poucos dados" })}</title>
+              <title>{t("globe.looks_pecas_hype", { countryName: countryName(p.country), schemes: p.schemes, pieces: p.pieces, value: p.avg_hype ?? "—", value2: p.sufficient ? "" : t("globe.poucos_dados") })}</title>
               {p.sufficient && <circle r={r * 1.9} fill={p.dominantColorHex ?? "#FFD54A"} opacity={0.22 * glow} className="pulse" />}
               <circle r={p.sufficient ? r : 3.5} fill={p.sufficient ? p.dominantColorHex ?? "#FFD54A" : "#8a96a3"} stroke={on ? "#fff" : "rgba(255,255,255,.75)"} strokeWidth={on ? 2.5 : 1} filter={p.sufficient ? "url(#globe-glow)" : undefined} opacity={p.sufficient ? glow : 0.6} />
               {p.sufficient && <text y={-r - 5} textAnchor="middle" className="globe-label">{p.country}</text>}

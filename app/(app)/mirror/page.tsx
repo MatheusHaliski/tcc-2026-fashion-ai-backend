@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Skeleton, Switch, useToast } from "@/components/ui";
@@ -11,7 +11,7 @@ import { FaiIcon } from "@/components/fai-icon";
 
 interface MPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; color?: string; colorHex?: string; addressLabel?: string; }
 interface State { slots: Record<string, MPiece | MPiece[] | null>; complete: boolean; missing: { slot: string; action: string; message: string }[]; warnings?: string[]; origin?: string; prompt?: string | null; interpretation?: Record<string, unknown> | null; actions?: string[]; silhouette?: string | null; postIt?: string | null; light?: { kelvin: number; label?: string }; restriction?: { challenge: string } | null; shownCount?: number; }
-const SLOT_LABEL: Record<string, string> = { outer_layer: "Camada externa", upper: "Superior", dress: "Vestido", lower: "Inferior", shoes: "Calçados", accessory: "Acessórios" };
+const SLOT_LABEL: Record<string, string> = { get outer_layer() { return tr("common.camada_externa"); }, get upper() { return tr("common.superior"); }, get dress() { return tr("mirror.vestido"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("mirror.calcados"); }, get accessory() { return tr("mirror.acessorios"); } };
 
 function MirrorInner() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
@@ -36,7 +36,7 @@ function MirrorInner() {
           </div>
           <div className="flex flex-wrap gap-2 p-3">
             <Button size="sm" onClick={() => run("clear", () => api.delete("/api/me/mirror"))}>{t("common.limpar")}</Button>
-            <Button size="sm" onClick={() => run("one", () => api.post("/api/me/mirror/take-one-off"), "Tirei uma coisa.")} disabled={worn.length < 2}><FaiIcon id="ACT-33" size={24} decorative />{t("mirror.tira_uma_coisa")}</Button>
+            <Button size="sm" onClick={() => run("one", () => api.post("/api/me/mirror/take-one-off"), t("mirror.tirei_uma_coisa"))} disabled={worn.length < 2}><FaiIcon id="ACT-33" size={24} decorative />{t("mirror.tira_uma_coisa")}</Button>
             <Button size="sm" onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }} disabled={!data.complete}>GRWM</Button>
           </div>
         </Card>
@@ -57,7 +57,7 @@ function MirrorInner() {
             {data.warnings?.length ? <ul className="mt-2 type-caption text-chalk">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
           </Card>
           <div className="flex flex-wrap gap-2">
-            <Button variant="accent" disabled={!data.complete} onClick={() => run("use", () => api.post("/api/me/mirror/use"), "Look do Dia registrado!")}><FaiIcon id="ACT-36" size={24} decorative />{t("mirror.usar_este_look_hoje")}</Button>
+            <Button variant="accent" disabled={!data.complete} onClick={() => run("use", () => api.post("/api/me/mirror/use"), t("mirror.look_do_dia_registrado"))}><FaiIcon id="ACT-36" size={24} decorative />{t("mirror.usar_este_look_hoje")}</Button>
             <Button variant="primary" disabled={worn.length === 0} onClick={() => setSaveTitle("")}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button>
             <Button disabled={worn.length === 0} onClick={async () => { const r = await run("draft", () => api.post("/api/me/mirror/draft", { origin: "MIRROR" })); const id = (r as { schemeId?: string })?.schemeId; if (id) window.location.href = `/schemes/${id}/edit`; }}>{t("mirror.abrir_no_editor")}</Button>
             <Link href="/room" className="btn"><FaiIcon id="NAV-16" size={24} decorative />{t("nav.room")}</Link>

@@ -93,7 +93,7 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
       </div>
       <Dialog open={improve} onClose={() => setImprove(false)} title={t("scheme.improve")} footer={diff ? <><Button onClick={() => setDiff(null)}>{t("common.cancel")}</Button><Button variant="primary" onClick={applyDiff} loading={busy}>{t("dashboard.apply")}</Button></> : <Button variant="primary" onClick={askImprove} loading={busy} disabled={!instruction.trim()}>{t("scheme.generate")}</Button>}>
         {!diff ? <Field label={t("scheme.instruction")} id="instruction"><Input id="instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder={t("schemes.id.ex_deixe_mais_formal_trocando")} /></Field>
-          : <div className="type-body"><p className="mb-2 text-muted">{String(diff.message ?? diff.explanation ?? "Mudanças propostas:")}</p><pre className="max-h-64 overflow-auto rounded bg-surface-2 p-2 type-caption">{JSON.stringify(diff.diff ?? diff.changes ?? diff, null, 2)}</pre></div>}
+          : <div className="type-body"><p className="mb-2 text-muted">{String(diff.message ?? diff.explanation ?? t("schemes.id.mudancas_propostas"))}</p><pre className="max-h-64 overflow-auto rounded bg-surface-2 p-2 type-caption">{JSON.stringify(diff.diff ?? diff.changes ?? diff, null, 2)}</pre></div>}
       </Dialog>
       <Dialog open={!!sealSuggest} onClose={() => setSealSuggest(null)} title={t("schemes.id.vinculos_de_selo_sugeridos_rf21")}>
         {sealSuggest?.message && <p className="type-body text-muted mb-2">{sealSuggest.message}</p>}

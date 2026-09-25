@@ -13,12 +13,13 @@ import { BackgroundStudio, type BgConfig } from "@/components/background-studio"
 import { DNA_LAYOUTS, DNA_NARRATIVES, DnaCard, SEASON_PRESETS, dnaNarrativeLabel, narrativeHasOwnArt, type DnaView } from "@/components/dna-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
+import { currentIntl } from "@/lib/i18n/state";
 
 interface Builder { totalSchemes: number; status: string; message?: string; action?: { label: string; href: string }; schemes: SchemeView[]; dna?: { archetypeLabel?: string; palette?: { color: string; hex: string }[]; phrase?: string; boldnessIndex?: number }; defaultVisibility: string; steps?: string[]; }
 interface Cell { schemeId: string; eraLabel: string; milestone: boolean; }
 interface Proposal { title: string; narrativeType?: string | null; cardLayout: string; cells: { schemeId: string; title?: string; eraLabel?: string | null; milestone?: boolean }[]; occasion?: string[]; style?: string[]; seasonalTheme?: string | null; rationale?: string | null; }
 const SEASONS = ["SPRING", "SUMMER", "AUTUMN", "WINTER"];
-const eraOf = (iso?: string) => { if (!iso) return ""; const d = new Date(iso); return `${d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}/${String(d.getFullYear()).slice(2)}`; };
+const eraOf = (iso?: string) => { if (!iso) return ""; const d = new Date(iso); return `${d.toLocaleDateString(currentIntl(), { month: "short" }).replace(".", "")}/${String(d.getFullYear()).slice(2)}`; };
 
 /** Esquema mini da anatomia (Seção A) para o seletor da etapa 4. */
 function LayoutGlyph({ id }: { id: string }) {
@@ -86,7 +87,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
     setBusy(true); setProposals(null);
     try {
       const r = await api.post<{ compositions: Proposal[]; message?: string; fallbackUsed?: boolean; provider?: string }>("/api/dna-schemes/compositions", { prompt: prompt || null, occasion: aiReq.occasion, style: aiReq.style, narrativeType: aiReq.narrative || null, season: aiReq.season || null });
-      setProposals(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? "Motor local (IA remota indisponível)." : r.provider ? `Gerado por ${r.provider}` : null));
+      setProposals(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null));
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   function applyProposal(p: Proposal) {

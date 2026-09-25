@@ -42,7 +42,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
             <div className="hidden flex-wrap gap-2 sm:flex">{actions}</div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label={t("profileHeader.contadores_do_perfil")}>
-            <div role="listitem">{stat(counts.pieces, "peças")}</div>
+            <div role="listitem">{stat(counts.pieces, t("common.pieces"))}</div>
             <div role="listitem">{stat(counts.schemes, "esquemas")}</div>
             <div role="listitem">{stat(counts.followers, "seguidores", "followers")}</div>
             <div role="listitem">{stat(counts.following, "seguindo", "following")}</div>

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api, qs } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import { Button, Card, ErrorState, Field, Input, PageHeader, Skeleton } from "@/components/ui";
 import { TimeSeries } from "@/components/charts";
 
-const ISSUER_LABEL: Record<string, string> = { suggested: "Vínculos sugeridos", accepted: "Aceitos pelos usuários", approved: "Aprovados por você", pendingReview: "Aguardando sua revisão", activeSeals: "Selos ativos", redemptions: "Resgates", conversionSealToRedemption: "Conversão selo → resgate (%)" };
+const ISSUER_LABEL: Record<string, string> = { get suggested() { return tr("dashboard.vinculos_sugeridos"); }, get accepted() { return tr("dashboard.aceitos_pelos_usuarios"); }, get approved() { return tr("dashboard.aprovados_por_voce"); }, get pendingReview() { return tr("dashboard.aguardando_sua_revisao"); }, get activeSeals() { return tr("dashboard.selos_ativos"); }, get redemptions() { return tr("common.resgates"); }, get conversionSealToRedemption() { return tr("dashboard.conversao_selo_resgate"); } };
 
 /** Dashboard do emissor (marca/celebridade): selos, vínculos, resgates e série de vínculos no período. */
 function IssuerDashboard() {

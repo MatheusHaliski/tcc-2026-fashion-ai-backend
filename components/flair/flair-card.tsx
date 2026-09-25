@@ -31,7 +31,7 @@ export const RARITY_META: Record<string, { label: string; frame: string; glow: s
   LIMITED: { get label() { return tr("flair.flairCard.limited"); }, frame: "linear-gradient(135deg,#c9a7ff,#7B4FD6)", glow: "rgba(123,79,214,.4)" },
   RARE: { get label() { return tr("flair.flairCard.rare"); }, frame: "linear-gradient(135deg,#ffe29a,#c8961e 45%,#fff3c4 60%,#b8860b)", glow: "rgba(232,185,73,.55)" },
 };
-export const SEASON_LABEL: Record<string, string> = { SUMMER: "Verão", AUTUMN: "Outono", WINTER: "Inverno", SPRING: "Primavera", ALL: "Todas" };
+export const SEASON_LABEL: Record<string, string> = { get SUMMER() { return tr("flair.flairCard.verao"); }, get AUTUMN() { return tr("flair.flairCard.outono"); }, get WINTER() { return tr("flair.flairCard.inverno"); }, get SPRING() { return tr("flair.flairCard.primavera"); }, get ALL() { return tr("flair.todas"); } };
 const SKIN_BG: Record<string, string> = {
   BRAND_FRAME: "repeating-linear-gradient(45deg,#1f2a44 0 6px,#26345a 6px 12px)",
   HOLOGRAFICO: "linear-gradient(120deg,#ffd1f0,#c7f0ff,#e8ffc7,#ffe6c7,#e0d1ff)",

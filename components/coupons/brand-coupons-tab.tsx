@@ -5,7 +5,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
 import { FaiCoupon, type Coupon, type CouponOwner } from "@/components/coupons/fai-coupon";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 interface Promo {
   source: "SELO" | "FLAIR"; id: string; title: string; kind: string; detail?: string | null; discount: string; seal?: { id: string; name: string } | null;
@@ -16,8 +17,8 @@ interface Seal { id: string; name: string; status?: string; tier?: string; }
 
 export const BRAND_PROMO_TYPES = ["DESCONTO_ECOMMERCE", "CUPOM_LOJA", "FRETE_GRATIS", "BRINDE", "ACESSO_ANTECIPADO", "EVENTO"];
 export const CELEB_PROMO_TYPES = [...BRAND_PROMO_TYPES, "SHOW", "MEET_GREET", "PRE_VENDA", "CONTEUDO_EXCLUSIVO"];
-const TYPE_LABEL: Record<string, string> = { DESCONTO_ECOMMERCE: "Desconto no e-commerce", CUPOM_LOJA: "Cupom na loja", FRETE_GRATIS: "Frete grátis", BRINDE: "Brinde", ACESSO_ANTECIPADO: "Acesso antecipado", EVENTO: "Evento", SHOW: "Show", MEET_GREET: "Meet & greet", PRE_VENDA: "Pré-venda", CONTEUDO_EXCLUSIVO: "Conteúdo exclusivo", COMBINACAO: "Combinação (deck)", COLECAO: "Coleção (guarda-roupa)", DUELO_PATROCINADO: "Duelo patrocinado" };
-const STATUS_LABEL: Record<string, string> = { ATIVA: "Ativa", FORA_DO_PERIODO: "Fora do período", DESATIVADA: "Desativada", REDEEMED: "Esgotada", EXPIRED: "Encerrada", REVOKED: "Revogada" };
+const TYPE_LABEL: Record<string, string> = { get DESCONTO_ECOMMERCE() { return tr("coupons.brandCouponsTab.desconto_no_e_commerce"); }, get CUPOM_LOJA() { return tr("coupons.brandCouponsTab.cupom_na_loja"); }, get FRETE_GRATIS() { return tr("coupons.brandCouponsTab.frete_gratis"); }, get BRINDE() { return tr("coupons.brandCouponsTab.brinde"); }, get ACESSO_ANTECIPADO() { return tr("coupons.brandCouponsTab.acesso_antecipado"); }, get EVENTO() { return tr("coupons.brandCouponsTab.evento"); }, get SHOW() { return tr("coupons.brandCouponsTab.show"); }, get MEET_GREET() { return tr("coupons.brandCouponsTab.meet_greet"); }, get PRE_VENDA() { return tr("coupons.brandCouponsTab.pre_venda"); }, get CONTEUDO_EXCLUSIVO() { return tr("coupons.brandCouponsTab.conteudo_exclusivo"); }, get COMBINACAO() { return tr("coupons.brandCouponsTab.combinacao_deck"); }, get COLECAO() { return tr("common.colecao_guarda_roupa"); }, get DUELO_PATROCINADO() { return tr("common.duelo_patrocinado"); } };
+const STATUS_LABEL: Record<string, string> = { get ATIVA() { return tr("flair.ativa"); }, get FORA_DO_PERIODO() { return tr("coupons.brandCouponsTab.fora_do_periodo"); }, get DESATIVADA() { return tr("coupons.brandCouponsTab.desativada"); }, get REDEEMED() { return tr("coupons.brandCouponsTab.esgotada"); }, get EXPIRED() { return tr("coupons.brandCouponsTab.encerrada"); }, get REVOKED() { return tr("coupons.brandCouponsTab.revogada"); } };
 
 /**
  * Card Trello RF38 — aba "Meus cupons promocionais" do perfil de marca ou celebridade: junta os cupons que QUALQUER
@@ -70,7 +71,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
           <div className="grid gap-4 lg:grid-cols-2">{d.coupons.map((c) => (
             <div key={`${c.source}-${c.id}`}>
               <FaiCoupon coupon={{ ...c, storeUrl: null }} compact />
-              <p className="type-caption text-muted mt-1">{t("coupons.brandCouponsTab.resgatado_por", { value: c.holder ? `@${c.holder.username}` : "—", value2: c.issuedAt ? t("coupons.brandCouponsTab.em", { toLocaleDateString: new Date(c.issuedAt).toLocaleDateString("pt-BR") }) : "" })}</p>
+              <p className="type-caption text-muted mt-1">{t("coupons.brandCouponsTab.resgatado_por", { value: c.holder ? `@${c.holder.username}` : "—", value2: c.issuedAt ? t("coupons.brandCouponsTab.em", { toLocaleDateString: new Date(c.issuedAt).toLocaleDateString(currentIntl()) }) : "" })}</p>
             </div>))}</div>}
       </>}
 
@@ -86,7 +87,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
               <p className="type-h3 mt-2">{p.title}</p>
               {p.detail && <p className="type-body-sm text-muted">{p.detail}</p>}
               <p className="type-body-sm mt-1"><b>{p.discount}</b>{p.seal ? t("coupons.brandCouponsTab.exige_o_selo", { name: p.seal.name }) : ""}</p>
-              <p className="type-caption text-faint mt-1">{t("coupons.brandCouponsTab.resgate_s_aguardando_resgate", { redeemed: p.redeemed, value: p.quota ? t("coupons.brandCouponsTab.de", { quota: p.quota }) : "", pendingRights: p.pendingRights, value2: p.endsAt ? t("coupons.brandCouponsTab.ate", { toLocaleDateString: new Date(p.endsAt).toLocaleDateString("pt-BR") }) : "", value3: p.storeUrl ? t("coupons.brandCouponsTab.loja_propria_do_cupom") : "" })}</p>
+              <p className="type-caption text-faint mt-1">{t("coupons.brandCouponsTab.resgate_s_aguardando_resgate", { redeemed: p.redeemed, value: p.quota ? t("coupons.brandCouponsTab.de", { quota: p.quota }) : "", pendingRights: p.pendingRights, value2: p.endsAt ? t("coupons.brandCouponsTab.ate", { toLocaleDateString: new Date(p.endsAt).toLocaleDateString(currentIntl()) }) : "", value3: p.storeUrl ? t("coupons.brandCouponsTab.loja_propria_do_cupom") : "" })}</p>
               {p.reason && !p.active && <p className="type-caption text-mark mt-1">{p.reason}</p>}
               <div className="mt-2 flex gap-2">{p.source === "SELO" ? <Button size="sm" onClick={() => toggleSeal(p)}>{p.active ? t("common.desativar") : t("common.reativar")}</Button> : <Button size="sm" onClick={onCreateFlair}>{t("coupons.brandCouponsTab.gerenciar_no_flair")}</Button>}</div>
             </Card>))}</div>}

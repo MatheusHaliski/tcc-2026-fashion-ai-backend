@@ -38,7 +38,7 @@ export function MannequinPhotoDialog({ kind, id, title, current, onClose }: { ki
   const canvas = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     let alive = true;
-    api.get<Look3d>(kind === "scheme" ? `/api/schemes/${id}/look3d` : `/api/pieces/${id}/look3d`).then((l) => { if (!alive) return; setLook(l); if (l.mannequin.face) setFace({ offsetX: 0, offsetY: 0, scale: 1, ...l.mannequin.face }); }).catch((e) => alive && setErr(e?.message ?? "Não foi possível montar o manequim."));
+    api.get<Look3d>(kind === "scheme" ? `/api/schemes/${id}/look3d` : `/api/pieces/${id}/look3d`).then((l) => { if (!alive) return; setLook(l); if (l.mannequin.face) setFace({ offsetX: 0, offsetY: 0, scale: 1, ...l.mannequin.face }); }).catch((e) => alive && setErr(e?.message ?? t("mannequinPhoto.nao_foi_possivel_montar_o")));
     return () => { alive = false; };
   }, [kind, id]);
   const lookWithFace = look ? { ...look, mannequin: { ...look.mannequin, face } } : null;
@@ -75,7 +75,7 @@ export function MannequinPhotoDialog({ kind, id, title, current, onClose }: { ki
             {m?.head === "FOTO" && !preview && (
               <fieldset className="mt-3">
                 <legend className="label">{t("mannequinPhoto.ajustar_o_rosto")}</legend>
-                {([["scale", "Tamanho", 0.6, 1.8, 0.02], ["offsetX", "Horizontal", -0.3, 0.3, 0.01], ["offsetY", "Vertical", -0.3, 0.3, 0.01]] as const).map(([k, lbl, min, max, step]) => (
+                {([["scale", t("common.size"), 0.6, 1.8, 0.02], ["offsetX", t("common.horizontal"), -0.3, 0.3, 0.01], ["offsetY", t("common.vertical"), -0.3, 0.3, 0.01]] as const).map(([k, lbl, min, max, step]) => (
                   <label key={k} className="mt-1 block type-caption">{lbl}<input type="range" min={min} max={max} step={step} value={face[k] ?? (k === "scale" ? 1 : 0)} onChange={(e) => setFace((f) => ({ ...f, [k]: Number(e.target.value) }))} className="block w-full" /></label>
                 ))}
               </fieldset>

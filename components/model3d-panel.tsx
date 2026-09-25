@@ -4,6 +4,7 @@ import { api } from "@/lib/api/client";
 import { Badge, Button, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 /** Resposta de GET/POST /api/pieces/{id}/model3d (Model3dService.status). */
 export interface Model3dStatus {
@@ -14,8 +15,8 @@ export interface Model3dStatus {
 }
 
 const STAGE_LABEL: Record<string, string> = {
-  FOTO: "Foto sem fundo", ENVIO: "Enviado ao provedor", SILHUETA: "Silhueta", MALHA: "Malha", TEXTURA: "Textura",
-  RECONSTRUCAO: "Reconstrução 3D", ARMAZENAMENTO: "Arquivo .glb salvo", TEMPO_LIMITE: "Tempo-limite",
+  get FOTO() { return tr("model3dPanel.foto_sem_fundo"); }, get ENVIO() { return tr("model3dPanel.enviado_ao_provedor"); }, get SILHUETA() { return tr("dna.silhueta"); }, get MALHA() { return tr("model3dPanel.malha"); }, get TEXTURA() { return tr("model3dPanel.textura"); },
+  get RECONSTRUCAO() { return tr("model3dPanel.reconstrucao_3d"); }, get ARMAZENAMENTO() { return tr("model3dPanel.arquivo_glb_salvo"); }, get TEMPO_LIMITE() { return tr("model3dPanel.tempo_limite"); },
 };
 const STEPS: { key: NonNullable<Model3dStatus["status"]>; label: string }[] = [
   { key: "QUEUED", label: "enfileirado" }, { key: "PROCESSING", label: "processando" }, { key: "COMPLETED", get label() { return tr("model3dPanel.concluido"); } },
@@ -59,7 +60,7 @@ export function Model3dPanel({ pieceId, initialStatus, onCompleted, onView }: {
   if (st.featureEnabled === false && !st.status) return <p className="type-caption text-muted">{t("model3dPanel.geracao_3d_desligada_neste_ambiente")}</p>;
   const s = st.status; const pct = Math.max(3, Math.min(100, st.progress ?? (s === "COMPLETED" ? 100 : 5)));
   const since = st.startedAt ?? st.queuedAt; const secs = since ? Math.max(0, Math.round((now - new Date(since).getTime()) / 1000)) : null;
-  const engines = st.providers?.length ? st.providers.join(" → ") + " → relevo local" : "relevo local (sem provedor externo configurado)";
+  const engines = st.providers?.length ? t("model3dPanel.relevo_local", { join: st.providers.join(" → ") }) : t("model3dPanel.relevo_local_sem_provedor_externo");
   return (
     <section aria-labelledby={`m3d-${pieceId}`} className="rounded-md border border-line-soft p-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -87,7 +88,7 @@ export function Model3dPanel({ pieceId, initialStatus, onCompleted, onView }: {
           <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t("model3dPanel.progresso_do_modelo_3d")}>
             <div className="h-full bg-ink transition-[width] duration-700" style={{ width: `${pct}%` }} />
           </div>
-          <p className="mt-1 type-caption text-muted">{t("model3dPanel.pode_sair_da_pagina_avisamos", { value: s === "QUEUED" ? t("model3dPanel.na_fila_o_gerador_pega") : t("model3dPanel.gerando_com", { value: st.provider ?? "o motor 3D" }), value2: secs != null ? ` ${secs}s` : "" })}</p>
+          <p className="mt-1 type-caption text-muted">{t("model3dPanel.pode_sair_da_pagina_avisamos", { value: s === "QUEUED" ? t("model3dPanel.na_fila_o_gerador_pega") : t("model3dPanel.gerando_com", { value: st.provider ?? t("model3dPanel.o_motor_3d") }), value2: secs != null ? ` ${secs}s` : "" })}</p>
         </div>
       )}
       {s === "FAILED" && (
@@ -98,7 +99,7 @@ export function Model3dPanel({ pieceId, initialStatus, onCompleted, onView }: {
       )}
       {s === "COMPLETED" && st.model && (
         <p className="mt-2 type-caption text-muted">
-          {st.model.kind === "relevo" ? t("model3dPanel.relevo_3d_a_partir_da") : t("model3dPanel.reconstrucao_3d")}{st.model.vertices ? t("model3dPanel.vertices", { toLocaleString: st.model.vertices.toLocaleString("pt-BR") }) : ""}
+          {st.model.kind === "relevo" ? t("model3dPanel.relevo_3d_a_partir_da") : t("model3dPanel.reconstrucao_3d")}{st.model.vertices ? t("model3dPanel.vertices", { toLocaleString: st.model.vertices.toLocaleString(currentIntl()) }) : ""}
           {st.model.heightM ? t("model3dPanel.cm", { Math: Math.round((st.model.widthM ?? 0) * 100), Math2: Math.round(st.model.heightM * 100), Math3: Math.round((st.model.depthM ?? 0) * 100) }) : ""}
           {st.provider ? ` · ${st.provider}` : ""}{st.fallbackUsed ? t("common.plano_b_local") : ""}
         </p>
