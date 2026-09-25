@@ -92,6 +92,11 @@ fashionai:
   app:
     base-url: ${APP_BASE_URL:http://localhost:8080}        # usado nas URLs de mídia local
   frontend-url: ${FRONTEND_URL:http://localhost:3000}      # links de e-mail (confirmar e-mail, redefinir senha)
+  admin:                                                   # conta de administração criada/promovida na subida (AdminBootstrap)
+    email: ${FAI_ADMIN_EMAIL:}
+    password: ${FAI_ADMIN_PASSWORD:}                         # só na criação; mínimo 12 caracteres
+    username: ${FAI_ADMIN_USERNAME:admin}
+    display-name: ${FAI_ADMIN_DISPLAY_NAME:Administração Fashion AI}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   jwt:

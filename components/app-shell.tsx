@@ -61,7 +61,7 @@ function useIsActive() {
 function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n(); const { user, isAdmin } = useAuth(); const isActive = useIsActive(); const pathname = usePathname();
   const manage: NavItem[] = [
-    ...(user && user.profileType !== "PESSOAL" ? [{ href: "/dashboard", key: "nav.issuer", icon: "NAV-01" }] : []),
+    // painel do emissor (marca/celebridade) fica no próprio perfil; o menu lateral só mostra o Dashboard da administração
     ...(isAdmin ? [{ href: "/admin/dashboard", key: "nav.admin", icon: "NAV-14" }] : []),
   ];
   const groups = [...GROUPS, ...(manage.length ? [{ key: "nav.group.manage", items: manage }] : [])];

@@ -1,6 +1,6 @@
 /** Tipos espelhando os records do backend (Views.java e serviços). Campos opcionais quando o backend pode omitir. */
 export interface UserCard {
-  id: string; username: string; displayName: string; avatarUrl?: string | null; profileType: "PESSOAL" | "MARCA" | "CELEBRIDADE";
+  id: string; username: string; displayName: string; avatarUrl?: string | null; profileType: "PESSOAL" | "MARCA" | "CELEBRIDADE" | "ADMIN";
   verified: boolean; country?: string | null; privateAccount: boolean;
 }
 export interface Session {

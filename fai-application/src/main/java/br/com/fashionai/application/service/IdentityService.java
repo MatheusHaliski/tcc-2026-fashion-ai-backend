@@ -170,6 +170,9 @@ public class IdentityService {
     public Session register(RegisterCommand cmd, String ip, String userAgent) {
         Map<String, Object> errors = new LinkedHashMap<>();
         ProfileType type = cmd.profileType() == null ? ProfileType.PESSOAL : cmd.profileType();
+        if (type == ProfileType.ADMIN) {
+            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("identity.tipo_de_perfil_nao_permitido"));
+        }
         if (cmd.fullName() == null || cmd.fullName().trim().length() < 3) {
             errors.put("fullName", Msg.t("identity.informe_seu_nome_completo"));
         }

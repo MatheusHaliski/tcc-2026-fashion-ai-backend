@@ -51,6 +51,28 @@ public interface AnalyticsQueryPort {
 
     int purgeNotifications(int days);
 
+    // ---------------------------------------------------------------- dashboard administrativo por abas
+    /** Funil de ativação da coorte cadastrada no período: etapas em ordem (registered → daily_look) com quantos chegaram a cada uma. */
+    List<Map<String, Object>> activationFunnel(Filter filter);
+    /** Atividade registrada no audit_log por dia da semana (0 = domingo) e hora, no fuso de Brasília. */
+    List<Map<String, Object>> activityHeatmap(Filter filter);
+    /** Usuários mais ativos no período (peças, looks e curtidas recebidas), sem contas de teste. */
+    List<Map<String, Object>> topUsers(Filter filter, int limit);
+    List<Map<String, Object>> moderationByStatus(Filter filter);
+    List<Map<String, Object>> moderationRecent(int limit);
+    /** Falhas e negações do audit_log agrupadas por ação e resultado. */
+    List<Map<String, Object>> auditFailures(Filter filter);
+    List<Map<String, Object>> auditRecent(Filter filter, int limit);
+    /** Por dia: logins falhos, acessos negados e erros. */
+    List<Map<String, Object>> securitySeries(Filter filter);
+    /** Por dia: curtidas, comentários e compartilhamentos. */
+    List<Map<String, Object>> engagementSeries(Filter filter);
+    List<Map<String, Object>> categories(Filter filter);
+    List<Map<String, Object>> jobsByStatus(Filter filter);
+    List<Map<String, Object>> jobsFailedRecent(int limit);
+    /** Tempo de um SELECT 1 no banco, em milissegundos (saúde do sistema). */
+    long dbLatencyMs();
+
     /** RF26 — recorte do painel global: estação (Scheme.season / WardrobeItem.market), cor e faixa de hypeScore. */
     record GlobalFilter(String season, String color, Double hypeMin, Double hypeMax) {
     }
