@@ -134,6 +134,9 @@ fashionai:
     enabled: ${REDIS_ENABLED:false}
   cassandra:
     enabled: ${CASSANDRA_ENABLED:false}
+    secure-connect-bundle:                                 # DataStax Astra DB (substitui contact-points/datacenter)
+      path: ${CASSANDRA_SECURE_BUNDLE_PATH:}
+      base64: ${CASSANDRA_SECURE_BUNDLE_BASE64:}
     timeline-ttl-days: 90
     notification-ttl-days: 30
   opensearch:

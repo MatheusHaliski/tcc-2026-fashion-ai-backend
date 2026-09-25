@@ -110,10 +110,23 @@ def provision_mysql(check):
 
 
 # ------------------------------------------------------------------------------------------------ Cassandra
+def astra_bundle():
+    """Secure Connect Bundle do Astra DB: caminho direto ou o zip em base64 gravado num arquivo temporário."""
+    if env("CASSANDRA_SECURE_BUNDLE_PATH"):
+        return env("CASSANDRA_SECURE_BUNDLE_PATH")
+    if env("CASSANDRA_SECURE_BUNDLE_BASE64"):
+        import tempfile  # noqa: WPS433
+        f = tempfile.NamedTemporaryFile(prefix="scb-", suffix=".zip", delete=False)
+        f.write(base64.b64decode(env("CASSANDRA_SECURE_BUNDLE_BASE64")))
+        f.close()
+        return f.name
+    return None
+
+
 def provision_cassandra(check):
-    hosts = env("CASSANDRA_CONTACT_POINTS")
-    if not hosts or env("CASSANDRA_ENABLED", "false").lower() != "true":
-        return report("Cassandra", SKIP, "defina CASSANDRA_ENABLED=true e CASSANDRA_CONTACT_POINTS (e usuário/senha, se houver)")
+    hosts, bundle = env("CASSANDRA_CONTACT_POINTS"), astra_bundle()
+    if not (hosts or bundle) or env("CASSANDRA_ENABLED", "false").lower() != "true":
+        return report("Cassandra", SKIP, "defina CASSANDRA_ENABLED=true e CASSANDRA_CONTACT_POINTS ou o Secure Connect Bundle do Astra")
     keyspace, dc = env("CASSANDRA_KEYSPACE", "fashionai_feed"), env("CASSANDRA_LOCAL_DATACENTER")
     rf = env("CASSANDRA_REPLICATION_FACTOR", "3" if dc and dc != "datacenter1" else "1")
     cql = open(CQL, encoding="utf-8").read().replace("fashionai_feed", keyspace)
@@ -123,6 +136,8 @@ def provision_cassandra(check):
         from cassandra.auth import PlainTextAuthProvider  # noqa: WPS433 — pip install cassandra-driver
         from cassandra.cluster import Cluster
     except ImportError:
+        if bundle:
+            return report("Cassandra", SKIP, "Astra DB: instale o driver (pip install cassandra-driver)")
         if shutil.which("cqlsh"):
             host = hosts.split(",")[0].strip()
             cmd = ["cqlsh", host, env("CASSANDRA_PORT", "9042")]
@@ -134,10 +149,19 @@ def provision_cassandra(check):
         return report("Cassandra", SKIP, "instale o driver (pip install cassandra-driver) ou o cqlsh")
     try:
         auth = PlainTextAuthProvider(env("CASSANDRA_USERNAME"), env("CASSANDRA_PASSWORD")) if env("CASSANDRA_USERNAME") else None
-        cluster = Cluster([h.strip() for h in hosts.split(",")], port=int(env("CASSANDRA_PORT", "9042")), auth_provider=auth)
+        if bundle:
+            cluster = Cluster(cloud={"secure_connect_bundle": bundle}, auth_provider=auth)
+        else:
+            cluster = Cluster([h.strip() for h in hosts.split(",")], port=int(env("CASSANDRA_PORT", "9042")), auth_provider=auth)
         session = cluster.connect()
+        if bundle and not session.execute("SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name=%s", [keyspace]).one():
+            cluster.shutdown()
+            return report("Cassandra", FAIL, f"Astra DB: crie o keyspace {keyspace} no painel do Astra (Data Explorer → Create keyspace)")
         if not check:
-            for stmt in [s.strip() for s in "\n".join(l for l in cql.splitlines() if not l.strip().startswith("--")).split(";") if s.strip()]:
+            stmts = [s.strip() for s in "\n".join(l for l in cql.splitlines() if not l.strip().startswith("--")).split(";") if s.strip()]
+            for stmt in stmts:
+                if bundle and stmt.upper().startswith("CREATE KEYSPACE"):
+                    continue   # o Astra não aceita CREATE KEYSPACE por CQL
                 session.execute(stmt)
         tables = [r.table_name for r in session.execute("SELECT table_name FROM system_schema.tables WHERE keyspace_name=%s", [keyspace])]
         cluster.shutdown()

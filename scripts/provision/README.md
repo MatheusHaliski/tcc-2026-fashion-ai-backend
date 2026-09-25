@@ -10,7 +10,7 @@ Lê `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` e prepara cada banco da aba **
 | Banco | O que o script faz | Variáveis |
 |---|---|---|
 | MySQL 8 | Cria o banco e o usuário da aplicação (só com `MYSQL_ADMIN_*`), confere a versão do Flyway e se **todas as tabelas da aba Entidades** existem | `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`; opcional `MYSQL_ADMIN_USER`, `MYSQL_ADMIN_PASSWORD` |
-| Cassandra | Aplica `schema.cql` (keyspace `fashionai_feed`, tabelas `timeline_by_user` e `notifications_by_user`) | `CASSANDRA_ENABLED=true`, `CASSANDRA_CONTACT_POINTS`, `CASSANDRA_PORT`, `CASSANDRA_LOCAL_DATACENTER`, `CASSANDRA_USERNAME`, `CASSANDRA_PASSWORD` |
+| Cassandra | Aplica `schema.cql` (keyspace `fashionai_feed`, tabelas `timeline_by_user` e `notifications_by_user`) | `CASSANDRA_ENABLED=true`, `CASSANDRA_CONTACT_POINTS`, `CASSANDRA_PORT`, `CASSANDRA_LOCAL_DATACENTER`, `CASSANDRA_USERNAME`, `CASSANDRA_PASSWORD`; Astra: `CASSANDRA_SECURE_BUNDLE_PATH` ou `CASSANDRA_SECURE_BUNDLE_BASE64` |
 | OpenSearch | Cria `fai-pieces` e `fai-schemes` com mapeamento explícito (texto em português + `.keyword` para os filtros) | `OPENSEARCH_ENABLED=true`, `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` |
 | Redis | Confere conexão e senha (PING) | `REDIS_ENABLED=true`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_SSL` |
 | S3 / MinIO / R2 | Cria o bucket e o CORS para o frontend; com `S3_PUBLIC_READ=true`, leitura pública de `users/` e `pending/` (os documentos em `restricted/` continuam privados) | `STORAGE_TYPE=s3`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `APP_CORS_ALLOWED_ORIGINS` |
@@ -18,9 +18,12 @@ Lê `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` e prepara cada banco da aba **
 > **Cloudflare R2**: nem toda API de bucket policy da AWS tem equivalente no R2, então `S3_PUBLIC_READ=true` pode falhar
 > nele. Ative o acesso público direto no painel (bucket → Settings → Public Access) nesse caso.
 
-> **DataStax Astra DB**: o adaptador de Cassandra aqui usa `contact-points`/`port`/`local-datacenter` puros (sem
-> "Secure Connect Bundle"), então o Astra — que só expõe CQL atrás desse bundle — não funciona sem código adicional.
-> Provedores com porta CQL direta (Instaclustr Managed Cassandra, ScyllaDB Cloud) funcionam sem alteração.
+> **DataStax Astra DB**: o Astra só expõe CQL pelo *Secure Connect Bundle*. Crie o banco com o keyspace
+> `fashionai_feed` no painel (o Astra não aceita `CREATE KEYSPACE` por CQL), baixe o bundle e gere um Application Token.
+> Depois: `CASSANDRA_USERNAME=token`, `CASSANDRA_PASSWORD=AstraCS:...` e `CASSANDRA_SECURE_BUNDLE_PATH` (arquivo) ou
+> `CASSANDRA_SECURE_BUNDLE_BASE64` (`base64 -w0 secure-connect-*.zip`, para hosts sem arquivos). Com o bundle, contact
+> points, porta e datacenter são ignorados. O script cria só as tabelas; o backend também as cria na subida.
+> Provedores com porta CQL direta (Instaclustr, ScyllaDB Cloud) usam `CASSANDRA_CONTACT_POINTS` normalmente.
 
 ```bash
 pip install openpyxl boto3 cassandra-driver     # opcionais: planilha, S3 e Cassandra
