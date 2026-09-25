@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
-import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { translate } from "@/lib/i18n/core";
 import { DEFAULT_LOCALE, PSEUDO_LOCALE, STORAGE_KEY, detectLocale, isLocale, type Locale } from "@/lib/i18n/state";
 
-// Tipografia oficial (docs/tipografia): editorial = Fraunces, interface = Inter, dado = IBM Plex Mono — self-hosted pelo next/font.
-const fraunces = Fraunces({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-editorial", display: "swap" });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-ui", display: "swap" });
-const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-data", display: "swap" });
+// Tipografia oficial (docs/tipografia): editorial = Fraunces, interface = Inter, dado = IBM Plex Mono.
+// Arquivos próprios em lib/design/fonts (latin, next/font/local) — next/font/google busca da rede no build e falha
+// de forma intermitente na Vercel ("Cannot read properties of null (reading '1')" no @next/font/google/loader).
+const fraunces = localFont({ src: "../lib/design/fonts/fraunces-variable.woff2", weight: "100 900", variable: "--font-editorial", display: "swap" });
+const inter = localFont({ src: "../lib/design/fonts/inter-variable.woff2", weight: "100 900", variable: "--font-ui", display: "swap" });
+const plexMono = localFont({
+  src: [
+    { path: "../lib/design/fonts/plexmono-400.woff2", weight: "400", style: "normal" },
+    { path: "../lib/design/fonts/plexmono-500.woff2", weight: "500", style: "normal" },
+    { path: "../lib/design/fonts/plexmono-600.woff2", weight: "600", style: "normal" },
+  ],
+  variable: "--font-data", display: "swap",
+});
 
 /** Idioma da requisição (RF23): cookie gravado pelo I18nProvider → Accept-Language do navegador → pt-BR. */
 async function requestLocale(): Promise<Locale> {
