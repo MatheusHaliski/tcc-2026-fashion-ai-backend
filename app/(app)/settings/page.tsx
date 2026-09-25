@@ -10,6 +10,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { CARD_SKINS } from "@/lib/skins";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
+import { setDevRefs, useDevRefs } from "@/lib/dev-refs";
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
@@ -18,7 +19,7 @@ interface Prefs { theme: string; language: string; density: string; fontScale: n
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
-  const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const toast = useToast();
+  const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const toast = useToast(); const devRefs = useDevRefs();
   const [tab, setTab] = useState<Tab>("account");
   const server = useApi<Prefs>((signal) => api.get("/api/me/preferences", { signal }), []);
   const consents = useApi<Consent[]>((signal) => api.get("/api/me/consents", { signal }), [], { enabled: tab === "privacy" });
@@ -75,6 +76,7 @@ function Settings() {
             <Field label={t("settings.density")} id="density"><Select id="density" value={theme.density} onChange={(e) => { updateTheme({ density: e.target.value as typeof theme.density }); savePrefs({ density: e.target.value }); }}><option value="COMFORTABLE">{t("settings.confortavel")}</option><option value="COMPACT">{t("settings.compacta")}</option></Select></Field>
             <Field label={`${t("settings.fontScale")}: ${theme.fontScale}%`} id="fontScale"><input id="fontScale" type="range" min={85} max={140} step={5} value={theme.fontScale} onChange={(e) => updateTheme({ fontScale: Number(e.target.value) })} onMouseUp={() => savePrefs({ fontScale: theme.fontScale })} onTouchEnd={() => savePrefs({ fontScale: theme.fontScale })} className="w-full" /></Field>
             <Switch checked={theme.highContrast} onChange={(v) => { updateTheme({ highContrast: v }); savePrefs({ highContrast: v }); }} label={t("settings.contrast")} />
+            <Switch checked={devRefs} onChange={setDevRefs} label={t("settings.devRefs")} hint={t("settings.devRefsHint")} />
             <Switch checked={theme.reduceMotion} onChange={(v) => { updateTheme({ reduceMotion: v }); savePrefs({ reduceMotion: v }); }} label={t("settings.reduceMotion")} />
             <Field label={t("settings.sistema_de_tamanhos")} id="sizeSystem"><Select id="sizeSystem" value={(server.data?.sizeSystem as string) ?? "BR"} onChange={(e) => savePrefs({ sizeSystem: e.target.value })}>{["BR", "US", "EU", "UK"].map((s) => <option key={s}>{s}</option>)}</Select></Field>
             <Field label={t("settings.unidades")} id="unitSystem"><Select id="unitSystem" value={(server.data?.unitSystem as string) ?? "CM"} onChange={(e) => savePrefs({ unitSystem: e.target.value })}>{["CM", "IN"].map((s) => <option key={s}>{s}</option>)}</Select></Field>
@@ -82,7 +84,7 @@ function Settings() {
           <Card>
             <h2 className="type-h3 mb-3">{t("settings.rf23", { txt: t("settings.chrome") })}</h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{CHROME_BACKGROUNDS.map((b) => <button key={b.id} type="button" aria-pressed={theme.chromeBackgroundId === b.id} className={`rounded border-2 p-1 ${theme.chromeBackgroundId === b.id ? "border-mark" : "border-line-soft"}`} onClick={() => { updateTheme({ chromeBackgroundId: b.id }); savePrefs({ chromeBackgroundId: b.id }); }}><img src={chromeTile(b.id)} alt={b.label} className="aspect-video w-full rounded object-cover" /><span className="block type-caption mt-1">{b.label}</span></button>)}</div>
-            <Button className="mt-2" size="sm" onClick={() => { updateTheme({ chromeBackgroundId: null }); savePrefs({ chromeBackgroundId: null }); }}>{t("settings.padrao")}</Button>
+            <Button className="mt-2" size="sm" onClick={() => { updateTheme({ chromeBackgroundId: null }); savePrefs({ chromeBackgroundId: null }); }} aria-pressed={!theme.chromeBackgroundId}>{t("settings.chromeNone")}</Button>
             <h2 className="type-h3 mt-5 mb-1">{t("settings.cor_dos_containers_rf23")}</h2>
             <p className="type-caption text-muted mb-2">{t("settings.todo_o_conteudo_das_paginas")}</p>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">{CONTAINER_PRESETS.map((c) => { const on = (theme.contentContainerColor ?? "#FFFFFF").toUpperCase() === c.hex; return <button key={c.hex} type="button" aria-pressed={on} title={c.label} aria-label={c.label} onClick={() => { const v = c.hex === "#FFFFFF" ? null : c.hex; updateTheme({ contentContainerColor: v }); savePrefs({ contentContainerColor: v ?? "" }); }} className={`h-12 rounded-lg border-2 ${on ? "border-mark ring-2 ring-mark/40" : "border-line-soft"}`} style={{ background: c.hex }} />; })}</div>

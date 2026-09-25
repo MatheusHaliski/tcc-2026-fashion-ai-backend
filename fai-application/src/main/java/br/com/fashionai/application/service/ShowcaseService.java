@@ -388,7 +388,7 @@ public class ShowcaseService {
         }
         User me = viewer == null ? null : users.findById(viewer.id()).orElse(null);
         List<RunwayEntry> pool = dailyLooks.findByLookDate(today).stream()
-                .filter(dl -> dl.getUser().getStatus() == AccountStatus.ACTIVE && !dl.getUser().isRunwayOptOut())
+                .filter(dl -> dl.getUser().getStatus() == AccountStatus.ACTIVE && !dl.getUser().isRunwayOptOut() && SearchService.showcaseAllows(viewer, dl.getUser()))
                 .filter(dl -> dl.getScheme().getStatus() != SchemeStatus.ARCHIVED && schemeService.canView(viewer, dl.getScheme()))
                 .map(this::entry).toList();
 

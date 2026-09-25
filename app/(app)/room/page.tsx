@@ -7,6 +7,7 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
+import { ActionMenu } from "@/components/ui";
 import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
@@ -122,7 +123,19 @@ function RoomInner() {
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{t("room.conquista")}{" "}{data.celebrations.map((c) => c.code).join(", ")}</p> : null}
       <Tabs tabs={[...(gl ? [{ id: "3d" as const, label: t("room.quarto_3d") }] : []), { id: "room" as const, label: gl ? "2.5D" : t("room.quarto_2_5d") }, { id: "list" as const, label: t("room.lista") }]} value={tab} onChange={setTab} />
       {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("room.este_aparelho_nao_tem_webgl")}</p>}
-      {tab === "3d" && (
+      {tab === "3d" && (<>
+          <div className="room3d-toolbar" role="toolbar" aria-label={t("room.toolbarLabel")}>
+            <Button variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}><FaiIcon id="ACT-32" size={20} decorative />{t("room.vista_me_2")}</Button>
+            <Button onClick={() => setCopilot((c) => ({ ...c, open: true }))}><FaiIcon id="ACT-13" size={20} decorative />{t("room.busto_copilot")}</Button>
+            <Button onClick={toggleTheme} aria-pressed={dark}>{dark ? t("room.acender") : t("room.apagar")}</Button>
+            {["STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"].includes(data.level) && <label className="room3d-light type-body-sm">{t("room.luz")}<input type="range" min={2700} max={6500} step={100} defaultValue={(data as unknown as RoomData3D).light?.kelvin ?? 4000} aria-label={t("room.iluminacao_guiada_kelvin")}
+                  onChange={(e) => { const k = Number(e.target.value); clearTimeout((window as unknown as { __lt?: number }).__lt); (window as unknown as { __lt?: number }).__lt = window.setTimeout(() => act(() => api.put("/api/me/room/light", { kelvin: k })), 400); }} /></label>}
+            <ActionMenu label={t("room.moreViews")} items={[
+              { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },
+              { label: t("room.abrir_portas"), onSelect: () => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))) },
+              { label: t("room.foto_do_quarto"), onSelect: () => { if (!canvas) return; const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "meu-quarto.png"; a.click(); } },
+            ]} />
+          </div>
         <div className="room3d">
           <div className="room3d-stage">
             <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
@@ -131,16 +144,6 @@ function RoomInner() {
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
               onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
-            <div className="room3d-hud">
-              <Button size="sm" onClick={() => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); }}>{t("room.vista_3_4")}</Button>
-              <Button size="sm" onClick={() => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id)))}>{t("room.abrir_portas")}</Button>
-              <Button size="sm" onClick={() => { if (!canvas) return; const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "meu-quarto.png"; a.click(); }}>{t("room.foto_do_quarto")}</Button>
-              <Button size="sm" variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}>{t("room.vista_me_2")}</Button>
-              <Button size="sm" onClick={() => setCopilot((c) => ({ ...c, open: true }))}>{t("room.busto_copilot")}</Button>
-              <Button size="sm" onClick={toggleTheme} aria-pressed={dark}>{dark ? t("room.acender") : t("room.apagar")}</Button>
-              {["STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"].includes(data.level) && <label className="flex items-center gap-1 type-caption">{t("room.luz")}<input type="range" min={2700} max={6500} step={100} defaultValue={(data as unknown as RoomData3D).light?.kelvin ?? 4000} aria-label={t("room.iluminacao_guiada_kelvin")}
-                  onChange={(e) => { const k = Number(e.target.value); clearTimeout((window as unknown as { __lt?: number }).__lt); (window as unknown as { __lt?: number }).__lt = window.setTimeout(() => act(() => api.put("/api/me/room/light", { kelvin: k })), 400); }} /></label>}
-            </div>
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>
           <nav className="room3d-positions" aria-label={t("room.posicoes_do_quarto")}>
@@ -155,7 +158,7 @@ function RoomInner() {
             </ul>
           </nav>
         </div>
-      )}
+      </>)}
       {tab === "room" && (
         <div className="rounded-xl p-3" style={{ background: data.ambient?.period === "night" ? "linear-gradient(180deg,#1b1d2a,#2a2c3a)" : "linear-gradient(180deg,#f3efe6,#e6e0d2)", perspective: "900px" }} aria-label={t("nav.room")}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" style={{ transform: "rotateX(4deg)" }}>

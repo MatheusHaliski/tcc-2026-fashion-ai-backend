@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [sex, setSex] = useState<"FEMININO" | "MASCULINO" | null>(null);
   const [docs, setDocs] = useState<{ logoUrl: string | null; activityProofUrl: string | null; officialPhotoUrl: string | null; identityProofUrl: string | null }>({ logoUrl: null, activityProofUrl: null, officialPhotoUrl: null, identityProofUrl: null });
+  const [local, setLocal] = useState<Record<string, string>>({});
   const [usernameState, setUsernameState] = useState<{ available?: boolean; suggestions?: string[] } | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string; checked?: boolean; type?: string } }) => setF((o) => ({ ...o, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
@@ -46,6 +47,11 @@ export default function RegisterPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    // validação local do que o servidor não devolve campo a campo (username vazio ou fora do padrão)
+    const l: Record<string, string> = {};
+    if (!/^[A-Za-z0-9._]{3,30}$/.test(f.username)) l.username = f.username ? t("register.usernameInvalid") : t("register.usernameRequired");
+    setLocal(l);
+    if (Object.keys(l).length) { document.getElementById(Object.keys(l)[0])?.focus(); return; }
     const s = await run();
     if (!s) return;
     signIn(s);
@@ -53,7 +59,7 @@ export default function RegisterPage() {
     toast.success(t("auth.verifyTitle"));
     router.push("/verify-email");
   }
-  const err = error?.fields ?? {};
+  const err = { ...local, ...(error?.fields ?? {}) };
   return (
     <AuthCard title={t("auth.registerTitle")} lead={t("auth.registerLead")}
       footer={<>{t("auth.hasAccount")} <Link className="font-semibold text-ink underline" href="/login">{t("nav.login")}</Link></>}>
@@ -63,24 +69,27 @@ export default function RegisterPage() {
         ))}
       </div>
       <form onSubmit={submit} noValidate>
-        <PhotoPicker kind="avatar" round value={avatarUrl} onChange={setAvatarUrl} error={err.avatarUrl}
-          label={profileType === "MARCA" ? t("register.foto_de_perfil_opcional_sem") : t("register.foto_de_perfil_opcional")}
-          hint={profileType === "MARCA" ? t("register.aparece_no_header_do_perfil") : t("register.aparece_no_seu_perfil_e")} />
-        {profileType !== "MARCA" && <MannequinSexPicker value={sex} onChange={setSex} error={err.sex} />}
         <Field label={t("auth.fullName")} id="fullName" required error={err.fullName}><Input id="fullName" autoComplete="name" value={f.fullName} onChange={set("fullName")} required /></Field>
         <Field label={t("auth.username")} id="username" required error={err.username}
           hint={usernameState ? (usernameState.available ? `✓ ${t("auth.usernameFree")}` : `✗ ${t("auth.usernameTaken")}${usernameState.suggestions?.length ? ` — ${t("auth.suggestions")}: ${usernameState.suggestions.join(", ")}` : ""}`) : t("register.n3_30_caracteres_letras_numeros")}>
           <Input id="username" autoComplete="username" value={f.username} onChange={set("username")} required error={usernameState?.available === false} />
         </Field>
         <Field label={t("auth.email")} id="email" required error={err.email}><Input id="email" type="email" autoComplete="email" value={f.email} onChange={set("email")} required /></Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-x-3 sm:grid-cols-2">
           <Field label={t("auth.password")} id="password" required error={err.password}><Input id="password" type="password" autoComplete="new-password" value={f.password} onChange={set("password")} required /></Field>
           <Field label={t("auth.confirmPassword")} id="confirmPassword" required error={err.confirmPassword}><Input id="confirmPassword" type="password" autoComplete="new-password" value={f.confirmPassword} onChange={set("confirmPassword")} required /></Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-x-3 sm:grid-cols-2">
           <Field label={t("auth.birthDate")} id="birthDate" required error={err.birthDate}><Input id="birthDate" type="date" value={f.birthDate} onChange={set("birthDate")} required /></Field>
           <Field label={t("auth.country")} id="country" required error={err.country}><Select id="country" value={f.country} onChange={set("country")}>{COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
         </div>
+        <fieldset className="mb-3 rounded-md border border-line-soft p-3">
+          <legend className="label px-1">{t("register.profileAndMannequin")}</legend>
+          <PhotoPicker kind="avatar" round value={avatarUrl} onChange={setAvatarUrl} error={err.avatarUrl}
+            label={profileType === "MARCA" ? t("register.foto_de_perfil_opcional_sem") : t("register.foto_de_perfil_opcional")}
+            hint={profileType === "MARCA" ? t("register.aparece_no_header_do_perfil") : t("register.aparece_no_seu_perfil_e")} />
+          {profileType !== "MARCA" && <MannequinSexPicker value={sex} onChange={setSex} error={err.sex} />}
+        </fieldset>
         {profileType === "MARCA" && (
           <fieldset className="mb-3 rounded-md border border-line-soft p-3">
             <legend className="label px-1">{t("auth.brandData")}</legend>

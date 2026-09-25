@@ -1,41 +1,196 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { useTheme } from "@/lib/theme/theme";
+import { useTheme, type ThemeMode } from "@/lib/theme/theme";
 import { api } from "@/lib/api/client";
 import { FaiIcon } from "@/components/fai-icon";
-import { Avatar, cn } from "@/components/ui";
+import { Avatar, Sheet, Skeleton, UiIcon, cn, useDismiss, useFocusTrap } from "@/components/ui";
 
-/** Itens de navegação: rota, chave i18n e ícone FAI (catálogo docs/icones). */
-const NAV = [
-  { href: "/feed", key: "nav.feed", icon: "NAV-05", auth: false },
-  { href: "/search", key: "nav.search", icon: "NAV-09", auth: false },
-  { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
-  { href: "/schemes/new", key: "nav.create", icon: "NAV-03", auth: true },
-  { href: "/lookbook", key: "nav.lookbook", icon: "NAV-15", auth: true },
-  { href: "/autopilot", key: "nav.autopilot", icon: "NAV-06", auth: true },
-  { href: "/copilot", key: "nav.copilot", icon: "ACT-13", auth: true },
-  { href: "/dna", key: "nav.dna", icon: "ACT-19", auth: true },
-  { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
-  { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
-  { href: "/highlights", key: "nav.highlights", icon: "ACT-37", auth: true },
-  { href: "/challenges", key: "nav.challenges", icon: "ACT-43", auth: true },
-  { href: "/flair", key: "nav.flair", icon: "ACT-46", auth: true },
-  { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
-  { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
-  { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
-  { href: "/brands", key: "nav.brands", icon: "NAV-11", auth: false },
-  { href: "/explorer", key: "nav.explorer", icon: "NAV-08", auth: false },
-] as const;
-const PRIMARY = ["/feed", "/closet", "/schemes/new", "/lookbook", "/copilot"];
+/**
+ * Estrutura de todas as telas logadas: cabeçalho de altura fixa, menu lateral em 4 grupos (desktop), gaveta (tablet e
+ * celular) e barra inferior com os 5 destinos principais. O menu fica sempre num container branco (regra do RF23).
+ */
+type NavItem = { href: string; key: string; icon: string; auth?: boolean };
+const GROUPS: { key: string; items: NavItem[] }[] = [
+  { key: "nav.group.discover", items: [
+    { href: "/feed", key: "nav.feed", icon: "NAV-05" },
+    { href: "/search", key: "nav.search", icon: "NAV-09" },
+    { href: "/explorer", key: "nav.explorer", icon: "NAV-08" },
+    { href: "/brands", key: "nav.brands", icon: "NAV-11" },
+  ] },
+  { key: "nav.group.wardrobe", items: [
+    { href: "/lookbook", key: "nav.profile", icon: "NAV-15", auth: true },
+    { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
+    { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
+    { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
+    { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
+  ] },
+  { key: "nav.group.create", items: [
+    { href: "/schemes/new", key: "nav.create", icon: "NAV-03", auth: true },
+    { href: "/dna", key: "nav.dna", icon: "ACT-19", auth: true },
+    { href: "/autopilot", key: "nav.autopilot", icon: "NAV-06", auth: true },
+    { href: "/copilot", key: "nav.copilot", icon: "ACT-13", auth: true },
+  ] },
+  { key: "nav.group.play", items: [
+    { href: "/challenges", key: "nav.challenges", icon: "ACT-43", auth: true },
+    { href: "/flair", key: "nav.flair", icon: "ACT-46", auth: true },
+    { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
+    { href: "/highlights", key: "nav.highlights", icon: "ACT-37", auth: true },
+    { href: "/coupons", key: "nav.coupons", icon: "ACT-26", auth: true },
+  ] },
+];
+
+const THEMES: { mode: ThemeMode; key: string }[] = [
+  { mode: "AUTO", key: "settings.systemTheme" }, { mode: "LIGHT", key: "settings.light" },
+  { mode: "DARK", key: "settings.dark" }, { mode: "HIGH_CONTRAST", key: "settings.contrast" },
+];
+
+function useIsActive() {
+  const pathname = usePathname(); const { user } = useAuth();
+  return (href: string) => {
+    if (href === "/lookbook") return pathname === "/lookbook" || (!!user && pathname === `/u/${user.username}`);
+    if (href === "/schemes/new" || href === "/feed") return pathname === href;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+}
+
+function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useI18n(); const { user, isAdmin } = useAuth(); const isActive = useIsActive(); const pathname = usePathname();
+  const manage: NavItem[] = [
+    ...(user && user.profileType !== "PESSOAL" ? [{ href: "/dashboard", key: "nav.issuer", icon: "NAV-01" }] : []),
+    ...(isAdmin ? [{ href: "/admin/dashboard", key: "nav.admin", icon: "NAV-14" }] : []),
+  ];
+  const groups = [...GROUPS, ...(manage.length ? [{ key: "nav.group.manage", items: manage }] : [])];
+  return (
+    <div className="nav-groups">
+      {groups.map((g) => {
+        const items = g.items.filter((n) => !n.auth || user);
+        if (!items.length) return null;
+        return (
+          <section key={g.key} aria-labelledby={`nav-${g.key}`}>
+            <h2 id={`nav-${g.key}`} className="nav-group-title">{t(g.key)}</h2>
+            <ul>
+              {items.map((n) => {
+                const on = n.href.startsWith("/admin") ? pathname.startsWith("/admin") : isActive(n.href);
+                return (
+                  <li key={n.href}>
+                    <Link href={n.href} aria-current={on ? "page" : undefined} className="nav-link" onClick={onNavigate}>
+                      <FaiIcon id={n.icon} size={24} variant="glyph" decorative /><span>{t(n.key)}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Menu da conta: perfil, configurações, tema, idioma, administração e sair. Tema e idioma saíram do cabeçalho. */
+function AccountMenu() {
+  const { t, locale, setLocale, locales } = useI18n(); const { user, isAdmin, signOut } = useAuth(); const { prefs, update } = useTheme();
+  const [open, setOpen] = useState(false); const box = useRef<HTMLDivElement>(null); const menuId = useId();
+  useDismiss(box, open, () => setOpen(false));
+  useEffect(() => { if (open) box.current?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus(); }, [open]);
+  if (!user) return null;
+  const setTheme = (mode: ThemeMode) => {
+    update({ theme: mode, highContrast: false });
+    api.put("/api/me/preferences", { theme: mode, highContrast: false, clientUpdatedAt: new Date().toISOString() }).catch(() => undefined);
+  };
+  const onKey = (e: ReactKeyboardEvent) => {
+    const list = Array.from(box.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? []);
+    const i = list.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % list.length]?.focus(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); list[(i - 1 + list.length) % list.length]?.focus(); }
+    if (e.key === "Tab") setOpen(false);
+  };
+  const close = () => setOpen(false);
+  return (
+    <div ref={box} className="relative">
+      <button type="button" className="account-btn" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
+        aria-label={t("nav.accountMenu")} onClick={() => setOpen((o) => !o)}>
+        <Avatar src={user.avatarUrl} name={user.displayName} size={32} />
+        <span className="hidden max-w-[140px] truncate type-body-sm font-medium lg:inline">@{user.username}</span>
+      </button>
+      {open && (
+        <div id={menuId} role="menu" aria-label={t("nav.accountMenu")} className="menu-pop right-0 w-72" onKeyDown={onKey}>
+          <div className="flex items-center gap-3 px-3 py-2">
+            <Avatar src={user.avatarUrl} name={user.displayName} size={40} />
+            <div className="min-w-0"><p className="truncate font-semibold">{user.displayName}</p><p className="truncate type-caption text-muted">@{user.username}</p></div>
+          </div>
+          <div className="menu-sep" />
+          <Link role="menuitem" tabIndex={-1} href="/lookbook" className="menu-item" onClick={close}><UiIcon name="user" />{t("nav.profile")}</Link>
+          <Link role="menuitem" tabIndex={-1} href="/settings" className="menu-item" onClick={close}><UiIcon name="settings" />{t("nav.settings")}</Link>
+          {isAdmin && <Link role="menuitem" tabIndex={-1} href="/admin/dashboard" className="menu-item" onClick={close}><UiIcon name="shield" />{t("nav.admin")}</Link>}
+          <div className="menu-sep" />
+          <p className="menu-label" id={`${menuId}-theme`}>{t("settings.theme")}</p>
+          <div role="group" aria-labelledby={`${menuId}-theme`}>
+            {THEMES.map((th) => {
+              const on = prefs.theme === th.mode && (th.mode === "HIGH_CONTRAST" || !prefs.highContrast);
+              return <button key={th.mode} type="button" role="menuitemradio" aria-checked={on} tabIndex={-1} className="menu-item" onClick={() => setTheme(th.mode)}>
+                <span className="w-5">{on && <UiIcon name="check" size={18} />}</span>{t(th.key)}</button>;
+            })}
+          </div>
+          <p className="menu-label" id={`${menuId}-lang`}>{t("settings.language")}</p>
+          <div role="group" aria-labelledby={`${menuId}-lang`}>
+            {locales.filter((l) => !l.qa).map((l) => (
+              <button key={l.code} type="button" role="menuitemradio" aria-checked={locale === l.code} tabIndex={-1} lang={l.code} className="menu-item" onClick={() => setLocale(l.code)}>
+                <span className="w-5">{locale === l.code && <UiIcon name="check" size={18} />}</span>{l.label}</button>
+            ))}
+          </div>
+          <div className="menu-sep" />
+          <button role="menuitem" tabIndex={-1} type="button" className="menu-item" onClick={() => { close(); signOut(); }}><UiIcon name="logout" />{t("nav.logout")}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Idioma para quem ainda não entrou: botão com globo e nomes completos dos idiomas. */
+function LanguageMenu() {
+  const { t, locale, setLocale, locales } = useI18n();
+  const [open, setOpen] = useState(false); const box = useRef<HTMLDivElement>(null); const menuId = useId();
+  useDismiss(box, open, () => setOpen(false));
+  useEffect(() => { if (open) box.current?.querySelector<HTMLElement>('[role="menuitemradio"]')?.focus(); }, [open]);
+  const current = locales.find((l) => l.code === locale);
+  return (
+    <div ref={box} className="relative">
+      <button type="button" className="btn btn-ghost btn-icon" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
+        aria-label={`${t("settings.language")}: ${current?.label ?? locale}`} title={t("settings.language")} onClick={() => setOpen((o) => !o)}>
+        <UiIcon name="globe" />
+      </button>
+      {open && (
+        <div id={menuId} role="menu" aria-label={t("settings.language")} className="menu-pop right-0 w-56">
+          {locales.filter((l) => !l.qa).map((l) => (
+            <button key={l.code} type="button" role="menuitemradio" aria-checked={locale === l.code} tabIndex={-1} lang={l.code} className="menu-item"
+              onClick={() => { setLocale(l.code); setOpen(false); }}>
+              <span className="w-5">{locale === l.code && <UiIcon name="check" size={18} />}</span>{l.label}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const CREATE = [
+  { href: "/pieces/new", key: "nav.createPiece", hint: "nav.createPieceHint", icon: "ACT-06" },
+  { href: "/schemes/new", key: "nav.createLook", hint: "nav.createLookHint", icon: "NAV-03" },
+  { href: "/dna-schemes/new", key: "nav.createDna", hint: "nav.createDnaHint", icon: "ACT-19" },
+  { href: "/photos", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { t, locale, setLocale, locales } = useI18n(); const { user, isAdmin, signOut, ready } = useAuth(); const { prefs, update, resolved } = useTheme();
-  const pathname = usePathname(); const router = useRouter();
-  const [unread, setUnread] = useState(0); const [menu, setMenu] = useState(false); const [drawer, setDrawer] = useState(false);
+  const { t } = useI18n(); const { user, ready } = useAuth(); const { prefs, update } = useTheme();
+  const pathname = usePathname(); const router = useRouter(); const isActive = useIsActive();
+  const [unread, setUnread] = useState(0); const [drawer, setDrawer] = useState(false); const [create, setCreate] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(drawerRef, drawer, () => setDrawer(false));
   useEffect(() => {
     if (!user) return;
     let alive = true;
@@ -43,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     load(); const h = setInterval(load, 60000);
     return () => { alive = false; clearInterval(h); };
   }, [user, pathname]);
-  useEffect(() => { setDrawer(false); setMenu(false); }, [pathname]);
+  useEffect(() => { setDrawer(false); setCreate(false); }, [pathname]);
   // RF23.CA02 — ao entrar, aplica as preferências salvas no servidor (tema, fundo do chrome, cor dos containers…)
   useEffect(() => {
     if (!user) return;
@@ -51,108 +206,106 @@ export function AppShell({ children }: { children: ReactNode }) {
       .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
       .catch(() => undefined);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const items = NAV.filter((n) => !n.auth || user);
-  const isActive = (href: string) => pathname === href || (href !== "/feed" && pathname.startsWith(href));
-  const cycleTheme = () => update({ theme: prefs.theme === "LIGHT" ? "DARK" : prefs.theme === "DARK" ? "HIGH_CONTRAST" : "LIGHT", highContrast: false });
 
-  const NavList = ({ compact }: { compact?: boolean }) => { const { t } = useI18n(); return ((
-    <ul className="flex flex-col gap-0.5">
-      {items.map((n) => (
-        <li key={n.href}>
-          <Link href={n.href} aria-current={isActive(n.href) ? "page" : undefined}
-            className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", isActive(n.href) && "bg-surface-2 font-semibold")}>
-            <FaiIcon id={n.icon} size={24} active={isActive(n.href)} decorative />
-            {!compact && <span>{t(n.key)}</span>}
-          </Link>
-        </li>
-      ))}
-      {user && user.profileType !== "PESSOAL" && (
-        <li><Link href="/dashboard" aria-current={pathname === "/dashboard" ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname === "/dashboard" && "bg-surface-2 font-semibold")}>
-          <FaiIcon id="NAV-01" size={24} active={pathname === "/dashboard"} decorative />{!compact && <span>{t("nav.issuer")}</span>}</Link></li>
-      )}
-      {isAdmin && (
-        <li><Link href="/admin/dashboard" aria-current={pathname.startsWith("/admin") ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5 type-body hover:bg-surface-2", pathname.startsWith("/admin") && "bg-surface-2 font-semibold")}>
-          <FaiIcon id="NAV-01" size={24} active={pathname.startsWith("/admin")} decorative />{!compact && <span>{t("nav.dashboard")}</span>}</Link></li>
-      )}
-    </ul>
-  )); };
+  const bottom = user
+    ? [{ href: "/feed", key: "nav.feed", icon: "NAV-05" }, { href: "/search", key: "nav.search", icon: "NAV-09" }, null, { href: "/closet", key: "nav.closet", icon: "NAV-02" }, { href: "/lookbook", key: "nav.profileShort", icon: "NAV-15" }]
+    : [{ href: "/feed", key: "nav.feed", icon: "NAV-05" }, { href: "/search", key: "nav.search", icon: "NAV-09" }, { href: "/explorer", key: "nav.explorer", icon: "NAV-08" }, { href: "/brands", key: "nav.brands", icon: "NAV-11" }];
 
   return (
     <div className="min-h-dvh">
       <a href="#conteudo" className="skip-link">{t("a11y.skip")}</a>
-      <header className="sticky top-0 z-40 border-b border-line-soft bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-3 py-2 sm:px-5">
-          <button type="button" className="btn btn-ghost btn-icon lg:hidden" aria-label={t("a11y.menu")} aria-expanded={drawer} onClick={() => setDrawer((d) => !d)}>☰</button>
-          <Link href="/feed" className="flex items-center gap-2" aria-label="Fashion AI">
-            <img src="/brand/fai-logo.png" alt="" width={30} height={30} />
-            <span className="type-h3 hidden sm:inline">Fashion AI</span>
+      <header className="app-header">
+        <div className="app-header-inner">
+          <button type="button" className="btn btn-ghost btn-icon lg:hidden" aria-label={t("a11y.menu")} aria-expanded={drawer} aria-controls="app-drawer" onClick={() => setDrawer(true)}>
+            <UiIcon name="menu" size={22} />
+          </button>
+          <Link href="/feed" className="brand-link" aria-label={`Fashion AI — ${t("nav.feed")}`}>
+            <img src="/brand/fai-logo.png" alt="" width={32} height={32} />
+            <span className="brand-name">Fashion AI</span>
           </Link>
-          <form role="search" className="ml-2 hidden flex-1 md:block" onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value; router.push(`/search?q=${encodeURIComponent(q)}`); }}>
-            <input name="q" className="input max-w-md" placeholder={t("common.search") + "…"} aria-label={t("nav.search")} />
+          <form role="search" className="header-search" onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value; router.push(`/search?q=${encodeURIComponent(q)}`); }}>
+            <UiIcon name="search" size={18} className="header-search-icon" />
+            <input name="q" type="search" className="input" placeholder={t("common.search") + "…"} aria-label={t("nav.search")} />
           </form>
-          <div className="ml-auto flex items-center gap-1">
-            <button type="button" className="btn btn-ghost btn-icon" onClick={cycleTheme} aria-label={`${t("settings.theme")}: ${resolved}`} title={t("settings.theme")}>
-              <FaiIcon id="ACT-28" size={24} active={resolved !== "light"} decorative />
-            </button>
-            <label className="sr-only" htmlFor="locale">{t("settings.language")}</label>
-            <select id="locale" className="input w-auto py-1 text-sm" value={locale} onChange={(e) => setLocale(e.target.value as typeof locale)}>
-              {locales.map((l) => <option key={l.code} value={l.code}>{l.qa ? l.label : l.code.toUpperCase()}</option>)}
-            </select>
-            {user ? (
+          <div className="header-actions">
+            {!ready ? (
+              <><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-10 w-10 rounded-full" /></>
+            ) : user ? (
               <>
-                <Link href="/notifications" className="btn btn-ghost btn-icon relative" aria-label={`${t("nav.notifications")}${unread ? ` (${unread})` : ""}`}>
-                  <FaiIcon id="ACT-03" size={24} active={unread > 0} decorative />
-                  {unread > 0 && <span className="absolute -right-0.5 -top-0.5 rounded-full bg-mark px-1.5 text-[10px] font-bold text-white tabular">{unread > 99 ? "99+" : unread}</span>}
+                <Link href="/notifications" className="btn btn-ghost btn-icon relative" aria-label={unread ? `${t("nav.notifications")} (${unread})` : t("nav.notifications")}>
+                  <FaiIcon id="ACT-03" size={24} variant="glyph" decorative />
+                  {unread > 0 && <span className="notif-badge tabular" aria-hidden>{unread > 99 ? "99+" : unread}</span>}
                 </Link>
-                <div className="relative">
-                  <button type="button" className="btn btn-ghost flex items-center gap-2 px-2" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
-                    <Avatar src={user.avatarUrl} name={user.displayName} size={28} /><span className="hidden sm:inline type-body-sm">@{user.username}</span>
-                  </button>
-                  {menu && (
-                    <div role="menu" className="surface absolute right-0 mt-1 w-56 p-1">
-                      <Link role="menuitem" href="/lookbook" className="block rounded px-3 py-2 hover:bg-surface-2">{t("nav.lookbook")}</Link>
-                      <Link role="menuitem" href="/settings" className="block rounded px-3 py-2 hover:bg-surface-2">{t("nav.settings")}</Link>
-                      {isAdmin && <Link role="menuitem" href="/admin/dashboard" className="block rounded px-3 py-2 hover:bg-surface-2">{t("nav.admin")}</Link>}
-                      <button role="menuitem" type="button" className="block w-full rounded px-3 py-2 text-left hover:bg-surface-2" onClick={signOut}>{t("nav.logout")}</button>
-                    </div>
-                  )}
-                </div>
+                <AccountMenu />
               </>
-            ) : ready ? (
+            ) : (
               <>
+                <LanguageMenu />
                 <Link href="/login" className="btn btn-sm">{t("nav.login")}</Link>
                 <Link href="/register" className="btn btn-sm btn-primary hidden sm:inline-flex">{t("nav.register")}</Link>
               </>
-            ) : null}
+            )}
           </div>
         </div>
       </header>
-      <div className="mx-auto flex max-w-[1400px] gap-6 px-3 py-4 sm:px-5">
-        <nav aria-label={t("a11y.menu")} className="hidden w-56 shrink-0 lg:block"><div className="side-nav-box sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto"><NavList /></div></nav>
-        {drawer && (
-          <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setDrawer(false)}>
-            <div className="absolute inset-0 bg-black/40" />
-            <nav aria-label={t("a11y.menu")} className="side-nav-box absolute left-0 top-0 h-full w-72 overflow-auto rounded-none p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
-          </div>
-        )}
-        <main id="conteudo" className="min-w-0 flex-1 pb-20 lg:pb-6"><div className="page-container">{children}</div></main>
+
+      <div className="app-body">
+        <nav aria-label={t("a11y.menu")} className="app-sidebar"><div className="side-nav-box"><NavGroups /></div></nav>
+        <main id="conteudo" tabIndex={-1} className="app-main"><div className="page-container">{children}</div></main>
       </div>
-      <nav aria-label={t("a11y.menu")} className="side-nav-box fixed bottom-0 left-0 right-0 z-40 flex justify-around rounded-none border-t py-1 lg:hidden">
-        {NAV.filter((n) => PRIMARY.includes(n.href) && (!n.auth || user)).map((n) => (
-          <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? "page" : undefined} className="flex flex-col items-center gap-0.5 px-2 py-1 text-[10px]">
-            <FaiIcon id={n.icon} size={24} active={isActive(n.href)} decorative /><span className={cn(isActive(n.href) && "font-semibold")}>{t(n.key)}</span>
+
+      {drawer && (
+        <div className="drawer-backdrop lg:hidden" onMouseDown={(e) => { if (e.target === e.currentTarget) setDrawer(false); }}>
+          <div ref={drawerRef} id="app-drawer" role="dialog" aria-modal="true" aria-label={t("a11y.menu")} className="drawer side-nav-box" tabIndex={-1}>
+            <div className="flex items-center justify-between px-2 pb-1">
+              <span className="brand-link"><img src="/brand/fai-logo.png" alt="" width={28} height={28} /><span className="type-h3">Fashion AI</span></span>
+              <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={() => setDrawer(false)}><UiIcon name="close" /></button>
+            </div>
+            <nav aria-label={t("a11y.menu")}><NavGroups onNavigate={() => setDrawer(false)} /></nav>
+          </div>
+        </div>
+      )}
+
+      <nav aria-label={t("a11y.menu")} className="bottom-nav side-nav-box lg:hidden" style={{ gridTemplateColumns: `repeat(${bottom.length}, minmax(0, 1fr))` }}>
+        {bottom.map((n) => n === null ? (
+          <button key="create" type="button" className="bottom-nav-create" aria-haspopup="dialog" aria-expanded={create} onClick={() => setCreate(true)}>
+            <span className="bottom-nav-plus"><UiIcon name="plus" size={24} /></span><span>{t("nav.createShort")}</span>
+          </button>
+        ) : (
+          <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? "page" : undefined} className="bottom-nav-link">
+            <FaiIcon id={n.icon} size={24} variant="glyph" decorative /><span>{t(n.key)}</span>
           </Link>
         ))}
       </nav>
+
+      <Sheet open={create} onClose={() => setCreate(false)} title={t("nav.createTitle")} side="bottom">
+        <ul className="grid gap-1">
+          {CREATE.map((c) => (
+            <li key={c.href}>
+              <Link href={c.href} className="create-option" onClick={() => setCreate(false)}>
+                <FaiIcon id={c.icon} size={32} variant="glyph" decorative />
+                <span className="min-w-0"><b className="block">{t(c.key)}</b><span className="type-body-sm text-muted">{t(c.hint)}</span></span>
+                <UiIcon name="chevronRight" className="ml-auto text-muted" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Sheet>
     </div>
   );
 }
 
-/** Página que exige login: redireciona visitantes e mostra placeholder enquanto a sessão carrega. */
+/** Página que exige login: redireciona visitantes e mostra o esqueleto da página enquanto a sessão carrega. */
 export function RequireAuth({ children, admin }: { children: ReactNode; admin?: boolean }) {
   const { user, ready, isAdmin, me } = useAuth(); const router = useRouter(); const pathname = usePathname(); const { t } = useI18n();
   useEffect(() => { if (ready && !user) router.replace(`/login?next=${encodeURIComponent(pathname)}`); }, [ready, user, router, pathname]);
-  if (!ready || !user) return <p className="type-body text-muted p-6">{t("common.loading")}</p>;
+  if (!ready || !user) return (
+    <div aria-busy="true" aria-live="polite">
+      <span className="sr-only">{t("common.loading")}</span>
+      <Skeleton className="mb-2 h-8 w-56" /><Skeleton className="mb-6 h-4 w-80 max-w-full" />
+      <div className="grid-cards">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56" />)}</div>
+    </div>
+  );
   if (admin && me && !isAdmin) return (
     <div role="alert" className="surface mx-auto mt-6 max-w-lg p-6 text-center">
       <p className="type-label text-mark">{t("common.n403_acesso_negado")}</p>

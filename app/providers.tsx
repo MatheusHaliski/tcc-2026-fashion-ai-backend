@@ -5,8 +5,10 @@ import { ThemeProvider } from "@/lib/theme/theme";
 import { AuthProvider } from "@/lib/auth/session";
 import { ToastProvider } from "@/components/ui";
 import { DetailModalProvider } from "@/components/detail-modal";
+import { useDevRefsFromUrl } from "@/lib/dev-refs";
 
 export function Providers({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
+  useDevRefsFromUrl();
   return (
     <I18nProvider initial={initialLocale}>
       <ThemeProvider>

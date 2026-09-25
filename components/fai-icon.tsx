@@ -12,18 +12,28 @@ const GLYPHS: Record<string, string> = {
   default: "M4 7h16M4 12h16M4 17h10",
 };
 
-interface Props { id: string; size?: 24 | 48 | 96 | 512; active?: boolean; className?: string; title?: string; decorative?: boolean; }
+interface Props { id: string; size?: 20 | 24 | 28 | 32 | 48 | 96 | 512; active?: boolean; className?: string; title?: string; decorative?: boolean; variant?: "medal" | "glyph"; }
 /**
  * Ícone FAI (77 IDs SOC/NAV/ACT em 4 tamanhos, estados normal/ativo — docs/icones). PNG do /public/icons/fai com
  * fallback SVG. Sem `decorative`, o label do catálogo no idioma atual vira o texto acessível.
  */
-export function FaiIcon({ id, size = 24, active = false, className, title, decorative }: Props) {
+export function FaiIcon({ id, size = 24, active = false, className, title, decorative, variant }: Props) {
+  // Até 32 px o ícone usa o glifo (a medalha inteira fica ilegível em tamanho pequeno); acima disso, a medalha.
+  variant = variant ?? (size <= 32 ? "glyph" : "medal");
   const { locale } = useI18n();
   const icon = ICONS[id];
   const key = toServerLanguage(locale);
   const label = title ?? icon?.label?.[key] ?? icon?.label?.PT_BR ?? id;
+  if (variant === "glyph" && icon) {
+    // Variante para tamanhos pequenos: só o disco central com o glifo (scripts/assets/fai-glyphs.py). O estado ativo é
+    // indicado pelo contêiner (pílula do menu), não pelo ícone.
+    const base = `/icons/fai/glyph/${id.toLowerCase()}`;
+    return <img src={`${base}-${size > 24 ? 48 : 24}.png`} srcSet={size > 24 ? undefined : `${base}-48.png 2x`} width={size} height={size}
+      alt={decorative ? "" : label} className={className} decoding="async" draggable={false} />;
+  }
   const state = active && icon?.states?.includes("ativo") ? "ativo" : "normal";
-  const file = icon?.files?.[state]?.[String(size)] ?? icon?.files?.normal?.[String(size)];
+  const fileSize = size <= 24 ? 24 : size <= 48 ? 48 : size <= 96 ? 96 : 512;
+  const file = icon?.files?.[state]?.[String(fileSize)] ?? icon?.files?.normal?.[String(fileSize)];
   if (!file) {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className={className} role={decorative ? undefined : "img"} aria-hidden={decorative || undefined} aria-label={decorative ? undefined : label}>

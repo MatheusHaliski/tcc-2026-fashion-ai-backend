@@ -4,7 +4,8 @@ import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n, tr } from "@/lib/i18n/i18n";
-import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, Input, Select, SkeletonGrid, useToast } from "@/components/ui";
+import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, useToast } from "@/components/ui";
+import { FilterBar } from "@/components/filter-bar";
 import { AVAILABILITY, SLOT_LABELS, StoreSwatch, type StoreItem } from "@/components/room3d/wardrobe-creator";
 
 type ShopItem = StoreItem & { inventory?: { inventoryId: string; appliedModule?: string | null; serial?: number | null }[] };
@@ -13,6 +14,7 @@ const MODULE_LABELS: Record<string, string> = { get ALL() { return tr("room3d.wa
 export const moduleLabel = (id?: string | null) => !id ? "—" : MODULE_LABELS[id] ?? id.replace(/^door:(\d+)$/, tr("room3d.roomStore.porta_1")).replace(/^drawer:(\d+)$/, tr("room3d.roomStore.gaveta_1"));
 const KINDS = [{ id: "", get label() { return tr("room3d.roomStore.tudo"); } }, { id: "COMPONENT", get label() { return tr("room3d.roomStore.componentes"); } }, { id: "WARDROBE", get label() { return tr("room3d.roomStore.guarda_roupas_inteiros"); } }];
 const ORIGINS = [{ id: "", get label() { return tr("room3d.roomStore.todas_as_origens"); } }, { id: "FAI", get label() { return tr("room3d.roomStore.fabrica_fai"); } }, { id: "MARCA", get label() { return tr("nav.brands"); } }, { id: "CELEBRIDADE", get label() { return tr("common.celebridades"); } }];
+const PAGE = 24;
 const SORTS = [{ id: "price", get label() { return tr("room3d.roomStore.menor_preco"); } }, { id: "-price", get label() { return tr("room3d.roomStore.maior_preco"); } }, { id: "new", get label() { return tr("room3d.roomStore.marcas_primeiro"); } }];
 
 /**
@@ -23,6 +25,7 @@ const SORTS = [{ id: "price", get label() { return tr("room3d.roomStore.menor_pr
 export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: string; onChanged?: () => void; compact?: boolean }) {
   const { fmtDate, t } = useI18n(); const toast = useToast();
   const shop = useApi<ShopItem[]>((signal) => api.get("/api/points/shop", { signal }), []);
+  const [shown, setShown] = useState(PAGE);
   const [kind, setKind] = useState(""); const [slot, setSlot] = useState(""); const [material, setMaterial] = useState(""); const [origin, setOrigin] = useState("");
   const [creator, setCreator] = useState(creatorSlug ?? ""); const [q, setQ] = useState(""); const [onlyBuyable, setOnlyBuyable] = useState(false); const [sort, setSort] = useState("price");
   const [apply, setApply] = useState<{ item: ShopItem; inventoryId: string } | null>(null); const [target, setTarget] = useState(""); const [busy, setBusy] = useState<string | null>(null);
@@ -59,20 +62,21 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
   if (shop.error) return <ErrorState error={shop.error} onRetry={shop.reload} />;
   return (
     <div className="grid gap-3">
-      <div className="grid gap-2">
-        <div className="flex flex-wrap gap-1">{KINDS.map((k) => <Chip key={k.id} active={kind === k.id} onClick={() => setKind(k.id)}>{k.label}</Chip>)}</div>
-        {kind !== "WARDROBE" && slots.length > 1 && <div className="flex flex-wrap gap-1" aria-label={t("room3d.roomStore.bloco")}><Chip active={!slot} onClick={() => setSlot("")}>{t("room3d.roomStore.todos_os_blocos")}</Chip>{slots.map(([s, l]) => <Chip key={s} active={slot === s} onClick={() => setSlot(s)}>{l}</Chip>)}</div>}
-        {materials.length > 1 && <div className="flex flex-wrap gap-1" aria-label={t("room3d.roomStore.material")}><Chip active={!material} onClick={() => setMaterial("")}>{t("room3d.roomStore.todos_os_materiais")}</Chip>{materials.map(([m, l]) => <Chip key={m} active={material === m} onClick={() => setMaterial(m)}>{l}</Chip>)}</div>}
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <Input aria-label={t("room3d.roomStore.buscar_cor_ou_nome")} placeholder={t("room3d.roomStore.cor_nome_marca")} value={q} onChange={(e) => setQ(e.target.value)} />
-          {!creatorSlug && <Select aria-label={t("room3d.roomStore.origem")} value={origin} onChange={(e) => setOrigin(e.target.value)}>{ORIGINS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</Select>}
-          {!creatorSlug && <Select aria-label={t("room3d.roomStore.marca_ou_celebridade")} value={creator} onChange={(e) => setCreator(e.target.value)}><option value="">{t("room3d.roomStore.todas_as_marcas_celebridades")}</option>{creators.map(([s, n]) => <option key={s} value={s}>{n}</option>)}</Select>}
-          <Select aria-label={t("common.ordenar")} value={sort} onChange={(e) => setSort(e.target.value)}>{SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}</Select>
-        </div>
-        <div className="flex flex-wrap items-center gap-2"><Chip active={onlyBuyable} onClick={() => setOnlyBuyable(!onlyBuyable)}>{t("room3d.roomStore.so_o_que_posso_comprar")}</Chip><span className="type-caption text-muted tabular">{t("room3d.roomStore.de_itens", { listCount: list.length, allCount: all.length })}</span></div>
-      </div>
+      <FilterBar search={q} onSearch={setQ} searchLabel={t("room3d.roomStore.buscar_cor_ou_nome")}
+        quick={{ key: "kind", label: t("room3d.roomStore.kindLabel"), options: KINDS.map((k) => ({ value: k.id, label: k.label })) }}
+        filters={[
+          ...(kind !== "WARDROBE" && slots.length > 1 ? [{ key: "slot", label: t("room3d.roomStore.bloco"), options: slots.map(([v, l]) => ({ value: v, label: l })) }] : []),
+          ...(materials.length > 1 ? [{ key: "material", label: t("room3d.roomStore.material"), options: materials.map(([v, l]) => ({ value: v, label: l })) }] : []),
+          ...(!creatorSlug ? [{ key: "origin", label: t("room3d.roomStore.origem"), options: ORIGINS.filter((o) => o.id).map((o) => ({ value: o.id, label: o.label })) }] : []),
+          ...(!creatorSlug && creators.length ? [{ key: "creator", label: t("room3d.roomStore.marca_ou_celebridade"), options: creators.map(([v, l]) => ({ value: v, label: l })) }] : []),
+          { key: "buyable", label: t("room3d.roomStore.availability"), options: [{ value: "1", label: t("room3d.roomStore.so_o_que_posso_comprar") }] },
+        ]}
+        values={{ kind, slot, material, origin, creator, buyable: onlyBuyable ? "1" : "" }}
+        onChange={(k, v) => { setShown(PAGE); ({ kind: setKind, slot: setSlot, material: setMaterial, origin: setOrigin, creator: setCreator } as Record<string, (x: string) => void>)[k]?.(v); if (k === "buyable") setOnlyBuyable(v === "1"); }}
+        sort={{ value: sort, onChange: setSort, options: SORTS.map((x) => ({ value: x.id, label: x.label })) }}
+        resultCount={list.length} />
       {shop.loading ? <SkeletonGrid n={6} h="h-48" /> : list.length === 0 ? <EmptyState title={t("room3d.roomStore.nenhum_item_com_esses_filtros")} hint={creatorSlug ? t("room3d.roomStore.esta_marca_celebridade_ainda_nao") : t("room3d.roomStore.limpe_os_filtros_para_ver")} /> : (
-        <div className="grid-cards">{list.slice(0, compact ? 12 : 400).map((i) => {
+        <><div className="grid-cards">{list.slice(0, compact ? 12 : shown).map((i) => {
           const units = i.inventory ?? []; const loose = units.find((u) => !u.appliedModule);
           return (
             <div key={i.sku} className="surface flex flex-col p-3">
@@ -97,7 +101,8 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
                 <Button size="sm" variant="primary" loading={busy === i.sku} disabled={!!i.blocker || i.levelOk === false || i.affordable === false} onClick={() => buy(i)} title={i.levelOk === false ? t("room3d.roomStore.disponivel_a_partir_do_nivel", { requiredLevel: i.requiredLevel }) : i.affordable === false ? t("room3d.roomStore.saldo_insuficiente") : i.blocker ?? undefined}>{units.length ? t("room3d.roomStore.comprar_outro") : t("room3d.roomStore.comprar")}</Button>
               </div>
             </div>);
-        })}</div>)}
+        })}</div>
+        {!compact && list.length > shown && <div className="mt-4 flex justify-center"><Button onClick={() => setShown((n) => n + PAGE)}>{t("room3d.roomStore.showMore", { count: Math.min(PAGE, list.length - shown), shown, total: list.length })}</Button></div>}</>)}
       <Dialog open={!!apply} onClose={() => setApply(null)} title={t("room3d.roomStore.montar", { value: apply?.item.name ?? "" })} footer={<><Button onClick={() => setApply(null)}>{t("room3d.roomStore.deixar_na_caixa")}</Button><Button variant="primary" disabled={!target} onClick={doApply}>{t("room3d.roomStore.montar_2")}</Button></>}>
         {apply && ((apply.item.compatibleModules ?? []).length === 0 ? <p className="type-body">{t("room3d.roomStore.nenhum_modulo_compativel_no_seu")}</p> : <>
           <p className="type-body-sm text-muted mb-2">{apply.item.kind === "WARDROBE" ? t("room3d.roomStore.o_guarda_roupa_inteiro_troca") : t("room3d.roomStore.escolha_o_modulo_onde_este")}</p>

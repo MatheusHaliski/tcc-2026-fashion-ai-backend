@@ -6,7 +6,7 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
+import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -77,11 +77,11 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("scheme.insufficient")} hint={b.message} action={<Link href={b.action?.href === "/add-piece" ? "/pieces/new" : b.action?.href ?? "/pieces/new"} className="btn btn-primary">{b.action?.label ?? t("closet.addPiece")}</Link>} />;
   const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode.toUpperCase(), origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: form.seals, tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo } as Record<string, unknown> };
-  const steps = [t("common.n1_modo"), t("schemeBuilder.n2_pecas"), t("common.n3_dados"), t("common.n4_background_studio"), t("common.n5_revisar_e_salvar")];
+  const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), t("builder.step.appearance"), t("builder.step.review")];
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       <div>
-        <ol className="mb-4 flex flex-wrap gap-1" aria-label={t("common.etapas")}>{steps.map((s, i) => <li key={s}><button type="button" className="chip" aria-current={step === i ? "step" : undefined} aria-pressed={step === i} onClick={() => setStep(i)}>{s}</button></li>)}</ol>
+        <Stepper steps={steps} current={step} onStep={setStep} label={t("builder.stepsLabel")} />
         {step === 0 && (
           <div className="surface p-4">
             <p className="label">{t("scheme.mode")}</p>
@@ -146,7 +146,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <div className="sm:col-span-2 flex justify-between"><Button onClick={() => setStep(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => setStep(3)}>{t("common.next")}</Button></div>
           </div>
         )}
-        {step === 3 && (<div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} /><div className="mt-3 flex justify-between"><Button onClick={() => setStep(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => setStep(4)}>{t("common.next")}</Button></div></div>)}
+        {step === 3 && (<div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => setStep(2)}>{t("common.back")}</Button><span className="flex gap-2"><Button variant="ghost" onClick={() => setStep(4)}>{t("builder.skipAppearance")}</Button><Button variant="primary" onClick={() => setStep(4)}>{t("common.next")}</Button></span></div></div>)}
         {step === 4 && (
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
@@ -163,7 +163,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           </div>
         )}
       </div>
-      <aside aria-label={t("common.pre_visualizacao")} className="lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><SchemeCard scheme={draft} href="#" /></aside>
+      <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><SchemeCard scheme={draft} href="#" /></aside>
     </div>
   );
 }

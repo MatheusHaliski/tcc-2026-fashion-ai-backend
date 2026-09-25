@@ -16,7 +16,7 @@ export default function ChallengePage({ params }: { params: Promise<{ id: string
   const looks = useApi<{ items: { id: string; title: string }[] }>((signal) => api.get("/api/me/schemes?size=50", { signal }), []);
   const [entry, setEntry] = useState(""); const [note, setNote] = useState("");
   const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); } catch (e) { toast.fromError(e); } };
-  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (error) return <ErrorState error={error} onRetry={reload} page />;
   if (loading || !data) return <Skeleton className="h-80" />;
   const d = data;
   return (

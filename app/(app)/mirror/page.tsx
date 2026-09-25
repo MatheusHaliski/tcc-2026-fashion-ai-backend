@@ -27,11 +27,17 @@ function MirrorInner() {
     <>
       <PageHeader title={t("nav.mirror")} kicker="RF28" lead={data.restriction ? t("mirror.desafio_ativo_so_as_pecas", { challenge: data.restriction.challenge }) : t("mirror.monte_o_look_no_espelho")} />
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
-        <Card pad={false} className="overflow-hidden">
+        <Card pad={false} className="min-w-0 overflow-hidden">
           <div className="relative flex min-h-[420px] flex-col items-center justify-center gap-1 p-4" style={{ background: `radial-gradient(circle at 50% 20%, ${data.light && data.light.kelvin < 3500 ? "#fff1dc" : data.light && data.light.kelvin > 5000 ? "#e8f2ff" : "#f7f4ec"}, var(--surface-2))` }} aria-label={t("mirror.espelho")}>
-            {worn.length === 0 && <p className="type-body text-muted">{t("mirror.espelho_vazio")}</p>}
-            {["outer_layer", "upper", "dress", "lower", "shoes", "accessory"].map((slot) => worn.filter((w) => w.slot === slot).map((w) => <button key={w.p.id} type="button" className="group relative" onClick={() => run("rm", () => api.delete(`/api/me/mirror/pieces/${w.p.id}`))} title={t("mirror.clique_para_tirar", { name: w.p.name })}><img src={mediaUrl(w.p.imageUrl ?? w.p.thumbnailUrl)} alt={w.p.name} className="h-24 object-contain drop-shadow" /><span className="absolute -right-1 -top-1 hidden rounded-full bg-ink px-1 text-[10px] text-surface group-hover:block">✕</span></button>))}
-            {data.postIt && <p className="absolute right-3 top-3 max-w-[150px] rotate-2 bg-chalk-soft p-2 text-[11px] shadow" role="note">📌 {data.postIt}</p>}
+            {worn.length === 0 && (
+              <div className="max-w-[260px] text-center">
+                <p className="type-h3">{t("mirror.emptyTitle")}</p>
+                <p className="type-body-sm mt-1 text-muted">{t("mirror.emptyHint")}</p>
+                <Button size="sm" variant="primary" className="mt-3" onClick={() => document.getElementById("vista-prompt")?.focus()}>{t("mirror.askVistaMe")}</Button>
+              </div>
+            )}
+            {["outer_layer", "upper", "dress", "lower", "shoes", "accessory"].map((slot) => worn.filter((w) => w.slot === slot).map((w) => <button key={w.p.id} type="button" className="group relative" onClick={() => run("rm", () => api.delete(`/api/me/mirror/pieces/${w.p.id}`))} title={t("mirror.clique_para_tirar", { name: w.p.name })}><img src={mediaUrl(w.p.imageUrl ?? w.p.thumbnailUrl)} alt={w.p.name} className="h-24 object-contain drop-shadow" /><span className="absolute -right-1 -top-1 hidden rounded-full bg-ink px-1 text-xs text-surface group-hover:block">✕</span></button>))}
+            {data.postIt && <p className="absolute right-3 top-3 max-w-[150px] rotate-2 bg-chalk-soft p-2 text-xs shadow" role="note">📌 {data.postIt}</p>}
             {data.silhouette && <p className="absolute bottom-3 left-3 type-caption text-muted">{t("mirror.silhueta", { silhouette: data.silhouette })}</p>}
           </div>
           <div className="flex flex-wrap gap-2 p-3">
@@ -40,11 +46,11 @@ function MirrorInner() {
             <Button size="sm" onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }} disabled={!data.complete}>GRWM</Button>
           </div>
         </Card>
-        <div className="grid gap-3">
+        <div className="grid min-w-0 gap-3">
           <Card>
             <h2 className="type-h3 mb-2">{t("mirror.vista_me")}</h2>
             <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); run("vista", () => api.post("/api/me/mirror/vista-me", { prompt, keepMirror: keep }), undefined); }}>
-              <Input aria-label={t("mirror.pedido")} className="flex-1" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("mirror.ex_algo_confortavel_para_trabalhar")} />
+              <Input id="vista-prompt" aria-label={t("mirror.pedido")} className="min-w-0 flex-1 basis-56" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("mirror.ex_algo_confortavel_para_trabalhar")} />
               <Button type="submit" variant="primary" loading={busy === "vista"}><FaiIcon id="ACT-32" size={24} decorative />{t("mirror.vista_me")}</Button>
             </form>
             <Switch checked={keep} onChange={setKeep} label={t("mirror.manter_o_que_ja_esta")} />

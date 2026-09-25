@@ -26,12 +26,19 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: { icon: "/favicon.png", apple: "/apple-touch-icon.png" },
   };
 }
-export const viewport: Viewport = { themeColor: "#191A19", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = {
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#F7F6F2" }, { media: "(prefers-color-scheme: dark)", color: "#121311" }],
+  width: "device-width", initialScale: 1, viewportFit: "cover",
+};
+
+/** Aplica tema, redução de movimento e escala de fonte antes da primeira pintura (sem piscar claro no tema escuro). */
+const THEME_BOOT = `(function(){try{var p=JSON.parse(localStorage.getItem("fai.theme")||"{}");var t=p.theme||"AUTO";var r=(p.highContrast||t==="HIGH_CONTRAST")?"contrast":t==="DARK"?"dark":t==="LIGHT"?"light":(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var d=document.documentElement;d.dataset.theme=r;if(p.reduceMotion)d.dataset.reduceMotion="true";if(p.fontScale&&p.fontScale!==100)d.style.fontSize=p.fontScale+"%";}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await requestLocale();
   return (
     <html lang={locale === PSEUDO_LOCALE ? "pt-BR" : locale} suppressHydrationWarning className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
+      <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
       <body>
         <Providers initialLocale={locale}>{children}</Providers>
       </body>

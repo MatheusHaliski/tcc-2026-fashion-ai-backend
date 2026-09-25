@@ -46,7 +46,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign };
   const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign }>(emptySeal);
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" });
-  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (error) return <ErrorState error={error} onRetry={reload} page notFound={{ title: t("brands.noOfficialTitle", { name: decodeURIComponent(slug) }), hint: t("brands.noOfficialHint"), action: <Link href={`/search?tab=PECAS&q=${encodeURIComponent(decodeURIComponent(slug))}`} className="btn btn-primary">{t("brands.seePieces")}</Link> }} />;
   if (loading || !data) return <Skeleton className="h-64" />;
   const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");

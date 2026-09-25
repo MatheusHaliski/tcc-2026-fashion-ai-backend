@@ -7,7 +7,7 @@ import type { SchemeView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
+import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast, Stepper } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { DNA_LAYOUTS, DNA_NARRATIVES, DnaCard, SEASON_PRESETS, dnaNarrativeLabel, narrativeHasOwnArt, type DnaView } from "@/components/dna-card";
@@ -107,7 +107,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("dnaBuilder.crie_esquemas_de_vestimenta_primeiro")} hint={b.message} action={<Link href="/schemes/new" className="btn btn-primary">{b.action?.label ?? t("common.criar_esquema")}</Link>} />;
-  const steps = b.steps ?? [t("common.n1_modo"), t("dnaBuilder.n2_esquemas"), t("common.n3_dados"), t("common.n4_background_studio"), t("common.n5_revisar_e_salvar")];
+  const steps = (b.steps ?? [t("builder.step.mode"), t("builder.step.looks"), t("builder.step.details"), t("builder.step.appearance"), t("builder.step.review")]).map((x) => x.replace(/^\d+\s*·\s*/, ""));
   const ownArt = narrativeHasOwnArt(effNarrative);
   const layoutPanel = (
     <div className="grid gap-3">
@@ -129,7 +129,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">
-        <ol className="mb-4 flex flex-wrap gap-1" aria-label={t("common.etapas")}>{steps.map((s, i) => <li key={s}><button type="button" className="chip" aria-current={step === i ? "step" : undefined} aria-pressed={step === i} onClick={() => setStep(i)}>{s}</button></li>)}</ol>
+        <Stepper steps={steps} current={step} onStep={setStep} label={t("builder.stepsLabel")} />
         {step === 0 && (
           <div className="surface p-4">
             {b.dna && <p className="mb-3 flex flex-wrap items-center gap-2 type-body-sm">{rich("dnaBuilder.dna_seu_dna_agora_ousadia", { archetypeLabel: b.dna.archetypeLabel, value: b.dna.boldnessIndex ?? 0 }, { 0: ($c) => <span className="badge" style={{ background: "#7C3AED", color: "#fff" }}>{$c}</span>, 1: ($c) => <b>{$c}</b> })}{(b.dna.palette ?? []).map((p) => <span key={p.color} className="inline-block h-4 w-4 rounded-full border border-line-soft" style={{ background: p.hex }} />)}</p>}

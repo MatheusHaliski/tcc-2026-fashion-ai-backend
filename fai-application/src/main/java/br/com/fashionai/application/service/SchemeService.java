@@ -947,8 +947,11 @@ public class SchemeService {
         }
         List<String> chips = new ArrayList<>(Json.csv(s.getOccasion()));
         chips.addAll(Json.csv(s.getStyle()));
-        String price = s.getTotalPrice() == null ? null : String.format(Locale.US, Msg.t("scheme.us_2f"), s.getTotalPrice());
-        String hype = s.getHypeScore() == null ? null : "Hype " + s.getHypeScore().setScale(0, java.math.RoundingMode.HALF_UP) + "%";
+        // Preços são em reais: o PNG usa a mesma moeda das telas, formatada no idioma de quem pediu a imagem.
+        java.text.NumberFormat brl = java.text.NumberFormat.getCurrencyInstance(Msg.locale());
+        brl.setCurrency(java.util.Currency.getInstance("BRL"));
+        String price = s.getTotalPrice() == null ? null : brl.format(s.getTotalPrice());
+        String hype = s.getHypeScore() == null ? null : Msg.t("scheme.cardHype", s.getHypeScore().setScale(0, java.math.RoundingMode.HALF_UP));
         return new SchemeCardRenderer.Card(s.getTitle(), s.getUser().getUsername(), chips, price, hype, studio.rendererBackground(s),
                 cardItems, expanded ? SchemeCardRenderer.Size.EXPANDED : SchemeCardRenderer.Size.COMPACT);
     }
@@ -962,7 +965,9 @@ public class SchemeService {
         g.fill(new RoundRectangle2D.Double(10, 10, 400, 400, 60, 60));
         g.setColor(ColorMath.isNeutral(w.getColor()) && Taxonomy.hex(w.getColor()).compareTo("#888888") > 0 ? Color.DARK_GRAY : Color.WHITE);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 34));
-        String label = WardrobeService.humanize(w.getSubcategory() == null ? Msg.t("scheme.peca_2") : w.getSubcategory());
+        // Nome da peça (escrito pelo usuário) em vez do código da subcategoria, que é em inglês.
+        String label = w.getName() != null && !w.getName().isBlank() ? (w.getName().length() > 22 ? w.getName().substring(0, 21) + "…" : w.getName())
+                : WardrobeService.humanize(w.getSubcategory() == null ? Msg.t("scheme.peca_2") : w.getSubcategory());
         g.drawString(Msg.resolve(label), 210 - g.getFontMetrics().stringWidth(label) / 2, 220);
         g.dispose();
         return img;

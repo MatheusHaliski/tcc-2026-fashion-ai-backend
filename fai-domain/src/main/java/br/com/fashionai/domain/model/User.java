@@ -67,6 +67,10 @@ public class User extends VersionedAuditableEntity {
     @Column(nullable = false, length = 30)
     private AccountStatus status = AccountStatus.PENDING_EMAIL_VERIFICATION;
 
+    /** Conta criada por teste automatizado (prefixo {@link #TEST_PREFIX}): fica fora da vitrine pública. */
+    @Column(name = "test_account", nullable = false)
+    private boolean testAccount;
+
     @Column(name = "avatar_url", length = 1024)
     private String avatarUrl;
 
@@ -119,6 +123,17 @@ public class User extends VersionedAuditableEntity {
         this.emailHash = emailHash;
         this.passwordHash = passwordHash;
         this.profileType = profileType;
+        this.testAccount = username != null && username.startsWith(TEST_PREFIX);
+    }
+
+    public static final String TEST_PREFIX = "e2e_";
+
+    public boolean isTestAccount() {
+        return testAccount;
+    }
+
+    public void setTestAccount(boolean testAccount) {
+        this.testAccount = testAccount;
     }
 
     public boolean isBrand() {

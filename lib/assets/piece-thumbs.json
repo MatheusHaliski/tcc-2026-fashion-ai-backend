@@ -1,0 +1,386 @@
+{
+ "/assets_pecas/01_Parte_superior/01_camiseta_referencia.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_01_camiseta_referencia-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_01_camiseta_referencia-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/02_shirt_camisa.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_02_shirt_camisa-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_02_shirt_camisa-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/03_blouse_blusa.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_03_blouse_blusa-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_03_blouse_blusa-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/04_tank_top_regata.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_04_tank_top_regata-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_04_tank_top_regata-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/05_crop_top_cropped.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_05_crop_top_cropped-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_05_crop_top_cropped-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/06_polo_shirt_camisa_polo.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_06_polo_shirt_camisa_polo-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_06_polo_shirt_camisa_polo-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/07_bodysuit_body.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_07_bodysuit_body-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_07_bodysuit_body-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/08_sweater_sueter.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_08_sweater_sueter-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_08_sweater_sueter-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/09_sweatshirt_moletom_sem_capuz.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_09_sweatshirt_moletom_sem_capuz-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_09_sweatshirt_moletom_sem_capuz-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/10_hoodie_moletom_com_capuz.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_10_hoodie_moletom_com_capuz-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_10_hoodie_moletom_com_capuz-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/11_cardigan.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_11_cardigan-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_11_cardigan-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/12_vest_colete.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_12_vest_colete-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_12_vest_colete-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/13_blazer.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_13_blazer-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_13_blazer-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/14_jacket_jaqueta.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_14_jacket_jaqueta-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_14_jacket_jaqueta-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/15_coat_casaco.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_15_coat_casaco-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_15_coat_casaco-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/16_parka.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_16_parka-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_16_parka-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/17_windbreaker_corta_vento.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_17_windbreaker_corta_vento-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_17_windbreaker_corta_vento-640.webp"
+ },
+ "/assets_pecas/01_Parte_superior/18_kimono_quimono.png": {
+  "320": "/_derived/pecas_thumb/01_parte_superior_18_kimono_quimono-320.webp",
+  "640": "/_derived/pecas_thumb/01_parte_superior_18_kimono_quimono-640.webp"
+ },
+ "/assets_pecas/01_camiseta_referencia.png": {
+  "320": "/_derived/pecas_thumb/01_camiseta_referencia-320.webp",
+  "640": "/_derived/pecas_thumb/01_camiseta_referencia-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/01_jeans.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_01_jeans-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_01_jeans-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/02_calca_casual.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_02_calca_casual-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_02_calca_casual-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/03_calca_alfaiataria.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_03_calca_alfaiataria-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_03_calca_alfaiataria-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/04_calca_cargo.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_04_calca_cargo-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_04_calca_cargo-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/05_calca_chino.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_05_calca_chino-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_05_calca_chino-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/06_calca_moletom.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_06_calca_moletom-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_06_calca_moletom-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/07_calca_jogger.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_07_calca_jogger-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_07_calca_jogger-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/08_legging.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_08_legging-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_08_legging-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/09_pantacourt.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_09_pantacourt-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_09_pantacourt-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/10_bermuda.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_10_bermuda-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_10_bermuda-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/11_shorts_jeans.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_11_shorts_jeans-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_11_shorts_jeans-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/12_saia.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_12_saia-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_12_saia-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/13_shorts.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_13_shorts-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_13_shorts-640.webp"
+ },
+ "/assets_pecas/02_Parte_inferior/14_short_saia.png": {
+  "320": "/_derived/pecas_thumb/02_parte_inferior_14_short_saia-320.webp",
+  "640": "/_derived/pecas_thumb/02_parte_inferior_14_short_saia-640.webp"
+ },
+ "/assets_pecas/02_shirt_camisa.png": {
+  "320": "/_derived/pecas_thumb/02_shirt_camisa-320.webp",
+  "640": "/_derived/pecas_thumb/02_shirt_camisa-640.webp"
+ },
+ "/assets_pecas/03_Calcados/01_tenis_casual.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_01_tenis_casual-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_01_tenis_casual-640.webp"
+ },
+ "/assets_pecas/03_Calcados/02_tenis_corrida.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_02_tenis_corrida-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_02_tenis_corrida-640.webp"
+ },
+ "/assets_pecas/03_Calcados/03_tenis_treino.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_03_tenis_treino-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_03_tenis_treino-640.webp"
+ },
+ "/assets_pecas/03_Calcados/04_tenis_skate.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_04_tenis_skate-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_04_tenis_skate-640.webp"
+ },
+ "/assets_pecas/03_Calcados/05_loafer.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_05_loafer-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_05_loafer-640.webp"
+ },
+ "/assets_pecas/03_Calcados/06_tenis_cano_alto.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_06_tenis_cano_alto-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_06_tenis_cano_alto-640.webp"
+ },
+ "/assets_pecas/03_Calcados/07_tenis_basquete.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_07_tenis_basquete-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_07_tenis_basquete-640.webp"
+ },
+ "/assets_pecas/03_Calcados/08_mocassim.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_08_mocassim-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_08_mocassim-640.webp"
+ },
+ "/assets_pecas/03_Calcados/09_oxford.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_09_oxford-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_09_oxford-640.webp"
+ },
+ "/assets_pecas/03_Calcados/10_derby.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_10_derby-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_10_derby-640.webp"
+ },
+ "/assets_pecas/03_Calcados/11_bota_cano_curto.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_11_bota_cano_curto-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_11_bota_cano_curto-640.webp"
+ },
+ "/assets_pecas/03_Calcados/12_bota_cano_longo.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_12_bota_cano_longo-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_12_bota_cano_longo-640.webp"
+ },
+ "/assets_pecas/03_Calcados/13_sandalia.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_13_sandalia-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_13_sandalia-640.webp"
+ },
+ "/assets_pecas/03_Calcados/14_coturno.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_14_coturno-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_14_coturno-640.webp"
+ },
+ "/assets_pecas/03_Calcados/15_chinelo.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_15_chinelo-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_15_chinelo-640.webp"
+ },
+ "/assets_pecas/03_Calcados/16_salto_alto.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_16_salto_alto-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_16_salto_alto-640.webp"
+ },
+ "/assets_pecas/03_Calcados/17_sapatilha.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_17_sapatilha-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_17_sapatilha-640.webp"
+ },
+ "/assets_pecas/03_Calcados/18_alpargata.png": {
+  "320": "/_derived/pecas_thumb/03_calcados_18_alpargata-320.webp",
+  "640": "/_derived/pecas_thumb/03_calcados_18_alpargata-640.webp"
+ },
+ "/assets_pecas/03_blouse_blusa.png": {
+  "320": "/_derived/pecas_thumb/03_blouse_blusa-320.webp",
+  "640": "/_derived/pecas_thumb/03_blouse_blusa-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/01_bolsa_transversal.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_01_bolsa_transversal-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_01_bolsa_transversal-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/02_bolsa_mao.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_02_bolsa_mao-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_02_bolsa_mao-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/03_clutch.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_03_clutch-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_03_clutch-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/04_tote.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_04_tote-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_04_tote-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/05_mochila.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_05_mochila-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_05_mochila-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/06_cinto.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_06_cinto-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_06_cinto-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/07_bone.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_07_bone-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_07_bone-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/08_chapeu.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_08_chapeu-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_08_chapeu-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/09_gorro.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_09_gorro-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_09_gorro-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/10_cachecol.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_10_cachecol-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_10_cachecol-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/11_gravata.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_11_gravata-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_11_gravata-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/12_gravata_borboleta.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_12_gravata_borboleta-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_12_gravata_borboleta-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/13_oculos_sol.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_13_oculos_sol-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_13_oculos_sol-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/14_oculos_grau.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_14_oculos_grau-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_14_oculos_grau-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/15_colar.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_15_colar-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_15_colar-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/16_pulseira.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_16_pulseira-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_16_pulseira-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/17_brincos.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_17_brincos-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_17_brincos-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/18_anel.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_18_anel-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_18_anel-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/19_relogio.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_19_relogio-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_19_relogio-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/20_luvas.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_20_luvas-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_20_luvas-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/21_meias.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_21_meias-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_21_meias-640.webp"
+ },
+ "/assets_pecas/04_Acessorios/22_acessorio_cabelo.png": {
+  "320": "/_derived/pecas_thumb/04_acessorios_22_acessorio_cabelo-320.webp",
+  "640": "/_derived/pecas_thumb/04_acessorios_22_acessorio_cabelo-640.webp"
+ },
+ "/assets_pecas/04_tank_top_regata.png": {
+  "320": "/_derived/pecas_thumb/04_tank_top_regata-320.webp",
+  "640": "/_derived/pecas_thumb/04_tank_top_regata-640.webp"
+ },
+ "/assets_pecas/05_Corpo_inteiro/01_vestido.png": {
+  "320": "/_derived/pecas_thumb/05_corpo_inteiro_01_vestido-320.webp",
+  "640": "/_derived/pecas_thumb/05_corpo_inteiro_01_vestido-640.webp"
+ },
+ "/assets_pecas/05_Corpo_inteiro/02_macacao.png": {
+  "320": "/_derived/pecas_thumb/05_corpo_inteiro_02_macacao-320.webp",
+  "640": "/_derived/pecas_thumb/05_corpo_inteiro_02_macacao-640.webp"
+ },
+ "/assets_pecas/05_Corpo_inteiro/03_macaquinho.png": {
+  "320": "/_derived/pecas_thumb/05_corpo_inteiro_03_macaquinho-320.webp",
+  "640": "/_derived/pecas_thumb/05_corpo_inteiro_03_macaquinho-640.webp"
+ },
+ "/assets_pecas/05_Corpo_inteiro/04_conjunto_coordenado.png": {
+  "320": "/_derived/pecas_thumb/05_corpo_inteiro_04_conjunto_coordenado-320.webp",
+  "640": "/_derived/pecas_thumb/05_corpo_inteiro_04_conjunto_coordenado-640.webp"
+ },
+ "/assets_pecas/05_Corpo_inteiro/05_jardineira.png": {
+  "320": "/_derived/pecas_thumb/05_corpo_inteiro_05_jardineira-320.webp",
+  "640": "/_derived/pecas_thumb/05_corpo_inteiro_05_jardineira-640.webp"
+ },
+ "/assets_pecas/05_crop_top_cropped.png": {
+  "320": "/_derived/pecas_thumb/05_crop_top_cropped-320.webp",
+  "640": "/_derived/pecas_thumb/05_crop_top_cropped-640.webp"
+ },
+ "/assets_pecas/06_Variacao_inicial/camiseta_letras_FAI.png": {
+  "320": "/_derived/pecas_thumb/06_variacao_inicial_camiseta_letras_fai-320.webp",
+  "640": "/_derived/pecas_thumb/06_variacao_inicial_camiseta_letras_fai-640.webp"
+ },
+ "/assets_pecas/06_polo_shirt_camisa_polo.png": {
+  "320": "/_derived/pecas_thumb/06_polo_shirt_camisa_polo-320.webp",
+  "640": "/_derived/pecas_thumb/06_polo_shirt_camisa_polo-640.webp"
+ },
+ "/assets_pecas/07_bodysuit_body.png": {
+  "320": "/_derived/pecas_thumb/07_bodysuit_body-320.webp",
+  "640": "/_derived/pecas_thumb/07_bodysuit_body-640.webp"
+ },
+ "/assets_pecas/08_sweater_sueter.png": {
+  "320": "/_derived/pecas_thumb/08_sweater_sueter-320.webp",
+  "640": "/_derived/pecas_thumb/08_sweater_sueter-640.webp"
+ },
+ "/assets_pecas/09_sweatshirt_moletom_sem_capuz.png": {
+  "320": "/_derived/pecas_thumb/09_sweatshirt_moletom_sem_capuz-320.webp",
+  "640": "/_derived/pecas_thumb/09_sweatshirt_moletom_sem_capuz-640.webp"
+ },
+ "/assets_pecas/10_hoodie_moletom_com_capuz.png": {
+  "320": "/_derived/pecas_thumb/10_hoodie_moletom_com_capuz-320.webp",
+  "640": "/_derived/pecas_thumb/10_hoodie_moletom_com_capuz-640.webp"
+ },
+ "/assets_pecas/11_cardigan.png": {
+  "320": "/_derived/pecas_thumb/11_cardigan-320.webp",
+  "640": "/_derived/pecas_thumb/11_cardigan-640.webp"
+ },
+ "/assets_pecas/12_vest_colete.png": {
+  "320": "/_derived/pecas_thumb/12_vest_colete-320.webp",
+  "640": "/_derived/pecas_thumb/12_vest_colete-640.webp"
+ },
+ "/assets_pecas/13_blazer.png": {
+  "320": "/_derived/pecas_thumb/13_blazer-320.webp",
+  "640": "/_derived/pecas_thumb/13_blazer-640.webp"
+ },
+ "/assets_pecas/14_jacket_jaqueta.png": {
+  "320": "/_derived/pecas_thumb/14_jacket_jaqueta-320.webp",
+  "640": "/_derived/pecas_thumb/14_jacket_jaqueta-640.webp"
+ },
+ "/assets_pecas/15_coat_casaco.png": {
+  "320": "/_derived/pecas_thumb/15_coat_casaco-320.webp",
+  "640": "/_derived/pecas_thumb/15_coat_casaco-640.webp"
+ },
+ "/assets_pecas/16_parka.png": {
+  "320": "/_derived/pecas_thumb/16_parka-320.webp",
+  "640": "/_derived/pecas_thumb/16_parka-640.webp"
+ },
+ "/assets_pecas/17_windbreaker_corta_vento.png": {
+  "320": "/_derived/pecas_thumb/17_windbreaker_corta_vento-320.webp",
+  "640": "/_derived/pecas_thumb/17_windbreaker_corta_vento-640.webp"
+ },
+ "/assets_pecas/18_kimono_quimono.png": {
+  "320": "/_derived/pecas_thumb/18_kimono_quimono-320.webp",
+  "640": "/_derived/pecas_thumb/18_kimono_quimono-640.webp"
+ }
+}

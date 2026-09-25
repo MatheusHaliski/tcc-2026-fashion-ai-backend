@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
-import { Avatar, Button, Card, Chip, EmptyState, ErrorState, Select, Skeleton } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { FilterBar } from "@/components/filter-bar";
 import { useWebGL, type Look3d } from "@/components/three/common";
 import type { RunwayEntry } from "@/components/three/runway-scene";
 
@@ -43,6 +44,10 @@ export function RunwayPanel() {
   }, [ranking, region, country, colors, occasions, styles, sex, offset]);
   const { data, loading, error, reload } = useApi<Runway>((signal) => api.get(`/api/explorer/runway?${query}`, { signal, anonymous: !user }), [!!user, query]);
   const [sel, setSel] = useState<RunwayEntry | null>(null);
+  // O 3D é pesado para celular: a passarela abre em 2D e o desfile em 3D carrega quando a pessoa pede (e fica lembrado).
+  const [want3d, setWant3d] = useState(false);
+  useEffect(() => { try { setWant3d(localStorage.getItem("fai.runway3d") === "1"); } catch { /* sem armazenamento */ } }, []);
+  const play3d = () => { setWant3d(true); try { localStorage.setItem("fai.runway3d", "1"); } catch { /* sem armazenamento */ } };
   const toggle = (xs: string[], x: string, set: (v: string[]) => void) => { set(xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]); setOffset(0); };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return <Skeleton className="h-[520px]" />;
@@ -56,25 +61,36 @@ export function RunwayPanel() {
           : data.you.hasLook ? <span className="badge badge-chalk">{t("showcase.runwayPanel.voce_desfila_hoje", { value: data.you.position ? t("showcase.runwayPanel.no", { position: data.you.position, RANKING_LABEL: RANKING_LABEL[data.ranking] }) : "" })}</span>
           : <Link className="btn btn-sm btn-primary" href="/mirror">{t("showcase.runwayPanel.marcar_meu_look_do_dia")}</Link>)}
       </div>
-      <div className="runway-filters" role="group" aria-label={t("showcase.runwayPanel.filtros_da_passarela")}>
-        <div className="flex flex-wrap gap-1.5">{data.rankings.filter((r) => user || r !== "SEGUINDO").map((r) => <Chip key={r} active={ranking === r} onClick={() => { setRanking(r); setOffset(0); if (r !== "TOP100_REGIONAL") setRegion(""); if (r !== "TOP100_PAIS") setCountry(""); }}>{RANKING_LABEL[r] ?? r}</Chip>)}</div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select aria-label={t("showcase.runwayPanel.regiao_do_mundo")} className="w-auto py-1" value={region} onChange={(e) => { setRegion(e.target.value); setOffset(0); if (e.target.value && ranking === "TOP100_GLOBAL") setRanking("TOP100_REGIONAL"); }}>
-            <option value="">{t("showcase.runwayPanel.todas_as_regioes")}</option>{data.facets.regions.map((r) => <option key={r.code} value={r.code}>{r.label} ({r.count})</option>)}</Select>
-          <Select aria-label={t("auth.country")} className="w-auto py-1" value={country} onChange={(e) => { setCountry(e.target.value); setOffset(0); }}>
-            <option value="">{t("showcase.runwayPanel.todos_os_paises")}</option>{data.facets.countries.map((c) => <option key={c.value} value={c.value}>{c.value} ({c.count})</option>)}</Select>
-          <Select aria-label={t("common.manequim")} className="w-auto py-1" value={sex} onChange={(e) => { setSex(e.target.value); setOffset(0); }}><option value="">{t("showcase.runwayPanel.manequim_todos")}</option><option value="FEMININO">{t("common.feminino")}</option><option value="MASCULINO">{t("common.masculino")}</option></Select>
-          {anyFilter && <Button size="sm" onClick={() => { setRegion(""); setCountry(""); setColors([]); setOccasions([]); setStyles([]); setSex(""); setOffset(0); }}>{t("common.limpar_filtros")}</Button>}
-        </div>
-        {data.facets.colors.length > 0 && <div className="flex flex-wrap items-center gap-1"><span className="type-caption text-muted">{t("showcase.runwayPanel.cores")}</span>{data.facets.colors.slice(0, 12).map((c) => <Chip key={c.value} active={colors.includes(c.value)} onClick={() => toggle(colors, c.value, setColors)}>{label(c.value)} · {c.count}</Chip>)}</div>}
-        {data.facets.occasions.length > 0 && <div className="flex flex-wrap items-center gap-1"><span className="type-caption text-muted">{t("common.ocasioes")}</span>{data.facets.occasions.slice(0, 12).map((c) => <Chip key={c.value} active={occasions.includes(c.value)} onClick={() => toggle(occasions, c.value, setOccasions)}>{label(c.value)} · {c.count}</Chip>)}</div>}
-        {data.facets.styles.length > 0 && <div className="flex flex-wrap items-center gap-1"><span className="type-caption text-muted">{t("common.estilos")}</span>{data.facets.styles.slice(0, 12).map((c) => <Chip key={c.value} active={styles.includes(c.value)} onClick={() => toggle(styles, c.value, setStyles)}>{label(c.value)} · {c.count}</Chip>)}</div>}
-      </div>
+      <FilterBar
+        quick={{ key: "ranking", label: t("showcase.runwayPanel.filtros_da_passarela"), options: data.rankings.filter((r) => user || r !== "SEGUINDO").map((r) => ({ value: r, label: RANKING_LABEL[r] ?? r })) }}
+        filters={[
+          { key: "region", label: t("showcase.runwayPanel.regiao_do_mundo"), options: data.facets.regions.map((r) => ({ value: r.code, label: `${r.label} (${r.count})` })) },
+          { key: "country", label: t("auth.country"), options: data.facets.countries.map((c) => ({ value: c.value, label: `${c.value} (${c.count})` })) },
+          { key: "sex", label: t("common.manequim"), options: [{ value: "FEMININO", label: t("common.feminino") }, { value: "MASCULINO", label: t("common.masculino") }] },
+          { key: "colors", label: t("showcase.runwayPanel.cores"), multi: true, options: data.facets.colors.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
+          { key: "occasions", label: t("common.ocasioes"), multi: true, options: data.facets.occasions.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
+          { key: "styles", label: t("common.estilos"), multi: true, options: data.facets.styles.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
+        ]}
+        values={{ ranking, region, country, sex, colors: colors.join(","), occasions: occasions.join(","), styles: styles.join(",") }}
+        onChange={(k, v) => {
+          setOffset(0);
+          const list = v ? v.split(",") : [];
+          if (k === "ranking") { setRanking(v || "TOP100_GLOBAL"); if (v !== "TOP100_REGIONAL") setRegion(""); if (v !== "TOP100_PAIS") setCountry(""); }
+          else if (k === "region") { setRegion(v); if (v && ranking === "TOP100_GLOBAL") setRanking("TOP100_REGIONAL"); }
+          else if (k === "country") setCountry(v);
+          else if (k === "sex") setSex(v);
+          else if (k === "colors") setColors(list);
+          else if (k === "occasions") setOccasions(list);
+          else if (k === "styles") setStyles(list);
+        }}
+        resultCount={data.total} />
       {data.looks.length === 0 ? <EmptyState title={anyFilter || ranking !== "TOP100_GLOBAL" ? t("showcase.runwayPanel.nenhum_look_com_esses_filtros") : t("showcase.runwayPanel.ninguem_desfilou_hoje_ainda")} hint={t("showcase.runwayPanel.marque_um_look_do_dia")} /> : (
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           <div>
             <div className="showcase-3d h-[540px]" aria-busy={loading}>
-              {webgl === false ? <RunwayFallback looks={data.looks} onPick={setSel} /> : <RunwayScene entries={data.looks} date={fmtDate(data.date)} onPick={setSel} selectedId={picked?.look.schemeId} />}
+              {webgl !== false && want3d
+                ? <RunwayScene entries={data.looks} date={fmtDate(data.date)} onPick={setSel} selectedId={picked?.look.schemeId} />
+                : <RunwayFallback looks={data.looks} onPick={setSel} can3d={webgl !== false} onPlay={play3d} />}
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <Button size="sm" disabled={!data.batch.hasPrev} onClick={() => setOffset(Math.max(0, offset - BATCH))}>{t("showcase.runwayPanel.lote_anterior")}</Button>
@@ -117,16 +133,23 @@ function LookCard({ e }: { e: RunwayEntry }) {
   );
 }
 
-function RunwayFallback({ looks, onPick }: { looks: RunwayEntry[]; onPick: (e: RunwayEntry) => void }) {
+function RunwayFallback({ looks, onPick, can3d, onPlay }: { looks: RunwayEntry[]; onPick: (e: RunwayEntry) => void; can3d: boolean; onPlay: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="flex h-full items-end gap-3 overflow-x-auto bg-[#0b0e16] p-4">
-      {looks.map((e) => <button key={e.look.schemeId} type="button" onClick={() => onPick(e)} className="flex shrink-0 flex-col items-center gap-1 text-white">
-        {e.look.mannequin.photoUrl && <img src={mediaUrl(e.look.mannequin.photoUrl)} alt="" className="h-10 w-10 rounded-full object-cover" />}
-        {e.look.pieces.slice(0, 3).map((p) => p.imageUrl && <img key={p.id} src={mediaUrl(p.imageUrl)} alt={p.name} className="h-16 object-contain" />)}
-        <span className="type-caption">#{e.position} @{e.look.owner?.username}</span>
-      </button>)}
-      <Button size="sm" className="ml-auto self-start" onClick={() => undefined} disabled>{t("showcase.runwayPanel.sem_webgl_passarela_2d")}</Button>
+    <div className="runway-2d">
+      <ol className="runway-2d-line">
+        {looks.map((e) => (
+          <li key={e.look.schemeId}>
+            <button type="button" onClick={() => onPick(e)} className="runway-2d-look" aria-label={t("showcase.runwayPanel.lookAt", { position: e.position, username: e.look.owner?.username ?? "" })}>
+              <span className="runway-2d-pos tabular">#{e.position}</span>
+              <span className="runway-2d-pieces">{e.look.pieces.slice(0, 3).map((p) => p.imageUrl && <img key={p.id} src={mediaUrl(p.imageUrl)} alt="" loading="lazy" decoding="async" />)}</span>
+              <span className="runway-2d-name">@{e.look.owner?.username}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      {can3d ? <Button variant="primary" className="runway-2d-play" onClick={onPlay}>{t("showcase.runwayPanel.play3d")}</Button>
+        : <p className="runway-2d-note">{t("showcase.runwayPanel.sem_webgl_passarela_2d")}</p>}
     </div>
   );
 }

@@ -296,11 +296,11 @@ function HypeFocus({ pieces, scheme }: { pieces: AnatomyPiece[]; scheme: SchemeV
     <div className="hypef" aria-label={t("schemeAnatomies.hype_focus")}>
       <div className="hypef-top">
         <svg width="92" height="54" viewBox="0 0 92 54" aria-hidden><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke="var(--line-soft)" strokeWidth="9" strokeLinecap="round" /><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke={hypeColor(hype)} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${(hype / 100) * 119.4} 200`} /><text x="46" y="44" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{hype}%</text></svg>
-        <div className="min-w-0"><span className="hypef-chip">{t("schemeAnatomies.em_alta_agora")}</span><p className="truncate text-[11px] font-semibold">{scheme.title}</p><p className="hypef-legend">{[["var(--status-critical)", "0–29"], ["var(--status-serious)", "30–49"], ["var(--status-warning)", "50–69"], ["var(--status-good)", "70+"]].map(([c, t]) => <span key={t}><i style={{ background: c }} />{t}</span>)}</p></div>
+        <div className="min-w-0"><span className="hypef-chip">{t("schemeAnatomies.em_alta_agora")}</span><p className="truncate text-xs font-semibold">{scheme.title}</p><p className="hypef-legend">{[["var(--status-critical)", "0–29"], ["var(--status-serious)", "30–49"], ["var(--status-warning)", "50–69"], ["var(--status-good)", "70+"]].map(([c, t]) => <span key={t}><i style={{ background: c }} />{t}</span>)}</p></div>
       </div>
       {ranked.map((p, i) => (
-        <div key={p.id} className="hypef-row">{p.img ? <img src={p.img} alt="" /> : <span className="cpu-img" />}<span className="min-w-0 flex-1 truncate text-[9.5px] font-semibold">{i === 0 && (p.hype ?? 0) > 0 ? "🔥 " : ""}{p.name}</span>
-          <span className="flex w-16 flex-col items-end gap-0.5"><b className="type-data text-[9.5px]">{Math.round(p.hype ?? 0)}%</b><span className="hype-bar w-full" style={{ height: 4 }}><i style={{ width: `${p.hype ?? 0}%`, background: hypeColor(p.hype) }} /></span></span></div>))}
+        <div key={p.id} className="hypef-row">{p.img ? <img src={p.img} alt="" /> : <span className="cpu-img" />}<span className="min-w-0 flex-1 truncate text-xs font-semibold">{i === 0 && (p.hype ?? 0) > 0 ? "🔥 " : ""}{p.name}</span>
+          <span className="flex w-16 flex-col items-end gap-0.5"><b className="type-data text-xs">{Math.round(p.hype ?? 0)}%</b><span className="hype-bar w-full" style={{ height: 4 }}><i style={{ width: `${p.hype ?? 0}%`, background: hypeColor(p.hype) }} /></span></span></div>))}
       <p className="hypef-note">{t("schemeAnatomies.mede_popularidade_na_plataforma_hoje")}</p>
     </div>
   );

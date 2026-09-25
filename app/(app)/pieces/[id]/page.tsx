@@ -93,6 +93,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
           </div>
           {mine && (
             <div className="flex flex-wrap gap-2 p-3">
+              <Link href={`/mirror?piece=${p.id}`} className="btn btn-sm btn-primary"><FaiIcon id="ACT-32" size={20} decorative />{t("pieces.id.showInMirror")}</Link>
               <label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />{t("closet.replaceImage")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && replaceImage(e.target.files[0])} /></label>
               <Button size="sm" onClick={() => act("background-removal", t("closet.removeBg") + " ✓")}>{t("closet.removeBg")}</Button>
               {canStudio && <Button size="sm" aria-expanded={studioOpen} onClick={() => setStudioOpen((o) => !o)}><FaiIcon id="ACT-08" size={24} decorative />{p.studioImageUrl ? t("pieces.id.refazer_estudio") : t("pieces.id.levar_ao_estudio")}</Button>}
