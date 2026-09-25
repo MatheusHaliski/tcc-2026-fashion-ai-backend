@@ -191,7 +191,7 @@ public class BrandWebSearchService {
             return r;
         } catch (Exception e) {
             s.put("status", "INDISPONIVEL");
-            s.put("note", "tempo esgotado");
+            s.put("note", Msg.t("brandWebSearch.tempo_esgotado"));
             sources.add(s);
             return List.of();
         }

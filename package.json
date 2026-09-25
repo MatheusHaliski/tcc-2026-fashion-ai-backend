@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "i18n:check": "node scripts/i18n/check.js --fail",
+    "i18n:scan": "node scripts/i18n/scan.js --fail",
+    "i18n:qa": "node scripts/i18n/qa.js",
+    "prebuild": "node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

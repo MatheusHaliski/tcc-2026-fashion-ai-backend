@@ -219,7 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button type="button" className="btn btn-ghost btn-icon lg:hidden" aria-label={t("a11y.menu")} aria-expanded={drawer} aria-controls="app-drawer" onClick={() => setDrawer(true)}>
             <UiIcon name="menu" size={22} />
           </button>
-          <Link href="/feed" className="brand-link" aria-label={`Fashion AI — ${t("nav.feed")}`}>
+          <Link href="/feed" className="brand-link" aria-label={t("nav.brandHome")}>
             <img src="/brand/fai-logo.png" alt="" width={32} height={32} />
             <span className="brand-name">Fashion AI</span>
           </Link>

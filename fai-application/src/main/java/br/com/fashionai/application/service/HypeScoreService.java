@@ -457,7 +457,7 @@ public class HypeScoreService {
         if (withAi) {
             String localTip = tip;
             outcome = ai.text(new AiEngine.TextCall<>(dl.getUser().getId(), AiCapability.STYLE_ADVISOR,
-                    "Você é o Style Advisor do Fashion AI. Dê UMA dica acionável (até 2 frases, português) para o usuário subir o Hype Score do look, "
+                    "Você é o Style Advisor do Fashion AI. Dê UMA dica acionável (até 2 frases, em " + Msg.languageName() + ") para o usuário subir o Hype Score do look, "
                             + "citando a métrica mais fraca. Nunca cite marcas reais que não estejam no look. Responda só o texto.",
                     Msg.t("hypeScore.look_estilos_ocasioes_breakdown", s.getTitle(), Json.csv(s.getStyle()), Json.csv(s.getOccasion()), Json.write(sc.breakdown()), Math.round(sc.eNorm()), Math.round(sc.tNorm())),
                     List.of(), 200, List.of(Msg.t("hypeScore.contadores_sociais_do_look"), Msg.t("hypeScore.percentis_de_calibracao")),

@@ -427,11 +427,11 @@ public class SealService {
         }
         if (target.getProfileType() == ProfileType.MARCA && brandProfiles.findByOwnerId(targetOwnerId)
                 .map(p -> p.getApprovalStatus() != ApprovalStatus.APROVADO).orElse(true)) {
-            throw ApiException.badRequest("MARCA_NAO_VALIDADA", "Somente marcas com perfil validado podem conceder selos (RF20.CA06).");
+            throw ApiException.badRequest("MARCA_NAO_VALIDADA", Msg.t("seal.somente_marcas_com_perfil_validado"));
         }
         if (target.getProfileType() == ProfileType.CELEBRIDADE && celebrityProfiles.findByOwnerId(targetOwnerId)
                 .map(p -> p.getVerificationStatus() != ApprovalStatus.APROVADO).orElse(true)) {
-            throw ApiException.badRequest("CELEBRIDADE_NAO_VERIFICADA", "Somente celebridades verificadas concedem Selo Premium (RF21.CA18).");
+            throw ApiException.badRequest("CELEBRIDADE_NAO_VERIFICADA", Msg.t("seal.somente_celebridades_verificadas_concedem"));
         }
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
         bonds.findBySchemeId(schemeId).stream()

@@ -93,16 +93,20 @@ public final class LocalAdvisors {
             Map.entry("beige", "bege"), Map.entry("taupe", "taupe"), Map.entry("metallic_gold", "dourado metálico"),
             Map.entry("metallic_silver", Msg.k("localAdvisors.prata_metalico")), Map.entry("bronze", "bronze"), Map.entry("multicolor", "multicolorido"), Map.entry("print", "estampado"));
 
+    /** Nome da cor no idioma da requisição (rótulos da taxonomia, minúsculo no meio da frase). */
     static String colorPt(String code) {
+        if (code == null) return "";
+        String key = "taxonomy." + code.toLowerCase(Locale.ROOT);
+        if (Msg.has(key)) return Msg.t(key).toLowerCase(Msg.locale());
         return COLOR_PT.getOrDefault(code, code.replace('_', ' '));
     }
 
     static String seasonPt(String code) {
         return switch (code.toUpperCase(Locale.ROOT)) {
-            case "SPRING", "PRIMAVERA" -> "a primavera";
+            case "SPRING", "PRIMAVERA" -> Msg.t("localAdvisors.a_primavera");
             case "SUMMER", "VERAO" -> Msg.t("localAdvisors.o_verao");
-            case "AUTUMN", "FALL", "OUTONO" -> "o outono";
-            case "WINTER", "INVERNO" -> "o inverno";
+            case "AUTUMN", "FALL", "OUTONO" -> Msg.t("localAdvisors.o_outono");
+            case "WINTER", "INVERNO" -> Msg.t("localAdvisors.o_inverno");
             default -> code.toLowerCase(Locale.ROOT);
         };
     }
@@ -111,7 +115,7 @@ public final class LocalAdvisors {
         if (iso == null || iso.length() != 2) {
             return String.valueOf(iso);
         }
-        String name = new Locale("", iso.toUpperCase(Locale.ROOT)).getDisplayCountry(Locale.forLanguageTag("pt-BR"));
+        String name = new Locale("", iso.toUpperCase(Locale.ROOT)).getDisplayCountry(Msg.locale());
         return name == null || name.isBlank() ? iso : name;
     }
 
@@ -233,7 +237,7 @@ public final class LocalAdvisors {
         String season = text.matches(".*(verao|calor|summer).*") ? "SUMMER" : text.matches(".*(inverno|frio|winter).*") ? "WINTER"
                 : text.matches(".*(outono|autumn|fall).*") ? "AUTUMN" : text.matches(".*(primavera|spring).*") ? "SPRING" : null;
         if (season != null && !season.equals(current.get("season"))) {
-            changes.add(new FieldChange("season", current.get("season"), season, "Estação citada na instrução."));
+            changes.add(new FieldChange("season", current.get("season"), season, Msg.t("localAdvisors.estacao_citada_na_instrucao")));
         }
         if (text.matches(".*(public|todos verem|aberto).*") && !"PUBLIC".equals(current.get("visibility"))) {
             changes.add(new FieldChange("visibility", current.get("visibility"), "PUBLIC", Msg.t("localAdvisors.voce_pediu_para_tornar_visivel")));
@@ -313,7 +317,9 @@ public final class LocalAdvisors {
         if (temperatureC == null) {
             return Optional.empty();
         }
-        String feel = temperatureC >= 27 ? "calor" : temperatureC >= 20 ? "clima ameno" : temperatureC >= 13 ? "friozinho" : "frio";
-        return Optional.of(String.format(Locale.ROOT, "%.0f°C e %s (%s)", temperatureC, description == null ? "tempo estável" : description, feel));
+        String feel = Msg.t(temperatureC >= 27 ? "localAdvisors.clima_calor" : temperatureC >= 20 ? "localAdvisors.clima_ameno"
+                : temperatureC >= 13 ? "localAdvisors.clima_friozinho" : "localAdvisors.clima_frio");
+        return Optional.of(Msg.t("localAdvisors.graus_e_descricao", String.format(Locale.ROOT, "%.0f", temperatureC),
+                description == null ? Msg.t("localAdvisors.tempo_estavel") : description, feel));
     }
 }

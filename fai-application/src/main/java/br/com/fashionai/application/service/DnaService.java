@@ -1021,18 +1021,18 @@ public class DnaService {
             order.add(r.narrativeType());
         }
         Map<String, NarrativeType> keywords = new LinkedHashMap<>();
-        keywords.put("tempo|evolu|histór|histor|trajet", NarrativeType.TIMELINE);
-        keywords.put("marco|formatura|momento|conquista", NarrativeType.MOMENTOS_MARCANTES);
-        keywords.put("primeir|estreia", NarrativeType.PRIMEIRA_VEZ);
-        keywords.put("cápsula|capsula|versát|versat|poucas peças", NarrativeType.CAPSULA_VERSATILIDADE);
-        keywords.put("ocasi|trabalho|festa|papel", NarrativeType.POR_OCASIAO);
+        keywords.put("tempo|evolu|histór|histor|trajet|timeline|journey|over time|tiempo|trayect", NarrativeType.TIMELINE);
+        keywords.put("marco|formatura|momento|conquista|milestone|graduation|achievement|hito|graduación|graduacion|logro", NarrativeType.MOMENTOS_MARCANTES);
+        keywords.put("primeir|estreia|first time|debut|primera vez|estreno", NarrativeType.PRIMEIRA_VEZ);
+        keywords.put("cápsula|capsula|versát|versat|poucas peças|capsule|versatil|few pieces|pocas piezas", NarrativeType.CAPSULA_VERSATILIDADE);
+        keywords.put("ocasi|trabalho|festa|papel|occasion|work|party|role|trabajo|fiesta", NarrativeType.POR_OCASIAO);
         keywords.put("mood|inspira|afinidade", NarrativeType.MOOD_BOARD);
-        keywords.put("paleta|cores|tons|cor ", NarrativeType.PALETA_DOMINANTE);
-        keywords.put("harmonia|contraste|complement", NarrativeType.HARMONIA_CROMATICA);
-        keywords.put("marca", NarrativeType.MARCAS_FAVORITAS);
-        keywords.put("hype|alta|tendên|tenden|bombando", NarrativeType.HYPE_FOCUS);
-        keywords.put("inverno|verão|verao|outono|primavera|estaç|estac|sazon", NarrativeType.CARTELA_SAZONAL);
-        keywords.put("lego|bloco", NarrativeType.LEGO);
+        keywords.put("paleta|cores|tons|cor |palette|colors|colours|tones|colores|tonos", NarrativeType.PALETA_DOMINANTE);
+        keywords.put("harmonia|contraste|complement|harmony|contrast|armonía|armonia", NarrativeType.HARMONIA_CROMATICA);
+        keywords.put("marca|brand", NarrativeType.MARCAS_FAVORITAS);
+        keywords.put("hype|alta|tendên|tenden|bombando|trend|tendencia", NarrativeType.HYPE_FOCUS);
+        keywords.put("inverno|verão|verao|outono|primavera|estaç|estac|sazon|winter|summer|autumn|fall|spring|season|invierno|verano|otoño|otono|estación|estacion", NarrativeType.CARTELA_SAZONAL);
+        keywords.put("lego|bloco|block|bloque", NarrativeType.LEGO);
         keywords.forEach((re, nt) -> {
             if (java.util.regex.Pattern.compile(re).matcher(q).find() && !order.contains(nt)) {
                 order.add(nt);
@@ -1044,8 +1044,8 @@ public class DnaService {
                 order.add(nt);
             }
         }
-        Season season = r.season() != null ? r.season() : q.contains("inverno") ? Season.WINTER : q.contains("verão") || q.contains("verao") ? Season.SUMMER
-                : q.contains("primavera") ? Season.SPRING : Season.AUTUMN;
+        Season season = r.season() != null ? r.season() : q.matches(".*(inverno|winter|invierno).*") ? Season.WINTER : q.matches(".*(verão|verao|summer|verano).*") ? Season.SUMMER
+                : q.matches(".*(primavera|spring).*") ? Season.SPRING : Season.AUTUMN;
         List<DnaProposal> out = new ArrayList<>();
         Set<String> used = new HashSet<>();
         for (NarrativeType nt : order) {

@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ApiError> unreadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
-        return respond(req, 400, "JSON_INVALIDO", "O corpo da requisição não é um JSON válido para esta operação.", Map.of());
+        return respond(req, 400, "JSON_INVALIDO", Msg.t("error.corpo_da_requisicao_nao_e"), Map.of());
     }
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,

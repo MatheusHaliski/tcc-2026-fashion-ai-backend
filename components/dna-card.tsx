@@ -267,7 +267,7 @@ function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSPr
   let k = 0; const drop = () => ({ animationDelay: `${(k++) * 60}ms` });   // cai de cima para baixo, 60 ms entre blocos
   return (
     <div className="dna-plate" key={round}>
-      <div className="brick brick-drop hero-brick" style={{ ...drop(), ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag="foto original" /></div>
+      <div className="brick brick-drop hero-brick" style={{ ...drop(), ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag={tr("dnaCard.foto_original")} /></div>
       <div className="brick brick-drop title-brick" style={{ ...drop(), ["--brick" as string]: "#F4F4F4" }}><b>{dna.title}</b><span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</span></div>
       {dna.cells.map((c) => { const col = brickColor(c.dominantColor); return <div key={c.schemeId} className="brick brick-drop cell-brick" style={{ ...drop(), ["--brick" as string]: col, color: inkOn(col) }}><Thumb c={c} /><span className="plate-label">{c.title} · {era(c, fmtEra)}</span></div>; })}
       <div className="brick brick-drop logo-brick" style={{ ...drop(), ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label"><BrandLogo name={l.brand} src={l.logoUrl} size={16} className="mr-1" />{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>

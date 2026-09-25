@@ -654,28 +654,28 @@ public final class FlairLooks {
         if (light(a.colorHex()) && "upper_piece".equals(a.category()) && dark(b.colorHex()) && "lower_piece".equals(b.category())
                 || light(b.colorHex()) && "upper_piece".equals(b.category()) && dark(a.colorHex()) && "lower_piece".equals(a.category())) {
             s += 5;
-            log.add("claro + calça escura: +5 Harmony (" + a.name() + " · " + b.name() + ")");
+            log.add(Msg.k("flairLooks.claro_calca_escura", a.name(), b.name()));
         } else if (fa.equals(fb) && !"neutral".equals(fa)) {
             s += 3;
-            log.add("mesma família de cor: +3 (" + a.name() + " · " + b.name() + ")");
+            log.add(Msg.k("flairLooks.mesma_familia_de_cor", a.name(), b.name()));
         } else if ("neutral".equals(fa) || "neutral".equals(fb)) {
             s += 2;
         }
         boolean street = (SNEAKERS.contains(a.subcategory()) && STREET_BOTTOMS.contains(b.subcategory())) || (SNEAKERS.contains(b.subcategory()) && STREET_BOTTOMS.contains(a.subcategory()));
         if (street) {
             s += 8;
-            log.add("tênis + cargo/jeans: +8 Style");
+            log.add(Msg.k("flairLooks.tenis_cargo_jeans"));
         }
         if (("blazer".equals(a.subcategory()) && "tailored_pants".equals(b.subcategory())) || ("blazer".equals(b.subcategory()) && "tailored_pants".equals(a.subcategory()))) {
             s += 6;
-            log.add("blazer + alfaiataria: +6 Style");
+            log.add(Msg.k("flairLooks.blazer_alfaiataria"));
         }
         if (a.styles().stream().anyMatch(b.styles()::contains)) {
             s += 4;
         }
         if (a.brandName() != null && a.brandName().equalsIgnoreCase(b.brandName())) {
             s += 3;
-            log.add("mesma marca: +3 (" + a.brandName() + ")");
+            log.add(Msg.k("flairLooks.mesma_marca", a.brandName()));
         }
         return s;
     }

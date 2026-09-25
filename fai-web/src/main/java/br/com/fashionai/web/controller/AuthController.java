@@ -102,7 +102,7 @@ public class AuthController {
     @Operation(summary = "RF2.CA06 — Pedir redefinição de senha (resposta idêntica exista ou não a conta)")
     public Map<String, String> requestReset(@RequestBody EmailRequest body, HttpServletRequest req) {
         identity.requestPasswordReset(body.email(), CorrelationIdFilter.clientIp(req), req.getHeader("User-Agent"));
-        return Map.of("message", "Se o e-mail estiver cadastrado, você receberá as instruções em instantes.");
+        return Map.of("message", Msg.t("auth.se_o_e_mail_estiver"));
     }
 
     public record ResetConfirm(@NotBlank String token, @NotBlank String newPassword, @NotBlank String confirmPassword) {

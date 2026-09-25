@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
+import { label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { Avatar, Chip, EmptyState, ErrorState, Input, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
@@ -28,7 +29,7 @@ export default function BrandsPage() {
         <Link key={slug + i} href={`/brands/${slug}`} className="surface flex flex-col items-center gap-2 p-4 text-center hover:bg-surface-2">
           {tab === "brands" ? <BrandLogo name={name} src={c.logoUrl} size={64} /> : <Avatar src={mediaUrl(c.officialPhotoUrl ?? c.user?.avatarUrl)} name={name} size={64} />}
           <p className="type-h3">{name}{c.verified && " ✓"}</p>
-          <p className="type-caption text-muted">{c.category ?? c.fashionCategory ?? (c.areas ?? []).join(", ")}</p>
+          <p className="type-caption text-muted">{c.category || c.fashionCategory ? label(c.category ?? c.fashionCategory) : (c.areas ?? []).map((a: string) => label(a)).join(", ")}</p>
           <p className="type-data text-faint tabular">{c.followers != null ? t("brands.seguidores", { followers: c.followers }) : ""}{c.seals != null ? t("brands.selos", { seals: c.seals }) : ""}{c.affinity != null ? t("brands.afinidade_2", { Math: Math.round(c.affinity * 100) }) : ""}</p>
         </Link>); })}</div>
     </>

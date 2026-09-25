@@ -235,7 +235,7 @@ public class ExplorerService {
                     "fallbackUsed", false, "note", Msg.t("explorer.cores_de_status_do_dataviz"));
         }
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(viewer.id(), AiCapability.INSIGHT_GENERATOR,
-                "Você é o Insight Generator do Fashion AI. Escreva UMA leitura de tendência (até 2 frases, português) a partir dos rankings agregados. "
+                "Você é o Insight Generator do Fashion AI. Escreva UMA leitura de tendência (até 2 frases, em " + Msg.languageName() + ") a partir dos rankings agregados. "
                         + "Não invente números; use só os dados.", "Rankings: " + Json.write(rankings), List.of(), 250,
                 List.of(Msg.t("explorer.rankings_agregados_sem_dados_pessoais")), text -> text == null || text.isBlank() ? null : InputSanitizer.clean(text, 400), () -> local, null));
         return Map.of("rankings", rankings, "aiInsight", outcome.value() == null ? local : outcome.value(), "explanation", outcome.explanation(),
