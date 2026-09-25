@@ -12,6 +12,7 @@ import { Avatar, Button, Card, Chip, EmptyState, ErrorState, Field, Input, Pagin
 import { SchemeCard, hypeColor } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
+import { LookExports } from "@/components/look-exports";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
 type TabId = "closet" | "looks" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
@@ -104,7 +105,7 @@ function DailyTab() {
   async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
   return (
     <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-      <div>{data.scheme ? <SchemeCard scheme={data.scheme} /> : <EmptyState title={data.empty?.message ?? t("lookbookTabs.nenhum_look_do_dia")} action={(data.empty?.actions ?? []).map((a) => <Link key={a.href} href={a.href === "/add-piece" ? "/pieces/new" : a.href.startsWith("/create") ? "/schemes/new" : a.href} className="btn btn-primary">{a.label}</Link>)} />}</div>
+      <div>{data.scheme && <SchemeCard scheme={data.scheme} />}{data.scheme && <LookExports scheme={data.scheme} hype={hype} bandLabel={typeof panel.band === "object" && panel.band ? (panel.band as { label?: string }).label : undefined} date={data.today?.date} />}{!data.scheme && <EmptyState title={data.empty?.message ?? t("lookbookTabs.nenhum_look_do_dia")} action={(data.empty?.actions ?? []).map((a) => <Link key={a.href} href={a.href === "/add-piece" ? "/pieces/new" : a.href.startsWith("/create") ? "/schemes/new" : a.href} className="btn btn-primary">{a.label}</Link>)} />}</div>
       <div>
         <Card className="mb-4">
           <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("lookbook.hype")} · {t("lookbook.panel")}</h2>
@@ -114,7 +115,7 @@ function DailyTab() {
               {data.panelVersion === "PASSARELA" ? <div className="flex h-40 items-end rounded bg-surface-2 p-1"><div className="w-full rounded" style={{ height: `${hype}%`, background: hypeColor(hype) }} /></div> : null}
               <div>
                 <p className="hero-number text-5xl" style={{ color: hypeColor(hype) }}>{Math.round(hype)}</p>
-                <p className="type-caption text-muted">{String(panel.bandLabel ?? panel.band ?? "")} {panel.topPercentWeekly != null ? t("lookbookTabs.top_da_semana", { topPercentWeekly: panel.topPercentWeekly }) : ""}</p>
+                <p className="type-caption text-muted">{String(panel.bandLabel ?? (typeof panel.band === "object" && panel.band ? (panel.band as { label?: string }).label ?? "" : panel.band ?? ""))} {panel.topPercentWeekly != null ? t("lookbookTabs.top_da_semana", { topPercentWeekly: panel.topPercentWeekly }) : ""}</p>
                 {data.panelVersion !== "PASSARELA" && <div className="hype-bar mt-2"><i style={{ width: `${hype}%`, background: hypeColor(hype) }} /></div>}
                 <dl className="mt-3 grid grid-cols-2 gap-2 type-body-sm">{Object.entries(metrics).map(([k, v]) => <div key={k}><dt className="label">{typeof v === "object" && v?.label ? v.label : k}</dt><dd className="type-data">{typeof v === "object" ? v?.value ?? "—" : v}</dd></div>)}</dl>
                 {typeof panel.tip === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {panel.tip}</p>}

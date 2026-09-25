@@ -111,6 +111,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(name = "haptics_enabled", nullable = false)
     private boolean hapticsEnabled = true;
 
+    /** DET-C06 — resultado do quiz "Qual é o seu core?" (OLD_MONEY, QUIET_LUXURY, GORPCORE, COQUETTE, Y2K…). */
+    @Column(name = "core_aesthetic", length = 32)
+    private String coreAesthetic;
+
     /** RF10.CA16 — uso da Identidade de Vida (Camada 2) no contexto da IA; desligado por padrão. */
     @Column(name = "life_identity_in_ai", nullable = false)
     private boolean lifeIdentityInAi;

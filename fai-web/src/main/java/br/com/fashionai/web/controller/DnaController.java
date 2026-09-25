@@ -27,6 +27,12 @@ public class DnaController {
         return dna.overview(user);
     }
 
+    @GetMapping("/api/me/dna/social-proof")
+    @Operation(summary = "DET-K06 — Prova social pelo DNA (grupos com 10 pessoas ou mais, sem identificar ninguém)")
+    public Map<String, Object> socialProof(CurrentUser user) {
+        return dna.socialProof(user);
+    }
+
     @PostMapping("/api/me/dna")
     @Operation(summary = "RF13.CA02 — Gerar/regerar o DNA (com formulário de vida opcional)")
     public Map<String, Object> generate(CurrentUser user, @RequestBody(required = false) DnaService.LifeForm form) {

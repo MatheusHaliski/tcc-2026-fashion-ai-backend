@@ -15,7 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
-interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; [k: string]: unknown; }
+interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
@@ -78,6 +78,9 @@ function Settings() {
             <Switch checked={theme.highContrast} onChange={(v) => { updateTheme({ highContrast: v }); savePrefs({ highContrast: v }); }} label={t("settings.contrast")} />
             <Switch checked={devRefs} onChange={setDevRefs} label={t("settings.devRefs")} hint={t("settings.devRefsHint")} />
             <Switch checked={theme.reduceMotion} onChange={(v) => { updateTheme({ reduceMotion: v }); savePrefs({ reduceMotion: v }); }} label={t("settings.reduceMotion")} />
+            {/* DET-D04 — som de tecido (desligado por padrão) e háptico (ligado) no Meu Quarto */}
+            <Switch checked={!!server.data?.soundEnabled} onChange={(v) => { server.setData({ ...server.data!, soundEnabled: v }); savePrefs({ soundEnabled: v }); }} label={t("settings.som_do_quarto")} hint={t("settings.som_do_quarto_dica")} />
+            <Switch checked={server.data?.hapticsEnabled !== false} onChange={(v) => { server.setData({ ...server.data!, hapticsEnabled: v }); savePrefs({ hapticsEnabled: v }); }} label={t("settings.haptico")} hint={t("settings.haptico_dica")} />
             <Field label={t("settings.sistema_de_tamanhos")} id="sizeSystem"><Select id="sizeSystem" value={(server.data?.sizeSystem as string) ?? "BR"} onChange={(e) => savePrefs({ sizeSystem: e.target.value })}>{["BR", "US", "EU", "UK"].map((s) => <option key={s}>{s}</option>)}</Select></Field>
             <Field label={t("settings.unidades")} id="unitSystem"><Select id="unitSystem" value={(server.data?.unitSystem as string) ?? "CM"} onChange={(e) => savePrefs({ unitSystem: e.target.value })}>{["CM", "IN"].map((s) => <option key={s}>{s}</option>)}</Select></Field>
           </Card>

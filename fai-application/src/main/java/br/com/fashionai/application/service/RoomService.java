@@ -194,6 +194,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
         mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
         mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
+        // Smart Mirror (RF28) — módulo trocável na loja do quarto (retangular, arco, oval, camarim com luzes)
+        mods.add(module("mirror", "MIRROR", "ESP-RET", 0, 0, Msg.t("room.espelho"), null,
+                Map.of("color", "#6B4A2F", "texture", "madeira", "material", "MADEIRA", "roughness", 0.6, "metalness", 0.0)));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
                 mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, "Porta " + d, null, white));

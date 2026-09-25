@@ -1,7 +1,7 @@
 # Detalhes de Engajamento — Meu Quarto, Destaques, Desafios e Copilot
 
 **Projeto:** FashionAI (SAI-TCC-2026)
-**Status:** proposta (v0.1), para revisão do time
+**Status:** v0.2 — entregue no código (ver §8)
 **Complementa:** [`01-especificacao-meu-quarto.md`](01-especificacao-meu-quarto.md) · [`02-inventory-score-calculo.md`](02-inventory-score-calculo.md) · [`03-desafios-e-games.md`](03-desafios-e-games.md)
 
 > **Premissa:** um detalhe pode valer mais do que uma estrutura inteira. Cada item aqui é pequeno de implementar, está preso a um RF já especificado e se apoia num princípio reconhecido de moda, design, marketing, publicidade ou games, ou num ritual que as comunidades de moda já praticam.
@@ -107,3 +107,21 @@ Todos os detalhes acima estão sujeitos a estas regras, que têm peso de critér
 | ETI-05 | Qualquer foto real do usuário (Espelho de Verdade) é privada por padrão e exige consentimento explícito para ser vista pela equipe |
 | ETI-06 | Todo efeito de movimento respeita "reduzir movimento". Todo som vem desligado por padrão |
 | ETI-07 | Nenhum detalhe imita marca, veículo editorial ou pessoa real (a capa é "FAI Magazine", sem logotipo de terceiros) |
+
+---
+
+## 8. Onde cada detalhe está no código
+
+Os detalhes que ainda não tinham interface própria foram entregues assim (os demais já estavam implementados sob outros nomes, listados na tabela de elementos do quarto em [`../meu-quarto/05-elementos-do-quarto.md`](../meu-quarto/05-elementos-do-quarto.md)):
+
+| ID | Onde | Como verificar |
+|---|---|---|
+| DET-C06 | `components/core-quiz.tsx` + card "Seu core" em `/dna` (aba Meu DNA); resultado em `user_preferences.core_aesthetic` (V24) | Abrir /dna → "Qual é o seu core?" → 6 perguntas → salvar; `GET /api/me/preferences` traz `coreAesthetic` |
+| DET-K06 | `GET /api/me/dna/social-proof` (`DnaService.socialProof`, `StyleDnaRepository.archetypeUsageSince`) + card "Quem tem o seu arquétipo" em `/dna` | Só grupos com ≥ 10 pessoas distintas do mesmo arquétipo nos últimos 7 dias; a resposta só tem contagens (ETI-03) |
+| DET-C10 | `components/look-exports.tsx` ("Exportar #lookdodia", 1080×1350) na aba Look do Dia | Baixa `lookdodia-<título>.jpg` |
+| DET-K07 | `components/look-exports.tsx` ("Baixar capa FAI Magazine"), liberado com Hype ≥ 85 (faixa Arrasando no Look) | Masthead próprio "FAI MAGAZINE", sem imitar editorial real |
+| DET-D04 | `lib/sensory.ts` (som sintetizado por tecido + `navigator.vibrate`), `Configurações → Aparência` (Sons do quarto, Vibração leve), `user_preferences.sound_enabled/haptics_enabled` | Som desligado por padrão, háptico ligado (ETI-06); abrir porta/gaveta no quarto 3D |
+| DET-D09 | `components/before-after.tsx`, aba "Antes e depois" no detalhe da peça (quando há `originalImageUrl` ≠ `imageUrl`) | Controle deslizante + "Exportar antes e depois" (2160×1350) |
+| DET-G04 | Modo foto em `/room` (menu ⋯ → Modo foto): 4 enquadramentos, 3 filtros + sem filtro, profundidade de campo; exportação só da cena | `meu-quarto-<enquadramento>-<filtro>.jpg` sem a interface |
+| DET-D06 | `components/onboarding.tsx`: o passo "Crie a sua conta" já nasce concluído | Barra dos primeiros passos começa em 1/4 |
+

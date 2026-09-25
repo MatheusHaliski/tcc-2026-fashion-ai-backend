@@ -6,6 +6,7 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
+import { CORES, CORE_BY_ARCHETYPE, CORE_NAME, CoreQuiz, coreDescription, type Core } from "@/components/core-quiz";
 import { Badge, Button, Card, Chip, EmptyState, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { DnaCard, type DnaView } from "@/components/dna-card";
@@ -18,6 +19,9 @@ function Dna() {
   const { t, fmtDate } = useI18n(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Overview>((signal) => api.get("/api/me/dna", { signal }), []);
   const [tab, setTab] = useState<"dna" | "life" | "schemes">("schemes"); const [busy, setBusy] = useState(false);
+  const prefs = useApi<{ coreAesthetic?: string | null }>((signal) => api.get("/api/me/preferences", { signal }), []);
+  const proof = useApi<{ items: { subcategory: string; people: number; text: string }[]; minGroup: number; note?: string }>((signal) => api.get("/api/me/dna/social-proof", { signal }), []);
+  const [quiz, setQuiz] = useState(false);
   const [life, setLife] = useState<Record<string, string>>({}); const [priv, setPriv] = useState<string[]>([]); const [skip, setSkip] = useState(false);
   useEffect(() => { const l = data?.dna?.life; if (l) setLife(Object.fromEntries(Object.entries(l).map(([k, v]) => [k, (v ?? []).join(", ")]))); setPriv(data?.dna?.privateFields ?? []); }, [data]);
   const fields = (() => { const lf = data?.lifeForm as { fields?: { key: string; label: string; max: number; hint?: string }[] } | undefined; return lf?.fields?.length ? lf.fields : LIFE_KEYS; })();
@@ -31,6 +35,9 @@ function Dna() {
   return (
     <>
       <PageHeader title={t("nav.dna")} kicker={t("dna.rf13_hu20")} lead={t("dna.crie_esquemas_do_tipo_dna")} actions={<><Link href="/dna-schemes/new" className="btn btn-primary"><FaiIcon id="NAV-03" size={24} decorative />{t("common.criar_dna_de_estilo")}</Link>{d && <Button onClick={share} loading={busy}><FaiIcon id="SOC-03" size={24} decorative />{t("dna.card_com_marca_d_agua")}</Button>}</>} />
+      {/* DET-C06 — o quiz é o primeiro contato com o vocabulário "-core" do DNA */}
+      {prefs.data && !prefs.data.coreAesthetic && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line-soft bg-surface p-3"><div><p className="type-body font-semibold">{t("coreQuiz.titulo")}</p><p className="type-caption text-muted">{t("coreQuiz.convite")}</p></div><Button variant="primary" onClick={() => setQuiz(true)}>{t("coreQuiz.comecar")}</Button></div>}
+      <CoreQuiz open={quiz} onClose={() => setQuiz(false)} onSaved={() => prefs.reload()} />
       {data.precisionNote && <p className="mb-3 rounded-md border border-line-soft p-2 type-body-sm text-muted">{data.precisionNote}</p>}
       {d && (
         <>
@@ -46,6 +53,14 @@ function Dna() {
                   {d.cardImageUrl && <p className="mt-3 type-caption text-muted"><a className="underline" href={mediaUrl(d.cardImageUrl)} target="_blank" rel="noreferrer">{t("dna.card_compartilhavel")}</a>{d.cardExpiresAt && t("common.ate_2", { date: fmtDate(d.cardExpiresAt) })}</p>}</div>
               </Card>
               <div className="grid gap-3 sm:grid-cols-2">
+                {(() => { const saved = prefs.data?.coreAesthetic as Core | null | undefined; const core: Core = saved && CORES.includes(saved) ? saved : CORE_BY_ARCHETYPE[d.archetype] ?? "QUIET_LUXURY"; return (
+                  <Card className="sm:col-span-2"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="label">{t("coreQuiz.seu_core")}</p><p className="type-h2">{CORE_NAME[core]}</p></div><Button size="sm" onClick={() => setQuiz(true)}>{saved ? t("coreQuiz.refazer") : t("coreQuiz.comecar")}</Button></div>
+                    <p className="type-body-sm">{coreDescription(core)}</p><p className="mt-1 type-caption text-muted">{saved ? t("coreQuiz.do_quiz") : t("coreQuiz.sugerido", { archetype: d.archetypeLabel ?? label(d.archetype.toLowerCase()) })}</p></Card>); })()}
+                {/* DET-K06 — prova social pelo DNA: só grupos com 10 pessoas ou mais, ninguém identificado */}
+                <Card className="sm:col-span-2"><p className="label">{t("dna.prova_social_titulo")}</p>
+                  {(proof.data?.items ?? []).length > 0 ? <ul className="grid gap-1 type-body-sm">{proof.data!.items.map((i) => <li key={i.subcategory}>{i.text}</li>)}</ul>
+                    : <p className="type-body-sm text-muted">{t("dna.prova_social_vazia", { n: proof.data?.minGroup ?? 10 })}</p>}
+                  {proof.data?.note && <p className="mt-1 type-caption text-muted">{proof.data.note}</p>}</Card>
                 <Card><p className="label">{t("dna.indice_de_ousadia")}</p><p className="hero-number text-4xl">{d.boldnessIndex ?? "—"}</p><p className="type-caption text-muted">{t("dna.percentil_entre_usuarios")}</p></Card>
                 <Card><p className="label">{t("dna.silhueta")}</p><p className="type-h2">{d.silhouette ?? "—"}</p><p className="type-caption text-muted">{t("dna.peca_icone", { value: d.iconPiece ?? "—" })}</p></Card>
                 <Card><p className="label">{t("common.estilos")}</p><div className="flex flex-wrap gap-1">{d.styles.map((s) => <Badge key={s}>{label(s)}</Badge>)}</div></Card>

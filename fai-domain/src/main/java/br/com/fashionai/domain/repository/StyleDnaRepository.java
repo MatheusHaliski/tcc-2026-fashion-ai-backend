@@ -18,4 +18,12 @@ import java.util.UUID;
 /** Repositório Spring Data de StyleDna (MySQL — fonte da verdade). */
 public interface StyleDnaRepository extends JpaRepository<StyleDna, UUID> {
     Optional<StyleDna> findByUserId(UUID userId);
+
+    /** DET-K06 — pessoas distintas com o mesmo arquétipo que usaram cada subcategoria num Look do Dia desde a data. */
+    @Query("select wi.subcategory, count(distinct dl.user.id) from DailyLook dl, SchemeItem si, StyleDna d join si.wardrobeItem wi "
+            + "where si.scheme = dl.scheme and d.user = dl.user and d.archetype = :archetype and dl.lookDate >= :since "
+            + "and wi.subcategory is not null group by wi.subcategory order by count(distinct dl.user.id) desc")
+    List<Object[]> archetypeUsageSince(@Param("archetype") StyleArchetype archetype, @Param("since") LocalDate since);
+
+    long countByArchetype(StyleArchetype archetype);
 }
