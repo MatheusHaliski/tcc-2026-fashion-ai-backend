@@ -15,6 +15,13 @@ Lê `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` e prepara cada banco da aba **
 | Redis | Confere conexão e senha (PING) | `REDIS_ENABLED=true`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_SSL` |
 | S3 / MinIO / R2 | Cria o bucket e o CORS para o frontend; com `S3_PUBLIC_READ=true`, leitura pública de `users/` e `pending/` (os documentos em `restricted/` continuam privados) | `STORAGE_TYPE=s3`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `APP_CORS_ALLOWED_ORIGINS` |
 
+> **Cloudflare R2**: nem toda API de bucket policy da AWS tem equivalente no R2, então `S3_PUBLIC_READ=true` pode falhar
+> nele. Ative o acesso público direto no painel (bucket → Settings → Public Access) nesse caso.
+
+> **DataStax Astra DB**: o adaptador de Cassandra aqui usa `contact-points`/`port`/`local-datacenter` puros (sem
+> "Secure Connect Bundle"), então o Astra — que só expõe CQL atrás desse bundle — não funciona sem código adicional.
+> Provedores com porta CQL direta (Instaclustr Managed Cassandra, ScyllaDB Cloud) funcionam sem alteração.
+
 ```bash
 pip install openpyxl boto3 cassandra-driver     # opcionais: planilha, S3 e Cassandra
 python3 scripts/provision/provision.py --check  # só confere
