@@ -1,0 +1,9 @@
+node_modules
+.next
+**/target
+docs
+markdowns
+material_chrome
+*.png
+!public/**/*.png
+.git
