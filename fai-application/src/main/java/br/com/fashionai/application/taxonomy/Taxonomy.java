@@ -1,5 +1,6 @@
 package br.com.fashionai.application.taxonomy;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 
 import java.util.LinkedHashMap;
@@ -108,41 +109,41 @@ public final class Taxonomy {
                                     String size, List<String> occasions, List<String> styles) {
         Map<String, Object> errors = new LinkedHashMap<>();
         if (!isValidCategory(category)) {
-            errors.put("category", "Categoria inválida.");
+            errors.put("category", Msg.t("taxonomy.categoria_invalida"));
         } else if (subcategory == null || !SUBCATEGORIES.get(category).contains(subcategory)) {
-            errors.put("subcategory", "Subcategoria não pertence à categoria escolhida.");
+            errors.put("subcategory", Msg.t("taxonomy.subcategoria_nao_pertence_a_categoria"));
         }
         if (sex == null || !SEXES.contains(sex)) {
-            errors.put("sex", "Campo sexo é obrigatório (Masculino, Feminino ou Unissex).");
+            errors.put("sex", Msg.t("taxonomy.campo_sexo_e_obrigatorio_masculino"));
         }
         if (color == null || !COLORS.containsKey(color)) {
-            errors.put("color", "Selecione uma cor da paleta oficial.");
+            errors.put("color", Msg.t("taxonomy.selecione_uma_cor_da_paleta"));
         }
         if (material == null || !MATERIALS.contains(material)) {
-            errors.put("material", "Selecione um material válido.");
+            errors.put("material", Msg.t("taxonomy.selecione_um_material_valido"));
         }
         if (size == null || !SIZES.contains(size)) {
-            errors.put("size", "Selecione um tamanho válido.");
+            errors.put("size", Msg.t("taxonomy.selecione_um_tamanho_valido"));
         }
         requireTags("occasion", occasions, allowedOccasions(category), 2, errors);
         requireTags("style", styles, STYLES, 2, errors);
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
     }
 
     public static void requireTags(String field, List<String> values, List<String> allowed, int max, Map<String, Object> errors) {
         if (values == null || values.isEmpty()) {
-            errors.put(field, "Informe ao menos 1 valor.");
+            errors.put(field, Msg.t("taxonomy.informe_ao_menos_1_valor"));
             return;
         }
         if (values.size() > max) {
-            errors.put(field, "Máximo de " + max + " valores (taxonomia §01).");
+            errors.put(field, Msg.t("taxonomy.maximo_de_valores_taxonomia_01", max));
             return;
         }
         for (String v : values) {
             if (!allowed.contains(v)) {
-                errors.put(field, "Valor fora da taxonomia: " + v);
+                errors.put(field, Msg.t("taxonomy.valor_fora_da_taxonomia", v));
                 return;
             }
         }

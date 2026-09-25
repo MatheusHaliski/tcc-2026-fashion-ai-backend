@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -158,12 +159,12 @@ public class SealService {
         s.setBackgroundConfigJson(Json.write(cfg));
         s.setIconUrl("UPLOAD".equals(design.get("mode")) ? String.valueOf(design.get("uploadUrl")) : f.iconUrl());
         if (f.availableFrom() != null && f.availableUntil() != null && f.availableUntil().isBefore(f.availableFrom())) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", "A disponibilidade termina antes de começar.");
+            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("common.a_disponibilidade_termina_antes_de"));
         }
         s.setAvailableFrom(f.availableFrom());
         s.setAvailableUntil(f.availableUntil());
         if (f.usageLimit() != null && f.usageLimit() < 1) {
-            throw ApiException.badRequest("LIMITE_INVALIDO", "O limite de emissão precisa ser positivo.");
+            throw ApiException.badRequest("LIMITE_INVALIDO", Msg.t("seal.o_limite_de_emissao_precisa"));
         }
         s.setUsageLimit(f.usageLimit());
         s.setStatus(f.status() == null ? SealStatus.ACTIVE : f.status());
@@ -186,16 +187,16 @@ public class SealService {
 
     public static String unavailableReason(Seal s, Instant now) {
         if (s.getStatus() != SealStatus.ACTIVE) {
-            return "O selo está inativo.";
+            return Msg.t("seal.o_selo_esta_inativo");
         }
         if (s.getAvailableFrom() != null && s.getAvailableFrom().isAfter(now)) {
-            return "O selo só fica disponível a partir de " + s.getAvailableFrom() + ".";
+            return Msg.t("seal.o_selo_so_fica_disponivel", s.getAvailableFrom());
         }
         if (s.getAvailableUntil() != null && !s.getAvailableUntil().isAfter(now)) {
-            return "O período de emissão do selo terminou.";
+            return Msg.t("seal.o_periodo_de_emissao_do");
         }
         if (s.getUsageLimit() != null && s.getUsageCount() >= s.getUsageLimit()) {
-            return "A campanha atingiu o limite de selos emitidos.";
+            return Msg.t("seal.a_campanha_atingiu_o_limite");
         }
         return null;
     }
@@ -263,11 +264,11 @@ public class SealService {
         for (SealTier tier : SealTier.values()) {
             Seal s = new Seal();
             s.setOwner(owner);
-            s.setName((premium ? "Selo Premium " : "Selo ") + owner.getDisplayName() + (tier == SealTier.PECA ? " · Peça" : " · Look"));
+            s.setName((premium ? Msg.t("seal.selo_premium") : "Selo ") + owner.getDisplayName() + (tier == SealTier.PECA ? Msg.t("seal.peca") : " · Look"));
             s.setTier(tier);
             s.setPremium(premium);
             s.setAutoIssued(true);
-            s.setPolicyText(tier == SealTier.PECA ? "Concedido a looks com 1 peça vinculada." : "Concedido a looks com várias peças vinculadas ou o look inteiro.");
+            s.setPolicyText(tier == SealTier.PECA ? Msg.t("seal.concedido_a_looks_com_1") : Msg.t("seal.concedido_a_looks_com_varias"));
             s.setBackgroundConfigJson(Json.write(Map.of("design", SealDesigns.defaultDesign(premium, tier))));
             seals.save(s);
         }
@@ -287,7 +288,7 @@ public class SealService {
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
         List<String> unregistered = new ArrayList<>();
         AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
-                List.of("marcas das peças", "estilo/ocasião do esquema", "assinatura de estilo das celebridades verificadas"),
+                List.of(Msg.t("seal.marcas_das_pecas"), Msg.t("seal.estilo_ocasiao_do_esquema"), Msg.t("seal.assinatura_de_estilo_das_celebridades")),
                 () -> candidates(scheme, items, unregistered));
         // descarta sugestões anteriores ainda não respondidas
         bonds.findBySchemeId(schemeId).stream().filter(b -> b.getStatus() == SealBondStatus.SUGGESTED).forEach(bonds::delete);
@@ -318,10 +319,10 @@ public class SealService {
         out.put("suggestions", suggestions);
         out.put("unregisteredBrands", unregistered);
         out.put("message", suggestions.isEmpty()
-                ? "Nenhuma marca ou celebridade atingiu a confiança mínima. Você pode vincular manualmente."
+                ? Msg.t("seal.nenhuma_marca_ou_celebridade_atingiu")
                 : null);
         if (!unregistered.isEmpty()) {
-            out.put("unregisteredMessage", "Somente marcas com perfil cadastrado podem conceder selos: " + String.join(", ", unregistered) + ".");
+            out.put("unregisteredMessage", Msg.t("seal.somente_marcas_com_perfil_cadastrado", String.join(", ", unregistered)));
         }
         out.put("explanation", outcome.explanation());
         out.put("inferenceId", outcome.inferenceId());
@@ -358,7 +359,7 @@ public class SealService {
             }
             out.add(new Candidate(bp.getOwner().getId(), "BRAND", bp.getBrandName(), bp.getLogoUrl(),
                     BigDecimal.valueOf(conf).setScale(3, RoundingMode.HALF_UP),
-                    k + " de " + n + " peças identificadas como " + bp.getBrandName(), k == 1 ? SealTier.PECA : SealTier.LOOK,
+                    Msg.t("seal.de_pecas_identificadas_como", (k), n, bp.getBrandName()), k == 1 ? SealTier.PECA : SealTier.LOOK,
                     e.getValue().stream().map(WardrobeItem::getId).toList(), SealBondBasis.BRAND_MATCH, null));
         }
         // Celebridades verificadas: assinatura de estilo (RF21.CA17/CA18).
@@ -383,9 +384,7 @@ public class SealService {
             matchedStyles.retainAll(styles);
             Set<String> matchedColors = new HashSet<>(sig.colors());
             matchedColors.retainAll(colors);
-            String why = (matchedStyles.isEmpty() ? "" : "estilo " + String.join("/", matchedStyles))
-                    + (matchedColors.isEmpty() ? "" : (matchedStyles.isEmpty() ? "" : " e ") + "paleta " + String.join("/", matchedColors))
-                    + " compatíveis" + (era == null ? "" : " com a era " + era);
+            String why = Msg.t("seal.compativeis", ((matchedStyles.isEmpty() ? "" : "estilo " + String.join("/", matchedStyles)) + (matchedColors.isEmpty() ? "" : (matchedStyles.isEmpty() ? "" : " e ") + "paleta " + String.join("/", matchedColors))), (era == null ? "" : Msg.t("seal.com_a_era", era)));
             out.add(new Candidate(cp.getOwner().getId(), "CELEBRITY", cp.getStageName(), cp.getAvatarUrl(),
                     BigDecimal.valueOf(conf).setScale(3, RoundingMode.HALF_UP), why.trim(), items.size() == 1 ? SealTier.PECA : SealTier.LOOK,
                     items.stream().map(si -> si.getWardrobeItem().getId()).toList(), SealBondBasis.STYLE_SIGNATURE, era));
@@ -408,7 +407,7 @@ public class SealService {
         guard.requireCanCreate(user);
         SealBond b = mine(user, bondId);
         if (b.getStatus() != SealBondStatus.SUGGESTED && b.getStatus() != SealBondStatus.REFUSED) {
-            throw ApiException.conflict("ESTADO_INVALIDO", "Este vínculo já foi respondido.");
+            throw ApiException.conflict("ESTADO_INVALIDO", Msg.t("seal.este_vinculo_ja_foi_respondido"));
         }
         b.setStatus(SealBondStatus.ACCEPTED);
         b.setImageRightsConsent(imageRightsConsent);
@@ -424,7 +423,7 @@ public class SealService {
         guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + schemeId);
         User target = users.findById(targetOwnerId).orElseThrow(() -> ApiException.notFound("Perfil"));
         if (target.getProfileType() == ProfileType.PESSOAL) {
-            throw ApiException.badRequest("PERFIL_INVALIDO", "Só marcas e celebridades cadastradas concedem selos.");
+            throw ApiException.badRequest("PERFIL_INVALIDO", Msg.t("seal.so_marcas_e_celebridades_cadastradas"));
         }
         if (target.getProfileType() == ProfileType.MARCA && brandProfiles.findByOwnerId(targetOwnerId)
                 .map(p -> p.getApprovalStatus() != ApprovalStatus.APROVADO).orElse(true)) {
@@ -447,7 +446,7 @@ public class SealService {
         b.setBasis(target.getProfileType() == ProfileType.CELEBRIDADE ? SealBondBasis.STYLE_SIGNATURE : SealBondBasis.BRAND_MATCH);
         b.setOrigin(SealBondOrigin.MANUAL);
         b.setStatus(SealBondStatus.EDITED);
-        b.setJustification("Vínculo escolhido manualmente pelo usuário.");
+        b.setJustification(Msg.t("seal.vinculo_escolhido_manualmente_pelo"));
         b.setImageRightsConsent(imageRightsConsent);
         b.setRespondedAt(Instant.now());
         requireUnique(b);
@@ -459,7 +458,7 @@ public class SealService {
     public Map<String, Object> refuse(CurrentUser user, UUID bondId) {
         SealBond b = mine(user, bondId);
         if (b.getStatus() != SealBondStatus.SUGGESTED) {
-            throw ApiException.conflict("ESTADO_INVALIDO", "Só sugestões podem ser recusadas.");
+            throw ApiException.conflict("ESTADO_INVALIDO", Msg.t("seal.so_sugestoes_podem_ser_recusadas"));
         }
         b.setStatus(SealBondStatus.REFUSED);
         b.setRespondedAt(Instant.now());
@@ -487,7 +486,7 @@ public class SealService {
                 List.of(SealBondStatus.PENDING_REVIEW, SealBondStatus.APPROVED)).isEmpty();
         if (dup) {
             // RF20.CA09 — selo único por par esquema/emissor.
-            throw ApiException.conflict("VINCULO_EXISTENTE", "Este esquema já tem vínculo com este perfil.");
+            throw ApiException.conflict("VINCULO_EXISTENTE", Msg.t("seal.este_esquema_ja_tem_vinculo"));
         }
     }
 
@@ -498,10 +497,10 @@ public class SealService {
         boolean celebrity = target.getProfileType() == ProfileType.CELEBRIDADE;
         if (celebrity && !Boolean.TRUE.equals(b.getImageRightsConsent())) {
             throw ApiException.badRequest("CONSENTIMENTO_IMAGEM",
-                    "Confirme que entende que o look será associado publicamente à imagem da celebridade (RF21.CA19).");
+                    Msg.t("seal.confirme_que_entende_que_o"));
         }
         Seal seal = sealFor(target, b.getTier());
-        String reason = seal == null ? "O perfil não tem selo ativo para este tier." : unavailableReason(seal, Instant.now());
+        String reason = seal == null ? Msg.t("seal.o_perfil_nao_tem_selo") : unavailableReason(seal, Instant.now());
         if (reason != null) {
             // RF21.CA23 — teto atingido: recusa com mensagem explicativa, sem emissão.
             b.setStatus(SealBondStatus.REJECTED);
@@ -515,8 +514,7 @@ public class SealService {
         if (requiresReview) {
             b.setStatus(SealBondStatus.PENDING_REVIEW);
             notifications.notify(target.getId(), b.getRequestedBy().getId(), NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND",
-                    b.getId(), "Novo vínculo para revisar", "@" + b.getRequestedBy().getUsername() + " vinculou o look \""
-                            + b.getScheme().getTitle() + "\" ao seu perfil.", null);
+                    b.getId(), Msg.k("seal.novo_vinculo_para_revisar"), Msg.k("seal.vinculou_o_look_ao_seu", b.getRequestedBy().getUsername(), b.getScheme().getTitle()), null);
             logBond(user, b, "PENDENTE");
         } else {
             issue(b, null);
@@ -551,8 +549,8 @@ public class SealService {
         }
         scheme.setSealIdsJson(Json.write(ids));
         notifications.notify(b.getRequestedBy().getId(), b.getTargetOwner().getId(), NotificationType.SEAL_GRANTED, "SEAL_BOND",
-                b.getId(), (seal.isPremium() ? "Selo Premium" : "Selo de Marca") + " emitido!",
-                "Seu look \"" + scheme.getTitle() + "\" recebeu o selo " + seal.getName() + ". Veja as promoções em Meus Selos.", null);
+                b.getId(), (seal.isPremium() ? Msg.k("seal.selo_premium_2") : Msg.k("seal.selo_de_marca")) + " emitido!",
+                Msg.k("seal.seu_look_recebeu_o_selo", scheme.getTitle(), seal.getName()), null);
         logBond(null, b, "EMITIDO");
         // o selo pode liberar promoções da marca/celebridade: direitos a cupom + notificação (card RF38)
         events.publishEvent(new DomainEvents.CouponRightsCheck(b.getRequestedBy().getId()));
@@ -583,11 +581,11 @@ public class SealService {
     @Transactional
     public Map<String, Object> review(CurrentUser user, UUID bondId, boolean approve, String reason) {
         requireIssuer(user);
-        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound("Vínculo"));
+        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.vinculo")));
         guard.requireOwner(user, b.getTargetOwner().getId(), "seal-bond:" + bondId);
         boolean revalidation = b.getStatus() == SealBondStatus.APPROVED && b.getScheme().isRevalidationPending();
         if (b.getStatus() != SealBondStatus.PENDING_REVIEW && !revalidation) {
-            throw ApiException.conflict("ESTADO_INVALIDO", "Este vínculo não está aguardando revisão.");
+            throw ApiException.conflict("ESTADO_INVALIDO", Msg.t("seal.este_vinculo_nao_esta_aguardando"));
         }
         if (approve) {
             if (revalidation) {
@@ -599,7 +597,7 @@ public class SealService {
             }
         } else {
             if (reason == null || reason.isBlank()) {
-                throw ApiException.badRequest("MOTIVO_OBRIGATORIO", "Informe o motivo da rejeição.");
+                throw ApiException.badRequest("MOTIVO_OBRIGATORIO", Msg.t("seal.informe_o_motivo_da_rejeicao"));
             }
             b.setStatus(revalidation ? SealBondStatus.REVOKED : SealBondStatus.REJECTED);
             b.setReviewNote(InputSanitizer.clean(reason, 1000));
@@ -609,7 +607,7 @@ public class SealService {
                 b.getScheme().setRevalidationPending(false);
             }
             notifications.notify(b.getRequestedBy().getId(), user.id(), NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND", b.getId(),
-                    "Vínculo " + (revalidation ? "revogado" : "não aprovado"), "Motivo: " + b.getReviewNote(), null);
+                    Msg.k("seal.vinculo_2", (revalidation ? "revogado" : Msg.k("seal.nao_aprovado"))), "Motivo: " + b.getReviewNote(), null);
             logBond(user, b, revalidation ? "REVOGADO" : "REJEITADO");
         }
         return bondView(b);
@@ -617,7 +615,7 @@ public class SealService {
 
     @Transactional
     public Map<String, Object> revoke(CurrentUser user, UUID bondId, String reason) {
-        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound("Vínculo"));
+        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.vinculo")));
         guard.requireOwner(user, b.getTargetOwner().getId(), "seal-bond:" + bondId);
         revokeInternal(b, reason == null ? "uso indevido" : reason, user.id());
         return bondView(b);
@@ -642,7 +640,7 @@ public class SealService {
         b.setReviewedAt(Instant.now());
         b.setReviewedBy(by);
         notifications.notify(b.getRequestedBy().getId(), by, NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND", b.getId(),
-                "Selo revogado", "O selo do look \"" + b.getScheme().getTitle() + "\" foi revogado: " + reason, null);
+                Msg.k("seal.selo_revogado"), Msg.k("seal.o_selo_do_look_foi", b.getScheme().getTitle(), reason), null);
         logBond(null, b, "REVOGADO");
     }
 
@@ -654,8 +652,8 @@ public class SealService {
             if (b.getStatus() == SealBondStatus.APPROVED) {
                 any = true;
                 notifications.notify(b.getTargetOwner().getId(), scheme.getUser().getId(), NotificationType.SEAL_BOND_REVIEW,
-                        "SEAL_BOND", b.getId(), "Revalidação pendente",
-                        "O look \"" + scheme.getTitle() + "\" vinculado ao seu perfil teve a lista de peças alterada.", null);
+                        "SEAL_BOND", b.getId(), Msg.k("seal.revalidacao_pendente"),
+                        Msg.k("seal.o_look_vinculado_ao_seu", scheme.getTitle()), null);
             }
         }
         scheme.setRevalidationPending(any);
@@ -708,7 +706,7 @@ public class SealService {
         }
         String v = raw.trim();
         if (!v.matches("(?i)https?://[^\\s]{3,500}")) {
-            throw ApiException.badRequest("LINK_INVALIDO", "Informe o link da loja começando com https://");
+            throw ApiException.badRequest("LINK_INVALIDO", Msg.t("seal.informe_o_link_da_loja"));
         }
         return v;
     }
@@ -746,7 +744,7 @@ public class SealService {
     @Transactional
     public Map<String, Object> updatePromotion(CurrentUser user, UUID id, PromotionForm f) {
         requireIssuer(user);
-        Promotion p = promotions.findById(id).orElseThrow(() -> ApiException.notFound("Promoção"));
+        Promotion p = promotions.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
         guard.requireOwner(user, p.getOwnerUserId(), "promotion:" + id);
         applyPromotion(user, p, f);
         return promotionView(p, null);
@@ -754,7 +752,7 @@ public class SealService {
 
     @Transactional
     public Map<String, Object> setPromotionStatus(CurrentUser user, UUID id, PromotionStatus status) {
-        Promotion p = promotions.findById(id).orElseThrow(() -> ApiException.notFound("Promoção"));
+        Promotion p = promotions.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
         guard.requireOwner(user, p.getOwnerUserId(), "promotion:" + id);
         p.setStatus(status);
         return promotionView(p, null);
@@ -762,21 +760,21 @@ public class SealService {
 
     private void applyPromotion(CurrentUser user, Promotion p, PromotionForm f) {
         if (f.type() == null) {
-            throw ApiException.badRequest("TIPO_OBRIGATORIO", "Escolha o tipo da promoção.");
+            throw ApiException.badRequest("TIPO_OBRIGATORIO", Msg.t("seal.escolha_o_tipo_da_promocao"));
         }
         User owner = users.findById(user.id()).orElseThrow();
         boolean celebrity = owner.getProfileType() == ProfileType.CELEBRIDADE;
         Set<PromotionType> brandTypes = Set.of(PromotionType.DESCONTO_ECOMMERCE, PromotionType.CUPOM_LOJA,
                 PromotionType.FRETE_GRATIS, PromotionType.BRINDE, PromotionType.ACESSO_ANTECIPADO, PromotionType.EVENTO);
         if (!celebrity && !brandTypes.contains(f.type())) {
-            throw ApiException.badRequest("TIPO_INVALIDO", "Tipo exclusivo de promoções de celebridade.");
+            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("seal.tipo_exclusivo_de_promocoes_de"));
         }
         p.setType(f.type());
         p.setTitle(InputSanitizer.required("title", f.title(), 3, 160));
         p.setDescription(InputSanitizer.clean(f.description(), 512));
         p.setRules(InputSanitizer.clean(f.rules(), 2048));
         if (f.discountPercent() != null && (f.discountPercent() < 1 || f.discountPercent() > 90)) {
-            throw ApiException.badRequest("DESCONTO_INVALIDO", "Desconto entre 1% e 90%.");
+            throw ApiException.badRequest("DESCONTO_INVALIDO", Msg.t("seal.desconto_entre_1_e_90"));
         }
         p.setDiscountPercent(f.discountPercent());
         if (f.sealId() != null) {
@@ -784,7 +782,7 @@ public class SealService {
             guard.requireOwner(user, seal.getOwner().getId(), "seal:" + f.sealId());
             if (seal.getStatus() != SealStatus.ACTIVE) {
                 // RNF12 — promoções só se aplicam a selos ativos.
-                throw ApiException.badRequest("SELO_INATIVO", "Promoções só podem ser aplicadas a selos ativos.");
+                throw ApiException.badRequest("SELO_INATIVO", Msg.t("seal.promocoes_so_podem_ser_aplicadas"));
             }
             p.setSeal(seal);
         }
@@ -792,17 +790,17 @@ public class SealService {
         p.setStartsAt(f.startsAt());
         p.setExpiresAt(f.expiresAt());
         if (f.startsAt() != null && f.expiresAt() != null && f.expiresAt().isBefore(f.startsAt())) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", "A promoção termina antes de começar.");
+            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("seal.a_promocao_termina_antes_de"));
         }
         p.setTotalQuota(f.totalQuota());
         p.setPerUserLimit(f.perUserLimit() == null ? 1 : Math.max(1, f.perUserLimit()));
         if (f.partnerBrandUserId() != null) {
             if (!celebrity) {
-                throw ApiException.badRequest("PARCEIRA_INVALIDA", "Marca parceira só se aplica a promoções de celebridade (RF21.CA22).");
+                throw ApiException.badRequest("PARCEIRA_INVALIDA", Msg.t("seal.marca_parceira_so_se_aplica"));
             }
-            User partner = users.findById(f.partnerBrandUserId()).orElseThrow(() -> ApiException.notFound("Marca parceira"));
+            User partner = users.findById(f.partnerBrandUserId()).orElseThrow(() -> ApiException.notFound(Msg.t("seal.marca_parceira")));
             if (partner.getProfileType() != ProfileType.MARCA) {
-                throw ApiException.badRequest("PARCEIRA_INVALIDA", "A parceira precisa ser uma marca cadastrada.");
+                throw ApiException.badRequest("PARCEIRA_INVALIDA", Msg.t("seal.a_parceira_precisa_ser_uma"));
             }
             p.setPartnerBrandUserId(partner.getId());
         }
@@ -856,26 +854,26 @@ public class SealService {
         m.put("status", p.getStatus());
         m.put("storeUrl", p.getStoreUrl());
         m.put("eligible", eligible != null && unavailable(p, now) == null);
-        m.put("unavailableReason", eligible == null ? "É preciso ter um selo válido deste perfil para resgatar." : unavailable(p, now));
+        m.put("unavailableReason", eligible == null ? Msg.t("seal.e_preciso_ter_um_selo") : unavailable(p, now));
         m.put("eligibleBondId", eligible == null ? null : eligible.getId());
         return m;
     }
 
     static String unavailable(Promotion p, Instant now) {
         if (p.getStatus() != PromotionStatus.AVAILABLE) {
-            return "Promoção " + (p.getStatus() == PromotionStatus.EXPIRED ? "expirada" : "indisponível") + ".";
+            return Msg.t("seal.promocao_2", (p.getStatus() == PromotionStatus.EXPIRED ? "expirada" : Msg.t("seal.indisponivel")));
         }
         if (p.getStartsAt() != null && p.getStartsAt().isAfter(now)) {
-            return "A promoção começa em " + p.getStartsAt() + ".";
+            return Msg.t("seal.a_promocao_comeca_em", p.getStartsAt());
         }
         if (p.getExpiresAt() != null && !p.getExpiresAt().isAfter(now)) {
-            return "Promoção expirada.";
+            return Msg.t("seal.promocao_expirada");
         }
         if (p.getTotalQuota() != null && p.getRedeemedCount() >= p.getTotalQuota()) {
-            return "Promoção esgotada.";
+            return Msg.t("seal.promocao_esgotada");
         }
         if (p.getSeal() != null && p.getSeal().getStatus() != SealStatus.ACTIVE) {
-            return "O selo desta promoção está inativo.";
+            return Msg.t("seal.o_selo_desta_promocao_esta");
         }
         return null;
     }
@@ -884,7 +882,7 @@ public class SealService {
     @Transactional
     public Map<String, Object> redeem(CurrentUser user, UUID promotionId) {
         guard.requireCanCreate(user);
-        Promotion p = promotions.findById(promotionId).orElseThrow(() -> ApiException.notFound("Promoção"));
+        Promotion p = promotions.findById(promotionId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
         Instant now = Instant.now();
         String reason = unavailable(p, now);
         if (reason != null) {
@@ -896,12 +894,12 @@ public class SealService {
         if (bond == null) {
             boolean revoked = bonds.findByRequestedByIdOrderByCreatedAtDesc(user.id()).stream()
                     .anyMatch(b -> b.getTargetOwner().getId().equals(p.getOwnerUserId()) && b.getStatus() == SealBondStatus.REVOKED);
-            throw ApiException.conflict("SELO_INVALIDO", revoked ? "Seu selo deste perfil foi revogado."
-                    : "É preciso ter um selo válido deste perfil para resgatar.");
+            throw ApiException.conflict("SELO_INVALIDO", revoked ? Msg.t("seal.seu_selo_deste_perfil_foi")
+                    : Msg.t("seal.e_preciso_ter_um_selo"));
         }
         long mine = redemptions.countByPromotionIdAndUserId(p.getId(), user.id());
         if (mine >= p.getPerUserLimit()) {
-            throw ApiException.conflict("LIMITE_POR_USUARIO", "Você já resgatou esta promoção o máximo de vezes permitido.");
+            throw ApiException.conflict("LIMITE_POR_USUARIO", Msg.t("seal.voce_ja_resgatou_esta_promocao"));
         }
         User owner = users.findById(p.getOwnerUserId()).orElseThrow();
         String prefix = owner.getUsername().replaceAll("[^A-Za-z0-9]", "").toUpperCase();
@@ -972,13 +970,13 @@ public class SealService {
     private void requireIssuer(CurrentUser user) {
         guard.requireCanCreate(user);
         if (user.profileType() == ProfileType.PESSOAL) {
-            throw guard.deny(user, "seals", "Selos e promoções são geridos por perfis de marca ou celebridade.");
+            throw guard.deny(user, "seals", Msg.t("seal.selos_e_promocoes_sao_geridos"));
         }
         guard.requireApprovedProfile(user, user.profileType());
     }
 
     private SealBond mine(CurrentUser user, UUID bondId) {
-        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound("Vínculo"));
+        SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.vinculo")));
         guard.requireOwner(user, b.getRequestedBy().getId(), "seal-bond:" + bondId);
         return b;
     }
@@ -990,7 +988,7 @@ public class SealService {
         meta.put("scheme", b.getScheme().getId().toString());
         meta.put("target", b.getTargetOwner().getId().toString());
         meta.put("status", b.getStatus().name());
-        meta.put("decidedBy", b.getReviewedBy() == null ? (user == null ? "sistema(auto-aprovação)" : user.id().toString())
+        meta.put("decidedBy", b.getReviewedBy() == null ? (user == null ? Msg.t("seal.sistema_auto_aprovacao") : user.id().toString())
                 : b.getReviewedBy().toString());
         audit.log(user == null ? "system" : user.id().toString(), AuditActions.MUDANCA_ESTADO_VINCULO_SELO,
                 "seal-bond:" + b.getId(), result, null, null, meta);

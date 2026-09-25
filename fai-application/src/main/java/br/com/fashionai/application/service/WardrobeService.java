@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -177,9 +178,9 @@ public class WardrobeService {
     public Draft analyze(CurrentUser user, byte[] bytes) {
         guard.requireCanCreate(user);
         ImageOps.requireAcceptedImage(bytes);
-        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         AiOutcome<FlatLayPipeline.Result> pipeline = ai.execute(user.id(), AiCapability.FLAT_LAY_STANDARDIZER,
-                List.of("foto enviada (" + bytes.length / 1024 + " KB)"), null, null,
+                List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null,
                 List.of(new AiEngine.RemoteStep<>() {
                     @Override
                     public String provider() {
@@ -224,9 +225,9 @@ public class WardrobeService {
         ImageOps.Cutout cutout = r.cutout();
         LocalVision.ModerationVerdict localVerdict = LocalVision.moderate(r.original(), cutout);
         AiOutcome<LocalVision.ModerationVerdict> moderation = ai.text(new AiEngine.TextCall<>(user.id(),
-                AiCapability.CONTENT_MODERATOR, MODERATION_SYSTEM, "Classifique a imagem anexada.",
+                AiCapability.CONTENT_MODERATOR, MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(r.original(), 768, 768), 0.85f), "image/jpeg")),
-                400, List.of("foto da peça (reduzida a 768 px)"), this::parseModeration, () -> localVerdict, null));
+                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), this::parseModeration, () -> localVerdict, null));
         LocalVision.ModerationVerdict verdict = moderation.value();
 
         // Detecção (#1) — pré-preenchimento só com confiança suficiente (RF4.CA02/CA03).
@@ -235,7 +236,7 @@ public class WardrobeService {
                 ANALYZER_SYSTEM, "Analise a peça de roupa da imagem anexada e responda só com o JSON.",
                 List.of(new AiRequest.AiImage(ImageOps.png(ImageOps.scaleToFit(ImageOps.composeCentered(
                         ImageOps.crop(cutout.image(), ImageOps.alphaBounds(cutout.image())), 768, 0.06, java.awt.Color.WHITE, false), 768, 768)), "image/png")),
-                600, List.of("foto padronizada da peça", "vocabulário da taxonomia v3.7"), this::parseAnalysis, () -> localGuess, null));
+                600, List.of(Msg.t("wardrobe.foto_padronizada_da_peca"), Msg.t("wardrobe.vocabulario_da_taxonomia_v3_7")), this::parseAnalysis, () -> localGuess, null));
         // logo apontado pela IA: caixa da imagem enviada (0–1000) → caixa relativa à peça (a mesma em qualquer escala)
         ImageOps.Box cutBox = ImageOps.alphaBounds(cutout.image());
         double[] logoRel = logoRelative(analysis.value() == null ? null : analysis.value().logoBox(), cutBox.w(), cutBox.h());
@@ -309,10 +310,10 @@ public class WardrobeService {
     /** RF4.CA05 — várias fotos: um rascunho por foto, revisáveis antes de confirmar o lote. */
     public List<Draft> analyzeBatch(CurrentUser user, List<byte[]> files) {
         if (files == null || files.isEmpty()) {
-            throw ApiException.badRequest("SEM_FOTOS", "Envie ao menos uma foto.");
+            throw ApiException.badRequest("SEM_FOTOS", Msg.t("wardrobe.envie_ao_menos_uma_foto"));
         }
         if (files.size() > 12) {
-            throw ApiException.badRequest("LOTE_GRANDE", "Envie no máximo 12 fotos por lote.");
+            throw ApiException.badRequest("LOTE_GRANDE", Msg.t("wardrobe.envie_no_maximo_12_fotos"));
         }
         List<Draft> drafts = new ArrayList<>();
         for (byte[] f : files) {
@@ -393,14 +394,14 @@ public class WardrobeService {
         List<String> cats = m.get("categories") instanceof List<?> l ? l.stream().map(String::valueOf).toList() : List.of();
         if (!safe) {
             return new LocalVision.ModerationVerdict(conf >= 0.85 ? ModerationStatus.REJECTED_POLICY : ModerationStatus.PENDING,
-                    conf, cats.isEmpty() ? List.of("conteúdo possivelmente impróprio") : cats, true);
+                    conf, cats.isEmpty() ? List.of(Msg.t("wardrobe.conteudo_possivelmente_improprio")) : cats, true);
         }
         if (!clothing) {
             return new LocalVision.ModerationVerdict(conf >= 0.85 ? ModerationStatus.REJECTED_NOT_CLOTHING : ModerationStatus.PENDING,
-                    conf, List.of("a imagem não parece ser uma peça de roupa"), true);
+                    conf, List.of(Msg.t("wardrobe.a_imagem_nao_parece_ser")), true);
         }
         return new LocalVision.ModerationVerdict(conf >= 0.6 ? ModerationStatus.APPROVED : ModerationStatus.PENDING, conf,
-                List.of("peça de roupa, sem violação"), conf < 0.6);
+                List.of(Msg.t("wardrobe.peca_de_roupa_sem_violacao")), conf < 0.6);
     }
 
     private Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo) {
@@ -414,7 +415,7 @@ public class WardrobeService {
         String name = sub == null ? null : humanize(sub) + (color == null ? "" : " " + humanize(color));
         return new Prefill(manual ? null : name, manual ? null : category, manual ? null : sub, color, manual ? null : material,
                 brand, manual ? null : g.sex(), List.of(), List.of(), List.of(), c, g.overall(), manual,
-                manual ? "A IA não reconheceu a peça com confiança suficiente. Preencha os campos manualmente." : null, logo);
+                manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo);
     }
 
     private static String keep(String value, Double confidence) {
@@ -438,7 +439,7 @@ public class WardrobeService {
     @Transactional
     public Views.PieceView create(CurrentUser user, PieceForm form) {
         guard.requireCanCreate(user);
-        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         validate(form);
         WardrobeItem w = new WardrobeItem();
         w.setUser(owner);
@@ -446,10 +447,10 @@ public class WardrobeService {
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         PipelineJob draft = form.draftId() == null ? null : jobs.findById(form.draftId()).orElse(null);
         if (draft != null && !draft.getUser().getId().equals(owner.getId())) {
-            throw guard.deny(user, "draft:" + form.draftId(), "Rascunho de outro usuário.");
+            throw guard.deny(user, "draft:" + form.draftId(), Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }
         if (draft == null && !form.useDefaultImage()) {
-            throw ApiException.badRequest("FOTO_OBRIGATORIA", "Envie uma foto ou escolha usar a imagem padrão da peça.");
+            throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
         }
         if (draft == null) {
             // imagem padrão da peça (/public/assets_pecas) quando o usuário deixa a foto vazia.
@@ -468,7 +469,7 @@ public class WardrobeService {
             Object modStatus = mod.get("status");
             ModerationStatus moderation = ModerationStatus.valueOf(modStatus == null ? "PENDING" : String.valueOf(modStatus));
             if (moderation == ModerationStatus.REJECTED_POLICY) {
-                throw ApiException.badRequest("CONTEUDO_BLOQUEADO", "A foto viola a política de conteúdo e não pode ser usada.");
+                throw ApiException.badRequest("CONTEUDO_BLOQUEADO", Msg.t("wardrobe.a_foto_viola_a_politica"));
             }
             // recorte incerto que a pessoa conferiu e mandou ao estúdio mesmo assim ("usar mesmo assim") vale como recorte
             boolean forcedCut = r.get("studio") instanceof Map<?, ?> fs && Boolean.TRUE.equals(fs.get("forced"))
@@ -542,7 +543,7 @@ public class WardrobeService {
         }
         projections.piece(w);
         notifications.notify(owner.getId(), null, NotificationType.PIECE_CREATED, "PIECE", w.getId(),
-                "Peça adicionada ao guarda-roupa", w.getName() + " já está no seu Closet Digital.", null);
+                Msg.k("wardrobe.peca_adicionada_ao_guarda_roupa"), Msg.k("wardrobe.ja_esta_no_seu_closet", (w.getName())), null);
         audit.log(user, AuditActions.CADASTRO_PECA, "piece:" + w.getId(), Map.of("category", w.getCategory(),
                 "defaultImage", w.isDefaultImage()));
         // RF32.CA02 (endereço automático), RF35 (pontos), RF34 (histórico de disponibilidade)
@@ -606,19 +607,19 @@ public class WardrobeService {
         Taxonomy.requirePiece(f.category(), f.subcategory(), f.sex(), f.color(), f.material(), f.size(), f.occasion(), f.style());
         Map<String, Object> errors = new LinkedHashMap<>();
         if (f.name() == null || f.name().isBlank()) {
-            errors.put("name", "Informe o nome da peça.");
+            errors.put("name", Msg.t("wardrobe.informe_o_nome_da_peca"));
         }
         if (f.price() == null || f.price().signum() < 0) {
-            errors.put("price", "Informe o preço (USD).");
+            errors.put("price", Msg.t("wardrobe.informe_o_preco_usd"));
         }
         if (f.seals() != null && f.seals().size() > 2) {
-            errors.put("seals", "Máximo de 2 selos sugeridos por peça.");
+            errors.put("seals", Msg.t("wardrobe.maximo_de_2_selos_sugeridos"));
         }
         if (!Taxonomy.isValidMarket(f.market())) {
-            errors.put("market", "Mercado inválido (estação_gênero, ex.: summer_female).");
+            errors.put("market", Msg.t("wardrobe.mercado_invalido_estacao_genero_ex"));
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
     }
 
@@ -670,7 +671,7 @@ public class WardrobeService {
      */
     private void resolveBrand(WardrobeItem w, UUID brandId, String brandName) {
         if (brandId != null) {
-            Brand b = brands.findById(brandId).orElseThrow(() -> ApiException.badRequest("MARCA_INVALIDA", "Marca não encontrada."));
+            Brand b = brands.findById(brandId).orElseThrow(() -> ApiException.badRequest("MARCA_INVALIDA", Msg.t("wardrobe.marca_nao_encontrada")));
             w.setBrand(b);
             w.setBrandName(b.getName());
             w.setBrandProfile(b.getBrandProfile());
@@ -781,7 +782,7 @@ public class WardrobeService {
     // ================================================================== RF7 — detalhe
     @Transactional
     public Map<String, Object> detail(CurrentUser viewer, UUID id, UUID fromSchemeId) {
-        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         boolean owner = viewer != null && viewer.id().equals(w.getUser().getId());
         Map<String, Object> out = new LinkedHashMap<>();
         if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED && !owner) {
@@ -894,9 +895,8 @@ public class WardrobeService {
         long published = uses.stream().filter(si -> si.getScheme().getStatus() == SchemeStatus.PUBLISHED).count();
         return Map.of("pieceId", w.getId(), "schemesAffected", uses.stream().map(si -> si.getScheme().getId()).distinct().count(),
                 "publishedSchemes", published,
-                "message", uses.isEmpty() ? "A peça não está em nenhum esquema."
-                        : "A peça está em " + uses.stream().map(si -> si.getScheme().getId()).distinct().count()
-                        + " esquema(s). Os já publicados mantêm o histórico da peça (snapshot).");
+                "message", uses.isEmpty() ? Msg.t("wardrobe.a_peca_nao_esta_em")
+                        : Msg.t("wardrobe.a_peca_esta_em_esquema", uses.stream().map(si -> si.getScheme().getId()).distinct().count()));
     }
 
     @Transactional
@@ -958,10 +958,10 @@ public class WardrobeService {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
         byte[] bytes = media.read(w.getOriginalImageUrl() != null ? w.getOriginalImageUrl() : w.getImageUrl())
-                .orElseThrow(() -> new ApiException(422, "SEM_IMAGEM", "Esta peça não tem foto armazenada para remover o fundo."));
+                .orElseThrow(() -> new ApiException(422, "SEM_IMAGEM", Msg.t("wardrobe.esta_peca_nao_tem_foto")));
         FlatLayPipeline.Result r = flatLay.run(bytes, true);
         if (!r.backgroundRemoved()) {
-            return Map.of("ok", false, "message", "Não foi possível remover o fundo agora; a sobreposição fica aproximada.",
+            return Map.of("ok", false, "message", Msg.t("wardrobe.nao_foi_possivel_remover_o"),
                     "stages", r.stages());
         }
         String base = "users/" + user.id() + "/pieces/" + id + "/processed-" + System.currentTimeMillis();
@@ -1010,7 +1010,7 @@ public class WardrobeService {
                     refreshStudio(w, r.studioSource(), true, true);                 // agora com recorte: ganha o estúdio
                     job.setStatus(PipelineJobStatus.COMPLETED);
                     notifications.notify(w.getUser().getId(), null, NotificationType.AI_JOB_FINISHED, "PIECE", w.getId(),
-                            "Foto da peça padronizada", "O fundo de " + w.getName() + " foi removido.", null);
+                            Msg.k("wardrobe.foto_da_peca_padronizada"), Msg.k("wardrobe.o_fundo_de_foi_removido", w.getName()), null);
                     done++;
                 } else {
                     job.setStatus(job.getAttempts() >= 3 ? PipelineJobStatus.FAILED : PipelineJobStatus.PENDING);
@@ -1161,7 +1161,7 @@ public class WardrobeService {
                                    br.com.fashionai.application.imaging.StudioPipeline.Hints hints) {
         try {
             AiOutcome<br.com.fashionai.application.imaging.StudioPipeline.Result> out = ai.execute(userId, AiCapability.STUDIO_ENHANCER,
-                    List.of("recorte da peça (PNG sem fundo)", "cor de fundo " + backdrop), null, null,
+                    List.of(Msg.t("common.recorte_da_peca_png_sem"), Msg.t("wardrobe.cor_de_fundo", backdrop)), null, null,
                     List.of(new AiEngine.RemoteStep<>() {
                         public String provider() {
                             return "photoroom/stability";
@@ -1177,7 +1177,7 @@ public class WardrobeService {
 
                         public AiEngine.RemoteResult<br.com.fashionai.application.imaging.StudioPipeline.Result> call() {
                             var res = studio.run(cutout, backdrop, true, hints);
-                            return new AiEngine.RemoteResult<>(res, res.costUsd(), "estúdio " + res.backdrop().id());
+                            return new AiEngine.RemoteResult<>(res, res.costUsd(), Msg.t("wardrobe.estudio", res.backdrop().id()));
                         }
                     }), () -> studio.run(cutout, backdrop, false, hints));
             var res = out.value();
@@ -1264,7 +1264,7 @@ public class WardrobeService {
     /** Fundos de estúdio disponíveis (+ "auto", que escolhe pela cor da peça). */
     public List<Map<String, Object>> studioBackdrops() {
         List<Map<String, Object>> out = new ArrayList<>();
-        out.add(Map.of("id", "auto", "label", "Automático (contraste com a peça)"));
+        out.add(Map.of("id", "auto", "label", Msg.t("wardrobe.automatico_contraste_com_a_peca")));
         for (var b : br.com.fashionai.application.imaging.StudioPipeline.BACKDROPS) {
             out.add(Map.of("id", b.id(), "label", b.label(), "hex", b.hex(), "edge", String.format("#%06X", b.edge())));
         }
@@ -1279,17 +1279,17 @@ public class WardrobeService {
     public Map<String, Object> studioDraft(CurrentUser user, UUID draftId, String backdrop, boolean force) {
         PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
         if (!draft.getUser().getId().equals(user.id())) {
-            throw guard.deny(user, "draft:" + draftId, "Rascunho de outro usuário.");
+            throw guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }
         Map<String, Object> r = new LinkedHashMap<>(Json.map(draft.getResultJson()));
         if (!Boolean.TRUE.equals(r.get("backgroundRemoved")) && !force) {
             throw new ApiException(422, "SEM_RECORTE", r.get("backgroundWarning") != null
-                    ? "O recorte automático ficou incerto: " + r.get("backgroundWarning") + ". Fotografe sobre um fundo de outra cor ou use o recorte mesmo assim."
-                    : "O estúdio precisa do fundo removido. Tente outra foto, com a peça sobre um fundo liso.");
+                    ? Msg.t("wardrobe.o_recorte_automatico_ficou_incerto", r.get("backgroundWarning"))
+                    : Msg.t("wardrobe.o_estudio_precisa_do_fundo"));
         }
         byte[] png = r.get("studioSourceUrl") == null ? null : media.read(String.valueOf(r.get("studioSourceUrl"))).orElse(null);
         if (png == null) {
-            png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound("Recorte do rascunho"));
+            png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound(Msg.t("wardrobe.recorte_do_rascunho")));
         }
         Map<?, ?> pf = r.get("prefill") instanceof Map<?, ?> m ? m : Map.of();
         Map<?, ?> flat = r.get("flatLayMetadata") instanceof Map<?, ?> m ? m : Map.of();
@@ -1298,7 +1298,7 @@ public class WardrobeService {
         Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
                 "users/" + user.id() + "/drafts/" + draftId + "/", hints);
         if (info == null) {
-            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. A foto padronizada continua valendo.");
+            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", Msg.t("wardrobe.nao_deu_para_gerar_o"));
         }
         if (!Boolean.TRUE.equals(r.get("backgroundRemoved"))) {
             info.put("forced", true);
@@ -1314,16 +1314,16 @@ public class WardrobeService {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
         if (w.isDefaultImage() || w.getImageUrl() == null || w.getPhotoProcessingStatus() != PhotoProcessingStatus.COMPLETED) {
-            throw new ApiException(422, "SEM_RECORTE", "A peça precisa de uma foto própria com o fundo removido para ir ao estúdio.");
+            throw new ApiException(422, "SEM_RECORTE", Msg.t("wardrobe.a_peca_precisa_de_uma"));
         }
         BufferedImage source = studioSource(w);
         if (source == null) {
-            throw ApiException.notFound("Foto da peça");
+            throw ApiException.notFound(Msg.t("wardrobe.foto_da_peca"));
         }
         Map<String, Object> info = studioShot(user.id(), source, backdrop == null ? "auto" : backdrop,
                 "users/" + user.id() + "/pieces/" + id + "/", studioHints(w));
         if (info == null) {
-            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", "Não deu para gerar o estúdio agora. Tente de novo em instantes.");
+            throw new ApiException(503, "ESTUDIO_INDISPONIVEL", Msg.t("wardrobe.nao_deu_para_gerar_o_2"));
         }
         applyStudio(w, info);
         return Views.piece(w, viewerState(user, w), null);
@@ -1381,10 +1381,10 @@ public class WardrobeService {
     @Transactional
     public Views.PieceView addToWardrobe(CurrentUser user, UUID sourceId) {
         guard.requireCanCreate(user);
-        WardrobeItem src = pieces.findById(sourceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem src = pieces.findById(sourceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireView(user, src.getUser().getId(), src.getVisibility(), "piece:" + sourceId);
         if (src.getUser().getId().equals(user.id())) {
-            throw ApiException.conflict("JA_E_SUA", "Esta peça já está no seu guarda-roupa.");
+            throw ApiException.conflict("JA_E_SUA", Msg.t("wardrobe.esta_peca_ja_esta_no"));
         }
         User owner = users.findById(user.id()).orElseThrow();
         WardrobeItem copy = new WardrobeItem();
@@ -1418,7 +1418,7 @@ public class WardrobeService {
     }
 
     public WardrobeItem owned(CurrentUser user, UUID id) {
-        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + id);
         return w;
     }

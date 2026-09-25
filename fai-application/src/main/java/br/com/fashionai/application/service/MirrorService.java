@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -206,13 +207,13 @@ public class MirrorService {
         List<Map<String, Object>> out = new ArrayList<>();
         boolean dress = single(slots, "dress") != null;
         if (!dress && single(slots, "upper") == null) {
-            out.add(Map.of("slot", "upper", "message", "Esse look ainda não possui uma peça superior (ou um vestido).", "action", "Sugerir peça superior"));
+            out.add(Map.of("slot", "upper", "message", Msg.t("mirror.esse_look_ainda_nao_possui"), "action", Msg.t("mirror.sugerir_peca_superior")));
         }
         if (!dress && single(slots, "lower") == null) {
-            out.add(Map.of("slot", "lower", "message", "Esse look ainda não possui uma peça inferior.", "action", "Sugerir peça inferior"));
+            out.add(Map.of("slot", "lower", "message", Msg.t("mirror.esse_look_ainda_nao_possui_2"), "action", Msg.t("mirror.sugerir_peca_inferior")));
         }
         if (single(slots, "shoes") == null) {
-            out.add(Map.of("slot", "shoes", "message", "Esse look ainda não possui calçado.", "action", "Sugerir calçado"));
+            out.add(Map.of("slot", "shoes", "message", Msg.t("mirror.esse_look_ainda_nao_possui_3"), "action", Msg.t("mirror.sugerir_calcado")));
         }
         return out;
     }
@@ -227,9 +228,9 @@ public class MirrorService {
         boolean dress = subs.stream().anyMatch(Set.of("dress", "jumpsuit", "romper")::contains);
         boolean belt = subs.contains("belt");
         String letter = dress || belt ? "X" : wideLower && fittedUpper ? "A" : volUpper && fittedLower ? "V" : volUpper && wideLower ? "H" : "H";
-        String thirds = letter.equals("A") ? "1/3 em cima, 2/3 embaixo — a parte de baixo domina" : letter.equals("V")
-                ? "2/3 em cima, 1/3 embaixo — a parte de cima domina" : letter.equals("X") ? "cintura marcada divide o look em 1/3–2/3"
-                : "proporções iguais (1/2–1/2): experimente marcar a cintura ou encurtar uma peça para chegar a 1/3–2/3";
+        String thirds = letter.equals("A") ? Msg.t("mirror.n1_3_em_cima_2") : letter.equals("V")
+                ? Msg.t("mirror.n2_3_em_cima_1") : letter.equals("X") ? Msg.t("mirror.cintura_marcada_divide_o_look")
+                : Msg.t("mirror.proporcoes_iguais_1_2_1");
         return Map.of("letter", letter, "rule", thirds, "toggle", true);
     }
 
@@ -295,7 +296,7 @@ public class MirrorService {
         List<String> warnings = new ArrayList<>();
         for (WardrobeItem w : look) {
             if (!available(w)) {
-                warnings.add("«" + w.getName() + "» está no cesto — não pode virar Look do Dia enquanto estiver indisponível (RF33.CA05).");
+                warnings.add(Msg.t("mirror.esta_no_cesto_nao_pode", w.getName()));
             }
         }
         out.put("warnings", warnings);
@@ -318,11 +319,11 @@ public class MirrorService {
         actions.add("VISTA_ME");
         out.put("actions", actions);
         out.put("silhouette", complete ? silhouette(look) : null);
-        out.put("postIt", !complete && !look.isEmpty() ? "Faltou " + missing(slots).stream().map(m -> switch (String.valueOf(m.get("slot"))) {
+        out.put("postIt", !complete && !look.isEmpty() ? Msg.t("mirror.faltou_o_look_continua_pendurado", missing(slots).stream().map(m -> switch (String.valueOf(m.get("slot"))) {
             case "shoes" -> "o sapato";
-            case "upper" -> "a peça de cima";
-            default -> "a peça de baixo";
-        }).collect(Collectors.joining(" e ")) + " — o look continua pendurado aqui." : null);
+            case "upper" -> Msg.t("mirror.a_peca_de_cima");
+            default -> Msg.t("mirror.a_peca_de_baixo");
+        }).collect(Collectors.joining(" e "))) : null);
         String colorSeason = dnas.findByUserId(user.id()).map(d -> d.getColorSeason()).orElse(null);
         out.put("light", Map.of("kelvin", colorSeason == null ? 4000 : switch (colorSeason.toUpperCase(Locale.ROOT)) {
             case "PRIMAVERA", "SPRING" -> 3400;
@@ -391,7 +392,7 @@ public class MirrorService {
         extra.put("placed", pieceView(w, where));
         extra.put("returned", returned);
         if (!available(w)) {
-            extra.put("notice", "«" + w.getName() + "» está no cesto (indisponível). Pode ficar no espelho, mas não vira Look do Dia.");
+            extra.put("notice", Msg.t("mirror.esta_no_cesto_indisponivel_pode", w.getName()));
         }
         return render(user, s, slots, extra);
     }
@@ -456,7 +457,7 @@ public class MirrorService {
         List<WardrobeItem> candidates = eligible(user.id()).stream().filter(w -> slotOf(w).equals(slot))
                 .filter(w -> !inMirror.contains(w.getId())).toList();
         if (candidates.isEmpty()) {
-            throw new ApiException(422, "SEM_CANDIDATAS", "Você não tem peça disponível para este slot. Cadastre uma peça (RF4) ou marque uma como disponível.",
+            throw new ApiException(422, "SEM_CANDIDATAS", Msg.t("mirror.voce_nao_tem_peca_disponivel"),
                     Map.of("href", "/add-piece", "slot", slot));
         }
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
@@ -474,7 +475,7 @@ public class MirrorService {
                 "Você é o Smart Mirror do Fashion AI. Escolha até 3 alternativas para o slot pedido, SOMENTE entre as candidatas (refs c1, c2...), "
                         + "que combinem com as peças já no espelho. Responda SOMENTE com JSON {\"alternatives\":[{\"ref\":\"c1\",\"why\":\"1 frase\"}]}.",
                 "Slot: " + slot + "\nNo espelho: " + Json.write(ctx) + "\nCandidatas: " + Json.write(catalog),
-                List.of(), 500, List.of("peças já no espelho e candidatas disponíveis do próprio acervo (metadados)"),
+                List.of(), 500, List.of(Msg.t("mirror.pecas_ja_no_espelho_e")),
                 text -> {
                     Map<String, Object> m = WardrobeService.extractJson(text);
                     if (!(m.get("alternatives") instanceof List<?> list)) {
@@ -528,7 +529,7 @@ public class MirrorService {
             double sim = ctx.isEmpty() ? 0.5 : ctx.stream().mapToDouble(x -> Similarity.weighted(sig, x)).average().orElse(0);
             boolean occ = ctxOcc.isEmpty() || Json.csv(c.getOccasionTags()).stream().anyMatch(ctxOcc::contains);
             double score = sim + (occ ? 0.3 : 0) + (br.com.fashionai.application.ai.local.ColorMath.isNeutral(c.getColor()) ? 0.1 : 0);
-            String why = occ ? "combina com a ocasião das peças do espelho" : "traz contraste com o que já está no espelho";
+            String why = occ ? Msg.t("mirror.combina_com_a_ocasiao_das") : Msg.t("mirror.traz_contraste_com_o_que");
             return Map.<String, Object>of("pieceId", c.getId(), "why", why, "score", score);
         }).sorted((a, b) -> Double.compare((double) b.get("score"), (double) a.get("score"))).limit(3).toList();
     }
@@ -587,12 +588,9 @@ public class MirrorService {
         }
         Interpretation local = localInterpretation(prompt, anchors);
         AiOutcome<Interpretation> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
-                "Interprete o pedido de look do usuário do Fashion AI. Responda SOMENTE com JSON "
-                        + "{\"occasion\":[códigos de " + Taxonomy.OCCASIONS + "],\"mood\":one of [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED] ou null,"
-                        + "\"anchor_refs\":[refs de peças que o usuário quer usar obrigatoriamente],\"constraints\":[\"cold\",\"hot\",\"different_from_usual\",\"monochrome\"...],"
-                        + "\"season\":one of [SPRING,SUMMER,AUTUMN,WINTER] ou null}.",
+                Msg.t("mirror.interprete_o_pedido_de_look", Taxonomy.OCCASIONS),
                 "Pedido: " + prompt + "\nPeças do acervo (refs): " + Json.write(names) + "\nÂncoras já escolhidas: " + anchors,
-                List.of(), 400, List.of("texto do pedido", "nomes/subcategorias das peças disponíveis"),
+                List.of(), 400, List.of(Msg.t("mirror.texto_do_pedido"), Msg.t("mirror.nomes_subcategorias_das_pecas")),
                 text -> {
                     Map<String, Object> m = WardrobeService.extractJson(text);
                     if (m.isEmpty()) {
@@ -646,11 +644,9 @@ public class MirrorService {
                 "Você é o Vista-me do Smart Mirror do Fashion AI. Monte UM look completo usando SOMENTE as peças do acervo (refs). "
                         + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Toda peça marcada anchor=true DEVE "
                         + "entrar. Nunca invente peças. Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}.",
-                "Pedido interpretado: " + Json.write(Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "constraints", it.constraints(),
-                        "season", String.valueOf(it.season()))) + "\nAcervo elegível: " + Json.write(catalog)
-                        + (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList())
-                        + (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown),
-                List.of(), 700, List.of("acervo elegível (metadados, sem fotos)", "pedido interpretado", "combinações já mostradas na sessão"),
+                Msg.t("mirror.pedido_interpretado_acervo_elegivel", Json.write(Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "constraints", it.constraints(),
+                        "season", String.valueOf(it.season()))), Json.write(catalog), (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList()), (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown)),
+                List.of(), 700, List.of("acervo elegível (metadados, sem fotos)", "pedido interpretado", Msg.t("mirror.combinacoes_ja_mostradas_na_sessao")),
                 text -> {
                     Map<String, Object> m = WardrobeService.extractJson(text);
                     if (!(m.get("refs") instanceof List<?> refs)) {
@@ -742,8 +738,7 @@ public class MirrorService {
         List<WardrobeItem> eligible = eligible(user.id());
         boolean hasTop = eligible.stream().anyMatch(w -> slotOf(w).equals("upper") || slotOf(w).equals("dress"));
         if (!hasTop) {
-            throw new ApiException(422, "ACERVO_SEM_SUPERIOR", "Você ainda não tem peça superior nem vestido disponível — o Vista-me precisa de ao menos "
-                    + "uma para montar o look. Cadastre uma peça (RF4) ou marque uma como disponível.", Map.of("href", "/add-piece", "rf", "RF33.CA14"));
+            throw new ApiException(422, "ACERVO_SEM_SUPERIOR", Msg.t("mirror.voce_ainda_nao_tem_peca"), Map.of("href", "/add-piece", "rf", "RF33.CA14"));
         }
         Set<UUID> eligibleIds = eligible.stream().map(WardrobeItem::getId).collect(Collectors.toSet());
         LinkedHashSet<UUID> anchors = new LinkedHashSet<>();
@@ -763,7 +758,7 @@ public class MirrorService {
         Optional<List<WardrobeItem>> composed = compose(user, it, eligible, shown, mirrorContext, holder);
         AiOutcome<?> composeOutcome = holder[0];
         if (composed.isEmpty()) {
-            throw new ApiException(422, "SEM_COMBINACAO_NOVA", "Não encontrei uma combinação nova com as peças elegíveis. Cadastre mais peças ou libere alguma do cesto.",
+            throw new ApiException(422, "SEM_COMBINACAO_NOVA", Msg.t("mirror.nao_encontrei_uma_combinacao_nova"),
                     Map.of("href", "/add-piece"));
         }
         List<WardrobeItem> look = composed.get();
@@ -803,19 +798,19 @@ public class MirrorService {
             RoomService.Location loc = where.get(w.getId());
             sequence.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "address", loc == null ? "" : loc.address().toString(),
                     "label", loc == null ? "" : loc.label(), "moduleId", loc == null ? "" : loc.moduleId(),
-                    "legend", w.getName() + " — " + (loc == null ? "posição desconhecida" : loc.label())));
+                    "legend", w.getName() + " — " + (loc == null ? Msg.t("common.posicao_desconhecida") : loc.label())));
         }
         Map<String, Object> extra = new LinkedHashMap<>();
         extra.put("sequence", sequence);
         extra.put("legend", sequence.stream().map(m -> String.valueOf(m.get("legend"))).toList());
         extra.put("fallbackUsed", (composeOutcome != null && composeOutcome.fallbackUsed()) || (interpretOutcome != null && interpretOutcome.fallbackUsed()));
         extra.put("fallbackMessage", composeOutcome != null && composeOutcome.fallbackUsed()
-                ? "Sugestão montada por regras locais (ocasião × tags) — a IA está indisponível ou acima do limite (RF33.CA15)." : null);
+                ? Msg.t("mirror.sugestao_montada_por_regras_locais") : null);
         extra.put("explanation", composeOutcome == null ? null : composeOutcome.explanation());
         extra.put("quota", composeOutcome == null ? null : composeOutcome.quota());
         extra.put("message", composeOutcome == null ? null : composeOutcome.userMessage());
         extra.put("actions", List.of("USAR_ESTE_LOOK", "TROCAR_UMA_PECA", "REMIXAR", "SALVAR", "OUTRA_SUGESTAO", "CRIAR_LOOK_COM_ESTAS_PECAS"));
-        restriction(user.id()).ifPresent(r -> extra.put("challengeNotice", "Respeitando o desafio " + r.challengeName() + ": só as peças permitidas entram (RF36.CA14)."));
+        restriction(user.id()).ifPresent(r -> extra.put("challengeNotice", Msg.t("mirror.respeitando_o_desafio_so_as", r.challengeName())));
         return render(user, s, newSlots, extra);
     }
 
@@ -843,7 +838,7 @@ public class MirrorService {
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
         if (!complete(slots)) {
-            throw new ApiException(409, "LOOK_INCOMPLETO", "Complete o look (superior + inferior ou vestido, e calçado) antes de tirar uma coisa.");
+            throw new ApiException(409, "LOOK_INCOMPLETO", Msg.t("mirror.complete_o_look_superior_inferior"));
         }
         Map<UUID, WardrobeItem> loaded = load(user.id(), allIds(slots));
         List<WardrobeItem> removable = new ArrayList<>();
@@ -853,7 +848,7 @@ public class MirrorService {
             removable.add(loaded.get(outer));
         }
         if (removable.isEmpty()) {
-            throw new ApiException(409, "NADA_A_TIRAR", "Esse look não tem acessório nem camada opcional — a regra de Chanel já está aplicada.");
+            throw new ApiException(409, "NADA_A_TIRAR", Msg.t("mirror.esse_look_nao_tem_acessorio"));
         }
         List<WardrobeItem> look = allIds(slots).stream().map(loaded::get).filter(Objects::nonNull).toList();
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
@@ -868,7 +863,7 @@ public class MirrorService {
                 "Regra de Coco Chanel: antes de sair, tire uma coisa. Entre as peças removíveis (refs), escolha UMA para tirar e diga por quê em 1 frase "
                         + "curta (ex.: 'o colar compete com a estampa'). Responda SOMENTE com JSON {\"remove_ref\":\"r1\",\"why\":\"...\"}.",
                 "Look: " + look.stream().map(w -> w.getName() + " (" + w.getSubcategory() + ", " + w.getColor() + ")").toList() + "\nRemovíveis: " + Json.write(cands),
-                List.of(), 200, List.of("peças do look no espelho (metadados)"),
+                List.of(), 200, List.of(Msg.t("mirror.pecas_do_look_no_espelho")),
                 text -> {
                     Map<String, Object> m = WardrobeService.extractJson(text);
                     WardrobeItem w = byRef.get(String.valueOf(m.get("remove_ref")));
@@ -894,8 +889,8 @@ public class MirrorService {
         WardrobeItem pick = removable.stream().filter(w -> "print".equals(w.getColor()) || "multicolor".equals(w.getColor())).findFirst()
                 .orElseGet(() -> removable.stream().min((a, b) -> Long.compare(families.getOrDefault(Taxonomy.COLOR_FAMILY.get(a.getColor()), 0L),
                         families.getOrDefault(Taxonomy.COLOR_FAMILY.get(b.getColor()), 0L))).orElse(removable.get(removable.size() - 1)));
-        String why = "print".equals(pick.getColor()) || "multicolor".equals(pick.getColor()) ? "a estampa compete com o resto do look"
-                : "é a cor que menos conversa com as outras peças — sem ela o look fica mais limpo";
+        String why = "print".equals(pick.getColor()) || "multicolor".equals(pick.getColor()) ? Msg.t("mirror.a_estampa_compete_com_o")
+                : Msg.t("mirror.e_a_cor_que_menos");
         return Map.of("pieceId", pick.getId(), "why", why);
     }
 
@@ -914,7 +909,7 @@ public class MirrorService {
     private Scheme materialize(CurrentUser user, Map<String, Object> slots, String title, boolean publish) {
         List<UUID> ids = allIds(slots);
         if (ids.size() < 2) {
-            throw ApiException.badRequest("SEM_PECAS", "Leve ao menos 2 peças ao espelho.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("mirror.leve_ao_menos_2_pecas"));
         }
         Scheme existing = findExistingScheme(user.id(), ids);
         if (existing != null) {
@@ -938,7 +933,7 @@ public class MirrorService {
         }
         LocalSchemeComposer.Composition base = LocalSchemeComposer.toComposition(look, occasions, List.of(), null, 0);
         String finalTitle = title != null && !title.isBlank() ? InputSanitizer.clean(title, 120)
-                : (origin == SchemeOrigin.VISTA_ME ? "Vista-me · " : "Espelho · ") + LocalDate.now(FaiPointsService.ZONE).format(DAY);
+                : (origin == SchemeOrigin.VISTA_ME ? Msg.t("mirror.vista_me") : Msg.t("mirror.espelho")) + LocalDate.now(FaiPointsService.ZONE).format(DAY);
         SchemeService.SchemeForm form = new SchemeService.SchemeForm(finalTitle, slots.get("prompt") == null ? null : "Pedido: " + slots.get("prompt"),
                 base.occasions(), base.styles(), null, null, null, null, items, origin == SchemeOrigin.VISTA_ME ? CreationMode.AI_ASSISTED : CreationMode.MANUAL, origin, null, null, Boolean.TRUE,
                 null, null, null, null, publish, null);
@@ -953,7 +948,7 @@ public class MirrorService {
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
         if (!complete(slots)) {
-            throw new ApiException(409, "LOOK_INCOMPLETO", "O Look do Dia precisa de (superior + inferior) ou vestido, e calçado (RF33 §2.1).");
+            throw new ApiException(409, "LOOK_INCOMPLETO", Msg.t("mirror.o_look_do_dia_precisa"));
         }
         Scheme scheme = materialize(user, slots, null, false);
         DailyLookSource source = scheme.getOrigin() == SchemeOrigin.VISTA_ME ? DailyLookSource.VISTA_ME : DailyLookSource.SMART_MIRROR;
@@ -964,7 +959,7 @@ public class MirrorService {
         out.put("dailyLook", dailyLooks.view(dl));
         out.put("source", source.name());
         out.put("closing", Map.of("animation", "fecho_vista_me", "steps", List.of("porta_fecha", "luz_sobe", "foto_do_look"), "respectsReduceMotion", true));
-        out.put("message", "Look do Dia registrado. " + (source == DailyLookSource.VISTA_ME ? "+FAI pts pelo Vista-me (limite 1/dia)." : ""));
+        out.put("message", Msg.t("mirror.look_do_dia_registrado", (source == DailyLookSource.VISTA_ME ? Msg.t("mirror.fai_pts_pelo_vista_me") : "")));
         return out;
     }
 
@@ -1008,7 +1003,7 @@ public class MirrorService {
         Map<String, Object> slots = slots(s);
         List<UUID> ids = allIds(slots);
         if (ids.isEmpty()) {
-            throw new ApiException(409, "ESPELHO_VAZIO", "Monte um look no espelho antes de gerar o vídeo.");
+            throw new ApiException(409, "ESPELHO_VAZIO", Msg.t("mirror.monte_um_look_no_espelho"));
         }
         Map<UUID, WardrobeItem> loaded = load(user.id(), ids);
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
@@ -1025,9 +1020,9 @@ public class MirrorService {
                     "pieceId", id, "imageUrl", String.valueOf(w.getImageUrl()), "caption", w.getName() + (loc == null ? "" : " — " + loc.label())));
             t += per;
         }
-        steps.add(Map.of("at", t, "durationMs", 3000, "moduleId", "mirror", "caption", "Look pronto ✨"));
+        steps.add(Map.of("at", t, "durationMs", 3000, "moduleId", "mirror", "caption", Msg.t("mirror.look_pronto")));
         events.publishEvent(new DomainEvents.MirrorAction(user.id(), "GRWM_VIDEO"));
-        return Map.of("format", "9:16", "maxSeconds", 15, "totalMs", t + 3000, "steps", steps, "music", "sem trilha com direitos autorais",
-                "watermark", "FAI", "excludes", List.of("preço", "marca (ETI-04)"));
+        return Map.of("format", "9:16", "maxSeconds", 15, "totalMs", t + 3000, "steps", steps, "music", Msg.t("mirror.sem_trilha_com_direitos_autorais"),
+                "watermark", "FAI", "excludes", List.of(Msg.t("common.preco"), "marca (ETI-04)"));
     }
 }

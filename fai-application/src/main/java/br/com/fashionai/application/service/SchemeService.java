@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -143,8 +144,8 @@ public class SchemeService {
         out.put("hiddenPieces", Math.max(0, total - eligible.size()));
         if (eligible.size() < 2) {
             out.put("status", "INSUFICIENTE");
-            out.put("message", "Você precisa de ao menos 2 peças disponíveis para criar um look. Cadastre suas peças primeiro.");
-            out.put("action", Map.of("label", "Adicionar nova peça", "href", "/add-piece"));
+            out.put("message", Msg.t("scheme.voce_precisa_de_ao_menos"));
+            out.put("action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/add-piece"));
         } else {
             out.put("status", "PRONTO");
         }
@@ -156,8 +157,8 @@ public class SchemeService {
         out.put("lists", lists);
         User u = users.findById(user.id()).orElseThrow();
         out.put("defaultVisibility", AccountService.defaultVisibility(u));
-        out.put("steps", List.of("1 · Modo de geração", "2 · Prompt da IA", "3 · Formulário manual", "4 · Arte de background",
-                "5 · Preview, slots e salvar"));
+        out.put("steps", List.of(Msg.t("scheme.n1_modo_de_geracao"), Msg.t("scheme.n2_prompt_da_ia"), Msg.t("scheme.n3_formulario_manual"), Msg.t("scheme.n4_arte_de_background"),
+                Msg.t("scheme.n5_preview_slots_e_salvar")));
         out.put("displayModes", DisplayMode.values());
         out.put("moods", Mood.values());
         out.put("seasons", Season.values());
@@ -181,7 +182,7 @@ public class SchemeService {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         if (eligible.size() < 2) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE",
-                    "Cadastre ao menos 2 peças disponíveis para gerar looks (RF5.CA02).", Map.of("href", "/add-piece"));
+                    Msg.t("scheme.cadastre_ao_menos_2_pecas"), Map.of("href", "/add-piece"));
         }
         Set<String> exclude = new HashSet<>(req.excludeCombinations() == null ? List.of() : req.excludeCombinations());
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
@@ -252,21 +253,14 @@ public class SchemeService {
                 {"compositions":[{"title":string,"refs":["p1",...],"occasion":[...],"style":[...],"mood":one of
                 [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"seals":[até 4 de affordable-chic, premium-look,
                 eco-conscious, trendy-combo, casual-elegance],"rationale":"até 2 frases"}]}""";
-        String prompt = "Acervo: " + Json.write(catalog)
-                + (photoRefs.isEmpty() ? "" : "\nFotos anexadas, na ordem, das peças: " + photoRefs)
-                + (profile.isEmpty() ? "" : "\nPerfil do usuário: " + Json.write(profile))
-                + "\nOcasião: " + req.occasion() + "\nEstilo: " + req.style()
-                + "\nHumor: " + req.mood() + "\nEstação: " + req.season() + "\nOrientações livres: "
-                + (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500))
-                + (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude);
-        List<String> inputs = new ArrayList<>(List.of(eligible.size()
-                + " peças do acervo com todos os atributos (categoria, cor, material, tamanho, estado, preço, uso, tags, notas, análise da foto)",
-                "ocasião/estilo/humor/estação pedidos", "orientações livres"));
+        String prompt = Msg.t("scheme.acervo_ocasiao_estilo_humor_estacao", Json.write(catalog), (photoRefs.isEmpty() ? "" : "\nFotos anexadas, na ordem, das peças: " + photoRefs), (profile.isEmpty() ? "" : "\nPerfil do usuário: " + Json.write(profile)), req.occasion(), req.style(), req.mood(), req.season(), (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500)), (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude));
+        List<String> inputs = new ArrayList<>(List.of(Msg.t("scheme.pecas_do_acervo_com_todos", (eligible.size())),
+                Msg.t("scheme.ocasiao_estilo_humor_estacao_pedidos"), Msg.t("common.orientacoes_livres")));
         if (!photoRefs.isEmpty()) {
-            inputs.add(photoRefs.size() + " fotos das peças (visão)");
+            inputs.add(Msg.t("scheme.fotos_das_pecas_visao", (photoRefs.size())));
         }
         if (profile.containsKey("styleDna")) {
-            inputs.add("DNA de estilo (arquétipo, paleta, estação cromática, silhueta)");
+            inputs.add(Msg.t("scheme.dna_de_estilo_arquetipo_paleta"));
         }
         AiOutcome<List<LocalSchemeComposer.Composition>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), capability,
                 system, prompt, photos, 1800, inputs,
@@ -277,8 +271,7 @@ public class SchemeService {
         List<LocalSchemeComposer.Composition> list = outcome.value() == null ? List.of() : outcome.value();
         String message = outcome.userMessage();
         if (list.size() < 3) {
-            message = (message == null ? "" : message + " ") + "Seu acervo permitiu " + list.size()
-                    + " combinação(ões) nova(s) — cadastre mais peças para variar.";
+            message = Msg.t("scheme.seu_acervo_permitiu_combinacao_oes", ((message == null ? "" : message + " ")), list.size());
         }
         return new ComposeResult(list, message, outcome.explanation(), outcome.inferenceId(), outcome.quota(),
                 outcome.fallbackUsed(), outcome.provider());
@@ -382,7 +375,7 @@ public class SchemeService {
         guard.requireCanCreate(user);
         User owner = users.findById(user.id()).orElseThrow();
         if (form.items() == null || form.items().isEmpty()) {
-            throw ApiException.badRequest("SEM_PECAS", "Adicione ao menos 1 peça para salvar o esquema (RF5.CA06).");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("scheme.adicione_ao_menos_1_peca"));
         }
         Scheme s = new Scheme();
         s.setUser(owner);
@@ -391,7 +384,7 @@ public class SchemeService {
         s.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         applyForm(s, form);
         if (form.remixedFromId() != null) {
-            Scheme src = schemes.findById(form.remixedFromId()).orElseThrow(() -> ApiException.notFound("Esquema de origem"));
+            Scheme src = schemes.findById(form.remixedFromId()).orElseThrow(() -> ApiException.notFound(Msg.t("scheme.esquema_de_origem")));
             guard.requireView(user, src.getUser().getId(), src.getVisibility(), "scheme:" + src.getId());
             s.setOriginalScheme(src);
             s.setOrigin(SchemeOrigin.REMIX);
@@ -408,7 +401,7 @@ public class SchemeService {
             src.setRemixCount(src.getRemixCount() + 1);
             counters.increment("scheme", src.getId(), "remixes", 1);
             notifications.notify(src.getUser().getId(), owner.getId(), NotificationType.NEW_REMIX, "SCHEME", s.getId(),
-                    "Seu look foi remixado", "@" + owner.getUsername() + " criou um look a partir de \"" + src.getTitle() + "\".", null);
+                    Msg.k("scheme.seu_look_foi_remixado"), Msg.k("scheme.criou_um_look_a_partir", owner.getUsername(), src.getTitle()), null);
             events.publishEvent(new DomainEvents.InteractionReceived(src.getUser().getId(), owner.getId(), "REMIX", src.getId()));
         }
         projections.scheme(s, items);
@@ -425,7 +418,7 @@ public class SchemeService {
             }
         }
         notifications.notify(owner.getId(), null, NotificationType.SCHEME_CREATED, "SCHEME", s.getId(),
-                "Esquema criado com sucesso", "\"" + s.getTitle() + "\" foi adicionado aos seus Looks.", null);
+                Msg.k("scheme.esquema_criado_com_sucesso"), Msg.k("scheme.foi_adicionado_aos_seus_looks", s.getTitle()), null);
         audit.log(user, AuditActions.CRIACAO_ESQUEMA, "scheme:" + s.getId(), Map.of("items", items.size(),
                 "creationMode", s.getCreationMode().name(), "origin", s.getOrigin().name()));
         Map<String, Object> out = new LinkedHashMap<>();
@@ -446,7 +439,7 @@ public class SchemeService {
         try {
             return seals.suggest(user, schemeId);
         } catch (RuntimeException ex) {
-            return Map.of("suggestions", List.of(), "message", "Sugestão de vínculo indisponível agora.");
+            return Map.of("suggestions", List.of(), "message", Msg.t("scheme.sugestao_de_vinculo_indisponivel_agora"));
         }
     }
 
@@ -457,10 +450,10 @@ public class SchemeService {
         Taxonomy.requireTags("occasion", f.occasion(), Taxonomy.OCCASIONS, 3, errors);
         Taxonomy.requireTags("style", f.style(), Taxonomy.STYLES, 3, errors);
         if (f.seals() != null && f.seals().size() > 4) {
-            errors.put("seals", "Máximo de 4 selos sugeridos por esquema.");
+            errors.put("seals", Msg.t("scheme.maximo_de_4_selos_sugeridos"));
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
         s.setOccasion(Json.csv(f.occasion()));
         s.setStyle(Json.csv(f.style()));
@@ -485,15 +478,15 @@ public class SchemeService {
         Map<UUID, WardrobeItem> own = new LinkedHashMap<>();
         for (ItemForm f : forms) {
             if (f.wardrobeItemId() == null) {
-                throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", Map.of("items", "Cada item precisa de wardrobeItemId."));
+                throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), Map.of("items", Msg.t("scheme.cada_item_precisa_de_wardrobeitemid")));
             }
-            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound("Peça " + f.wardrobeItemId()));
+            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound(Msg.t("scheme.peca", f.wardrobeItemId())));
             if (!w.getUser().getId().equals(user.id())) {
                 // RF5.CA07b / RF30.CA02 — só peças do acervo real do usuário.
-                throw ApiException.badRequest("PECA_DE_OUTRO_USUARIO", "Use apenas peças do seu guarda-roupa.");
+                throw ApiException.badRequest("PECA_DE_OUTRO_USUARIO", Msg.t("scheme.use_apenas_pecas_do_seu"));
             }
             if (!w.isDisponivel()) {
-                throw ApiException.badRequest("PECA_INDISPONIVEL", "A peça \"" + w.getName() + "\" está marcada como indisponível (RF31.CA02).");
+                throw ApiException.badRequest("PECA_INDISPONIVEL", Msg.t("scheme.a_peca_esta_marcada_como", w.getName()));
             }
             own.put(w.getId(), w);
         }
@@ -548,9 +541,9 @@ public class SchemeService {
     }
 
     // ================================================================== foto do look (como a foto de um post)
-    static final List<String> PHOTO_PIPELINE = List.of("formato validado (JPEG/PNG/WebP)", "tamanho mínimo 400 × 400 px",
-            "proporção de post (entre 1:2 e 2:1)", "redimensionada para no máximo 1600 px", "metadados removidos (EXIF/GPS)",
-            "registrada na moderação de mídia", "filtros aplicados na exibição, sem alterar o arquivo");
+    static final List<String> PHOTO_PIPELINE = List.of(Msg.k("scheme.formato_validado_jpeg_png_webp"), Msg.k("scheme.tamanho_minimo_400_400_px"),
+            Msg.k("scheme.proporcao_de_post_entre_1"), Msg.k("scheme.redimensionada_para_no_maximo_1600"), Msg.k("scheme.metadados_removidos_exif_gps"),
+            Msg.k("scheme.registrada_na_moderacao_de_midia"), Msg.k("scheme.filtros_aplicados_na_exibicao_sem"));
 
     /**
      * RF5 — a foto do conjunto é enviada pelo usuário, como a foto de um post. Passa pelo pipeline (validação, redimensionamento,
@@ -563,11 +556,11 @@ public class SchemeService {
         ImageOps.requireAcceptedImage(bytes);
         BufferedImage img = ImageOps.decode(bytes);
         if (img.getWidth() < 400 || img.getHeight() < 400) {
-            throw ApiException.badRequest("IMAGEM_PEQUENA", "A foto do look precisa ter ao menos 400 × 400 px.");
+            throw ApiException.badRequest("IMAGEM_PEQUENA", Msg.t("scheme.a_foto_do_look_precisa"));
         }
         double ratio = img.getWidth() / (double) img.getHeight();
         if (ratio > 2.0 || ratio < 0.5) {
-            throw ApiException.badRequest("PROPORCAO_INVALIDA", "Use uma foto com proporção de post (entre 1:2 e 2:1 — por exemplo 4:5, 1:1 ou 3:4).");
+            throw ApiException.badRequest("PROPORCAO_INVALIDA", Msg.t("scheme.use_uma_foto_com_proporcao"));
         }
         BufferedImage normalized = ImageOps.scaleToFit(img, 1600, 1600);
         byte[] jpeg = ImageOps.jpeg(normalized, 0.88f);
@@ -593,7 +586,7 @@ public class SchemeService {
             return;
         }
         if (!url.contains("/users/" + user.id() + "/looks/")) {
-            throw ApiException.badRequest("FOTO_INVALIDA", "Envie a foto do look pelo pipeline de fotos do RF5.");
+            throw ApiException.badRequest("FOTO_INVALIDA", Msg.t("scheme.envie_a_foto_do_look"));
         }
         s.setCoverImageUrl(url);
     }
@@ -620,7 +613,7 @@ public class SchemeService {
         }
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
         if (items.isEmpty()) {
-            throw ApiException.badRequest("SEM_PECAS", "Adicione ao menos 1 peça antes de publicar.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("scheme.adicione_ao_menos_1_peca_2"));
         }
         publishInternal(s, items);
         projections.scheme(s, items);
@@ -724,7 +717,7 @@ public class SchemeService {
         }
         List<SchemeItem> items = form.items() == null ? schemeItems.findBySchemeIdOrderBySortOrder(id) : replaceItems(user, s, form.items());
         if (items.isEmpty()) {
-            throw ApiException.badRequest("SEM_PECAS", "O esquema precisa de ao menos 1 peça.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("scheme.o_esquema_precisa_de_ao"));
         }
         Set<UUID> after = items.stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet());
         if (form.background() != null || Boolean.TRUE.equals(form.applyRecommendedDirection())) {
@@ -741,7 +734,7 @@ public class SchemeService {
         }
         if (s.getVisibility() == Visibility.PRIVATE && oldVisibility != Visibility.PRIVATE) {
             // RF20.CA14 — esquema tornado privado revoga os selos.
-            seals.revokeForScheme(s.getId(), "esquema tornado privado");
+            seals.revokeForScheme(s.getId(), Msg.t("scheme.esquema_tornado_privado"));
         }
         if (Boolean.TRUE.equals(form.publish()) && s.getStatus() != SchemeStatus.PUBLISHED) {
             publishInternal(s, items);
@@ -776,8 +769,8 @@ public class SchemeService {
                 (PRIVATE/FOLLOWERS/PUBLIC). Responda SOMENTE com JSON:
                 {"changes":[{"field":string,"proposed":valor,"reason":"1 frase"}]}""";
         AiOutcome<List<LocalAdvisors.FieldChange>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.EDIT_ASSISTANT,
-                system, "Esquema atual: " + Json.write(current) + "\nInstrução: " + InputSanitizer.clean(instruction, 500),
-                List.of(), 900, List.of("campos atuais do esquema", "instrução em linguagem natural"),
+                system, Msg.t("scheme.esquema_atual_instrucao", Json.write(current), InputSanitizer.clean(instruction, 500)),
+                List.of(), 900, List.of(Msg.t("scheme.campos_atuais_do_esquema"), "instrução em linguagem natural"),
                 text -> parseDiff(text, current), () -> LocalAdvisors.proposeEdit(current, instruction == null ? "" : instruction), null));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("changes", outcome.value());
@@ -826,7 +819,7 @@ public class SchemeService {
         Scheme s = owned(user, id);
         for (Map.Entry<String, Object> e : accepted.entrySet()) {
             if (!validChange(e.getKey(), e.getValue())) {
-                throw ApiException.badRequest("DIFF_INVALIDO", "Alteração inválida para o campo " + e.getKey());
+                throw ApiException.badRequest("DIFF_INVALIDO", Msg.t("scheme.alteracao_invalida_para_o_campo", e.getKey()));
             }
             switch (e.getKey()) {
                 case "title" -> s.setTitle(InputSanitizer.moderated("title", (String) e.getValue(), 120));
@@ -863,7 +856,7 @@ public class SchemeService {
         guard.requireCanCreate(user);
         Scheme s = owned(user, id);
         s.setStatus(SchemeStatus.ARCHIVED);
-        seals.revokeForScheme(id, "esquema excluído pelo autor");
+        seals.revokeForScheme(id, Msg.t("scheme.esquema_excluido_pelo_autor"));
         projections.removeScheme(id);
         audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("op", "archive"));
         return Map.of("id", id, "status", s.getStatus());
@@ -876,7 +869,7 @@ public class SchemeService {
         Scheme src = schemes.findById(sourceId).orElseThrow(() -> ApiException.notFound("Esquema"));
         requireView(user, src);
         if (!src.isDisponivel()) {
-            throw ApiException.conflict("INDISPONIVEL", "O autor marcou este look como indisponível para remix.");
+            throw ApiException.conflict("INDISPONIVEL", Msg.t("scheme.o_autor_marcou_este_look"));
         }
         List<SchemeItem> srcItems = schemeItems.findBySchemeIdOrderBySortOrder(sourceId);
         List<WardrobeItem> mine = wardrobe.eligible(user.id());
@@ -893,11 +886,11 @@ public class SchemeService {
                 mapped.add(new ItemForm(match.getId(), si.getSlot(), si.getSortOrder(), si.getZIndex(), si.getPositionX(),
                         si.getPositionY(), si.getScale(), si.getRotation(), si.getOpacity(), Json.map(si.getFiltersJson())));
             } else {
-                missing.add(Map.of("sourcePiece", Views.row(si), "action", "Adicionar ao guarda-roupa ou cadastrar peça parecida"));
+                missing.add(Map.of("sourcePiece", Views.row(si), "action", Msg.t("scheme.adicionar_ao_guarda_roupa_ou")));
             }
         }
         Map<String, Object> prefill = new LinkedHashMap<>();
-        prefill.put("title", "Remix de " + src.getTitle());
+        prefill.put("title", Msg.t("scheme.remix_de", src.getTitle()));
         prefill.put("description", src.getDescription());
         prefill.put("occasion", Json.csv(src.getOccasion()));
         prefill.put("style", Json.csv(src.getStyle()));
@@ -954,7 +947,7 @@ public class SchemeService {
         }
         List<String> chips = new ArrayList<>(Json.csv(s.getOccasion()));
         chips.addAll(Json.csv(s.getStyle()));
-        String price = s.getTotalPrice() == null ? null : String.format(Locale.US, "US$ %.2f", s.getTotalPrice());
+        String price = s.getTotalPrice() == null ? null : String.format(Locale.US, Msg.t("scheme.us_2f"), s.getTotalPrice());
         String hype = s.getHypeScore() == null ? null : "Hype " + s.getHypeScore().setScale(0, java.math.RoundingMode.HALF_UP) + "%";
         return new SchemeCardRenderer.Card(s.getTitle(), s.getUser().getUsername(), chips, price, hype, studio.rendererBackground(s),
                 cardItems, expanded ? SchemeCardRenderer.Size.EXPANDED : SchemeCardRenderer.Size.COMPACT);
@@ -969,8 +962,8 @@ public class SchemeService {
         g.fill(new RoundRectangle2D.Double(10, 10, 400, 400, 60, 60));
         g.setColor(ColorMath.isNeutral(w.getColor()) && Taxonomy.hex(w.getColor()).compareTo("#888888") > 0 ? Color.DARK_GRAY : Color.WHITE);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 34));
-        String label = WardrobeService.humanize(w.getSubcategory() == null ? "peça" : w.getSubcategory());
-        g.drawString(label, 210 - g.getFontMetrics().stringWidth(label) / 2, 220);
+        String label = WardrobeService.humanize(w.getSubcategory() == null ? Msg.t("scheme.peca_2") : w.getSubcategory());
+        g.drawString(Msg.resolve(label), 210 - g.getFontMetrics().stringWidth(label) / 2, 220);
         g.dispose();
         return img;
     }
@@ -980,7 +973,7 @@ public class SchemeService {
     public byte[] preview(CurrentUser user, SchemeForm form) {
         Scheme s = new Scheme();
         s.setUser(users.findById(user.id()).orElseThrow());
-        s.setTitle(form.title() == null ? "Pré-visualização" : form.title());
+        s.setTitle(form.title() == null ? Msg.t("scheme.pre_visualizacao") : form.title());
         s.setOccasion(Json.csv(form.occasion()));
         s.setStyle(Json.csv(form.style()));
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
@@ -990,7 +983,7 @@ public class SchemeService {
         List<SchemeItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         for (ItemForm f : form.items() == null ? List.<ItemForm>of() : form.items()) {
-            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound("Peça"));
+            WardrobeItem w = pieces.findById(f.wardrobeItemId()).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
             guard.requireOwner(user, w.getUser().getId(), "piece:" + w.getId());
             SchemeItem si = new SchemeItem();
             si.setWardrobeItem(w);

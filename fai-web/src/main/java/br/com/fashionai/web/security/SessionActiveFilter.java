@@ -1,5 +1,6 @@
 package br.com.fashionai.web.security;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.RequestActor;
 import br.com.fashionai.application.service.IdentityService;
 import br.com.fashionai.web.error.ErrorWriter;
@@ -37,7 +38,7 @@ public class SessionActiveFilter extends OncePerRequestFilter {
             String sid = token.getToken().getClaimAsString("sid");
             if (sid != null && !identity.sessionActive(UUID.fromString(sid))) {
                 SecurityContextHolder.clearContext();
-                errors.write(request, response, 401, "SESSAO_ENCERRADA", "Sua sessão foi encerrada. Faça login novamente.");
+                errors.write(request, response, 401, "SESSAO_ENCERRADA", Msg.t("sessionActiveFilter.sua_sessao_foi_encerrada_faca"));
                 return;
             }
             RequestActor.set(token.getToken().getClaimAsString("user_id"));

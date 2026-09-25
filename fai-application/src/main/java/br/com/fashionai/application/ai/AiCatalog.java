@@ -1,5 +1,6 @@
 package br.com.fashionai.application.ai;
 
+import br.com.fashionai.application.common.Msg;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -41,176 +42,172 @@ public final class AiCatalog {
     static {
         ProviderOption none = null;
         put(AiCapability.PIECE_ANALYZER,
-                "Detecta e classifica a peça pela foto: categoria, subcategoria, cor dominante, material, marca e confiança.",
-                gemini(Kind.VISION, "0.0012", "≈1,3 mil tokens de entrada (imagem) + 300 de saída", 1500),
-                claude(CLAUDE_LIGHT_MODEL, Kind.VISION, "0.0031", "Claude Haiku 4.5 com visão — alternativa da planilha RF24", 2200),
-                local("Análise local (k-means de cor + proporção da silhueta)", 120),
-                "Pré-preenche só o que tiver confiança; abaixo de 0,55 o formulário fica vazio com aviso, sem bloquear (RF4.CA03).",
-                60, "Implementado — Gemini Vision/Claude + fallback local");
+                Msg.k("aiCatalog.detecta_e_classifica_a_peca"),
+                gemini(Kind.VISION, "0.0012", Msg.k("aiCatalog.n1_3_mil_tokens_de"), 1500),
+                claude(CLAUDE_LIGHT_MODEL, Kind.VISION, "0.0031", Msg.k("aiCatalog.claude_haiku_4_5_com"), 2200),
+                local(Msg.k("aiCatalog.analise_local_k_means_de"), 120),
+                Msg.k("aiCatalog.pre_preenche_so_o_que"),
+                60, Msg.k("aiCatalog.implementado_gemini_vision_claude"));
         put(AiCapability.CONTENT_MODERATOR,
-                "Modera a foto contra a política de conteúdo e confirma que é uma peça de roupa.",
-                gemini(Kind.VISION, "0.0010", "classificação de segurança + 'é peça de roupa?'", 1200),
-                claude(CLAUDE_LIGHT_MODEL, Kind.VISION, "0.0028", "Claude Haiku 4.5 com visão", 2000),
-                local("Heurística local (resolução, cobertura do objeto, proporção de tons de pele)", 60),
-                "Nunca aprova por omissão: dúvida vai para a fila humana (moderation_queue) com status PENDING.",
-                200, "Implementado — remoto + heurística local + fila humana");
+                Msg.k("aiCatalog.modera_a_foto_contra_a"),
+                gemini(Kind.VISION, "0.0010", Msg.k("aiCatalog.classificacao_de_seguranca_e_peca"), 1200),
+                claude(CLAUDE_LIGHT_MODEL, Kind.VISION, "0.0028", Msg.k("aiCatalog.claude_haiku_4_5_com_2"), 2000),
+                local(Msg.k("aiCatalog.heuristica_local_resolucao_cobertura_do"), 60),
+                Msg.k("aiCatalog.nunca_aprova_por_omissao_duvida"),
+                200, Msg.k("aiCatalog.implementado_remoto_heuristica_local"));
         put(AiCapability.SCHEME_COMPOSER,
-                "Compõe 3 esquemas a partir de ocasião/estilo/orientações livres usando SÓ peças do acervo do usuário; lê todos os atributos das peças (material, cor, padrão, tamanho, estado, preço, uso), as fotos e o DNA de estilo.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", "≈4–12 mil tokens (acervo + até 12 fotos) + 1,2 mil de saída", 8000),
-                gemini(Kind.TEXT, "0.0042", "mesma entrada no Gemini Flash", 2500),
-                local("Composição por regras (ocasião, estilo, harmonia de cor, estação)", 40),
-                "Composição por regras locais + aviso ao usuário (RF5.CA04 continua atendido).",
-                30, "Implementado — Claude + Gemini + regras locais");
+                Msg.k("aiCatalog.compoe_3_esquemas_a_partir"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", Msg.k("aiCatalog.n4_12_mil_tokens_acervo"), 8000),
+                gemini(Kind.TEXT, "0.0042", Msg.k("aiCatalog.mesma_entrada_no_gemini_flash"), 2500),
+                local(Msg.k("aiCatalog.composicao_por_regras_ocasiao_estilo"), 40),
+                Msg.k("aiCatalog.composicao_por_regras_locais_aviso"),
+                30, Msg.k("aiCatalog.implementado_claude_gemini_regras_locais"));
         put(AiCapability.DNA_SYNTHESIZER,
-                "Sintetiza arquétipo (Kibbe), índice de ousadia, frase de identidade e paleta do DNA de Estilo.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0300", "≈3 mil tokens + 600 de saída; paleta sempre local (k-means)", 6000),
-                gemini(Kind.TEXT, "0.0025", "planilha original citava GPT-4o mini; implementado Gemini Flash", 2000),
-                local("Arquétipo por mapeamento estilo→Kibbe + paleta k-means local", 30),
-                "Card exibido sem a frase de identidade, com aviso; paleta local sempre disponível.",
-                10, "Implementado — Claude + Gemini + síntese local");
+                Msg.k("aiCatalog.sintetiza_arquetipo_kibbe_indice_de"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0300", Msg.k("aiCatalog.n3_mil_tokens_600_de"), 6000),
+                gemini(Kind.TEXT, "0.0025", Msg.k("aiCatalog.planilha_original_citava_gpt_4o"), 2000),
+                local(Msg.k("aiCatalog.arquetipo_por_mapeamento_estilo_kibbe"), 30),
+                Msg.k("aiCatalog.card_exibido_sem_a_frase"),
+                10, Msg.k("aiCatalog.implementado_claude_gemini_sintese_local"));
         put(AiCapability.BACKGROUND_GENERATOR,
-                "Gera a arte de fundo (Arte com AI) a partir de prompt, direção recomendada ou preset AURA/material.",
-                option("firefly", "Adobe Firefly Services", "firefly-image-4", CostMode.H, "0.0400",
-                        "assinatura com cota; excedente estimado por imagem", 6000, "FIREFLY_CLIENT_ID", Kind.IMAGE_GENERATION),
-                option("replicate", "Replicate (FLUX schnell / SDXL)", "black-forest-labs/flux-schnell", CostMode.P, "0.0030",
-                        "por imagem 1024px; Gemini Image (~US$0,039) é a 2ª alternativa", 4000, "REPLICATE_API_TOKEN", Kind.IMAGE_GENERATION),
-                local("Galeria pré-gerada: presets AURA, materiais, mosaicos e gradientes do /public", 20),
-                "Oferece a galeria de fundos pré-gerados (AURA/material/mosaico) e o modo Cor & Gradiente.",
-                20, "Implementado — Firefly/Replicate + galeria local");
+                Msg.k("aiCatalog.gera_a_arte_de_fundo"),
+                option("firefly", Msg.k("aiCatalog.adobe_firefly_services"), "firefly-image-4", CostMode.H, "0.0400",
+                        Msg.k("aiCatalog.assinatura_com_cota_excedente_estimado"), 6000, "FIREFLY_CLIENT_ID", Kind.IMAGE_GENERATION),
+                option("replicate", Msg.k("aiCatalog.replicate_flux_schnell_sdxl"), "black-forest-labs/flux-schnell", CostMode.P, "0.0030",
+                        Msg.k("aiCatalog.por_imagem_1024px_gemini_image"), 4000, "REPLICATE_API_TOKEN", Kind.IMAGE_GENERATION),
+                local(Msg.k("aiCatalog.galeria_pre_gerada_presets_aura"), 20),
+                Msg.k("aiCatalog.oferece_a_galeria_de_fundos"),
+                20, Msg.k("aiCatalog.implementado_firefly_replicate_galeria"));
         put(AiCapability.SEALBOND_MATCHER,
-                "Sugere até 3 vínculos de selo (marca/celebridade) com confiança e justificativa.",
-                local("Similaridade de embeddings local (marca da peça + assinatura de estilo)", 50),
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0300", "catálogo de marcas/celebridades em contexto", 6000),
-                local("Regra de marca exata", 5),
-                "Vínculo manual pelo usuário (RF20.CA03).",
-                50, "Implementado — local (primário) + Claude opcional");
+                Msg.k("aiCatalog.sugere_ate_3_vinculos_de"),
+                local(Msg.k("aiCatalog.similaridade_de_embeddings_local_marca"), 50),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0300", Msg.k("aiCatalog.catalogo_de_marcas_celebridades_em"), 6000),
+                local(Msg.k("aiCatalog.regra_de_marca_exata"), 5),
+                Msg.k("aiCatalog.vinculo_manual_pelo_usuario_rf20"),
+                50, Msg.k("aiCatalog.implementado_local_primario_claude"));
         put(AiCapability.STYLE_ADVISOR,
-                "Gera dica de estilo acionável a partir da métrica mais fraca (L/C/S/R) do painel Look do Dia.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0080", "≈800 tokens + 150 de saída", 3000),
-                gemini(Kind.TEXT, "0.0006", "Gemini Flash", 1200),
-                local("Dica por regra da métrica mais fraca", 5),
-                "Dica local pela métrica mais fraca.",
-                20, "Implementado — Claude + Gemini + regra local");
+                Msg.k("aiCatalog.gera_dica_de_estilo_acionavel"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0080", Msg.k("aiCatalog.n800_tokens_150_de_saida"), 3000),
+                gemini(Kind.TEXT, "0.0006", Msg.k("aiCatalog.gemini_flash"), 1200),
+                local(Msg.k("aiCatalog.dica_por_regra_da_metrica"), 5),
+                Msg.k("aiCatalog.dica_local_pela_metrica_mais"),
+                20, Msg.k("aiCatalog.implementado_claude_gemini_regra_local"));
         put(AiCapability.INSIGHT_GENERATOR,
-                "Leitura textual curta dos rankings agregados do Explorador Global.",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0150", "≈1,5 mil tokens de agregados + 300 de saída", 4000),
-                gemini(Kind.TEXT, "0.0012", "Gemini Flash", 1500),
-                local("Texto por template a partir dos rankings", 5),
-                "Rankings exibidos com leitura por template.",
-                20, "Implementado — Claude + Gemini + template local");
+                Msg.k("aiCatalog.leitura_textual_curta_dos_rankings"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0150", Msg.k("aiCatalog.n1_5_mil_tokens_de"), 4000),
+                gemini(Kind.TEXT, "0.0012", Msg.k("aiCatalog.gemini_flash"), 1500),
+                local(Msg.k("aiCatalog.texto_por_template_a_partir"), 5),
+                Msg.k("aiCatalog.rankings_exibidos_com_leitura_por"),
+                20, Msg.k("aiCatalog.implementado_claude_gemini_template"));
         put(AiCapability.BRAND_RESOLVER,
-                "Audita texto candidato a marca; só cadastra Brand quando validada como real e inédita.",
-                local("Fuzzy match (Jaro-Winkler) contra a tabela brands", 10),
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0063", "validação 'marca real?' ≈500 tokens + 150", 3000),
-                local("Normalização + match exato", 2),
-                "Nunca cria Brand por omissão: sem validação o texto fica como brandName livre.",
-                30, "Implementado — local + validação Claude");
+                Msg.k("aiCatalog.audita_texto_candidato_a_marca"),
+                local(Msg.k("aiCatalog.fuzzy_match_jaro_winkler_contra"), 10),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0063", Msg.k("aiCatalog.validacao_marca_real_500_tokens"), 3000),
+                local(Msg.k("aiCatalog.normalizacao_match_exato"), 2),
+                Msg.k("aiCatalog.nunca_cria_brand_por_omissao"),
+                30, Msg.k("aiCatalog.implementado_local_validacao_claude"));
         put(AiCapability.COPILOT,
-                "Recomendações de peças/esquemas a partir do acervo, preferências, histórico e clima (Open-Meteo).",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0375", "≈3,5 mil tokens + 800; justificativa ≤ 2 frases", 7000),
-                gemini(Kind.TEXT, "0.0031", "Gemini Flash", 2500),
-                local("Recomendação por regras + clima", 30),
-                "Recomendação por regras locais (RF10.CA05); sem clima, avisa.",
-                30, "Implementado — Claude + Gemini + regras locais");
+                Msg.k("aiCatalog.recomendacoes_de_pecas_esquemas_a"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0375", Msg.k("aiCatalog.n3_5_mil_tokens_800"), 7000),
+                gemini(Kind.TEXT, "0.0031", Msg.k("aiCatalog.gemini_flash"), 2500),
+                local(Msg.k("aiCatalog.recomendacao_por_regras_clima"), 30),
+                Msg.k("aiCatalog.recomendacao_por_regras_locais_rf10"),
+                30, Msg.k("aiCatalog.implementado_claude_gemini_regras_locais"));
         put(AiCapability.STYLE_INSIGHT,
-                "Detecta padrões no histórico (cores, tipos de peça, ocasiões) para a Cronologia de Estilo.",
-                local("Estatística local sobre o histórico de fotos/peças", 30),
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0100", "narrativa opcional dos padrões", 4000),
-                local("Estatística local", 30),
-                "Cronologia sem narrativa textual.",
-                20, "Implementado — local + narrativa Claude opcional");
+                Msg.k("aiCatalog.detecta_padroes_no_historico_cores"),
+                local(Msg.k("aiCatalog.estatistica_local_sobre_o_historico"), 30),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0100", Msg.k("aiCatalog.narrativa_opcional_dos_padroes"), 4000),
+                local(Msg.k("aiCatalog.estatistica_local"), 30),
+                Msg.k("aiCatalog.cronologia_sem_narrativa_textual"),
+                20, Msg.k("aiCatalog.implementado_local_narrativa_claude"));
         put(AiCapability.EDIT_ASSISTANT,
                 "\"Melhorar com IA\": propõe um diff estruturado (JSON validado) aceito ou recusado item a item.",
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0225", "≈2 mil tokens + 500; saída JSON validada", 5000),
-                gemini(Kind.TEXT, "0.0019", "Gemini Flash", 2000),
-                local("Parser de intenções por palavras-chave", 5),
-                "Edição manual, sem sugestão; nunca aplica sem revisão campo a campo.",
-                30, "Implementado — Claude + Gemini + parser local");
+                gemini(Kind.TEXT, "0.0019", Msg.k("aiCatalog.gemini_flash"), 2000),
+                local(Msg.k("aiCatalog.parser_de_intencoes_por_palavras"), 5),
+                Msg.k("aiCatalog.edicao_manual_sem_sugestao_nunca"),
+                30, Msg.k("aiCatalog.implementado_claude_gemini_parser_local"));
         put(AiCapability.ACERVO_GROUPING,
-                "Agrupa peças/esquemas do próprio acervo por semelhança (embeddings + k-means), restrito ao dono.",
-                local("Embeddings de atributos + k-means local", 60),
-                option("vertex", "Vertex AI Matching Engine", "—", CostMode.P, "0.0000",
-                        "alternativa da planilha — não implementada", 0, "—", Kind.TEXT),
-                local("Sem agrupamento", 1),
-                "Exibe o acervo sem agrupamento sugerido; nunca bloqueia a exibição.",
-                100, "Implementado — local");
+                Msg.k("aiCatalog.agrupa_pecas_esquemas_do_proprio"),
+                local(Msg.k("aiCatalog.embeddings_de_atributos_k_means"), 60),
+                option("vertex", Msg.k("aiCatalog.vertex_ai_matching_engine"), "—", CostMode.P, "0.0000",
+                        Msg.k("aiCatalog.alternativa_da_planilha_nao_implementada"), 0, "—", Kind.TEXT),
+                local(Msg.k("aiCatalog.sem_agrupamento"), 1),
+                Msg.k("aiCatalog.exibe_o_acervo_sem_agrupamento"),
+                100, Msg.k("aiCatalog.implementado_local"));
         put(AiCapability.AFFINITY,
-                "Ordena o feed de Marcas/Celebridades por afinidade de embeddings com o acervo do usuário (RF8).",
-                local("Cosseno entre centróide do usuário e do perfil", 20),
+                Msg.k("aiCatalog.ordena_o_feed_de_marcas"),
+                local(Msg.k("aiCatalog.cosseno_entre_centroide_do_usuario"), 20),
                 none,
-                local("Ordena por mais recentes", 1),
-                "Sem embeddings suficientes, ordena por mais recentes.",
-                200, "Implementado — local");
+                local(Msg.k("aiCatalog.ordena_por_mais_recentes"), 1),
+                Msg.k("aiCatalog.sem_embeddings_suficientes_ordena_por"),
+                200, Msg.k("aiCatalog.implementado_local"));
         put(AiCapability.THREE_D_GENERATOR,
-                "Gera o modelo 3D (GLB texturizado) da peça a partir do recorte do RF4; job assíncrono com estado visível.",
-                option("meshy", "Meshy image-to-3D", "meshy-5", CostMode.P, "0.4000",
-                        "≈20 créditos por modelo com textura PBR; 1–3 min", 120000, "MESHY_API_KEY", Kind.THREE_D),
-                option("stability-sf3d", "Stability AI · Stable Fast 3D", "stable-fast-3d", CostMode.P, "0.1000",
-                        "10 créditos por modelo; poucos segundos", 8000, "STABILITY_API_KEY", Kind.THREE_D),
-                local("Relevo inflado local: silhueta do recorte → malha frente/verso + foto como textura (glTF binário)", 400),
-                "Sem provedor ou com falha, gera o relevo local; erro sem saída vira FALHOU com motivo e 1 reprocessamento grátis (RF16.CA03).",
-                3, "Implementado — Meshy (assíncrono) + Stable Fast 3D + relevo local");
+                Msg.k("aiCatalog.gera_o_modelo_3d_glb"),
+                option("meshy", Msg.k("aiCatalog.meshy_image_to_3d"), "meshy-5", CostMode.P, "0.4000",
+                        Msg.k("aiCatalog.n20_creditos_por_modelo_com"), 120000, "MESHY_API_KEY", Kind.THREE_D),
+                option("stability-sf3d", Msg.k("aiCatalog.stability_ai_stable_fast_3d"), "stable-fast-3d", CostMode.P, "0.1000",
+                        Msg.k("aiCatalog.n10_creditos_por_modelo_poucos"), 8000, "STABILITY_API_KEY", Kind.THREE_D),
+                local(Msg.k("aiCatalog.relevo_inflado_local_silhueta_do"), 400),
+                Msg.k("aiCatalog.sem_provedor_ou_com_falha"),
+                3, Msg.k("aiCatalog.implementado_meshy_assincrono_stable"));
         put(AiCapability.TRY_ON,
-                "Sobrepõe os slots TOP/BOTTOM/OUTER no manequim virtual (masculino/feminino).",
+                Msg.k("aiCatalog.sobrepoe_os_slots_top_bottom"),
                 option("fashn", "FASHN.ai", "tryon-v1.6", CostMode.P, "0.0750",
-                        "por geração; RFC estima US$0,09–0,15 por look completo", 5000, "FASHN_API_KEY", Kind.IMAGE_PROCESSING),
-                option("replicate", "IDM-VTON via Replicate", "cuuupid/idm-vton", CostMode.P, "0.0300",
-                        "por geração em GPU A40", 9000, "REPLICATE_API_TOKEN", Kind.IMAGE_PROCESSING),
-                local("Sobreposição aproximada por camadas e âncoras do manequim", 150),
-                "Sobreposição aproximada, com aviso (RF18.CA05); estados PENDING→COMPLETED/FAILED.",
-                15, "Implementado — FASHN.ai + compositor local");
+                        Msg.k("aiCatalog.por_geracao_rfc_estima_us"), 5000, "FASHN_API_KEY", Kind.IMAGE_PROCESSING),
+                option("replicate", Msg.k("aiCatalog.idm_vton_via_replicate"), "cuuupid/idm-vton", CostMode.P, "0.0300",
+                        Msg.k("aiCatalog.por_geracao_em_gpu_a40"), 9000, "REPLICATE_API_TOKEN", Kind.IMAGE_PROCESSING),
+                local(Msg.k("aiCatalog.sobreposicao_aproximada_por_camadas_e"), 150),
+                Msg.k("aiCatalog.sobreposicao_aproximada_com_aviso_rf18"),
+                15, Msg.k("aiCatalog.implementado_fashn_ai_compositor_local"));
         put(AiCapability.TRY_ON_POLISH,
-                "Corrige costuras, bordas e cor/luz da saída bruta do try-on (estágio ENHANCING).",
-                option("cleanup", "Cleanup.pictures API", "cleanup-hd", CostMode.P, "0.0200",
+                Msg.k("aiCatalog.corrige_costuras_bordas_e_cor"),
+                option("cleanup", Msg.k("aiCatalog.cleanup_pictures_api"), "cleanup-hd", CostMode.P, "0.0200",
                         "por imagem", 1500, "CLEANUP_API_KEY", Kind.IMAGE_PROCESSING),
-                option("replicate", "Real-ESRGAN via Replicate", "nightmareai/real-esrgan", CostMode.P, "0.0020",
+                option("replicate", Msg.k("aiCatalog.real_esrgan_via_replicate"), "nightmareai/real-esrgan", CostMode.P, "0.0020",
                         "por imagem", 3000, "REPLICATE_API_TOKEN", Kind.IMAGE_PROCESSING),
-                local("Suavização de borda (feather) + casamento de luminância local", 60),
-                "Mantém a saída bruta, só pula o polimento (degradação graciosa).",
-                15, "Implementado — Cleanup + polimento local");
+                local(Msg.k("aiCatalog.suavizacao_de_borda_feather_casamento"), 60),
+                Msg.k("aiCatalog.mantem_a_saida_bruta_so"),
+                15, Msg.k("aiCatalog.implementado_cleanup_polimento_local"));
         put(AiCapability.CATEGORY_FALLBACK_COMPOSITOR,
-                "Posiciona calçados e acessórios rígidos sobre landmarks do manequim (compositing determinístico).",
-                local("Tabela de landmarks pé/perna e mão/rosto do manequim (equivalente MediaPipe)", 40),
+                Msg.k("aiCatalog.posiciona_calcados_e_acessorios_rigidos"),
+                local(Msg.k("aiCatalog.tabela_de_landmarks_pe_perna"), 40),
                 none,
-                local("Slot sem overlay", 1),
-                "Slot fica sem overlay; o card mantém a foto 2D da peça isolada.",
-                500, "Implementado — local");
+                local(Msg.k("aiCatalog.slot_sem_overlay"), 1),
+                Msg.k("aiCatalog.slot_fica_sem_overlay_o"),
+                500, Msg.k("aiCatalog.implementado_local"));
         put(AiCapability.PHOTO_CURATOR,
-                "Aba 'Para Você': 4 carrosséis (Em destaque, Não vê há um tempo, Combina agora, Sugestões de uso) com motivo.",
-                local("Heurística local + embeddings do acervo", 40),
+                Msg.k("aiCatalog.aba_para_voce_4_carrosseis"),
+                local(Msg.k("aiCatalog.heuristica_local_embeddings_do_acervo"), 40),
                 none,
-                local("Grade cronológica", 1),
-                "Cai no modo Grade padrão (cronológico), nunca bloqueia o acesso às fotos.",
-                100, "Implementado — local");
+                local(Msg.k("aiCatalog.grade_cronologica"), 1),
+                Msg.k("aiCatalog.cai_no_modo_grade_padrao"),
+                100, Msg.k("aiCatalog.implementado_local"));
         put(AiCapability.FLAT_LAY_STANDARDIZER,
-                "Pipeline híbrido Flat Lay: remoção de fundo → correção de perspectiva → normalização de cor → composição 1024px → validação de qualidade.",
-                option("rembg", "rembg (auto-hospedado, ONNX u2net) via HTTP", "u2net", CostMode.G, "0.0000",
-                        "self-hosted; RFC: US$0,01–0,02 por imagem no pipeline completo", 600, "REMBG_URL", Kind.IMAGE_PROCESSING),
-                option("removebg", "remove.bg API", "remove.bg", CostMode.P, "0.2000",
-                        "por imagem em créditos (alternativa)", 1500, "REMOVE_BG_API_KEY", Kind.IMAGE_PROCESSING),
-                local("Java2D: flood fill de borda + PCA de orientação + gray-world + composição 1024px", 450),
-                "Salva com a foto original e enfileira reprocessamento (RF4.CA06).",
-                60, "Implementado — rembg/remove.bg + Cloudinary + pipeline local");
+                Msg.k("aiCatalog.pipeline_hibrido_flat_lay_remocao"),
+                option("rembg", Msg.k("aiCatalog.rembg_auto_hospedado_onnx_u2net"), "u2net", CostMode.G, "0.0000",
+                        Msg.k("aiCatalog.self_hosted_rfc_us_0"), 600, "REMBG_URL", Kind.IMAGE_PROCESSING),
+                option("removebg", Msg.k("aiCatalog.remove_bg_api"), "remove.bg", CostMode.P, "0.2000",
+                        Msg.k("aiCatalog.por_imagem_em_creditos_alternativa"), 1500, "REMOVE_BG_API_KEY", Kind.IMAGE_PROCESSING),
+                local(Msg.k("aiCatalog.java2d_flood_fill_de_borda"), 450),
+                Msg.k("aiCatalog.salva_com_a_foto_original"),
+                60, Msg.k("aiCatalog.implementado_rembg_remove_bg_cloudinary"));
         put(AiCapability.STUDIO_ENHANCER,
-                "Depois do Flat Lay, leva a foto da peça a acabamento de estúdio: ampliação/nitidez, reiluminação com volume, "
-                        + "fundo de estúdio em cor harmônica, sombra suave e composição 1600 px.",
-                option("photoroom", "Photoroom Image Editing API (fundo + AI lighting + AI shadow)", "photoroom-v2-edit", CostMode.P, "0.1000",
-                        "por imagem (plano Plus); 2–5 s", 5000, "PHOTOROOM_API_KEY", Kind.IMAGE_PROCESSING),
-                option("stability-upscale", "Stability AI · Upscale Fast (4×)", "stable-upscale-fast", CostMode.P, "0.0200",
-                        "2 créditos por imagem; ~1 s", 2500, "STABILITY_API_KEY", Kind.IMAGE_PROCESSING),
-                local("Java2D: bicúbica progressiva + clarity + nitidez + vibração, luz por campo de altura, gradiente radial, sombra projetada/contato", 900),
-                "Sem provedor, o estúdio local assume; a foto do Flat Lay continua disponível e nada trava o cadastro (RNF8).",
-                200, "Implementado — Photoroom + Stability Upscale + estúdio local");
+                Msg.k("aiCatalog.depois_do_flat_lay_leva"),
+                option("photoroom", Msg.k("aiCatalog.photoroom_image_editing_api_fundo"), "photoroom-v2-edit", CostMode.P, "0.1000",
+                        Msg.k("aiCatalog.por_imagem_plano_plus_2"), 5000, "PHOTOROOM_API_KEY", Kind.IMAGE_PROCESSING),
+                option("stability-upscale", Msg.k("aiCatalog.stability_ai_upscale_fast_4"), "stable-upscale-fast", CostMode.P, "0.0200",
+                        Msg.k("aiCatalog.n2_creditos_por_imagem_1"), 2500, "STABILITY_API_KEY", Kind.IMAGE_PROCESSING),
+                local(Msg.k("aiCatalog.java2d_bicubica_progressiva_clarity"), 900),
+                Msg.k("aiCatalog.sem_provedor_o_estudio_local"),
+                200, Msg.k("aiCatalog.implementado_photoroom_stability"));
         put(AiCapability.BRAND_LOGO_FINDER,
-                "Procura na internet o logo oficial da marca: Wikidata/Wikimedia Commons (logo P154 e site P856) → busca na web "
-                        + "pela IA (Claude + web_search) → ícone do site oficial; baixa, valida e guarda no storage próprio. No RF4 também "
-                        + "lista marcas para o campo marca (buscador web: Wikidata, Simple Icons e IA), com o logo passado pelo filtro "
-                        + "de nitidez (fundo branco, letras pretas).",
-                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", "até 3 buscas na web (US$ 10 / mil buscas) + ≈3 mil tokens", 15000),
+                Msg.k("aiCatalog.procura_na_internet_o_logo"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", Msg.k("aiCatalog.ate_3_buscas_na_web"), 15000),
                 null,
-                local("Monograma SVG com as iniciais e uma cor estável por marca", 5),
-                "Sem logo confiável, a interface mostra o monograma e uma nova busca é feita depois de 3 dias.",
-                200, "Implementado — Wikidata + Claude com busca na web + ícone do site + monograma");
+                local(Msg.k("aiCatalog.monograma_svg_com_as_iniciais"), 5),
+                Msg.k("aiCatalog.sem_logo_confiavel_a_interface"),
+                200, Msg.k("aiCatalog.implementado_wikidata_claude_com_busca"));
     }
 
     private AiCatalog() {
@@ -227,21 +224,21 @@ public final class AiCatalog {
     private static void put(AiCapability cap, String what, ProviderOption primary, ProviderOption alternative,
                             ProviderOption local, String fallback, int quota, String status) {
         SPECS.put(cap, new CapabilitySpec(cap, what, primary, alternative, local, fallback, quota, 30, status,
-                List.of("RNF5 (registro da inferência)", "RNF6 (consentimento/transparência)", "RNF8 (timeout 30 s + fallback)")));
+                List.of(Msg.t("aiCatalog.rnf5_registro_da_inferencia"), Msg.t("aiCatalog.rnf6_consentimento_transparencia"), Msg.t("aiCatalog.rnf8_timeout_30_s_fallback"))));
     }
 
     static ProviderOption claude(String model, Kind kind, String cost, String note, long latency) {
-        return new ProviderOption("anthropic", "Claude (Anthropic API)", model, CostMode.P, new BigDecimal(cost), note,
+        return new ProviderOption("anthropic", Msg.t("aiCatalog.claude_anthropic_api"), model, CostMode.P, new BigDecimal(cost), note,
                 latency, "ANTHROPIC_API_KEY", kind);
     }
 
     static ProviderOption gemini(Kind kind, String cost, String note, long latency) {
-        return new ProviderOption("gemini", "Google Gemini Flash", GEMINI_DEFAULT_MODEL, CostMode.H, new BigDecimal(cost),
-                note + " (free tier cobre a demonstração)", latency, "GEMINI_API_KEY", kind);
+        return new ProviderOption("gemini", Msg.t("aiCatalog.google_gemini_flash"), GEMINI_DEFAULT_MODEL, CostMode.H, new BigDecimal(cost),
+                Msg.t("aiCatalog.free_tier_cobre_a_demonstracao", (note)), latency, "GEMINI_API_KEY", kind);
     }
 
     static ProviderOption local(String description, long latency) {
-        return new ProviderOption("local", description, "local", CostMode.G, BigDecimal.ZERO, "processado no backend",
+        return new ProviderOption("local", description, "local", CostMode.G, BigDecimal.ZERO, Msg.t("aiCatalog.processado_no_backend"),
                 latency, "—", Kind.LOCAL);
     }
 

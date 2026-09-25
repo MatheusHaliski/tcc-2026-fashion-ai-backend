@@ -16,19 +16,21 @@ import { useI18n } from "@/lib/i18n/i18n";
 export interface StoreEntry { id: string; label: string; rank: number; audience: number; fraction: number; fireworks: number; accentColor: string; artUrl?: string | null; score: number }
 
 function Sign({ text, color }: { text: string; color: string }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     g.fillStyle = "#101318"; g.fillRect(0, 0, w, h);
     g.strokeStyle = color; g.lineWidth = 10; g.strokeRect(8, 8, w - 16, h - 16);
-    g.fillStyle = "#ffffff"; g.font = "700 64px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#ffffff"; g.font = t("three.storeStreetScene.n700_64px_inter_arial_sans"); g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(text.length > 18 ? text.slice(0, 17) + "…" : text, w / 2, h / 2 + 2);
   }, 768, 144, [text, color]);
   return <mesh position={[0, 1.78, 0.72]}><planeGeometry args={[2.1, 0.39]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>;
 }
 
 function RankBadge({ rank, color }: { rank: number; color: string }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     g.fillStyle = rank === 1 ? "#E9B949" : rank === 2 ? "#C9CED6" : rank === 3 ? "#C98A55" : color; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#111"; g.font = "800 120px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${rank}`, w / 2, h / 2 + 6);
+    g.fillStyle = "#111"; g.font = t("three.storeStreetScene.n800_120px_inter_arial_sans"); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${rank}`, w / 2, h / 2 + 6);
   }, 256, 256, [rank, color]);
   return <sprite position={[0, 2.55, 0.4]} scale={[0.5, 0.5, 1]}><spriteMaterial map={tex} depthTest={false} /></sprite>;
 }

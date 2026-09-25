@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCatalog;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.assets.AssetCatalogService;
@@ -133,15 +134,15 @@ public class AdminService {
             c.setVerificationNotes(clean);
             c.setRequiresSealReview(true); // RF21.CA19 — celebridade sempre revisa
         } else {
-            throw ApiException.badRequest("PERFIL_PESSOAL", "Perfis pessoais não passam por validação.");
+            throw ApiException.badRequest("PERFIL_PESSOAL", Msg.t("admin.perfis_pessoais_nao_passam_por"));
         }
         if (approve) {
             u.setStatus(AccountStatus.ACTIVE);
             seals.ensureDefaultSeals(u);
         }
         users.save(u);
-        notifications.notify(userId, admin.id(), NotificationType.ACCOUNT_APPROVAL, "USER", userId, approve ? "Perfil validado ✅" : "Cadastro não aprovado",
-                approve ? "Seu perfil já aparece no feed e pode receber vínculos." : "Motivo: " + (clean == null ? "documentação insuficiente" : clean), Map.of());
+        notifications.notify(userId, admin.id(), NotificationType.ACCOUNT_APPROVAL, "USER", userId, approve ? Msg.k("admin.perfil_validado") : Msg.k("admin.cadastro_nao_aprovado"),
+                approve ? Msg.k("admin.seu_perfil_ja_aparece_no") : "Motivo: " + (clean == null ? Msg.k("admin.documentacao_insuficiente") : clean), Map.of());
         audit.log(admin, approve ? "PERFIL_APROVADO" : "PERFIL_RECUSADO", "user:" + userId, Map.of("profileType", u.getProfileType().name()));
         return Map.of("userId", userId, "approved", approve);
     }
@@ -170,7 +171,7 @@ public class AdminService {
     @Transactional
     public Map<String, Object> moderate(CurrentUser admin, UUID itemId, boolean approve, String reason) {
         guard.requireAdmin(admin);
-        ModerationQueueItem q = moderation.findById(itemId).orElseThrow(() -> ApiException.notFound("Item de moderação"));
+        ModerationQueueItem q = moderation.findById(itemId).orElseThrow(() -> ApiException.notFound(Msg.t("admin.item_de_moderacao")));
         q.setStatus(approve ? ModerationQueueStatus.APPROVED : ModerationQueueStatus.REJECTED);
         q.setReviewedBy(admin.id());
         q.setReviewedAt(Instant.now());
@@ -195,7 +196,7 @@ public class AdminService {
     public Map<String, Object> setStatus(CurrentUser admin, UUID userId, boolean suspend, String reason) {
         guard.requireAdmin(admin);
         if (admin.id().equals(userId)) {
-            throw ApiException.badRequest("AUTO_SUSPENSAO", "Você não pode suspender a própria conta.");
+            throw ApiException.badRequest("AUTO_SUSPENSAO", Msg.t("admin.voce_nao_pode_suspender_a"));
         }
         User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
         u.setStatus(suspend ? AccountStatus.SUSPENDED : AccountStatus.ACTIVE);
@@ -209,7 +210,7 @@ public class AdminService {
     public Map<String, Object> setRole(CurrentUser admin, UUID userId, String role) {
         guard.requireAdmin(admin);
         if (!List.of("USER", "ADMIN").contains(role)) {
-            throw ApiException.badRequest("PAPEL_INVALIDO", "Papéis: USER ou ADMIN.");
+            throw ApiException.badRequest("PAPEL_INVALIDO", Msg.t("admin.papeis_user_ou_admin"));
         }
         User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
         u.setRole(role);
@@ -250,7 +251,7 @@ public class AdminService {
         r.setStartedAt(Instant.now());
         backups.save(r);
         BackupPort port = backupPort.getIfAvailable();
-        BackupPort.Result res = port == null ? new BackupPort.Result(false, null, 0, null, "Nenhum adaptador de backup configurado.") : port.run("MYSQL_FULL");
+        BackupPort.Result res = port == null ? new BackupPort.Result(false, null, 0, null, Msg.t("admin.nenhum_adaptador_de_backup_configurado")) : port.run("MYSQL_FULL");
         r.setStatus(res.ok() ? "COMPLETED" : "FAILED");
         r.setFileKey(res.fileKey());
         r.setSizeBytes(res.sizeBytes());
@@ -298,7 +299,7 @@ public class AdminService {
             case "challenges" -> challenges.tick();
             case "assets" -> assets.syncPresets();
             case "notifications" -> analytics.purgeNotifications((int) NotificationService.RETENTION.toDays());
-            default -> throw ApiException.badRequest("JOB_INVALIDO", "Jobs: hype, rankings, challenges, assets, notifications.");
+            default -> throw ApiException.badRequest("JOB_INVALIDO", Msg.t("admin.jobs_hype_rankings_challenges_assets"));
         };
         audit.log(admin, "JOB_EXECUTADO", "job:" + job, Map.of());
         return Map.of("job", job, "result", result);

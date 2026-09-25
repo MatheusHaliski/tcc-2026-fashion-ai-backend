@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.CurrentUser;
@@ -38,13 +39,13 @@ public class FaiPointsService {
 
     /** §5.3 — nível, limiar de pontos vitalícios (calibração inicial: ~1 semana até Studio, ~2 meses até Closet). */
     public enum Level {
-        ESTREIA(0, "FAI Origem, Smart Mirror, Vista-me, Copilot, gavetas com categoria", "branco de fábrica"),
-        STUDIO(300, "Iluminação guiada personalizável e monograma nas portas", "primeiros acabamentos e materiais"),
-        LOFT(900, "+2 módulos e mais categorias próprias", "quarto maior"),
-        CLOSET(2000, "Sapateira, vitrine de bolsas e porta-joias", "módulos especializados"),
-        ATELIER(4000, "Ilha central = bancada de looks (comparar 2–3 looks) e regras automáticas de organização", "ilha central"),
-        PENTHOUSE(7500, "Troca de estação: peças fora de estação no maleiro, ignoradas pelo Vista-me", "ambiente premium"),
-        MAISON(12000, "Closet de assinatura, itens exclusivos e Colabs Maison", "closet de assinatura");
+        ESTREIA(0, Msg.k("faiPoints.fai_origem_smart_mirror_vista"), Msg.k("faiPoints.branco_de_fabrica")),
+        STUDIO(300, Msg.k("faiPoints.iluminacao_guiada_personalizavel_e"), Msg.k("faiPoints.primeiros_acabamentos_e_materiais")),
+        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior"),
+        CLOSET(2000, Msg.k("faiPoints.sapateira_vitrine_de_bolsas_e"), Msg.k("faiPoints.modulos_especializados")),
+        ATELIER(4000, Msg.k("faiPoints.ilha_central_bancada_de_looks"), "ilha central"),
+        PENTHOUSE(7500, Msg.k("faiPoints.troca_de_estacao_pecas_fora"), "ambiente premium"),
+        MAISON(12000, Msg.k("faiPoints.closet_de_assinatura_itens_exclusivos"), Msg.k("faiPoints.closet_de_assinatura"));
 
         public final int threshold;
         public final String unlocks;
@@ -105,23 +106,23 @@ public class FaiPointsService {
     public Award award(UUID userId, String actionCode, String refType, String refId, Integer pointsOverride) {
         FaiPointsRule rule = rules.findById(actionCode).orElse(null);
         if (rule == null || !rule.isActive()) {
-            return new Award(false, 0, false, "Ação sem regra de pontos.", level(userId), false);
+            return new Award(false, 0, false, Msg.t("faiPoints.acao_sem_regra_de_pontos"), level(userId), false);
         }
         String key = userId + ":" + actionCode + ":" + (refId == null ? LocalDate.now(ZONE) : refId);
         if (ledger.existsByIdempotencyKey(key)) {
-            return new Award(false, 0, false, "Evento já pontuado.", level(userId), false);
+            return new Award(false, 0, false, Msg.t("faiPoints.evento_ja_pontuado"), level(userId), false);
         }
         Instant dayStart = LocalDate.now(ZONE).atStartOfDay(ZONE).toInstant();
         if (rule.getDailyCap() != null && ledger.countByUserIdAndActionCodeAndCreatedAtAfter(userId, actionCode, dayStart) >= rule.getDailyCap()) {
-            return new Award(false, 0, true, "Limite diário de pontos desta ação atingido — a ação continua valendo.", level(userId), false);
+            return new Award(false, 0, true, Msg.t("faiPoints.limite_diario_de_pontos_desta"), level(userId), false);
         }
         Instant weekStart = LocalDate.now(ZONE).with(DayOfWeek.MONDAY).atStartOfDay(ZONE).toInstant();
         if (rule.getWeeklyCap() != null && ledger.countByUserIdAndActionCodeAndCreatedAtAfter(userId, actionCode, weekStart) >= rule.getWeeklyCap()) {
-            return new Award(false, 0, true, "Limite semanal de pontos desta ação atingido.", level(userId), false);
+            return new Award(false, 0, true, Msg.t("faiPoints.limite_semanal_de_pontos_desta"), level(userId), false);
         }
         int points = pointsOverride != null && pointsOverride > 0 ? pointsOverride : rule.getPoints();
         if (points <= 0) {
-            return new Award(false, 0, false, "Ação sem pontos.", level(userId), false);
+            return new Award(false, 0, false, Msg.t("faiPoints.acao_sem_pontos"), level(userId), false);
         }
         Level before = level(userId);
         FaiPointsLedgerEntry e = new FaiPointsLedgerEntry();
@@ -137,10 +138,10 @@ public class FaiPointsService {
         boolean up = after.ordinal() > before.ordinal();
         if (up) {
             layouts.setLevel(userId, after.name());
-            notifications.notify(userId, null, NotificationType.ROOM_LEVEL_UP, "ROOM", null, "Seu quarto evoluiu: " + after.name(),
-                    "Nível " + after.name() + " liberado — " + after.unlocks + ".", Map.of("level", after.name()));
+            notifications.notify(userId, null, NotificationType.ROOM_LEVEL_UP, "ROOM", null, Msg.k("faiPoints.seu_quarto_evoluiu", after.name()),
+                    Msg.k("faiPoints.nivel_liberado", after.name(), after.unlocks), Map.of("level", after.name()));
         }
-        return new Award(true, points, false, "+" + points + " FAI pts", after, up);
+        return new Award(true, points, false, Msg.t("faiPoints.fai_pts", points), after, up);
     }
 
     public long balance(UUID userId) {
@@ -177,7 +178,7 @@ public class FaiPointsService {
                 "points", r.getPoints(), "dailyCap", r.getDailyCap() == null ? "" : r.getDailyCap(), "description", String.valueOf(r.getDescription()))).toList());
         m.put("recent", ledger.findTop100ByUserIdOrderByCreatedAtDesc(user.id()).stream().limit(30).map(e -> Map.of("delta", e.getDelta(),
                 "action", e.getActionCode(), "ref", String.valueOf(e.getRefId()), "at", e.getCreatedAt())).toList());
-        m.put("note", "FAI Points não são vendidos por dinheiro real e não compram posição em ranking (RF35.CA08).");
+        m.put("note", Msg.t("faiPoints.fai_points_nao_sao_vendidos"));
         return m;
     }
 
@@ -214,25 +215,24 @@ public class FaiPointsService {
 
     /** RF35.CA06 — "Provar no meu quarto": prévia aplicada na cena, sem compra, saldo intacto. */
     public Map<String, Object> tryOn(CurrentUser user, String sku, String moduleId) {
-        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound("Item da loja"));
+        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
         List<String> compatible = layouts.compatibleModules(user.id(), c);
         if (moduleId != null && !compatible.contains(moduleId)) {
-            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", "Este item não cabe no módulo escolhido. Cabe em: "
-                    + (compatible.isEmpty() ? "nenhum módulo do seu nível atual" : String.join(", ", compatible)) + ".");
+            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", Msg.t("faiPoints.este_item_nao_cabe_no", (compatible.isEmpty() ? Msg.t("faiPoints.nenhum_modulo_do_seu_nivel") : String.join(", ", compatible))));
         }
         return Map.of("preview", true, "sku", sku, "module", moduleId == null ? (compatible.isEmpty() ? "" : compatible.get(0)) : moduleId,
-                "finish", Json.map(c.getFinishJson()), "balance", balance(user.id()), "note", "Prévia descartada ao sair — nada foi comprado.");
+                "finish", Json.map(c.getFinishJson()), "balance", balance(user.id()), "note", Msg.t("faiPoints.previa_descartada_ao_sair_nada"));
     }
 
     @Transactional
     public Map<String, Object> buy(CurrentUser user, String sku) {
-        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound("Item da loja"));
+        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
         Level lvl = level(user.id());
         if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", "Disponível a partir do nível " + c.getRequiredLevel() + ".");
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
         }
         if (c.getStockLimit() != null && c.getSoldCount() >= c.getStockLimit()) {
-            throw new ApiException(409, "ESGOTADO", "Edição limitada esgotada (item cosmético — ETI-01).");
+            throw new ApiException(409, "ESGOTADO", Msg.t("faiPoints.edicao_limitada_esgotada_item_cosmetico"));
         }
         String blocker = creator.blocker(user.id(), c);
         if (blocker != null) {
@@ -240,7 +240,7 @@ public class FaiPointsService {
         }
         long bal = balance(user.id());
         if (bal < c.getPricePoints()) {
-            throw new ApiException(409, "SALDO_INSUFICIENTE", "Saldo de " + bal + " FAI pts; o item custa " + c.getPricePoints() + ".");
+            throw new ApiException(409, "SALDO_INSUFICIENTE", Msg.t("faiPoints.saldo_de_fai_pts_o", bal, c.getPricePoints()));
         }
         if (c.getPricePoints() > 0) {
             FaiPointsLedgerEntry e = new FaiPointsLedgerEntry();
@@ -269,12 +269,12 @@ public class FaiPointsService {
     public Map<String, Object> apply(CurrentUser user, UUID inventoryId, String moduleId) {
         RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound("Item"));
         if (!item.getUserId().equals(user.id())) {
-            throw ApiException.forbidden("Item de outro usuário.");
+            throw ApiException.forbidden(Msg.t("faiPoints.item_de_outro_usuario"));
         }
         RoomCatalogItem c = catalog.findById(item.getSku()).orElseThrow();
         List<String> compatible = layouts.compatibleModules(user.id(), c);
         if (!compatible.contains(moduleId)) {
-            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", "O item cabe em: " + String.join(", ", compatible) + " (RF35.CA07).");
+            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", Msg.t("faiPoints.o_item_cabe_em_rf35", String.join(", ", compatible)));
         }
         item.setAppliedModule(moduleId);
         layouts.applyFinish(user.id(), moduleId, c);

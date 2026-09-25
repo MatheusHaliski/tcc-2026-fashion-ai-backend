@@ -107,7 +107,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("dnaBuilder.crie_esquemas_de_vestimenta_primeiro")} hint={b.message} action={<Link href="/schemes/new" className="btn btn-primary">{b.action?.label ?? t("common.criar_esquema")}</Link>} />;
-  const steps = b.steps ?? ["1 · Modo", "2 · Esquemas", "3 · Dados", "4 · Background Studio", "5 · Revisar e salvar"];
+  const steps = b.steps ?? [t("common.n1_modo"), t("dnaBuilder.n2_esquemas"), t("common.n3_dados"), t("common.n4_background_studio"), t("common.n5_revisar_e_salvar")];
   const ownArt = narrativeHasOwnArt(effNarrative);
   const layoutPanel = (
     <div className="grid gap-3">

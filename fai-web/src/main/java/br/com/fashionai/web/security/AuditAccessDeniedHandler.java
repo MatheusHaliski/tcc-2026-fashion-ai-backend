@@ -1,5 +1,6 @@
 package br.com.fashionai.web.security;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.audit.AuditEvent;
 import br.com.fashionai.application.audit.AuditService;
@@ -43,6 +44,6 @@ public class AuditAccessDeniedHandler implements AccessDeniedHandler {
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),
                 Map.of("method", request.getMethod())
         ));
-        errors.write(request, response, 403, "ACESSO_NEGADO", "Você não tem permissão para esta ação.");
+        errors.write(request, response, 403, "ACESSO_NEGADO", Msg.t("auditAccessDeniedHandler.voce_nao_tem_permissao_para"));
     }
 }

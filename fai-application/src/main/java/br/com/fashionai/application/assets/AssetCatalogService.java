@@ -1,5 +1,6 @@
 package br.com.fashionai.application.assets;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.domain.model.AssetPreset;
 import br.com.fashionai.domain.model.enums.AssetKind;
@@ -161,7 +162,7 @@ public class AssetCatalogService {
         }
         Optional<Map<String, Object>> aura = auraVariant(auraVariantId);
         Optional<Map<String, Object>> material = material(materialId);
-        out.put("strategy", animated ? "css-blend(aura_static + material_animated video)" : "css-blend(aura_static + material_static)");
+        out.put("strategy", animated ? Msg.t("assetCatalog.css_blend_aura_static_material") : Msg.t("assetCatalog.css_blend_aura_static_material_2"));
         out.put("kind", animated ? "aura-material-animated" : "aura-material-static");
         aura.ifPresent(a -> out.put("auraLayer", a.get("static")));
         material.ifPresent(m -> out.put("materialLayer", animated ? m.getOrDefault("animated", m.get("static")) : m.get("static")));

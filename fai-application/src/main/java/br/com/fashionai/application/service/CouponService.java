@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.events.DomainEvents;
@@ -180,9 +181,8 @@ public class CouponService {
         payload.put("href", "/coupons?right=" + r.getId());
         payload.put("actions", List.of("RESGATAR", "AGORA_NAO"));
         notifications.notify(u.getId(), ownerId, NotificationType.COUPON_AVAILABLE, "COUPON_RIGHT", r.getId(),
-                "Parabéns! Você conquistou um cupom 🎟️",
-                "Deseja resgatar o CUPOM \"" + r.getTitle() + "\" de " + ownerName(owner) + "? "
-                        + (SELO.equals(source) ? "Seu look ganhou o selo que libera esta promoção." : "Seu deck completou o jogo FLAIR da loja."),
+                Msg.k("coupon.parabens_voce_conquistou_um_cupom"),
+                Msg.k("coupon.deseja_resgatar_o_cupom_de", r.getTitle(), ownerName(owner), (SELO.equals(source) ? Msg.k("coupon.seu_look_ganhou_o_selo") : Msg.k("coupon.seu_deck_completou_o_jogo"))),
                 payload);
         return true;
     }
@@ -205,7 +205,7 @@ public class CouponService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("pending", rights.findByUserIdAndStatusOrderByCreatedAtDesc(user.id(), PENDENTE).stream().map(this::rightView).toList());
         out.put("coupons", wallet(user.id()));
-        out.put("note", "Cupons Fashion AI: use o código na loja da marca ou celebridade, fora do app.");
+        out.put("note", Msg.t("coupon.cupons_fashion_ai_use_o"));
         return out;
     }
 
@@ -213,7 +213,7 @@ public class CouponService {
     public Map<String, Object> redeem(CurrentUser user, UUID rightId) {
         CouponRight r = ownRight(user, rightId);
         if (!PENDENTE.equals(r.getStatus())) {
-            throw ApiException.conflict("DIREITO_DECIDIDO", "Este cupom já foi " + (RESGATADO.equals(r.getStatus()) ? "resgatado." : "dispensado."));
+            throw ApiException.conflict("DIREITO_DECIDIDO", Msg.t("coupon.este_cupom_ja_foi", (RESGATADO.equals(r.getStatus()) ? "resgatado." : "dispensado.")));
         }
         Map<String, Object> issued = SELO.equals(r.getSourceType()) ? seals.redeem(user, r.getSourceId())
                 : flair.redeem(user, r.getSourceId(), r.getSchemeId());
@@ -257,7 +257,7 @@ public class CouponService {
     private User issuer(CurrentUser user) {
         User u = users.findById(user.id()).orElseThrow();
         if (u.getProfileType() != ProfileType.MARCA && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw guard.deny(user, "coupons:admin", "A aba Meus cupons promocionais é de perfis de marca ou celebridade.");
+            throw guard.deny(user, "coupons:admin", Msg.t("coupon.a_aba_meus_cupons_promocionais"));
         }
         return u;
     }
@@ -305,7 +305,7 @@ public class CouponService {
             v.put("seal", null);
             v.put("active", active);
             v.put("status", active ? "ATIVA" : c.isActive() ? "FORA_DO_PERIODO" : "DESATIVADA");
-            v.put("reason", active ? null : c.isActive() ? "Fora do período ou sem estoque." : "Desativada pela loja.");
+            v.put("reason", active ? null : c.isActive() ? Msg.t("coupon.fora_do_periodo_ou_sem") : Msg.t("coupon.desativada_pela_loja"));
             v.put("redeemed", c.getRedeemed());
             v.put("quota", c.getStock());
             v.put("pendingRights", rights.countBySourceTypeAndSourceIdAndStatus(FLAIR, c.getId(), PENDENTE));
@@ -322,7 +322,7 @@ public class CouponService {
                 "useRate", issued.isEmpty() ? 0 : Math.round(used * 1000.0 / issued.size()) / 10.0));
         out.put("coupons", issued);
         out.put("promotions", all);
-        out.put("sources", List.of(Map.of("id", SELO, "label", "Política de promoção de selo (RF25)"), Map.of("id", FLAIR, "label", "Jogo FLAIR (combinação da loja)")));
+        out.put("sources", List.of(Map.of("id", SELO, "label", Msg.t("coupon.politica_de_promocao_de_selo")), Map.of("id", FLAIR, "label", Msg.t("coupon.jogo_flair_combinacao_da_loja"))));
         return out;
     }
 
@@ -340,10 +340,10 @@ public class CouponService {
             throw ApiException.notFound("Cupom");
         }
         if (r.getStatus() == RedemptionStatus.USED) {
-            throw ApiException.conflict("CUPOM_USADO", "Cupom já usado.");
+            throw ApiException.conflict("CUPOM_USADO", Msg.t("coupon.cupom_ja_usado"));
         }
         if (r.getExpiresAt() != null && r.getExpiresAt().isBefore(Instant.now())) {
-            throw ApiException.conflict("CUPOM_EXPIRADO", "Cupom expirado.");
+            throw ApiException.conflict("CUPOM_EXPIRADO", Msg.t("common.cupom_expirado"));
         }
         r.setStatus(RedemptionStatus.USED);
         return withHolder(couponView(r), r.getUser());
@@ -360,7 +360,7 @@ public class CouponService {
         m.put("status", r.getStatus());
         m.put("createdAt", r.getCreatedAt());
         m.put("owner", ownerView(r.getOwner()));
-        m.put("question", "Parabéns! Deseja resgatar o CUPOM \"" + r.getTitle() + "\" de " + ownerName(r.getOwner()) + "?");
+        m.put("question", Msg.t("coupon.parabens_deseja_resgatar_o_cupom", r.getTitle(), ownerName(r.getOwner())));
         return m;
     }
 
@@ -381,7 +381,7 @@ public class CouponService {
         String status = "USADO".equals(r.getStatus()) ? "USADO" : r.getExpiresAt().isBefore(Instant.now()) ? "EXPIRADO" : "EMITIDO";
         return coupon(r.getId(), FLAIR, r.getCode(), c.getCouponTitle(), c.getName(), c.getDiscountPercent(), c.getDiscountAmount(),
                 c.getMinPurchase(), status, r.getExpiresAt(), r.getCreatedAt(), c.getBrand(), firstNonNull(c.getStoreUrl(), storeOf(c.getBrand())),
-                c.getAccentColor(), "Jogo FLAIR" + (r.getScheme() == null ? "" : " · deck " + r.getScheme().getTitle()));
+                c.getAccentColor(), Msg.t("coupon.jogo_flair", (r.getScheme() == null ? "" : " · deck " + r.getScheme().getTitle())));
     }
 
     private Map<String, Object> coupon(UUID id, String source, String code, String title, String subtitle, Integer pct, BigDecimal amount,
@@ -448,8 +448,8 @@ public class CouponService {
     }
 
     static String discountText(Integer pct, BigDecimal amount, BigDecimal minPurchase) {
-        String off = pct != null ? pct + "% off" : amount != null ? "R$ " + amount.setScale(0, java.math.RoundingMode.HALF_UP) + " off" : "Benefício exclusivo";
-        return off + (minPurchase == null ? "" : " · compra mínima R$ " + minPurchase.setScale(0, java.math.RoundingMode.HALF_UP));
+        String off = pct != null ? pct + "% off" : amount != null ? "R$ " + amount.setScale(0, java.math.RoundingMode.HALF_UP) + " off" : Msg.t("coupon.beneficio_exclusivo");
+        return off + (minPurchase == null ? "" : Msg.t("coupon.compra_minima_r", minPurchase.setScale(0, java.math.RoundingMode.HALF_UP)));
     }
 
     @SafeVarargs

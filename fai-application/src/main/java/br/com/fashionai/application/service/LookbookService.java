@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -113,14 +114,14 @@ public class LookbookService {
         out.put("visible", canSee);
         out.put("institutional", owner.getProfileType() != ProfileType.PESSOAL);
         // Peças e esquemas nunca dividem a mesma aba: Closet/Peças salvas (peças) × Looks/Looks salvos (esquemas).
-        out.put("tabs", List.of(Map.of("id", "closet", "label", "Closet Digital", "count", all.size()),
+        out.put("tabs", List.of(Map.of("id", "closet", "label", Msg.t("lookbook.closet_digital"), "count", all.size()),
                 Map.of("id", "looks", "label", "Looks", "count", looks.size()),
-                Map.of("id", "saved_looks", "label", "Looks salvos", "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.SCHEME) : 0),
-                Map.of("id", "saved_pieces", "label", "Peças salvas", "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.PIECE) : 0),
-                Map.of("id", "daily", "label", "Look do Dia", "count", self ? dailyLooks.today(ownerId).isPresent() ? 1 : 0 : 0),
-                Map.of("id", "capsule", "label", "Minha Cápsula", "count", looks.isEmpty() ? 0 : basePieces(looks).size()),
-                Map.of("id", "room", "label", "Meu Guarda-Roupa", "count", all.size())));
-        out.put("emptyCloset", all.isEmpty() ? Map.of("message", "Seu Closet Digital está vazio.", "action", Map.of("label", "Adicionar nova peça", "href", "/add-piece")) : null);
+                Map.of("id", "saved_looks", "label", Msg.t("lookbook.looks_salvos"), "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.SCHEME) : 0),
+                Map.of("id", "saved_pieces", "label", Msg.t("lookbook.pecas_salvas"), "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.PIECE) : 0),
+                Map.of("id", "daily", "label", Msg.t("lookbook.look_do_dia"), "count", self ? dailyLooks.today(ownerId).isPresent() ? 1 : 0 : 0),
+                Map.of("id", "capsule", "label", Msg.t("lookbook.minha_capsula"), "count", looks.isEmpty() ? 0 : basePieces(looks).size()),
+                Map.of("id", "room", "label", Msg.t("lookbook.meu_guarda_roupa"), "count", all.size())));
+        out.put("emptyCloset", all.isEmpty() ? Map.of("message", Msg.t("lookbook.seu_closet_digital_esta_vazio"), "action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/add-piece")) : null);
         out.put("panelVersion", owner.getLookDoDiaPanelVersion() == null ? HypeScorePanelVersion.SPOTLIGHT_CLASSICO.name() : owner.getLookDoDiaPanelVersion().name());
         out.put("groupingSuggestionsAvailable", self && all.size() >= GROUPING_MIN_PIECES);
         return out;
@@ -136,7 +137,7 @@ public class LookbookService {
             }
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("origin", "PROPRIO");
-            m.put("originLabel", "Seu look");
+            m.put("originLabel", Msg.t("lookbook.seu_look"));
             m.put("scheme", schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
             m.put("favorite", s.isFavorite());
             m.put("canEdit", true);
@@ -154,7 +155,7 @@ public class LookbookService {
             }
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("origin", "SALVO");
-            m.put("originLabel", "Salvo de @" + s.getUser().getUsername());
+            m.put("originLabel", Msg.t("lookbook.salvo_de", s.getUser().getUsername()));
             m.put("author", Views.user(s.getUser()));
             m.put("scheme", schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
             m.put("favorite", si.isFavorite());
@@ -188,7 +189,7 @@ public class LookbookService {
             }
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("origin", own ? "PROPRIO" : "SALVO");
-            m.put("originLabel", own ? "Sua peça" : "Salva de @" + w.getUser().getUsername());
+            m.put("originLabel", own ? Msg.t("lookbook.sua_peca") : Msg.t("lookbook.salva_de", w.getUser().getUsername()));
             m.put("author", Views.user(w.getUser()));
             m.put("piece", Views.piece(w, null, null));
             m.put("favorite", si.isFavorite());
@@ -215,7 +216,7 @@ public class LookbookService {
     @Transactional
     public Map<String, Object> removeSaved(CurrentUser user, UUID schemeId) {
         if (saved.findByUserIdAndTargetTypeAndTargetId(user.id(), TargetType.SCHEME, schemeId).isEmpty()) {
-            throw ApiException.notFound("Look salvo");
+            throw ApiException.notFound(Msg.t("common.look_salvo"));
         }
         return social.toggleSave(user, TargetType.SCHEME, schemeId);
     }
@@ -235,9 +236,9 @@ public class LookbookService {
             out.put("scheme", schemeService.view(user, dl.getScheme(), schemeItems.findBySchemeIdOrderBySortOrder(dl.getScheme().getId())));
             out.put("panel", hype.panel(dl, withAi));
         } else {
-            out.put("empty", Map.of("message", "Nenhum Look do Dia marcado ainda.", "actions", List.of(
-                    Map.of("label", "Marcar um look salvo", "href", "/profile?tab=looks"), Map.of("label", "Usar o Autopiloto", "href", "/autopilot"),
-                    Map.of("label", "Vista-me no espelho", "href", "/my-wardrobe/room"))));
+            out.put("empty", Map.of("message", Msg.t("lookbook.nenhum_look_do_dia_marcado"), "actions", List.of(
+                    Map.of("label", Msg.t("lookbook.marcar_um_look_salvo"), "href", "/profile?tab=looks"), Map.of("label", Msg.t("lookbook.usar_o_autopiloto"), "href", "/autopilot"),
+                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/my-wardrobe/room"))));
         }
         out.put("history", dailyLooks.history(user));
         out.put("feedbackReminder", dailyLooks.pendingFeedback(user));
@@ -247,12 +248,12 @@ public class LookbookService {
 
     public static List<Map<String, Object>> panelVersions() {
         return List.of(
-                Map.of("code", "SPOTLIGHT_CLASSICO", "name", "Spotlight Clássico", "emphasis", "Equilíbrio", "hype", "barra horizontal + texto", "bestFor", "padrão geral"),
-                Map.of("code", "PASSARELA", "name", "Passarela", "emphasis", "Celebração/drama", "hype", "termômetro vertical", "bestFor", "scores altos, compartilhamento"),
-                Map.of("code", "RAIO_X_ESTILO", "name", "Raio-X do Estilo", "emphasis", "Transparência do cálculo", "hype", "número + breakdown expandido", "bestFor", "usuários avançados"),
-                Map.of("code", "BENTO_DIA", "name", "Bento do Dia", "emphasis", "Priorização configurável", "hype", "bloco fixo grande", "bestFor", "usuários recorrentes"),
-                Map.of("code", "EDITORIAL_MINIMAL", "name", "Editorial Minimal", "emphasis", "Minimalismo", "hype", "número discreto", "bestFor", "baixa tolerância a gamificação"),
-                Map.of("code", "COACH_ESTILO", "name", "Coach de Estilo", "emphasis", "Orientação acionável", "hype", "secundário, abaixo da sugestão", "bestFor", "scores baixos/médios"));
+                Map.of("code", "SPOTLIGHT_CLASSICO", "name", Msg.t("lookbook.spotlight_classico"), "emphasis", Msg.t("lookbook.equilibrio"), "hype", Msg.t("lookbook.barra_horizontal_texto"), "bestFor", Msg.t("lookbook.padrao_geral")),
+                Map.of("code", "PASSARELA", "name", "Passarela", "emphasis", Msg.t("lookbook.celebracao_drama"), "hype", Msg.t("lookbook.termometro_vertical"), "bestFor", Msg.t("lookbook.scores_altos_compartilhamento")),
+                Map.of("code", "RAIO_X_ESTILO", "name", Msg.t("lookbook.raio_x_do_estilo"), "emphasis", Msg.t("lookbook.transparencia_do_calculo"), "hype", Msg.t("lookbook.numero_breakdown_expandido"), "bestFor", Msg.t("lookbook.usuarios_avancados")),
+                Map.of("code", "BENTO_DIA", "name", Msg.t("lookbook.bento_do_dia"), "emphasis", Msg.t("lookbook.priorizacao_configuravel"), "hype", Msg.t("lookbook.bloco_fixo_grande"), "bestFor", Msg.t("lookbook.usuarios_recorrentes")),
+                Map.of("code", "EDITORIAL_MINIMAL", "name", Msg.t("lookbook.editorial_minimal"), "emphasis", "Minimalismo", "hype", Msg.t("lookbook.numero_discreto"), "bestFor", Msg.t("lookbook.baixa_tolerancia_a_gamificacao")),
+                Map.of("code", "COACH_ESTILO", "name", Msg.t("lookbook.coach_de_estilo"), "emphasis", Msg.t("lookbook.orientacao_acionavel"), "hype", Msg.t("lookbook.secundario_abaixo_da_sugestao"), "bestFor", Msg.t("lookbook.scores_baixos_medios")));
     }
 
     @Transactional
@@ -288,7 +289,7 @@ public class LookbookService {
         List<Scheme> looks = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
         Map<String, Object> out = new LinkedHashMap<>();
         if (looks.isEmpty()) {
-            out.put("empty", Map.of("message", "A cápsula só faz sentido com ao menos 1 look montado.", "action", Map.of("label", "Criar meu primeiro look", "href", "/create-my-scheme")));
+            out.put("empty", Map.of("message", Msg.t("lookbook.a_capsula_so_faz_sentido"), "action", Map.of("label", Msg.t("lookbook.criar_meu_primeiro_look"), "href", "/create-my-scheme")));
             out.put("basePieces", 0);
             out.put("looks", 0);
             out.put("factor", 0);
@@ -305,7 +306,7 @@ public class LookbookService {
         out.put("factor", Math.round(10.0 * looks.size() / Math.max(1, use.size())) / 10.0);
         out.put("filters", List.of("Tudo", "upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"));
         out.put("cards", cards);
-        out.put("note", "Não inclui itens salvos de terceiros — cápsula é sobre o que você possui.");
+        out.put("note", Msg.t("lookbook.nao_inclui_itens_salvos_de"));
         return out;
     }
 
@@ -318,7 +319,7 @@ public class LookbookService {
         if (type == HypeEntityType.PIECE) {
             List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
             if (all.size() < GROUPING_MIN_PIECES) {
-                throw new ApiException(422, "ACERVO_PEQUENO", "Os agrupamentos sugeridos aparecem a partir de " + GROUPING_MIN_PIECES + " peças (RF24.CA05).",
+                throw new ApiException(422, "ACERVO_PEQUENO", Msg.t("lookbook.os_agrupamentos_sugeridos_aparecem_a", GROUPING_MIN_PIECES),
                         Map.of("pieces", all.size(), "missing", GROUPING_MIN_PIECES - all.size()));
             }
             sigs = all.stream().map(Similarity::of).toList();
@@ -333,7 +334,7 @@ public class LookbookService {
             labels = looks.stream().map(s -> String.valueOf(s.getTitle())).toList();
         }
         final List<Similarity.Signature> fs = sigs;
-        AiOutcome<List<List<Integer>>> outcome = ai.local(user.id(), AiCapability.ACERVO_GROUPING, List.of("estilos, ocasiões, cores, marcas e tipos do próprio acervo"),
+        AiOutcome<List<List<Integer>>> outcome = ai.local(user.id(), AiCapability.ACERVO_GROUPING, List.of(Msg.t("lookbook.estilos_ocasioes_cores_marcas_e")),
                 () -> HypeScoreService.cluster(fs));
         acervoGroups.deleteByUserIdAndEntityType(user.id(), type);
         List<Map<String, Object>> out = new ArrayList<>();
@@ -352,7 +353,7 @@ public class LookbookService {
             out.add(Map.of("id", g.getId(), "label", g.getLabel(), "members", cluster.stream().map(i -> Map.of("id", ids.get(i), "label", labels.get(i))).toList(),
                     "count", cluster.size()));
         }
-        return Map.of("groups", out, "type", type.name(), "explanation", outcome.explanation(), "note", "Sugestões sempre descartáveis (RF24.CA05).");
+        return Map.of("groups", out, "type", type.name(), "explanation", outcome.explanation(), "note", Msg.t("lookbook.sugestoes_sempre_descartaveis_rf24_ca05"));
     }
 
     @Transactional(readOnly = true)
@@ -386,7 +387,7 @@ public class LookbookService {
         User owner = users.findById(user.id()).orElseThrow();
         Set<GroupingType> allowed = owner.getProfileType() == ProfileType.MARCA ? BRAND : owner.getProfileType() == ProfileType.CELEBRIDADE ? CELEBRITY : PERSONAL;
         if (f.type() == null || !allowed.contains(f.type())) {
-            throw ApiException.badRequest("TIPO_INVALIDO", "Tipos permitidos para o seu perfil: " + allowed);
+            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("lookbook.tipos_permitidos_para_o_seu", allowed));
         }
         SchemeGrouping g = new SchemeGrouping();
         g.setOwner(owner);
@@ -408,11 +409,11 @@ public class LookbookService {
             g.setPeriodTo(year(f.periodTo()));
         }
         if (g.getPeriodFrom() != null && g.getPeriodTo() != null && g.getPeriodTo() < g.getPeriodFrom()) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", "O fim do período vem antes do início.");
+            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("lookbook.o_fim_do_periodo_vem"));
         }
         if (f.accentColor() != null) {
             if (!f.accentColor().isBlank() && !f.accentColor().matches("#[0-9A-Fa-f]{6}")) {
-                throw ApiException.badRequest("COR_INVALIDA", "Use a cor em hexadecimal (#RRGGBB).");
+                throw ApiException.badRequest("COR_INVALIDA", Msg.t("lookbook.use_a_cor_em_hexadecimal"));
             }
             g.setAccentColor(f.accentColor().isBlank() ? null : f.accentColor().toUpperCase(java.util.Locale.ROOT));
         }
@@ -423,7 +424,7 @@ public class LookbookService {
 
     private static int year(int y) {
         if (y < 1900 || y > 2100) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", "Ano fora do intervalo 1900–2100.");
+            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("lookbook.ano_fora_do_intervalo_1900"));
         }
         return y;
     }

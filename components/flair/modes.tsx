@@ -187,7 +187,7 @@ function TerritoryPanel({ map, looks, onDone }: PanelProps & { map: string }) {
           <small className="text-muted">{t.theme.emoji} {t.theme.label} · {t.territory.bonus}</small>
           {t.defenders.length > 0 && <small>{tr("flair.modes.defensores")}{" "}{t.defenders.map((d) => d.title).join(", ")}</small>}
         </button>))}</div>
-      {target && <><LookPicker looks={looks} value={pick} onChange={setPick} max={need} label={map === "CONQUEST" ? "3 looks de ataque" : t("flair.modes.look_de_ataque")} />
+      {target && <><LookPicker looks={looks} value={pick} onChange={setPick} max={need} label={map === "CONQUEST" ? t("flair.modes.n3_looks_de_ataque") : t("flair.modes.look_de_ataque")} />
         <div><PlayButton busy={busy} disabled={pick.length !== need} onClick={() => play(() => api.post(`/api/flair/modes/territories/${map}/${target}/attack`, { schemeIds: pick })).then(() => { data.reload(); onDone(); })}>{map === "CONQUEST" ? t("flair.modes.conquistar_regiao") : t("flair.modes.tomar_o_distrito")}</PlayButton></div></>}
       {result && (result as ModeResult & { captured?: boolean }).captured && <p className="mode-banner">🎉 {map === "CONQUEST" ? t("flair.modes.seu_lookbook_conquistou_a_regiao") : t("flair.modes.o_distrito_agora_e_seu")}</p>}
       <ResultView result={result} labelB={t("flair.modes.defensor")} />
@@ -306,7 +306,7 @@ function BossPanel({ looks, catalog, onDone }: PanelProps) {
   return (
     <div className="grid gap-3">
       <div className="mode-grid">{catalog.bosses.map((x) => <button key={x.code} type="button" className={cn("mode-card text-left", boss === x.code && "mode-card-on")} onClick={() => setBoss(x.code)}><span className="mode-card-emoji">{x.emoji}</span><p className="type-h3">{x.name}</p><p className="type-caption">{Object.entries(x.stats).map(([k, v]) => `${STAT_LABEL[k]} ${v}`).join(" · ")}</p></button>)}</div>
-      {b && <><p className="mode-banner">💡 {b.lesson}</p><LookPicker looks={looks} value={pick} onChange={setPick} max={3} label="1 a 3 looks contra o boss" />
+      {b && <><p className="mode-banner">💡 {b.lesson}</p><LookPicker looks={looks} value={pick} onChange={setPick} max={3} label={t("flair.modes.n1_a_3_looks_contra")} />
         <div><PlayButton busy={busy} disabled={pick.length === 0} onClick={() => play(() => api.post(`/api/flair/modes/bosses/${b.code}`, { schemeIds: pick })).then(onDone)}>{t("flair.modes.enfrentar", { name: b.name })}</PlayButton></div></>}
       <ResultView result={result} labelB={b?.name} />
     </div>

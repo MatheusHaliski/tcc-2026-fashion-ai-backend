@@ -1,5 +1,6 @@
 package br.com.fashionai.web.security;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.enums.AccountStatus;
@@ -51,6 +52,6 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
                 .filter(u -> u.getStatus() != AccountStatus.DELETED)
                 .map(u -> CurrentUser.of(u, request == null ? null : CorrelationIdFilter.clientIp(request),
                         request == null ? null : request.getHeader("User-Agent")))
-                .orElseThrow(() -> ApiException.unauthorized("Conta não encontrada. Faça login novamente."));
+                .orElseThrow(() -> ApiException.unauthorized(Msg.t("currentUserResolver.conta_nao_encontrada_faca_login")));
     }
 }

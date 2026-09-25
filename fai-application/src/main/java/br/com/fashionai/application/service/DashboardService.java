@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
@@ -55,10 +56,10 @@ public class DashboardService {
         LocalDate to = q == null || q.to() == null ? LocalDate.now(FaiPointsService.ZONE) : q.to();
         LocalDate from = q == null || q.from() == null ? to.minusDays(29) : q.from();
         if (from.isAfter(to)) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", "A data inicial precisa ser anterior à final.");
+            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("dashboard.a_data_inicial_precisa_ser"));
         }
         if (ChronoUnit.DAYS.between(from, to) > 366) {
-            throw ApiException.badRequest("PERIODO_LONGO", "Escolha um período de até 1 ano.");
+            throw ApiException.badRequest("PERIODO_LONGO", Msg.t("dashboard.escolha_um_periodo_de_ate"));
         }
         Instant f = from.atStartOfDay(FaiPointsService.ZONE).toInstant();
         Instant t = to.plusDays(1).atStartOfDay(FaiPointsService.ZONE).toInstant().minusNanos(1000);
@@ -106,23 +107,23 @@ public class DashboardService {
         List<Map<String, Object>> out = new ArrayList<>();
         double fallback = num(kpis.get("ai_fallback_pct"));
         if (fallback >= 20) {
-            out.add(alert("warning", "IA em fallback em " + fallback + "% das chamadas", "Verifique chaves/cota do provedor primário ou troque o provedor da capacidade."));
+            out.add(alert("warning", Msg.t("dashboard.ia_em_fallback_em_das", fallback), Msg.t("dashboard.verifique_chaves_cota_do_provedor")));
         }
         long moderation = (long) num(kpis.get("moderation_pending"));
         if (moderation > 20) {
-            out.add(alert("warning", moderation + " itens na fila de moderação", "Reforce a revisão manual ou ajuste o limiar de confiança do moderador."));
+            out.add(alert("warning", Msg.t("dashboard.itens_na_fila_de_moderacao", (moderation)), Msg.t("dashboard.reforce_a_revisao_manual_ou")));
         }
         long approvals = (long) num(kpis.get("approvals_pending"));
         if (approvals > 0) {
-            out.add(alert("info", approvals + " marca(s)/celebridade(s) aguardando validação", "Abra a fila de aprovações."));
+            out.add(alert("info", Msg.t("dashboard.marca_s_celebridade_s_aguardando", (approvals)), Msg.t("dashboard.abra_a_fila_de_aprovacoes")));
         }
         aiUsage.stream().filter(r -> num(r.get("cost_usd")) > 0).max((a, b) -> Double.compare(num(a.get("cost_usd")), num(b.get("cost_usd"))))
-                .ifPresent(r -> out.add(alert("info", "Maior custo de IA: " + r.get("capability") + " (" + r.get("provider") + ") — US$ " + r.get("cost_usd"),
-                        "Avalie usar o modelo leve ou o motor local nessa capacidade.")));
+                .ifPresent(r -> out.add(alert("info", Msg.t("dashboard.maior_custo_de_ia_us", r.get("capability"), r.get("provider"), r.get("cost_usd")),
+                        Msg.t("dashboard.avalie_usar_o_modelo_leve"))));
         long bonds = (long) num(kpis.get("bonds_approved"));
         long redemptions = (long) num(kpis.get("redemptions"));
         if (bonds > 0) {
-            out.add(alert("info", "Conversão selo → resgate: " + Math.round(100.0 * redemptions / bonds) + "%", "Campanhas com conversão baixa pedem promoção mais atraente."));
+            out.add(alert("info", Msg.t("dashboard.conversao_selo_resgate", Math.round(100.0 * redemptions / bonds)), Msg.t("dashboard.campanhas_com_conversao_baixa_pedem")));
         }
         return out;
     }
@@ -149,7 +150,7 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public Map<String, Object> issuer(CurrentUser user, Query q) {
         if (user.profileType() == ProfileType.PESSOAL && !user.admin()) {
-            throw guard.deny(user, "dashboard:issuer", "Painel exclusivo de marcas e celebridades.");
+            throw guard.deny(user, "dashboard:issuer", Msg.t("dashboard.painel_exclusivo_de_marcas_e"));
         }
         AnalyticsQueryPort.Filter f = filter(q);
         Map<String, Object> out = new LinkedHashMap<>();
@@ -175,7 +176,7 @@ public class DashboardService {
 
     @Transactional
     public Map<String, Object> saveLayout(CurrentUser user, List<String> widgets, List<String> hidden, Map<String, Object> defaultFilter) {
-        UserPreferences p = preferences.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound("Preferências"));
+        UserPreferences p = preferences.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.preferencias")));
         List<String> order = widgets == null ? WIDGETS : widgets.stream().filter(WIDGETS::contains).distinct().toList();
         List<String> off = hidden == null ? List.of() : hidden.stream().filter(WIDGETS::contains).distinct().toList();
         Map<String, Object> layout = new LinkedHashMap<>();

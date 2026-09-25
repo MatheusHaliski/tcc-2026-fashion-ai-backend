@@ -265,7 +265,7 @@ function Silhouette({ pieces }: { pieces: AnatomyPiece[] }) {
   const full = by("full_body_piece")[0]; const upper = by("upper_piece"); const lower = by("lower_piece")[0]; const shoes = by("shoes_piece")[0]; const acc = by("accessory_piece");
   const top = tint(full?.colorHex ?? upper[upper.length - 1]?.colorHex); const layer = upper.length > 1 ? tint(upper[0].colorHex) : null;
   const bottom = tint(full?.colorHex ?? lower?.colorHex); const feet = tint(shoes?.colorHex);
-  const ratio = full ? t("schemeAnatomies.coluna_unica_peca_inteira") : upper.length && lower ? "1/3 : 2/3 — regra dos terços" : t("schemeAnatomies.proporcao_livre");
+  const ratio = full ? t("schemeAnatomies.coluna_unica_peca_inteira") : upper.length && lower ? t("schemeAnatomies.n1_3_2_3_regra") : t("schemeAnatomies.proporcao_livre");
   const verdict = full ? "fluida" : upper.length > 1 ? t("schemeAnatomies.em_camadas") : "equilibrada";
   return (
     <div className="silhouette" aria-label={t("schemeAnatomies.silhueta_e_proporcao")}>

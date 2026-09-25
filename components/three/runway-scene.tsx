@@ -52,16 +52,17 @@ function Backdrop({ date }: { date: string }) {
     const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, "#101522"); grad.addColorStop(1, "#2D55C9");
     g.fillStyle = grad; g.fillRect(0, 0, w, h);
     g.fillStyle = "rgba(255,255,255,0.06)"; for (let x = 0; x < w; x += 32) g.fillRect(x, 0, 2, h);
-    g.fillStyle = "#F1E8D8"; g.textAlign = "center"; g.font = "700 120px Inter, Arial, sans-serif"; g.fillText(t("three.runwayScene.passarela_fai"), w / 2, h * 0.48);
-    g.font = "500 44px Inter, Arial, sans-serif"; g.fillStyle = "#c9d4ff"; g.fillText(t("three.runwayScene.look_do_dia", { date }), w / 2, h * 0.72);
+    g.fillStyle = "#F1E8D8"; g.textAlign = "center"; g.font = t("three.runwayScene.n700_120px_inter_arial_sans"); g.fillText(t("three.runwayScene.passarela_fai"), w / 2, h * 0.48);
+    g.font = t("three.runwayScene.n500_44px_inter_arial_sans"); g.fillStyle = "#c9d4ff"; g.fillText(t("three.runwayScene.look_do_dia", { date }), w / 2, h * 0.72);
   }, 1024, 384, [date]);
   return <mesh position={[0, 1.9, -LEN / 2 - 0.6]}><planeGeometry args={[6, 2.25]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>;
 }
 
 function NameTag({ text, you }: { text: string; you?: boolean }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     g.fillStyle = you ? "#F26A1B" : "rgba(16,21,34,0.85)"; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 26); g.fill();
-    g.fillStyle = "#ffffff"; g.font = "600 44px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#ffffff"; g.font = t("three.runwayScene.n600_44px_inter_arial_sans"); g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(text.length > 18 ? text.slice(0, 17) + "…" : text, w / 2, h / 2 + 2);
   }, 512, 96, [text, you]);
   return <sprite position={[0, 2.08, 0]} scale={[0.95, 0.18, 1]}><spriteMaterial map={tex} depthTest={false} /></sprite>;

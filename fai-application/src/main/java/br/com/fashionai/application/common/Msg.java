@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * RF23 — textos do backend no idioma da requisição. Os catálogos ficam em {@code i18n/messages*.properties}
@@ -21,6 +23,10 @@ public final class Msg {
     public static final List<Locale> SUPPORTED = List.of(PT_BR, Locale.ENGLISH, Locale.forLanguageTag("es"));
     private static final String BASE = "i18n.messages";
     private static final Map<String, ResourceBundle> BUNDLES = new ConcurrentHashMap<>();
+    /** Marcador de texto adiado: {@code §i18n:chave\u001Farg1\u001Farg2§} — resolvido na serialização JSON (I18nJsonModule) no idioma de quem lê. */
+    public static final String MARK = "§i18n:";
+    private static final char SEP = '\u001F';
+    private static final Pattern MARK_RE = Pattern.compile("§i18n:([A-Za-z0-9_.\\-]+)((?:\u001F[^§]*)*)§");
     private static final ResourceBundle.Control NO_FALLBACK = ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES);
 
     private Msg() {
@@ -66,6 +72,45 @@ public final class Msg {
         } catch (IllegalArgumentException e) {
             return pattern;
         }
+    }
+
+    /**
+     * Texto adiado: devolve um marcador que só vira texto quando a resposta é serializada (ou em {@link #resolve}),
+     * no idioma de quem lê. Para dados estáticos (catálogos, enums) e para notificações guardadas no banco.
+     */
+    public static String k(String key, Object... args) {
+        StringBuilder sb = new StringBuilder(MARK).append(key);
+        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : String.valueOf(a).replace('§', 'S').replace(SEP, ' '));
+        return sb.append('§').toString();
+    }
+
+    public static boolean hasMark(String s) {
+        return s != null && s.indexOf('§') >= 0 && s.contains(MARK);
+    }
+
+    /** Troca todos os marcadores de um texto pelo texto no idioma pedido (texto sem marcador volta igual). */
+    public static String resolve(Locale locale, String s) {
+        if (!hasMark(s)) return s;
+        Matcher m = MARK_RE.matcher(s);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            String key = m.group(1);
+            String rawArgs = m.group(2);
+            Object[] args = rawArgs == null || rawArgs.isEmpty() ? new Object[0] : rawArgs.substring(1).split(String.valueOf(SEP), -1);
+            m.appendReplacement(out, Matcher.quoteReplacement(t(locale, key, args)));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    public static String resolve(String s) {
+        return resolve(locale(), s);
+    }
+
+    /** Nome do idioma corrente para instruções a modelos de IA ("responda em …"). */
+    public static String languageName() {
+        Locale l = locale();
+        return "en".equals(l.getLanguage()) ? "English" : "es".equals(l.getLanguage()) ? "español" : Msg.t("msg.portugues_do_brasil");
     }
 
     /** Existe texto para a chave em algum catálogo? */

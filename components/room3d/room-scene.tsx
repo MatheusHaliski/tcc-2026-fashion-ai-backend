@@ -77,6 +77,7 @@ interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced:
  * croqui (desenho técnico que ganha cor quando a foto chega), 30 usos (ponto dourado), 2ª chance (etiqueta).
  */
 function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w: number; h: number; ctx: Ctx; lying?: boolean; onPuff?: () => void }) {
+  const { t } = useI18n();
   const tex = useTex(p.imageUrl ?? p.thumbnailUrl);
   const croqui = !!p.states?.includes("CROQUI") || !(p.imageUrl ?? p.thumbnailUrl);
   const sketch = useCanvasTex(`sketch-${p.category}`, 256, 256, sketchDraw(p.category));
@@ -115,7 +116,7 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
       {forgotten && <><mesh position={[0, 0, 0.004]}><planeGeometry args={[w, h]} /><meshBasicMaterial color="#8d8a84" transparent opacity={0.18} depthWrite={false} /></mesh><Cobweb w={w} h={h} /></>}
       <group position={[0, 0, 0.02]}><DustPuff trigger={puff} reduced={ctx.reduced} /></group>
       {p.states?.includes("30_USOS") && <GoldDot position={[-w / 2 + 0.03, h / 2 - 0.03, 0.01]} />}
-      {ctx.tagged.has(p.id) && <HangTag text="2ª chance" color="#fde2e4" fg="#9d174d" position={[w / 2 - 0.04, h / 2 - 0.1, 0.02]} />}
+      {ctx.tagged.has(p.id) && <HangTag text={t("room3d.roomScene.n2_chance")} color="#fde2e4" fg="#9d174d" position={[w / 2 - 0.04, h / 2 - 0.1, 0.02]} />}
       {highlight && <pointLight position={[0, 0, 0.35]} intensity={1.6} distance={1.2} color="#ffe6a0" />}
     </group>
   );
@@ -260,7 +261,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { positi
       {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.35 - Math.floor(i / 2) * 0.4, 0.026]} />)}
       <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.5} h={0.06} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
       {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.5} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, 1.72, 0.026]} />}
-      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt.replace(t("room3d.roomScene.o_look_continua_pendurado_aqui"), "")} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
+      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
       {/* botão "+" do Vista-me ao lado do móvel */}

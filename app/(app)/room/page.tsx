@@ -218,7 +218,7 @@ function RoomInner() {
             <dt>{t("room.composicao")}</dt><dd>{tag.composition ?? "—"}</dd>
             <dt>{t("room.lavagem")}</dt><dd>{tag.care ?? CARE[tag.composition ?? ""] ?? t("room.siga_a_etiqueta_original")}</dd>
             <dt>{t("room.origem")}</dt><dd>{tag.origin ? ORIGIN[tag.origin] ?? tag.origin.toLowerCase() : "—"}{tag.garimpo && <span className="sewn-tag-seal">{t("common.garimpo")}</span>}</dd>
-            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title="30 usos" />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { toFixed: Number(tag.costPerUse).toFixed(2) })}</span>}</dd>
+            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title={t("room.n30_usos")} />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { toFixed: Number(tag.costPerUse).toFixed(2) })}</span>}</dd>
             <dt>{t("room.no_quarto")}</dt><dd>{tag.location?.label ?? "—"}</dd>
           </dl>
           {tag.diary.length > 0 && <p className="type-caption text-muted mt-2">{t("room.ultimo_uso", { date: tag.diary[0].date, value: tag.diary[0].occasion !== "null" ? ` · ${tag.diary[0].occasion}` : "" })}</p>}

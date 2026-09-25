@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -131,8 +132,7 @@ public class PhotoService {
         Photo p = owned(user, id);
         Optional<WardrobeItem> linked = linkedActivePiece(p);
         if (linked.isPresent() && !confirmed) {
-            throw new ApiException(409, "CONFIRMACAO_NECESSARIA", "Esta foto é a imagem da peça «" + linked.get().getName()
-                    + "». Se excluir, a peça volta para a imagem padrão da categoria. Confirme para continuar.", Map.of("pieceId", linked.get().getId()));
+            throw new ApiException(409, "CONFIRMACAO_NECESSARIA", Msg.t("photo.esta_foto_e_a_imagem", linked.get().getName()), Map.of("pieceId", linked.get().getId()));
         }
         linked.ifPresent(wardrobe::useDefaultImageAfterPhotoDeletion);
         p.setDeletedAt(Instant.now());
@@ -157,7 +157,7 @@ public class PhotoService {
         long linked = list.stream().filter(p -> linkedActivePiece(p).isPresent()).count();
         if (!confirmed) {
             return Map.of("requiresConfirmation", true, "count", list.size(), "linkedToPieces", linked,
-                    "message", "Excluir " + list.size() + " foto(s)?" + (linked > 0 ? " " + linked + " são imagens de peças ativas." : ""));
+                    "message", "Excluir " + list.size() + " foto(s)?" + (linked > 0 ? Msg.t("photo.sao_imagens_de_pecas_ativas", linked) : ""));
         }
         for (Photo p : list) {
             linkedActivePiece(p).ifPresent(wardrobe::useDefaultImageAfterPhotoDeletion);
@@ -171,7 +171,7 @@ public class PhotoService {
     public byte[] download(CurrentUser user, UUID id) {
         Photo p = owned(user, id);
         p.setLastViewedAt(Instant.now());
-        return media.read(p.getOriginalUrl() != null ? p.getOriginalUrl() : p.getPublicUrl()).orElseThrow(() -> ApiException.notFound("Arquivo da foto"));
+        return media.read(p.getOriginalUrl() != null ? p.getOriginalUrl() : p.getPublicUrl()).orElseThrow(() -> ApiException.notFound(Msg.t("photo.arquivo_da_foto")));
     }
 
     @Transactional
@@ -207,7 +207,7 @@ public class PhotoService {
     @Transactional
     public Map<String, Object> curate(CurrentUser user) {
         List<Photo> all = photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id()).stream().limit(400).toList();
-        AiOutcome<List<List<Photo>>> outcome = ai.local(user.id(), AiCapability.PHOTO_CURATOR, List.of(all.size() + " fotos do próprio acervo (hash perceptual local)"), () -> {
+        AiOutcome<List<List<Photo>>> outcome = ai.local(user.id(), AiCapability.PHOTO_CURATOR, List.of(Msg.t("photo.fotos_do_proprio_acervo_hash", (all.size()))), () -> {
             Map<UUID, Long> hashes = new LinkedHashMap<>();
             for (Photo p : all) {
                 Map<String, Object> meta = Json.map(p.getMetadataJson());
@@ -250,7 +250,7 @@ public class PhotoService {
             out.add(Map.of("photos", g.stream().map(Views::photo).toList(), "suggestKeep", keep.getId(),
                     "suggestDiscard", g.stream().filter(p -> !p.getId().equals(keep.getId())).map(Photo::getId).toList()));
         }
-        return Map.of("duplicateGroups", out, "explanation", outcome.explanation(), "note", "Sugestão apenas — nada é excluído sem a sua confirmação.");
+        return Map.of("duplicateGroups", out, "explanation", outcome.explanation(), "note", Msg.t("photo.sugestao_apenas_nada_e_excluido"));
     }
 
     /** Linha do tempo de estilo (StyleInsight): fotos por mês e por origem. */
@@ -286,7 +286,7 @@ public class PhotoService {
         if (piece.isPresent()) {
             Views.PieceView view = wardrobe.replaceImage(user, piece.get().getId(), bytes, id);
             return Map.of("replacedPieceImage", true, "piece", Map.of("id", view.id(), "name", view.name(), "imageUrl", String.valueOf(view.imageUrl())),
-                    "message", "A imagem editada agora é a da peça «" + view.name() + "». A original continua em Minhas Fotos.");
+                    "message", Msg.t("photo.a_imagem_editada_agora_e", view.name()));
         }
         String mime = ImageOps.requireAcceptedImage(bytes);
         BufferedImage img = ImageOps.decode(bytes);
@@ -297,7 +297,7 @@ public class PhotoService {
         Photo edited = media.register(original.getUser(), PhotoOrigin.EDITOR, original.getSourceEntityId(), stored, original.getOriginalUrl() != null ? original.getOriginalUrl() : original.getPublicUrl(),
                 thumb.url(), bytes, img.getWidth(), img.getHeight(), null, ModerationStatus.APPROVED, Map.of("sourceMime", mime, "editedFrom", id.toString()));
         edited.setEditedFromPhotoId(id);
-        return Map.of("replacedPieceImage", false, "photo", Views.photo(edited), "message", "Cópia editada salva em Minhas Fotos; a original ficou intacta.");
+        return Map.of("replacedPieceImage", false, "photo", Views.photo(edited), "message", Msg.t("photo.copia_editada_salva_em_minhas"));
     }
 
     /** RF15.CA01/CA04 — remoção de fundo sob demanda para o editor; a falha é informada e as outras ferramentas seguem. */

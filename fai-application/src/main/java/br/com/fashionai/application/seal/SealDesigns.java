@@ -1,5 +1,6 @@
 package br.com.fashionai.application.seal;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.domain.model.enums.SealTier;
 
@@ -24,20 +25,20 @@ public final class SealDesigns {
             "uploadRatioTolerance", 0.03, "uploadMinPx", 256, "uploadMaxPx", 4096, "uploadOutputPx", 512);
 
     public static final List<Map<String, String>> ELEMENTS = List.of(
-            item("BAG", "Sacola FAI"), item("HANGER", "Cabide"), item("STAR", "Estrela"), item("DIAMOND", "Diamante"),
-            item("CROWN", "Coroa"), item("HEART", "Coração"), item("SCISSORS", "Tesoura"), item("NEEDLE", "Agulha"),
+            item("BAG", Msg.k("sealDesigns.sacola_fai")), item("HANGER", "Cabide"), item("STAR", "Estrela"), item("DIAMOND", "Diamante"),
+            item("CROWN", "Coroa"), item("HEART", Msg.k("sealDesigns.coracao")), item("SCISSORS", "Tesoura"), item("NEEDLE", "Agulha"),
             item("LAUREL", "Louro"), item("BOLT", "Raio"), item("FLOWER", "Flor"), item("MONOGRAM", "Monograma"));
 
     /** "Qualquer elemento entre a borda e o centro". */
     public static final List<Map<String, String>> PATTERNS = List.of(
-            item("MALHA", "Malha de nós (logo)"), item("GRADE", "Grade"), item("FLUXO_PONTOS", "Fluxo de pontos"),
-            item("PONTOS", "Pontos"), item("RAIOS", "Raios"), item("ONDAS", "Ondas"), item("ANEIS", "Anéis"),
-            item("HEXAGONOS", "Hexágonos"), item("ESTRELAS", "Estrelas"), item("COSTURA", "Costura"),
-            item("ESPINHA", "Espinha de peixe"), item("TRAMA", "Trama têxtil"), item("NENHUM", "Liso"));
+            item("MALHA", Msg.k("sealDesigns.malha_de_nos_logo")), item("GRADE", "Grade"), item("FLUXO_PONTOS", Msg.k("sealDesigns.fluxo_de_pontos")),
+            item("PONTOS", "Pontos"), item("RAIOS", "Raios"), item("ONDAS", "Ondas"), item("ANEIS", Msg.k("sealDesigns.aneis")),
+            item("HEXAGONOS", Msg.k("sealDesigns.hexagonos")), item("ESTRELAS", "Estrelas"), item("COSTURA", "Costura"),
+            item("ESPINHA", Msg.k("sealDesigns.espinha_de_peixe")), item("TRAMA", Msg.k("sealDesigns.trama_textil")), item("NENHUM", "Liso"));
 
     public static final List<Map<String, String>> MATERIALS = List.of(
             item("FOSCO", "Fosco"), item("BRILHO", "Brilho"), item("DOURADO", "Dourado"), item("PRATA", "Prata"),
-            item("BRONZE", "Bronze"), item("HOLOGRAFICO", "Holográfico"), item("ESMALTE", "Esmalte"),
+            item("BRONZE", "Bronze"), item("HOLOGRAFICO", Msg.k("common.holografico")), item("ESMALTE", "Esmalte"),
             item("MADEIRA", "Madeira"), item("COURO", "Couro"), item("TECIDO", "Tecido"), item("VIDRO", "Vidro"),
             item("NEON", "Neon"));
 
@@ -70,8 +71,7 @@ public final class SealDesigns {
         m.put("patterns", PATTERNS);
         m.put("materials", MATERIALS);
         m.put("palettes", PALETTES);
-        m.put("uploadRule", "Imagem quadrada (1:1, tolerância de 3 %), conteúdo circular como o logo FashionAI, de 256 a 4096 px; "
-                + "PNG/WEBP com fundo transparente fora do círculo. Salva em 512 × 512.");
+        m.put("uploadRule", Msg.t("sealDesigns.imagem_quadrada_1_1_tolerancia"));
         return m;
     }
 
@@ -101,13 +101,13 @@ public final class SealDesigns {
         Map<String, Object> out = new LinkedHashMap<>();
         String mode = upper(raw.get("mode"), "GENERATED");
         if (!mode.equals("GENERATED") && !mode.equals("UPLOAD")) {
-            errors.put("mode", "Use GENERATED ou UPLOAD.");
+            errors.put("mode", Msg.t("sealDesigns.use_generated_ou_upload"));
             mode = "GENERATED";
         }
         out.put("mode", mode);
         String palette = raw.get("palette") == null ? null : upper(raw.get("palette"), null);
         if (palette != null && !PALETTES.containsKey(palette)) {
-            errors.put("palette", "Paleta desconhecida.");
+            errors.put("palette", Msg.t("sealDesigns.paleta_desconhecida"));
         }
         out.put("palette", palette);
 
@@ -122,7 +122,7 @@ public final class SealDesigns {
         Map<String, Object> f = new LinkedHashMap<>();
         String pattern = upper(field.get("pattern"), "MALHA");
         if (!PATTERN_IDS.contains(pattern)) {
-            errors.put("field.pattern", "Padrão desconhecido.");
+            errors.put("field.pattern", Msg.t("sealDesigns.padrao_desconhecido"));
         }
         f.put("pattern", pattern);
         f.put("material", material(field.get("material"), "FOSCO", "field.material", errors));
@@ -159,7 +159,7 @@ public final class SealDesigns {
         Map<String, Object> e = new LinkedHashMap<>();
         String id = upper(element.get("id"), "BAG");
         if (!ELEMENT_IDS.contains(id)) {
-            errors.put("element.id", "Elemento central desconhecido.");
+            errors.put("element.id", Msg.t("sealDesigns.elemento_central_desconhecido"));
         }
         e.put("id", id);
         e.put("material", material(element.get("material"), "FOSCO", "element.material", errors));
@@ -170,7 +170,7 @@ public final class SealDesigns {
             text = "FAI";
         }
         if (text.length() > 3) {
-            errors.put("element.text", "No máximo 3 caracteres.");
+            errors.put("element.text", Msg.t("sealDesigns.no_maximo_3_caracteres"));
             text = text.substring(0, 3);
         }
         e.put("text", text);
@@ -180,14 +180,14 @@ public final class SealDesigns {
         String uploadUrl = upload == null || String.valueOf(upload).isBlank() ? null : String.valueOf(upload).trim();
         if (mode.equals("UPLOAD")) {
             if (uploadUrl == null) {
-                errors.put("uploadUrl", "Envie a imagem do selo (1:1, circular).");
+                errors.put("uploadUrl", Msg.t("sealDesigns.envie_a_imagem_do_selo"));
             } else if (!(uploadUrl.startsWith("/media/") || uploadUrl.startsWith("http://") || uploadUrl.startsWith("https://"))) {
-                errors.put("uploadUrl", "URL de upload inválida.");
+                errors.put("uploadUrl", Msg.t("sealDesigns.url_de_upload_invalida"));
             }
         }
         out.put("uploadUrl", uploadUrl);
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("SELO_DESIGN_INVALIDO", "Revise o desenho do selo.", Map.of("fields", errors));
+            throw ApiException.badRequest("SELO_DESIGN_INVALIDO", Msg.t("sealDesigns.revise_o_desenho_do_selo"), Map.of("fields", errors));
         }
         return out;
     }
@@ -265,7 +265,7 @@ public final class SealDesigns {
     private static String material(Object v, String dflt, String field, Map<String, String> errors) {
         String m = upper(v, dflt);
         if (!MATERIAL_IDS.contains(m)) {
-            errors.put(field, "Material desconhecido.");
+            errors.put(field, Msg.t("sealDesigns.material_desconhecido"));
             return dflt;
         }
         return m;
@@ -277,7 +277,7 @@ public final class SealDesigns {
         }
         String c = String.valueOf(v).trim();
         if (!HEX.matcher(c).matches()) {
-            errors.put(field, "Cor em hexadecimal (#RRGGBB).");
+            errors.put(field, Msg.t("sealDesigns.cor_em_hexadecimal_rrggbb"));
             return dflt;
         }
         return c.toUpperCase(Locale.ROOT);

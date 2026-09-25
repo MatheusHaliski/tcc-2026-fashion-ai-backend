@@ -1,5 +1,6 @@
 package br.com.fashionai.application.ai.local;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.Scheme;
@@ -97,20 +98,20 @@ public final class LocalDnaSynthesizer {
 
     static String phrase(StyleArchetype archetype, List<String> styles, List<String> occasions, int boldness) {
         String essence = switch (archetype) {
-            case ROMANTIC -> "delicadeza que conta histórias";
-            case DRAMATIC -> "presença que ocupa a sala";
-            case CLASSIC -> "elegância que atravessa estações";
-            case NATURAL -> "conforto com intenção";
-            case GAMINE -> "energia urbana em movimento";
+            case ROMANTIC -> Msg.t("localDnaSynthesizer.delicadeza_que_conta_historias");
+            case DRAMATIC -> Msg.t("localDnaSynthesizer.presenca_que_ocupa_a_sala");
+            case CLASSIC -> Msg.t("localDnaSynthesizer.elegancia_que_atravessa_estacoes");
+            case NATURAL -> Msg.t("localDnaSynthesizer.conforto_com_intencao");
+            case GAMINE -> Msg.t("localDnaSynthesizer.energia_urbana_em_movimento");
         };
-        String intensity = boldness >= 65 ? "sem medo de arriscar" : boldness >= 35 ? "com toques de ousadia" : "em tom sereno";
-        String context = occasions.isEmpty() ? "do dia a dia" : switch (occasions.get(0)) {
-            case "work", "business" -> "do trabalho à noite";
-            case "party", "night_out" -> "feita para a noite";
-            case "gym", "sport" -> "que acompanha o ritmo";
-            case "formal", "wedding", "ceremony" -> "para os grandes momentos";
-            case "travel", "vacation", "beach" -> "pronta para viajar";
-            default -> "do dia a dia";
+        String intensity = boldness >= 65 ? Msg.t("common.sem_medo_de_arriscar") : boldness >= 35 ? Msg.t("localDnaSynthesizer.com_toques_de_ousadia") : Msg.t("localDnaSynthesizer.em_tom_sereno");
+        String context = occasions.isEmpty() ? Msg.t("localDnaSynthesizer.do_dia_a_dia") : switch (occasions.get(0)) {
+            case "work", "business" -> Msg.t("localDnaSynthesizer.do_trabalho_a_noite");
+            case "party", "night_out" -> Msg.t("localDnaSynthesizer.feita_para_a_noite");
+            case "gym", "sport" -> Msg.t("localDnaSynthesizer.que_acompanha_o_ritmo");
+            case "formal", "wedding", "ceremony" -> Msg.t("localDnaSynthesizer.para_os_grandes_momentos");
+            case "travel", "vacation", "beach" -> Msg.t("localDnaSynthesizer.pronta_para_viajar");
+            default -> Msg.t("localDnaSynthesizer.do_dia_a_dia");
         };
         return capitalize(essence) + ", " + intensity + " — " + context + ".";
     }

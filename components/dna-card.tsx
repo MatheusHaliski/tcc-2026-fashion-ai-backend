@@ -201,8 +201,8 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
     }
     case "PRIMEIRA_VEZ": {
       const firsts = ((n.firsts as { schemeId: string; label: string; kind?: string; value?: string }[] | undefined) ?? []);
-      const rows = firsts.length ? firsts : cells.slice(0, 1).map((c) => ({ schemeId: c.schemeId, label: "1º esquema salvo", kind: "PRIMEIRO", value: undefined }));
-      const text = (f: (typeof rows)[number]) => f.kind === "OCASIAO" && f.value ? `1ª vez em ${label(f.value).toLowerCase()}` : f.kind === "MARCA" && f.value ? `1ª peça ${f.value.toUpperCase()}` : f.label;
+      const rows = firsts.length ? firsts : cells.slice(0, 1).map((c) => ({ schemeId: c.schemeId, label: t("dnaCard.n1_esquema_salvo"), kind: "PRIMEIRO", value: undefined }));
+      const text = (f: (typeof rows)[number]) => f.kind === "OCASIAO" && f.value ? t("dnaCard.n1_vez_em", { toLowerCase: label(f.value).toLowerCase() }) : f.kind === "MARCA" && f.value ? t("dnaCard.n1_peca", { toUpperCase: f.value.toUpperCase() }) : f.label;
       return (<div className="dna-firsts">{rows.map((f, i) => { const c = byId.get(f.schemeId); return c ? <div key={i} className="dna-row"><span className="dna-first">1ª</span><Thumb c={c} /><span className="dna-row-txt"><b>{text(f)}</b><span>{c.title} · {c.createdAt ? fmtDate(c.createdAt, { month: "short", year: "numeric" }) : ""}</span></span></div> : null; })}</div>);
     }
     case "CAPSULA_VERSATILIDADE": {

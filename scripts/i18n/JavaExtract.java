@@ -21,12 +21,14 @@ import java.util.stream.*;
  */
 public class JavaExtract {
     static final Pattern NAT = Pattern.compile("[áéíóúãõçâêôÁÉÍÓÚÃÕÇÂÊÔ]");
-    static final Pattern IGNORE = Pattern.compile("^(https?://|/|#|@|\\.|[A-Z0-9_\\-]+$|[a-z]+(-[a-z0-9]+)+$|[a-z]+[A-Z][A-Za-z0-9]*$|\\d)");
+    static final Pattern IGNORE = Pattern.compile("^(https?://|/|#|@|\\.|[A-Z0-9_\\-]+$|[a-z]+(-[a-z0-9]+)+$|[a-z]+[A-Z][A-Za-z0-9]*$|[\\d.,:/\\-\\s]+([a-z%]{0,3})$|\\d+(px|rem|em|%|ms|s|x|k|mb|kb)\\b)");
     static final Set<String> SKIP_METHODS = Set.of("info", "warn", "debug", "error", "trace", "ofPattern", "compile", "matches", "replaceAll", "replaceFirst", "split",
             "contains", "equals", "equalsIgnoreCase", "startsWith", "endsWith", "indexOf", "lastIndexOf", "getenv", "getProperty", "containsKey", "get", "remove",
-            "header", "setHeader", "addHeader", "queryParam", "path", "uri", "url", "of", "forLanguageTag", "valueOf", "name", "getBundle", "log", "audit", "record",
+            "header", "setHeader", "addHeader", "queryParam", "path", "uri", "url", "forLanguageTag", "valueOf", "name", "getBundle", "log", "audit", "record",
             "hasText", "isBlank", "strip", "trim", "toLowerCase", "toUpperCase", "requireNonNull", "checkArgument", "state", "isTrue", "notNull", "assertEquals", "assertTrue");
-    static final Set<String> SKIP_RECEIVERS = Set.of("log", "logger", "LOG", "audit", "Pattern", "DateTimeFormatter", "Map", "Set", "List", "System", "Objects", "Assert", "Files", "Paths", "Path", "URI", "UriComponentsBuilder", "MediaType", "HttpHeaders", "Locale", "String", "Optional", "Collectors", "Stream", "Instant", "LocalDate", "Duration", "UUID", "Base64", "Jsoup", "Json", "ObjectMapper");
+    static final Set<String> SKIP_RECEIVERS = Set.of("log", "logger", "LOG", "audit", "Pattern", "DateTimeFormatter", "System", "Objects", "Assert", "Files", "Paths", "Path", "URI", "UriComponentsBuilder", "MediaType", "HttpHeaders", "Locale", "Optional", "Collectors", "Stream", "Instant", "LocalDate", "Duration", "UUID", "Base64", "Jsoup", "Json", "ObjectMapper");
+    static final Pattern PROMPT = Pattern.compile("(?i)(responda|json|somente|exatamente|você é o|voce e o|assistente|instruç|contexto \\(|acervo elegível|^pedido:|^slot:|^look:|removíveis:|tool|ferramenta|schema)");
+    static final Set<String> INTERNAL_EX = Set.of("IllegalStateException", "IllegalArgumentException", "RuntimeException", "UnsupportedOperationException", "IOException", "UncheckedIOException", "NoSuchElementException", "AssertionError");
     static final Set<String> ALLOW = Set.of("Fashion AI", "FashionAI", "FAI", "FLAIR", "Copilot", "Hype Score", "Smart Mirror", "Wikidata (Wikimedia)", "Simple Icons");
 
     record Edit(long start, long end, String text) {}
@@ -117,27 +119,49 @@ public class JavaExtract {
             if (ns.isEmpty()) ns = cls.toLowerCase();
             List<Edit> edits = new ArrayList<>(); Set<Tree> consumed = new HashSet<>(); String nsF = ns;
             new TreePathScanner<Void, Void>() {
-                boolean inMethod(TreePath p) {   // corpo de método/lambda/inicializador — nunca campo, enum, anotação
+                /** 1 = corpo de método/lambda (Msg.t), 2 = campo/enum/bloco estático (Msg.k, adiado), 0 = fora (anotação, case, prompt). */
+                int context(TreePath p) {
                     for (TreePath q = p.getParentPath(); q != null; q = q.getParentPath()) {
                         Tree t = q.getLeaf();
-                        if (t instanceof AnnotationTree || t instanceof CaseTree) return false;
-                        if (t instanceof MethodTree m) { String n = m.getName().toString().toLowerCase(); return !(n.contains("prompt") || n.contains("systemmessage") || n.contains("instruction")); }
-                        if (t instanceof LambdaExpressionTree) return true;
-                        if (t instanceof VariableTree v && q.getParentPath() != null && q.getParentPath().getLeaf() instanceof ClassTree) return false; // campo
-                        if (t instanceof ClassTree) return false;
+                        if (t instanceof AnnotationTree) return 0;
+                        if (t instanceof ConstantCaseLabelTree) return 0;   // rótulo de case (precisa ser constante)
+                        if (t instanceof CaseTree c && c.getExpressions().contains(directChild(q, p))) return 0;
+                        if (t instanceof MethodTree m) { String n = m.getName().toString().toLowerCase(); return ((n.contains("prompt") && !n.contains("suggest") && !n.contains("quick") && !n.contains("example") && !n.contains("chip")) || n.contains("systemmessage") || n.contains("instruction")) ? 0 : 1; }
+                        if (t instanceof LambdaExpressionTree) return 1;
+                        if (t instanceof VariableTree v && q.getParentPath() != null && q.getParentPath().getLeaf() instanceof ClassTree) return 2; // campo ou constante de enum
+                        if (t instanceof BlockTree && q.getParentPath() != null && q.getParentPath().getLeaf() instanceof ClassTree) return 2; // bloco estático
+                        if (t instanceof ClassTree) return 0;
+                    }
+                    return 0;
+                }
+                boolean deferred(TreePath p) {   // notificações ficam no banco: guardar o marcador, não o texto
+                    for (TreePath q = p.getParentPath(); q != null; q = q.getParentPath()) {
+                        Tree t = q.getLeaf();
+                        if (t instanceof MethodInvocationTree mi) { ExpressionTree sel = mi.getMethodSelect(); String name = sel instanceof MemberSelectTree ms ? ms.getIdentifier().toString() : sel.toString(); if (name.equals("notify") || name.equals("notifyAll") || name.equals("notifyOnce")) return true; }
+                        if (t instanceof MethodTree || t instanceof LambdaExpressionTree || t instanceof ClassTree) return false;
                     }
                     return false;
                 }
+                String reason = "";
+                Tree directChild(TreePath ancestor, TreePath leaf) { TreePath q = leaf; while (q.getParentPath() != null && q.getParentPath() != ancestor) q = q.getParentPath(); return q.getLeaf(); }
                 boolean skippedCall(TreePath p) {
                     for (TreePath q = p.getParentPath(); q != null; q = q.getParentPath()) {
                         Tree t = q.getLeaf();
                         if (t instanceof MethodInvocationTree mi) {
                             ExpressionTree sel = mi.getMethodSelect(); String name = sel instanceof MemberSelectTree ms ? ms.getIdentifier().toString() : sel.toString();
                             String recv = sel instanceof MemberSelectTree ms ? ms.getExpression().toString() : "";
-                            if (SKIP_METHODS.contains(name) || SKIP_RECEIVERS.contains(recv) || recv.endsWith("log") || recv.startsWith("log.")) return true;
-                            if (name.equals("put") || name.equals("putIfAbsent")) { if (mi.getArguments().size() >= 1 && p.getLeaf() == mi.getArguments().get(0)) return true; }
+                            if (SKIP_METHODS.contains(name) || SKIP_RECEIVERS.contains(recv) || ((recv.endsWith("log") || recv.startsWith("log.")) && Set.of("info", "warn", "debug", "error", "trace").contains(name))) { reason = "call:" + (recv.isEmpty() ? "" : recv + ".") + name; return true; }
+                            if (name.equals("put") || name.equals("putIfAbsent")) { if (mi.getArguments().size() >= 1 && directChild(q, p) == mi.getArguments().get(0)) { reason = "mapkey"; return true; } }
+                            if (name.equals("of") || name.equals("ofEntries") || name.equals("entry")) {
+                                int idx = mi.getArguments().indexOf(directChild(q, p));
+                                if ((recv.equals("Map") || name.equals("entry")) && idx % 2 == 0) { reason = "mapkey"; return true; }            // chave do mapa
+                                boolean anyStr = mi.getArguments().stream().anyMatch(a -> a instanceof LiteralTree l && l.getKind() == Tree.Kind.STRING_LITERAL);
+                                boolean allWords = anyStr && mi.getArguments().stream().allMatch(a -> !(a instanceof LiteralTree l) || l.getKind() != Tree.Kind.STRING_LITERAL || (!((String) l.getValue()).trim().contains(" ") && Character.isLowerCase(((String) l.getValue()).trim().charAt(0))));
+                                if ((recv.equals("List") || recv.equals("Set")) && allWords) { reason = "keywords"; return true; }   // lista de palavras-chave
+                            }
                         }
-                        if (t instanceof BinaryTree b && b.getKind() != Tree.Kind.PLUS) return true;   // comparações
+                        if (t instanceof BinaryTree b && b.getKind() != Tree.Kind.PLUS) { reason = "compare"; return true; }
+                        if (t instanceof NewClassTree nc && INTERNAL_EX.contains(nc.getIdentifier().toString())) { reason = "internal-ex"; return true; }   // comparações
                         if (t instanceof MethodTree || t instanceof LambdaExpressionTree || t instanceof ClassTree) return false;
                     }
                     return false;
@@ -146,7 +170,10 @@ public class JavaExtract {
                     if (lit.getKind() != Tree.Kind.STRING_LITERAL || consumed.contains(lit)) return null;
                     TreePath p = getCurrentPath(); String text = (String) lit.getValue();
                     long s0 = pos.getStartPosition(cu, lit); if (src.startsWith("\"\"\"", (int) s0)) return null;   // text block = prompt
-                    if (!inMethod(p) || skippedCall(p)) { if (natural(text)) skipped.add(rel + ":" + lm.getLineNumber(s0) + " " + text); return null; }
+                    int ctx = context(p); reason = "";
+                    if (ctx == 0 || skippedCall(p)) { if (natural(text)) skipped.add(rel + ":" + lm.getLineNumber(s0) + " [" + (ctx == 0 ? "ctx0" : reason) + "] " + text); return null; }
+                    String fn = ctx == 2 || deferred(p) ? "Msg.k" : "Msg.t";
+                    if (text.contains("\n") || PROMPT.matcher(text).find()) { skipped.add(rel + ":" + lm.getLineNumber(s0) + " [prompt] " + text.replace("\n", "⏎")); return null; }
                     // sobe a cadeia de concatenação
                     TreePath top = p; while (top.getParentPath() != null && top.getParentPath().getLeaf() instanceof BinaryTree b && b.getKind() == Tree.Kind.PLUS) top = top.getParentPath();
                     if (top.getLeaf() != lit) {
@@ -165,13 +192,13 @@ public class JavaExtract {
                         }
                         String key = keyFor(pat.toString(), nsF, rel);
                         found.add(new Found(rel, lm.getLineNumber(s0), key, pat.toString()));
-                        edits.add(new Edit(pos.getStartPosition(cu, top.getLeaf()), pos.getEndPosition(cu, top.getLeaf()), "Msg.t(\"" + key + "\"" + (args.isEmpty() ? "" : ", " + String.join(", ", args)) + ")"));
+                        edits.add(new Edit(pos.getStartPosition(cu, top.getLeaf()), pos.getEndPosition(cu, top.getLeaf()), fn + "(\"" + key + "\"" + (args.isEmpty() ? "" : ", " + String.join(", ", args)) + ")"));
                         return null;
                     }
                     if (!natural(text)) return null;
                     String key = keyFor(mf(text), nsF, rel);
                     found.add(new Found(rel, lm.getLineNumber(s0), key, text));
-                    edits.add(new Edit(s0, pos.getEndPosition(cu, lit), "Msg.t(\"" + key + "\")"));
+                    edits.add(new Edit(s0, pos.getEndPosition(cu, lit), fn + "(\"" + key + "\")"));
                     return null;
                 }
                 void flatten(ExpressionTree e, List<ExpressionTree> out) { if (e instanceof BinaryTree b && b.getKind() == Tree.Kind.PLUS) { flatten(b.getLeftOperand(), out); flatten(b.getRightOperand(), out); } else out.add(e); }

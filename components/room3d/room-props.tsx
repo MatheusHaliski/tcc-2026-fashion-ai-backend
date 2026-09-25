@@ -322,10 +322,10 @@ export function WallCalendar({ position, days }: { position: [number, number, nu
   const { t } = useI18n();
   const tex = useCanvasTex(`cal-${days}`, 256, 300, (g, w, h) => {
     g.fillStyle = "#fbfaf6"; g.fillRect(0, 0, w, h); g.fillStyle = "#C6275E"; g.fillRect(0, 0, w, 54);
-    g.fillStyle = "#fff"; g.font = "700 26px Inter, Arial"; g.textAlign = "center"; g.fillText(t("room3d.roomProps.sem_repetir"), w / 2, 36);
+    g.fillStyle = "#fff"; g.font = t("room3d.roomProps.n700_26px_inter_arial"); g.textAlign = "center"; g.fillText(t("room3d.roomProps.sem_repetir"), w / 2, 36);
     for (let i = 0; i < 28; i++) {
       const x = 14 + (i % 7) * 33, y = 70 + Math.floor(i / 7) * 52;
-      g.strokeStyle = "#d8d2c6"; g.strokeRect(x, y, 30, 46); g.fillStyle = "#6b5a4a"; g.font = "500 12px Inter"; g.textAlign = "left"; g.fillText(String(i + 1), x + 3, y + 13);
+      g.strokeStyle = "#d8d2c6"; g.strokeRect(x, y, 30, 46); g.fillStyle = "#6b5a4a"; g.font = t("room3d.roomProps.n500_12px_inter"); g.textAlign = "left"; g.fillText(String(i + 1), x + 3, y + 13);
       if (i < days) { g.strokeStyle = "#C6275E"; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 5, y + 16); g.lineTo(x + 25, y + 42); g.moveTo(x + 25, y + 16); g.lineTo(x + 5, y + 42); g.stroke(); g.lineWidth = 1; }
     }
   });
@@ -334,8 +334,9 @@ export function WallCalendar({ position, days }: { position: [number, number, nu
 
 /** Fita de alfaiate (Temporada Cápsula): faixa amarela graduada atravessando os puxadores trancados. */
 export function TailorTape({ width, position, rotation }: { width: number; position: [number, number, number]; rotation?: [number, number, number] }) {
+  const { t } = useI18n();
   const tex = useCanvasTex("tape", 512, 32, (g, w, h) => {
-    g.fillStyle = "#f2d04b"; g.fillRect(0, 0, w, h); g.fillStyle = "#3a2f1a"; g.font = "600 12px Inter"; g.textAlign = "center";
+    g.fillStyle = "#f2d04b"; g.fillRect(0, 0, w, h); g.fillStyle = "#3a2f1a"; g.font = t("room3d.roomProps.n600_12px_inter"); g.textAlign = "center";
     for (let i = 0; i < 64; i++) { const x = i * 8; g.fillRect(x, 0, 1, i % 5 === 0 ? 12 : 6); if (i % 10 === 0) g.fillText(String(i), x + 2, h - 6); }
   });
   return <mesh position={position} rotation={rotation}><planeGeometry args={[width, 0.03]} /><meshStandardMaterial map={tex} side={THREE.DoubleSide} /></mesh>;

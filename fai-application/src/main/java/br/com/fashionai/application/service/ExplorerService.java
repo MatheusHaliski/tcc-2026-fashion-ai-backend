@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -77,15 +78,15 @@ public class ExplorerService {
     public Map<String, Object> globalPanel(CurrentUser viewer, String selectedCountry, String season, String color, String hypeBand) {
         String se = season == null || season.isBlank() ? null : season.trim().toUpperCase(Locale.ROOT);
         if (se != null && !Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(se)) {
-            throw ApiException.badRequest("ESTACAO_INVALIDA", "Estações: SPRING, SUMMER, AUTUMN, WINTER.");
+            throw ApiException.badRequest("ESTACAO_INVALIDA", Msg.t("explorer.estacoes_spring_summer_autumn_winter"));
         }
         String co = color == null || color.isBlank() ? null : color.trim();
         if (co != null && !Taxonomy.COLORS.containsKey(co)) {
-            throw ApiException.badRequest("COR_INVALIDA", "Cor fora da taxonomia: " + co);
+            throw ApiException.badRequest("COR_INVALIDA", Msg.t("explorer.cor_fora_da_taxonomia", co));
         }
         String band = hypeBand == null || hypeBand.isBlank() ? null : hypeBand.trim().toUpperCase(Locale.ROOT);
         if (band != null && !HYPE_BANDS.containsKey(band)) {
-            throw ApiException.badRequest("FAIXA_INVALIDA", "Faixas de hype: " + HYPE_BANDS.keySet());
+            throw ApiException.badRequest("FAIXA_INVALIDA", Msg.t("explorer.faixas_de_hype", HYPE_BANDS.keySet()));
         }
         double[] range = band == null ? null : HYPE_BANDS.get(band);
         AnalyticsQueryPort.GlobalFilter gf = new AnalyticsQueryPort.GlobalFilter(se, co, range == null ? null : range[0], range == null ? null : range[1]);
@@ -133,7 +134,7 @@ public class ExplorerService {
             out.put("selected", Map.of("country", selectedCountry, "hypeBySeason", analytics.hypeBySeason(selectedCountry),
                     "topColors", analytics.colorRanking(selectedCountry, 5)));
         }
-        out.put("legend", "um ponto por país com ≥ " + MIN_DATA + " peças/looks públicos · tamanho = volume · cor = cor dominante · brilho = hype médio");
+        out.put("legend", Msg.t("explorer.um_ponto_por_pais_com", MIN_DATA));
         return out;
     }
 
@@ -230,14 +231,14 @@ public class ExplorerService {
                 ((Number) r.get("public_schemes")).longValue()).reversed()).limit(5).map(r -> Map.of("label", r.get("country"), "value", r.get("public_schemes"))).toList());
         String local = LocalAdvisors.insightText(rankings);
         if (viewer == null) {
-            return Map.of("rankings", rankings, "aiInsight", local, "explanation", "Leitura local (faça login para a leitura por IA).",
-                    "fallbackUsed", false, "note", "Cores de status do dataviz nunca são reaproveitadas como identidade de série.");
+            return Map.of("rankings", rankings, "aiInsight", local, "explanation", Msg.t("explorer.leitura_local_faca_login_para"),
+                    "fallbackUsed", false, "note", Msg.t("explorer.cores_de_status_do_dataviz"));
         }
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(viewer.id(), AiCapability.INSIGHT_GENERATOR,
                 "Você é o Insight Generator do Fashion AI. Escreva UMA leitura de tendência (até 2 frases, português) a partir dos rankings agregados. "
                         + "Não invente números; use só os dados.", "Rankings: " + Json.write(rankings), List.of(), 250,
-                List.of("rankings agregados (sem dados pessoais)"), text -> text == null || text.isBlank() ? null : InputSanitizer.clean(text, 400), () -> local, null));
+                List.of(Msg.t("explorer.rankings_agregados_sem_dados_pessoais")), text -> text == null || text.isBlank() ? null : InputSanitizer.clean(text, 400), () -> local, null));
         return Map.of("rankings", rankings, "aiInsight", outcome.value() == null ? local : outcome.value(), "explanation", outcome.explanation(),
-                "fallbackUsed", outcome.fallbackUsed(), "note", "Cores de status do dataviz nunca são reaproveitadas como identidade de série.");
+                "fallbackUsed", outcome.fallbackUsed(), "note", Msg.t("explorer.cores_de_status_do_dataviz"));
     }
 }

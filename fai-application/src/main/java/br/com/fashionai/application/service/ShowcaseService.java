@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import java.util.HashSet;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.taxonomy.WorldRegions;
@@ -120,7 +121,7 @@ public class ShowcaseService {
     /** Uma peça sozinha no manequim (card de peça): o modelo do RF16 quando existe, senão a foto aplicada. */
     @Transactional(readOnly = true)
     public Map<String, Object> piece3d(CurrentUser viewer, UUID pieceId) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireView(viewer, w.getUser().getId(), SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility()), "piece:" + pieceId);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("pieceId", w.getId());
@@ -225,7 +226,7 @@ public class ShowcaseService {
                 continue;
             }
             if (!w.getUser().getId().equals(user.id())) {
-                skipped.add(Map.of("id", w.getId(), "name", w.getName(), "reason", "peça de outra pessoa"));
+                skipped.add(Map.of("id", w.getId(), "name", w.getName(), "reason", Msg.t("showcase.peca_de_outra_pessoa")));
                 continue;
             }
             try {
@@ -255,11 +256,10 @@ public class ShowcaseService {
     @Transactional
     public Map<String, Object> pieceMannequinPhoto(CurrentUser user, UUID id, byte[] bytes) {
         guard.requireCanCreate(user);
-        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + id);
         if (!MANNEQUIN_PHOTO_CATEGORIES.contains(w.getCategory())) {
-            throw new ApiException(422, "SEM_FOTO_NO_MANEQUIM", "A foto com manequim é para peças superiores e de corpo inteiro. "
-                    + "Peças inferiores, calçados e acessórios aparecem vestidos na foto do look (RF5).");
+            throw new ApiException(422, "SEM_FOTO_NO_MANEQUIM", Msg.t("showcase.a_foto_com_manequim_e"));
         }
         String url = storeMannequinPhoto(user, "pieces/" + id, bytes);
         w.setMannequinImageUrl(url);
@@ -291,7 +291,7 @@ public class ShowcaseService {
             s.setMannequinImageUrl(null);
             s.setMannequinImageFace(null);
         } else {
-            WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound("Peça"));
+            WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
             guard.requireOwner(user, w.getUser().getId(), "piece:" + id);
             w.setMannequinImageUrl(null);
             w.setMannequinImageFace(null);
@@ -404,7 +404,7 @@ public class ShowcaseService {
         Set<UUID> following = new HashSet<>();
         if ("SEGUINDO".equals(ranking)) {
             if (viewer == null) {
-                throw ApiException.unauthorized("Entre na conta para ver quem você segue na passarela.");
+                throw ApiException.unauthorized(Msg.t("showcase.entre_na_conta_para_ver"));
             }
             follows.findByFollowerIdAndStatus(viewer.id(), FollowStatus.ACEITO).forEach(x -> following.add(x.getFollowing().getId()));
             following.add(viewer.id());
@@ -520,17 +520,17 @@ public class ShowcaseService {
         return switch (v) {
             case "ERAS" -> Kind.ERAS;
             case "COLLECTIONS", "COLECOES" -> Kind.COLLECTIONS;
-            default -> throw ApiException.badRequest("ABA_INVALIDA", "Use eras ou collections.");
+            default -> throw ApiException.badRequest("ABA_INVALIDA", Msg.t("showcase.use_eras_ou_collections"));
         };
     }
 
     private User owner(String slug, Kind kind) {
         User u = institutional.institutionalUser(slug);
         if (kind == Kind.ERAS && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw ApiException.notFound("Eras (só perfis de celebridade)");
+            throw ApiException.notFound(Msg.t("showcase.eras_so_perfis_de_celebridade"));
         }
         if (kind == Kind.COLLECTIONS && u.getProfileType() != ProfileType.MARCA) {
-            throw ApiException.notFound("Coleções (só perfis de marca)");
+            throw ApiException.notFound(Msg.t("showcase.colecoes_so_perfis_de_marca"));
         }
         return u;
     }
@@ -633,7 +633,7 @@ public class ShowcaseService {
             }
         }
         if (groupingId != null && selected == null) {
-            throw ApiException.notFound(kind == Kind.ERAS ? "Era" : "Coleção");
+            throw ApiException.notFound(kind == Kind.ERAS ? "Era" : Msg.t("showcase.colecao"));
         }
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         String t = type == null ? "TODOS" : type.toUpperCase(Locale.ROOT);
@@ -736,9 +736,7 @@ public class ShowcaseService {
         out.put("ranking", rows);
         out.put("mostLiked", rows.stream().max(Comparator.comparingLong(r -> ((Number) r.get("likes")).longValue())).map(r -> r.get("label")).orElse(null));
         out.put("mostHype", rows.stream().max(Comparator.comparingDouble(r -> ((Number) r.get("topHype")).doubleValue())).map(r -> r.get("label")).orElse(null));
-        out.put("method", "Pontuação = 0,5 × curtidas + 0,35 × maior Hype Score + 0,15 × itens, cada termo dividido pelo maior valor entre as "
-                + (kind == Kind.ERAS ? "eras" : "coleções") + " deste perfil. A plateia é proporcional à pontuação; o 1º lugar lota ("
-                + capacity + " lugares). Só entram esquemas e peças que você pode ver.");
+        out.put("method", Msg.t("showcase.pontuacao_0_5_curtidas_0", (kind == Kind.ERAS ? "eras" : Msg.t("showcase.colecoes")), capacity));
         return out;
     }
 

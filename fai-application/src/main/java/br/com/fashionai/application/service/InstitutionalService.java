@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.local.Similarity;
@@ -160,11 +161,11 @@ public class InstitutionalService {
             cards.add(m);
         }
         if (affinityOrder) {
-            ai.local(viewer.id(), AiCapability.AFFINITY, List.of("estilos do seu DNA", "estilos do catálogo das marcas"), () -> cards.size());
+            ai.local(viewer.id(), AiCapability.AFFINITY, List.of(Msg.t("institutional.estilos_do_seu_dna"), Msg.t("institutional.estilos_do_catalogo_das_marcas")), () -> cards.size());
             cards.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("affinity")).longValue()).reversed());
         }
         return Map.of("brands", cards, "order", affinityOrder ? "AFINIDADE" : "RECENTES", "orders", List.of("AFINIDADE", "RECENTES"),
-                "empty", cards.isEmpty() ? (term == null ? "Nenhuma marca validada ainda." : "Nenhuma marca encontrada para \"" + term + "\".") : "");
+                "empty", cards.isEmpty() ? (term == null ? Msg.t("institutional.nenhuma_marca_validada_ainda") : Msg.t("institutional.nenhuma_marca_encontrada_para", term)) : "");
     }
 
     @Transactional(readOnly = true)
@@ -196,7 +197,7 @@ public class InstitutionalService {
             u = brands.findBySlug(slugOrId).map(BrandProfile::getOwner).orElseGet(() -> celebrities.findBySlug(slugOrId).map(CelebrityProfile::getOwner).orElse(null));
         }
         if (u == null || u.getProfileType() == ProfileType.PESSOAL) {
-            throw ApiException.notFound("Perfil institucional");
+            throw ApiException.notFound(Msg.t("institutional.perfil_institucional"));
         }
         return u;
     }
@@ -228,7 +229,7 @@ public class InstitutionalService {
             header.put("status", c.getVerificationStatus() == ApprovalStatus.APROVADO ? "Verificada" : c.getVerificationStatus().name());
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.ERA).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", false);
-            header.put("autoApprovalLocked", "Todo vínculo com celebridade exige aprovação explícita deste perfil — direito de imagem (RF21.CA19).");
+            header.put("autoApprovalLocked", Msg.t("institutional.todo_vinculo_com_celebridade_exige"));
         }
         header.put("username", u.getUsername());
         header.put("following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO));
@@ -247,7 +248,7 @@ public class InstitutionalService {
                 : List.of("PROMOCOES", "LOOKS_CONSAGRADOS", "CATALOGO"));
         if (admin) {
             int pending = bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtAsc(u.getId(), SealBondStatus.PENDING_REVIEW).size();
-            out.put("reviewBanner", pending == 0 ? null : pending + " vínculo(s) aguardando sua revisão. A fila fica em Meus selos.");
+            out.put("reviewBanner", pending == 0 ? null : Msg.t("institutional.vinculo_s_aguardando_sua_revisao", (pending)));
         }
         out.put("groupings", groupings.findByOwnerIdOrderByCreatedAtDesc(u.getId()).stream().map(g -> Map.of("id", g.getId(), "type", g.getType().name(),
                 "label", g.getLabel())).toList());
@@ -284,12 +285,12 @@ public class InstitutionalService {
         boolean admin = viewer != null && viewer.id().equals(u.getId());
         String t = tab == null ? "" : tab.toUpperCase(Locale.ROOT);
         if (!admin && Set.of("CADASTRAR_SELO", "MEUS_SELOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS", "MEUS_ESQUEMAS", "MINHAS_PECAS").contains(t)) {
-            throw guard.deny(viewer, "institutional-tab:" + t, "Esta aba é do administrador do perfil (RNF1).");
+            throw guard.deny(viewer, "institutional-tab:" + t, Msg.t("institutional.esta_aba_e_do_administrador"));
         }
         return switch (t) {
             case "CADASTRAR_SELO" -> Map.of("tiers", List.of("PECA", "LOOK"), "premium", u.getProfileType() == ProfileType.CELEBRIDADE,
                     "autoApprovalLocked", u.getProfileType() == ProfileType.CELEBRIDADE, "campaignCapRequired", u.getProfileType() == ProfileType.CELEBRIDADE,
-                    "centerEmpty", "O centro do selo recebe o logo cadastrado — nunca envie arte com logotipo embutido.");
+                    "centerEmpty", Msg.t("institutional.o_centro_do_selo_recebe"));
             case "MEUS_SELOS" -> Map.of("seals", sealService.sealsOf(u.getId()), "reviewQueue", sealService.reviewQueue(viewer), "metrics", sealService.issuerMetrics(viewer));
             case "MEUS_ESQUEMAS", "LOOKS_CONSAGRADOS" -> consecrated(viewer, u, filter, groupingId, admin);
             case "MINHAS_PECAS", "CATALOGO" -> catalog(u, filter);
@@ -307,7 +308,7 @@ public class InstitutionalService {
             case "ESQUEMAS_DESTAQUE" -> highlightedSchemes(viewer, u, filter, groupingId);
             case "PECAS_DESTAQUE" -> highlightedPieces(viewer, u, filter, groupingId);
             case "DESTAQUES", "ESQUEMAS_PECAS_DESTAQUE" -> highlighted(viewer, u, filter, groupingId);
-            default -> throw ApiException.badRequest("ABA_INVALIDA", "Aba desconhecida.");
+            default -> throw ApiException.badRequest("ABA_INVALIDA", Msg.t("institutional.aba_desconhecida"));
         };
     }
 
@@ -376,7 +377,7 @@ public class InstitutionalService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schemes", looks);
         out.put("pieces", new ArrayList<>(piecesOut.values()));
-        out.put("empty", looks.isEmpty() ? "Nenhum look conquistou um selo deste perfil ainda. Publique um look compatível com a política do selo." : null);
+        out.put("empty", looks.isEmpty() ? Msg.t("institutional.nenhum_look_conquistou_um_selo") : null);
         return out;
     }
 
@@ -395,22 +396,22 @@ public class InstitutionalService {
         User u = institutionalUser(slugOrId);
         BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Marca"));
         if (b.getStoreUrl() == null || b.getStoreUrl().isBlank()) {
-            throw new ApiException(404, "LOJA_INDISPONIVEL", "Esta marca ainda não cadastrou o link da loja.");
+            throw new ApiException(404, "LOJA_INDISPONIVEL", Msg.t("institutional.esta_marca_ainda_nao_cadastrou"));
         }
-        return Map.of("url", b.getStoreUrl(), "external", true, "note", "Sua sessão no Fashion AI continua ativa quando você voltar.");
+        return Map.of("url", b.getStoreUrl(), "external", true, "note", Msg.t("institutional.sua_sessao_no_fashion_ai"));
     }
 
     /** RF1.CA08 — administrador da marca edita bio, site, logo, capa, categoria. */
     @Transactional
     public Map<String, Object> updateBrand(CurrentUser user, Map<String, String> fields) {
-        BrandProfile b = brands.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "brand-profile", "Apenas o perfil da marca pode editar estes dados."));
+        BrandProfile b = brands.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "brand-profile", Msg.t("institutional.apenas_o_perfil_da_marca")));
         if (fields.containsKey("bio")) {
             b.setBio(InputSanitizer.clean(fields.get("bio"), 500));
         }
         if (fields.containsKey("storeUrl")) {
             String url = fields.get("storeUrl");
             if (url != null && !url.isBlank() && !url.matches("^https://.+")) {
-                throw ApiException.badRequest("URL_INVALIDA", "O link da loja precisa começar com https://");
+                throw ApiException.badRequest("URL_INVALIDA", Msg.t("institutional.o_link_da_loja_precisa"));
             }
             b.setStoreUrl(url);
         }
@@ -429,7 +430,7 @@ public class InstitutionalService {
 
     @Transactional
     public Map<String, Object> updateCelebrity(CurrentUser user, Map<String, Object> fields) {
-        CelebrityProfile c = celebrities.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "celebrity-profile", "Apenas o perfil da celebridade pode editar estes dados."));
+        CelebrityProfile c = celebrities.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "celebrity-profile", Msg.t("institutional.apenas_o_perfil_da_celebridade")));
         if (fields.containsKey("bio")) {
             c.setBio(InputSanitizer.clean(String.valueOf(fields.get("bio")), 500));
         }

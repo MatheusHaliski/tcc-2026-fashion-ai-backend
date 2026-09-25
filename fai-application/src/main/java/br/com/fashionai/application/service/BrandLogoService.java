@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -124,7 +125,7 @@ public class BrandLogoService {
     public Map<String, Object> manual(String rawName, byte[] bytes) {
         String key = keyOf(rawName);
         if (key.isEmpty()) {
-            throw br.com.fashionai.application.common.ApiException.badRequest("MARCA_INVALIDA", "Informe o nome da marca.");
+            throw br.com.fashionai.application.common.ApiException.badRequest("MARCA_INVALIDA", Msg.t("brandLogo.informe_o_nome_da_marca"));
         }
         ImageOps.requireAcceptedImage(bytes);
         BufferedImage img = ImageOps.decode(bytes);
@@ -219,10 +220,10 @@ public class BrandLogoService {
                 if (stored.isPresent()) {
                     return new Found(stored.get(), "WIKIDATA", domain, url, new BigDecimal("0.9500"), null);
                 }
-                errors.add("logo do Wikidata não baixou");
+                errors.add(Msg.t("brandLogo.logo_do_wikidata_nao_baixou"));
             }
         } else {
-            errors.add(wd == null ? "Wikidata inacessível (rede)" : "Wikidata sem item de moda com esse nome");
+            errors.add(wd == null ? Msg.t("brandLogo.wikidata_inacessivel_rede") : Msg.t("brandLogo.wikidata_sem_item_de_moda"));
         }
         // 3) IA com busca na web
         AiHint hint = aiSearch(name, domain);
@@ -236,10 +237,10 @@ public class BrandLogoService {
                     return new Found(stored.get(), "IA_BUSCA_WEB", domain, hint.logoUrl(),
                             BigDecimal.valueOf(Math.min(0.99, hint.confidence())).setScale(4, java.math.RoundingMode.HALF_UP), null);
                 }
-                errors.add("URL sugerida pela IA não é uma imagem válida");
+                errors.add(Msg.t("brandLogo.url_sugerida_pela_ia_nao"));
             }
         } else {
-            errors.add("IA sem resposta (sem chave, sem cota ou sem resultado)");
+            errors.add(Msg.t("brandLogo.ia_sem_resposta_sem_chave"));
         }
         // 4) ícone do site oficial
         if (domain != null) {
@@ -251,7 +252,7 @@ public class BrandLogoService {
                     return new Found(stored.get(), "FAVICON_SITE", domain, url, new BigDecimal("0.6000"), null);
                 }
             }
-            errors.add("site " + domain + " sem ícone utilizável");
+            errors.add(Msg.t("brandLogo.site_sem_icone_utilizavel", domain));
         }
         return new Found(null, "MONOGRAMA", domain, null, null, String.join("; ", errors));
     }
@@ -367,9 +368,8 @@ public class BrandLogoService {
                         + "A URL precisa apontar direto para a imagem (png, jpg, webp ou svg) do logotipo da marca, não para uma página, "
                         + "foto de loja, produto ou pessoa. Responda somente JSON: "
                         + "{\"officialDomain\": \"exemplo.com\" | null, \"logoUrl\": \"https://...\" | null, \"confidence\": 0..1}.",
-                "Marca: \"" + name + "\"" + (knownDomain == null ? "" : " (site oficial provável: " + knownDomain + ")")
-                        + ". Segmento: moda / vestuário / calçados / acessórios.",
-                List.of(), 1500, List.of("nome da marca (dado público)"),
+                Msg.t("brandLogo.marca_segmento_moda_vestuario_calcados", name, (knownDomain == null ? "" : Msg.t("brandLogo.site_oficial_provavel", knownDomain))),
+                List.of(), 1500, List.of(Msg.t("brandLogo.nome_da_marca_dado_publico")),
                 text -> {
                     Map<String, Object> m = Json.map(text);
                     if (m.isEmpty()) {

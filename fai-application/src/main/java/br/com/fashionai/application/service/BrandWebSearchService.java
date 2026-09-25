@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -102,7 +103,7 @@ public class BrandWebSearchService {
     public Map<String, Object> search(UUID userId, String rawQuery, boolean allowAi) {
         String q = rawQuery == null ? "" : rawQuery.trim().replaceAll("\\s+", " ");
         if (q.length() < 2 || q.length() > 60) {
-            throw ApiException.badRequest("BUSCA_INVALIDA", "Digite de 2 a 60 caracteres para buscar a marca.");
+            throw ApiException.badRequest("BUSCA_INVALIDA", Msg.t("brandWebSearch.digite_de_2_a_60"));
         }
         String key = BrandLogoService.keyOf(q) + (allowAi ? "|ia" : "");
         Cached c = queries.get(key);
@@ -117,12 +118,12 @@ public class BrandWebSearchService {
         CompletableFuture<List<Hit>> wd = CompletableFuture.supplyAsync(() -> wikidata(q), pool);
         CompletableFuture<List<Hit>> si = CompletableFuture.supplyAsync(() -> simpleIcons(q), pool);
         hits.addAll(collect(wd, "WIKIDATA", "Wikidata (Wikimedia)", sources));
-        hits.addAll(collect(si, "SIMPLE_ICONS", "Simple Icons (GitHub)", sources));
+        hits.addAll(collect(si, "SIMPLE_ICONS", Msg.t("brandWebSearch.simple_icons_github"), sources));
         if (allowAi && q.length() >= 3 && hits.stream().filter(h -> h.match() <= 1).count() < 2) {
-            hits.addAll(collect(CompletableFuture.supplyAsync(() -> aiSearch(userId, q), pool), "IA_BUSCA_WEB", "IA com busca na web", sources));
+            hits.addAll(collect(CompletableFuture.supplyAsync(() -> aiSearch(userId, q), pool), "IA_BUSCA_WEB", Msg.t("brandWebSearch.ia_com_busca_na_web"), sources));
         } else {
-            sources.add(Map.of("source", "IA_BUSCA_WEB", "label", "IA com busca na web", "status", "NAO_USADA",
-                    "note", allowAi ? "as outras fontes já trouxeram resultados" : "IA remota desligada nas preferências"));
+            sources.add(Map.of("source", "IA_BUSCA_WEB", "label", Msg.t("brandWebSearch.ia_com_busca_na_web"), "status", "NAO_USADA",
+                    "note", allowAi ? Msg.t("brandWebSearch.as_outras_fontes_ja_trouxeram") : Msg.t("brandWebSearch.ia_remota_desligada_nas_preferencias")));
         }
         List<Hit> merged = merge(hits);
         List<CompletableFuture<Map<String, Object>>> jobs = new ArrayList<>();
@@ -150,7 +151,7 @@ public class BrandWebSearchService {
         out.put("sources", sources);
         out.put("rejectedLogos", rejected);
         out.put("ms", (System.nanoTime() - t0) / 1_000_000);
-        out.put("note", "Busca feita agora na internet; o Fashion AI não mantém catálogo de marcas. Logos passam pelo filtro de nitidez (fundo branco, letras pretas).");
+        out.put("note", Msg.t("brandWebSearch.busca_feita_agora_na_internet"));
         out.put("cache", false);
         if (results.size() > 0 || sources.stream().anyMatch(s -> "OK".equals(s.get("status")))) {
             if (queries.size() > 500) {
@@ -179,7 +180,7 @@ public class BrandWebSearchService {
             List<Hit> r = f.get(10, TimeUnit.SECONDS);
             if (r == null) {
                 s.put("status", "INDISPONIVEL");
-                s.put("note", "sem acesso à fonte (rede, chave ou cota)");
+                s.put("note", Msg.t("brandWebSearch.sem_acesso_a_fonte_rede"));
                 r = List.of();
             } else {
                 s.put("status", r.isEmpty() ? "SEM_RESULTADO" : "OK");
@@ -307,7 +308,7 @@ public class BrandWebSearchService {
         for (SimpleIcon s : index) {
             int match = matchOf(s.title(), s.aliases(), q);
             if (match <= 3) {
-                out.add(new Hit(s.title(), "Logo vetorial do catálogo aberto Simple Icons", "SIMPLE_ICONS", s.slug(),
+                out.add(new Hit(s.title(), Msg.t("brandWebSearch.logo_vetorial_do_catalogo_aberto"), "SIMPLE_ICONS", s.slug(),
                         BrandLogoService.domainOf(s.source()), s.source(), s.hex() == null ? null : "#" + s.hex(),
                         simpleIconsBase + "/icons/" + s.slug() + ".svg", true, null, match));
             }
@@ -374,10 +375,10 @@ public class BrandWebSearchService {
         AiOutcome<List<Hit>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.BRAND_LOGO_FINDER,
                 "Você é o buscador de marcas do Fashion AI. Use a busca na web para listar até 4 marcas REAIS de moda (roupa, calçado, "
                         + "acessório, joia, luxo ou varejo de moda) cujo nome combine com o texto digitado. Para cada uma: nome oficial, "
-                        + "descrição curta em português, site oficial e a URL direta de uma imagem do logotipo (PNG ou JPG grande, de preferência "
+                        + "descrição curta em " + Msg.languageName() + ", site oficial e a URL direta de uma imagem do logotipo (PNG ou JPG grande, de preferência "
                         + "upload.wikimedia.org ou press kit oficial; nunca SVG, favicon, foto de loja, produto ou pessoa). Nunca invente URL. "
                         + "Responda só JSON: {\"brands\":[{\"name\":\"...\",\"description\":\"...\",\"officialDomain\":\"exemplo.com\",\"logoUrl\":\"https://...\"}]}",
-                "Texto digitado no campo marca: \"" + q + "\"", List.of(), 1200, List.of("texto digitado no campo marca (dado público)"),
+                Msg.t("brandWebSearch.texto_digitado_no_campo_marca", q), List.of(), 1200, List.of(Msg.t("brandWebSearch.texto_digitado_no_campo_marca_2")),
                 text -> {
                     Object brands = Json.map(text).get("brands");
                     List<Hit> out = new ArrayList<>();
@@ -453,8 +454,8 @@ public class BrandWebSearchService {
         m.put("source", h.source());
         m.put("sourceLabel", switch (h.source()) {
             case "WIKIDATA" -> "Wikidata";
-            case "IA_BUSCA_WEB" -> "IA · busca na web";
-            default -> "Simple Icons · GitHub";
+            case "IA_BUSCA_WEB" -> Msg.t("brandWebSearch.ia_busca_na_web");
+            default -> Msg.t("brandWebSearch.simple_icons_github_2");
         });
         m.put("ref", h.ref());
         m.put("domain", h.domain());

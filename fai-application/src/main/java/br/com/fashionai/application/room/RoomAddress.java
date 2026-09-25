@@ -1,5 +1,6 @@
 package br.com.fashionai.application.room;
 
+import br.com.fashionai.application.common.Msg;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -60,12 +61,12 @@ public record RoomAddress(String zone, int index, int sub) {
                 yield "Gaveta " + index + (l == null || l.isBlank() ? "" : " · " + l);
             }
             case "top" -> "Maleiro";
-            case "base" -> "Base · posição " + index;
-            case "shoe" -> "Sapateira · posição " + index;
-            case "bags" -> "Vitrine de bolsas · posição " + index;
-            case "jewelry" -> "Porta-joias · posição " + index;
+            case "base" -> Msg.t("roomAddress.base_posicao", index);
+            case "shoe" -> Msg.t("roomAddress.sapateira_posicao", index);
+            case "bags" -> Msg.t("roomAddress.vitrine_de_bolsas_posicao", index);
+            case "jewelry" -> Msg.t("roomAddress.porta_joias_posicao", index);
             case "chair" -> "Cadeira";
-            case "season" -> "Maleiro de estação";
+            case "season" -> Msg.t("common.maleiro_de_estacao");
             default -> toString();
         };
     }

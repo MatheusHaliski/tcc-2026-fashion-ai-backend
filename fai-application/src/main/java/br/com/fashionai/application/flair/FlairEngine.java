@@ -1,5 +1,6 @@
 package br.com.fashionai.application.flair;
 
+import br.com.fashionai.application.common.Msg;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -128,14 +129,14 @@ public final class FlairEngine {
 
     static Ability ability(String rarity, Map<String, Integer> s, List<String> styles) {
         return switch (rarity) {
-            case "RARE" -> s.get("EDGE") >= 80 ? new Ability("TRENDSETTER", "Trendsetter", "Dobra o EDGE desta carta na rodada de EDGE.")
-                    : s.get("GLOW") >= 80 ? new Ability("SPOTLIGHT", "Spotlight", "+30 de GLOW para todo o deck na rodada de GLOW.")
-                    : new Ability("ICON", "Ícone", "+20% no poder do deck como âncora.");
+            case "RARE" -> s.get("EDGE") >= 80 ? new Ability("TRENDSETTER", "Trendsetter", Msg.t("flair.dobra_o_edge_desta_carta"))
+                    : s.get("GLOW") >= 80 ? new Ability("SPOTLIGHT", "Spotlight", Msg.t("flair.n30_de_glow_para_todo"))
+                    : new Ability("ICON", Msg.t("flair.icone"), Msg.t("flair.n20_no_poder_do_deck"));
             case "LIMITED" -> styles.contains("statement") || styles.contains("avant_garde")
-                    ? new Ability("STATEMENT_LOCK", "Statement Lock", "Bloqueia a carta mais forte do oponente na rodada de EDGE.")
+                    ? new Ability("STATEMENT_LOCK", Msg.t("flair.statement_lock"), Msg.t("flair.bloqueia_a_carta_mais_forte"))
                     : styles.contains("streetwear") || styles.contains("urban")
-                    ? new Ability("HYPE_BOOST", "Hype Boost", "+15 de EDGE para cada outra carta street/urban do deck.") : null;
-            case "PREMIUM" -> new Ability("SHIELD", "Escudo", "Rodada perdida por menos de 10 pontos vira empate.");
+                    ? new Ability("HYPE_BOOST", Msg.t("flair.hype_boost"), Msg.t("flair.n15_de_edge_para_cada")) : null;
+            case "PREMIUM" -> new Ability("SHIELD", "Escudo", Msg.t("flair.rodada_perdida_por_menos_de"));
             default -> null;
         };
     }
@@ -148,21 +149,21 @@ public final class FlairEngine {
             Map<String, Integer> styleCount = count(cards.stream().map(Card::styles).toList());
             int style = styleCount.values().stream().filter(c -> c >= 2).mapToInt(c -> 8 * c).sum();
             if (style > 0) {
-                combos.add(new Combo("STYLE_SYNERGY", "Sinergia de estilo", Math.min(60, style)));
+                combos.add(new Combo("STYLE_SYNERGY", Msg.t("flair.sinergia_de_estilo"), Math.min(60, style)));
             }
             Set<String> shared = new HashSet<>(cards.get(0).occasions());
             cards.forEach(c -> shared.retainAll(c.occasions()));
             if (!shared.isEmpty() && cards.size() >= 2) {
-                combos.add(new Combo("OCCASION_SYNERGY", "Sinergia de ocasião", Math.min(48, 12 * shared.size())));
+                combos.add(new Combo("OCCASION_SYNERGY", Msg.t("flair.sinergia_de_ocasiao"), Math.min(48, 12 * shared.size())));
             }
             Map<String, Integer> seasons = count(cards.stream().map(c -> List.of(c.season())).toList());
             seasons.remove("ALL");
             if (seasons.values().stream().anyMatch(c -> c >= 3)) {
-                combos.add(new Combo("SEASON_SWEEP", "Varredura de estação", 25));
+                combos.add(new Combo("SEASON_SWEEP", Msg.t("flair.varredura_de_estacao"), 25));
             }
             long materials = cards.stream().map(Card::material).filter(m -> m != null && !m.isBlank()).distinct().count();
             if (materials >= 3) {
-                combos.add(new Combo("MATERIAL_CONTRAST", "Contraste de materiais", (int) Math.min(36, 6 * materials)));
+                combos.add(new Combo("MATERIAL_CONTRAST", Msg.t("flair.contraste_de_materiais"), (int) Math.min(36, 6 * materials)));
             }
         }
         Map<String, Integer> brands = count(cards.stream().map(c -> c.brandName() == null || c.brandName().isBlank() ? List.<String>of() : List.of(c.brandName().toLowerCase(Locale.ROOT))).toList());
@@ -213,7 +214,7 @@ public final class FlairEngine {
             if (!"DRAW".equals(w)) {
                 Deck loser = "A".equals(w) ? b : a;
                 if (Math.abs(va - vb) < 10 && loser.abilities().stream().anyMatch(x -> x.code().equals("SHIELD"))) {
-                    notes.add("Escudo de " + ("A".equals(w) ? "B" : "A") + ": derrota por menos de 10 vira empate");
+                    notes.add(Msg.t("flair.escudo_de_derrota_por_menos", ("A".equals(w) ? "B" : "A")));
                     w = "DRAW";
                 }
             }
@@ -235,7 +236,7 @@ public final class FlairEngine {
         if ("EDGE".equals(stat) && other.abilities().stream().anyMatch(x -> x.code().equals("STATEMENT_LOCK")) && cards.size() > 1) {
             Card strongest = cards.stream().max((x, y) -> Integer.compare(x.stats().get("EDGE"), y.stats().get("EDGE"))).get();
             cards.remove(strongest);
-            notes.add("Statement Lock bloqueou " + strongest.name() + " (" + tag + ")");
+            notes.add(Msg.t("flair.statement_lock_bloqueou", strongest.name(), tag));
         }
         double sum = 0;
         long street = cards.stream().filter(c -> c.styles().contains("streetwear") || c.styles().contains("urban")).count();
@@ -243,7 +244,7 @@ public final class FlairEngine {
             double v = c.stats().get(stat);
             if ("EDGE".equals(stat) && c.ability() != null && c.ability().code().equals("TRENDSETTER")) {
                 v *= 2;
-                notes.add("Trendsetter dobrou o EDGE de " + c.name() + " (" + tag + ")");
+                notes.add(Msg.t("flair.trendsetter_dobrou_o_edge_de", c.name(), tag));
             }
             if ("EDGE".equals(stat) && c.ability() != null && c.ability().code().equals("HYPE_BOOST")) {
                 v += 15 * Math.max(0, street - 1);
@@ -253,7 +254,7 @@ public final class FlairEngine {
         double val = sum / cards.size();
         if ("GLOW".equals(stat) && me.abilities().stream().anyMatch(x -> x.code().equals("SPOTLIGHT"))) {
             val += 30;
-            notes.add("Spotlight: +30 GLOW (" + tag + ")");
+            notes.add(Msg.t("flair.spotlight_30_glow", tag));
         }
         long synced = me.cards().stream().filter(c -> c.stats().get("SYNC") == 100).count();
         if (synced * 2 > me.cards().size()) {
@@ -279,8 +280,8 @@ public final class FlairEngine {
 
     /** Rank do jogador pelos pontos (FlairRank). */
     public static Map<String, Object> rank(int points) {
-        String[][] ranks = {{"0", "ROOKIE", "Rookie"}, {"500", "TRENDSETTER", "Trendsetter"}, {"1500", "STYLE_MAVEN", "Style Maven"},
-                {"4000", "FASHION_ARCHITECT", "Fashion Architect"}, {"8000", "ICONIC", "Iconic"}, {"15000", "LEGEND", "Legend"}};
+        String[][] ranks = {{"0", "ROOKIE", "Rookie"}, {"500", "TRENDSETTER", "Trendsetter"}, {"1500", "STYLE_MAVEN", Msg.t("flair.style_maven")},
+                {"4000", "FASHION_ARCHITECT", Msg.t("flair.fashion_architect")}, {"8000", "ICONIC", "Iconic"}, {"15000", "LEGEND", "Legend"}};
         int i = 0;
         for (int k = 0; k < ranks.length; k++) {
             if (points >= Integer.parseInt(ranks[k][0])) {

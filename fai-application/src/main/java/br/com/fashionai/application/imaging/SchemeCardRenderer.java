@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.domain.model.enums.SchemeSlot;
@@ -101,7 +102,7 @@ public class SchemeCardRenderer {
         // cabeçalho
         g.setColor(bgInk);
         g.setFont(new Font(Font.SERIF, Font.BOLD, 58));
-        drawClipped(g, card.title() == null ? "Sem título" : card.title(), pad, 11 * PX_PER_MM, W - 2 * pad);
+        drawClipped(g, card.title() == null ? Msg.t("common.sem_titulo") : card.title(), pad, 11 * PX_PER_MM, W - 2 * pad);
         g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
         g.drawString("@" + (card.owner() == null ? "fashionai" : card.owner()), pad, 16 * PX_PER_MM);
         int chipX = pad;
@@ -114,7 +115,7 @@ public class SchemeCardRenderer {
             g.setColor(new Color(bgInk.getRed(), bgInk.getGreen(), bgInk.getBlue(), 40));
             g.fill(new RoundRectangle2D.Double(chipX, 18.5 * PX_PER_MM, tw, 46, 46, 46));
             g.setColor(bgInk);
-            g.drawString(chip, chipX + 18, (int) (18.5 * PX_PER_MM) + 32);
+            g.drawString(Msg.resolve(chip), chipX + 18, (int) (18.5 * PX_PER_MM) + 32);
             chipX += tw + 12;
         }
 
@@ -143,7 +144,7 @@ public class SchemeCardRenderer {
         g.drawString("Fashion AI", pad, H - 6 * PX_PER_MM);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
         String right = (card.hypeLabel() == null ? "" : card.hypeLabel() + "   ") + (card.priceLabel() == null ? "" : card.priceLabel());
-        g.drawString(right, W - pad - g.getFontMetrics().stringWidth(right), H - 6 * PX_PER_MM);
+        g.drawString(Msg.resolve(right), W - pad - g.getFontMetrics().stringWidth(right), H - 6 * PX_PER_MM);
         g.dispose();
         return img;
     }
@@ -327,6 +328,6 @@ public class SchemeCardRenderer {
         while (g.getFontMetrics().stringWidth(t) > maxW && t.length() > 3) {
             t = t.substring(0, t.length() - 2);
         }
-        g.drawString(t.equals(text) ? t : t + "…", x, y);
+        g.drawString(Msg.resolve(t.equals(text) ? t : t + "…"), x, y);
     }
 }

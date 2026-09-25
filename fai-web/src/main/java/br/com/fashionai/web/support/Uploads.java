@@ -1,5 +1,6 @@
 package br.com.fashionai.web.support;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,22 +17,22 @@ public final class Uploads {
 
     public static byte[] image(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw ApiException.badRequest("ARQUIVO_VAZIO", "Envie uma imagem.");
+            throw ApiException.badRequest("ARQUIVO_VAZIO", Msg.t("uploads.envie_uma_imagem"));
         }
         String type = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
         if (!IMAGE_TYPES.contains(type)) {
-            throw ApiException.badRequest("FORMATO_NAO_SUPORTADO", "Use JPG, PNG, WEBP ou HEIC.", java.util.Map.of("contentType", type));
+            throw ApiException.badRequest("FORMATO_NAO_SUPORTADO", Msg.t("uploads.use_jpg_png_webp_ou"), java.util.Map.of("contentType", type));
         }
         try {
             return file.getBytes();
         } catch (IOException e) {
-            throw ApiException.badRequest("ARQUIVO_ILEGIVEL", "Não foi possível ler o arquivo enviado.");
+            throw ApiException.badRequest("ARQUIVO_ILEGIVEL", Msg.t("uploads.nao_foi_possivel_ler_o"));
         }
     }
 
     public static List<byte[]> images(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
-            throw ApiException.badRequest("ARQUIVO_VAZIO", "Envie ao menos uma imagem.");
+            throw ApiException.badRequest("ARQUIVO_VAZIO", Msg.t("uploads.envie_ao_menos_uma_imagem"));
         }
         return files.stream().map(Uploads::image).toList();
     }

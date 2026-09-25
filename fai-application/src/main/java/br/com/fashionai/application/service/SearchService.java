@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.LocalAdvisors;
 import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.common.ApiException;
@@ -108,7 +109,7 @@ public class SearchService {
                 String[] p = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8).split("\\|");
                 return new Cursor(Instant.parse(p[0]), UUID.fromString(p[1]));
             } catch (RuntimeException ex) {
-                throw ApiException.badRequest("CURSOR_INVALIDO", "Cursor de paginação inválido.");
+                throw ApiException.badRequest("CURSOR_INVALIDO", Msg.t("search.cursor_de_paginacao_invalido"));
             }
         }
 
@@ -259,7 +260,7 @@ public class SearchService {
         out.put("items", ordered.stream().map(s -> schemeService.view(viewer, s, itemsBy.get(s.getId()))).toList());
         out.put("nextCursor", next);
         out.put("chips", filters == null ? List.of() : filters.chips());
-        out.put("order", "relevância (recência, hype, afinidade) dentro da janela do cursor");
+        out.put("order", Msg.t("search.relevancia_recencia_hype_afinidade"));
         return out;
     }
 
@@ -313,7 +314,7 @@ public class SearchService {
         out.put("items", items);
         out.put("nextCursor", next);
         out.put("fallbackToCommunity", fallback);
-        out.put("waywt", Map.of("title", "WAYWT — O que você está vestindo?", "hint", "Compartilhe o seu Look do Dia no feed com #WAYWT (DET-C03)."));
+        out.put("waywt", Map.of("title", Msg.t("search.waywt_o_que_voce_esta"), "hint", Msg.t("search.compartilhe_o_seu_look_do")));
         out.put("battles", challenges.voteFeed(viewer));
         return out;
     }
@@ -371,7 +372,7 @@ public class SearchService {
                 hot.forEach(v -> { v.style().forEach(x -> freq.merge(x, 1L, Long::sum)); v.occasion().forEach(x -> freq.merge(x, 1L, Long::sum)); });
                 alts = freq.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(5).map(Map.Entry::getKey).toList();
             }
-            out.put("empty", Map.of("message", "Nada encontrado para \"" + term + "\".", "alternatives", alts, "trending", hot));
+            out.put("empty", Map.of("message", Msg.t("search.nada_encontrado_para", term), "alternatives", alts, "trending", hot));
         }
         return out;
     }
@@ -384,7 +385,7 @@ public class SearchService {
             String v = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8);
             return v.startsWith("o:") ? Math.max(0, Math.min(Integer.parseInt(v.substring(2)), 10_000)) : 0;
         } catch (RuntimeException ex) {
-            throw ApiException.badRequest("CURSOR_INVALIDO", "Cursor de paginação inválido.");
+            throw ApiException.badRequest("CURSOR_INVALIDO", Msg.t("search.cursor_de_paginacao_invalido"));
         }
     }
 

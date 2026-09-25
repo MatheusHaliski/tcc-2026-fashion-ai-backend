@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -179,7 +180,7 @@ public class CopilotService {
         out.put("available", eligible.size());
         out.put("ready", eligible.size() >= MIN_PIECES);
         if (eligible.size() < MIN_PIECES) {
-            out.put("limitation", Map.of("message", "O Copilot precisa de ao menos 3 peças disponíveis para sugerir looks (RF10.CA04).", "href", "/add-piece"));
+            out.put("limitation", Map.of("message", Msg.t("copilot.o_copilot_precisa_de_ao"), "href", "/add-piece"));
         }
         // ocasião e humor pré-preenchidos pelo que o sistema conhece (último Look do Dia e ocasiões mais usadas)
         List<DailyLook> recent = dailyLooks.findTop30ByUserIdOrderByLookDateDesc(user.id());
@@ -332,7 +333,7 @@ public class CopilotService {
     public Map<String, Object> ask(CurrentUser user, AskRequest req) {
         String message = InputSanitizer.clean(req.message() == null ? "" : req.message(), 600);
         if (message.isBlank()) {
-            throw ApiException.badRequest("MENSAGEM_VAZIA", "Escreva o que você precisa.");
+            throw ApiException.badRequest("MENSAGEM_VAZIA", Msg.t("copilot.escreva_o_que_voce_precisa"));
         }
         Intent intent = intent(message);
         Map<String, Object> out = switch (intent) {
@@ -352,8 +353,7 @@ public class CopilotService {
     }
 
     Optional<String> restrictionNotice(CurrentUser user) {
-        return challenges.restriction(user.id()).map(r -> "Estou respeitando o desafio " + r.challengeName() + ": só as " + r.allowedPieceIds().size()
-                + " peças escolhidas entram nas sugestões (RF36.CA14).");
+        return challenges.restriction(user.id()).map(r -> Msg.t("copilot.estou_respeitando_o_desafio_so", r.challengeName(), r.allowedPieceIds().size()));
     }
 
     /** CA09 — "Onde está meu tênis branco?" → endereço e destaque no quarto. */
@@ -362,7 +362,7 @@ public class CopilotService {
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         if (found.isEmpty()) {
-            out.put("text", "Não encontrei essa peça no seu acervo. Quer cadastrá-la? (RF4)");
+            out.put("text", Msg.t("copilot.nao_encontrei_essa_peca_no"));
             out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/add-piece")));
             out.put("chips", List.of());
             return out;
@@ -381,9 +381,9 @@ public class CopilotService {
             if (sb.length() > 0) {
                 sb.append(' ');
             }
-            sb.append("Sua **").append(w.getName()).append("** está em **").append(loc == null ? "posição desconhecida" : loc.label()).append("**.");
+            sb.append(Msg.t("copilot.sua")).append(w.getName()).append(Msg.t("copilot.esta_em")).append(loc == null ? Msg.t("common.posicao_desconhecida") : loc.label()).append("**.");
             if (!w.isDisponivel()) {
-                sb.append(" (está no cesto — indisponível)");
+                sb.append(Msg.t("copilot.esta_no_cesto_indisponivel"));
             }
         }
         out.put("text", sb.toString());
@@ -410,12 +410,12 @@ public class CopilotService {
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         if (list.isEmpty()) {
-            out.put("text", "Boa notícia: nenhuma peça está parada há 60 dias ou mais.");
+            out.put("text", Msg.t("copilot.boa_noticia_nenhuma_peca_esta"));
             out.put("chips", List.of());
             return out;
         }
         List<Map<String, Object>> chips = new ArrayList<>();
-        StringBuilder sb = new StringBuilder("Estas peças estão paradas há mais tempo:");
+        StringBuilder sb = new StringBuilder(Msg.t("copilot.estas_pecas_estao_paradas_ha"));
         for (WardrobeItem w : list.stream().limit(8).toList()) {
             LocalDate ref = Optional.ofNullable(RoomService.lastUse(w, last)).orElse(LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE));
             Map<String, Object> c = chip(w, where);
@@ -425,8 +425,8 @@ public class CopilotService {
         }
         out.put("text", sb.toString());
         out.put("chips", chips);
-        out.put("actions", List.of(Map.of("type", "COMPOSE_WITH", "label", "Criar look com elas", "pieceIds", list.stream().limit(3).map(WardrobeItem::getId).toList()),
-                Map.of("type", "CHALLENGE", "label", "Segunda Chance", "code", "SECOND_CHANCE")));
+        out.put("actions", List.of(Map.of("type", "COMPOSE_WITH", "label", Msg.t("common.criar_look_com_elas"), "pieceIds", list.stream().limit(3).map(WardrobeItem::getId).toList()),
+                Map.of("type", "CHALLENGE", "label", Msg.t("common.segunda_chance"), "code", "SECOND_CHANCE")));
         out.put("tools", List.of("historico_uso"));
         return out;
     }
@@ -436,12 +436,12 @@ public class CopilotService {
         Map<String, Object> hints = inventory.improvementHints(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         if (!Boolean.TRUE.equals(hints.get("eligible"))) {
-            out.put("text", "O Inventory Score aparece a partir de 10 peças. Cadastre mais peças para destravá-lo.");
+            out.put("text", Msg.t("copilot.o_inventory_score_aparece_a"));
             out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/add-piece")));
             return out;
         }
         @SuppressWarnings("unchecked") List<InventoryScoreService.Dimension> weakest = (List<InventoryScoreService.Dimension>) hints.get("weakest");
-        StringBuilder sb = new StringBuilder("Seu Inventory Score é " + hints.get("score") + ". As dimensões que mais puxam para baixo:");
+        StringBuilder sb = new StringBuilder(Msg.t("copilot.seu_inventory_score_e_as", hints.get("score")));
         for (InventoryScoreService.Dimension d : weakest) {
             sb.append("\n• **").append(d.name()).append(" ").append(d.value()).append("** — ").append(d.rule());
         }
@@ -457,7 +457,7 @@ public class CopilotService {
     Map<String, Object> different(CurrentUser user, AskRequest req) {
         List<WardrobeItem> eligible = mirror.eligible(user.id());
         if (eligible.size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", "Cadastre ao menos 3 peças disponíveis (RF10.CA04).", Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.cadastre_ao_menos_3_pecas"), Map.of("href", "/add-piece"));
         }
         Map<UUID, Long> freq = new HashMap<>();
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
@@ -478,8 +478,7 @@ public class CopilotService {
         }
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("text", look.isEmpty() ? "Não consegui montar algo diferente com as peças disponíveis." : "Fugindo do seu habitual (" + String.join(", ", usual)
-                + "), que tal: " + look.stream().map(WardrobeItem::getName).collect(Collectors.joining(" + ")) + "? São as peças que você menos combinou até hoje.");
+        out.put("text", look.isEmpty() ? Msg.t("copilot.nao_consegui_montar_algo_diferente") : Msg.t("copilot.fugindo_do_seu_habitual_que", String.join(", ", usual), look.stream().map(WardrobeItem::getName).collect(Collectors.joining(" + "))));
         out.put("chips", look.stream().map(w -> chip(w, where)).toList());
         out.put("actions", look.isEmpty() ? List.of() : List.of(Map.of("type", "MOUNT_MIRROR", "pieceIds", look.stream().map(WardrobeItem::getId).toList()),
                 Map.of("type", "OPEN_CREATE_LOOK", "draft", draft(look, "copilot", req.message()))));
@@ -515,7 +514,7 @@ public class CopilotService {
         long lowers = a.stream().filter(w -> "lower_piece".equals(w.getCategory())).count();
         long shoes = a.stream().filter(w -> "shoes_piece".equals(w.getCategory())).count();
         List<String> findings = new ArrayList<>();
-        findings.add(uppers + " partes de cima para " + lowers + " partes de baixo e " + shoes + " calçados.");
+        findings.add(Msg.t("copilot.partes_de_cima_para_partes", (uppers), lowers, shoes));
         Map<UUID, Long> freq = new HashMap<>();
         long totalApp = 0;
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
@@ -526,7 +525,7 @@ public class CopilotService {
         }
         if (totalApp > 0) {
             long top3 = freq.values().stream().sorted(Comparator.reverseOrder()).limit(3).mapToLong(Long::longValue).sum();
-            findings.add(Math.round(100.0 * top3 / totalApp) + "% das aparições nos seus looks dependem de 3 peças.");
+            findings.add(Msg.t("copilot.das_aparicoes_nos_seus_looks", (Math.round(100.0 * top3 / totalApp))));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         // 1) reuso primeiro
@@ -560,18 +559,17 @@ public class CopilotService {
                 long gain = InventoryScoreService.combos(plus, 0, null).total() - base;
                 if (gain > 0) {
                     purchases.add(Map.of("category", String.valueOf(cat), "subcategory", g.subcategory(), "color", g.color(), "occasions", occ,
-                            "gain", gain, "gainText", "+" + gain + " combinações possíveis", "reason", g.reason(), "external", true,
-                            "action", Map.of("type", "ADD_PIECE", "label", "Cadastrar se você já tiver", "href", "/add-piece")));
+                            "gain", gain, "gainText", Msg.t("copilot.combinacoes_possiveis", gain), "reason", g.reason(), "external", true,
+                            "action", Map.of("type", "ADD_PIECE", "label", Msg.t("copilot.cadastrar_se_voce_ja_tiver"), "href", "/add-piece")));
                 }
             }
             purchases.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("gain")).reversed());
         }
         out.put("purchaseSuggestions", enabled ? purchases.stream().limit(3).toList() : List.of());
         out.put("purchaseSuggestionsEnabled", enabled);
-        out.put("purchaseRules", List.of("reuso antes de compra", "Δcombinações visível", "sem marca ou produto", "patrocínio só em bloco separado", "opt-out em Preferências"));
-        out.put("sponsored", Map.of("label", "Patrocinado", "items", List.of(), "note", "Conteúdo de marca nunca entra na resposta do Copilot (CA14)."));
-        out.put("text", String.join(" ", findings) + (purchases.isEmpty() || !enabled ? "" : " Depois de reaproveitar o que você já tem, uma "
-                + purchases.get(0).get("subcategory") + " " + purchases.get(0).get("color") + " liberaria " + purchases.get(0).get("gainText") + "."));
+        out.put("purchaseRules", List.of(Msg.t("copilot.reuso_antes_de_compra"), Msg.t("copilot.combinacoes_visivel"), Msg.t("copilot.sem_marca_ou_produto"), Msg.t("copilot.patrocinio_so_em_bloco_separado"), Msg.t("copilot.opt_out_em_preferencias")));
+        out.put("sponsored", Map.of("label", "Patrocinado", "items", List.of(), "note", Msg.t("copilot.conteudo_de_marca_nunca_entra")));
+        out.put("text", String.join(" ", findings) + (purchases.isEmpty() || !enabled ? "" : Msg.t("copilot.depois_de_reaproveitar_o_que", purchases.get(0).get("subcategory"), purchases.get(0).get("color"), purchases.get(0).get("gainText"))));
         out.put("tools", List.of("buscar_pecas", "historico_uso", "ler_inventory_score"));
         return out;
     }
@@ -579,8 +577,7 @@ public class CopilotService {
     /** CA02/CA03/CA05 — 3 looks distintos com justificativa; sem repetir a rodada anterior; fallback local. */
     Map<String, Object> looks(CurrentUser user, AskRequest req, String message) {
         if (wardrobe.eligible(user.id()).size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", "O Copilot precisa de ao menos 3 peças disponíveis para sugerir looks. "
-                    + "Cadastre suas peças (RF4).", Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.o_copilot_precisa_de_ao_2"), Map.of("href", "/add-piece"));
         }
         List<String> occasions = new ArrayList<>(req.occasion() == null ? List.of() : req.occasion());
         if (occasions.isEmpty()) {
@@ -605,12 +602,11 @@ public class CopilotService {
             @SuppressWarnings("unchecked") List<UUID> ids = (List<UUID>) s.get("pieceIds");
             List<WardrobeItem> look = pieces.findByIdIn(ids);
             s.put("chips", look.stream().map(w -> chip(w, where)).toList());
-            s.put("actions", List.of(Map.of("type", "ACCEPT_DAILY_LOOK", "label", "Usar como Look do Dia"), Map.of("type", "MOUNT_MIRROR", "pieceIds", ids),
+            s.put("actions", List.of(Map.of("type", "ACCEPT_DAILY_LOOK", "label", Msg.t("copilot.usar_como_look_do_dia")), Map.of("type", "MOUNT_MIRROR", "pieceIds", ids),
                     Map.of("type", "OPEN_CREATE_LOOK", "draft", draft(look, "copilot", message))));
         }
         Map<String, Object> out = new LinkedHashMap<>(result);
-        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : "Separei " + suggestions.size()
-                + " looks com peças do seu acervo" + (occasions.isEmpty() ? "" : " para " + String.join("/", occasions)) + ".");
+        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : Msg.t("copilot.separei_looks_com_pecas_do", suggestions.size(), (occasions.isEmpty() ? "" : " para " + String.join("/", occasions))));
         out.put("tools", List.of("buscar_pecas", "listar_looks", "montar_no_espelho", "abrir_criar_look"));
         return out;
     }
@@ -618,7 +614,7 @@ public class CopilotService {
     /** CA06 — aceitar sugestão: esquema com origem Copilot + Look do Dia. */
     @Transactional
     public Map<String, Object> accept(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion) {
-        Scheme s = autopilot.createScheme(user, pieceIds, title == null ? "Look do Dia · Copilot" : title, occasion, SchemeOrigin.COPILOT);
+        Scheme s = autopilot.createScheme(user, pieceIds, title == null ? Msg.t("copilot.look_do_dia_copilot") : title, occasion, SchemeOrigin.COPILOT);
         DailyLook dl = dailyLookService.register(user, s, DailyLookSource.COPILOT, LocalDate.now(FaiPointsService.ZONE));
         return Map.of("schemeId", s.getId(), "origin", "COPILOT", "dailyLook", dailyLookService.view(dl));
     }
@@ -640,13 +636,12 @@ public class CopilotService {
                     "available", w.isDisponivel()));
         }
         Map<String, Object> summary = compactSummary(user);
-        String localText = "Posso ajudar a montar looks, localizar peças no quarto, achar peças esquecidas ou melhorar seu Inventory Score. "
-                + "Experimente: " + String.join(" · ", promptsFor(view));
+        String localText = Msg.t("copilot.posso_ajudar_a_montar_looks", String.join(" · ", promptsFor(view)));
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
-                "Você é o Copilot do Fashion AI. Responda em português, em até 4 frases. Use SOMENTE as peças listadas (refs p1..pn) e cite cada peça como [[pN]]. "
+                "Você é o Copilot do Fashion AI. Responda em " + Msg.languageName() + ", em até 4 frases. Use SOMENTE as peças listadas (refs p1..pn) e cite cada peça como [[pN]]. "
                         + "Nunca cite marca ou produto para compra. Nunca invente peças. Se precisar de algo fora do acervo, diga de forma genérica (categoria, cor, ocasião).",
                 "Contexto (resumo): " + Json.write(summary) + "\nVisão atual: " + view + "\nPeças disponíveis via ferramenta buscar_pecas: " + Json.write(tool)
-                        + "\nPergunta: " + message, List.of(), 500, List.of("resumo compacto (contagens, DNA camada 1, score)", "peças retornadas por buscar_pecas"),
+                        + "\nPergunta: " + message, List.of(), 500, List.of(Msg.t("copilot.resumo_compacto_contagens_dna_camada"), Msg.t("copilot.pecas_retornadas_por_buscar_pecas")),
                 text -> text == null || text.isBlank() ? null : text, () -> localText, null));
         String raw = outcome.value() == null ? localText : outcome.value();
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -51,7 +52,7 @@ public final class LogoFilter {
     public static Result fromVector(SvgPathRenderer.Vector v) {
         BufferedImage hi = SvgPathRenderer.render(v, 1024, 0.06);
         Result r = filter(hi, "vetor (SVG)");
-        r.steps().add(0, "SVG vetorial renderizado sem perda de nitidez");
+        r.steps().add(0, Msg.t("logoFilter.svg_vetorial_renderizado_sem_perda"));
         return r;
     }
 
@@ -90,7 +91,7 @@ public final class LogoFilter {
                 lum[i] = (float) (0.2126 * r + 0.7152 * g + 0.0722 * b);
             }
         }
-        steps.add("transparência achatada sobre branco");
+        steps.add(Msg.t("logoFilter.transparencia_achatada_sobre_branco"));
         // 2) fundo: PNG com transparência → branco; senão, a cor mais comum da moldura (o logo pode encostar na borda)
         int transparent = 0;
         if (src.getColorModel().hasAlpha()) {
@@ -158,7 +159,7 @@ public final class LogoFilter {
             return Result.reject("FUNDO_NAO_UNIFORME", m, steps);
         }
         m.put("invertido", bgLum < 128);
-        steps.add(bgLum < 128 ? "fundo escuro detectado: desenho claro vira preto" : "fundo claro detectado");
+        steps.add(bgLum < 128 ? Msg.t("logoFilter.fundo_escuro_detectado_desenho_claro") : Msg.t("logoFilter.fundo_claro_detectado"));
         // 3) tinta = distância à cor do fundo (0..1)
         float[] ink = new float[w * h];
         int marked = 0;
@@ -186,7 +187,7 @@ public final class LogoFilter {
         for (int i = 0; i < ink.length; i++) {
             ink[i] = (float) Math.min(1, ink[i] / top);
         }
-        steps.add("desenho separado do fundo pela distância de cor");
+        steps.add(Msg.t("logoFilter.desenho_separado_do_fundo_pela"));
         // 4) Otsu
         double t = otsu(ink);
         m.put("limiar", round(t));
@@ -201,7 +202,7 @@ public final class LogoFilter {
         if (sh.edgeWidth() > MAX_EDGE_WIDTH || sh.edgeGradient() < MIN_EDGE_GRADIENT) {
             return Result.reject("SEM_NITIDEZ", m, steps);
         }
-        steps.add("nitidez conferida (borda de " + String.format("%.1f", sh.edgeWidth()) + " px)");
+        steps.add(Msg.t("logoFilter.nitidez_conferida_borda_de_px", String.format("%.1f", sh.edgeWidth())));
         // 6) recorte justo
         int x0 = w, y0 = h, x1 = -1, y1 = -1;
         for (int y = 0; y < h; y++) {
@@ -230,7 +231,7 @@ public final class LogoFilter {
         if (coverage > 0.92) {
             return Result.reject("BLOCO_SOLIDO", m, steps);
         }
-        steps.add("recorte justo no desenho");
+        steps.add(Msg.t("logoFilter.recorte_justo_no_desenho"));
         BufferedImage inkImg = new BufferedImage(bw, bh, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < bh; y++) {
             for (int x = 0; x < bw; x++) {
@@ -248,8 +249,8 @@ public final class LogoFilter {
         }
         BufferedImage wide = compose(inkImg, Math.min(wideScale, MAX_UPSCALE), t, false);
         BufferedImage square = compose(inkImg, Math.min(squareScale, MAX_UPSCALE), t, true);
-        steps.add("binarização suave: preto puro no desenho, branco puro no fundo");
-        steps.add("saídas: quadrado " + SQUARE + "×" + SQUARE + " e faixa " + wide.getWidth() + "×" + wide.getHeight());
+        steps.add(Msg.t("logoFilter.binarizacao_suave_preto_puro_no"));
+        steps.add(Msg.t("logoFilter.saidas_quadrado_e_faixa", SQUARE, SQUARE, wide.getWidth(), wide.getHeight()));
         // 8) conferência final na saída
         float[] out = inkOf(wide);
         Sharpness fin = sharpness(out, wide.getWidth(), wide.getHeight(), 0.5);

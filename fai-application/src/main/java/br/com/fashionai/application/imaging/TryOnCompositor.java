@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.ImageProviderPorts.ArtifactCleanupPort;
 import br.com.fashionai.application.imaging.ImageProviderPorts.ProviderImage;
 import br.com.fashionai.application.imaging.ImageProviderPorts.TryOnProviderPort;
@@ -77,7 +78,7 @@ public class TryOnCompositor {
         List<Garment> ordered = new ArrayList<>();
         for (Garment g : garments) {
             if (g.cutout() == null) {            // imagem ilegível ou ausente: não derruba a prova, avisa
-                warnings.add("A peça " + g.slot() + " ficou de fora: a imagem dela não pôde ser lida.");
+                warnings.add(Msg.t("tryOnCompositor.a_peca_ficou_de_fora", g.slot()));
                 continue;
             }
             ordered.add(g);
@@ -115,14 +116,14 @@ public class TryOnCompositor {
             }
             if (!done) {
                 if (!g.backgroundRemoved()) {
-                    warnings.add("A peça " + g.slot() + " não teve o fundo removido: a sobreposição é aproximada (RF18.CA05).");
+                    warnings.add(Msg.t("tryOnCompositor.a_peca_nao_teve_o", g.slot()));
                 }
                 placements.add(overlay(canvas, body, g, "local-ancora"));
                 fallback |= allowExternal && externalAvailable();
             }
         }
         stages.add(new FlatLayPipeline.Stage("RENDERING", costs.isEmpty() ? "local-ancora" : String.join("+", costs.keySet()),
-                ms(t), sum(costs), true, fallback, placements.size() + " peças de tecido"));
+                ms(t), sum(costs), true, fallback, Msg.t("tryOnCompositor.pecas_de_tecido", (placements.size()))));
 
         // ENHANCING — polimento
         t = System.nanoTime();
@@ -148,7 +149,7 @@ public class TryOnCompositor {
         }
         if (!polished) {
             stages.add(new FlatLayPipeline.Stage("ENHANCING", "local-feather", ms(t), BigDecimal.ZERO, true, !costs.isEmpty(),
-                    "bordas suavizadas no recorte"));
+                    Msg.t("tryOnCompositor.bordas_suavizadas_no_recorte")));
         }
 
         // COMPOSITING — Category Fallback Compositor (#18)
@@ -162,7 +163,7 @@ public class TryOnCompositor {
             rigid++;
         }
         stages.add(new FlatLayPipeline.Stage("COMPOSITING", "local-landmarks", ms(t), BigDecimal.ZERO, true, false,
-                rigid + " calçados/acessórios"));
+                Msg.t("tryOnCompositor.calcados_acessorios", (rigid))));
 
         // Qualidade
         Map<String, Object> quality = new LinkedHashMap<>();

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -206,7 +207,7 @@ public class AutopilotService {
     Map<String, Object> suggestionView(UUID userId, Candidate c, String rationale, int index) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("key", c.key());
-        m.put("title", "Look do Dia #" + index + " · " + c.composition().title());
+        m.put("title", Msg.t("autopilot.look_do_dia", index, c.composition().title()));
         m.put("pieceIds", c.pieces().stream().map(WardrobeItem::getId).toList());
         m.put("pieces", c.pieces().stream().map(w -> Views.piece(w, null, null)).toList());
         m.put("occasion", c.composition().occasions());
@@ -239,11 +240,10 @@ public class AutopilotService {
         };
         AiOutcome<List<Map<String, Object>>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
                 "Você é o Autopiloto de Looks do Fashion AI. Escolha EXATAMENTE 3 candidatas distintas (refs c1..c10) e justifique cada uma em até "
-                        + "2 frases em português, citando ocasião, humor e clima quando houver. Responda SOMENTE com JSON "
+                        + "2 frases em " + Msg.languageName() + ", citando ocasião, humor e clima quando houver. Responda SOMENTE com JSON "
                         + "{\"picks\":[{\"ref\":\"c1\",\"rationale\":\"...\"}]}.",
-                "Ocasião: " + occasions + "\nHumor: " + mood + "\nClima: " + (ctx != null && ctx.available() ? ctx.note() : "não informado")
-                        + "\nCandidatas: " + Json.write(list), List.of(), 600,
-                List.of("candidatas já validadas do próprio acervo", "ocasião/humor", ctx != null && ctx.available() ? "clima local" : "sem clima"),
+                Msg.t("autopilot.ocasiao_humor_clima_candidatas", occasions, mood, (ctx != null && ctx.available() ? ctx.note() : Msg.t("autopilot.nao_informado")), Json.write(list)), List.of(), 600,
+                List.of(Msg.t("autopilot.candidatas_ja_validadas_do_proprio"), Msg.t("autopilot.ocasiao_humor"), ctx != null && ctx.available() ? "clima local" : "sem clima"),
                 text -> {
                     Map<String, Object> m = WardrobeService.extractJson(text);
                     if (!(m.get("picks") instanceof List<?> picks)) {
@@ -285,7 +285,7 @@ public class AutopilotService {
         StringBuilder sb = new StringBuilder();
         sb.append(c.composition().rationale());
         if (ctx != null && ctx.available()) {
-            sb.append(" Pensado para ").append(ctx.note()).append('.');
+            sb.append(Msg.t("autopilot.pensado_para")).append(ctx.note()).append('.');
         }
         return InputSanitizer.clean(sb.toString(), 280);
     }
@@ -296,8 +296,7 @@ public class AutopilotService {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         long total = pieces.countByUserId(user.id());
         if (eligible.size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", "O Autopiloto precisa de ao menos " + MIN_PIECES + " peças disponíveis no guarda-roupa "
-                    + "(você tem " + eligible.size() + "). Cadastre mais peças para usar a funcionalidade.", Map.of("href", "/add-piece", "pieces", total));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.o_autopiloto_precisa_de_ao", MIN_PIECES, eligible.size()), Map.of("href", "/add-piece", "pieces", total));
         }
         WeatherService.Context ctx = weather.resolve(req.latitude(), req.longitude(), req.city());
         List<String> occasions = req.occasion() == null ? List.of() : req.occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).toList();
@@ -307,7 +306,7 @@ public class AutopilotService {
         out.put("weather", WeatherService.view(ctx));
         if (ranked.isEmpty()) {
             out.put("suggestions", List.of());
-            out.put("message", "Não há combinações novas diferentes das anteriores — cadastre mais peças para variar (HU17 C4).");
+            out.put("message", Msg.t("autopilot.nao_ha_combinacoes_novas_diferentes"));
             return out;
         }
         AiOutcome<?>[] holder = new AiOutcome<?>[1];
@@ -324,7 +323,7 @@ public class AutopilotService {
             out.put("weatherNotice", ctx.note());
         }
         if (picks.size() < 3) {
-            out.put("notice", "Seu acervo permitiu " + picks.size() + " combinação(ões) nova(s).");
+            out.put("notice", Msg.t("autopilot.seu_acervo_permitiu_combinacao_oes", picks.size()));
         }
         return out;
     }
@@ -332,14 +331,14 @@ public class AutopilotService {
     /** HU17 C5 — o look aprovado vira esquema e é registrado como Look do Dia (source = AUTOPILOTO). */
     @Transactional
     public Map<String, Object> confirmDaily(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion, String mood) {
-        Scheme s = createScheme(user, pieceIds, title == null ? "Look do Dia · Autopiloto" : title, occasion, SchemeOrigin.AUTOPILOTO);
+        Scheme s = createScheme(user, pieceIds, title == null ? Msg.t("autopilot.look_do_dia_autopiloto") : title, occasion, SchemeOrigin.AUTOPILOTO);
         DailyLook dl = dailyLooks.register(user, s, DailyLookSource.AUTOPILOTO, LocalDate.now(FaiPointsService.ZONE));
         return Map.of("schemeId", s.getId(), "dailyLook", dailyLooks.view(dl));
     }
 
     Scheme createScheme(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion, SchemeOrigin origin) {
         if (pieceIds == null || pieceIds.size() < 2) {
-            throw ApiException.badRequest("SEM_PECAS", "Selecione um look com ao menos 2 peças.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("autopilot.selecione_um_look_com_ao"));
         }
         Map<UUID, WardrobeItem> own = new HashMap<>();
         for (WardrobeItem w : pieces.findByIdIn(pieceIds)) {
@@ -358,7 +357,7 @@ public class AutopilotService {
         for (UUID id : pieceIds) {
             WardrobeItem w = own.get(id);
             if (w == null) {
-                throw ApiException.notFound("Peça");
+                throw ApiException.notFound(Msg.t("common.peca"));
             }
             items.add(new SchemeService.ItemForm(id, LocalSchemeComposer.slotOf(w), i, i, null, null, null, null, null, null));
             i++;
@@ -376,7 +375,7 @@ public class AutopilotService {
     public Map<String, Object> planWeek(CurrentUser user, WeekRequest req) {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         if (eligible.size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", "Cadastre ao menos " + MIN_PIECES + " peças disponíveis para planejar a semana.",
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.cadastre_ao_menos_pecas_disponiveis", MIN_PIECES),
                     Map.of("href", "/add-piece"));
         }
         LocalDate start = (req.weekStart() == null ? LocalDate.now(FaiPointsService.ZONE) : req.weekStart()).with(DayOfWeek.MONDAY);
@@ -417,7 +416,7 @@ public class AutopilotService {
             day.setEventLabel(d.event() == null ? null : InputSanitizer.clean(d.event(), 80));
             day.setOccasion(d.occasion());
             if (ranked.isEmpty()) {
-                day.setRationale("Lacuna: não há combinação nova sem repetir os dias anteriores.");
+                day.setRationale(Msg.t("autopilot.lacuna_nao_ha_combinacao_nova"));
                 gaps.add(gap(d, eligible, ctx));
             } else {
                 Candidate c = ranked.get(0);
@@ -458,13 +457,13 @@ public class AutopilotService {
                         "imageUrl", String.valueOf(w.getImageUrl()), "external", true)).toList();
         return Map.of("date", d.date(), "occasion", String.valueOf(d.occasion()), "suggestions", generic.stream()
                 .map(g -> Map.of("subcategory", g.subcategory(), "color", g.color(), "reason", g.reason())).toList(), "brandCatalog", catalog,
-                "note", "Sugestões externas: só entram no guarda-roupa depois de cadastradas (RF10.CA07).");
+                "note", Msg.t("autopilot.sugestoes_externas_so_entram_no"));
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> currentWeek(CurrentUser user) {
         return weekPlans.findFirstByUserIdAndStatusOrderByWeekStartDesc(user.id(), WeekPlanStatus.ACTIVE).map(p -> planView(user, p))
-                .orElseGet(() -> Map.of("active", false, "message", "Nenhuma semana planejada ativa."));
+                .orElseGet(() -> Map.of("active", false, "message", Msg.t("autopilot.nenhuma_semana_planejada_ativa")));
     }
 
     Map<String, Object> planView(CurrentUser user, WeekPlan plan) {
@@ -499,10 +498,10 @@ public class AutopilotService {
     /** HU18 C3 — edita só o dia escolhido e revalida que não há repetição de combinação. */
     @Transactional
     public Map<String, Object> editDay(CurrentUser user, UUID dayId, List<UUID> pieceIds) {
-        WeekPlanDay day = weekDays.findById(dayId).orElseThrow(() -> ApiException.notFound("Dia do plano"));
+        WeekPlanDay day = weekDays.findById(dayId).orElseThrow(() -> ApiException.notFound(Msg.t("autopilot.dia_do_plano")));
         guard.requireOwner(user, day.getWeekPlan().getUser().getId(), "week-plan:" + day.getWeekPlan().getId());
         if (pieceIds == null || pieceIds.size() < 2) {
-            throw ApiException.badRequest("SEM_PECAS", "O look do dia precisa de ao menos 2 peças.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("autopilot.o_look_do_dia_precisa"));
         }
         for (WardrobeItem w : pieces.findByIdIn(pieceIds)) {
             guard.requireOwner(user, w.getUser().getId(), "piece:" + w.getId());
@@ -510,13 +509,13 @@ public class AutopilotService {
         String key = SchemeService.combinationKey(pieceIds);
         for (WeekPlanDay other : weekDays.findByWeekPlanIdOrderByDayDate(day.getWeekPlan().getId())) {
             if (!other.getId().equals(dayId) && key.equals(other.getCombinationKey())) {
-                throw new ApiException(409, "COMBINACAO_REPETIDA", "Essa combinação já está planejada para " + other.getDayDate() + ". Troque ao menos uma peça.");
+                throw new ApiException(409, "COMBINACAO_REPETIDA", Msg.t("autopilot.essa_combinacao_ja_esta_planejada", other.getDayDate()));
             }
         }
         day.setPieceIdsJson(Json.write(pieceIds.stream().map(UUID::toString).toList()));
         day.setCombinationKey(key);
         day.setEditedManually(true);
-        day.setRationale("Editado por você.");
+        day.setRationale(Msg.t("autopilot.editado_por_voce"));
         day.setScheme(null);
         weekDays.save(day);
         return planView(user, day.getWeekPlan());
@@ -526,23 +525,23 @@ public class AutopilotService {
     @Transactional
     public Map<String, Object> discardWeek(CurrentUser user) {
         WeekPlan plan = weekPlans.findFirstByUserIdAndStatusOrderByWeekStartDesc(user.id(), WeekPlanStatus.ACTIVE)
-                .orElseThrow(() -> ApiException.notFound("Semana planejada"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("autopilot.semana_planejada")));
         weekDays.deleteAll(weekDays.findByWeekPlanIdOrderByDayDate(plan.getId()));
         plan.setStatus(WeekPlanStatus.DISCARDED);
         weekPlans.save(plan);
-        return Map.of("discarded", true, "note", "Esquemas já salvos continuam no seu Lookbook.");
+        return Map.of("discarded", true, "note", Msg.t("autopilot.esquemas_ja_salvos_continuam_no"));
     }
 
     /** Usa o look planejado do dia: cria o esquema (se preciso) e registra o Look do Dia vinculado ao dia do plano. */
     @Transactional
     public Map<String, Object> useDay(CurrentUser user, UUID dayId) {
-        WeekPlanDay day = weekDays.findById(dayId).orElseThrow(() -> ApiException.notFound("Dia do plano"));
+        WeekPlanDay day = weekDays.findById(dayId).orElseThrow(() -> ApiException.notFound(Msg.t("autopilot.dia_do_plano")));
         guard.requireOwner(user, day.getWeekPlan().getUser().getId(), "week-plan:" + day.getWeekPlan().getId());
         List<UUID> ids = Json.strings(day.getPieceIdsJson()).stream().map(UUID::fromString).toList();
         if (ids.isEmpty()) {
-            throw new ApiException(409, "DIA_SEM_LOOK", "Este dia é uma lacuna — escolha peças antes.");
+            throw new ApiException(409, "DIA_SEM_LOOK", Msg.t("autopilot.este_dia_e_uma_lacuna"));
         }
-        Scheme s = day.getScheme() != null ? day.getScheme() : createScheme(user, ids, "Semana Planejada · " + day.getDayDate(),
+        Scheme s = day.getScheme() != null ? day.getScheme() : createScheme(user, ids, Msg.t("autopilot.semana_planejada_2", day.getDayDate()),
                 day.getOccasion() == null ? List.of() : List.of(day.getOccasion()), SchemeOrigin.AUTOPILOTO);
         day.setScheme(s);
         weekDays.save(day);

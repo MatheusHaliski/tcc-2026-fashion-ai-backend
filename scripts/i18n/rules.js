@@ -27,7 +27,7 @@ const PROP_BLOCKLIST = new Set(["id", "key", "code", "slug", "type", "kind", "va
 const TEXT_CALLS = new Set(["toast.success", "toast.error", "toast.info", "toast.warn", "toast.warning", "toast.show", "toast.push", "toast.message", "confirm", "alert", "window.confirm", "window.alert", "prompt", "window.prompt"]);
 const HAS_LETTERS = /[A-Za-zÀ-ÿ]{2,}/;
 // urls, rotas, âncoras, classes css, constantes, camelCase técnico, números
-const IGNORE = /^(https?:\/\/|\/|#|@|\.|[A-Z0-9_\-]+$|[a-z]+(-[a-z0-9]+)+$|[a-z]+[A-Z][A-Za-z0-9]*$|\d)/;
+const IGNORE = /^(https?:\/\/|\/|#|@|\.|[A-Z0-9_\-]+$|[a-z]+(-[a-z0-9]+)+$|[a-z]+[A-Z][A-Za-z0-9]*$|[\d.,:/\-\s]+([a-z%]{0,3})$|\d+(px|rem|em|%|ms|s|x|k|mb|kb)\b)/i;
 const ALLOW = new Set(["Fashion AI", "FashionAI", "FAI", "FLAIR", "LEGO", "PT-BR", "EN", "ES", "OK", "3D", "2D", "AURA", "USD", "BRL", "EUR", "PNG", "JPG", "JPEG", "WebP", "SVG", "GLB", "glTF", "ID", "URL",
   "IA", "AI", "DNA", "CNPJ", "CPF", "LGPD", "TOP", "MB", "KB", "GB", "px", "GitHub", "Wikidata", "Simple Icons", "Wikimedia", "Zara", "Instagram", "TikTok", "Playwright", "Vercel", "MySQL", "Redis",
   "Cassandra", "OpenSearch", "Bearer", "Basic", "Authorization", "Accept", "Content-Type", "Hype Score", "Copilot", "Lookbook", "Background Studio", "Kibbe", "Pinterest", "Spotify", "YouTube", "Google", "Gemini", "Claude", "Anthropic", "Meshy", "Photoroom", "Replicate", "WebGL", "iOS", "Android", "Windows", "macOS", "Linux", "Chrome", "Safari", "Firefox", "Edge",

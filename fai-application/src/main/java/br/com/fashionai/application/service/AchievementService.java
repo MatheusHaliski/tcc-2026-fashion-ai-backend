@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import br.com.fashionai.application.events.SideEffectRunner;
@@ -38,16 +39,16 @@ public class AchievementService {
     }
 
     public static final List<Def> CATALOG = List.of(
-            new Def("CURADOR", "Curador", "🏆", "Catalogação ≥ 95", 200, false),
-            new Def("SEGUNDA_CHANCE", "Segunda Chance", "♻️", "10 peças esquecidas reutilizadas", 300, false),
-            new Def("CAMALEAO", "Camaleão", "🎨", "Looks em 10 estilos diferentes", 200, false),
-            new Def("SIGNATURE_CLOSET", "Signature Closet", "👑", "Inventory Score ≥ 900", 500, false),
-            new Def("STYLIST", "Stylist", "🧠", "50 combinações únicas do próprio inventário", 300, false),
-            new Def("HIDDEN_GEM", "Hidden Gem", "💎", "Uma peça esquecida entra no top 10 das mais usadas", 150, false),
-            new Def("MONOCROMATICO", "Monocromático", "⬛", "Look de uma cor só", 100, true),
-            new Def("CHANEL", "Chanel", "🎀", "Usar \"Tira uma coisa\"", 100, true),
-            new Def("SEXTA_CASUAL", "Sexta Casual", "🧢", "Look do Dia casual numa sexta-feira", 100, true),
-            new Def("MADRUGADA", "Madrugada", "🌙", "Vista-me entre 0 h e 5 h", 100, true));
+            new Def("CURADOR", "Curador", "🏆", Msg.k("achievement.catalogacao_95"), 200, false),
+            new Def("SEGUNDA_CHANCE", Msg.k("common.segunda_chance"), "♻️", Msg.k("achievement.n10_pecas_esquecidas_reutilizadas"), 300, false),
+            new Def("CAMALEAO", Msg.k("achievement.camaleao"), "🎨", Msg.k("achievement.looks_em_10_estilos_diferentes"), 200, false),
+            new Def("SIGNATURE_CLOSET", Msg.k("common.signature_closet"), "👑", Msg.k("achievement.inventory_score_900"), 500, false),
+            new Def("STYLIST", "Stylist", "🧠", Msg.k("achievement.n50_combinacoes_unicas_do_proprio"), 300, false),
+            new Def("HIDDEN_GEM", Msg.k("achievement.hidden_gem"), "💎", Msg.k("achievement.uma_peca_esquecida_entra_no"), 150, false),
+            new Def("MONOCROMATICO", Msg.k("achievement.monocromatico"), "⬛", Msg.k("achievement.look_de_uma_cor_so"), 100, true),
+            new Def("CHANEL", "Chanel", "🎀", Msg.k("achievement.usar_tira_uma_coisa"), 100, true),
+            new Def("SEXTA_CASUAL", Msg.k("achievement.sexta_casual"), "🧢", Msg.k("achievement.look_do_dia_casual_numa"), 100, true),
+            new Def("MADRUGADA", "Madrugada", "🌙", Msg.k("achievement.vista_me_entre_0_h"), 100, true));
 
     private final UserAchievementRepository achievements;
     private final FaiPointsService points;
@@ -87,7 +88,7 @@ public class AchievementService {
         achievements.save(a);
         points.award(userId, "ACHIEVEMENT", "ACHIEVEMENT", code, d.points());
         notifications.notify(userId, null, NotificationType.ACHIEVEMENT_UNLOCKED, "ACHIEVEMENT", null,
-                d.emoji() + " Conquista: " + d.name(), d.condition() + " — +" + d.points() + " FAI pts.", Map.of("code", code, "secret", d.secret()));
+                d.emoji() + " Conquista: " + d.name(), Msg.k("achievement.fai_pts", (d.condition()), d.points()), Map.of("code", code, "secret", d.secret()));
         events.publishEvent(new DomainEvents.AchievementGranted(userId, code, d.secret()));
         return true;
     }

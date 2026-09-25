@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import br.com.fashionai.application.events.SideEffectRunner;
@@ -90,7 +91,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public static final int TOP_CAPACITY = 8;
     public static final int BASE_CAPACITY = 12;
     public static final int SHOE_RACK_CAPACITY = 24;
-    public static final List<String> DEFAULT_DRAWER_LABELS = List.of("Jeans", "Academia", "Praia", "Acessórios", "Íntimas", "Favoritas");
+    public static final List<String> DEFAULT_DRAWER_LABELS = List.of("Jeans", "Academia", "Praia", Msg.k("room.acessorios"), Msg.k("room.intimas"), "Favoritas");
     static final Set<String> OUTERWEAR = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono");
     static final Set<String> KNITWEAR = Set.of("sweater", "sweatshirt", "hoodie", "vest");
     static final Set<String> DENIM = Set.of("jeans", "denim_shorts");
@@ -101,8 +102,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     static final Map<String, String> SUBCATEGORY_PT = Map.ofEntries(Map.entry("skirt", "Saias"), Map.entry("shorts", "Shorts"),
             Map.entry("bermuda_shorts", "Bermudas"), Map.entry("tailored_pants", "Alfaiataria"), Map.entry("chino_pants", "Chinos"),
             Map.entry("cargo_pants", "Cargo"), Map.entry("casual_pants", "Calças casuais"), Map.entry("culottes", "Pantacourts"),
-            Map.entry("skort", "Short-saias"), Map.entry("belt", "Cintos"), Map.entry("scarf", "Lenços"), Map.entry("cap", "Bonés"),
-            Map.entry("hat", "Chapéus"), Map.entry("sunglasses", "Óculos"), Map.entry("t_shirt", "Camisetas"));
+            Map.entry("skort", "Short-saias"), Map.entry("belt", "Cintos"), Map.entry("scarf", "Lenços"), Map.entry("cap", Msg.k("room.bones")),
+            Map.entry("hat", "Chapéus"), Map.entry("sunglasses", Msg.k("room.oculos")), Map.entry("t_shirt", "Camisetas"));
 
     /** Decorações de desafios ativos (RF36 §5) — implementado pelo ChallengeService, sem acoplar o quarto. */
     public interface DecorationsProvider {
@@ -189,10 +190,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         mods.add(module("top", "TOP", null, 0, TOP_CAPACITY, "Maleiro", null, null));
         mods.add(module("base", "BASE", null, 0, BASE_CAPACITY, "Base", null, null));
         mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
-        mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, "Iluminação", null, Map.of("kelvin", 4000, "guided", false)));
+        mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, Msg.t("room.iluminacao"), null, Map.of("kelvin", 4000, "guided", false)));
         mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
         mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
-        mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, "Logo das portas", null, null));
+        mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
                 mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, "Porta " + d, null, white));
@@ -203,17 +204,17 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         if (level.atLeast(FaiPointsService.Level.CLOSET)) {
             mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, "Sapateira", null, white));
-            mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, "Vitrine de bolsas", null, null));
+            mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, Msg.t("common.vitrine_de_bolsas"), null, null));
             mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, "Porta-joias", null, null));
         }
         if (level.atLeast(FaiPointsService.Level.ATELIER)) {
-            mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, "Ilha central (bancada de looks)", null, null));
+            mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, Msg.t("room.ilha_central_bancada_de_looks"), null, null));
         }
         if (level.atLeast(FaiPointsService.Level.PENTHOUSE)) {
-            mods.add(module("season", "SEASON_STORAGE", null, 0, 60, "Maleiro de estação", null, null));
+            mods.add(module("season", "SEASON_STORAGE", null, 0, 60, Msg.t("common.maleiro_de_estacao"), null, null));
         }
         if (level.atLeast(FaiPointsService.Level.MAISON)) {
-            mods.add(module("signature", "SIGNATURE", null, 0, 0, "Closet de assinatura", null, null));
+            mods.add(module("signature", "SIGNATURE", null, 0, 0, Msg.t("room.closet_de_assinatura"), null, null));
         }
         return mods;
     }
@@ -227,7 +228,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public RoomLayout layout(UUID userId) {
         RoomLayout layout = layouts.findByUserId(userId).orElseGet(() -> {
             RoomLayout l = new RoomLayout();
-            l.setUser(users.findById(userId).orElseThrow(() -> ApiException.notFound("Usuário")));
+            l.setUser(users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
             l.setLevel(levelOf(userId).name());
             Map<String, Object> labels = new LinkedHashMap<>();
             Map<String, String> values = new LinkedHashMap<>();
@@ -388,7 +389,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> setLight(CurrentUser user, int kelvin) {
         if (!levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", "A iluminação guiada é liberada no nível Studio.");
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_iluminacao_guiada_e_liberada"));
         }
         int k = Math.max(2700, Math.min(6500, kelvin));
         RoomLayout l = layout(user.id());
@@ -403,7 +404,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> setMonogram(CurrentUser user, String initials) {
         if (!levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", "O monograma é liberado no nível Studio (DET-K03).");
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.o_monograma_e_liberado_no"));
         }
         String clean = InputSanitizer.clean(initials == null ? "" : initials, 3).toUpperCase(Locale.ROOT).replaceAll("[^A-Z]", "");
         RoomLayout l = layout(user.id());
@@ -438,7 +439,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         String cat = nz(w.getCategory());
         String sub = nz(w.getSubcategory());
         if (cat.equals("accessory_piece")) {
-            return INTIMATES.contains(sub) ? "Íntimas" : "Acessórios";
+            return INTIMATES.contains(sub) ? Msg.t("room.intimas") : Msg.t("room.acessorios");
         }
         if (DENIM.contains(sub)) {
             return "Jeans";
@@ -633,7 +634,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
 
     @Transactional
     public RoomAddress autoAssign(UUID userId, UUID pieceId) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         RoomLayout layout = layout(userId);
         Optional<RoomStorageEntry> existing = storage.findByWardrobeItemId(pieceId);
         if (existing.isPresent()) {
@@ -815,7 +816,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> tour(CurrentUser viewer, UUID ownerId) {
         if (!viewer.id().equals(ownerId) && !keys(layout(ownerId)).contains(viewer.id().toString())) {
-            throw guard.deny(viewer, "room:" + ownerId, "Você precisa da Chave do Quarto para visitar este quarto.");
+            throw guard.deny(viewer, "room:" + ownerId, Msg.t("room.voce_precisa_da_chave_do"));
         }
         return render(ownerId, viewer.id().equals(ownerId));
     }
@@ -829,13 +830,13 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> giveKey(CurrentUser user, UUID guestId) {
         if (guestId.equals(user.id())) {
-            throw ApiException.badRequest("CHAVE_INVALIDA", "A chave é para outra pessoa.");
+            throw ApiException.badRequest("CHAVE_INVALIDA", Msg.t("room.a_chave_e_para_outra"));
         }
-        users.findById(guestId).orElseThrow(() -> ApiException.notFound("Usuário"));
+        users.findById(guestId).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         RoomLayout l = layout(user.id());
         List<Map<String, Object>> mods = modules(l);
         Map<String, Object> keysModule = mods.stream().filter(m -> "keys".equals(m.get("id"))).findFirst().orElseGet(() -> {
-            Map<String, Object> m = module("keys", "KEYS", null, 0, 0, "Chaves do Quarto", null, null);
+            Map<String, Object> m = module("keys", "KEYS", null, 0, 0, Msg.t("room.chaves_do_quarto"), null, null);
             mods.add(m);
             return m;
         });
@@ -914,10 +915,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 view.put("category", label);
                 view.put("labelSource", labelSources(layout).getOrDefault(idx, label == null ? null : "DEFAULT"));
                 view.put("accessibleLabel", "Gaveta " + idx + (label == null ? "" : ", " + label) + ", " + content.size()
-                        + (content.size() == 1 ? " peça" : " peças"));
+                        + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
                 view.put("empty", content.isEmpty());
                 view.put("emptyCharm", content.isEmpty() ? Map.of("props", List.of("sache_lavanda", "meia_sem_par"),
-                        "action", "Adicionar peça a esta gaveta") : null);
+                        "action", Msg.t("room.adicionar_peca_a_esta_gaveta")) : null);
             } else if (slot.equals("DOOR")) {
                 int cap = capacity(m);
                 List<Map<String, Object>> hangers = new ArrayList<>();
@@ -927,7 +928,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     hangers.add(Map.of("k", k, "address", hangerAddr, "pieceId", piece == null ? "" : String.valueOf(piece.get("id"))));
                 }
                 view.put("hangers", hangers);
-                view.put("accessibleLabel", m.get("label") + ", " + content.size() + " peças");
+                view.put("accessibleLabel", Msg.t("room.pecas_2", (m.get("label")), content.size()));
             } else if (slot.equals("TOP")) {
                 List<Scheme> boxes = owner ? schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED)
                         : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED).stream()
@@ -936,9 +937,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                         "coverImageUrl", String.valueOf(s.getCoverImageUrl()), "cardSkin", String.valueOf(s.getCardSkin()),
                         "lookDoDia", s.isLookDoDia())).toList());
                 view.put("totalLooks", boxes.size());
-                view.put("accessibleLabel", "Maleiro, " + boxes.size() + " caixas de look");
+                view.put("accessibleLabel", Msg.t("room.maleiro_caixas_de_look", boxes.size()));
             } else {
-                view.put("accessibleLabel", m.get("label") + ", " + content.size() + (content.size() == 1 ? " peça" : " peças"));
+                view.put("accessibleLabel", m.get("label") + ", " + content.size() + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
             }
             view.put("pieces", content);
             view.put("count", content.size());
@@ -954,7 +955,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         out.put("drawerLabels", labels);
         out.put("pieces", byId);
         out.put("basket", basket);
-        out.put("saleRack", Map.of("name", "Arara do Desapego", "pieces", saleRack));
+        out.put("saleRack", Map.of("name", Msg.t("room.arara_do_desapego"), "pieces", saleRack));
         out.put("showcase", showcase);
         out.put("chair", chair);
         out.put("capacity", Map.of("pieces", all.size(), "positions", positions(layout), "overflow", chair.size()));
@@ -988,7 +989,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         out.put("camera", Map.of("preset", "editorial_3_4", "azimuth", List.of(-35, 35), "polar", List.of(55, 80), "zoom", List.of(0.8, 1.6),
                 "free", false));
-        out.put("render", Map.of("preferred", "3d", "fallback", "2.5d", "note", "Sem WebGL ou abaixo do mínimo → 2.5D estático com as mesmas interações (RF32.CA08)"));
+        out.put("render", Map.of("preferred", "3d", "fallback", "2.5d", "note", Msg.t("room.sem_webgl_ou_abaixo_do")));
         out.put("photoMode", Map.of("framings", List.of("frontal", "tres_quartos", "detalhe_espelho", "gaveta_aberta"),
                 "filters", List.of("editorial", "quente", "pb"), "depthOfField", true, "exportWithoutUi", true));
         return out;
@@ -1018,7 +1019,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         List<Map<String, Object>> chair = (List<Map<String, Object>>) room.get("chair");
         if (!chair.isEmpty()) {
-            out.add(Map.of("moduleId", "chair", "label", "Cadeira, " + chair.size() + " peças excedentes", "count", chair.size(),
+            out.add(Map.of("moduleId", "chair", "label", Msg.t("room.cadeira_pecas_excedentes", chair.size()), "count", chair.size(),
                     "pieces", chair, "actions", List.of("abrir", "mover")));
         }
         return out;
@@ -1026,7 +1027,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
 
     // ================================================================== ações (CA03/CA04/CA09)
     private WardrobeItem owned(CurrentUser user, UUID pieceId) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
         return w;
     }
@@ -1037,33 +1038,33 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, Object> room = render(user.id(), true);
         @SuppressWarnings("unchecked") List<Map<String, Object>> modules = (List<Map<String, Object>>) room.get("modules");
         return modules.stream().filter(m -> moduleId.equals(String.valueOf(m.get("id")))).findFirst()
-                .orElseThrow(() -> ApiException.notFound("Módulo"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("room.modulo")));
     }
 
     @Transactional
     public Map<String, Object> move(CurrentUser user, UUID pieceId, String rawAddress) {
         WardrobeItem w = owned(user, pieceId);
         RoomAddress a = RoomAddress.parse(rawAddress).orElseThrow(() -> ApiException.badRequest("ENDERECO_INVALIDO",
-                "Endereço inválido. Use door:{n}/hanger:{k}, drawer:{n}, base:{n}, shoe:{n}, bags:{n}, jewelry:{n}, chair:{n} ou season:{n}."));
+                Msg.t("room.endereco_invalido_use_door_n")));
         RoomLayout layout = layout(user.id());
         if (!a.zone().equals("chair")) {
             Map<String, Object> module = module(layout, a.moduleId()).orElseThrow(() -> new ApiException(409, "MODULO_INDISPONIVEL",
-                    "Este módulo não existe no seu nível atual (" + layout.getLevel() + ")."));
+                    Msg.t("room.este_modulo_nao_existe_no", layout.getLevel())));
             int cap = capacity(module);
             int pos = a.zone().equals("door") ? a.sub() : a.index();
             if (a.zone().equals("drawer")) {
                 long count = storage.findByUserId(user.id()).stream().filter(e -> !e.getWardrobeItemId().equals(pieceId))
                         .filter(e -> e.getAddress().equals(a.toString())).count();
                 if (count >= cap) {
-                    throw new ApiException(409, "GAVETA_CHEIA", "A gaveta " + a.index() + " já tem " + cap + " peças.");
+                    throw new ApiException(409, "GAVETA_CHEIA", Msg.t("room.a_gaveta_ja_tem_pecas", a.index(), cap));
                 }
             } else if (pos < 1 || pos > cap) {
-                throw ApiException.badRequest("POSICAO_INVALIDA", "A posição vai de 1 a " + cap + ".");
+                throw ApiException.badRequest("POSICAO_INVALIDA", Msg.t("room.a_posicao_vai_de_1", cap));
             } else {
                 boolean taken = storage.findByUserId(user.id()).stream().filter(e -> !e.getWardrobeItemId().equals(pieceId))
                         .anyMatch(e -> e.getAddress().equals(a.toString()));
                 if (taken) {
-                    throw new ApiException(409, "POSICAO_OCUPADA", "Já existe uma peça nesta posição.");
+                    throw new ApiException(409, "POSICAO_OCUPADA", Msg.t("room.ja_existe_uma_peca_nesta"));
                 }
             }
         }
@@ -1105,7 +1106,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> showInRoom(CurrentUser user, UUID pieceId) {
         owned(user, pieceId);
-        Location loc = locate(user.id(), pieceId).orElseThrow(() -> ApiException.notFound("Posição"));
+        Location loc = locate(user.id(), pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("room.posicao")));
         return Map.of("pieceId", pieceId, "address", loc.address().toString(), "label", loc.label(), "moduleId", loc.moduleId(),
                 "camera", Map.of("target", loc.moduleId(), "highlight", loc.address().toString(), "lighting", "spot", "open", true));
     }
@@ -1114,7 +1115,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, Object> seasonStorage(CurrentUser user, List<UUID> pieceIds, boolean store) {
         if (!levelOf(user.id()).atLeast(FaiPointsService.Level.PENTHOUSE)) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", "A troca de estação é liberada no nível Penthouse.");
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_troca_de_estacao_e"));
         }
         RoomLayout layout = layout(user.id());
         Map<String, String> labels = labels(layout);
@@ -1196,10 +1197,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                             .map(WardrobeItem::getSubcategory).toList())).toList();
             Map<String, String> local = new LinkedHashMap<>(proposed);
             outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
-                    "Você organiza o closet digital do Fashion AI. Proponha rótulos curtos (até 24 caracteres, em português) para as gavetas "
+                    "Você organiza o closet digital do Fashion AI. Responda em " + Msg.languageName() + ". Proponha rótulos curtos (até 24 caracteres, em português) para as gavetas "
                             + "com base no conteúdo. Categorias padrão: Jeans, Academia, Praia, Acessórios, Íntimas, Favoritas. "
                             + "Responda SOMENTE com JSON {\"labels\":{\"<gaveta>\":\"<rótulo>\"}}.",
-                    "Gavetas: " + Json.write(summary), List.of(), 600, List.of("subcategorias das peças por gaveta (sem fotos, sem nomes)"),
+                    "Gavetas: " + Json.write(summary), List.of(), 600, List.of(Msg.t("room.subcategorias_das_pecas_por_gaveta")),
                     text -> {
                         Map<String, Object> m = WardrobeService.extractJson(text);
                         if (!(m.get("labels") instanceof Map<?, ?> lm)) {
@@ -1248,8 +1249,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 mv.put("fromLabel", RoomAddress.parse(e.getAddress()).map(x -> x.label(labels)).orElse(""));
                 mv.put("to", target.toString());
                 mv.put("toLabel", target.label(proposed));
-                mv.put("reason", target.zone().equals("drawer") ? "categoria da gaveta" : target.zone().equals("door") ? "peça superior vai ao cabideiro"
-                        : target.zone().equals("chair") ? "sem posição livre" : "posição do tipo");
+                mv.put("reason", target.zone().equals("drawer") ? Msg.t("room.categoria_da_gaveta") : target.zone().equals("door") ? Msg.t("room.peca_superior_vai_ao_cabideiro")
+                        : target.zone().equals("chair") ? Msg.t("room.sem_posicao_livre") : Msg.t("room.posicao_do_tipo"));
                 moves.add(mv);
             }
         }
@@ -1258,7 +1259,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         out.put("changedLabels", proposed.entrySet().stream().filter(en -> !en.getValue().equals(labels.get(en.getKey())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new)));
         out.put("moves", moves);
-        out.put("summary", moves.size() + " peça(s) reposicionada(s), " + ((Map<?, ?>) out.get("changedLabels")).size() + " gaveta(s) renomeada(s).");
+        out.put("summary", Msg.t("room.peca_s_reposicionada_s_gaveta", (moves.size()), ((Map<?, ?>) out.get("changedLabels")).size()));
         out.put("fallbackUsed", outcome != null && outcome.fallbackUsed());
         out.put("explanation", outcome == null ? null : outcome.explanation());
         out.put("canUndo", true);
@@ -1315,7 +1316,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         RoomLayout layout = layout(user.id());
         Map<String, Object> previous = Json.map(layout.getPreviousMapJson());
         if (previous.isEmpty()) {
-            throw new ApiException(409, "NADA_A_DESFAZER", "Não há organização anterior para restaurar.");
+            throw new ApiException(409, "NADA_A_DESFAZER", Msg.t("room.nao_ha_organizacao_anterior_para"));
         }
         @SuppressWarnings("unchecked") Map<String, Object> labels = previous.get("labels") instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
         @SuppressWarnings("unchecked") Map<String, Object> sources = previous.get("sources") instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
@@ -1356,7 +1357,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         m.put("thirtyWears", w.getWearCount() >= 30);
         m.put("costPerUse", w.getPrice() != null && w.getWearCount() > 0
                 ? w.getPrice().divide(BigDecimal.valueOf(w.getWearCount()), 2, RoundingMode.HALF_UP) : null);
-        m.put("costPerUseNote", "Custo por uso só para o dono; nunca público (ETI-04).");
+        m.put("costPerUseNote", Msg.t("room.custo_por_uso_so_para"));
         m.put("location", locate(user.id(), pieceId).map(l -> Map.of("address", l.address().toString(), "label", l.label())).orElse(null));
         m.put("diary", uses.stream().limit(60).map(e -> Map.of("date", e.getUsedOn(), "occasion", String.valueOf(e.getOccasion()),
                 "note", String.valueOf(e.getNote()), "source", e.getSource(), "schemeId", String.valueOf(e.getSchemeId()))).toList());
@@ -1370,10 +1371,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         WardrobeItem w = owned(user, pieceId);
         LocalDate day = date == null ? LocalDate.now(ZONE) : date;
         if (day.isAfter(LocalDate.now(ZONE))) {
-            throw ApiException.badRequest("DATA_FUTURA", "O diário registra usos passados ou de hoje.");
+            throw ApiException.badRequest("DATA_FUTURA", Msg.t("room.o_diario_registra_usos_passados"));
         }
         if (occasion != null && !occasion.isBlank() && !Taxonomy.OCCASIONS.contains(occasion)) {
-            throw ApiException.badRequest("OCASIAO_INVALIDA", "Ocasião fora da taxonomia.");
+            throw ApiException.badRequest("OCASIAO_INVALIDA", Msg.t("room.ocasiao_fora_da_taxonomia"));
         }
         if (!diary.existsByWardrobeItemIdAndUsedOn(pieceId, day)) {
             PieceUsageDiaryEntry e = new PieceUsageDiaryEntry();
@@ -1398,10 +1399,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional(readOnly = true)
     public Map<String, Object> island(CurrentUser user, List<UUID> schemeIds) {
         if (!levelOf(user.id()).atLeast(FaiPointsService.Level.ATELIER)) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", "A ilha central é liberada no nível Atelier.");
+            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_ilha_central_e_liberada"));
         }
         if (schemeIds == null || schemeIds.size() < 2 || schemeIds.size() > 3) {
-            throw ApiException.badRequest("QUANTIDADE_INVALIDA", "Compare 2 ou 3 looks.");
+            throw ApiException.badRequest("QUANTIDADE_INVALIDA", Msg.t("room.compare_2_ou_3_looks"));
         }
         List<Map<String, Object>> looks = new ArrayList<>();
         for (UUID id : schemeIds) {
