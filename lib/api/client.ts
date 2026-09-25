@@ -105,9 +105,11 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
     tokenStore.clear();
     unauthorizedListeners.forEach((l) => l());
   }
-  // gate expirado ou ausente no backend: volta para o /gate e retorna à página atual depois
+  // gate expirado ou ausente no backend: volta para o gate e retorna à página atual depois
   if (res.status === 403 && res.headers.get("X-Dev-Gate-Required") === "1" && typeof window !== "undefined") {
-    window.location.assign(`/gate?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    // o backend recusou o token do gate: descarta os cookies do gate e volta para a tela inicial (que é o gate)
+    void fetch("/gate/verify", { method: "DELETE" }).finally(() => window.location.assign(`/?next=${next}`));
   }
   if (!res.ok) throw await parseError(res);
   if (res.status === 204) return undefined as T;

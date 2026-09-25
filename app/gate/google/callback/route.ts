@@ -4,14 +4,14 @@ import { GATE_GOOGLE_COOKIE, GATE_OAUTH_COOKIE, gateConfig, safeEqual, signValue
 /**
  * Callback do login Google do gate: confere state, troca o código no servidor (segredo do cliente + PKCE), valida o
  * id_token (emissor, audiência, validade, nonce, e-mail verificado) e só aceita contas listadas em
- * DEV_GATE_ALLOWED_EMAILS. Sucesso grava o 1º fator (cookie assinado de 15 min) e volta para o /gate pedir o PIN.
+ * DEV_GATE_ALLOWED_EMAILS. Sucesso grava o 1º fator (cookie assinado de 15 min) e volta para a tela inicial "/" pedir o PIN.
  * O id_token vem direto do endpoint de token do Google por TLS, então dispensa checar a assinatura (OIDC Core §3.1.3.7).
  */
 export async function GET(req: NextRequest) {
   const cfg = await gateConfig();
   const origin = cfg.publicUrl ?? req.nextUrl.origin;
   const fail = (erro: string) => {
-    const res = NextResponse.redirect(new URL(`/gate?erro=${erro}`, origin));
+    const res = NextResponse.redirect(new URL(`/?erro=${erro}`, origin));
     res.cookies.set(GATE_OAUTH_COOKIE, "", { path: "/gate", maxAge: 0 });
     return res;
   };
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       || !claims.exp || claims.exp < now || claims.nonce !== flow.nonce || !claims.email || !verified) return fail("google_invalido");
   const email = claims.email.toLowerCase();
   if (!cfg.allowedEmails.includes(email)) return fail("conta_nao_autorizada");
-  const res = NextResponse.redirect(new URL(`/gate${flow.next && flow.next !== "/" ? `?next=${encodeURIComponent(flow.next)}` : ""}`, origin));
+  const res = NextResponse.redirect(new URL(`/${flow.next && flow.next !== "/" ? `?next=${encodeURIComponent(flow.next)}` : ""}`, origin));
   res.cookies.set(GATE_OAUTH_COOKIE, "", { path: "/gate", maxAge: 0 });
   res.cookies.set(GATE_GOOGLE_COOKIE, await signValue("g1", email, cfg.secret, 900),
     { httpOnly: true, secure: origin.startsWith("https://"), sameSite: "lax", path: "/", maxAge: 900 });

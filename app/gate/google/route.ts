@@ -7,7 +7,7 @@ import { GATE_OAUTH_COOKIE, gateConfig, pkceChallenge, randomToken, safeNext, si
  */
 export async function GET(req: NextRequest) {
   const cfg = await gateConfig();
-  const back = (erro: string) => NextResponse.redirect(new URL(`/gate?erro=${erro}`, cfg.publicUrl ?? req.nextUrl.origin));
+  const back = (erro: string) => NextResponse.redirect(new URL(`/?erro=${erro}`, cfg.publicUrl ?? req.nextUrl.origin));
   if (!cfg.enabled) return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   if (!cfg.google || !cfg.googleClientId || !cfg.googleClientSecret || !cfg.secret) return back("google_nao_configurado");
   const origin = cfg.publicUrl ?? req.nextUrl.origin;
