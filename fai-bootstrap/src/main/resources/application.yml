@@ -129,6 +129,7 @@ fashionai:
       bucket: ${S3_BUCKET:fashionai-media}
       access-key: ${S3_ACCESS_KEY_ID:}
       secret-key: ${S3_SECRET_ACCESS_KEY:}
+      path-style: ${S3_PATH_STYLE:}                        # vazio = path-style só com S3_ENDPOINT (MinIO); Railway: false
       serve-through-api: ${S3_SERVE_THROUGH_API:false}     # bucket privado (Railway): a API entrega /media/** lendo do bucket
   redis:
     enabled: ${REDIS_ENABLED:false}

@@ -45,12 +45,15 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
                                  @Value("${fashionai.storage.s3.secret-key:}") String secretKey,
                                  @Value("${fashionai.storage.public-base-url:}") String publicBaseUrl,
                                  @Value("${fashionai.storage.s3.serve-through-api:false}") boolean serveThroughApi,
+                                 @Value("${fashionai.storage.s3.path-style:}") String pathStyle,
                                  @Value("${fashionai.app.base-url:http://localhost:8080}") String appBaseUrl) {
         StaticCredentialsProvider credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+        // MinIO pede path-style; Railway Buckets (Tigris) e AWS usam virtual-hosted: S3_PATH_STYLE decide, padrão pelo endpoint
+        boolean pathStyleAccess = pathStyle.isBlank() ? !endpoint.isBlank() : Boolean.parseBoolean(pathStyle.trim());
         S3ClientBuilder builder = S3Client.builder().region(Region.of(region)).credentialsProvider(credentials)
-                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(!endpoint.isBlank()).build());
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccess).build());
         S3Presigner.Builder presignBuilder = S3Presigner.builder().region(Region.of(region)).credentialsProvider(credentials)
-                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(!endpoint.isBlank()).build());
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccess).build());
         if (!endpoint.isBlank()) {
             builder.endpointOverride(URI.create(endpoint));
             presignBuilder.endpointOverride(URI.create(endpoint));
