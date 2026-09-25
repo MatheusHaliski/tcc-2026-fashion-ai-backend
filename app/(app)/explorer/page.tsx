@@ -11,6 +11,7 @@ import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader,
 import { Globe, countryName, type GlobePoint } from "@/components/globe";
 import { BrandLogo } from "@/components/brand-logo";
 import { RunwayPanel } from "@/components/showcase/runway-panel";
+import { FilterBar } from "@/components/filter-bar";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
 interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
@@ -44,12 +45,13 @@ function Explorer() {
       {tab === "runway" && <RunwayPanel />}
       {tab === "map" && (
         <>
-          <div className="mb-3 grid gap-2 sm:grid-cols-4" aria-label={t("explorer.recorte_do_painel")}>
-            <Select aria-label={t("explorer.estacao")} value={g.season} onChange={(e) => setG({ ...g, season: e.target.value })}><option value="">{t("explorer.todas_as_estacoes")}</option>{(global.data?.facets?.seasons ?? ["SPRING", "SUMMER", "AUTUMN", "WINTER"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select>
-            <Select aria-label={t("explorer.cor")} value={g.color} onChange={(e) => setG({ ...g, color: e.target.value })}><option value="">{t("explorer.todas_as_cores")}</option>{(global.data?.facets?.colors ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
-            <Select aria-label={t("explorer.faixa_de_hype")} value={g.hypeBand} onChange={(e) => setG({ ...g, hypeBand: e.target.value })}><option value="">{t("explorer.todas_as_faixas_de_hype")}</option>{(global.data?.facets?.hypeBands ?? Object.keys(BAND_LABEL)).map((b) => <option key={b} value={b}>{BAND_LABEL[b] ?? b}</option>)}</Select>
-            {(g.season || g.color || g.hypeBand) ? <Button onClick={() => setG({ season: "", color: "", hypeBand: "" })}>{t("explorer.limpar_recorte")}</Button> : <span />}
-          </div>
+          <FilterBar
+            filters={[
+              { key: "season", label: t("explorer.estacao"), options: (global.data?.facets?.seasons ?? ["SPRING", "SUMMER", "AUTUMN", "WINTER"]).map((x) => ({ value: x, label: label(x.toLowerCase()) })) },
+              { key: "color", label: t("explorer.cor"), options: (global.data?.facets?.colors ?? []).map((c) => ({ value: c, label: label(c) })) },
+              { key: "hypeBand", label: t("explorer.faixa_de_hype"), options: (global.data?.facets?.hypeBands ?? Object.keys(BAND_LABEL)).map((x) => ({ value: x, label: BAND_LABEL[x] ?? x })) },
+            ]}
+            values={g} onChange={(k, v) => setG({ ...g, [k]: v })} />
           {global.error ? <ErrorState error={global.error} onRetry={global.reload} /> : global.loading && !global.data ? <Skeleton className="h-96" /> : (
             <div className="grid gap-4 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
               <Card className="flex flex-col items-center"><Globe points={points} selected={country} onSelect={setCountry} size={420} /><p className="mt-1 type-caption text-muted text-center">{global.data?.legend}</p></Card>

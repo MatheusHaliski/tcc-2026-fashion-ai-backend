@@ -174,12 +174,18 @@ public class SearchService {
         return out;
     }
 
+    /** Conteúdo de conta de teste só aparece para outra conta de teste (a vitrine pública fica limpa). */
+    static boolean showcaseAllows(CurrentUser viewer, User owner) {
+        return !owner.isTestAccount() || (viewer != null && viewer.username() != null && viewer.username().startsWith(User.TEST_PREFIX));
+    }
+
     boolean visible(CurrentUser viewer, Scheme s, Set<UUID> blocked) {
-        return !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && schemeService.canView(viewer, s);
+        return !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, s.getUser())
+                && schemeService.canView(viewer, s);
     }
 
     boolean visible(CurrentUser viewer, WardrobeItem w, Set<UUID> blocked) {
-        return !blocked.contains(w.getUser().getId()) && w.getUser().getStatus() == AccountStatus.ACTIVE
+        return !blocked.contains(w.getUser().getId()) && w.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, w.getUser())
                 && w.getModerationStatus() == ModerationStatus.APPROVED
                 && guard.canView(viewer, w.getUser().getId(), SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility()));
     }

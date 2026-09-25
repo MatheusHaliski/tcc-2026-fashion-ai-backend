@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
-import { useI18n, tr } from "@/lib/i18n/i18n";
+import { useI18n } from "@/lib/i18n/i18n";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Avatar, Button, Chip, EmptyState, ErrorState, Input, PageHeader, Select, SkeletonGrid, Tabs } from "@/components/ui";
+import { Avatar, Button, Chip, EmptyState, ErrorState, Input, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
+import { FilterBar } from "@/components/filter-bar";
+import { useDevRefs } from "@/lib/dev-refs";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
@@ -20,7 +22,6 @@ type Row = SchemeView | PieceView | (UserCard & { relation?: string }) | Brand;
 interface Page { items: Row[]; nextCursor: string | null; empty?: { message?: string; alternatives?: string[]; trending?: SchemeView[] }; engine?: string; }
 type Filters = { style: string; occasion: string; color: string; brand: string; category: string };
 const NO_FILTERS: Filters = { style: "", occasion: "", color: "", brand: "", category: "" };
-const FILTER_LABEL: Record<keyof Filters, string> = { get style() { return tr("common.style"); }, get occasion() { return tr("common.occasion"); }, get color() { return tr("common.color"); }, get brand() { return tr("auth.profileBrand"); }, get category() { return tr("common.category"); } };
 const keyOf = (r: Row, i: number) => (r as { id?: string }).id ?? (r as Brand).slug ?? String(i);
 
 /**
@@ -29,6 +30,7 @@ const keyOf = (r: Row, i: number) => (r as { id?: string }).id ?? (r as Brand).s
  * cursor sem repetir itens e a busca vazia nunca fica em branco (termos alternativos + looks em alta).
  */
 function SearchInner() {
+  const devRefs = useDevRefs();
   const { t } = useI18n(); const { user } = useAuth(); const params = useSearchParams(); const router = useRouter(); const tax = useTaxonomy();
   const [q, setQ] = useState(params.get("q") ?? ""); const [term, setTerm] = useState(params.get("q") ?? "");
   const [tab, setTab] = useState<Tab>(((params.get("tab") as Tab) ?? "LOOKS"));
@@ -72,19 +74,15 @@ function SearchInner() {
       </form>
       <Tabs tabs={tabs} value={tab} onChange={(v) => setTab(v)} />
       {filterable && (
-        <div className="mb-2 grid gap-2 sm:grid-cols-5" aria-label={t("search.filtros")}>
-          <Select aria-label={t("common.style")} value={f.style} onChange={(e) => setF({ ...f, style: e.target.value })}><option value="">{t("common.style")}</option>{(tax?.styles ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
-          <Select aria-label={t("common.occasion")} value={f.occasion} onChange={(e) => setF({ ...f, occasion: e.target.value })}><option value="">{t("common.occasion")}</option>{(tax?.occasions ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
-          <Select aria-label={t("common.color")} value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })}><option value="">{t("common.color")}</option>{Object.keys(tax?.colors ?? {}).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
-          <Select aria-label={t("common.brand")} value={f.brand} onChange={(e) => setF({ ...f, brand: e.target.value })}><option value="">{t("common.brand")}</option>{(tax?.brands ?? []).map((b) => <option key={b.id} value={b.name}>{b.name}</option>)}</Select>
-          <Select aria-label={t("common.category")} value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}><option value="">{t("common.category")}</option>{Object.keys(tax?.subcategories ?? {}).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
-        </div>
-      )}
-      {filterable && active.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label={t("search.filtros_ativos")}>
-          {active.map((k) => <button key={k} type="button" className="chip" aria-pressed="true" aria-label={t("search.remover_filtro", { FILTER_LABEL: FILTER_LABEL[k], f: f[k] })} onClick={() => setF({ ...f, [k]: "" })}>{FILTER_LABEL[k]}: {k === "brand" ? f[k] : label(f[k])} <span aria-hidden>✕</span></button>)}
-          {active.length > 1 && <Button size="sm" variant="ghost" onClick={() => setF(NO_FILTERS)}>{t("common.limpar_filtros")}</Button>}
-        </div>
+        <FilterBar
+          filters={[
+            { key: "style", label: t("common.style"), options: (tax?.styles ?? []).map((x) => ({ value: x, label: label(x) })) },
+            { key: "occasion", label: t("common.occasion"), options: (tax?.occasions ?? []).map((x) => ({ value: x, label: label(x) })) },
+            { key: "color", label: t("common.color"), options: Object.entries(tax?.colors ?? {}).map(([x, hex]) => ({ value: x, label: label(x), swatch: /^#[0-9a-f]{3,8}$/i.test(hex) ? hex : undefined })) },
+            { key: "brand", label: t("common.brand"), options: (tax?.brands ?? []).map((b) => ({ value: b.name, label: b.name })) },
+            { key: "category", label: t("common.category"), options: Object.keys(tax?.subcategories ?? {}).map((x) => ({ value: x, label: label(x) })) },
+          ]}
+          values={f} onChange={(k, v) => setF({ ...f, [k]: v })} />
       )}
       {error ? <ErrorState error={error} onRetry={() => setNonce((n) => n + 1)} /> : null}
       {loading && items.length === 0 && <SkeletonGrid n={6} />}
@@ -106,7 +104,7 @@ function SearchInner() {
             </li>))}</ul>
       )}
       <InfiniteSentinel hasMore={!!next} loading={loading} onMore={more} />
-      {meta?.engine && <p className="mt-4 type-caption text-faint">{t("search.busca", { engine: meta.engine, value: items.length ? t("search.itens_carregados", { itemsCount: items.length }) : "" })}</p>}
+      {devRefs && meta?.engine && <p className="mt-4 type-caption text-muted">{t("search.busca", { engine: meta.engine, value: items.length ? t("search.itens_carregados", { itemsCount: items.length }) : "" })}</p>}
     </>
   );
 }

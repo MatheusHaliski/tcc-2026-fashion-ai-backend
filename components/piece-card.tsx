@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import type { PieceView } from "@/lib/api/types";
-import { mediaUrl } from "@/lib/api/client";
+import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FaiIcon } from "@/components/fai-icon";
 import { Generate3DButton } from "@/components/generate-3d";
@@ -25,23 +25,27 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
   const { t, fmtMoney } = useI18n();
   // RF4 · Estúdio: com foto de estúdio, o card mostra a foto de produto de ponta a ponta (fundo faz parte da imagem)
   const studio = mediaUrl(piece.studioThumbUrl ?? piece.studioImageUrl);
-  const img = studio ?? mediaUrl(piece.thumbnailUrl ?? piece.imageUrl);
+  const raw = piece.thumbnailUrl ?? piece.imageUrl;
+  const img = studio ?? thumbUrl(raw, 640);
+  const srcSet = studio ? undefined : thumbSrcSet(raw);
   const body = (
     <>
       <div className="c-photo" style={{ aspectRatio: "1" }}>
-        {img ? <img src={img} alt={piece.name} loading="lazy" style={studio ? { objectFit: "cover" } : { objectFit: "contain", padding: 8 }} /> : null}
+        {img ? <img src={img} srcSet={srcSet} sizes="(max-width: 639px) 50vw, 240px" alt={piece.name} loading="lazy" decoding="async" style={studio ? { objectFit: "cover" } : { objectFit: "contain", padding: 8 }} /> : null}
         {(zone === "COVER_CORNER" || zone === "HEADER") && <SealSlot size="sm" seals={seals} />}
         {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
         {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
       </div>
       <div className="c-title seal-row"><span className="min-w-0 flex-1">{piece.name}</span>{zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}</div>
       {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
-      <div className="c-row flex items-center gap-2">
-        <span aria-hidden className="inline-block h-3 w-3 rounded-full border border-line-soft" style={{ background: piece.colorHex ?? "#ccc" }} />
-        <span className="type-data text-muted">{label(piece.color)}</span>
-        <span className="ml-auto type-data text-muted">{piece.price != null ? fmtMoney(piece.price) : piece.size?.toUpperCase()}</span>
+      <div className="c-row piece-meta">
+        <span className="piece-brand">{piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={22} withName /> : <span className="text-muted">{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>}</span>
+        {piece.price != null && <span className="type-data tabular">{fmtMoney(piece.price, "BRL")}</span>}
       </div>
-      <div className="c-row seal-row">{piece.brandName && <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={26} className="mr-2" />}<span className="min-w-0 flex-1"><span className="k">{[label(piece.subcategory) || CATEGORY_LABEL[piece.category], piece.brandName, label(piece.sex?.toLowerCase())].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? t("pieceCard.selos") : ""}</span>{(piece.occasion ?? []).map(label).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
+      <div className="c-row piece-meta">
+        <span className="flex min-w-0 items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: piece.colorHex ?? "#ccc" }} /><span className="truncate">{label(piece.color)}</span>{piece.brandName && <span className="truncate text-muted">· {label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>}</span>
+        {zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
+      </div>
     </>
   );
   return (
@@ -53,10 +57,10 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
       )}
       {!selectable && (
         <div className="c-foot">
-          {onFavorite && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onFavorite(piece)} aria-pressed={piece.favorite}><FaiIcon id="SOC-06" size={24} active={piece.favorite} /></button>}
-          {onAvailability && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onAvailability(piece)} aria-pressed={piece.disponivel}><FaiIcon id={piece.disponivel ? "SOC-14" : "SOC-15"} size={24} active={piece.disponivel} /></button>}
+          {onFavorite && <button type="button" className="metric metric-btn" onClick={() => onFavorite(piece)} aria-pressed={piece.favorite} aria-label={piece.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite")} title={piece.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite")}><FaiIcon id="SOC-06" size={20} variant="glyph" decorative /></button>}
+          {onAvailability && <button type="button" className="metric metric-btn" onClick={() => onAvailability(piece)} aria-pressed={piece.disponivel} aria-label={piece.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable")} title={piece.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable")}><FaiIcon id={piece.disponivel ? "SOC-14" : "SOC-15"} size={20} variant="glyph" decorative /></button>}
           <Generate3DButton targets={piece.id ? [{ kind: "piece", id: piece.id, title: piece.name }] : []} />
-          <span className="ml-auto type-data text-faint tabular">{piece.wearCount} {t("closet.wearCount")}</span>
+          {piece.wearCount > 0 && <span className="ml-auto type-caption text-muted tabular">{t("pieceCard.worn", { count: piece.wearCount })}</span>}
         </div>
       )}
       {extra && <div className="c-extra">{extra}</div>}

@@ -37,15 +37,15 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-xl font-normal text-[#111] sm:text-2xl">{username}</h1>
-            {verified && <span title={t("profileHeader.verificado")} aria-label={t("profileHeader.verificado")} className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0095F6] text-[11px] font-bold text-white">✓</span>}
+            {verified && <span title={t("profileHeader.verificado")} aria-label={t("profileHeader.verificado")} className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0095F6] text-xs font-bold text-white">✓</span>}
             {kindLabel && <span className="rounded-full bg-[#efefef] px-2 py-0.5 text-[12px] text-[#333]">{kindLabel}</span>}
             <div className="hidden flex-wrap gap-2 sm:flex">{actions}</div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label={t("profileHeader.contadores_do_perfil")}>
             <div role="listitem">{stat(counts.pieces, t("common.pieces"))}</div>
-            <div role="listitem">{stat(counts.schemes, "esquemas")}</div>
-            <div role="listitem">{stat(counts.followers, "seguidores", "followers")}</div>
-            <div role="listitem">{stat(counts.following, "seguindo", "following")}</div>
+            <div role="listitem">{stat(counts.schemes, t("profileHeader.looks"))}</div>
+            <div role="listitem">{stat(counts.followers, t("profileHeader.followers"), "followers")}</div>
+            <div role="listitem">{stat(counts.following, t("profileHeader.following"), "following")}</div>
           </div>
         </div>
         <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">

@@ -1,7 +1,10 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { ApiError } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
+import { REQUIREMENT_CODE, useDevRefs } from "@/lib/dev-refs";
+import { UiIcon } from "@/components/ui/icons";
+export { UiIcon } from "@/components/ui/icons";
 
 export const cn = (...xs: Array<string | false | null | undefined>) => xs.filter(Boolean).join(" ");
 
@@ -39,16 +42,20 @@ export function Textarea({ className, error, ...rest }: TextareaHTMLAttributes<H
 export function Select({ className, error, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean }) {
   return <select {...rest} aria-invalid={error || undefined} className={cn("input", className)}>{children}</select>;
 }
-export function Switch({ checked, onChange, label, id }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string }) {
+export function Switch({ checked, onChange, label, id, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; hint?: string }) {
   const auto = useId(); const sid = id ?? auto;
+  // O nome acessível vem do rótulo visível (aria-labelledby); a linha inteira é clicável e tem altura de toque.
   return (
-    <label htmlFor={sid} className="flex items-center justify-between gap-3 py-2 cursor-pointer">
-      <span>{label}</span>
-      <button id={sid} type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-        className={cn("relative h-6 w-11 rounded-full border-2 transition-colors", checked ? "bg-ink border-ink" : "bg-surface-2 border-line-soft")}>
-        <span className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-surface transition-transform", checked ? "translate-x-5" : "translate-x-0.5")} />
+    <div className="switch-row">
+      <span className="min-w-0">
+        <span id={`${sid}-label`} className="block">{label}</span>
+        {hint && <span id={`${sid}-hint`} className="type-caption block text-muted">{hint}</span>}
+      </span>
+      <button id={sid} type="button" role="switch" aria-checked={checked} aria-labelledby={`${sid}-label`} aria-describedby={hint ? `${sid}-hint` : undefined}
+        onClick={() => onChange(!checked)} className="switch-track">
+        <span className="switch-thumb" />
       </button>
-    </label>
+    </div>
   );
 }
 export function Chip({ active, children, onClick, className, title }: { active?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
@@ -63,52 +70,110 @@ export function Card({ children, className, pad = true }: { children: ReactNode;
   return <section className={cn("surface", pad && "card-pad p-4", className)}>{children}</section>;
 }
 export function PageHeader({ title, lead, actions, kicker }: { title: string; lead?: string; actions?: ReactNode; kicker?: string }) {
+  // Rótulos que são só código de requisito ("RF7 · RF31") aparecem apenas no modo apresentação.
+  const devRefs = useDevRefs();
+  const isCode = !!kicker && REQUIREMENT_CODE.test(kicker);
+  // Título da aba do navegador acompanha o título da página (leitores de tela anunciam a troca de página por ele).
+  useEffect(() => { document.title = `${title} · Fashion AI`; }, [title]);
   return (
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        {kicker && <p className="type-label text-muted mb-1">{kicker}</p>}
+    <header className="page-header" data-rf={isCode ? kicker : undefined}>
+      <div className="min-w-0">
+        {kicker && !isCode && <p className="type-label text-muted mb-1">{kicker}</p>}
+        {kicker && isCode && devRefs && <p className="type-label mb-1 text-thread">{kicker}</p>}
         <h1 className="type-h1 text-ink">{title}</h1>
-        {lead && <p className="type-body text-muted mt-1 max-w-prose">{lead}</p>}
+        {lead && <p className="type-body text-muted mt-1.5 max-w-prose">{lead}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="page-header-actions">{actions}</div>}
     </header>
   );
 }
-export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; className?: string }) {
+export function Tabs<T extends string>({ tabs, value, onChange, className, label }: { tabs: { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; className?: string; label?: string }) {
+  // Abas roláveis: sombra na borda indica que há mais abas; setas do teclado trocam de aba (padrão ARIA de tablist).
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ start: false, end: false });
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const measure = () => setEdge({ start: el.scrollLeft > 2, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return () => { el.removeEventListener("scroll", measure); ro.disconnect(); };
+  }, [tabs.length]);
+  useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }); }, [value]);
+  const onKey = (e: ReactKeyboardEvent) => {
+    const i = tabs.findIndex((x) => x.id === value);
+    const next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -2;
+    if (next === -2) return;
+    e.preventDefault();
+    const n = tabs[(next + tabs.length) % tabs.length];
+    onChange(n.id);
+    requestAnimationFrame(() => ref.current?.querySelector<HTMLElement>(`[data-tab="${n.id}"]`)?.focus());
+  };
   return (
-    <div role="tablist" className={cn("tabs mb-4", className)}>
-      {tabs.map((t) => (
-        <button key={t.id} role="tab" type="button" aria-selected={value === t.id} className="tab" onClick={() => onChange(t.id)}>
-          {t.label}{t.count !== undefined && <span className="ml-1 tabular text-faint">{t.count}</span>}
-        </button>
-      ))}
+    <div className={cn("tabs-wrap mb-4", edge.start && "fade-start", edge.end && "fade-end", className)}>
+      <div ref={ref} role="tablist" aria-label={label} className="tabs" onKeyDown={onKey}>
+        {tabs.map((t) => (
+          <button key={t.id} data-tab={t.id} role="tab" type="button" aria-selected={value === t.id} tabIndex={value === t.id ? 0 : -1} className="tab" onClick={() => onChange(t.id)}>
+            {t.label}{t.count !== undefined && <span className="ml-1.5 tabular text-muted">{t.count}</span>}
+          </button>
+        ))}
+      </div>
     </div>
+  );
+}
+/** Progresso de um fluxo em etapas: "Passo 2 de 5 · Peças" + trilho com as etapas (as já feitas podem ser revisitadas). */
+export function Stepper({ steps, current, onStep, label }: { steps: string[]; current: number; onStep?: (i: number) => void; label: string }) {
+  const { t } = useI18n();
+  return (
+    <nav aria-label={label} className="stepper">
+      <p className="stepper-count"><span className="text-muted">{t("ui.stepOf", { n: current + 1, total: steps.length })}</span> · <b>{steps[current]}</b></p>
+      <ol>
+        {steps.map((s, i) => (
+          <li key={s} className={i < current ? "is-done" : i === current ? "is-current" : undefined}>
+            <button type="button" disabled={!onStep || i > current} aria-current={i === current ? "step" : undefined} onClick={() => onStep?.(i)}>
+              <span className="stepper-dot" aria-hidden>{i < current ? <UiIcon name="check" size={14} /> : i + 1}</span>
+              <span className="stepper-label">{s}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }
 export function Skeleton({ className }: { className?: string }) { return <div className={cn("skeleton", className)} aria-hidden />; }
 export function SkeletonGrid({ n = 6, h = "h-56" }: { n?: number; h?: string }) {
   return <div className="grid-cards">{Array.from({ length: n }).map((_, i) => <Skeleton key={i} className={h} />)}</div>;
 }
-export function EmptyState({ title, hint, action, icon }: { title: string; hint?: string; action?: ReactNode; icon?: ReactNode }) {
+export function EmptyState({ title, hint, action, icon, heading }: { title: string; hint?: string; action?: ReactNode; icon?: ReactNode; heading?: boolean }) {
+  const Title = heading ? "h1" : "p";
   return (
-    <div className="surface p-8 text-center">
+    <div className="surface empty-state p-8 text-center">
       {icon && <div className="mx-auto mb-3 w-14">{icon}</div>}
-      <p className="type-h3 text-ink">{title}</p>
+      <Title className={heading ? "type-h2 text-ink" : "type-h3 text-ink"}>{title}</Title>
       {hint && <p className="type-body text-muted mt-1 max-w-md mx-auto">{hint}</p>}
-      {action && <div className="mt-4 flex justify-center gap-2">{action}</div>}
+      {action && <div className="mt-4 flex flex-wrap justify-center gap-2">{action}</div>}
     </div>
   );
 }
-export function ErrorState({ error, onRetry }: { error: ApiError | Error | null; onRetry?: () => void }) {
+export function ErrorState({ error, onRetry, page, notFound }: { error: ApiError | Error | null; onRetry?: () => void; page?: boolean; notFound?: { title: string; hint?: string; action?: ReactNode } }) {
   const { t } = useI18n();
   if (!error) return null;
   const api = error instanceof ApiError ? error : null;
+  // Erros de página (404/403) viram um estado explicado, com saída; os demais oferecem tentar de novo.
+  const kind = api?.status === 0 ? "offline" : api?.status === 404 ? "notFound" : api?.status === 403 ? "forbidden" : "generic";
+  const Title = page ? "h1" : "p";
+  if (kind === "notFound" && notFound) return <EmptyState title={notFound.title} hint={notFound.hint} action={notFound.action} heading={page} />;
+  const title = kind === "offline" ? t("common.offline") : kind === "notFound" ? t("errors.notFoundTitle") : kind === "forbidden" ? t("errors.forbiddenTitle") : t("common.errorTitle");
+  const hint = kind === "notFound" ? t("errors.notFoundHint") : kind === "forbidden" ? t("errors.forbiddenHint") : error.message;
   return (
-    <div role="alert" className="surface p-5 border-critical/40">
-      <p className="type-h3 text-ink">{api?.status === 0 ? t("common.offline") : t("common.errorTitle")}</p>
-      <p className="type-body text-muted mt-1">{error.message}</p>
-      {api?.correlationId && <p className="type-caption text-faint mt-1">{t("common.errorHint")}: <code className="type-data">{api.correlationId}</code></p>}
-      {onRetry && <Button className="mt-3" onClick={onRetry}>{t("common.retry")}</Button>}
+    <div role="alert" className="surface p-6">
+      <Title className={page ? "type-h1 text-ink" : "type-h3 text-ink"}>{title}</Title>
+      <p className="type-body text-muted mt-1">{hint}</p>
+      {api?.correlationId && kind === "generic" && <p className="type-caption text-muted mt-1">{t("common.errorHint")}: <code className="type-data">{api.correlationId}</code></p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {onRetry && (kind === "generic" || kind === "offline") && <Button onClick={onRetry}>{t("common.retry")}</Button>}
+        {(kind === "notFound" || kind === "forbidden") && <a href="/feed" className="btn btn-primary">{t("common.voltar_ao_feed")}</a>}
+      </div>
     </div>
   );
 }
@@ -128,29 +193,117 @@ export function Pagination({ page, hasMore, onPage, total, size }: { page: numbe
   );
 }
 
+/* ---------- Sobreposições: foco preso, Escape, rolagem travada e foco devolvido ao gatilho ---------- */
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean, onClose: () => void, opts?: { lockScroll?: boolean; initial?: "first" | "container" }) {
+  const close = useRef(onClose); close.current = onClose;
+  useEffect(() => {
+    if (!active) return;
+    const el = ref.current; if (!el) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const items = () => Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((x) => x.getClientRects().length > 0);
+    const autofocus = el.querySelector<HTMLElement>("[data-autofocus]");
+    (autofocus ?? (opts?.initial === "container" ? null : items()[0]) ?? el).focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); close.current(); return; }
+      if (e.key !== "Tab") return;
+      const list = items(); if (!list.length) { e.preventDefault(); return; }
+      const first = list[0], last = list[list.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !el.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (document.activeElement === last || !el.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey, true);
+    const html = document.documentElement; const prevOverflow = html.style.overflow;
+    if (opts?.lockScroll !== false) html.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey, true); html.style.overflow = prevOverflow; previous?.focus?.({ preventScroll: true }); };
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+/** Fecha um popover ao clicar fora ou apertar Escape; devolve o foco ao gatilho. */
+export function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, onClose: () => void) {
+  const close = useRef(onClose); close.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) close.current(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { close.current(); (ref.current?.querySelector("[aria-haspopup]") as HTMLElement | null)?.focus(); } };
+    document.addEventListener("pointerdown", onDown); document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open, ref]);
+}
+
 /* ---------- Dialog ---------- */
 export function Dialog({ open, onClose, title, children, footer, size }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    const first = ref.current?.querySelector<HTMLElement>("button, input, select, textarea, [tabindex]");
-    first?.focus();
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const titleId = useId();
+  useFocusTrap(ref, open, onClose);
   if (!open) return null;
   return (
     <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`dialog ${size ? `dialog-${size}` : ""}`}>
-        <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
-          <h2 className="type-h3">{title}</h2>
-          <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}>✕</button>
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog ${size ? `dialog-${size}` : ""}`}>
+        <div className="dialog-head">
+          <h2 id={titleId} className="type-h2">{title}</h2>
+          <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}><UiIcon name="close" /></button>
         </div>
         <div className="p-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-line-soft px-4 py-3">{footer}</div>}
+        {footer && <div className="dialog-foot">{footer}</div>}
       </div>
+    </div>
+  );
+}
+
+/** Painel que sobe do rodapé no celular e abre na lateral direita no desktop (filtros, criar, opções). */
+export function Sheet({ open, onClose, title, children, footer, side = "auto" }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; side?: "auto" | "bottom" }) {
+  const { t } = useI18n();
+  const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useFocusTrap(ref, open, onClose);
+  if (!open) return null;
+  return (
+    <div className={cn("sheet-backdrop", side === "bottom" && "sheet-always-bottom")} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="sheet">
+        <div className="sheet-grip" aria-hidden />
+        <div className="sheet-head">
+          <h2 id={titleId} className="type-h3">{title}</h2>
+          <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}><UiIcon name="close" /></button>
+        </div>
+        <div className="sheet-body">{children}</div>
+        {footer && <div className="sheet-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+export interface MenuItem { label: string; onSelect?: () => void; href?: string; danger?: boolean; icon?: ReactNode; hidden?: boolean; disabled?: boolean; }
+/** Menu de ações secundárias ("Mais"): botão + lista com navegação por setas, Escape e clique fora. */
+export function ActionMenu({ items, label, className, trigger, align = "end" }: { items: MenuItem[]; label?: string; className?: string; trigger?: ReactNode; align?: "start" | "end" }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  useDismiss(box, open, () => setOpen(false));
+  const visible = items.filter((i) => !i.hidden);
+  useEffect(() => { if (open) box.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus(); }, [open]);
+  const onKey = (e: ReactKeyboardEvent) => {
+    const list = Array.from(box.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const i = list.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % list.length]?.focus(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); list[(i - 1 + list.length) % list.length]?.focus(); }
+    if (e.key === "Tab") setOpen(false);
+  };
+  if (!visible.length) return null;
+  return (
+    <div ref={box} className={cn("relative inline-flex", className)}>
+      <button type="button" className={trigger ? "btn" : "btn btn-icon"} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
+        aria-label={trigger ? undefined : (label ?? t("common.moreOptions"))} title={trigger ? undefined : (label ?? t("common.moreOptions"))} onClick={() => setOpen((o) => !o)}>
+        {trigger ?? <UiIcon name="more" />}
+      </button>
+      {open && (
+        <div id={menuId} role="menu" aria-label={label ?? t("common.moreOptions")} className={cn("menu-pop", align === "start" ? "left-0" : "right-0")} onKeyDown={onKey}>
+          {visible.map((it) => it.href
+            ? <a key={it.label} role="menuitem" tabIndex={-1} href={it.href} className={cn("menu-item", it.danger && "is-danger")} onClick={() => setOpen(false)}>{it.icon}{it.label}</a>
+            : <button key={it.label} role="menuitem" tabIndex={-1} type="button" disabled={it.disabled} className={cn("menu-item", it.danger && "is-danger")} onClick={() => { setOpen(false); it.onSelect?.(); }}>{it.icon}{it.label}</button>)}
+        </div>
+      )}
     </div>
   );
 }

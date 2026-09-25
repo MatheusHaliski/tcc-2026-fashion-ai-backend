@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FashionAI · Anatomias do Card v18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* =====================================================================
+   TOKENS — os mesmos nomes de app/globals.css. Texto só usa pares que
+   passam de 4,5:1; --faint é decorativo (linhas, trilhos), nunca texto.
+   ===================================================================== */
+:root{
+  color-scheme:light;
+  --ground:#F7F6F2; --surface:#FFFFFF; --surface-2:#F1F0EA; --surface-3:#E7E5DD;
+  --ink:#191A19; --muted:#5C6058; --faint:#B9BBB2;
+  --line:#1A1A18; --line-soft:#D8D6CC;
+  --mark:#C6275E; --mark-ink:#A81F4F; --mark-soft:#FBE7EE;
+  --thread:#1F7A76; --thread-ink:#17625F; --thread-soft:#E0F0EE;
+  --chalk:#B8862B; --chalk-ink:#7D5A12; --chalk-soft:#FAF0DC;
+  --status-good:#0CA30C; --status-warning:#FAB219; --status-serious:#EC835A; --status-critical:#D03B3B;
+  --good-ink:#16722A; --warning-ink:#8A5A00; --serious-ink:#A8461C; --critical-ink:#B42318;
+  --photo-bg:#F3F1EC; --focus:#C6275E; --scrim:rgba(25,26,25,.72);
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  /* escala do card */
+  --fs-cap:11px; --fs-xs:12px; --fs-sm:13px; --fs-md:15px; --fs-title:17px; --fs-price:24px;
+  --r-in:4px; --r-card:6px; --hit:32px; --card-w:280px;
+}
+@media (pointer:coarse){ :root{ --hit:44px; } }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  color-scheme:dark;
+  --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --faint:#4A4E54; --line:#C9C7BE; --line-soft:#3A3D42;
+  --mark:#F06A93; --mark-ink:#F48AAB; --mark-soft:#3A1E28; --thread:#5FBFB8; --thread-ink:#7FD3CC; --thread-soft:#1B3331;
+  --chalk:#D9B45C; --chalk-ink:#E2C27A; --chalk-soft:#3A3120;
+  --good-ink:#6BD58A; --warning-ink:#F2C45A; --serious-ink:#F2A07F; --critical-ink:#F48A8A; --focus:#F06A93;
+} }
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --faint:#4A4E54; --line:#C9C7BE; --line-soft:#3A3D42;
+  --mark:#F06A93; --mark-ink:#F48AAB; --mark-soft:#3A1E28; --thread:#5FBFB8; --thread-ink:#7FD3CC; --thread-soft:#1B3331;
+  --chalk:#D9B45C; --chalk-ink:#E2C27A; --chalk-soft:#3A3120;
+  --good-ink:#6BD58A; --warning-ink:#F2C45A; --serious-ink:#F2A07F; --critical-ink:#F48A8A; --focus:#F06A93;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 14px/1.5 var(--sans)}
+img{max-width:100%}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:max(16px,2.4vw)}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tr{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab{font-variant-numeric:tabular-nums}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+
+/* ---------------- prancha ---------------- */
+header.top{border-bottom:2px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px 24px}
+.brand{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.1}
+h1{font-size:20px;font-weight:700;margin:4px 0 6px;text-wrap:balance}
+.lede{margin:0;color:var(--muted);font-size:14px;max-width:80ch}
+.stamp{text-align:right;font:12px/1.6 var(--mono);color:var(--muted)}
+.stamp b{color:var(--ink)}
+.changes{background:var(--thread-soft);border-bottom:1px solid var(--thread);color:var(--ink)}
+.changes .wrap{padding-block:12px;display:grid;gap:6px 24px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));font-size:13px}
+.changes b{display:block;font:600 11px/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--thread-ink)}
+.toolbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--ground) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line-soft)}
+.toolbar .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding-block:8px}
+.tool{display:flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{min-height:var(--hit);padding:0 10px;border:0;background:transparent;font:500 13px var(--sans);color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0}
+.seg button+button{border-left:1px solid var(--line-soft)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.photo-note{font-size:12px;color:var(--muted);margin-left:auto;max-width:52ch}
+
+section.band{padding-block:40px 12px}
+section.band.alt{background:var(--surface-2)}
+h2.sec{font-size:22px;margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
+.sec-sub{margin:0 0 24px;color:var(--muted);max-width:80ch;font-size:14px}
+.plate{padding-block:32px;border-top:1px solid var(--line-soft)}
+.plate-top{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.plate-n{font:600 12px var(--mono);background:var(--ink);color:var(--surface);padding:3px 8px;border-radius:3px}
+.plate-name{font-family:var(--serif);font-size:26px;font-weight:600;margin:0}
+.thesis{margin:0 0 18px;color:var(--muted);max-width:78ch}
+.plate-body{display:flex;gap:28px 36px;flex-wrap:wrap;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0;max-width:100%}
+.col-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dimv{font:500 11px var(--mono);color:var(--muted);letter-spacing:0;text-transform:none}
+.replay{align-self:flex-start;min-height:var(--hit);padding:0 12px;border:1px solid var(--line-soft);background:var(--surface);border-radius:6px;font:500 13px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.replay:hover{border-color:var(--line)}
+[data-motion="reduce"] .replay{display:none}
+@media (prefers-reduced-motion:reduce){ .replay{display:none} }
+.notes{flex:1 1 300px;max-width:48ch;margin:0;display:grid;gap:10px;font-size:13px}
+.notes dt{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.notes dd{margin:0 0 4px;color:var(--ink)}
+.status{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.st{font:600 11px/1 var(--mono);letter-spacing:.04em;padding:4px 8px;border-radius:99px;border:1px solid}
+.st.ok{color:var(--good-ink);border-color:currentColor}
+.st.test{color:var(--warning-ink);border-color:currentColor}
+.st.data{color:var(--thread-ink);border-color:currentColor}
+.st.new{color:var(--mark-ink);border-color:currentColor}
+.dep{display:inline-block;font:500 11px/1.3 var(--mono);padding:1px 6px;border-radius:3px;margin:1px 2px 1px 0}
+.dep.y{background:var(--thread-soft);color:var(--thread-ink)}
+.dep.p{background:var(--chalk-soft);color:var(--chalk-ink)}
+.dep.n{background:var(--mark-soft);color:var(--mark-ink)}
+.grid-states{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--card-w)),1fr));gap:28px 24px;align-items:start}
+.grid-states .col{max-width:var(--card-w)}
+.tbl{overflow-x:auto;border:1px solid var(--line-soft);border-radius:6px;background:var(--surface);margin:8px 0 18px}
+.tbl table{border-collapse:collapse;width:100%;font-size:13px}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+.tbl th{font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+.tbl tr:last-child td{border-bottom:0}
+.swatch-t{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+footer.fin{padding-block:32px 60px;border-top:2px solid var(--line);margin-top:24px}
+footer.fin .wrap{display:grid;gap:10px}
+footer.fin h3{font-size:14px;margin:12px 0 0}
+footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:92ch}
+.anno-wrap{position:relative;padding-right:40px}
+.anno-pin{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:600 11px/22px var(--mono);text-align:center}
+.anno-pin::before{content:"";position:absolute;right:100%;top:50%;width:14px;border-top:1px solid var(--ink)}
+.anno-list{margin:0;padding-left:0;list-style:none;display:grid;gap:8px;font-size:13px;max-width:46ch}
+.anno-list li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
+.anno-list i{font:600 11px/22px var(--mono);font-style:normal;background:var(--ink);color:var(--surface);border-radius:50%;text-align:center}
+.toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 14px;border-radius:8px;font-size:13px;z-index:60;max-width:calc(100% - 32px)}
+
+/* =====================================================================
+   CARD — mesmo contrato do componente do produto (.fai-card):
+   cabeçalho do post → container do esquema → ações do post.
+   ===================================================================== */
+.fc{width:var(--card-w);max-width:100%;background:var(--surface-2);color:var(--ink);border:1.6px solid var(--line);border-radius:var(--r-card);overflow:hidden;display:flex;flex-direction:column;font-size:var(--fs-sm);line-height:1.4;position:relative}
+.fc-head{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 4px 4px 10px}
+.fc-av{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--thread-soft);color:var(--thread-ink);font:600 var(--fs-xs)/1 var(--mono)}
+.fc-who{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.fc-who b{font-size:var(--fs-sm);font-weight:600}
+.fc-who>span{font-size:var(--fs-xs);color:var(--muted);display:flex;align-items:center;gap:4px;min-width:0}
+.fc-who svg{flex:none}
+.icon-btn{width:var(--hit);height:var(--hit);flex:none;display:inline-grid;place-items:center;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer}
+.icon-btn:hover{background:var(--surface-3);color:var(--ink)}
+.sc{margin:0 8px;background:var(--surface);border-radius:var(--r-in);box-shadow:0 0 0 1px var(--line-soft);display:flex;flex-direction:column;overflow:hidden;position:relative;min-width:0}
+[data-edit="on"] .sc,[data-edit="on"] .sc-blk{outline:1.5px dashed var(--mark);outline-offset:3px;overflow:visible;position:relative}
+[data-edit="on"] .sc::before,[data-edit="on"] .sc-blk::before{content:"Editável · RF9";position:absolute;z-index:6;top:-11px;right:8px;background:var(--mark);color:#fff;font:600 11px/1 var(--mono);padding:3px 6px;border-radius:3px}
+.fc-actions{display:flex;align-items:center;gap:2px;padding:4px 4px 4px}
+.act{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:var(--hit);min-width:var(--hit);padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--ink);font:500 var(--fs-xs)/1 var(--sans);font-variant-numeric:tabular-nums;cursor:pointer}
+.act:hover{background:var(--surface-3)}
+.act svg{flex:none}
+.act[aria-pressed="true"]{color:var(--mark-ink)}
+.act[aria-pressed="true"] .fillable{fill:currentColor}
+.fc-actions .grow{flex:1}
+.menu{position:fixed;z-index:50;min-width:190px;background:var(--surface);color:var(--ink);border:1px solid var(--line-soft);border-radius:8px;box-shadow:0 10px 24px rgba(0,0,0,.18);padding:4px;display:flex;flex-direction:column}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:var(--hit);padding:6px 10px;border:0;border-radius:6px;background:transparent;text-align:left;font-size:var(--fs-sm);cursor:pointer}
+.menu button:hover,.menu button:focus-visible{background:var(--surface-2)}
+.menu small{font-size:var(--fs-xs);color:var(--muted)}
+
+/* foto e composição: a foto não muda com o tema (é registro, fundo de estúdio) */
+.ph{position:relative;background:var(--photo-bg);overflow:hidden;container-type:size;flex:none}
+.ph--45{aspect-ratio:4/5}.ph--11{aspect-ratio:1/1}.ph--43{aspect-ratio:4/3}
+.comp{position:absolute;left:50%;top:50%;width:min(100cqw,80cqh);aspect-ratio:4/5;transform:translate(-50%,-50%)}
+.cut{position:absolute;height:auto;max-width:none;transform:translate(-50%,-50%);filter:var(--rc,none) drop-shadow(0 2px 3px rgba(0,0,0,.22));transition:opacity .2s,filter .2s}
+.cut.dim{opacity:.22}
+.solo{position:absolute;inset:9%;width:82%;height:82%;object-fit:contain;filter:var(--rc,none) drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+.ph-empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:6px;color:var(--muted);font-size:var(--fs-xs);text-align:center;padding:12px;background:repeating-linear-gradient(135deg,var(--photo-bg) 0 8px,#ECE9E2 8px 16px)}
+.ph-chip{position:absolute;z-index:3;left:8px;top:8px;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.92);color:#191A19;font:600 var(--fs-xs)/1 var(--sans);padding:5px 8px;border-radius:99px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+
+.sc-top{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.sc-top+.sc-top,.ph+.sc-top{border-top:1px solid var(--line-soft)}
+.kick{font:600 var(--fs-cap)/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sc-title{font:600 var(--fs-title)/1.25 var(--serif);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:balance;color:var(--ink)}
+.sc-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--fs-xs);color:var(--muted);min-width:0}
+.price{font:600 var(--fs-sm)/1.2 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.seal{width:20px;height:20px;border-radius:50%;flex:none;display:inline-grid;place-items:center;font:700 var(--fs-xs)/1 var(--mono);border:1.5px solid}
+.seal--brand{color:var(--thread-ink);border-color:var(--thread);background:var(--thread-soft)}
+.seal--celeb{color:var(--mark-ink);border-color:var(--mark);background:var(--mark-soft)}
+.seal--look{color:var(--chalk-ink);border-color:var(--chalk);background:var(--chalk-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px 10px;border-top:1px solid var(--line-soft)}
+.tchip{font-size:var(--fs-xs);line-height:1.5;padding:0 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.desc{margin:0;font-size:var(--fs-xs);color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.prow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 12px;border-top:1px solid var(--line-soft);min-width:0}
+.thumb{width:40px;height:40px;border-radius:4px;background:var(--photo-bg);position:relative;overflow:hidden;flex:none}
+.thumb img{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);object-fit:contain;filter:var(--rc,none)}
+.thumb--s{width:32px;height:32px}
+.pt{min-width:0;display:flex;flex-direction:column}
+.pt>b{font-size:var(--fs-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt>span{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv{font:500 var(--fs-xs)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.mono{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:4px;border:1px solid var(--line-soft);background:var(--surface);font:700 var(--fs-xs)/1 var(--mono);color:var(--ink)}
+.how{border-top:1px solid var(--line-soft)}
+.how summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:var(--hit);padding:0 12px;font-size:var(--fs-xs);color:var(--muted)}
+.how summary::-webkit-details-marker{display:none}
+.how summary:hover{color:var(--ink)}
+.how[open] summary svg{transform:rotate(90deg)}
+.how p{margin:0;padding:0 12px 10px;font-size:var(--fs-xs);color:var(--muted)}
+
+/* compacto: cabeçalho, miniatura, título, preço, assinatura da anatomia, 3 ações + menu */
+.cmp{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:8px;align-items:start}
+.cmp .ph{width:64px;aspect-ratio:4/5;border-radius:3px}
+.cmp .sc-title{font-size:var(--fs-md)}
+.cmp-txt{min-width:0;display:flex;flex-direction:column;gap:3px}
+.sig{padding:0 8px 8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sig-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--fs-xs);color:var(--muted);min-width:0}
+.mini-thumbs{display:flex;gap:4px}
+.mini-thumbs .thumb{width:36px;height:36px}
+
+/* densidade miniatura (grades de perfil/busca) */
+.fc--thumb .ph{border-radius:var(--r-card) var(--r-card) 0 0}
+.thumb-cap{padding:8px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center;background:var(--surface)}
+
+/* ---------------- 01 Passarela ---------------- */
+.runway{position:relative;aspect-ratio:4/5;overflow:hidden;background:radial-gradient(90% 60% at 50% 0,#2B2733,#0C0B10 75%);container-type:size;flex:none}
+.runway .floor{position:absolute;left:50%;bottom:0;width:130%;height:70%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(180deg,#3A3440,#8C8478 62%,#D9CBB0)}
+.runway .crowd{position:absolute;bottom:0;width:20%;height:12%;background:radial-gradient(circle at 50% 35%,#1B1822 34%,transparent 36%) 0 0/11px 11px repeat;opacity:.7}
+.runway .crowd.l{left:0}.runway .crowd.r{right:0}
+.spot{position:absolute;top:0;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,244,214,.9),rgba(255,244,214,0) 92%);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);mix-blend-mode:screen;opacity:var(--o);pointer-events:none}
+.walker{position:absolute;margin:0;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center}
+.walker img{width:100%;height:auto;filter:var(--rc,none) drop-shadow(0 6px 6px rgba(0,0,0,.55))}
+.walker::after{content:"";width:70%;height:6px;border-radius:50%;background:rgba(0,0,0,.45);margin-top:-3px}
+.walker figcaption{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;font:600 var(--fs-xs)/1 var(--mono);white-space:nowrap;color:#fff;background:rgba(0,0,0,.78);padding:4px 7px;border-radius:99px;font-variant-numeric:tabular-nums}
+.walker.lead figcaption{background:#E8C15A;color:#1A1206}
+.legend-line{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:var(--fs-xs);color:var(--muted);border-top:1px solid var(--line-soft)}
+.legend-line i{display:inline-block;width:44px;height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(232,193,90,.25),#E8C15A);flex:none}
+.rstrip{display:flex;gap:3px;background:#0C0B10;border-radius:4px;padding:4px;overflow:hidden}
+.rstrip figure{margin:0;flex:1;min-width:0;position:relative;background:radial-gradient(80% 70% at 50% 100%,rgba(255,244,214,var(--o)),transparent 70%);border-radius:3px;aspect-ratio:1/1;display:grid;place-items:center}
+.rstrip img{width:78%;height:78%;object-fit:contain;filter:var(--rc,none)}
+.rstrip figcaption{position:absolute;left:3px;top:3px;font:600 var(--fs-xs)/1 var(--mono);color:#fff;background:rgba(0,0,0,.72);padding:2px 4px;border-radius:99px}
+.fc.play .spot{animation:spotIn .9s ease-out both;animation-delay:calc(var(--i) * 120ms)}
+.fc.play .walker{animation:walkIn .7s ease-out both;animation-delay:calc(var(--i) * 120ms + 200ms)}
+@keyframes spotIn{from{opacity:0}}
+@keyframes walkIn{from{opacity:0;translate:0 10px}}
+
+/* ---------------- 02 Etiqueta ---------------- */
+.tags{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 2px}
+.minitag{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:var(--hit);padding:0 10px 0 16px;border:1.4px solid var(--line);border-radius:2px 6px 6px 2px;background:var(--surface);font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.02em;cursor:pointer;clip-path:polygon(10px 0,100% 0,100% 100%,10px 100%,0 50%)}
+.minitag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--surface);box-shadow:0 0 0 1.4px var(--muted);position:absolute;left:8px;top:50%;translate:0 -50%}
+.minitag:hover{background:var(--surface-2)}
+.minitag[aria-checked="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.minitag[aria-checked="true"]::before{box-shadow:0 0 0 1.4px var(--surface);background:var(--ink)}
+.minitag:focus-visible{outline:none;box-shadow:inset 0 0 0 3px var(--focus)}
+.tagbody{margin:10px 12px 12px;border:1px solid var(--line-soft);border-radius:6px;position:relative;background:var(--surface)}
+.tagbody::before{content:"";position:absolute;top:10px;left:50%;width:10px;height:10px;margin-left:-5px;border-radius:50%;box-shadow:inset 0 0 0 1.4px var(--muted);background:var(--surface-2)}
+.tag-hero{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:center;padding:26px 12px 12px;border-bottom:1px dashed var(--line-soft)}
+.tag-hero .ph{border-radius:4px}
+.tag-price{font:600 var(--fs-price)/1.1 var(--serif);font-variant-numeric:tabular-nums}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 12px;border-top:1px solid var(--line-soft);font-size:var(--fs-sm)}
+.kv:first-of-type{border-top:0}
+.kv span{color:var(--muted)}
+.kv b{font-weight:600;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);flex:none}
+.tag-chip{display:inline-flex;align-items:center;gap:6px;font:600 var(--fs-xs)/1 var(--mono);padding:5px 8px 5px 12px;border:1.2px solid var(--line);border-radius:2px 5px 5px 2px;clip-path:polygon(7px 0,100% 0,100% 100%,7px 100%,0 50%);background:var(--surface)}
+.tier-classic{box-shadow:0 0 0 1px var(--line-soft),inset 0 0 0 3px var(--surface),inset 0 0 0 4.5px var(--thread)}
+.ribbon{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px;background:var(--thread-soft);color:var(--thread-ink);font:600 var(--fs-cap)/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------------- 03 Raio-X ---------------- */
+.xray{position:relative;aspect-ratio:4/5;overflow:hidden;background:radial-gradient(circle at 50% 45%,#12344D,#07131D 75%);container-type:size;flex:none}
+.xray::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(94,242,255,.10) 1px,transparent 1px) 0 0/16px 16px,linear-gradient(90deg,rgba(94,242,255,.10) 1px,transparent 1px) 0 0/16px 16px}
+.xray .cut{filter:var(--rc,none) drop-shadow(0 0 4px rgba(94,242,255,.55))}
+.xray .corner{position:absolute;width:16px;height:16px;border:2px solid #5EF2FF;z-index:2}
+.xray .corner.tl{left:8px;top:8px;border-right:0;border-bottom:0}.xray .corner.br{right:8px;bottom:8px;border-left:0;border-top:0}
+.beam{position:absolute;left:0;right:0;top:-12%;height:12%;opacity:0;background:linear-gradient(180deg,transparent,rgba(94,242,255,.38),transparent);z-index:2;pointer-events:none}
+.fc.play .beam{animation:beam 1.8s ease-in-out 1 both}
+@keyframes beam{0%{top:-12%;opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+.pin{position:absolute;z-index:3;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:#5EF2FF;color:#06131F;font:700 var(--fs-xs)/24px var(--mono);text-align:center;box-shadow:0 0 0 3px rgba(94,242,255,.28)}
+.pin.anchor{background:#fff;box-shadow:0 0 0 3px #5EF2FF}
+.xl{list-style:none;margin:0;padding:0}
+.xl li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 12px;border-top:1px solid var(--line-soft)}
+.xl .n{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 var(--fs-xs)/24px var(--mono);text-align:center}
+.xl .n.anchor{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.badge{display:inline-flex;align-items:center;gap:4px;font:600 var(--fs-cap)/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:4px 6px;border-radius:3px;background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.badge.good{background:var(--thread-soft);color:var(--thread-ink)}
+.badge.warn{background:var(--chalk-soft);color:var(--chalk-ink)}
+.readout{margin:0;padding:8px 12px;font:500 var(--fs-xs)/1.4 var(--mono);color:var(--muted);border-top:1px solid var(--line-soft)}
+
+/* ---------------- 04 Bento ---------------- */
+.bento{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:repeat(3,1fr);gap:3px;aspect-ratio:1/1;background:var(--line-soft)}
+.bcell{position:relative;border:0;padding:0;background:var(--photo-bg);overflow:hidden;cursor:pointer;container-type:size;min-width:0;min-height:0}
+.bcell.hero{grid-row:1/4;cursor:default}
+.bcell:not(.hero):hover{box-shadow:inset 0 0 0 2px var(--ink)}
+.bcell:focus-visible{outline:none;box-shadow:inset 0 0 0 3px var(--focus)}
+.bcell .solo{inset:8% 8% 26%;width:84%;height:66%}
+.bcell.hero .solo{inset:8% 8% 20%;height:72%}
+.bcell .lab{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;background:rgba(255,255,255,.94);color:#191A19;display:flex;flex-direction:column;text-align:left;font-size:var(--fs-xs);line-height:1.25}
+.bcell .lab b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bcell .lab span{color:#4F534B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bcell.hero .lab b{font-size:var(--fs-sm)}
+.mini-bento{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:2px;width:64px;aspect-ratio:4/5;border-radius:3px;overflow:hidden;background:var(--line-soft)}
+.mini-bento>span{position:relative;background:var(--photo-bg);overflow:hidden;container-type:size}
+.mini-bento>span:first-child{grid-row:1/3}
+
+/* ---------------- 05 Espectro ---------------- */
+.cband{display:flex;height:14px;margin:10px 12px 8px;border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)}
+.cband i{display:block;height:100%}
+.cband i+i{box-shadow:inset 1px 0 0 rgba(255,255,255,.6)}
+.srow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:var(--hit);padding:4px 12px;border:0;border-top:1px solid var(--line-soft);background:transparent;text-align:left;cursor:pointer}
+.srow:hover{background:var(--surface-2)}
+.srow[aria-pressed="true"]{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--ink)}
+.srow:focus-visible{outline-offset:-2px}
+.sw{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
+.share{font:600 var(--fs-xs)/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.sband{display:flex;height:10px;border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);flex:1;min-width:60px}
+.combo{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 10px}
+.combo .sw{display:inline-block;flex:none}
+.combo span{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);padding:3px 8px 3px 3px;border-radius:99px;background:var(--surface-2)}
+
+/* ---------------- 06 Custo por uso ---------------- */
+.cpu-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line-soft);font-size:var(--fs-xs);color:var(--muted)}
+.lock{display:inline-flex;align-items:center;gap:4px;font:600 var(--fs-cap)/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--thread-ink);background:var(--thread-soft);padding:4px 6px;border-radius:3px}
+.crow{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:start;padding:8px 12px;border-top:1px solid var(--line-soft)}
+.crow .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
+.crow .l1 b:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .l1 b{font-size:var(--fs-sm);color:var(--ink);font-weight:600}
+.crow .l1 b+b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.crow .l3{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px;font-size:var(--fs-xs);color:var(--muted)}
+.crow .pt>span{white-space:normal}
+.cval{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.cval b{font:600 var(--fs-sm)/1.1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
+.meter{height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:4px}
+.meter i{display:block;height:100%;border-radius:99px}
+.cfoot{margin:0;padding:10px 12px;border-top:1px solid var(--line-soft);font-size:var(--fs-xs);color:var(--muted)}
+.cfoot b{color:var(--ink);font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
+
+/* ---------------- 07 Silhueta ---------------- */
+.sil{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:0;border-bottom:1px solid var(--line-soft)}
+.sil .ph{border-right:1px solid var(--line-soft)}
+.waist{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(25,26,25,.55);z-index:3}
+.waist span{position:absolute;right:4px;font:600 var(--fs-xs)/1 var(--mono);background:rgba(255,255,255,.92);color:#191A19;padding:3px 5px;border-radius:3px}
+.waist .up{bottom:4px}.waist .dn{top:4px}
+.fig{display:grid;place-items:center;padding:8px;background:var(--surface)}
+.fig svg{width:100%;max-width:120px;height:auto}
+.fig text{font:600 11px var(--mono);fill:var(--muted)}
+
+/* ---------------- 08 Hype Focus ---------------- */
+.hf-top{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px}
+.hf-top .ph{border-radius:4px}
+.gauge{display:flex;align-items:center;gap:8px}
+.gauge svg{flex:none}
+.gauge text{font:700 15px var(--sans);fill:var(--ink)}
+.hrow{display:grid;grid-template-columns:40px minmax(0,1fr) 88px;gap:10px;align-items:center;padding:7px 12px;border-top:1px solid var(--line-soft)}
+.hm{display:flex;flex-direction:column;gap:3px;align-items:stretch}
+.hm .v{display:flex;justify-content:space-between;font:600 var(--fs-xs)/1 var(--mono);font-variant-numeric:tabular-nums}
+.hm .v span{color:var(--muted);font-weight:500}
+.bands{display:flex;flex-wrap:wrap;gap:4px 10px;padding:8px 12px;border-top:1px solid var(--line-soft);font:500 var(--fs-xs)/1.2 var(--mono);color:var(--muted)}
+.bands i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* ---------------- 09 Cartela sazonal ---------------- */
+.leaf{position:absolute;z-index:2;width:12px;height:8px;border-radius:0 70% 0 70%;background:var(--c);opacity:.95;rotate:var(--r)}
+.fc.play .leaf{animation:fall 2.2s cubic-bezier(.3,.6,.4,1) both;animation-delay:var(--d)}
+@keyframes fall{from{translate:var(--dx) -160px;opacity:0;rotate:calc(var(--r) - 140deg)}20%{opacity:1}}
+.palette{display:flex;gap:4px;align-items:center;padding:10px 12px 4px}
+.palette i{width:22px;height:22px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.palette span{font-size:var(--fs-xs);color:var(--muted);margin-left:6px}
+.match{margin:0;padding:4px 12px 10px;font-size:var(--fs-xs);color:var(--muted)}
+.match b{color:var(--ink);font-weight:600}
+.studio{width:var(--card-w);max-width:100%;border:1px solid var(--line-soft);border-radius:8px;background:var(--surface);padding:12px;display:grid;gap:8px}
+.studio h4{margin:0;font:600 var(--fs-cap)/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:var(--hit);padding:6px 0;border:0;background:transparent;text-align:left;cursor:pointer;font-size:var(--fs-sm)}
+.switch .trk{width:40px;height:24px;border-radius:99px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-soft);position:relative;flex:none;transition:background .15s}
+.switch .trk::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}
+.switch[aria-checked="true"] .trk{background:var(--thread)}
+.switch[aria-checked="true"] .trk::after{left:19px}
+.switch[aria-disabled="true"]{cursor:not-allowed;opacity:.55}
+.hint{margin:0;font-size:var(--fs-xs);color:var(--muted)}
+
+/* ---------------- 10 Blocos ---------------- */
+.blk{--plate:#A0A5A9;width:var(--card-w);max-width:100%;border:1.6px solid var(--line);border-radius:var(--r-card);overflow:hidden;position:relative;padding:6px 6px 8px;display:flex;flex-direction:column;gap:4px;color:#191A19;font-size:var(--fs-sm);line-height:1.35;
+  background-color:var(--plate);background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.32) 0 1.5px,rgba(0,0,0,.2) 2.6px,transparent 3.2px);background-size:10px 10px}
+.brick,.tile{--c:#F4F4F4;position:relative;background:var(--c);border-radius:2px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -2.5px 0 rgba(0,0,0,.22),0 1.5px 0 rgba(0,0,0,.3)}
+.brick{margin-top:5px;padding:6px 7px 7px}
+.brick::before{content:"";position:absolute;left:3px;right:3px;top:-5px;height:5px;pointer-events:none;
+  background:radial-gradient(1.4px 1.2px at 38% 72%,rgba(255,255,255,.7) 0 80%,transparent 100%) 0 0/11px 5px repeat-x,radial-gradient(3.6px 5px at 50% 100%,var(--c) 0 94%,transparent 100%) 0 0/11px 5px repeat-x;filter:drop-shadow(0 -.5px 0 rgba(0,0,0,.3))}
+.tile{padding:5px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1.5px 0 rgba(0,0,0,.14),0 1px 0 rgba(0,0,0,.28)}
+.print{display:block;background:#F4F4F4;color:#191A19;border-radius:2px;padding:2px 6px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-xs)}
+.print b{font-size:var(--fs-sm)}
+.stud{--c:#F4F4F4;width:20px;height:20px;border-radius:50%;flex:none;display:inline-grid;place-items:center;font:700 var(--fs-xs)/1 var(--mono);background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 2.4px,var(--c) 3px 4px,rgba(0,0,0,.2) 4.4px,var(--c) 5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1.5px 0 rgba(0,0,0,.3),0 1px 0 rgba(0,0,0,.3)}
+.brow{display:flex;gap:4px;align-items:center;min-width:0}
+.brow>*{min-width:0}
+.brow.acts{align-items:stretch}
+.bond>.brick:nth-child(odd){margin-right:12px}.bond>.brick:nth-child(even){margin-left:12px}
+.bframe{padding:5px}
+.bframe .ph{border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.bbtn{flex:1;flex-wrap:wrap;text-align:center;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:var(--hit);padding:6px 4px 7px;font:700 var(--fs-xs)/1 var(--mono);letter-spacing:.02em;color:#191A19}
+.bbtn.dk{color:#fff}
+.bbtn:active{translate:0 1.5px}
+.bbtn:focus-visible{outline:2px solid #fff;outline-offset:1px;box-shadow:0 0 0 4px #191A19}
+.bbtn[aria-pressed="true"]{box-shadow:inset 0 2px 0 rgba(0,0,0,.25)}
+.blk .sc-blk{border:1.5px solid rgba(255,255,255,.85);border-radius:4px;padding:2px 4px 5px;display:flex;flex-direction:column;gap:3px}
+.fc.play .brick,.fc.play .tile,.fc.play .stud{animation:drop .44s cubic-bezier(.3,1.45,.5,1) both;animation-delay:calc(var(--i,0) * 55ms)}
+@keyframes drop{from{translate:0 -22px;opacity:0}60%{opacity:1}}
+
+/* ---------------- estados ---------------- */
+.sk{background:linear-gradient(90deg,var(--surface-3) 0 40%,var(--surface-2) 50%,var(--surface-3) 60%) 0 0/300% 100%;border-radius:4px}
+.fc.play .sk{animation:shimmer 1.4s linear 3}
+@keyframes shimmer{to{background-position:-100% 0}}
+.state{display:grid;justify-items:center;text-align:center;gap:8px;padding:24px 16px;color:var(--muted);font-size:var(--fs-sm)}
+.state b{color:var(--ink);font-size:var(--fs-md)}
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:var(--hit);padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:500 var(--fs-sm) var(--sans);cursor:pointer}
+
+/* movimento: uma vez, ao entrar na tela; nada infinito. Reduzir movimento desliga tudo. */
+[data-motion="reduce"] .fc *,[data-motion="reduce"] .fc{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){ .fc *,.fc{animation:none!important;transition:none!important} }
+@media (max-width:760px){ .toolbar{position:static} }
+@media (max-width:640px){ .plate-name{font-size:22px} .anno-wrap{padding-right:34px} .photo-note{margin-left:0} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="brand">FashionAI</div>
+      <h1>Anatomias do Card, v18</h1>
+      <p class="lede">Prancha de componentes do card de <b>esquema de vestimenta</b> (<code>ClothesScheme</code>, RF5) e de <b>peça</b> (<code>ClothesPiece</code>). Todos os cards desta página são desenhados pelo mesmo código a partir de um único look de exemplo, com as mesmas peças, preços e contagens em todas as pranchas. As fotos são os assets de referência do acervo FAI (<code>public/assets_pecas</code>, miniaturas WebP); filtros CSS recolorem as peças só nesta prancha, para simular o look de exemplo.</p>
+    </div>
+    <div class="stamp">Prancha técnica<br><b>v18</b> · substitui a v17_1<br>setembro 2026</div>
+  </div>
+</header>
+
+<div class="changes" aria-label="O que mudou em relação à v17">
+  <div class="wrap">
+    <p><b>1 · Estrutura limpa e completa</b>Todo card de look tem cabeçalho do post, container do esquema, foto real e ações. Saíram do card os textos de especificação. Os 13 compactos seguem um único formato.</p>
+    <p><b>2 · Acessibilidade e movimento</b>Seleções anunciadas a leitores de tela, navegação por setas, foco visível, alvos de 44 px no toque, texto de no mínimo 12 px e contraste AA. Animação roda uma vez ao entrar na tela e desliga com “reduzir movimento”.</p>
+    <p><b>3 · Uma fonte de verdade</b>Um único look, com totais calculados. O Hype mostra o valor global e o pessoal, o Espectro traz uma estimativa rotulada e o Custo por uso usa uma fórmula explícita. O acabamento “premium” por preço virou nível por uso.</p>
+  </div>
+</div>
+
+<nav class="toolbar" aria-label="Controles da prancha">
+  <div class="wrap">
+    <div class="tool" role="group" aria-label="Tema">Tema
+      <span class="seg" data-tool="theme"><button type="button" data-v="system" aria-pressed="true">Sistema</button><button type="button" data-v="light" aria-pressed="false">Claro</button><button type="button" data-v="dark" aria-pressed="false">Escuro</button></span></div>
+    <div class="tool" role="group" aria-label="Largura do card">Largura
+      <span class="seg" data-tool="width"><button type="button" data-v="240" aria-pressed="false">240</button><button type="button" data-v="280" aria-pressed="true">280</button><button type="button" data-v="360" aria-pressed="false">360 px</button></span></div>
+    <div class="tool" role="group" aria-label="Movimento">Movimento
+      <span class="seg" data-tool="motion"><button type="button" data-v="auto" aria-pressed="true">Normal</button><button type="button" data-v="reduce" aria-pressed="false">Reduzido</button></span></div>
+    <div class="tool" role="group" aria-label="Limite editável do esquema">Limite RF9
+      <span class="seg" data-tool="edit"><button type="button" data-v="off" aria-pressed="true">Oculto</button><button type="button" data-v="on" aria-pressed="false">Visível</button></span></div>
+  </div>
+</nav>
+
+<main>
+<!-- ================= 0. SISTEMA ================= -->
+<section class="band" id="sistema">
+  <div class="wrap">
+    <h2 class="sec">0. Sistema do card</h2>
+    <p class="sec-sub">Um card de look tem três camadas. As duas de fora (cabeçalho e ações) pertencem ao <b>post</b> e mudam de dono quando alguém remixa. A do meio é o próprio <b>esquema</b>, que o RF9 edita, o RF13 referencia no DNA de Estilo e sobre o qual o RF20/RF21 posicionam selos. A separação é feita por superfície: o post é cinza e o esquema é o papel branco. O tracejado aparece só no modo de edição (botão “Limite RF9” acima).</p>
+    <div class="plate-body">
+      <div class="col">
+        <span class="col-label">Anatomia anotada · Lista vertical <span class="dimv" data-dim="anno"></span></span>
+        <div class="anno-wrap" id="anno"><div data-r="lista:full" data-id="anno"></div></div>
+      </div>
+      <div class="col" style="flex:1 1 320px;max-width:520px">
+        <ol class="anno-list">
+          <li><i>1</i><span><b>Cabeçalho do post</b>: avatar, autor, quando e visibilidade, com o menu ⋯. Fica fora do esquema.</span></li>
+          <li><i>2</i><span><b>Container do esquema</b>: superfície branca com contorno de 1 px. Tudo que é <code>ClothesScheme</code> mora aqui.</span></li>
+          <li><i>3</i><span><b>Foto</b>: a composição do RF11 (fundo + peças posicionadas). Obrigatória em toda anatomia. A arte de cada anatomia vai atrás ou ao lado da foto, nunca no lugar dela.</span></li>
+          <li><i>4</i><span><b>Título, selos e preço</b>: título em Fraunces com até 2 linhas, selos com letra (M marca, C celebridade, L look) e o total calculado das peças.</span></li>
+          <li><i>5</i><span><b>Peças</b>: miniatura, nome, marca · tamanho · cor e preço.</span></li>
+          <li><i>6</i><span><b>Metadados</b>: ocasião, estilo e estação, em uma linha de etiquetas.</span></li>
+          <li><i>7</i><span><b>Ações do post</b>: Curtir, Comentar, Compartilhar e Remixar, com a contagem no próprio botão. Salvar, Editar (só para quem publicou), Ver original (só em remixes) e Denunciar ficam no menu ⋯.</span></li>
+        </ol>
+        <div class="tbl" style="margin-top:16px"><table>
+          <thead><tr><th>Token</th><th>Valor</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td>Tipo</td><td class="tab">11 · 12 · 13 · 15 · 17 · 24 px</td><td>11 só em rótulo mono maiúsculo; 12 é o piso de texto; 17 é o título; 24 é o preço da Etiqueta</td></tr>
+            <tr><td>Espaço</td><td class="tab">4 · 8 · 12 px</td><td>12 px é a margem interna do esquema</td></tr>
+            <tr><td>Raio</td><td class="tab">4 · 6 px</td><td>4 px dentro, 6 px no card</td></tr>
+            <tr><td>Alvo</td><td class="tab">32 px (mouse) · 44 px (toque)</td><td><code>@media (pointer:coarse)</code></td></tr>
+            <tr><td>Largura</td><td class="tab">240–360 px na tela · 90 mm no PNG</td><td>O card é fluido; use o controle “Largura” para testar</td></tr>
+          </tbody>
+        </table></div>
+        <div class="tbl"><table id="contrast">
+          <thead><tr><th>Texto sobre fundo</th><th>Contraste</th></tr></thead><tbody></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="plate">
+      <div class="plate-top"><span class="plate-n">0.1</span><h3 class="plate-name">Densidades</h3></div>
+      <p class="thesis">São três densidades para o mesmo dado. <b>Ampliado</b> no feed e no detalhe. <b>Compacto</b> em listas de busca, perfil e notificações: cabeçalho, miniatura, título, preço, a assinatura visual da anatomia e três ações, com o resto no menu ⋯. <b>Miniatura</b> em grades de perfil e de guarda-roupa.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="d1"></span></span><div data-r="lista:full" data-id="d1"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="d2"></span></span><div data-r="lista:compact" data-id="d2"></div></div>
+        <div class="col"><span class="col-label">Miniatura <span class="dimv" data-dim="d3"></span></span><div data-r="lista:thumb" data-id="d3" style="width:160px"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= A. ENTIDADES E BASE ================= -->
+<section class="band alt" id="secaoA">
+  <div class="wrap">
+    <h2 class="sec">A. Entidades e anatomias base</h2>
+    <p class="sec-sub">Peça e look precisam ser distinguíveis antes de qualquer leitura: o rótulo de entidade, a proporção da foto e as ações são diferentes.</p>
+
+    <div class="plate">
+      <div class="plate-top"><span class="plate-n">A0</span><h3 class="plate-name">Peça × Look</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Peça · ampliado <span class="dimv" data-dim="pa"></span></span><div data-r="piece:full" data-p="blusa" data-id="pa"></div></div>
+        <div class="col"><span class="col-label">Peça · compacto <span class="dimv" data-dim="pc"></span></span><div data-r="piece:compact" data-p="blusa" data-id="pc"></div>
+          <span class="col-label" style="margin-top:12px">Peça · miniatura <span class="dimv" data-dim="pt"></span></span><div data-r="piece:thumb" data-p="blusa" data-id="pt" style="width:160px"></div></div>
+        <dl class="notes">
+          <dt>Como se distinguem</dt>
+          <dd><b>Peça</b>: rótulo “Peça · categoria”, foto 1:1 sobre fundo de estúdio, marca em destaque (logo ou monograma de 2 letras), sem container de esquema e ações de guarda-roupa (Curtir, Comentar, Salvar, Usar num look).</dd>
+          <dd><b>Look</b>: rótulo “Look · 4 peças”, foto 4:5 da composição, container do esquema e ações sociais (Curtir, Comentar, Compartilhar, Remixar).</dd>
+          <dt>Ordem de leitura da peça</dt>
+          <dd>Foto → nome → marca → categoria · tamanho · cor → preço → selos → ações. Na v17 o nome vinha só na terceira linha.</dd>
+          <dt>Quando falta dado</dt>
+          <dd>Sem logo: monograma. Sem marca: “Sem marca”. Sem foto: ícone da categoria com “Sem foto ainda”. Sem preço: “Preço não informado”. Exemplos na seção D.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate">
+      <div class="plate-top"><span class="plate-n">A1</span><h3 class="plate-name">Lista vertical</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">É o card base: foto, título e uma linha por peça. Serve para quem quer saber “o que é cada peça e quanto custa”.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="a1f"></span></span><div data-r="lista:full" data-id="a1f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="a1c"></span></span><div data-r="lista:compact" data-id="a1c"></div></div>
+        <dl class="notes">
+          <dt>Onde usar</dt><dd>Feed, perfil, resultado de busca.</dd>
+          <dt>Assinatura no compacto</dt><dd>As 4 miniaturas das peças.</dd>
+          <dt>Selo</dt><dd>Zona <code>TITLE_ROW</code>, com selos também por peça (inalterado em relação à v17).</dd>
+          <dt>No produto hoje</dt><dd>Existe (<code>SchemeCard layout="lista"</code>). Para alinhar à v18: ações com contagem, menu ⋯ e o compacto com miniatura.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate">
+      <div class="plate-top"><span class="plate-n">A2</span><h3 class="plate-name">Grade de peças</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">As peças em mosaico 2×2 abaixo da foto, cada célula com foto própria. Serve para comparar as peças visualmente.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="a2f"></span></span><div data-r="grade:full" data-id="a2f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="a2c"></span></span><div data-r="grade:compact" data-id="a2c"></div></div>
+        <dl class="notes">
+          <dt>Onde usar</dt><dd>Perfil e guarda-roupa, quando as peças importam mais que a composição.</dd>
+          <dt>Assinatura no compacto</dt><dd>A própria miniatura vira um mosaico 2×2 das peças.</dd>
+          <dt>Selo</dt><dd><code>TITLE_ROW</code> e em cada célula.</dd>
+          <dt>No produto hoje</dt><dd>Existe (<code>layout="grade"</code>).</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate">
+      <div class="plate-top"><span class="plate-n">A3</span><h3 class="plate-name">Foto hero + lista lateral</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">A foto grande à esquerda e as peças ao lado, na mesma faixa. As marcas aparecem uma vez só.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="a3f"></span></span><div data-r="hero:full" data-id="a3f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="a3c"></span></span><div data-r="hero:compact" data-id="a3c"></div></div>
+        <dl class="notes">
+          <dt>Onde usar</dt><dd>Detalhe do look e feed em telas largas. A 240 px os nomes quebram em 2 linhas, o que é aceitável.</dd>
+          <dt>Assinatura no compacto</dt><dd>Monogramas das marcas, com 2 letras (a v17 usava 1 letra, ambígua).</dd>
+          <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
+          <dt>No produto hoje</dt><dd>Existe (<code>layout="lateral"</code>).</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B. VARIAÇÕES ================= -->
+<section class="band" id="secaoB">
+  <div class="wrap">
+    <h2 class="sec">B. Variações de anatomia do look</h2>
+    <p class="sec-sub">Cada variação muda o miolo do container e mantém o cabeçalho, a foto, o título e as ações. O selo de maturidade diz se a anatomia pode ir para o produto e se precisa de teste com pessoas antes do feed.</p>
+
+    <div class="plate" id="p01">
+      <div class="plate-top"><span class="plate-n">01</span><h3 class="plate-name">Passarela</h3><span class="status"><span class="st ok">Pronta</span><span class="st test">Testar com usuários</span></span></div>
+      <p class="thesis">As peças desfilam na ordem que o público escolheu: a mais curtida vem à frente, maior e com mais luz.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b1f"></span></span><div data-r="passarela:full" data-id="b1f"></div><button type="button" class="replay" data-replay="b1f">Repetir animação</button></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b1c"></span></span><div data-r="passarela:compact" data-id="b1c"></div></div>
+        <dl class="notes">
+          <dt>Leitura do dado</dt><dd>Posição, tamanho e luz seguem o mesmo dado. A mais curtida fica à frente, com 44 % da largura, e a intensidade do holofote é proporcional às curtidas (100 % para a mais curtida, 17 % para a menos curtida). Cada peça mostra “#posição · ♥ curtidas”.</dd>
+          <dt>Por que “do público”</dt><dd>Num desfile, a ordem é decisão do estilista. Aqui ela vem de votação, e o card explica isso em “Por que esta ordem?”.</dd>
+          <dt>Dados</dt><dd><span class="dep y">curtidas por peça · existe</span></dd>
+          <dt>Quando falta dado</dt><dd>Com curtidas empatadas ou zeradas, vale a ordem de montagem do look e a luz fica igual para todas. Com 1 peça, use a versão C1.</dd>
+          <dt>Movimento</dt><dd>Luz e peças entram uma vez (0,9 s). Sem flashes em loop.</dd>
+          <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
+          <dt>No produto hoje</dt><dd>Tapete vermelho com fotos e holofotes piscando em loop. Para alinhar: luz proporcional, uma entrada só, legenda.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p02">
+      <div class="plate-top"><span class="plate-n">02</span><h3 class="plate-name">Etiqueta</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">A etiqueta de preço de cada peça, uma por vez. As mini-etiquetas escolhem a peça.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado · interativo <span class="dimv" data-dim="b2f"></span></span><div data-r="etiqueta:full" data-id="b2f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b2c"></span></span><div data-r="etiqueta:compact" data-id="b2c"></div></div>
+        <dl class="notes">
+          <dt>Interação</dt><dd>As mini-etiquetas formam um grupo de opções (<code>role="radiogroup"</code>). Clique ou toque troca a peça. No teclado, Tab entra no grupo e as setas, Home e End trocam. O estado é anunciado com <code>aria-checked</code>.</dd>
+          <dt>Dados</dt><dd><span class="dep y">preço</span><span class="dep y">tamanho</span><span class="dep y">cor</span><span class="dep y">material</span><span class="dep p">coleção · opcional</span><span class="dep p">código · opcional</span></dd>
+          <dt>Quando falta dado</dt><dd>Linha ausente some; preço ausente vira “Preço não informado” no lugar do número grande.</dd>
+          <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
+          <dt>No produto hoje</dt><dd>Etiquetas penduradas lado a lado, sem seletor. As duas podem conviver: a do produto para visão geral e esta para o detalhe.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p03">
+      <div class="plate-top"><span class="plate-n">03</span><h3 class="plate-name">Raio-X</h3><span class="status"><span class="st ok">Pronta</span><span class="st test">Testar com usuários</span></span></div>
+      <p class="thesis">Decompõe o look: cada peça numerada sobre a própria foto, com material, cor e a peça-âncora.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b3f"></span></span><div data-r="raiox:full" data-id="b3f"></div><button type="button" class="replay" data-replay="b3f">Repetir animação</button></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b3c"></span></span><div data-r="raiox:compact" data-id="b3c"></div></div>
+        <dl class="notes">
+          <dt>Leitura do dado</dt><dd>Os pinos ficam no centro de cada peça na composição (<code>SchemeItem.positionX/Y</code>). A <b>peça-âncora</b> é a de maior área na composição e recebe pino branco e selo “Âncora”. As linhas de espessura variável e o pulso de ECG da v17 saíram, porque pareciam medição e não tinham dado.</dd>
+          <dt>Dados</dt><dd><span class="dep y">posição e escala das peças</span><span class="dep y">material</span><span class="dep y">cor</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem material: a linha mostra só a cor. Sem composição: pinos sobre a lista, sem foto de scanner (use Lista vertical).</dd>
+          <dt>Movimento</dt><dd>Uma varredura de 1,8 s ao entrar. Nada fica passando sobre a foto.</dd>
+          <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
+          <dt>No produto hoje</dt><dd>Scanner ciano com as fotos invertidas (negativo) e varredura infinita. Para alinhar: foto em cores reais, âncora e uma varredura.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p04">
+      <div class="plate-top"><span class="plate-n">04</span><h3 class="plate-name">Bento assimétrico</h3><span class="status"><span class="st ok">Pronta</span><span class="st test">Testar com usuários</span></span></div>
+      <p class="thesis">Um bloco grande em destaque e três menores. Tocar num bloco menor o leva para o destaque, sem mudar a altura do card.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado · interativo <span class="dimv" data-dim="b4f"></span></span><div data-r="bento:full" data-id="b4f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b4c"></span></span><div data-r="bento:compact" data-id="b4c"></div></div>
+        <dl class="notes">
+          <dt>Interação</dt><dd>Os blocos menores são botões (“Destacar Calça reta”). A grade tem proporção fixa de 1:1, então o card não pula ao trocar. A v17 variava entre 267 e 290 px.</dd>
+          <dt>O que mudou</dt><dd>O destaque é sempre uma foto (o look ou uma peça). Saíram “Estado exibido: clique no logo 2”, “assimetria ativa” e a mistura de dados de look e peça.</dd>
+          <dt>Dados</dt><dd><span class="dep y">fotos das peças</span><span class="dep y">preço</span></dd>
+          <dt>Selo</dt><dd><code>META_BLOCK</code>.</dd>
+          <dt>No produto hoje</dt><dd>Mesmo modelo (destaque + células + estatística). Para alinhar: incluir o look inteiro como opção de destaque.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p05">
+      <div class="plate-top"><span class="plate-n">05</span><h3 class="plate-name">Espectro</h3><span class="status"><span class="st ok">Pronta</span><span class="st data">Dado estimado</span></span></div>
+      <p class="thesis">A paleta do look em proporção, com o nome de cada cor sempre visível. Tocar numa cor destaca a peça na foto.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado · interativo <span class="dimv" data-dim="b5f"></span></span><div data-r="espectro:full" data-id="b5f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b5c"></span></span><div data-r="espectro:compact" data-id="b5c"></div>
+          <span class="col-label" style="margin-top:12px">Compacto · sem estimativa de área <span class="dimv" data-dim="b5e"></span></span><div data-r="espectro:compact" data-v="noarea" data-id="b5e"></div></div>
+        <dl class="notes">
+          <dt>De onde vem a proporção</dt><dd>É a área de cada peça na composição, calculada com a escala do item e a proporção da foto (<code>SchemeItem.scale</code> × aspecto da imagem) e arredondada para múltiplos de 5 %. O card diz “≈ área estimada” e explica em “Como é estimado”.</dd>
+          <dt>Interação</dt><dd>Cada linha é um botão que liga ou desliga o destaque (<code>aria-pressed</code>). Esc limpa. O nome da cor não fica escondido atrás de um toque.</dd>
+          <dt>Dados</dt><dd><span class="dep y">cor da peça (taxonomia)</span><span class="dep y">escala e aspecto</span><span class="dep p">cor medida na foto (RF4) · melhora a precisão</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem escala ou sem foto, as faixas ficam iguais e o rótulo passa a “por peça”.</dd>
+          <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
+          <dt>No produto hoje</dt><dd>A proporção é calculada pelo número de peças. Para alinhar: usar a área estimada e o destaque na foto.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p06">
+      <div class="plate-top"><span class="plate-n">06</span><h3 class="plate-name">Custo por uso</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">Quanto cada peça custou por vez que foi usada. O dado é pessoal, então esta anatomia aparece só para quem é dono do look.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b6f"></span></span><div data-r="custo:full" data-id="b6f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b6c"></span></span><div data-r="custo:compact" data-id="b6c"></div>
+          <span class="col-label" style="margin-top:12px">Ampliado · com dados ausentes <span class="dimv" data-dim="b6e"></span></span><div data-r="custo:full" data-v="cpumissing" data-id="b6e"></div></div>
+        <dl class="notes">
+          <dt>Fórmulas</dt><dd>Por peça: preço ÷ usos. Look inteiro: total gasto ÷ total de usos (R$ 1.899,60 ÷ 53 = R$ 35,84). A v17 mostrava a média das razões (R$ 68,58), que não é o que a pessoa espera ler.</dd>
+          <dt>Meta</dt><dd>R$ 20 por uso, a mesma do produto. A barra mostra quanto falta, e o card indica a peça com melhor custo e a que pede mais uso.</dd>
+          <dt>Dados</dt><dd><span class="dep y">preço</span><span class="dep y">usos (<code>wearCount</code>, diário de uso)</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem preço: “Preço não informado” e a peça sai do total. Sem uso: “Ainda não usada”, sem R$ 0 e sem divisão por zero.</dd>
+          <dt>Selo</dt><dd><code>HEADER</code>.</dd>
+          <dt>No produto hoje</dt><dd>Existe com meta e estados. Para alinhar: fórmula do total e o aviso “Só você vê”.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p07">
+      <div class="plate-top"><span class="plate-n">07</span><h3 class="plate-name">Silhueta &amp; Proporção</h3><span class="status"><span class="st ok">Pronta</span><span class="st new">Família depende de campo novo</span><span class="st test">Testar com usuários</span></span></div>
+      <p class="thesis">A forma que o look desenha: onde fica a divisão entre a parte de cima e a de baixo e qual família de silhueta a pessoa declarou.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b7f"></span></span><div data-r="silhueta:full" data-id="b7f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b7c"></span></span><div data-r="silhueta:compact" data-id="b7c"></div></div>
+        <dl class="notes">
+          <dt>Leitura do dado</dt><dd>A divisão é medida na composição: a cintura fica entre a base da peça de cima e o topo da de baixo, e a altura vai do topo da peça de cima até a base do calçado. Aqui dá 31 % / 69 %, perto da regra dos terços. A família (“Reta”) é <b>declarada</b> por quem publicou e aparece assim no card.</dd>
+          <dt>O que saiu</dt><dd>As barras de ombro, busto, cintura e quadril com percentuais, que nenhum dado do app sustenta.</dd>
+          <dt>Dados</dt><dd><span class="dep y">posição e escala das peças</span><span class="dep y">categoria</span><span class="dep n">família de silhueta · campo novo, opcional</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem família declarada, o card mostra só a divisão. Sem peça de cima e de baixo (vestido), mostra “Coluna única”.</dd>
+          <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
+          <dt>No produto hoje</dt><dd>Manequim pintado com a contagem de peças por categoria. Para alinhar: divisão medida e família declarada.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p08">
+      <div class="plate-top"><span class="plate-n">08</span><h3 class="plate-name">Hype Focus</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">Qual peça do look está em alta na plataforma, com o valor global e o desta peça lado a lado.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b8f"></span></span><div data-r="hype:full" data-id="b8f"></div></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b8c"></span></span><div data-r="hype:compact" data-id="b8c"></div>
+          <span class="col-label" style="margin-top:12px">Compacto · hype em formação <span class="dimv" data-dim="b8e"></span></span><div data-r="hype:compact" data-v="nohype" data-id="b8e"></div></div>
+        <dl class="notes">
+          <dt>Global × esta peça</dt><dd><b>Global</b> (<code>hypeScoreGlobal</code>) é a média das peças parecidas de qualquer pessoa. <b>Esta peça</b> (<code>hypeScore</code>) é o engajamento desta peça. O card mostra os dois com o nome escrito, e “Como é calculado” abre a explicação do RF6.</dd>
+          <dt>Faixas</dt><dd>Paleta de status fixa: 0–29, 30–49, 50–69 e 70–100. A cor pinta só as barras; o número está sempre escrito em cor de texto.</dd>
+          <dt>Dados</dt><dd><span class="dep y">hypeScore</span><span class="dep y">hypeScoreGlobal</span></dd>
+          <dt>Quando falta dado</dt><dd>Com poucas interações: “Hype em formação”, sem medidor.</dd>
+          <dt>Selo</dt><dd><code>HEADER</code>.</dd>
+          <dt>No produto hoje</dt><dd>Mostra o valor pessoal (<code>piece.hypeScore</code>) como se fosse o único. Para alinhar: ler também o global e rotular os dois.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p09">
+      <div class="plate-top"><span class="plate-n">09</span><h3 class="plate-name">Cartela sazonal</h3><span class="status"><span class="st ok">Pronta</span></span></div>
+      <p class="thesis">A estação do look vira o fundo da foto e o card indica quais peças conversam com a paleta da estação.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b9f"></span></span><div data-r="cartela:full" data-id="b9f"></div><button type="button" class="replay" data-replay="b9f">Repetir animação</button></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b9c"></span></span><div data-r="cartela:compact" data-id="b9c"></div>
+          <span class="col-label" style="margin-top:12px">Controle no Background Studio · etapa 4</span>
+          <div class="studio" id="studio"></div></div>
+        <dl class="notes">
+          <dt>Onde mora o controle</dt><dd>O botão “Aplicar arte sazonal automática” fica no editor, não no card publicado. Ele começa desligado, é um <code>role="switch"</code> de verdade e fica desabilitado, com a explicação, quando a estação não está preenchida.</dd>
+          <dt>Leitura do dado</dt><dd>A estação vem de <code>ClothesScheme.season</code>. A correspondência de cada peça com a paleta é calculada pela cor: peças neutras contam como “neutras”, e as demais comparam com as 4 cores da estação.</dd>
+          <dt>Dados</dt><dd><span class="dep y">season</span><span class="dep y">presets RF11</span><span class="dep y">cor da peça</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem estação, a anatomia não é oferecida. O produto hoje usa Primavera como padrão, o que deve mudar.</dd>
+          <dt>Movimento</dt><dd>As folhas caem uma vez e ficam nas bordas, sem cobrir as peças.</dd>
+          <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="plate" id="p10">
+      <div class="plate-top"><span class="plate-n">10</span><h3 class="plate-name">Blocos</h3><span class="status"><span class="st ok">Pronta</span><span class="st test">Testar com usuários</span><span class="st new">Nome pendente</span></span></div>
+      <p class="thesis">O card inteiro é montado em blocos de encaixe, menos as fotos. O conteúdo é o mesmo da Lista vertical; o que muda é o material do card.</p>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ampliado <span class="dimv" data-dim="b10f"></span></span><div data-r="blocos:full" data-id="b10f"></div><button type="button" class="replay" data-replay="b10f">Montar de novo</button></div>
+        <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b10c"></span></span><div data-r="blocos:compact" data-id="b10c"></div></div>
+        <dl class="notes">
+          <dt>Regras</dt><dd>Bloco com pinos é estrutura, placa lisa leva texto e placa redonda leva selo e avatar. A cor de cada bloco é a cor da peça, quantizada para 10 cores de bloco. Todo texto vai numa placa branca impressa, com 12 px ou mais.</dd>
+          <dt>Ações</dt><dd>Curtir, Comentar e Remixar são botões de verdade, com foco visível e contagem impressa.</dd>
+          <dt>Nome</dt><dd>Esta prancha usa <b>Blocos</b>, porque LEGO é marca registrada. No app a opção aparece hoje como “LEGO”, por um pedido anterior. A decisão é do time; se ficar “Blocos”, é preciso trocar os rótulos em <code>SCHEME_ANATOMIES</code>, <code>PIECE_ANATOMIES</code>, <code>dna-card.tsx</code> e i18n.</dd>
+          <dt>Movimento</dt><dd>Montagem de 60 ms por bloco, uma vez ao entrar na tela. “Montar de novo” repete a montagem deste card.</dd>
+          <dt>Selo</dt><dd><code>STUDS</code> (placas redondas M, C e L).</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= C. PEÇA ================= -->
+<section class="band alt" id="secaoC">
+  <div class="wrap">
+    <h2 class="sec">C. Anatomias da peça</h2>
+    <p class="sec-sub">São sete anatomias com versão para uma peça só. Silhueta, Hype Focus e Cartela ficam de fora porque dependem de várias peças ou da estação do look. O nível <b>Clássica do armário</b> (30 usos ou mais) substitui o acabamento “premium” por preço da v17: premiar o uso é coerente com o Custo por uso e não cria hierarquia por poder de compra.</p>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C1</span><h3 class="plate-name">Passarela · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Mais curtida do look <span class="dimv" data-dim="c1a"></span></span><div data-r="p-passarela:full" data-p="blusa" data-id="c1a"></div><button type="button" class="replay" data-replay="c1a">Repetir animação</button></div>
+        <div class="col"><span class="col-label">Menos curtida do look <span class="dimv" data-dim="c1b"></span></span><div data-r="p-passarela:full" data-p="bolsa" data-id="c1b"></div></div>
+        <dl class="notes"><dt>Regra</dt><dd>A luz é igual às curtidas da peça divididas pelas da peça mais curtida do mesmo look: 1.240 → 100 %, 210 → 17 %. O card escreve a porcentagem para que a luz não precise ser adivinhada.</dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C2</span><h3 class="plate-name">Etiqueta · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Comum · 7 usos <span class="dimv" data-dim="c2a"></span></span><div data-r="p-etiqueta:full" data-p="blusa" data-id="c2a"></div></div>
+        <div class="col"><span class="col-label">Clássica do armário · 30 usos <span class="dimv" data-dim="c2b"></span></span><div data-r="p-etiqueta:full" data-p="bolsa" data-id="c2b"></div></div>
+        <dl class="notes"><dt>Nível por uso</dt><dd>Com 30 usos ou mais, a etiqueta ganha moldura dupla em verde-petróleo e a faixa “Clássica do armário · 30 usos”. O preço continua sendo só um dado e não muda a moldura.</dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C3</span><h3 class="plate-name">Raio-X · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Ficha técnica <span class="dimv" data-dim="c3a"></span></span><div data-r="p-raiox:full" data-p="calca" data-id="c3a"></div><button type="button" class="replay" data-replay="c3a">Repetir animação</button></div>
+        <dl class="notes"><dt>O que mudou</dt><dd>O pulso de ECG com “142 bpm” saiu, porque o valor não saía de nenhum dado e parecia sinal vital. No lugar entrou a ficha técnica da peça, com dados reais: material, cor, tamanho, categoria, usos e curtidas.</dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C4</span><h3 class="plate-name">Bento · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Peça individual <span class="dimv" data-dim="c4a"></span></span><div data-r="p-bento:full" data-p="tenis" data-id="c4a"></div></div>
+        <dl class="notes"><dt>Estrutura</dt><dd>Foto em destaque e três blocos de dado: preço, usos e curtidas. Sem seletor, porque há uma peça só.</dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C5</span><h3 class="plate-name">Espectro · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Cor e combinações <span class="dimv" data-dim="c5a"></span></span><div data-r="p-espectro:full" data-p="calca" data-id="c5a"></div></div>
+        <dl class="notes"><dt>O que mudou</dt><dd>Uma faixa de 100 % não diz nada. A versão por peça mostra a cor e sugere combinações pela roda de cores (complementar e análogas), apontando quais peças do próprio armário já combinam.</dd>
+          <dt>Dados</dt><dd><span class="dep y">cor da peça</span><span class="dep y">peças do armário</span></dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C6</span><h3 class="plate-name">Custo por uso · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Comum · 7 usos <span class="dimv" data-dim="c6a"></span></span><div data-r="p-custo:full" data-p="blusa" data-id="c6a"></div></div>
+        <div class="col"><span class="col-label">Clássica do armário · 30 usos <span class="dimv" data-dim="c6b"></span></span><div data-r="p-custo:full" data-p="bolsa" data-id="c6b"></div></div>
+        <dl class="notes"><dt>O ponto do exemplo</dt><dd>A bolsa de R$ 899,90 custa R$ 30,00 por uso, perto dos R$ 35,70 da blusa de R$ 249,90, porque foi usada 30 vezes. É o uso que ganha a moldura, não o preço.</dd></dl>
+      </div></div>
+
+    <div class="plate"><div class="plate-top"><span class="plate-n">C7</span><h3 class="plate-name">Blocos · peça</h3></div>
+      <div class="plate-body">
+        <div class="col"><span class="col-label">Comum <span class="dimv" data-dim="c7a"></span></span><div data-r="p-blocos:full" data-p="blusa" data-id="c7a"></div><button type="button" class="replay" data-replay="c7a">Montar de novo</button></div>
+        <div class="col"><span class="col-label">Clássica do armário <span class="dimv" data-dim="c7b"></span></span><div data-r="p-blocos:full" data-p="bolsa" data-id="c7b"></div><button type="button" class="replay" data-replay="c7b">Montar de novo</button></div>
+        <dl class="notes"><dt>Nível por uso</dt><dd>A peça clássica ganha uma placa impressa “30 usos” em verde-petróleo, no lugar dos blocos dourados por preço da v17.</dd></dl>
+      </div></div>
+  </div>
+</section>
+
+<!-- ================= D. ESTADOS ================= -->
+<section class="band" id="secaoD">
+  <div class="wrap">
+    <h2 class="sec">D. Estados</h2>
+    <p class="sec-sub">São os estados que todo card precisa ter antes de ir ao feed. Eles valem para todas as anatomias, porque cabeçalho, foto, título e ações são compartilhados.</p>
+    <div class="grid-states">
+      <div class="col"><span class="col-label">Carregando</span><div data-r="state:loading" data-id="s1"></div></div>
+      <div class="col"><span class="col-label">Erro ao carregar</span><div data-r="state:error" data-id="s2"></div></div>
+      <div class="col"><span class="col-label">Look privado</span><div data-r="state:private" data-id="s3"></div></div>
+      <div class="col"><span class="col-label">Look removido</span><div data-r="state:removed" data-id="s4"></div></div>
+      <div class="col"><span class="col-label">Sem foto, marca e preço</span><div data-r="lista:full" data-v="missing" data-id="s5"></div></div>
+      <div class="col"><span class="col-label">Texto longo</span><div data-r="lista:compact" data-v="long" data-id="s6"></div>
+        <span class="col-label" style="margin-top:12px">Peça sem foto e sem marca</span><div data-r="piece:compact" data-p="blusa" data-v="missing" data-id="s7"></div></div>
+      <div class="col"><span class="col-label">Fotos difíceis</span><div data-r="state:photos" data-id="s8"></div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="fin">
+  <div class="wrap">
+    <h3>Decisões da v18</h3>
+    <ul>
+      <li>O container do esquema é uma superfície (papel branco sobre o post cinza). O tracejado rosa ficou só para o modo de edição do RF9.</li>
+      <li>Toda anatomia mostra foto real. A arte (palco, scanner, estação, blocos) fica atrás ou ao redor dela.</li>
+      <li>Ações com contagem no botão. Salvar, Editar (só dono), Ver original (só remix, o antigo “Retornar”) e Denunciar ficam no menu ⋯.</li>
+      <li>O compacto é único: cabeçalho, miniatura 4:5, título, preço, assinatura da anatomia, Curtir, Comentar e Remixar.</li>
+      <li>Texto de no mínimo 12 px (11 px só em rótulo mono maiúsculo), contraste AA, alvos de 44 px no toque e foco de 2 px.</li>
+      <li>Animação só uma vez, ao entrar na tela. “Reduzir movimento” (sistema ou RF23) desliga tudo.</li>
+      <li>Um look de exemplo, com totais calculados: R$ 1.899,60 e 53 usos.</li>
+      <li>O nível “Clássica do armário” (30 usos ou mais) substitui o “premium” por preço.</li>
+      <li>As zonas de selo (<code>SEAL_PLACEMENT</code>) são as mesmas da v17, então o backend não muda.</li>
+    </ul>
+    <h3>Dependências de dado</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Anatomia</th><th>Precisa de</th><th>Situação no app</th></tr></thead>
+      <tbody>
+        <tr><td>Espectro, Raio-X (âncora), Silhueta (divisão)</td><td>área e posição das peças na composição</td><td><span class="dep y">existe</span> <code>SchemeItem.positionX/Y</code>, <code>scale</code> e aspecto da imagem; falta calcular no front</td></tr>
+        <tr><td>Espectro, Blocos, Cartela</td><td>cor da peça</td><td><span class="dep p">parcial</span> <code>colorHex</code> vem da taxonomia; cor medida na foto (RF4) melhora</td></tr>
+        <tr><td>Silhueta</td><td>família declarada</td><td><span class="dep n">campo novo, opcional</span></td></tr>
+        <tr><td>Hype Focus</td><td>hype global e pessoal por peça</td><td><span class="dep y">existe</span> no domínio; o front lê só o pessoal</td></tr>
+        <tr><td>Custo por uso, nível Clássica</td><td>preço e usos</td><td><span class="dep y">existe</span> <code>price</code>, <code>wearCount</code></td></tr>
+        <tr><td>Cartela sazonal</td><td>estação e presets</td><td><span class="dep y">existe</span>; falta o switch no Background Studio e tirar o padrão Primavera</td></tr>
+        <tr><td>Passarela</td><td>curtidas por peça</td><td><span class="dep y">existe</span></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Relação com o produto</h3>
+    <p>As 13 anatomias já existem em <code>components/scheme-anatomies.tsx</code> (<code>AnatomyBody</code>), com desenho da v17. As notas “No produto hoje” de cada prancha dizem o que muda para alinhar à v18. A v17_1 fica em <code>docs/anatomias/</code> como referência histórica.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+"use strict";
+/* ============================ DADOS ============================ */
+const BASE = document.documentElement.dataset.assets || "../../public/_derived/pecas_thumb/";
+const LOOK = {
+  title: "Fim de tarde",
+  desc: "Linho, jeans e couro caramelo para o fim de tarde na cidade.",
+  owner: { name: "Marina Alves", ini: "MA" }, when: "há 2 h", vis: "Público",
+  occasion: "casual", style: "minimal", season: "AUTUMN", silhouette: "Reta",
+  seals: [{ t: "brand", l: "M", name: "Selo de marca: ZARA" }, { t: "look", l: "L", name: "Selo Look do Dia" }],
+  m: { likes: 128, comments: 34, shares: 12, remixes: 5 },
+  bg: "radial-gradient(120% 90% at 50% 12%, #F8F3EC 0%, #E4D9CB 100%)",
+  pieces: [
+    { id: "blusa", name: "Blusa de linho", brand: "ZARA", mono: "ZA", cat: "Parte superior", slot: "top", size: "M", color: "Preto", hex: "#1F1F22", material: "Linho", collection: "Outono 2024", code: "ZU2024-01", price: 249.90, uses: 7, likes: 1240, comments: 18, hg: 71, hp: 66, img: "01_parte_superior_03_blouse_blusa", ar: 427 / 640, rc: "grayscale(1) brightness(.42) contrast(1.25)", pos: { x: 44, y: 23, w: 46 } },
+    { id: "calca", name: "Calça reta", brand: "LEVI'S", mono: "LV", cat: "Parte inferior", slot: "bottom", size: "40", color: "Azul jeans", hex: "#3B5A8C", material: "Denim", collection: "Inverno 2024", code: "LV2024-02", price: 349.90, uses: 12, likes: 890, comments: 11, hg: 55, hp: 58, img: "02_parte_inferior_01_jeans", ar: 640 / 585, rc: "none", pos: { x: 44, y: 58, w: 40 } },
+    { id: "tenis", name: "Tênis urbano", brand: "NIKE", mono: "NK", cat: "Calçados", slot: "shoes", size: "39", color: "Branco", hex: "#ECEBE6", material: "Lona", collection: "Verão 2024", code: "NK2024-03", price: 399.90, uses: 4, likes: 540, comments: 6, hg: 78, hp: 70, img: "03_calcados_01_tenis_casual", ar: 427 / 640, rc: "grayscale(1) brightness(1.6) contrast(.8)", pos: { x: 42, y: 88, w: 34 } },
+    { id: "bolsa", name: "Bolsa tote", brand: "COACH", mono: "CO", cat: "Acessórios", slot: "acc", size: "Único", color: "Caramelo", hex: "#A86A3A", material: "Couro", collection: "Resort 2024", code: "CO2024-04", price: 899.90, uses: 30, likes: 210, comments: 3, hg: 44, hp: 38, img: "04_acessorios_04_tote", ar: 585 / 640, rc: "grayscale(1) sepia(1) saturate(2.4) hue-rotate(-10deg) brightness(.92)", pos: { x: 79, y: 56, w: 30 } }
+  ]
+};
+const SEASONS = { AUTUMN: { name: "Outono", preset: "Ember", art: "linear-gradient(165deg,#F6D49A 0%,#D9914F 55%,#8C4524 100%)", palette: ["#F2C879", "#C97C3D", "#7A3B1E", "#4A2511"] } };
+const GOAL = 20, CLASSIC = 30;
+
+/* ============================ UTIL ============================ */
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const brl = (v) => v == null ? null : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl0 = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const int = (v) => v.toLocaleString("pt-BR");
+const src = (n, s) => `${BASE}${n}-${s || 640}.webp`;
+const srcset = (n) => `${src(n, 320)} 320w, ${src(n, 640)} 640w`;
+const byId = (id) => LOOK.pieces.find((p) => p.id === id);
+let uid = 0;
+const P = (d) => `<path d="${d}"/>`;
+const ICONS = {
+  heart: `<path class="fillable" d="M12 20s-7-4.4-9.3-8.8A5.2 5.2 0 0 1 12 6.1a5.2 5.2 0 0 1 9.3 5.1C19 15.6 12 20 12 20z"/>`,
+  comment: P("M4 5h16v11H9l-5 4z"), share: P("M4 13v6h16v-6M12 3v12M7.5 7.5 12 3l4.5 4.5"),
+  remix: P("M17 3l3 3-3 3M20 6H9a5 5 0 0 0-5 5M7 21l-3-3 3-3M4 18h11a5 5 0 0 0 5-5"),
+  more: P("M5 12h.01M12 12h.01M19 12h.01"), save: `<path class="fillable" d="M6 3h12v18l-6-4-6 4z"/>`,
+  globe: P("M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.6 9h16.8M3.6 15h16.8M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"),
+  lock: P("M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"), chev: P("M9 6l6 6-6 6"),
+  hanger: P("M12 8a2 2 0 1 1 2-2M12 8v2l-9 7h18l-9-7"), alert: P("M12 3 2 20h20zM12 10v4M12 17h.01"),
+  refresh: P("M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"), trash: P("M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"),
+  star: P("M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"), leaf: P("M5 19c0-8 6-14 15-14 0 9-6 15-14 15M5 19l7-7")
+};
+const ico = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 3 : 1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[n]}</svg>`;
+
+/* cálculos a partir da composição (posição e escala de cada peça, aspecto da foto) */
+const hPct = (p) => p.pos.w * p.ar / 1.25; // altura em % da moldura 4:5
+function areaShares(pieces) {
+  const raw = pieces.map((p) => p.pos.w * p.pos.w * p.ar), tot = raw.reduce((a, b) => a + b, 0);
+  const pct = raw.map((r) => 100 * r / tot), fl = pct.map((v) => Math.floor(v / 5) * 5);
+  let rest = 100 - fl.reduce((a, b) => a + b, 0);
+  pct.map((v, i) => [v - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rest > 0) { fl[i] += 5; rest -= 5; } });
+  return fl;
+}
+function waist(pieces) {
+  const t = pieces.find((p) => p.slot === "top"), b = pieces.find((p) => p.slot === "bottom"), s = pieces.find((p) => p.slot === "shoes");
+  if (!t || !b) return null;
+  const top = t.pos.y - hPct(t) / 2, tb = t.pos.y + hPct(t) / 2, bt = b.pos.y - hPct(b) / 2;
+  const foot = s ? s.pos.y + hPct(s) / 2 : b.pos.y + hPct(b) / 2, line = (tb + bt) / 2;
+  return { line, up: Math.round(100 * (line - top) / (foot - top)), top, foot };
+}
+function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function hueChroma(hex) { const [r, g, b] = rgb(hex).map((v) => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), c = mx - mn; let h = 0; if (c) h = mx === r ? ((g - b) / c) % 6 : mx === g ? (b - r) / c + 2 : (r - g) / c + 4; return { hue: (h * 60 + 360) % 360, chroma: c }; }
+const hueDist = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+function harmony(pieces) {
+  const ch = pieces.filter((p) => hueChroma(p.hex).chroma > .18), neu = pieces.length - ch.length;
+  const n = neu ? `, com ${neu === 1 ? "um neutro" : neu + " neutros"}` : "";
+  if (ch.length < 2) return "Neutra" + (ch.length ? `: ${ch[0].color.toLowerCase()} sobre neutros` : "");
+  const spread = Math.max(...ch.flatMap((a) => ch.map((b) => hueDist(hueChroma(a.hex).hue, hueChroma(b.hex).hue))));
+  const kind = spread > 150 ? "Complementar" : spread < 60 ? "Análoga" : "Contraste livre";
+  return `${kind}: ${ch.map((p) => p.color.toLowerCase()).join(" × ")}${n}`;
+}
+const hsl = (h, s, l) => `hsl(${Math.round(h)} ${s}% ${l}%)`;
+function seasonMatch(pieces, pal) {
+  const inP = [], neu = [], out = [];
+  pieces.forEach((p) => {
+    if (hueChroma(p.hex).chroma < .15) return neu.push(p.name);
+    const [r, g, b] = rgb(p.hex), d = Math.min(...pal.map((c) => { const [R, G, B] = rgb(c); return Math.hypot(r - R, g - G, b - B); }));
+    (d < 90 ? inP : out).push(p.name);
+  });
+  return { inP, neu, out };
+}
+const BRICKS = { white: "#F4F4F4", black: "#1B2A34", red: "#C91A09", blue: "#0055BF", yellow: "#F2CD37", green: "#237841", tan: "#E4CD9E", orange: "#FE8A18", lbg: "#A0A5A9", dbg: "#6C6E68" };
+/* neutros por luminosidade; cromáticos pela matiz mais próxima; tons terrosos pouco saturados viram bege */
+function brick(hex) {
+  const [r, g, b] = rgb(hex).map((v) => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, sat = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1)), { hue } = hueChroma(hex);
+  if (sat < .18) return l < .25 ? "black" : l < .5 ? "dbg" : l < .8 ? "lbg" : "white";
+  if (hue >= 18 && hue <= 50 && sat < .55) return "tan";
+  const H = { red: 5, orange: 30, yellow: 48, green: 143, blue: 213 }; let best = "red", bd = 999;
+  for (const [k, h] of Object.entries(H)) { const d = hueDist(hue, h); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+const darkBrick = (k) => ["black", "red", "blue", "green", "dbg"].includes(k);
+const hypeFill = (v) => v >= 70 ? "var(--status-good)" : v >= 50 ? "var(--status-warning)" : v >= 30 ? "var(--status-serious)" : "var(--status-critical)";
+const hypeWord = (v) => v >= 70 ? "Em alta" : v >= 50 ? "Subindo" : v >= 30 ? "Morno" : "Frio";
+
+/* variações de dado para os estados */
+function lookFor(v) {
+  if (!v) return LOOK;
+  const L = JSON.parse(JSON.stringify(LOOK));
+  if (v === "missing") { L.noPhoto = true; L.pieces[1].brand = null; L.pieces[1].mono = null; L.pieces[2].price = null; L.pieces[2].noPhoto = true; L.pieces[3].uses = 0; }
+  if (v === "cpumissing") { L.pieces[2].price = null; L.pieces[3].uses = 0; }
+  if (v === "long") { L.title = "Conjunto de alfaiataria em linho cru para o casamento de verão na praia de Trancoso"; L.owner = { name: "Maria Eduarda de Albuquerque Figueiredo", ini: "MF" }; L.pieces[0].name = "Blusa de linho com mangas bufantes e botões de madrepérola"; }
+  if (v === "noarea") L.noArea = true;
+  if (v === "nohype") L.pieces.forEach((p) => { p.hg = null; p.hp = null; });
+  return L;
+}
+const total = (L) => L.pieces.reduce((a, p) => a + (p.price || 0), 0);
+const priced = (L) => L.pieces.filter((p) => p.price != null).length;
+
+/* ============================ PEDAÇOS COMPARTILHADOS ============================ */
+function head(L, kind) {
+  return `<header class="fc-head" data-part="head"><span class="fc-av" aria-hidden="true">${esc(L.owner.ini)}</span>
+    <span class="fc-who"><b class="tr">${esc(L.owner.name)}</b><span><span class="tr">${L.when} ·</span>${ico("globe", 14)}<span class="tr">${L.vis}</span></span></span>
+    <button class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Mais opções do post" data-menu="${kind}">${ico("more")}</button></header>`;
+}
+function act(key, icon, label, n, pressable) {
+  return `<button type="button" class="act" data-act="${key}" data-label="${esc(label)}" ${n != null ? `data-n="${n}"` : ""} ${pressable ? 'aria-pressed="false"' : ""} aria-label="${esc(label)}${n != null ? `, ${int(n)}` : ""}">${ico(icon)}${n != null ? `<span class="n">${int(n)}</span>` : ""}</button>`;
+}
+function actions(L, kind, density) {
+  const m = L.m, A = [];
+  if (kind === "look") {
+    A.push(act("like", "heart", "Curtir", m.likes, true), act("comment", "comment", "Comentar", m.comments));
+    if (density === "full") A.push(act("share", "share", "Compartilhar", m.shares));
+    A.push(act("remix", "remix", "Remixar", m.remixes));
+  } else {
+    A.push(act("like", "heart", "Curtir", m.likes, true));
+    if (density === "full") A.push(act("comment", "comment", "Comentar", m.comments));
+    A.push(act("save", "save", "Salvar", null, true), act("remix", "remix", "Usar num look", m.remixes));
+  }
+  return `<footer class="fc-actions" data-part="actions">${A.join("")}</footer>`;
+}
+const seals = (list) => list.map((s) => `<span class="seal seal--${s.t}" role="img" aria-label="${esc(s.name)}">${s.l}</span>`).join("");
+function priceLine(L) {
+  const n = L.pieces.length, pr = priced(L);
+  const t = pr ? `<span class="price">${brl(total(L))}</span>${pr < n ? `<span>· ${n - pr} sem preço</span>` : ""}` : `<span>Preço não informado</span>`;
+  return `<span class="sc-line">${seals(L.seals)}${t}</span>`;
+}
+function titleBlock(L, id, { kicker = true, desc = false } = {}) {
+  return `<div class="sc-top" data-part="title">${kicker ? `<span class="kick">Look · ${L.pieces.length} peças</span>` : ""}<h4 class="sc-title" id="${id}-t">${esc(L.title)}</h4>${priceLine(L)}${desc ? `<p class="desc">${esc(L.desc)}</p>` : ""}</div>`;
+}
+const chips = (L) => `<div class="chips" data-part="meta"><span class="tchip">${L.occasion}</span><span class="tchip">${L.style}</span><span class="tchip">${SEASONS[L.season].name}</span></div>`;
+function cut(p, extra = "", cls = "cut") {
+  const hp = hPct(p);
+  return `<img class="${cls}" data-piece="${p.id}" src="${src(p.img)}" srcset="${srcset(p.img)}" sizes="${Math.round(p.pos.w * 3.6)}px" alt="${esc(p.name)}" loading="lazy" decoding="async" style="left:${p.pos.x}%;top:${p.pos.y}%;width:${p.pos.w}%;--rc:${p.rc}${extra}">`;
+}
+function comp(L, { ratio = "45", bg, inner = "", hl = null, cls = "", style = "" } = {}) {
+  if (L.noPhoto) return `<div class="ph ph--${ratio}${cls ? " " + cls : ""}" data-part="photo" style="${style}"><div class="ph-empty">${ico("hanger", 28)}<span>Composição ainda não gerada</span></div></div>`;
+  return `<div class="ph ph--${ratio}${cls ? " " + cls : ""}" data-part="photo" style="background:${bg || L.bg};${style}"><div class="comp" role="img" aria-label="Composição do look: ${esc(L.pieces.map((p) => p.name).join(", "))}">${L.pieces.map((p) => cut(p).replace('class="cut"', `class="cut${hl && hl !== p.id ? " dim" : ""}"`)).join("")}${inner}</div></div>`;
+}
+function solo(p, ratio = "11", extra = "") {
+  if (p.noPhoto) return `<div class="ph ph--${ratio}"><div class="ph-empty">${ico("hanger", 24)}<span>Sem foto ainda</span></div></div>`;
+  return `<div class="ph ph--${ratio}">${extra}<img class="solo" src="${src(p.img)}" srcset="${srcset(p.img)}" sizes="200px" alt="${esc(p.name)}" loading="lazy" decoding="async" style="--rc:${p.rc}"></div>`;
+}
+function thumb(p, cls = "") {
+  if (p.noPhoto) return `<span class="thumb ${cls}" aria-hidden="true" style="display:grid;place-items:center;color:var(--muted)">${ico("hanger", 16)}</span>`;
+  return `<span class="thumb ${cls}"><img src="${src(p.img, 320)}" alt="" loading="lazy" decoding="async" style="--rc:${p.rc}"></span>`;
+}
+const brandTxt = (p) => p.brand ? esc(p.brand) : "Sem marca";
+function pieceRow(p) {
+  return `<div class="prow">${thumb(p)}<span class="pt"><b>${esc(p.name)}</b><span>${brandTxt(p)} · ${esc(p.size)} · ${esc(p.color)}</span></span><span class="pv">${p.price != null ? brl(p.price) : '<span class="muted">sem preço</span>'}</span></div>`;
+}
+function shell(L, { id, kind = "look", density = "full", body, anatomy, anim = false, piece = null }) {
+  return `<article class="fc fc--${density}" id="${id}" data-anatomy="${anatomy}" ${anim ? "data-anim" : ""} aria-labelledby="${id}-t">
+    ${head(L, kind)}<div class="sc" data-part="sc">${body}</div>${actions(piece ? pieceMetrics(piece) : L, kind, density)}</article>`;
+}
+const pieceMetrics = (p) => ({ m: { likes: p.likes, comments: p.comments, remixes: Math.max(1, Math.round(p.likes / 250)) } });
+/* compacto padrão: miniatura + título + preço + assinatura */
+function compact(L, id, { anatomy, media, sig = "", anim = false, kicker }) {
+  const body = `<div class="cmp">${media || comp(L)}<div class="cmp-txt"><span class="kick">${kicker || `Look · ${L.pieces.length} peças`}</span><h4 class="sc-title" id="${id}-t">${esc(L.title)}</h4>${priceLine(L)}</div></div>${sig ? `<div class="sig">${sig}</div>` : ""}`;
+  return shell(L, { id, density: "compact", body, anatomy, anim });
+}
+
+/* ============================ ANATOMIAS DO LOOK ============================ */
+const R = {};
+R.lista = {
+  full: (L, id) => shell(L, { id, anatomy: "LISTA_VERTICAL", body: `${comp(L)}${titleBlock(L, id, { desc: true })}<div data-part="pieces">${L.pieces.map(pieceRow).join("")}</div>${chips(L)}` }),
+  compact: (L, id) => compact(L, id, { anatomy: "LISTA_VERTICAL", sig: `<div class="mini-thumbs" aria-label="Peças do look">${L.pieces.map((p) => thumb(p)).join("")}</div>` }),
+  thumb: (L, id) => `<article class="fc fc--thumb" id="${id}" aria-labelledby="${id}-t" style="width:100%">${comp(L, { ratio: "11" })}<div class="thumb-cap"><h4 class="sc-title" id="${id}-t" style="font-size:var(--fs-sm);-webkit-line-clamp:1">${esc(L.title)}</h4><span class="pv">♥ ${int(L.m.likes)}</span></div></article>`
+};
+R.grade = {
+  full: (L, id) => shell(L, { id, anatomy: "GRADE_PECAS", body: `${comp(L)}${titleBlock(L, id)}<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-top:1px solid var(--line-soft)">${L.pieces.map((p) => `<div style="background:var(--surface);min-width:0">${solo(p, "43")}<div style="padding:6px 8px 8px"><b class="tr" style="display:block;font-size:var(--fs-sm)">${esc(p.name)}</b><span class="sc-line"><span class="tr">${brandTxt(p)}</span>·<span class="pv">${p.price != null ? brl0(p.price) : "sem preço"}</span></span></div></div>`).join("")}</div>${chips(L)}` }),
+  compact: (L, id) => compact(L, id, { anatomy: "GRADE_PECAS", media: `<div class="ph" style="width:64px;aspect-ratio:4/5;border-radius:3px;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft)">${L.pieces.map((p) => `<span style="position:relative;background:var(--photo-bg)"><img src="${src(p.img, 320)}" alt="" style="position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;filter:${p.rc}"></span>`).join("")}</div>` })
+};
+R.hero = {
+  full: (L, id) => shell(L, { id, anatomy: "HERO_LISTA", body: `<div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)">${comp(L)}<div style="display:flex;flex-direction:column;border-left:1px solid var(--line-soft);min-width:0">${L.pieces.map((p, i) => `<div style="flex:1;display:flex;gap:6px;align-items:center;padding:4px 8px;${i ? "border-top:1px solid var(--line-soft);" : ""}min-width:0">${thumb(p, "thumb--s")}<span class="pt"><b style="font-size:var(--fs-xs);white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(p.name)}</b><span>${brandTxt(p)}</span></span></div>`).join("")}</div></div>${titleBlock(L, id, { desc: true })}${chips(L)}` }),
+  compact: (L, id) => compact(L, id, { anatomy: "HERO_LISTA", sig: `<div class="sig-row">${L.pieces.map((p) => `<span class="mono" title="${brandTxt(p)}">${p.mono || "—"}</span>`).join("")}<span class="tr">${L.pieces.map((p) => brandTxt(p)).join(" · ")}</span></div>` })
+};
+
+/* 01 Passarela */
+const WALK = [{ x: 50, y: 90, w: 44 }, { x: 27, y: 64, w: 27 }, { x: 73, y: 64, w: 27 }, { x: 50, y: 46, w: 18 }];
+function stage(pieces, maxLikes, one) {
+  const sorted = one ? pieces : [...pieces].sort((a, b) => b.likes - a.likes);
+  const pos = one ? [{ x: 50, y: 86, w: 52 }] : WALK;
+  const spots = sorted.map((p, i) => { const o = (.15 + .7 * p.likes / maxLikes).toFixed(2); return `<span class="spot" style="--i:${i};left:${pos[i].x}%;width:${pos[i].w * 2}%;height:${pos[i].y}%;--o:${o}"></span>`; }).join("");
+  const walkers = sorted.map((p, i) => `<figure class="walker${i === 0 && !one ? " lead" : ""}" style="--i:${i};left:${pos[i].x}%;top:${pos[i].y - 4}%;width:${pos[i].w}%;z-index:${10 - i}"><img src="${src(p.img)}" srcset="${srcset(p.img)}" sizes="${Math.round(pos[i].w * 3)}px" alt="${esc(p.name)}" style="--rc:${p.rc}" loading="lazy"><figcaption>${one ? "" : `#${i + 1} · `}♥ ${int(p.likes)}</figcaption></figure>`).join("");
+  return `<div class="runway" data-part="photo" role="img" aria-label="Passarela: ${esc(sorted.map((p, i) => `${i + 1}º ${p.name}, ${int(p.likes)} curtidas`).join("; "))}"><span class="floor"></span><span class="crowd l"></span><span class="crowd r"></span>${spots}<div aria-hidden="true">${walkers}</div></div>`;
+}
+const maxLikes = (L) => Math.max(...L.pieces.map((p) => p.likes));
+R.passarela = {
+  full: (L, id) => shell(L, { id, anatomy: "PASSARELA", anim: true, body: `${stage(L.pieces, maxLikes(L))}<div class="legend-line"><i></i>Luz e posição proporcionais às curtidas de cada peça</div>${titleBlock(L, id)}<details class="how"><summary>${ico("chev", 14)}Por que esta ordem?</summary><p>As peças estão em ordem de curtidas: quem vê o look decide quem abre o desfile. Num desfile de verdade, essa ordem é escolha do estilista.</p></details>${chips(L)}` }),
+  compact: (L, id) => { const mx = maxLikes(L); return compact(L, id, { anatomy: "PASSARELA", sig: `<div class="rstrip" role="img" aria-label="Ordem por curtidas: ${esc([...L.pieces].sort((a, b) => b.likes - a.likes).map((p) => `${p.name} ${int(p.likes)}`).join(", "))}">${[...L.pieces].sort((a, b) => b.likes - a.likes).map((p, i) => `<figure style="--o:${(.15 + .7 * p.likes / mx).toFixed(2)}"><img src="${src(p.img, 320)}" alt="" style="--rc:${p.rc};filter:${p.rc}"><figcaption>#${i + 1}</figcaption></figure>`).join("")}</div><div class="sig-row"><span>Mais curtida: <b style="color:var(--ink)">${esc([...L.pieces].sort((a, b) => b.likes - a.likes)[0].name)}</b> · ♥ ${int(mx)}</span></div>` }); }
+};
+
+/* 02 Etiqueta */
+function tagBody(p, { classic = false } = {}) {
+  const rows = [["Marca", p.brand ? `<span class="mono" style="width:22px;height:22px">${p.mono}</span>${esc(p.brand)}` : "Sem marca"], ["Tamanho", esc(p.size)], ["Cor", `<span class="dot" style="background:${p.hex}"></span>${esc(p.color)}`], ["Material", esc(p.material)], ["Coleção", p.collection && esc(p.collection)], ["Usos", `<span class="tab">${p.uses}</span>`], ["Código", p.code && `<span style="font-family:var(--mono);font-weight:500">${esc(p.code)}</span>`]].filter((r) => r[1]);
+  return `${classic ? `<div class="ribbon" style="margin:10px 12px 0;border-radius:6px">${ico("star", 14)}Clássica do armário · ${p.uses} usos</div>` : ""}<div class="tagbody${classic ? " tier-classic" : ""}"><div class="tag-hero">${solo(p, "11")}<div style="min-width:0"><div class="kick">Fashion AI</div><div class="tag-price">${p.price != null ? brl(p.price) : '<span style="font-size:var(--fs-md)">Preço não informado</span>'}</div><div class="tr" style="font-size:var(--fs-sm)">${esc(p.name)}</div></div></div>${rows.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`).join("")}</div>`;
+}
+R.etiqueta = {
+  full: (L, id) => shell(L, { id, anatomy: "ETIQUETA", body: `${titleBlock(L, id)}<div class="tags" role="radiogroup" aria-label="Escolher peça" data-etq>${L.pieces.map((p, i) => `<button type="button" class="minitag" role="radio" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-i="${i}" aria-label="${esc(p.name)} · ${brandTxt(p)}">${brandTxt(p)}</button>`).join("")}</div><div data-tagbody>${tagBody(L.pieces[0])}</div>` }),
+  compact: (L, id) => compact(L, id, { anatomy: "ETIQUETA", sig: `<div class="sig-row">${L.pieces.map((p) => `<span class="tag-chip">${p.mono} <span class="tab" style="font-weight:500">${p.price != null ? brl0(p.price) : "—"}</span></span>`).join("")}</div>` })
+};
+
+/* 03 Raio-X */
+function anchorOf(L) { const s = areaShares(L.pieces); let k = 0; s.forEach((v, i) => { if (v > s[k]) k = i; }); return { k, s }; }
+R.raiox = {
+  full: (L, id) => { const { k, s } = anchorOf(L); const pins = L.pieces.map((p, i) => `<span class="pin${i === k ? " anchor" : ""}" style="left:${p.pos.x}%;top:${p.pos.y}%">${i + 1}</span>`).join("");
+    const stageHtml = `<div class="xray" data-part="photo"><span class="corner tl"></span><span class="corner br"></span><span class="beam"></span><div class="comp" role="img" aria-label="Raio-X do look com ${L.pieces.length} peças numeradas">${L.pieces.map((p) => cut(p)).join("")}${pins}</div></div>`;
+    const mats = new Set(L.pieces.map((p) => p.material)).size;
+    return shell(L, { id, anatomy: "RAIO_X", anim: true, body: `${stageHtml}${titleBlock(L, id)}<ol class="xl">${L.pieces.map((p, i) => `<li><span class="n${i === k ? " anchor" : ""}">${i + 1}</span><span class="pt"><b>${esc(p.name)}</b><span>${brandTxt(p)} · ${esc(p.material)} · <span class="dot" style="background:${p.hex};width:10px;height:10px;vertical-align:-1px"></span> ${esc(p.color)}</span></span>${i === k ? `<span class="badge good">${ico("star", 12)}Âncora</span>` : `<span class="pv muted">≈ ${s[i]} %</span>`}</li>`).join("")}</ol><p class="readout">${L.pieces.length} camadas · ${mats} materiais · âncora ocupa ≈ ${s[k]} % da composição</p>` }); },
+  compact: (L, id) => { const { k } = anchorOf(L); return compact(L, id, { anatomy: "RAIO_X", media: `<div class="xray" style="width:64px;border-radius:3px"><div class="comp">${L.pieces.map((p) => cut(p)).join("")}${L.pieces.map((p, i) => `<span class="pin${i === k ? " anchor" : ""}" style="left:${p.pos.x}%;top:${p.pos.y}%;width:7px;height:7px;font-size:0;box-shadow:0 0 0 2px rgba(94,242,255,.35)"></span>`).join("")}</div></div>`, sig: `<div class="sig-row">${ico("star", 14)}<span>Âncora: <b style="color:var(--ink)">${esc(L.pieces[k].name)}</b> · ${new Set(L.pieces.map((p) => p.material)).size} materiais</span></div>` }); }
+};
+
+/* 04 Bento */
+function bentoGrid(L, hero) {
+  const items = [{ id: "look", look: true }, ...L.pieces];
+  const h = items.find((x) => x.id === hero) || items[0], rest = items.filter((x) => x !== h).slice(0, 3);
+  const media = (x, cls) => x.look ? `<div class="comp">${L.pieces.map((p) => cut(p)).join("")}</div>` : `<img class="solo" src="${src(x.img)}" srcset="${srcset(x.img)}" sizes="200px" alt="" style="--rc:${x.rc}">`;
+  const lab = (x) => x.look ? `<span class="lab"><b>Look completo</b><span>${L.pieces.length} peças · ${brl(total(L))}</span></span>` : `<span class="lab"><b>${esc(x.name)}</b><span>${brandTxt(x)} · ${x.price != null ? brl(x.price) : "sem preço"}</span></span>`;
+  return `<div class="bento" data-part="photo" data-bento>
+    <div class="bcell hero" style="${h.look ? `background:${L.bg}` : ""}" role="img" aria-label="Em destaque: ${h.look ? "look completo" : esc(h.name)}">${media(h)}${lab(h)}</div>
+    ${rest.map((x) => `<button type="button" class="bcell" data-pick="${x.id}" style="${x.look ? `background:${L.bg}` : ""}" aria-label="Destacar ${x.look ? "look completo" : esc(x.name)}">${media(x)}${lab(x)}</button>`).join("")}</div>`;
+}
+R.bento = {
+  full: (L, id) => shell(L, { id, anatomy: "BENTO", body: `${titleBlock(L, id)}<span class="sr" aria-live="polite" data-bento-live></span><div data-bento-host data-hero="look" style="border-top:1px solid var(--line-soft)">${bentoGrid(L, "look")}</div>${chips(L)}` }),
+  compact: (L, id) => compact(L, id, { anatomy: "BENTO", media: `<div class="mini-bento"><span style="background:${L.bg}"><span class="comp">${L.pieces.map((p) => cut(p)).join("")}</span></span>${L.pieces.slice(0, 2).map((p) => `<span><img src="${src(p.img, 320)}" alt="" style="position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;filter:${p.rc}"></span>`).join("")}</div>` })
+};
+
+/* 05 Espectro */
+function spectrum(L) {
+  const shares = L.noArea ? L.pieces.map(() => Math.round(100 / L.pieces.length)) : areaShares(L.pieces);
+  return L.pieces.map((p, i) => ({ p, v: shares[i] })).sort((a, b) => b.v - a.v);
+}
+R.espectro = {
+  full: (L, id) => { const sp = spectrum(L); return shell(L, { id, anatomy: "ESPECTRO", body: `${comp(L, { ratio: "11" })}${titleBlock(L, id)}<div class="cband" role="img" aria-label="Paleta: ${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(", "))}">${sp.map((x) => `<i style="flex:${x.v};background:${x.p.hex}"></i>`).join("")}</div>
+      <div data-spectrum>${sp.map((x) => `<button type="button" class="srow" aria-pressed="false" data-hl="${x.p.id}"><span class="sw" style="background:${x.p.hex}"></span><span class="pt"><b>${esc(x.p.color)}</b><span>${esc(x.p.name)} · ${brandTxt(x.p)}</span></span><span class="share">≈ ${x.v} %</span></button>`).join("")}</div>
+      <p class="readout" style="font-family:var(--sans)">${esc(harmony(L.pieces))}</p><details class="how"><summary>${ico("chev", 14)}Como é estimado</summary><p>A porcentagem é a área de cada peça na composição, calculada pela escala do item e pela proporção da foto e arredondada para 5 %. É uma estimativa, não uma medição de pixels.</p></details>` }); },
+  compact: (L, id) => { const sp = spectrum(L); return compact(L, id, { anatomy: "ESPECTRO", sig: `<div class="sig-row"><span class="sband" role="img" aria-label="Paleta ${L.noArea ? "por peça" : "por área estimada"}: ${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(", "))}">${sp.map((x) => `<i style="flex:${x.v};background:${x.p.hex}"></i>`).join("")}</span><span style="white-space:nowrap">${L.noArea ? "por peça" : "≈ área"}</span></div><div class="sig-row"><span class="tr">${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(" · "))}</span></div>` }); }
+};
+
+/* 06 Custo por uso */
+function cpuRows(L) {
+  return L.pieces.map((p) => { const cpu = p.price != null && p.uses > 0 ? p.price / p.uses : null; const need = p.price != null ? Math.max(0, Math.ceil(p.price / GOAL) - p.uses) : null; return { p, cpu, need }; });
+}
+R.custo = {
+  full: (L, id) => {
+    const rows = cpuRows(L), sc = rows.filter((r) => r.cpu != null);
+    const best = sc.length ? sc.reduce((a, b) => a.cpu < b.cpu ? a : b).p.id : null, worst = sc.length > 1 ? sc.reduce((a, b) => a.cpu > b.cpu ? a : b).p.id : null;
+    const spent = rows.filter((r) => r.p.price != null).reduce((a, r) => a + r.p.price, 0), uses = rows.filter((r) => r.p.price != null).reduce((a, r) => a + r.p.uses, 0);
+    const body = `<div class="sc-top" data-part="title"><div style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:center">${comp(L, { style: "border-radius:3px;width:48px" })}<div class="cmp-txt"><span class="kick">Look · ${L.pieces.length} peças</span><h4 class="sc-title" id="${id}-t">${esc(L.title)}</h4></div></div></div>
+      <div class="cpu-head"><span>Meta: ${brl0(GOAL)} por uso</span><span class="lock">${ico("lock", 12)}Só você vê</span></div>
+      ${rows.map((r) => { const pct = r.cpu == null ? 0 : Math.min(100, GOAL / r.cpu * 100); const ok = r.cpu != null && r.cpu <= GOAL;
+        const sub = r.p.price == null ? "Preço não informado" : r.p.uses === 0 ? `${brl(r.p.price)} · ainda não usada` : `${brl(r.p.price)} ÷ ${r.p.uses} ${r.p.uses === 1 ? "uso" : "usos"}`;
+        const note = r.cpu == null ? "" : r.need ? `faltam ${r.need} usos` : "meta atingida";
+        const tag = r.p.id === best ? `<span class="badge good">Melhor custo</span>` : r.p.id === worst ? `<span class="badge warn">Use mais</span>` : "";
+        return `<div class="crow">${thumb(r.p)}<span class="pt"><span class="l1"><b>${esc(r.p.name)}</b><b>${r.cpu != null ? brl(r.cpu) : "—"}</b></span><span>${sub}</span>${r.cpu != null ? `<span class="meter" role="img" aria-label="${Math.round(pct)}% da meta"><i style="width:${pct}%;background:${ok ? "var(--status-good)" : pct >= 50 ? "var(--status-warning)" : "var(--status-serious)"}"></i></span>` : ""}${note || tag ? `<span class="l3"><span>${note}</span>${tag}</span>` : ""}</span></div>`; }).join("")}
+      <p class="cfoot">Look inteiro: ${brl(spent)} ÷ ${uses} usos = <b>${uses ? brl(spent / uses) : "—"} por uso</b>${rows.some((r) => r.p.price == null) ? " · peças sem preço ficam fora do total" : ""}</p>`;
+    return shell(L, { id, anatomy: "CUSTO_POR_USO", body });
+  },
+  compact: (L, id) => { const rows = cpuRows(L), spent = total(L), uses = L.pieces.reduce((a, p) => a + p.uses, 0), best = rows.filter((r) => r.cpu != null).reduce((a, b) => a.cpu < b.cpu ? a : b);
+    return compact(L, id, { anatomy: "CUSTO_POR_USO", sig: `<div class="sig-row"><b class="price">${brl(spent / uses)} por uso</b><span>· ${uses} usos</span><span class="lock" style="margin-left:auto">${ico("lock", 12)}Só você vê</span></div><div class="sig-row"><span class="tr">Melhor custo: ${esc(best.p.name)} · ${brl(best.cpu)}</span></div>` }); }
+};
+
+/* 07 Silhueta */
+function mannequin(L, w) {
+  const col = (slot) => (L.pieces.find((p) => p.slot === slot) || {}).hex || "#C9C4BB";
+  const y = 16 + (w.up / 100) * 150;
+  return `<svg viewBox="0 0 100 180" role="img" aria-label="Silhueta com divisão em ${w.up}% e ${100 - w.up}%">
+    <circle cx="40" cy="12" r="9" fill="#E8DCCF" stroke="#8A7B6B"/>
+    <path d="M24 26 Q40 21 56 26 L60 ${y} L20 ${y} Z" fill="${col("top")}" stroke="rgba(0,0,0,.3)"/>
+    <path d="M20 ${y} L60 ${y} L57 160 L44 160 L40 ${y + 20} L36 160 L23 160 Z" fill="${col("bottom")}" stroke="rgba(0,0,0,.3)"/>
+    <path d="M19 161 h17 v8 h-19 z M44 161 h17 v8 h-19 z" fill="${col("shoes")}" stroke="rgba(0,0,0,.35)"/>
+    <line x1="72" y1="16" x2="72" y2="166" stroke="#8A7B6B" stroke-dasharray="2 2"/>
+    <line x1="66" y1="${y}" x2="78" y2="${y}" stroke="#191A19" stroke-width="1.5"/>
+    <text x="80" y="${(16 + y) / 2 + 4}">${w.up}</text><text x="80" y="${(y + 166) / 2 + 4}">${100 - w.up}</text></svg>`;
+}
+R.silhueta = {
+  full: (L, id) => { const w = waist(L.pieces);
+    const photo = comp(L, { inner: `<span class="waist" style="top:${w.line}%"><span class="up">${w.up} %</span><span class="dn">${100 - w.up} %</span></span>` });
+    return shell(L, { id, anatomy: "SILHUETA_PROPORCAO", body: `<div class="sil">${photo}<div class="fig">${mannequin(L, w)}</div></div>${titleBlock(L, id)}<div class="kv" style="border-top:1px solid var(--line-soft)"><span>Cima · baixo</span><b class="tab">${w.up} % · ${100 - w.up} %</b></div><div class="kv"><span>Proporção</span><b>${Math.abs(w.up - 33) <= 4 ? "≈ 1/3 · 2/3" : "livre"}</b></div><div class="kv"><span>Silhueta</span><b>${L.silhouette ? `${esc(L.silhouette)} <span class="badge">declarada</span>` : "não declarada"}</b></div>${chips(L)}` }); },
+  compact: (L, id) => { const w = waist(L.pieces); return compact(L, id, { anatomy: "SILHUETA_PROPORCAO", sig: `<div class="sig-row"><span class="sband" aria-hidden="true"><i style="flex:${w.up};background:${byId("blusa").hex}"></i><i style="flex:${100 - w.up};background:${byId("calca").hex}"></i></span><span class="tab" style="white-space:nowrap">${w.up} · ${100 - w.up}</span></div><div class="sig-row"><span>${esc(L.silhouette || "Silhueta não declarada")}${L.silhouette ? " (declarada)" : ""} · ${Math.abs(w.up - 33) <= 4 ? "≈ 1/3 · 2/3" : "proporção livre"}</span></div>` }); }
+};
+
+/* 08 Hype Focus */
+function gauge(v, size = 96) {
+  const len = 119.4, h = Math.round(size * .58);
+  return `<svg width="${size}" height="${h}" viewBox="0 0 92 54" role="img" aria-label="Hype global ${v}%"><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke="var(--surface-3)" stroke-width="9" stroke-linecap="round"/><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke="${hypeFill(v)}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(v / 100) * len} 200"/><text x="46" y="46" text-anchor="middle">${v}%</text></svg>`;
+}
+R.hype = {
+  full: (L, id) => { const ranked = [...L.pieces].sort((a, b) => b.hg - a.hg), f = ranked[0];
+    return shell(L, { id, anatomy: "HYPE_FOCUS", body: `${titleBlock(L, id)}<div class="hf-top" style="border-top:1px solid var(--line-soft)">${solo(f, "11")}<div class="pt"><span class="kick" style="white-space:normal">Peça em alta</span><b>${esc(f.name)}</b><span>${brandTxt(f)} · ${hypeWord(f.hg)}</span></div></div><div class="gauge" style="padding:0 12px 10px">${gauge(f.hg, 92)}<span class="pt"><span>Global</span><b class="tab" style="font-size:var(--fs-md)">${f.hg} %</b><span>Esta peça <b class="tab" style="color:var(--ink)">${f.hp} %</b></span></span></div>
+      ${ranked.slice(1).map((p) => `<div class="hrow">${thumb(p)}<span class="pt"><b>${esc(p.name)}</b><span>Esta peça ${p.hp} %</span></span><span class="hm"><span class="v">${p.hg} %<span>global</span></span><span class="meter" style="margin:0"><i style="width:${p.hg}%;background:${hypeFill(p.hg)}"></i></span></span></div>`).join("")}
+      <div class="bands" aria-label="Faixas do Hype"><span><i style="background:var(--status-critical)"></i>0–29</span><span><i style="background:var(--status-serious)"></i>30–49</span><span><i style="background:var(--status-warning)"></i>50–69</span><span><i style="background:var(--status-good)"></i>70–100</span></div>
+      <details class="how"><summary>${ico("chev", 14)}Como é calculado</summary><p><b>Global</b>: média do Hype das peças parecidas com esta, de qualquer pessoa (RF6 §9, grupo de peças). <b>Esta peça</b>: curtidas, comentários, salvamentos e remixes desta peça nos últimos 30 dias, ajustados pela tendência. Mede popularidade, não qualidade.</p></details>` }); },
+  compact: (L, id) => { if (L.pieces.every((p) => p.hg == null)) return compact(L, id, { anatomy: "HYPE_FOCUS", sig: `<div class="sig-row"><span class="badge">Hype em formação</span><span>poucas interações para calcular</span></div>` });
+    const f = [...L.pieces].sort((a, b) => b.hg - a.hg)[0];
+    return compact(L, id, { anatomy: "HYPE_FOCUS", sig: `<div class="sig-row">${gauge(f.hg, 52)}<span class="pt"><b>${esc(f.name)}</b><span>global ${f.hg} % · esta peça ${f.hp} %</span></span></div>` }); }
+};
+
+/* 09 Cartela */
+const LEAVES = [[6, 70, 20, "#C97C3D", 0], [12, 90, -30, "#7A3B1E", .2], [88, 72, 40, "#F2C879", .35], [93, 88, -15, "#C97C3D", .1], [70, 95, 60, "#7A3B1E", .5], [20, 96, 10, "#F2C879", .6], [82, 18, -40, "#C97C3D", .25], [8, 30, 25, "#F2C879", .45]];
+R.cartela = {
+  full: (L, id) => { const S = SEASONS[L.season], mt = seasonMatch(L.pieces, S.palette);
+    const leaves = LEAVES.map(([x, y, r, c, d]) => `<span class="leaf" style="left:${x}%;top:${y}%;--r:${r}deg;--c:${c};--d:${d}s;--dx:${(50 - x) / 3}px" aria-hidden="true"></span>`).join("");
+    const photo = comp(L, { bg: S.art }).replace('<div class="comp"', `<span class="ph-chip">${ico("leaf", 14)}${S.name} · ${S.preset}</span>${leaves}<div class="comp"`);
+    const list = (a) => a.map(esc).join(", ");
+    return shell(L, { id, anatomy: "CARTELA_SAZONAL", anim: true, body: `${photo}${titleBlock(L, id)}<div class="palette" aria-label="Paleta do ${S.name.toLowerCase()}">${S.palette.map((c) => `<i style="background:${c}"></i>`).join("")}<span>Paleta do ${S.name.toLowerCase()}</span></div><p class="match">${mt.inP.length ? `Na paleta: <b>${list(mt.inP)}</b>. ` : ""}${mt.neu.length ? `Neutras: ${list(mt.neu)}. ` : ""}${mt.out.length ? `Fora: ${list(mt.out)}.` : ""}</p>${chips(L)}` }); },
+  compact: (L, id) => { const S = SEASONS[L.season], mt = seasonMatch(L.pieces, S.palette);
+    return compact(L, id, { anatomy: "CARTELA_SAZONAL", media: comp(L, { bg: S.art }), sig: `<div class="sig-row"><span class="palette" style="padding:0">${S.palette.map((c) => `<i style="background:${c};width:16px;height:16px"></i>`).join("")}</span><span>${S.name} · ${S.preset} · ${mt.inP.length + mt.neu.length} de ${L.pieces.length} peças combinam</span></div>` }); }
+};
+
+/* 10 Blocos */
+function blocos(L, id, density, piece) {
+  let i = 0; const I = () => `--i:${i++}`;
+  const studSeal = (s) => `<span class="stud" style="--c:${s.t === "brand" ? BRICKS.green : s.t === "celeb" ? BRICKS.red : BRICKS.yellow};${I()};color:${s.t === "look" ? "#191A19" : "#fff"}" role="img" aria-label="${esc(s.name)}">${s.l}</span>`;
+  const btn = (c, dk, label, n, key, pressable) => `<button type="button" class="brick bbtn${dk ? " dk" : ""}" style="--c:${c};${I()}" data-act="${key}" data-label="${label}" ${n != null ? `data-n="${n}"` : ""} ${pressable ? 'aria-pressed="false"' : ""} aria-label="${label}${n != null ? `, ${int(n)}` : ""}">${label.toUpperCase()}${n != null ? ` <span class="n">${int(n)}</span>` : ""}</button>`;
+  const headB = `<div class="brick" style="--c:${BRICKS.white};${I()}"><div class="brow"><span class="stud" style="--c:${BRICKS.tan};color:#191A19;${I()}" aria-hidden="true">${L.owner.ini[0]}</span><span class="tr" style="flex:1;font-size:var(--fs-xs)"><b style="font-size:var(--fs-sm)">${esc(L.owner.name)}</b> · ${L.when}</span><button class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Mais opções do post" data-menu="${piece ? "piece" : "look"}" style="color:#191A19">${ico("more")}</button></div></div>`;
+  if (piece) {
+    const p = piece, k = brick(p.hex), classic = p.uses >= CLASSIC;
+    const body = `<div class="sc-blk"><div class="brick bframe" style="--c:${BRICKS[k]};${I()}">${solo(p, "11")}</div>
+      <div class="brick" style="--c:${BRICKS[k]};${I()}"><span class="print"><b>${brandTxt(p)}</b> · ${esc(p.collection || "")}</span></div>
+      <div class="tile" style="--c:${BRICKS.white};${I()}"><span class="kick" style="color:#5C6058">Peça · ${esc(p.cat)}</span><h4 class="sc-title" id="${id}-t" style="color:#191A19;font-size:var(--fs-md)">${esc(p.name)}</h4></div>
+      <div class="brow">${[`Tam ${p.size}`, p.color, `${p.uses} usos`].map((t) => `<span class="tile" style="--c:${BRICKS.white};${I()};flex:1;text-align:center;font:600 var(--fs-xs)/1.3 var(--mono)">${esc(t)}</span>`).join("")}</div>
+      ${classic ? `<div class="tile" style="--c:#1F7A76;${I()};color:#fff;text-align:center;font:600 var(--fs-cap)/1.3 var(--mono);letter-spacing:.08em">CLÁSSICA DO ARMÁRIO · ${p.uses} USOS</div>` : ""}
+      <div class="brick" style="--c:${BRICKS.white};${I()}"><div class="brow" style="justify-content:space-between"><span style="font:600 var(--fs-cap)/1 var(--mono);color:#5C6058">PREÇO</span><b class="tab" style="font:600 var(--fs-sm) var(--mono)">${brl(p.price)}</b></div></div></div>`;
+    return `<article class="fc blk" id="${id}" data-anatomy="LEGO" data-anim aria-labelledby="${id}-t">${headB}${body}<div class="brow acts">${btn(BRICKS.yellow, false, "Curtir", p.likes, "like", true)}${btn(BRICKS.blue, true, "Salvar", null, "save", true)}</div></article>`;
+  }
+  if (density === "compact") {
+    return `<article class="fc blk" id="${id}" data-anatomy="LEGO" data-anim aria-labelledby="${id}-t">${headB}<div class="sc-blk"><div class="brick" style="--c:${BRICKS.white};${I()}"><div style="display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;align-items:center">${comp(L, { style: "border-radius:1px" })}<div class="cmp-txt"><h4 class="sc-title" id="${id}-t" style="color:#191A19;font-size:var(--fs-md)">${esc(L.title)}</h4><span class="print" style="padding:1px 4px"><b class="tab">${brl(total(L))}</b></span><span class="brow" aria-label="Cores das peças">${L.pieces.map((p) => `<span class="stud" style="--c:${BRICKS[brick(p.hex)]};${I()}" title="${esc(p.name)}"></span>`).join("")}</span></div></div></div></div>
+      <div class="brow acts">${btn(BRICKS.yellow, false, "Curtir", L.m.likes, "like", true)}${btn(BRICKS.red, true, "Remixar", L.m.remixes, "remix")}</div></article>`;
+  }
+  const body = `<div class="sc-blk"><div class="brick bframe" style="--c:${BRICKS.white};${I()}">${comp(L)}</div>
+    <div class="tile" style="--c:${BRICKS.white};${I()}"><span class="kick" style="color:#5C6058">Look · ${L.pieces.length} peças</span><h4 class="sc-title" id="${id}-t" style="color:#191A19">${esc(L.title)}</h4></div>
+    <div class="brow">${L.seals.map(studSeal).join("")}<span class="tile" style="--c:${BRICKS.white};${I()};margin-left:auto"><b class="tab" style="font:600 var(--fs-sm) var(--mono)">${brl(total(L))}</b></span></div>
+    <div class="bond">${L.pieces.map((p) => { const k = brick(p.hex); return `<div class="brick" style="--c:${BRICKS[k]};${I()}"><div class="brow">${thumb(p, "thumb--s")}<span class="print"><b>${esc(p.name)}</b> · ${brandTxt(p)}</span></div></div>`; }).join("")}</div>
+    <div class="brow">${[L.occasion, L.style, SEASONS[L.season].name].map((t) => `<span class="tile" style="--c:${BRICKS.white};${I()};flex:1;text-align:center;font:500 var(--fs-xs)/1.3 var(--mono)">${esc(t)}</span>`).join("")}</div></div>`;
+  return `<article class="fc blk" id="${id}" data-anatomy="LEGO" data-anim aria-labelledby="${id}-t">${headB}${body}<div class="brow acts">${btn(BRICKS.yellow, false, "Curtir", L.m.likes, "like", true)}${btn(BRICKS.blue, true, "Comentar", L.m.comments, "comment")}${btn(BRICKS.red, true, "Remixar", L.m.remixes, "remix")}</div></article>`;
+}
+R.blocos = { full: (L, id) => blocos(L, id, "full"), compact: (L, id) => blocos(L, id, "compact") };
+
+/* ============================ PEÇA ============================ */
+function pieceShell(L, p, id, { density = "full", body, anatomy, anim }) {
+  return shell(L, { id, kind: "piece", density, body, anatomy, anim, piece: p });
+}
+const pieceTitle = (p, id) => `<div class="sc-top" data-part="title"><span class="kick">Peça · ${esc(p.cat)}</span><div style="display:flex;gap:8px;align-items:center;min-width:0">${p.brand ? `<span class="mono" title="${esc(p.brand)}">${p.mono}</span>` : ""}<div class="pt"><h4 class="sc-title" id="${id}-t" style="-webkit-line-clamp:1;display:block;white-space:nowrap;text-overflow:ellipsis">${esc(p.name)}</h4><span>${brandTxt(p)} · ${esc(p.size)} · ${esc(p.color)}</span></div></div><span class="sc-line">${p.brand ? `<span class="seal seal--brand" role="img" aria-label="Selo de marca: ${esc(p.brand)}">M</span>` : ""}${p.price != null ? `<span class="price">${brl(p.price)}</span>` : "<span>Preço não informado</span>"}<span>· ${p.uses} usos</span></span></div>`;
+const PR = {};
+PR.piece = {
+  full: (L, p, id) => pieceShell(L, p, id, { anatomy: "PECA_AMPLIADO", body: `${solo(p, "11")}${pieceTitle(p, id)}<div class="chips"><span class="tchip">${esc(p.material)}</span><span class="tchip">${L.occasion}</span><span class="tchip">${L.style}</span></div>` }),
+  compact: (L, p, id) => pieceShell(L, p, id, { density: "compact", anatomy: "PECA_AMPLIADO", body: `<div class="cmp">${solo(p, "11").replace('class="ph ph--11"', 'class="ph ph--11" style="width:64px;border-radius:3px"')}<div class="cmp-txt"><span class="kick">Peça · ${esc(p.cat)}</span><h4 class="sc-title" id="${id}-t" style="-webkit-line-clamp:1">${esc(p.name)}</h4><span class="sc-line"><span>${brandTxt(p)} · ${esc(p.size)}</span>·<span class="price">${p.price != null ? brl(p.price) : "sem preço"}</span></span></div></div>` }),
+  thumb: (L, p, id) => `<article class="fc fc--thumb" id="${id}" aria-labelledby="${id}-t" style="width:100%">${solo(p, "11")}<div class="thumb-cap"><span class="pt"><b id="${id}-t" style="font-size:var(--fs-sm)">${esc(p.name)}</b><span>${brandTxt(p)}</span></span><span class="pv">${brl0(p.price)}</span></div></article>`
+};
+PR["p-passarela"] = { full: (L, p, id) => { const mx = maxLikes(L), pct = Math.round(100 * p.likes / mx), rank = [...L.pieces].sort((a, b) => b.likes - a.likes).findIndex((q) => q.id === p.id) + 1;
+  return pieceShell(L, p, id, { anatomy: "PASSARELA", anim: true, body: `${stage([p], mx, true)}<div class="legend-line"><i></i>#${rank} no look “${esc(L.title)}” · luz ${pct} %</div>${pieceTitle(p, id)}` }); } };
+PR["p-etiqueta"] = { full: (L, p, id) => pieceShell(L, p, id, { anatomy: "ETIQUETA", body: `<div class="sc-top" data-part="title"><span class="kick">Peça · ${esc(p.cat)}</span><h4 class="sc-title" id="${id}-t">${esc(p.name)}</h4></div>${tagBody(p, { classic: p.uses >= CLASSIC })}` }) };
+PR["p-raiox"] = { full: (L, p, id) => pieceShell(L, p, id, { anatomy: "RAIO_X", anim: true, body: `<div class="xray ph--11" style="aspect-ratio:1/1"><span class="corner tl"></span><span class="corner br"></span><span class="beam"></span><img class="solo" src="${src(p.img)}" srcset="${srcset(p.img)}" sizes="260px" alt="${esc(p.name)}" style="--rc:${p.rc};filter:${p.rc} drop-shadow(0 0 4px rgba(94,242,255,.55))"></div>${pieceTitle(p, id)}${[["Material", p.material], ["Cor", `<span class="dot" style="background:${p.hex}"></span>${esc(p.color)}`], ["Tamanho", p.size], ["Categoria", p.cat], ["Usos", p.uses], ["Curtidas", int(p.likes)]].map(([k, v]) => `<div class="kv" style="border-top:1px solid var(--line-soft)"><span>${k}</span><b>${v}</b></div>`).join("")}` }) };
+PR["p-bento"] = { full: (L, p, id) => pieceShell(L, p, id, { anatomy: "BENTO", body: `${pieceTitle(p, id)}<div class="bento" style="border-top:1px solid var(--line-soft)"><div class="bcell hero" role="img" aria-label="${esc(p.name)}"><img class="solo" src="${src(p.img)}" srcset="${srcset(p.img)}" sizes="200px" alt="" style="--rc:${p.rc}"></div>${[["Preço", brl(p.price)], ["Usos", p.uses], ["Curtidas", int(p.likes)]].map(([k, v]) => `<div class="bcell" style="cursor:default;background:var(--surface);display:grid;place-content:center;text-align:center"><span class="kick">${k}</span><b class="tab" style="font:600 var(--fs-md)/1.2 var(--sans);color:var(--ink)">${v}</b></div>`).join("")}</div>` }) };
+PR["p-espectro"] = { full: (L, p, id) => { const { hue, chroma } = hueChroma(p.hex); const comp2 = (hue + 180) % 360, an1 = (hue + 330) % 360, an2 = (hue + 30) % 360;
+  const inCloset = L.pieces.filter((q) => q !== p && hueChroma(q.hex).chroma > .18 && hueDist(hueChroma(q.hex).hue, comp2) < 30);
+  const neutral = chroma < .15;
+  return pieceShell(L, p, id, { anatomy: "ESPECTRO", body: `${solo(p, "43")}${pieceTitle(p, id)}<div class="srow" style="cursor:default"><span class="sw" style="background:${p.hex}"></span><span class="pt"><b>${esc(p.color)}</b><span>${p.hex.toUpperCase()} · ${neutral ? "neutra" : `matiz ${Math.round(hue)}°`}</span></span><span class="share">100 %</span></div>
+    <div class="kv" style="border-top:1px solid var(--line-soft)"><span>Combina com</span><b></b></div>
+    <div class="combo">${neutral ? `<span>Neutra: combina com qualquer cor</span>` : `<span><i class="sw" style="background:${hsl(comp2, 55, 45)};width:18px;height:18px"></i>Complementar</span><span><i class="sw" style="background:${hsl(an1, 40, 40)};width:18px;height:18px"></i>Análoga</span><span><i class="sw" style="background:${hsl(an2, 40, 40)};width:18px;height:18px"></i>Análoga</span>`}</div>
+    ${inCloset.length ? `<p class="match">No seu armário: <b>${inCloset.map((q) => `${esc(q.name)} (${esc(q.color.toLowerCase())})`).join(", ")}</b>, complementar.</p>` : ""}` }); } };
+PR["p-custo"] = { full: (L, p, id) => { const cpu = p.price / p.uses, pct = Math.min(100, GOAL / cpu * 100), need = Math.max(0, Math.ceil(p.price / GOAL) - p.uses), classic = p.uses >= CLASSIC;
+  return pieceShell(L, p, id, { anatomy: "CUSTO_POR_USO", body: `${solo(p, "43")}${pieceTitle(p, id)}${classic ? `<div class="ribbon">${ico("star", 14)}Clássica do armário · ${p.uses} usos</div>` : ""}<div class="cpu-head"><span>Meta: ${brl0(GOAL)} por uso</span><span class="lock">${ico("lock", 12)}Só você vê</span></div>
+    <div class="kv"><span>Preço</span><b class="tab">${brl(p.price)}</b></div><div class="kv"><span>Usos</span><b class="tab">${p.uses}</b></div>
+    <div style="padding:10px 12px;border-top:1px solid var(--line-soft)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="kick">Custo por uso</span><b class="tab" style="font:600 var(--fs-price)/1 var(--serif)">${brl(cpu)}</b></div><div class="meter" role="img" aria-label="${Math.round(pct)}% da meta"><i style="width:${pct}%;background:${cpu <= GOAL ? "var(--status-good)" : pct >= 50 ? "var(--status-warning)" : "var(--status-serious)"}"></i></div><p class="hint" style="margin-top:6px">${need ? `Faltam ${need} usos para chegar a ${brl0(GOAL)} por uso.` : "Meta atingida."}</p></div>` }).replace('class="sc"', `class="sc${classic ? " tier-classic" : ""}"`); } };
+PR["p-blocos"] = { full: (L, p, id) => blocos(L, id, "full", p) };
+
+/* ============================ ESTADOS ============================ */
+const ST = {
+  loading: (L, id) => `<article class="fc" id="${id}" data-anim aria-busy="true" aria-label="Carregando look"><header class="fc-head"><span class="sk" style="width:24px;height:24px;border-radius:50%"></span><span style="flex:1;display:grid;gap:4px"><span class="sk" style="height:10px;width:60%"></span><span class="sk" style="height:8px;width:40%"></span></span></header><div class="sc"><div class="sk ph--45" style="border-radius:0"></div><div class="sc-top"><span class="sk" style="height:14px;width:75%"></span><span class="sk" style="height:10px;width:45%"></span></div>${[1, 2].map(() => `<div class="prow"><span class="sk" style="width:40px;height:40px"></span><span style="display:grid;gap:4px"><span class="sk" style="height:10px;width:80%"></span><span class="sk" style="height:8px;width:55%"></span></span><span></span></div>`).join("")}</div><div class="fc-actions" style="height:40px"></div></article>`,
+  error: (L, id) => `<article class="fc" id="${id}" aria-labelledby="${id}-t">${head(L, "look")}<div class="sc"><div class="state" role="alert">${ico("alert", 28)}<b id="${id}-t">Não foi possível carregar este look</b><span>Verifique a conexão e tente de novo.</span><button type="button" class="btn" data-toast="Tentando de novo…">${ico("refresh", 16)}Tentar de novo</button></div></div><div class="fc-actions"></div></article>`,
+  private: (L, id) => `<article class="fc" id="${id}" aria-labelledby="${id}-t">${head(L, "look")}<div class="sc"><div class="state">${ico("lock", 28)}<b id="${id}-t">Look privado</b><span>Só quem ${esc(L.owner.name.split(" ")[0])} aprovou como seguidor pode ver.</span><button type="button" class="btn" data-toast="Pedido enviado">Pedir para seguir</button></div></div><div class="fc-actions"></div></article>`,
+  removed: (L, id) => `<article class="fc" id="${id}" aria-labelledby="${id}-t"><div class="sc" style="margin:8px"><div class="state">${ico("trash", 28)}<b id="${id}-t">Este look foi removido</b><span>Quem publicou apagou o post. Os remixes feitos a partir dele continuam no ar.</span></div></div></article>`,
+  photos: (L, id) => { const hard = [{ ...byId("tenis"), label: "Peça clara sobre fundo claro" }, { ...byId("blusa"), label: "Peça escura" }, { ...byId("calca"), label: "Foto vertical" }, { ...byId("bolsa"), label: "Baixa resolução (320 px ampliada)", low: true }];
+    return `<article class="fc" id="${id}" aria-labelledby="${id}-t"><div class="sc" style="margin:8px"><div class="sc-top"><span class="kick">Teste de foto</span><h4 class="sc-title" id="${id}-t">Fundo de estúdio + contorno</h4></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft)">${hard.map((p) => `<div style="background:var(--surface)"><div class="ph ph--11"><img class="solo" src="${src(p.img, p.low ? 320 : 640)}" alt="${esc(p.name)}" style="--rc:${p.rc}${p.low ? ";image-rendering:auto" : ""}"></div><p class="hint" style="padding:6px 8px">${p.label}</p></div>`).join("")}</div><p class="readout" style="font-family:var(--sans)">A foto usa sempre o fundo de estúdio, nos dois temas, e ganha uma sombra de 2 px que desenha o contorno de peças claras.</p></div></article>`; }
+};
+
+/* ============================ MONTAGEM ============================ */
+function renderAll() {
+  document.querySelectorAll("[data-r]").forEach((el) => {
+    const [a, d] = el.dataset.r.split(":"), id = el.dataset.id || "c" + (++uid), L = lookFor(el.dataset.v);
+    let html;
+    if (a === "state") html = ST[d](L, id);
+    else if (PR[a]) { const p = { ...L.pieces.find((x) => x.id === el.dataset.p) }; if (el.dataset.v === "missing") { p.noPhoto = true; p.brand = null; p.mono = null; } html = PR[a][d](L, p, id); }
+    else html = R[a][d](L, id);
+    el.innerHTML = html;
+    if (!el.style.width) el.style.display = "contents";
+  });
+}
+renderAll();
+const idOf = (el) => el.closest(".fc")?.id;
+
+/* anotações do card do sistema (pinos fora do card) */
+function annotate() {
+  const wrap = document.getElementById("anno"); if (!wrap) return;
+  wrap.querySelectorAll(".anno-pin").forEach((n) => n.remove());
+  const card = wrap.querySelector(".fc"), cr = card.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+  ["head", "sc", "photo", "title", "pieces", "meta", "actions"].forEach((part, i) => {
+    const t = part === "sc" ? card.querySelector('[data-part="sc"]') : card.querySelector(`[data-part="${part}"]`); if (!t) return;
+    const r = t.getBoundingClientRect(), pin = document.createElement("span");
+    pin.className = "anno-pin"; pin.textContent = i + 1; pin.setAttribute("aria-hidden", "true");
+    const y = part === "sc" ? r.top + 14 : r.top + r.height / 2;
+    pin.style.left = (cr.right - wr.left + 14) + "px"; pin.style.top = (y - wr.top - 11) + "px";
+    wrap.appendChild(pin);
+  });
+}
+/* dimensões medidas, nunca declaradas */
+function measure() {
+  document.querySelectorAll("[data-dim]").forEach((s) => { const c = document.getElementById(s.dataset.dim); if (!c) return; const r = c.getBoundingClientRect(); s.textContent = `${Math.round(r.width)} × ${Math.round(r.height)} px`; });
+  annotate();
+}
+/* contraste dos pares de texto, calculado dos tokens do tema ativo */
+function lum(hex) { return rgb(hex).map((v) => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0); }
+function contrast() {
+  const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
+  const pairs = [["--ink", "--surface"], ["--muted", "--surface"], ["--muted", "--surface-2"], ["--mark-ink", "--surface"], ["--thread-ink", "--thread-soft"], ["--chalk-ink", "--chalk-soft"], ["--good-ink", "--surface"], ["--warning-ink", "--surface"]];
+  document.querySelector("#contrast tbody").innerHTML = pairs.map(([f, b]) => { const A = lum(g(f)), B = lum(g(b)), r = (Math.max(A, B) + .05) / (Math.min(A, B) + .05); return `<tr><td><span class="swatch-t" style="background:var(${f})"></span><code>${f}</code> sobre <code>${b}</code></td><td class="tab">${r.toFixed(1)}:1 ${r >= 4.5 ? "· AA" : "· abaixo de AA"}</td></tr>`; }).join("");
+}
+
+/* animação: uma vez ao entrar na tela */
+const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("play"); io.unobserve(e.target); } }), { threshold: .35 }) : null;
+document.querySelectorAll(".fc[data-anim]").forEach((c) => io ? io.observe(c) : c.classList.add("play"));
+
+/* toast */
+const toastEl = document.getElementById("toast"); let tt;
+function toast(msg) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(tt); tt = setTimeout(() => { toastEl.hidden = true; }, 1800); }
+
+/* menu ⋯ */
+const MENUS = { look: [["Salvar"], ["Copiar link"], ["Editar", "Aparece só para quem publicou"], ["Ver original", "Aparece só em remixes"], ["Denunciar"]], piece: [["Compartilhar"], ["Copiar link"], ["Editar peça", "Aparece só para o dono"], ["Denunciar"]] };
+function closeMenus(focusBtn) { document.querySelectorAll(".menu").forEach((m) => { m._btn.setAttribute("aria-expanded", "false"); if (focusBtn) m._btn.focus(); m.remove(); }); }
+function openMenu(btn) {
+  const m = document.createElement("div");
+  m.className = "menu"; m.setAttribute("role", "menu"); m.setAttribute("aria-label", "Opções do post");
+  m.innerHTML = MENUS[btn.dataset.menu].map(([l, h]) => `<button type="button" role="menuitem" tabindex="-1" data-label="${l}">${l}${h ? `<small>${h}</small>` : ""}</button>`).join("");
+  const br = btn.getBoundingClientRect();
+  m._btn = btn; m._y = scrollY; document.body.appendChild(m);
+  m.style.top = Math.min(br.bottom + 4, innerHeight - m.offsetHeight - 8) + "px"; m.style.left = Math.max(8, br.right - m.offsetWidth) + "px"; btn.setAttribute("aria-expanded", "true"); m.querySelector("button").focus();
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  const mb = t.closest("[data-menu]");
+  if (mb) { const open = mb.getAttribute("aria-expanded") === "true"; closeMenus(); if (!open) openMenu(mb); return; }
+  const mi = t.closest(".menu [role=menuitem]");
+  if (mi) { toast(`Demonstração: ${mi.dataset.label}`); closeMenus(true); return; }
+  if (!t.closest(".menu")) closeMenus();
+
+  const a = t.closest("[data-act]");
+  if (a) {
+    if (a.hasAttribute("aria-pressed")) {
+      const on = a.getAttribute("aria-pressed") !== "true"; a.setAttribute("aria-pressed", String(on));
+      const n = a.querySelector(".n"); if (n && a.dataset.n) { const v = +a.dataset.n + (on ? 1 : 0); n.textContent = int(v); a.setAttribute("aria-label", `${a.dataset.label}, ${int(v)}`); }
+    } else toast(`Demonstração: ${a.dataset.label}`);
+    return;
+  }
+  const tb = t.closest("[data-toast]"); if (tb) { toast(tb.dataset.toast); return; }
+  const tag = t.closest(".minitag"); if (tag) { selectTag(tag); return; }
+  const pick = t.closest("[data-pick]"); if (pick) { const host = pick.closest("[data-bento-host]"), id = pick.dataset.pick; host.dataset.hero = id; host.innerHTML = bentoGrid(LOOK, id); const live = host.parentElement.querySelector("[data-bento-live]"); if (live) live.textContent = "Em destaque: " + (id === "look" ? "look completo" : byId(id).name); const nb = host.querySelector("[data-pick]"); if (nb) nb.focus(); return; }
+  const sr = t.closest(".srow[data-hl]"); if (sr) { toggleSpectrum(sr); return; }
+  const rp = t.closest("[data-replay]"); if (rp) { const c = document.getElementById(rp.dataset.replay); if (c) { c.classList.remove("play"); void c.offsetWidth; c.classList.add("play"); } return; }
+  const sw = t.closest(".switch"); if (sw && sw.getAttribute("aria-disabled") !== "true") { sw.setAttribute("aria-checked", String(sw.getAttribute("aria-checked") !== "true")); updateStudio(); return; }
+  const tool = t.closest(".seg[data-tool] button"); if (tool) { setTool(tool); }
+});
+
+function selectTag(tag) {
+  const grp = tag.closest("[role=radiogroup]"), card = tag.closest(".fc");
+  grp.querySelectorAll("[role=radio]").forEach((r) => { const on = r === tag; r.setAttribute("aria-checked", String(on)); r.tabIndex = on ? 0 : -1; });
+  card.querySelector("[data-tagbody]").innerHTML = tagBody(LOOK.pieces[+tag.dataset.i]);
+  measure();
+}
+function toggleSpectrum(row) {
+  const card = row.closest(".fc"), on = row.getAttribute("aria-pressed") !== "true";
+  card.querySelectorAll(".srow[data-hl]").forEach((r) => r.setAttribute("aria-pressed", "false"));
+  row.setAttribute("aria-pressed", String(on));
+  card.querySelectorAll(".comp .cut").forEach((img) => img.classList.toggle("dim", on && img.dataset.piece !== row.dataset.hl));
+}
+document.addEventListener("keydown", (e) => {
+  const m = e.target.closest(".menu");
+  if (m) {
+    const items = [...m.querySelectorAll("[role=menuitem]")], i = items.indexOf(e.target);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    else if (e.key === "Home") { e.preventDefault(); items[0].focus(); }
+    else if (e.key === "End") { e.preventDefault(); items[items.length - 1].focus(); }
+    else if (e.key === "Escape") { e.preventDefault(); closeMenus(true); }
+    else if (e.key === "Tab") closeMenus();
+    return;
+  }
+  const r = e.target.closest("[role=radio]");
+  if (r && ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(e.key)) {
+    e.preventDefault(); const all = [...r.closest("[role=radiogroup]").querySelectorAll("[role=radio]")], i = all.indexOf(r);
+    const n = e.key === "Home" ? 0 : e.key === "End" ? all.length - 1 : (i + (["ArrowRight", "ArrowDown"].includes(e.key) ? 1 : -1) + all.length) % all.length;
+    all[n].focus(); selectTag(all[n]); return;
+  }
+  if (e.key === "Escape") { const c = e.target.closest(".fc"); if (c && c.querySelector('.srow[aria-pressed="true"]')) { c.querySelectorAll(".srow").forEach((x) => x.setAttribute("aria-pressed", "false")); c.querySelectorAll(".cut.dim").forEach((x) => x.classList.remove("dim")); } }
+});
+
+/* Background Studio: switch sazonal */
+function updateStudio() {
+  const s = document.getElementById("studio"), a = s.querySelector("#sw-a"), on = a.getAttribute("aria-checked") === "true";
+  s.querySelector("#sw-a-hint").textContent = on ? "Ligado: o fundo manual foi guardado e volta se você desligar." : "Desligado: o fundo continua o que você escolheu na etapa 4.";
+}
+document.getElementById("studio").innerHTML = `<h4>Etapa 4 · Fundo</h4>
+  <button type="button" class="switch" role="switch" aria-checked="false" id="sw-a" aria-describedby="sw-a-hint"><span>Aplicar arte sazonal automática<br><span class="hint">Estação do look: Outono</span></span><span class="trk" aria-hidden="true"></span></button>
+  <p class="hint" id="sw-a-hint">Desligado: o fundo continua o que você escolheu na etapa 4.</p>
+  <button type="button" class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-describedby="sw-b-hint"><span>Aplicar arte sazonal automática<br><span class="hint">Outro look, sem estação</span></span><span class="trk" aria-hidden="true"></span></button>
+  <p class="hint" id="sw-b-hint">Preencha a estação na etapa 3 para ativar.</p>`;
+
+/* barra de ferramentas */
+function setTool(btn) {
+  const seg = btn.closest(".seg"), kind = seg.dataset.tool, v = btn.dataset.v, root = document.documentElement;
+  seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+  if (kind === "theme") { if (v === "system") root.removeAttribute("data-theme"); else root.dataset.theme = v; contrast(); }
+  if (kind === "width") root.style.setProperty("--card-w", v + "px");
+  if (kind === "motion") { if (v === "reduce") root.dataset.motion = "reduce"; else root.removeAttribute("data-motion"); }
+  if (kind === "edit") root.dataset.edit = v;
+  requestAnimationFrame(measure);
+}
+contrast();
+window.addEventListener("load", measure);
+window.addEventListener("resize", () => { closeMenus(); requestAnimationFrame(measure); });
+window.addEventListener("scroll", () => { const m = document.querySelector(".menu"); if (m && Math.abs(scrollY - m._y) > 40) closeMenus(); }, { passive: true });
+if (document.fonts) document.fonts.ready.then(measure);
+setTimeout(measure, 300);
+})();
+</script>
+</body>
+</html>

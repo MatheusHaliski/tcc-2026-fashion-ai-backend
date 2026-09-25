@@ -42,6 +42,12 @@ def mf_quote(v):
     import re
     return re.sub(r"'('|\{'|\}')?", lambda m: m.group(0) if m.group(1) else "''", v)
 
+REQ_CODE = __import__("re").compile(r"\s*\((?:DET-[A-Z]\d{2}[^)]*|RF\d+(?:\.CA\d+)?(?:[,/ ·]+(?:RF|CA)?\d+)*(?:\s*§[\d.]+)?|RNF\d+|HU\d+|NFR\d+)\)")
+
+def strip_codes(v):
+    """Códigos de requisito (RF4.CA06, DET-G05…) não aparecem para o usuário final: saem das traduções também."""
+    return REQ_CODE.sub("", v)
+
 def catalogs():
     return {"fe": (read_json(f"{FE}/pt-BR.json"), read_json(f"{FE}/en.json"), read_json(f"{FE}/es.json")),
             "be": (read_props(f"{BE}/messages.properties"), read_props(f"{BE}/messages_en.properties"), read_props(f"{BE}/messages_es.properties"))}
@@ -65,6 +71,7 @@ def apply(files):
             pt, en, es = cats[kind]
             if key not in pt: print("chave desconhecida:", k); continue
             if not isinstance(pair, list) or len(pair) != 2: print("formato inválido:", k); continue
+            pair = [strip_codes(x) for x in pair]
             if kind == "be": pair = [mf_quote(x) for x in pair]
             en[key], es[key] = pair; n[kind] += 1
     write_json(f"{FE}/en.json", cats["fe"][1]); write_json(f"{FE}/es.json", cats["fe"][2])

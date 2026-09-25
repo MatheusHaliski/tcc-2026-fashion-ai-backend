@@ -34,6 +34,8 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
   };
   const occasions = value.category ? tax?.allowedOccasionsByCategory?.[value.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
   function submit(e: FormEvent) { e.preventDefault(); onSubmit(); }
+  // "Mais detalhes" abre sozinho quando já há algo preenchido ali (edição) ou quando o servidor apontou erro nesses campos.
+  const moreOpen = ["seals", "visibility", "condition", "purchaseDate", "purchaseLocation", "tags", "notes"].some((k) => err[k]) || !!(value.tags || value.notes || value.purchaseLocation || value.purchaseDate || value.seals.length);
   return (
     <form onSubmit={submit} noValidate className="grid gap-x-4 sm:grid-cols-2">
       {prefilledNote && <p className="sm:col-span-2 mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{prefilledNote}</p>}
@@ -61,14 +63,19 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
       <Field label={t("common.ate_3", { txt: t("common.occasion") })} error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>
       <Field label={t("common.ate_3", { txt: t("common.style") })} error={err.style} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={value.style.includes(s)} onClick={() => toggleIn("style", s, 2)}>{label(s)}</Chip>)}</div></Field>
-      <Field label={t("pieceForm.selos_da_peca")} error={err.seals} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.pieceSeals ?? []).map((s) => <Chip key={s} active={value.seals.includes(s)} onClick={() => toggleIn("seals", s, 3)}>{label(s)}</Chip>)}</div></Field>
-      <Field label={t("common.visibility")} id="visibility" error={err.visibility}><Select id="visibility" value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
-      <Field label={t("pieceForm.condicao")} id="condition" error={err.condition}><Select id="condition" value={value.condition} onChange={(e) => set("condition", e.target.value)}><option value="">—</option><option value="NEW">{t("pieceForm.nova")}</option><option value="LIKE_NEW">{t("pieceForm.como_nova")}</option><option value="GOOD">{t("pieceForm.boa")}</option><option value="WORN">{t("pieceForm.usada")}</option></Select></Field>
-      <Field label={t("pieceForm.data_de_compra")} id="purchaseDate"><Input id="purchaseDate" type="date" value={value.purchaseDate} onChange={(e) => set("purchaseDate", e.target.value)} /></Field>
-      <Field label={t("pieceForm.local_de_compra")} id="purchaseLocation"><Input id="purchaseLocation" value={value.purchaseLocation} onChange={(e) => set("purchaseLocation", e.target.value)} /></Field>
-      <Field label={t("common.tags_virgula")} id="tags" className="sm:col-span-2"><Input id="tags" value={value.tags} onChange={(e) => set("tags", e.target.value)} placeholder={t("pieceForm.verao_viagem")} /></Field>
-      <Field label={t("pieceForm.notas")} id="notes" className="sm:col-span-2"><Textarea id="notes" value={value.notes} onChange={(e) => set("notes", e.target.value)} maxLength={500} /></Field>
-      <label className="sm:col-span-2 mb-3 flex items-center gap-2 type-body"><input type="checkbox" checked={value.forSale} onChange={(e) => set("forSale", e.target.checked)} /> {t("common.forSale")}</label>
+      <details className="more-details sm:col-span-2" open={moreOpen}>
+        <summary>{t("pieceForm.moreDetails")}<span className="type-body-sm text-muted"> — {t("pieceForm.moreDetailsHint")}</span></summary>
+        <div className="grid gap-x-4 pt-3 sm:grid-cols-2">
+        <Field label={t("pieceForm.selos_da_peca")} error={err.seals} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.pieceSeals ?? []).map((s) => <Chip key={s} active={value.seals.includes(s)} onClick={() => toggleIn("seals", s, 3)}>{label(s)}</Chip>)}</div></Field>
+        <Field label={t("common.visibility")} id="visibility" error={err.visibility}><Select id="visibility" value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
+        <Field label={t("pieceForm.condicao")} id="condition" error={err.condition}><Select id="condition" value={value.condition} onChange={(e) => set("condition", e.target.value)}><option value="">—</option><option value="NEW">{t("pieceForm.nova")}</option><option value="LIKE_NEW">{t("pieceForm.como_nova")}</option><option value="GOOD">{t("pieceForm.boa")}</option><option value="WORN">{t("pieceForm.usada")}</option></Select></Field>
+        <Field label={t("pieceForm.data_de_compra")} id="purchaseDate"><Input id="purchaseDate" type="date" value={value.purchaseDate} onChange={(e) => set("purchaseDate", e.target.value)} /></Field>
+        <Field label={t("pieceForm.local_de_compra")} id="purchaseLocation"><Input id="purchaseLocation" value={value.purchaseLocation} onChange={(e) => set("purchaseLocation", e.target.value)} /></Field>
+        <Field label={t("common.tags_virgula")} id="tags" className="sm:col-span-2"><Input id="tags" value={value.tags} onChange={(e) => set("tags", e.target.value)} placeholder={t("pieceForm.verao_viagem")} /></Field>
+        <Field label={t("pieceForm.notas")} id="notes" className="sm:col-span-2"><Textarea id="notes" value={value.notes} onChange={(e) => set("notes", e.target.value)} maxLength={500} /></Field>
+        <label className="sm:col-span-2 mb-3 flex items-center gap-2 type-body"><input type="checkbox" checked={value.forSale} onChange={(e) => set("forSale", e.target.checked)} /> {t("common.forSale")}</label>
+        </div>
+      </details>
       {error && Object.keys(err).length === 0 && <p role="alert" className="error-text sm:col-span-2">{error.message}</p>}
       <div className="sm:col-span-2 flex justify-end gap-2"><Button type="submit" variant="primary" size="lg" loading={busy}>{submitLabel}</Button></div>
     </form>

@@ -20,7 +20,18 @@
   --tracking-label: 0.08em;
 }
 
-/* papéis por família: moda = editorial, interface = ui, dado = data */
+/* papéis por família: moda = editorial, interface = ui, dado = data.
+   Cada classe carrega tamanho, entrelinha e tracking do token (antes só a família: os títulos herdavam 14 px do body). */
+.type-display-xl { font-size: var(--text-display-xl); line-height: var(--text-display-xl--line-height); letter-spacing: var(--text-display-xl--letter-spacing); }
+.type-display { font-size: var(--text-display); line-height: var(--text-display--line-height); letter-spacing: var(--text-display--letter-spacing); }
+.type-h1 { font-size: var(--text-h1); line-height: var(--text-h1--line-height); letter-spacing: var(--text-h1--letter-spacing); text-wrap: balance; }
+.type-h2 { font-size: var(--text-h2); line-height: var(--text-h2--line-height); letter-spacing: var(--text-h2--letter-spacing); text-wrap: balance; }
+.type-h3 { font-size: var(--text-h3); line-height: var(--text-h3--line-height); }
+.type-body-lg { font-size: var(--text-body-lg); line-height: var(--text-body-lg--line-height); }
+.type-body { font-size: var(--text-body); line-height: var(--text-body--line-height); }
+.type-body-sm { font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
+.type-caption { font-size: var(--text-caption); line-height: var(--text-caption--line-height); letter-spacing: var(--text-caption--letter-spacing); }
+.type-label { font-size: var(--text-label); line-height: var(--text-label--line-height); }
 .type-display-xl, .type-display, .type-h1, .type-h2 { font-family: var(--font-editorial); font-weight: 600; }
 .type-h2 { font-weight: 500; }
 .type-h3 { font-family: var(--font-ui); font-weight: 600; }
@@ -28,3 +39,9 @@
 .type-caption { font-family: var(--font-ui); font-weight: 500; }
 .type-label { font-family: var(--font-data); font-weight: 500; text-transform: uppercase; letter-spacing: var(--tracking-label); }
 .type-data, .tabular { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* Títulos de página crescem no desktop (display 32 px); no celular ficam em 24 px. Texto corrido sobe para 15 px no
+   celular (leitura com o aparelho na mão); campos de formulário nunca ficam abaixo de 16 px em tela de toque, para o
+   Safari do iPhone não ampliar a página ao focar. */
+@media (min-width: 1024px) { :root { --text-h1: 1.875rem; --text-h2: 1.375rem; } }
+@media (max-width: 639px) { :root { --text-body: 0.9375rem; --text-body-sm: 0.875rem; } }

@@ -7,7 +7,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Button, Chip, EmptyState, ErrorState, Input, PageHeader, Pagination, Select, SkeletonGrid, useToast } from "@/components/ui";
+import { Button, EmptyState, ErrorState, PageHeader, Pagination, SkeletonGrid, useToast } from "@/components/ui";
+import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 
@@ -34,16 +35,19 @@ function Closet() {
     <>
       <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
         actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button>}</>} />
-      <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("closet.state")}>
-        {STATES.map(([v, k]) => <Chip key={v} active={f.state === v} onClick={() => set("state", v)}>{t(k)}</Chip>)}
-      </div>
-      <div className="mb-4 grid gap-2 sm:grid-cols-5">
-        <Input aria-label={t("common.search")} placeholder={t("common.search") + "…"} value={f.q} onChange={(e) => set("q", e.target.value)} />
-        <Select aria-label={t("common.category")} value={f.category} onChange={(e) => set("category", e.target.value)}><option value="">{t("common.category")}: {t("common.all")}</option>{Object.keys(tax?.subcategories ?? {}).map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
-        <Select aria-label={t("common.color")} value={f.color} onChange={(e) => set("color", e.target.value)}><option value="">{t("common.color")}: {t("common.all")}</option>{Object.keys(tax?.colors ?? {}).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
-        <Select aria-label={t("common.occasion")} value={f.occasion} onChange={(e) => set("occasion", e.target.value)}><option value="">{t("common.occasion")}: {t("common.all")}</option>{(tax?.occasions ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
-        <Select aria-label={t("common.ordenar")} value={f.sort} onChange={(e) => set("sort", e.target.value)}><option value="recentes">{t("common.mais_recentes")}</option><option value="mais_usadas">{t("closet.mais_usadas")}</option><option value="menos_usadas">{t("closet.menos_usadas")}</option><option value="nome">{t("closet.nome_a_z")}</option><option value="preco">{t("common.price")}</option></Select>
-      </div>
+      <FilterBar search={f.q} onSearch={(v) => set("q", v)} searchLabel={t("closet.searchLabel")}
+        quick={{ key: "state", label: t("closet.state"), options: STATES.map(([v, k]) => ({ value: v, label: t(k) })) }}
+        filters={[
+          { key: "category", label: t("common.category"), options: Object.keys(tax?.subcategories ?? {}).map((c) => ({ value: c, label: CATEGORY_LABEL[c] ?? c })) },
+          { key: "color", label: t("common.color"), options: Object.entries(tax?.colors ?? {}).map(([c, hex]) => ({ value: c, label: label(c), swatch: /^#[0-9a-f]{3,8}$/i.test(hex) ? hex : undefined })) },
+          { key: "occasion", label: t("common.occasion"), options: (tax?.occasions ?? []).map((c) => ({ value: c, label: label(c) })) },
+        ]}
+        values={{ state: f.state, category: f.category, color: f.color, occasion: f.occasion }} onChange={(k, v) => set(k as keyof typeof f, v)}
+        sort={{ value: f.sort, onChange: (v) => set("sort", v), options: [
+          { value: "recentes", label: t("common.mais_recentes") }, { value: "mais_usadas", label: t("closet.mais_usadas") },
+          { value: "menos_usadas", label: t("closet.menos_usadas") }, { value: "nome", label: t("closet.nome_a_z") }, { value: "preco", label: t("common.price") },
+        ] }}
+        resultCount={data?.total} />
       {error && <ErrorState error={error} onRetry={reload} />}
       {loading && <SkeletonGrid n={8} />}
       {!loading && data && data.items.length === 0 && <EmptyState title={t("closet.empty")} hint={t("closet.emptyHint")} action={<Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link>} />}
@@ -53,8 +57,7 @@ function Closet() {
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />
         </>
       )}
-      <p className="mt-6 type-caption text-faint">{t("nav.explorer")}: <Link className="underline" href="/search?tab=PECAS">{t("closet.addToWardrobe")}</Link></p>
-      <div className="hidden"><Button onClick={reload}>{t("common.retry")}</Button></div>
+      <p className="mt-6 type-caption text-muted">{t("nav.explorer")}: <Link className="underline" href="/search?tab=PECAS">{t("closet.addToWardrobe")}</Link></p>
     </>
   );
 }

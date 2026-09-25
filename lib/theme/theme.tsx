@@ -55,8 +55,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.dataset.density = prefs.density.toLowerCase();
     root.style.fontSize = `${(prefs.fontScale / 100) * 100}%`;
     root.dataset.reduceMotion = prefs.reduceMotion ? "true" : "false";
-    const bg = prefs.chromeBackgroundId ?? (resolved === "dark" ? "rf23_bg_selos_fai_noturno" : "rf23_bg_selos_fai_claro");
-    root.style.setProperty("--chrome-bg", resolved === "contrast" ? "none" : `url("${chromeTile(bg)}")`);
+    // Fundo do chrome (RF23): liso por padrão; o padrão de selos FAI (ou outro) é escolha do usuário em Configurações.
+    const bg = prefs.chromeBackgroundId;
+    root.style.setProperty("--chrome-bg", resolved === "contrast" || !bg ? "none" : `url("${chromeTile(bg)}")`);
     // Containers de conteúdo (RF23): brancos por padrão; cor escolhida pelo usuário define também o tom do texto dentro deles.
     const custom = prefs.contentContainerColor && /^#[0-9A-Fa-f]{6}$/.test(prefs.contentContainerColor) ? prefs.contentContainerColor : null;
     const content = custom ?? (resolved === "light" ? "#FFFFFF" : resolved === "dark" ? "#1B1C1A" : "#000000");

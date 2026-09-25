@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Chip, EmptyState, ErrorState, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
+import { OnboardingChecklist } from "@/components/onboarding";
 
 type Feed = { items: SchemeView[]; nextCursor: string | null; chips: { label: string; key: string; value: string }[]; order?: string };
 
@@ -26,7 +27,8 @@ export default function FeedPage() {
   const toggle = (k: string, v: string) => { setCursor(null); setFilters((f) => (f[k] === v ? Object.fromEntries(Object.entries(f).filter(([x]) => x !== k)) : { ...f, [k]: v })); };
   return (
     <>
-      <PageHeader title={t("feed.title")} kicker="RF8" lead={data?.order} />
+      <PageHeader title={t("feed.title")} kicker="RF8" lead={t("feed.lead")} />
+      <OnboardingChecklist />
       <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); }} />
       {tab === "runway" && !user && <EmptyState title={t("common.loginRequired")} action={<Link href="/login" className="btn btn-primary">{t("nav.login")}</Link>} />}
       {data?.chips?.length ? <div className="mb-4 flex flex-wrap gap-2">{data.chips.map((c) => <Chip key={c.key + c.value} active={filters[c.key] === c.value} onClick={() => toggle(c.key, c.value)}>{c.label}</Chip>)}</div> : null}

@@ -4,6 +4,7 @@
  */
 import { tr } from "@/lib/i18n/core";
 import { acceptLanguage, getCurrentLocale } from "@/lib/i18n/state";
+import PIECE_THUMBS from "@/lib/assets/piece-thumbs.json";
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -137,4 +138,20 @@ export function mediaUrl(url?: string | null): string | undefined {
   if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
   if (url.startsWith("/media/")) return `${API_BASE}${url}`;
   return url;
+}
+
+/**
+ * Miniatura para cards: as imagens padrão de peça (PNG de até 2 MB em /public/assets_pecas) têm versões WebP de 320 e
+ * 640 px (scripts/assets/piece-thumbs.py). Para as demais imagens devolve a própria URL.
+ */
+export function thumbUrl(url?: string | null, size: 320 | 640 = 640): string | undefined {
+  if (!url) return undefined;
+  const hit = (PIECE_THUMBS as Record<string, Record<string, string>>)[decodeURI(url.split("?")[0])];
+  return hit?.[String(size)] ?? mediaUrl(url);
+}
+/** srcSet de 320/640 px quando a miniatura existe (o navegador escolhe pela largura e pela densidade da tela). */
+export function thumbSrcSet(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const hit = (PIECE_THUMBS as Record<string, Record<string, string>>)[decodeURI(url.split("?")[0])];
+  return hit ? `${hit["320"]} 320w, ${hit["640"]} 640w` : undefined;
 }

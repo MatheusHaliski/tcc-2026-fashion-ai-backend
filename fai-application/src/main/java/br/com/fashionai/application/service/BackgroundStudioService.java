@@ -49,14 +49,14 @@ import java.util.UUID;
  */
 @Service
 public class BackgroundStudioService {
-    /** anatomias_card_v17: 3 anatomias base (Seção A) + 10 variações oficiais (Seção B). */
+    /** anatomias_card_v18 (antes v17): 3 anatomias base (Seção A) + 10 variações oficiais (Seção B). */
     public static final List<String> ANATOMIES = List.of("LISTA_VERTICAL", "GRADE_PECAS", "HERO_LISTA", "PASSARELA", "ETIQUETA",
             "RAIO_X", "BENTO", "ESPECTRO", "CUSTO_POR_USO", "SILHUETA_PROPORCAO", "HYPE_FOCUS", "CARTELA_SAZONAL", "LEGO");
     /** Versão por peça (Seção C): 7 das 10 variações. */
     public static final List<String> PIECE_ANATOMIES = List.of("PECA_AMPLIADO", "PASSARELA", "ETIQUETA", "RAIO_X", "BENTO",
             "ESPECTRO", "CUSTO_POR_USO", "LEGO");
     /**
-     * Posição do selo por anatomia (docs/anatomias/anatomias_card_v17_1.html). Zonas: TITLE_ROW (linha "Título · selos ·
+     * Posição do selo por anatomia (docs/anatomias/anatomias_card_v18.html; zonas iguais às da v17_1). Zonas: TITLE_ROW (linha "Título · selos ·
      * preço"), META_BLOCK (bloco "Selos · descrição · estilo"), COVER_CORNER (canto da capa/arte própria), HEADER
      * (cabeçalho do card-objeto, ao lado do label PREMIUM), STUDS (placas redondas 1×1 do LEGO). pieceRows indica que
      * cada linha/célula de peça também leva selo ("marca · nome · selos · preço"). O medalhão tem o tamanho do logo

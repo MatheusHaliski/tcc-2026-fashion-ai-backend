@@ -98,7 +98,7 @@ function FlairInner() {
     <>
       <PageHeader title="FLAIR" kicker={t("flair.rf37_jogo_de_cartas")}
         lead={t("flair.o_guarda_roupa_e_a")}
-        actions={m ? <div className="flex flex-wrap items-center gap-2"><Badge tone="thread">{m.rank.label}</Badge><Badge>{t("flair.coins_3", { coins: m.coins })}</Badge><Badge tone="chalk">{m.wins}V · {m.draws}E · {m.losses}D</Badge></div> : undefined} />
+        actions={m ? <div className="flex flex-wrap items-center gap-2"><Badge tone="thread"><span title={t("flair.rankHint")}>{m.rank.label}</span></Badge><Badge><span title={t("flair.coinsHint")}>{t("flair.coins_3", { coins: m.coins })}</span></Badge><Badge tone="chalk"><span aria-label={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })} title={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })}>{t("flair.recordShort", { wins: m.wins, draws: m.draws, losses: m.losses })}</span></Badge></div> : undefined} />
       {m && (
         <div className="surface mb-4 flex flex-wrap items-center gap-4 p-3">
           <div className="min-w-[180px] flex-1">

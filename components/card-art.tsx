@@ -13,7 +13,7 @@ export function CardArtLayer({ art }: { art: CardArt }) {
     <div className={`card-art ${art.animation ? `anim-${art.animation}` : ""} art-${art.kind}`} style={{ background: art.base }} aria-hidden data-art={art.label}>
       {art.image && <img src={art.image} alt="" className="card-art-img" />}
       {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
-      {art.material && <img src={art.material} alt="" className="card-art-img card-art-material" />}
+      {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}
       {art.season && <SeasonDecor season={art.season} />}
     </div>
   );

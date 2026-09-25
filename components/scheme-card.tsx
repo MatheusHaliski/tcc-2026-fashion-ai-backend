@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import type { SchemeView } from "@/lib/api/types";
-import { mediaUrl } from "@/lib/api/client";
+import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle } from "@/lib/skins";
@@ -17,7 +17,16 @@ import { useDetailModal } from "@/components/detail-modal";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 
-export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-good)" : (h ?? 0) >= 50 ? "var(--status-warning)" : (h ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)";
+/** Escala da popularidade (Hype): sem vermelho — nota baixa não é erro, é look novo ou pouco visto. */
+export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)";
+/** Faixa qualitativa do Hype mostrada nos cards (o número exato fica no detalhe, com a explicação). */
+export const hypeBand = (h?: number | null): "hot" | "rising" | null => (h ?? 0) >= 70 ? "hot" : (h ?? 0) >= 40 ? "rising" : null;
+export function HypeBadge({ score }: { score?: number | null }) {
+  const { t } = useI18n();
+  const band = hypeBand(score);
+  if (!band) return null;
+  return <span className={`hype-chip is-${band}`} title={t("hype.explain")}>{band === "hot" ? t("hype.hot") : t("hype.rising")}</span>;
+}
 
 /**
  * Card oficial v17 (docs/anatomias): header do autor, container do esquema (foto/grade + peças), rodapé com métricas.
@@ -66,9 +75,11 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const anat = (scheme.layoutAnatomy ?? "").toUpperCase();
   const l = layout ?? (anat.includes("GRADE") ? "grade" : anat === "HERO_LISTA" || anat.includes("LATERAL") ? "lateral" : "lista");
   const items = scheme.items ?? [];
-  const cover = mediaUrl(scheme.coverImageUrl) ?? mediaUrl(items[0]?.piece?.imageUrl ?? (items[0]?.imageUrl as string));
+  const coverRaw = scheme.coverImageUrl ? null : (items[0]?.piece?.imageUrl ?? (items[0]?.imageUrl as string));
+  const cover = mediaUrl(scheme.coverImageUrl) ?? thumbUrl(coverRaw, 640);
+  const coverSet = coverRaw ? thumbSrcSet(coverRaw) : undefined;
   const link = href ?? `/schemes/${scheme.id}`;
-  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: mediaUrl(it.piece?.imageUrl ?? (it.imageUrl as string)), brand: it.piece?.brandName, logo: it.piece?.brandLogoUrl ?? null, price: it.piece?.price, slot: it.slot }));
+  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: thumbUrl(it.piece?.imageUrl ?? (it.imageUrl as string), 320), brand: it.piece?.brandName, logo: it.piece?.brandLogoUrl ?? null, price: it.piece?.price, slot: it.slot }));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(scheme.layoutAnatomy ?? (l === "grade" ? "GRADE_PECAS" : l === "lateral" ? "HERO_LISTA" : "LISTA_VERTICAL"));
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
@@ -86,14 +97,14 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   return (
     <article className={`fai-card ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <div className="c-header">
-        <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={18} /></span>
+        <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={24} /></span>
         <span className="c-meta">@{scheme.owner?.username} · {relative(scheme.publishedAt ?? scheme.createdAt)}</span>
-        {scheme.lookDoDia && <span className="badge badge-chalk" title={t("lookbook.daily")}>LDD</span>}
-        <span className="c-fav" aria-hidden><FaiIcon id="SOC-06" size={24} active={scheme.viewer?.saved} decorative /></span>
+        {scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}
+        {scheme.viewer?.saved && <span className="c-fav" role="img" aria-label={t("common.saved")} title={t("common.saved")}><FaiIcon id="SOC-05" size={20} variant="glyph" decorative /></span>}
       </div>
       <div className="scheme-stage">
       {hasArt && art && <CardArtLayer art={art} />}
-      <Link href={link} onClick={openModal} className="scheme-container block" data-anatomy={scheme.layoutAnatomy ?? "LISTA_VERTICAL"} data-label={scheme.origin === "AUTOPILOTO" ? "autopiloto" : scheme.creationMode === "AI" ? "ia" : "esquema"}>
+      <Link href={link} onClick={openModal} className="scheme-container block" data-anatomy={scheme.layoutAnatomy ?? "LISTA_VERTICAL"} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI" ? t("schemeCard.madeWithAi") : undefined}>
         {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
         {hasOwnArt(scheme.layoutAnatomy) ? (
           <AnatomyBody scheme={scheme} pieces={toAnatomyPieces(scheme)} />
@@ -103,18 +114,18 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         ) : l === "lateral" ? (
           <div className="hero-lateral-row">
-            <div className="c-photo">{cover && <img src={cover} alt="" loading="lazy" style={{ filter: photoFilter }} />}</div>
+            <div className="c-photo">{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" style={{ filter: photoFilter }} />}</div>
             <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><b>{p.name}</b><span>{p.brand ?? p.slot}</span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>
           </div>
         ) : (
           <>
-            <div className="c-photo">{cover && <img src={cover} alt="" loading="lazy" style={{ filter: photoFilter }} />}</div>
+            <div className="c-photo">{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" style={{ filter: photoFilter }} />}</div>
             {titleRow}
             {!compact && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${onPiece ? "cursor-pointer hover:bg-surface-2" : ""}`} role={onPiece ? "button" : undefined} tabIndex={onPiece ? 0 : undefined}
                 onClick={onPiece ? (e) => { e.preventDefault(); e.stopPropagation(); onPiece(p.id); } : undefined} onKeyDown={onPiece ? (e) => { if (e.key === "Enter") { e.preventDefault(); onPiece(p.id); } } : undefined}>
                 <span className="logo-chip">{p.brand ? <BrandLogo name={p.brand} src={p.logo} size={26} shape="square" /> : p.img ? <img src={p.img} alt="" /> : "FAI"}</span>
-                <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.price != null ? fmtMoney(p.price) : null].filter(Boolean).join(" · ") || p.slot}</span></span>
+                <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.price != null ? fmtMoney(p.price, "BRL") : null].filter(Boolean).join(" · ") || p.slot}</span></span>
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>
             ))}
@@ -127,8 +138,13 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       </Link>
       </div>
       <div className="c-foot">
-        <span className="metrics tabular"><span title={t("common.curtidas")}>♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title={t("common.remixes")}>↻ {scheme.counters?.remixes ?? 0}</span><Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} /></span>
-        {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
+        <span className="metrics tabular">
+          <span className="metric" role="img" aria-label={t("schemeCard.likesCount", { count: scheme.counters?.likes ?? 0 })} title={t("schemeCard.likesCount", { count: scheme.counters?.likes ?? 0 })}><FaiIcon id="SOC-01" size={20} variant="glyph" decorative />{scheme.counters?.likes ?? 0}</span>
+          <CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} />
+          <span className="metric" role="img" aria-label={t("schemeCard.remixesCount", { count: scheme.counters?.remixes ?? 0 })} title={t("schemeCard.remixesCount", { count: scheme.counters?.remixes ?? 0 })}><FaiIcon id="SOC-04" size={20} variant="glyph" decorative />{scheme.counters?.remixes ?? 0}</span>
+          <Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} />
+        </span>
+        <HypeBadge score={scheme.hypeScore} />
       </div>
       {extra && <div className="c-extra">{extra}</div>}
     </article>

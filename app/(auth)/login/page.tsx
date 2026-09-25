@@ -21,7 +21,7 @@ function LoginForm() {
     if (!s) return;
     signIn(s);
     s.warnings?.forEach((w) => toast.info(w));
-    if (!s.emailVerified) router.push("/verify-email"); else router.push(params.get("next") ?? "/closet");
+    if (!s.emailVerified) router.push("/verify-email"); else router.push(params.get("next") ?? "/feed");
   }
   return (
     <AuthCard title={t("auth.loginTitle")} lead={t("auth.loginLead")}

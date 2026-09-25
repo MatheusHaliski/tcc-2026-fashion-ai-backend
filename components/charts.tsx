@@ -25,10 +25,10 @@ export function TimeSeries({ data, x = "day", keys, kind = "line", height = 220,
   // Recharts 2 só enxerga eixos/grade/tooltip como filhos diretos (ou em array) — dentro de um Fragment eles somem.
   const axes = [
     <CartesianGrid key="grid" strokeDasharray="3 3" stroke="var(--line-soft)" />,
-    <XAxis key="x" dataKey={x} tick={{ fontSize: 10, fill: "var(--muted)" }} tickFormatter={(v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? `${String(v).slice(8, 10)}/${String(v).slice(5, 7)}` : String(v))} minTickGap={12} />,
-    <YAxis key="y" tick={{ fontSize: 10, fill: "var(--muted)" }} width={44} />,
+    <XAxis key="x" dataKey={x} tick={{ fontSize: 12, fill: "var(--muted)" }} tickFormatter={(v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? `${String(v).slice(8, 10)}/${String(v).slice(5, 7)}` : String(v))} minTickGap={12} />,
+    <YAxis key="y" tick={{ fontSize: 12, fill: "var(--muted)" }} width={44} />,
     <Tooltip key="tip" contentStyle={{ background: "var(--surface)", border: "1px solid var(--line-soft)", color: "var(--ink)" }} />,
-    <Legend key="legend" wrapperStyle={{ fontSize: 11 }} />,
+    <Legend key="legend" wrapperStyle={{ fontSize: 12 }} />,
   ];
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -46,8 +46,8 @@ export function Bars({ data, x, y, height = 220, horizontal }: { data: Row[]; x:
       <BarChart data={rows} layout={horizontal ? "vertical" : "horizontal"} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--line-soft)" />
         {horizontal
-          ? [<XAxis key="x" type="number" tick={{ fontSize: 10, fill: "var(--muted)" }} />, <YAxis key="y" type="category" dataKey="name" tick={{ fontSize: 11, fill: "var(--ink)" }} width={labelW} interval={0} />]
-          : [<XAxis key="x" dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} interval={0} />, <YAxis key="y" tick={{ fontSize: 10, fill: "var(--muted)" }} width={40} />]}
+          ? [<XAxis key="x" type="number" tick={{ fontSize: 12, fill: "var(--muted)" }} />, <YAxis key="y" type="category" dataKey="name" tick={{ fontSize: 12, fill: "var(--ink)" }} width={labelW} interval={0} />]
+          : [<XAxis key="x" dataKey="name" tick={{ fontSize: 12, fill: "var(--muted)" }} interval={0} />, <YAxis key="y" tick={{ fontSize: 12, fill: "var(--muted)" }} width={40} />]}
         <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--line-soft)", color: "var(--ink)" }} />
         <Bar dataKey="value">{rows.map((_, i) => <Cell key={i} fill={SERIES[i % SERIES.length]} />)}</Bar>
       </BarChart>
@@ -58,7 +58,7 @@ export function Donut({ data, x, y, height = 220 }: { data: Row[]; x: string; y:
   const rows = data.map((r) => ({ name: String(r[x] ?? "—"), value: num(r[y]) }));
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <PieChart><Pie data={rows} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="85%" paddingAngle={2}>{rows.map((_, i) => <Cell key={i} fill={SERIES[i % SERIES.length]} />)}</Pie><Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--line-soft)", color: "var(--ink)" }} /><Legend wrapperStyle={{ fontSize: 11 }} /></PieChart>
+      <PieChart><Pie data={rows} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="85%" paddingAngle={2}>{rows.map((_, i) => <Cell key={i} fill={SERIES[i % SERIES.length]} />)}</Pie><Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--line-soft)", color: "var(--ink)" }} /><Legend wrapperStyle={{ fontSize: 12 }} /></PieChart>
     </ResponsiveContainer>
   );
 }
