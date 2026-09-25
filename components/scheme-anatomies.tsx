@@ -248,7 +248,7 @@ function CostPerUse({ pieces }: { pieces: AnatomyPiece[] }) {
       {rows.map((r) => { const pct = r.cpu == null ? 0 : Math.min(100, (GOAL / r.cpu) * 100); const ok = r.cpu != null && r.cpu <= GOAL; return (
         <div key={r.p.id} className="cpu-row">
           {r.p.img ? <img src={r.p.img} alt="" /> : <span className="cpu-img" />}
-          <span className="cpu-name"><b>{r.p.name}</b><em>{t("schemeAnatomies.uso", { money: money(r.p.price), uses: r.uses, value: r.uses === 1 ? "" : "s", value2: r.need ? t("schemeAnatomies.faltam_para_a_meta", { need: r.need }) : t("schemeAnatomies.meta_atingida") })}</em>
+          <span className="cpu-name"><b>{r.p.name}</b><em>{t("schemeAnatomies.uso", { money: money(r.p.price), uses: r.uses, value2: r.need ? t("schemeAnatomies.faltam_para_a_meta", { need: r.need }) : t("schemeAnatomies.meta_atingida") })}</em>
             <span className="cpu-bar"><i style={{ width: `${pct}%`, background: ok ? "var(--status-good)" : pct > 40 ? "var(--status-warning)" : "var(--status-serious)" }} /></span></span>
           <b className="cpu-value" style={{ color: ok ? "var(--status-good)" : undefined }}>{r.cpu != null ? `${brl.format(r.cpu)}/uso` : t("schemeAnatomies.sem_uso")}</b>
           {r.p.id === best && <span className="cpu-badge good">{t("schemeAnatomies.melhor_custo")}</span>}{r.p.id === worst && r.p.id !== best && <span className="cpu-badge">{t("schemeAnatomies.use_mais")}</span>}
@@ -282,7 +282,7 @@ function Silhouette({ pieces }: { pieces: AnatomyPiece[] }) {
         {["upper_piece", "lower_piece", "full_body_piece", "shoes_piece", "accessory_piece"].map((c) => { const n = by(c).length; if (!n) return null; return (
           <div key={c} className="sil-row"><span>{CATEGORY_LABEL[c] ?? c}</span><span className="sil-bar"><i style={{ width: `${(100 * n) / (pieces.length || 1)}%` }} /></span><b>{n}</b></div>); })}
         <p className="sil-ratio"><b>{ratio}</b></p>
-        <p className="sil-verdict">{rich("schemeAnatomies.pecas_silhueta", { piecesCount: pieces.length, verdict, value: acc.length ? t("schemeAnatomies.acessorio_de_ponto_focal", { accCount: acc.length, value: acc.length > 1 ? "s" : "" }) : "" }, { 0: ($c) => <b>{$c}</b> })}</p>
+        <p className="sil-verdict">{rich("schemeAnatomies.pecas_silhueta", { piecesCount: pieces.length, verdict, value: acc.length ? t("schemeAnatomies.acessorio_de_ponto_focal", { accCount: acc.length }) : "" }, { 0: ($c) => <b>{$c}</b> })}</p>
       </div>
     </div>
   );

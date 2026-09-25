@@ -52,7 +52,7 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
   return (
     <div className="seal-studs" aria-label={t("schemeCard.selos_2", { sealsCount: seals.length })}>
       {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} /> : null}</span>)}
-      <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length, value: seals.length === 1 ? "" : "s" })}</span>
+      <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length })}</span>
     </div>
   );
 }
