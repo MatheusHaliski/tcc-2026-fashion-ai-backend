@@ -56,14 +56,16 @@ Depois: `python3 scripts/provision/provision.py --check` com as mesmas variávei
 
 ### Railway (tudo em um projeto)
 
+Projeto `fashion-ai-tcc-2026`, API pública em `https://api-production-ecf4.up.railway.app`.
+
 | Serviço | Origem | Observação |
 |---|---|---|
 | `api` | este repositório, `Dockerfile.backend`, health check `/actuator/health` | único serviço com domínio público |
 | `MySQL` | template oficial `mysql` (volume em `/var/lib/mysql`) | `MYSQL_HOST=${{MySQL.MYSQLHOST}}`, `MYSQL_PASSWORD=${{MySQL.MYSQLPASSWORD}}` etc. |
 | `Redis` | template oficial `redis` | rede privada: `REDIS_SSL=false` |
 | `cassandra` | imagem `cassandra:4.1` + volume em `/var/lib/cassandra`, `MAX_HEAP_SIZE=512M`, `HEAP_NEWSIZE=128M` | só rede privada; na API: `SPRING_PROFILES_ACTIVE=cassandra`, `CASSANDRA_CREATE_KEYSPACE=true` (a API cria o keyspace e as tabelas) |
-| `opensearch` | imagem `opensearchproject/opensearch:2` + volume em `/usr/share/opensearch/data`, `discovery.type=single-node`, `DISABLE_SECURITY_PLUGIN=true`, heap 512 MB | só rede privada (sem domínio nem proxy TCP) |
-| bucket `fashionai-media` | Railway Storage Bucket | **privado**: use `S3_SERVE_THROUGH_API=true`, e a API entrega `/media/**` lendo do bucket |
+| `opensearch` | imagem `opensearchproject/opensearch:2.19.1` + volume em `/usr/share/opensearch/data`; variáveis `DISABLE_SECURITY_PLUGIN=true`, `DISABLE_INSTALL_DEMO_CONFIG=true`, `OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m`, `RAILWAY_RUN_UID=0`; start command `sh -c 'chown -R 1000:1000 /usr/share/opensearch/data && exec chroot --userspec=1000:1000 --skip-chdir / env HOME=/usr/share/opensearch ./opensearch-docker-entrypoint.sh opensearch -Ediscovery.type=single-node'` (o volume do Railway nasce como root e o OpenSearch se recusa a rodar como root) | só rede privada (sem domínio nem proxy TCP) |
+| bucket `fashionai-media` | Railway Storage Bucket (região sjc) | **privado**: na API `S3_SERVE_THROUGH_API=true` e `S3_PATH_STYLE=false` (URLs virtual-hosted); credenciais por referência `${{fashionai-media.ACCESS_KEY_ID}}` etc. |
 
 Os serviços conversam por `*.railway.internal` (rede privada do projeto); Cassandra e OpenSearch não ficam expostos à
 internet. Na primeira subida a API cria sozinha as tabelas do MySQL (Flyway) e o keyspace e as tabelas do Cassandra; os
