@@ -10,7 +10,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 
-/** Anatomias oficiais do card (docs/anatomias/anatomias_card_v17_1): seção A (base) e seção B (variações com arte própria). */
+/** Anatomias oficiais do card (docs/anatomias/anatomias_card_v18.html; v17_1 como histórico): seção A (base) e seção B (variações com arte própria). */
 export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; ownArt?: boolean; hint: string }[] = [
   { id: "LISTA_VERTICAL", get label() { return tr("schemeAnatomies.lista_vertical"); }, section: "A", get hint() { return tr("schemeAnatomies.foto_pecas_em_linhas"); } },
   { id: "GRADE_PECAS", get label() { return tr("schemeAnatomies.grade_de_pecas"); }, section: "A", get hint() { return tr("schemeAnatomies.mosaico_3_n_das_pecas"); } },
@@ -27,7 +27,7 @@ export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; 
   { id: "LEGO", label: "LEGO", section: "B", ownArt: true, get hint() { return tr("schemeAnatomies.card_em_blocos_de_encaixe_2"); } },
 ];
 /**
- * Posição do selo por anatomia (anatomias_card_v17_1.html) — espelha BackgroundStudioService.SEAL_PLACEMENT.
+ * Posição do selo por anatomia (anatomias_card_v18.html, zonas iguais às da v17_1) — espelha BackgroundStudioService.SEAL_PLACEMENT.
  * TITLE_ROW = linha "Título · selos · preço"; META_BLOCK = bloco "Selos · descrição · estilo"; COVER_CORNER = canto da
  * capa/arte própria; HEADER = cabeçalho do card-objeto (ao lado do PREMIUM); STUDS = placas redondas 1×1 do LEGO.
  */
