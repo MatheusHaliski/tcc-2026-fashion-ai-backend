@@ -83,7 +83,7 @@ class FlairLooksTest {
         bad.put("SHOES_R", MINIMAL.get(0));
         double g = ((Number) FlairLooks.chess(good).get("total")).doubleValue(), w = ((Number) FlairLooks.chess(bad).get("total")).doubleValue();
         assertThat(g).isGreaterThan(w);
-        assertThat((List<?>) FlairLooks.chess(good).get("bonuses")).anySatisfy(x -> assertThat(String.valueOf(x)).contains("+5 Harmony"));
+        assertThat((List<?>) FlairLooks.chess(good).get("bonuses")).anySatisfy(x -> assertThat(br.com.fashionai.application.common.Msg.resolve(String.valueOf(x))).contains("+5 Harmony"));
     }
 
     @Test

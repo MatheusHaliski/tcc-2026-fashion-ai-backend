@@ -222,8 +222,9 @@ public class AccountService {
             vc.setExpiresAt(Instant.now().plus(Duration.ofHours(2)));
             vc.setLastSentAt(Instant.now());
             codes.save(vc);
-            email.send(mail, Msg.t("account.confirme_o_novo_e_mail"), Msg.t("account.p_codigo_para_confirmar_o", code), "SECURITY");
-            email.send(u.getEmail(), Msg.t("account.pedido_de_troca_de_e"), Msg.t("account.p_foi_pedida_a_troca", IdentityService.maskEmail(mail)), "SECURITY");
+            Locale loc = mailLocale(u);
+            email.send(mail, Msg.t(loc, "account.confirme_o_novo_e_mail"), Msg.t(loc, "account.p_codigo_para_confirmar_o", code), "SECURITY");
+            email.send(u.getEmail(), Msg.t(loc, "account.pedido_de_troca_de_e"), Msg.t(loc, "account.p_foi_pedida_a_troca", IdentityService.maskEmail(mail)), "SECURITY");
             out.put("emailChangePending", IdentityService.maskEmail(mail));
             changed.add("email(pendente)");
         }
@@ -267,7 +268,7 @@ public class AccountService {
     @Transactional
     public Map<String, Object> updatePrivacy(CurrentUser user, Visibility visibility) {
         if (visibility == null) {
-            throw ApiException.badRequest("VISIBILIDADE_INVALIDA", "Escolha público, somente seguidores ou privado.");
+            throw ApiException.badRequest("VISIBILIDADE_INVALIDA", Msg.t("account.escolha_publico_somente_seguidores"));
         }
         User u = load(user);
         u.setProfileVisibility(visibility);
@@ -337,7 +338,7 @@ public class AccountService {
         req.setStatus(ExportStatus.PROCESSING);
         exports.save(req);
         Map<String, Object> data = exportData(u);
-        byte[] json = Json.write(data).getBytes(StandardCharsets.UTF_8);
+        byte[] json = Json.write(Msg.resolveDeep(mailLocale(u), data)).getBytes(StandardCharsets.UTF_8);
         MediaStoragePort.StoredObject stored = storage.put("users/" + u.getId() + "/exports/" + req.getId() + ".json", json,
                 "application/json");
         req.setFileKey(stored.key());
@@ -345,10 +346,15 @@ public class AccountService {
         req.setReadyAt(Instant.now());
         req.setExpiresAt(Instant.now().plus(Duration.ofDays(7)));
         notifications.notify(u.getId(), null, NotificationType.DATA_EXPORT_READY, "EXPORT", req.getId(),
-                Msg.k("account.seus_dados_estao_prontos"), "A exportação em JSON fica disponível por 7 dias em Configurações › Seus dados.", null);
+                Msg.k("account.seus_dados_estao_prontos"), Msg.k("account.a_exportacao_em_json_fica"), null);
         audit.log(user, AuditActions.EXPORTACAO_CONTA, "export:" + req.getId(), Map.of("bytes", json.length));
         return Map.of("id", req.getId(), "status", req.getStatus(), "readyAt", req.getReadyAt(), "expiresAt", req.getExpiresAt(),
                 "bytes", json.length);
+    }
+
+    /** Idioma dos e-mails e arquivos do usuário: a preferência salva (RF23) e, sem ela, o idioma da requisição. */
+    private Locale mailLocale(User u) {
+        return preferences.findByUserId(u.getId()).map(p -> p.getLanguage() == null ? Msg.locale() : Msg.fromPreference(p.getLanguage().name())).orElseGet(Msg::locale);
     }
 
     @Transactional(readOnly = true)
@@ -430,7 +436,8 @@ public class AccountService {
         u.setDeletionRequestedAt(Instant.now());
         u.setDeletionScheduledFor(Instant.now().plus(DELETION_GRACE));
         u.setStatus(AccountStatus.DELETION_SCHEDULED);
-        email.send(u.getEmail(), Msg.t("account.exclusao_de_conta_agendada"), Msg.t("account.p_sua_conta_sera_excluida", u.getDeletionScheduledFor()), "SECURITY");
+        Locale loc = mailLocale(u);
+        email.send(u.getEmail(), Msg.t(loc, "account.exclusao_de_conta_agendada"), Msg.t(loc, "account.p_sua_conta_sera_excluida", u.getDeletionScheduledFor()), "SECURITY");
         audit.log(user, AuditActions.EXCLUSAO_CONTA, "user:" + u.getId(), Map.of("scheduledFor", u.getDeletionScheduledFor().toString()));
         return Map.of("status", u.getStatus(), "deletionScheduledFor", u.getDeletionScheduledFor());
     }

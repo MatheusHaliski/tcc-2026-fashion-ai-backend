@@ -55,7 +55,9 @@ const Sun = () => (
  * Decoração das cartelas sazonais: flocos de neve caindo (inverno), sol com raios e coqueiros (verão), folhas caindo
  * (outono) e pétalas + flores (primavera). Some a animação com "reduzir movimento".
  */
-export function SeasonDecor({ season, count }: { season: string; count?: number }) {
+export function SeasonDecor({ season, count, once }: { season: string; count?: number; once?: boolean }) {
+  // once: nas anatomias do card a decoração cai uma vez (quando o card aparece) e fica pousada nas bordas.
+  if (once) return <SeasonOnce season={season} count={count ?? 10} />;
   if (season === "WINTER") {
     const n = count ?? 18;
     return (<div className="season-decor winter" aria-hidden>
@@ -87,12 +89,22 @@ export function SeasonDecor({ season, count }: { season: string; count?: number 
   </div>);
 }
 
-/** Holofotes da plateia (Passarela): um feixe por peça, do teto até ela; o da primeira peça pisca mais forte. */
-export function Spotlights({ beams, strongIndex = 0 }: { beams: { x: number; h: number }[]; strongIndex?: number }) {
-  return (<div className="runway-spots" aria-hidden>{beams.map((b, i) => <span key={i} className={`spot ${i === strongIndex ? "strong" : ""}`} style={vars({ left: `${b.x}%`, height: `${b.h}%`, "--delay": `${rnd(i, 7) * 1.6}s` })} />)}</div>);
+/** Decoração sazonal de uma só vez: cada elemento cai do topo e pousa perto das bordas, sem cobrir as peças. */
+function SeasonOnce({ season, count }: { season: string; count: number }) {
+  const autumn = ["#C2410C", "#B45309", "#9A3412", "#D97706", "#7C2D12"], petals = ["#F9A8D4", "#FBCFE8", "#F472B6", "#FDE2EC"];
+  return (<div className="season-decor once" aria-hidden>
+    {Array.from({ length: count }, (_, i) => {
+      const side = i % 2 ? 1 : -1, left = side < 0 ? 2 + rnd(i) * 16 : 82 + rnd(i) * 14, rest = 18 + rnd(i, 2) * 70;
+      const el = season === "WINTER" ? <Snowflake /> : season === "AUTUMN" ? <Leaf color={autumn[i % autumn.length]} /> : season === "SPRING" ? <Blossom color={petals[i % petals.length]} /> : null;
+      if (!el) return null;
+      return <i key={i} className={`fall once ${season === "WINTER" ? "flake" : season === "AUTUMN" ? "leaf" : "petal"}`} style={vars({ left: `${left}%`, "--rest": `${rest}%`, "--size": `${10 + rnd(i, 3) * 8}px`, "--d": `${rnd(i, 4) * 0.6}s`, "--drift": `${side * 10}px`, "--rot": `${Math.round(rnd(i, 5) * 300)}deg` })}>{el}</i>;
+    })}
+    {season === "SUMMER" && <span className="sun once"><Sun /></span>}
+  </div>);
 }
 
-/** Flashes de câmera na plateia (pontos que disparam em tempos diferentes). */
-export function CameraFlashes({ count = 5, salt = 1 }: { count?: number; salt?: number }) {
-  return (<>{Array.from({ length: count }, (_, i) => <i key={i} className="flash" style={vars({ left: `${8 + rnd(i, salt) * 84}%`, top: `${10 + rnd(i, salt + 1) * 50}%`, "--delay": `${rnd(i, salt + 2) * 2.2}s` })} />)}</>);
+/** Holofotes da Passarela: um feixe por peça, do teto até ela, com intensidade proporcional às curtidas (light 0–1). */
+export function Spotlights({ beams }: { beams: { x: number; h: number; light?: number }[] }) {
+  return (<div className="runway-spots" aria-hidden>{beams.map((b, i) => <span key={i} className="spot" style={vars({ left: `${b.x}%`, height: `${b.h}%`, width: `${40 + 60 * (b.light ?? 0.5)}px`, marginLeft: `${-(20 + 30 * (b.light ?? 0.5))}px`, "--light": (b.light ?? 0.5).toFixed(2), "--i": i })} />)}</div>);
 }
+

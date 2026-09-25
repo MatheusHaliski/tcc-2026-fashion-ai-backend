@@ -1,5 +1,7 @@
 /** English labels for taxonomy keys (same keys as labels-pt.ts — the parity check keeps the three files aligned). */
 export const EN_LABELS: Record<string, string> = {
+  // look slots (SchemeSlot)
+  top: "Top", bottom: "Bottom", shoes: "Shoes", accessory: "Accessory", full_body: "One-piece", outerwear: "Outerwear",
   // categories
   upper_piece: "Top", lower_piece: "Bottom", shoes_piece: "Shoes", accessory_piece: "Accessories", full_body_piece: "One-piece",
   // occasions

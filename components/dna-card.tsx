@@ -6,7 +6,7 @@ import { mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
-import { skinStyle } from "@/lib/skins";
+import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
@@ -119,7 +119,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
       </div>
       <div className="scheme-stage">
       {hasArt && art && <CardArtLayer art={art} />}
-      <div className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
+      <div style={hasArt && studio.container?.color ? surfaceToneStyle(boxColor) : undefined} className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
         {cells.length === 0 ? <div className="dna-empty">{t("dnaCard.selecione_de_2_a_6")}</div> : body}
         {narrative !== "LEGO" && <>
           <div className="c-title"><span className="min-w-0 flex-1">{dna.title}</span></div>
@@ -267,7 +267,7 @@ function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSPr
   let k = 0; const drop = () => ({ animationDelay: `${(k++) * 60}ms` });   // cai de cima para baixo, 60 ms entre blocos
   return (
     <div className="dna-plate" key={round}>
-      <div className="brick brick-drop hero-brick" style={{ ...drop(), ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag="foto original" /></div>
+      <div className="brick brick-drop hero-brick" style={{ ...drop(), ["--brick" as string]: "#7C3AED" }}><Hero dna={dna} cells={dna.cells} heroStyle={heroStyle} tag={tr("dnaCard.foto_original")} /></div>
       <div className="brick brick-drop title-brick" style={{ ...drop(), ["--brick" as string]: "#F4F4F4" }}><b>{dna.title}</b><span>{[...occasion, ...style].map((x) => label(x)).join(" · ") || "—"}</span></div>
       {dna.cells.map((c) => { const col = brickColor(c.dominantColor); return <div key={c.schemeId} className="brick brick-drop cell-brick" style={{ ...drop(), ["--brick" as string]: col, color: inkOn(col) }}><Thumb c={c} /><span className="plate-label">{c.title} · {era(c, fmtEra)}</span></div>; })}
       <div className="brick brick-drop logo-brick" style={{ ...drop(), ["--brick" as string]: "#F2CD37" }}>{(dna.logos ?? []).slice(0, 2).map((l) => <span key={l.brand} className="plate-label"><BrandLogo name={l.brand} src={l.logoUrl} size={16} className="mr-1" />{l.brand.toUpperCase()}</span>)}{(dna.logos ?? []).length > 2 && <span className="plate-label">+{dna.logos.length - 2}</span>}</div>

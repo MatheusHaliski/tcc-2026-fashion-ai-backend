@@ -819,7 +819,7 @@ public class FlairModesService {
             pos -= BOARD.size();
             st.put("lap", num(st.get("lap")) + 1);
             st.put("points", num(st.get("points")) + 25);
-            log.add(0, Map.of("text", "🌍 Volta completa! +25", "at", Instant.now().toString()));
+            log.add(0, Map.of("text", Msg.k("flairModes.volta_completa_25"), "at", Instant.now().toString()));
             trophy(user.id(), "TOUR", Msg.t("flairModes.fashion_world_tour_volta", num(st.get("lap"))), seasonKey(), Map.of("points", st.get("points")));
         }
         Square sq = BOARD.get(pos);
@@ -1115,7 +1115,7 @@ public class FlairModesService {
         Set<String> a = new HashSet<>(Json.strings(Json.write(st.get("A"))));
         List<String> b = Json.strings(Json.write(st.get("B")));
         if (looks == null || looks.size() != 3) {
-            throw ApiException.badRequest("LOOKS_INVALIDOS", "Monte exatamente 3 looks.");
+            throw ApiException.badRequest("LOOKS_INVALIDOS", Msg.t("flairModes.monte_exatamente_3_looks"));
         }
         Set<String> used = new HashSet<>();
         for (List<UUID> l : looks) {

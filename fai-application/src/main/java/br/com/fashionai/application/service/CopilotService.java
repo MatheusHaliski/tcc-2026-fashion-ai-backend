@@ -85,6 +85,19 @@ public class CopilotService {
         COLOR_WORDS.put("marrom", Set.of("brown", "chocolate", "camel", "tan", "taupe"));
         COLOR_WORDS.put("bege", Set.of("beige", "tan", "camel", "cream"));
         COLOR_WORDS.put("jeans", Set.of("denim"));
+        // inglês e espanhol (RF23): mesmos códigos da taxonomia
+        COLOR_WORDS.put("white", Set.of("white", "off_white", "ivory", "cream")); COLOR_WORDS.put("black", Set.of("black", "charcoal", "washed_black"));
+        COLOR_WORDS.put("gray", Set.of("light_gray", "gray", "dark_gray", "silver")); COLOR_WORDS.put("grey", Set.of("light_gray", "gray", "dark_gray", "silver"));
+        COLOR_WORDS.put("blue", Set.of("blue", "navy", "light_blue", "sky_blue", "cobalt", "denim", "teal")); COLOR_WORDS.put("navy", Set.of("navy"));
+        COLOR_WORDS.put("red", Set.of("red", "crimson", "burgundy", "maroon", "rust")); COLOR_WORDS.put("pink", Set.of("pink", "hot_pink", "rose", "coral", "salmon"));
+        COLOR_WORDS.put("orange", Set.of("orange", "terracotta", "amber", "apricot")); COLOR_WORDS.put("yellow", Set.of("yellow", "mustard", "gold", "butter"));
+        COLOR_WORDS.put("green", Set.of("green", "olive", "military_green", "forest_green", "mint", "sage", "emerald")); COLOR_WORDS.put("purple", Set.of("purple", "violet", "lilac", "lavender", "plum"));
+        COLOR_WORDS.put("brown", Set.of("brown", "chocolate", "camel", "tan", "taupe")); COLOR_WORDS.put("beige", Set.of("beige", "tan", "camel", "cream")); COLOR_WORDS.put("denim", Set.of("denim"));
+        COLOR_WORDS.put("blanc", Set.of("white", "off_white", "ivory", "cream")); COLOR_WORDS.put("negr", Set.of("black", "charcoal", "washed_black"));
+        COLOR_WORDS.put("gris", Set.of("light_gray", "gray", "dark_gray", "silver")); COLOR_WORDS.put("roj", Set.of("red", "crimson", "burgundy", "maroon", "rust"));
+        COLOR_WORDS.put("naranja", Set.of("orange", "terracotta", "amber", "apricot")); COLOR_WORDS.put("amarill", Set.of("yellow", "mustard", "gold", "butter"));
+        COLOR_WORDS.put("morad", Set.of("purple", "violet", "lilac", "lavender", "plum")); COLOR_WORDS.put("lila", Set.of("lilac", "lavender"));
+        COLOR_WORDS.put("marr", Set.of("brown", "chocolate", "camel", "tan", "taupe"));
         TYPE_WORDS.put("tênis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("sapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
@@ -113,6 +126,26 @@ public class CopilotService {
         TYPE_WORDS.put("óculos", Set.of("sunglasses", "eyeglasses"));
         TYPE_WORDS.put("colar", Set.of("necklace"));
         TYPE_WORDS.put("relógio", Set.of("watch"));
+        // inglês e espanhol (RF23)
+        TYPE_WORDS.put("sneaker", Taxonomy.SNEAKERS); TYPE_WORDS.put("zapatilla", Taxonomy.SNEAKERS); TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
+        TYPE_WORDS.put("shoe", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats")); TYPE_WORDS.put("zapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
+        TYPE_WORDS.put("boot", Set.of("ankle_boots", "long_boots", "combat_boots")); TYPE_WORDS.put("bota", Set.of("ankle_boots", "long_boots", "combat_boots"));
+        TYPE_WORDS.put("sandal", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandalia", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandália", Set.of("sandals", "flip_flops", "espadrilles"));
+        TYPE_WORDS.put("heel", Set.of("heels")); TYPE_WORDS.put("tacón", Set.of("heels")); TYPE_WORDS.put("tacon", Set.of("heels"));
+        TYPE_WORDS.put("pants", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants")); TYPE_WORDS.put("trousers", Set.of("tailored_pants", "casual_pants", "chino_pants"));
+        TYPE_WORDS.put("pantal", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants"));
+        TYPE_WORDS.put("skirt", Set.of("skirt", "skort")); TYPE_WORDS.put("falda", Set.of("skirt", "skort"));
+        TYPE_WORDS.put("t-shirt", Set.of("t_shirt", "tank_top", "crop_top")); TYPE_WORDS.put("tee", Set.of("t_shirt")); TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "crop_top"));
+        TYPE_WORDS.put("shirt", Set.of("shirt", "polo_shirt")); TYPE_WORDS.put("camisa", Set.of("shirt", "polo_shirt"));
+        TYPE_WORDS.put("blouse", Set.of("blouse", "sweater")); TYPE_WORDS.put("sweater", Set.of("sweater")); TYPE_WORDS.put("blusa", Set.of("blouse", "sweater")); TYPE_WORDS.put("suéter", Set.of("sweater"));
+        TYPE_WORDS.put("hoodie", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sweatshirt", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sudadera", Set.of("sweatshirt", "hoodie"));
+        TYPE_WORDS.put("jacket", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("chaqueta", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("coat", Set.of("coat", "parka", "jacket")); TYPE_WORDS.put("abrigo", Set.of("coat", "parka", "jacket"));
+        TYPE_WORDS.put("dress", Set.of("dress")); TYPE_WORDS.put("vestido", Set.of("dress")); TYPE_WORDS.put("jumpsuit", Set.of("jumpsuit", "overalls", "romper")); TYPE_WORDS.put("mono", Set.of("jumpsuit", "overalls", "romper"));
+        TYPE_WORDS.put("bag", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("bolso", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("backpack", Set.of("backpack")); TYPE_WORDS.put("mochila", Set.of("backpack"));
+        TYPE_WORDS.put("cap", Set.of("cap")); TYPE_WORDS.put("gorra", Set.of("cap")); TYPE_WORDS.put("hat", Set.of("hat")); TYPE_WORDS.put("sombrero", Set.of("hat"));
+        TYPE_WORDS.put("belt", Set.of("belt")); TYPE_WORDS.put("cinturón", Set.of("belt")); TYPE_WORDS.put("cinturon", Set.of("belt"));
+        TYPE_WORDS.put("glasses", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("gafas", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("necklace", Set.of("necklace")); TYPE_WORDS.put("collar", Set.of("necklace"));
+        TYPE_WORDS.put("watch", Set.of("watch")); TYPE_WORDS.put("reloj", Set.of("watch"));
     }
 
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
@@ -164,10 +197,10 @@ public class CopilotService {
     // ================================================================== contexto pré-preenchido (CA01/CA08)
     static List<String> promptsFor(String view) {
         return switch (view == null ? "" : view.toUpperCase(Locale.ROOT)) {
-            case "GRADE" -> List.of("Monte um look com as peças selecionadas", "Tenho roupa que não uso há muito tempo?", "O que falta no meu guarda-roupa?");
-            case "QUARTO" -> List.of("Onde está meu tênis branco?", "Vista-me para o trabalho", "Organize minhas gavetas");
-            case "DESTAQUES" -> List.of("✨ Como melhorar meu inventário?", "Qual desafio combina comigo?", "Por que minha Utilização está baixa?");
-            default -> List.of("Sugira 3 looks para hoje", "Quero algo diferente do que normalmente uso", "Está frio hoje, o que visto?");
+            case "GRADE" -> List.of(Msg.t("copilot.prompt_monte_um_look"), Msg.t("copilot.prompt_roupa_sem_uso"), Msg.t("copilot.prompt_o_que_falta"));
+            case "QUARTO" -> List.of(Msg.t("copilot.prompt_onde_esta_tenis"), Msg.t("copilot.prompt_vista_me_trabalho"), Msg.t("copilot.prompt_organize_gavetas"));
+            case "DESTAQUES" -> List.of(Msg.t("copilot.prompt_melhorar_inventario"), Msg.t("copilot.prompt_qual_desafio"), Msg.t("copilot.prompt_utilizacao_baixa"));
+            default -> List.of(Msg.t("copilot.prompt_sugira_3_looks"), Msg.t("copilot.prompt_algo_diferente"), Msg.t("copilot.prompt_esta_frio"));
         };
     }
 
@@ -257,19 +290,19 @@ public class CopilotService {
 
     static Intent intent(String m) {
         String t = m == null ? "" : m.toLowerCase(Locale.ROOT);
-        if (t.matches(".*(onde est|onde fica|cadê|cade |onde guardei|onde deixei).*")) {
+        if (t.matches(".*(onde est|onde fica|cadê|cade |onde guardei|onde deixei|where is|where are|where's|where did i|dónde est|donde est|dónde guard|donde guard).*")) {
             return Intent.WHERE_IS;
         }
-        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei).*")) {
+        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo).*")) {
             return Intent.FORGOTTEN;
         }
-        if (t.matches(".*(melhorar (o |meu )?invent|inventory score|como melhorar|minha utiliza|meu score).*")) {
+        if (t.matches(".*(melhorar (o |meu )?invent|inventory score|como melhorar|minha utiliza|meu score|improve (my )?invent|my utilization|my score|mejorar (el |mi )?invent|mi utiliza|mi puntuaci).*")) {
             return Intent.IMPROVE_INVENTORY;
         }
-        if (t.matches(".*(diferente|fora do comum|ousad|sair da rotina|nunca combinei).*")) {
+        if (t.matches(".*(diferente|fora do comum|ousad|sair da rotina|nunca combinei|different|out of the ordinary|bold|break the routine|never combined|diferente|fuera de lo común|atrevid|salir de la rutina|nunca combiné).*")) {
             return Intent.DIFFERENT;
         }
-        if (t.matches(".*(comprar|o que falta|falta no meu|diagnóstic|diagnostic|lacuna).*")) {
+        if (t.matches(".*(comprar|o que falta|falta no meu|diagnóstic|diagnostic|lacuna|buy|what's missing|what is missing|missing from my|gap|qué falta|que falta|falta en mi|diagnóstico|brecha).*")) {
             return Intent.DIAGNOSIS;
         }
         if (t.matches(".*(look|vestir|visto|usar hoje|sugest|montar|combina|roupa para|frio|calor|trabalho|festa|faculdade|academia).*")) {
@@ -421,7 +454,8 @@ public class CopilotService {
             Map<String, Object> c = chip(w, where);
             c.put("daysUnused", ChronoUnit.DAYS.between(ref, today));
             chips.add(c);
-            sb.append("\n• ").append(w.getName()).append(" — ").append(ChronoUnit.DAYS.between(ref, today)).append(" dias");
+            long days = ChronoUnit.DAYS.between(ref, today);
+            sb.append("\n• ").append(w.getName()).append(" — ").append(days == 1 ? Msg.t("copilot.um_dia") : Msg.t("copilot.n_dias", days));
         }
         out.put("text", sb.toString());
         out.put("chips", chips);

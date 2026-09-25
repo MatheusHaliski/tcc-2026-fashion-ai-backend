@@ -61,7 +61,7 @@ function useIsActive() {
 function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n(); const { user, isAdmin } = useAuth(); const isActive = useIsActive(); const pathname = usePathname();
   const manage: NavItem[] = [
-    ...(user && user.profileType !== "PESSOAL" ? [{ href: "/dashboard", key: "nav.issuer", icon: "NAV-01" }] : []),
+    // painel do emissor (marca/celebridade) fica no próprio perfil; o menu lateral só mostra o Dashboard da administração
     ...(isAdmin ? [{ href: "/admin/dashboard", key: "nav.admin", icon: "NAV-14" }] : []),
   ];
   const groups = [...GROUPS, ...(manage.length ? [{ key: "nav.group.manage", items: manage }] : [])];
@@ -219,7 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button type="button" className="btn btn-ghost btn-icon lg:hidden" aria-label={t("a11y.menu")} aria-expanded={drawer} aria-controls="app-drawer" onClick={() => setDrawer(true)}>
             <UiIcon name="menu" size={22} />
           </button>
-          <Link href="/feed" className="brand-link" aria-label={`Fashion AI — ${t("nav.feed")}`}>
+          <Link href="/feed" className="brand-link" aria-label={t("nav.brandHome")}>
             <img src="/brand/fai-logo.png" alt="" width={32} height={32} />
             <span className="brand-name">Fashion AI</span>
           </Link>

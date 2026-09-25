@@ -1197,7 +1197,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                             .map(WardrobeItem::getSubcategory).toList())).toList();
             Map<String, String> local = new LinkedHashMap<>(proposed);
             outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
-                    "Você organiza o closet digital do Fashion AI. Responda em " + Msg.languageName() + ". Proponha rótulos curtos (até 24 caracteres, em português) para as gavetas "
+                    "Você organiza o closet digital do Fashion AI. Responda em " + Msg.languageName() + ". Proponha rótulos curtos (até 24 caracteres, nesse idioma) para as gavetas "
                             + "com base no conteúdo. Categorias padrão: Jeans, Academia, Praia, Acessórios, Íntimas, Favoritas. "
                             + "Responda SOMENTE com JSON {\"labels\":{\"<gaveta>\":\"<rótulo>\"}}.",
                     "Gavetas: " + Json.write(summary), List.of(), 600, List.of(Msg.t("room.subcategorias_das_pecas_por_gaveta")),

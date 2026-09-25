@@ -228,4 +228,111 @@ public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
                 WHERE s.visibility = 'PUBLIC' AND s.status = 'PUBLISHED' AND s.hype_score IS NOT NULL AND w.brand_name IS NOT NULL AND w.brand_name <> ''
                 GROUP BY w.brand_name ORDER BY avg_hype DESC LIMIT :limit""", new MapSqlParameterSource("limit", limit));
     }
+
+    // ---------------------------------------------------------------- dashboard administrativo por abas
+    private static final String USER_SCOPE = " (:country IS NULL OR u.country = :country) AND (:profile IS NULL OR u.profile_type = :profile)";
+    private static final String FAILURE_RESULTS = "('NEGADO','NAO_AUTENTICADO','FALHA','ERRO','BLOQUEADO','REJEITADO')";
+
+    @Override
+    public List<Map<String, Object>> activationFunnel(Filter f) {
+        String cohort = "FROM users u WHERE u.created_at BETWEEN :from AND :to AND u.test_account = FALSE AND" + USER_SCOPE;
+        return jdbc.queryForList("""
+                SELECT stage, total FROM (
+                  SELECT 1 AS ord, 'registered' AS stage, COUNT(*) AS total %1$s
+                  UNION ALL SELECT 2, 'email_verified', COUNT(*) %1$s AND u.email_verified = TRUE
+                  UNION ALL SELECT 3, 'first_piece', COUNT(*) %1$s AND EXISTS (SELECT 1 FROM wardrobe_items w WHERE w.user_id = u.id)
+                  UNION ALL SELECT 4, 'first_scheme', COUNT(*) %1$s AND EXISTS (SELECT 1 FROM schemes s WHERE s.user_id = u.id)
+                  UNION ALL SELECT 5, 'first_published', COUNT(*) %1$s AND EXISTS (SELECT 1 FROM schemes s WHERE s.user_id = u.id AND s.published_at IS NOT NULL)
+                  UNION ALL SELECT 6, 'daily_look', COUNT(*) %1$s AND EXISTS (SELECT 1 FROM daily_looks d WHERE d.user_id = u.id)
+                ) t ORDER BY ord""".formatted(cohort), params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> activityHeatmap(Filter f) {
+        return jdbc.queryForList("""
+                SELECT DAYOFWEEK(CONVERT_TZ(a.`timestamp`, '+00:00', '-03:00')) - 1 AS dow, HOUR(CONVERT_TZ(a.`timestamp`, '+00:00', '-03:00')) AS hour, COUNT(*) AS total
+                FROM audit_log a WHERE a.`timestamp` BETWEEN :from AND :to GROUP BY dow, hour ORDER BY dow, hour""", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> topUsers(Filter f, int limit) {
+        return jdbc.queryForList("""
+                SELECT u.username, u.profile_type, u.country,
+                       (SELECT COUNT(*) FROM wardrobe_items w WHERE w.user_id = u.id AND w.created_at BETWEEN :from AND :to) AS pieces,
+                       (SELECT COUNT(*) FROM schemes s WHERE s.user_id = u.id AND s.created_at BETWEEN :from AND :to) AS schemes,
+                       (SELECT COUNT(*) FROM reactions r JOIN schemes s2 ON s2.id = r.target_id
+                          WHERE r.target_type = 'SCHEME' AND s2.user_id = u.id AND r.created_at BETWEEN :from AND :to) AS likes
+                FROM users u WHERE u.test_account = FALSE AND""" + USER_SCOPE + """
+                HAVING pieces + schemes + likes > 0 ORDER BY (pieces + schemes + likes * 2) DESC, u.username LIMIT :limit""",
+                params(f).addValue("limit", limit));
+    }
+
+    @Override
+    public List<Map<String, Object>> moderationByStatus(Filter f) {
+        return jdbc.queryForList("SELECT status, COUNT(*) AS total FROM moderation_queue WHERE created_at BETWEEN :from AND :to GROUP BY status ORDER BY total DESC", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> moderationRecent(int limit) {
+        return jdbc.queryForList("""
+                SELECT id, target_type, content_excerpt, confidence, categories_json, created_at FROM moderation_queue
+                WHERE status = 'PENDING_REVIEW' ORDER BY created_at DESC LIMIT :limit""", new MapSqlParameterSource("limit", limit));
+    }
+
+    @Override
+    public List<Map<String, Object>> auditFailures(Filter f) {
+        return jdbc.queryForList("SELECT acao, resultado, COUNT(*) AS total FROM audit_log WHERE `timestamp` BETWEEN :from AND :to AND resultado IN "
+                + FAILURE_RESULTS + " GROUP BY acao, resultado ORDER BY total DESC LIMIT 12", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> auditRecent(Filter f, int limit) {
+        return jdbc.queryForList("SELECT actor, acao, recurso, resultado, ip, `timestamp` AS at FROM audit_log WHERE `timestamp` BETWEEN :from AND :to AND resultado IN "
+                + FAILURE_RESULTS + " ORDER BY `timestamp` DESC LIMIT :limit", params(f).addValue("limit", limit));
+    }
+
+    @Override
+    public List<Map<String, Object>> securitySeries(Filter f) {
+        return jdbc.queryForList("""
+                SELECT DATE(`timestamp`) AS day,
+                       SUM(CASE WHEN acao = 'LOGIN_FALHO' THEN 1 ELSE 0 END) AS login_failures,
+                       SUM(CASE WHEN resultado = 'NEGADO' THEN 1 ELSE 0 END) AS denied,
+                       SUM(CASE WHEN resultado IN ('FALHA','ERRO') AND acao <> 'LOGIN_FALHO' THEN 1 ELSE 0 END) AS errors
+                FROM audit_log WHERE `timestamp` BETWEEN :from AND :to GROUP BY DATE(`timestamp`) ORDER BY day""", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> engagementSeries(Filter f) {
+        return jdbc.queryForList("""
+                SELECT day, SUM(likes) AS likes, SUM(comments) AS comments, SUM(shares) AS shares FROM (
+                  SELECT DATE(created_at) AS day, COUNT(*) AS likes, 0 AS comments, 0 AS shares FROM reactions WHERE created_at BETWEEN :from AND :to GROUP BY DATE(created_at)
+                  UNION ALL SELECT DATE(created_at), 0, COUNT(*), 0 FROM comments WHERE created_at BETWEEN :from AND :to GROUP BY DATE(created_at)
+                  UNION ALL SELECT DATE(created_at), 0, 0, COUNT(*) FROM shares WHERE created_at BETWEEN :from AND :to GROUP BY DATE(created_at)
+                ) t GROUP BY day ORDER BY day""", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> categories(Filter f) {
+        return jdbc.queryForList("SELECT w.category, COUNT(*) AS total FROM wardrobe_items w JOIN users u ON u.id = w.user_id WHERE w.created_at BETWEEN :from AND :to AND"
+                + USER_SCOPE + " GROUP BY w.category ORDER BY total DESC", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> jobsByStatus(Filter f) {
+        return jdbc.queryForList("SELECT type, status, COUNT(*) AS total, ROUND(AVG(total_time_ms)) AS avg_ms FROM pipeline_jobs WHERE created_at BETWEEN :from AND :to GROUP BY type, status ORDER BY type, status", params(f));
+    }
+
+    @Override
+    public List<Map<String, Object>> jobsFailedRecent(int limit) {
+        return jdbc.queryForList("SELECT type, error_code, MAX(error_message) AS error_message, COUNT(*) AS total, MAX(created_at) AS last_at FROM pipeline_jobs "
+                + "WHERE status = 'FAILED' GROUP BY type, error_code ORDER BY last_at DESC LIMIT :limit",
+                new MapSqlParameterSource("limit", limit));
+    }
+
+    @Override
+    public long dbLatencyMs() {
+        long t0 = System.nanoTime();
+        jdbc.getJdbcOperations().queryForObject("SELECT 1", Integer.class);
+        return Math.max(0, (System.nanoTime() - t0) / 1_000_000);
+    }
 }

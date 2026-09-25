@@ -305,7 +305,7 @@ public class PhotoService {
         guard.requireCanCreate(user);
         FlatLayPipeline.Result r = flatLay.run(bytes, true);
         if (!r.backgroundRemoved() || r.processedPng() == null) {
-            return Map.of("ok", false, "message", "A remoção de fundo não está disponível agora. As outras ferramentas continuam funcionando.");
+            return Map.of("ok", false, "message", Msg.t("photo.a_remocao_de_fundo_nao"));
         }
         return Map.of("ok", true, "png", java.util.Base64.getEncoder().encodeToString(r.processedPng()),
                 "provider", r.stages().stream().filter(x -> "REMOCAO_FUNDO".equals(x.name()) && x.ok())

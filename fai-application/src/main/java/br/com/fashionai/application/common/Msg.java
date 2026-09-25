@@ -32,9 +32,11 @@ public final class Msg {
     private Msg() {
     }
 
-    /** Idioma corrente da requisição (pt-BR fora de um request). */
+    /** Idioma corrente da requisição; fora de um request (jobs, testes) é pt-BR, e não o locale da JVM. */
     public static Locale locale() {
-        return supported(LocaleContextHolder.getLocale());
+        org.springframework.context.i18n.LocaleContext ctx = LocaleContextHolder.getLocaleContext();
+        Locale l = ctx == null ? null : ctx.getLocale();
+        return l == null ? PT_BR : supported(l);
     }
 
     /** Reduz qualquer Locale a um dos suportados (en-US → en, es-MX → es, outros → pt-BR). */
@@ -80,7 +82,7 @@ public final class Msg {
      */
     public static String k(String key, Object... args) {
         StringBuilder sb = new StringBuilder(MARK).append(key);
-        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : String.valueOf(a).replace('§', 'S').replace(SEP, ' '));
+        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : String.valueOf(a).replace(SEP, ' '));   // um marcador pode ser argumento de outro
         return sb.append('§').toString();
     }
 
@@ -91,20 +93,53 @@ public final class Msg {
     /** Troca todos os marcadores de um texto pelo texto no idioma pedido (texto sem marcador volta igual). */
     public static String resolve(Locale locale, String s) {
         if (!hasMark(s)) return s;
-        Matcher m = MARK_RE.matcher(s);
-        StringBuilder out = new StringBuilder();
-        while (m.find()) {
-            String key = m.group(1);
-            String rawArgs = m.group(2);
-            Object[] args = rawArgs == null || rawArgs.isEmpty() ? new Object[0] : rawArgs.substring(1).split(String.valueOf(SEP), -1);
-            m.appendReplacement(out, Matcher.quoteReplacement(t(locale, key, args)));
+        String cur = s;
+        for (int pass = 0; pass < 4 && hasMark(cur); pass++) {   // marcadores aninhados (argumento de outro) resolvem de dentro para fora
+            Matcher m = MARK_RE.matcher(cur);
+            StringBuilder out = new StringBuilder();
+            boolean any = false;
+            while (m.find()) {
+                any = true;
+                String key = m.group(1);
+                String rawArgs = m.group(2);
+                Object[] args = rawArgs == null || rawArgs.isEmpty() ? new Object[0] : rawArgs.substring(1).split(String.valueOf(SEP), -1);
+                m.appendReplacement(out, Matcher.quoteReplacement(t(locale, key, args)));
+            }
+            m.appendTail(out);
+            if (!any) break;
+            cur = out.toString();
         }
-        m.appendTail(out);
-        return out.toString();
+        return cur;
     }
 
     public static String resolve(String s) {
         return resolve(locale(), s);
+    }
+
+    /**
+     * Resolve os marcadores em profundidade (Map, List e String) para dados que saem do sistema sem passar pelo
+     * serializador JSON da API — exportação LGPD, arquivos, e-mails. Mapas e listas voltam em cópias; o resto é devolvido igual.
+     */
+    @SuppressWarnings("unchecked")
+    public static Object resolveDeep(Locale locale, Object value) {
+        if (value instanceof String s) return resolve(locale, s);
+        if (value instanceof Map<?, ?> m) {
+            Map<Object, Object> out = new java.util.LinkedHashMap<>();
+            for (Map.Entry<?, ?> e : m.entrySet()) out.put(e.getKey(), resolveDeep(locale, e.getValue()));
+            return out;
+        }
+        if (value instanceof List<?> l) {
+            List<Object> out = new java.util.ArrayList<>(l.size());
+            for (Object o : l) out.add(resolveDeep(locale, o));
+            return out;
+        }
+        return value;
+    }
+
+    /** Código da preferência de idioma do usuário (enum UiLanguage) para um Locale: PT_BR, EN ou ES. */
+    public static String preferenceCode(Locale locale) {
+        Locale l = supported(locale);
+        return "en".equals(l.getLanguage()) ? "EN" : "es".equals(l.getLanguage()) ? "ES" : "PT_BR";
     }
 
     /** O texto enviado pelo cliente corresponde a este texto (marcador ou literal) em algum dos idiomas suportados? */

@@ -1,6 +1,6 @@
 /** Tipos espelhando os records do backend (Views.java e serviços). Campos opcionais quando o backend pode omitir. */
 export interface UserCard {
-  id: string; username: string; displayName: string; avatarUrl?: string | null; profileType: "PESSOAL" | "MARCA" | "CELEBRIDADE";
+  id: string; username: string; displayName: string; avatarUrl?: string | null; profileType: "PESSOAL" | "MARCA" | "CELEBRIDADE" | "ADMIN";
   verified: boolean; country?: string | null; privateAccount: boolean;
 }
 export interface Session {
@@ -23,6 +23,8 @@ export interface PieceView {
   visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string; favorite: boolean; forSale: boolean; wearCount: number;
   lastWornDate?: string | null; moderationStatus?: string; photoProcessingStatus?: string; photoQuality?: Record<string, unknown>;
   flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>; hypeScore?: number | null; hypeScoreGlobal?: number | null;
+  /** curtidas da peça (vem na linha resumida da peça dentro de um look) */
+  likes?: number;
   tags: string[]; notes?: string | null; purchaseDate?: string | null; model3dStatus?: string | null; model3dUrl?: string | null;
   /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) + miniatura 640 px para grades */
   studioImageUrl?: string | null; studioBackdrop?: string | null; studioThumbUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null;

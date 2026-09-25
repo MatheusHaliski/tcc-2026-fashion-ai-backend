@@ -234,7 +234,7 @@ public class StudioPipeline {
         StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, true);
         StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
         stages.add(new Stage("ENQUADRAMENTO", "local", 0, BigDecimal.ZERO, true, false,
-                String.format(java.util.Locale.ROOT, "%s (%d×%d) · peça ocupa %.0f%% do quadro", frame.aspect(), frame.width(), frame.height(), frame.fill() * 100)
+                Msg.t("studio.peca_ocupa_do_quadro", frame.aspect(), String.valueOf(frame.width()), String.valueOf(frame.height()), String.format(java.util.Locale.ROOT, "%.0f", frame.fill() * 100))
                         + (bleed.isEmpty() ? Msg.t("studio.peca_inteira_com_margem_minima")
                         : flush.containsAll(bleed) ? Msg.t("studio.rente_a_borda_em_barra", String.join(", ", sides(bleed)))
                         : Msg.t("studio.sangra_em_corte_da_foto", String.join(", ", sides(bleed))))));

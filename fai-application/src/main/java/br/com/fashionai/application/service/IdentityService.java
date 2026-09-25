@@ -29,6 +29,7 @@ import br.com.fashionai.domain.model.enums.VerificationPurpose;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.RefreshTokenRepository;
+import br.com.fashionai.domain.model.enums.UiLanguage;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.VerificationCodeRepository;
@@ -169,6 +170,9 @@ public class IdentityService {
     public Session register(RegisterCommand cmd, String ip, String userAgent) {
         Map<String, Object> errors = new LinkedHashMap<>();
         ProfileType type = cmd.profileType() == null ? ProfileType.PESSOAL : cmd.profileType();
+        if (type == ProfileType.ADMIN) {
+            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("identity.tipo_de_perfil_nao_permitido"));
+        }
         if (cmd.fullName() == null || cmd.fullName().trim().length() < 3) {
             errors.put("fullName", Msg.t("identity.informe_seu_nome_completo"));
         }
@@ -271,6 +275,7 @@ public class IdentityService {
         users.save(u);
         UserPreferences prefs = new UserPreferences();
         prefs.setUser(u);
+        prefs.setLanguage(UiLanguage.valueOf(Msg.preferenceCode(Msg.locale())));   // o idioma da interface no cadastro vira a preferência (RF23)
         if (cmd.sex() != null) {
             prefs.setMannequinSex(cmd.sex());
         }
@@ -423,8 +428,9 @@ public class IdentityService {
         vc.setExpiresAt(Instant.now().plus(Duration.ofHours(24)));
         vc.setLastSentAt(Instant.now());
         codes.save(vc);
-        email.send(u.getEmail(), Msg.t("identity.confirme_seu_e_mail_no"),
-                Msg.t("identity.p_seu_codigo_de_confirmacao", code, frontendUrl, code),
+        Locale loc = mailLocale(u);
+        email.send(u.getEmail(), Msg.t(loc, "identity.confirme_seu_e_mail_no"),
+                Msg.t(loc, "identity.p_seu_codigo_de_confirmacao", code, frontendUrl, code),
                 "SECURITY");
     }
 
@@ -539,7 +545,13 @@ public class IdentityService {
         vc.setExpiresAt(Instant.now().plus(Duration.ofMinutes(10)));
         vc.setLastSentAt(Instant.now());
         codes.save(vc);
-        email.send(u.getEmail(), Msg.t("identity.seu_codigo_de_acesso_ao"), Msg.t("identity.p_codigo_b_b_valido", code), "SECURITY");
+        Locale loc = mailLocale(u);
+        email.send(u.getEmail(), Msg.t(loc, "identity.seu_codigo_de_acesso_ao"), Msg.t(loc, "identity.p_codigo_b_b_valido", code), "SECURITY");
+    }
+
+    /** Idioma dos e-mails do usuário: a preferência salva (RF23) e, sem ela, o idioma da requisição. */
+    private Locale mailLocale(User u) {
+        return preferences.findByUserId(u.getId()).map(p -> p.getLanguage() == null ? Msg.locale() : Msg.fromPreference(p.getLanguage().name())).orElseGet(Msg::locale);
     }
 
     private Session openSession(User u, boolean persistent, String ip, String userAgent, String deviceName) {
@@ -687,8 +699,9 @@ public class IdentityService {
             vc.setExpiresAt(Instant.now().plus(Duration.ofMinutes(30)));
             vc.setLastSentAt(Instant.now());
             codes.save(vc);
-            email.send(u.getEmail(), Msg.t("identity.redefinicao_de_senha_fashion_ai"),
-                    Msg.t("identity.p_recebemos_um_pedido_para", frontendUrl, token), "SECURITY");
+            Locale loc = mailLocale(u);
+            email.send(u.getEmail(), Msg.t(loc, "identity.redefinicao_de_senha_fashion_ai"),
+                    Msg.t(loc, "identity.p_recebemos_um_pedido_para", frontendUrl, token), "SECURITY");
             notifications.notify(u.getId(), null, NotificationType.PASSWORD_RESET, "USER", u.getId(),
                     Msg.k("identity.pedido_de_redefinicao_de_senha"), Msg.k("identity.se_nao_foi_voce_ignore"), null);
             audit.log(u.getId().toString(), AuditActions.RECUPERACAO_SENHA, "auth", "SOLICITADA", ip, userAgent, Map.of());

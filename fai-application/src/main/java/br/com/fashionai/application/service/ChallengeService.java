@@ -226,8 +226,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         for (ChallengeTemplate t : templates.findByActiveTrueOrderByName()) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("code", t.getCode());
-            m.put("name", t.getName());
-            m.put("rule", t.getRuleText());
+            m.put("name", tplName(t));
+            m.put("rule", tplRule(t));
             m.put("durationDays", t.getDurationDays());
             m.put("modes", Json.strings(t.getModesAllowedJson()));
             List<String> dims = Json.strings(t.getScoreDimensionsJson());
@@ -293,7 +293,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeTemplate t = template(req.code());
         String mode = req.mode() == null ? "SOLO" : req.mode().toUpperCase(Locale.ROOT);
         if (!Json.strings(t.getModesAllowedJson()).contains(mode)) {
-            throw ApiException.badRequest("MODO_INDISPONIVEL", Msg.t("challenge.o_desafio_nao_aceita_o", t.getName(), mode));
+            throw ApiException.badRequest("MODO_INDISPONIVEL", Msg.t("challenge.o_desafio_nao_aceita_o", tplName(t), mode));
         }
         if (mode.equals("COMUNIDADE")) {
             return joinCommunity(user, t, req.photoConsent());
@@ -418,11 +418,22 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     }
 
     /** Parâmetros por desafio (ex.: as 10 peças do 10×10). */
+    /** Nome do modelo de desafio no idioma de quem lê (chave challengeTemplate.<código>.name; o texto semeado em pt-BR é o fallback). */
+    static String tplName(ChallengeTemplate t) {
+        String key = "challengeTemplate." + t.getCode() + ".name";
+        return Msg.has(key) ? Msg.k(key) : t.getName();
+    }
+
+    static String tplRule(ChallengeTemplate t) {
+        String key = "challengeTemplate." + t.getCode() + ".rule";
+        return Msg.has(key) ? Msg.k(key) : t.getRuleText();
+    }
+
     Map<String, Object> validateParams(CurrentUser user, ChallengeTemplate t, String mode, Map<String, Object> params) {
         switch (t.getCode()) {
-            case "TEN_X_TEN" -> params.put("piece_ids", ownPieceSet(user, params.get("piece_ids"), 10, 10, "o 10×10 usa exatamente 10 peças"));
+            case "TEN_X_TEN" -> params.put("piece_ids", ownPieceSet(user, params.get("piece_ids"), 10, 10, Msg.t("challenge.o_10x10_usa_exatamente")));
             case "CAPSULE_SEASON" -> {
-                params.put("piece_ids", ownPieceSet(user, params.get("piece_ids"), 33, 33, "a Temporada Cápsula usa exatamente 33 peças"));
+                params.put("piece_ids", ownPieceSet(user, params.get("piece_ids"), 33, 33, Msg.t("challenge.a_temporada_capsula_usa_exatamente")));
                 int target = params.get("target_days") instanceof Number n ? n.intValue() : 60;
                 params.put("target_days", Math.max(30, Math.min(90, target)));
             }
@@ -472,7 +483,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         List<WardrobeItem> found = pieces.findByIdIn(distinct);
         if (found.size() != distinct.size() || found.stream().anyMatch(w -> !w.getUser().getId().equals(user.id())
                 || w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED)) {
-            throw ApiException.badRequest("PECAS_INVALIDAS", "Use somente peças do seu próprio acervo.");
+            throw ApiException.badRequest("PECAS_INVALIDAS", Msg.t("challenge.use_somente_pecas_do_seu"));
         }
         return distinct.stream().map(UUID::toString).toList();
     }
@@ -617,7 +628,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         List<ChallengeParticipant> remaining = participants.findByInstanceId(id).stream().filter(x -> P_ATIVO.equals(x.getStatus())).toList();
         if (remaining.isEmpty() && (ATIVO.equals(i.getState()) || AGUARDANDO.equals(i.getState())) && !"COMUNIDADE".equals(i.getMode())) {
             i.setState(EXPIRADO);
-            i.setResultJson(Json.write(Map.of("reason", "todos saíram", "penalty", false)));
+            i.setResultJson(Json.write(Map.of("reason", Msg.k("challenge.todos_sairam"), "penalty", false)));
             instances.save(i);
         }
         return Map.of("left", true, "note", Msg.t("challenge.seu_progresso_continua_registrado_no"));
@@ -649,7 +660,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
 
     void expire(ChallengeInstance i) {
         i.setState(EXPIRADO);
-        i.setResultJson(Json.write(Map.of("reason", "mínimo de participantes não atingido no prazo de aceite", "penalty", false)));
+        i.setResultJson(Json.write(Map.of("reason", Msg.k("challenge.minimo_de_participantes_nao_atingido"), "penalty", false)));
         instances.save(i);
     }
 
@@ -1051,7 +1062,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         List<ChallengeParticipant> members = ps.stream().filter(p -> P_ATIVO.equals(p.getStatus()) || P_CONCLUIU.equals(p.getStatus())).toList();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("code", t.getCode());
-        result.put("name", t.getName());
+        result.put("name", tplName(t));
         result.put("mode", i.getMode());
         result.put("concludedAt", Instant.now().toString());
         switch (i.getMode()) {
@@ -1111,7 +1122,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         i.setResultJson(Json.write(result));
         instances.save(i);
         for (ChallengeParticipant p : members) {
-            notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_RESULT, "CHALLENGE", i.getId(), Msg.k("challenge.concluido", (t.getName())),
+            notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_RESULT, "CHALLENGE", i.getId(), Msg.k("challenge.concluido", (tplName(t))),
                     Msg.k("challenge.veja_o_card_de_resultado"), Map.of("challengeId", i.getId().toString()));
         }
     }
@@ -1234,8 +1245,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", i.getId());
         out.put("code", t.getCode());
-        out.put("name", t.getName());
-        out.put("rule", t.getCode().equals("DAILY_CHALLENGE") ? params.getOrDefault("rule", t.getRuleText()) : t.getRuleText());
+        out.put("name", tplName(t));
+        out.put("rule", t.getCode().equals("DAILY_CHALLENGE") ? params.getOrDefault("rule", tplRule(t)) : tplRule(t));
         out.put("mode", i.getMode());
         out.put("state", i.getState());
         out.put("startsAt", i.getStartsAt());
@@ -1380,7 +1391,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             }
             List<Map<String, Object>> entries = entries(user, i, t, true).stream().filter(e -> !Boolean.TRUE.equals(e.get("mine"))).toList();
             if (!entries.isEmpty()) {
-                out.add(Map.of("challengeId", i.getId(), "name", t.getName(), "theme", String.valueOf(Json.map(i.getParamsJson()).get("theme")),
+                out.add(Map.of("challengeId", i.getId(), "name", tplName(t), "theme", String.valueOf(Json.map(i.getParamsJson()).get("theme")),
                         "entries", entries, "endsAt", String.valueOf(i.getEndsAt())));
             }
         }
@@ -1545,7 +1556,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeParticipant me = participants.findByInstanceIdAndUserId(id, user.id())
                 .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         Map<String, Object> card = new LinkedHashMap<>();
-        card.put("title", t.getName());
+        card.put("title", tplName(t));
         card.put("mode", i.getMode());
         card.put("format", "9:16");
         if (t.getCode().equals("DAILY_CHALLENGE")) {
@@ -1625,7 +1636,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         t.setActive(true);
         templates.save(t);
         audit.log(user, "DESAFIO_PROPOSTO", "challenge-template:" + t.getCode(), Map.of("blocks", clean.size()));
-        return Map.of("code", t.getCode(), "name", t.getName(), "rule", t.getRuleText(), "note",
+        return Map.of("code", t.getCode(), "name", tplName(t), "rule", tplRule(t), "note",
                 Msg.t("challenge.os_desafios_da_comunidade_com"));
     }
 
@@ -1677,7 +1688,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", i.getId());
             m.put("code", i.getTemplateCode());
-            m.put("name", t == null ? i.getTemplateCode() : t.getName());
+            m.put("name", t == null ? i.getTemplateCode() : tplName(t));
             m.put("mode", i.getMode());
             m.put("state", i.getState());
             m.put("myStatus", p.getStatus());
@@ -1719,7 +1730,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             Map<String, Object> d = new LinkedHashMap<>();
             d.put("challengeId", i.getId());
             d.put("type", t.getRoomDecoration());
-            d.put("name", t.getName());
+            d.put("name", tplName(t));
             Map<String, Object> params = Json.map(i.getParamsJson());
             switch (t.getRoomDecoration()) {
                 case "quadro_cortica" -> {
@@ -1759,7 +1770,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             if (t.getCode().equals("TEN_X_TEN") || t.getCode().equals("CAPSULE_SEASON")) {
                 Set<UUID> allowed = Json.strings(Json.write(Json.map(i.getParamsJson()).get("piece_ids"))).stream().map(UUID::fromString)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
-                return Optional.of(new Restriction(t.getName(), allowed));
+                return Optional.of(new Restriction(tplName(t), allowed));
             }
         }
         return Optional.empty();
@@ -1773,7 +1784,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             ChallengeInstance i = (ChallengeInstance) row[0];
             ChallengeParticipant p = (ChallengeParticipant) row[1];
             ChallengeTemplate t = (ChallengeTemplate) row[2];
-            out.add(Map.of("id", i.getId().toString(), "name", t.getName(), "rule", t.getRuleText(), "mode", i.getMode(),
+            out.add(Map.of("id", i.getId().toString(), "name", tplName(t), "rule", tplRule(t), "mode", i.getMode(),
                     "fraction", round2(p.getProgressFraction().doubleValue())));
         }
         return out;

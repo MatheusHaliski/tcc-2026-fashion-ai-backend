@@ -3,6 +3,8 @@
  * humor, visibilidade, selos). A API guarda as chaves em inglês; a interface em pt-BR mostra estes rótulos.
  */
 export const PT_LABELS: Record<string, string> = {
+  // posições do look (SchemeSlot)
+  top: "Parte de cima", bottom: "Parte de baixo", shoes: "Calçado", accessory: "Acessório", full_body: "Peça única", outerwear: "Sobreposição",
   // categorias
   upper_piece: "Parte superior", lower_piece: "Parte inferior", shoes_piece: "Calçados", accessory_piece: "Acessórios", full_body_piece: "Peça única",
   // ocasiões

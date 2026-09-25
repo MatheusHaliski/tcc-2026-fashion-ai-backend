@@ -270,10 +270,8 @@ public final class ImageOps {
         String warning = null;
         if (fg > 0 && looksBroken(shape)) {
             confidence = Math.min(confidence, 0.3);
-            warning = String.format(java.util.Locale.ROOT,
-                    "o fundo parece ter a mesma cor de partes da peça: o recorte local ficou com buracos "
-                            + "(solidez %.2f, conjunto %.2f em %d pedaços, centro removido %.0f%%)",
-                    shape[0], shape[2], (int) shape[3], shape[1] * 100);
+            warning = Msg.t("imageOps.o_fundo_parece_ter_a", String.format(java.util.Locale.ROOT, "%.2f", shape[0]),
+                    String.format(java.util.Locale.ROOT, "%.2f", shape[2]), String.valueOf((int) shape[3]), String.format(java.util.Locale.ROOT, "%.0f", shape[1] * 100));
         }
         return new Cutout(out, coverage, confidence, borderMedian(px, w, h), warning);
     }

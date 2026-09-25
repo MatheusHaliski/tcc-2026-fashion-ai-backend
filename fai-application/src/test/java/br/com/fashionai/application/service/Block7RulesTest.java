@@ -63,7 +63,7 @@ class Block7RulesTest {
                 Map.of("ai_fallback_pct", 45.0, "moderation_pending", 3, "approvals_pending", 2, "bonds_approved", 4, "redemptions", 1),
                 List.of(Map.of("capability", "TRY_ON", "provider", "fashn", "cost_usd", 4.17)));
         assertThat(alerts).extracting(a -> a.get("title").toString())
-                .anyMatch(t -> t.contains("fallback em 45.0%"))
+                .anyMatch(t -> t.contains("fallback em 45,0%"))   // decimal no idioma da requisição (pt-BR fora de request)
                 .anyMatch(t -> t.contains("2 marca(s)/celebridade(s)"))
                 .anyMatch(t -> t.contains("TRY_ON"))
                 .anyMatch(t -> t.contains("25%"));

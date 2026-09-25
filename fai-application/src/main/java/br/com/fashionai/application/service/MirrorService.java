@@ -544,7 +544,20 @@ public class MirrorService {
             Map.entry("praia", List.of("beach")), Map.entry("piscina", List.of("beach")), Map.entry("viagem", List.of("travel")),
             Map.entry("academia", List.of("gym")), Map.entry("treino", List.of("gym", "sport")), Map.entry("corrida", List.of("sport")),
             Map.entry("esporte", List.of("sport")), Map.entry("casa", List.of("home")), Map.entry("show", List.of("festival")),
-            Map.entry("festival", List.of("festival")), Map.entry("passeio", List.of("casual", "outdoor")), Map.entry("parque", List.of("outdoor")));
+            Map.entry("festival", List.of("festival")), Map.entry("passeio", List.of("casual", "outdoor")), Map.entry("parque", List.of("outdoor")),
+            // inglês e espanhol (RF23)
+            Map.entry("university", List.of("university")), Map.entry("college", List.of("university")), Map.entry("class", List.of("university", "school")), Map.entry("school", List.of("school")),
+            Map.entry("work", List.of("work")), Map.entry("office", List.of("work", "business")), Map.entry("meeting", List.of("business")), Map.entry("presentation", List.of("business", "formal")),
+            Map.entry("interview", List.of("business", "formal")), Map.entry("party", List.of("party")), Map.entry("club", List.of("night_out")), Map.entry("dinner", List.of("date", "social")),
+            Map.entry("date", List.of("date")), Map.entry("wedding", List.of("wedding")), Map.entry("graduation", List.of("ceremony", "formal")), Map.entry("beach", List.of("beach")),
+            Map.entry("pool", List.of("beach")), Map.entry("trip", List.of("travel")), Map.entry("travel", List.of("travel")), Map.entry("gym", List.of("gym")), Map.entry("workout", List.of("gym", "sport")),
+            Map.entry("running", List.of("sport")), Map.entry("sport", List.of("sport")), Map.entry("home", List.of("home")), Map.entry("concert", List.of("festival")), Map.entry("walk", List.of("casual", "outdoor")), Map.entry("park", List.of("outdoor")),
+            Map.entry("universidad", List.of("university")), Map.entry("clase", List.of("university", "school")), Map.entry("escuela", List.of("school")), Map.entry("oficina", List.of("work", "business")),
+            Map.entry("reunión", List.of("business")), Map.entry("reunion", List.of("business")), Map.entry("presentación", List.of("business", "formal")), Map.entry("presentacion", List.of("business", "formal")),
+            Map.entry("fiesta", List.of("party")), Map.entry("discoteca", List.of("night_out")), Map.entry("cena", List.of("date", "social")),
+            Map.entry("cita", List.of("date")), Map.entry("boda", List.of("wedding")), Map.entry("graduación", List.of("ceremony", "formal")), Map.entry("graduacion", List.of("ceremony", "formal")),
+            Map.entry("playa", List.of("beach")), Map.entry("viaje", List.of("travel")), Map.entry("gimnasio", List.of("gym")), Map.entry("entrenamiento", List.of("gym", "sport")),
+            Map.entry("carrera", List.of("sport")), Map.entry("deporte", List.of("sport")), Map.entry("concierto", List.of("festival")), Map.entry("paseo", List.of("casual", "outdoor")));
 
     static Interpretation localInterpretation(String prompt, List<UUID> anchors) {
         String p = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT);

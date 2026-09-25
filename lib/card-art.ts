@@ -19,6 +19,8 @@ interface Studio {
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
   container?: { color?: string | null } | null; photo?: { url?: string | null; filters?: PhotoFilters; preset?: string } | null; skin?: string;
+  /** família de silhueta declarada por quem publica (anatomia Silhueta & Proporção) */
+  silhouette?: string | null;
 }
 type Idx = {
   presets: Record<string, { name: string; palette: string[]; animation?: string; recommendedMaterials: string[]; variants: string[] }>;

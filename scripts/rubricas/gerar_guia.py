@@ -155,9 +155,11 @@ OPCIONAIS = [
                    "widgets do dashboard salvos por usuário, Background Studio/skins de cards, layout mobile com menu recolhível.",
          acao="Na demo, trocar o tema e mostrar a tela no celular."),
     dict(criterio="Internacionalização (textos, formatos, dados e moeda)", area="Frontend", valor=1.5,
-         prioridade="B", meta="60–100%", status="PARCIAL",
-         evidencia="Dicionários PT-BR/EN/ES (lib/i18n) e seletor de idioma no topo; formatos de data/número por locale.",
-         acao="Completar a tradução das telas novas (RF25–RF39) e mostrar a troca de idioma na demo."),
+         prioridade="B", meta="60–100%", status="OK",
+         evidencia="RF23: catálogos pt-BR/en/es completos no frontend (2 743 chaves, ICU) e no backend (2 000+ chaves, MessageFormat); "
+                   "Accept-Language → Content-Language inclusive nos 401/403; textos gravados no banco como marcadores resolvidos no idioma de quem lê; "
+                   "datas, números e moeda (BRL/USD/EUR) por Intl; pseudo-idioma de QA; scripts check/scan/qa no prebuild (docs/i18n/RF23_Internacionalizacao.md).",
+         acao="Na demo, trocar o idioma no topo e mostrar um erro da API e uma notificação em inglês."),
     dict(criterio="Padrões de projeto e arquitetura limpa (frontend)", area="Frontend", valor=1.0,
          prioridade="B", meta="100%", status="PARCIAL",
          evidencia="Camadas lib/api (client), lib/hooks (useApi), components/ui, components/<área>; Provider de i18n e de tema.",

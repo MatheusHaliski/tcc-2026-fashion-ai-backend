@@ -11,6 +11,7 @@ import { Badge, Button, ErrorState, Skeleton } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { BrandLogo } from "@/components/brand-logo";
+import { CardActions } from "@/components/interactions";
 
 /**
  * Modal de detalhe (RF7): clicar num esquema ou numa peça em qualquer lista abre o card SEMPRE AMPLIADO num modal,
@@ -98,7 +99,7 @@ function SchemeDetail({ id, onPiece, onClose }: { id: string; onPiece: (id: stri
           {data.canEdit && <Link href={`/schemes/${s.id}/edit`} className="btn" onClick={onClose}><FaiIcon id="SOC-11" size={24} decorative />{t("common.edit")}</Link>}
           <Link href={`/try-on?scheme=${s.id}`} className="btn" onClick={onClose}><FaiIcon id="NAV-07" size={24} decorative />{t("scheme.tryOn")}</Link>
         </div>
-        <p className="mt-3 type-caption text-faint tabular">{t("detailModal.views", { likes: s.counters.likes, comments: s.counters.comments, remixes: s.counters.remixes, views: s.counters.views })}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3"><CardActions type="SCHEME" id={s.id} counters={s.counters} viewer={s.viewer} ownerId={s.owner.id} title={s.title} /><span className="type-caption text-muted tabular">{t("interactions.views", { value: s.counters.views ?? 0 })}</span></div>
       </div>
     </div>
   );
@@ -138,7 +139,7 @@ function PieceDetail({ id, from, onScheme, onClose }: { id: string; from?: strin
           {data.canEdit && <Link href={`/pieces/${p.id}?edit=1`} className="btn" onClick={onClose}><FaiIcon id="SOC-11" size={24} decorative />{t("common.edit")}</Link>}
           {user && !data.canEdit && <Link href={`/pieces/${p.id}`} className="btn" onClick={onClose}><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addToWardrobe")}</Link>}
         </div>
-        <p className="mt-3 type-caption text-faint tabular">{t("detailModal.views_2", { likes: p.counters.likes, comments: p.counters.comments, views: p.counters.views })}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3"><CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} /><span className="type-caption text-muted tabular">{t("interactions.views", { value: p.counters.views ?? 0 })}</span></div>
       </div>
     </div>
   );
