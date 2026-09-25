@@ -54,6 +54,22 @@ No host (Railway/Render/Fly), use o `Dockerfile.backend`, porta `8080`, health c
 
 Depois: `python3 scripts/provision/provision.py --check` com as mesmas variáveis confere banco, índices e bucket.
 
+### Railway (tudo em um projeto)
+
+| Serviço | Origem | Observação |
+|---|---|---|
+| `api` | este repositório, `Dockerfile.backend`, health check `/actuator/health` | único serviço com domínio público |
+| `MySQL` | template oficial `mysql` (volume em `/var/lib/mysql`) | `MYSQL_HOST=${{MySQL.MYSQLHOST}}`, `MYSQL_PASSWORD=${{MySQL.MYSQLPASSWORD}}` etc. |
+| `Redis` | template oficial `redis` | rede privada: `REDIS_SSL=false` |
+| `cassandra` | imagem `cassandra:4.1` + volume em `/var/lib/cassandra`, `MAX_HEAP_SIZE=512M`, `HEAP_NEWSIZE=128M` | só rede privada; na API: `SPRING_PROFILES_ACTIVE=cassandra`, `CASSANDRA_CREATE_KEYSPACE=true` (a API cria o keyspace e as tabelas) |
+| `opensearch` | imagem `opensearchproject/opensearch:2` + volume em `/usr/share/opensearch/data`, `discovery.type=single-node`, `DISABLE_SECURITY_PLUGIN=true`, heap 512 MB | só rede privada (sem domínio nem proxy TCP) |
+| bucket `fashionai-media` | Railway Storage Bucket | **privado**: use `S3_SERVE_THROUGH_API=true`, e a API entrega `/media/**` lendo do bucket |
+
+Os serviços conversam por `*.railway.internal` (rede privada do projeto); Cassandra e OpenSearch não ficam expostos à
+internet. Na primeira subida a API cria sozinha as tabelas do MySQL (Flyway) e o keyspace e as tabelas do Cassandra; os
+índices do OpenSearch nascem na primeira indexação (mapeamento dinâmico). Para o mapeamento em português dos índices,
+rode uma vez `railway run python3 scripts/provision/provision.py --only opensearch` antes de publicar conteúdo.
+
 ## 3. Domínio
 
 `fashionai.com`, `fashionai.app` e `fashionai.com.br` **não estão disponíveis** para compra (consulta de 25/09/2026 na

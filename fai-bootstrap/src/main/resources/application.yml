@@ -41,8 +41,7 @@ spring:
     port: ${CASSANDRA_PORT:9042}
     local-datacenter: ${CASSANDRA_LOCAL_DATACENTER:datacenter1}
     keyspace-name: ${CASSANDRA_KEYSPACE:fashionai_feed}
-    username: ${CASSANDRA_USERNAME:}
-    password: ${CASSANDRA_PASSWORD:}
+    # usuário/senha ficam em fashionai.cassandra: aqui, vazios, o Spring Boot recusaria Cassandra sem autenticação
   autoconfigure:
     # Cassandra só é ligado pelo perfil "cassandra"; sem ele o driver nem tenta conectar.
     exclude:
@@ -130,10 +129,15 @@ fashionai:
       bucket: ${S3_BUCKET:fashionai-media}
       access-key: ${S3_ACCESS_KEY_ID:}
       secret-key: ${S3_SECRET_ACCESS_KEY:}
+      serve-through-api: ${S3_SERVE_THROUGH_API:false}     # bucket privado (Railway): a API entrega /media/** lendo do bucket
   redis:
     enabled: ${REDIS_ENABLED:false}
   cassandra:
     enabled: ${CASSANDRA_ENABLED:false}
+    username: ${CASSANDRA_USERNAME:}                       # vazio = sem autenticação (contêiner na rede privada)
+    password: ${CASSANDRA_PASSWORD:}
+    create-keyspace: ${CASSANDRA_CREATE_KEYSPACE:false}    # Cassandra próprio (Railway/Docker): cria o keyspace na subida
+    replication-factor: ${CASSANDRA_REPLICATION_FACTOR:1}
     secure-connect-bundle:                                 # DataStax Astra DB (substitui contact-points/datacenter)
       path: ${CASSANDRA_SECURE_BUNDLE_PATH:}
       base64: ${CASSANDRA_SECURE_BUNDLE_BASE64:}
