@@ -5,7 +5,14 @@
 import { tr } from "@/lib/i18n/core";
 import { acceptLanguage, getCurrentLocale } from "@/lib/i18n/state";
 import PIECE_THUMBS from "@/lib/assets/piece-thumbs.json";
-export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+// NEXT_PUBLIC_API_BASE_URL vazia (definida em branco, não ausente) sem isto virava caminho relativo — a chamada caía
+// na própria origem do frontend (Vercel) em vez do backend, com um 404 silencioso e sem pista do que faltava.
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+export const API_BASE = (RAW_API_BASE && RAW_API_BASE.trim() ? RAW_API_BASE : "http://localhost:8080").replace(/\/+$/, "");
+if (!RAW_API_BASE?.trim() && process.env.NODE_ENV === "production" && typeof window !== "undefined") {
+  // eslint-disable-next-line no-console
+  console.error("NEXT_PUBLIC_API_BASE_URL não está configurada em produção: as chamadas à API vão falhar. Defina-a na Vercel e faça um novo deploy (é uma variável de build).");
+}
 
 export class ApiError extends Error {
   status: number;
