@@ -36,7 +36,8 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
         {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
         {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
       </div>
-      <div className="c-title seal-row"><span className="min-w-0 flex-1">{piece.name}</span>{zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}</div>
+      <span className="c-kicker" style={{ padding: "10px 12px 0" }}>{t("anatomy.pieceKicker", { category: CATEGORY_LABEL[piece.category] ?? label(piece.subcategory) })}</span>
+      <div className="c-title seal-row" style={{ paddingTop: 2 }}><span className="min-w-0 flex-1">{piece.name}</span>{zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}</div>
       {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
       <div className="c-row piece-meta">
         <span className="piece-brand">{piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={22} withName /> : <span className="text-muted">{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>}</span>

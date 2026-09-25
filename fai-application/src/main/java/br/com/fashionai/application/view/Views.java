@@ -97,7 +97,8 @@ public final class Views {
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */
     public record PieceRow(UUID id, String name, String brandName, String brandLogoUrl, String subcategory,
                            String category, String size, String sex, String color, String colorHex, String imageUrl,
-                           String thumbnailUrl, BigDecimal price, boolean notAvailableAnymore, UUID ownerId) {
+                           String thumbnailUrl, BigDecimal price, boolean notAvailableAnymore, UUID ownerId,
+                           String material, int wearCount, long likes, BigDecimal hypeScore, BigDecimal hypeScoreGlobal) {
     }
 
     public static PieceRow row(SchemeItem si) {
@@ -110,12 +111,12 @@ public final class Views {
                     (String) snap.get("size"), (String) snap.get("sex"), (String) snap.get("color"),
                     Taxonomy.hex((String) snap.get("color")), (String) snap.get("imageUrl"), (String) snap.get("thumbnailUrl"),
                     snap.get("price") == null ? null : new BigDecimal(String.valueOf(snap.get("price"))), true,
-                    w == null ? null : w.getUser().getId());
+                    w == null ? null : w.getUser().getId(), (String) snap.get("material"), 0, 0, null, null);
         }
         return new PieceRow(w.getId(), w.getName(), w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
                 brandLogo(w), w.getSubcategory(), w.getCategory(), w.getSizeLabel(),
                 w.getSex(), w.getColor(), Taxonomy.hex(w.getColor()), w.getImageUrl(), w.getThumbnailUrl(), w.getPrice(), gone,
-                w.getUser().getId());
+                w.getUser().getId(), w.getMaterial(), w.getWearCount(), w.getLikesCount(), w.getHypeScore(), w.getHypeScoreGlobal());
     }
 
     public static Map<String, Object> snapshot(WardrobeItem w) {
@@ -132,6 +133,7 @@ public final class Views {
         m.put("imageUrl", w.getImageUrl());
         m.put("thumbnailUrl", w.getThumbnailUrl());
         m.put("price", w.getPrice());
+        m.put("material", w.getMaterial());
         m.put("capturedAt", Instant.now().toString());
         return m;
     }

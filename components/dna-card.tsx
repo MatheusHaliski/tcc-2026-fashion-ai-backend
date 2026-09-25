@@ -6,7 +6,7 @@ import { mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
-import { skinStyle } from "@/lib/skins";
+import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
@@ -119,7 +119,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
       </div>
       <div className="scheme-stage">
       {hasArt && art && <CardArtLayer art={art} />}
-      <div className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
+      <div style={hasArt && studio.container?.color ? surfaceToneStyle(boxColor) : undefined} className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>
         {cells.length === 0 ? <div className="dna-empty">{t("dnaCard.selecione_de_2_a_6")}</div> : body}
         {narrative !== "LEGO" && <>
           <div className="c-title"><span className="min-w-0 flex-1">{dna.title}</span></div>

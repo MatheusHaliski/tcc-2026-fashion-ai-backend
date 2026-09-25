@@ -2,13 +2,14 @@
 import { useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
+import { label } from "@/lib/api/taxonomy";
 import { useApi } from "@/lib/hooks/use-api";
 import { Button, Chip, Input, Select, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
-import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement } from "@/components/scheme-anatomies";
+import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
-export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; posterUrl?: string; container?: { color?: string | null } | null; photo?: { url?: string | null; filters?: import("@/lib/card-art").PhotoFilters; preset?: string } | null; }
+export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null } | null; photo?: { url?: string | null; filters?: import("@/lib/card-art").PhotoFilters; preset?: string } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 interface Catalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 const STEPS = ["1 · Cor & gradiente", "2 · Presets AURA & materiais", "3 · Arte com IA / upload", "4 · Layout & peças"];
@@ -36,8 +37,10 @@ function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: 
  * Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, LEGO) trazem arte própria e SOBREPÕEM o que foi
  * escolhido nas etapas 2 e 3 (presets AURA/recomendados, materiais, arte com IA e upload) — a etapa fica desativada.
  */
-export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel }: {
+export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel, season }: {
   value: BgConfig; onChange: (v: BgConfig) => void; skin: string; onSkin: (s: string) => void; anatomy: string; onAnatomy: (a: string) => void; pieceAnatomy?: string; onPieceAnatomy?: (a: string) => void; styles?: string[]; occasions?: string[];
+  /** estação do look (etapa 3): a Cartela sazonal e a arte sazonal automática só existem com ela preenchida */
+  season?: string | null;
   /** RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar das anatomias do card v17. */
   layoutPanel?: ReactNode; ownArt?: boolean; ownArtLabel?: string;
 }) {
@@ -51,7 +54,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   function chooseAnatomy(a: string) {
     onAnatomy(a);
     // caso especial (seções B/C): a arte da anatomia sobrepõe presets/materiais/arte com IA da etapa 2–3
-    if (hasOwnArt(a)) set({ ...clearArt, seasonalAuto: a === "CARTELA_SAZONAL" ? true : value.seasonalAuto });
+    if (hasOwnArt(a)) set({ ...clearArt });
   }
   async function generateArt() {
     setBusy(true);
@@ -76,7 +79,8 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
           <div><p className="label">{t("common.color")}</p><div className="flex flex-wrap gap-1.5">{(cat?.colors ?? []).map((c) => <button key={c} type="button" aria-label={c} aria-pressed={value.color === c} className={`h-8 w-8 rounded-full border-2 ${value.color === c ? "border-mark" : "border-line-soft"}`} style={{ background: c }} onClick={() => set({ color: c, gradient: null, gradientPresetId: null, seasonalPresetId: null })} />)}</div></div>
           <div><p className="label">{t("backgroundStudio.gradientes_aura")}</p><div className="flex flex-wrap gap-1.5">{(cat?.gradients ?? []).map((g) => <button key={g.id} type="button" aria-label={g.name} aria-pressed={value.gradientPresetId === g.id} className={`h-10 w-16 rounded border-2 ${value.gradientPresetId === g.id ? "border-mark" : "border-line-soft"}`} title={g.name} style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} onClick={() => set({ gradientPresetId: g.id, seasonalPresetId: null, gradient: `${g.type === "radial" ? "radial-gradient(circle" : `linear-gradient(${g.angle ?? 135}deg`}, ${g.stops.join(",")})` })} />)}</div></div>
           <div><p className="label">{t("common.cartela_sazonal")}</p><div className="flex flex-wrap gap-1.5">{(cat?.seasonal ?? []).map((g) => <Chip key={g.id} active={value.seasonalPresetId === g.id} onClick={() => set({ seasonalPresetId: g.id, gradientPresetId: null, gradient: `linear-gradient(135deg, ${g.stops.join(",")})` })}><span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} />{g.name} · {g.season}</Chip>)}</div>
-            <Switch checked={!!value.seasonalAuto} onChange={(v) => set({ seasonalAuto: v })} label={t("backgroundStudio.cartela_sazonal_automatica_usa_a")} /></div>
+            {season ? <Switch checked={!!value.seasonalAuto} onChange={(v) => set({ seasonalAuto: v })} label={t("backgroundStudio.cartela_sazonal_automatica_usa_a")} hint={value.seasonalAuto ? t("anatomy.studio.seasonOn") : t("anatomy.studio.seasonOff", { season: label(season.toLowerCase()) })} />
+              : <p className="mt-2 type-caption text-muted">{t("anatomy.studio.seasonNeeded")}</p>}</div>
           <div><p className="label">{t("backgroundStudio.animacao_2")}</p><Select aria-label={t("backgroundStudio.animacao")} value={value.animation ?? ""} onChange={(e) => set({ animation: e.target.value || null })}><option value="">—</option>{(cat?.animations ?? []).map((a) => <option key={a} value={a}>{a}</option>)}</Select></div>
         </div>
       )}
@@ -107,9 +111,10 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
           {layoutPanel ?? <div>
             <p className="label">{t("backgroundStudio.layout_do_esquema_anatomia_do")}</p>
             <p className="type-caption text-muted mb-2">{t("backgroundStudio.secao_a_layouts_base_secao")}</p>
-            <div className="grid gap-1.5 sm:grid-cols-2">{SCHEME_ANATOMIES.map((a) => <button key={a.id} type="button" aria-pressed={anatomy === a.id} onClick={() => chooseAnatomy(a.id)} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${anatomy === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><SealZoneDiagram zone={SEAL_PLACEMENT[a.id]?.zone ?? "TITLE_ROW"} pieceRows={SEAL_PLACEMENT[a.id]?.pieceRows} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.section}</span>{a.label}{a.ownArt && " ✦"}</span><span className="block type-caption text-muted">{a.hint}</span></span></button>)}</div>
+            <div className="grid gap-1.5 sm:grid-cols-2">{SCHEME_ANATOMIES.map((a) => { const blocked = a.id === "CARTELA_SAZONAL" && !season; return <button key={a.id} type="button" aria-pressed={anatomy === a.id} aria-disabled={blocked || undefined} onClick={() => blocked ? toast.info(t("anatomy.studio.seasonNeeded")) : chooseAnatomy(a.id)} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${anatomy === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"} ${blocked ? "opacity-60" : ""}`}><SealZoneDiagram zone={SEAL_PLACEMENT[a.id]?.zone ?? "TITLE_ROW"} pieceRows={SEAL_PLACEMENT[a.id]?.pieceRows} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.section}</span>{a.label}{a.ownArt && " ✦"}</span><span className="block type-caption text-muted">{blocked ? t("anatomy.studio.seasonNeeded") : a.id === "CUSTO_POR_USO" ? `${a.hint} · ${t("anatomy.studio.ownerOnly")}` : a.hint}</span></span></button>; })}</div>
             <p className="mt-2 rounded-md border border-line-soft p-2 type-body-sm"><b>{t("backgroundStudio.selo_neste_layout")}</b> {sealPlacement(anatomy).description} <span className="text-muted">{t("backgroundStudio.medalhao_44_px_tamanho_do", { value: sealPlacement(anatomy).source === "anatomia" ? t("backgroundStudio.posicao_escrita_na_anatomia_v17") : t("backgroundStudio.posicao_derivada_da_estrutura_da") })}</span></p>
-            {special && <p className="mt-2 type-caption text-chalk">{t("backgroundStudio.arte_propria_sobrepoe_as_etapas", { value: anatomy === "LEGO" && t("backgroundStudio.com_lego_o_seletor_de") })}</p>}
+            {special && <p className="mt-2 type-caption text-chalk-ink">{t("backgroundStudio.arte_propria_sobrepoe_as_etapas", { value: anatomy === "LEGO" ? ` ${t("backgroundStudio.com_lego_o_seletor_de")}` : "" })}</p>}
+            {anatomy === "SILHUETA_PROPORCAO" && <div className="mt-3"><p className="label">{t("anatomy.studio.silhouette")}</p><p className="type-caption text-muted mb-1.5">{t("anatomy.studio.silhouetteHint")}</p><div className="flex flex-wrap gap-1.5"><Chip active={!value.silhouette} onClick={() => set({ silhouette: null })}>{t("anatomy.silhouette.notDeclared")}</Chip>{SILHOUETTES.map((f) => <Chip key={f} active={value.silhouette === f} onClick={() => set({ silhouette: f })}>{silhouetteLabel(f)}</Chip>)}</div></div>}
           </div>}
           {!layoutPanel && onPieceAnatomy && <div><p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p><div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div><p className="mt-1 type-caption text-muted">{t("backgroundStudio.selo_da_peca_36_px", { description: pieceSealPlacement(pieceAnatomy).description })}</p></div>}
           <div><p className="label">{t("scheme.skin")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(CARD_SKINS).map(([id, s]) => (

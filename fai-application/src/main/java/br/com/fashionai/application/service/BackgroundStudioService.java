@@ -63,6 +63,8 @@ public class BackgroundStudioService {
      * FashionAI (44 px no card do look, 36 px no da peça); source diz se a posição está escrita na anatomia ou foi
      * derivada da estrutura da prancha (quando a prancha não traz a linha de selos).
      */
+    /** Famílias de silhueta que a pessoa pode declarar no look (anatomias v18, prancha 07). */
+    public static final Set<String> SILHOUETTES = Set.of("AMPULHETA", "RETA", "TRAPEZIO", "TRIANGULO_INVERTIDO", "OVERSIZED");
     public static final Map<String, Map<String, Object>> SEAL_PLACEMENT = new LinkedHashMap<>();
     public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
 
@@ -442,6 +444,10 @@ public class BackgroundStudioService {
                 }
             });
             scheme.put("seasonalPresetId", preset);
+        }
+        if (scheme.get("silhouette") != null && !SILHOUETTES.contains(String.valueOf(scheme.get("silhouette")))) {
+            // anatomias v18 prancha 07: família de silhueta declarada por quem publica (opcional)
+            throw ApiException.badRequest("SILHUETA_INVALIDA", Msg.t("backgroundStudio.silhueta_desconhecida", scheme.get("silhouette")));
         }
         if (scheme.get("cardSkin") instanceof String skin) {
             if (assets.cardSkin(skin).isEmpty()) {

@@ -1,5 +1,7 @@
 /** Etiquetas en español de las claves de la taxonomía (mismas claves que labels-pt.ts). */
 export const ES_LABELS: Record<string, string> = {
+  // posiciones del look (SchemeSlot)
+  top: "Parte de arriba", bottom: "Parte de abajo", shoes: "Calzado", accessory: "Accesorio", full_body: "Pieza única", outerwear: "Abrigo",
   // categorías
   upper_piece: "Parte superior", lower_piece: "Parte inferior", shoes_piece: "Calzado", accessory_piece: "Accesorios", full_body_piece: "Prenda entera",
   // ocasiones

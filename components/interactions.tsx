@@ -21,7 +21,7 @@ const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: string }[] = [{ 
  */
 export function InteractionBar({ type, id, counters, viewer, onChange, remixHref, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
   const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
-  const [share, setShare] = useState(false); const [caption, setCaption] = useState(""); const [comments, setComments] = useState(false);
+  const [share, setShare] = useState(false); const [comments, setComments] = useState(false);
   const [liked, setLiked] = useState(!!viewer?.liked); const [saved, setSaved] = useState(!!viewer?.saved);
   const [mine3, setMine3] = useState<string[]>(viewer?.reactions ?? []);
   const [likes, setLikes] = useState(counters?.likes ?? 0); const [saves, setSaves] = useState(counters?.saves ?? 0);
@@ -43,15 +43,6 @@ export function InteractionBar({ type, id, counters, viewer, onChange, remixHref
     optimistic(() => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
   };
   async function remix() { if (!guard()) return; try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(remixHref ?? (type === "SCHEME" ? `/schemes/${nid}` : `/pieces/${nid}`)); else onChange?.(); } catch (e) { toast.fromError(e); } }
-  async function doShare(channel: string) {
-    if (!guard()) return;
-    try {
-      const r = await api.post<{ url?: string; link?: string }>(`${base}/shares`, { channel, caption });
-      const url = r.url ?? r.link ?? `${window.location.origin}${window.location.pathname}`;
-      if (channel === "EXTERNAL") { await navigator.clipboard.writeText(url); toast.success(t("common.copied")); } else toast.success(t("interactions.sharedToFeed"));
-      setShare(false); onChange?.();
-    } catch (e) { toast.fromError(e); }
-  }
   const mine = user && ownerId === user.id;
   return (
     <div className="social-bar" role="group" aria-label={t("interactions.interacoes")}>
@@ -74,10 +65,66 @@ export function InteractionBar({ type, id, counters, viewer, onChange, remixHref
       {(type === "SCHEME" || type === "PIECE") && <Generate3DButton compact={false} targets={[{ kind: type === "SCHEME" ? "scheme" : "piece", id, title: title ?? "" }]} />}
       <span className="ml-auto type-caption text-muted tabular">{t("interactions.views", { value: counters?.views ?? 0 })}</span>
       <CommentsDialog type={type} id={id} open={comments} onClose={() => { setComments(false); onChange?.(); }} title={title} />
-      <Dialog open={share} onClose={() => setShare(false)} title={t("common.share")} footer={<><Button onClick={() => doShare("EXTERNAL")}>{t("interactions.copyLink")}</Button><Button variant="primary" onClick={() => doShare("FEED")}>{t("interactions.shareToFeed")}</Button></>}>
-        <label htmlFor={`share-caption-${id}`} className="label">{t("interactions.legenda_opcional")}</label>
-        <Textarea id={`share-caption-${id}`} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={200} />
-      </Dialog>
+      <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} onShared={onChange} />
+    </div>
+  );
+}
+
+/** Compartilhar (RF19): copiar o link ou publicar no feed, com legenda opcional. */
+export function ShareDialog({ type, id, open, onClose, onShared }: { type: TargetType; id: string; open: boolean; onClose: () => void; onShared?: () => void }) {
+  const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const [caption, setCaption] = useState("");
+  async function doShare(channel: string) {
+    if (!user) { router.push("/login"); return; }
+    try {
+      const r = await api.post<{ url?: string; link?: string }>(`/api/interactions/${type}/${id}/shares`, { channel, caption });
+      const url = r.url ?? r.link ?? `${window.location.origin}/${type === "PIECE" ? "pieces" : "schemes"}/${id}`;
+      if (channel === "EXTERNAL") { await navigator.clipboard.writeText(url); toast.success(t("common.copied")); } else toast.success(t("interactions.sharedToFeed"));
+      onClose(); onShared?.();
+    } catch (e) { toast.fromError(e); }
+  }
+  return (
+    <Dialog open={open} onClose={onClose} title={t("common.share")} footer={<><Button onClick={() => doShare("EXTERNAL")}>{t("interactions.copyLink")}</Button><Button variant="primary" onClick={() => doShare("FEED")}>{t("interactions.shareToFeed")}</Button></>}>
+      <label htmlFor={`share-caption-${id}`} className="label">{t("interactions.legenda_opcional")}</label>
+      <Textarea id={`share-caption-${id}`} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={200} />
+    </Dialog>
+  );
+}
+
+/**
+ * Ações do post no rodapé do card (anatomias v18): Curtir, Comentar, Compartilhar e Remixar, com a contagem no próprio
+ * botão. No compacto, Compartilhar vai para o menu ⋯ do cabeçalho. Curtir responde na hora e volta atrás se falhar.
+ */
+export function CardActions({ type, id, counters, viewer, ownerId, title, compact, extra }: { type: "SCHEME" | "PIECE"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode }) {
+  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const [liked, setLiked] = useState(!!viewer?.liked); const [likes, setLikes] = useState(counters?.likes ?? 0);
+  const [comments, setComments] = useState(false); const [share, setShare] = useState(false); const [busy, setBusy] = useState(false);
+  useEffect(() => { setLiked(!!viewer?.liked); setLikes(counters?.likes ?? 0); }, [viewer?.liked, counters?.likes]);
+  const base = `/api/interactions/${type}/${id}`;
+  const guard = () => { if (!user) { router.push("/login"); return false; } return true; };
+  const like = async () => {
+    if (!guard()) return; const was = liked;
+    setLiked(!was); setLikes((n) => n + (was ? -1 : 1));
+    try { await api.post(`${base}/reactions`, { reaction: "LIKE" }); } catch (e) { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); toast.fromError(e); }
+  };
+  const mine = !!user && ownerId === user.id;
+  async function remix() {
+    if (!guard() || busy) return; setBusy(true);
+    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(type === "SCHEME" ? `/schemes/${nid}` : `/pieces/${nid}`); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
+  }
+  const n = (v?: number) => fmtNumber(v ?? 0);
+  return (
+    <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
+      <button type="button" className="c-act" aria-pressed={liked} onClick={like} aria-label={t("anatomy.actions.like", { count: likes })}><FaiIcon id="SOC-01" size={20} variant="glyph" decorative /><span className="tabular">{n(likes)}</span></button>
+      <button type="button" className="c-act" aria-haspopup="dialog" onClick={() => setComments(true)} aria-label={t("anatomy.actions.comment", { count: counters?.comments ?? 0 })}><FaiIcon id="SOC-02" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.comments)}</span></button>
+      {!compact && <button type="button" className="c-act" aria-haspopup="dialog" onClick={() => { if (guard()) setShare(true); }} aria-label={t("anatomy.actions.share", { count: counters?.shares ?? 0 })}><FaiIcon id="SOC-03" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.shares)}</span></button>}
+      {mine
+        ? <span className="c-act is-static" role="img" aria-label={t("anatomy.actions.remixes", { count: counters?.remixes ?? 0 })}><FaiIcon id="SOC-04" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.remixes)}</span></span>
+        : <button type="button" className="c-act" onClick={remix} disabled={busy} aria-label={t("anatomy.actions.remix", { count: counters?.remixes ?? 0 })}><FaiIcon id="SOC-04" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.remixes)}</span></button>}
+      <span className="grow" />
+      {extra}
+      <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />
+      <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />
     </div>
   );
 }

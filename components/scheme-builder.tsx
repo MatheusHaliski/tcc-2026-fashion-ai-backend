@@ -146,7 +146,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <div className="sm:col-span-2 flex justify-between"><Button onClick={() => setStep(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => setStep(3)}>{t("common.next")}</Button></div>
           </div>
         )}
-        {step === 3 && (<div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => setStep(2)}>{t("common.back")}</Button><span className="flex gap-2"><Button variant="ghost" onClick={() => setStep(4)}>{t("builder.skipAppearance")}</Button><Button variant="primary" onClick={() => setStep(4)}>{t("common.next")}</Button></span></div></div>)}
+        {step === 3 && (<div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => setStep(2)}>{t("common.back")}</Button><span className="flex gap-2"><Button variant="ghost" onClick={() => setStep(4)}>{t("builder.skipAppearance")}</Button><Button variant="primary" onClick={() => setStep(4)}>{t("common.next")}</Button></span></div></div>)}
         {step === 4 && (
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>

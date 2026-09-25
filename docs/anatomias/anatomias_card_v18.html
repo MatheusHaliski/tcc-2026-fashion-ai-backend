@@ -525,7 +525,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Onde usar</dt><dd>Feed, perfil, resultado de busca.</dd>
           <dt>Assinatura no compacto</dt><dd>As 4 miniaturas das peças.</dd>
           <dt>Selo</dt><dd>Zona <code>TITLE_ROW</code>, com selos também por peça (inalterado em relação à v17).</dd>
-          <dt>No produto hoje</dt><dd>Existe (<code>SchemeCard layout="lista"</code>). Para alinhar à v18: ações com contagem, menu ⋯ e o compacto com miniatura.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado à v18 em <code>scheme-card.tsx</code>: cabeçalho do post, título como link do card, linhas com miniatura, ações com contagem, menu ⋯ e compacto com miniatura e assinatura.</dd>
         </dl>
       </div>
     </div>
@@ -540,7 +540,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Onde usar</dt><dd>Perfil e guarda-roupa, quando as peças importam mais que a composição.</dd>
           <dt>Assinatura no compacto</dt><dd>A própria miniatura vira um mosaico 2×2 das peças.</dd>
           <dt>Selo</dt><dd><code>TITLE_ROW</code> e em cada célula.</dd>
-          <dt>No produto hoje</dt><dd>Existe (<code>layout="grade"</code>).</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: células com foto, nome, marca e preço logo abaixo do título.</dd>
         </dl>
       </div>
     </div>
@@ -555,7 +555,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Onde usar</dt><dd>Detalhe do look e feed em telas largas. A 240 px os nomes quebram em 2 linhas, o que é aceitável.</dd>
           <dt>Assinatura no compacto</dt><dd>Monogramas das marcas, com 2 letras (a v17 usava 1 letra, ambígua).</dd>
           <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
-          <dt>No produto hoje</dt><dd>Existe (<code>layout="lateral"</code>).</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: foto do look à esquerda e até 4 peças com miniatura à direita.</dd>
         </dl>
       </div>
     </div>
@@ -581,7 +581,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Quando falta dado</dt><dd>Com curtidas empatadas ou zeradas, vale a ordem de montagem do look e a luz fica igual para todas. Com 1 peça, use a versão C1.</dd>
           <dt>Movimento</dt><dd>Luz e peças entram uma vez (0,9 s). Sem flashes em loop.</dd>
           <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
-          <dt>No produto hoje</dt><dd>Tapete vermelho com fotos e holofotes piscando em loop. Para alinhar: luz proporcional, uma entrada só, legenda.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: luz de cada holofote proporcional às curtidas, entrada uma vez ao aparecer na tela, legenda, empates e “Por que esta ordem?”.</dd>
         </dl>
       </div>
     </div>
@@ -597,7 +597,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Dados</dt><dd><span class="dep y">preço</span><span class="dep y">tamanho</span><span class="dep y">cor</span><span class="dep y">material</span><span class="dep p">coleção · opcional</span><span class="dep p">código · opcional</span></dd>
           <dt>Quando falta dado</dt><dd>Linha ausente some; preço ausente vira “Preço não informado” no lugar do número grande.</dd>
           <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
-          <dt>No produto hoje</dt><dd>Etiquetas penduradas lado a lado, sem seletor. As duas podem conviver: a do produto para visão geral e esta para o detalhe.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: etiquetas com foto, tamanho, marca e preço; a etiqueta “Clássica do armário” aparece a partir de 30 usos. Não há faixa de preço.</dd>
         </dl>
       </div>
     </div>
@@ -614,7 +614,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Quando falta dado</dt><dd>Sem material: a linha mostra só a cor. Sem composição: pinos sobre a lista, sem foto de scanner (use Lista vertical).</dd>
           <dt>Movimento</dt><dd>Uma varredura de 1,8 s ao entrar. Nada fica passando sobre a foto.</dd>
           <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
-          <dt>No produto hoje</dt><dd>Scanner ciano com as fotos invertidas (negativo) e varredura infinita. Para alinhar: foto em cores reais, âncora e uma varredura.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: foto em cores reais, âncora marcada (a peça de maior área estimada) e uma única varredura.</dd>
         </dl>
       </div>
     </div>
@@ -630,7 +630,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>O que mudou</dt><dd>O destaque é sempre uma foto (o look ou uma peça). Saíram “Estado exibido: clique no logo 2”, “assimetria ativa” e a mistura de dados de look e peça.</dd>
           <dt>Dados</dt><dd><span class="dep y">fotos das peças</span><span class="dep y">preço</span></dd>
           <dt>Selo</dt><dd><code>META_BLOCK</code>.</dd>
-          <dt>No produto hoje</dt><dd>Mesmo modelo (destaque + células + estatística). Para alinhar: incluir o look inteiro como opção de destaque.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: “Look completo” é o destaque inicial, as células têm proporção fixa e a troca é anunciada por <code>aria-live</code>.</dd>
         </dl>
       </div>
     </div>
@@ -643,12 +643,12 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
         <div class="col"><span class="col-label">Compacto <span class="dimv" data-dim="b5c"></span></span><div data-r="espectro:compact" data-id="b5c"></div>
           <span class="col-label" style="margin-top:12px">Compacto · sem estimativa de área <span class="dimv" data-dim="b5e"></span></span><div data-r="espectro:compact" data-v="noarea" data-id="b5e"></div></div>
         <dl class="notes">
-          <dt>De onde vem a proporção</dt><dd>É a área de cada peça na composição, calculada com a escala do item e a proporção da foto (<code>SchemeItem.scale</code> × aspecto da imagem) e arredondada para múltiplos de 5 %. O card diz “≈ área estimada” e explica em “Como é estimado”.</dd>
+          <dt>De onde vem a proporção</dt><dd>É a área que cada peça ocupa num look vestido, estimada pelo peso da categoria (peça única 50, superior e inferior 30, calçado 12, acessório 10) e arredondada para múltiplos de 5 %. Quando o editor salvar escala e posição (<code>SchemeItem.scale</code>), a estimativa passa a usar a composição real. O card diz “≈ área estimada” e explica em “Como é estimado”.</dd>
           <dt>Interação</dt><dd>Cada linha é um botão que liga ou desliga o destaque (<code>aria-pressed</code>). Esc limpa. O nome da cor não fica escondido atrás de um toque.</dd>
-          <dt>Dados</dt><dd><span class="dep y">cor da peça (taxonomia)</span><span class="dep y">escala e aspecto</span><span class="dep p">cor medida na foto (RF4) · melhora a precisão</span></dd>
-          <dt>Quando falta dado</dt><dd>Sem escala ou sem foto, as faixas ficam iguais e o rótulo passa a “por peça”.</dd>
+          <dt>Dados</dt><dd><span class="dep y">cor da peça (taxonomia)</span><span class="dep y">categoria</span><span class="dep n">escala e posição · campo futuro</span><span class="dep p">cor medida na foto (RF4) · melhora a precisão</span></dd>
+          <dt>Quando falta dado</dt><dd>Sem categoria conhecida, a peça conta com o peso de acessório; o rótulo continua “≈ área estimada”.</dd>
           <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
-          <dt>No produto hoje</dt><dd>A proporção é calculada pelo número de peças. Para alinhar: usar a área estimada e o destaque na foto.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado com uma diferença honesta: o editor ainda não salva posição nem escala das peças, então a área é estimada pelo peso da categoria (peça única 50, superior e inferior 30, calçado 12, acessório 10) e arredondada para 5 %. O card diz “≈ área estimada”.</dd>
         </dl>
       </div>
     </div>
@@ -666,7 +666,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Dados</dt><dd><span class="dep y">preço</span><span class="dep y">usos (<code>wearCount</code>, diário de uso)</span></dd>
           <dt>Quando falta dado</dt><dd>Sem preço: “Preço não informado” e a peça sai do total. Sem uso: “Ainda não usada”, sem R$ 0 e sem divisão por zero.</dd>
           <dt>Selo</dt><dd><code>HEADER</code>.</dd>
-          <dt>No produto hoje</dt><dd>Existe com meta e estados. Para alinhar: fórmula do total e o aviso “Só você vê”.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: fórmula do total (gasto ÷ usos), aviso “Só você vê” e estados de dado faltando. Para quem não é dono, o card cai para a Lista vertical.</dd>
         </dl>
       </div>
     </div>
@@ -683,7 +683,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Dados</dt><dd><span class="dep y">posição e escala das peças</span><span class="dep y">categoria</span><span class="dep n">família de silhueta · campo novo, opcional</span></dd>
           <dt>Quando falta dado</dt><dd>Sem família declarada, o card mostra só a divisão. Sem peça de cima e de baixo (vestido), mostra “Coluna única”.</dd>
           <dt>Selo</dt><dd><code>TITLE_ROW</code>.</dd>
-          <dt>No produto hoje</dt><dd>Manequim pintado com a contagem de peças por categoria. Para alinhar: divisão medida e família declarada.</dd>
+          <dt>No produto hoje</dt><dd>Parcial por falta de dado: a família é declarada no Background Studio (<code>background.scheme.silhouette</code>, validada no backend) e aparece como “declarada”. A divisão medida depende de posição e escala das peças, que o editor ainda não salva; até lá o card mostra as peças por zona.</dd>
         </dl>
       </div>
     </div>
@@ -701,7 +701,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Dados</dt><dd><span class="dep y">hypeScore</span><span class="dep y">hypeScoreGlobal</span></dd>
           <dt>Quando falta dado</dt><dd>Com poucas interações: “Hype em formação”, sem medidor.</dd>
           <dt>Selo</dt><dd><code>HEADER</code>.</dd>
-          <dt>No produto hoje</dt><dd>Mostra o valor pessoal (<code>piece.hypeScore</code>) como se fosse o único. Para alinhar: ler também o global e rotular os dois.</dd>
+          <dt>No produto hoje</dt><dd>Alinhado: lê <code>hypeScoreGlobal</code> e <code>hypeScore</code> e rotula “Global” e “Esta peça”, com legenda, “Como é calculado” e o estado “Hype em formação”.</dd>
         </dl>
       </div>
     </div>
@@ -718,7 +718,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
           <dt>Onde mora o controle</dt><dd>O botão “Aplicar arte sazonal automática” fica no editor, não no card publicado. Ele começa desligado, é um <code>role="switch"</code> de verdade e fica desabilitado, com a explicação, quando a estação não está preenchida.</dd>
           <dt>Leitura do dado</dt><dd>A estação vem de <code>ClothesScheme.season</code>. A correspondência de cada peça com a paleta é calculada pela cor: peças neutras contam como “neutras”, e as demais comparam com as 4 cores da estação.</dd>
           <dt>Dados</dt><dd><span class="dep y">season</span><span class="dep y">presets RF11</span><span class="dep y">cor da peça</span></dd>
-          <dt>Quando falta dado</dt><dd>Sem estação, a anatomia não é oferecida. O produto hoje usa Primavera como padrão, o que deve mudar.</dd>
+          <dt>Quando falta dado</dt><dd>Sem estação, a anatomia fica desabilitada no editor com a explicação, e um card antigo sem estação cai para a Lista vertical. O padrão Primavera foi removido.</dd>
           <dt>Movimento</dt><dd>As folhas caem uma vez e ficam nas bordas, sem cobrir as peças.</dd>
           <dt>Selo</dt><dd><code>COVER_CORNER</code>.</dd>
         </dl>
@@ -845,7 +845,7 @@ footer.fin p,footer.fin li{margin:0;color:var(--muted);font-size:13px;max-width:
       </tbody>
     </table></div>
     <h3>Relação com o produto</h3>
-    <p>As 13 anatomias já existem em <code>components/scheme-anatomies.tsx</code> (<code>AnatomyBody</code>), com desenho da v17. As notas “No produto hoje” de cada prancha dizem o que muda para alinhar à v18. A v17_1 fica em <code>docs/anatomias/</code> como referência histórica.</p>
+    <p>As 13 anatomias estão em <code>components/scheme-anatomies.tsx</code> (<code>AnatomyBody</code>) e seguem a v18. As notas “No produto hoje” dizem o estado atual de cada uma, inclusive onde o produto ainda estima em vez de medir. A v17_1 fica em <code>docs/anatomias/</code> como referência histórica.</p>
   </div>
 </footer>
 
@@ -899,8 +899,10 @@ const ico = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" 
 
 /* cálculos a partir da composição (posição e escala de cada peça, aspecto da foto) */
 const hPct = (p) => p.pos.w * p.ar / 1.25; // altura em % da moldura 4:5
+/* área estimada pelo peso da categoria, como no produto (components/scheme-anatomies.tsx · AREA_WEIGHT) */
+const AREA_WEIGHT = { full: 50, top: 30, bottom: 30, shoes: 12, acc: 10 };
 function areaShares(pieces) {
-  const raw = pieces.map((p) => p.pos.w * p.pos.w * p.ar), tot = raw.reduce((a, b) => a + b, 0);
+  const raw = pieces.map((p) => AREA_WEIGHT[p.slot] ?? 10), tot = raw.reduce((a, b) => a + b, 0);
   const pct = raw.map((r) => 100 * r / tot), fl = pct.map((v) => Math.floor(v / 5) * 5);
   let rest = 100 - fl.reduce((a, b) => a + b, 0);
   pct.map((v, i) => [v - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rest > 0) { fl[i] += 5; rest -= 5; } });
@@ -1099,7 +1101,7 @@ function spectrum(L) {
 R.espectro = {
   full: (L, id) => { const sp = spectrum(L); return shell(L, { id, anatomy: "ESPECTRO", body: `${comp(L, { ratio: "11" })}${titleBlock(L, id)}<div class="cband" role="img" aria-label="Paleta: ${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(", "))}">${sp.map((x) => `<i style="flex:${x.v};background:${x.p.hex}"></i>`).join("")}</div>
       <div data-spectrum>${sp.map((x) => `<button type="button" class="srow" aria-pressed="false" data-hl="${x.p.id}"><span class="sw" style="background:${x.p.hex}"></span><span class="pt"><b>${esc(x.p.color)}</b><span>${esc(x.p.name)} · ${brandTxt(x.p)}</span></span><span class="share">≈ ${x.v} %</span></button>`).join("")}</div>
-      <p class="readout" style="font-family:var(--sans)">${esc(harmony(L.pieces))}</p><details class="how"><summary>${ico("chev", 14)}Como é estimado</summary><p>A porcentagem é a área de cada peça na composição, calculada pela escala do item e pela proporção da foto e arredondada para 5 %. É uma estimativa, não uma medição de pixels.</p></details>` }); },
+      <p class="readout" style="font-family:var(--sans)">${esc(harmony(L.pieces))}</p><details class="how"><summary>${ico("chev", 14)}Como é estimado</summary><p>A porcentagem estima a área de cada peça pelo peso da categoria (uma peça de cima ocupa mais que um acessório) e é arredondada para 5 %. É uma estimativa, não uma medição de pixels.</p></details>` }); },
   compact: (L, id) => { const sp = spectrum(L); return compact(L, id, { anatomy: "ESPECTRO", sig: `<div class="sig-row"><span class="sband" role="img" aria-label="Paleta ${L.noArea ? "por peça" : "por área estimada"}: ${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(", "))}">${sp.map((x) => `<i style="flex:${x.v};background:${x.p.hex}"></i>`).join("")}</span><span style="white-space:nowrap">${L.noArea ? "por peça" : "≈ área"}</span></div><div class="sig-row"><span class="tr">${esc(sp.map((x) => `${x.p.color} ${x.v}%`).join(" · "))}</span></div>` }); }
 };
 
@@ -1186,8 +1188,8 @@ function blocos(L, id, density, piece) {
       <div class="brick" style="--c:${BRICKS[k]};${I()}"><span class="print"><b>${brandTxt(p)}</b> · ${esc(p.collection || "")}</span></div>
       <div class="tile" style="--c:${BRICKS.white};${I()}"><span class="kick" style="color:#5C6058">Peça · ${esc(p.cat)}</span><h4 class="sc-title" id="${id}-t" style="color:#191A19;font-size:var(--fs-md)">${esc(p.name)}</h4></div>
       <div class="brow">${[`Tam ${p.size}`, p.color, `${p.uses} usos`].map((t) => `<span class="tile" style="--c:${BRICKS.white};${I()};flex:1;text-align:center;font:600 var(--fs-xs)/1.3 var(--mono)">${esc(t)}</span>`).join("")}</div>
-      ${classic ? `<div class="tile" style="--c:#1F7A76;${I()};color:#fff;text-align:center;font:600 var(--fs-cap)/1.3 var(--mono);letter-spacing:.08em">CLÁSSICA DO ARMÁRIO · ${p.uses} USOS</div>` : ""}
-      <div class="brick" style="--c:${BRICKS.white};${I()}"><div class="brow" style="justify-content:space-between"><span style="font:600 var(--fs-cap)/1 var(--mono);color:#5C6058">PREÇO</span><b class="tab" style="font:600 var(--fs-sm) var(--mono)">${brl(p.price)}</b></div></div></div>`;
+      ${classic ? `<div class="tile" style="--c:#1F7A76;${I()};color:#fff;text-align:center;font:600 var(--fs-cap)/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase">Clássica do armário · ${p.uses} usos</div>` : ""}
+      <div class="brick" style="--c:${BRICKS.white};${I()}"><div class="brow" style="justify-content:space-between"><span style="font:600 var(--fs-cap)/1 var(--mono);color:#5C6058;text-transform:uppercase">Preço</span><b class="tab" style="font:600 var(--fs-sm) var(--mono)">${brl(p.price)}</b></div></div></div>`;
     return `<article class="fc blk" id="${id}" data-anatomy="LEGO" data-anim aria-labelledby="${id}-t">${headB}${body}<div class="brow acts">${btn(BRICKS.yellow, false, "Curtir", p.likes, "like", true)}${btn(BRICKS.blue, true, "Salvar", null, "save", true)}</div></article>`;
   }
   if (density === "compact") {

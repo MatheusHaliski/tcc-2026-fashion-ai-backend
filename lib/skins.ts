@@ -12,9 +12,24 @@ export const CARD_SKINS: Record<string, { bg: string; ink: string; accent: strin
   atelier_terracotta: { bg: "#3A2416", ink: "#F3E6D8", accent: "#C4674A", border: "rgba(243,230,216,0.28)", radius: 7, titleWeight: 300 },
   luxury_glass_warm: { bg: "rgba(13,27,42,0.97)", ink: "#EDE6F5", accent: "#C4956A", border: "rgba(196,149,106,0.22)", radius: 16, titleWeight: 200 },
 };
+/** Skins de fundo escuro; as demais são claras. */
+const DARK_SKINS = new Set(["show_notes", "atelier_terracotta", "luxury_glass_warm"]);
+/* O card tem superfície própria (a skin), independente do tema do app: os tokens de texto secundário, linhas e
+   superfícies internas acompanham o tom da skin, para manter contraste AA no tema claro e no escuro. */
+const LIGHT_TOKENS = { "--surface-2": "#F1F0EA", "--surface-3": "#E9E7DF", "--ink": "#191A19", "--muted": "#5C6058", "--faint": "#6B6F66", "--line": "#1A1A18", "--line-soft": "#D8D6CC", "--mark-soft": "#FBE7EE", "--thread-soft": "#E0F0EE", "--chalk-soft": "#FAF0DC", "--chalk-ink": "#7A5710", "--thread-ink": "#165C58", "--mark-ink": "#A51F4E", colorScheme: "light" };
+const DARK_TOKENS = { "--surface-2": "rgba(255,255,255,.08)", "--surface-3": "rgba(255,255,255,.14)", "--ink": "#F2F1EC", "--muted": "#C9CBC3", "--faint": "#A9ACA2", "--line": "#E6E4DA", "--line-soft": "rgba(255,255,255,.18)", "--mark-soft": "#3A1D28", "--thread-soft": "#14302E", "--chalk-soft": "#3A2E12", "--chalk-ink": "#F0C872", "--thread-ink": "#7FD3CE", "--mark-ink": "#F58DB0", colorScheme: "dark" };
+/** Tokens de tom para uma superfície de cor livre (container personalizado no Background Studio). */
+export function surfaceToneStyle(hex?: string | null): React.CSSProperties | undefined {
+  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return undefined;
+  const n = parseInt(hex.slice(1), 16); const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return { ...(lum > 140 ? LIGHT_TOKENS : DARK_TOKENS), "--surface": hex } as React.CSSProperties;
+}
+export function skinTone(skin?: string | null): "light" | "dark" { return DARK_SKINS.has(skin ?? "") ? "dark" : "light"; }
 export function skinStyle(skin?: string | null): React.CSSProperties {
-  const s = CARD_SKINS[skin ?? ""] ?? CARD_SKINS.atelier;
-  return { "--card-bg": s.bg, "--card-ink": s.ink, "--card-accent": s.accent, "--card-border": s.border, "--card-radius": `${s.radius}px`, "--card-title-weight": s.titleWeight } as React.CSSProperties;
+  const key = CARD_SKINS[skin ?? ""] ? (skin as string) : "atelier";
+  const s = CARD_SKINS[key];
+  const tones = skinTone(key) === "dark" ? DARK_TOKENS : LIGHT_TOKENS;
+  return { ...tones, "--surface": s.bg, "--card-bg": s.bg, "--card-ink": s.ink, "--card-accent": s.accent, "--card-border": s.border, "--card-radius": `${s.radius}px`, "--card-title-weight": s.titleWeight } as React.CSSProperties;
 }
 /** Fundo do card (RF11): gradiente/imagem a partir do config salvo no esquema. */
 export function backgroundStyle(bg?: Record<string, unknown> | null): React.CSSProperties {
