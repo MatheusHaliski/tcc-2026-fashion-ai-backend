@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { GATE_COOKIE, GATE_HEADER_COOKIE, GATE_TTL_SECONDS, gateConfig, safeEqual, safeNext, sha256Hex, signGate } from "@/lib/gate/token";
+import { GATE_COOKIE, GATE_GOOGLE_COOKIE, GATE_HEADER_COOKIE, GATE_TTL_SECONDS, gateConfig, safeEqual, safeNext, sha256Hex, signGate, verifyValue } from "@/lib/gate/token";
 
 /**
- * Verificação do gate: usuário + PIN conferidos contra as variáveis do servidor (o PIN só existe como hash). Erros
- * respondem igual para usuário e PIN (não revela qual errou), com atraso fixo, e cada IP tem no máximo 8 tentativas
+ * Verificação do gate (2º fator): PIN conferido contra o hash do servidor, depois do 1º fator (login Google autorizado,
+ * ou usuário da equipe com DEV_GATE_GOOGLE=false). Erros respondem igual para qualquer fator (não revela qual
+ * falhou), com atraso fixo, e cada IP tem no máximo 8 tentativas
  * erradas a cada 15 minutos. O contador fica na memória da instância: em produção, some a ele uma regra de rate limit
  * no firewall da Vercel para /gate/verify (ver docs/seguranca/SEGURANCA_PRODUCAO.md).
  */
@@ -25,7 +26,10 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch { /* corpo inválido conta como erro */ }
   const user = typeof body.user === "string" ? body.user.trim().slice(0, 64) : "";
   const pin = typeof body.pin === "string" ? body.pin.trim().slice(0, 64) : "";
-  const okUser = safeEqual(await sha256Hex(user.toLowerCase()), await sha256Hex(cfg.user.toLowerCase()));
+  // 1º fator: conta Google autorizada (padrão) ou, com DEV_GATE_GOOGLE=false, o usuário da equipe
+  const okUser = cfg.google
+    ? !!(await verifyValue("g1", req.cookies.get(GATE_GOOGLE_COOKIE)?.value, cfg.secret))
+    : safeEqual(await sha256Hex(user.toLowerCase()), await sha256Hex(cfg.user.toLowerCase()));
   const okPin = safeEqual(await sha256Hex(pin), cfg.pinHash);
   if (!okUser || !okPin) {
     const cur = fails.get(ip); fails.set(ip, { n: (cur?.n ?? 0) + 1, since: cur?.since ?? now });
@@ -39,6 +43,7 @@ export async function POST(req: NextRequest) {
   res.cookies.set(GATE_COOKIE, token, { httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: GATE_TTL_SECONDS });
   // cópia legível pelo cliente da API, só para o cabeçalho X-Dev-Gate do backend (não autentica usuário: o JWT continua)
   res.cookies.set(GATE_HEADER_COOKIE, token, { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_TTL_SECONDS });
+  res.cookies.set(GATE_GOOGLE_COOKIE, "", { path: "/", maxAge: 0 });   // 1º fator é de uso único
   res.headers.set("Cache-Control", "no-store");
   return res;
 }

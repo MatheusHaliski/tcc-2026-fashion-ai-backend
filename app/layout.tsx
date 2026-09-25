@@ -18,7 +18,12 @@ async function requestLocale(): Promise<Locale> {
   return detectLocale((await headers()).get("accept-language")?.split(",")[0] ?? null) ?? DEFAULT_LOCALE;
 }
 
+/** Gate de desenvolvedor: a página não pode revelar nada do produto (nome, descrição, ícone, textos do app). */
+const isGatePage = async () => (await headers()).get("x-gate-page") === "1";
+const BLANK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'/%3E";
+
 export async function generateMetadata(): Promise<Metadata> {
+  if (await isGatePage()) return { title: { absolute: "/gate" }, description: null, icons: { icon: BLANK_ICON }, robots: { index: false, follow: false } };
   const locale = await requestLocale();
   return {
     title: { default: "Fashion AI", template: "%s · Fashion AI" },
@@ -35,6 +40,8 @@ export const viewport: Viewport = {
 const THEME_BOOT = `(function(){try{var p=JSON.parse(localStorage.getItem("fai.theme")||"{}");var t=p.theme||"AUTO";var r=(p.highContrast||t==="HIGH_CONTRAST")?"contrast":t==="DARK"?"dark":t==="LIGHT"?"light":(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var d=document.documentElement;d.dataset.theme=r;if(p.reduceMotion)d.dataset.reduceMotion="true";if(p.fontScale&&p.fontScale!==100)d.style.fontSize=p.fontScale+"%";}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // casca mínima no /gate: sem provedores do app (catálogos de texto, tema, sessão) nem script de tema
+  if (await isGatePage()) return <html lang="en"><body className="gate-body">{children}</body></html>;
   const locale = await requestLocale();
   const nonce = (await headers()).get("x-nonce") ?? undefined;   // CSP com nonce (middleware.ts)
   return (

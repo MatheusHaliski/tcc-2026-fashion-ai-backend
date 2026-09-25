@@ -11,7 +11,9 @@ exigem passar pelo `/gate` com usuário e PIN da equipe.
 | Camada | Como funciona | Código |
 |---|---|---|
 | Páginas (Next) | `middleware.ts` confere o cookie `fai_gate` (HttpOnly, 12 h) em toda rota; sem ele, redireciona para `/gate?next=…` | `middleware.ts`, `lib/gate/token.ts` |
-| Verificação | `POST /gate/verify` compara usuário e SHA-256 do PIN em tempo constante; mesma resposta para usuário ou PIN errado; atraso fixo; 8 erros por IP em 15 min → 429 | `app/gate/verify/route.ts` |
+| 1º fator: Google | `/gate/google` inicia OpenID Connect (código + PKCE, state e nonce em cookie assinado); `/gate/google/callback` troca o código no servidor, valida emissor, audiência, validade, nonce e e-mail verificado, e só aceita contas de `DEV_GATE_ALLOWED_EMAILS` | `app/gate/google/**` |
+| 2º fator: PIN | `POST /gate/verify` exige o 1º fator (cookie de 15 min, uso único) e compara o SHA-256 do PIN em tempo constante; mesma resposta para qualquer fator errado; atraso fixo; 8 erros por IP em 15 min → 429 | `app/gate/verify/route.ts` |
+| Tela neutra | `/gate` não carrega nada do app: sem nome, descrição, ícone, catálogos de texto nem provedores (título da aba `/gate`) | `app/gate/page.tsx`, `app/layout.tsx` |
 | API (Spring) | `DevGateFilter` exige o cabeçalho `X-Dev-Gate` com o mesmo token HMAC-SHA256; `/actuator/health`, `/actuator/info`, `/media/**` e o preflight CORS ficam de fora | `fai-web/.../support/DevGateFilter.java` |
 | Indexação | `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /` enquanto o gate estiver ligado | `middleware.ts`, `next.config.ts`, `app/robots.ts` |
 
@@ -25,7 +27,14 @@ printf '%s' 'SEU_PIN' | sha256sum          # → DEV_GATE_PIN_HASH (64 caractere
 openssl rand -base64 48                   # → DEV_GATE_SECRET (use o MESMO valor no Vercel e no backend)
 ```
 
+Login Google (1º fator): crie um cliente OAuth "Aplicativo da Web" no Google Cloud Console (APIs e serviços →
+Credenciais), com URI de redirecionamento autorizado `https://<seu-domínio>/gate/google/callback`, e defina no Vercel
+`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` e `DEV_GATE_ALLOWED_EMAILS` (e-mails autorizados, separados por
+vírgula). `DEV_GATE_PUBLIC_URL` fixa a origem do redirect quando o app tem mais de um domínio. `DEV_GATE_GOOGLE=false`
+troca o Google pelo campo de usuário (`DEV_GATE_USER`).
+
 Sem `DEV_GATE_PIN_HASH` (ou `DEV_GATE_PIN`) e `DEV_GATE_SECRET`, o gate falha fechado: ninguém entra (503 no `/gate`).
+Sem o cliente Google ou com a lista de e-mails vazia, ninguém passa do 1º fator.
 No lançamento público: `DEV_GATE_ENABLED=false` nos dois lados.
 
 ## 2. OWASP Top 10 (2021)
@@ -70,7 +79,9 @@ No lançamento público: `DEV_GATE_ENABLED=false` nos dois lados.
 | Onde | Variável | Valor |
 |---|---|---|
 | Vercel | `DEV_GATE_ENABLED` | `true` até o lançamento |
-| Vercel | `DEV_GATE_USER` | usuário do gate (padrão `matheushaliskitcc20233`) |
+| Vercel | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | cliente OAuth do Google (1º fator) |
+| Vercel | `DEV_GATE_ALLOWED_EMAILS` | contas Google autorizadas, separadas por vírgula |
+| Vercel | `DEV_GATE_USER` | só com `DEV_GATE_GOOGLE=false` (padrão `matheushaliskitcc20233`) |
 | Vercel | `DEV_GATE_PIN_HASH` | SHA-256 do PIN (ver §1) |
 | Vercel + backend | `DEV_GATE_SECRET` | mesmo segredo nos dois lados |
 | Vercel | `NEXT_PUBLIC_API_BASE_URL` | URL pública do backend (https) |

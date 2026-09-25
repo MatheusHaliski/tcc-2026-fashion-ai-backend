@@ -20,7 +20,8 @@ alterado.
    | Variável | Valor |
    |---|---|
    | `DEV_GATE_ENABLED` | `true` |
-   | `DEV_GATE_USER` | `matheushaliskitcc20233` |
+   | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | cliente OAuth do Google; redirect `https://<domínio>/gate/google/callback` |
+   | `DEV_GATE_ALLOWED_EMAILS` | contas Google da equipe, separadas por vírgula |
    | `DEV_GATE_PIN_HASH` | `printf '%s' 'SEU_PIN' \| sha256sum` (só o hash; nunca o PIN) |
    | `DEV_GATE_SECRET` | `openssl rand -base64 48` (o mesmo valor vai no backend) |
    | `NEXT_PUBLIC_API_BASE_URL` | URL https da API (passo 2) |

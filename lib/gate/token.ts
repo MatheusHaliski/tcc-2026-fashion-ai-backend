@@ -34,7 +34,18 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export interface GateConfig { enabled: boolean; user: string; pinHash: string | null; secret: string | null; }
+export const GATE_GOOGLE_COOKIE = "fai_gate_g";      // 1º fator concluído (conta Google autorizada), 15 min
+export const GATE_OAUTH_COOKIE = "fai_gate_oauth";    // state + nonce + PKCE do login Google em andamento, 10 min
+
+export interface GateConfig {
+  enabled: boolean; user: string; pinHash: string | null; secret: string | null;
+  /** 1º fator: login Google (padrão). DEV_GATE_GOOGLE=false volta para usuário + PIN. */
+  google: boolean; googleClientId: string | null; googleClientSecret: string | null;
+  /** Contas Google autorizadas (e-mails separados por vírgula). Vazio = ninguém entra. */
+  allowedEmails: string[];
+  /** URL pública do app (para o redirect do Google); sem ela, usa a origem da requisição. */
+  publicUrl: string | null;
+}
 
 /**
  * Lê a configuração das variáveis de ambiente do servidor (nunca do navegador). O gate fica LIGADO por padrão: só
@@ -47,7 +58,40 @@ export async function gateConfig(): Promise<GateConfig> {
   const rawPin = process.env.DEV_GATE_PIN?.trim();
   const pinHash = process.env.DEV_GATE_PIN_HASH?.trim().toLowerCase() || (rawPin ? await sha256Hex(rawPin) : null);
   const secret = process.env.DEV_GATE_SECRET?.trim() || null;
-  return { enabled, user, pinHash, secret };
+  const google = (process.env.DEV_GATE_GOOGLE ?? "true").toLowerCase() !== "false";
+  const allowedEmails = (process.env.DEV_GATE_ALLOWED_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return {
+    enabled, user, pinHash, secret, google,
+    googleClientId: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || null,
+    googleClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || null,
+    allowedEmails, publicUrl: process.env.DEV_GATE_PUBLIC_URL?.trim().replace(/\/+$/, "") || null,
+  };
+}
+
+/** Token curto genérico assinado: `<tipo>.<dados base64url>.<expira>.<assinatura>`. */
+export async function signValue(kind: string, value: string, secret: string, ttl: number): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + ttl;
+  const payload = `${kind}.${b64url(enc.encode(value).buffer as ArrayBuffer)}.${exp}`;
+  return `${payload}.${await hmac(secret, payload)}`;
+}
+
+export async function verifyValue(kind: string, token: string | undefined | null, secret: string | null): Promise<string | null> {
+  if (!token || !secret) return null;
+  const p = token.split(".");
+  if (p.length !== 4 || p[0] !== kind) return null;
+  const exp = Number(p[2]);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+  if (!safeEqual(p[3], await hmac(secret, `${p[0]}.${p[1]}.${p[2]}`))) return null;
+  try { return new TextDecoder().decode(Uint8Array.from(atob(p[1].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0))); } catch { return null; }
+}
+
+export function randomToken(bytes = 32): string {
+  const a = new Uint8Array(bytes); crypto.getRandomValues(a);
+  return b64url(a.buffer as ArrayBuffer);
+}
+
+export async function pkceChallenge(verifier: string): Promise<string> {
+  return b64url(await crypto.subtle.digest("SHA-256", enc.encode(verifier)));
 }
 
 export async function signGate(user: string, secret: string, ttl = GATE_TTL_SECONDS): Promise<string> {

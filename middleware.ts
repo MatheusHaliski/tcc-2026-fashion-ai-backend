@@ -37,6 +37,7 @@ export async function middleware(req: NextRequest) {
   if (pass) {
     const headers = new Headers(req.headers);
     headers.set("x-nonce", nonce); headers.set("Content-Security-Policy", policy);
+    if (req.nextUrl.pathname === "/gate") headers.set("x-gate-page", "1"); else headers.delete("x-gate-page");
     res = NextResponse.next({ request: { headers } });
   } else {
     const url = req.nextUrl.clone();
