@@ -16,7 +16,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
   bio?: string | null; link?: { href: string; label: string } | null; counts: ProfileCounts; actions?: ReactNode;
   onCounts?: (which: "followers" | "following") => void; cover?: string | null;
 }) {
-  const { fmtNumber } = useI18n();
+  const { fmtNumber, t } = useI18n();
   const stat = (n: number | undefined, label: string, which?: "followers" | "following") => {
     const body = <><span className="block text-[17px] font-semibold tabular leading-tight text-[#111]">{fmtNumber(n ?? 0)}</span><span className="block text-[13px] text-[#555]">{label}</span></>;
     return which && onCounts
@@ -24,10 +24,10 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
       : <div className="px-1 text-center">{body}</div>;
   };
   const avatar = photo ?? (photoUrl
-    ? <img src={mediaUrl(photoUrl)} alt={`Foto de perfil de ${displayName}`} className="h-full w-full rounded-full object-cover" />
+    ? <img src={mediaUrl(photoUrl)} alt={t("profileHeader.foto_de_perfil_de", { displayName })} className="h-full w-full rounded-full object-cover" />
     : <span aria-hidden className="flex h-full w-full items-center justify-center rounded-full bg-[#efefef] text-3xl font-semibold text-[#777]">{displayName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}</span>);
   return (
-    <section aria-label={`Perfil de ${displayName}`} className="mb-4 overflow-hidden rounded-xl border border-[#dbdbdb] bg-white text-[#111]">
+    <section aria-label={t("profileHeader.perfil_de", { displayName })} className="mb-4 overflow-hidden rounded-xl border border-[#dbdbdb] bg-white text-[#111]">
       {cover && <img src={mediaUrl(cover)} alt="" className="h-28 w-full object-cover sm:h-36" />}
       <div className="grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3 p-4 sm:grid-cols-[auto_1fr] sm:gap-x-10 sm:p-6">
         {/* anel da foto (como o de stories), sem animação */}
@@ -37,12 +37,12 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-xl font-normal text-[#111] sm:text-2xl">{username}</h1>
-            {verified && <span title="verificado" aria-label="verificado" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0095F6] text-[11px] font-bold text-white">✓</span>}
+            {verified && <span title={t("profileHeader.verificado")} aria-label={t("profileHeader.verificado")} className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0095F6] text-[11px] font-bold text-white">✓</span>}
             {kindLabel && <span className="rounded-full bg-[#efefef] px-2 py-0.5 text-[12px] text-[#333]">{kindLabel}</span>}
             <div className="hidden flex-wrap gap-2 sm:flex">{actions}</div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label="contadores do perfil">
-            <div role="listitem">{stat(counts.pieces, "peças")}</div>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label={t("profileHeader.contadores_do_perfil")}>
+            <div role="listitem">{stat(counts.pieces, t("common.pieces"))}</div>
             <div role="listitem">{stat(counts.schemes, "esquemas")}</div>
             <div role="listitem">{stat(counts.followers, "seguidores", "followers")}</div>
             <div role="listitem">{stat(counts.following, "seguindo", "following")}</div>

@@ -1,0 +1,105 @@
+{
+ "files": {
+  "app/(app)/room/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "app/(auth)/register/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/coupons/brand-coupons-tab.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/dna-builder.tsx": {
+   "a": 5,
+   "b": 0
+  },
+  "components/dna-card.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/flair/brand-flair-tab.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/flair/modes.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "components/room3d/room-props.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/room3d/room-scene.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/scheme-anatomies.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/scheme-builder.tsx": {
+   "a": 5,
+   "b": 0
+  },
+  "components/three/runway-scene.tsx": {
+   "a": 3,
+   "b": 0
+  },
+  "components/three/stage-scene.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "components/three/store-street-scene.tsx": {
+   "a": 2,
+   "b": 0
+  }
+ },
+ "skipped": [
+  {
+   "file": "app/(app)/layout.tsx",
+   "reason": "server component (tratar manualmente com translate(locale, …))"
+  },
+  {
+   "file": "app/(auth)/layout.tsx",
+   "reason": "server component (tratar manualmente com translate(locale, …))"
+  }
+ ],
+ "stats": {
+  "edits": 37,
+  "keys": 27,
+  "files": 14
+ },
+ "renamed": 4,
+ "newKeys": [
+  "room.n30_usos",
+  "register.n3_30_caracteres_letras_numeros",
+  "coupons.brandCouponsTab.n20_na_nova_colecao",
+  "common.n1_modo",
+  "dnaBuilder.n2_esquemas",
+  "common.n3_dados",
+  "common.n4_background_studio",
+  "common.n5_revisar_e_salvar",
+  "dnaCard.n1_esquema_salvo",
+  "dnaCard.n1_vez_em",
+  "dnaCard.n1_peca",
+  "flair.brandFlairTab.n15_na_colecao_alfaiataria",
+  "flair.modes.n3_looks_de_ataque",
+  "flair.modes.n1_a_3_looks_contra",
+  "room3d.roomProps.n700_26px_inter_arial",
+  "room3d.roomProps.n500_12px_inter",
+  "room3d.roomProps.n600_12px_inter",
+  "room3d.roomScene.n2_chance",
+  "schemeAnatomies.n1_3_2_3_regra",
+  "schemeBuilder.n2_pecas",
+  "three.runwayScene.n700_120px_inter_arial_sans",
+  "three.runwayScene.n500_44px_inter_arial_sans",
+  "three.runwayScene.n600_44px_inter_arial_sans",
+  "three.stageScene.n800_150px_inter_arial_sans",
+  "three.stageScene.n600_64px_inter_arial_sans",
+  "three.storeStreetScene.n700_64px_inter_arial_sans",
+  "three.storeStreetScene.n800_120px_inter_arial_sans"
+ ]
+}

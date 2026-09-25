@@ -5,6 +5,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
 import { rng, useCanvasTexture, useReducedMotion, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * My Stage 3D (RF22 · aba Eras): a foto oficial da celebridade na cabeça do manequim, vestindo o look escolhido,
@@ -43,13 +44,14 @@ function Crowd({ count, reduced, seed = 11 }: { count: number; reduced: boolean;
 }
 
 function LedWall({ name, era, colors }: { name: string; era?: string | null; colors: string[] }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     const cs = colors.length ? colors : ["#2D55C9", "#F26A1B"];
     const grad = g.createLinearGradient(0, 0, w, 0); cs.forEach((c, i) => grad.addColorStop(cs.length === 1 ? 0 : i / (cs.length - 1), c));
     g.fillStyle = grad; g.fillRect(0, 0, w, h);
     g.fillStyle = "rgba(0,0,0,0.35)"; for (let y = 0; y < h; y += 8) g.fillRect(0, y, w, 3);   // linhas de LED
-    g.fillStyle = "#ffffff"; g.textAlign = "center"; g.font = "800 150px Inter, Arial, sans-serif"; g.fillText(name.toUpperCase(), w / 2, h * 0.5);
-    if (era) { g.font = "600 64px Inter, Arial, sans-serif"; g.fillStyle = "rgba(255,255,255,0.9)"; g.fillText(era, w / 2, h * 0.78); }
+    g.fillStyle = "#ffffff"; g.textAlign = "center"; g.font = t("three.stageScene.n800_150px_inter_arial_sans"); g.fillText(name.toUpperCase(), w / 2, h * 0.5);
+    if (era) { g.font = t("three.stageScene.n600_64px_inter_arial_sans"); g.fillStyle = "rgba(255,255,255,0.9)"; g.fillText(era, w / 2, h * 0.78); }
   }, 1600, 560, [name, era, colors.join()]);
   return <mesh position={[0, 3.1, -2.3]}><planeGeometry args={[10, 3.5]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>;
 }
@@ -80,9 +82,10 @@ function Turntable({ children, reduced }: { children: React.ReactNode; reduced: 
 }
 
 export default function StageScene({ name, era, colors, mannequin, pieces, crowd = 150 }: { name: string; era?: string | null; colors: string[]; mannequin: Mannequin3d; pieces: Look3dPiece[]; crowd?: number }) {
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   return (
-    <Canvas shadows camera={{ position: [0, 2.6, 8.5], fov: 45 }} dpr={[1, 1.75]} aria-label={`My Stage 3D de ${name}`}>
+    <Canvas shadows camera={{ position: [0, 2.6, 8.5], fov: 45 }} dpr={[1, 1.75]} aria-label={t("three.stageScene.my_stage_3d_de", { name })}>
       <color attach="background" args={["#07080d"]} />
       <fog attach="fog" args={["#07080d", 10, 22]} />
       <hemisphereLight args={["#b9c6ff", "#0c0d12", 0.45]} />

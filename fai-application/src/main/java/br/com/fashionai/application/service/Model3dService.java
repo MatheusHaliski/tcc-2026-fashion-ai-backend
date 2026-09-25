@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -85,10 +86,10 @@ public class Model3dService {
     /** CA01 — cria o job (enfileirado). Chamado dentro da transação do WardrobeService, com a posse já validada. */
     public Map<String, Object> request(WardrobeItem w) {
         if (!enabled) {
-            throw new ApiException(409, "RECURSO_DESLIGADO", "A geração 3D está desligada neste ambiente (FEATURE_RF16_3D=false).");
+            throw new ApiException(409, "RECURSO_DESLIGADO", Msg.t("model3d.a_geracao_3d_esta_desligada"));
         }
         if (w.getImageUrl() == null || w.isDefaultImage()) {
-            throw new ApiException(422, "SEM_FOTO", "A peça precisa de uma foto própria para virar 3D. Envie uma foto no cadastro (RF4).");
+            throw new ApiException(422, "SEM_FOTO", Msg.t("model3d.a_peca_precisa_de_uma"));
         }
         if (w.getModel3dStatus() == Model3dStatus.QUEUED || w.getModel3dStatus() == Model3dStatus.PROCESSING) {
             return status(w);
@@ -143,12 +144,12 @@ public class Model3dService {
 
     static String label(Model3dStatus s) {
         if (s == null) {
-            return "sem modelo 3D";
+            return Msg.t("model3d.sem_modelo_3d");
         }
         return switch (s) {
             case QUEUED -> "enfileirado";
             case PROCESSING -> "processando";
-            case COMPLETED -> "concluído";
+            case COMPLETED -> Msg.t("model3d.concluido");
             case FAILED -> "falhou";
         };
     }
@@ -183,7 +184,7 @@ public class Model3dService {
         } catch (RuntimeException e) {
             log.warn("job 3D {} falhou: {}", jobId, e.toString());
             tx.executeWithoutResult(s -> jobs.findById(jobId).ifPresent(j -> fail(j, "ERRO_INTERNO",
-                    "Não conseguimos gerar o 3D desta vez (" + e.getClass().getSimpleName() + "). Tente de novo — o primeiro reprocessamento é grátis.")));
+                    Msg.t("model3d.nao_conseguimos_gerar_o_3d", e.getClass().getSimpleName()))));
         }
     }
 
@@ -198,12 +199,12 @@ public class Model3dService {
             PipelineJob job = jobs.findById(jobId).orElseThrow();
             WardrobeItem w = pieces.findById(job.getInputResourceId()).orElse(null);
             if (w == null) {
-                fail(job, "PECA_REMOVIDA", "A peça foi excluída antes de o 3D ficar pronto.");
+                fail(job, "PECA_REMOVIDA", Msg.t("model3d.a_peca_foi_excluida_antes"));
                 return null;
             }
             byte[] bytes = media.read(w.getImageUrl()).orElse(null);
             if (bytes == null) {
-                fail(job, "SEM_ARQUIVO", "A foto da peça não foi encontrada no armazenamento. Envie a foto de novo.");
+                fail(job, "SEM_ARQUIVO", Msg.t("model3d.a_foto_da_peca_nao"));
                 return null;
             }
             job.setStatus(PipelineJobStatus.RUNNING);
@@ -247,7 +248,7 @@ public class Model3dService {
         }
         // o reprocessamento grátis não consome cota: a chamada entra sem usuário no controle de cota (fica no log)
         AiOutcome<Started> outcome = ai.execute(in.freeRetry() ? null : in.userId(), AiCapability.THREE_D_GENERATOR,
-                List.of("recorte da peça (PNG sem fundo)", "categoria " + in.category()), null, null, steps,
+                List.of(Msg.t("common.recorte_da_peca_png_sem"), "categoria " + in.category()), null, null, steps,
                 () -> {
                     ReliefModelGenerator.Model m = ReliefModelGenerator.generate(cutout, heightM);
                     return new Started("local-relevo", null, m.glb(), BigDecimal.ZERO, true, m);
@@ -259,7 +260,7 @@ public class Model3dService {
             job.setFallbackUsed(outcome.fallbackUsed() || st.local());
             job.setTotalCostUsd(st.costUsd());
             List<Map<String, Object>> stages = new ArrayList<>();
-            stages.add(stage("FOTO", "local", "recorte sem fundo do RF4 (" + cutout.getWidth() + "×" + cutout.getHeight() + ")"));
+            stages.add(stage("FOTO", "local", Msg.t("model3d.recorte_sem_fundo_do_rf4", cutout.getWidth(), cutout.getHeight())));
             if (st.taskId() != null) {
                 job.setExternalJobId(st.taskId());
                 stages.add(stage("ENVIO", st.provider(), "tarefa " + st.taskId()));
@@ -268,11 +269,11 @@ public class Model3dService {
                 return;
             }
             if (st.local()) {
-                stages.add(stage("SILHUETA", "local", "máscara " + ReliefModelGenerator.GRID + " células + distância à borda"));
-                stages.add(stage("MALHA", "local", st.relief().vertices() + " vértices · " + st.relief().triangles() + " triângulos"));
-                stages.add(stage("TEXTURA", "local", "foto da peça como baseColor (PBR)"));
+                stages.add(stage("SILHUETA", "local", Msg.t("model3d.mascara_celulas_distancia_a_borda", ReliefModelGenerator.GRID)));
+                stages.add(stage("MALHA", "local", Msg.t("model3d.vertices_triangulos", (st.relief().vertices()), st.relief().triangles())));
+                stages.add(stage("TEXTURA", "local", Msg.t("model3d.foto_da_peca_como_basecolor")));
             } else {
-                stages.add(stage("RECONSTRUCAO", st.provider(), "GLB síncrono"));
+                stages.add(stage("RECONSTRUCAO", st.provider(), Msg.t("model3d.glb_sincrono")));
             }
             complete(job, st.glb(), stages, st.relief());
         });
@@ -296,12 +297,12 @@ public class Model3dService {
         if (status != null && "SUCCEEDED".equals(status.state()) && status.glbUrl() != null) {
             glb = web.get(status.glbUrl(), MAX_GLB_BYTES, null).map(WebFetchPort.Fetched::body).filter(ReliefModelGenerator::isGlb).orElse(null);
             if (glb == null) {
-                error = "o modelo ficou pronto no provedor, mas o download falhou";
+                error = Msg.t("model3d.o_modelo_ficou_pronto_no");
             }
         } else if (status != null && "FAILED".equals(status.state())) {
-            error = status.error() == null ? "o provedor não conseguiu reconstruir a peça" : status.error();
+            error = status.error() == null ? Msg.t("model3d.o_provedor_nao_conseguiu_reconstruir") : status.error();
         } else if (late) {
-            error = "passou do tempo limite de " + timeout.toMinutes() + " min";
+            error = Msg.t("model3d.passou_do_tempo_limite_de", timeout.toMinutes());
         } else {
             int progress = status == null ? 15 : Math.max(10, Math.min(95, status.progress()));
             tx.executeWithoutResult(s -> jobs.findById(jobId).ifPresent(j -> j.setResultJson(Json.write(Map.of("progress", progress)))));
@@ -313,7 +314,7 @@ public class Model3dService {
             PipelineJob job = jobs.findById(jobId).orElseThrow();
             List<Map<String, Object>> stages = new ArrayList<>(Json.list(job.getStagesJson()));
             if (ready != null) {
-                stages.add(stage("RECONSTRUCAO", p.provider(), "GLB texturizado pronto"));
+                stages.add(stage("RECONSTRUCAO", p.provider(), Msg.t("model3d.glb_texturizado_pronto")));
                 complete(job, ready, stages, null);
                 return;
             }
@@ -325,7 +326,7 @@ public class Model3dService {
                     ReliefModelGenerator.Model m = ReliefModelGenerator.generate(ImageOps.toArgb(ImageOps.decode(bytes)),
                             heightOf(LocalSchemeComposer.slotOf(w), w.getSubcategory()));
                     stages.add(stage("RECONSTRUCAO", p.provider(), "falhou: " + why));
-                    stages.add(stage("MALHA", "local-relevo", m.vertices() + " vértices (plano B)"));
+                    stages.add(stage("MALHA", "local-relevo", Msg.t("model3d.vertices_plano_b", (m.vertices()))));
                     job.setFallbackUsed(true);
                     job.setProvider(p.provider() + "→local-relevo");
                     complete(job, m.glb(), stages, m);
@@ -335,20 +336,19 @@ public class Model3dService {
                 }
             }
             job.setStagesJson(Json.write(stages));
-            fail(job, late ? "TEMPO_LIMITE" : "PROVEDOR_FALHOU", "A geração 3D não terminou: " + why + ". Você pode reprocessar"
-                    + (job.getRetryCount() == 0 ? " uma vez sem custo." : "."));
+            fail(job, late ? "TEMPO_LIMITE" : "PROVEDOR_FALHOU", Msg.t("model3d.a_geracao_3d_nao_terminou", why, (job.getRetryCount() == 0 ? Msg.t("model3d.uma_vez_sem_custo") : ".")));
         });
     }
 
     private void complete(PipelineJob job, byte[] glb, List<Map<String, Object>> stages, ReliefModelGenerator.Model relief) {
         WardrobeItem w = pieces.findById(job.getInputResourceId()).orElse(null);
         if (w == null) {
-            fail(job, "PECA_REMOVIDA", "A peça foi excluída antes de o 3D ficar pronto.");
+            fail(job, "PECA_REMOVIDA", Msg.t("model3d.a_peca_foi_excluida_antes"));
             return;
         }
         String url = media.put("users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/model-" + System.currentTimeMillis() + ".glb",
                 glb, "model/gltf-binary").url();
-        stages.add(stage("ARMAZENAMENTO", "storage", glb.length / 1024 + " KB (.glb)"));
+        stages.add(stage("ARMAZENAMENTO", "storage", Msg.t("model3d.kb_glb", (glb.length / 1024))));
         w.setModel3dUrl(url);
         w.setModel3dStatus(Model3dStatus.COMPLETED);
         job.setStatus(PipelineJobStatus.COMPLETED);
@@ -367,7 +367,7 @@ public class Model3dService {
         }
         job.setResultJson(Json.write(result));
         notifications.notify(w.getUser().getId(), null, NotificationType.AI_JOB_FINISHED, "PIECE", w.getId(),
-                "Modelo 3D pronto", "«" + w.getName() + "» já pode ser girada em 3D.", Map.of("href", "/pieces/" + w.getId()));
+                Msg.k("model3d.modelo_3d_pronto"), Msg.k("model3d.ja_pode_ser_girada_em", w.getName()), Map.of("href", "/pieces/" + w.getId()));
         try {
             points.awardIsolated(w.getUser().getId(), "PIECE_3D", "PIECE", w.getId().toString(), null);   // +15, 1× por peça (§5.2)
         } catch (RuntimeException e) {

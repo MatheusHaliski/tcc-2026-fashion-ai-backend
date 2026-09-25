@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
@@ -112,14 +113,14 @@ public class IdentityService {
     public Map<String, Object> preRegistrationUpload(byte[] bytes, String kind, String ip) {
         Integer size = PRE_UPLOAD_SIZE.get(kind == null ? "" : kind);
         if (size == null) {
-            throw ApiException.badRequest("TIPO_INVALIDO", "Tipo de arquivo inválido.", Map.of("allowed", PRE_UPLOAD_SIZE.keySet()));
+            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("identity.tipo_de_arquivo_invalido"), Map.of("allowed", PRE_UPLOAD_SIZE.keySet()));
         }
         if (bytes.length > 8L * 1024 * 1024) {
-            throw ApiException.badRequest("ARQUIVO_GRANDE", "A imagem deve ter até 8 MB.");
+            throw ApiException.badRequest("ARQUIVO_GRANDE", Msg.t("identity.a_imagem_deve_ter_ate"));
         }
         UUID bucketOwner = UUID.nameUUIDFromBytes(("pre-upload:" + (ip == null ? "?" : ip)).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         if (!rateLimit.tryAcquire(bucketOwner, "pre-registration-upload", 30, Duration.ofHours(1))) {
-            throw new ApiException(429, "LIMITE_ENVIOS", "Muitos envios em pouco tempo. Tente de novo em alguns minutos.");
+            throw new ApiException(429, "LIMITE_ENVIOS", Msg.t("identity.muitos_envios_em_pouco_tempo"));
         }
         ImageOps.requireAcceptedImage(bytes);
         java.awt.image.BufferedImage img = ImageOps.decode(bytes);
@@ -169,55 +170,55 @@ public class IdentityService {
         Map<String, Object> errors = new LinkedHashMap<>();
         ProfileType type = cmd.profileType() == null ? ProfileType.PESSOAL : cmd.profileType();
         if (cmd.fullName() == null || cmd.fullName().trim().length() < 3) {
-            errors.put("fullName", "Informe seu nome completo.");
+            errors.put("fullName", Msg.t("identity.informe_seu_nome_completo"));
         }
         String mail = cmd.email() == null ? "" : cmd.email().trim().toLowerCase(Locale.ROOT);
         if (!EMAIL.matcher(mail).matches()) {
-            errors.put("email", "Formato de e-mail inválido.");
+            errors.put("email", Msg.t("common.formato_de_e_mail_invalido"));
         }
         validatePassword(cmd.password(), errors);
         if (cmd.password() != null && !cmd.password().equals(cmd.confirmPassword())) {
-            errors.put("confirmPassword", "As senhas não coincidem.");
+            errors.put("confirmPassword", Msg.t("identity.as_senhas_nao_coincidem"));
         }
         if (!cmd.acceptTerms()) {
-            errors.put("acceptTerms", "É preciso aceitar os termos de uso e a política de privacidade.");
+            errors.put("acceptTerms", Msg.t("identity.e_preciso_aceitar_os_termos"));
         }
         if (cmd.birthDate() != null && !cmd.birthDate().isBlank()) {
             try {
                 LocalDate birth = LocalDate.parse(cmd.birthDate());
                 if (Period.between(birth, LocalDate.now()).getYears() < 13) {
-                    errors.put("birthDate", "O Fashion AI é destinado a maiores de 13 anos.");
+                    errors.put("birthDate", Msg.t("identity.o_fashion_ai_e_destinado"));
                 }
             } catch (DateTimeParseException ex) {
-                errors.put("birthDate", "Data inválida (use AAAA-MM-DD).");
+                errors.put("birthDate", Msg.t("identity.data_invalida_use_aaaa_mm"));
             }
         }
         if (type == ProfileType.MARCA) {
             BrandData b = cmd.brand();
             if (b == null || blank(b.razaoSocial())) {
-                errors.put("brand.razaoSocial", "Razão social é obrigatória.");
+                errors.put("brand.razaoSocial", Msg.t("identity.razao_social_e_obrigatoria"));
             }
             if (b == null || !validCnpj(b.cnpj())) {
-                errors.put("brand.cnpj", "CNPJ inválido.");
+                errors.put("brand.cnpj", Msg.t("identity.cnpj_invalido"));
             }
             if (b == null || blank(b.logoUrl())) {
-                errors.put("brand.logoUrl", "Envie o logo da marca.");
+                errors.put("brand.logoUrl", Msg.t("identity.envie_o_logo_da_marca"));
             }
         }
         if (type == ProfileType.CELEBRIDADE) {
             CelebrityData c = cmd.celebrity();
             if (c == null || blank(c.stageName())) {
-                errors.put("celebrity.stageName", "Nome artístico é obrigatório.");
+                errors.put("celebrity.stageName", Msg.t("identity.nome_artistico_e_obrigatorio"));
             }
             if (c == null || blank(c.identityProofUrl())) {
-                errors.put("celebrity.identityProofUrl", "Envie o documento de identificação.");
+                errors.put("celebrity.identityProofUrl", Msg.t("identity.envie_o_documento_de_identificacao"));
             }
             if (c == null || blank(c.officialPhotoUrl())) {
-                errors.put("celebrity.officialPhotoUrl", "Envie a foto oficial.");
+                errors.put("celebrity.officialPhotoUrl", Msg.t("identity.envie_a_foto_oficial"));
             }
         }
         if (type != ProfileType.MARCA && cmd.sex() == null) {
-            errors.put("sex", "Escolha o manequim (feminino ou masculino): ele desfila o seu Look do Dia na Passarela 3D.");
+            errors.put("sex", Msg.t("identity.escolha_o_manequim_feminino_ou"));
         }
         for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl()},
                 {"brand.logoUrl", cmd.brand() == null ? null : cmd.brand().logoUrl()},
@@ -225,21 +226,21 @@ public class IdentityService {
                 {"celebrity.officialPhotoUrl", cmd.celebrity() == null ? null : cmd.celebrity().officialPhotoUrl()},
                 {"celebrity.identityProofUrl", cmd.celebrity() == null ? null : cmd.celebrity().identityProofUrl()}}) {
             if (!blank(f[1]) && !preRegistrationUpload(f[1])) {
-                errors.put(f[0], "Envie o arquivo pelo formulário de cadastro.");
+                errors.put(f[0], Msg.t("identity.envie_o_arquivo_pelo_formulario"));
             }
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
         String emailHash = Hashing.emailHash(mail);
         if (users.existsByEmailHash(emailHash)) {
             // RF1.CA02 — recusa específica, sem vazar nenhum dado da conta existente.
-            throw ApiException.conflict("EMAIL_EM_USO", "Este e-mail já está cadastrado. Faça login ou recupere a senha.");
+            throw ApiException.conflict("EMAIL_EM_USO", Msg.t("identity.este_e_mail_ja_esta"));
         }
         String username = cmd.username() == null || cmd.username().isBlank() ? suggestUsername(cmd.fullName())
                 : normalizeUsername(cmd.username());
         if (users.existsByUsernameIgnoreCase(username)) {
-            throw ApiException.badRequest("USERNAME_EM_USO", "Este @ já está em uso.",
+            throw ApiException.badRequest("USERNAME_EM_USO", Msg.t("common.este_ja_esta_em_uso"),
                     Map.of("suggestions", usernameSuggestions(username)));
         }
         User u = new User();
@@ -314,16 +315,14 @@ public class IdentityService {
         }
         sendEmailVerification(u);
         if (type != ProfileType.PESSOAL) {
-            email.send(mail, "Cadastro recebido — pendente de validação",
-                    "<p>Recebemos o cadastro de <b>" + escape(u.getDisplayName()) + "</b> como "
-                            + (type == ProfileType.MARCA ? "marca" : "celebridade")
-                            + ".</p><p>Status: <b>pendente_validação</b>. Um administrador do Fashion AI vai revisar os dados e você receberá a resposta por e-mail.</p>",
+            email.send(mail, Msg.t("identity.cadastro_recebido_pendente_de_validacao"),
+                    Msg.t("identity.p_recebemos_o_cadastro_de", escape(u.getDisplayName()), (type == ProfileType.MARCA ? "marca" : "celebridade")),
                     "SECURITY");
         }
-        notifications.notify(u.getId(), null, NotificationType.WELCOME, "USER", u.getId(), "Boas-vindas ao Fashion AI!",
-                "Monte seu guarda-roupa, crie looks e descubra seu DNA de Estilo.", null);
+        notifications.notify(u.getId(), null, NotificationType.WELCOME, "USER", u.getId(), Msg.k("identity.boas_vindas_ao_fashion_ai"),
+                Msg.k("identity.monte_seu_guarda_roupa_crie"), null);
         notifications.notify(u.getId(), null, NotificationType.EMAIL_CONFIRMATION, "USER", u.getId(),
-                "Confirme seu e-mail", "Enviamos um código para " + maskEmail(mail) + ". Até confirmar, você só pode navegar.", null);
+                Msg.k("identity.confirme_seu_e_mail"), Msg.k("identity.enviamos_um_codigo_para_ate", maskEmail(mail)), null);
         audit.log(u.getId().toString(), AuditActions.CADASTRO_CONTA, "user:" + u.getId(), "SUCESSO", ip, userAgent,
                 Map.of("profileType", type.name()));
         return openSession(u, true, ip, userAgent, null);
@@ -332,7 +331,7 @@ public class IdentityService {
     public static void validatePassword(String password, Map<String, Object> errors) {
         if (password == null || password.length() < 8 || !password.matches(".*[A-Z].*") || !password.matches(".*\\d.*")
                 || !password.matches(".*[^A-Za-z0-9].*")) {
-            errors.put("password", "A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial.");
+            errors.put("password", Msg.t("identity.a_senha_precisa_de_no"));
         }
     }
 
@@ -424,27 +423,26 @@ public class IdentityService {
         vc.setExpiresAt(Instant.now().plus(Duration.ofHours(24)));
         vc.setLastSentAt(Instant.now());
         codes.save(vc);
-        email.send(u.getEmail(), "Confirme seu e-mail no Fashion AI",
-                "<p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'>" + code + "</b>.</p>"
-                        + "<p>Ou abra: <a href='" + frontendUrl + "/verify-email?code=" + code + "'>confirmar e-mail</a>. Vale por 24 horas.</p>",
+        email.send(u.getEmail(), Msg.t("identity.confirme_seu_e_mail_no"),
+                Msg.t("identity.p_seu_codigo_de_confirmacao", code, frontendUrl, code),
                 "SECURITY");
     }
 
     @Transactional
     public Views.UserCard verifyEmail(CurrentUser current, String code) {
-        User u = users.findById(current.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(current.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (u.isEmailVerified()) {
             return Views.user(u);
         }
         VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
                 VerificationPurpose.EMAIL_VERIFICATION).orElseThrow(() -> ApiException.badRequest("CODIGO_INVALIDO",
-                "Código inválido. Peça um novo código."));
+                Msg.t("identity.codigo_invalido_peca_um_novo")));
         if (vc.getExpiresAt().isBefore(Instant.now()) || vc.getAttempts() >= 5) {
-            throw ApiException.badRequest("CODIGO_EXPIRADO", "O código expirou. Peça um novo.");
+            throw ApiException.badRequest("CODIGO_EXPIRADO", Msg.t("identity.o_codigo_expirou_peca_um"));
         }
         if (!vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + (code == null ? "" : code.trim())))) {
             vc.setAttempts(vc.getAttempts() + 1);
-            throw ApiException.badRequest("CODIGO_INVALIDO", "Código incorreto. Restam " + (5 - vc.getAttempts()) + " tentativas.");
+            throw ApiException.badRequest("CODIGO_INVALIDO", Msg.t("identity.codigo_incorreto_restam_tentativas", (5 - vc.getAttempts())));
         }
         vc.setConsumedAt(Instant.now());
         u.setEmailVerified(true);
@@ -466,13 +464,13 @@ public class IdentityService {
 
     @Transactional
     public void resendEmailVerification(CurrentUser current) {
-        User u = users.findById(current.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(current.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (u.isEmailVerified()) {
             return;
         }
         if (!rateLimit.tryAcquire(u.getId(), "email-verification", 5, Duration.ofDays(1))) {
             RateLimitPort.QuotaStatus st = rateLimit.status(u.getId(), "email-verification", 5, Duration.ofDays(1));
-            throw ApiException.tooMany("Limite de reenvios atingido.", Map.of("resetAt", st.resetAt().toString()));
+            throw ApiException.tooMany(Msg.t("identity.limite_de_reenvios_atingido"), Map.of("resetAt", st.resetAt().toString()));
         }
         sendEmailVerification(u);
     }
@@ -489,34 +487,34 @@ public class IdentityService {
         if (u == null) {
             hasher.matches(cmd.password() == null ? "" : cmd.password(), dummyHash);
             audit.log("anonymous", AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "usuario_inexistente"));
-            throw ApiException.unauthorized("E-mail/usuário ou senha incorretos.");
+            throw ApiException.unauthorized(Msg.t("identity.e_mail_usuario_ou_senha"));
         }
         RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), "login-fail", MAX_LOGIN_FAILURES, LOCK_WINDOW);
         if (lock.exhausted()) {
             audit.log(u.getId().toString(), AuditActions.LOGIN_BLOQUEADO_TENTATIVAS, "auth", "BLOQUEADO", ip, userAgent, Map.of());
             throw new ApiException(423, "CONTA_BLOQUEADA_TEMPORARIAMENTE",
-                    "Muitas tentativas. Tente de novo depois de " + lock.resetAt() + " ou recupere a senha.",
+                    Msg.t("identity.muitas_tentativas_tente_de_novo", lock.resetAt()),
                     Map.of("resetAt", lock.resetAt().toString()));
         }
         if (!hasher.matches(cmd.password() == null ? "" : cmd.password(), u.getPasswordHash())) {
             rateLimit.tryAcquire(u.getId(), "login-fail", MAX_LOGIN_FAILURES, LOCK_WINDOW);
             audit.log(u.getId().toString(), AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "senha"));
-            throw ApiException.unauthorized("E-mail/usuário ou senha incorretos.");
+            throw ApiException.unauthorized(Msg.t("identity.e_mail_usuario_ou_senha"));
         }
         if (u.getStatus() == AccountStatus.DELETED || u.getStatus() == AccountStatus.SUSPENDED) {
-            throw new ApiException(403, "CONTA_INDISPONIVEL", "Esta conta não está disponível.");
+            throw new ApiException(403, "CONTA_INDISPONIVEL", Msg.t("identity.esta_conta_nao_esta_disponivel"));
         }
         if (u.isTwoFactorEnabled()) {
             if (cmd.twoFactorCode() == null || cmd.twoFactorCode().isBlank()) {
                 sendTwoFactor(u);
-                throw new ApiException(401, "DOIS_FATORES_NECESSARIO", "Enviamos um código de verificação para o seu e-mail.",
+                throw new ApiException(401, "DOIS_FATORES_NECESSARIO", Msg.t("identity.enviamos_um_codigo_de_verificacao"),
                         Map.of("twoFactorRequired", true));
             }
             VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
-                    VerificationPurpose.TWO_FACTOR).orElseThrow(() -> ApiException.unauthorized("Código de verificação inválido."));
+                    VerificationPurpose.TWO_FACTOR).orElseThrow(() -> ApiException.unauthorized(Msg.t("identity.codigo_de_verificacao_invalido")));
             if (vc.getExpiresAt().isBefore(Instant.now())
                     || !vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + cmd.twoFactorCode().trim()))) {
-                throw ApiException.unauthorized("Código de verificação inválido ou expirado.");
+                throw ApiException.unauthorized(Msg.t("identity.codigo_de_verificacao_invalido_ou"));
             }
             vc.setConsumedAt(Instant.now());
         }
@@ -526,8 +524,7 @@ public class IdentityService {
         audit.log(u.getId().toString(), AuditActions.LOGIN_SUCESSO, "auth", "SUCESSO", ip, userAgent, Map.of("newDevice", newDevice));
         if (newDevice && u.getLastLoginAt() != null) {
             notifications.notify(u.getId(), null, NotificationType.NEW_LOGIN_DEVICE, "SESSION", null,
-                    "Novo acesso à sua conta", "Login em " + (userAgent == null ? "dispositivo desconhecido" : shortAgent(userAgent))
-                            + ". Se não foi você, encerre a sessão em Configurações › Conta.", Map.of("ip", ip == null ? "" : ip));
+                    Msg.k("identity.novo_acesso_a_sua_conta"), Msg.k("identity.login_em_se_nao_foi", (userAgent == null ? "dispositivo desconhecido" : shortAgent(userAgent))), Map.of("ip", ip == null ? "" : ip));
         }
         return openSession(u, cmd.rememberMe(), ip, userAgent, cmd.deviceName());
     }
@@ -542,7 +539,7 @@ public class IdentityService {
         vc.setExpiresAt(Instant.now().plus(Duration.ofMinutes(10)));
         vc.setLastSentAt(Instant.now());
         codes.save(vc);
-        email.send(u.getEmail(), "Seu código de acesso ao Fashion AI", "<p>Código: <b>" + code + "</b> (válido por 10 minutos).</p>", "SECURITY");
+        email.send(u.getEmail(), Msg.t("identity.seu_codigo_de_acesso_ao"), Msg.t("identity.p_codigo_b_b_valido", code), "SECURITY");
     }
 
     private Session openSession(User u, boolean persistent, String ip, String userAgent, String deviceName) {
@@ -567,13 +564,13 @@ public class IdentityService {
         refreshTokens.save(rt);
         List<String> warnings = new ArrayList<>();
         if (!u.isEmailVerified()) {
-            warnings.add("Confirme seu e-mail para criar e editar conteúdo (acesso limitado).");
+            warnings.add(Msg.t("identity.confirme_seu_e_mail_para"));
         }
         if (u.getStatus() == AccountStatus.PENDING_VALIDATION) {
-            warnings.add("Seu perfil aguarda a validação de um administrador do Fashion AI.");
+            warnings.add(Msg.t("identity.seu_perfil_aguarda_a_validacao"));
         }
         if (u.getStatus() == AccountStatus.DELETION_SCHEDULED) {
-            warnings.add("Sua conta será excluída em " + u.getDeletionScheduledFor() + ". Cancele em Configurações › Seus dados.");
+            warnings.add(Msg.t("identity.sua_conta_sera_excluida_em", u.getDeletionScheduledFor()));
         }
         return new Session(tokens.issueAccessToken(u, family), tokens.accessTokenTtl().toSeconds(), raw, rt.getExpiresAt(),
                 family, Views.user(u), u.getStatus().name(), u.isEmailVerified(), warnings);
@@ -582,23 +579,23 @@ public class IdentityService {
     @Transactional(noRollbackFor = ApiException.class)
     public Session refresh(String rawRefresh, String ip, String userAgent) {
         if (rawRefresh == null || rawRefresh.isBlank()) {
-            throw ApiException.unauthorized("Sessão expirada. Faça login novamente.");
+            throw ApiException.unauthorized(Msg.t("identity.sessao_expirada_faca_login_novamente"));
         }
         RefreshToken rt = refreshTokens.findByTokenHash(Hashing.sha256(rawRefresh))
-                .orElseThrow(() -> ApiException.unauthorized("Sessão expirada. Faça login novamente."));
+                .orElseThrow(() -> ApiException.unauthorized(Msg.t("identity.sessao_expirada_faca_login_novamente")));
         if (rt.getRevokedAt() != null) {
             // reutilização de refresh token já rotacionado: revoga a família inteira (roubo de token).
             revokeFamily(rt.getFamilyId());
             audit.log(rt.getUser().getId().toString(), AuditActions.REFRESH_REUTILIZADO, "session:" + rt.getFamilyId(),
                     "BLOQUEADO", ip, userAgent, Map.of());
-            throw ApiException.unauthorized("Sessão encerrada por segurança. Faça login novamente.");
+            throw ApiException.unauthorized(Msg.t("identity.sessao_encerrada_por_seguranca_faca"));
         }
         if (rt.getExpiresAt().isBefore(Instant.now())) {
-            throw ApiException.unauthorized("Sessão expirada. Faça login novamente.");
+            throw ApiException.unauthorized(Msg.t("identity.sessao_expirada_faca_login_novamente"));
         }
         User u = rt.getUser();
         if (u.getStatus() == AccountStatus.DELETED || u.getStatus() == AccountStatus.SUSPENDED) {
-            throw ApiException.unauthorized("Conta indisponível.");
+            throw ApiException.unauthorized(Msg.t("identity.conta_indisponivel"));
         }
         rt.setRevokedAt(Instant.now());
         return issue(u, rt.getFamilyId(), rt.getId(), rt.isPersistent(), ip, userAgent, rt.getDeviceName());
@@ -654,7 +651,7 @@ public class IdentityService {
     public void revokeSession(CurrentUser user, UUID sessionId) {
         List<RefreshToken> family = refreshTokens.findByFamilyId(sessionId);
         if (family.isEmpty() || !family.get(0).getUser().getId().equals(user.id())) {
-            throw ApiException.notFound("Sessão");
+            throw ApiException.notFound(Msg.t("identity.sessao"));
         }
         revokeFamily(sessionId);
         audit.log(user, AuditActions.SESSAO_REVOGADA, "session:" + sessionId, Map.of());
@@ -690,12 +687,10 @@ public class IdentityService {
             vc.setExpiresAt(Instant.now().plus(Duration.ofMinutes(30)));
             vc.setLastSentAt(Instant.now());
             codes.save(vc);
-            email.send(u.getEmail(), "Redefinição de senha — Fashion AI",
-                    "<p>Recebemos um pedido para redefinir sua senha.</p><p><a href='" + frontendUrl
-                            + "/reset-password?token=" + token + "'>Redefinir senha</a> (válido por 30 minutos).</p>"
-                            + "<p>Se não foi você, ignore este e-mail.</p>", "SECURITY");
+            email.send(u.getEmail(), Msg.t("identity.redefinicao_de_senha_fashion_ai"),
+                    Msg.t("identity.p_recebemos_um_pedido_para", frontendUrl, token), "SECURITY");
             notifications.notify(u.getId(), null, NotificationType.PASSWORD_RESET, "USER", u.getId(),
-                    "Pedido de redefinição de senha", "Se não foi você, ignore o e-mail e troque sua senha.", null);
+                    Msg.k("identity.pedido_de_redefinicao_de_senha"), Msg.k("identity.se_nao_foi_voce_ignore"), null);
             audit.log(u.getId().toString(), AuditActions.RECUPERACAO_SENHA, "auth", "SOLICITADA", ip, userAgent, Map.of());
         });
         // resposta uniforme: nunca revela se o e-mail existe (RF3.CA29).
@@ -705,17 +700,17 @@ public class IdentityService {
     public void confirmPasswordReset(String token, String newPassword, String confirm) {
         VerificationCode vc = codes.findByCodeHashAndPurpose(Hashing.sha256(token == null ? "" : token),
                 VerificationPurpose.PASSWORD_RESET).orElseThrow(() -> ApiException.badRequest("LINK_INVALIDO",
-                "Link inválido ou expirado. Peça uma nova redefinição."));
+                Msg.t("identity.link_invalido_ou_expirado_peca")));
         if (vc.getConsumedAt() != null || vc.getExpiresAt().isBefore(Instant.now())) {
-            throw ApiException.badRequest("LINK_INVALIDO", "Link inválido ou expirado. Peça uma nova redefinição.");
+            throw ApiException.badRequest("LINK_INVALIDO", Msg.t("identity.link_invalido_ou_expirado_peca"));
         }
         Map<String, Object> errors = new LinkedHashMap<>();
         validatePassword(newPassword, errors);
         if (newPassword != null && !newPassword.equals(confirm)) {
-            errors.put("confirmPassword", "As senhas não coincidem.");
+            errors.put("confirmPassword", Msg.t("identity.as_senhas_nao_coincidem"));
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
         User u = vc.getUser();
         u.setPasswordHash(hasher.hash(newPassword));
@@ -728,17 +723,17 @@ public class IdentityService {
     /** RF3.CA11/CA33 — troca de senha com a senha atual; encerra todas as demais sessões. */
     @Transactional
     public int changePassword(CurrentUser user, UUID currentSession, String currentPassword, String newPassword, String confirm) {
-        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (!hasher.matches(currentPassword == null ? "" : currentPassword, u.getPasswordHash())) {
-            throw ApiException.badRequest("SENHA_ATUAL_INCORRETA", "Senha atual incorreta.");
+            throw ApiException.badRequest("SENHA_ATUAL_INCORRETA", Msg.t("identity.senha_atual_incorreta"));
         }
         Map<String, Object> errors = new LinkedHashMap<>();
         validatePassword(newPassword, errors);
         if (newPassword != null && !newPassword.equals(confirm)) {
-            errors.put("confirmPassword", "As senhas não coincidem.");
+            errors.put("confirmPassword", Msg.t("identity.as_senhas_nao_coincidem"));
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Corrija os campos destacados.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
         u.setPasswordHash(hasher.hash(newPassword));
         int ended = revokeOtherSessions(u.getId(), currentSession);
@@ -748,9 +743,9 @@ public class IdentityService {
 
     /** Reautenticação exigida para dados sensíveis (RF3.CA01). */
     public void reauthenticate(UUID userId, String password) {
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (!hasher.matches(password == null ? "" : password, u.getPasswordHash())) {
-            throw new ApiException(401, "REAUTENTICACAO_FALHOU", "Confirme sua senha para alterar dados sensíveis.");
+            throw new ApiException(401, "REAUTENTICACAO_FALHOU", Msg.t("identity.confirme_sua_senha_para_alterar"));
         }
     }
 

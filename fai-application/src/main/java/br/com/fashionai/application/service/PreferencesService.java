@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
@@ -66,7 +67,7 @@ public class PreferencesService {
     private UserPreferences prefs(CurrentUser user) {
         return preferences.findByUserId(user.id()).orElseGet(() -> {
             UserPreferences p = new UserPreferences();
-            p.setUser(users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário")));
+            p.setUser(users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
             return preferences.save(p);
         });
     }
@@ -137,7 +138,7 @@ public class PreferencesService {
         }
         if (u.fontScale() != null) {
             if (u.fontScale() < 80 || u.fontScale() > 160) {
-                throw ApiException.badRequest("FONTE_INVALIDA", "Tamanho de fonte entre 80% e 160%.");
+                throw ApiException.badRequest("FONTE_INVALIDA", Msg.t("preferences.tamanho_de_fonte_entre_80"));
             }
             p.setFontScale(u.fontScale());
         }
@@ -150,7 +151,7 @@ public class PreferencesService {
         if (u.chromeBackgroundId() != null) {
             String id = u.chromeBackgroundId().isBlank() ? null : u.chromeBackgroundId();
             if (id != null && !assets.isChromeBackground(id)) {
-                throw ApiException.badRequest("FUNDO_INVALIDO", "Fundo do chrome fora da lista (RF23 · /public/bg_chrome).");
+                throw ApiException.badRequest("FUNDO_INVALIDO", Msg.t("preferences.fundo_do_chrome_fora_da"));
             }
             p.setChromeBackgroundId(id);
             p.getUser().setInterfaceBackgroundPresetId(id);
@@ -159,7 +160,7 @@ public class PreferencesService {
             // "" volta ao padrão (branco); qualquer outro valor precisa ser #RRGGBB
             String c = u.contentContainerColor().trim();
             if (!c.isEmpty() && !c.matches("^#[0-9A-Fa-f]{6}$")) {
-                throw ApiException.badRequest("COR_INVALIDA", "Cor dos containers em hexadecimal (#RRGGBB).");
+                throw ApiException.badRequest("COR_INVALIDA", Msg.t("preferences.cor_dos_containers_em_hexadecimal"));
             }
             p.setContentContainerColor(c.isEmpty() ? null : c.toUpperCase(java.util.Locale.ROOT));
         }
@@ -174,7 +175,7 @@ public class PreferencesService {
         }
         if (u.mannequinSkinTone() != null) {
             if (!MannequinGeometry.SKIN_TONES.containsKey(u.mannequinSkinTone())) {
-                throw ApiException.badRequest("TOM_INVALIDO", "Tom de pele fora da paleta do manequim.");
+                throw ApiException.badRequest("TOM_INVALIDO", Msg.t("preferences.tom_de_pele_fora_da"));
             }
             p.setMannequinSkinTone(u.mannequinSkinTone());
         }
@@ -183,7 +184,7 @@ public class PreferencesService {
         }
         if (u.defaultCardSkin() != null) {
             if (assets.cardSkin(u.defaultCardSkin()).isEmpty()) {
-                throw ApiException.badRequest("SKIN_INVALIDA", "Skin de card desconhecida.");
+                throw ApiException.badRequest("SKIN_INVALIDA", Msg.t("preferences.skin_de_card_desconhecida"));
             }
             p.setDefaultCardSkin(u.defaultCardSkin());
         }
@@ -207,7 +208,7 @@ public class PreferencesService {
     /** RF23.CA03 — vitrine do perfil sem reautenticação. */
     @Transactional
     public Views.UserCard updateProfile(CurrentUser user, ProfileUpdate cmd) {
-        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (cmd.displayName() != null) {
             u.setDisplayName(InputSanitizer.required("displayName", InputSanitizer.moderated("displayName", cmd.displayName(), 80), 2, 80));
         }
@@ -223,7 +224,7 @@ public class PreferencesService {
         if (cmd.country() != null) {
             String c = cmd.country().trim().toUpperCase(Locale.ROOT);
             if (!c.isEmpty() && !c.matches("[A-Z]{2}")) {
-                throw ApiException.badRequest("PAIS_INVALIDO", "Use o código ISO do país (ex.: BR).");
+                throw ApiException.badRequest("PAIS_INVALIDO", Msg.t("preferences.use_o_codigo_iso_do"));
             }
             u.setCountry(c.isEmpty() ? null : c);
         }
@@ -254,7 +255,7 @@ public class PreferencesService {
     /** Links do perfil (Editar perfil, formato do Instagram): até 5, só http(s), título curto. */
     static List<Map<String, String>> validLinks(List<Map<String, String>> links) {
         if (links.size() > 5) {
-            throw ApiException.badRequest("LINKS_DEMAIS", "Use até 5 links.");
+            throw ApiException.badRequest("LINKS_DEMAIS", Msg.t("preferences.use_ate_5_links"));
         }
         List<Map<String, String>> out = new java.util.ArrayList<>();
         for (Map<String, String> l : links) {
@@ -263,7 +264,7 @@ public class PreferencesService {
                 continue;
             }
             if (!url.matches("(?i)https?://[^\\s<>\"]{3,300}")) {
-                throw ApiException.badRequest("LINK_INVALIDO", "Link inválido: use um endereço que comece com http:// ou https://.");
+                throw ApiException.badRequest("LINK_INVALIDO", Msg.t("preferences.link_invalido_use_um_endereco"));
             }
             String title = l.get("title") == null || l.get("title").isBlank() ? url.replaceFirst("(?i)^https?://", "") : l.get("title").trim();
             out.add(Map.of("title", InputSanitizer.clean(title.length() > 40 ? title.substring(0, 40) : title, 40), "url", url));
@@ -282,14 +283,14 @@ public class PreferencesService {
         guard.requireCanCreate(user);
         String username = IdentityService.normalizeUsername(requested);
         if (username.length() < 3) {
-            throw ApiException.badRequest("USERNAME_INVALIDO", "O @ precisa de ao menos 3 caracteres (letras, números, ponto ou _).");
+            throw ApiException.badRequest("USERNAME_INVALIDO", Msg.t("preferences.o_precisa_de_ao_menos"));
         }
-        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (username.equalsIgnoreCase(u.getUsername())) {
             return Map.of("username", username);
         }
         if (users.existsByUsernameIgnoreCase(username)) {
-            throw ApiException.badRequest("USERNAME_EM_USO", "Este @ já está em uso.",
+            throw ApiException.badRequest("USERNAME_EM_USO", Msg.t("common.este_ja_esta_em_uso"),
                     Map.of("suggestions", identity.usernameSuggestions(username)));
         }
         u.setUsername(username);
@@ -311,7 +312,7 @@ public class PreferencesService {
         BufferedImage img = ImageOps.decode(bytes);
         BufferedImage fitted = ImageOps.scaleToFit(img, cover ? 1600 : 512, cover ? 900 : 512);
         byte[] jpeg = ImageOps.jpeg(fitted, 0.9f);
-        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         String key = "users/" + u.getId() + "/profile/" + (cover ? "cover" : "avatar") + "-" + System.currentTimeMillis() + ".jpg";
         MediaStoragePort.StoredObject stored = media.put(key, jpeg, "image/jpeg");
         media.register(u, PhotoOrigin.PROFILE, u.getId(), stored, null, null, jpeg, fitted.getWidth(), fitted.getHeight(), null,

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.common;
 
+import br.com.fashionai.application.common.Msg;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
@@ -31,11 +32,11 @@ public final class InputSanitizer {
     public static String required(String field, String text, int min, int max) {
         String t = clean(text, Integer.MAX_VALUE);
         if (t == null || t.length() < min) {
-            throw ApiException.badRequest("CAMPO_INVALIDO", "Preencha o campo " + field + ".", Map.of(field, "mínimo " + min + " caracteres"));
+            throw ApiException.badRequest("CAMPO_INVALIDO", Msg.t("inputSanitizer.preencha_o_campo", field), Map.of(field, Msg.t("inputSanitizer.minimo_caracteres", min)));
         }
         if (t.length() > max) {
-            throw ApiException.badRequest("CAMPO_INVALIDO", "O campo " + field + " aceita no máximo " + max + " caracteres.",
-                    Map.of(field, "máximo " + max + " caracteres"));
+            throw ApiException.badRequest("CAMPO_INVALIDO", Msg.t("inputSanitizer.o_campo_aceita_no_maximo", field, max),
+                    Map.of(field, Msg.t("inputSanitizer.maximo_caracteres", max)));
         }
         return t;
     }
@@ -51,7 +52,7 @@ public final class InputSanitizer {
     public static String moderated(String field, String text, int max) {
         String t = clean(text, max);
         if (offensive(t)) {
-            throw ApiException.badRequest("CONTEUDO_BLOQUEADO", "O texto do campo " + field + " viola a política de conteúdo.");
+            throw ApiException.badRequest("CONTEUDO_BLOQUEADO", Msg.t("inputSanitizer.o_texto_do_campo_viola", field));
         }
         return t;
     }

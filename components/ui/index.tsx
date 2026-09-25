@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { ApiError } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 export const cn = (...xs: Array<string | false | null | undefined>) => xs.filter(Boolean).join(" ");
 
@@ -120,7 +120,7 @@ export function Avatar({ src, name, size = 32 }: { src?: string | null; name?: s
 export function Pagination({ page, hasMore, onPage, total, size }: { page: number; hasMore: boolean; onPage: (p: number) => void; total?: number; size?: number }) {
   const { t, fmtNumber } = useI18n();
   return (
-    <nav className="mt-4 flex items-center justify-between gap-2" aria-label="paginação">
+    <nav className="mt-4 flex items-center justify-between gap-2" aria-label={t("ui.index.paginacao")}>
       <Button size="sm" disabled={page <= 0} onClick={() => onPage(page - 1)}>← {t("common.back")}</Button>
       <span className="type-caption text-muted tabular">{t("common.page")} {page + 1}{total !== undefined && size ? ` ${t("common.of")} ${Math.max(1, Math.ceil(total / size))} · ${fmtNumber(total)} ${t("common.results")}` : ""}</span>
       <Button size="sm" disabled={!hasMore} onClick={() => onPage(page + 1)}>{t("common.next")} →</Button>
@@ -130,6 +130,7 @@ export function Pagination({ page, hasMore, onPage, total, size }: { page: numbe
 
 /* ---------- Dialog ---------- */
 export function Dialog({ open, onClose, title, children, footer, size }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -145,7 +146,7 @@ export function Dialog({ open, onClose, title, children, footer, size }: { open:
       <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`dialog ${size ? `dialog-${size}` : ""}`}>
         <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
           <h2 className="type-h3">{title}</h2>
-          <button type="button" className="btn btn-ghost btn-icon" aria-label="fechar" onClick={onClose}>✕</button>
+          <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}>✕</button>
         </div>
         <div className="p-4">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-line-soft px-4 py-3">{footer}</div>}
@@ -181,6 +182,6 @@ export function useToast() {
   return {
     info: (t: string) => push("info", t), success: (t: string) => push("success", t), error: (t: string) => push("error", t),
     /** Mostra a mensagem tratada do backend (ApiError) ou uma genérica. */
-    fromError: (e: unknown, fallback = "Algo deu errado. Tente de novo.") => push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
+    fromError: (e: unknown, fallback = tr("ui.index.algo_deu_errado_tente_de")) => push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
   };
 }

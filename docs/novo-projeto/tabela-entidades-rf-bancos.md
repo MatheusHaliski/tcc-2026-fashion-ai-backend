@@ -1,5 +1,7 @@
 # Fashion AI - Entidades, RF e Bancos
 
+> **Atualizado em 24/09/2026 (etapa 12):** a versão atual, gerada do código e do teste ponta a ponta e com RF1–RF39 na numeração do Trello, está em `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` (resumo em `docs/planilhas/ETAPA12_IA_E_ENTIDADES_POR_RF.md`). Este arquivo fica como registro do desenho inicial.
+
 Status: esqueleto inicial implementado no backend Java.
 
 Fontes usadas: `01-bootstrap-repo-java.md`, documentos de anatomia dos cards RF5/RF6/RF13, especificacao social antiga apenas como referencia de modelo, `db/schema.sql` antigo apenas como referencia, Trello JSON exportado, pacote `fashionai-diagramas-completo (10)-TOPrompt.zip`, RF24 xlsx/markdown, RF4/RF18 pipelines, taxonomias oficiais e PDF de subcategorias.

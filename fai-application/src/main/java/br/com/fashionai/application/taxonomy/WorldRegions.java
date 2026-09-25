@@ -1,5 +1,6 @@
 package br.com.fashionai.application.taxonomy;
 
+import br.com.fashionai.application.common.Msg;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -21,15 +22,15 @@ public final class WorldRegions {
     }
 
     static {
-        region("AMERICA_DO_SUL", "América do Sul", "BR,AR,CL,CO,PE,UY,PY,BO,EC,VE,GY,SR");
-        region("AMERICA_DO_NORTE", "América do Norte", "US,CA,MX");
-        region("AMERICA_CENTRAL_CARIBE", "América Central e Caribe", "GT,CR,PA,HN,SV,NI,BZ,CU,DO,PR,JM,HT,TT,BS,BB");
+        region("AMERICA_DO_SUL", Msg.k("worldRegions.america_do_sul"), "BR,AR,CL,CO,PE,UY,PY,BO,EC,VE,GY,SR");
+        region("AMERICA_DO_NORTE", Msg.k("worldRegions.america_do_norte"), "US,CA,MX");
+        region("AMERICA_CENTRAL_CARIBE", Msg.k("worldRegions.america_central_e_caribe"), "GT,CR,PA,HN,SV,NI,BZ,CU,DO,PR,JM,HT,TT,BS,BB");
         region("EUROPA", "Europa", "GB,UK,FR,DE,IT,ES,PT,NL,BE,CH,AT,SE,NO,DK,FI,IE,PL,CZ,GR,RO,HU,UA,IS,LU,HR,SI,SK,BG,RS,EE,LV,LT,MT,CY,MC,AD");
-        region("ASIA", "Ásia", "JP,CN,KR,IN,ID,TH,VN,PH,MY,SG,TW,HK,PK,BD,LK,NP,MN,KZ,UZ,KH,MM");
-        region("ORIENTE_MEDIO", "Oriente Médio", "AE,SA,IL,TR,QA,KW,BH,OM,JO,LB,IR,IQ,EG");
-        region("AFRICA", "África", "ZA,NG,MA,KE,GH,ET,TN,DZ,SN,CI,AO,MZ,TZ,UG,CM,RW,CV");
+        region("ASIA", Msg.k("worldRegions.asia"), "JP,CN,KR,IN,ID,TH,VN,PH,MY,SG,TW,HK,PK,BD,LK,NP,MN,KZ,UZ,KH,MM");
+        region("ORIENTE_MEDIO", Msg.k("worldRegions.oriente_medio"), "AE,SA,IL,TR,QA,KW,BH,OM,JO,LB,IR,IQ,EG");
+        region("AFRICA", Msg.k("worldRegions.africa"), "ZA,NG,MA,KE,GH,ET,TN,DZ,SN,CI,AO,MZ,TZ,UG,CM,RW,CV");
         region("OCEANIA", "Oceania", "AU,NZ,FJ,PG");
-        LABELS.put("OUTRAS", "Outras regiões");
+        LABELS.put("OUTRAS", Msg.k("worldRegions.outras_regioes"));
     }
 
     public static String of(String country) {

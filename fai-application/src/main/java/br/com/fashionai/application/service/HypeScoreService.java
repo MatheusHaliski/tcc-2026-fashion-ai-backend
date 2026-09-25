@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -72,9 +73,9 @@ public class HypeScoreService {
     }
 
     public static final List<Band> BANDS = List.of(new Band(0, 14, HypeScoreBand.DESPRETENSIOSO, "Despretensioso"),
-            new Band(15, 29, HypeScoreBand.EM_CONSTRUCAO, "Em Construção"), new Band(30, 49, HypeScoreBand.NOTADO, "Notado"),
-            new Band(50, 69, HypeScoreBand.COM_ESTILO, "Com Estilo"), new Band(70, 84, HypeScoreBand.MUITO_ESTILOSO, "Muito Estiloso"),
-            new Band(85, 95, HypeScoreBand.ARRASANDO_NO_LOOK, "Arrasando no Look"), new Band(96, 100, HypeScoreBand.ICONE_DE_ESTILO, "Ícone de Estilo"));
+            new Band(15, 29, HypeScoreBand.EM_CONSTRUCAO, Msg.k("hypeScore.em_construcao")), new Band(30, 49, HypeScoreBand.NOTADO, "Notado"),
+            new Band(50, 69, HypeScoreBand.COM_ESTILO, Msg.k("hypeScore.com_estilo")), new Band(70, 84, HypeScoreBand.MUITO_ESTILOSO, Msg.k("hypeScore.muito_estiloso")),
+            new Band(85, 95, HypeScoreBand.ARRASANDO_NO_LOOK, Msg.k("hypeScore.arrasando_no_look")), new Band(96, 100, HypeScoreBand.ICONE_DE_ESTILO, Msg.k("hypeScore.icone_de_estilo")));
 
     public static Band band(double hype) {
         int h = (int) Math.round(hype);
@@ -458,9 +459,8 @@ public class HypeScoreService {
             outcome = ai.text(new AiEngine.TextCall<>(dl.getUser().getId(), AiCapability.STYLE_ADVISOR,
                     "Você é o Style Advisor do Fashion AI. Dê UMA dica acionável (até 2 frases, português) para o usuário subir o Hype Score do look, "
                             + "citando a métrica mais fraca. Nunca cite marcas reais que não estejam no look. Responda só o texto.",
-                    "Look: " + s.getTitle() + " · estilos " + Json.csv(s.getStyle()) + " · ocasiões " + Json.csv(s.getOccasion()) + "\nBreakdown (percentis): "
-                            + Json.write(sc.breakdown()) + "\nE_norm=" + Math.round(sc.eNorm()) + " T_norm=" + Math.round(sc.tNorm()),
-                    List.of(), 200, List.of("contadores sociais do look", "percentis de calibração"),
+                    Msg.t("hypeScore.look_estilos_ocasioes_breakdown", s.getTitle(), Json.csv(s.getStyle()), Json.csv(s.getOccasion()), Json.write(sc.breakdown()), Math.round(sc.eNorm()), Math.round(sc.tNorm())),
+                    List.of(), 200, List.of(Msg.t("hypeScore.contadores_sociais_do_look"), Msg.t("hypeScore.percentis_de_calibracao")),
                     text -> text == null || text.isBlank() ? null : InputSanitizer.clean(text, 300), () -> localTip, null));
             if (outcome.value() != null) {
                 tip = outcome.value();
@@ -510,7 +510,7 @@ public class HypeScoreService {
         }
         out.put("seals", seals);
         out.put("weeklyTopPercent", sc.weeklyTopPercent() == null ? null : Math.round(sc.weeklyTopPercent() * 10) / 10.0);
-        out.put("weeklyRankingText", sc.weeklyTopPercent() == null ? "Sem população semanal ainda." : "Top " + Math.round(sc.weeklyTopPercent()) + "% dos looks desta semana");
+        out.put("weeklyRankingText", sc.weeklyTopPercent() == null ? Msg.t("hypeScore.sem_populacao_semanal_ainda") : Msg.t("hypeScore.top_dos_looks_desta_semana", Math.round(sc.weeklyTopPercent())));
         out.put("delta", delta == null ? null : Math.round(delta * 10) / 10.0);
         out.put("deltaArrow", delta == null ? "=" : delta > 0.05 ? "↑" : delta < -0.05 ? "↓" : "=");
         out.put("previousDailyLook", previous.map(p -> Map.of("date", p.getLookDate(), "schemeId", p.getScheme().getId())).orElse(null));
@@ -518,7 +518,7 @@ public class HypeScoreService {
         out.put("aiExplanation", outcome == null ? null : outcome.explanation());
         out.put("globalHypeScore", s.getHypeScoreGlobal());
         out.put("hypeGroupId", s.getHypeGroupId());
-        out.put("formula", "Hype = 0,65 × E_norm + 0,35 × T_norm · E_raw = L + 3C + 5S + 8R · percentis na janela de 90 dias · tendência 30 dias");
+        out.put("formula", Msg.t("hypeScore.hype_0_65_e_norm"));
         out.put("calibratedAt", calibration(HypeEntityType.SCHEME).computedAt());
         return out;
     }

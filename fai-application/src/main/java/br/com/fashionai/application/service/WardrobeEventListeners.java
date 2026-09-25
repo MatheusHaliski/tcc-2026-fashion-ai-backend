@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import br.com.fashionai.application.events.SideEffectRunner;
@@ -81,7 +82,7 @@ public class WardrobeEventListeners {
             e.setSource(source);
             e.setSchemeId(schemeId);
             e.setOccasion(occasion);
-            e.setNote(wasForgotten ? "resgate: " + ChronoUnit.DAYS.between(ref, day) + " dias sem uso" : null);
+            e.setNote(wasForgotten ? Msg.t("wardrobeEventListeners.resgate_dias_sem_uso", ChronoUnit.DAYS.between(ref, day)) : null);
             diary.save(e);
             if (wasForgotten) {
                 points.award(userId, "FORGOTTEN_RESCUED", "PIECE", id + ":" + day, null);

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -85,7 +86,7 @@ public class TryOnService {
     }
 
     UserPreferences prefs(UUID userId) {
-        return preferences.findByUserId(userId).orElseThrow(() -> ApiException.notFound("Preferências"));
+        return preferences.findByUserId(userId).orElseThrow(() -> ApiException.notFound(Msg.t("common.preferencias")));
     }
 
     /** Estado inicial do provador: manequim lembrado, preferências de corpo e peças compatíveis por camada. */
@@ -96,7 +97,7 @@ public class TryOnService {
         List<WardrobeItem> own = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
                 .filter(w -> w.getAvailabilityStatus() != br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED).toList();
         if (own.isEmpty()) {
-            throw new ApiException(422, "ACERVO_VAZIO", "Cadastre ao menos 1 peça para usar o Provador 2D (RF18.CA01).", Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_VAZIO", Msg.t("tryOn.cadastre_ao_menos_1_peca"), Map.of("href", "/add-piece"));
         }
         Map<String, List<Map<String, Object>>> byLayer = new LinkedHashMap<>();
         for (WardrobeItem w : own) {
@@ -134,7 +135,7 @@ public class TryOnService {
         }
         if (skinTone != null) {
             if (!MannequinGeometry.SKIN_TONES.containsKey(skinTone)) {
-                throw ApiException.badRequest("TOM_INVALIDO", "Tons disponíveis: " + MannequinGeometry.SKIN_TONES.keySet());
+                throw ApiException.badRequest("TOM_INVALIDO", Msg.t("tryOn.tons_disponiveis", MannequinGeometry.SKIN_TONES.keySet()));
             }
             p.setMannequinSkinTone(skinTone);
         }
@@ -154,14 +155,14 @@ public class TryOnService {
             String key = MannequinGeometry.replacementKey(slot, w.getSubcategory());
             WardrobeItem previous = byKey.put(key, w);
             if (previous != null) {
-                replaced.add("«" + w.getName() + "» substituiu «" + previous.getName() + "» na mesma camada.");
+                replaced.add(Msg.t("tryOn.substituiu_na_mesma_camada", w.getName(), previous.getName()));
             }
             if (slot == SchemeSlot.FULL_BODY) {
                 byKey.entrySet().removeIf(e -> {
                     SchemeSlot s = LocalSchemeComposer.slotOf(e.getValue());
                     boolean conflict = s == SchemeSlot.TOP || s == SchemeSlot.BOTTOM;
                     if (conflict) {
-                        replaced.add("«" + w.getName() + "» (peça inteira) substituiu «" + e.getValue().getName() + "».");
+                        replaced.add(Msg.t("tryOn.peca_inteira_substituiu", w.getName(), e.getValue().getName()));
                     }
                     return conflict;
                 });
@@ -174,7 +175,7 @@ public class TryOnService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> render(CurrentUser user, MannequinSex sex, List<UUID> pieceIds) {
         if (pieceIds == null || pieceIds.isEmpty()) {
-            throw ApiException.badRequest("SEM_PECAS", "Leve ao menos uma peça ao manequim.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("tryOn.leve_ao_menos_uma_peca"));
         }
         UserPreferences p = prefs(user.id());
         MannequinSex s = sex != null ? sex : p.getMannequinSex() == null ? MannequinSex.FEMININO : p.getMannequinSex();
@@ -182,7 +183,7 @@ public class TryOnService {
         for (UUID id : pieceIds) {
             WardrobeItem w = wardrobe.owned(user, id);
             if (!MannequinGeometry.sexMatches(s, w.getSex())) {
-                throw ApiException.badRequest("SEXO_INCOMPATIVEL", "«" + w.getName() + "» não é compatível com o manequim " + s.name().toLowerCase() + " (RF18.CA08).");
+                throw ApiException.badRequest("SEXO_INCOMPATIVEL", Msg.t("tryOn.nao_e_compativel_com_o", w.getName(), s.name().toLowerCase()));
             }
             ordered.add(w);
         }
@@ -199,7 +200,7 @@ public class TryOnService {
         BodyBuild build = p.getMannequinBuild();
         String skin = p.getMannequinSkinTone();
         AiOutcome<TryOnCompositor.Result> outcome = ai.execute(user.id(), AiCapability.TRY_ON,
-                List.of(garments.size() + " peças do próprio acervo (recortes)", "manequim " + s.name().toLowerCase()), null, null,
+                List.of(Msg.t("tryOn.pecas_do_proprio_acervo_recortes", (garments.size())), "manequim " + s.name().toLowerCase()), null, null,
                 List.of(new AiEngine.RemoteStep<>() {
                     public String provider() {
                         return "fashn";
@@ -246,7 +247,7 @@ public class TryOnService {
     @Transactional
     public Map<String, Object> saveAsScheme(CurrentUser user, List<UUID> pieceIds, String title, String tryOnUrl) {
         if (pieceIds == null || pieceIds.isEmpty()) {
-            throw ApiException.badRequest("SEM_PECAS", "Não há peças no manequim.");
+            throw ApiException.badRequest("SEM_PECAS", Msg.t("tryOn.nao_ha_pecas_no_manequim"));
         }
         List<WardrobeItem> ordered = pieceIds.stream().map(id -> wardrobe.owned(user, id)).toList();
         @SuppressWarnings("unchecked") List<WardrobeItem> dressed = (List<WardrobeItem>) resolveLayers(ordered).get("pieces");
@@ -257,7 +258,7 @@ public class TryOnService {
             i++;
         }
         LocalSchemeComposer.Composition c = LocalSchemeComposer.toComposition(dressed, List.of(), List.of(), null, 0);
-        SchemeService.SchemeForm form = new SchemeService.SchemeForm(title == null || title.isBlank() ? "Provador · " + c.title() : InputSanitizer.clean(title, 120),
+        SchemeService.SchemeForm form = new SchemeService.SchemeForm(title == null || title.isBlank() ? Msg.t("tryOn.provador", c.title()) : InputSanitizer.clean(title, 120),
                 null, c.occasions(), c.styles(), null, null, null, null, items, CreationMode.MANUAL, SchemeOrigin.PROVADOR, null, null, Boolean.TRUE,
                 null, null, null, null, Boolean.FALSE, null);
         Views.SchemeView view = (Views.SchemeView) schemeService.create(user, form).get("scheme");

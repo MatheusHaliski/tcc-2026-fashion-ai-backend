@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.IdentityService;
 import br.com.fashionai.web.support.CorrelationIdFilter;
@@ -122,7 +123,7 @@ public class AuthController {
     public Map<String, Object> changePassword(CurrentUser user, @AuthenticationPrincipal Jwt jwt, @RequestBody PasswordChange body) {
         int revoked = identity.changePassword(user, UUID.fromString(jwt.getClaimAsString("sid")),
                 body.currentPassword(), body.newPassword(), body.confirmPassword());
-        return Map.of("revokedSessions", revoked, "message", "Senha alterada. As outras sessões foram encerradas.");
+        return Map.of("revokedSessions", revoked, "message", Msg.t("auth.senha_alterada_as_outras_sessoes"));
     }
 
     @GetMapping("/sessions")

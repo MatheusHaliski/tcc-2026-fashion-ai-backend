@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair.FlairEngine.Card;
@@ -111,59 +112,59 @@ public class FlairModesService {
     }
 
     public static final List<Mode> MODES = List.of(
-            new Mode("BATTLE", "Battle of Looks", "⚔️", "NUCLEO", "Look × Look com tema sorteado.", "O tema muda os pesos dos 10 atributos: vencer não é só ter o maior HypeScore."),
-            new Mode("SQUAD", "FLAIR Squad", "👥", "NUCLEO", "5 looks × 5 looks em 5 situações.", "Date Night, Business Meeting, Music Festival, Beach Club e Red Carpet: diversidade vence especialização."),
-            new Mode("LEAGUE", "Fashion League", "🏆", "NUCLEO", "Temporada com tabela, pontos e divisões.", "5 titulares, 3 reservas e 5 cartas especiais. Vitória 3, empate 1. Bronze → FLAIR Elite."),
-            new Mode("TOUR", "Fashion World Tour", "🎲", "NUCLEO", "Tabuleiro Paris → São Paulo.", "Role o dado, caia numa casa de evento e cumpra o desafio com um look."),
-            new Mode("CONQUEST", "FLAIR Conquest", "🗺️", "NUCLEO", "Conquiste regiões de estilo com 3 looks.", "Atacante × defensor, 3 confrontos: quem vencer 2 conquista a região."),
-            new Mode("DECK", "Deck Battle", "🃏", "NUCLEO", "TCG: 12 cartas, monte o look durante a partida.", "4 superiores, 3 inferiores, 2 calçados, 2 acessórios e 1 curinga; receba 7 cartas e monte o melhor look para o desafio."),
-            new Mode("WARDROBE", "Wardrobe Wars", "🧥", "ESPECIAL", "Guarda-roupa × guarda-roupa.", "7 rodadas: qualidade, diversidade, versatilidade, originalidade, coleção, sustentabilidade e comunidade."),
-            new Mode("RUNWAY", "FLAIR Runway", "✨", "ESPECIAL", "Competição de passarela com 8 looks.", "Qualificação → semifinal → final. 40% IA + 30% tema + 20% comunidade + 10% originalidade."),
-            new Mode("DRAFT", "FLAIR Draft", "🧩", "ESPECIAL", "20 peças, escolha alternada, 3 looks × 3 looks.", "Habilidade de composição acima de guarda-roupa grande: todos escolhem do mesmo monte."),
-            new Mode("TAG_TEAM", "FLAIR Tag Team", "🤝", "ESPECIAL", "2 usuários × 2 usuários.", "Cada um entra com um look; o Team Harmony da dupla também conta."),
-            new Mode("BOSS", "Fashion Boss", "👑", "ESPECIAL", "Vença os chefes controlados pela IA.", "The Minimalist, Street King, Luxury Queen, Color Master, Vintage Collector e Avant-Garde AI — cada um ensina uma regra de moda."),
-            new Mode("COMBO", "Combo Battle", "⚡", "ESPECIAL", "Sinergias entre peças decidem.", "Streetwear, Classic Formal, Monochrome, Brand Loyalty, Mix & Match e Vintage Revival."),
-            new Mode("MONOPOLY", "Fashion Monopoly", "🏙️", "ESPECIAL", "Conquiste distritos e boutiques.", "O dono do distrito ganha bônus com cartas do estilo do território."),
-            new Mode("CHESS", "FLAIR Chess", "♟️", "ESPECIAL", "Tabuleiro 3×3: a posição importa.", "Cartas adjacentes se influenciam; HERO vale ×1,25 e SUPPORT reforça as vizinhas."),
-            new Mode("ULTIMATE", "FLAIR Ultimate Team", "🌟", "ESPECIAL", "7 looks titulares com funções.", "ICON, TREND, SOCIAL, CREATIVE, CLASSIC, WILD CARD e SPECIAL; Team Rating, Chemistry e Diversity."));
+            new Mode("BATTLE", Msg.k("flairModes.battle_of_looks"), "⚔️", "NUCLEO", Msg.k("flairModes.look_look_com_tema_sorteado"), Msg.k("flairModes.o_tema_muda_os_pesos")),
+            new Mode("SQUAD", Msg.k("flairModes.flair_squad"), "👥", "NUCLEO", Msg.k("flairModes.n5_looks_5_looks_em"), Msg.k("flairModes.date_night_business_meeting_music")),
+            new Mode("LEAGUE", Msg.k("flairModes.fashion_league"), "🏆", "NUCLEO", Msg.k("flairModes.temporada_com_tabela_pontos_e"), Msg.k("flairModes.n5_titulares_3_reservas_e")),
+            new Mode("TOUR", Msg.k("flairModes.fashion_world_tour"), "🎲", "NUCLEO", Msg.k("flairModes.tabuleiro_paris_sao_paulo"), Msg.k("flairModes.role_o_dado_caia_numa")),
+            new Mode("CONQUEST", Msg.k("flairModes.flair_conquest"), "🗺️", "NUCLEO", Msg.k("flairModes.conquiste_regioes_de_estilo_com"), Msg.k("flairModes.atacante_defensor_3_confrontos_quem")),
+            new Mode("DECK", Msg.k("flairModes.deck_battle"), "🃏", "NUCLEO", Msg.k("flairModes.tcg_12_cartas_monte_o"), Msg.k("flairModes.n4_superiores_3_inferiores_2")),
+            new Mode("WARDROBE", Msg.k("flairModes.wardrobe_wars"), "🧥", "ESPECIAL", Msg.k("flairModes.guarda_roupa_guarda_roupa"), Msg.k("flairModes.n7_rodadas_qualidade_diversidade")),
+            new Mode("RUNWAY", Msg.k("flairModes.flair_runway"), "✨", "ESPECIAL", Msg.k("flairModes.competicao_de_passarela_com_8"), Msg.k("flairModes.qualificacao_semifinal_final_40_ia")),
+            new Mode("DRAFT", Msg.k("flairModes.flair_draft"), "🧩", "ESPECIAL", Msg.k("flairModes.n20_pecas_escolha_alternada_3"), Msg.k("flairModes.habilidade_de_composicao_acima_de")),
+            new Mode("TAG_TEAM", Msg.k("flairModes.flair_tag_team"), "🤝", "ESPECIAL", Msg.k("flairModes.n2_usuarios_2_usuarios"), Msg.k("flairModes.cada_um_entra_com_um")),
+            new Mode("BOSS", Msg.k("flairModes.fashion_boss"), "👑", "ESPECIAL", Msg.k("flairModes.venca_os_chefes_controlados_pela"), Msg.k("flairModes.the_minimalist_street_king_luxury")),
+            new Mode("COMBO", Msg.k("flairModes.combo_battle"), "⚡", "ESPECIAL", Msg.k("flairModes.sinergias_entre_pecas_decidem"), Msg.k("flairModes.streetwear_classic_formal_monochrome")),
+            new Mode("MONOPOLY", Msg.k("flairModes.fashion_monopoly"), "🏙️", "ESPECIAL", Msg.k("flairModes.conquiste_distritos_e_boutiques"), Msg.k("flairModes.o_dono_do_distrito_ganha")),
+            new Mode("CHESS", Msg.k("flairModes.flair_chess"), "♟️", "ESPECIAL", Msg.k("flairModes.tabuleiro_3_3_a_posicao"), Msg.k("flairModes.cartas_adjacentes_se_influenciam_hero")),
+            new Mode("ULTIMATE", Msg.k("flairModes.flair_ultimate_team"), "🌟", "ESPECIAL", Msg.k("flairModes.n7_looks_titulares_com_funcoes"), Msg.k("flairModes.icon_trend_social_creative_classic")));
 
     public record Square(int index, String city, String title, String emoji, String type, String theme, int target, int reward, String rule) {
     }
 
-    public static final List<String> CITIES = List.of("Paris", "Milan", "London", "Tokyo", "Seoul", "New York", "São Paulo");
+    public static final List<String> CITIES = List.of("Paris", "Milan", "London", "Tokyo", "Seoul", Msg.k("flairModes.new_york"), Msg.k("flairModes.sao_paulo"));
     public static final List<Square> BOARD = board();
 
     static List<Square> board() {
         List<Square> b = new ArrayList<>();
         String[][] data = {
-                {"Paris", "Largada · Paris", "🗼", "START", "PARIS_COUTURE", "0", "10", "Passe pela largada: +10 pontos."},
-                {"Paris", "Paris Couture Week", "👗", "CHALLENGE", "PARIS_COUTURE", "62", "30", "Look elegante e coerente (Style + Color)."},
-                {"Paris", "Café de Flore", "☕", "BONUS", "DATE_NIGHT", "0", "15", "Pausa para o café: +15 pontos."},
-                {"Paris", "Aeroporto CDG", "✈️", "AIRPORT", "PARIS_COUTURE", "0", "0", "Voe direto para a próxima cidade."},
-                {"Milan", "Milan Fashion Week", "🇮🇹", "CHALLENGE", "MILAN_FASHION_WEEK", "64", "35", "Use um look com pelo menos uma peça Luxury."},
-                {"Milan", "Via Montenapoleone", "🛍️", "CHALLENGE", "RED_CARPET", "60", "30", "Marca e raridade contam mais."},
-                {"Milan", "Ateliê aberto", "🧵", "BONUS", "MILAN_FASHION_WEEK", "0", "15", "Visita ao ateliê: +15."},
-                {"Milan", "Aeroporto MXP", "✈️", "AIRPORT", "MILAN_FASHION_WEEK", "0", "0", "Voe para Londres."},
-                {"London", "Rainy London", "☔", "CHALLENGE", "RAINY_LONDON", "60", "30", "Looks com outerwear recebem bônus."},
-                {"London", "Portobello Road", "🎩", "CHALLENGE", "LONDON_VINTAGE", "60", "30", "Evento retrô: Vintage Revival vale mais."},
-                {"London", "Chá das cinco", "🫖", "BONUS", "LONDON_VINTAGE", "0", "15", "+15 pontos."},
-                {"London", "Heathrow", "✈️", "AIRPORT", "RAINY_LONDON", "0", "0", "Voe para Tóquio."},
-                {"Tokyo", "Tokyo Street Challenge", "🗼", "CHALLENGE", "TOKYO_STREET", "62", "35", "Streetwear recebe +20% Originality."},
-                {"Tokyo", "Harajuku Sunday", "🌸", "CHALLENGE", "FESTIVAL_NOITE", "60", "30", "Ousadia e tendência."},
-                {"Tokyo", "Karaokê", "🎤", "BONUS", "FESTIVAL_NOITE", "0", "15", "+15 pontos."},
-                {"Tokyo", "Haneda", "✈️", "AIRPORT", "TOKYO_STREET", "0", "0", "Voe para Seul."},
-                {"Seoul", "Seoul K-Fashion", "🇰🇷", "CHALLENGE", "SEOUL_KFASHION", "60", "30", "Trend e comunidade em alta."},
-                {"Seoul", "Gangnam Night", "🌃", "CHALLENGE", "DATE_NIGHT", "60", "30", "Harmonia de cores para a noite."},
-                {"Seoul", "Mercado Myeongdong", "🍢", "BONUS", "SEOUL_KFASHION", "0", "15", "+15 pontos."},
-                {"Seoul", "Incheon", "✈️", "AIRPORT", "SEOUL_KFASHION", "0", "0", "Voe para Nova York."},
-                {"New York", "New York Minimal", "🗽", "CHALLENGE", "NEW_YORK_MINIMAL", "62", "30", "Menos é mais."},
-                {"New York", "Red Carpet · Met", "🎬", "CHALLENGE", "RED_CARPET", "66", "45", "Formal + Luxury + marca de celebridade recebem multiplicador."},
-                {"New York", "Central Park Run", "🏃", "CHALLENGE", "GYM_RUN", "58", "25", "Esporte: adequação acima de tudo."},
-                {"New York", "JFK", "✈️", "AIRPORT", "NEW_YORK_MINIMAL", "0", "0", "Voe para São Paulo."},
-                {"São Paulo", "SPFW", "🌴", "CHALLENGE", "SAO_PAULO_TROPICAL", "62", "35", "Cor, calor e comunidade."},
-                {"São Paulo", "Beach Club em Maresias", "🏖️", "CHALLENGE", "BEACH_CLUB", "60", "30", "Ocasião de praia e cores leves."},
-                {"São Paulo", "Rua Oscar Freire", "🛍️", "BONUS", "SAO_PAULO_TROPICAL", "0", "20", "+20 pontos."},
-                {"São Paulo", "Casamento de dia", "💐", "CHALLENGE", "WEDDING_GUEST", "60", "30", "Convidado elegante sem roubar a cena."}};
+                {"Paris", Msg.t("flairModes.largada_paris"), "🗼", "START", "PARIS_COUTURE", "0", "10", Msg.t("flairModes.passe_pela_largada_10_pontos")},
+                {"Paris", Msg.t("flairModes.paris_couture_week"), "👗", "CHALLENGE", "PARIS_COUTURE", "62", "30", Msg.t("flairModes.look_elegante_e_coerente_style")},
+                {"Paris", Msg.t("flairModes.cafe_de_flore"), "☕", "BONUS", "DATE_NIGHT", "0", "15", Msg.t("flairModes.pausa_para_o_cafe_15")},
+                {"Paris", Msg.t("flairModes.aeroporto_cdg"), "✈️", "AIRPORT", "PARIS_COUTURE", "0", "0", Msg.t("flairModes.voe_direto_para_a_proxima")},
+                {"Milan", Msg.t("common.milan_fashion_week"), "🇮🇹", "CHALLENGE", "MILAN_FASHION_WEEK", "64", "35", Msg.t("common.use_um_look_com_pelo")},
+                {"Milan", Msg.t("flairModes.via_montenapoleone"), "🛍️", "CHALLENGE", "RED_CARPET", "60", "30", Msg.t("flairModes.marca_e_raridade_contam_mais")},
+                {"Milan", Msg.t("flairModes.atelie_aberto"), "🧵", "BONUS", "MILAN_FASHION_WEEK", "0", "15", Msg.t("flairModes.visita_ao_atelie_15")},
+                {"Milan", Msg.t("flairModes.aeroporto_mxp"), "✈️", "AIRPORT", "MILAN_FASHION_WEEK", "0", "0", Msg.t("flairModes.voe_para_londres")},
+                {"London", Msg.t("common.rainy_london"), "☔", "CHALLENGE", "RAINY_LONDON", "60", "30", Msg.t("common.looks_com_outerwear_recebem_bonus")},
+                {"London", Msg.t("flairModes.portobello_road"), "🎩", "CHALLENGE", "LONDON_VINTAGE", "60", "30", Msg.t("common.evento_retro_vintage_revival_vale")},
+                {"London", Msg.t("flairModes.cha_das_cinco"), "🫖", "BONUS", "LONDON_VINTAGE", "0", "15", Msg.t("flairModes.n15_pontos")},
+                {"London", "Heathrow", "✈️", "AIRPORT", "RAINY_LONDON", "0", "0", Msg.t("flairModes.voe_para_toquio")},
+                {"Tokyo", Msg.t("common.tokyo_street_challenge"), "🗼", "CHALLENGE", "TOKYO_STREET", "62", "35", Msg.t("common.streetwear_recebe_20_originality")},
+                {"Tokyo", Msg.t("flairModes.harajuku_sunday"), "🌸", "CHALLENGE", "FESTIVAL_NOITE", "60", "30", Msg.t("flairModes.ousadia_e_tendencia")},
+                {"Tokyo", Msg.t("flairModes.karaoke"), "🎤", "BONUS", "FESTIVAL_NOITE", "0", "15", Msg.t("flairModes.n15_pontos")},
+                {"Tokyo", "Haneda", "✈️", "AIRPORT", "TOKYO_STREET", "0", "0", Msg.t("flairModes.voe_para_seul")},
+                {"Seoul", Msg.t("common.seoul_k_fashion"), "🇰🇷", "CHALLENGE", "SEOUL_KFASHION", "60", "30", Msg.t("common.trend_e_comunidade_em_alta")},
+                {"Seoul", Msg.t("flairModes.gangnam_night"), "🌃", "CHALLENGE", "DATE_NIGHT", "60", "30", Msg.t("flairModes.harmonia_de_cores_para_a")},
+                {"Seoul", Msg.t("flairModes.mercado_myeongdong"), "🍢", "BONUS", "SEOUL_KFASHION", "0", "15", Msg.t("flairModes.n15_pontos")},
+                {"Seoul", "Incheon", "✈️", "AIRPORT", "SEOUL_KFASHION", "0", "0", Msg.t("flairModes.voe_para_nova_york")},
+                {Msg.t("flairModes.new_york"), Msg.t("common.new_york_minimal"), "🗽", "CHALLENGE", "NEW_YORK_MINIMAL", "62", "30", Msg.t("flairModes.menos_e_mais")},
+                {Msg.t("flairModes.new_york"), Msg.t("flairModes.red_carpet_met"), "🎬", "CHALLENGE", "RED_CARPET", "66", "45", Msg.t("common.formal_luxury_marca_de_celebridade")},
+                {Msg.t("flairModes.new_york"), Msg.t("flairModes.central_park_run"), "🏃", "CHALLENGE", "GYM_RUN", "58", "25", Msg.t("common.esporte_adequacao_acima_de_tudo")},
+                {Msg.t("flairModes.new_york"), "JFK", "✈️", "AIRPORT", "NEW_YORK_MINIMAL", "0", "0", Msg.t("flairModes.voe_para_sao_paulo")},
+                {Msg.t("flairModes.sao_paulo"), "SPFW", "🌴", "CHALLENGE", "SAO_PAULO_TROPICAL", "62", "35", Msg.t("common.cor_calor_e_comunidade")},
+                {Msg.t("flairModes.sao_paulo"), Msg.t("flairModes.beach_club_em_maresias"), "🏖️", "CHALLENGE", "BEACH_CLUB", "60", "30", Msg.t("common.ocasiao_de_praia_e_cores")},
+                {Msg.t("flairModes.sao_paulo"), Msg.t("flairModes.rua_oscar_freire"), "🛍️", "BONUS", "SAO_PAULO_TROPICAL", "0", "20", Msg.t("flairModes.n20_pontos")},
+                {Msg.t("flairModes.sao_paulo"), Msg.t("common.casamento_de_dia"), "💐", "CHALLENGE", "WEDDING_GUEST", "60", "30", Msg.t("flairModes.convidado_elegante_sem_roubar_a")}};
         for (int i = 0; i < data.length; i++) {
             String[] d = data[i];
             b.add(new Square(i, d[0], d[1], d[2], d[3], d[4], Integer.parseInt(d[5]), Integer.parseInt(d[6]), d[7]));
@@ -175,29 +176,29 @@ public class FlairModesService {
     }
 
     public static final List<Territory> TERRITORIES = List.of(
-            new Territory("MONOPOLY", "HARAJUKU", "Harajuku — Streetwear District", "🗼", "streetwear", "TOKYO_STREET", "cartas streetwear +10% no território"),
-            new Territory("MONOPOLY", "MILAN_LUX", "Milan — Luxury District", "🇮🇹", "luxury", "MILAN_FASHION_WEEK", "cartas luxury +10% no território"),
-            new Territory("MONOPOLY", "PARIS_AVENUE", "Paris — Avenue Montaigne", "🗼", "chic", "PARIS_COUTURE", "cartas chic +10% no território"),
-            new Territory("MONOPOLY", "LONDON_LANE", "London — Vintage Lane", "🎩", "vintage", "LONDON_VINTAGE", "cartas vintage +10% no território"),
-            new Territory("MONOPOLY", "NY_LOFT", "New York — Minimal Loft", "🗽", "minimalist", "NEW_YORK_MINIMAL", "cartas minimalist +10% no território"),
-            new Territory("MONOPOLY", "SEOUL_SQUARE", "Seoul — K-Fashion Square", "🇰🇷", "modern", "SEOUL_KFASHION", "cartas modern +10% no território"),
-            new Territory("MONOPOLY", "SP_MARKET", "São Paulo — Tropical Market", "🌴", "resort", "SAO_PAULO_TROPICAL", "cartas resort +10% no território"),
-            new Territory("MONOPOLY", "BERLIN_HUB", "Berlin — Techwear Hub", "⚙️", "techwear", "CYBERPUNK_FORMAL", "cartas techwear +10% no território"),
-            new Territory("CONQUEST", "STREETWEAR", "Streetwear", "🛹", "streetwear", "TOKYO_STREET", "defensor com 3 looks"),
-            new Territory("CONQUEST", "LUXURY", "Luxury", "💎", "luxury", "RED_CARPET", "defensor com 3 looks"),
-            new Territory("CONQUEST", "VINTAGE", "Vintage", "📻", "vintage", "LONDON_VINTAGE", "defensor com 3 looks"),
-            new Territory("CONQUEST", "MINIMAL", "Minimal Fashion", "◻️", "minimalist", "NEW_YORK_MINIMAL", "defensor com 3 looks"),
-            new Territory("CONQUEST", "SPORT", "Sport", "🏃", "sporty", "GYM_RUN", "defensor com 3 looks"),
-            new Territory("CONQUEST", "FORMAL", "Formal", "🎩", "classic", "BUSINESS_MEETING", "defensor com 3 looks"),
-            new Territory("CONQUEST", "AVANT_GARDE", "Avant-Garde", "🧬", "avant_garde", "CYBERPUNK_FORMAL", "defensor com 3 looks"));
+            new Territory("MONOPOLY", "HARAJUKU", Msg.k("flairModes.harajuku_streetwear_district"), "🗼", "streetwear", "TOKYO_STREET", Msg.k("flairModes.cartas_streetwear_10_no_territorio")),
+            new Territory("MONOPOLY", "MILAN_LUX", Msg.k("flairModes.milan_luxury_district"), "🇮🇹", "luxury", "MILAN_FASHION_WEEK", Msg.k("flairModes.cartas_luxury_10_no_territorio")),
+            new Territory("MONOPOLY", "PARIS_AVENUE", Msg.k("flairModes.paris_avenue_montaigne"), "🗼", "chic", "PARIS_COUTURE", Msg.k("flairModes.cartas_chic_10_no_territorio")),
+            new Territory("MONOPOLY", "LONDON_LANE", Msg.k("flairModes.london_vintage_lane"), "🎩", "vintage", "LONDON_VINTAGE", Msg.k("flairModes.cartas_vintage_10_no_territorio")),
+            new Territory("MONOPOLY", "NY_LOFT", Msg.k("flairModes.new_york_minimal_loft"), "🗽", "minimalist", "NEW_YORK_MINIMAL", Msg.k("flairModes.cartas_minimalist_10_no_territorio")),
+            new Territory("MONOPOLY", "SEOUL_SQUARE", Msg.k("flairModes.seoul_k_fashion_square"), "🇰🇷", "modern", "SEOUL_KFASHION", Msg.k("flairModes.cartas_modern_10_no_territorio")),
+            new Territory("MONOPOLY", "SP_MARKET", Msg.k("flairModes.sao_paulo_tropical_market"), "🌴", "resort", "SAO_PAULO_TROPICAL", Msg.k("flairModes.cartas_resort_10_no_territorio")),
+            new Territory("MONOPOLY", "BERLIN_HUB", Msg.k("flairModes.berlin_techwear_hub"), "⚙️", "techwear", "CYBERPUNK_FORMAL", Msg.k("flairModes.cartas_techwear_10_no_territorio")),
+            new Territory("CONQUEST", "STREETWEAR", "Streetwear", "🛹", "streetwear", "TOKYO_STREET", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "LUXURY", "Luxury", "💎", "luxury", "RED_CARPET", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "VINTAGE", "Vintage", "📻", "vintage", "LONDON_VINTAGE", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "MINIMAL", Msg.k("flairModes.minimal_fashion"), "◻️", "minimalist", "NEW_YORK_MINIMAL", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "SPORT", "Sport", "🏃", "sporty", "GYM_RUN", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "FORMAL", "Formal", "🎩", "classic", "BUSINESS_MEETING", Msg.k("flairModes.defensor_com_3_looks")),
+            new Territory("CONQUEST", "AVANT_GARDE", "Avant-Garde", "🧬", "avant_garde", "CYBERPUNK_FORMAL", Msg.k("flairModes.defensor_com_3_looks")));
 
     static Territory territory(String map, String code) {
-        return TERRITORIES.stream().filter(t -> t.map().equals(map) && t.code().equals(code)).findFirst().orElseThrow(() -> ApiException.notFound("Território"));
+        return TERRITORIES.stream().filter(t -> t.map().equals(map) && t.code().equals(code)).findFirst().orElseThrow(() -> ApiException.notFound(Msg.t("flairModes.territorio")));
     }
 
     public Map<String, Object> catalog() {
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("architecture", List.of("PEÇA", "CARD", "LOOK", "TEAM / DECK", "COMPETIÇÃO"));
+        out.put("architecture", List.of(Msg.t("flairModes.peca"), "CARD", "LOOK", Msg.t("flairModes.team_deck"), Msg.t("flairModes.competicao")));
         out.put("modes", MODES);
         out.put("stats", FlairLooks.LABELS);
         out.put("themes", FlairLooks.THEMES.values());
@@ -208,7 +209,7 @@ public class FlairModesService {
         out.put("territories", TERRITORIES);
         out.put("chessBoard", FlairLooks.BOARD);
         out.put("roles", FlairLooks.ROLES.keySet());
-        out.put("ethics", "Recompensas do sistema, sem aposta; " + REWARDED_PER_MODE_DAY + " partidas premiadas por modo por dia.");
+        out.put("ethics", Msg.t("flairModes.recompensas_do_sistema_sem_aposta", REWARDED_PER_MODE_DAY));
         return out;
     }
 
@@ -252,7 +253,7 @@ public class FlairModesService {
     Scheme ownScheme(CurrentUser user, UUID id) {
         Scheme s = schemeService.owned(user, id);
         if (s.getStatus() == SchemeStatus.ARCHIVED) {
-            throw ApiException.badRequest("LOOK_ARQUIVADO", "Esse look está arquivado.");
+            throw ApiException.badRequest("LOOK_ARQUIVADO", Msg.t("flairModes.esse_look_esta_arquivado"));
         }
         return s;
     }
@@ -290,7 +291,7 @@ public class FlairModesService {
     User opponentUser(CurrentUser user, String opponent) {
         User u = users.findByUsernameIgnoreCase(opponent.trim().replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound("Oponente"));
         if (u.getId().equals(user.id())) {
-            throw ApiException.badRequest("OPONENTE_INVALIDO", "Escolha outra pessoa ou a Casa.");
+            throw ApiException.badRequest("OPONENTE_INVALIDO", Msg.t("common.escolha_outra_pessoa_ou_a"));
         }
         return u;
     }
@@ -419,7 +420,7 @@ public class FlairModesService {
         t.setSeasonKey(season);
         t.setDetailJson(Json.write(detail));
         trophies.save(t);
-        notifications.notify(userId, null, NotificationType.ACHIEVEMENT_UNLOCKED, "FLAIR_TROPHY", t.getId(), "🏆 " + title, "Novo troféu FLAIR no seu perfil.", Map.of("href", "/flair?tab=modos"));
+        notifications.notify(userId, null, NotificationType.ACHIEVEMENT_UNLOCKED, "FLAIR_TROPHY", t.getId(), "🏆 " + title, Msg.k("flairModes.novo_trofeu_flair_no_seu"), Map.of("href", "/flair?tab=modos"));
     }
 
     @Transactional(readOnly = true)
@@ -456,14 +457,14 @@ public class FlairModesService {
         User rival = house(opponent) ? null : opponentUser(user, opponent);
         List<Look> pool = rival == null ? houseLooks(user.id(), 6, seed(schemeId, "house")) : publicLooksOf(user, rival);
         if (pool.isEmpty()) {
-            throw new ApiException(409, "SEM_LOOK_PUBLICO", (rival == null ? "A comunidade" : "@" + rival.getUsername()) + " ainda não tem look público para batalhar.");
+            throw new ApiException(409, "SEM_LOOK_PUBLICO", Msg.t("flairModes.ainda_nao_tem_look_publico", ((rival == null ? Msg.t("flairModes.a_comunidade") : "@" + rival.getUsername()))));
         }
         Look theirs = pool.stream().max(Comparator.comparingDouble(l -> FlairLooks.score(l, t).total())).get();
         Clash c = FlairLooks.battle(mine, theirs, t);
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("theme", t);
         r.put("me", lookView(mine));
-        r.put("opponent", Map.of("label", rival == null ? "A Casa (" + theirs.owner() + ")" : "@" + rival.getUsername(), "look", lookView(theirs)));
+        r.put("opponent", Map.of("label", rival == null ? Msg.t("flairModes.a_casa", theirs.owner()) : "@" + rival.getUsername(), "look", lookView(theirs)));
         r.put("rounds", List.of(clashView(c)));
         r.put("scoreA", c.scoreA());
         r.put("scoreB", c.scoreB());
@@ -496,12 +497,12 @@ public class FlairModesService {
         List<Look> mine = schemeIds == null || schemeIds.isEmpty() ? pickSquad(ownSchemes(user.id()).stream().map(this::look).toList(), 5)
                 : schemeIds.stream().limit(5).map(id -> look(ownScheme(user, id))).toList();
         if (mine.isEmpty()) {
-            throw ApiException.badRequest("SEM_LOOKS", "Monte ao menos um look para formar o Squad.");
+            throw ApiException.badRequest("SEM_LOOKS", Msg.t("flairModes.monte_ao_menos_um_look"));
         }
         User rival = house(opponent) ? null : opponentUser(user, opponent);
         List<Look> theirs = pickSquad(rival == null ? houseLooks(user.id(), 12, seed("squad")) : publicLooksOf(user, rival), 5);
         if (theirs.isEmpty()) {
-            throw new ApiException(409, "SEM_LOOK_PUBLICO", "O oponente ainda não tem looks públicos.");
+            throw new ApiException(409, "SEM_LOOK_PUBLICO", Msg.t("flairModes.o_oponente_ainda_nao_tem"));
         }
         List<Theme> sits = FlairLooks.SQUAD_SITUATIONS.stream().map(FlairLooks::theme).toList();
         List<Clash> rounds = FlairLooks.squad(mine, theirs, sits);
@@ -509,11 +510,11 @@ public class FlairModesService {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("situations", sits);
         r.put("me", mine.stream().map(FlairModesService::lookView).toList());
-        r.put("opponent", Map.of("label", rival == null ? "Squad da Casa" : "@" + rival.getUsername(), "looks", theirs.stream().map(FlairModesService::lookView).toList()));
+        r.put("opponent", Map.of("label", rival == null ? Msg.t("flairModes.squad_da_casa") : "@" + rival.getUsername(), "looks", theirs.stream().map(FlairModesService::lookView).toList()));
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
-        return finish(user, "SQUAD", "5 situações", w, r, mine, rival, theirs);
+        return finish(user, "SQUAD", Msg.t("flairModes.n5_situacoes"), w, r, mine, rival, theirs);
     }
 
     // ================================================================== 3. Fashion League
@@ -522,23 +523,23 @@ public class FlairModesService {
     public Map<String, Object> saveRoster(CurrentUser user, List<UUID> starters, List<UUID> reserves, List<UUID> specials) {
         guard.requireCanCreate(user);
         if (starters == null || starters.isEmpty() || starters.size() > 5) {
-            throw ApiException.badRequest("ELENCO_INVALIDO", "Escolha de 1 a 5 looks titulares.");
+            throw ApiException.badRequest("ELENCO_INVALIDO", Msg.t("flairModes.escolha_de_1_a_5"));
         }
         if (reserves != null && reserves.size() > 3 || specials != null && specials.size() > 5) {
-            throw ApiException.badRequest("ELENCO_INVALIDO", "Até 3 reservas e 5 cartas especiais.");
+            throw ApiException.badRequest("ELENCO_INVALIDO", Msg.t("flairModes.ate_3_reservas_e_5"));
         }
         Set<UUID> all = new HashSet<>(starters);
         if (reserves != null) {
             for (UUID r : reserves) {
                 if (!all.add(r)) {
-                    throw ApiException.badRequest("ELENCO_INVALIDO", "Um look não pode ser titular e reserva.");
+                    throw ApiException.badRequest("ELENCO_INVALIDO", Msg.t("flairModes.um_look_nao_pode_ser"));
                 }
             }
         }
         all.forEach(id -> ownScheme(user, id));
         if (specials != null) {
             for (UUID p : specials) {
-                WardrobeItem w = pieces.findById(p).orElseThrow(() -> ApiException.notFound("Peça"));
+                WardrobeItem w = pieces.findById(p).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
                 guard.requireOwner(user, w.getUser().getId(), "piece:" + p);
             }
         }
@@ -592,7 +593,7 @@ public class FlairModesService {
         out.put("table", table);
         out.put("roster", mine);
         out.put("division", FlairLooks.division(num(mine.get("points"))));
-        out.put("rule", "Temporada de 4 semanas. 5 titulares, até 3 reservas (2 substituições por partida) e até 5 cartas especiais (+3 na rodada do estilo/ocasião delas). Vitória 3, empate 1, derrota 0. Divisões: Bronze → Silver → Gold → Platinum → Diamond → FLAIR Elite.");
+        out.put("rule", Msg.t("flairModes.temporada_de_4_semanas_5"));
         return out;
     }
 
@@ -609,12 +610,12 @@ public class FlairModesService {
         guard.requireCanCreate(user);
         String season = seasonKey();
         FlairModeState mineState = states.findByUserIdAndModeAndSeasonKey(user.id(), "LEAGUE", season)
-                .orElseThrow(() -> new ApiException(409, "SEM_ELENCO", "Monte o elenco da temporada antes de jogar."));
+                .orElseThrow(() -> new ApiException(409, "SEM_ELENCO", Msg.t("flairModes.monte_o_elenco_da_temporada")));
         Map<String, Object> a = Json.map(mineState.getStateJson());
         Instant dayStart = today().atStartOfDay(FaiPointsService.ZONE).toInstant();
         long playedToday = entries.findByUserIdAndCreatedAtAfter(user.id(), dayStart).stream().filter(e -> "LEAGUE".equals(e.getMatch().getMode()) && "A".equals(e.getSide())).count();
         if (playedToday >= 3) {
-            throw ApiException.conflict("LIMITE_LIGA", "Você já jogou 3 rodadas da liga hoje. Volte amanhã.");
+            throw ApiException.conflict("LIMITE_LIGA", Msg.t("flairModes.voce_ja_jogou_3_rodadas"));
         }
         List<FlairModeState> others = states.findByModeAndSeasonKey("LEAGUE", season).stream()
                 .filter(s -> !s.getUser().getId().equals(user.id()) && !ids(Json.map(s.getStateJson()).get("starters")).isEmpty()).toList();
@@ -656,14 +657,14 @@ public class FlairModesService {
         r.put("season", season);
         r.put("matchday", matchday);
         r.put("situations", sits);
-        r.put("opponent", Map.of("label", rival == null ? "FLAIR Bots (amistoso da Casa)" : "@" + rival.getUsername()));
+        r.put("opponent", Map.of("label", rival == null ? Msg.t("flairModes.flair_bots_amistoso_da_casa") : "@" + rival.getUsername()));
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
         r.put("division", FlairLooks.division(num(a.get("points"))));
         Map<String, Object> div = FlairLooks.division(num(a.get("points")));
         if (!"BRONZE".equals(div.get("code"))) {
-            trophy(user.id(), "LEAGUE", "Fashion League — divisão " + div.get("label"), season, Map.of("points", a.get("points")));
+            trophy(user.id(), "LEAGUE", Msg.t("flairModes.fashion_league_divisao", div.get("label")), season, Map.of("points", a.get("points")));
         }
         return finish(user, "LEAGUE", "Rodada " + matchday, w, r, sa, rival, sb);
     }
@@ -700,7 +701,7 @@ public class FlairModesService {
         out.put("theme", runwayTheme());
         out.put("week", weekKey());
         out.put("season", runwaySeason());
-        out.put("rule", "8 looks: qualificação (8 → 4), semifinal (1º×4º, 2º×3º) e final. Nota = 40% IA + 30% compatibilidade temática + 20% comunidade + 10% originalidade, com júri (± variação). Uma entrada por semana.");
+        out.put("rule", Msg.t("flairModes.n8_looks_qualificacao_8_4"));
         out.put("entry", states.findByUserIdAndModeAndSeasonKey(user.id(), "RUNWAY", weekKey()).map(s -> Json.map(s.getStateJson())).orElse(null));
         return out;
     }
@@ -709,7 +710,7 @@ public class FlairModesService {
     public Map<String, Object> enterRunway(CurrentUser user, UUID schemeId) {
         guard.requireCanCreate(user);
         if (states.findByUserIdAndModeAndSeasonKey(user.id(), "RUNWAY", weekKey()).isPresent()) {
-            throw ApiException.conflict("JA_NA_RUNWAY", "Você já desfilou nesta semana. O próximo tema abre na segunda-feira.");
+            throw ApiException.conflict("JA_NA_RUNWAY", Msg.t("flairModes.voce_ja_desfilou_nesta_semana"));
         }
         Theme t = runwayTheme();
         Look mine = look(ownScheme(user, schemeId));
@@ -727,7 +728,7 @@ public class FlairModesService {
         Map<Look, Double> q = new LinkedHashMap<>();
         alive.forEach(l -> q.put(l, FlairLooks.runwayScore(l, t, 1, seed)));
         List<Look> top4 = q.entrySet().stream().sorted(Map.Entry.<Look, Double>comparingByValue().reversed()).limit(4).map(Map.Entry::getKey).toList();
-        stages.add(Map.of("stage", "Qualificação", "results", q.entrySet().stream().sorted(Map.Entry.<Look, Double>comparingByValue().reversed())
+        stages.add(Map.of("stage", Msg.t("flairModes.qualificacao"), "results", q.entrySet().stream().sorted(Map.Entry.<Look, Double>comparingByValue().reversed())
                 .map(e -> Map.of("title", e.getKey().title(), "owner", e.getKey().owner(), "score", e.getValue(), "you", e.getKey() == mine, "advanced", top4.contains(e.getKey()))).toList()));
         // semifinal
         List<Look> finalists = new ArrayList<>();
@@ -752,7 +753,7 @@ public class FlairModesService {
                     "b", finalists.get(1).title() + " (@" + finalists.get(1).owner() + ")", "scoreA", sx, "scoreB", sy, "winner", sx >= sy ? "A" : "B",
                     "you", finalists.contains(mine)))));
         }
-        String place = champion == mine ? "CAMPEÃ(O)" : finalists.contains(mine) ? "FINALISTA" : top4.contains(mine) ? "SEMIFINALISTA" : "QUALIFICAÇÃO";
+        String place = champion == mine ? Msg.t("flairModes.campea_o") : finalists.contains(mine) ? "FINALISTA" : top4.contains(mine) ? "SEMIFINALISTA" : Msg.t("flairModes.qualificacao_2");
         String winner = champion == mine ? "A" : finalists.contains(mine) ? "DRAW" : "B";
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("theme", t);
@@ -762,7 +763,7 @@ public class FlairModesService {
         r.put("place", place);
         r.put("scoreA", q.get(mine));
         r.put("scoreB", champion == null ? 0 : q.get(champion));
-        String title = "FLAIR Runway " + (champion == mine ? "Winner" : "Finalist") + " — " + t.label() + " — Season " + runwaySeason();
+        String title = Msg.t("flairModes.flair_runway_season", (champion == mine ? "Winner" : "Finalist"), t.label(), runwaySeason());
         if (champion == mine || finalists.contains(mine)) {
             trophy(user.id(), "RUNWAY", title, weekKey(), Map.of("theme", t.label(), "look", mine.title()));
             r.put("card", title);
@@ -793,7 +794,7 @@ public class FlairModesService {
         out.put("lastRoll", st.get("lastRoll"));
         out.put("log", st.getOrDefault("log", List.of()));
         out.put("rollsLeft", Math.max(0, 6 - num(st.get("rolls_" + today()))));
-        out.put("rule", "Role o dado (6 por dia). Casas de desafio pedem um look que alcance a nota-alvo no tema da cidade; bônus somam pontos; aeroportos levam à próxima cidade. Cada volta completa vale um troféu.");
+        out.put("rule", Msg.t("flairModes.role_o_dado_6_por"));
         return out;
     }
 
@@ -804,11 +805,11 @@ public class FlairModesService {
         FlairModeState s = state(user.id(), "TOUR", seasonKey());
         Map<String, Object> st = Json.map(s.getStateJson());
         if (st.get("pending") != null) {
-            throw ApiException.conflict("CASA_PENDENTE", "Resolva o desafio da casa atual antes de rolar de novo.");
+            throw ApiException.conflict("CASA_PENDENTE", Msg.t("flairModes.resolva_o_desafio_da_casa"));
         }
         String rk = "rolls_" + today();
         if (num(st.get(rk)) >= 6) {
-            throw ApiException.conflict("SEM_DADOS", "Você já rolou 6 vezes hoje. O tour continua amanhã.");
+            throw ApiException.conflict("SEM_DADOS", Msg.t("flairModes.voce_ja_rolou_6_vezes"));
         }
         st.put(rk, num(st.get(rk)) + 1);
         int dice = DICE.nextInt(6) + 1;
@@ -819,7 +820,7 @@ public class FlairModesService {
             st.put("lap", num(st.get("lap")) + 1);
             st.put("points", num(st.get("points")) + 25);
             log.add(0, Map.of("text", "🌍 Volta completa! +25", "at", Instant.now().toString()));
-            trophy(user.id(), "TOUR", "Fashion World Tour — volta " + num(st.get("lap")), seasonKey(), Map.of("points", st.get("points")));
+            trophy(user.id(), "TOUR", Msg.t("flairModes.fashion_world_tour_volta", num(st.get("lap"))), seasonKey(), Map.of("points", st.get("points")));
         }
         Square sq = BOARD.get(pos);
         String text;
@@ -835,7 +836,7 @@ public class FlairModesService {
                 }
                 pos = Math.min(BOARD.size() - 1, pos + 1);
                 sq = BOARD.get(pos);
-                text = "✈️ Voo para " + sq.city() + " → " + sq.emoji() + " " + sq.title();
+                text = Msg.t("flairModes.voo_para", sq.city(), sq.emoji(), sq.title());
                 if ("CHALLENGE".equals(sq.type())) {
                     st.put("pending", pos);
                 }
@@ -862,7 +863,7 @@ public class FlairModesService {
         FlairModeState s = state(user.id(), "TOUR", seasonKey());
         Map<String, Object> st = Json.map(s.getStateJson());
         if (st.get("pending") == null) {
-            throw ApiException.conflict("SEM_DESAFIO", "Não há desafio pendente. Role o dado.");
+            throw ApiException.conflict("SEM_DESAFIO", Msg.t("flairModes.nao_ha_desafio_pendente_role"));
         }
         Square sq = BOARD.get(num(st.get("pending")));
         Theme t = FlairLooks.theme(sq.theme());
@@ -916,8 +917,8 @@ public class FlairModesService {
         out.put("map", m);
         out.put("territories", list);
         out.put("mine", list.stream().filter(x -> Boolean.TRUE.equals(x.get("mine"))).count());
-        out.put("rule", "CONQUEST".equals(m) ? "Ataque com 3 looks contra os 3 do defensor (ou da Casa, se a região estiver livre). Vencendo 2 de 3, a região é sua e seus looks viram os defensores."
-                : "Ataque um distrito com 1 look. O dono defende com o look dele e tem +10% com cartas do estilo do território. Vencendo, o distrito é seu.");
+        out.put("rule", "CONQUEST".equals(m) ? Msg.t("flairModes.ataque_com_3_looks_contra")
+                : Msg.t("flairModes.ataque_um_distrito_com_1"));
         return out;
     }
 
@@ -928,12 +929,12 @@ public class FlairModesService {
         Territory terr = territory(m, code.toUpperCase(Locale.ROOT));
         int need = "CONQUEST".equals(m) ? 3 : 1;
         if (schemeIds == null || schemeIds.size() != need) {
-            throw ApiException.badRequest("LOOKS_INVALIDOS", "CONQUEST".equals(m) ? "Ataque com exatamente 3 looks." : "Ataque com 1 look.");
+            throw ApiException.badRequest("LOOKS_INVALIDOS", "CONQUEST".equals(m) ? "Ataque com exatamente 3 looks." : Msg.t("flairModes.ataque_com_1_look"));
         }
         Instant dayStart = today().atStartOfDay(FaiPointsService.ZONE).toInstant();
         long today = entries.findByUserIdAndCreatedAtAfter(user.id(), dayStart).stream().filter(e -> m.equals(e.getMatch().getMode()) && "A".equals(e.getSide())).count();
         if (today >= 5) {
-            throw ApiException.conflict("LIMITE_ATAQUES", "Você já atacou 5 vezes hoje neste mapa.");
+            throw ApiException.conflict("LIMITE_ATAQUES", Msg.t("flairModes.voce_ja_atacou_5_vezes"));
         }
         FlairTerritory ft = territories.findByMapCodeAndTerritoryCode(m, terr.code()).orElseGet(() -> {
             FlairTerritory x = new FlairTerritory();
@@ -943,7 +944,7 @@ public class FlairModesService {
             return x;
         });
         if (ft.getOwner() != null && ft.getOwner().getId().equals(user.id())) {
-            throw ApiException.conflict("JA_E_SEU", "Esse território já é seu. Ataque outro.");
+            throw ApiException.conflict("JA_E_SEU", Msg.t("flairModes.esse_territorio_ja_e_seu"));
         }
         Theme t = FlairLooks.theme(terr.theme());
         List<Look> atk = schemeIds.stream().map(id -> look(ownScheme(user, id))).toList();
@@ -964,7 +965,7 @@ public class FlairModesService {
             def = merged;
         }
         if (def.isEmpty()) {
-            throw new ApiException(409, "SEM_DEFENSOR", "Ainda não há looks públicos para defender este território.");
+            throw new ApiException(409, "SEM_DEFENSOR", Msg.t("flairModes.ainda_nao_ha_looks_publicos"));
         }
         List<Clash> rounds = new ArrayList<>();
         List<Look> atkSorted = atk.stream().sorted(Comparator.comparingDouble((Look l) -> FlairLooks.score(l, t).total()).reversed()).toList();
@@ -976,7 +977,7 @@ public class FlairModesService {
             List<String> notes = new ArrayList<>(c.notes());
             if (owner != null && "MONOPOLY".equals(m) && d.styles().contains(terr.style())) {
                 sb = Math.round(sb * 1.10 * 10) / 10.0;
-                notes.add("B: dono do distrito — cartas " + terr.style() + " +10%");
+                notes.add(Msg.t("flairModes.b_dono_do_distrito_cartas", terr.style()));
             }
             rounds.add(new Clash(c.label() + " · " + (i + 1), a.title(), d.title(), c.scoreA(), sb, FlairLooks.winner(c.scoreA(), sb), notes, c.breakdown()));
         }
@@ -988,10 +989,10 @@ public class FlairModesService {
             ft.setCapturedAt(Instant.now());
             ft.setDefenses(0);
             territories.save(ft);
-            String title = "CONQUEST".equals(m) ? "Seu Lookbook conquistou a região " + terr.name() + "." : "Você conquistou o distrito " + terr.name() + ".";
+            String title = "CONQUEST".equals(m) ? Msg.t("flairModes.seu_lookbook_conquistou_a_regiao", terr.name()) : Msg.t("flairModes.voce_conquistou_o_distrito", terr.name());
             notifications.notify(user.id(), null, NotificationType.ACHIEVEMENT_UNLOCKED, "FLAIR_TERRITORY", ft.getId(), "🗺️ " + title,
-                    "Seus looks agora defendem o território " + terr.emoji() + ".", Map.of("href", "/flair?tab=modos&mode=" + m));
-            trophy(user.id(), m, ("CONQUEST".equals(m) ? "Conquest — " : "Monopoly — ") + terr.name(), seasonKey(), Map.of("territory", terr.code()));
+                    Msg.k("flairModes.seus_looks_agora_defendem_o", terr.emoji()), Map.of("href", "/flair?tab=modos&mode=" + m));
+            trophy(user.id(), m, ("CONQUEST".equals(m) ? Msg.t("flairModes.conquest") : Msg.t("flairModes.monopoly")) + terr.name(), seasonKey(), Map.of("territory", terr.code()));
         } else {
             ft.setDefenses(ft.getDefenses() + 1);
             territories.save(ft);
@@ -1000,7 +1001,7 @@ public class FlairModesService {
         r.put("territory", terr);
         r.put("theme", t);
         r.put("captured", captured);
-        r.put("defender", owner == null ? "A Casa" : "@" + owner.getUsername());
+        r.put("defender", owner == null ? Msg.t("common.a_casa") : "@" + owner.getUsername());
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("scoreA", wa);
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
@@ -1014,7 +1015,7 @@ public class FlairModesService {
         guard.requireCanCreate(user);
         List<Card> pool = houseCards(user.id(), 20, seed("draft", user.id(), System.nanoTime()));
         if (pool.size() < 12) {
-            throw new ApiException(409, "POUCAS_PECAS", "A comunidade ainda não tem peças públicas suficientes para um draft.");
+            throw new ApiException(409, "POUCAS_PECAS", Msg.t("flairModes.a_comunidade_ainda_nao_tem"));
         }
         FlairMatch m = new FlairMatch();
         m.setMode("DRAFT");
@@ -1042,7 +1043,7 @@ public class FlairModesService {
         out.put("theirs", b.stream().map(cards::get).filter(Objects::nonNull).toList());
         out.put("pick", num(st.get("pick")));
         out.put("turn", num(st.get("pick")) >= pool.size() ? "COMPOSE" : FlairLooks.draftTurn(num(st.get("pick"))));
-        out.put("order", "A, B, B, A, A, B, B, A… (serpente)");
+        out.put("order", Msg.t("flairModes.a_b_b_a_a"));
         out.put("themes", Json.strings(Json.write(st.get("themes"))).stream().map(FlairLooks::theme).toList());
         if (st.get("result") != null) {
             out.put("result", st.get("result"));
@@ -1062,18 +1063,18 @@ public class FlairModesService {
     public Map<String, Object> draftPick(CurrentUser user, UUID id, UUID pieceId) {
         FlairMatch m = ownDraft(user, id, "DRAFT");
         if (!"OPEN".equals(m.getStatus())) {
-            throw ApiException.conflict("DRAFT_FECHADO", "O draft já terminou.");
+            throw ApiException.conflict("DRAFT_FECHADO", Msg.t("flairModes.o_draft_ja_terminou"));
         }
         Map<String, Object> st = Json.map(m.getResultJson());
         List<String> pool = Json.strings(Json.write(st.get("pool")));
         List<String> a = new ArrayList<>(Json.strings(Json.write(st.get("A")))), b = new ArrayList<>(Json.strings(Json.write(st.get("B"))));
         int pick = num(st.get("pick"));
         if (!"A".equals(FlairLooks.draftTurn(pick))) {
-            throw ApiException.conflict("VEZ_DO_OPONENTE", "Aguarde a escolha do oponente.");
+            throw ApiException.conflict("VEZ_DO_OPONENTE", Msg.t("flairModes.aguarde_a_escolha_do_oponente"));
         }
         String pid = pieceId.toString();
         if (!pool.contains(pid) || a.contains(pid) || b.contains(pid)) {
-            throw ApiException.badRequest("PECA_INDISPONIVEL", "Essa peça não está mais no monte.");
+            throw ApiException.badRequest("PECA_INDISPONIVEL", Msg.t("flairModes.essa_peca_nao_esta_mais"));
         }
         a.add(pid);
         pick++;
@@ -1104,12 +1105,12 @@ public class FlairModesService {
     public Map<String, Object> draftFinish(CurrentUser user, UUID id, List<List<UUID>> looks) {
         FlairMatch m = ownDraft(user, id, "DRAFT");
         if (!"OPEN".equals(m.getStatus())) {
-            throw ApiException.conflict("DRAFT_FECHADO", "O draft já terminou.");
+            throw ApiException.conflict("DRAFT_FECHADO", Msg.t("flairModes.o_draft_ja_terminou"));
         }
         Map<String, Object> st = Json.map(m.getResultJson());
         List<String> pool = Json.strings(Json.write(st.get("pool")));
         if (num(st.get("pick")) < pool.size()) {
-            throw ApiException.conflict("DRAFT_EM_ANDAMENTO", "Termine as escolhas antes de montar os looks.");
+            throw ApiException.conflict("DRAFT_EM_ANDAMENTO", Msg.t("flairModes.termine_as_escolhas_antes_de"));
         }
         Set<String> a = new HashSet<>(Json.strings(Json.write(st.get("A"))));
         List<String> b = Json.strings(Json.write(st.get("B")));
@@ -1119,11 +1120,11 @@ public class FlairModesService {
         Set<String> used = new HashSet<>();
         for (List<UUID> l : looks) {
             if (l == null || l.size() < 2) {
-                throw ApiException.badRequest("LOOKS_INVALIDOS", "Cada look precisa de ao menos 2 peças.");
+                throw ApiException.badRequest("LOOKS_INVALIDOS", Msg.t("flairModes.cada_look_precisa_de_ao"));
             }
             for (UUID p : l) {
                 if (!a.contains(p.toString()) || !used.add(p.toString())) {
-                    throw ApiException.badRequest("LOOKS_INVALIDOS", "Use só as suas escolhas, sem repetir peça.");
+                    throw ApiException.badRequest("LOOKS_INVALIDOS", Msg.t("flairModes.use_so_as_suas_escolhas"));
                 }
             }
         }
@@ -1138,7 +1139,7 @@ public class FlairModesService {
             Look ml = lookOfCards(mc, "Look " + (i + 1), user.username());
             List<Card> ac = FlairLooks.bestLook(aiLeft, t, cs -> lookOfCards(cs, "IA", "CASA"));
             aiLeft.removeAll(ac);
-            Look al = lookOfCards(ac, "Look IA " + (i + 1), "CASA");
+            Look al = lookOfCards(ac, Msg.t("flairModes.look_ia", (i + 1)), "CASA");
             mineLooks.add(ml);
             theirLooks.add(al);
             rounds.add(FlairLooks.battle(ml, al, t));
@@ -1147,7 +1148,7 @@ public class FlairModesService {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("me", mineLooks.stream().map(FlairModesService::lookView).toList());
-        r.put("opponent", Map.of("label", "IA do Draft", "looks", theirLooks.stream().map(FlairModesService::lookView).toList()));
+        r.put("opponent", Map.of("label", Msg.t("flairModes.ia_do_draft"), "looks", theirLooks.stream().map(FlairModesService::lookView).toList()));
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
         st.put("result", r);
@@ -1189,11 +1190,11 @@ public class FlairModesService {
     @Transactional
     public Map<String, Object> saveDeck(CurrentUser user, List<UUID> pieceIds) {
         if (pieceIds == null || pieceIds.size() != 12 || new HashSet<>(pieceIds).size() != 12) {
-            throw ApiException.badRequest("DECK_INVALIDO", "O deck tem 12 cartas diferentes: 4 superiores, 3 inferiores, 2 calçados, 2 acessórios e 1 curinga.");
+            throw ApiException.badRequest("DECK_INVALIDO", Msg.t("flairModes.o_deck_tem_12_cartas"));
         }
         List<Card> cards = new ArrayList<>();
         for (UUID p : pieceIds) {
-            WardrobeItem w = pieces.findById(p).orElseThrow(() -> ApiException.notFound("Peça"));
+            WardrobeItem w = pieces.findById(p).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
             guard.requireOwner(user, w.getUser().getId(), "piece:" + p);
             cards.add(flair.card(w));
         }
@@ -1202,12 +1203,12 @@ public class FlairModesService {
         for (String cat : List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece")) {
             long n = have.getOrDefault(cat, 0L);
             if (n < DECK_RULE.get(cat)) {
-                throw ApiException.badRequest("DECK_INVALIDO", "Faltam cartas de " + FlairService.CATEGORY_LABELS.getOrDefault(cat, cat) + " (" + n + "/" + DECK_RULE.get(cat) + ").");
+                throw ApiException.badRequest("DECK_INVALIDO", Msg.t("flairModes.faltam_cartas_de", FlairService.CATEGORY_LABELS.getOrDefault(cat, cat), n, DECK_RULE.get(cat)));
             }
             spare += n - DECK_RULE.get(cat);
         }
         if (spare != 1) {
-            throw ApiException.badRequest("DECK_INVALIDO", "Composição: 4 superiores, 3 inferiores, 2 calçados, 2 acessórios e 1 curinga.");
+            throw ApiException.badRequest("DECK_INVALIDO", Msg.t("flairModes.composicao_4_superiores_3_inferiores"));
         }
         FlairModeState s = state(user.id(), "DECK", "ALL");
         s.setStateJson(Json.write(Map.of("cards", pieceIds.stream().map(UUID::toString).toList())));
@@ -1219,7 +1220,7 @@ public class FlairModesService {
         guard.requireCanCreate(user);
         List<Card> deck = cardsById(ids(Json.map(state(user.id(), "DECK", "ALL").getStateJson()).get("cards")));
         if (deck.size() < 12) {
-            throw new ApiException(409, "SEM_DECK", "Monte o deck de 12 cartas antes de jogar.");
+            throw new ApiException(409, "SEM_DECK", Msg.t("flairModes.monte_o_deck_de_12"));
         }
         long seed = seed("deck", user.id(), System.nanoTime());
         Theme t = FlairLooks.drawTheme(seed);
@@ -1247,7 +1248,7 @@ public class FlairModesService {
         out.put("challenge", t);
         out.put("hand", hand);
         out.put("hint", FlairLooks.bestLook(hand, t, cs -> lookOfCards(cs, "dica", user.username())).stream().map(Card::id).toList());
-        out.put("rule", "Monte o melhor look com 2 a 5 cartas da sua mão. A Casa monta o dela com a mão da comunidade.");
+        out.put("rule", Msg.t("flairModes.monte_o_melhor_look_com"));
         return out;
     }
 
@@ -1255,24 +1256,24 @@ public class FlairModesService {
     public Map<String, Object> deckPlay(CurrentUser user, UUID id, List<UUID> pieceIds) {
         FlairMatch m = ownDraft(user, id, "DECK");
         if (!"OPEN".equals(m.getStatus())) {
-            throw ApiException.conflict("PARTIDA_FECHADA", "Essa partida já terminou.");
+            throw ApiException.conflict("PARTIDA_FECHADA", Msg.t("flairModes.essa_partida_ja_terminou"));
         }
         Map<String, Object> st = Json.map(m.getResultJson());
         Set<String> hand = new HashSet<>(Json.strings(Json.write(st.get("hand"))));
         if (pieceIds == null || pieceIds.size() < 2 || pieceIds.size() > 5 || !pieceIds.stream().allMatch(p -> hand.contains(p.toString()))) {
-            throw ApiException.badRequest("JOGADA_INVALIDA", "Escolha de 2 a 5 cartas da sua mão.");
+            throw ApiException.badRequest("JOGADA_INVALIDA", Msg.t("flairModes.escolha_de_2_a_5"));
         }
         Theme t = FlairLooks.theme(String.valueOf(st.get("theme")));
-        Look mine = lookOfCards(cardsById(pieceIds), "Meu look", user.username());
+        Look mine = lookOfCards(cardsById(pieceIds), Msg.t("flairModes.meu_look"), user.username());
         List<Card> house = cardsById(ids(st.get("house")));
-        Look theirs = lookOfCards(FlairLooks.bestLook(house, t, cs -> lookOfCards(cs, "Casa", "CASA")), "Look da Casa", "CASA");
+        Look theirs = lookOfCards(FlairLooks.bestLook(house, t, cs -> lookOfCards(cs, "Casa", "CASA")), Msg.t("flairModes.look_da_casa"), "CASA");
         Clash c = FlairLooks.battle(mine, theirs, t);
         m.setStatus("FINISHED");
         m.setWinnerSide(c.winner());
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("challenge", t);
         r.put("me", lookView(mine));
-        r.put("opponent", Map.of("label", "A Casa", "look", lookView(theirs)));
+        r.put("opponent", Map.of("label", Msg.t("common.a_casa"), "look", lookView(theirs)));
         r.put("rounds", List.of(clashView(c)));
         r.put("scoreA", c.scoreA());
         r.put("scoreB", c.scoreB());
@@ -1289,7 +1290,7 @@ public class FlairModesService {
         Theme t = FlairLooks.drawTheme(seed("combo", schemeId));
         List<Look> pool = rival == null ? houseLooks(user.id(), 10, seed("combo-house")) : publicLooksOf(user, rival);
         if (pool.isEmpty()) {
-            throw new ApiException(409, "SEM_LOOK_PUBLICO", "O oponente ainda não tem looks públicos.");
+            throw new ApiException(409, "SEM_LOOK_PUBLICO", Msg.t("flairModes.o_oponente_ainda_nao_tem"));
         }
         Look theirs = pool.stream().max(Comparator.comparingDouble(l -> FlairLooks.comboScore(l, t))).get();
         double sa = FlairLooks.comboScore(mine, t), sb = FlairLooks.comboScore(theirs, t);
@@ -1297,19 +1298,19 @@ public class FlairModesService {
         FlairLooks.synergies(mine.cards(), t).forEach(x -> notes.add("A: " + x.emoji() + " " + x.label() + " +" + x.bonus() + " " + FlairLooks.LABELS.get(x.stat())));
         FlairLooks.synergies(theirs.cards(), t).forEach(x -> notes.add("B: " + x.emoji() + " " + x.label() + " +" + x.bonus() + " " + FlairLooks.LABELS.get(x.stat())));
         if (notes.isEmpty()) {
-            notes.add("Nenhum combo ativado: tente tênis + cargo + camiseta ampla, ou blazer + camisa + sapato de couro.");
+            notes.add(Msg.t("flairModes.nenhum_combo_ativado_tente_tenis"));
         }
-        Clash c = new Clash("⚡ Combo Battle · " + t.label(), mine.title(), theirs.title(), sa, sb, FlairLooks.winner(sa, sb), notes, List.of());
+        Clash c = new Clash(Msg.t("flairModes.combo_battle_2", t.label()), mine.title(), theirs.title(), sa, sb, FlairLooks.winner(sa, sb), notes, List.of());
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("theme", t);
         r.put("me", lookView(mine));
-        r.put("opponent", Map.of("label", rival == null ? "A Casa (" + theirs.owner() + ")" : "@" + rival.getUsername(), "look", lookView(theirs)));
+        r.put("opponent", Map.of("label", rival == null ? Msg.t("flairModes.a_casa", theirs.owner()) : "@" + rival.getUsername(), "look", lookView(theirs)));
         r.put("rounds", List.of(clashView(c)));
         r.put("scoreA", sa);
         r.put("scoreB", sb);
-        r.put("comboBook", List.of("⚡ Streetwear Combo: tênis + cargo/jeans + camiseta/moletom → +15 Style", "👔 Classic Formal: blazer + camisa + sapato de couro → +18 Style",
-                "🖤 Monochrome: 3 peças da mesma família de cor → +12 Style", "🏷️ Brand Loyalty: 3 peças da mesma marca → +10 Brand Power",
-                "🎨 Mix & Match: 3 marcas diferentes → +10 Originality", "📻 Vintage Revival: 2 peças vintage → +15 Trend em eventos retrô"));
+        r.put("comboBook", List.of(Msg.t("flairModes.streetwear_combo_tenis_cargo_jeans"), Msg.t("flairModes.classic_formal_blazer_camisa_sapato"),
+                Msg.t("flairModes.monochrome_3_pecas_da_mesma"), Msg.t("flairModes.brand_loyalty_3_pecas_da"),
+                Msg.t("flairModes.mix_match_3_marcas_diferentes"), Msg.t("flairModes.vintage_revival_2_pecas_vintage")));
         return finish(user, "COMBO", t.label(), c.winner(), r, List.of(mine), rival, List.of(theirs));
     }
 
@@ -1322,7 +1323,7 @@ public class FlairModesService {
         Theme t = FlairLooks.drawTheme(seed("tag", schemeId, partner));
         User p = opponentUser(user, partner);
         Look pl = publicLooksOf(user, p).stream().max(Comparator.comparingDouble(l -> FlairLooks.harmony(mine, l) * 0.4 + FlairLooks.score(l, t).total() * 0.6))
-                .orElseThrow(() -> new ApiException(409, "SEM_LOOK_PUBLICO", "@" + p.getUsername() + " ainda não tem look público."));
+                .orElseThrow(() -> new ApiException(409, "SEM_LOOK_PUBLICO", Msg.t("flairModes.ainda_nao_tem_look_publico_2", p.getUsername())));
         List<Look> opp = new ArrayList<>();
         List<String> labels = new ArrayList<>();
         List<String> names = opponents == null ? List.of() : opponents.stream().filter(x -> x != null && !x.isBlank()).limit(2).toList();
@@ -1330,10 +1331,10 @@ public class FlairModesService {
             for (String n : names) {
                 User u = opponentUser(user, n);
                 if (u.getId().equals(p.getId())) {
-                    throw ApiException.badRequest("DUPLA_INVALIDA", "A parceria não pode estar no time adversário.");
+                    throw ApiException.badRequest("DUPLA_INVALIDA", Msg.t("flairModes.a_parceria_nao_pode_estar"));
                 }
                 opp.add(publicLooksOf(user, u).stream().max(Comparator.comparingDouble(l -> FlairLooks.score(l, t).total()))
-                        .orElseThrow(() -> new ApiException(409, "SEM_LOOK_PUBLICO", "@" + u.getUsername() + " ainda não tem look público.")));
+                        .orElseThrow(() -> new ApiException(409, "SEM_LOOK_PUBLICO", Msg.t("flairModes.ainda_nao_tem_look_publico_2", u.getUsername()))));
                 labels.add("@" + u.getUsername());
             }
         } else {
@@ -1343,12 +1344,12 @@ public class FlairModesService {
             });
         }
         if (opp.size() < 2) {
-            throw new ApiException(409, "SEM_ADVERSARIOS", "Não há looks públicos suficientes para a dupla adversária.");
+            throw new ApiException(409, "SEM_ADVERSARIOS", Msg.t("flairModes.nao_ha_looks_publicos_suficientes"));
         }
         double sa = FlairLooks.tagScore(mine, pl, t), sb = FlairLooks.tagScore(opp.get(0), opp.get(1), t);
         int ha = FlairLooks.harmony(mine, pl), hb = FlairLooks.harmony(opp.get(0), opp.get(1));
         Clash c = new Clash("🤝 " + t.emoji() + " " + t.label(), "@" + user.username() + " + @" + p.getUsername(), String.join(" + ", labels), sa, sb, FlairLooks.winner(sa, sb),
-                List.of("A: Team Harmony " + ha, "B: Team Harmony " + hb, "Nota da dupla = 80% média dos looks no tema + 20% Team Harmony"), List.of());
+                List.of(Msg.t("flairModes.a_team_harmony", ha), Msg.t("flairModes.b_team_harmony", hb), Msg.t("flairModes.nota_da_dupla_80_media")), List.of());
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("theme", t);
         r.put("teamA", Map.of("looks", List.of(lookView(mine), lookView(pl)), "harmony", ha));
@@ -1369,7 +1370,7 @@ public class FlairModesService {
             throw ApiException.notFound("Boss");
         }
         if (schemeIds == null || schemeIds.isEmpty() || schemeIds.size() > 3) {
-            throw ApiException.badRequest("LOOKS_INVALIDOS", "Enfrente o boss com 1 a 3 looks.");
+            throw ApiException.badRequest("LOOKS_INVALIDOS", Msg.t("flairModes.enfrente_o_boss_com_1"));
         }
         Theme t = FlairLooks.theme(boss.theme());
         Look bl = FlairLooks.bossLook(boss);
@@ -1394,7 +1395,7 @@ public class FlairModesService {
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
         if ("A".equals(w)) {
-            trophy(user.id(), "BOSS", "Boss derrotado — " + boss.name(), seasonKey(), Map.of("boss", boss.code()));
+            trophy(user.id(), "BOSS", Msg.t("flairModes.boss_derrotado", boss.name()), seasonKey(), Map.of("boss", boss.code()));
         }
         return finish(user, "BOSS", boss.name(), w, r, mine, null, List.of());
     }
@@ -1442,8 +1443,8 @@ public class FlairModesService {
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
-        r.put("note", "Do oponente contam só peças e looks públicos (privacidade).");
-        return finish(user, "WARDROBE", "Guarda-roupa × guarda-roupa", w, r, List.of(), rival, List.of());
+        r.put("note", Msg.t("flairModes.do_oponente_contam_so_pecas"));
+        return finish(user, "WARDROBE", Msg.t("flairModes.guarda_roupa_guarda_roupa_2"), w, r, List.of(), rival, List.of());
     }
 
     // ================================================================== 14. FLAIR Chess
@@ -1457,9 +1458,9 @@ public class FlairModesService {
         out.put("cards", mine);
         out.put("suggestion", board.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().id(), (a, b) -> a, LinkedHashMap::new)));
         out.put("preview", FlairLooks.chess(board));
-        out.put("rules", List.of("Cada carta vale poder/10 na posição certa (metade fora dela).", "HERO (centro) vale ×1,25; SUPPORT dá +3 a cada vizinha.",
-                "Peça clara em cima + calça escura adjacente: +5 Harmony.", "Tênis ao lado de cargo/jeans: +8 Style; blazer + alfaiataria: +6.",
-                "Mesma família de cor: +3; mesmo estilo: +4; mesma marca: +3."));
+        out.put("rules", List.of(Msg.t("flairModes.cada_carta_vale_poder_10"), Msg.t("flairModes.hero_centro_vale_1_25"),
+                Msg.t("flairModes.peca_clara_em_cima_calca"), Msg.t("flairModes.tenis_ao_lado_de_cargo"),
+                Msg.t("flairModes.mesma_familia_de_cor_3")));
         return out;
     }
 
@@ -1467,7 +1468,7 @@ public class FlairModesService {
     public Map<String, Object> chess(CurrentUser user, Map<String, UUID> placement) {
         guard.requireCanCreate(user);
         if (placement == null || placement.isEmpty()) {
-            throw ApiException.badRequest("TABULEIRO_VAZIO", "Coloque cartas no tabuleiro.");
+            throw ApiException.badRequest("TABULEIRO_VAZIO", Msg.t("flairModes.coloque_cartas_no_tabuleiro"));
         }
         Map<String, Card> board = new LinkedHashMap<>();
         Set<UUID> used = new HashSet<>();
@@ -1476,9 +1477,9 @@ public class FlairModesService {
                 continue;
             }
             if (!used.add(e.getValue())) {
-                throw ApiException.badRequest("CARTA_REPETIDA", "Cada carta ocupa uma posição só.");
+                throw ApiException.badRequest("CARTA_REPETIDA", Msg.t("flairModes.cada_carta_ocupa_uma_posicao"));
             }
-            WardrobeItem w = pieces.findById(e.getValue()).orElseThrow(() -> ApiException.notFound("Peça"));
+            WardrobeItem w = pieces.findById(e.getValue()).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
             guard.requireOwner(user, w.getUser().getId(), "piece:" + e.getValue());
             board.put(e.getKey(), flair.card(w));
         }
@@ -1488,11 +1489,11 @@ public class FlairModesService {
         String w = FlairLooks.winner(sa, sb);
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("me", ea);
-        r.put("opponent", Map.of("label", "IA estrategista", "board", eb, "cards", ai.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name(), (x, y) -> x, LinkedHashMap::new))));
-        r.put("rounds", List.of(clashView(new Clash("♟️ Tabuleiro 3×3", "seu tabuleiro", "IA", sa, sb, w, List.of(), List.of()))));
+        r.put("opponent", Map.of("label", Msg.t("flairModes.ia_estrategista"), "board", eb, "cards", ai.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name(), (x, y) -> x, LinkedHashMap::new))));
+        r.put("rounds", List.of(clashView(new Clash(Msg.t("flairModes.tabuleiro_3_3"), "seu tabuleiro", "IA", sa, sb, w, List.of(), List.of()))));
         r.put("scoreA", sa);
         r.put("scoreB", sb);
-        return finish(user, "CHESS", "Fashion Strategy", w, r, List.of(), null, List.of());
+        return finish(user, "CHESS", Msg.t("flairModes.fashion_strategy"), w, r, List.of(), null, List.of());
     }
 
     // ================================================================== 15. FLAIR Ultimate Team
@@ -1529,8 +1530,8 @@ public class FlairModesService {
                 "value", FlairLooks.roleValue(e.getValue(), e.getKey()))), LinkedHashMap::putAll));
         out.put("team", FlairLooks.teamRating(roster));
         out.put("suggestion", suggestion.entrySet().stream().collect(LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue() == null ? null : e.getValue().schemeId()), LinkedHashMap::putAll));
-        out.put("roleHelp", Map.of("ICON", "look principal (rating geral)", "TREND", "foco em tendências", "SOCIAL", "maior Community Score", "CREATIVE", "alta originalidade",
-                "CLASSIC", "alta consistência (Style + AI)", "WILD_CARD", "imprevisível: o maior atributo decide", "SPECIAL", "look para eventos (raridade)"));
+        out.put("roleHelp", Map.of("ICON", Msg.t("flairModes.look_principal_rating_geral"), "TREND", Msg.t("flairModes.foco_em_tendencias"), "SOCIAL", Msg.t("flairModes.maior_community_score"), "CREATIVE", "alta originalidade",
+                "CLASSIC", Msg.t("flairModes.alta_consistencia_style_ai"), "WILD_CARD", Msg.t("flairModes.imprevisivel_o_maior_atributo_decide"), "SPECIAL", Msg.t("flairModes.look_para_eventos_raridade")));
         return out;
     }
 
@@ -1544,7 +1545,7 @@ public class FlairModesService {
                 continue;
             }
             if (!used.add(id)) {
-                throw ApiException.badRequest("LOOK_REPETIDO", "Cada look ocupa uma função só.");
+                throw ApiException.badRequest("LOOK_REPETIDO", Msg.t("flairModes.cada_look_ocupa_uma_funcao"));
             }
             ownScheme(user, id);
             clean.put(role, id.toString());
@@ -1584,13 +1585,13 @@ public class FlairModesService {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("teamA", ta);
         r.put("teamB", tb);
-        r.put("opponent", Map.of("label", rival == null ? "Ultimate Team da Casa" : "@" + rival.getUsername()));
+        r.put("opponent", Map.of("label", rival == null ? Msg.t("flairModes.ultimate_team_da_casa") : "@" + rival.getUsername()));
         r.put("rounds", rounds.stream().map(FlairModesService::clashView).toList());
         r.put("scoreA", wa);
         r.put("scoreB", wb);
-        r.put("tiebreak", wa == wb ? "Empate nas funções: decide a Chemistry" : null);
+        r.put("tiebreak", wa == wb ? Msg.t("flairModes.empate_nas_funcoes_decide_a") : null);
         r.put("roster", view.get("roster"));
-        return finish(user, "ULTIMATE", "FLAIR Team", w, r, mine.values().stream().filter(Objects::nonNull).toList(), rival,
+        return finish(user, "ULTIMATE", Msg.t("flairModes.flair_team"), w, r, mine.values().stream().filter(Objects::nonNull).toList(), rival,
                 theirs.values().stream().filter(Objects::nonNull).toList());
     }
 }

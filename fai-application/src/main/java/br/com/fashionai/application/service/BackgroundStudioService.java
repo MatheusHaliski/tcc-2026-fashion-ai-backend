@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -66,27 +67,27 @@ public class BackgroundStudioService {
     public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
 
     static {
-        seal(SEAL_PLACEMENT, "LISTA_VERTICAL", "TITLE_ROW", true, "anatomia", "Linha \"Título · selos · preço\" abaixo da foto; cada peça repete \"marca · nome · selos · preço\".");
-        seal(SEAL_PLACEMENT, "GRADE_PECAS", "TITLE_ROW", true, "anatomia", "Linha do título; cada célula da grade mostra \"selos · preço\" (compacto: \"4 peças · selos · preço\").");
-        seal(SEAL_PLACEMENT, "HERO_LISTA", "TITLE_ROW", true, "anatomia", "Linha do título abaixo do hero; no compacto, cada linha lateral traz \"peça · selos · preço\".");
-        seal(SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", "Canto superior direito da capa, oposto ao rótulo lateral vertical — o trilho de peças fica livre.");
-        seal(SEAL_PLACEMENT, "ETIQUETA", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço · descrição\" logo abaixo das mini-etiquetas.");
-        seal(SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", "Sobre a foto do scanner, canto superior direito (a legenda numerada ocupa a esquerda).");
-        seal(SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "anatomia", "Bloco \"Selos · descrição · estilo\" abaixo da grade assimétrica.");
-        seal(SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço\" acima das faixas de cor.");
-        seal(SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", "Cabeçalho \"FASHIONAI · VALOR DE USO\", ao lado do label PREMIUM (> R$ 600).");
-        seal(SEAL_PLACEMENT, "SILHUETA_PROPORCAO", "TITLE_ROW", false, "derivada", "Linha do nome da silhueta, antes de \"Descrição · ocasião · estilo\".");
-        seal(SEAL_PLACEMENT, "HYPE_FOCUS", "HEADER", false, "derivada", "Ao lado do medidor \"Peça em destaque\" — o selo não disputa com a chama do Hype.");
-        seal(SEAL_PLACEMENT, "CARTELA_SAZONAL", "COVER_CORNER", false, "derivada", "Canto superior direito do hero da estação (o nome da estação fica à esquerda).");
-        seal(SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", "Placas redondas 1×1 no container (verde = marca, vermelho = celebridade, amarelo = look) + placa \"N selos\".");
-        seal(PIECE_SEAL_PLACEMENT, "PECA_AMPLIADO", "META_BLOCK", false, "anatomia", "Linha \"Categoria · marca · sexo · selos\" abaixo da foto da peça.");
-        seal(PIECE_SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", "Canto da capa, oposto ao número de rank e aos holofotes.");
-        seal(PIECE_SEAL_PLACEMENT, "ETIQUETA", "HEADER", false, "derivada", "Ao lado do label \"FASHION AI\" da etiqueta (moldura dourada acima de R$ 600).");
-        seal(PIECE_SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", "Sobre a foto, canto oposto ao ritmo (bpm).");
-        seal(PIECE_SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "derivada", "Bloco \"Atributos\" (a grade da peça tem 2 células fixas).");
-        seal(PIECE_SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", "Linha \"Título · selos · preço\" acima da faixa única.");
-        seal(PIECE_SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", "Cabeçalho, ao lado do label PREMIUM.");
-        seal(PIECE_SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", "Placa redonda 1×1 ao lado do bloco de marca (✦ PREMIUM vira bloco dourado).");
+        seal(SEAL_PLACEMENT, "LISTA_VERTICAL", "TITLE_ROW", true, "anatomia", Msg.k("backgroundStudio.linha_titulo_selos_preco_abaixo"));
+        seal(SEAL_PLACEMENT, "GRADE_PECAS", "TITLE_ROW", true, "anatomia", Msg.k("backgroundStudio.linha_do_titulo_cada_celula"));
+        seal(SEAL_PLACEMENT, "HERO_LISTA", "TITLE_ROW", true, "anatomia", Msg.k("backgroundStudio.linha_do_titulo_abaixo_do"));
+        seal(SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", Msg.k("backgroundStudio.canto_superior_direito_da_capa"));
+        seal(SEAL_PLACEMENT, "ETIQUETA", "TITLE_ROW", false, "anatomia", Msg.k("backgroundStudio.linha_titulo_selos_preco_descricao"));
+        seal(SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", Msg.k("backgroundStudio.sobre_a_foto_do_scanner"));
+        seal(SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "anatomia", Msg.k("backgroundStudio.bloco_selos_descricao_estilo_abaixo"));
+        seal(SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", Msg.k("backgroundStudio.linha_titulo_selos_preco_acima"));
+        seal(SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", Msg.k("backgroundStudio.cabecalho_fashionai_valor_de_uso"));
+        seal(SEAL_PLACEMENT, "SILHUETA_PROPORCAO", "TITLE_ROW", false, "derivada", Msg.k("backgroundStudio.linha_do_nome_da_silhueta"));
+        seal(SEAL_PLACEMENT, "HYPE_FOCUS", "HEADER", false, "derivada", Msg.k("backgroundStudio.ao_lado_do_medidor_peca"));
+        seal(SEAL_PLACEMENT, "CARTELA_SAZONAL", "COVER_CORNER", false, "derivada", Msg.k("backgroundStudio.canto_superior_direito_do_hero"));
+        seal(SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", Msg.k("backgroundStudio.placas_redondas_1_1_no"));
+        seal(PIECE_SEAL_PLACEMENT, "PECA_AMPLIADO", "META_BLOCK", false, "anatomia", Msg.k("backgroundStudio.linha_categoria_marca_sexo_selos"));
+        seal(PIECE_SEAL_PLACEMENT, "PASSARELA", "COVER_CORNER", false, "derivada", Msg.k("backgroundStudio.canto_da_capa_oposto_ao"));
+        seal(PIECE_SEAL_PLACEMENT, "ETIQUETA", "HEADER", false, "derivada", Msg.k("backgroundStudio.ao_lado_do_label_fashion"));
+        seal(PIECE_SEAL_PLACEMENT, "RAIO_X", "COVER_CORNER", false, "derivada", Msg.k("backgroundStudio.sobre_a_foto_canto_oposto"));
+        seal(PIECE_SEAL_PLACEMENT, "BENTO", "META_BLOCK", false, "derivada", Msg.k("backgroundStudio.bloco_atributos_a_grade_da"));
+        seal(PIECE_SEAL_PLACEMENT, "ESPECTRO", "TITLE_ROW", false, "anatomia", Msg.k("backgroundStudio.linha_titulo_selos_preco_acima_2"));
+        seal(PIECE_SEAL_PLACEMENT, "CUSTO_POR_USO", "HEADER", false, "derivada", Msg.k("backgroundStudio.cabecalho_ao_lado_do_label"));
+        seal(PIECE_SEAL_PLACEMENT, "LEGO", "STUDS", false, "anatomia", Msg.k("backgroundStudio.placa_redonda_1_1_ao"));
     }
 
     private static void seal(Map<String, Map<String, Object>> target, String anatomy, String zone, boolean pieceRows, String source,
@@ -109,16 +110,16 @@ public class BackgroundStudioService {
     public static final Map<String, Map<String, Object>> DIRECTIONS = new LinkedHashMap<>();
 
     static {
-        DIRECTIONS.put("EDITORIAL_SPREAD", Map.of("label", "Editorial Spread", "skin", "editorial_ivory",
+        DIRECTIONS.put("EDITORIAL_SPREAD", Map.of("label", Msg.k("backgroundStudio.editorial_spread"), "skin", "editorial_ivory",
                 "aura", "aura_editorial_mono__estudio", "material", "linho_natural", "wearstyles", "sublinhados",
                 "styles", List.of("classic", "minimalist", "chic", "tailored", "preppy", "modern")));
-        DIRECTIONS.put("LUXURY_GLASS", Map.of("label", "Luxury Glass", "skin", "luxury_glass_warm",
-                "aura", "aura_glam_noite__palco", "material", "cetim_liquido", "wearstyles", "pílula dourada",
+        DIRECTIONS.put("LUXURY_GLASS", Map.of("label", Msg.k("backgroundStudio.luxury_glass"), "skin", "luxury_glass_warm",
+                "aura", "aura_glam_noite__palco", "material", "cetim_liquido", "wearstyles", Msg.k("backgroundStudio.pilula_dourada"),
                 "styles", List.of("luxury", "glam", "statement", "avant_garde", "futuristic")));
         DIRECTIONS.put("ATELIER", Map.of("label", "Atelier", "skin", "atelier_terracotta",
                 "aura", "aura_boemio_terracota__dunas_douradas", "material", "couro_nappa", "wearstyles", "etiquetas tracejadas",
                 "styles", List.of("boho", "vintage", "romantic", "resort", "utility", "grunge")));
-        DIRECTIONS.put("SHOW_NOTES", Map.of("label", "Show Notes", "skin", "show_notes",
+        DIRECTIONS.put("SHOW_NOTES", Map.of("label", Msg.k("backgroundStudio.show_notes"), "skin", "show_notes",
                 "aura", "aura_streetwear_neon__circuitos", "material", "nylon_ripstop", "wearstyles", "numerados",
                 "styles", List.of("streetwear", "sporty", "athleisure", "techwear", "urban", "y2k", "edgy", "basic")));
     }
@@ -199,8 +200,8 @@ public class BackgroundStudioService {
         d.put("id", best);
         d.put("combination", assets.resolveCombination((String) d.get("aura"), (String) d.get("material"), true, false));
         d.put("containerColor", assets.nativeContainer((String) d.get("skin")));
-        d.put("reason", bestScore > 0 ? "Coerente com o estilo " + String.join("/", styles == null ? List.of() : styles) + " do look."
-                : "Direção neutra padrão — funciona com qualquer estilo.");
+        d.put("reason", bestScore > 0 ? Msg.t("backgroundStudio.coerente_com_o_estilo_do", String.join("/", styles == null ? List.of() : styles))
+                : Msg.t("backgroundStudio.direcao_neutra_padrao_funciona_com"));
         return d;
     }
 
@@ -213,7 +214,7 @@ public class BackgroundStudioService {
     public Map<String, Object> generateArt(CurrentUser user, ArtRequest req) {
         guard.requireCanCreate(user);
         if (req.prompt() == null || req.prompt().isBlank()) {
-            throw ApiException.badRequest("PROMPT_VAZIO", "Descreva o cenário da arte de fundo.");
+            throw ApiException.badRequest("PROMPT_VAZIO", Msg.t("backgroundStudio.descreva_o_cenario_da_arte"));
         }
         List<String> protectedNames = new ArrayList<>();
         celebrities.findAll().forEach(c -> {
@@ -224,11 +225,8 @@ public class BackgroundStudioService {
         });
         String direction = req.direction() == null ? null : req.direction().toUpperCase(Locale.ROOT);
         Map<String, Object> dir = direction == null ? null : DIRECTIONS.get(direction);
-        String prompt = req.prompt().trim() + (dir == null ? "" : ", " + dir.get("label") + " art direction")
-                + (req.era() != null ? ", chromatic and material atmosphere of the era \"" + req.era() + "\"" : "")
-                + ", fashion card background, no people, no faces, no text";
-        String negative = "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, "
-                + "avoid unreadable typography collisions, avoid gamified badge icons, avoid text overlays";
+        String prompt = Msg.t("backgroundStudio.fashion_card_background_no_people", (req.prompt().trim() + (dir == null ? "" : ", " + dir.get("label") + " art direction") + (req.era() != null ? Msg.t("backgroundStudio.chromatic_and_material_atmosphere_of", req.era()) : "")));
+        String negative = Msg.t("backgroundStudio.avoid_faces_avoid_people_avoid");
         int w = 900;
         int h = "PIECE".equalsIgnoreCase(req.target()) ? 2080 : 2160;
         List<AiEngine.RemoteStep<byte[]>> steps = new ArrayList<>();
@@ -261,7 +259,7 @@ public class BackgroundStudioService {
             });
         }
         AiOutcome<byte[]> outcome = ai.execute(user.id(), AiCapability.BACKGROUND_GENERATOR,
-                List.of("prompt de arte", direction == null ? "sem direção" : "direção " + direction,
+                List.of(Msg.t("backgroundStudio.prompt_de_arte"), direction == null ? Msg.t("backgroundStudio.sem_direcao") : Msg.t("backgroundStudio.direcao", direction),
                         req.era() == null ? "sem era" : "era: " + req.era()),
                 // valida só o texto do usuário (e a era): o sufixo de segurança "no people, no faces" que o sistema
                 // acrescenta ao prompt final não pode ser lido como pedido de rosto
@@ -274,7 +272,7 @@ public class BackgroundStudioService {
             // Fallback: galeria pré-gerada (AURA/material/mosaico) coerente com o prompt.
             out.put("status", "FALLBACK_GALLERY");
             out.put("message", outcome.userMessage() != null ? outcome.userMessage()
-                    : "Geração por IA indisponível — escolha um fundo da galeria pré-gerada.");
+                    : Msg.t("backgroundStudio.geracao_por_ia_indisponivel_escolha"));
             out.put("suggestions", gallerySuggestions(req.prompt()));
             return out;
         }
@@ -325,11 +323,11 @@ public class BackgroundStudioService {
         ImageOps.requireAcceptedImage(bytes);
         BufferedImage img = ImageOps.decode(bytes);
         if (img.getWidth() < 400 || img.getHeight() < 400) {
-            throw ApiException.badRequest("IMAGEM_PEQUENA", "A imagem precisa ter ao menos 400 × 400 px.");
+            throw ApiException.badRequest("IMAGEM_PEQUENA", Msg.t("backgroundStudio.a_imagem_precisa_ter_ao"));
         }
         double ratio = img.getWidth() / (double) img.getHeight();
         if (ratio > 2.5 || ratio < 0.25) {
-            throw ApiException.badRequest("PROPORCAO_INVALIDA", "Proporção muito estreita ou larga para o card.");
+            throw ApiException.badRequest("PROPORCAO_INVALIDA", Msg.t("backgroundStudio.proporcao_muito_estreita_ou_larga"));
         }
         int w = 900;
         int h = "PIECE".equalsIgnoreCase(target) ? 2080 : 2160;
@@ -379,31 +377,31 @@ public class BackgroundStudioService {
             s.setBackgroundGradient(null);
         }
         if (scheme.get("gradientPresetId") instanceof String gid && assets.gradient(gid).isEmpty()) {
-            throw ApiException.badRequest("PRESET_INVALIDO", "Gradiente desconhecido: " + gid);
+            throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.gradiente_desconhecido", gid));
         }
         if (scheme.get("seasonalPresetId") instanceof String sid && assets.gradient(sid).isEmpty()) {
-            throw ApiException.badRequest("PRESET_INVALIDO", "Preset sazonal desconhecido: " + sid);
+            throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.preset_sazonal_desconhecido", sid));
         }
         Map<String, Object> aura = scheme.get("aura") instanceof Map<?, ?> a ? (Map<String, Object>) a : null;
         String auraVariant = aura == null ? null : (String) aura.get("variantId");
         if (auraVariant != null && assets.auraVariant(auraVariant).isEmpty()) {
-            throw ApiException.badRequest("PRESET_INVALIDO", "Preset AURA desconhecido: " + auraVariant);
+            throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.preset_aura_desconhecido", auraVariant));
         }
         String material = (String) scheme.get("materialId");
         if (material != null && assets.material(material).isEmpty()) {
-            throw ApiException.badRequest("PRESET_INVALIDO", "Material desconhecido: " + material);
+            throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.material_desconhecido", material));
         }
         String anatomy = scheme.get("layoutAnatomy") instanceof String a2 ? a2 : s.getLayoutAnatomy();
         if ("LEGO".equals(anatomy) && material != null) {
             // v17 prancha 10: com a anatomia LEGO a placa-base já é o material — o seletor fica desabilitado.
-            throw ApiException.badRequest("MATERIAL_INDISPONIVEL", "Com a anatomia LEGO o seletor de material fica desabilitado.");
+            throw ApiException.badRequest("MATERIAL_INDISPONIVEL", Msg.t("backgroundStudio.com_a_anatomia_lego_o"));
         }
         String format = aura == null ? null : (String) aura.get("format");
         if (format != null && !AURA_FORMATS.contains(format)) {
-            throw ApiException.badRequest("FORMATO_INVALIDO", "Formato do Preset Aura: IMAGEM_UNICA ou MOSAICO.");
+            throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("backgroundStudio.formato_do_preset_aura_imagem"));
         }
         if (format != null && (auraVariant == null || material == null)) {
-            throw ApiException.badRequest("FORMATO_INVALIDO", "O formato só se aplica a Preset Aura com camada de material.");
+            throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("backgroundStudio.o_formato_so_se_aplica"));
         }
         s.setBackgroundVideoUrl(null);
         if (auraVariant != null && material != null && format != null) {
@@ -424,7 +422,7 @@ public class BackgroundStudioService {
         if (Boolean.TRUE.equals(scheme.get("seasonalAuto"))) {
             // v17 prancha 09 — Cartela sazonal: opt-in, só com season preenchido; sobrescreve o fundo manual.
             if (s.getSeason() == null) {
-                throw ApiException.badRequest("ESTACAO_OBRIGATORIA", "Preencha a estação (Etapa 3) para aplicar a arte sazonal.");
+                throw ApiException.badRequest("ESTACAO_OBRIGATORIA", Msg.t("backgroundStudio.preencha_a_estacao_etapa_3"));
             }
             String preset = switch (s.getSeason()) {
                 case WINTER -> "frost";
@@ -447,13 +445,13 @@ public class BackgroundStudioService {
         }
         if (scheme.get("cardSkin") instanceof String skin) {
             if (assets.cardSkin(skin).isEmpty()) {
-                throw ApiException.badRequest("SKIN_INVALIDA", "Skin de card desconhecida: " + skin);
+                throw ApiException.badRequest("SKIN_INVALIDA", Msg.t("backgroundStudio.skin_de_card_desconhecida", skin));
             }
             s.setCardSkin(skin);
         }
         if (scheme.get("layoutAnatomy") instanceof String anat) {
             if (!ANATOMIES.contains(anat) && !PIECE_ANATOMIES.contains(anat)) {
-                throw ApiException.badRequest("ANATOMIA_INVALIDA", "Anatomia de card desconhecida: " + anat);
+                throw ApiException.badRequest("ANATOMIA_INVALIDA", Msg.t("backgroundStudio.anatomia_de_card_desconhecida", anat));
             }
             s.setLayoutAnatomy(anat);
             // o layout escolhido na etapa 4 já carrega a posição do selo daquela anatomia
@@ -461,7 +459,7 @@ public class BackgroundStudioService {
         }
         if (config.get("pieces") instanceof Map<?, ?> pc && pc.get("anatomy") instanceof String pAnat) {
             if (!PIECE_ANATOMIES.contains(pAnat)) {
-                throw ApiException.badRequest("ANATOMIA_INVALIDA", "Anatomia de peça desconhecida: " + pAnat);
+                throw ApiException.badRequest("ANATOMIA_INVALIDA", Msg.t("backgroundStudio.anatomia_de_peca_desconhecida", pAnat));
             }
             @SuppressWarnings("unchecked")
             Map<String, Object> pieces = (Map<String, Object>) pc;
@@ -471,7 +469,7 @@ public class BackgroundStudioService {
             String dirId = (String) scheme.getOrDefault("direction", "EDITORIAL_SPREAD");
             Map<String, Object> dir = DIRECTIONS.get(dirId);
             if (dir == null) {
-                throw ApiException.badRequest("DIRECAO_INVALIDA", "Direção recomendada desconhecida.");
+                throw ApiException.badRequest("DIRECAO_INVALIDA", Msg.t("backgroundStudio.direcao_recomendada_desconhecida"));
             }
             s.setRecommendedDirection(dirId);
             s.setCardSkin((String) dir.get("skin"));
@@ -483,7 +481,7 @@ public class BackgroundStudioService {
             if (s.isContainerMandatory()) {
                 if (cColor != null && !String.valueOf(cColor).equalsIgnoreCase(s.getContainerColor())) {
                     throw new ApiException(409, "CONTAINER_TRAVADO",
-                            "O container foi travado pela Direção recomendada e não pode ser editado neste esquema.");
+                            Msg.t("backgroundStudio.o_container_foi_travado_pela"));
                 }
             } else if (cColor != null && !String.valueOf(cColor).isBlank()) {
                 requireHex(String.valueOf(cColor));
@@ -518,7 +516,7 @@ public class BackgroundStudioService {
 
     private static void requireHex(String color) {
         if (!color.matches("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")) {
-            throw ApiException.badRequest("COR_INVALIDA", "Use cor hexadecimal (#RRGGBB).");
+            throw ApiException.badRequest("COR_INVALIDA", Msg.t("backgroundStudio.use_cor_hexadecimal_rrggbb"));
         }
     }
 
@@ -561,7 +559,7 @@ public class BackgroundStudioService {
     }
 
     private Map<String, Object> savePieceInternal(CurrentUser user, UUID pieceId, Object cfg) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
         w.setBackgroundConfigJson(cfg == null ? null : Json.write(cfg));
         return Map.of("pieceId", pieceId, "background", cfg == null ? Map.of() : cfg);
@@ -582,9 +580,9 @@ public class BackgroundStudioService {
         Optional<ImageProviderPorts.ImageGenerationPort> g = generators.stream().filter(ImageProviderPorts.ImageGenerationPort::available).findFirst();
         if (g.isEmpty()) {
             return Map.of("status", "FALLBACK", "strategy", "live-css-miniature",
-                    "message", "Nenhum provedor de imagem configurado — o seletor usa a miniatura CSS do skin.");
+                    "message", Msg.t("backgroundStudio.nenhum_provedor_de_imagem_configurado"));
         }
-        AiOutcome<byte[]> outcome = ai.execute(admin.id(), AiCapability.BACKGROUND_GENERATOR, List.of("prompt do skin " + skinId),
+        AiOutcome<byte[]> outcome = ai.execute(admin.id(), AiCapability.BACKGROUND_GENERATOR, List.of(Msg.t("backgroundStudio.prompt_do_skin", skinId)),
                 prompt, null, List.of(new AiEngine.RemoteStep<>() {
                     @Override
                     public String provider() {

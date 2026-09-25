@@ -1,5 +1,6 @@
 package br.com.fashionai.web.security;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.audit.AuditEvent;
 import br.com.fashionai.application.audit.AuditService;
@@ -41,6 +42,6 @@ public class AuditAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),
                 Map.of("method", request.getMethod())
         ));
-        errors.write(request, response, 401, "NAO_AUTENTICADO", "Faça login para continuar.");
+        errors.write(request, response, 401, "NAO_AUTENTICADO", Msg.t("common.faca_login_para_continuar"));
     }
 }

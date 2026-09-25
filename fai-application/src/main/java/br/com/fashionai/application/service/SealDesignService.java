@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
@@ -38,7 +39,7 @@ public class SealDesignService {
     public Map<String, Object> upload(CurrentUser user, byte[] bytes) {
         User owner = users.findById(user.id()).orElseThrow();
         if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw ApiException.forbidden("Só perfis de marca ou celebridade criam selos.");
+            throw ApiException.forbidden(Msg.t("sealDesign.so_perfis_de_marca_ou"));
         }
         ImageOps.requireAcceptedImage(bytes);
         BufferedImage img = ImageOps.toArgb(ImageOps.decode(bytes));
@@ -54,13 +55,13 @@ public class SealDesignService {
         details.put("ratio", Math.round(ratio * 1000) / 1000.0);
         if (Math.abs(ratio - 1.0) > tolerance) {
             throw ApiException.badRequest("SELO_PROPORCAO_INVALIDA",
-                    "O selo precisa ser quadrado (1:1) como o logo FashionAI — envie uma imagem circular com o mesmo enquadramento.", details);
+                    Msg.t("sealDesign.o_selo_precisa_ser_quadrado"), details);
         }
         if (Math.min(w, h) < minPx) {
-            throw ApiException.badRequest("SELO_PEQUENO", "O selo precisa ter ao menos " + minPx + " × " + minPx + " px.", details);
+            throw ApiException.badRequest("SELO_PEQUENO", Msg.t("sealDesign.o_selo_precisa_ter_ao", minPx, minPx), details);
         }
         if (Math.max(w, h) > maxPx) {
-            throw ApiException.badRequest("SELO_GRANDE", "O selo pode ter no máximo " + maxPx + " × " + maxPx + " px.", details);
+            throw ApiException.badRequest("SELO_GRANDE", Msg.t("sealDesign.o_selo_pode_ter_no", maxPx, maxPx), details);
         }
         int side = Math.min(w, h);
         BufferedImage square = img.getSubimage((w - side) / 2, (h - side) / 2, side, side);
@@ -80,7 +81,7 @@ public class SealDesignService {
         result.put("sourceSize", w + "x" + h);
         result.put("circular", circular);
         result.put("warning", circular ? null
-                : "Os cantos da imagem não estão transparentes: o selo será mostrado dentro de um círculo e as bordas serão cortadas.");
+                : Msg.t("sealDesign.os_cantos_da_imagem_nao"));
         return result;
     }
 

@@ -17,7 +17,7 @@ function VerifyForm() {
   async function submit(e: FormEvent) { e.preventDefault(); const r = await run(); if (r !== undefined) { await refreshMe(); toast.success(t("auth.verified")); router.push("/closet"); } }
   return (
     <AuthCard title={t("auth.verifyTitle")} lead={t("auth.verifyLead")}
-      footer={<button type="button" className="underline" onClick={async () => { const r = await resend.run(); if (r !== undefined) toast.info("Código reenviado."); }} disabled={resend.busy}>{t("auth.resend")}</button>}>
+      footer={<button type="button" className="underline" onClick={async () => { const r = await resend.run(); if (r !== undefined) toast.info(t("verifyEmail.codigo_reenviado")); }} disabled={resend.busy}>{t("auth.resend")}</button>}>
       <form onSubmit={submit} noValidate>
         <Field label={t("auth.code")} id="code" required error={error?.fields.code}><Input id="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="text-center tracking-[0.4em] text-2xl" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required autoFocus /></Field>
         {error && <p role="alert" className="error-text mb-3">{error.message}</p>}

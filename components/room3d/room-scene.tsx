@@ -9,6 +9,7 @@ import {
   ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
   pointer, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar,
 } from "@/components/room3d/room-props";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /* RF27/RF32 — Meu Quarto 3D (React Three Fiber). Móvel FAI Origem paramétrico (molde = função de parâmetros, acabamento =
  * dado), peças como planos com a foto sem fundo (GLB quando houver modelo 3D do RF16), câmera 3/4 editorial limitada.
@@ -76,6 +77,7 @@ interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced:
  * croqui (desenho técnico que ganha cor quando a foto chega), 30 usos (ponto dourado), 2ª chance (etiqueta).
  */
 function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w: number; h: number; ctx: Ctx; lying?: boolean; onPuff?: () => void }) {
+  const { t } = useI18n();
   const tex = useTex(p.imageUrl ?? p.thumbnailUrl);
   const croqui = !!p.states?.includes("CROQUI") || !(p.imageUrl ?? p.thumbnailUrl);
   const sketch = useCanvasTex(`sketch-${p.category}`, 256, 256, sketchDraw(p.category));
@@ -114,7 +116,7 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
       {forgotten && <><mesh position={[0, 0, 0.004]}><planeGeometry args={[w, h]} /><meshBasicMaterial color="#8d8a84" transparent opacity={0.18} depthWrite={false} /></mesh><Cobweb w={w} h={h} /></>}
       <group position={[0, 0, 0.02]}><DustPuff trigger={puff} reduced={ctx.reduced} /></group>
       {p.states?.includes("30_USOS") && <GoldDot position={[-w / 2 + 0.03, h / 2 - 0.03, 0.01]} />}
-      {ctx.tagged.has(p.id) && <HangTag text="2ª chance" color="#fde2e4" fg="#9d174d" position={[w / 2 - 0.04, h / 2 - 0.1, 0.02]} />}
+      {ctx.tagged.has(p.id) && <HangTag text={t("room3d.roomScene.n2_chance")} color="#fde2e4" fg="#9d174d" position={[w / 2 - 0.04, h / 2 - 0.1, 0.02]} />}
       {highlight && <pointLight position={[0, 0, 0.35]} intensity={1.6} distance={1.2} color="#ffe6a0" />}
     </group>
   );
@@ -224,12 +226,13 @@ function Drawer({ m, x, y, w, open, lit, onToggle, finish, handle, taped, onAdd,
 }
 
 function LookBox({ b, x, season, count }: { b?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }; x: number; season?: string; count?: number }) {
+  const { t } = useI18n();
   const tex = useTex(b?.coverImageUrl);
   return (
     <group position={[x, Y.doors1 + 0.16, 0.02]}>
       <RoundedBox args={[0.26, 0.26, 0.4]} radius={0.01} castShadow><meshStandardMaterial color={season ? "#cfe0ea" : b?.lookDoDia ? "#f5d9a8" : "#e9e3d7"} roughness={0.9} /></RoundedBox>
       {b && <mesh position={[0, 0, 0.201]}><planeGeometry args={[0.2, 0.2]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : "#d8d2c6"} /></mesh>}
-      {season && <Label3D text={`${season}\n${count ?? 0} peças`} w={0.22} h={0.14} px={192} bg="#f7fbfd" fg="#29485c" position={[0, 0, 0.202]} />}
+      {season && <Label3D text={t("room3d.roomScene.pecas", { season, value: count ?? 0 })} w={0.22} h={0.14} px={192} bg="#f7fbfd" fg="#29485c" position={[0, 0, 0.202]} />}
     </group>
   );
 }
@@ -239,6 +242,7 @@ function LookBox({ b, x, season, count }: { b?: { id: string; title: string; cov
  * vidro, fecho do Vista-me com a luz subindo, brilho de conquista das luzes do closet e o botão "+" do Vista-me.
  */
 function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean }) {
+  const { t } = useI18n();
   const tex = useTex(look?.coverImageUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   useEffect(() => { if (overlay?.closingKey) start.current = performance.now(); }, [overlay?.closingKey]);
@@ -255,16 +259,16 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { positi
       <mesh position={[0, 0.95, 0.021]}><planeGeometry args={[0.54, 1.7]} /><meshStandardMaterial color="#cfd8de" metalness={0.95} roughness={0.08} /></mesh>
       {tex && hanging.length === 0 && <mesh position={[0, 1.02, 0.024]}><planeGeometry args={[0.44, 0.9]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
       {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.35 - Math.floor(i / 2) * 0.4, 0.026]} />)}
-      <Label3D text={look?.title ? `Look do Dia · ${look.title}` : hanging.length ? "Look pendurado no espelho" : "Monte o look de hoje"} w={0.5} h={0.06} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
-      {theme && <Label3D text={`Batalha: ${theme}`} w={0.5} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, 1.72, 0.026]} />}
-      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt.replace(" — o look continua pendurado aqui.", "")} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
+      <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.5} h={0.06} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
+      {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.5} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, 1.72, 0.026]} />}
+      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
       {/* botão "+" do Vista-me ao lado do móvel */}
       {onVistaMe && <group position={[0.4, 1.3, 0.02]} onClick={(e) => { e.stopPropagation(); onVistaMe(); }} {...pointer}>
         <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.08, 0.08, 0.02, 32]} /><meshStandardMaterial color="#C6275E" emissive="#C6275E" emissiveIntensity={0.3} /></mesh>
         <Label3D text="+" w={0.1} h={0.1} px={128} fg="#fff" font="700 110px Inter, Arial" position={[0, 0.005, 0.012]} />
-        <Label3D text="✨ Vista-me" w={0.26} h={0.05} px={256} fg="#C6275E" position={[0, -0.12, 0.012]} />
+        <Label3D text={t("common.vista_me")} w={0.26} h={0.05} px={256} fg="#C6275E" position={[0, -0.12, 0.012]} />
       </group>}
     </group>
   );
@@ -275,17 +279,19 @@ function MirrorPiece({ url, position }: { url?: string | null; position: [number
 }
 
 function Basket({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
+  const { t } = useI18n();
   return (
     <group position={position}>
       <mesh position={[0, 0.2, 0]} castShadow><cylinderGeometry args={[0.24, 0.2, 0.4, 24, 1, true]} /><meshStandardMaterial color="#b89a6a" roughness={1} side={THREE.DoubleSide} /></mesh>
       {pieces.slice(0, 3).map((p, i) => <group key={p.id} position={[-0.06 + i * 0.06, 0.36, 0]} rotation={[-0.4, i * 0.6, 0]}><PieceMesh p={p} w={0.28} h={0.28} ctx={ctx} /></group>)}
-      <HangTag text="para lavar" position={[0.2, 0.36, 0.2]} w={0.13} />
+      <HangTag text={t("room3d.roomScene.para_lavar")} position={[0.2, 0.36, 0.2]} w={0.13} />
     </group>
   );
 }
 
 /** Arara do Desapego: etiqueta de preço e selo Garimpo nas peças de brechó. */
 function SaleRack({ position, rack, ctx }: { position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
+  const { t } = useI18n();
   return (
     <group position={position} rotation={[0, -deg(25), 0]}>
       {[-0.4, 0.4].map((x) => <mesh key={x} position={[x, 0.7, 0]}><cylinderGeometry args={[0.012, 0.012, 1.4, 8]} /><meshStandardMaterial color="#9a9a9a" metalness={0.8} roughness={0.3} /></mesh>)}
@@ -295,7 +301,7 @@ function SaleRack({ position, rack, ctx }: { position: [number, number, number];
         <group key={p.id} position={[-0.3 + i * 0.2, 1.3, 0.02 * i]}>
           <Hanger /><group position={[0, -0.34, 0.01]}><PieceMesh p={p} w={0.36} h={0.55} ctx={ctx} /></group>
           {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[0.12, -0.12, 0.04]} />}
-          {p.states?.includes("GARIMPO") && <HangTag text="Garimpo" color="#1F7A76" fg="#fff" position={[-0.1, -0.24, 0.04]} w={0.11} />}
+          {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-0.1, -0.24, 0.04]} w={0.11} />}
         </group>))}
     </group>
   );
@@ -315,6 +321,7 @@ function Chair({ position, pieces, ctx }: { position: [number, number, number]; 
 
 /** Nível Closet: vitrine de bolsas (nichos de vidro) com o porta-joias em cima. */
 function BagDisplay({ position, bags, jewelry, ctx }: { position: [number, number, number]; bags: RoomPiece3D[]; jewelry: RoomPiece3D[]; ctx: Ctx }) {
+  const { t } = useI18n();
   return (
     <group position={position}>
       <mesh position={[0, 0.8, 0]} castShadow><boxGeometry args={[0.62, 1.6, 0.4]} /><meshStandardMaterial color="#efe9df" roughness={0.6} transparent opacity={0.25} /></mesh>
@@ -322,7 +329,7 @@ function BagDisplay({ position, bags, jewelry, ctx }: { position: [number, numbe
       {[-0.31, 0.31].map((x) => <mesh key={x} position={[x, 0.8, 0]}><boxGeometry args={[0.02, 1.6, 0.42]} /><meshStandardMaterial color="#d9cbb5" /></mesh>)}
       {bags.slice(0, 6).map((p, i) => <group key={p.id} position={[i % 2 ? 0.14 : -0.14, 0.28 + Math.floor(i / 2) * 0.53, 0.05]}><PieceMesh p={p} w={0.24} h={0.24} ctx={ctx} /></group>)}
       <mesh position={[0, 1.36, 0.21]}><planeGeometry args={[0.6, 0.5]} /><meshPhysicalMaterial color="#ffffff" transmission={0.9} roughness={0.05} transparent opacity={0.2} /></mesh>
-      <Label3D text="Vitrine de bolsas" w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.1, 0.215]} />
+      <Label3D text={t("room3d.roomScene.vitrine_de_bolsas")} w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.1, 0.215]} />
       {/* porta-joias */}
       <group position={[0, 1.61, 0]}>
         <RoundedBox args={[0.3, 0.1, 0.2]} radius={0.015} position={[0, 0.05, 0]}><meshStandardMaterial color="#7a1f3d" roughness={0.8} /></RoundedBox>
@@ -335,12 +342,13 @@ function BagDisplay({ position, bags, jewelry, ctx }: { position: [number, numbe
 
 /** Nível Atelier: ilha central (bancada) para comparar 2–3 looks lado a lado. */
 function Island({ position, boxes }: { position: [number, number, number]; boxes: { id: string; title: string; coverImageUrl?: string | null }[] }) {
+  const { t } = useI18n();
   return (
     <group position={position}>
       <RoundedBox args={[1.1, 0.42, 0.42]} radius={0.02} position={[0, 0.21, 0]} castShadow><meshStandardMaterial color="#e9e3d7" roughness={0.7} /></RoundedBox>
       <mesh position={[0, 0.425, 0]}><boxGeometry args={[1.14, 0.02, 0.46]} /><meshStandardMaterial color="#8a6a4a" roughness={0.5} /></mesh>
       {boxes.slice(0, 3).map((b, i) => <IslandCard key={b.id} b={b} x={-0.35 + i * 0.35} />)}
-      <Label3D text="Ilha · compare looks" w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.2, 0.215]} />
+      <Label3D text={t("room3d.roomScene.ilha_compare_looks")} w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.2, 0.215]} />
     </group>
   );
 }
@@ -423,6 +431,7 @@ export function moduleAnchor(id: string, level?: string): [number, number, numbe
 
 export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, onToggleTheme, onVistaMe, onCopilot,
   copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer }: RoomSceneProps) {
+  const { t } = useI18n();
   const controls = useRef<unknown>(null);
   const reduced = !!data.ambient?.reduceMotion;
   const period = dark ? "night" : data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
@@ -461,7 +470,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const closetW = W + L.ext;
   return (
     <Canvas shadows dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75 + L.ext / 2, 2.35, 4.8 + L.ext * 0.8], near: 0.05, far: 40 }}
-      onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label="Meu Quarto em 3D">
+      onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label={t("room3d.roomScene.meu_quarto_em_3d")}>
       <color attach="background" args={[night ? "#1d1f2a" : "#efe9df"]} />
       <fog attach="fog" args={[night ? "#1d1f2a" : "#efe9df", 8, 16]} />
       <hemisphereLight args={[night ? "#9aa0c8" : period === "morning" ? "#eef4ff" : "#fff6e8", night ? "#2a2433" : "#d9cbb5", night ? 0.55 : 0.9]} />
@@ -482,7 +491,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         {/* closet de assinatura (Maison): filetes dourados e placa */}
         {signature && <>
           {[Y.base1, Y.drawers1, Y.doors1, Y.top1].map((y) => <mesh key={`g${y}`} position={[L.ext / 2, y, D / 2 + 0.002]}><boxGeometry args={[closetW + 0.04, 0.008, 0.004]} /><meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.2} /></mesh>)}
-          <Label3D text={`Closet de assinatura${data.monogram ? ` · ${data.monogram}` : ""}`} w={0.9} h={0.08} px={512} bg="#1a1a1a" fg="#E9B949" font="italic 600 30px Georgia, serif" position={[L.ext / 2, Y.top1 + 0.3, 0.02]} />
+          <Label3D text={t("room3d.roomScene.closet_de_assinatura", { value: data.monogram ? ` · ${data.monogram}` : "" })} w={0.9} h={0.08} px={512} bg="#1a1a1a" fg="#E9B949" font="italic 600 30px Georgia, serif" position={[L.ext / 2, Y.top1 + 0.3, 0.02]} />
         </>}
         {/* iluminação guiada (Studio+): fita de LED sob o maleiro na temperatura escolhida */}
         {atLeast(level, "STUDIO") && <mesh position={[L.ext / 2, Y.doors1 - 0.015, D / 2 - 0.04]}><boxGeometry args={[closetW - 0.06, 0.008, 0.01]} /><meshBasicMaterial color={lightColor} toneMapped={false} /></mesh>}
@@ -499,8 +508,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
 
       {/* maleiro: caixas de look; no Penthouse, as caixas da troca de estação; na Cápsula, a caixa trancada com fita */}
       {boxes.slice(0, penthouse ? 6 : tapedIds.size ? 7 : 8).map((b, i) => <LookBox key={b.id} b={b} x={-W / 2 + 0.16 + i * 0.3} />)}
-      {penthouse && <LookBox x={-W / 2 + 0.16 + 6 * 0.3} season="Fora de estação" count={(byId["season"]?.pieces ?? []).length} />}
-      {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season="Fora da cápsula" count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
+      {penthouse && <LookBox x={-W / 2 + 0.16 + 6 * 0.3} season={t("room3d.roomScene.fora_de_estacao")} count={(byId["season"]?.pieces ?? []).length} />}
+      {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season={t("room3d.roomScene.fora_da_capsula")} count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
       {L.ext > 0 && boxes.slice(8, 13).map((b, i) => <LookBox key={b.id} b={b} x={W / 2 + 0.2 + i * 0.32} />)}
 
       {/* base de calçados (vira Sapateira no Closet) com LED que acende no Vista-me */}
@@ -508,7 +517,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {shoes.slice(0, atLeast(level, "CLOSET") ? 16 : 10).map((p, i) => <group key={p.id} position={[-W / 2 + 0.16 + i * 0.23, 0.14, 0.12]}><PieceMesh p={p} w={0.22} h={0.2} ctx={ctx} /></group>)}
       <mesh position={[L.ext / 2, 0.02, D / 2 - 0.01]}><boxGeometry args={[closetW - 0.04, 0.01, 0.01]} /><meshBasicMaterial color={litAny(["base", "shoe"]) ? "#ffd27a" : "#9b958a"} toneMapped={false} /></mesh>
       {litAny(["base", "shoe"]) && <pointLight position={[L.ext / 2, 0.2, 0.6]} intensity={1} distance={1.6} color="#ffe6a0" />}
-      {atLeast(level, "CLOSET") && <Label3D text="Sapateira" w={0.34} h={0.05} fg="#6b5a4a" position={[L.ext / 2, 0.26, D / 2 + 0.005]} />}
+      {atLeast(level, "CLOSET") && <Label3D text={t("room3d.roomScene.sapateira")} w={0.34} h={0.05} fg="#6b5a4a" position={[L.ext / 2, 0.26, D / 2 + 0.005]} />}
 
       {/* luzes do closet: marcos do Inventory Score */}
       {data.closetLights && data.closetLights.milestones.length > 0 && <group position={[L.ext / 2, 0, 0]}><ClosetLights y={Y.top1 + 0.1} width={closetW} milestones={data.closetLights.milestones} celebrate={!!mirror?.celebrate} reduced={reduced} /></group>}
@@ -518,7 +527,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         <mesh position={[0, 0.45, 0]} castShadow><boxGeometry args={[0.36, 0.9, 0.36]} /><meshStandardMaterial color="#f4f1ea" roughness={0.6} /></mesh>
         <mesh position={[0, 1.12, 0]}><boxGeometry args={[0.34, 0.44, 0.34]} /><meshPhysicalMaterial color="#ffffff" transmission={0.9} roughness={0.05} thickness={0.02} transparent opacity={0.35} /></mesh>
         <group position={[0, 1.1, 0]}><PieceMesh p={showcase[0]} w={0.26} h={0.26} ctx={ctx} /></group>
-        <Label3D text="Peça Ícone" w={0.3} h={0.05} fg="#6b5a4a" position={[0, 0.8, 0.185]} />
+        <Label3D text={t("room3d.roomScene.peca_icone")} w={0.3} h={0.05} fg="#6b5a4a" position={[0, 0.8, 0.185]} />
       </group>}
       {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
       {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} />}

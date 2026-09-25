@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.domain.model.enums.HypeScoreBand;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +28,9 @@ class ScoreBandsTest {
         for (int i = 1; i < InventoryScoreService.BANDS.size(); i++) {
             assertThat(InventoryScoreService.BANDS.get(i).min()).isEqualTo(InventoryScoreService.BANDS.get(i - 1).max() + 1);
         }
-        assertThat(InventoryScoreService.band(0)).isEqualTo("Em Montagem");
-        assertThat(InventoryScoreService.band(650)).isEqualTo("Bem Curado");
-        assertThat(InventoryScoreService.band(1000)).isEqualTo("Maison Closet");
+        assertThat(Msg.resolve(InventoryScoreService.band(0))).isEqualTo("Em Montagem");
+        assertThat(Msg.resolve(InventoryScoreService.band(650))).isEqualTo("Bem Curado");
+        assertThat(Msg.resolve(InventoryScoreService.band(1000))).isEqualTo("Maison Closet");
     }
 
     @Test

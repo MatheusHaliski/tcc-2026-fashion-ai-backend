@@ -1,5 +1,6 @@
 package br.com.fashionai.application.ai.local;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -30,15 +31,15 @@ public final class LocalAdvisors {
         weighted.put("R", remixes * 8.0);
         String weakest = weighted.entrySet().stream().min(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("L");
         if (tNorm < 35) {
-            return "Seu look está fora das tendências da semana: troque uma peça por uma de estilo em alta no Explorador Global para subir o alinhamento de tendência.";
+            return Msg.t("localAdvisors.seu_look_esta_fora_das");
         }
         return switch (weakest) {
-            case "C" -> "Poucas conversas no look: publique com uma pergunta na descrição (\"qual sapato vocês usariam?\") para puxar comentários.";
-            case "S" -> "O look ainda não circulou: use o compartilhar para o feed ou exporte o card para outra rede — shares pesam 5× no Hype Score.";
-            case "R" -> "Ninguém remixou ainda: deixe o look público e com peças disponíveis — remixes pesam 8× e são o sinal mais forte do Hype Score.";
+            case "C" -> Msg.t("localAdvisors.poucas_conversas_no_look_publique");
+            case "S" -> Msg.t("localAdvisors.o_look_ainda_nao_circulou");
+            case "R" -> Msg.t("localAdvisors.ninguem_remixou_ainda_deixe_o");
             default -> eNorm < 40
-                    ? "Poucas curtidas: publique no horário de pico (19h–21h) e escolha um fundo de alto contraste no Background Studio."
-                    : "Bom engajamento! Marque o look como Look do Dia de novo numa ocasião diferente para testar a versatilidade.";
+                    ? Msg.t("localAdvisors.poucas_curtidas_publique_no_horario")
+                    : Msg.t("localAdvisors.bom_engajamento_marque_o_look");
         };
     }
 
@@ -51,20 +52,20 @@ public final class LocalAdvisors {
         Object used = rankings.get("topColors");
         Object seasons = rankings.get("hypeBySeason");
         if (countries instanceof List<?> list && !list.isEmpty()) {
-            sb.append("O país com mais atividade no período é ").append(countryPt(label(list.get(0)))).append(". ");
+            sb.append(Msg.t("localAdvisors.o_pais_com_mais_atividade")).append(countryPt(label(list.get(0)))).append(". ");
         }
         if (brands instanceof List<?> list && !list.isEmpty()) {
-            sb.append("A marca mais usada nos looks é ").append(label(list.get(0))).append(". ");
+            sb.append(Msg.t("localAdvisors.a_marca_mais_usada_nos")).append(label(list.get(0))).append(". ");
         }
         if (colors instanceof List<?> list) {
-            sb.append("A cor com maior Hype Score médio é ").append(colorPt(label(list.get(0)))).append(". ");
+            sb.append(Msg.t("localAdvisors.a_cor_com_maior_hype")).append(colorPt(label(list.get(0)))).append(". ");
         } else if (used instanceof List<?> list && !list.isEmpty()) {
-            sb.append("A cor mais presente nas peças públicas é ").append(colorPt(label(list.get(0)))).append(". ");
+            sb.append(Msg.t("localAdvisors.a_cor_mais_presente_nas")).append(colorPt(label(list.get(0)))).append(". ");
         }
         if (seasons instanceof List<?> list && !list.isEmpty()) {
-            sb.append("Entre as estações, ").append(seasonPt(label(list.get(0)))).append(" lidera o Hype Score médio.");
+            sb.append(Msg.t("localAdvisors.entre_as_estacoes")).append(seasonPt(label(list.get(0)))).append(Msg.t("localAdvisors.lidera_o_hype_score_medio"));
         }
-        return sb.length() == 0 ? "Ainda não há dados suficientes para leituras globais neste recorte." : sb.toString().trim();
+        return sb.length() == 0 ? Msg.t("localAdvisors.ainda_nao_ha_dados_suficientes") : sb.toString().trim();
     }
 
     private static String label(Object o) {
@@ -80,17 +81,17 @@ public final class LocalAdvisors {
             Map.entry("off_white", "off-white"), Map.entry("ivory", "marfim"), Map.entry("cream", "creme"), Map.entry("light_gray", "cinza-claro"),
             Map.entry("gray", "cinza"), Map.entry("dark_gray", "cinza-escuro"), Map.entry("silver", "prata"), Map.entry("blue", "azul"),
             Map.entry("navy", "azul-marinho"), Map.entry("light_blue", "azul-claro"), Map.entry("sky_blue", "azul-céu"), Map.entry("cobalt", "azul-cobalto"),
-            Map.entry("denim", "jeans"), Map.entry("teal", "azul-petróleo"), Map.entry("red", "vermelho"), Map.entry("crimson", "carmim"),
+            Map.entry("denim", "jeans"), Map.entry("teal", Msg.k("localAdvisors.azul_petroleo")), Map.entry("red", "vermelho"), Map.entry("crimson", "carmim"),
             Map.entry("burgundy", "bordô"), Map.entry("maroon", "vinho"), Map.entry("rust", "ferrugem"), Map.entry("pink", "rosa"),
-            Map.entry("hot_pink", "pink"), Map.entry("rose", "rosé"), Map.entry("coral", "coral"), Map.entry("salmon", "salmão"),
+            Map.entry("hot_pink", "pink"), Map.entry("rose", Msg.k("localAdvisors.rose")), Map.entry("coral", "coral"), Map.entry("salmon", Msg.k("localAdvisors.salmao")),
             Map.entry("orange", "laranja"), Map.entry("terracotta", "terracota"), Map.entry("amber", "âmbar"), Map.entry("apricot", "damasco"),
             Map.entry("yellow", "amarelo"), Map.entry("mustard", "mostarda"), Map.entry("gold", "dourado"), Map.entry("butter", "manteiga"),
             Map.entry("green", "verde"), Map.entry("olive", "oliva"), Map.entry("military_green", "verde-militar"), Map.entry("forest_green", "verde-floresta"),
-            Map.entry("mint", "menta"), Map.entry("sage", "sálvia"), Map.entry("emerald", "esmeralda"), Map.entry("purple", "roxo"),
-            Map.entry("violet", "violeta"), Map.entry("lilac", "lilás"), Map.entry("lavender", "lavanda"), Map.entry("plum", "ameixa"),
+            Map.entry("mint", "menta"), Map.entry("sage", Msg.k("localAdvisors.salvia")), Map.entry("emerald", "esmeralda"), Map.entry("purple", "roxo"),
+            Map.entry("violet", "violeta"), Map.entry("lilac", Msg.k("localAdvisors.lilas")), Map.entry("lavender", "lavanda"), Map.entry("plum", "ameixa"),
             Map.entry("brown", "marrom"), Map.entry("chocolate", "chocolate"), Map.entry("camel", "caramelo"), Map.entry("tan", "castanho"),
             Map.entry("beige", "bege"), Map.entry("taupe", "taupe"), Map.entry("metallic_gold", "dourado metálico"),
-            Map.entry("metallic_silver", "prata metálico"), Map.entry("bronze", "bronze"), Map.entry("multicolor", "multicolorido"), Map.entry("print", "estampado"));
+            Map.entry("metallic_silver", Msg.k("localAdvisors.prata_metalico")), Map.entry("bronze", "bronze"), Map.entry("multicolor", "multicolorido"), Map.entry("print", "estampado"));
 
     static String colorPt(String code) {
         return COLOR_PT.getOrDefault(code, code.replace('_', ' '));
@@ -99,7 +100,7 @@ public final class LocalAdvisors {
     static String seasonPt(String code) {
         return switch (code.toUpperCase(Locale.ROOT)) {
             case "SPRING", "PRIMAVERA" -> "a primavera";
-            case "SUMMER", "VERAO" -> "o verão";
+            case "SUMMER", "VERAO" -> Msg.t("localAdvisors.o_verao");
             case "AUTUMN", "FALL", "OUTONO" -> "o outono";
             case "WINTER", "INVERNO" -> "o inverno";
             default -> code.toLowerCase(Locale.ROOT);
@@ -208,7 +209,7 @@ public final class LocalAdvisors {
         List<String> sty = new ArrayList<>(asList(current.get("style")));
         List<String[]> rules = List.of(
                 new String[]{"formal|elegante|social|trabalho|escritorio|reuniao", "occasion", "work", "style", "tailored"},
-                new String[]{"casual|relax|confort|dia a dia", "occasion", "casual", "style", "basic"},
+                new String[]{"casual|relax|confort|dia a dia|everyday|comfort|comod|cotidian", "occasion", "casual", "style", "basic"},
                 new String[]{"festa|balada|noite|party", "occasion", "party", "style", "glam"},
                 new String[]{"academia|treino|gym|esporte", "occasion", "gym", "style", "athleisure"},
                 new String[]{"viagem|viajar|travel", "occasion", "travel", "style", "utility"},
@@ -224,10 +225,10 @@ public final class LocalAdvisors {
             }
         }
         if (!occ.equals(asList(current.get("occasion")))) {
-            changes.add(new FieldChange("occasion", current.get("occasion"), occ, "Ocasião ajustada ao pedido: \"" + instruction + "\"."));
+            changes.add(new FieldChange("occasion", current.get("occasion"), occ, Msg.t("localAdvisors.ocasiao_ajustada_ao_pedido", instruction)));
         }
         if (!sty.equals(asList(current.get("style")))) {
-            changes.add(new FieldChange("style", current.get("style"), sty, "Estilo sintetizado a partir do pedido (máx. 3)."));
+            changes.add(new FieldChange("style", current.get("style"), sty, Msg.t("localAdvisors.estilo_sintetizado_a_partir_do")));
         }
         String season = text.matches(".*(verao|calor|summer).*") ? "SUMMER" : text.matches(".*(inverno|frio|winter).*") ? "WINTER"
                 : text.matches(".*(outono|autumn|fall).*") ? "AUTUMN" : text.matches(".*(primavera|spring).*") ? "SPRING" : null;
@@ -235,23 +236,23 @@ public final class LocalAdvisors {
             changes.add(new FieldChange("season", current.get("season"), season, "Estação citada na instrução."));
         }
         if (text.matches(".*(public|todos verem|aberto).*") && !"PUBLIC".equals(current.get("visibility"))) {
-            changes.add(new FieldChange("visibility", current.get("visibility"), "PUBLIC", "Você pediu para tornar visível a todos."));
+            changes.add(new FieldChange("visibility", current.get("visibility"), "PUBLIC", Msg.t("localAdvisors.voce_pediu_para_tornar_visivel")));
         } else if (text.matches(".*(privad|so eu|esconder).*") && !"PRIVATE".equals(current.get("visibility"))) {
-            changes.add(new FieldChange("visibility", current.get("visibility"), "PRIVATE", "Você pediu para restringir a visibilidade."));
+            changes.add(new FieldChange("visibility", current.get("visibility"), "PRIVATE", Msg.t("localAdvisors.voce_pediu_para_restringir_a")));
         }
         if (text.matches(".*(titulo|nome|renomear|title).*") || changes.stream().anyMatch(c -> c.field().equals("style"))) {
             String proposed = LocalSchemeComposer.title(sty, occ, season);
             if (!proposed.equals(current.get("title"))) {
-                changes.add(new FieldChange("title", current.get("title"), proposed, "Título coerente com o novo estilo/ocasião."));
+                changes.add(new FieldChange("title", current.get("title"), proposed, Msg.t("localAdvisors.titulo_coerente_com_o_novo")));
             }
         }
         if (text.matches(".*(descri|legenda|caption).*")) {
             String proposed = "Look " + String.join(", ", sty) + " pensado para " + String.join(" e ", occ) + ".";
-            changes.add(new FieldChange("description", current.get("description"), proposed, "Descrição gerada a partir das tags."));
+            changes.add(new FieldChange("description", current.get("description"), proposed, Msg.t("localAdvisors.descricao_gerada_a_partir_das")));
         }
         String mood = LocalSchemeComposer.mood(sty, occ);
         if (!changes.isEmpty() && !mood.equals(current.get("mood"))) {
-            changes.add(new FieldChange("mood", current.get("mood"), mood, "Humor derivado do estilo e da ocasião."));
+            changes.add(new FieldChange("mood", current.get("mood"), mood, Msg.t("localAdvisors.humor_derivado_do_estilo_e")));
         }
         return changes;
     }
@@ -294,16 +295,16 @@ public final class LocalAdvisors {
             }
         }
         if (!cats.contains("shoes_piece") || neutralsShoes == 0) {
-            out.add(new PieceSuggestion("casual_sneakers", "white", "Um tênis branco fecha a maior parte dos looks casuais do seu acervo."));
+            out.add(new PieceSuggestion("casual_sneakers", "white", Msg.t("localAdvisors.um_tenis_branco_fecha_a")));
         }
         if (temperatureC != null && temperatureC < 18 && subs.stream().noneMatch(s -> java.util.Set.of("coat", "jacket", "parka", "blazer").contains(s))) {
-            out.add(new PieceSuggestion("jacket", "navy", "Está frio e você não tem terceira peça: uma jaqueta navy combina com quase tudo."));
+            out.add(new PieceSuggestion("jacket", "navy", Msg.t("localAdvisors.esta_frio_e_voce_nao")));
         }
         if (!subs.contains("jeans")) {
-            out.add(new PieceSuggestion("jeans", "denim", "Jeans denim é a base neutra que mais multiplica combinações."));
+            out.add(new PieceSuggestion("jeans", "denim", Msg.t("localAdvisors.jeans_denim_e_a_base")));
         }
         if (!cats.contains("accessory_piece")) {
-            out.add(new PieceSuggestion("belt", "brown", "Um cinto marrom dá acabamento aos looks sem mudar a paleta."));
+            out.add(new PieceSuggestion("belt", "brown", Msg.t("localAdvisors.um_cinto_marrom_da_acabamento")));
         }
         return out.stream().limit(4).toList();
     }

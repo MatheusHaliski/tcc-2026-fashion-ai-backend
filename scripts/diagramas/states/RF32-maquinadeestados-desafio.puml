@@ -1,0 +1,21 @@
+@startuml RF32_MaquinaDeEstados_Desafio
+!pragma layout smetana
+title RF32 — Desafio (challenge_instances.status)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> RASCUNHO : POST /api/challenges
+RASCUNHO --> AGUARDANDO : launch (convites enviados)
+RASCUNHO --> ATIVO : solo
+AGUARDANDO --> ATIVO : convidados aceitam\nou criador "começar agora"
+AGUARDANDO --> CANCELADO : criador cancela
+ATIVO --> VOTACAO_FECHADA : prazo encerra a votação
+ATIVO --> CANCELADO : criador cancela
+VOTACAO_FECHADA --> CONCLUIDO : apuração + FAI Points\n+ card de resultado
+CONCLUIDO --> [*]
+CANCELADO --> [*]
+@enduml

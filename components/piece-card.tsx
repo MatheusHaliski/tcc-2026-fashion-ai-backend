@@ -41,7 +41,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
         <span className="type-data text-muted">{label(piece.color)}</span>
         <span className="ml-auto type-data text-muted">{piece.price != null ? fmtMoney(piece.price) : piece.size?.toUpperCase()}</span>
       </div>
-      <div className="c-row seal-row">{piece.brandName && <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={26} className="mr-2" />}<span className="min-w-0 flex-1"><span className="k">{[label(piece.subcategory) || CATEGORY_LABEL[piece.category], piece.brandName, label(piece.sex?.toLowerCase())].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? " · selos" : ""}</span>{(piece.occasion ?? []).map(label).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
+      <div className="c-row seal-row">{piece.brandName && <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={26} className="mr-2" />}<span className="min-w-0 flex-1"><span className="k">{[label(piece.subcategory) || CATEGORY_LABEL[piece.category], piece.brandName, label(piece.sex?.toLowerCase())].filter(Boolean).join(" · ") || "—"}{zone === "META_BLOCK" ? t("pieceCard.selos") : ""}</span>{(piece.occasion ?? []).map(label).join(", ") || "—"}</span>{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</div>
     </>
   );
   return (

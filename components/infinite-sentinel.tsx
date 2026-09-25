@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui";
+import { tr } from "@/lib/i18n/i18n";
 
 /**
  * Fim da lista (RF8.CA06): quando o usuário rola até aqui, carrega a próxima página pelo cursor. O botão continua
  * disponível como alternativa acessível (teclado/leitor de tela) e para quando o IntersectionObserver não existe.
  */
-export function InfiniteSentinel({ hasMore, loading, onMore, label = "Carregar mais" }: { hasMore: boolean; loading: boolean; onMore: () => void; label?: string }) {
+export function InfiniteSentinel({ hasMore, loading, onMore, label = tr("infiniteSentinel.carregar_mais") }: { hasMore: boolean; loading: boolean; onMore: () => void; label?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const more = useRef(onMore); more.current = onMore;
   useEffect(() => {

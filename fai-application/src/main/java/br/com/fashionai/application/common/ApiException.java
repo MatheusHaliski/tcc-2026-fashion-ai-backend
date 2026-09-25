@@ -1,5 +1,6 @@
 package br.com.fashionai.application.common;
 
+import br.com.fashionai.application.common.Msg;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ public class ApiException extends RuntimeException {
     }
 
     public static ApiException notFound(String what) {
-        return new ApiException(404, "NAO_ENCONTRADO", what + " não encontrado(a).");
+        return new ApiException(404, "NAO_ENCONTRADO", Msg.t("apiException.nao_encontrado_a", (what)));
     }
 
     public static ApiException forbidden(String message) {

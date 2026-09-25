@@ -4,6 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { rng, useCanvasTexture, useReducedMotion, useTex } from "@/components/three/common";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Collections insights (RF22 · aba Coleções da marca): cada coleção vira uma mini loja 3D com a arte da coleção na
@@ -15,19 +16,21 @@ import { rng, useCanvasTexture, useReducedMotion, useTex } from "@/components/th
 export interface StoreEntry { id: string; label: string; rank: number; audience: number; fraction: number; fireworks: number; accentColor: string; artUrl?: string | null; score: number }
 
 function Sign({ text, color }: { text: string; color: string }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     g.fillStyle = "#101318"; g.fillRect(0, 0, w, h);
     g.strokeStyle = color; g.lineWidth = 10; g.strokeRect(8, 8, w - 16, h - 16);
-    g.fillStyle = "#ffffff"; g.font = "700 64px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#ffffff"; g.font = t("three.storeStreetScene.n700_64px_inter_arial_sans"); g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(text.length > 18 ? text.slice(0, 17) + "…" : text, w / 2, h / 2 + 2);
   }, 768, 144, [text, color]);
   return <mesh position={[0, 1.78, 0.72]}><planeGeometry args={[2.1, 0.39]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>;
 }
 
 function RankBadge({ rank, color }: { rank: number; color: string }) {
+  const { t } = useI18n();
   const tex = useCanvasTexture((g, w, h) => {
     g.fillStyle = rank === 1 ? "#E9B949" : rank === 2 ? "#C9CED6" : rank === 3 ? "#C98A55" : color; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#111"; g.font = "800 120px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${rank}`, w / 2, h / 2 + 6);
+    g.fillStyle = "#111"; g.font = t("three.storeStreetScene.n800_120px_inter_arial_sans"); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`${rank}`, w / 2, h / 2 + 6);
   }, 256, 256, [rank, color]);
   return <sprite position={[0, 2.55, 0.4]} scale={[0.5, 0.5, 1]}><spriteMaterial map={tex} depthTest={false} /></sprite>;
 }
@@ -125,6 +128,7 @@ function Fireworks({ x, z, level, colors, reduced }: { x: number; z: number; lev
 }
 
 export default function StoreStreetScene({ stores, onPick, selectedId }: { stores: StoreEntry[]; onPick: (id: string) => void; selectedId?: string | null }) {
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   // 1º lugar no centro; os demais alternam esquerda/direita num arco voltado para a câmera
   const layout = useMemo(() => stores.map((s) => {
@@ -133,7 +137,7 @@ export default function StoreStreetScene({ stores, onPick, selectedId }: { store
     return { x: Math.sin(a) * R, z: -Math.cos(a) * R + R - 2, ry: -a };
   }), [stores]);
   return (
-    <Canvas shadows camera={{ position: [0, 5.5, 11], fov: 45 }} dpr={[1, 1.75]} aria-label="Mini lojas 3D das coleções, do 1º lugar ao último">
+    <Canvas shadows camera={{ position: [0, 5.5, 11], fov: 45 }} dpr={[1, 1.75]} aria-label={t("three.storeStreetScene.mini_lojas_3d_das_colecoes")}>
       <color attach="background" args={["#0e1220"]} />
       <fog attach="fog" args={["#0e1220", 14, 30]} />
       <hemisphereLight args={["#e6ecff", "#23262e", 0.8]} />

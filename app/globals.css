@@ -614,6 +614,12 @@ h1, h2, h3, h4 { margin: 0; }
 .brand-logo { display: inline-flex; min-width: 0; align-items: center; gap: 6px; vertical-align: middle; }
 .brand-logo-mark { display: inline-flex; flex: none; align-items: center; justify-content: center; overflow: hidden; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.12); color: #fff; font-weight: 700; letter-spacing: .02em; line-height: 1; }
 .brand-logo.is-square .brand-logo-mark { border-radius: 6px; }
+/* Barra lateral: os itens ficam sempre dentro de um container de fundo branco (em qualquer tema e sobre qualquer fundo
+   de interface). A paleta clara é fixada dentro do container para textos e ícones continuarem legíveis no tema escuro. */
+.side-nav-box { --ink: #191A19; --muted: #5C6058; --faint: #8B8F86; --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF;
+  --line-soft: #E1DED4; background: #FFFFFF; color: #191A19; border: 1px solid #E1DED4; border-radius: 14px; padding: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 18px rgba(0,0,0,.06); }
+:root[data-theme="contrast"] .side-nav-box { border: 2px solid #000; }
 /* RF4 · buscador web de marcas: lista de resultados + slot do logo (logo sempre em fundo branco, letras pretas) */
 .brand-search { position: relative; }
 .brand-search-pop { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--surface); box-shadow: 0 12px 32px rgba(0,0,0,.14); overflow: hidden; }

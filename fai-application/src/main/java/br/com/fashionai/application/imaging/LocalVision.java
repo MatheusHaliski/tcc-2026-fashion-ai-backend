@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 
@@ -87,20 +88,20 @@ public final class LocalVision {
         int[] fg = ImageOps.foregroundPixels(cutout.image(), Math.max(1, cutout.image().getWidth() / 200));
         double skin = skinRatio(fg);
         if (original.getWidth() < 200 || original.getHeight() < 200) {
-            reasons.add("imagem pequena demais para avaliar");
+            reasons.add(Msg.t("localVision.imagem_pequena_demais_para_avaliar"));
         }
         if (cutout.coverage() < 0.03) {
-            reasons.add("nenhum objeto identificável no primeiro plano");
+            reasons.add(Msg.t("localVision.nenhum_objeto_identificavel_no_primeiro"));
             return new ModerationVerdict(ModerationStatus.REJECTED_NOT_CLOTHING, 0.55, reasons, true);
         }
         if (skin > 0.35) {
-            reasons.add(String.format("proporção alta de tons de pele (%.0f%%)", skin * 100));
+            reasons.add(String.format(Msg.t("localVision.proporcao_alta_de_tons_de"), skin * 100));
         }
         if (cutout.confidence() < 0.45) {
-            reasons.add("recorte pouco confiável — não é possível confirmar que é uma peça");
+            reasons.add(Msg.t("localVision.recorte_pouco_confiavel_nao_e"));
         }
         if (reasons.isEmpty()) {
-            return new ModerationVerdict(ModerationStatus.APPROVED, round(0.6 + (0.35 - skin) * 0.5), List.of("objeto único, sem pele exposta relevante"), false);
+            return new ModerationVerdict(ModerationStatus.APPROVED, round(0.6 + (0.35 - skin) * 0.5), List.of(Msg.t("localVision.objeto_unico_sem_pele_exposta")), false);
         }
         return new ModerationVerdict(ModerationStatus.PENDING, 0.4, reasons, true);
     }

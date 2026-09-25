@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { LOCALES } from "@/lib/i18n/dictionaries";
 import { useTheme } from "@/lib/theme/theme";
 import { api } from "@/lib/api/client";
 import { FaiIcon } from "@/components/fai-icon";
@@ -34,7 +33,7 @@ const NAV = [
 const PRIMARY = ["/feed", "/closet", "/schemes/new", "/lookbook", "/copilot"];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { t, locale, setLocale } = useI18n(); const { user, isAdmin, signOut, ready } = useAuth(); const { prefs, update, resolved } = useTheme();
+  const { t, locale, setLocale, locales } = useI18n(); const { user, isAdmin, signOut, ready } = useAuth(); const { prefs, update, resolved } = useTheme();
   const pathname = usePathname(); const router = useRouter();
   const [unread, setUnread] = useState(0); const [menu, setMenu] = useState(false); const [drawer, setDrawer] = useState(false);
   useEffect(() => {
@@ -56,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (href: string) => pathname === href || (href !== "/feed" && pathname.startsWith(href));
   const cycleTheme = () => update({ theme: prefs.theme === "LIGHT" ? "DARK" : prefs.theme === "DARK" ? "HIGH_CONTRAST" : "LIGHT", highContrast: false });
 
-  const NavList = ({ compact }: { compact?: boolean }) => (
+  const NavList = ({ compact }: { compact?: boolean }) => { const { t } = useI18n(); return ((
     <ul className="flex flex-col gap-0.5">
       {items.map((n) => (
         <li key={n.href}>
@@ -76,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <FaiIcon id="NAV-01" size={24} active={pathname.startsWith("/admin")} decorative />{!compact && <span>{t("nav.dashboard")}</span>}</Link></li>
       )}
     </ul>
-  );
+  )); };
 
   return (
     <div className="min-h-dvh">
@@ -97,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <label className="sr-only" htmlFor="locale">{t("settings.language")}</label>
             <select id="locale" className="input w-auto py-1 text-sm" value={locale} onChange={(e) => setLocale(e.target.value as typeof locale)}>
-              {LOCALES.map((l) => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
+              {locales.map((l) => <option key={l.code} value={l.code}>{l.qa ? l.label : l.code.toUpperCase()}</option>)}
             </select>
             {user ? (
               <>
@@ -129,16 +128,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <div className="mx-auto flex max-w-[1400px] gap-6 px-3 py-4 sm:px-5">
-        <nav aria-label={t("a11y.menu")} className="hidden w-56 shrink-0 lg:block"><div className="sticky top-16"><NavList /></div></nav>
+        <nav aria-label={t("a11y.menu")} className="hidden w-56 shrink-0 lg:block"><div className="side-nav-box sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto"><NavList /></div></nav>
         {drawer && (
           <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setDrawer(false)}>
             <div className="absolute inset-0 bg-black/40" />
-            <nav aria-label={t("a11y.menu")} className="absolute left-0 top-0 h-full w-72 overflow-auto bg-surface p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
+            <nav aria-label={t("a11y.menu")} className="side-nav-box absolute left-0 top-0 h-full w-72 overflow-auto rounded-none p-3 shadow-xl" onClick={(e) => e.stopPropagation()}><NavList /></nav>
           </div>
         )}
         <main id="conteudo" className="min-w-0 flex-1 pb-20 lg:pb-6"><div className="page-container">{children}</div></main>
       </div>
-      <nav aria-label={t("a11y.menu")} className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-line-soft bg-surface/95 py-1 backdrop-blur lg:hidden">
+      <nav aria-label={t("a11y.menu")} className="side-nav-box fixed bottom-0 left-0 right-0 z-40 flex justify-around rounded-none border-t py-1 lg:hidden">
         {NAV.filter((n) => PRIMARY.includes(n.href) && (!n.auth || user)).map((n) => (
           <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? "page" : undefined} className="flex flex-col items-center gap-0.5 px-2 py-1 text-[10px]">
             <FaiIcon id={n.icon} size={24} active={isActive(n.href)} decorative /><span className={cn(isActive(n.href) && "font-semibold")}>{t(n.key)}</span>
@@ -156,10 +155,10 @@ export function RequireAuth({ children, admin }: { children: ReactNode; admin?: 
   if (!ready || !user) return <p className="type-body text-muted p-6">{t("common.loading")}</p>;
   if (admin && me && !isAdmin) return (
     <div role="alert" className="surface mx-auto mt-6 max-w-lg p-6 text-center">
-      <p className="type-label text-mark">403 · acesso negado</p>
-      <h1 className="type-h2 mt-1">Área restrita a administradores</h1>
-      <p className="type-body mt-2 text-muted">Seu perfil não tem o papel ADMIN. O servidor também recusa estas rotas (/api/admin/**) com 403, mesmo que o endereço seja digitado direto.</p>
-      <Link href="/feed" className="btn mt-4">Voltar ao feed</Link>
+      <p className="type-label text-mark">{t("common.n403_acesso_negado")}</p>
+      <h1 className="type-h2 mt-1">{t("appShell.area_restrita_a_administradores")}</h1>
+      <p className="type-body mt-2 text-muted">{t("appShell.seu_perfil_nao_tem_o")}</p>
+      <Link href="/feed" className="btn mt-4">{t("common.voltar_ao_feed")}</Link>
     </div>);
   return <>{children}</>;
 }

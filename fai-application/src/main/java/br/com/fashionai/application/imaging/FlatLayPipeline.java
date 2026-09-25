@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.ImageProviderPorts.BackgroundRemovalPort;
 import br.com.fashionai.application.imaging.ImageProviderPorts.ColorNormalizationPort;
 import br.com.fashionai.application.imaging.ImageProviderPorts.ProviderImage;
@@ -93,7 +94,7 @@ public class FlatLayPipeline {
             cutout = ImageOps.removeBackgroundLocal(original);
             fallback = allowExternal && backgroundRemovers.stream().anyMatch(BackgroundRemovalPort::available);
             stages.add(new Stage("REMOCAO_FUNDO", "local-floodfill", ms(t), BigDecimal.ZERO, cutout.confidence() >= 0.45,
-                    true, String.format("confiança %.2f", cutout.confidence())
+                    true, String.format(Msg.t("flatLay.confianca_2f"), cutout.confidence())
                     + (cutout.warning() == null ? "" : " — " + cutout.warning())));
         }
         boolean backgroundRemoved = cutout.confidence() >= 0.45;
@@ -109,7 +110,7 @@ public class FlatLayPipeline {
         BufferedImage straight = ImageOps.rotate(cutout.image(), correction);
         BufferedImage cropped = ImageOps.crop(straight, ImageOps.alphaBounds(straight));
         stages.add(new Stage("CORRECAO_PERSPECTIVA", "local-pca", ms(t), BigDecimal.ZERO, true, false,
-                String.format("eixo %.1f°, alongamento %.2f, correção %.1f°", principal, axis[1], correction)));
+                String.format(Msg.t("flatLay.eixo_1f_alongamento_2f_correcao"), principal, axis[1], correction)));
 
         // 4 — normalização de cor
         t = System.nanoTime();
@@ -142,7 +143,7 @@ public class FlatLayPipeline {
             colorScore = nr.score();
             stages.add(new Stage("NORMALIZACAO_COR", "local-grayworld", ms(t), BigDecimal.ZERO, true,
                     allowExternal && colorNormalizers.stream().anyMatch(ColorNormalizationPort::available),
-                    String.format("ganhos R%.2f G%.2f B%.2f", nr.gainR(), nr.gainG(), nr.gainB())));
+                    String.format(Msg.t("flatLay.ganhos_r_2f_g_2f"), nr.gainR(), nr.gainG(), nr.gainB())));
         }
 
         // 4b — fonte do estúdio em alta resolução: máscara do recorte aplicada à foto original (≤ 2400 px), mesma
@@ -162,13 +163,13 @@ public class FlatLayPipeline {
         t = System.nanoTime();
         BufferedImage composed = ImageOps.composeCentered(normalized, CANVAS, 0.08, null, false);
         BufferedImage white = ImageOps.composeCentered(normalized, CANVAS, 0.08, Color.WHITE, true);
-        stages.add(new Stage("COMPOSICAO", "local-java2d", ms(t), BigDecimal.ZERO, true, false, CANVAS + "px, margem 8%"));
+        stages.add(new Stage("COMPOSICAO", "local-java2d", ms(t), BigDecimal.ZERO, true, false, Msg.t("flatLay.px_margem_8", (CANVAS))));
 
         // 6 — validação de qualidade
         t = System.nanoTime();
         QualityMetrics.Report quality = QualityMetrics.evaluate(original, composed, cutout.confidence(), colorScore);
         stages.add(new Stage("VALIDACAO_QUALIDADE", "local", ms(t), BigDecimal.ZERO, quality.accepted(), false,
-                String.format("nota %.2f (limiar %.2f)", quality.overall(), QualityMetrics.ACCEPTANCE_THRESHOLD)));
+                String.format(Msg.t("flatLay.nota_2f_limiar_2f"), quality.overall(), QualityMetrics.ACCEPTANCE_THRESHOLD)));
 
         // 7 — thumbnail
         t = System.nanoTime();

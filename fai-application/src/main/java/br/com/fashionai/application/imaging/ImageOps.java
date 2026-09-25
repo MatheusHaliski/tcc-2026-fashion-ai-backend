@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 
 import javax.imageio.IIOImage;
@@ -49,14 +50,14 @@ public final class ImageOps {
 
     public static String requireAcceptedImage(byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
-            throw ApiException.badRequest("ARQUIVO_VAZIO", "Envie uma foto da peça.");
+            throw ApiException.badRequest("ARQUIVO_VAZIO", Msg.t("imageOps.envie_uma_foto_da_peca"));
         }
         if (bytes.length > MAX_UPLOAD_BYTES) {
-            throw ApiException.badRequest("ARQUIVO_GRANDE", "A foto tem mais de 10 MB. Reduza o tamanho e tente de novo.");
+            throw ApiException.badRequest("ARQUIVO_GRANDE", Msg.t("imageOps.a_foto_tem_mais_de"));
         }
         String mime = detectMime(bytes);
         if (mime == null) {
-            throw ApiException.badRequest("FORMATO_INVALIDO", "Formato não aceito. Use JPG, PNG ou WebP.");
+            throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("imageOps.formato_nao_aceito_use_jpg"));
         }
         return mime;
     }
@@ -65,11 +66,11 @@ public final class ImageOps {
         try {
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
             if (img == null) {
-                throw ApiException.badRequest("IMAGEM_ILEGIVEL", "Não conseguimos ler a imagem. Tente outra foto.");
+                throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
             }
             return toArgb(img);
         } catch (IOException ex) {
-            throw ApiException.badRequest("IMAGEM_ILEGIVEL", "Não conseguimos ler a imagem. Tente outra foto.");
+            throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
         }
     }
 

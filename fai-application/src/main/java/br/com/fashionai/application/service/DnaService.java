@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -90,9 +91,9 @@ public class DnaService {
     static final Map<StyleArchetype, String> ARCHETYPE_LABEL = new EnumMap<>(StyleArchetype.class);
 
     static {
-        ARCHETYPE_LABEL.put(StyleArchetype.ROMANTIC, "Romântico");
-        ARCHETYPE_LABEL.put(StyleArchetype.DRAMATIC, "Dramático");
-        ARCHETYPE_LABEL.put(StyleArchetype.CLASSIC, "Clássico");
+        ARCHETYPE_LABEL.put(StyleArchetype.ROMANTIC, Msg.k("dna.romantico"));
+        ARCHETYPE_LABEL.put(StyleArchetype.DRAMATIC, Msg.k("dna.dramatico"));
+        ARCHETYPE_LABEL.put(StyleArchetype.CLASSIC, Msg.k("dna.classico"));
         ARCHETYPE_LABEL.put(StyleArchetype.NATURAL, "Natural");
         ARCHETYPE_LABEL.put(StyleArchetype.GAMINE, "Gamine");
     }
@@ -155,15 +156,14 @@ public class DnaService {
         // construtor de Esquemas de DNA fica sempre disponível; peças e looks "adorei" só deixam a síntese mais precisa.
         out.put("prerequisites", Map.of("pieces", p, "positiveFeedbacks", f, "ready", true, "unlockRequired", false));
         if (p < MIN_PIECES || f < MIN_POSITIVE) {
-            out.put("precisionNote", "Seu DNA fica mais preciso com " + MIN_PIECES + "+ peças e " + MIN_POSITIVE
-                    + "+ looks avaliados como \"adorei\" (hoje: " + p + " peça(s) e " + f + " avaliação(ões)).");
+            out.put("precisionNote", Msg.t("dna.seu_dna_fica_mais_preciso", MIN_PIECES, MIN_POSITIVE, p, f));
         }
         StyleDna d = ensureDna(user);
         out.put("generated", true);
         if (interactions(user.id()) - d.getInteractionsAtSynthesis() >= RECALC_INTERACTIONS) {
             synthesize(user, d, true, "EVOLUCAO");
-            notifications.notify(user.id(), null, NotificationType.AI_JOB_FINISHED, "DNA", d.getId(), "Sua identidade evoluiu ✨",
-                    "Recalculamos a Camada 1 do seu DNA de Estilo com as suas novas interações.", Map.of());
+            notifications.notify(user.id(), null, NotificationType.AI_JOB_FINISHED, "DNA", d.getId(), Msg.k("dna.sua_identidade_evoluiu"),
+                    Msg.k("dna.recalculamos_a_camada_1_do"), Map.of());
         }
         out.put("dna", view(d, true));
         out.put("versions", versions.findTop20ByUserIdOrderByCreatedAtDesc(user.id()).stream().map(v -> Map.of("id", v.getId(), "createdAt", v.getCreatedAt(),
@@ -185,10 +185,10 @@ public class DnaService {
     }
 
     static Map<String, Object> lifeFormSpec() {
-        return Map.of("places", Map.of("label", "Lugares", "max", 3, "examples", "cidade natal, lugar favorito, destino dos sonhos"),
-                "people", Map.of("label", "Pessoas", "max", 3, "examples", "nomes ou apelidos (sem foto de terceiros)"),
-                "animals", Map.of("label", "Animais", "max", 2, "examples", "nome e espécie do pet"),
-                "objects", Map.of("label", "Objetos / Itens", "max", 4, "examples", "instrumento, livro, bebida, hobby, esporte"),
+        return Map.of("places", Map.of("label", "Lugares", "max", 3, "examples", Msg.t("dna.cidade_natal_lugar_favorito_destino")),
+                "people", Map.of("label", "Pessoas", "max", 3, "examples", Msg.t("dna.nomes_ou_apelidos_sem_foto")),
+                "animals", Map.of("label", "Animais", "max", 2, "examples", Msg.t("dna.nome_e_especie_do_pet")),
+                "objects", Map.of("label", Msg.t("dna.objetos_itens"), "max", 4, "examples", Msg.t("dna.instrumento_livro_bebida_hobby_esporte")),
                 "maxChars", 30, "encrypted", true);
     }
 
@@ -202,19 +202,19 @@ public class DnaService {
         if (raw != null) {
             raw.forEach((k, v) -> {
                 if (!LIFE_LIMITS.containsKey(k)) {
-                    errors.put(k, "Categoria desconhecida.");
+                    errors.put(k, Msg.t("dna.categoria_desconhecida"));
                     return;
                 }
                 List<String> clean = (v == null ? List.<String>of() : v).stream().map(s -> InputSanitizer.clean(s == null ? "" : s, 30))
                         .filter(s -> !s.isBlank()).distinct().toList();
                 if (clean.size() > LIFE_LIMITS.get(k)) {
-                    errors.put(k, "Máximo de " + LIFE_LIMITS.get(k) + " itens.");
+                    errors.put(k, Msg.t("dna.maximo_de_itens", LIFE_LIMITS.get(k)));
                 }
                 out.put(k, clean.stream().limit(LIFE_LIMITS.get(k)).toList());
             });
         }
         if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", "Revise a Identidade de Vida.", errors);
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("dna.revise_a_identidade_de_vida"), errors);
         }
         return out;
     }
@@ -232,7 +232,7 @@ public class DnaService {
         synthesize(user, d, true, "GERACAO");
         Map<String, Object> out = new LinkedHashMap<>(view(d, true));
         if (skip) {
-            out.put("notice", "Card gerado só com a Camada 1 (estilo). Você pode enriquecê-lo com a Identidade de Vida a qualquer momento.");
+            out.put("notice", Msg.t("dna.card_gerado_so_com_a"));
         }
         return out;
     }
@@ -240,7 +240,7 @@ public class DnaService {
     /** CA05 — editar a Identidade de Vida regenera só a Frase; a Camada 1 permanece intacta. */
     @Transactional
     public Map<String, Object> updateLife(CurrentUser user, LifeForm form) {
-        StyleDna d = dnas.findByUserId(user.id()).filter(x -> x.getSynthesizedAt() != null).orElseThrow(() -> ApiException.notFound("DNA de Estilo"));
+        StyleDna d = dnas.findByUserId(user.id()).filter(x -> x.getSynthesizedAt() != null).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
         d.setLifeIdentityJson(Json.write(validateLife(form.fields())));
         d.setLifePrivateFieldsJson(Json.write(form.privateFields() == null ? List.of() : form.privateFields()));
         phrase(user, d);
@@ -253,7 +253,7 @@ public class DnaService {
     /** CA06 / RN07 — visibilidade por campo da Camada 2 no card exportado. */
     @Transactional
     public Map<String, Object> setPrivateFields(CurrentUser user, List<String> privateFields) {
-        StyleDna d = dnas.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound("DNA de Estilo"));
+        StyleDna d = dnas.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
         d.setLifePrivateFieldsJson(Json.write(privateFields == null ? List.of() : privateFields));
         d.setCardImageUrl(null);
         dnas.save(d);
@@ -270,7 +270,7 @@ public class DnaService {
         List<Scheme> weighted = new ArrayList<>(own);
         own.stream().filter(s -> loved.contains(s.getId())).forEach(weighted::add);
         List<WardrobeItem> wardrobe = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
-        LocalDnaSynthesizer.Synthesis syn = ai.local(user.id(), AiCapability.DNA_SYNTHESIZER, List.of("esquemas e peças do acervo", "looks avaliados como \"adorei\""),
+        LocalDnaSynthesizer.Synthesis syn = ai.local(user.id(), AiCapability.DNA_SYNTHESIZER, List.of(Msg.t("dna.esquemas_e_pecas_do_acervo"), Msg.t("dna.looks_avaliados_como_adorei")),
                 () -> LocalDnaSynthesizer.synthesize(weighted, itemsBy, wardrobe)).value();
         d.setArchetype(syn.archetype());
         d.setBoldnessIndex(boldnessPercentile(user.id(), wardrobe));
@@ -357,13 +357,10 @@ public class DnaService {
                 l.forEach(x -> privateValues.add(String.valueOf(x)));
             }
         }
-        String prompt = "Arquétipo: " + ARCHETYPE_LABEL.get(d.getArchetype()) + "\nPaleta: " + d.getColorPalette() + "\nSilhueta: " + d.getSilhouette()
-                + "\nOusadia: " + d.getBoldnessIndex() + "/100\nPeça ícone: " + d.getIconPieceName() + "\nEstilos: " + d.getStyleKeywords()
-                + (withLife ? "\nIdentidade de Vida (use como inspiração; NÃO cite literalmente estes itens privados: " + privateValues + "): " + Json.write(life) : "");
+        String prompt = Msg.t("dna.arquetipo_paleta_silhueta_ousadia_100", ARCHETYPE_LABEL.get(d.getArchetype()), d.getColorPalette(), d.getSilhouette(), d.getBoldnessIndex(), d.getIconPieceName(), d.getStyleKeywords(), (withLife ? Msg.t("dna.identidade_de_vida_use_como", privateValues, Json.write(life)) : ""));
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.DNA_SYNTHESIZER,
-                "Escreva a Frase de Identidade do DNA de Estilo do Fashion AI: UMA frase em português (até 220 caracteres), que sintetiza — nunca lista — "
-                        + "estilo e vida. Moda é a moldura, vida é o quadro. Sem emojis, sem hashtags. Responda só a frase.",
-                prompt, List.of(), 200, withLife ? List.of("Camada 1 (estilo)", "Camada 2 (Identidade de Vida, cifrada em repouso)") : List.of("Camada 1 (estilo)"),
+                Msg.t("dna.escreva_a_frase_de_identidade", Msg.languageName()),
+                prompt, List.of(), 200, withLife ? List.of(Msg.t("dna.camada_1_estilo"), Msg.t("dna.camada_2_identidade_de_vida")) : List.of(Msg.t("dna.camada_1_estilo")),
                 text -> {
                     if (text == null || text.isBlank()) {
                         return null;
@@ -381,7 +378,7 @@ public class DnaService {
     }
 
     static String localPhrase(StyleDna d, Map<String, Object> life, List<String> hidden) {
-        String base = ARCHETYPE_LABEL.get(d.getArchetype()) + " de silhueta " + d.getSilhouette() + (d.getIconPieceName() == null ? "" : ", que chega de " + d.getIconPieceName());
+        String base = ARCHETYPE_LABEL.get(d.getArchetype()) + " de silhueta " + d.getSilhouette() + (d.getIconPieceName() == null ? "" : Msg.t("dna.que_chega_de", d.getIconPieceName()));
         List<String> bits = new ArrayList<>();
         for (String k : List.of("objects", "places", "animals")) {
             if (!hidden.contains(k) && life.get(k) instanceof List<?> l && !l.isEmpty()) {
@@ -389,11 +386,11 @@ public class DnaService {
                 bits.add(switch (k) {
                     case "objects" -> "leva " + v + " na rotina";
                     case "places" -> "tem " + v + " no mapa";
-                    default -> "divide os dias com " + v;
+                    default -> Msg.t("dna.divide_os_dias_com", v);
                 });
             }
         }
-        return InputSanitizer.clean(base + (bits.isEmpty() ? " — " + (d.getBoldnessIndex() >= 60 ? "sem medo de arriscar" : "com elegância serena") : ", " + String.join(" e ", bits)) + ".", 240);
+        return InputSanitizer.clean(base + (bits.isEmpty() ? " — " + (d.getBoldnessIndex() >= 60 ? Msg.t("common.sem_medo_de_arriscar") : Msg.t("dna.com_elegancia_serena")) : ", " + String.join(" e ", bits)) + ".", 240);
     }
 
     void snapshot(StyleDna d, String reason) {
@@ -433,10 +430,10 @@ public class DnaService {
     /** DET-M05 — estação da coloração pessoal (opcional). */
     @Transactional
     public Map<String, Object> setColorSeason(CurrentUser user, String season) {
-        StyleDna d = dnas.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound("DNA de Estilo"));
+        StyleDna d = dnas.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
         String s = season == null ? null : season.toUpperCase(Locale.ROOT);
         if (s != null && !Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(s)) {
-            throw ApiException.badRequest("ESTACAO_INVALIDA", "Use SPRING, SUMMER, AUTUMN ou WINTER.");
+            throw ApiException.badRequest("ESTACAO_INVALIDA", Msg.t("dna.use_spring_summer_autumn_ou"));
         }
         d.setColorSeason(s);
         dnas.save(d);
@@ -446,7 +443,7 @@ public class DnaService {
     // ================================================================== card PNG com marca d'água (CA09 / RN07 / RN08)
     @Transactional
     public Map<String, Object> shareCard(CurrentUser user) {
-        StyleDna d = dnas.findByUserId(user.id()).filter(x -> x.getSynthesizedAt() != null).orElseThrow(() -> ApiException.notFound("DNA de Estilo"));
+        StyleDna d = dnas.findByUserId(user.id()).filter(x -> x.getSynthesizedAt() != null).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
         byte[] png = renderCard(d);
         MediaStoragePort.StoredObject stored = media.put("dna/" + user.id() + "/card-" + Instant.now().toEpochMilli() + ".png", png, "image/png");
         d.setCardImageUrl(stored.url());
@@ -470,9 +467,9 @@ public class DnaService {
         g.fillRoundRect(60, 60, w - 120, h - 120, 48, 48);
         g.setColor(new Color(0x1E1B18));
         g.setFont(new Font("Serif", Font.BOLD, 72));
-        g.drawString("DNA de Estilo", 110, 200);
+        g.drawString(Msg.resolve(Msg.t("common.dna_de_estilo")), 110, 200);
         g.setFont(new Font("SansSerif", Font.PLAIN, 34));
-        g.drawString(ARCHETYPE_LABEL.get(d.getArchetype()) + " · silhueta " + d.getSilhouette() + " · ousadia " + d.getBoldnessIndex(), 110, 260);
+        g.drawString(Msg.resolve(ARCHETYPE_LABEL.get(d.getArchetype()) + " · silhueta " + d.getSilhouette() + " · ousadia " + d.getBoldnessIndex()), 110, 260);
         int x = 110;
         for (String p : palette) {
             g.setColor(color(p));
@@ -486,7 +483,7 @@ public class DnaService {
         g.setFont(new Font("Serif", Font.ITALIC, 44));
         drawWrapped(g, "“" + d.getIdentityPhrase() + "”", 110, 560, w - 220, 58);
         g.setFont(new Font("SansSerif", Font.PLAIN, 32));
-        g.drawString("Peça ícone: " + (d.getIconPieceName() == null ? "—" : d.getIconPieceName()), 110, 900);
+        g.drawString(Msg.resolve(Msg.t("dna.peca_icone", (d.getIconPieceName() == null ? "—" : d.getIconPieceName()))), 110, 900);
         Map<String, Object> life = Json.map(d.getLifeIdentityJson());
         List<String> hidden = Json.strings(d.getLifePrivateFieldsJson());
         int y = 960;
@@ -500,12 +497,12 @@ public class DnaService {
                 case "animals" -> "Animais";
                 default -> "Objetos";
             };
-            g.drawString(label + ": " + l.stream().map(String::valueOf).collect(Collectors.joining(" · ")), 110, y);
+            g.drawString(Msg.resolve(label + ": " + l.stream().map(String::valueOf).collect(Collectors.joining(" · "))), 110, y);
             y += 50;
         }
         g.setFont(new Font("SansSerif", Font.BOLD, 30));
         g.setColor(new Color(0xF57C1F));
-        g.drawString("Fashion AI · FAI", w - 360, h - 110);
+        g.drawString(Msg.resolve(Msg.t("dna.fashion_ai_fai")), w - 360, h - 110);
         g.dispose();
         return ImageOps.png(img);
     }
@@ -528,7 +525,7 @@ public class DnaService {
         for (String word : text.split(" ")) {
             String test = line.isEmpty() ? word : line + " " + word;
             if (g.getFontMetrics().stringWidth(test) > width) {
-                g.drawString(line.toString(), x, y);
+                g.drawString(Msg.resolve(line.toString()), x, y);
                 y += lh;
                 line = new StringBuilder(word);
             } else {
@@ -536,7 +533,7 @@ public class DnaService {
             }
         }
         if (!line.isEmpty()) {
-            g.drawString(line.toString(), x, y);
+            g.drawString(Msg.resolve(line.toString()), x, y);
         }
     }
 
@@ -583,7 +580,7 @@ public class DnaService {
 
     @Transactional
     public Map<String, Object> updateDnaScheme(CurrentUser user, UUID id, DnaSchemeForm f) {
-        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema de DNA"));
+        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("dna.esquema_de_dna")));
         guard.requireOwner(user, d.getUser().getId(), "dna:" + id);
         apply(user, d, f, false);
         if (f.cells() != null) {
@@ -610,13 +607,13 @@ public class DnaService {
         }
         String target = f.targetElement() == null ? (creating ? "DNA_COMPLETO" : d.getTargetElement()) : f.targetElement();
         if (!Set.of("DNA_COMPLETO", "ESQUEMA").contains(target)) {
-            throw ApiException.badRequest("ALVO_INVALIDO", "Elemento-alvo: DNA_COMPLETO ou ESQUEMA.");
+            throw ApiException.badRequest("ALVO_INVALIDO", Msg.t("dna.elemento_alvo_dna_completo_ou"));
         }
         d.setTargetElement(target);
         if (f.narrativeType() != null) {
             // Seção B só existe quando o elemento-alvo da Etapa 1 é o Conjunto DNA completo
             if (!"DNA_COMPLETO".equals(target)) {
-                throw ApiException.badRequest("NARRATIVA_INDISPONIVEL", "As narrativas só aparecem quando o elemento-alvo é o DNA completo.");
+                throw ApiException.badRequest("NARRATIVA_INDISPONIVEL", Msg.t("dna.as_narrativas_so_aparecem_quando"));
             }
             d.setNarrativeType(f.narrativeType());
         } else if (creating || f.cardLayout() != null || !"DNA_COMPLETO".equals(target)) {
@@ -655,21 +652,21 @@ public class DnaService {
 
     void replaceCells(CurrentUser user, DnaScheme d, List<DnaCellForm> cells) {
         if (cells == null || cells.size() < 2 || cells.size() > 6) {
-            throw ApiException.badRequest("CELULAS_INVALIDAS", "Um DNA referencia de 2 a 6 esquemas.");
+            throw ApiException.badRequest("CELULAS_INVALIDAS", Msg.t("dna.um_dna_referencia_de_2"));
         }
         if (d.getId() != null) {
             dnaItems.deleteByDnaSchemeId(d.getId());
         }
         long milestones = cells.stream().filter(c -> Boolean.TRUE.equals(c.milestone())).count();
         if (milestones > 1) {
-            throw ApiException.badRequest("MARCO_UNICO", "Escolha uma única célula como marco (Momentos Marcantes).");
+            throw ApiException.badRequest("MARCO_UNICO", Msg.t("dna.escolha_uma_unica_celula_como"));
         }
         DnaCell[] slots = DnaCell.values();
         Set<UUID> seen = new HashSet<>();
         for (int i = 0; i < cells.size(); i++) {
             DnaCellForm c = cells.get(i);
             if (!seen.add(c.schemeId())) {
-                throw ApiException.badRequest("ESQUEMA_REPETIDO", "Cada esquema entra uma vez no DNA.");
+                throw ApiException.badRequest("ESQUEMA_REPETIDO", Msg.t("dna.cada_esquema_entra_uma_vez"));
             }
             Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound("Esquema"));
             guard.requireOwner(user, s.getUser().getId(), "scheme:" + s.getId());
@@ -685,12 +682,12 @@ public class DnaService {
 
     @Transactional
     public Map<String, Object> getDnaScheme(CurrentUser viewer, UUID id) {
-        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema de DNA"));
+        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("dna.esquema_de_dna")));
         User owner = d.getUser();
         if (viewer == null || !viewer.id().equals(owner.getId())) {
             guard.requireView(viewer, owner.getId(), SchemeService.moreRestrictive(d.getVisibility(), owner.getProfileVisibility()), "dna:" + id);
             if (d.getStatus() != SchemeStatus.PUBLISHED) {
-                throw guard.deny(viewer, "dna:" + id, "Este DNA ainda não foi publicado.");
+                throw guard.deny(viewer, "dna:" + id, Msg.t("dna.este_dna_ainda_nao_foi"));
             }
         }
         return dnaSchemeView(viewer, d);
@@ -704,7 +701,7 @@ public class DnaService {
 
     @Transactional
     public void deleteDnaScheme(CurrentUser user, UUID id) {
-        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema de DNA"));
+        DnaScheme d = dnaSchemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("dna.esquema_de_dna")));
         guard.requireOwner(user, d.getUser().getId(), "dna:" + id);
         d.setStatus(SchemeStatus.ARCHIVED);
         d.setVisibility(Visibility.PRIVATE);
@@ -805,7 +802,7 @@ public class DnaService {
     }
 
     // ================================================================== construtor igual ao RF5 (bloco 12)
-    static final List<String> BUILDER_STEPS = List.of("1 · Modo", "2 · Esquemas", "3 · Dados", "4 · Background Studio", "5 · Revisar e salvar");
+    static final List<String> BUILDER_STEPS = List.of(Msg.k("dna.n1_modo"), Msg.k("dna.n2_esquemas"), Msg.k("dna.n3_dados"), Msg.k("dna.n4_background_studio"), Msg.k("dna.n5_revisar_e_salvar"));
 
     /** Etapas 1–2: os "itens" de um Esquema de DNA são os esquemas de vestimenta do próprio usuário (RF5), de 2 a 6. */
     @Transactional
@@ -817,8 +814,8 @@ public class DnaService {
         out.put("source", "RF5");
         if (own.size() < 2) {
             out.put("status", "INSUFICIENTE");
-            out.put("message", "Um DNA de estilo referencia de 2 a 6 esquemas de vestimenta seus. Crie ao menos 2 esquemas (RF5) primeiro.");
-            out.put("action", Map.of("label", "Criar esquema de vestimenta", "href", "/schemes/new"));
+            out.put("message", Msg.t("dna.um_dna_de_estilo_referencia"));
+            out.put("action", Map.of("label", Msg.t("dna.criar_esquema_de_vestimenta"), "href", "/schemes/new"));
         } else {
             out.put("status", "PRONTO");
         }
@@ -843,7 +840,7 @@ public class DnaService {
         d.setUser(users.findById(user.id()).orElseThrow());
         stamp(d, dna);
         d.setCreationMode("AI".equalsIgnoreCase(f.creationMode()) ? CreationMode.AI_ASSISTED : CreationMode.MANUAL);
-        String title = f.title() == null || f.title().strip().length() < 2 ? "Sem título" : f.title(); // a prévia aparece antes da etapa 3
+        String title = f.title() == null || f.title().strip().length() < 2 ? Msg.t("common.sem_titulo") : f.title(); // a prévia aparece antes da etapa 3
         apply(user, d, new DnaSchemeForm(title, f.cells(), f.cardLayout(), f.targetElement(), f.narrativeType(), f.occasion(), f.style(),
                 f.seasonalTheme(), f.visibility(), f.background(), false, f.creationMode()), true);
         List<CellRef> refs = new ArrayList<>();
@@ -881,7 +878,7 @@ public class DnaService {
         StyleDna dna = ensureDna(user);
         List<Scheme> own = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream().limit(40).toList();
         if (own.size() < 2) {
-            throw new ApiException(422, "ESQUEMAS_INSUFICIENTES", "Crie ao menos 2 esquemas de vestimenta (RF5) para montar um DNA de estilo.",
+            throw new ApiException(422, "ESQUEMAS_INSUFICIENTES", Msg.t("dna.crie_ao_menos_2_esquemas"),
                     Map.of("action", "/schemes/new"));
         }
         Map<UUID, List<SchemeItem>> itemsBy = groupItems(own);
@@ -922,13 +919,10 @@ public class DnaService {
                 {"compositions":[{"title":string,"narrativeType":string|null,"cardLayout":string,"refs":["s1",...],
                 "eraLabels":{"s1":"2024 · primeiro emprego"},"milestone":"s2"|null,"seasonalTheme":string|null,
                 "occasion":[...],"style":[...],"rationale":"até 2 frases"}]}""";
-        String prompt = "Esquemas: " + Json.write(catalog)
-                + "\nDNA sintetizado: " + Json.write(Map.of("archetype", String.valueOf(dna.getArchetype()), "palette", Json.csv(dna.getColorPalette()),
-                "styles", Json.csv(dna.getStyleKeywords()), "silhouette", String.valueOf(dna.getSilhouette())))
-                + "\nOcasião: " + r.occasion() + "\nEstilo: " + r.style() + "\nNarrativa desejada: " + r.narrativeType()
-                + "\nEstação: " + r.season() + "\nOrientações livres: " + (r.prompt() == null ? "" : InputSanitizer.clean(r.prompt(), 500));
-        List<String> inputs = List.of(own.size() + " esquemas de vestimenta seus (peças, materiais, cores, estampas, marcas, ocasiões, datas e hype)",
-                "DNA sintetizado (arquétipo, paleta, estilos)", "ocasião/estilo/narrativa/estação pedidos", "orientações livres");
+        String prompt = Msg.t("dna.esquemas_dna_sintetizado_ocasiao_estilo", Json.write(catalog), Json.write(Map.of("archetype", String.valueOf(dna.getArchetype()), "palette", Json.csv(dna.getColorPalette()),
+                "styles", Json.csv(dna.getStyleKeywords()), "silhouette", String.valueOf(dna.getSilhouette()))), r.occasion(), r.style(), r.narrativeType(), r.season(), (r.prompt() == null ? "" : InputSanitizer.clean(r.prompt(), 500)));
+        List<String> inputs = List.of(Msg.t("dna.esquemas_de_vestimenta_seus_pecas", (own.size())),
+                Msg.t("dna.dna_sintetizado_arquetipo_paleta_estilos"), Msg.t("dna.ocasiao_estilo_narrativa_estacao_pedidos"), Msg.t("common.orientacoes_livres"));
         AiOutcome<List<DnaProposal>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.DNA_SYNTHESIZER, system, prompt, List.of(), 1400,
                 inputs, text -> parseProposals(text, byRef), () -> localProposals(own, itemsBy, r), null));
         List<DnaProposal> list = outcome.value() == null || outcome.value().isEmpty() ? localProposals(own, itemsBy, r) : outcome.value();
@@ -985,7 +979,7 @@ public class DnaService {
             List<DnaCellForm> cells = chosen.stream().map(ref -> new DnaCellForm(byRef.get(ref).getId(),
                     eras.get(ref) == null ? era(byRef.get(ref)) : InputSanitizer.clean(String.valueOf(eras.get(ref)), 60), ref.equals(mk))).toList();
             Season season = enumOr(Season.class, c.get("seasonalTheme"), nt == NarrativeType.CARTELA_SAZONAL ? Season.AUTUMN : null);
-            out.add(new DnaProposal(c.get("title") == null ? "Meu DNA" : InputSanitizer.clean(String.valueOf(c.get("title")), 120), nt, layout, cells,
+            out.add(new DnaProposal(c.get("title") == null ? Msg.t("dna.meu_dna") : InputSanitizer.clean(String.valueOf(c.get("title")), 120), nt, layout, cells,
                     strs(c.get("occasion"), Taxonomy.OCCASIONS), strs(c.get("style"), Taxonomy.STYLES),
                     season, c.get("rationale") == null ? null : InputSanitizer.clean(String.valueOf(c.get("rationale")), 300)));
             if (out.size() == 3) {
@@ -1069,8 +1063,8 @@ public class DnaService {
                 case MOMENTOS_MARCANTES -> "LATERAL";
                 default -> "AMPLIADO";
             };
-            out.add(new DnaProposal(TITLES.getOrDefault(nt, "Meu DNA"), nt, layout, cells, occ, sty, nt == NarrativeType.CARTELA_SAZONAL ? season : null,
-                    RATIONALE.getOrDefault(nt, "") + (q.isBlank() ? "" : " Considerou as suas orientações: \"" + InputSanitizer.clean(r.prompt(), 80) + "\".")));
+            out.add(new DnaProposal(TITLES.getOrDefault(nt, Msg.t("dna.meu_dna")), nt, layout, cells, occ, sty, nt == NarrativeType.CARTELA_SAZONAL ? season : null,
+                    RATIONALE.getOrDefault(nt, "") + (q.isBlank() ? "" : Msg.t("dna.considerou_as_suas_orientacoes", InputSanitizer.clean(r.prompt(), 80)))));
             if (out.size() == 3) {
                 break;
             }
@@ -1078,22 +1072,22 @@ public class DnaService {
         return out;
     }
 
-    static final Map<NarrativeType, String> TITLES = new EnumMap<>(Map.of(NarrativeType.TIMELINE, "Minha linha do tempo",
-            NarrativeType.MOMENTOS_MARCANTES, "Momentos que me vestiram", NarrativeType.PRIMEIRA_VEZ, "Minhas estreias",
-            NarrativeType.CAPSULA_VERSATILIDADE, "Cápsula que rende", NarrativeType.POR_OCASIAO, "Eu em cada ocasião",
-            NarrativeType.MOOD_BOARD, "Mood board do meu estilo", NarrativeType.PALETA_DOMINANTE, "Minha paleta",
-            NarrativeType.HARMONIA_CROMATICA, "Cores que conversam", NarrativeType.MARCAS_FAVORITAS, "Marcas que me vestem",
-            NarrativeType.HYPE_FOCUS, "Em alta agora"));
-    static final Map<NarrativeType, String> RATIONALE = new EnumMap<>(Map.of(NarrativeType.TIMELINE, "Looks em ordem cronológica, espaçados para mostrar a evolução do guarda-roupa.",
-            NarrativeType.MOMENTOS_MARCANTES, "O look mais curtido vira o marco da capa; os demais ficam na fileira de apoio.",
-            NarrativeType.PRIMEIRA_VEZ, "Um look por estreia: primeira ocasião nova ou primeira peça de uma marca.",
-            NarrativeType.CAPSULA_VERSATILIDADE, "Looks que reaproveitam as mesmas peças-base — alta versatilidade.",
-            NarrativeType.POR_OCASIAO, "Um grupo por ocasião predominante: como você se veste em cada papel.",
-            NarrativeType.MOOD_BOARD, "Looks agrupados por afinidade de estilo ao redor do seu arquétipo.",
-            NarrativeType.PALETA_DOMINANTE, "Looks cuja cor dominante reforça a sua paleta sintetizada.",
-            NarrativeType.HARMONIA_CROMATICA, "Looks cujas cores formam uma harmonia legível no círculo cromático.",
-            NarrativeType.MARCAS_FAVORITAS, "Looks que mostram as marcas mais presentes no seu acervo.",
-            NarrativeType.HYPE_FOCUS, "Looks com o maior Hype Score global hoje (popularidade, não qualidade)."));
+    static final Map<NarrativeType, String> TITLES = new EnumMap<>(Map.of(NarrativeType.TIMELINE, Msg.k("dna.minha_linha_do_tempo"),
+            NarrativeType.MOMENTOS_MARCANTES, Msg.k("dna.momentos_que_me_vestiram"), NarrativeType.PRIMEIRA_VEZ, Msg.k("dna.minhas_estreias"),
+            NarrativeType.CAPSULA_VERSATILIDADE, Msg.k("dna.capsula_que_rende"), NarrativeType.POR_OCASIAO, Msg.k("dna.eu_em_cada_ocasiao"),
+            NarrativeType.MOOD_BOARD, Msg.k("dna.mood_board_do_meu_estilo"), NarrativeType.PALETA_DOMINANTE, Msg.k("dna.minha_paleta"),
+            NarrativeType.HARMONIA_CROMATICA, Msg.k("dna.cores_que_conversam"), NarrativeType.MARCAS_FAVORITAS, Msg.k("dna.marcas_que_me_vestem"),
+            NarrativeType.HYPE_FOCUS, Msg.k("dna.em_alta_agora")));
+    static final Map<NarrativeType, String> RATIONALE = new EnumMap<>(Map.of(NarrativeType.TIMELINE, Msg.k("dna.looks_em_ordem_cronologica_espacados"),
+            NarrativeType.MOMENTOS_MARCANTES, Msg.k("dna.o_look_mais_curtido_vira"),
+            NarrativeType.PRIMEIRA_VEZ, Msg.k("dna.um_look_por_estreia_primeira"),
+            NarrativeType.CAPSULA_VERSATILIDADE, Msg.k("dna.looks_que_reaproveitam_as_mesmas"),
+            NarrativeType.POR_OCASIAO, Msg.k("dna.um_grupo_por_ocasiao_predominante"),
+            NarrativeType.MOOD_BOARD, Msg.k("dna.looks_agrupados_por_afinidade_de"),
+            NarrativeType.PALETA_DOMINANTE, Msg.k("dna.looks_cuja_cor_dominante_reforca"),
+            NarrativeType.HARMONIA_CROMATICA, Msg.k("dna.looks_cujas_cores_formam_uma"),
+            NarrativeType.MARCAS_FAVORITAS, Msg.k("dna.looks_que_mostram_as_marcas"),
+            NarrativeType.HYPE_FOCUS, Msg.k("dna.looks_com_o_maior_hype")));
 
     static boolean matches(Scheme s, List<SchemeItem> items, String q, DnaComposeRequest r) {
         if (r.occasion() != null && !r.occasion().isEmpty() && Json.csv(s.getOccasion()).stream().noneMatch(r.occasion()::contains)) {
@@ -1278,7 +1272,7 @@ public class DnaService {
                 for (int i = 0; i < chrono.size(); i++) {
                     Scheme s = chrono.get(i).scheme();
                     if (i == 0) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1º esquema salvo", "kind", "PRIMEIRO"));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", Msg.t("dna.n1_esquema_salvo"), "kind", "PRIMEIRO"));
                         occ.addAll(Json.csv(s.getOccasion()));
                         itemsBy.getOrDefault(s.getId(), List.of()).forEach(si -> brands.add(String.valueOf(si.getWardrobeItem().getBrandName())));
                         continue;
@@ -1287,9 +1281,9 @@ public class DnaService {
                     String newBrand = itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> si.getWardrobeItem().getBrandName())
                             .filter(b -> b != null && !brands.contains(b)).findFirst().orElse(null);
                     if (newOcc != null) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª vez em " + newOcc, "kind", "OCASIAO", "value", newOcc));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", Msg.t("dna.n1_vez_em", newOcc), "kind", "OCASIAO", "value", newOcc));
                     } else if (newBrand != null) {
-                        firsts.add(Map.of("schemeId", s.getId(), "label", "1ª peça " + newBrand, "kind", "MARCA", "value", newBrand));
+                        firsts.add(Map.of("schemeId", s.getId(), "label", Msg.t("dna.n1_peca", newBrand), "kind", "MARCA", "value", newBrand));
                     }
                     occ.addAll(Json.csv(s.getOccasion()));
                     itemsBy.getOrDefault(s.getId(), List.of()).forEach(si -> brands.add(String.valueOf(si.getWardrobeItem().getBrandName())));
@@ -1330,9 +1324,9 @@ public class DnaService {
                 case SUMMER -> "solstice";
                 case AUTUMN -> "ember";
                 default -> "bloom";
-            }, "note", "Escolher a Cartela Sazonal sobrescreve a arte de fundo manual da Etapa 4."));
+            }, "note", Msg.t("dna.escolher_a_cartela_sazonal_sobrescreve")));
             case LEGO -> n.put("blocks", Map.of("order", List.of("chrome", "hero", "titulo", "lista", "logos", "frase"), "socialOutsideContainer", true,
-                    "note", "LEGO muda a forma, não o conteúdo; LEGO é marca registrada."));
+                    "note", Msg.t("dna.lego_muda_a_forma_nao")));
         }
         return n;
     }

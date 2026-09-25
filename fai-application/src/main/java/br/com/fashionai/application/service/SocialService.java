@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.ports.CounterStorePort;
@@ -100,12 +101,12 @@ public class SocialService {
                 yield new Target(type, id, s.getUser(), s.getTitle(), s.isDisponivel(), s);
             }
             case PIECE -> {
-                WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound("Peça"));
+                WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
                 guard.requireView(viewer, w.getUser().getId(), w.getVisibility(), "piece:" + id);
                 yield new Target(type, id, w.getUser(), w.getName(), w.isDisponivel(), w);
             }
             case DNA -> {
-                DnaScheme d = dnas.findById(id).orElseThrow(() -> ApiException.notFound("DNA de Estilo"));
+                DnaScheme d = dnas.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
                 guard.requireView(viewer, d.getUser().getId(), d.getVisibility(), "dna:" + id);
                 yield new Target(type, id, d.getUser(), d.getTitle(), d.isDisponivel(), d);
             }
@@ -223,13 +224,13 @@ public class SocialService {
         Target t = target(user, type, id);
         String text = InputSanitizer.clean(content, Integer.MAX_VALUE);
         if (text == null || text.isBlank()) {
-            throw ApiException.badRequest("COMENTARIO_VAZIO", "Escreva algo antes de enviar.");
+            throw ApiException.badRequest("COMENTARIO_VAZIO", Msg.t("social.escreva_algo_antes_de_enviar"));
         }
         if (text.length() > COMMENT_MAX) {
-            throw ApiException.badRequest("COMENTARIO_LONGO", "O comentário tem " + text.length() + " caracteres; o limite é " + COMMENT_MAX + ".");
+            throw ApiException.badRequest("COMENTARIO_LONGO", Msg.t("social.o_comentario_tem_caracteres_o", text.length(), COMMENT_MAX));
         }
         if (InputSanitizer.offensive(text)) {
-            throw ApiException.badRequest("CONTEUDO_BLOQUEADO", "O comentário viola a política de conteúdo.");
+            throw ApiException.badRequest("CONTEUDO_BLOQUEADO", Msg.t("social.o_comentario_viola_a_politica"));
         }
         Comment c = new Comment();
         c.setAuthor(users.findById(user.id()).orElseThrow());
@@ -240,19 +241,19 @@ public class SocialService {
         comments.save(c);
         bump(t, "comments", 1);
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_COMMENT, type.name(), id,
-                "@" + user.username() + " comentou em \"" + t.title() + "\"", text.length() > 120 ? text.substring(0, 117) + "…" : text, null);
+                Msg.k("social.comentou_em", user.username(), t.title()), text.length() > 120 ? text.substring(0, 117) + "…" : text, null);
         events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "COMMENT", c.getId()));
         return Map.of("id", c.getId(), "author", Views.user(c.getAuthor()), "content", c.getContent(), "createdAt", String.valueOf(c.getCreatedAt()));
     }
 
     @Transactional
     public void deleteComment(CurrentUser user, UUID commentId) {
-        Comment c = comments.findById(commentId).orElseThrow(() -> ApiException.notFound("Comentário"));
+        Comment c = comments.findById(commentId).orElseThrow(() -> ApiException.notFound(Msg.t("social.comentario")));
         Target t = target(user, c.getTargetType(), c.getTargetId());
         boolean allowed = user.id().equals(c.getAuthor().getId()) || user.id().equals(t.owner().getId());
         if (!allowed) {
             // CA05 — nenhum outro usuário exclui (RNF1), tentativa auditada.
-            throw guard.deny(user, "comment:" + commentId, "Só o autor do comentário ou do conteúdo pode excluí-lo.");
+            throw guard.deny(user, "comment:" + commentId, Msg.t("social.so_o_autor_do_comentario"));
         }
         c.setActive(false);
         bump(t, "comments", -1);
@@ -282,7 +283,7 @@ public class SocialService {
     @Transactional
     public Map<String, Object> favoriteSaved(CurrentUser user, TargetType type, UUID id, boolean favorite) {
         SavedItem s = saved.findByUserIdAndTargetTypeAndTargetId(user.id(), type, id)
-                .orElseThrow(() -> ApiException.notFound("Look salvo"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("common.look_salvo")));
         s.setFavorite(favorite);
         return Map.of("favorite", favorite);
     }
@@ -293,7 +294,7 @@ public class SocialService {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
         if (!t.available()) {
-            throw ApiException.conflict("INDISPONIVEL", "Este conteúdo está marcado como indisponível para compartilhamento.");
+            throw ApiException.conflict("INDISPONIVEL", Msg.t("social.este_conteudo_esta_marcado_como"));
         }
         Share s = new Share();
         s.setUser(users.findById(user.id()).orElseThrow());
@@ -331,7 +332,7 @@ public class SocialService {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
         if (!t.available()) {
-            throw ApiException.conflict("INDISPONIVEL", "O autor marcou este conteúdo como indisponível para remix.");
+            throw ApiException.conflict("INDISPONIVEL", Msg.t("social.o_autor_marcou_este_conteudo"));
         }
         if (type == TargetType.SCHEME) {
             return schemeService.remix(user, id);
@@ -340,10 +341,10 @@ public class SocialService {
             bump(t, "remixes", 1);
             WardrobeItem w = (WardrobeItem) t.entity();
             notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REMIX, "PIECE", id,
-                    "@" + user.username() + " remixou a peça \"" + w.getName() + "\"", null, null);
+                    Msg.k("social.remixou_a_peca", user.username(), w.getName()), null, null);
             return Map.of("next", "/create-look?seedPiece=" + id, "sourcePiece", Views.piece(w, null, null),
-                    "hint", w.getUser().getId().equals(user.id()) ? "A peça entra como semente do novo look."
-                            : "Adicione a peça ao seu guarda-roupa para usá-la no remix.");
+                    "hint", w.getUser().getId().equals(user.id()) ? Msg.t("social.a_peca_entra_como_semente")
+                            : Msg.t("social.adicione_a_peca_ao_seu"));
         }
         bump(t, "remixes", 1);
         return Map.of("next", "/dna/new?remix=" + id);
@@ -352,9 +353,9 @@ public class SocialService {
     /** CA14 — a partir de uma peça da lista, abre o esquema de ORIGEM que usou aquela peça (o mais antigo visível). */
     @Transactional(readOnly = true)
     public Map<String, Object> returnToOrigin(CurrentUser user, UUID pieceId, UUID fromSchemeId) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound("Peça"));
+        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         if (!w.isDisponivel() && !w.getUser().getId().equals(user.id())) {
-            throw ApiException.conflict("INDISPONIVEL", "Esta peça está indisponível para retornar.");
+            throw ApiException.conflict("INDISPONIVEL", Msg.t("social.esta_peca_esta_indisponivel_para"));
         }
         List<Scheme> candidates = schemeItems.findByWardrobeItemId(pieceId).stream().map(si -> si.getScheme())
                 .filter(s -> !s.getId().equals(fromSchemeId))
@@ -362,7 +363,7 @@ public class SocialService {
                 .sorted(java.util.Comparator.comparing(Scheme::getCreatedAt))
                 .toList();
         if (candidates.isEmpty()) {
-            throw ApiException.notFound("Esquema de origem visível para esta peça");
+            throw ApiException.notFound(Msg.t("social.esquema_de_origem_visivel_para"));
         }
         Scheme origin = candidates.get(0);
         return Map.of("pieceId", pieceId, "originSchemeId", origin.getId(), "title", origin.getTitle(),

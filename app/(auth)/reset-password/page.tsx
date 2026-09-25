@@ -16,7 +16,7 @@ function ResetForm() {
   return (
     <AuthCard title={t("auth.resetTitle")} lead={t("auth.resetLead")} footer={<Link href="/login" className="underline">← {t("nav.login")}</Link>}>
       <form onSubmit={submit} noValidate>
-        {!params.get("token") && <Field label="Token" id="token" required><Input id="token" value={token} onChange={(e) => setToken(e.target.value)} required /></Field>}
+        {!params.get("token") && <Field label={t("resetPassword.token")} id="token" required><Input id="token" value={token} onChange={(e) => setToken(e.target.value)} required /></Field>}
         <Field label={t("auth.newPassword")} id="newPassword" required error={error?.fields.newPassword}><Input id="newPassword" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required autoFocus /></Field>
         <Field label={t("auth.confirmPassword")} id="confirmPassword" required error={error?.fields.confirmPassword}><Input id="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirm(e.target.value)} required /></Field>
         {error && <p role="alert" className="error-text mb-3">{error.message}</p>}

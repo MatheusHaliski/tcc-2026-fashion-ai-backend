@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
@@ -212,7 +213,7 @@ public class FlairService {
     private Scheme ownDeckScheme(CurrentUser user, UUID schemeId) {
         Scheme s = schemeService.owned(user, schemeId);
         if (s.getStatus() == SchemeStatus.ARCHIVED) {
-            throw ApiException.badRequest("DECK_ARQUIVADO", "Esse esquema está arquivado.");
+            throw ApiException.badRequest("DECK_ARQUIVADO", Msg.t("flair.esse_esquema_esta_arquivado"));
         }
         return s;
     }
@@ -261,7 +262,7 @@ public class FlairService {
         out.put("ledger", coins.findTop30ByUserIdOrderByCreatedAtDesc(user.id()).stream()
                 .map(e -> Map.of("delta", e.getDelta(), "reason", e.getReason(), "ref", e.getRef(), "at", e.getCreatedAt())).toList());
         out.put("recent", entries.findTop30ByUserIdOrderByCreatedAtDesc(user.id()).stream().limit(10).map(this::entryView).toList());
-        out.put("ethics", "Sem apostas: coins vêm do sistema (duelos têm teto diário) e só compram itens cosméticos.");
+        out.put("ethics", Msg.t("flair.sem_apostas_coins_vem_do"));
         return out;
     }
 
@@ -276,7 +277,7 @@ public class FlairService {
         List<String> owned = new ArrayList<>(Json.strings(p.getSkinsJson()));
         if (!owned.contains(code)) {
             if (p.getCoins() < price) {
-                throw new ApiException(409, "COINS_INSUFICIENTES", "Faltam " + (price - p.getCoins()) + " coins para esta skin.");
+                throw new ApiException(409, "COINS_INSUFICIENTES", Msg.t("flair.faltam_coins_para_esta_skin", (price - p.getCoins())));
             }
             award(user.id(), -price, 0, "SKIN", code);
             owned.add(code);
@@ -294,17 +295,17 @@ public class FlairService {
     }
 
     static final List<Quest> QUESTS = List.of(
-            new Quest("SEASONAL_LOOK", "Look da estação", "DAY", 50, "Um deck com 3+ cartas em SYNC com a estação atual."),
-            new Quest("BRAND_COLLECTOR", "Colecionador de marca", "DAY", 30, "Um deck com 3+ peças da mesma marca."),
-            new Quest("VERSATILE_MASTER", "Mestre da versatilidade", "DAY", 40, "Um deck com RANGE médio acima de 70."),
-            new Quest("GLOW_UP", "Glow up", "DAY", 45, "Um deck com GLOW médio acima de 65."),
-            new Quest("STYLE_CURATOR", "Curadoria de estilo", "WEEK", 200, "Curtir 10 looks da comunidade nesta semana."),
-            new Quest("WARDROBE_MAVEN", "Guarda-roupa em dia", "WEEK", 150, "Cadastrar 3 peças novas nesta semana."),
-            new Quest("DUEL_CHAMPION", "Campeão de duelos", "WEEK", 200, "Vencer 5 duelos nesta semana."),
-            new Quest("POWER_DECK", "Deck poderoso", "WEEK", 300, "Montar um deck com poder acima de 350."));
+            new Quest("SEASONAL_LOOK", Msg.k("flair.look_da_estacao"), "DAY", 50, Msg.k("flair.um_deck_com_3_cartas")),
+            new Quest("BRAND_COLLECTOR", Msg.k("flair.colecionador_de_marca"), "DAY", 30, Msg.k("flair.um_deck_com_3_pecas")),
+            new Quest("VERSATILE_MASTER", Msg.k("flair.mestre_da_versatilidade"), "DAY", 40, Msg.k("flair.um_deck_com_range_medio")),
+            new Quest("GLOW_UP", Msg.k("flair.glow_up"), "DAY", 45, Msg.k("flair.um_deck_com_glow_medio")),
+            new Quest("STYLE_CURATOR", Msg.k("flair.curadoria_de_estilo"), "WEEK", 200, Msg.k("flair.curtir_10_looks_da_comunidade")),
+            new Quest("WARDROBE_MAVEN", Msg.k("flair.guarda_roupa_em_dia"), "WEEK", 150, Msg.k("flair.cadastrar_3_pecas_novas_nesta")),
+            new Quest("DUEL_CHAMPION", Msg.k("flair.campeao_de_duelos"), "WEEK", 200, Msg.k("flair.vencer_5_duelos_nesta_semana")),
+            new Quest("POWER_DECK", Msg.k("flair.deck_poderoso"), "WEEK", 300, Msg.k("flair.montar_um_deck_com_poder")));
 
-    static final Map<String, String> CATEGORY_LABELS = Map.of("upper_piece", "parte de cima", "lower_piece", "parte de baixo",
-            "shoes_piece", "calçado", "accessory_piece", "acessório", "full_body_piece", "peça inteira");
+    static final Map<String, String> CATEGORY_LABELS = Map.of("upper_piece", Msg.k("flair.parte_de_cima"), "lower_piece", Msg.k("flair.parte_de_baixo"),
+            "shoes_piece", Msg.k("flair.calcado"), "accessory_piece", Msg.k("flair.acessorio"), "full_body_piece", Msg.k("flair.peca_inteira"));
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> quests(CurrentUser user) {
@@ -345,12 +346,12 @@ public class FlairService {
     public Map<String, Object> claimQuest(CurrentUser user, String code) {
         Map<String, Object> q = quests(user).stream().filter(x -> x.get("code").equals(code)).findFirst().orElseThrow(() -> ApiException.notFound("Quest"));
         if (!Boolean.TRUE.equals(q.get("done"))) {
-            throw new ApiException(409, "QUEST_INCOMPLETA", "Esta quest ainda não foi cumprida.");
+            throw new ApiException(409, "QUEST_INCOMPLETA", Msg.t("flair.esta_quest_ainda_nao_foi"));
         }
         LocalDate day = today();
         String ref = "DAY".equals(q.get("period")) ? day.toString() : day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString();
         if (!award(user.id(), (Integer) q.get("coins"), 10, "QUEST_" + code, ref)) {
-            throw ApiException.conflict("QUEST_JA_RESGATADA", "Recompensa já resgatada neste período.");
+            throw ApiException.conflict("QUEST_JA_RESGATADA", Msg.t("flair.recompensa_ja_resgatada_neste_periodo"));
         }
         return me(user);
     }
@@ -368,7 +369,7 @@ public class FlairService {
                 cs.add(card(c.get(r.nextInt(c.size()))));
             }
         }
-        return FlairEngine.deck(null, "Deck da Casa · " + today(), cs, season(), season());
+        return FlairEngine.deck(null, Msg.t("flair.deck_da_casa", today()), cs, season(), season());
     }
 
     /** Melhor deck público de outra pessoa (o que ela mostraria numa vitrine). */
@@ -385,7 +386,7 @@ public class FlairService {
         Scheme mine = ownDeckScheme(user, schemeId);
         Deck a = deck(mine);
         if (a.cards().isEmpty()) {
-            throw ApiException.badRequest("DECK_VAZIO", "Esse esquema não tem peças.");
+            throw ApiException.badRequest("DECK_VAZIO", Msg.t("flair.esse_esquema_nao_tem_pecas"));
         }
         boolean house = opponent == null || opponent.isBlank() || CASA.equalsIgnoreCase(opponent);
         User rival = null;
@@ -396,9 +397,9 @@ public class FlairService {
         } else {
             rival = users.findByUsernameIgnoreCase(opponent.replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound("Oponente"));
             if (rival.getId().equals(user.id())) {
-                throw ApiException.badRequest("DUELO_CONSIGO", "Escolha outra pessoa ou a Casa.");
+                throw ApiException.badRequest("DUELO_CONSIGO", Msg.t("common.escolha_outra_pessoa_ou_a"));
             }
-            var best = bestPublicDeck(user, rival).orElseThrow(() -> new ApiException(409, "SEM_DECK_PUBLICO", "@" + opponent + " ainda não tem um look público para duelar."));
+            var best = bestPublicDeck(user, rival).orElseThrow(() -> new ApiException(409, "SEM_DECK_PUBLICO", Msg.t("flair.ainda_nao_tem_um_look", opponent)));
             rivalScheme = best.getKey();
             b = best.getValue();
         }
@@ -432,7 +433,7 @@ public class FlairService {
         out.put("matchId", m.getId());
         out.put("mode", m.getMode());
         out.put("me", a);
-        out.put("opponent", Map.of("label", house ? "A Casa" : "@" + rival.getUsername(), "deck", b));
+        out.put("opponent", Map.of("label", house ? Msg.t("common.a_casa") : "@" + rival.getUsername(), "deck", b));
         out.put("rounds", r.rounds());
         out.put("score", Map.of("me", r.winsA(), "opponent", r.winsB()));
         out.put("outcome", outcome);
@@ -494,7 +495,7 @@ public class FlairService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("date", d);
         out.put("theme", arenaTheme(d));
-        out.put("rule", "Tema do dia igual para todos. Nota = 40% cobertura da ocasião + 20% RANGE + 20% EDGE + 20% GLOW + 30% dos combos. Um deck por pessoa por dia.");
+        out.put("rule", Msg.t("flair.tema_do_dia_igual_para"));
         List<Map<String, Object>> board = new ArrayList<>();
         for (int i = 0; i < es.size(); i++) {
             FlairMatchEntry e = es.get(i);
@@ -516,7 +517,7 @@ public class FlairService {
         guard.requireCanCreate(user);
         LocalDate d = today();
         if (entries.findFirstByUserIdAndMatchModeAndMatchPlayDate(user.id(), "ARENA", d).isPresent()) {
-            throw ApiException.conflict("JA_NA_ARENA", "Você já inscreveu um deck na batalha de hoje. Volte amanhã para o novo tema.");
+            throw ApiException.conflict("JA_NA_ARENA", Msg.t("flair.voce_ja_inscreveu_um_deck"));
         }
         Scheme s = ownDeckScheme(user, schemeId);
         Deck deck = deck(s);
@@ -549,7 +550,7 @@ public class FlairService {
         out.put("teams", teams.findTop20ByOrderByPointsDesc().stream().map(t -> teamView(t, viewer)).toList());
         out.put("mine", viewer == null ? null : members.findByUserId(viewer.id()).map(m -> teamView(m.getTeam(), viewer)).orElse(null));
         out.put("players", profiles.findTop20ByOrderByRankPointsDesc().stream().map(p -> Map.of("user", Views.user(p.getUser()), "rank", FlairEngine.rank(p.getRankPoints()), "wins", p.getWins())).toList());
-        out.put("rule", "Equipes de até 5. No duelo de equipes, os 3 melhores decks de cada lado se enfrentam em pares (1º×1º, 2º×2º, 3º×3º). Vitória vale 3 pontos na liga; empate, 1.");
+        out.put("rule", Msg.t("flair.equipes_de_ate_5_no"));
         if (viewer != null) {
             out.put("battles", members.findByUserId(viewer.id()).map(m -> matches.findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(m.getTeam().getId(), m.getTeam().getId()).stream()
                     .map(x -> Map.of("id", x.getId(), "theme", String.valueOf(x.getTheme()), "winner", String.valueOf(x.getWinnerSide()), "date", String.valueOf(x.getPlayDate()),
@@ -562,7 +563,7 @@ public class FlairService {
     public Map<String, Object> createTeam(CurrentUser user, String name, String color) {
         guard.requireCanCreate(user);
         if (members.findByUserId(user.id()).isPresent()) {
-            throw ApiException.conflict("JA_EM_EQUIPE", "Saia da equipe atual antes de criar outra.");
+            throw ApiException.conflict("JA_EM_EQUIPE", Msg.t("flair.saia_da_equipe_atual_antes"));
         }
         FlairTeam t = new FlairTeam();
         t.setName(InputSanitizer.required("name", InputSanitizer.moderated("name", name, 40), 3, 40));
@@ -591,10 +592,10 @@ public class FlairService {
         guard.requireCanCreate(user);
         FlairTeam t = teams.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Equipe"));
         if (members.findByUserId(user.id()).isPresent()) {
-            throw ApiException.conflict("JA_EM_EQUIPE", "Você já está numa equipe.");
+            throw ApiException.conflict("JA_EM_EQUIPE", Msg.t("flair.voce_ja_esta_numa_equipe"));
         }
         if (members.countByTeamId(t.getId()) >= 5) {
-            throw ApiException.conflict("EQUIPE_CHEIA", "A equipe já tem 5 integrantes.");
+            throw ApiException.conflict("EQUIPE_CHEIA", Msg.t("flair.a_equipe_ja_tem_5"));
         }
         addMember(t, user.id(), "MEMBRO");
         return league(user);
@@ -623,19 +624,19 @@ public class FlairService {
     @Transactional
     public Map<String, Object> teamBattle(CurrentUser user, String opponentCode) {
         guard.requireCanCreate(user);
-        FlairTeam mine = members.findByUserId(user.id()).map(FlairTeamMember::getTeam).orElseThrow(() -> new ApiException(409, "SEM_EQUIPE", "Entre numa equipe para desafiar outra."));
-        FlairTeam rival = teams.findByCode(opponentCode == null ? "" : opponentCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Equipe adversária"));
+        FlairTeam mine = members.findByUserId(user.id()).map(FlairTeamMember::getTeam).orElseThrow(() -> new ApiException(409, "SEM_EQUIPE", Msg.t("flair.entre_numa_equipe_para_desafiar")));
+        FlairTeam rival = teams.findByCode(opponentCode == null ? "" : opponentCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound(Msg.t("flair.equipe_adversaria")));
         if (rival.getId().equals(mine.getId())) {
-            throw ApiException.badRequest("MESMA_EQUIPE", "Escolha outra equipe.");
+            throw ApiException.badRequest("MESMA_EQUIPE", Msg.t("flair.escolha_outra_equipe"));
         }
         boolean playedToday = matches.findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(mine.getId(), mine.getId()).stream()
                 .anyMatch(x -> today().equals(x.getPlayDate()) && (rival.getId().equals(x.getTeamAId()) || rival.getId().equals(x.getTeamBId())));
         if (playedToday) {
-            throw ApiException.conflict("JA_DUELARAM_HOJE", "Suas equipes já se enfrentaram hoje. Revanche amanhã.");
+            throw ApiException.conflict("JA_DUELARAM_HOJE", Msg.t("flair.suas_equipes_ja_se_enfrentaram"));
         }
         List<Map.Entry<Scheme, Deck>> a = teamDecks(mine, user), b = teamDecks(rival, user);
         if (a.isEmpty() || b.isEmpty()) {
-            throw new ApiException(409, "SEM_DECKS", "Cada equipe precisa de ao menos um integrante com look público.");
+            throw new ApiException(409, "SEM_DECKS", Msg.t("flair.cada_equipe_precisa_de_ao"));
         }
         List<Map<String, Object>> duels = new ArrayList<>();
         int wa = 0, wb = 0;
@@ -705,7 +706,7 @@ public class FlairService {
     private User brandOwner(CurrentUser user) {
         User u = users.findById(user.id()).orElseThrow();
         if (u.getProfileType() != ProfileType.MARCA && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw guard.deny(user, "flair:combinations", "Só perfis de marca ou celebridade (participantes) criam combinações FLAIR.");
+            throw guard.deny(user, "flair:combinations", Msg.t("flair.so_perfis_de_marca_ou"));
         }
         return u;
     }
@@ -720,9 +721,9 @@ public class FlairService {
     @Transactional
     public Map<String, Object> saveCombination(CurrentUser user, UUID id, CombinationForm f) {
         User brand = brandOwner(user);
-        FlairCombination c = id == null ? new FlairCombination() : combinations.findById(id).orElseThrow(() -> ApiException.notFound("Combinação"));
+        FlairCombination c = id == null ? new FlairCombination() : combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
         if (id != null && !c.getBrand().getId().equals(brand.getId())) {
-            throw guard.deny(user, "flair:combination:" + id, "Combinação de outra loja.");
+            throw guard.deny(user, "flair:combination:" + id, Msg.t("flair.combinacao_de_outra_loja"));
         }
         c.setBrand(brand);
         c.setName(InputSanitizer.required("name", InputSanitizer.moderated("name", f.name(), 120), 3, 120));
@@ -742,11 +743,11 @@ public class FlairService {
         if (Json.strings(c.getRequiredCategoriesJson()).isEmpty() && Json.strings(c.getRequiredStylesJson()).isEmpty()
                 && Json.strings(c.getRequiredOccasionsJson()).isEmpty() && c.getMinBrandPieces() == 0 && c.getMinDeckPower() == 0
                 && c.getMinRarity() == null && !"DUELO_PATROCINADO".equals(type)) {
-            throw ApiException.badRequest("SEM_REQUISITOS", "Defina ao menos um requisito (categoria, estilo, ocasião, peças da marca, poder ou raridade).");
+            throw ApiException.badRequest("SEM_REQUISITOS", Msg.t("flair.defina_ao_menos_um_requisito"));
         }
         c.setCouponTitle(InputSanitizer.required("couponTitle", InputSanitizer.moderated("couponTitle", f.couponTitle(), 120), 3, 120));
         if (f.discountPercent() == null && f.discountAmount() == null) {
-            throw ApiException.badRequest("DESCONTO_OBRIGATORIO", "Informe o desconto em % ou em R$.");
+            throw ApiException.badRequest("DESCONTO_OBRIGATORIO", Msg.t("flair.informe_o_desconto_em_ou"));
         }
         c.setDiscountPercent(f.discountPercent() == null ? null : clamp(f.discountPercent(), 1, 90));
         c.setDiscountAmount(f.discountAmount());
@@ -765,9 +766,9 @@ public class FlairService {
     @Transactional
     public void deleteCombination(CurrentUser user, UUID id) {
         User brand = brandOwner(user);
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound("Combinação"));
+        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
         if (!c.getBrand().getId().equals(brand.getId())) {
-            throw guard.deny(user, "flair:combination:" + id, "Combinação de outra loja.");
+            throw guard.deny(user, "flair:combination:" + id, Msg.t("flair.combinacao_de_outra_loja"));
         }
         if (c.getRedeemed() > 0) {
             c.setActive(false);                       // com cupons emitidos, só desativa (os cupons continuam válidos)
@@ -811,26 +812,26 @@ public class FlairService {
             out.add(req("STYLE", st, "Estilo: " + st, cs.stream().anyMatch(x -> x.styles().contains(st))));
         }
         for (String oc : Json.strings(c.getRequiredOccasionsJson())) {
-            out.add(req("OCCASION", oc, "Ocasião: " + oc, cs.stream().anyMatch(x -> x.occasions().contains(oc))));
+            out.add(req("OCCASION", oc, Msg.t("flair.ocasiao", oc), cs.stream().anyMatch(x -> x.occasions().contains(oc))));
         }
         if (c.getMinBrandPieces() > 0) {
             long n = cs.stream().filter(x -> isBrandCard(x, c.getBrand(), bn)).count();
-            out.add(req("BRAND", String.valueOf(n), c.getMinBrandPieces() + " peça(s) " + bn + " (" + n + ")", n >= c.getMinBrandPieces()));
+            out.add(req("BRAND", String.valueOf(n), Msg.t("flair.peca_s", (c.getMinBrandPieces()), bn, n), n >= c.getMinBrandPieces()));
         }
         if (c.getMinDeckPower() > 0 && !"COLECAO".equals(c.getGameType())) {
             int p = deck == null ? 0 : deck.power();
-            out.add(req("POWER", String.valueOf(p), "Poder do deck ≥ " + c.getMinDeckPower() + " (" + p + ")", p >= c.getMinDeckPower()));
+            out.add(req("POWER", String.valueOf(p), Msg.t("flair.poder_do_deck", c.getMinDeckPower(), p), p >= c.getMinDeckPower()));
         }
         if (c.getMinRarity() != null) {
             int need = FlairEngine.RARITIES.indexOf(c.getMinRarity());
-            out.add(req("RARITY", c.getMinRarity(), "Uma carta " + c.getMinRarity() + " ou melhor", cs.stream().anyMatch(x -> FlairEngine.RARITIES.indexOf(x.rarity()) >= need)));
+            out.add(req("RARITY", c.getMinRarity(), Msg.t("flair.uma_carta_ou_melhor", c.getMinRarity()), cs.stream().anyMatch(x -> FlairEngine.RARITIES.indexOf(x.rarity()) >= need)));
         }
         if ("DUELO_PATROCINADO".equals(c.getGameType()) && user != null) {
             Instant since = today().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay(FaiPointsService.ZONE).toInstant();
             long wins = entries.findByUserIdAndCreatedAtAfter(user.id(), since).stream()
                     .filter(e -> Objects.equals(e.getSide(), e.getMatch().getWinnerSide()) && FlairModesService.COMPETITIVE.contains(e.getMatch().getMode()))
                     .filter(e -> Json.strings(e.getBrandPiecesJson()).contains(bn.toLowerCase(Locale.ROOT))).count();
-            out.add(req("WINS", String.valueOf(wins), c.getMinWins() + " vitória(s) nesta semana com peça " + bn + " no deck (" + wins + ")", wins >= c.getMinWins()));
+            out.add(req("WINS", String.valueOf(wins), Msg.t("flair.vitoria_s_nesta_semana_com", (c.getMinWins()), bn, wins), wins >= c.getMinWins()));
         }
         return out;
     }
@@ -906,7 +907,7 @@ public class FlairService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> checkCombination(CurrentUser user, UUID id, UUID schemeId) {
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound("Combinação"));
+        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
         Deck d = schemeId == null ? null : deck(schemeService.owned(user, schemeId));
         List<Card> wardrobe = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
         List<Map<String, Object>> checks = check(c, d, wardrobe, user);
@@ -918,19 +919,19 @@ public class FlairService {
     @Transactional
     public Map<String, Object> redeem(CurrentUser user, UUID id, UUID schemeId) {
         guard.requireCanCreate(user);
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound("Combinação"));
+        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
         if (!available(c)) {
-            throw new ApiException(409, "COMBINACAO_INDISPONIVEL", "Esta combinação não está mais disponível.");
+            throw new ApiException(409, "COMBINACAO_INDISPONIVEL", Msg.t("flair.esta_combinacao_nao_esta_mais"));
         }
         if (redemptions.findByCombinationIdAndUserId(c.getId(), user.id()).isPresent()) {
-            throw ApiException.conflict("CUPOM_JA_EMITIDO", "Você já completou esta combinação.");
+            throw ApiException.conflict("CUPOM_JA_EMITIDO", Msg.t("flair.voce_ja_completou_esta_combinacao"));
         }
         Scheme s = "COLECAO".equals(c.getGameType()) || schemeId == null ? null : ownDeckScheme(user, schemeId);
         Deck d = s == null ? null : deck(s);
         List<Card> wardrobe = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
         List<Map<String, Object>> checks = check(c, d, wardrobe, user);
         if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
-            throw new ApiException(422, "COMBINACAO_INCOMPLETA", "O deck ainda não completa a combinação.", Map.of("checks", checks));
+            throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));
         }
         FlairRedemption r = new FlairRedemption();
         r.setCombination(c);
@@ -997,8 +998,8 @@ public class FlairService {
             List<FlairRedemption> rs = redemptions.findByCombinationBrandIdOrderByCreatedAtDesc(owner.getId());
             out.put("redemptions", rs.stream().limit(100).map(this::redemptionView).toList());
             out.put("stats", Map.of("issued", rs.size(), "used", rs.stream().filter(r -> "USADO".equals(r.getStatus())).count()));
-            out.put("gameTypes", List.of(Map.of("id", "COMBINACAO", "label", "Combinação (um deck)"), Map.of("id", "COLECAO", "label", "Coleção (guarda-roupa inteiro)"),
-                    Map.of("id", "DUELO_PATROCINADO", "label", "Duelo patrocinado (vitórias com peça da marca)")));
+            out.put("gameTypes", List.of(Map.of("id", "COMBINACAO", "label", Msg.t("flair.combinacao_um_deck")), Map.of("id", "COLECAO", "label", Msg.t("flair.colecao_guarda_roupa_inteiro")),
+                    Map.of("id", "DUELO_PATROCINADO", "label", Msg.t("flair.duelo_patrocinado_vitorias_com_peca"))));
         }
         return out;
     }
@@ -1012,10 +1013,10 @@ public class FlairService {
             throw ApiException.notFound("Cupom");
         }
         if ("USADO".equals(r.getStatus())) {
-            throw ApiException.conflict("CUPOM_USADO", "Cupom já usado em " + r.getUsedAt() + ".");
+            throw ApiException.conflict("CUPOM_USADO", Msg.t("flair.cupom_ja_usado_em", r.getUsedAt()));
         }
         if (r.getExpiresAt().isBefore(Instant.now())) {
-            throw ApiException.conflict("CUPOM_EXPIRADO", "Cupom expirado.");
+            throw ApiException.conflict("CUPOM_EXPIRADO", Msg.t("common.cupom_expirado"));
         }
         r.setStatus("USADO");
         r.setUsedAt(Instant.now());

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.LocalAdvisors;
 import br.com.fashionai.application.ports.GeocodingPort;
 import br.com.fashionai.application.ports.WeatherPort;
@@ -78,7 +79,7 @@ public class WeatherService {
         } else if (city != null && !city.isBlank()) {
             key = "city:" + city.trim().toLowerCase(Locale.ROOT);
         } else {
-            return Context.none("Localização não informada — as sugestões não consideram o clima. Informe a cidade ou permita a localização.");
+            return Context.none(Msg.t("weather.localizacao_nao_informada_as_sugestoes"));
         }
         Cached c = cache.get(key);
         if (c != null && c.at().plus(TTL).isAfter(Instant.now())) {
@@ -90,7 +91,7 @@ public class WeatherService {
             GeocodingPort geo = geocoding.getIfAvailable();
             Optional<GeocodingPort.Place> place = geo == null ? Optional.empty() : safe(() -> geo.geocode(city));
             if (place.isEmpty()) {
-                return Context.none("Não encontramos a cidade \"" + city + "\" — as sugestões não consideram o clima.");
+                return Context.none(Msg.t("weather.nao_encontramos_a_cidade_as", city));
             }
             lat = place.get().latitude();
             lon = place.get().longitude();
@@ -100,7 +101,7 @@ public class WeatherService {
         final double fLat = lat, fLon = lon;
         Optional<WeatherPort.Weather> w = port == null ? Optional.empty() : safe(() -> port.current(fLat, fLon));
         if (w.isEmpty()) {
-            return Context.none("Serviço de clima indisponível agora — as sugestões não consideram o clima (RNF8).");
+            return Context.none(Msg.t("weather.servico_de_clima_indisponivel_agora"));
         }
         double t = w.get().temperatureC();
         Context ctx = new Context(t, w.get().description(), name, band(t), season(t),

@@ -1,0 +1,23 @@
+@startuml RF25_MaquinaDeEstados_Selo
+!pragma layout smetana
+title RF25 — Selo: status × janela de validade (disponível a partir de / expira em)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Ativo : POST /api/seals
+state "ACTIVE" as Ativo {
+  [*] --> EmBreve : agora < availableFrom
+  [*] --> Disponivel : sem janela ou dentro dela
+  EmBreve --> Disponivel : chega availableFrom
+  Disponivel --> Expirado : passa availableUntil
+  Disponivel --> Esgotado : emissões = usageLimit
+}
+Ativo --> Inativo : dono desativa
+Inativo --> Ativo : dono reativa
+note right of Disponivel : só aqui o selo é concedido\n(SealBond APPROVED)\ne gera CouponRightsCheck (RF38)
+note right of Expirado : fora da janela aparece como\nindisponível, com o motivo
+@enduml

@@ -57,19 +57,19 @@ export default function RegisterPage() {
   return (
     <AuthCard title={t("auth.registerTitle")} lead={t("auth.registerLead")}
       footer={<>{t("auth.hasAccount")} <Link className="font-semibold text-ink underline" href="/login">{t("nav.login")}</Link></>}>
-      <div className="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label="tipo de perfil">
+      <div className="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label={t("register.tipo_de_perfil")}>
         {(["PESSOAL", "MARCA", "CELEBRIDADE"] as ProfileType[]).map((p) => (
           <Chip key={p} active={profileType === p} onClick={() => setProfileType(p)}>{t(p === "PESSOAL" ? "auth.profilePersonal" : p === "MARCA" ? "auth.profileBrand" : "auth.profileCelebrity")}</Chip>
         ))}
       </div>
       <form onSubmit={submit} noValidate>
         <PhotoPicker kind="avatar" round value={avatarUrl} onChange={setAvatarUrl} error={err.avatarUrl}
-          label={profileType === "MARCA" ? "Foto de perfil (opcional — sem ela, o logo vira o avatar)" : "Foto de perfil (opcional)"}
-          hint={profileType === "MARCA" ? "Aparece no header do perfil e nas configurações." : "Aparece no seu perfil e nas configurações, e vira o rosto do seu manequim na Passarela 3D. Sem foto, desfila o manequim padrão."} />
+          label={profileType === "MARCA" ? t("register.foto_de_perfil_opcional_sem") : t("register.foto_de_perfil_opcional")}
+          hint={profileType === "MARCA" ? t("register.aparece_no_header_do_perfil") : t("register.aparece_no_seu_perfil_e")} />
         {profileType !== "MARCA" && <MannequinSexPicker value={sex} onChange={setSex} error={err.sex} />}
         <Field label={t("auth.fullName")} id="fullName" required error={err.fullName}><Input id="fullName" autoComplete="name" value={f.fullName} onChange={set("fullName")} required /></Field>
         <Field label={t("auth.username")} id="username" required error={err.username}
-          hint={usernameState ? (usernameState.available ? `✓ ${t("auth.usernameFree")}` : `✗ ${t("auth.usernameTaken")}${usernameState.suggestions?.length ? ` — ${t("auth.suggestions")}: ${usernameState.suggestions.join(", ")}` : ""}`) : "3–30 caracteres: letras, números, ponto e sublinhado"}>
+          hint={usernameState ? (usernameState.available ? `✓ ${t("auth.usernameFree")}` : `✗ ${t("auth.usernameTaken")}${usernameState.suggestions?.length ? ` — ${t("auth.suggestions")}: ${usernameState.suggestions.join(", ")}` : ""}`) : t("register.n3_30_caracteres_letras_numeros")}>
           <Input id="username" autoComplete="username" value={f.username} onChange={set("username")} required error={usernameState?.available === false} />
         </Field>
         <Field label={t("auth.email")} id="email" required error={err.email}><Input id="email" type="email" autoComplete="email" value={f.email} onChange={set("email")} required /></Field>
@@ -84,23 +84,23 @@ export default function RegisterPage() {
         {profileType === "MARCA" && (
           <fieldset className="mb-3 rounded-md border border-line-soft p-3">
             <legend className="label px-1">{t("auth.brandData")}</legend>
-            {([["razaoSocial", "Razão social"], ["cnpj", "CNPJ"], ["nomeFantasia", "Nome fantasia"], ["fashionCategory", "Categoria de moda"], ["storeUrl", "Loja / site"], ["commercialContact", "Contato comercial"], ["officialHashtag", "Hashtag oficial"]] as const).map(([k, label]) => (
+            {([["razaoSocial", t("register.razao_social")], ["cnpj", "CNPJ"], ["nomeFantasia", t("register.nome_fantasia")], ["fashionCategory", t("register.categoria_de_moda")], ["storeUrl", t("register.loja_site")], ["commercialContact", t("register.contato_comercial")], ["officialHashtag", t("register.hashtag_oficial")]] as const).map(([k, label]) => (
               <Field key={k} label={label} id={k} error={err[`brand.${k}`] ?? err[k]}><Input id={k} value={brand[k]} onChange={(e) => setBrand((b) => ({ ...b, [k]: e.target.value }))} /></Field>
             ))}
-            <PhotoPicker kind="logo" value={docs.logoUrl} onChange={(u) => setDocs((d) => ({ ...d, logoUrl: u }))} label="Logo da marca" hint="PNG com fundo transparente fica melhor. Vai para o centro dos selos (RF20)." error={err["brand.logoUrl"]} />
-            <PhotoPicker kind="activity-proof" value={docs.activityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, activityProofUrl: u }))} label="Comprovante de atividade (opcional)" hint="Só a administração vê, para validar a marca." error={err["brand.activityProofUrl"]} />
+            <PhotoPicker kind="logo" value={docs.logoUrl} onChange={(u) => setDocs((d) => ({ ...d, logoUrl: u }))} label={t("register.logo_da_marca")} hint={t("register.png_com_fundo_transparente_fica")} error={err["brand.logoUrl"]} />
+            <PhotoPicker kind="activity-proof" value={docs.activityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, activityProofUrl: u }))} label={t("register.comprovante_de_atividade_opcional")} hint={t("register.so_a_administracao_ve_para")} error={err["brand.activityProofUrl"]} />
           </fieldset>
         )}
         {profileType === "CELEBRIDADE" && (
           <fieldset className="mb-3 rounded-md border border-line-soft p-3">
             <legend className="label px-1">{t("auth.celebrityData")}</legend>
-            {([["stageName", "Nome artístico"], ["realName", "Nome real"], ["areas", "Áreas (separe por vírgula)"], ["verificationUrl", "Link para verificação"], ["representationContact", "Contato da representação"]] as const).map(([k, label]) => (
+            {([["stageName", t("register.nome_artistico")], ["realName", t("register.nome_real")], ["areas", t("register.areas_separe_por_virgula")], ["verificationUrl", t("register.link_para_verificacao")], ["representationContact", t("register.contato_da_representacao")]] as const).map(([k, label]) => (
               <Field key={k} label={label} id={k} error={err[`celebrity.${k}`] ?? err[k]}><Input id={k} value={celeb[k]} onChange={(e) => setCeleb((c) => ({ ...c, [k]: e.target.value }))} /></Field>
             ))}
-            <PhotoPicker kind="official-photo" value={docs.officialPhotoUrl} onChange={(u) => setDocs((d) => ({ ...d, officialPhotoUrl: u }))} label="Foto oficial" hint="Usada no perfil, nos selos e no My Stage 3D (a foto no manequim do palco)." error={err["celebrity.officialPhotoUrl"]} />
-            <PhotoPicker kind="identity" value={docs.identityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, identityProofUrl: u }))} label="Documento de identificação" hint="Só a administração vê, para verificar o perfil." error={err["celebrity.identityProofUrl"]} />
-            <Field label="Histórico profissional" id="professionalHistory"><Textarea id="professionalHistory" value={celeb.professionalHistory} onChange={(e) => setCeleb((c) => ({ ...c, professionalHistory: e.target.value }))} /></Field>
-            <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={celeb.sealConsentGranted} onChange={(e) => setCeleb((c) => ({ ...c, sealConsentGranted: e.target.checked }))} /> Autorizo o uso do meu nome/imagem em selos vinculados (RF20).</label>
+            <PhotoPicker kind="official-photo" value={docs.officialPhotoUrl} onChange={(u) => setDocs((d) => ({ ...d, officialPhotoUrl: u }))} label={t("register.foto_oficial")} hint={t("register.usada_no_perfil_nos_selos")} error={err["celebrity.officialPhotoUrl"]} />
+            <PhotoPicker kind="identity" value={docs.identityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, identityProofUrl: u }))} label={t("register.documento_de_identificacao")} hint={t("register.so_a_administracao_ve_para_2")} error={err["celebrity.identityProofUrl"]} />
+            <Field label={t("register.historico_profissional")} id="professionalHistory"><Textarea id="professionalHistory" value={celeb.professionalHistory} onChange={(e) => setCeleb((c) => ({ ...c, professionalHistory: e.target.value }))} /></Field>
+            <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={celeb.sealConsentGranted} onChange={(e) => setCeleb((c) => ({ ...c, sealConsentGranted: e.target.checked }))} />{" "}{t("register.autorizo_o_uso_do_meu")}</label>
           </fieldset>
         )}
         <label className="mb-3 flex items-start gap-2 type-body-sm"><input type="checkbox" checked={f.acceptTerms} onChange={set("acceptTerms")} required /> {t("auth.acceptTerms")}</label>

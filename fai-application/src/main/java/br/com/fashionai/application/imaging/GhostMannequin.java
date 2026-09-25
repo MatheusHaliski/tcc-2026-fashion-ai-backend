@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.ColorMath;
 
 import java.awt.image.BufferedImage;
@@ -122,7 +123,7 @@ final class GhostMannequin {
                 }
             }
             hanger = true;
-            notes.add("gancho do cabide removido");
+            notes.add(Msg.t("ghostMannequin.gancho_do_cabide_removido"));
         }
         // pescoço de manequim/busto: coluna no centro que sobe acima da linha dos ombros/pontas da gola, com cor
         // (mediana) de manequim diferente do corpo da peça — gola alta e capuz têm a cor da peça e ficam
@@ -192,7 +193,7 @@ final class GhostMannequin {
                             }
                         }
                         mannequin = true;
-                        notes.add("pescoço do manequim removido");
+                        notes.add(Msg.t("ghostMannequin.pescoco_do_manequim_removido"));
                     }
                 }
             }
@@ -300,7 +301,7 @@ final class GhostMannequin {
         long midHoles = holes.stream().filter(hb -> hb[0] > garmentArea * 0.001).count();
         boolean lace = midHoles > 8;                            // renda/tela: os furos são o desenho do tecido
         if (lace) {
-            notes.add("tecido vazado: aberturas preservadas");
+            notes.add(Msg.t("ghostMannequin.tecido_vazado_aberturas_preservadas"));
         }
         for (int k = 0; k < holes.size() && !lace; k++) {
             int[] hb = holes.get(k);
@@ -333,10 +334,10 @@ final class GhostMannequin {
             }
         }
         if (openings > 0) {
-            notes.add("abertura da gola preenchida com o interior da peça");
+            notes.add(Msg.t("ghostMannequin.abertura_da_gola_preenchida_com"));
         }
         if (repaired > 0) {
-            notes.add(repaired + " falha(s) do recorte reparada(s)");
+            notes.add(Msg.t("ghostMannequin.falha_s_do_recorte_reparada", (repaired)));
         }
 
         // --- decote aberto entre as pontas da gola
@@ -411,7 +412,7 @@ final class GhostMannequin {
                         px[i] = under(px[i], (((int) Math.round(255 * cover)) << 24) | (inner & 0x00FFFFFF));
                     }
                 }
-                notes.add("decote: interior das costas preenchido (manequim invisível)");
+                notes.add(Msg.t("ghostMannequin.decote_interior_das_costas_preenchido"));
             }
         }
         if (!neck && openings == 0 && repaired == 0) {

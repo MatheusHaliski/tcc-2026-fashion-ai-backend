@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
@@ -99,7 +100,7 @@ public class ProfileService {
         out.put("contentVisible", canSee);
         if (!canSee) {
             out.put("invite", Map.of("message", u.getProfileVisibility() == Visibility.FOLLOWERS
-                    ? "Este perfil mostra as publicações só para seguidores. Siga para ver." : "Perfil privado.", "action", "SEGUIR"));
+                    ? Msg.t("profile.este_perfil_mostra_as_publicacoes") : Msg.t("profile.perfil_privado"), "action", "SEGUIR"));
             out.put("schemes", List.of());
             out.put("pieces", List.of());
             return out;
@@ -124,7 +125,7 @@ public class ProfileService {
     @Transactional
     public Map<String, Object> follow(CurrentUser viewer, UUID targetId) {
         if (viewer.id().equals(targetId)) {
-            throw ApiException.badRequest("SEGUIR_A_SI", "Você não pode seguir a si mesmo.");
+            throw ApiException.badRequest("SEGUIR_A_SI", Msg.t("profile.voce_nao_pode_seguir_a"));
         }
         User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound("Perfil"));
         if (relation(targetId, viewer.id()) == FollowStatus.BLOQUEADO) {
@@ -144,7 +145,7 @@ public class ProfileService {
         f.setStatus(needsApproval ? FollowStatus.PENDENTE : FollowStatus.ACEITO);
         follows.save(f);
         notifications.notify(targetId, viewer.id(), needsApproval ? NotificationType.FOLLOW_REQUEST : NotificationType.NEW_FOLLOWER, "USER", viewer.id(),
-                needsApproval ? "@" + viewer.username() + " quer seguir você" : "@" + viewer.username() + " começou a seguir você", null, Map.of());
+                needsApproval ? Msg.k("profile.quer_seguir_voce", viewer.username()) : Msg.k("profile.comecou_a_seguir_voce", viewer.username()), null, Map.of());
         return state(viewer.id(), targetId);
     }
 
@@ -173,14 +174,14 @@ public class ProfileService {
         Follow f = follows.findById(followId).orElseThrow(() -> ApiException.notFound("Pedido"));
         guard.requireOwner(user, f.getFollowing().getId(), "follow:" + followId);
         if (f.getStatus() != FollowStatus.PENDENTE) {
-            throw new ApiException(409, "PEDIDO_RESPONDIDO", "Este pedido já foi respondido.");
+            throw new ApiException(409, "PEDIDO_RESPONDIDO", Msg.t("profile.este_pedido_ja_foi_respondido"));
         }
         if (accept) {
             f.setStatus(FollowStatus.ACEITO);
             f.setRespondedAt(Instant.now());
             follows.save(f);
             notifications.notify(f.getFollower().getId(), user.id(), NotificationType.FOLLOW_ACCEPTED, "USER", user.id(),
-                    "@" + user.username() + " aceitou seu pedido", null, Map.of());
+                    Msg.k("profile.aceitou_seu_pedido", user.username()), null, Map.of());
         } else {
             follows.delete(f);
         }
@@ -191,7 +192,7 @@ public class ProfileService {
     public Map<String, Object> connections(CurrentUser viewer, UUID userId) {
         User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Perfil"));
         if (!viewer.id().equals(userId) && !guard.canView(viewer, userId, u.getProfileVisibility())) {
-            throw guard.deny(viewer, "connections:" + userId, "As conexões deste perfil não estão visíveis para você.");
+            throw guard.deny(viewer, "connections:" + userId, Msg.t("profile.as_conexoes_deste_perfil_nao"));
         }
         return Map.of("followers", follows.findByFollowingIdAndStatus(userId, FollowStatus.ACEITO).stream().map(f -> Views.user(f.getFollower())).toList(),
                 "following", follows.findByFollowerIdAndStatus(userId, FollowStatus.ACEITO).stream().map(f -> Views.user(f.getFollowing())).toList());
@@ -201,7 +202,7 @@ public class ProfileService {
     @Transactional
     public Map<String, Object> block(CurrentUser user, UUID targetId, boolean block) {
         if (user.id().equals(targetId)) {
-            throw ApiException.badRequest("BLOQUEIO_INVALIDO", "Você não pode bloquear a si mesmo.");
+            throw ApiException.badRequest("BLOQUEIO_INVALIDO", Msg.t("profile.voce_nao_pode_bloquear_a"));
         }
         User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound("Perfil"));
         follows.findByFollowerIdAndFollowingId(targetId, user.id()).ifPresent(follows::delete);

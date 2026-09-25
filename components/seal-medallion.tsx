@@ -1,6 +1,7 @@
 "use client";
 import { useId } from "react";
 import { mediaUrl } from "@/lib/api/client";
+import { tr, useI18n } from "@/lib/i18n/i18n";
 
 /**
  * RF25 — medalhão do selo. Segue as proporções do logo FashionAI (medidas no PNG oficial, frações do raio):
@@ -21,19 +22,19 @@ export interface SealDesign {
 export const GEOMETRY = { bezel: 0.06, fieldOuter: 0.94, centerDisc: 0.45, element: 0.36, uploadRatioTolerance: 0.03, uploadMinPx: 256, uploadMaxPx: 4096 };
 
 export const ELEMENTS = [
-  { id: "BAG", label: "Sacola FAI" }, { id: "HANGER", label: "Cabide" }, { id: "STAR", label: "Estrela" }, { id: "DIAMOND", label: "Diamante" },
-  { id: "CROWN", label: "Coroa" }, { id: "HEART", label: "Coração" }, { id: "SCISSORS", label: "Tesoura" }, { id: "NEEDLE", label: "Agulha" },
-  { id: "LAUREL", label: "Louro" }, { id: "BOLT", label: "Raio" }, { id: "FLOWER", label: "Flor" }, { id: "MONOGRAM", label: "Monograma" },
+  { id: "BAG", get label() { return tr("sealMedallion.sacola_fai"); } }, { id: "HANGER", get label() { return tr("sealMedallion.cabide"); } }, { id: "STAR", get label() { return tr("sealMedallion.estrela"); } }, { id: "DIAMOND", get label() { return tr("sealMedallion.diamante"); } },
+  { id: "CROWN", get label() { return tr("sealMedallion.coroa"); } }, { id: "HEART", get label() { return tr("sealMedallion.coracao"); } }, { id: "SCISSORS", get label() { return tr("sealMedallion.tesoura"); } }, { id: "NEEDLE", get label() { return tr("sealMedallion.agulha"); } },
+  { id: "LAUREL", get label() { return tr("sealMedallion.louro"); } }, { id: "BOLT", get label() { return tr("sealMedallion.raio"); } }, { id: "FLOWER", get label() { return tr("sealMedallion.flor"); } }, { id: "MONOGRAM", get label() { return tr("sealMedallion.monograma"); } },
 ];
 export const PATTERNS = [
-  { id: "MALHA", label: "Malha de nós (logo)" }, { id: "GRADE", label: "Grade" }, { id: "FLUXO_PONTOS", label: "Fluxo de pontos" }, { id: "PONTOS", label: "Pontos" },
-  { id: "RAIOS", label: "Raios" }, { id: "ONDAS", label: "Ondas" }, { id: "ANEIS", label: "Anéis" }, { id: "HEXAGONOS", label: "Hexágonos" },
-  { id: "ESTRELAS", label: "Estrelas" }, { id: "COSTURA", label: "Costura" }, { id: "ESPINHA", label: "Espinha de peixe" }, { id: "TRAMA", label: "Trama têxtil" }, { id: "NENHUM", label: "Liso" },
+  { id: "MALHA", get label() { return tr("sealMedallion.malha_de_nos_logo"); } }, { id: "GRADE", get label() { return tr("sealMedallion.grade"); } }, { id: "FLUXO_PONTOS", get label() { return tr("sealMedallion.fluxo_de_pontos"); } }, { id: "PONTOS", get label() { return tr("sealMedallion.pontos"); } },
+  { id: "RAIOS", get label() { return tr("sealMedallion.raios"); } }, { id: "ONDAS", get label() { return tr("sealMedallion.ondas"); } }, { id: "ANEIS", get label() { return tr("sealMedallion.aneis"); } }, { id: "HEXAGONOS", get label() { return tr("sealMedallion.hexagonos"); } },
+  { id: "ESTRELAS", get label() { return tr("sealMedallion.estrelas"); } }, { id: "COSTURA", get label() { return tr("sealMedallion.costura"); } }, { id: "ESPINHA", get label() { return tr("sealMedallion.espinha_de_peixe"); } }, { id: "TRAMA", get label() { return tr("sealMedallion.trama_textil"); } }, { id: "NENHUM", get label() { return tr("sealMedallion.liso"); } },
 ];
 export const MATERIALS = [
-  { id: "FOSCO", label: "Fosco" }, { id: "BRILHO", label: "Brilho" }, { id: "DOURADO", label: "Dourado" }, { id: "PRATA", label: "Prata" }, { id: "BRONZE", label: "Bronze" },
-  { id: "HOLOGRAFICO", label: "Holográfico" }, { id: "ESMALTE", label: "Esmalte" }, { id: "MADEIRA", label: "Madeira" }, { id: "COURO", label: "Couro" },
-  { id: "TECIDO", label: "Tecido" }, { id: "VIDRO", label: "Vidro" }, { id: "NEON", label: "Neon" },
+  { id: "FOSCO", get label() { return tr("sealMedallion.fosco"); } }, { id: "BRILHO", get label() { return tr("common.brilho"); } }, { id: "DOURADO", get label() { return tr("sealMedallion.dourado"); } }, { id: "PRATA", get label() { return tr("sealMedallion.prata"); } }, { id: "BRONZE", get label() { return tr("sealMedallion.bronze"); } },
+  { id: "HOLOGRAFICO", get label() { return tr("sealMedallion.holografico"); } }, { id: "ESMALTE", get label() { return tr("sealMedallion.esmalte"); } }, { id: "MADEIRA", get label() { return tr("sealMedallion.madeira"); } }, { id: "COURO", get label() { return tr("sealMedallion.couro"); } },
+  { id: "TECIDO", get label() { return tr("sealMedallion.tecido"); } }, { id: "VIDRO", get label() { return tr("sealMedallion.vidro"); } }, { id: "NEON", get label() { return tr("sealMedallion.neon"); } },
 ];
 export const PALETTES: Record<string, { border: string; field: string; line: string; nodes: string[]; center: string; element: string }> = {
   FAI: { border: "#2B2622", field: "#F58220", line: "#F6E8CF", nodes: ["#F9B21C", "#2E86C1", "#6DB33F", "#7A4E2D", "#F26522"], center: "#F6E8CF", element: "#2B2622" },
@@ -212,6 +213,7 @@ function Element({ id, color, text, fill }: { id: string; color: string; text: s
 }
 
 export function SealMedallion({ design, size = 44, premium, title, className }: { design?: SealDesign | null; size?: number; premium?: boolean; title?: string; className?: string }) {
+  const { t } = useI18n();
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const d = design ?? DEFAULT_DESIGN;
   const R = 100;
@@ -229,7 +231,7 @@ export function SealMedallion({ design, size = 44, premium, title, className }: 
   }
   return (
     <span className={wrapClass} style={{ width: size, height: size }} title={title}>
-      <svg viewBox="-100 -100 200 200" width={size} height={size} role="img" aria-label={title ?? "selo"} style={{ display: "block", overflow: "visible" }}>
+      <svg viewBox="-100 -100 200 200" width={size} height={size} role="img" aria-label={title ?? t("sealMedallion.selo")} style={{ display: "block", overflow: "visible" }}>
         <defs>
           <clipPath id={`${uid}-cb`}><circle r={R} /></clipPath>
           <clipPath id={`${uid}-cf`}><circle r={fieldR} /></clipPath>
@@ -271,12 +273,12 @@ export function validateSealImage(file: File): Promise<{ ok: boolean; message?: 
     img.onload = () => {
       URL.revokeObjectURL(url);
       const ratio = img.width / img.height;
-      if (Math.abs(ratio - 1) > GEOMETRY.uploadRatioTolerance) resolve({ ok: false, message: `A imagem precisa ser quadrada (1:1) como o logo FashionAI — esta tem ${img.width} × ${img.height}.`, width: img.width, height: img.height });
-      else if (Math.min(img.width, img.height) < GEOMETRY.uploadMinPx) resolve({ ok: false, message: `Mínimo de ${GEOMETRY.uploadMinPx} × ${GEOMETRY.uploadMinPx} px.`, width: img.width, height: img.height });
-      else if (Math.max(img.width, img.height) > GEOMETRY.uploadMaxPx) resolve({ ok: false, message: `Máximo de ${GEOMETRY.uploadMaxPx} × ${GEOMETRY.uploadMaxPx} px.`, width: img.width, height: img.height });
+      if (Math.abs(ratio - 1) > GEOMETRY.uploadRatioTolerance) resolve({ ok: false, message: tr("sealMedallion.a_imagem_precisa_ser_quadrada", { width: img.width, height: img.height }), width: img.width, height: img.height });
+      else if (Math.min(img.width, img.height) < GEOMETRY.uploadMinPx) resolve({ ok: false, message: tr("sealMedallion.minimo_de_px", { uploadMinPx: GEOMETRY.uploadMinPx, uploadMinPx2: GEOMETRY.uploadMinPx }), width: img.width, height: img.height });
+      else if (Math.max(img.width, img.height) > GEOMETRY.uploadMaxPx) resolve({ ok: false, message: tr("sealMedallion.maximo_de_px", { uploadMaxPx: GEOMETRY.uploadMaxPx, uploadMaxPx2: GEOMETRY.uploadMaxPx }), width: img.width, height: img.height });
       else resolve({ ok: true, width: img.width, height: img.height });
     };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve({ ok: false, message: "Não foi possível ler a imagem.", width: 0, height: 0 }); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve({ ok: false, message: tr("sealMedallion.nao_foi_possivel_ler_a"), width: 0, height: 0 }); };
     img.src = url;
   });
 }

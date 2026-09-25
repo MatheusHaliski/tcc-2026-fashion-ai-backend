@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 
 import java.awt.image.BufferedImage;
@@ -250,7 +251,7 @@ public final class ReliefModelGenerator {
         bin.put(png);
 
         Map<String, Object> gltf = new LinkedHashMap<>();
-        gltf.put("asset", Map.of("version", "2.0", "generator", "Fashion AI · RF16 relevo local"));
+        gltf.put("asset", Map.of("version", "2.0", "generator", Msg.t("reliefModelGenerator.fashion_ai_rf16_relevo_local")));
         gltf.put("scene", 0);
         gltf.put("scenes", List.of(Map.of("nodes", List.of(0))));
         gltf.put("nodes", List.of(Map.of("mesh", 0, "name", "peca")));

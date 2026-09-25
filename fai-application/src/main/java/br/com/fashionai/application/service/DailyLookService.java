@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.security.CurrentUser;
@@ -57,8 +58,7 @@ public class DailyLookService {
         List<WardrobeItem> unavailable = items.stream().map(SchemeItem::getWardrobeItem)
                 .filter(w -> !w.isDisponivel() || w.getAvailabilityStatus() != AvailabilityStatus.AVAILABLE).toList();
         if (!unavailable.isEmpty()) {
-            throw new ApiException(409, "PECA_INDISPONIVEL", "Este look tem peça(s) no cesto: "
-                    + unavailable.stream().map(WardrobeItem::getName).toList() + ". Marque como disponível antes (RF33.CA05).");
+            throw new ApiException(409, "PECA_INDISPONIVEL", Msg.t("dailyLook.este_look_tem_peca_s", unavailable.stream().map(WardrobeItem::getName).toList()));
         }
         LocalDate day = date == null ? LocalDate.now(FaiPointsService.ZONE) : date;
         User owner = users.findById(user.id()).orElseThrow();
@@ -107,8 +107,7 @@ public class DailyLookService {
     public Map<String, Object> feedback(CurrentUser user, LocalDate date, DailyLookFeedback feedback) {
         LocalDate day = date == null ? LocalDate.now(FaiPointsService.ZONE) : date;
         DailyLook dl = (day.equals(LocalDate.now(FaiPointsService.ZONE)) ? today(user.id()) : dailyLooks.findByUserIdAndLookDate(user.id(), day))
-                .orElseThrow(() -> new ApiException(404, "SEM_LOOK_DO_DIA", "Não há Look do Dia registrado para " + day
-                        + ". Use o Autopiloto ou marque um look salvo como Look do Dia.", Map.of("href", "/autopilot")));
+                .orElseThrow(() -> new ApiException(404, "SEM_LOOK_DO_DIA", Msg.t("dailyLook.nao_ha_look_do_dia", day), Map.of("href", "/autopilot")));
         dl.setFeedback(feedback);
         dl.setFeedbackAt(Instant.now());
         dailyLooks.save(dl);
@@ -131,7 +130,7 @@ public class DailyLookService {
         out.put("pending", pending);
         out.put("evening", hour >= 18);
         out.put("show", pending && hour >= 18);
-        out.put("message", pending ? "Como foi o look de hoje? Avalie antes da meia-noite." : "");
+        out.put("message", pending ? Msg.t("dailyLook.como_foi_o_look_de") : "");
         out.put("dailyLook", dl.map(this::view).orElse(null));
         return out;
     }

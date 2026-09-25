@@ -1,5 +1,6 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.common.Msg;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,20 +45,20 @@ public final class QualityMetrics {
         List<String> issues = new ArrayList<>();
         List<String> recs = new ArrayList<>();
         if (m.get("sharpness") < 0.45) {
-            issues.add("foto tremida ou desfocada");
-            recs.add("Apoie o celular e fotografe com boa luz para a foto ficar nítida.");
+            issues.add(Msg.t("qualityMetrics.foto_tremida_ou_desfocada"));
+            recs.add(Msg.t("qualityMetrics.apoie_o_celular_e_fotografe"));
         }
         if (m.get("exposure") < 0.5) {
-            issues.add("exposição inadequada");
-            recs.add("Evite contraluz e sombras fortes; prefira luz natural difusa.");
+            issues.add(Msg.t("qualityMetrics.exposicao_inadequada"));
+            recs.add(Msg.t("qualityMetrics.evite_contraluz_e_sombras_fortes"));
         }
         if (m.get("background_removal") < 0.5) {
-            issues.add("fundo pouco contrastante");
-            recs.add("Fotografe a peça esticada sobre um fundo liso e de cor diferente da peça.");
+            issues.add(Msg.t("qualityMetrics.fundo_pouco_contrastante"));
+            recs.add(Msg.t("qualityMetrics.fotografe_a_peca_esticada_sobre"));
         }
         if (m.get("resolution") < 0.6) {
-            issues.add("resolução baixa");
-            recs.add("Use a câmera principal, sem zoom digital (mínimo 800 px no menor lado).");
+            issues.add(Msg.t("qualityMetrics.resolucao_baixa"));
+            recs.add(Msg.t("qualityMetrics.use_a_camera_principal_sem"));
         }
         return new Report(m, overall, overall >= ACCEPTANCE_THRESHOLD, issues, recs);
     }

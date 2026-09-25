@@ -2,6 +2,8 @@
 import { mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { cn } from "@/components/ui";
+import { useI18n, tr } from "@/lib/i18n/i18n";
+import { currentIntl } from "@/lib/i18n/state";
 
 /** Card Trello RF38 — Cupom Fashion AI (tipos compartilhados pela carteira do usuário e pela aba da marca). */
 export interface CouponOwner { user: UserCard; name: string; kind: "MARCA" | "CELEBRIDADE" | "PESSOAL"; logoUrl?: string | null; slug?: string | null; storeUrl?: string | null; }
@@ -12,8 +14,8 @@ export interface Coupon {
 }
 export interface CouponRight { id: string; source: "SELO" | "FLAIR"; title: string; detail?: string | null; status: string; createdAt: string; owner: CouponOwner; question: string; }
 
-const SOURCE_LABEL: Record<string, string> = { SELO: "Selo", FLAIR: "Jogo FLAIR" };
-const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString("pt-BR") : "sem validade");
+const SOURCE_LABEL: Record<string, string> = { get SELO() { return tr("coupons.faiCoupon.selo"); }, get FLAIR() { return tr("common.jogo_flair"); } };
+const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString(currentIntl()) : tr("coupons.faiCoupon.sem_validade"));
 
 /** Valor em destaque: "15%", "R$ 60" ou o texto do benefício. */
 function bigValue(c: Pick<Coupon, "discountPercent" | "discountAmount" | "discount">) {
@@ -27,13 +29,14 @@ function bigValue(c: Pick<Coupon, "discountPercent" | "discountAmount" | "discou
  * na cor da marca com logo, valor, código e validade. Tocar abre a loja terceira em outra aba (fora do app FAI).
  */
 export function FaiCoupon({ coupon, preview, onClick, compact }: { coupon: Coupon | (Omit<Coupon, "code" | "status" | "id"> & { code?: string; status?: Coupon["status"]; id?: string }); preview?: boolean; onClick?: () => void; compact?: boolean }) {
+  const { rich, t } = useI18n();
   const c = coupon; const val = bigValue(c); const status = c.status ?? "EMITIDO";
   const usable = !preview && status === "EMITIDO" && !!c.storeUrl;
   const body = (
     <div className={cn("fai-coupon", compact && "fai-coupon-compact", status !== "EMITIDO" && "fai-coupon-off")} style={{ ["--coupon" as string]: c.accentColor }}>
       <div className="fai-coupon-stub">
         <img src="/brand/fai-logo.png" alt="Fashion AI" className="fai-coupon-logo" draggable={false} />
-        <span className="fai-coupon-stub-label">CUPOM<br />FASHION AI</span>
+        <span className="fai-coupon-stub-label">{rich("coupons.faiCoupon.cupom_fashion_ai", undefined, { 0: () => <br /> })}</span>
         <span className="fai-coupon-source">{SOURCE_LABEL[c.source] ?? c.source}</span>
       </div>
       <div className="fai-coupon-main">
@@ -48,15 +51,15 @@ export function FaiCoupon({ coupon, preview, onClick, compact }: { coupon: Coupo
         <p className="fai-coupon-title">{c.title}</p>
         {c.discountPercent == null && c.discountAmount == null ? null : <p className="fai-coupon-terms">{c.discount}</p>}
         <div className="fai-coupon-foot">
-          <code className="fai-coupon-code">{preview ? "FAI-••••-••••" : c.code}</code>
-          <span>válido até {date(c.expiresAt)}</span>
+          <code className="fai-coupon-code">{preview ? t("coupons.faiCoupon.fai") : c.code}</code>
+          <span>{t("coupons.faiCoupon.valido_ate", { date: date(c.expiresAt) })}</span>
         </div>
-        {!preview && <p className="fai-coupon-cta">{status === "EMITIDO" ? (c.storeUrl ? "Usar na loja ↗" : "Mostre o código na loja") : status === "USADO" ? "Cupom usado" : "Cupom expirado"}</p>}
+        {!preview && <p className="fai-coupon-cta">{status === "EMITIDO" ? (c.storeUrl ? t("coupons.faiCoupon.usar_na_loja") : t("coupons.faiCoupon.mostre_o_codigo_na_loja")) : status === "USADO" ? t("coupons.faiCoupon.cupom_usado") : t("coupons.faiCoupon.cupom_expirado")}</p>}
       </div>
       {status !== "EMITIDO" && <span className="fai-coupon-stamp">{status}</span>}
     </div>
   );
-  if (onClick) return <button type="button" className="block w-full text-left" onClick={onClick} aria-label={`Cupom ${c.title} de ${c.owner.name}`}>{body}</button>;
-  if (usable) return <a href={c.storeUrl!} target="_blank" rel="noopener noreferrer" className="block" aria-label={`Usar o cupom ${c.title} na loja de ${c.owner.name} (abre fora do app)`}>{body}</a>;
+  if (onClick) return <button type="button" className="block w-full text-left" onClick={onClick} aria-label={t("coupons.faiCoupon.cupom_de", { title: c.title, name: c.owner.name })}>{body}</button>;
+  if (usable) return <a href={c.storeUrl!} target="_blank" rel="noopener noreferrer" className="block" aria-label={t("coupons.faiCoupon.usar_o_cupom_na_loja", { title: c.title, name: c.owner.name })}>{body}</a>;
   return body;
 }

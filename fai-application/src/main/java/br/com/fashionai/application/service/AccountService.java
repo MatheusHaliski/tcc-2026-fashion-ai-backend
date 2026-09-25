@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
@@ -71,25 +72,25 @@ public class AccountService {
     public static final Map<ConsentPurpose, String[]> PURPOSES = new LinkedHashMap<>();
 
     static {
-        PURPOSES.put(ConsentPurpose.AI_RECOMMENDATION, new String[]{"Recomendações por IA",
-                "Enviar metadados do seu acervo (peças e looks) a provedores de IA para compor looks, Copilot e DNA de Estilo.",
-                "Consentimento", "Art. 7º, I"});
-        PURPOSES.put(ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, new String[]{"Processamento de fotos por terceiros",
-                "Enviar fotos das peças a serviços externos (remoção de fundo, detecção, provador FASHN.ai). Sem isso, tudo roda localmente.",
-                "Consentimento", "Art. 7º, I"});
-        PURPOSES.put(ConsentPurpose.HISTORY_FOR_RECOMMENDATION, new String[]{"Histórico para personalização",
-                "Usar seu histórico de interações para ordenar feeds e curadoria de fotos.", "Consentimento", "Art. 7º, I"});
-        PURPOSES.put(ConsentPurpose.PERSONALIZED_ADS, new String[]{"Anúncios personalizados",
-                "Mostrar promoções de marcas conforme seu estilo.", "Consentimento", "Art. 7º, I"});
-        PURPOSES.put(ConsentPurpose.PARTNER_SHARING, new String[]{"Compartilhamento com parceiros",
-                "Compartilhar dados agregados com marcas parceiras em resgates de promoção.", "Consentimento", "Art. 7º, I"});
-        PURPOSES.put(ConsentPurpose.BODY_MEASUREMENTS, new String[]{"Medidas corporais (dado sensível)",
-                "Usar porte e tom de pele do manequim do provador para personalizar a renderização.", "Consentimento específico e destacado",
-                "Art. 11, I"});
-        PURPOSES.put(ConsentPurpose.FACIAL_RECOGNITION, new String[]{"Reconhecimento facial (dado sensível)",
-                "Não utilizado pelo Fashion AI — o manequim nunca usa rosto real.", "Consentimento específico e destacado", "Art. 11, I"});
-        PURPOSES.put(ConsentPurpose.LOCATION_HISTORY, new String[]{"Localização para clima",
-                "Usar sua localização aproximada para o clima do Copilot (Open-Meteo).", "Consentimento", "Art. 7º, I"});
+        PURPOSES.put(ConsentPurpose.AI_RECOMMENDATION, new String[]{Msg.k("account.recomendacoes_por_ia"),
+                Msg.k("account.enviar_metadados_do_seu_acervo"),
+                "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, new String[]{Msg.k("account.processamento_de_fotos_por_terceiros"),
+                Msg.k("account.enviar_fotos_das_pecas_a"),
+                "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.HISTORY_FOR_RECOMMENDATION, new String[]{Msg.k("account.historico_para_personalizacao"),
+                Msg.k("account.usar_seu_historico_de_interacoes"), "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.PERSONALIZED_ADS, new String[]{Msg.k("account.anuncios_personalizados"),
+                Msg.k("account.mostrar_promocoes_de_marcas_conforme"), "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.PARTNER_SHARING, new String[]{Msg.k("account.compartilhamento_com_parceiros"),
+                Msg.k("account.compartilhar_dados_agregados_com_marcas"), "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.BODY_MEASUREMENTS, new String[]{Msg.k("account.medidas_corporais_dado_sensivel"),
+                Msg.k("account.usar_porte_e_tom_de"), Msg.k("account.consentimento_especifico_e_destacado"),
+                Msg.k("account.art_11_i")});
+        PURPOSES.put(ConsentPurpose.FACIAL_RECOGNITION, new String[]{Msg.k("account.reconhecimento_facial_dado_sensivel"),
+                Msg.k("account.nao_utilizado_pelo_fashion_ai"), Msg.k("account.consentimento_especifico_e_destacado"), Msg.k("account.art_11_i")});
+        PURPOSES.put(ConsentPurpose.LOCATION_HISTORY, new String[]{Msg.k("account.localizacao_para_clima"),
+                Msg.k("account.usar_sua_localizacao_aproximada_para"), "Consentimento", Msg.k("account.art_7_i")});
     }
 
     private final UserRepository users;
@@ -152,7 +153,7 @@ public class AccountService {
     }
 
     private User load(CurrentUser user) {
-        return users.findById(user.id()).orElseThrow(() -> ApiException.notFound("Usuário"));
+        return users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
     }
 
     @Transactional(readOnly = true)
@@ -207,10 +208,10 @@ public class AccountService {
         if (cmd.email() != null && !cmd.email().isBlank() && !cmd.email().trim().equalsIgnoreCase(u.getEmail())) {
             String mail = cmd.email().trim().toLowerCase(Locale.ROOT);
             if (!IdentityService.EMAIL.matcher(mail).matches()) {
-                throw ApiException.badRequest("EMAIL_INVALIDO", "Formato de e-mail inválido.");
+                throw ApiException.badRequest("EMAIL_INVALIDO", Msg.t("common.formato_de_e_mail_invalido"));
             }
             if (users.existsByEmailHash(Hashing.emailHash(mail))) {
-                throw ApiException.conflict("EMAIL_EM_USO", "Este e-mail já está em uso.");
+                throw ApiException.conflict("EMAIL_EM_USO", Msg.t("account.este_e_mail_ja_esta"));
             }
             String code = Hashing.numericCode(6);
             VerificationCode vc = new VerificationCode();
@@ -221,9 +222,8 @@ public class AccountService {
             vc.setExpiresAt(Instant.now().plus(Duration.ofHours(2)));
             vc.setLastSentAt(Instant.now());
             codes.save(vc);
-            email.send(mail, "Confirme o novo e-mail", "<p>Código para confirmar o novo e-mail: <b>" + code + "</b></p>", "SECURITY");
-            email.send(u.getEmail(), "Pedido de troca de e-mail", "<p>Foi pedida a troca do e-mail da sua conta para "
-                    + IdentityService.maskEmail(mail) + ". Se não foi você, troque sua senha.</p>", "SECURITY");
+            email.send(mail, Msg.t("account.confirme_o_novo_e_mail"), Msg.t("account.p_codigo_para_confirmar_o", code), "SECURITY");
+            email.send(u.getEmail(), Msg.t("account.pedido_de_troca_de_e"), Msg.t("account.p_foi_pedida_a_troca", IdentityService.maskEmail(mail)), "SECURITY");
             out.put("emailChangePending", IdentityService.maskEmail(mail));
             changed.add("email(pendente)");
         }
@@ -248,9 +248,9 @@ public class AccountService {
     public Views.UserCard confirmEmailChange(CurrentUser user, String code) {
         User u = load(user);
         VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
-                VerificationPurpose.EMAIL_CHANGE).orElseThrow(() -> ApiException.badRequest("CODIGO_INVALIDO", "Nenhuma troca pendente."));
+                VerificationPurpose.EMAIL_CHANGE).orElseThrow(() -> ApiException.badRequest("CODIGO_INVALIDO", Msg.t("account.nenhuma_troca_pendente")));
         if (vc.getExpiresAt().isBefore(Instant.now()) || !vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + code))) {
-            throw ApiException.badRequest("CODIGO_INVALIDO", "Código inválido ou expirado.");
+            throw ApiException.badRequest("CODIGO_INVALIDO", Msg.t("account.codigo_invalido_ou_expirado"));
         }
         vc.setConsumedAt(Instant.now());
         u.setEmail(vc.getTarget());
@@ -304,7 +304,7 @@ public class AccountService {
     @Transactional
     public List<Map<String, Object>> setConsent(CurrentUser user, ConsentPurpose purpose, boolean granted) {
         if (purpose == ConsentPurpose.FACIAL_RECOGNITION && granted) {
-            throw ApiException.badRequest("FINALIDADE_NAO_UTILIZADA", "O Fashion AI não usa reconhecimento facial.");
+            throw ApiException.badRequest("FINALIDADE_NAO_UTILIZADA", Msg.t("account.o_fashion_ai_nao_usa"));
         }
         User u = load(user);
         UserConsent c = consents.findByUserIdAndPurpose(u.getId(), purpose).orElseGet(() -> {
@@ -345,7 +345,7 @@ public class AccountService {
         req.setReadyAt(Instant.now());
         req.setExpiresAt(Instant.now().plus(Duration.ofDays(7)));
         notifications.notify(u.getId(), null, NotificationType.DATA_EXPORT_READY, "EXPORT", req.getId(),
-                "Seus dados estão prontos", "A exportação em JSON fica disponível por 7 dias em Configurações › Seus dados.", null);
+                Msg.k("account.seus_dados_estao_prontos"), "A exportação em JSON fica disponível por 7 dias em Configurações › Seus dados.", null);
         audit.log(user, AuditActions.EXPORTACAO_CONTA, "export:" + req.getId(), Map.of("bytes", json.length));
         return Map.of("id", req.getId(), "status", req.getStatus(), "readyAt", req.getReadyAt(), "expiresAt", req.getExpiresAt(),
                 "bytes", json.length);
@@ -365,12 +365,12 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public byte[] downloadExport(CurrentUser user, UUID exportId) {
-        DataExportRequest req = exports.findById(exportId).orElseThrow(() -> ApiException.notFound("Exportação"));
+        DataExportRequest req = exports.findById(exportId).orElseThrow(() -> ApiException.notFound(Msg.t("account.exportacao")));
         if (!req.getUser().getId().equals(user.id())) {
-            throw ApiException.forbidden("Exportação de outro usuário.");
+            throw ApiException.forbidden(Msg.t("account.exportacao_de_outro_usuario"));
         }
         if (req.getExpiresAt() != null && req.getExpiresAt().isBefore(Instant.now())) {
-            throw new ApiException(410, "EXPORTACAO_EXPIRADA", "Esta exportação expirou. Gere uma nova.");
+            throw new ApiException(410, "EXPORTACAO_EXPIRADA", Msg.t("account.esta_exportacao_expirou_gere_uma"));
         }
         return storage.get(req.getFileKey());
     }
@@ -378,7 +378,7 @@ public class AccountService {
     Map<String, Object> exportData(User u) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("exportedAt", Instant.now());
-        data.put("format", "Fashion AI — exportação LGPD (art. 18, V)");
+        data.put("format", Msg.t("account.fashion_ai_exportacao_lgpd_art"));
         Map<String, Object> profile = new LinkedHashMap<>();
         profile.put("id", u.getId());
         profile.put("username", u.getUsername());
@@ -430,8 +430,7 @@ public class AccountService {
         u.setDeletionRequestedAt(Instant.now());
         u.setDeletionScheduledFor(Instant.now().plus(DELETION_GRACE));
         u.setStatus(AccountStatus.DELETION_SCHEDULED);
-        email.send(u.getEmail(), "Exclusão de conta agendada", "<p>Sua conta será excluída em "
-                + u.getDeletionScheduledFor() + ". Você pode cancelar até lá em Configurações › Seus dados.</p>", "SECURITY");
+        email.send(u.getEmail(), Msg.t("account.exclusao_de_conta_agendada"), Msg.t("account.p_sua_conta_sera_excluida", u.getDeletionScheduledFor()), "SECURITY");
         audit.log(user, AuditActions.EXCLUSAO_CONTA, "user:" + u.getId(), Map.of("scheduledFor", u.getDeletionScheduledFor().toString()));
         return Map.of("status", u.getStatus(), "deletionScheduledFor", u.getDeletionScheduledFor());
     }
@@ -477,7 +476,7 @@ public class AccountService {
                 s.setStatus(SchemeStatus.ARCHIVED);
             }
             comments.findByAuthorId(u.getId()).forEach(c -> {
-                c.setContent("[comentário removido]");
+                c.setContent(Msg.t("account.comentario_removido"));
                 c.setActive(false);
             });
             photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(u.getId()).forEach(p -> {
@@ -489,7 +488,7 @@ public class AccountService {
                 p.setDeletedAt(Instant.now());
             });
             u.setUsername("deleted_" + tag);
-            u.setDisplayName("Conta excluída");
+            u.setDisplayName(Msg.t("account.conta_excluida"));
             u.setEmail("deleted+" + tag + "@fashionai.invalid");
             u.setEmailHash(Hashing.sha256("deleted:" + u.getId() + ":" + Hashing.randomToken(8)));
             u.setPhone(null);

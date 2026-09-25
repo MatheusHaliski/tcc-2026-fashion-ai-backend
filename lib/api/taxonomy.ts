@@ -2,6 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
 import { PT_LABELS } from "@/lib/api/labels-pt";
+import { EN_LABELS } from "@/lib/api/labels-en";
+import { ES_LABELS } from "@/lib/api/labels-es";
+import { PSEUDO_LOCALE, baseLocale, getCurrentLocale } from "@/lib/i18n/state";
+import { pseudo } from "@/lib/i18n/pseudo";
 
 export interface Taxonomy {
   subcategories: Record<string, string[]>; colors: Record<string, string>; colorFamilies?: Record<string, string>; materials: string[]; sizes: string[]; sexes: string[];
@@ -14,13 +18,28 @@ export function useTaxonomy() {
   useEffect(() => { if (cache) return; api.get<Taxonomy>("/api/taxonomy", { anonymous: true }).then((t) => { cache = t; setTax(t); }).catch(() => undefined); }, []);
   return tax;
 }
-export const CATEGORY_LABEL: Record<string, string> = { upper_piece: "Parte superior", lower_piece: "Parte inferior", shoes_piece: "Calçados", accessory_piece: "Acessórios", full_body_piece: "Corpo inteiro" };
-/** Idioma dos rótulos de taxonomia — o I18nProvider atualiza quando o usuário troca de idioma. */
-let labelLocale = "pt-BR";
-export const setLabelLocale = (l: string) => { labelLocale = l; };
-/** Rótulo legível de uma chave da taxonomia: em pt-BR usa o dicionário; nos demais idiomas, a própria chave formatada. */
+
+const TABLES: Record<"pt-BR" | "en" | "es", Record<string, string>> = { "pt-BR": PT_LABELS, en: EN_LABELS, es: ES_LABELS };
+export const CATEGORY_KEYS = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"] as const;
+
+/**
+ * Rótulo legível de uma chave da taxonomia no idioma corrente (RF23): tabela do idioma → tabela pt-BR → a própria chave
+ * formatada. No pseudo-idioma o rótulo sai pseudolocalizado, como qualquer texto do catálogo.
+ */
 export const label = (s?: string | null) => {
   const key = (s ?? "").trim();
-  if (labelLocale === "pt-BR") { const pt = PT_LABELS[key.toLowerCase()]; if (pt) return pt; }
-  return key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  if (!key) return "";
+  const locale = getCurrentLocale();
+  const k = key.toLowerCase();
+  const hit = TABLES[baseLocale(locale)][k] ?? PT_LABELS[k];
+  const out = hit ?? key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  return locale === PSEUDO_LOCALE ? pseudo(out) : out;
 };
+
+/** Rótulos das cinco categorias, sempre no idioma corrente (objeto vivo: `CATEGORY_LABEL[x]`, `Object.keys`, `Object.entries`). */
+export const CATEGORY_LABEL: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get: (_t, k) => (typeof k === "string" && (CATEGORY_KEYS as readonly string[]).includes(k) ? label(k) : undefined),
+  has: (_t, k) => typeof k === "string" && (CATEGORY_KEYS as readonly string[]).includes(k),
+  ownKeys: () => [...CATEGORY_KEYS],
+  getOwnPropertyDescriptor: (_t, k) => (typeof k === "string" && (CATEGORY_KEYS as readonly string[]).includes(k) ? { enumerable: true, configurable: true, writable: false, value: label(k) } : undefined),
+});

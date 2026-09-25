@@ -2,6 +2,7 @@
 import { useId, useRef, useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { Button, useToast } from "@/components/ui";
+import { useI18n } from "@/lib/i18n/i18n";
 
 export type PreUploadKind = "avatar" | "logo" | "official-photo" | "identity" | "activity-proof";
 
@@ -13,12 +14,13 @@ export type PreUploadKind = "avatar" | "logo" | "official-photo" | "identity" | 
 export function PhotoPicker({ kind, value, onChange, label, hint, round = false, error }: {
   kind: PreUploadKind; value: string | null; onChange: (url: string | null) => void; label: string; hint?: string; round?: boolean; error?: string;
 }) {
+  const { t } = useI18n();
   const id = useId(); const input = useRef<HTMLInputElement>(null); const toast = useToast();
   const [busy, setBusy] = useState(false); const [local, setLocal] = useState<string | null>(null);
   const privateDoc = kind === "identity" || kind === "activity-proof";
   async function pick(file?: File) {
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { toast.error("A imagem deve ter até 8 MB."); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error(t("photoPicker.a_imagem_deve_ter_ate")); return; }
     setBusy(true); setLocal(URL.createObjectURL(file));
     try {
       const form = new FormData(); form.append("file", file);
@@ -35,13 +37,13 @@ export function PhotoPicker({ kind, value, onChange, label, hint, round = false,
         <button type="button" onClick={() => input.current?.click()} aria-labelledby={`${id}-l`} disabled={busy}
           className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-dashed border-line bg-surface-2 text-muted hover:bg-surface-3 ${round ? "h-20 w-20 rounded-full" : "h-20 w-28 rounded-md"}`}>
           {preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <span aria-hidden className="text-2xl">＋</span>}
-          {busy && <span className="absolute inset-0 flex items-center justify-center bg-surface/70 type-caption">enviando…</span>}
+          {busy && <span className="absolute inset-0 flex items-center justify-center bg-surface/70 type-caption">{t("photoPicker.enviando")}</span>}
         </button>
         <div className="min-w-0 flex-1">
           {hint && <p className="type-caption text-muted">{hint}</p>}
           <div className="mt-1 flex gap-2">
-            <Button size="sm" onClick={() => input.current?.click()} disabled={busy}>{value ? "Trocar" : "Escolher foto"}</Button>
-            {value && <Button size="sm" variant="ghost" onClick={() => { onChange(null); setLocal(null); }}>Remover</Button>}
+            <Button size="sm" onClick={() => input.current?.click()} disabled={busy}>{value ? t("common.trocar") : t("photoPicker.escolher_foto")}</Button>
+            {value && <Button size="sm" variant="ghost" onClick={() => { onChange(null); setLocal(null); }}>{t("common.remove")}</Button>}
           </div>
           {error && <p className="error-text mt-1" role="alert">{error}</p>}
         </div>
@@ -54,18 +56,19 @@ export function PhotoPicker({ kind, value, onChange, label, hint, round = false,
 
 /** RF1 — sexo do manequim (Passarela 3D e provador): radios com o desenho do manequim (a silhueta nunca é o único sinal). */
 export function MannequinSexPicker({ value, onChange, error, optional }: { value: string | null; onChange: (v: "FEMININO" | "MASCULINO") => void; error?: string; optional?: boolean }) {
+  const { t } = useI18n();
   return (
     <fieldset className="mb-3">
-      <legend className="label mb-1">Manequim{optional ? " (opcional)" : ""}</legend>
-      <div role="radiogroup" aria-label="sexo do manequim" className="flex gap-2">
+      <legend className="label mb-1">{t("photoPicker.manequim", { value: optional ? t("photoPicker.opcional") : "" })}</legend>
+      <div role="radiogroup" aria-label={t("photoPicker.sexo_do_manequim")} className="flex gap-2">
         {(["FEMININO", "MASCULINO"] as const).map((s) => (
           <button key={s} type="button" role="radio" aria-checked={value === s} onClick={() => onChange(s)}
             className={`chip inline-flex items-center gap-2 ${value === s ? "is-active" : ""}`}>
-            <MannequinGlyph sex={s} />{s === "FEMININO" ? "Feminino" : "Masculino"}
+            <MannequinGlyph sex={s} />{s === "FEMININO" ? t("common.feminino") : t("common.masculino")}
           </button>
         ))}
       </div>
-      <p className="mt-1 type-caption text-muted">Define o manequim que desfila o seu Look do Dia na Passarela 3D e o do provador.</p>
+      <p className="mt-1 type-caption text-muted">{t("photoPicker.define_o_manequim_que_desfila")}</p>
       {error && <p className="error-text mt-1" role="alert">{error}</p>}
     </fieldset>
   );

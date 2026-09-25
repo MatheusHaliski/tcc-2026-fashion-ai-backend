@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { localMonogram } from "@/lib/brand-logos";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 
 /** Resultado do buscador web de marcas (GET /api/brand-search). */
 export interface BrandHit {
@@ -13,11 +14,11 @@ interface BrandSearch { query: string; results: BrandHit[]; sources: { source: s
 export interface BrandChoice { brandName: string; brandLogoUrl: string | null; brandLogoWideUrl?: string | null; brandSource: string | null; brandRef: string | null; brandDomain?: string | null; edgePx?: number | null; }
 
 const REASON: Record<string, string> = {
-  SEM_NITIDEZ: "logo recusado: sem nitidez", RESOLUCAO_BAIXA: "logo recusado: resolução baixa", FUNDO_NAO_UNIFORME: "logo recusado: não é logo (foto/banner)",
-  CONTRASTE_BAIXO: "logo recusado: contraste baixo", BLOCO_SOLIDO: "logo recusado: bloco sólido", SEM_DESENHO: "logo recusado: vazio",
-  LOGO_NAO_BAIXOU: "logo não baixou", SEM_LOGO_NA_FONTE: "fonte sem logo", LOGO_INVALIDO: "arquivo de logo inválido", NAO_PROCESSADO: "logo não processado",
+  get SEM_NITIDEZ() { return tr("brandSearchInput.logo_recusado_sem_nitidez"); }, get RESOLUCAO_BAIXA() { return tr("brandSearchInput.logo_recusado_resolucao_baixa"); }, get FUNDO_NAO_UNIFORME() { return tr("brandSearchInput.logo_recusado_nao_e_logo"); },
+  CONTRASTE_BAIXO: "logo recusado: contraste baixo", get BLOCO_SOLIDO() { return tr("brandSearchInput.logo_recusado_bloco_solido"); }, SEM_DESENHO: "logo recusado: vazio",
+  get LOGO_NAO_BAIXOU() { return tr("brandSearchInput.logo_nao_baixou"); }, get SEM_LOGO_NA_FONTE() { return tr("brandSearchInput.fonte_sem_logo"); }, get LOGO_INVALIDO() { return tr("brandSearchInput.arquivo_de_logo_invalido"); }, get NAO_PROCESSADO() { return tr("brandSearchInput.logo_nao_processado"); },
 };
-const STATUS: Record<string, string> = { OK: "ok", SEM_RESULTADO: "sem resultado", INDISPONIVEL: "indisponível", NAO_USADA: "não usada" };
+const STATUS: Record<string, string> = { OK: "ok", get SEM_RESULTADO() { return tr("brandSearchInput.sem_resultado"); }, get INDISPONIVEL() { return tr("challenges.indisponivel"); }, get NAO_USADA() { return tr("brandSearchInput.nao_usada"); } };
 
 /**
  * Campo marca do RF4: busca a marca na internet enquanto a pessoa digita (Wikidata, Simple Icons no GitHub e IA com
@@ -25,6 +26,7 @@ const STATUS: Record<string, string> = { OK: "ok", SEM_RESULTADO: "sem resultado
  * logo com a imagem já filtrada (fundo branco, letras pretas nítidas).
  */
 export function BrandSearchInput({ value, onChange, error }: { value: BrandChoice; onChange: (v: BrandChoice) => void; error?: string }) {
+  const { t } = useI18n();
   const listId = useId();
   const [q, setQ] = useState(value.brandName ?? "");
   const [open, setOpen] = useState(false);
@@ -44,7 +46,7 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
     const h = setTimeout(async () => {
       setBusy(true); setFailed(null);
       try { const r = await api.get<BrandSearch>(`/api/brand-search?q=${encodeURIComponent(term)}`, { signal: ctl.signal }); if (n === seq.current) { setRes(r); setActive(0); } }
-      catch (e) { if (n === seq.current && !(e instanceof DOMException)) setFailed("Não foi possível buscar agora. Você pode usar o nome digitado."); }
+      catch (e) { if (n === seq.current && !(e instanceof DOMException)) setFailed(t("brandSearchInput.nao_foi_possivel_buscar_agora")); }
       finally { if (n === seq.current) setBusy(false); }
     }, 380);
     return () => { clearTimeout(h); ctl.abort(); };
@@ -72,18 +74,18 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
       <div className="relative">
         <input id="brand" role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list" autoComplete="off"
           aria-activedescendant={open && total ? `${listId}-${active}` : undefined} aria-invalid={!!error || undefined}
-          className={`input pr-9 ${error ? "input-error" : ""}`} placeholder="Digite a marca — buscamos na internet" value={q} maxLength={60}
+          className={`input pr-9 ${error ? "input-error" : ""}`} placeholder={t("brandSearchInput.digite_a_marca_buscamos_na")} value={q} maxLength={60}
           onChange={(e) => { setQ(e.target.value); setOpen(true); if (chosen) onChange({ brandName: e.target.value, brandLogoUrl: null, brandSource: null, brandRef: null }); }}
           onFocus={() => q.trim().length >= 2 && !chosen && setOpen(true)} onKeyDown={onKey} onBlur={() => setTimeout(() => setOpen(false), 180)} />
         <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 type-caption text-muted">{busy ? "…" : "🌐"}</span>
       {open && q.trim().length >= 2 && (
         <div className="brand-search-pop" role="presentation" data-query={res?.query ?? ""} data-busy={busy ? "1" : "0"}>
-          <ul id={listId} role="listbox" aria-label="marcas encontradas na internet">
-            {!fresh && <li className="brand-search-empty">Buscando “{q.trim()}” na internet…</li>}
+          <ul id={listId} role="listbox" aria-label={t("brandSearchInput.marcas_encontradas_na_internet")}>
+            {!fresh && <li className="brand-search-empty">{t("brandSearchInput.buscando_na_internet", { q: q.trim() })}</li>}
             {items.map((h, i) => (
               <li key={`${h.source}-${h.ref ?? h.name}`} id={`${listId}-${i}`} role="option" aria-selected={active === i}
                 className={`brand-search-opt ${active === i ? "is-active" : ""}`} onMouseDown={(e) => { e.preventDefault(); pick(h); }} onMouseEnter={() => setActive(i)}>
-                <span className="brand-search-logo">{h.logoUrl ? <img src={mediaUrl(h.logoUrl)} alt={`logo ${h.name}`} /> : <b style={{ background: localMonogram(h.name).color }}>{localMonogram(h.name).initials}</b>}</span>
+                <span className="brand-search-logo">{h.logoUrl ? <img src={mediaUrl(h.logoUrl)} alt={t("common.logo", { name: h.name })} /> : <b style={{ background: localMonogram(h.name).color }}>{localMonogram(h.name).initials}</b>}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate type-body font-semibold">{h.name}</span>
                   <span className="block truncate type-caption text-muted">{h.description ?? "—"}{h.domain ? ` · ${h.domain}` : ""}</span>
@@ -92,36 +94,36 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
                 <span className="badge shrink-0">{h.sourceLabel}</span>
               </li>
             ))}
-            {fresh && items.length === 0 && <li className="brand-search-empty">Nenhuma marca encontrada na internet para “{res.query}”.</li>}
+            {fresh && items.length === 0 && <li className="brand-search-empty">{t("brandSearchInput.nenhuma_marca_encontrada_na_internet", { query: res.query })}</li>}
             <li id={`${listId}-${items.length}`} role="option" aria-selected={active === items.length} className={`brand-search-opt is-free ${active === items.length ? "is-active" : ""}`}
               onMouseDown={(e) => { e.preventDefault(); free(); }} onMouseEnter={() => setActive(items.length)}>
               <span className="brand-search-logo"><b style={{ background: localMonogram(q).color }}>{localMonogram(q).initials}</b></span>
-              <span className="flex-1 type-body-sm">Usar “{q.trim()}” sem logo da web (monograma)</span>
+              <span className="flex-1 type-body-sm">{t("brandSearchInput.usar_sem_logo_da_web", { q: q.trim() })}</span>
             </li>
           </ul>
-          {fresh && res && <p className="brand-search-sources">{res.sources.map((s) => `${s.label}: ${STATUS[s.status] ?? s.status}${s.count ? ` (${s.count})` : ""}`).join(" · ")}{res.rejectedLogos > 0 ? ` · ${res.rejectedLogos} logo(s) recusado(s) pelo filtro de nitidez` : ""}</p>}
+          {fresh && res && <p className="brand-search-sources">{res.sources.map((s) => `${s.label}: ${STATUS[s.status] ?? s.status}${s.count ? ` (${s.count})` : ""}`).join(" · ")}{res.rejectedLogos > 0 ? t("brandSearchInput.logo_s_recusado_s_pelo", { rejectedLogos: res.rejectedLogos }) : ""}</p>}
           {failed && <p className="brand-search-sources error-text">{failed}</p>}
         </div>
       )}
       </div>
       {/* slot do logo da marca: preenchido pela busca web */}
-      <div className="brand-logo-slot" aria-label="logo da marca">
+      <div className="brand-logo-slot" aria-label={t("brandSearchInput.logo_da_marca")}>
         <span className="brand-logo-slot-img">
-          {value.brandLogoWideUrl || value.brandLogoUrl ? <img src={mediaUrl(value.brandLogoWideUrl ?? value.brandLogoUrl)} alt={`logo ${value.brandName}`} />
-            : value.brandName ? <b style={{ background: mono.color }}>{mono.initials}</b> : <em>logo da marca</em>}
+          {value.brandLogoWideUrl || value.brandLogoUrl ? <img src={mediaUrl(value.brandLogoWideUrl ?? value.brandLogoUrl)} alt={t("brandSearchInput.logo", { brandName: value.brandName })} />
+            : value.brandName ? <b style={{ background: mono.color }}>{mono.initials}</b> : <em>{t("brandSearchInput.logo_da_marca")}</em>}
         </span>
         <span className="min-w-0 flex-1 type-caption">
           {value.brandName ? <><b className="type-body-sm">{value.brandName}</b><br />
-            {value.brandLogoUrl ? <>logo via {labelOf(value.brandSource)}{value.brandDomain ? ` · ${value.brandDomain}` : ""} · filtro: fundo branco, letras pretas{value.edgePx != null ? `, borda ${value.edgePx.toFixed(1).replace(".", ",")} px` : ""}</>
-              : value.brandSource === "TEXTO_LIVRE" ? "texto livre: sem logo da web (monograma)" : "escolha um resultado da busca para trazer o logo"}</>
-            : "O logo aparece aqui quando você escolhe a marca na busca."}
+            {value.brandLogoUrl ? <>{t("brandSearchInput.logo_via_filtro_fundo_branco", { labelOf: labelOf(value.brandSource), value: value.brandDomain ? ` · ${value.brandDomain}` : "", value2: value.edgePx != null ? t("brandSearchInput.borda_px", { replace: value.edgePx.toFixed(1).replace(".", ",") }) : "" })}</>
+              : value.brandSource === "TEXTO_LIVRE" ? t("brandSearchInput.texto_livre_sem_logo_da") : t("brandSearchInput.escolha_um_resultado_da_busca")}</>
+            : t("brandSearchInput.o_logo_aparece_aqui_quando")}
         </span>
-        {value.brandName && <button type="button" className="btn btn-sm btn-ghost" onClick={clear}>Trocar</button>}
+        {value.brandName && <button type="button" className="btn btn-sm btn-ghost" onClick={clear}>{t("common.trocar")}</button>}
       </div>
     </div>
   );
 }
 
 function labelOf(source?: string | null) {
-  return source === "WIKIDATA" ? "Wikidata" : source === "SIMPLE_ICONS" ? "Simple Icons (GitHub)" : source === "IA_BUSCA_WEB" ? "IA com busca na web" : source === "PLATAFORMA" ? "perfil da marca" : "internet";
+  return source === "WIKIDATA" ? "Wikidata" : source === "SIMPLE_ICONS" ? tr("brandSearchInput.simple_icons_github") : source === "IA_BUSCA_WEB" ? tr("brandSearchInput.ia_com_busca_na_web") : source === "PLATAFORMA" ? tr("common.perfil_da_marca") : "internet";
 }

@@ -5,8 +5,9 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { Button, Dialog, Skeleton, useToast } from "@/components/ui";
 import { useWebGL, type Look3d } from "@/components/three/common";
+import { tr, useI18n } from "@/lib/i18n/i18n";
 
-const LookViewer = dynamic(() => import("@/components/three/look-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">montando o manequim em 3D…</div> });
+const LookViewer = dynamic(() => import("@/components/three/look-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("generate3d.montando_o_manequim_em_3d")}</div> });
 
 export type Target3d = { kind: "scheme" | "piece"; id: string; title: string };
 
@@ -24,20 +25,21 @@ export function Cube3dIcon({ size = 20 }: { size?: number }) {
  * no manequim), peça (a peça no manequim ou o modelo do RF16) e DNA (cada esquema referenciado, um de cada vez).
  */
 export function Generate3DButton({ targets, compact = true, className = "" }: { targets: Target3d[]; compact?: boolean; className?: string }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (!targets.length) return null;
   return (
     <>
       <button type="button" className={`btn btn-ghost btn-sm gen3d-btn ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        aria-haspopup="dialog" title="Gerar 3D: ver no manequim em 3D" aria-label={`Gerar 3D de ${targets[0].title}`}>
-        <Cube3dIcon /><span>{compact ? "3D" : "Gerar 3D"}</span>
+        aria-haspopup="dialog" title={t("generate3d.gerar_3d_ver_no_manequim")} aria-label={t("generate3d.gerar_3d_de", { title: targets[0].title })}>
+        <Cube3dIcon /><span>{compact ? "3D" : t("closet.request3d")}</span>
       </button>
       {open && <Generate3DDialog targets={targets} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-const SLOT: Record<string, string> = { upper: "Superior", outer_layer: "Camada externa", dress: "Corpo inteiro", lower: "Inferior", shoes: "Calçado", accessory: "Acessório" };
+const SLOT: Record<string, string> = { get upper() { return tr("common.superior"); }, get outer_layer() { return tr("common.camada_externa"); }, get dress() { return tr("generate3d.corpo_inteiro"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("common.calcado"); }, get accessory() { return tr("common.acessorio"); } };
 
 export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; onClose: () => void }) {
   const { user } = useAuth(); const toast = useToast(); const webgl = useWebGL();
@@ -46,7 +48,7 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
   const path = t.kind === "scheme" ? `/api/schemes/${t.id}/look3d` : `/api/pieces/${t.id}/look3d`;
   useEffect(() => {
     let alive = true; setLook(null); setErr(null);
-    api.get<Look3d>(path, { anonymous: !user }).then((l) => alive && setLook(l)).catch((e) => alive && setErr(e?.message ?? "Não foi possível montar o 3D."));
+    api.get<Look3d>(path, { anonymous: !user }).then((l) => alive && setLook(l)).catch((e) => alive && setErr(e?.message ?? tr("generate3d.nao_foi_possivel_montar_o")));
     return () => { alive = false; };
   }, [path, user]);
   // enquanto houver peça na fila do RF16, atualiza a cada 5 s
@@ -62,19 +64,19 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
       if (t.kind === "scheme") {
         const r = await api.post<{ requested: number; skipped: { name: string; reason: string }[]; look: Look3d }>(`/api/schemes/${t.id}/model3d`);
         setLook(r.look);
-        toast.success(r.requested ? `${r.requested} peça(s) na fila do 3D (RF16)` : "Nenhuma peça nova para gerar.");
+        toast.success(r.requested ? tr("generate3d.peca_s_na_fila_do", { requested: r.requested }) : tr("generate3d.nenhuma_peca_nova_para_gerar"));
         r.skipped.slice(0, 2).forEach((s) => toast.info(`${s.name}: ${s.reason}`));
       } else {
-        await api.post(`/api/pieces/${t.id}/model3d`); toast.success("Peça na fila do 3D (RF16)");
+        await api.post(`/api/pieces/${t.id}/model3d`); toast.success(tr("generate3d.peca_na_fila_do_3d"));
         setLook(await api.get<Look3d>(path));
       }
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   const m = look?.mannequin;
   return (
-    <Dialog open onClose={onClose} title={`Gerar 3D · ${t.title}`} size="lg">
+    <Dialog open onClose={onClose} title={tr("generate3d.gerar_3d", { title: t.title })} size="lg">
       {targets.length > 1 && (
-        <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="esquemas do DNA">
+        <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label={tr("common.esquemas_do_dna")}>
           {targets.map((x, k) => <button key={x.id} type="button" role="tab" aria-selected={k === i} className={`chip ${k === i ? "is-active" : ""}`} onClick={() => setI(k)}>{x.title}</button>)}
         </div>
       )}
@@ -86,21 +88,21 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
             {webgl === false ? <PaperDoll look={look} /> : <LookViewer look={look} />}
           </div>
           <div className="min-w-0">
-            <p className="label">Manequim</p>
-            <p className="type-body-sm">{m?.sex === "MASCULINO" ? "Masculino" : "Feminino"} <span className="text-muted">({m?.sexSource === "cadastro" ? "sexo do cadastro" : m?.sexSource === "provador" ? "preferência do provador" : m?.sexSource === "pecas" ? "pelas peças" : "padrão"})</span></p>
-            <p className="type-caption text-muted">{m?.head === "FOTO" ? "Rosto: foto de perfil de @" + (look.owner?.username ?? "") : "Rosto: manequim padrão (sem foto de perfil)"}</p>
-            <p className="label mt-3">Peças ({look.pieces.length})</p>
+            <p className="label">{tr("common.manequim")}</p>
+            <p className="type-body-sm">{m?.sex === "MASCULINO" ? tr("common.masculino") : tr("common.feminino")} <span className="text-muted">({m?.sexSource === "cadastro" ? tr("generate3d.sexo_do_cadastro") : m?.sexSource === "provador" ? tr("generate3d.preferencia_do_provador") : m?.sexSource === "pecas" ? tr("generate3d.pelas_pecas") : tr("common.padrao")})</span></p>
+            <p className="type-caption text-muted">{m?.head === "FOTO" ? tr("generate3d.rosto_foto_de_perfil_de", { value: (look.owner?.username ?? "") }) : tr("generate3d.rosto_manequim_padrao_sem_foto")}</p>
+            <p className="label mt-3">{tr("common.pecas_2", { piecesCount: look.pieces.length })}</p>
             <ul className="mt-1 space-y-1.5">
               {look.pieces.map((p) => (
                 <li key={p.id} className="flex items-center gap-2">
                   <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">{(p.studioUrl ?? p.imageUrl) && <img src={mediaUrl(p.studioUrl ?? p.imageUrl)} alt="" className="h-full w-full object-cover" />}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate type-body-sm">{p.name}</span><span className="block type-caption text-muted">{SLOT[p.slot] ?? p.slot} · {p.model3dUrl ? "modelo 3D (RF16)" : p.model3dStatus === "QUEUED" || p.model3dStatus === "PROCESSING" ? "gerando o modelo…" : "foto aplicada no manequim"}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate type-body-sm">{p.name}</span><span className="block type-caption text-muted">{SLOT[p.slot] ?? p.slot} · {p.model3dUrl ? tr("generate3d.modelo_3d_rf16") : p.model3dStatus === "QUEUED" || p.model3dStatus === "PROCESSING" ? tr("generate3d.gerando_o_modelo") : tr("generate3d.foto_aplicada_no_manequim")}</span></span>
                 </li>
               ))}
             </ul>
-            {look.canRequest && <Button className="mt-3 w-full" variant="primary" loading={busy} onClick={requestModels}>Gerar modelos 3D das peças</Button>}
-            {!look.canRequest && (look.missing3d ?? 0) > 0 && <p className="mt-3 type-caption text-muted">As peças sem modelo 3D aparecem com a foto aplicada no manequim. {user ? "Só o dono pede o modelo 3D (RF16) das peças." : ""}</p>}
-            <p className="mt-3 type-caption text-faint">Arraste para girar · role para aproximar{webgl === false ? " · sem WebGL: versão 2D" : ""}</p>
+            {look.canRequest && <Button className="mt-3 w-full" variant="primary" loading={busy} onClick={requestModels}>{tr("generate3d.gerar_modelos_3d_das_pecas")}</Button>}
+            {!look.canRequest && (look.missing3d ?? 0) > 0 && <p className="mt-3 type-caption text-muted">{tr("generate3d.as_pecas_sem_modelo_3d", { value: user ? tr("generate3d.so_o_dono_pede_o") : "" })}</p>}
+            <p className="mt-3 type-caption text-faint">{tr("generate3d.arraste_para_girar_role_para", { value: webgl === false ? tr("generate3d.sem_webgl_versao_2d") : "" })}</p>
           </div>
         </div>
       )}
@@ -110,10 +112,11 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
 
 /** Sem WebGL: as peças empilhadas na silhueta do manequim (mesma ordem de camadas do 3D). */
 function PaperDoll({ look }: { look: Look3d }) {
+  const { t } = useI18n();
   const order = ["shoes", "lower", "dress", "upper", "outer_layer", "accessory"];
   const top: Record<string, string> = { upper: "14%", outer_layer: "13%", dress: "14%", lower: "44%", shoes: "88%", accessory: "50%" };
   return (
-    <div className="relative mx-auto h-full w-[260px]" aria-label="look no manequim (2D)">
+    <div className="relative mx-auto h-full w-[260px]" aria-label={t("generate3d.look_no_manequim_2d")}>
       <svg viewBox="0 0 100 260" className="absolute inset-0 h-full w-full text-surface-3" aria-hidden><circle cx="50" cy="18" r="11" fill="currentColor" /><path d="M36 32h28l6 60-8 4 4 140H34l4-140-8-4z" fill="currentColor" /></svg>
       {look.mannequin.photoUrl && <img src={mediaUrl(look.mannequin.photoUrl)} alt="" className="absolute left-1/2 top-[3%] h-[9%] -translate-x-1/2 rounded-full object-cover" style={{ aspectRatio: "1" }} />}
       {order.flatMap((slot) => look.pieces.filter((p) => p.slot === slot)).map((p) => (

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.ports.NotificationProjectionPort;
@@ -66,8 +67,8 @@ public class NotificationService {
         n.setCategory(type.category());
         n.setResourceType(resourceType);
         n.setResourceId(resourceId);
-        n.setTitle(title.length() > 180 ? title.substring(0, 177) + "…" : title);
-        n.setBody(body == null ? null : body.length() > 500 ? body.substring(0, 497) + "…" : body);
+        n.setTitle(!Msg.hasMark(title) && title.length() > 180 ? title.substring(0, 177) + "…" : title);
+        n.setBody(body == null ? null : !Msg.hasMark(body) && body.length() > 500 ? body.substring(0, 497) + "…" : body);
         n.setPayloadJson(payload == null ? null : Json.write(payload));
         n.setDelivered(enabled(recipientId, type));
         Notification saved = notifications.save(n);
@@ -114,7 +115,7 @@ public class NotificationService {
     public void markRead(CurrentUser user, List<UUID> ids) {
         for (Notification n : notifications.findAllById(ids)) {
             if (!n.getRecipient().getId().equals(user.id())) {
-                throw ApiException.forbidden("Notificação de outro usuário.");
+                throw ApiException.forbidden(Msg.t("notification.notificacao_de_outro_usuario"));
             }
             n.setRead(true);
             n.setReadAt(Instant.now());
@@ -149,7 +150,7 @@ public class NotificationService {
     @Transactional
     public List<Map<String, Object>> updatePreferences(CurrentUser user, Map<String, Boolean> changes, Boolean master) {
         UserPreferences prefs = preferences.findByUserId(user.id())
-                .orElseThrow(() -> ApiException.notFound("Preferências"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("common.preferencias")));
         Map<String, Object> current = Json.map(prefs.getNotificationPrefsJson());
         if (changes != null) {
             changes.forEach((type, enabled) -> {
@@ -157,10 +158,10 @@ public class NotificationService {
                 try {
                     t = NotificationType.valueOf(type);
                 } catch (IllegalArgumentException ex) {
-                    throw ApiException.badRequest("TIPO_INVALIDO", "Tipo de notificação desconhecido: " + type);
+                    throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("notification.tipo_de_notificacao_desconhecido", type));
                 }
                 if (!t.optOutAllowed() && Boolean.FALSE.equals(enabled)) {
-                    throw ApiException.badRequest("TIPO_OBRIGATORIO", "Notificações de segurança não podem ser desativadas.");
+                    throw ApiException.badRequest("TIPO_OBRIGATORIO", Msg.t("notification.notificacoes_de_seguranca_nao_podem"));
                 }
                 current.put(type, enabled);
             });

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
@@ -85,9 +86,9 @@ public class InventoryScoreService {
     public record Band(int min, int max, String label) {
     }
 
-    public static final List<Band> BANDS = List.of(new Band(0, 299, "Em Montagem"), new Band(300, 499, "Organizado"),
-            new Band(500, 649, "Versátil"), new Band(650, 799, "Bem Curado"), new Band(800, 899, "Closet Inteligente"),
-            new Band(900, 959, "Signature Closet"), new Band(960, 1000, "Maison Closet"));
+    public static final List<Band> BANDS = List.of(new Band(0, 299, Msg.k("inventoryScore.em_montagem")), new Band(300, 499, "Organizado"),
+            new Band(500, 649, Msg.k("inventoryScore.versatil")), new Band(650, 799, Msg.k("inventoryScore.bem_curado")), new Band(800, 899, Msg.k("inventoryScore.closet_inteligente")),
+            new Band(900, 959, Msg.k("common.signature_closet")), new Band(960, 1000, Msg.k("inventoryScore.maison_closet")));
 
     static {
         WEIGHTS.put("C", 0.20);
@@ -97,12 +98,12 @@ public class InventoryScoreService {
         WEIGHTS.put("D", 0.12);
         WEIGHTS.put("O", 0.10);
         WEIGHTS.put("I", 0.10);
-        NAMES.put("C", "Catalogação");
-        NAMES.put("U", "Utilização");
+        NAMES.put("C", Msg.k("common.catalogacao"));
+        NAMES.put("U", Msg.k("common.utilizacao"));
         NAMES.put("V", "Versatilidade");
         NAMES.put("R", "Descoberta");
         NAMES.put("D", "Diversidade");
-        NAMES.put("O", "Organização");
+        NAMES.put("O", Msg.k("common.organizacao"));
         NAMES.put("I", "Identidade");
         OCCASION_GROUPS.put("faculdade/trabalho", List.of("university", "school", "work", "business"));
         OCCASION_GROUPS.put("casual", List.of("casual", "home", "travel", "outdoor", "vacation"));
@@ -112,7 +113,7 @@ public class InventoryScoreService {
     }
 
     public static String band(int score) {
-        return BANDS.stream().filter(b -> score >= b.min() && score <= b.max()).map(Band::label).findFirst().orElse("Em Montagem");
+        return BANDS.stream().filter(b -> score >= b.min() && score <= b.max()).map(Band::label).findFirst().orElse(Msg.t("inventoryScore.em_montagem"));
     }
 
     public record Dimension(String code, String name, Integer value, double weight, String rule, List<Map<String, Object>> pullingDown) {
@@ -503,8 +504,7 @@ public class InventoryScoreService {
         all.forEach(w -> compl.put(w.getId(), completeness(w)));
         int cVal = n == 0 ? 0 : (int) Math.round(compl.values().stream().mapToInt(Integer::intValue).average().orElse(0));
         dims.put("C", cVal);
-        explain.add(new Dimension("C", NAMES.get("C"), cVal, WEIGHTS.get("C"), "Média da completude das peças (categoria, cor, ocasiões, estilos, "
-                + "imagem aprovada = 15 cada; material e marca = 10; 3D = 5). Sua média: " + cVal + "%.",
+        explain.add(new Dimension("C", NAMES.get("C"), cVal, WEIGHTS.get("C"), Msg.t("inventoryScore.media_da_completude_das_pecas", cVal),
                 all.stream().sorted(Comparator.comparingInt(w -> compl.get(w.getId()))).limit(5)
                         .map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", compl.get(w.getId()) + "%",
                                 "hint", missingFields(w))).toList()));
@@ -520,13 +520,11 @@ public class InventoryScoreService {
         double cob = combos.coverage().values().stream().mapToDouble(b -> b ? 1 : 0).sum() / OCCASION_GROUPS.size();
         int dVal = (int) Math.round(100 * (0.25 * hCat + 0.25 * hCol + 0.25 * hSty + 0.25 * cob));
         dims.put("D", dVal);
-        String weakestAttr = hCat <= hCol && hCat <= hSty ? "categorias" : hCol <= hSty ? "famílias de cor" : "estilos";
+        String weakestAttr = hCat <= hCol && hCat <= hSty ? "categorias" : hCol <= hSty ? Msg.t("inventoryScore.familias_de_cor") : "estilos";
         List<String> uncovered = combos.coverage().entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).toList();
-        explain.add(new Dimension("D", NAMES.get("D"), dVal, WEIGHTS.get("D"), "Variedade útil das peças disponíveis: entropia normalizada de "
-                + "categoria (" + pct(hCat) + "), cor (" + pct(hCol) + ") e estilo (" + pct(hSty) + ") + cobertura de ocasiões com combinação completa ("
-                + pct(cob) + ").", List.of(Map.of("name", "Atributo menos variado", "value", weakestAttr, "hint", "cadastre estilos/cores diferentes"),
-                Map.of("name", "Ocasiões sem combinação completa", "value", uncovered.isEmpty() ? "nenhuma" : String.join(", ", uncovered),
-                        "hint", "falta peça superior, inferior ou calçado com essa ocasião"))));
+        explain.add(new Dimension("D", NAMES.get("D"), dVal, WEIGHTS.get("D"), Msg.t("inventoryScore.variedade_util_das_pecas_disponiveis", pct(hCat), pct(hCol), pct(hSty), pct(cob)), List.of(Map.of("name", Msg.t("inventoryScore.atributo_menos_variado"), "value", weakestAttr, "hint", Msg.t("inventoryScore.cadastre_estilos_cores_diferentes")),
+                Map.of("name", Msg.t("inventoryScore.ocasioes_sem_combinacao_completa"), "value", uncovered.isEmpty() ? "nenhuma" : String.join(", ", uncovered),
+                        "hint", Msg.t("inventoryScore.falta_peca_superior_inferior_ou")))));
 
         // ---- U (população de exposição)
         Map<UUID, Long> exposure = exposureDays(userId, all, since, today);
@@ -536,12 +534,10 @@ public class InventoryScoreService {
         dims.put("U", uVal);
         List<WardrobeItem> forgottenNow = all.stream().filter(w -> available(w))
                 .filter(w -> RoomService.forgotten(w, lastUse(w, usageAll), today)).toList();
-        explain.add(new Dimension("U", NAMES.get("U"), uVal, WEIGHTS.get("U"), usedInWindow + " de " + exposed.size()
-                + " peças expostas (disponíveis por ≥ 7 dias nos últimos 90) foram usadas em looks ou Looks do Dia (" + uVal + "%). "
-                + "Marcar como indisponível não tira a peça do denominador.",
+        explain.add(new Dimension("U", NAMES.get("U"), uVal, WEIGHTS.get("U"), Msg.t("inventoryScore.de_pecas_expostas_disponiveis_por", (usedInWindow), exposed.size(), uVal),
                 forgottenNow.stream().sorted(Comparator.comparing(w -> Optional.ofNullable(lastUse(w, usageAll)).orElse(LocalDate.MIN)))
                         .limit(5).map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()),
-                                "value", daysSince(w, usageAll, today) + " dias sem uso", "hint", "leve ao espelho ou a um look")).toList()));
+                                "value", Msg.t("inventoryScore.dias_sem_uso", (daysSince(w, usageAll, today))), "hint", Msg.t("inventoryScore.leve_ao_espelho_ou_a"))).toList()));
 
         // ---- V
         List<WardrobeItem> comboEligible = a.stream().filter(w -> COMBO_CATEGORIES.contains(w.getCategory())).toList();
@@ -553,13 +549,12 @@ public class InventoryScoreService {
         double conc = totalApp == 0 ? 1 : (double) top3 / totalApp; // sem looks: (1 − Conc) = 0
         int vVal = (int) Math.round(100 * (0.6 * conect + 0.4 * (1 - conc)));
         dims.put("V", vVal);
-        explain.add(new Dimension("V", NAMES.get("V"), vVal, WEIGHTS.get("V"), pct(conect) + " das peças (superiores, inferiores, calçados, vestidos) "
-                + "participam de ≥ 3 combinações válidas; " + (totalApp == 0 ? "sem looks na janela, o termo de concentração vale 0" :
-                pct(conc) + " das aparições nos looks dos últimos 90 dias vêm de 3 peças") + ".",
+        explain.add(new Dimension("V", NAMES.get("V"), vVal, WEIGHTS.get("V"), Msg.t("inventoryScore.das_pecas_superiores_inferiores_calcados", (pct(conect)), (totalApp == 0 ? Msg.t("inventoryScore.sem_looks_na_janela_o") :
+                Msg.t("inventoryScore.das_aparicoes_nos_looks_dos", (pct(conc))))),
                 comboEligible.stream().sorted(Comparator.comparingInt(w -> combos.perPiece().getOrDefault(w.getId(), 0))).limit(5)
                         .map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()),
-                                "value", combos.perPiece().getOrDefault(w.getId(), 0) + " combinações", "hint", occ(w).isEmpty()
-                                        ? "sem ocasião cadastrada — não forma combinação" : "precisa de peças com ocasião em comum")).toList()));
+                                "value", Msg.t("inventoryScore.combinacoes", (combos.perPiece().getOrDefault(w.getId(), 0))), "hint", occ(w).isEmpty()
+                                        ? Msg.t("inventoryScore.sem_ocasiao_cadastrada_nao_forma") : Msg.t("inventoryScore.precisa_de_pecas_com_ocasiao"))).toList()));
 
         // ---- O
         RoomLayout layout = room.layout(userId);
@@ -581,7 +576,7 @@ public class InventoryScoreService {
             if (RoomService.coherent(w, loc.address(), labels)) {
                 coherent++;
             } else if (incoherent.size() < 5) {
-                incoherent.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", loc.label(), "hint", "mova para a posição do tipo"));
+                incoherent.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", loc.label(), "hint", Msg.t("inventoryScore.mova_para_a_posicao_do")));
             }
         }
         double coer = located == 0 ? 1 : (double) coherent / located;
@@ -595,14 +590,13 @@ public class InventoryScoreService {
         dims.put("O", oVal);
         List<Map<String, Object>> oDown = new ArrayList<>(incoherent);
         if (rot < 1) {
-            oDown.add(Map.of("name", "Gavetas sem rótulo", "value", (occupiedDrawers.size() - labeled) + " de " + occupiedDrawers.size(),
-                    "hint", "renomeie no modo Organizar ou aceite a sugestão da IA"));
+            oDown.add(Map.of("name", Msg.t("inventoryScore.gavetas_sem_rotulo"), "value", (occupiedDrawers.size() - labeled) + " de " + occupiedDrawers.size(),
+                    "hint", Msg.t("inventoryScore.renomeie_no_modo_organizar_ou")));
         }
         if (stale > 0) {
-            oDown.add(Map.of("name", "Cesto esquecido", "value", stale + " peça(s) indisponível(is) há mais de 30 dias sem revisão", "hint", "revise o cesto"));
+            oDown.add(Map.of("name", Msg.t("inventoryScore.cesto_esquecido"), "value", Msg.t("inventoryScore.peca_s_indisponivel_is_ha", (stale)), "hint", Msg.t("inventoryScore.revise_o_cesto")));
         }
-        explain.add(new Dimension("O", NAMES.get("O"), oVal, WEIGHTS.get("O"), pct(coer) + " das peças estão numa posição coerente com o tipo; "
-                + pct(rot) + " das gavetas ocupadas têm rótulo; " + pct(rev) + " do cesto foi revisado nos últimos 30 dias. Reorganizar não pontua de novo.", oDown));
+        explain.add(new Dimension("O", NAMES.get("O"), oVal, WEIGHTS.get("O"), Msg.t("inventoryScore.das_pecas_estao_numa_posicao", (pct(coer)), pct(rot), pct(rev)), oDown));
 
         // ---- R
         Set<UUID> f = new HashSet<>();
@@ -659,12 +653,12 @@ public class InventoryScoreService {
         double ined = windowSchemes == 0 ? 0 : (double) novel / windowSchemes;
         int rVal = (int) Math.round(100 * (0.5 * resg + 0.5 * ined));
         dims.put("R", rVal);
-        explain.add(new Dimension("R", NAMES.get("R"), rVal, WEIGHTS.get("R"), (f.isEmpty() ? "Nenhuma peça esquecida nos últimos 90 dias (resgate = 100%)"
-                : rescued.size() + " de " + f.size() + " peças esquecidas voltaram a um look (" + pct(resg) + ")") + "; "
-                + (windowSchemes == 0 ? "sem looks novos na janela, o termo de ineditismo vale 0" : novel + " de " + windowSchemes + " looks da janela trouxeram um par inédito") + ".",
+        explain.add(new Dimension("R", NAMES.get("R"), rVal, WEIGHTS.get("R"), (f.isEmpty() ? Msg.t("inventoryScore.nenhuma_peca_esquecida_nos_ultimos")
+                : Msg.t("inventoryScore.de_pecas_esquecidas_voltaram_a", (rescued.size()), f.size(), pct(resg))) + "; "
+                + (windowSchemes == 0 ? Msg.t("inventoryScore.sem_looks_novos_na_janela") : Msg.t("inventoryScore.de_looks_da_janela_trouxeram", (novel), windowSchemes)) + ".",
                 f.stream().filter(id -> !rescued.contains(id)).map(byId::get).filter(Objects::nonNull).limit(5)
-                        .map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", "esquecida, ainda sem resgate",
-                                "hint", "monte um look com ela (+30 FAI pts)")).toList()));
+                        .map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", Msg.t("inventoryScore.esquecida_ainda_sem_resgate"),
+                                "hint", Msg.t("inventoryScore.monte_um_look_com_ela"))).toList()));
 
         // ---- I (Camada 1 do DNA — nunca a Identidade de Vida, RNF6)
         Optional<StyleDna> dna = dnas.findByUserId(userId);
@@ -680,12 +674,10 @@ public class InventoryScoreService {
             iVal = (int) Math.round(100 * (0.5 * cc + 0.5 * cs));
             dims.put("I", iVal);
             a.stream().filter(w -> family(w.getColor()) != null && !dnaColors.containsKey(family(w.getColor()))).limit(3)
-                    .forEach(w -> iDown.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", "cor fora da paleta do DNA", "hint", "informativo — não é defeito")));
-            explain.add(new Dimension("I", NAMES.get("I"), iVal, WEIGHTS.get("I"), "Correspondência entre o inventário disponível e a Camada 1 do DNA: "
-                    + "cores " + pct(cc) + ", estilos " + pct(cs) + ". Só a Camada 1 entra; a Identidade de Vida nunca (RNF6).", iDown));
+                    .forEach(w -> iDown.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", Msg.t("inventoryScore.cor_fora_da_paleta_do"), "hint", Msg.t("inventoryScore.informativo_nao_e_defeito"))));
+            explain.add(new Dimension("I", NAMES.get("I"), iVal, WEIGHTS.get("I"), Msg.t("inventoryScore.correspondencia_entre_o_inventario", pct(cc), pct(cs)), iDown));
         } else {
-            explain.add(new Dimension("I", NAMES.get("I"), null, WEIGHTS.get("I"), "Sem DNA de Estilo gerado a Identidade é omitida e os pesos são "
-                    + "renormalizados — sem penalidade (RF34.CA04).", List.of()));
+            explain.add(new Dimension("I", NAMES.get("I"), null, WEIGHTS.get("I"), Msg.t("inventoryScore.sem_dna_de_estilo_gerado"), List.of()));
         }
 
         // ---- score
@@ -794,13 +786,13 @@ public class InventoryScoreService {
             m.add("cor");
         }
         if (Json.csv(w.getOccasionTags()).isEmpty()) {
-            m.add("ocasiões");
+            m.add(Msg.t("inventoryScore.ocasioes"));
         }
         if (Json.csv(w.getStyleTags()).isEmpty()) {
             m.add("estilos");
         }
         if (w.getImageUrl() == null || w.isDefaultImage()) {
-            m.add("foto própria");
+            m.add(Msg.t("inventoryScore.foto_propria"));
         }
         if (w.getMaterial() == null) {
             m.add("material");
@@ -912,17 +904,17 @@ public class InventoryScoreService {
         if (!r.eligible()) {
             // RF34.CA02 — progresso no padrão do RF13.CA02, sem nota parcial
             out.put("progress", Map.of("missing", MIN_PIECES - r.pieces(), "target", MIN_PIECES,
-                    "message", "Faltam " + (MIN_PIECES - r.pieces()) + " peças para o seu Inventory Score.",
-                    "steps", List.of(Map.of("label", "Conta criada", "done", true), Map.of("label", "Primeira peça cadastrada", "done", r.pieces() > 0),
-                            Map.of("label", "10 peças no acervo", "done", false))));
-            out.put("manifesto", "Vista o que você tem.");
+                    "message", Msg.t("inventoryScore.faltam_pecas_para_o_seu", (MIN_PIECES - r.pieces())),
+                    "steps", List.of(Map.of("label", Msg.t("inventoryScore.conta_criada"), "done", true), Map.of("label", Msg.t("inventoryScore.primeira_peca_cadastrada"), "done", r.pieces() > 0),
+                            Map.of("label", Msg.t("inventoryScore.n10_pecas_no_acervo"), "done", false))));
+            out.put("manifesto", Msg.t("inventoryScore.vista_o_que_voce_tem"));
             return out;
         }
         out.put("score", r.score());
         out.put("band", r.band());
         out.put("bands", BANDS);
         out.put("k", r.k());
-        out.put("kNote", r.k() < 1 ? "Sua nota cresce até 20 peças (fator " + Math.round(r.k() * 100) + "%)." : null);
+        out.put("kNote", r.k() < 1 ? Msg.t("inventoryScore.sua_nota_cresce_ate_20", Math.round(r.k() * 100)) : null);
         out.put("dimensions", r.dimensions());
         out.put("dims", r.dims());
         out.put("delta", monthDelta(user.id(), r));
@@ -933,7 +925,7 @@ public class InventoryScoreService {
         out.put("suggestedChallenges", suggestedChallenges(r));
         out.put("rankingsOptIn", optIns.findById(user.id()).map(RankingOptIn::isOptedIn).orElse(false));
         out.put("computedAt", r.computedAt());
-        out.put("manifesto", "Vista o que você tem.");
+        out.put("manifesto", Msg.t("inventoryScore.vista_o_que_voce_tem"));
         return out;
     }
 
@@ -952,26 +944,25 @@ public class InventoryScoreService {
         Map<String, Object> perCombos = (Map<String, Object>) r.metrics().getOrDefault("perPieceCombos", Map.of());
         perCombos.entrySet().stream().max(Comparator.comparingInt(e -> ((Number) e.getValue()).intValue()))
                 .filter(e -> ((Number) e.getValue()).intValue() > 0).map(e -> byId.get(UUID.fromString(e.getKey()))).filter(Objects::nonNull)
-                .ifPresent(w -> cards.add(card("🏆", "Peça mais versátil", w, perCombos.get(w.getId().toString()) + " combinações")));
+                .ifPresent(w -> cards.add(card("🏆", Msg.t("inventoryScore.peca_mais_versatil"), w, Msg.t("inventoryScore.combinacoes", (perCombos.get(w.getId().toString()))))));
         Map<String, Object> usageCount = (Map<String, Object>) r.metrics().getOrDefault("usageCount", Map.of());
         usageCount.entrySet().stream().max(Comparator.comparingInt(e -> ((Number) e.getValue()).intValue()))
                 .map(e -> byId.get(UUID.fromString(e.getKey()))).filter(Objects::nonNull)
-                .ifPresent(w -> cards.add(card("❤️", "Mais usada", w, usageCount.get(w.getId().toString()) + "× em 90 dias")));
+                .ifPresent(w -> cards.add(card("❤️", Msg.t("inventoryScore.mais_usada"), w, Msg.t("inventoryScore.em_90_dias", (usageCount.get(w.getId().toString()))))));
         dnas.findByUserId(userId).map(StyleDna::getIconPieceName).filter(Objects::nonNull)
                 .flatMap(name -> all.stream().filter(w -> name.equalsIgnoreCase(w.getName())).findFirst())
-                .ifPresent(w -> cards.add(card("💎", "Peça Ícone", w, "eleita pelo seu DNA de Estilo")));
+                .ifPresent(w -> cards.add(card("💎", Msg.t("inventoryScore.peca_icone"), w, Msg.t("inventoryScore.eleita_pelo_seu_dna_de"))));
         Map<String, Object> gaps = (Map<String, Object>) r.metrics().getOrDefault("rescueGaps", Map.of());
         gaps.entrySet().stream().max(Comparator.comparingLong(e -> ((Number) e.getValue()).longValue()))
                 .map(e -> byId.get(UUID.fromString(e.getKey()))).filter(Objects::nonNull)
-                .ifPresent(w -> cards.add(card("🔄", "Melhor retorno", w, gaps.get(w.getId().toString()) + " dias parada → "
-                        + usageCount.getOrDefault(w.getId().toString(), 1) + " look(s)")));
+                .ifPresent(w -> cards.add(card("🔄", Msg.t("inventoryScore.melhor_retorno"), w, Msg.t("inventoryScore.dias_parada_look_s", (gaps.get(w.getId().toString())), usageCount.getOrDefault(w.getId().toString(), 1)))));
         List<WardrobeItem> a = all.stream().filter(InventoryScoreService::available).toList();
         Map<String, Long> fam = a.stream().map(w -> family(w.getColor())).filter(Objects::nonNull).collect(Collectors.groupingBy(f -> f, Collectors.counting()));
-        fam.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("emoji", "🎨", "title", "Cor assinatura",
-                "value", e.getKey() + " (" + Math.round(100.0 * e.getValue() / a.size()) + "%)", "actions", List.of(Map.of("label", "Ver peças", "filter", "color:" + e.getKey())))));
+        fam.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("emoji", "🎨", "title", Msg.t("inventoryScore.cor_assinatura"),
+                "value", e.getKey() + " (" + Math.round(100.0 * e.getValue() / a.size()) + "%)", "actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas"), "filter", "color:" + e.getKey())))));
         Map<String, Long> cat = a.stream().map(WardrobeItem::getSubcategory).filter(Objects::nonNull).collect(Collectors.groupingBy(c -> c, Collectors.counting()));
-        cat.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("emoji", "👕", "title", "Categoria dominante",
-                "value", e.getKey() + " (" + e.getValue() + ")", "actions", List.of(Map.of("label", "Ver peças", "filter", "subcategory:" + e.getKey())))));
+        cat.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("emoji", "👕", "title", Msg.t("inventoryScore.categoria_dominante"),
+                "value", e.getKey() + " (" + e.getValue() + ")", "actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas"), "filter", "subcategory:" + e.getKey())))));
         return cards.stream().limit(6).toList();
     }
 
@@ -983,8 +974,8 @@ public class InventoryScoreService {
         m.put("name", w.getName());
         m.put("imageUrl", w.getImageUrl());
         m.put("value", value);
-        m.put("actions", List.of(Map.of("label", "Ver peça", "href", "/my-wardrobe/" + w.getId()),
-                Map.of("label", "Mostrar no quarto", "action", "showInRoom", "pieceId", w.getId().toString())));
+        m.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_peca"), "href", "/my-wardrobe/" + w.getId()),
+                Map.of("label", Msg.t("inventoryScore.mostrar_no_quarto"), "action", "showInRoom", "pieceId", w.getId().toString())));
         return m;
     }
 
@@ -1011,7 +1002,7 @@ public class InventoryScoreService {
         List<Map<String, Object>> history = snapshots.findTop60ByUserIdAndPeriodTypeOrderByPeriodDateDesc(userId, "DAY").stream()
                 .map(s -> Map.<String, Object>of("date", s.getPeriodDate(), "score", s.getScore() == null ? 0 : s.getScore())).toList();
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("title", "Seu guarda-roupa evoluiu este mês");
+        out.put("title", Msg.t("inventoryScore.seu_guarda_roupa_evoluiu_este"));
         out.put("now", now);
         out.put("previousMonth", before.isEmpty() ? null : before);
         out.put("history", history);
@@ -1061,7 +1052,7 @@ public class InventoryScoreService {
         out.put("currentStreak", streak);
         out.put("rescuedInAWeek", rescuedPerWeek.values().stream().max(Integer::compare).orElse(0));
         out.put("uniqueLooks", r.metrics().get("uniqueLooks"));
-        out.put("note", "Recordes só seus — nunca comparados com outros usuários (DET-G05).");
+        out.put("note", Msg.t("inventoryScore.recordes_so_seus_nunca_comparados"));
         return out;
     }
 
@@ -1074,7 +1065,7 @@ public class InventoryScoreService {
         String dim = weakest.get().getKey();
         return templates.findByActiveTrueOrderByName().stream().filter(t -> Json.strings(t.getScoreDimensionsJson()).contains(dim)).limit(2)
                 .map(t -> Map.<String, Object>of("code", t.getCode(), "name", t.getName(), "rule", t.getRuleText(), "dimension", dim,
-                        "reason", NAMES.get(dim) + " " + weakest.get().getValue() + "%: que tal o " + t.getName() + "?")).toList();
+                        "reason", Msg.t("inventoryScore.que_tal_o", (NAMES.get(dim)), weakest.get().getValue(), t.getName()))).toList();
     }
 
     /** RF34.CA05 — regra em linguagem simples e itens que mais puxam a dimensão para baixo. */
@@ -1082,7 +1073,7 @@ public class InventoryScoreService {
     public Dimension explain(CurrentUser user, String code) {
         Result r = compute(user.id(), true);
         return r.dimensions().stream().filter(d -> d.code().equalsIgnoreCase(code)).findFirst()
-                .orElseThrow(() -> ApiException.notFound("Dimensão"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("inventoryScore.dimensao")));
     }
 
     /** RF10.CA13 — as 2 dimensões mais fracas com números e ações diretas (consumido pelo Copilot). */
@@ -1094,8 +1085,8 @@ public class InventoryScoreService {
         out.put("score", r.score());
         out.put("eligible", r.eligible());
         out.put("weakest", weakest);
-        out.put("actions", List.of(Map.of("label", "Ver peças esquecidas", "filter", "state:forgotten"),
-                Map.of("label", "Criar look com elas", "action", "compose_forgotten"), Map.of("label", "Abrir Meu Quarto", "href", "/my-wardrobe/room")));
+        out.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas_esquecidas"), "filter", "state:forgotten"),
+                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/my-wardrobe/room")));
         out.put("suggestedChallenges", suggestedChallenges(r));
         return out;
     }
@@ -1118,8 +1109,8 @@ public class InventoryScoreService {
         out.put("total", total);
         out.put("discovered", Math.min(discovered, total));
         out.put("percent", total == 0 ? 0 : Math.round(100.0 * Math.min(discovered, total) / total));
-        out.put("message", total == 0 ? "Cadastre ocasiões nas peças para descobrir combinações válidas."
-                : "Você descobriu " + Math.round(100.0 * Math.min(discovered, total) / total) + "% das combinações possíveis.");
+        out.put("message", total == 0 ? Msg.t("inventoryScore.cadastre_ocasioes_nas_pecas_para")
+                : Msg.t("inventoryScore.voce_descobriu_das_combinacoes_possiveis", Math.round(100.0 * Math.min(discovered, total) / total)));
         out.put("undiscovered", silhouettes);
         out.put("enumerated", r.metrics().get("combosEnumerated"));
         return out;
@@ -1135,26 +1126,26 @@ public class InventoryScoreService {
         Map<UUID, Long> uses = entries.stream().collect(Collectors.groupingBy(PieceUsageDiaryEntry::getWardrobeItemId, Collectors.counting()));
         List<Map<String, Object>> cards = new ArrayList<>();
         uses.entrySet().stream().max(Map.Entry.comparingByValue()).map(e -> byId.get(e.getKey())).filter(Objects::nonNull)
-                .ifPresent(w -> cards.add(Map.of("type", "most_used", "title", "Peça mais usada do ano", "name", String.valueOf(w.getName()),
+                .ifPresent(w -> cards.add(Map.of("type", "most_used", "title", Msg.t("inventoryScore.peca_mais_usada_do_ano"), "name", String.valueOf(w.getName()),
                         "value", uses.get(w.getId()) + " usos", "imageUrl", String.valueOf(w.getImageUrl()))));
         entries.stream().filter(e -> e.getNote() != null && e.getNote().startsWith("resgate")).map(e -> byId.get(e.getWardrobeItemId())).filter(Objects::nonNull)
-                .findFirst().ifPresent(w -> cards.add(Map.of("type", "rescued", "title", "Peça resgatada do ano", "name", String.valueOf(w.getName()),
+                .findFirst().ifPresent(w -> cards.add(Map.of("type", "rescued", "title", Msg.t("inventoryScore.peca_resgatada_do_ano"), "name", String.valueOf(w.getName()),
                         "imageUrl", String.valueOf(w.getImageUrl()))));
         Map<String, Long> fam = entries.stream().map(e -> byId.get(e.getWardrobeItemId())).filter(Objects::nonNull).map(w -> family(w.getColor()))
                 .filter(Objects::nonNull).collect(Collectors.groupingBy(f -> f, Collectors.counting()));
-        fam.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("type", "color", "title", "Sua cor do ano", "value", e.getKey())));
+        fam.entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(e -> cards.add(Map.of("type", "color", "title", Msg.t("inventoryScore.sua_cor_do_ano"), "value", e.getKey())));
         long uniqueLooks = schemes.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
                 .filter(s -> s.getCreatedAt() != null && LocalDate.ofInstant(s.getCreatedAt(), FaiPointsService.ZONE).getYear() == year).count();
-        cards.add(Map.of("type", "looks", "title", "Looks únicos criados", "value", uniqueLooks));
-        cards.add(Map.of("type", "uses", "title", "Usos registrados", "value", entries.size()));
+        cards.add(Map.of("type", "looks", "title", Msg.t("inventoryScore.looks_unicos_criados"), "value", uniqueLooks));
+        cards.add(Map.of("type", "uses", "title", Msg.t("inventoryScore.usos_registrados"), "value", entries.size()));
         List<BigDecimal> cpu = all.stream().filter(w -> w.getPrice() != null && w.getWearCount() > 0)
                 .map(w -> w.getPrice().divide(BigDecimal.valueOf(w.getWearCount()), 2, RoundingMode.HALF_UP)).toList();
         if (!cpu.isEmpty()) {
             BigDecimal avg = cpu.stream().reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(cpu.size()), 2, RoundingMode.HALF_UP);
-            cards.add(Map.of("type", "cost_per_use", "title", "Custo médio por uso", "value", avg, "privateOnly", true,
-                    "note", "só para você — nunca no card público (ETI-04)"));
+            cards.add(Map.of("type", "cost_per_use", "title", Msg.t("inventoryScore.custo_medio_por_uso"), "value", avg, "privateOnly", true,
+                    "note", Msg.t("inventoryScore.so_para_voce_nunca_no")));
         }
-        cards.add(Map.of("type", "manifesto", "title", "Vista o que você tem", "value", year));
+        cards.add(Map.of("type", "manifesto", "title", Msg.t("inventoryScore.vista_o_que_voce_tem_2"), "value", year));
         return Map.of("year", year, "format", "9:16", "cards", cards.stream().limit(8).toList());
     }
 
@@ -1172,7 +1163,7 @@ public class InventoryScoreService {
             positions.findByUserId(user.id()).forEach(positions::delete);
         }
         return Map.of("optedIn", o.isOptedIn(), "shareCity", o.isShareCity(), "city", String.valueOf(o.getCity()),
-                "note", "Sem opt-in você vê só o próprio score e não aparece para os outros (RNF6).");
+                "note", Msg.t("inventoryScore.sem_opt_in_voce_ve"));
     }
 
     @Transactional
@@ -1183,7 +1174,7 @@ public class InventoryScoreService {
         out.put("score", r.score());
         out.put("optedIn", o.isPresent());
         if (o.isEmpty()) {
-            out.put("message", "Participe dos rankings para ver sua posição. Sem opt-in, ninguém vê seu score (RF34.CA08).");
+            out.put("message", Msg.t("inventoryScore.participe_dos_rankings_para_ver"));
             out.put("available", List.of("GLOBAL", "PAIS", "CIDADE", "FAIXA", "ESTILO", "SUSTENTAVEL", "VERSATEIS", "RISING"));
             return out;
         }
@@ -1195,7 +1186,7 @@ public class InventoryScoreService {
                                 .limit(5).map(t -> Map.of("position", t.getPosition(), "value", t.getValue(),
                                         "user", users.findById(t.getUserId()).map(User::getUsername).orElse("—"))).toList())).toList();
         out.put("positions", rows);
-        out.put("note", "Colecionadores mede completude de coleções temáticas, nunca contagem de peças; fora do MVP até haver definição (§4.2).");
+        out.put("note", Msg.t("inventoryScore.colecionadores_mede_completude_de"));
         return out;
     }
 

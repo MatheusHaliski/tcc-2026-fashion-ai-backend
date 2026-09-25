@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.Msg;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import br.com.fashionai.application.events.SideEffectRunner;
@@ -95,29 +96,29 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     /** §6 — 6 emojis fixos. */
     public static final List<String> REACTIONS = List.of("👏", "🔥", "✨", "💪", "😍", "🙌");
     /** §6 — lista de frases prontas (o campo livre de 80 caracteres passa pela moderação). */
-    public static final List<String> PRESET_NOTES = List.of("Arrasou no look!", "Bora que dá!", "Essa combinação ficou incrível",
-            "Amei a ideia", "Vamos juntos até o fim", "Inspirou meu look de hoje");
+    public static final List<String> PRESET_NOTES = List.of(Msg.k("challenge.arrasou_no_look"), Msg.k("challenge.bora_que_da"), Msg.k("challenge.essa_combinacao_ficou_incrivel"),
+            Msg.k("challenge.amei_a_ideia"), Msg.k("challenge.vamos_juntos_ate_o_fim"), Msg.k("challenge.inspirou_meu_look_de_hoje"));
     public static final String RASCUNHO = "RASCUNHO", AGUARDANDO = "AGUARDANDO", ATIVO = "ATIVO", CONCLUIDO = "CONCLUIDO", EXPIRADO = "EXPIRADO";
     public static final String P_CONVIDADO = "CONVIDADO", P_ATIVO = "ATIVO", P_RECUSOU = "RECUSOU", P_SAIU = "SAIU", P_CONCLUIU = "CONCLUIU",
             P_CANCELADO = "CANCELADO";
     static final Set<String> VOTED = Set.of("RUNWAY_BATTLE", "GRWM");
     static final Set<String> SINGLE_SHOT = Set.of("RUNWAY_BATTLE", "GRWM", "DAILY_CHALLENGE");
-    static final Map<String, String> DIM_NAMES = Map.of("C", "Catalogação", "D", "Diversidade", "U", "Utilização", "V", "Versatilidade",
-            "O", "Organização", "R", "Descoberta", "I", "Identidade");
+    static final Map<String, String> DIM_NAMES = Map.of("C", Msg.k("common.catalogacao"), "D", "Diversidade", "U", Msg.k("common.utilizacao"), "V", "Versatilidade",
+            "O", Msg.k("common.organizacao"), "R", "Descoberta", "I", "Identidade");
     /** Tema semanal da Batalha na Passarela (rodízio pela semana ISO). */
-    static final List<String> RUNWAY_THEMES = List.of("Monocromático total", "Anos 2000 com o que você tem", "Old money do dia a dia",
-            "Festival de verão", "Escritório criativo", "Noite de gala sem comprar nada", "Gorpcore urbano", "Quiet luxury", "Uma peça herdada");
+    static final List<String> RUNWAY_THEMES = List.of(Msg.k("challenge.monocromatico_total"), Msg.k("challenge.anos_2000_com_o_que"), Msg.k("challenge.old_money_do_dia_a"),
+            Msg.k("challenge.festival_de_verao"), Msg.k("challenge.escritorio_criativo"), Msg.k("challenge.noite_de_gala_sem_comprar"), Msg.k("challenge.gorpcore_urbano"), Msg.k("challenge.quiet_luxury"), Msg.k("challenge.uma_peca_herdada"));
     /** DET-C04 — regras do Desafio do Dia (rodízio pelo dia do ano). */
     static final List<Map<String, Object>> DAILY_RULES = List.of(
-            Map.of("text", "Uma peça vermelha + uma esquecida", "blocks", List.of(Map.of("type", "color_family", "value", "Vermelho"),
+            Map.of("text", Msg.k("challenge.uma_peca_vermelha_uma_esquecida"), "blocks", List.of(Map.of("type", "color_family", "value", "Vermelho"),
                     Map.of("type", "state", "value", "forgotten"))),
-            Map.of("text", "Look monocromático", "blocks", List.of(Map.of("type", "monochrome", "value", true))),
-            Map.of("text", "Uma peça garimpada, herdada ou de presente", "blocks", List.of(Map.of("type", "origin", "value", "GARIMPADA|HERDADA|PRESENTE"))),
-            Map.of("text", "Três famílias de cor diferentes", "blocks", List.of(Map.of("type", "distinct_colors", "value", 3))),
-            Map.of("text", "Uma peça que você não usa há 30 dias + um acessório", "blocks", List.of(Map.of("type", "unused_days", "value", 30),
+            Map.of("text", Msg.k("challenge.look_monocromatico"), "blocks", List.of(Map.of("type", "monochrome", "value", true))),
+            Map.of("text", Msg.k("challenge.uma_peca_garimpada_herdada_ou"), "blocks", List.of(Map.of("type", "origin", "value", "GARIMPADA|HERDADA|PRESENTE"))),
+            Map.of("text", Msg.k("challenge.tres_familias_de_cor_diferentes"), "blocks", List.of(Map.of("type", "distinct_colors", "value", 3))),
+            Map.of("text", Msg.k("challenge.uma_peca_que_voce_nao"), "blocks", List.of(Map.of("type", "unused_days", "value", 30),
                     Map.of("type", "category", "value", "accessory_piece"))),
-            Map.of("text", "Só peças neutras", "blocks", List.of(Map.of("type", "neutral_only", "value", true))),
-            Map.of("text", "Uma camada por cima + uma peça azul", "blocks", List.of(Map.of("type", "slot", "value", "outer_layer"),
+            Map.of("text", Msg.k("challenge.so_pecas_neutras"), "blocks", List.of(Map.of("type", "neutral_only", "value", true))),
+            Map.of("text", Msg.k("challenge.uma_camada_por_cima_uma"), "blocks", List.of(Map.of("type", "slot", "value", "outer_layer"),
                     Map.of("type", "color_family", "value", "Azul"))));
     /** §7 — blocos de regra pré-definidos (sem texto livre, sempre verificáveis). */
     static final Set<String> RULE_BLOCK_TYPES = Set.of("color_family", "category", "origin", "state", "piece_count", "monochrome",
@@ -238,7 +239,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 case "ALTO" -> "●●●";
                 default -> "●●○";
             });
-            m.put("reward", "até " + t.getRewardPoints() + " FAI pts");
+            m.put("reward", Msg.t("challenge.ate_fai_pts", t.getRewardPoints()));
             m.put("rewardPoints", t.getRewardPoints());
             m.put("participants", Map.of("min", t.getMinParticipants(), "max", t.getMaxParticipants()));
             m.put("playingNow", playing.getOrDefault(t.getCode(), 0L));
@@ -252,13 +253,13 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 m.put("weeklyTheme", runwayTheme(d));
             }
             if (t.getCode().equals("WEAR_WHAT_YOU_HAVE") && d.getMonthValue() == 4) {
-                m.put("highlight", "Fashion Revolution Week — Vista o que você tem (DET-K04)");
+                m.put("highlight", Msg.t("challenge.fashion_revolution_week_vista_o"));
             }
             cards.add(m);
         }
         long active = activeCount(user.id());
         return Map.of("challenges", cards, "activeCount", active, "maxActive", MAX_ACTIVE, "reactions", REACTIONS, "presetNotes", PRESET_NOTES,
-                "note", "Desafios comparam o uso do guarda-roupa, nunca o tamanho dele (§1.1).");
+                "note", Msg.t("challenge.desafios_comparam_o_uso_do"));
     }
 
     long activeCount(UUID userId) {
@@ -276,7 +277,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (activeCount(userId) >= MAX_ACTIVE) {
             List<Map<String, Object>> active = mineRaw(userId).stream().filter(m -> ATIVO.equals(m.get("state")) || AGUARDANDO.equals(m.get("state")))
                     .map(m -> Map.<String, Object>of("id", m.get("id"), "name", m.get("name"))).toList();
-            throw new ApiException(409, "LIMITE_DESAFIOS", "Você já tem " + MAX_ACTIVE + " desafios ativos. Encerre um deles para começar outro (RF36.CA06).",
+            throw new ApiException(409, "LIMITE_DESAFIOS", Msg.t("challenge.voce_ja_tem_desafios_ativos", MAX_ACTIVE),
                     Map.of("active", active));
         }
     }
@@ -292,7 +293,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeTemplate t = template(req.code());
         String mode = req.mode() == null ? "SOLO" : req.mode().toUpperCase(Locale.ROOT);
         if (!Json.strings(t.getModesAllowedJson()).contains(mode)) {
-            throw ApiException.badRequest("MODO_INDISPONIVEL", "O desafio " + t.getName() + " não aceita o modo " + mode + " (RF36.CA02).");
+            throw ApiException.badRequest("MODO_INDISPONIVEL", Msg.t("challenge.o_desafio_nao_aceita_o", t.getName(), mode));
         }
         if (mode.equals("COMUNIDADE")) {
             return joinCommunity(user, t, req.photoConsent());
@@ -325,10 +326,10 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> launchDraft(CurrentUser user, UUID id, List<UUID> invitees, Map<String, String> teams) {
         ChallengeInstance i = instance(id);
         if (!i.getCreatedBy().equals(user.id())) {
-            throw guard.deny(user, "challenge:" + id, "Só quem criou o desafio pode iniciá-lo.");
+            throw guard.deny(user, "challenge:" + id, Msg.t("challenge.so_quem_criou_o_desafio"));
         }
         if (!RASCUNHO.equals(i.getState())) {
-            throw new ApiException(409, "ESTADO_INVALIDO", "O desafio já foi iniciado.");
+            throw new ApiException(409, "ESTADO_INVALIDO", Msg.t("challenge.o_desafio_ja_foi_iniciado"));
         }
         requireSlot(user.id());
         launch(user, i, template(i.getTemplateCode()), invitees, teams);
@@ -342,16 +343,16 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
         List<UUID> list = invitees == null ? List.of() : invitees.stream().filter(u -> !u.equals(user.id())).distinct().toList();
         if (list.isEmpty()) {
-            throw ApiException.badRequest("SEM_CONVIDADOS", "Convide ao menos 1 pessoa para jogar em " + i.getMode().toLowerCase(Locale.ROOT) + ".");
+            throw ApiException.badRequest("SEM_CONVIDADOS", Msg.t("challenge.convide_ao_menos_1_pessoa", i.getMode().toLowerCase(Locale.ROOT)));
         }
         if (list.size() + 1 > t.getMaxParticipants()) {
-            throw ApiException.badRequest("PARTICIPANTES_DEMAIS", "Este desafio aceita até " + t.getMaxParticipants() + " participantes.");
+            throw ApiException.badRequest("PARTICIPANTES_DEMAIS", Msg.t("challenge.este_desafio_aceita_ate_participantes", t.getMaxParticipants()));
         }
         for (UUID invitee : list) {
             boolean follows = this.follows.findByFollowerIdAndFollowingId(user.id(), invitee).filter(f -> f.getStatus() == FollowStatus.ACEITO).isPresent();
             if (!follows && !room.hasKey(user.id(), invitee)) {
                 throw guard.deny(user, "challenge-invite:" + invitee,
-                        "Você só pode convidar quem você segue ou quem usou a sua Chave do Quarto (RF36.CA04).");
+                        Msg.t("challenge.voce_so_pode_convidar_quem"));
             }
         }
         i.setState(AGUARDANDO);
@@ -364,7 +365,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             p.setStatus(P_CONVIDADO);
             participants.save(p);
             notifications.notify(invitee, user.id(), NotificationType.CHALLENGE_INVITE, "CHALLENGE", i.getId(),
-                    "@" + user.username() + " convidou você para " + tpl.getName(),
+                    Msg.k("challenge.convidou_voce_para", user.username(), tpl.getName()),
                     tpl.getRuleText() + " · modo " + i.getMode().toLowerCase(Locale.ROOT) + ". O convite vale por 48 h.",
                     Map.of("challengeId", i.getId().toString(), "code", tpl.getCode()));
         }
@@ -439,8 +440,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             case "MY_SEASON" -> {
                 var dna = dnas.findByUserId(user.id()).orElse(null);
                 if (dna == null || (dna.getColorPalette() == null && dna.getColorSeason() == null)) {
-                    throw new ApiException(409, "SEM_COLORACAO", "Minha Estação usa a cartela da sua coloração pessoal: gere o DNA de Estilo "
-                            + "ou preencha a estação no DNA (DET-M05).", Map.of("href", "/style-dna"));
+                    throw new ApiException(409, "SEM_COLORACAO", Msg.t("challenge.minha_estacao_usa_a_cartela"), Map.of("href", "/style-dna"));
                 }
             }
             case "RUNWAY_BATTLE" -> params.put("theme", runwayTheme(today()));
@@ -467,7 +467,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
         List<UUID> distinct = ids.stream().distinct().toList();
         if (distinct.size() < min || distinct.size() > max) {
-            throw ApiException.badRequest("PECAS_INVALIDAS", "Escolha as peças do desafio: " + rule + ".");
+            throw ApiException.badRequest("PECAS_INVALIDAS", Msg.t("challenge.escolha_as_pecas_do_desafio", rule));
         }
         List<WardrobeItem> found = pieces.findByIdIn(distinct);
         if (found.size() != distinct.size() || found.stream().anyMatch(w -> !w.getUser().getId().equals(user.id())
@@ -549,7 +549,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeParticipant p = participants.findByInstanceIdAndUserId(id, user.id())
                 .filter(x -> P_CONVIDADO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound("Convite"));
         if (!AGUARDANDO.equals(i.getState()) || i.getAcceptDeadline() == null || i.getAcceptDeadline().isBefore(Instant.now())) {
-            throw new ApiException(409, "CONVITE_EXPIRADO", "O prazo de aceite (48 h) já passou — sem nenhuma penalidade.");
+            throw new ApiException(409, "CONVITE_EXPIRADO", Msg.t("challenge.o_prazo_de_aceite_48"));
         }
         requireSlot(user.id());
         ChallengeTemplate t = template(i.getTemplateCode());
@@ -590,12 +590,12 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> startNow(CurrentUser user, UUID id) {
         ChallengeInstance i = instance(id);
         if (!i.getCreatedBy().equals(user.id())) {
-            throw guard.deny(user, "challenge:" + id, "Só quem criou pode iniciar agora.");
+            throw guard.deny(user, "challenge:" + id, Msg.t("challenge.so_quem_criou_pode_iniciar"));
         }
         ChallengeTemplate t = template(i.getTemplateCode());
         long accepted = participants.findByInstanceId(id).stream().filter(p -> P_ATIVO.equals(p.getStatus())).count();
         if (!AGUARDANDO.equals(i.getState()) || accepted < Math.max(2, t.getMinParticipants())) {
-            throw new ApiException(409, "MINIMO_NAO_ATINGIDO", "Ainda não há o mínimo de participantes que aceitaram.");
+            throw new ApiException(409, "MINIMO_NAO_ATINGIDO", Msg.t("challenge.ainda_nao_ha_o_minimo"));
         }
         participants.findByInstanceId(id).stream().filter(p -> P_CONVIDADO.equals(p.getStatus())).forEach(p -> {
             p.setStatus(P_RECUSOU);
@@ -610,7 +610,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> leave(CurrentUser user, UUID id) {
         ChallengeInstance i = instance(id);
         ChallengeParticipant p = participants.findByInstanceIdAndUserId(id, user.id())
-                .filter(x -> P_ATIVO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound("Participação"));
+                .filter(x -> P_ATIVO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound(Msg.t("challenge.participacao")));
         p.setStatus(P_SAIU);
         p.setLeftAt(Instant.now());
         participants.save(p);
@@ -620,7 +620,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             i.setResultJson(Json.write(Map.of("reason", "todos saíram", "penalty", false)));
             instances.save(i);
         }
-        return Map.of("left", true, "note", "Seu progresso continua registrado no seu perfil; ele só deixa de contar para a equipe.");
+        return Map.of("left", true, "note", Msg.t("challenge.seu_progresso_continua_registrado_no"));
     }
 
     /** Diagrama §3: o criador cancela e o desafio volta para rascunho (sem penalidade para ninguém). */
@@ -628,10 +628,10 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> cancel(CurrentUser user, UUID id) {
         ChallengeInstance i = instance(id);
         if (!i.getCreatedBy().equals(user.id()) || "COMUNIDADE".equals(i.getMode())) {
-            throw guard.deny(user, "challenge:" + id, "Só quem criou o desafio pode cancelá-lo.");
+            throw guard.deny(user, "challenge:" + id, Msg.t("challenge.so_quem_criou_o_desafio_2"));
         }
         if (!AGUARDANDO.equals(i.getState()) && !ATIVO.equals(i.getState())) {
-            throw new ApiException(409, "ESTADO_INVALIDO", "Este desafio não pode ser cancelado agora.");
+            throw new ApiException(409, "ESTADO_INVALIDO", Msg.t("challenge.este_desafio_nao_pode_ser"));
         }
         for (ChallengeParticipant p : participants.findByInstanceId(id)) {
             if (!p.getUserId().equals(user.id()) && (P_ATIVO.equals(p.getStatus()) || P_CONVIDADO.equals(p.getStatus()))) {
@@ -678,25 +678,25 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                         ok++;
                     }
                 }
-                return new Progress(ok, 10, Math.min(1, ok / 10.0), Math.max(p.getBestRecord(), ok), "looks só com as 10 peças", pending);
+                return new Progress(ok, 10, Math.min(1, ok / 10.0), Math.max(p.getBestRecord(), ok), Msg.t("challenge.looks_so_com_as_10"), pending);
             }
             case "CAPSULE_SEASON" -> {
                 int target = params.get("target_days") instanceof Number n ? n.intValue() : 60;
                 long days = ev.stream().filter(e -> "CAPSULE_DAY".equals(e.getEvidenceType())).count();
-                return new Progress((int) days, target, Math.min(1, days / (double) target), (int) days, "dias vestindo só a cápsula", 0);
+                return new Progress((int) days, target, Math.min(1, days / (double) target), (int) days, Msg.t("challenge.dias_vestindo_so_a_capsula"), 0);
             }
             case "SECOND_CHANCE" -> {
                 int target = goal.get("target") instanceof Number n ? n.intValue() : 0;
                 long rescued = ev.stream().filter(e -> "RESCUE".equals(e.getEvidenceType())).map(ChallengeEvent::getRefId).distinct().count();
                 double f = target == 0 ? 1 : Math.min(1, rescued / (double) target);
-                return new Progress((int) rescued, target, f, (int) rescued, target == 0 ? "nenhuma peça esquecida — meta já cumprida"
-                        : "peças esquecidas resgatadas", 0);
+                return new Progress((int) rescued, target, f, (int) rescued, target == 0 ? Msg.t("challenge.nenhuma_peca_esquecida_meta_ja")
+                        : Msg.t("challenge.pecas_esquecidas_resgatadas"), 0);
             }
             case "NO_REPEAT" -> {
                 int[] streak = noRepeatStreak(p.getUserId(), i.getStartsAt() == null ? today() : dateOf(i.getStartsAt()));
                 int target = params.get("target_days") instanceof Number n ? n.intValue() : 7;
                 return new Progress(streak[0], target, Math.min(1, streak[0] / (double) target), Math.max(p.getBestRecord(), streak[1]),
-                        "dias seguidos sem repetir o Look do Dia", 0);
+                        Msg.t("challenge.dias_seguidos_sem_repetir_o"), 0);
             }
             case "WEAR_WHAT_YOU_HAVE", "CHANEL_WEEK", "MY_SEASON", "REAL_MIRROR" -> {
                 String type = switch (t.getCode()) {
@@ -710,25 +710,25 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 long days = ev.stream().filter(e -> type.equals(e.getEvidenceType())).map(e -> dateOf(e.getCreatedAt()))
                         .filter(d -> !violations.contains(d)).distinct().count();
                 String label = switch (t.getCode()) {
-                    case "WEAR_WHAT_YOU_HAVE" -> "dias vestindo só o que já estava no acervo";
-                    case "CHANEL_WEEK" -> "dias com \"Tira uma coisa\"";
-                    case "MY_SEASON" -> "dias com looks da sua cartela";
-                    default -> "dias com o look real registrado na janela";
+                    case "WEAR_WHAT_YOU_HAVE" -> Msg.t("challenge.dias_vestindo_so_o_que");
+                    case "CHANEL_WEEK" -> Msg.t("challenge.dias_com_tira_uma_coisa");
+                    case "MY_SEASON" -> Msg.t("challenge.dias_com_looks_da_sua");
+                    default -> Msg.t("challenge.dias_com_o_look_real");
                 };
                 return new Progress((int) days, duration, Math.min(1, days / (double) duration), (int) days, label, 0);
             }
             case "RUNWAY_BATTLE", "GRWM" -> {
                 boolean entry = ev.stream().anyMatch(e -> "LOOK_ENTRY".equals(e.getEvidenceType()) || "GRWM_VIDEO".equals(e.getEvidenceType()));
-                return new Progress(entry ? 1 : 0, 1, entry ? 1 : 0, entry ? 1 : 0, t.getCode().equals("GRWM") ? "vídeo do Vista-me publicado"
-                        : "look inscrito na batalha", 0);
+                return new Progress(entry ? 1 : 0, 1, entry ? 1 : 0, entry ? 1 : 0, t.getCode().equals("GRWM") ? Msg.t("challenge.video_do_vista_me_publicado")
+                        : Msg.t("challenge.look_inscrito_na_batalha"), 0);
             }
             case "DAILY_CHALLENGE" -> {
                 boolean ok = ev.stream().anyMatch(e -> "DAILY_RULE_OK".equals(e.getEvidenceType()));
-                return new Progress(ok ? 1 : 0, 1, ok ? 1 : 0, ok ? 1 : 0, "look dentro da regra do dia", 0);
+                return new Progress(ok ? 1 : 0, 1, ok ? 1 : 0, ok ? 1 : 0, Msg.t("challenge.look_dentro_da_regra_do"), 0);
             }
             default -> {
                 long days = ev.stream().filter(e -> "RULE_LOOK".equals(e.getEvidenceType())).map(e -> dateOf(e.getCreatedAt())).distinct().count();
-                return new Progress((int) days, duration, Math.min(1, days / (double) duration), (int) days, "dias com look dentro da regra", 0);
+                return new Progress((int) days, duration, Math.min(1, days / (double) duration), (int) days, Msg.t("challenge.dias_com_look_dentro_da"), 0);
             }
         }
     }
@@ -1067,7 +1067,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             }
             case "DUELO" -> {
                 Map<UUID, Double> scores = duelScores(i, t, members);
-                result.put("scoring", VOTED.contains(t.getCode()) ? "votos às cegas" : "recorde pessoal");
+                result.put("scoring", VOTED.contains(t.getCode()) ? Msg.t("challenge.votos_as_cegas") : "recorde pessoal");
                 double best = scores.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
                 boolean teams = members.stream().anyMatch(p -> "B".equals(p.getTeam()));
                 List<String> winners = new ArrayList<>();
@@ -1111,8 +1111,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         i.setResultJson(Json.write(result));
         instances.save(i);
         for (ChallengeParticipant p : members) {
-            notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_RESULT, "CHALLENGE", i.getId(), t.getName() + " concluído 🎉",
-                    "Veja o card de resultado e compartilhe se quiser.", Map.of("challengeId", i.getId().toString()));
+            notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_RESULT, "CHALLENGE", i.getId(), Msg.k("challenge.concluido", (t.getName())),
+                    Msg.k("challenge.veja_o_card_de_resultado"), Map.of("challengeId", i.getId().toString()));
         }
     }
 
@@ -1213,8 +1213,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (now.isAfter(start) && now.isBefore(start.plusMinutes(15))) {
             for (ChallengeParticipant p : participants.findByInstanceId(i.getId())) {
                 if (P_ATIVO.equals(p.getStatus()) && record(i, p.getUserId(), "WINDOW_NOTIFIED", dayRef(i.getId(), today()))) {
-                    notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_INVITE, "CHALLENGE", i.getId(), "Hora do Espelho de Verdade 📸",
-                            "A janela de hoje está aberta por 30 minutos.", Map.of("challengeId", i.getId().toString()));
+                    notifications.notify(p.getUserId(), null, NotificationType.CHALLENGE_INVITE, "CHALLENGE", i.getId(), Msg.k("challenge.hora_do_espelho_de_verdade"),
+                            Msg.k("challenge.a_janela_de_hoje_esta"), Map.of("challengeId", i.getId().toString()));
                 }
             }
         }
@@ -1228,7 +1228,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         List<ChallengeParticipant> ps = participants.findByInstanceId(id);
         ChallengeParticipant me = ps.stream().filter(p -> p.getUserId().equals(user.id())).findFirst().orElse(null);
         if (me == null && !"COMUNIDADE".equals(i.getMode())) {
-            throw guard.deny(user, "challenge:" + id, "Você não participa deste desafio.");
+            throw guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio"));
         }
         Map<String, Object> params = Json.map(i.getParamsJson());
         Map<String, Object> out = new LinkedHashMap<>();
@@ -1322,7 +1322,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("entryId", s.getId());
             m.put("coverImageUrl", s.getCoverImageUrl());
-            m.put("title", blind ? "Look #" + (out.size() + 1) : s.getTitle());
+            m.put("title", blind ? Msg.t("challenge.look", (out.size() + 1)) : s.getTitle());
             m.put("pieces", items.stream().map(si -> {
                 Map<String, Object> pm = new LinkedHashMap<>();
                 pm.put("imageUrl", si.getWardrobeItem().getImageUrl());
@@ -1350,19 +1350,19 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         ChallengeParticipant me = participants.findByInstanceIdAndUserId(id, user.id()).filter(p -> P_ATIVO.equals(p.getStatus()))
-                .orElseThrow(() -> guard.deny(user, "challenge:" + id, "Você não participa deste desafio."));
+                .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         if (!ATIVO.equals(i.getState())) {
-            throw new ApiException(409, "ESTADO_INVALIDO", "O desafio não está ativo.");
+            throw new ApiException(409, "ESTADO_INVALIDO", Msg.t("challenge.o_desafio_nao_esta_ativo"));
         }
         Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + schemeId);
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
         if (items.size() < 2 || items.stream().anyMatch(si -> !si.getWardrobeItem().getUser().getId().equals(user.id()))) {
-            throw ApiException.badRequest("LOOK_INVALIDO", "O look precisa de ao menos 2 peças, todas do seu próprio acervo.");
+            throw ApiException.badRequest("LOOK_INVALIDO", Msg.t("challenge.o_look_precisa_de_ao"));
         }
         boolean hasEntry = evidence.findByInstanceIdAndUserId(id, user.id()).stream().anyMatch(e -> "LOOK_ENTRY".equals(e.getEvidenceType()));
         if (hasEntry && SINGLE_SHOT.contains(t.getCode())) {
-            throw new ApiException(409, "JA_INSCRITO", "Você já inscreveu um look neste desafio.");
+            throw new ApiException(409, "JA_INSCRITO", Msg.t("challenge.voce_ja_inscreveu_um_look"));
         }
         record(i, user.id(), "LOOK_ENTRY", schemeId);
         refresh(i, t);
@@ -1392,16 +1392,16 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         if (!ATIVO.equals(i.getState()) || !VOTED.contains(t.getCode())) {
-            throw new ApiException(409, "VOTACAO_FECHADA", "A votação deste desafio não está aberta.");
+            throw new ApiException(409, "VOTACAO_FECHADA", Msg.t("challenge.a_votacao_deste_desafio_nao"));
         }
         ChallengeEvent entry = evidence.findByInstanceId(id).stream().filter(e -> "LOOK_ENTRY".equals(e.getEvidenceType()) && e.getRefId().equals(entrySchemeId))
-                .findFirst().orElseThrow(() -> ApiException.notFound("Look inscrito"));
+                .findFirst().orElseThrow(() -> ApiException.notFound(Msg.t("challenge.look_inscrito")));
         if (entry.getUserId().equals(user.id())) {
-            throw ApiException.badRequest("VOTO_PROPRIO", "Você não pode votar no próprio look.");
+            throw ApiException.badRequest("VOTO_PROPRIO", Msg.t("challenge.voce_nao_pode_votar_no"));
         }
         boolean already = votes.findByInstanceId(id).stream().anyMatch(v -> v.getVoterUserId().equals(user.id()));
         if (already) {
-            throw new ApiException(409, "JA_VOTOU", "Você já votou nesta batalha — um voto por pessoa.");
+            throw new ApiException(409, "JA_VOTOU", Msg.t("challenge.voce_ja_votou_nesta_batalha"));
         }
         ChallengeVote v = new ChallengeVote();
         v.setId(UUID.randomUUID());
@@ -1409,7 +1409,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         v.setVoterUserId(user.id());
         v.setEntrySchemeId(entrySchemeId);
         votes.save(v);
-        return Map.of("voted", true, "note", "Marca, preço e autor aparecem só quando o resultado sair (RF36.CA08).");
+        return Map.of("voted", true, "note", Msg.t("challenge.marca_preco_e_autor_aparecem"));
     }
 
     /** CA16 — bilhete: frase pronta ou texto livre de até 80 caracteres, moderado. Não existe chat livre. */
@@ -1419,15 +1419,15 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         String content;
         String kind;
         if (preset != null && !preset.isBlank()) {
-            if (!PRESET_NOTES.contains(preset)) {
-                throw ApiException.badRequest("FRASE_INVALIDA", "Escolha uma das frases prontas.");
+            if (PRESET_NOTES.stream().noneMatch(p -> Msg.matchesAnyLocale(p, preset))) {
+                throw ApiException.badRequest("FRASE_INVALIDA", Msg.t("challenge.escolha_uma_das_frases_prontas"));
             }
             content = preset;
             kind = "PRESET";
         } else {
             content = InputSanitizer.moderated("bilhete", free == null ? "" : free, NOTE_MAX);
             if (content.isBlank()) {
-                throw ApiException.badRequest("BILHETE_VAZIO", "Escreva um bilhete de até 80 caracteres.");
+                throw ApiException.badRequest("BILHETE_VAZIO", Msg.t("challenge.escreva_um_bilhete_de_ate"));
             }
             kind = "FREE";
         }
@@ -1445,7 +1445,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> react(CurrentUser user, UUID id, String emoji) {
         ChallengeInstance i = requireSocial(user, id);
         if (!REACTIONS.contains(emoji)) {
-            throw ApiException.badRequest("REACAO_INVALIDA", "Reações disponíveis: " + String.join(" ", REACTIONS));
+            throw ApiException.badRequest("REACAO_INVALIDA", Msg.t("challenge.reacoes_disponiveis", String.join(" ", REACTIONS)));
         }
         ChallengeNote n = new ChallengeNote();
         n.setId(UUID.randomUUID());
@@ -1460,10 +1460,10 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     ChallengeInstance requireSocial(CurrentUser user, UUID id) {
         ChallengeInstance i = instance(id);
         if (!"EQUIPE".equals(i.getMode()) && !"DUELO".equals(i.getMode())) {
-            throw ApiException.badRequest("SEM_INTERACAO", "Reações e bilhetes existem só em Equipe e Duelo (§6).");
+            throw ApiException.badRequest("SEM_INTERACAO", Msg.t("challenge.reacoes_e_bilhetes_existem_so"));
         }
         participants.findByInstanceIdAndUserId(id, user.id()).filter(p -> P_ATIVO.equals(p.getStatus()) || P_CONCLUIU.equals(p.getStatus()))
-                .orElseThrow(() -> guard.deny(user, "challenge:" + id, "Você não participa deste desafio."));
+                .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         return i;
     }
 
@@ -1473,17 +1473,17 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         if (!t.getCode().equals("REAL_MIRROR") || !ATIVO.equals(i.getState())) {
-            throw ApiException.badRequest("DESAFIO_INVALIDO", "Este envio vale só para o Espelho de Verdade ativo.");
+            throw ApiException.badRequest("DESAFIO_INVALIDO", Msg.t("challenge.este_envio_vale_so_para"));
         }
         ChallengeParticipant me = participants.findByInstanceIdAndUserId(id, user.id()).filter(p -> P_ATIVO.equals(p.getStatus()))
-                .orElseThrow(() -> guard.deny(user, "challenge:" + id, "Você não participa deste desafio."));
+                .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         ZonedDateTime ws = windowStart(id, today());
         ZonedDateTime now = ZonedDateTime.now(FaiPointsService.ZONE);
         if (now.isBefore(ws) || now.isAfter(ws.plusMinutes(30))) {
-            throw new ApiException(409, "FORA_DA_JANELA", "A janela de hoje é das " + ws.toLocalTime() + " às " + ws.plusMinutes(30).toLocalTime() + ".");
+            throw new ApiException(409, "FORA_DA_JANELA", Msg.t("challenge.a_janela_de_hoje_e", ws.toLocalTime(), ws.plusMinutes(30).toLocalTime()));
         }
         if (bytes == null || bytes.length == 0 || bytes.length > 10 * 1024 * 1024) {
-            throw ApiException.badRequest("FOTO_INVALIDA", "Envie uma foto de até 10 MB.");
+            throw ApiException.badRequest("FOTO_INVALIDA", Msg.t("challenge.envie_uma_foto_de_ate"));
         }
         String contentType = mime == null ? "image/jpeg" : mime;
         MediaStoragePort.StoredObject stored = media.put("challenges/" + id + "/" + user.id() + "/" + today() + "." + MediaService.ext(contentType),
@@ -1500,7 +1500,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         record(i, user.id(), "REAL_PHOTO", dayRef(id, today()));
         refresh(i, t);
         return Map.of("recorded", true, "private", !Boolean.TRUE.equals(goal.get("photoConsent")),
-                "note", "Foto privada por padrão; a equipe só vê com o seu consentimento explícito (ETI-05).");
+                "note", Msg.t("challenge.foto_privada_por_padrao_a"));
     }
 
     /** Em Equipe, a confirmação vem de um colega (§4) — só vê a foto quem tem o consentimento do autor. */
@@ -1509,20 +1509,20 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         if (!"EQUIPE".equals(i.getMode())) {
-            throw ApiException.badRequest("SEM_CONFIRMACAO", "Confirmação por colega existe só no modo Equipe.");
+            throw ApiException.badRequest("SEM_CONFIRMACAO", Msg.t("challenge.confirmacao_por_colega_existe_so"));
         }
         participants.findByInstanceIdAndUserId(id, user.id()).filter(p -> P_ATIVO.equals(p.getStatus()))
-                .orElseThrow(() -> guard.deny(user, "challenge:" + id, "Você não participa deste desafio."));
+                .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         if (memberId.equals(user.id())) {
-            throw ApiException.badRequest("AUTOCONFIRMACAO", "A confirmação precisa vir de outra pessoa da equipe.");
+            throw ApiException.badRequest("AUTOCONFIRMACAO", Msg.t("challenge.a_confirmacao_precisa_vir_de"));
         }
         ChallengeParticipant member = participants.findByInstanceIdAndUserId(id, memberId).orElseThrow(() -> ApiException.notFound("Participante"));
         if (!Boolean.TRUE.equals(Json.map(member.getPersonalGoalJson()).get("photoConsent"))) {
-            throw guard.deny(user, "challenge-photo:" + memberId, "Esta pessoa não autorizou a equipe a ver a foto (ETI-05).");
+            throw guard.deny(user, "challenge-photo:" + memberId, Msg.t("challenge.esta_pessoa_nao_autorizou_a"));
         }
         LocalDate d = day == null ? today() : day;
         if (!evidence.existsByInstanceIdAndUserIdAndEvidenceTypeAndRefId(id, memberId, "REAL_PHOTO", dayRef(id, d))) {
-            throw ApiException.notFound("Foto do dia");
+            throw ApiException.notFound(Msg.t("challenge.foto_do_dia"));
         }
         ChallengeEvent e = new ChallengeEvent();
         e.setId(UUID.randomUUID());
@@ -1543,7 +1543,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = templates.findById(i.getTemplateCode()).orElseThrow();
         ChallengeParticipant me = participants.findByInstanceIdAndUserId(id, user.id())
-                .orElseThrow(() -> guard.deny(user, "challenge:" + id, "Você não participa deste desafio."));
+                .orElseThrow(() -> guard.deny(user, "challenge:" + id, Msg.t("challenge.voce_nao_participa_deste_desafio")));
         Map<String, Object> card = new LinkedHashMap<>();
         card.put("title", t.getName());
         card.put("mode", i.getMode());
@@ -1551,9 +1551,9 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (t.getCode().equals("DAILY_CHALLENGE")) {
             Map<String, Object> params = Json.map(i.getParamsJson());
             String grid = String.valueOf(Json.map(me.getPersonalGoalJson()).getOrDefault("grid", "⬜"));
-            card.put("text", "Desafio do Dia #" + params.getOrDefault("number", "") + "\n" + grid);
+            card.put("text", Msg.t("challenge.desafio_do_dia", params.getOrDefault("number", ""), grid));
             card.put("grid", grid);
-            card.put("note", "Grade compartilhável sem expor as peças nem o acervo (RF36.CA17).");
+            card.put("note", Msg.t("challenge.grade_compartilhavel_sem_expor_as"));
             return card;
         }
         Progress pr = progress(i, me, t);
@@ -1561,7 +1561,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         card.put("best", Math.max(pr.best(), me.getBestRecord()));
         card.put("label", pr.label());
         card.put("result", Json.map(i.getResultJson()));
-        card.put("excludes", List.of("preço", "custo por uso", "marcas", "acervo completo"));
+        card.put("excludes", List.of(Msg.t("common.preco"), Msg.t("challenge.custo_por_uso"), "marcas", "acervo completo"));
         return card;
     }
 
@@ -1574,10 +1574,10 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         guard.requireCanCreate(user);
         String name = InputSanitizer.moderated("nome", req.name() == null ? "" : req.name(), 60);
         if (name.isBlank()) {
-            throw ApiException.badRequest("NOME_OBRIGATORIO", "Dê um nome ao desafio.");
+            throw ApiException.badRequest("NOME_OBRIGATORIO", Msg.t("challenge.de_um_nome_ao_desafio"));
         }
         if (req.blocks() == null || req.blocks().isEmpty() || req.blocks().size() > 4) {
-            throw ApiException.badRequest("BLOCOS_INVALIDOS", "Use de 1 a 4 blocos de regra.");
+            throw ApiException.badRequest("BLOCOS_INVALIDOS", Msg.t("challenge.use_de_1_a_4"));
         }
         List<Map<String, Object>> clean = new ArrayList<>();
         Set<String> families = new HashSet<>(Taxonomy.COLOR_FAMILY.values());
@@ -1585,7 +1585,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             String type = String.valueOf(b.get("type"));
             Object v = b.get("value");
             if (!RULE_BLOCK_TYPES.contains(type)) {
-                throw ApiException.badRequest("BLOCO_INVALIDO", "Bloco desconhecido: " + type + ". Use: " + RULE_BLOCK_TYPES);
+                throw ApiException.badRequest("BLOCO_INVALIDO", Msg.t("challenge.bloco_desconhecido_use", type, RULE_BLOCK_TYPES));
             }
             boolean ok = switch (type) {
                 case "color_family" -> families.contains(String.valueOf(v));
@@ -1597,7 +1597,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 default -> true;
             };
             if (!ok) {
-                throw ApiException.badRequest("BLOCO_INVALIDO", "Valor inválido para o bloco " + type + ".");
+                throw ApiException.badRequest("BLOCO_INVALIDO", Msg.t("challenge.valor_invalido_para_o_bloco", type));
             }
             Map<String, Object> cb = new LinkedHashMap<>();
             cb.put("type", type);
@@ -1626,24 +1626,24 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         templates.save(t);
         audit.log(user, "DESAFIO_PROPOSTO", "challenge-template:" + t.getCode(), Map.of("blocks", clean.size()));
         return Map.of("code", t.getCode(), "name", t.getName(), "rule", t.getRuleText(), "note",
-                "Os desafios da comunidade com mais participantes em 30 dias podem entrar no catálogo oficial com o seu nome (§7).");
+                Msg.t("challenge.os_desafios_da_comunidade_com"));
     }
 
     static String describe(List<Map<String, Object>> blocks) {
         return blocks.stream().map(b -> {
-            String q = "all".equals(b.get("quantifier")) ? "só peças " : "uma peça ";
+            String q = "all".equals(b.get("quantifier")) ? Msg.t("challenge.so_pecas") : Msg.t("challenge.uma_peca");
             Object v = b.get("value");
             return switch (String.valueOf(b.get("type"))) {
                 case "color_family" -> q + "da cor " + v;
                 case "category" -> q + "da categoria " + v;
                 case "origin" -> q + "com origem " + String.valueOf(v).toLowerCase(Locale.ROOT).replace("|", " ou ");
-                case "state" -> q + ("forgotten".equals(v) ? "esquecida" : "favorite".equals(v) ? "favorita" : "disponível");
-                case "unused_days" -> "uma peça sem uso há " + v + " dias";
-                case "slot" -> "uma peça no slot " + v;
-                case "monochrome" -> "look monocromático";
-                case "neutral_only" -> "só peças neutras";
-                case "distinct_colors" -> v + " famílias de cor";
-                case "piece_count" -> "até " + v + " peças";
+                case "state" -> q + ("forgotten".equals(v) ? "esquecida" : "favorite".equals(v) ? "favorita" : Msg.t("challenge.disponivel"));
+                case "unused_days" -> Msg.t("challenge.uma_peca_sem_uso_ha", v);
+                case "slot" -> Msg.t("challenge.uma_peca_no_slot", v);
+                case "monochrome" -> Msg.t("challenge.look_monocromatico_2");
+                case "neutral_only" -> Msg.t("challenge.so_pecas_neutras_2");
+                case "distinct_colors" -> Msg.t("challenge.familias_de_cor", (v));
+                case "piece_count" -> Msg.t("challenge.ate_pecas", v);
                 default -> String.valueOf(b.get("type"));
             };
         }).collect(Collectors.joining(" + "));

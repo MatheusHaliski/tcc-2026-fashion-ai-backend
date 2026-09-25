@@ -1,5 +1,6 @@
 package br.com.fashionai.web.error;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -42,14 +43,14 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> invalid(MethodArgumentNotValidException ex, HttpServletRequest req) {
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(f -> fields.putIfAbsent(f.getField(), f.getDefaultMessage()));
-        return respond(req, 422, "VALIDACAO", "Revise os campos destacados.", Map.of("fields", fields));
+        return respond(req, 422, "VALIDACAO", Msg.t("globalExceptionHandler.revise_os_campos_destacados"), Map.of("fields", fields));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     ResponseEntity<ApiError> constraint(ConstraintViolationException ex, HttpServletRequest req) {
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(v -> fields.putIfAbsent(v.getPropertyPath().toString(), v.getMessage()));
-        return respond(req, 422, "VALIDACAO", "Revise os campos destacados.", Map.of("fields", fields));
+        return respond(req, 422, "VALIDACAO", Msg.t("globalExceptionHandler.revise_os_campos_destacados"), Map.of("fields", fields));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -63,43 +64,43 @@ public class GlobalExceptionHandler {
         String name = ex instanceof MethodArgumentTypeMismatchException m ? m.getName()
                 : ex instanceof MissingServletRequestParameterException p ? p.getParameterName()
                 : ((MissingServletRequestPartException) ex).getRequestPartName();
-        return respond(req, 400, "PARAMETRO_INVALIDO", "Parâmetro ausente ou inválido: " + name + ".", Map.of("parameter", name));
+        return respond(req, 400, "PARAMETRO_INVALIDO", Msg.t("globalExceptionHandler.parametro_ausente_ou_invalido", name), Map.of("parameter", name));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     ResponseEntity<ApiError> tooLarge(MaxUploadSizeExceededException ex, HttpServletRequest req) {
-        return respond(req, 413, "ARQUIVO_GRANDE", "O arquivo passa do limite de envio. Use uma imagem menor.", Map.of());
+        return respond(req, 413, "ARQUIVO_GRANDE", Msg.t("globalExceptionHandler.o_arquivo_passa_do_limite"), Map.of());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     ResponseEntity<ApiError> method(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
-        return respond(req, 405, "METODO_NAO_SUPORTADO", "Operação não suportada neste endereço.", Map.of());
+        return respond(req, 405, "METODO_NAO_SUPORTADO", Msg.t("globalExceptionHandler.operacao_nao_suportada_neste_endereco"), Map.of());
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     ResponseEntity<ApiError> mediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
-        return respond(req, 415, "FORMATO_NAO_SUPORTADO", "Formato de conteúdo não suportado.", Map.of());
+        return respond(req, 415, "FORMATO_NAO_SUPORTADO", Msg.t("globalExceptionHandler.formato_de_conteudo_nao_suportado"), Map.of());
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     ResponseEntity<ApiError> notAcceptable(HttpMediaTypeNotAcceptableException ex, HttpServletRequest req) {
-        return respond(req, 406, "FORMATO_NAO_ACEITO", "Este endereço devolve imagem; peça com Accept: image/png.", Map.of());
+        return respond(req, 406, "FORMATO_NAO_ACEITO", Msg.t("globalExceptionHandler.este_endereco_devolve_imagem_peca"), Map.of());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ApiError> noResource(NoResourceFoundException ex, HttpServletRequest req) {
-        return respond(req, 404, "NAO_ENCONTRADO", "Endereço não encontrado.", Map.of());
+        return respond(req, 404, "NAO_ENCONTRADO", Msg.t("globalExceptionHandler.endereco_nao_encontrado"), Map.of());
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
     ResponseEntity<ApiError> concurrent(OptimisticLockingFailureException ex, HttpServletRequest req) {
-        return respond(req, 409, "EDICAO_CONCORRENTE", "Este conteúdo foi alterado em outra aba. Recarregue e tente de novo.", Map.of());
+        return respond(req, 409, "EDICAO_CONCORRENTE", Msg.t("globalExceptionHandler.este_conteudo_foi_alterado_em"), Map.of());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ApiError> integrity(DataIntegrityViolationException ex, HttpServletRequest req) {
         log.warn("Violação de integridade em {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
-        return respond(req, 409, "CONFLITO", "Esta ação conflita com um registro existente.", Map.of());
+        return respond(req, 409, "CONFLITO", Msg.t("globalExceptionHandler.esta_acao_conflita_com_um"), Map.of());
     }
 
     /** Negações de @PreAuthorize seguem para o AccessDeniedHandler auditado da cadeia de segurança. */
@@ -112,7 +113,7 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> unexpected(Exception ex, HttpServletRequest req) {
         log.error("Erro inesperado em {} {}", req.getMethod(), req.getRequestURI(), ex);
         return respond(req, 500, "ERRO_INTERNO",
-                "Algo deu errado do nosso lado. Tente de novo em instantes; se persistir, informe o código de rastreio.", Map.of());
+                Msg.t("globalExceptionHandler.algo_deu_errado_do_nosso"), Map.of());
     }
 
     private static ResponseEntity<ApiError> respond(HttpServletRequest req, int status, String code, String message,

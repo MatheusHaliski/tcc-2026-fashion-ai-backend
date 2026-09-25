@@ -1,5 +1,6 @@
 package br.com.fashionai.application.ai;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.audit.AuditEvent;
 import br.com.fashionai.application.audit.AuditService;
@@ -145,14 +146,14 @@ public class AiEngine {
                 UUID id = record(userId, capability, "none", "none", 0, BigDecimal.ZERO, AiCallResult.PROMPT_REJECTED,
                         false, inputs, String.join("; ", verdict.violations()), "n/a", correlationId);
                 throw new ApiException(422, "PROMPT_REJEITADO",
-                        "A arte trabalha a atmosfera da era, nunca rosto, corpo, silhueta ou nome de pessoa real.",
+                        Msg.t("ai.a_arte_trabalha_a_atmosfera"),
                         Map.of("violations", verdict.violations(), "inferenceId", id.toString()));
             }
         }
 
         if (!capability.inScope() && !(capability == AiCapability.THREE_D_GENERATOR && feature3d)) {
             return localOutcome(userId, capability, inputs, local, AiCallResult.FALLBACK_LOCAL,
-                    capability.hostRf() + " é tema futuro — recurso desligado por feature flag.", "n/a", null, correlationId);
+                    Msg.t("ai.e_tema_futuro_recurso_desligado", (capability.hostRf())), "n/a", null, correlationId);
         }
 
         String consentState = consentState(userId, capability.consentPurpose());
@@ -163,8 +164,7 @@ public class AiEngine {
         }
         if ("NEGADO".equals(consentState)) {
             return localOutcome(userId, capability, inputs, local, AiCallResult.CONSENT_DENIED,
-                    "Você não autorizou o envio destes dados a serviços de IA externos (" + capability.consentPurpose()
-                            + "). Aplicamos só o processamento local — ative em Configurações › Privacidade.",
+                    Msg.t("ai.voce_nao_autorizou_o_envio", capability.consentPurpose()),
                     consentState, null, correlationId);
         }
 
@@ -177,8 +177,7 @@ public class AiEngine {
                 RateLimitPort.QuotaStatus now = rateLimit.status(userId, bucket, spec.dailyQuotaPerUser(), window);
                 AiOutcome.Quota q = new AiOutcome.Quota(now.limit(), now.used(), now.resetAt());
                 return localOutcome(userId, capability, inputs, local, AiCallResult.RATE_LIMITED,
-                        "Cota diária de " + now.limit() + " usos de " + capability.officialName()
-                                + " atingida. Reposição em " + HOUR.format(now.resetAt()) + ". Resultado local aplicado.",
+                        Msg.t("ai.cota_diaria_de_usos_de", now.limit(), capability.officialName(), HOUR.format(now.resetAt())),
                         consentState, q, correlationId);
             }
             RateLimitPort.QuotaStatus after = rateLimit.status(userId, bucket, spec.dailyQuotaPerUser(), window);
@@ -199,7 +198,7 @@ public class AiEngine {
                         false, inputs, result.outputSummary(), consentState, correlationId);
                 return new AiOutcome<>(result.value(), id, AiCallResult.SUCCESS, false, step.provider(), step.model(),
                         latency, cost, null, explanation(capability, step.provider(), step.model(), inputs, consentState,
-                        "Provedor " + step.provider() + " respondeu dentro do tempo limite."), quota);
+                        Msg.t("ai.provedor_respondeu_dentro_do_tempo", step.provider())), quota);
             } catch (Exception ex) {
                 long latency = (System.nanoTime() - started) / 1_000_000;
                 failure = classify(ex, latency, spec.timeoutSeconds());
@@ -209,7 +208,7 @@ public class AiEngine {
             }
         }
         AiOutcome<T> fallback = localOutcome(userId, capability, inputs, local, AiCallResult.FALLBACK_LOCAL,
-                "O serviço de IA externo está indisponível no momento (" + failure + "). Mostramos o resultado local.",
+                Msg.t("ai.o_servico_de_ia_externo", failure),
                 consentState, quota, correlationId);
         return fallback;
     }
@@ -223,10 +222,10 @@ public class AiEngine {
         UUID id = record(userId, capability, "local", "local", latency, BigDecimal.ZERO, result, true, inputs,
                 value == null ? "" : String.valueOf(value), consentState, correlationId);
         String reason = switch (result) {
-            case CONSENT_DENIED -> "Consentimento para " + capability.consentPurpose() + " não concedido — processamento local.";
-            case RATE_LIMITED -> "Cota diária atingida — processamento local.";
-            default -> message == null ? "Nenhum provedor externo configurado — processamento local determinístico."
-                    : "Provedor externo indisponível — processamento local.";
+            case CONSENT_DENIED -> Msg.t("ai.consentimento_para_nao_concedido", capability.consentPurpose());
+            case RATE_LIMITED -> Msg.t("ai.cota_diaria_atingida_processamento_local");
+            default -> message == null ? Msg.t("ai.nenhum_provedor_externo_configurado")
+                    : Msg.t("ai.provedor_externo_indisponivel");
         };
         return new AiOutcome<>(value, id, result, true, "local", "local", latency, BigDecimal.ZERO, message,
                 explanation(capability, "local", "local", inputs, consentState, reason), quota);
@@ -317,7 +316,7 @@ public class AiEngine {
                 value == null ? "" : String.valueOf(value), consent, correlationId);
         return new AiOutcome<>(value, id, AiCallResult.SUCCESS, false, "local", "local", latency, BigDecimal.ZERO, null,
                 explanation(capability, "local", "local", inputs, consent,
-                        "Motor local determinístico (primário desta capacidade) — nenhum dado sai do Fashion AI."), null);
+                        Msg.t("ai.motor_local_deterministico_primario")), null);
     }
 
     public Optional<AiProviderPort> provider(String id) {
