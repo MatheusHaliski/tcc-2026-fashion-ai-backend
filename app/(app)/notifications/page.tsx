@@ -25,8 +25,8 @@ function Inbox() {
   const cats = Array.from(new Set((data?.items ?? []).map((n) => n.category)));
   return (
     <>
-      <PageHeader title={t("nav.notifications")} lead={data ? `${data.unread} não lidas` : undefined} actions={<Button size="sm" onClick={markAll}>Marcar todas como lidas</Button>} />
-      <Tabs tabs={[{ id: "inbox", label: "Caixa de entrada", count: data?.unread }, { id: "prefs", label: t("settings.notifications") }]} value={tab} onChange={setTab} />
+      <PageHeader title={t("nav.notifications")} lead={data ? t("notifications.nao_lidas", { unread: data.unread }) : undefined} actions={<Button size="sm" onClick={markAll}>{t("notifications.marcar_todas_como_lidas")}</Button>} />
+      <Tabs tabs={[{ id: "inbox", label: t("notifications.caixa_de_entrada"), count: data?.unread }, { id: "prefs", label: t("settings.notifications") }]} value={tab} onChange={setTab} />
       {tab === "inbox" && (
         <>
           <div className="mb-3 flex flex-wrap gap-1.5">{["ALL", ...cats].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c === "ALL" ? t("common.all") : c}</button>)}</div>
@@ -37,7 +37,7 @@ function Inbox() {
             <li key={n.id} className={`flex items-start gap-3 p-3 ${n.read ? "" : "bg-thread-soft/40"}`}>
               <Avatar src={mediaUrl(n.actor?.avatarUrl)} name={n.actor?.displayName ?? n.category} size={36} />
               <div className="min-w-0 flex-1"><p className="type-body"><b>{n.title}</b> <span className="type-caption text-faint">· {relative(n.createdAt)} · {n.category}</span></p><p className="type-body-sm text-muted">{n.body}</p>
-                <div className="mt-1 flex gap-2 type-caption">{href && <Link href={href} className="underline" onClick={() => !n.read && markOne(n.id)}>{t("common.see")}</Link>}{!n.read && <button type="button" className="underline" onClick={() => markOne(n.id)}>marcar como lida</button>}</div></div>
+                <div className="mt-1 flex gap-2 type-caption">{href && <Link href={href} className="underline" onClick={() => !n.read && markOne(n.id)}>{t("common.see")}</Link>}{!n.read && <button type="button" className="underline" onClick={() => markOne(n.id)}>{t("notifications.marcar_como_lida")}</button>}</div></div>
             </li>); })}</ul>
         </>
       )}
@@ -46,7 +46,7 @@ function Inbox() {
           {prefs.loading && <Skeleton className="h-40" />}
           {prefs.data && (
             <>
-              <Switch checked={prefs.data.some((p) => p.enabled)} onChange={master} label="Todas as notificações" />
+              <Switch checked={prefs.data.some((p) => p.enabled)} onChange={master} label={t("notifications.todas_as_notificacoes")} />
               <ul className="divide-y divide-line-soft">{prefs.data.map((p) => <li key={p.type}><Switch checked={p.enabled} onChange={() => togglePref(p)} label={`${p.label ?? p.type.replace(/_/g, " ").toLowerCase()}${p.category ? ` · ${p.category}` : ""}`} /></li>)}</ul>
             </>
           )}

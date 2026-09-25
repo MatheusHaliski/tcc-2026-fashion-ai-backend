@@ -2,6 +2,7 @@
 import { label } from "@/lib/api/taxonomy";
 import type { UserCard } from "@/lib/api/types";
 import { Button, Dialog } from "@/components/ui";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /** Tipos e utilitários do FLAIR compartilhados entre a página /flair e a aba da loja (RF14/RF22). */
 export interface Check { kind: string; value: string; label: string; ok: boolean; }
@@ -34,14 +35,15 @@ export function checkLabel(c: Check) {
 }
 
 export function VoucherDialog({ voucher, onClose }: { voucher: Voucher | null; onClose: () => void }) {
+  const { rich, t } = useI18n();
   return (
-    <Dialog open={!!voucher} onClose={onClose} title={voucher ? `Cupom ${voucher.combination.brandName}` : ""} footer={<Button variant="primary" onClick={onClose}>Fechar</Button>}>
+    <Dialog open={!!voucher} onClose={onClose} title={voucher ? t("flair.flairShared.cupom", { brandName: voucher.combination.brandName }) : ""} footer={<Button variant="primary" onClick={onClose}>{t("common.close")}</Button>}>
       {voucher && <div className="text-center">
         <p className="type-h3">{voucher.combination.coupon}</p>
         <p className="type-caption text-muted">{couponText(voucher.combination)}</p>
-        <p className="flair-code flair-code-lg my-4" aria-label={`Código ${voucher.code.split("").join(" ")}`}>{voucher.code}</p>
-        <p className="type-body-sm">Mostre este código no caixa (ou use no site) da loja. Status: <b>{voucher.status}</b>{voucher.expiresAt ? ` · válido até ${new Date(voucher.expiresAt).toLocaleDateString("pt-BR")}` : ""}</p>
-        {voucher.deck && <p className="type-caption text-muted mt-1">Trocado com o deck “{voucher.deck}” (poder {voucher.deckPower}).</p>}
+        <p className="flair-code flair-code-lg my-4" aria-label={t("flair.flairShared.codigo", { join: voucher.code.split("").join(" ") })}>{voucher.code}</p>
+        <p className="type-body-sm">{rich("flair.flairShared.mostre_este_codigo_no_caixa", { status: voucher.status, value: voucher.expiresAt ? t("flair.flairShared.valido_ate", { toLocaleDateString: new Date(voucher.expiresAt).toLocaleDateString("pt-BR") }) : "" }, { 0: ($c) => <b>{$c}</b> })}</p>
+        {voucher.deck && <p className="type-caption text-muted mt-1">{t("flair.flairShared.trocado_com_o_deck_poder", { deck: voucher.deck, deckPower: voucher.deckPower })}</p>}
       </div>}
     </Dialog>
   );

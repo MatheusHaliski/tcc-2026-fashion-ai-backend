@@ -4,6 +4,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { mediaUrl } from "@/lib/api/client";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Objetos e detalhes do Meu Quarto (docs/meu-quarto/05-elementos-do-quarto.md), todos procedurais — sem modelos
@@ -109,6 +110,7 @@ export function GoldDot({ position }: { position: [number, number, number] }) {
 // ------------------------------------------------------------------ gaveta vazia com charme (DET-D08)
 
 export function EmptyDrawerCharm({ width, onAdd }: { width: number; onAdd: () => void }) {
+  const { t } = useI18n();
   return (
     <group>
       {/* sachê de lavanda */}
@@ -122,7 +124,7 @@ export function EmptyDrawerCharm({ width, onAdd }: { width: number; onAdd: () =>
         <mesh position={[0.02, -0.045, 0]}><boxGeometry args={[0.05, 0.03, 0.008]} /><meshStandardMaterial color="#e57c5f" roughness={1} /></mesh>
         <mesh position={[0, 0.04, 0.0045]}><boxGeometry args={[0.036, 0.012, 0.002]} /><meshStandardMaterial color="#f3efe6" /></mesh>
       </group>
-      <Label3D text="+ adicionar peça" w={width * 0.8} h={0.03} px={256} fg="#4a3f6b" position={[0, 0.07, 0.08]} />
+      <Label3D text={t("room3d.roomProps.adicionar_peca")} w={width * 0.8} h={0.03} px={256} fg="#4a3f6b" position={[0, 0.07, 0.08]} />
     </group>
   );
 }
@@ -164,13 +166,14 @@ export function DressForm({ position, pointAt, talking, onClick, reduced }: { po
 
 /** Interruptor de luz = modo escuro (DET-D01), sincronizado com as Configurações. */
 export function LightSwitch({ position, rotation, on, onToggle }: { position: [number, number, number]; rotation?: [number, number, number]; on: boolean; onToggle: () => void }) {
+  const { t } = useI18n();
   const lever = useRef<THREE.Mesh>(null);
   useFrame((_, dt) => { if (lever.current) lever.current.rotation.x = THREE.MathUtils.damp(lever.current.rotation.x, on ? -0.35 : 0.35, 12, dt); });
   return (
     <group position={position} rotation={rotation} onClick={(e) => { e.stopPropagation(); onToggle(); }} {...hover}>
       <RoundedBox args={[0.09, 0.13, 0.012]} radius={0.006}><meshStandardMaterial color="#f7f5f0" roughness={0.5} /></RoundedBox>
       <mesh ref={lever} position={[0, 0, 0.012]}><boxGeometry args={[0.03, 0.05, 0.014]} /><meshStandardMaterial color={on ? "#fff3c4" : "#dcd8cf"} emissive={on ? "#ffcf6a" : "#000"} emissiveIntensity={on ? 0.4 : 0} /></mesh>
-      <Label3D text={on ? "claro" : "escuro"} w={0.09} h={0.022} fg="#8a8578" position={[0, -0.085, 0.001]} />
+      <Label3D text={on ? t("room3d.roomProps.claro") : t("room3d.roomProps.escuro")} w={0.09} h={0.022} fg="#8a8578" position={[0, -0.085, 0.001]} />
     </group>
   );
 }
@@ -178,6 +181,7 @@ export function LightSwitch({ position, rotation, on, onToggle }: { position: [n
 const SKY: Record<string, [string, string]> = { morning: ["#bcd8f2", "#e8f1fa"], afternoon: ["#f6d7a0", "#fbe9c6"], golden: ["#f29b58", "#f7c98b"], night: ["#141a36", "#2a2f58"], fixed: ["#dfe6ea", "#f1f3f4"] };
 /** Janela com a luz do horário real (DET-D02) e a decoração discreta das datas sazonais (DET-G07). */
 export function RoomWindow({ position, period, seasonal }: { position: [number, number, number]; period: string; seasonal?: string | null }) {
+  const { t } = useI18n();
   const [a, b] = SKY[period] ?? SKY.fixed;
   const sky = useCanvasTex(`sky-${period}`, 128, 128, (g, w, h) => {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, w, h);
@@ -197,7 +201,7 @@ export function RoomWindow({ position, period, seasonal }: { position: [number, 
       {period !== "night" && <spotLight position={[0, 0.2, 0.3]} target-position={[0.4, -2, 2.5]} angle={0.6} penumbra={0.8} intensity={warm ? 2.2 : 1.2} color={warm ? "#ffcf8a" : "#dfeaff"} distance={6} />}
       {seasonal === "festa_junina" && <group position={[0, 0.62, 0.08]}>{Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[-0.56 + i * 0.14, -0.04 - Math.sin((i / 8) * Math.PI) * 0.06, 0]} rotation={[0, 0, Math.PI]}><coneGeometry args={[0.04, 0.07, 3]} /><meshStandardMaterial color={["#e63946", "#f4a261", "#2a9d8f", "#e9c46a", "#457b9d"][i % 5]} /></mesh>)}</group>}
       {seasonal === "fim_de_ano" && <group position={[0, 0.6, 0.08]}>{Array.from({ length: 12 }, (_, i) => <mesh key={i} position={[-0.55 + i * 0.1, -0.03 - Math.sin((i / 11) * Math.PI) * 0.05, 0]}><sphereGeometry args={[0.014, 8, 8]} /><meshStandardMaterial color={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissive={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissiveIntensity={0.9} /></mesh>)}</group>}
-      {seasonal === "fashion_revolution_week" && <Label3D text="Vista o que você tem" w={0.8} h={0.08} px={512} bg="#111" fg="#fff" position={[0, -0.72, 0.06]} />}
+      {seasonal === "fashion_revolution_week" && <Label3D text={t("room3d.roomProps.vista_o_que_voce_tem")} w={0.8} h={0.08} px={512} bg="#111" fg="#fff" position={[0, -0.72, 0.06]} />}
     </group>
   );
 }
@@ -262,6 +266,7 @@ export function FaiBox({ position, count, opening, onOpen }: { position: [number
 
 /** Gancho da Chave do Quarto (DET-K05): uma chave por pessoa convidada, com a inicial no chaveiro. */
 export function KeyHook({ position, rotation, keys, onClick }: { position: [number, number, number]; rotation?: [number, number, number]; keys: { username: string }[]; onClick: () => void }) {
+  const { t } = useI18n();
   return (
     <group position={position} rotation={rotation} onClick={(e) => { e.stopPropagation(); onClick(); }} {...hover}>
       <mesh><boxGeometry args={[0.34, 0.06, 0.02]} /><meshStandardMaterial color="#8a6a4a" roughness={0.6} /></mesh>
@@ -278,7 +283,7 @@ export function KeyHook({ position, rotation, keys, onClick }: { position: [numb
           </group>
         );
       })}
-      <Label3D text={keys.length ? `${keys.length} chave(s)` : "chave do quarto"} w={0.3} h={0.035} fg="#6b5a4a" position={[0, 0.06, 0.011]} />
+      <Label3D text={keys.length ? t("room3d.roomProps.chave_s", { keysCount: keys.length }) : t("room3d.roomProps.chave_do_quarto")} w={0.3} h={0.035} fg="#6b5a4a" position={[0, 0.06, 0.011]} />
     </group>
   );
 }
@@ -298,6 +303,7 @@ export function CorkBoard({ position, days = 10, polaroids }: { position: [numbe
   );
 }
 function Polaroid({ index, url, filled }: { index: number; url: string | null; filled: boolean }) {
+  const { t } = useI18n();
   const [tex, setTex] = useState<THREE.Texture | null>(null);
   useEffect(() => { const u = mediaUrl(url); if (!u || u.endsWith("null")) return; const l = new THREE.TextureLoader(); l.setCrossOrigin("anonymous"); l.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; setTex(t); }, undefined, () => undefined); }, [url]);
   const col = index % 5, row = Math.floor(index / 5);
@@ -306,7 +312,7 @@ function Polaroid({ index, url, filled }: { index: number; url: string | null; f
       <mesh><planeGeometry args={[0.13, 0.16]} /><meshStandardMaterial color={filled ? "#fbfaf6" : "#e9e2d2"} /></mesh>
       <mesh position={[0, 0.012, 0.001]}><planeGeometry args={[0.11, 0.11]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : filled ? "#d6cfc2" : "#d9cdb4"} /></mesh>
       <mesh position={[0, 0.075, 0.004]}><sphereGeometry args={[0.008, 8, 8]} /><meshStandardMaterial color="#C6275E" /></mesh>
-      <Label3D text={`dia ${index + 1}`} w={0.1} h={0.02} fg="#6b5a4a" position={[0, -0.064, 0.002]} />
+      <Label3D text={t("room3d.roomProps.dia", { value: index + 1 })} w={0.1} h={0.02} fg="#6b5a4a" position={[0, -0.064, 0.002]} />
     </group>
   );
 }

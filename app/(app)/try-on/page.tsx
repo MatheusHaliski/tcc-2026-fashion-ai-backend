@@ -75,7 +75,7 @@ function MannequinBody({ m }: { m: Mannequin }) {
 }
 
 function TryOnInner() {
-  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
+  const { t, rich } = useI18n(); const toast = useToast(); const sp = useSearchParams();
   const { data, loading, error, reload } = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
   const [dressed, setDressed] = useState<string[]>([]);
   const [render, setRender] = useState<Render | null>(null); const [busy, setBusy] = useState(false); const [title, setTitle] = useState("");
@@ -98,7 +98,7 @@ function TryOnInner() {
   function takeOff(id: string) { setDressed((d) => d.filter((x) => x !== id)); setRender(null); }
   async function setSex(sex: Sex) {
     if (sex === data?.sex) return;
-    try { await api.put("/api/try-on/preferences", { sex }); setRender(null); reload(); toast.success(`Manequim ${sex === "MASCULINO" ? "masculino" : "feminino"} salvo — ele volta assim na próxima sessão.`); } catch (e) { toast.fromError(e); }
+    try { await api.put("/api/try-on/preferences", { sex }); setRender(null); reload(); toast.success(t("tryOn.manequim_salvo_ele_volta_assim", { value: sex === "MASCULINO" ? "masculino" : "feminino" })); } catch (e) { toast.fromError(e); }
   }
   async function savePrefs(patch: { skinTone?: string; build?: string }) { try { await api.put("/api/try-on/preferences", patch); setRender(null); reload(); } catch (e) { toast.fromError(e); } }
   async function doRender() {
@@ -107,13 +107,13 @@ function TryOnInner() {
   }
   async function removeBg(id: string) {
     setFixing(id);
-    try { const r = await api.post<{ ok: boolean; message?: string }>(`/api/pieces/${id}/background-removal`); if (r.ok) { toast.success("Fundo removido — a peça agora encaixa sem sobra."); reload(); } else toast.info(r.message ?? "Não deu para remover o fundo agora; a sobreposição fica aproximada."); } catch (e) { toast.fromError(e); } finally { setFixing(null); }
+    try { const r = await api.post<{ ok: boolean; message?: string }>(`/api/pieces/${id}/background-removal`); if (r.ok) { toast.success(t("tryOn.fundo_removido_a_peca_agora")); reload(); } else toast.info(r.message ?? t("tryOn.nao_deu_para_remover_o")); } catch (e) { toast.fromError(e); } finally { setFixing(null); }
   }
   async function saveScheme() {
     try { const r = await api.post<{ schemeId?: string }>("/api/try-on/schemes", { pieceIds: dressed, title: title || undefined, tryOnUrl: render?.imageUrl ?? null }); toast.success(t("scheme.saved")); if (r.schemeId) window.location.href = `/schemes/${r.schemeId}`; } catch (e) { toast.fromError(e); }
   }
 
-  if (error instanceof ApiError && error.code === "ACERVO_VAZIO") return <><PageHeader title={t("nav.tryon")} kicker="RF18" /><EmptyState title="Seu guarda-roupa ainda está vazio" hint={error.message} action={<Link href="/add-piece" className="btn btn-primary">Cadastrar peça</Link>} /></>;
+  if (error instanceof ApiError && error.code === "ACERVO_VAZIO") return <><PageHeader title={t("nav.tryon")} kicker="RF18" /><EmptyState title={t("tryOn.seu_guarda_roupa_ainda_esta")} hint={error.message} action={<Link href="/add-piece" className="btn btn-primary">{t("common.cadastrar_peca")}</Link>} /></>;
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
   const m = data.mannequin;
@@ -122,16 +122,16 @@ function TryOnInner() {
   const skin = m.skinTone ?? "media";
   return (
     <>
-      <PageHeader title={t("nav.tryon")} kicker="RF18" lead={`Arraste uma peça até o manequim (ou toque nela). As camadas se ajeitam sozinhas: base → intermediária → externa → acessório. ${data.externalAvailable ? "O render final usa try-on por IA (FASHN) com o compositor local de reserva." : "O render final usa o compositor local por camadas (IA externa desligada ou sem chave)."}`} />
+      <PageHeader title={t("nav.tryon")} kicker="RF18" lead={t("tryOn.arraste_uma_peca_ate_o", { value: data.externalAvailable ? "O render final usa try-on por IA (FASHN) com o compositor local de reserva." : "O render final usa o compositor local por camadas (IA externa desligada ou sem chave)." })} />
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
         <div className="grid content-start gap-3">
           <Card pad={false}>
-            <div className={`tryon-stage ${over ? "is-over" : ""}`} aria-label="manequim — solte uma peça aqui" role="region"
+            <div className={`tryon-stage ${over ? "is-over" : ""}`} aria-label={t("tryOn.manequim_solte_uma_peca_aqui")} role="region"
               onDragOver={(e) => { if (e.dataTransfer.types.includes(DRAG_TYPE)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(true); } }}
               onDragLeave={() => setOver(false)}
               onDrop={(e) => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData(DRAG_TYPE); if (id) put(id); }}>
-              {render?.imageUrl ? <img src={mediaUrl(render.imageUrl)} alt="look provado no manequim" className="h-full w-full object-contain" /> : (
-                <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={`manequim ${m.sex.toLowerCase()} com ${on.length} peça(s)`}>
+              {render?.imageUrl ? <img src={mediaUrl(render.imageUrl)} alt={t("tryOn.look_provado_no_manequim")} className="h-full w-full object-contain" /> : (
+                <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={t("tryOn.manequim_com_peca_s", { toLowerCase: m.sex.toLowerCase(), onCount: on.length })}>
                   <MannequinBody m={m} />
                   {on.map((e, i) => {
                     const b = m.anchors[e.anchor] ?? m.anchors[e.slot]; if (!b) return null; const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); if (!src) return null;
@@ -140,66 +140,66 @@ function TryOnInner() {
                   })}
                 </svg>
               )}
-              {!on.length && !render && <p className="tryon-drop-hint">solte uma peça aqui</p>}
-              {render && <Badge tone="thread" className="absolute left-2 top-2">render {render.fallbackUsed ? "local" : render.explanation?.provider ?? ""}</Badge>}
+              {!on.length && !render && <p className="tryon-drop-hint">{t("tryOn.solte_uma_peca_aqui")}</p>}
+              {render && <Badge tone="thread" className="absolute left-2 top-2">{t("tryOn.render", { value: render.fallbackUsed ? t("common.local") : render.explanation?.provider ?? "" })}</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-2 p-3">
-              <span className="label mr-1">Manequim</span>
-              <Chip active={data.sex === "MASCULINO"} onClick={() => setSex("MASCULINO")}><FaiIcon id="ACT-22" size={24} decorative />Masculino</Chip>
-              <Chip active={data.sex === "FEMININO"} onClick={() => setSex("FEMININO")}><FaiIcon id="ACT-23" size={24} decorative />Feminino</Chip>
-              <Button size="sm" variant="ghost" className="ml-auto" disabled={!dressed.length && !render} onClick={() => setConfirmClear(true)}><FaiIcon id="ACT-24" size={24} decorative />Limpar</Button>
+              <span className="label mr-1">{t("common.manequim")}</span>
+              <Chip active={data.sex === "MASCULINO"} onClick={() => setSex("MASCULINO")}><FaiIcon id="ACT-22" size={24} decorative />{t("common.masculino")}</Chip>
+              <Chip active={data.sex === "FEMININO"} onClick={() => setSex("FEMININO")}><FaiIcon id="ACT-23" size={24} decorative />{t("common.feminino")}</Chip>
+              <Button size="sm" variant="ghost" className="ml-auto" disabled={!dressed.length && !render} onClick={() => setConfirmClear(true)}><FaiIcon id="ACT-24" size={24} decorative />{t("common.limpar")}</Button>
             </div>
           </Card>
           <Card>
-            <p className="label">Tom de pele <span className="type-caption text-faint">· salvo no seu perfil</span></p>
-            <div className="mb-2 flex flex-wrap gap-1.5">{Object.entries(data.skinTones).map(([id, hex]) => <button key={id} type="button" title={label(id)} aria-label={`tom de pele ${label(id)}`} aria-pressed={skin === id} className={`h-7 w-7 rounded-full border-2 ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: hex }} onClick={() => savePrefs({ skinTone: id })} />)}</div>
-            <Field label="Porte" id="build"><Select id="build" value={m.build} onChange={(e) => savePrefs({ build: e.target.value })}>{data.builds.map((b) => <option key={b} value={b}>{BUILD_LABEL[b] ?? b.toLowerCase()}</option>)}</Select></Field>
+            <p className="label">{rich("tryOn.tom_de_pele_salvo_no", undefined, { 0: ($c) => <span className="type-caption text-faint">{$c}</span> })}</p>
+            <div className="mb-2 flex flex-wrap gap-1.5">{Object.entries(data.skinTones).map(([id, hex]) => <button key={id} type="button" title={label(id)} aria-label={t("tryOn.tom_de_pele", { label: label(id) })} aria-pressed={skin === id} className={`h-7 w-7 rounded-full border-2 ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: hex }} onClick={() => savePrefs({ skinTone: id })} />)}</div>
+            <Field label={t("tryOn.porte")} id="build"><Select id="build" value={m.build} onChange={(e) => savePrefs({ build: e.target.value })}>{data.builds.map((b) => <option key={b} value={b}>{BUILD_LABEL[b] ?? b.toLowerCase()}</option>)}</Select></Field>
           </Card>
-          {render && <Card><p className="label">Render</p><p className="type-caption text-muted">{render.fallbackUsed ? "compositor local" : render.explanation?.provider ?? ""} · {render.totalMs ?? 0} ms{render.costUsd ? ` · US$ ${render.costUsd}` : ""}</p>{render.stages?.length ? <ul className="type-caption">{render.stages.map((s, i) => <li key={i}>{s.name} · {s.provider ?? ""} {s.ms ? `${s.ms} ms` : ""}</li>)}</ul> : null}{render.warnings?.length ? <ul className="mt-2 grid gap-1 type-caption text-muted">{render.warnings.map((w, i) => <li key={i}>⚠ {w}</li>)}</ul> : null}</Card>}
+          {render && <Card><p className="label">{t("tryOn.render_2")}</p><p className="type-caption text-muted">{t("tryOn.ms_2", { value: render.fallbackUsed ? t("tryOn.compositor_local") : render.explanation?.provider ?? "", value2: render.totalMs ?? 0, value3: render.costUsd ? t("tryOn.us", { costUsd: render.costUsd }) : "" })}</p>{render.stages?.length ? <ul className="type-caption">{render.stages.map((s, i) => <li key={i}>{s.name} · {s.provider ?? ""} {s.ms ? t("common.ms", { ms: s.ms }) : ""}</li>)}</ul> : null}{render.warnings?.length ? <ul className="mt-2 grid gap-1 type-caption text-muted">{render.warnings.map((w, i) => <li key={i}>⚠ {w}</li>)}</ul> : null}</Card>}
         </div>
         <div className="grid content-start gap-4">
           <Card>
-            <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">No manequim</h2><span className="type-caption text-muted">{on.length} peça(s) · ordem de vestir</span></div>
-            {!on.length ? <p className="type-body text-muted">Nada ainda. Arraste uma peça do seu acervo abaixo.</p> : (
+            <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("tryOn.no_manequim")}</h2><span className="type-caption text-muted">{t("tryOn.peca_s_ordem_de_vestir", { onCount: on.length })}</span></div>
+            {!on.length ? <p className="type-body text-muted">{t("tryOn.nada_ainda_arraste_uma_peca")}</p> : (
               <ol className="tryon-layers">{LAYER_ORDER.map((l) => { const list = on.filter((e) => e.layer === l); return (
                 <li key={l} className={list.length ? "" : "is-empty"}><span className="tryon-layer-name">{LAYER_LABEL[l]}</span>
                   <div className="flex flex-wrap gap-1.5">{list.length ? list.map((e) => (
                     <span key={e.piece.id} className="tryon-worn"><img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl)} alt="" />{e.piece.name}
-                      {!e.backgroundRemoved && <Badge tone="chalk">sobreposição aproximada</Badge>}
-                      <button type="button" aria-label={`tirar ${e.piece.name}`} onClick={() => takeOff(e.piece.id)}>✕</button></span>)) : <span className="type-caption text-faint">—</span>}</div>
+                      {!e.backgroundRemoved && <Badge tone="chalk">{t("tryOn.sobreposicao_aproximada")}</Badge>}
+                      <button type="button" aria-label={t("tryOn.tirar", { name: e.piece.name })} onClick={() => takeOff(e.piece.id)}>✕</button></span>)) : <span className="type-caption text-faint">—</span>}</div>
                 </li>); })}</ol>
             )}
             {notices.length > 0 && <p className="mt-2 type-caption text-thread" role="status">{notices.join(" ")}</p>}
             {approximate.length > 0 && (
               <div className="mt-3 rounded-md border border-line-soft bg-surface-2 p-2 type-caption" role="note">
-                <p><b>{approximate.length} peça(s) com fundo na foto.</b> Sem a remoção de fundo, o encaixe no corpo fica aproximado (RF18.CA05).</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">{approximate.map((e) => <Button key={e.piece.id} size="sm" loading={fixing === e.piece.id} onClick={() => removeBg(e.piece.id)}>Remover fundo · {e.piece.name}</Button>)}</div>
+                <p>{rich("tryOn.peca_s_com_fundo_na", { approximateCount: approximate.length }, { 0: ($c) => <b>{$c}</b> })}</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">{approximate.map((e) => <Button key={e.piece.id} size="sm" loading={fixing === e.piece.id} onClick={() => removeBg(e.piece.id)}>{t("tryOn.remover_fundo", { name: e.piece.name })}</Button>)}</div>
               </div>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button variant="primary" onClick={doRender} loading={busy} disabled={!on.length}><FaiIcon id="NAV-07" size={24} decorative />Provar ({on.length})</Button>
-              <Input aria-label="título do look" className="max-w-xs" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título do look (opcional)" />
-              <Button onClick={saveScheme} disabled={!on.length}><FaiIcon id="ACT-25" size={24} decorative />Salvar como look</Button>
+              <Button variant="primary" onClick={doRender} loading={busy} disabled={!on.length}><FaiIcon id="NAV-07" size={24} decorative />{t("tryOn.provar", { onCount: on.length })}</Button>
+              <Input aria-label={t("tryOn.titulo_do_look")} className="max-w-xs" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("tryOn.titulo_do_look_opcional")} />
+              <Button onClick={saveScheme} disabled={!on.length}><FaiIcon id="ACT-25" size={24} decorative />{t("common.salvar_como_look")}</Button>
             </div>
-            <p className="mt-1 type-caption text-faint">O look salvo entra em Meus Looks com origem “Provador”.</p>
+            <p className="mt-1 type-caption text-faint">{t("tryOn.o_look_salvo_entra_em")}</p>
           </Card>
           {LAYER_ORDER.map((layer) => { const list = data.pieces[layer] ?? []; if (!list.length) return null; return (
-            <section key={layer} aria-label={`acervo — camada ${LAYER_LABEL[layer]}`}><h2 className="type-h3 mb-2">{LAYER_LABEL[layer]} <span className="type-caption text-muted">· {list.length}</span></h2>
+            <section key={layer} aria-label={t("tryOn.acervo_camada", { LAYER_LABEL: LAYER_LABEL[layer] })}><h2 className="type-h3 mb-2">{LAYER_LABEL[layer]} <span className="type-caption text-muted">· {list.length}</span></h2>
               <div className="flex flex-wrap gap-2">{list.map((e) => { const worn = dressed.includes(e.piece.id); return (
-                <button key={e.piece.id} type="button" draggable aria-pressed={worn} title={worn ? "Tirar do manequim" : "Arraste ao manequim ou toque para vestir"}
+                <button key={e.piece.id} type="button" draggable aria-pressed={worn} title={worn ? t("tryOn.tirar_do_manequim") : t("tryOn.arraste_ao_manequim_ou_toque")}
                   onDragStart={(ev) => { ev.dataTransfer.setData(DRAG_TYPE, e.piece.id); ev.dataTransfer.effectAllowed = "copy"; }}
                   onClick={() => (worn ? takeOff(e.piece.id) : put(e.piece.id))}
                   className={`tryon-rack-item ${worn ? "is-worn" : ""}`}>
                   <img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl)} alt="" className="aspect-square w-full object-contain" draggable={false} />
                   <span className="block truncate type-caption">{e.piece.name}</span>
-                  {!e.backgroundRemoved && <span className="tryon-bg-flag" title="fundo não removido — sobreposição aproximada">fundo</span>}
+                  {!e.backgroundRemoved && <span className="tryon-bg-flag" title={t("tryOn.fundo_nao_removido_sobreposicao")}>{t("tryOn.fundo")}</span>}
                 </button>); })}</div>
             </section>); })}
         </div>
       </div>
-      <Dialog open={confirmClear} onClose={() => setConfirmClear(false)} title="Limpar o manequim?"
-        footer={<><Button onClick={() => setConfirmClear(false)}>Cancelar</Button><Button variant="primary" onClick={() => { setDressed([]); setRender(null); setNotices([]); setConfirmClear(false); toast.info("Manequim limpo. Suas peças continuam no guarda-roupa."); }}>Limpar</Button></>}>
-        <p className="type-body">Todas as {on.length} peça(s) saem do manequim. Nada é apagado do seu guarda-roupa nem dos seus looks salvos.</p>
+      <Dialog open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_manequim")}
+        footer={<><Button onClick={() => setConfirmClear(false)}>{t("common.cancel")}</Button><Button variant="primary" onClick={() => { setDressed([]); setRender(null); setNotices([]); setConfirmClear(false); toast.info(t("tryOn.manequim_limpo_suas_pecas_continuam")); }}>{t("common.limpar")}</Button></>}>
+        <p className="type-body">{t("tryOn.todas_as_peca_s_saem", { onCount: on.length })}</p>
       </Dialog>
     </>
   );

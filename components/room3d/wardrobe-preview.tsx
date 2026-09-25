@@ -5,6 +5,7 @@ import { ContactShadows, OrbitControls, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { mediaUrl } from "@/lib/api/client";
 import { Label3D } from "@/components/room3d/room-props";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /** Acabamento de um bloco do móvel (cor, material e, nos itens de marca/celebridade, logo, arte e nome gravado). */
 export interface BlockFinish { color?: string; roughness?: number; metalness?: number; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; kelvin?: number; material?: string; }
@@ -37,6 +38,7 @@ function mat(f: BlockFinish | undefined, fallback: string, map?: THREE.Texture |
  * para edição — é o criador de blocos.
  */
 export default function WardrobePreview({ finishes, selected, onPick, name }: { finishes: Finishes; selected?: string | null; onPick?: (slot: string) => void; name?: string }) {
+  const { t } = useI18n();
   const art = useTex(finishes.DOOR?.artUrl); const logo = useTex(finishes.LOGO?.logoUrl ?? finishes.DOOR?.logoUrl);
   const pick = (slot: string) => (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onPick?.(slot); };
   const hover = { onPointerOver: (e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); document.body.style.cursor = onPick ? "pointer" : ""; }, onPointerOut: () => { document.body.style.cursor = ""; } };
@@ -44,7 +46,7 @@ export default function WardrobePreview({ finishes, selected, onPick, name }: { 
   const label = finishes.LOGO?.labelText ?? finishes.DOOR?.labelText ?? name ?? null;
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ fov: 36, position: [1.9, 1.9, 4.6] }} gl={{ preserveDrawingBuffer: true, antialias: true }}
-      onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; }} aria-label="Pré-visualização do guarda-roupa">
+      onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; }} aria-label={t("room3d.wardrobePreview.pre_visualizacao_do_guarda_roupa")}>
       <color attach="background" args={["#efe9df"]} />
       <hemisphereLight args={["#ffffff", "#d9cbb5", 0.9]} />
       <directionalLight position={[3, 5, 4]} intensity={1.5} castShadow />

@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { SchemeView } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/api/client";
 import { label } from "@/lib/api/taxonomy";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle } from "@/lib/skins";
 import { containerColorOf, inkOn, photoFilterCss, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
@@ -26,15 +26,16 @@ export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--status-g
 export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK"; }
 /** Converte o "badge" que a API devolve nos vínculos aprovados (tier, owner, premium, name, iconUrl, design) em SealBadge. */
 export function toSealBadges(list?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: SealDesign | null; linkedPieceIds?: string[] }[] | null): SealBadge[] {
-  return (list ?? []).map((b) => ({ label: b.tier === "PECA" ? "PEÇA" : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier, name: b.name ?? null, iconUrl: b.iconUrl ?? null, design: b.design ?? null, linkedPieceIds: b.linkedPieceIds ?? [], kind: b.premium ? "CELEBRITY" : "BRAND" }));
+  return (list ?? []).map((b) => ({ label: b.tier === "PECA" ? tr("schemeCard.peca") : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier, name: b.name ?? null, iconUrl: b.iconUrl ?? null, design: b.design ?? null, linkedPieceIds: b.linkedPieceIds ?? [], kind: b.premium ? "CELEBRITY" : "BRAND" }));
 }
 /** Espaço reservado para o selo (RF20/RF21): sempre presente na anatomia; mostra os medalhões quando o look conquistou selos. */
 export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; size?: "sm"; inline?: boolean; px?: number }) {
+  const { t } = useI18n();
   const list = (seals ?? []).slice(0, 3);
   const dim = px ?? (size === "sm" ? 36 : 44);
-  if (list.length === 0) return <span className={`seal-slot empty ${inline ? "inline" : ""} ${size === "sm" ? "seal-sm" : ""}`} style={px ? { width: px, height: px } : undefined} aria-hidden title="espaço reservado para selo" />;
+  if (list.length === 0) return <span className={`seal-slot empty ${inline ? "inline" : ""} ${size === "sm" ? "seal-sm" : ""}`} style={px ? { width: px, height: px } : undefined} aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} />;
   return (
-    <span className={`seal-slot ${inline ? "inline" : ""} ${list.length > 1 ? "many" : ""}`} role="img" aria-label={`selos: ${list.map((s) => s.label).join(", ")}`}>
+    <span className={`seal-slot ${inline ? "inline" : ""} ${list.length > 1 ? "many" : ""}`} role="img" aria-label={t("schemeCard.selos", { join: list.map((s) => s.label).join(", ") })}>
       {list.map((s, i) => {
         const title = `${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}${s.tier ? ` · ${s.tier}` : ""}`;
         if (s.design) return <SealMedallion key={i} design={s.design} size={dim} premium={s.premium} title={title} />;
@@ -46,11 +47,12 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
 
 /** LEGO: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look. */
 export function SealStuds({ seals }: { seals: SealBadge[] }) {
+  const { t } = useI18n();
   const color = (s: SealBadge) => (s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
   return (
-    <div className="seal-studs" aria-label={`${seals.length} selos`}>
-      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title="espaço reservado para selo" /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} /> : null}</span>)}
-      <span className="seal-stud-tile">{seals.length} selo{seals.length === 1 ? "" : "s"}</span>
+    <div className="seal-studs" aria-label={t("schemeCard.selos_2", { sealsCount: seals.length })}>
+      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} /> : null}</span>)}
+      <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length, value: seals.length === 1 ? "" : "s" })}</span>
     </div>
   );
 }
@@ -119,13 +121,13 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </>
         )}
         {(l !== "lista" || hasOwnArt(scheme.layoutAnatomy)) && titleRow}
-        {expanded && scheme.description && <div className="c-row"><span className="k">Descrição</span>{scheme.description}</div>}
+        {expanded && scheme.description && <div className="c-row"><span className="k">{t("common.descricao")}</span>{scheme.description}</div>}
         {placement.zone === "STUDS" && <SealStuds seals={badges} />}
-        <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? "Selos · " : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
+        <div className="c-row seal-row"><span className="min-w-0 flex-1"><span className="k">{placement.zone === "META_BLOCK" ? t("schemeCard.selos_3") : ""}{t("common.occasion")} · {t("common.style")}</span>{[...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).join(", ") || "—"}</span>{placement.zone === "META_BLOCK" && <SealSlot inline seals={badges} />}</div>
       </Link>
       </div>
       <div className="c-foot">
-        <span className="metrics tabular"><span title="curtidas">♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title="remixes">↻ {scheme.counters?.remixes ?? 0}</span><Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} /></span>
+        <span className="metrics tabular"><span title={t("common.curtidas")}>♥ {scheme.counters?.likes ?? 0}</span><CommentButton type="SCHEME" id={scheme.id} count={scheme.counters?.comments} title={scheme.title} /><span title={t("common.remixes")}>↻ {scheme.counters?.remixes ?? 0}</span><Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} /></span>
         {scheme.hypeScore != null && <span className="flex items-center gap-1 tabular" title="Hype Score"><span className="hype-bar w-14"><i style={{ width: `${scheme.hypeScore}%`, background: hypeColor(scheme.hypeScore) }} /></span>{Math.round(scheme.hypeScore)}</span>}
       </div>
       {extra && <div className="c-extra">{extra}</div>}

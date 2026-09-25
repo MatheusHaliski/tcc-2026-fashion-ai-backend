@@ -4,6 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { rng, useCanvasTexture, useReducedMotion, useTex } from "@/components/three/common";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Collections insights (RF22 · aba Coleções da marca): cada coleção vira uma mini loja 3D com a arte da coleção na
@@ -125,6 +126,7 @@ function Fireworks({ x, z, level, colors, reduced }: { x: number; z: number; lev
 }
 
 export default function StoreStreetScene({ stores, onPick, selectedId }: { stores: StoreEntry[]; onPick: (id: string) => void; selectedId?: string | null }) {
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   // 1º lugar no centro; os demais alternam esquerda/direita num arco voltado para a câmera
   const layout = useMemo(() => stores.map((s) => {
@@ -133,7 +135,7 @@ export default function StoreStreetScene({ stores, onPick, selectedId }: { store
     return { x: Math.sin(a) * R, z: -Math.cos(a) * R + R - 2, ry: -a };
   }), [stores]);
   return (
-    <Canvas shadows camera={{ position: [0, 5.5, 11], fov: 45 }} dpr={[1, 1.75]} aria-label="Mini lojas 3D das coleções, do 1º lugar ao último">
+    <Canvas shadows camera={{ position: [0, 5.5, 11], fov: 45 }} dpr={[1, 1.75]} aria-label={t("three.storeStreetScene.mini_lojas_3d_das_colecoes")}>
       <color attach="background" args={["#0e1220"]} />
       <fog attach="fog" args={["#0e1220", 14, 30]} />
       <hemisphereLight args={["#e6ecff", "#23262e", 0.8]} />

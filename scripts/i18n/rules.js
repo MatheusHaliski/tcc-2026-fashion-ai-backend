@@ -1,0 +1,54 @@
+// Regras compartilhadas da auditoria (scan.js) e do codemod (extract.js): o que conta como texto de interface.
+const TEXT_ATTRS = new Set(["title", "placeholder", "aria-label", "aria-description", "aria-placeholder", "aria-valuetext", "aria-roledescription", "alt", "label", "hint", "lead", "kicker", "description", "caption",
+  "emptyText", "submitLabel", "prefilledNote", "message", "subtitle", "heading", "helper", "tooltip", "confirmLabel", "cancelLabel", "note", "legend",
+  "ownArtLabel", "ariaLabel", "buttonLabel", "text", "badge", "empty", "emptyTitle", "emptyDescription", "emptyLabel", "actionLabel", "okLabel", "primaryLabel", "secondaryLabel",
+  "loadingText", "errorText", "successText", "summary", "detail", "details", "why", "tip", "explanation", "eyebrow", "overline", "tagline", "cta", "ctaLabel", "footer", "header", "intro", "outro", "greeting", "question", "answer", "prefix", "suffix", "unitLabel", "yesLabel", "noLabel", "closeLabel", "backLabel", "nextLabel", "prevLabel", "saveLabel", "deleteLabel", "removeLabel", "addLabel", "editLabel", "createLabel", "searchPlaceholder", "inputLabel", "helpText", "aria-roledescription"]);
+// atributos que nunca são texto de interface
+const ATTR_BLOCKLIST = new Set(["className", "class", "href", "src", "id", "key", "type", "value", "defaultValue", "role", "htmlFor", "style", "target", "rel", "method", "action", "width", "height",
+  "viewBox", "d", "fill", "stroke", "transform", "xmlns", "sizes", "srcSet", "autoComplete", "inputMode", "pattern", "accept", "download", "loading", "decoding", "crossOrigin",
+  "referrerPolicy", "as", "variant", "size", "tone", "color", "align", "position", "wrap", "mode", "kind", "icon", "iconId", "skin", "preset", "layout", "family", "format", "unit",
+  "currency", "locale", "lang", "dir", "min", "max", "step", "tabIndex", "name", "form", "list", "enterKeyHint", "autoCapitalize", "spellCheck", "translate", "slot", "part", "is",
+  "shape", "fit", "objectFit", "anchor", "side", "placement", "tab", "view", "sort", "order", "filter", "group", "scope", "path", "route", "url", "base", "endpoint", "field", "column",
+  "prop", "dataKey", "nameKey", "valueKey", "xKey", "yKey", "series", "metric", "dimension", "status", "state", "level", "category", "subcategory", "slug", "code", "sku", "hex", "emoji", "glyph",
+  "font", "fontFamily", "weight", "radius", "gap", "cols", "rows", "span", "cx", "cy", "r", "x", "y", "x1", "x2", "y1", "y2", "points", "dx", "dy", "opacity", "fillRule", "clipRule", "strokeWidth",
+  "strokeLinecap", "strokeLinejoin", "gradientUnits", "offset", "stopColor", "textAnchor", "dominantBaseline", "preserveAspectRatio", "mask", "clipPath", "filterUnits", "in", "in2", "result", "stdDeviation", "values", "attributeName", "dur", "repeatCount", "begin", "end", "from", "to", "by", "calcMode", "keyTimes", "keySplines", "media", "content", "charSet", "httpEquiv", "property", "itemProp", "itemType", "manifest", "data-testid", "data-id", "data-key", "data-query", "data-busy", "data-state", "data-tab", "data-slot", "data-kind", "data-theme"]);
+const TEXT_PROPS = new Set(["label", "hint", "title", "description", "text", "placeholder", "message", "name", "lead", "caption", "subtitle", "why", "tip", "helper", "empty", "summary",
+  "detail", "note", "legend", "heading", "kicker", "tooltip", "explanation", "how", "rule", "bonus", "lesson", "reward", "unlocks", "aesthetic", "tagline", "cta", "question", "answer",
+  "greeting", "body", "intro", "advice", "reason", "warning", "error", "success", "info", "emptyText", "buttonLabel", "actionLabel", "confirmLabel", "cancelLabel", "shortLabel", "longLabel", "plural", "singular", "care", "origin", "meaning", "mood", "vibe", "story", "quote", "author", "prompt", "instruction", "instructions", "step", "steps", "benefit", "benefits", "feature", "features", "objective", "goal", "mission", "task", "hintText", "helpText", "ariaLabel", "alt", "eyebrow", "overline", "headline", "subheadline", "subheading", "footer", "header", "badge", "status_label", "statusLabel", "levelLabel", "unit", "unitLabel"]);
+// propriedades que nunca são texto de interface (identificadores, rotas, estilos)
+const PROP_BLOCKLIST = new Set(["id", "key", "code", "slug", "type", "kind", "value", "href", "src", "url", "path", "route", "icon", "iconId", "color", "hex", "bg", "fg", "className", "class",
+  "style", "variant", "size", "tone", "sku", "emoji", "glyph", "font", "fontFamily", "family", "format", "mime", "contentType", "method", "endpoint", "field", "column", "prop", "dataKey", "nameKey",
+  "valueKey", "xKey", "yKey", "metric", "dimension", "status", "state", "level", "category", "subcategory", "tab", "view", "sort", "order", "filter", "group", "scope", "locale", "lang", "currency",
+  "unit", "region", "country", "timezone", "pattern", "regex", "selector", "query", "param", "params", "header", "headers", "token", "secret", "password", "email", "username", "handle", "domain", "host",
+  "port", "protocol", "scheme", "hash", "ref", "target", "rel", "role", "test", "testId", "dataTestId", "storageKey", "cookie", "cacheKey", "eventName", "event", "action", "actionType", "mutation", "op",
+  "operator", "cmp", "fn", "handler", "callback", "component", "element", "tag", "tagName", "layout", "preset", "skin", "theme", "mode", "shape", "fit", "anchor", "side", "placement", "position", "align",
+  "direction", "orientation", "axis", "x", "y", "z", "w", "h", "width", "height", "radius", "weight", "opacity", "rotation", "scale", "material", "texture", "finish", "mold", "slotType", "slot", "zone",
+  "address", "map", "board", "square", "cell", "row", "col", "index", "idx", "seq", "n", "count", "total", "min", "max", "step", "from", "to", "start", "end", "at", "date", "time", "createdAt", "updatedAt"]);
+const TEXT_CALLS = new Set(["toast.success", "toast.error", "toast.info", "toast.warn", "toast.warning", "toast.show", "toast.push", "toast.message", "confirm", "alert", "window.confirm", "window.alert", "prompt", "window.prompt"]);
+const HAS_LETTERS = /[A-Za-zÀ-ÿ]{2,}/;
+// urls, rotas, âncoras, classes css, constantes, camelCase técnico, números
+const IGNORE = /^(https?:\/\/|\/|#|@|\.|[A-Z0-9_\-]+$|[a-z]+(-[a-z0-9]+)+$|[a-z]+[A-Z][A-Za-z0-9]*$|\d)/;
+const ALLOW = new Set(["Fashion AI", "FashionAI", "FAI", "FLAIR", "LEGO", "PT-BR", "EN", "ES", "OK", "3D", "2D", "AURA", "USD", "BRL", "EUR", "PNG", "JPG", "JPEG", "WebP", "SVG", "GLB", "glTF", "ID", "URL",
+  "IA", "AI", "DNA", "CNPJ", "CPF", "LGPD", "TOP", "MB", "KB", "GB", "px", "GitHub", "Wikidata", "Simple Icons", "Wikimedia", "Zara", "Instagram", "TikTok", "Playwright", "Vercel", "MySQL", "Redis",
+  "Cassandra", "OpenSearch", "Bearer", "Basic", "Authorization", "Accept", "Content-Type", "Hype Score", "Copilot", "Lookbook", "Background Studio", "Kibbe", "Pinterest", "Spotify", "YouTube", "Google", "Gemini", "Claude", "Anthropic", "Meshy", "Photoroom", "Replicate", "WebGL", "iOS", "Android", "Windows", "macOS", "Linux", "Chrome", "Safari", "Firefox", "Edge",
+  "Battle of Looks", "Squad", "League", "World Tour", "Monopoly", "Conquest", "Draft", "Deck Battle", "Combo", "Tag Team", "Boss", "Wardrobe Wars", "Chess", "Ultimate Team", "Runway", "Studio", "Deck", "Boho", "Chic", "Glam", "Preppy", "Grunge", "Vintage", "Streetwear", "Athleisure", "Techwear", "Y2K", "Resort", "Denim", "Camel", "Beige", "Taupe", "Oxford", "Derby", "Kimono", "Blazer", "Cardigan", "Parka", "Clutch", "Culottes"]);
+const STOP = new Set(["de", "da", "do", "das", "dos", "com", "para", "por", "em", "no", "na", "nos", "nas", "um", "uma", "uns", "umas", "não", "nao", "sem", "ao", "aos", "à", "às", "o", "a", "os", "as", "e", "ou", "que", "seu", "sua", "seus", "suas",
+  "meu", "minha", "meus", "minhas", "este", "esta", "esse", "essa", "isso", "isto", "aqui", "já", "ainda", "mais", "menos", "muito", "pouco", "todo", "toda", "todos", "todas", "cada", "outro", "outra", "você", "voce", "nós", "ele", "ela", "eles", "elas", "se", "quando", "onde", "como", "porque", "então", "mas", "até", "sobre", "entre", "após", "antes", "depois", "the", "and", "of", "to", "in", "for", "with", "your", "is", "are"]);
+function clean(s) { return s.replace(/\s+/g, " ").trim(); }
+/** Texto de interface em contexto textual (texto JSX, placeholder, título…): qualquer coisa com letras que não seja técnica. */
+function isText(s) { const c = clean(s); return c.length >= 2 && HAS_LETTERS.test(c) && !IGNORE.test(c) && !ALLOW.has(c) && !/[{}`]/.test(c) && !/^[\w.-]+=[\w.-]*$/.test(c); }
+const TW = (w) => /^[!a-z0-9\-\/:\[\]\.%#(),']+$/.test(w);
+/** Texto em linguagem natural (contexto ambíguo): acento, frase com maiúscula/pontuação, palavra capitalizada ou palavras funcionais do português. */
+function isNatural(s) {
+  const c = clean(s);
+  if (!isText(c)) return false;
+  if (/^[\w.\-]+\/[\w.\-\/]+$/.test(c)) return false;                       // caminhos e tipos MIME
+  if (/[À-ÿ]/.test(c)) return true;                                          // acento: português
+  const words = c.split(" ");
+  if (words.every(TW) && !words.some((w) => STOP.has(w)) && (words.some((w) => /[:\/\[]/.test(w)) || words.filter((w) => w.includes("-")).length >= 2)) return false; // classes utilitárias (tailwind)
+  if (/^[A-Z][a-zà-ÿ]{2,}(-[a-zà-ÿ]+)*$/.test(c)) return true;                 // "Salvar", "Momentos-chave"
+  if (words.length >= 2 && (/^[A-Z]/.test(c) || /[.,:;!?…]/.test(c) || words.length >= 3)) return true;
+  if (words.length >= 2 && words.some((w) => STOP.has(w.toLowerCase()))) return true;
+  return false;
+}
+module.exports = { TEXT_ATTRS, ATTR_BLOCKLIST, TEXT_PROPS, PROP_BLOCKLIST, TEXT_CALLS, HAS_LETTERS, IGNORE, ALLOW, STOP, clean, isText, isNatural };

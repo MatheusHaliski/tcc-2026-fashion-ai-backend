@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { tr } from "@/lib/i18n/i18n";
 
 export type ThemeMode = "AUTO" | "LIGHT" | "DARK" | "HIGH_CONTRAST";
 export type Density = "COMFORTABLE" | "COMPACT";
@@ -12,21 +13,21 @@ const Ctx = createContext<ThemeCtx | null>(null);
 
 /** Fundos do chrome (RF23/RNF7) — ids do asset-manifest; o tile fica em /public/_derived/bg_chrome. */
 export const CHROME_BACKGROUNDS = [
-  { id: "rf23_bg_selos_fai_claro", label: "Selos FAI · claro", tone: "light" },
-  { id: "rf23_bg_selos_fai_coloridos", label: "Selos FAI · coloridos", tone: "light" },
-  { id: "rf23_bg_icones_holografico", label: "Ícones · holográfico", tone: "light" },
-  { id: "rf23_bg_icones_moda_pastel", label: "Ícones de moda · pastel", tone: "light" },
-  { id: "rf23_bg_icones_moda_kraft", label: "Ícones de moda · kraft", tone: "light" },
-  { id: "rf23_bg_selos_fai_noturno", label: "Selos FAI · noturno", tone: "dark" },
-  { id: "rf23_bg_icones_moda_noite", label: "Ícones de moda · noite", tone: "dark" },
+  { id: "rf23_bg_selos_fai_claro", get label() { return tr("lib.theme.theme.selos_fai_claro"); }, tone: "light" },
+  { id: "rf23_bg_selos_fai_coloridos", get label() { return tr("lib.theme.theme.selos_fai_coloridos"); }, tone: "light" },
+  { id: "rf23_bg_icones_holografico", get label() { return tr("lib.theme.theme.icones_holografico"); }, tone: "light" },
+  { id: "rf23_bg_icones_moda_pastel", get label() { return tr("lib.theme.theme.icones_de_moda_pastel"); }, tone: "light" },
+  { id: "rf23_bg_icones_moda_kraft", get label() { return tr("lib.theme.theme.icones_de_moda_kraft"); }, tone: "light" },
+  { id: "rf23_bg_selos_fai_noturno", get label() { return tr("lib.theme.theme.selos_fai_noturno"); }, tone: "dark" },
+  { id: "rf23_bg_icones_moda_noite", get label() { return tr("lib.theme.theme.icones_de_moda_noite"); }, tone: "dark" },
 ] as const;
 export const chromeTile = (id: string) => `/_derived/bg_chrome/${id}_tile.webp`;
 
 /** RF23 — cores sugeridas para os containers de conteúdo (padrão: branco). */
 export const CONTAINER_PRESETS = [
-  { hex: "#FFFFFF", label: "Branco (padrão)" }, { hex: "#FBF7EF", label: "Marfim" }, { hex: "#F3EDE3", label: "Areia" },
-  { hex: "#EEF2F6", label: "Névoa" }, { hex: "#EAF4EF", label: "Menta" }, { hex: "#FBEFF2", label: "Rosé" },
-  { hex: "#2B2C26", label: "Grafite" }, { hex: "#141A2E", label: "Noite" },
+  { hex: "#FFFFFF", get label() { return tr("lib.theme.theme.branco_padrao"); } }, { hex: "#FBF7EF", get label() { return tr("lib.theme.theme.marfim"); } }, { hex: "#F3EDE3", get label() { return tr("lib.theme.theme.areia"); } },
+  { hex: "#EEF2F6", get label() { return tr("lib.theme.theme.nevoa"); } }, { hex: "#EAF4EF", get label() { return tr("lib.theme.theme.menta"); } }, { hex: "#FBEFF2", get label() { return tr("lib.theme.theme.rose"); } },
+  { hex: "#2B2C26", get label() { return tr("lib.theme.theme.grafite"); } }, { hex: "#141A2E", get label() { return tr("lib.theme.theme.noite"); } },
 ] as const;
 
 /** Tom (claro/escuro) de uma cor #RRGGBB pela luminância relativa — decide a cor do texto dentro do container. */

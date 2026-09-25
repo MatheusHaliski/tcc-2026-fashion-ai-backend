@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
-import { useI18n } from "@/lib/i18n/i18n";
+import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 import type { BlockFinish, Finishes } from "@/components/room3d/wardrobe-preview";
 
@@ -25,7 +25,7 @@ interface Part { moldId: string; material: string; colorName: string; color: str
 interface Form { kind: "COMPONENT" | "WARDROBE"; name: string; description: string; labelText: string; logoUrl: string; artUrl: string; sealId: string; pricePoints: string; requiredLevel: string; stock: string; perUserLimit: string; availableFrom: string; availableUntil: string; requiresSeal: boolean; active: boolean; }
 
 export const AVAILABILITY: Record<string, { label: string; tone?: "mark" | "thread" | "chalk" }> = {
-  DISPONIVEL: { label: "à venda", tone: "thread" }, EM_BREVE: { label: "em breve", tone: "chalk" }, EXPIRADO: { label: "expirado", tone: "mark" }, ESGOTADO: { label: "esgotado", tone: "mark" }, INATIVO: { label: "fora da loja" },
+  DISPONIVEL: { get label() { return tr("room3d.wardrobeCreator.a_venda"); }, tone: "thread" }, EM_BREVE: { get label() { return tr("room3d.wardrobeCreator.em_breve"); }, tone: "chalk" }, EXPIRADO: { label: "expirado", tone: "mark" }, ESGOTADO: { label: "esgotado", tone: "mark" }, INATIVO: { get label() { return tr("room3d.wardrobeCreator.fora_da_loja"); } },
 };
 /** Blocos da pré-visualização: o FAI Origem e os móveis à parte (sapateira, vitrine, porta-joias, ilha). */
 export const SLOT_LABELS: Record<string, string> = { DOOR: "Portas", DRAWER: "Gavetas", HANDLE: "Puxadores", TOP: "Maleiro", BASE: "Base", HANGER: "Cabides", LOGO: "Placa de logo", LIGHT: "LED", RUG: "Tapete", SHOE_RACK: "Sapateira", BAG_DISPLAY: "Vitrine de bolsas", JEWELRY: "Porta-joias", ISLAND: "Ilha central" };
@@ -47,7 +47,7 @@ export function finishOf(m: CreatorMaterial | undefined, p: Part): BlockFinish {
  * (preço em FAI Points, nível, estoque, limite por pessoa, janela de disponibilidade/expiração e selo exigido).
  */
 export function WardrobeCreatorTab() {
-  const { fmtDate, fmtNumber } = useI18n(); const toast = useToast();
+  const { fmtDate, fmtNumber, t, rich } = useI18n(); const toast = useToast();
   const opts = useApi<Options>((signal) => api.get("/api/room-creator/options", { signal }), []);
   const mine = useApi<Mine>((signal) => api.get("/api/room-creator/items", { signal }), []);
   const [form, setForm] = useState<Form>(empty); const [editing, setEditing] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function WardrobeCreatorTab() {
   }
   async function upload(kind: "logo" | "art", file?: File) {
     if (!file) return; const fd = new FormData(); fd.append("file", file);
-    try { const r = await api.upload<{ url: string }>(`/api/room-creator/uploads?kind=${kind}`, fd); setForm((f) => ({ ...f, [kind === "logo" ? "logoUrl" : "artUrl"]: r.url })); toast.success(kind === "logo" ? "Logo enviado." : "Arte enviada."); } catch (e) { toast.fromError(e); }
+    try { const r = await api.upload<{ url: string }>(`/api/room-creator/uploads?kind=${kind}`, fd); setForm((f) => ({ ...f, [kind === "logo" ? "logoUrl" : "artUrl"]: r.url })); toast.success(kind === "logo" ? t("room3d.wardrobeCreator.logo_enviado") : t("room3d.wardrobeCreator.arte_enviada")); } catch (e) { toast.fromError(e); }
   }
   // preço sugerido = Σ preço base do bloco × fator do material; nível mínimo = maior entre bloco, material e o escolhido
   const suggestion = useMemo(() => Object.values(parts).length === 0 || !o ? { price: 0, level: "ESTREIA" } : Object.entries(parts).reduce((acc, [, p]) => {
@@ -113,7 +113,7 @@ export function WardrobeCreatorTab() {
   async function save() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
     const main = parts[slot] ?? Object.values(parts)[0]; const mainSlot = parts[slot] ? slot : Object.keys(parts)[0];
-    if (!main) { toast.error("Escolha ao menos um bloco do móvel."); return; }
+    if (!main) { toast.error(t("room3d.wardrobeCreator.escolha_ao_menos_um_bloco")); return; }
     const body = {
       kind: form.kind, name: form.name, description: form.description || null, labelText: form.labelText || null, logoUrl: form.logoUrl || null, artUrl: form.artUrl || null, sealId: form.sealId || null,
       pricePoints: form.pricePoints === "" ? suggestion.price : Number(form.pricePoints), requiredLevel: form.requiredLevel, stock: form.stock ? Number(form.stock) : null, perUserLimit: form.perUserLimit ? Number(form.perUserLimit) : null,
@@ -124,11 +124,11 @@ export function WardrobeCreatorTab() {
     setBusy(true);
     try {
       const r = editing ? await api.put<StoreItem>(`/api/room-creator/items/${editing}`, body) : await api.post<StoreItem>("/api/room-creator/items", body);
-      toast.success(`${r.name} ${editing ? "atualizado" : "publicado na loja do quarto"} — ${r.pricePoints} FAI pts · nível ${r.requiredLevel}.`); setEditing(r.sku); mine.reload();
+      toast.success(t("room3d.wardrobeCreator.fai_pts_nivel", { name: r.name, value: editing ? "atualizado" : "publicado na loja do quarto", pricePoints: r.pricePoints, requiredLevel: r.requiredLevel })); setEditing(r.sku); mine.reload();
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function remove(i: StoreItem) {
-    try { await api.delete(`/api/room-creator/items/${i.sku}`); toast.success(i.sold > 0 ? "Retirado da loja — quem comprou continua com o item." : "Item excluído."); if (editing === i.sku) startNew(form.kind); mine.reload(); } catch (e) { toast.fromError(e); } finally { setConfirmDel(null); }
+    try { await api.delete(`/api/room-creator/items/${i.sku}`); toast.success(i.sold > 0 ? t("room3d.wardrobeCreator.retirado_da_loja_quem_comprou") : t("room3d.wardrobeCreator.item_excluido")); if (editing === i.sku) startNew(form.kind); mine.reload(); } catch (e) { toast.fromError(e); } finally { setConfirmDel(null); }
   }
 
   if (opts.error) return <ErrorState error={opts.error} onRetry={opts.reload} />;
@@ -139,9 +139,9 @@ export function WardrobeCreatorTab() {
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="type-body text-muted flex-1 min-w-[16rem]">Crie componentes ou um guarda-roupa inteiro com a identidade de <b>{o.identity.name}</b>. O item entra na <b>loja do quarto</b> e é comprado com FAI Points — que não são vendidos por dinheiro real.</p>
-        <Button variant={form.kind === "WARDROBE" && !editing ? "primary" : "default"} onClick={() => startNew("WARDROBE")}>Novo guarda-roupa inteiro</Button>
-        <Button variant={form.kind === "COMPONENT" && !editing ? "primary" : "default"} onClick={() => startNew("COMPONENT")}>Novo componente</Button>
+        <p className="type-body text-muted flex-1 min-w-[16rem]">{rich("room3d.wardrobeCreator.crie_componentes_ou_um_guarda", { name: o.identity.name }, { 0: ($c) => <b>{$c}</b>, 1: ($c) => <b>{$c}</b> })}</p>
+        <Button variant={form.kind === "WARDROBE" && !editing ? "primary" : "default"} onClick={() => startNew("WARDROBE")}>{t("room3d.wardrobeCreator.novo_guarda_roupa_inteiro")}</Button>
+        <Button variant={form.kind === "COMPONENT" && !editing ? "primary" : "default"} onClick={() => startNew("COMPONENT")}>{t("room3d.wardrobeCreator.novo_componente")}</Button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
@@ -149,16 +149,16 @@ export function WardrobeCreatorTab() {
           <div className="relative h-[420px] sm:h-[480px]">
             <WardrobePreview finishes={finishes} selected={inPreview ? slot : null} onPick={pick} name={form.labelText || o.identity.name} />
             <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1">
-              <Badge tone="chalk">{form.kind === "WARDROBE" ? "Guarda-roupa inteiro" : "Componente"}</Badge>{editing && <Badge>editando {editing}</Badge>}
+              <Badge tone="chalk">{form.kind === "WARDROBE" ? t("room3d.wardrobeCreator.guarda_roupa_inteiro") : t("room3d.wardrobeCreator.componente")}</Badge>{editing && <Badge>{t("room3d.wardrobeCreator.editando", { editing })}</Badge>}
             </div>
-            {cur && <div className="pointer-events-none absolute bottom-3 left-3 surface px-2 py-1 type-caption"><span className="inline-block h-3 w-6 align-middle rounded" style={{ background: cur.color }} /> {curBlock?.label} · {curMat?.label} · {cur.colorName} · a partir de {higher(curBlock?.minLevel ?? "ESTREIA", curMat?.minLevel ?? "ESTREIA")}</div>}
+            {cur && <div className="pointer-events-none absolute bottom-3 left-3 surface px-2 py-1 type-caption">{rich("room3d.wardrobeCreator.a_partir_de", { label: curBlock?.label, label2: curMat?.label, colorName: cur.colorName, higher: higher(curBlock?.minLevel ?? "ESTREIA", curMat?.minLevel ?? "ESTREIA") }, { 0: () => <span className="inline-block h-3 w-6 align-middle rounded" style={{ background: cur.color }} /> })}</div>}
           </div>
           <div className="border-t border-line-soft p-3">
-            <p className="label mb-1">Blocos do móvel {form.kind === "WARDROBE" ? "— toque para incluir e editar" : "— escolha o componente"}</p>
+            <p className="label mb-1">{t("room3d.wardrobeCreator.blocos_do_movel", { value: form.kind === "WARDROBE" ? t("room3d.wardrobeCreator.toque_para_incluir_e_editar") : t("room3d.wardrobeCreator.escolha_o_componente") })}</p>
             <div className="flex flex-wrap gap-1">
               {slots.map((s) => {
                 const on = !!parts[s];
-                return <Chip key={s} active={slot === s} onClick={() => (form.kind === "WARDROBE" && on && slot === s ? toggleSlot(s, false) : pick(s))} title={form.kind === "WARDROBE" && on && slot === s ? "tocar de novo remove o bloco" : undefined}>{form.kind === "WARDROBE" ? (on ? "✓ " : "+ ") : ""}{slotLabel(s)}</Chip>;
+                return <Chip key={s} active={slot === s} onClick={() => (form.kind === "WARDROBE" && on && slot === s ? toggleSlot(s, false) : pick(s))} title={form.kind === "WARDROBE" && on && slot === s ? t("room3d.wardrobeCreator.tocar_de_novo_remove_o") : undefined}>{form.kind === "WARDROBE" ? (on ? "✓ " : "+ ") : ""}{slotLabel(s)}</Chip>;
               })}
             </div>
           </div>
@@ -166,77 +166,77 @@ export function WardrobeCreatorTab() {
 
         <div className="grid content-start gap-3">
           <Card>
-            <h3 className="type-h3 mb-2">{slotLabel(slot)} {cur ? "" : <span className="type-caption text-muted">(não incluído)</span>}</h3>
-            {!cur ? <Button size="sm" onClick={() => pick(slot)}>Incluir este bloco</Button> : <>
-              {blocksOf(slot).length > 1 && <Field label="Modelo" id="mold"><Select id="mold" value={cur.moldId} onChange={(e) => setPart(slot, { moldId: e.target.value })}>{blocksOf(slot).map((b) => <option key={b.moldId} value={b.moldId}>{b.label} · a partir de {b.minLevel}</option>)}</Select></Field>}
-              <p className="label mt-2">Material</p>
-              <div className="mt-1 flex flex-wrap gap-1">{(curBlock?.materials ?? []).map((code) => { const m = mat(code); return m ? <Chip key={code} active={cur.material === code} onClick={() => setPart(slot, { material: code })} title={`fator de preço ×${m.priceFactor} · nível ${m.minLevel}`}>{m.label}{m.metalness > 0.8 ? " ✦" : ""}</Chip> : null; })}</div>
-              <p className="label mt-3">Cor / acabamento {curMat ? `de ${curMat.label.toLowerCase()}` : ""}</p>
+            <h3 className="type-h3 mb-2">{slotLabel(slot)} {cur ? "" : <span className="type-caption text-muted">{t("room3d.wardrobeCreator.nao_incluido")}</span>}</h3>
+            {!cur ? <Button size="sm" onClick={() => pick(slot)}>{t("room3d.wardrobeCreator.incluir_este_bloco")}</Button> : <>
+              {blocksOf(slot).length > 1 && <Field label={t("room3d.wardrobeCreator.modelo")} id="mold"><Select id="mold" value={cur.moldId} onChange={(e) => setPart(slot, { moldId: e.target.value })}>{blocksOf(slot).map((b) => <option key={b.moldId} value={b.moldId}>{t("room3d.wardrobeCreator.a_partir_de_2", { label: b.label, minLevel: b.minLevel })}</option>)}</Select></Field>}
+              <p className="label mt-2">{t("common.material")}</p>
+              <div className="mt-1 flex flex-wrap gap-1">{(curBlock?.materials ?? []).map((code) => { const m = mat(code); return m ? <Chip key={code} active={cur.material === code} onClick={() => setPart(slot, { material: code })} title={t("room3d.wardrobeCreator.fator_de_preco_nivel", { priceFactor: m.priceFactor, minLevel: m.minLevel })}>{m.label}{m.metalness > 0.8 ? " ✦" : ""}</Chip> : null; })}</div>
+              <p className="label mt-3">{t("room3d.wardrobeCreator.cor_acabamento", { value: curMat ? t("room3d.wardrobeCreator.de", { toLowerCase: curMat.label.toLowerCase() }) : "" })}</p>
               <div className="mt-1 flex flex-wrap gap-2">{(curMat?.colors ?? []).map((cn) => (
                 <button key={cn} type="button" onClick={() => setPart(slot, { colorName: cn, color: o.colors[cn] ?? cur.color })} aria-pressed={cur.colorName === cn} className={`flex items-center gap-1 rounded-full border px-2 py-1 type-caption ${cur.colorName === cn ? "border-ink" : "border-line-soft"}`}>
                   <span className="h-4 w-4 rounded-full border border-line-soft" style={{ background: o.colors[cn] }} />{cn}
                 </button>))}</div>
-              {curMat?.code !== "LED" && <div className="mt-2 flex items-center gap-2"><label htmlFor="hex" className="type-caption text-muted">cor da marca (hex)</label><input id="hex" type="color" value={cur.color} onChange={(e) => setPart(slot, { color: e.target.value.toUpperCase(), colorName: `${cur.colorName.split(" · ")[0]} · ${e.target.value.toUpperCase()}` })} className="h-7 w-10 rounded" /></div>}
+              {curMat?.code !== "LED" && <div className="mt-2 flex items-center gap-2"><label htmlFor="hex" className="type-caption text-muted">{t("room3d.wardrobeCreator.cor_da_marca_hex")}</label><input id="hex" type="color" value={cur.color} onChange={(e) => setPart(slot, { color: e.target.value.toUpperCase(), colorName: `${cur.colorName.split(" · ")[0]} · ${e.target.value.toUpperCase()}` })} className="h-7 w-10 rounded" /></div>}
             </>}
           </Card>
 
           <Card>
-            <h3 className="type-h3 mb-2">Identidade</h3>
-            <Field label="Nome do item" id="nm" required><Input id="nm" value={form.name} maxLength={120} placeholder={form.kind === "WARDROBE" ? `Guarda-roupa ${o.identity.name}` : `Porta ${o.identity.name}`} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-            <Field label="Nome gravado na placa" id="lb" hint="aparece na placa de logo e no topo do móvel"><Input id="lb" value={form.labelText} maxLength={60} onChange={(e) => setForm({ ...form, labelText: e.target.value })} /></Field>
-            <Field label="Descrição" id="ds"><Textarea id="ds" rows={2} maxLength={400} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+            <h3 className="type-h3 mb-2">{t("common.identidade")}</h3>
+            <Field label={t("room3d.wardrobeCreator.nome_do_item")} id="nm" required><Input id="nm" value={form.name} maxLength={120} placeholder={form.kind === "WARDROBE" ? t("room3d.wardrobeCreator.guarda_roupa", { name: o.identity.name }) : t("room3d.wardrobeCreator.porta", { name: o.identity.name })} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+            <Field label={t("room3d.wardrobeCreator.nome_gravado_na_placa")} id="lb" hint={t("room3d.wardrobeCreator.aparece_na_placa_de_logo")}><Input id="lb" value={form.labelText} maxLength={60} onChange={(e) => setForm({ ...form, labelText: e.target.value })} /></Field>
+            <Field label={t("common.descricao")} id="ds"><Textarea id="ds" rows={2} maxLength={400} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div className="surface p-2 text-center">
-                <p className="label">Logo</p>
-                {form.logoUrl || o.identity.logoUrl ? <img src={mediaUrl(form.logoUrl || o.identity.logoUrl)} alt="logo" className="mx-auto h-12 object-contain" /> : <p className="type-caption text-muted">sem logo</p>}
+                <p className="label">{t("room3d.wardrobeCreator.logo_2")}</p>
+                {form.logoUrl || o.identity.logoUrl ? <img src={mediaUrl(form.logoUrl || o.identity.logoUrl)} alt={t("room3d.wardrobeCreator.logo")} className="mx-auto h-12 object-contain" /> : <p className="type-caption text-muted">{t("room3d.wardrobeCreator.sem_logo")}</p>}
                 <input ref={logoIn} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => upload("logo", e.target.files?.[0])} />
-                <Button size="sm" className="mt-1" onClick={() => logoIn.current?.click()}>{form.logoUrl ? "Trocar" : "Enviar PNG"}</Button>
+                <Button size="sm" className="mt-1" onClick={() => logoIn.current?.click()}>{form.logoUrl ? t("common.trocar") : t("room3d.wardrobeCreator.enviar_png")}</Button>
               </div>
               <div className="surface p-2 text-center">
-                <p className="label">Arte da marca (portas)</p>
-                {form.artUrl ? <img src={mediaUrl(form.artUrl)} alt="arte" className="mx-auto h-12 object-cover" /> : <p className="type-caption text-muted">sem arte</p>}
+                <p className="label">{t("room3d.wardrobeCreator.arte_da_marca_portas")}</p>
+                {form.artUrl ? <img src={mediaUrl(form.artUrl)} alt={t("room3d.wardrobeCreator.arte")} className="mx-auto h-12 object-cover" /> : <p className="type-caption text-muted">{t("common.sem_arte")}</p>}
                 <input ref={artIn} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => upload("art", e.target.files?.[0])} />
-                <div className="mt-1 flex justify-center gap-1"><Button size="sm" onClick={() => artIn.current?.click()}>{form.artUrl ? "Trocar" : "Enviar"}</Button>{form.artUrl && <Button size="sm" variant="ghost" onClick={() => setForm({ ...form, artUrl: "" })}>remover</Button>}</div>
+                <div className="mt-1 flex justify-center gap-1"><Button size="sm" onClick={() => artIn.current?.click()}>{form.artUrl ? t("common.trocar") : t("auth.send")}</Button>{form.artUrl && <Button size="sm" variant="ghost" onClick={() => setForm({ ...form, artUrl: "" })}>{t("room3d.wardrobeCreator.remover")}</Button>}</div>
               </div>
             </div>
-            <Field label="Selo de identidade (RF25)" id="sl" className="mt-2" hint="o selo aparece no item e pode ser exigido na compra"><Select id="sl" value={form.sealId} onChange={(e) => setForm({ ...form, sealId: e.target.value, requiresSeal: e.target.value ? form.requiresSeal : false })}><option value="">— nenhum —</option>{o.seals.map((s) => <option key={s.id} value={s.id}>{s.name}{s.availableUntil && s.availableUntil !== "null" ? ` · até ${fmtDate(s.availableUntil)}` : ""}</option>)}</Select></Field>
+            <Field label={t("room3d.wardrobeCreator.selo_de_identidade_rf25")} id="sl" className="mt-2" hint={t("room3d.wardrobeCreator.o_selo_aparece_no_item")}><Select id="sl" value={form.sealId} onChange={(e) => setForm({ ...form, sealId: e.target.value, requiresSeal: e.target.value ? form.requiresSeal : false })}><option value="">{t("room3d.wardrobeCreator.nenhum")}</option>{o.seals.map((s) => <option key={s.id} value={s.id}>{s.name}{s.availableUntil && s.availableUntil !== "null" ? t("common.ate_2", { date: fmtDate(s.availableUntil) }) : ""}</option>)}</Select></Field>
           </Card>
 
           <Card>
-            <h3 className="type-h3 mb-2">Condições de compra</h3>
+            <h3 className="type-h3 mb-2">{t("room3d.wardrobeCreator.condicoes_de_compra")}</h3>
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Preço (FAI Points)" id="pp" hint={`sugerido: ${suggestion.price}`}><Input id="pp" type="number" min={0} max={20000} value={form.pricePoints} placeholder={String(suggestion.price)} onChange={(e) => setForm({ ...form, pricePoints: e.target.value })} /></Field>
-              <Field label="Nível mínimo" id="lv" hint={`blocos/materiais exigem ${suggestion.level}`}><Select id="lv" value={form.requiredLevel} onChange={(e) => setForm({ ...form, requiredLevel: e.target.value })}>{o.levels.map((l) => <option key={l} value={l}>{l}</option>)}</Select></Field>
-              <Field label="Estoque (edição limitada)" id="st" hint="vazio = ilimitado"><Input id="st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
-              <Field label="Limite por pessoa" id="pu" hint="vazio = sem limite"><Input id="pu" type="number" min={1} value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: e.target.value })} /></Field>
-              <Field label="Disponível a partir de" id="af" hint="vazio = imediato"><Input id="af" type="datetime-local" value={form.availableFrom} onChange={(e) => setForm({ ...form, availableFrom: e.target.value })} /></Field>
-              <Field label="Expira em" id="au" hint="vazio = sem expiração"><Input id="au" type="datetime-local" value={form.availableUntil} onChange={(e) => setForm({ ...form, availableUntil: e.target.value })} /></Field>
+              <Field label={t("room3d.wardrobeCreator.preco_fai_points")} id="pp" hint={t("room3d.wardrobeCreator.sugerido", { price: suggestion.price })}><Input id="pp" type="number" min={0} max={20000} value={form.pricePoints} placeholder={String(suggestion.price)} onChange={(e) => setForm({ ...form, pricePoints: e.target.value })} /></Field>
+              <Field label={t("room3d.wardrobeCreator.nivel_minimo")} id="lv" hint={t("room3d.wardrobeCreator.blocos_materiais_exigem", { level: suggestion.level })}><Select id="lv" value={form.requiredLevel} onChange={(e) => setForm({ ...form, requiredLevel: e.target.value })}>{o.levels.map((l) => <option key={l} value={l}>{l}</option>)}</Select></Field>
+              <Field label={t("room3d.wardrobeCreator.estoque_edicao_limitada")} id="st" hint={t("common.vazio_ilimitado")}><Input id="st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
+              <Field label={t("room3d.wardrobeCreator.limite_por_pessoa")} id="pu" hint={t("room3d.wardrobeCreator.vazio_sem_limite")}><Input id="pu" type="number" min={1} value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: e.target.value })} /></Field>
+              <Field label={t("common.disponivel_a_partir_de")} id="af" hint={t("common.vazio_imediato")}><Input id="af" type="datetime-local" value={form.availableFrom} onChange={(e) => setForm({ ...form, availableFrom: e.target.value })} /></Field>
+              <Field label={t("common.expira_em")} id="au" hint={t("common.vazio_sem_expiracao")}><Input id="au" type="datetime-local" value={form.availableUntil} onChange={(e) => setForm({ ...form, availableUntil: e.target.value })} /></Field>
             </div>
             <div className="mt-2 grid gap-2">
-              <Switch id="rs" checked={form.requiresSeal} onChange={(v) => setForm({ ...form, requiresSeal: v })} label={form.sealId ? "Só vende para quem tem este selo aprovado num look" : `Só vende para quem tem um selo de ${o.identity.name}`} />
-              <Switch id="ac" checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label="Visível na loja" />
+              <Switch id="rs" checked={form.requiresSeal} onChange={(v) => setForm({ ...form, requiresSeal: v })} label={form.sealId ? t("room3d.wardrobeCreator.so_vende_para_quem_tem") : t("room3d.wardrobeCreator.so_vende_para_quem_tem_2", { name: o.identity.name })} />
+              <Switch id="ac" checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label={t("room3d.wardrobeCreator.visivel_na_loja")} />
             </div>
-            <p className="mt-2 type-caption text-muted">O nível final é o maior entre o escolhido e o exigido pelos blocos/materiais ({suggestion.level}). FAI Points não são vendidos por dinheiro real.</p>
-            <div className="mt-3 flex flex-wrap gap-2"><Button variant="primary" loading={busy} disabled={!form.name.trim() || Object.keys(parts).length === 0} onClick={save}>{editing ? "Salvar alterações" : "Publicar na loja do quarto"}</Button>{editing && <Button onClick={() => startNew(form.kind)}>Novo</Button>}</div>
+            <p className="mt-2 type-caption text-muted">{t("room3d.wardrobeCreator.o_nivel_final_e_o", { level: suggestion.level })}</p>
+            <div className="mt-3 flex flex-wrap gap-2"><Button variant="primary" loading={busy} disabled={!form.name.trim() || Object.keys(parts).length === 0} onClick={save}>{editing ? t("room3d.wardrobeCreator.salvar_alteracoes") : t("room3d.wardrobeCreator.publicar_na_loja_do_quarto")}</Button>{editing && <Button onClick={() => startNew(form.kind)}>{t("common.new")}</Button>}</div>
           </Card>
         </div>
       </div>
 
       <Card>
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h3 className="type-h3">Minhas criações na loja</h3>{mine.data && <p className="type-data text-muted tabular">{mine.data.stats.items} itens · {mine.data.stats.sold} vendas · {fmtNumber(mine.data.stats.points)} FAI pts</p>}</div>
-        {mine.error ? <ErrorState error={mine.error} onRetry={mine.reload} /> : mine.loading ? <Skeleton className="h-32" /> : (mine.data?.items ?? []).length === 0 ? <EmptyState title="Nenhuma criação ainda." hint="Monte um guarda-roupa inteiro ou um componente e publique na loja do quarto." /> : (
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h3 className="type-h3">{t("room3d.wardrobeCreator.minhas_criacoes_na_loja")}</h3>{mine.data && <p className="type-data text-muted tabular">{t("room3d.wardrobeCreator.itens_vendas_fai_pts", { items: mine.data.stats.items, sold: mine.data.stats.sold, number: fmtNumber(mine.data.stats.points) })}</p>}</div>
+        {mine.error ? <ErrorState error={mine.error} onRetry={mine.reload} /> : mine.loading ? <Skeleton className="h-32" /> : (mine.data?.items ?? []).length === 0 ? <EmptyState title={t("room3d.wardrobeCreator.nenhuma_criacao_ainda")} hint={t("room3d.wardrobeCreator.monte_um_guarda_roupa_inteiro")} /> : (
           <div className="grid-cards">{mine.data!.items.map((i) => (
             <div key={i.sku} className={`surface p-3 ${editing === i.sku ? "ring-2 ring-[var(--mark)]" : ""}`}>
               <StoreSwatch item={i} />
               <p className="mt-2 type-body"><b>{i.name}</b></p>
-              <p className="type-caption text-muted">{i.kind === "WARDROBE" ? `Guarda-roupa inteiro · ${i.bundle?.length ?? 0} blocos` : `${i.blockLabel} · ${i.materialLabel} · ${i.colorName}`}</p>
-              <div className="mt-1 flex flex-wrap gap-1"><Badge tone={AVAILABILITY[i.availability]?.tone}>{AVAILABILITY[i.availability]?.label ?? i.availability}</Badge><Badge>{i.pricePoints} pts</Badge><Badge>nível {i.requiredLevel}</Badge>{i.seal && <Badge tone="chalk">selo {i.seal.name}</Badge>}</div>
-              <p className="mt-1 type-data text-faint tabular">{i.sold} vendidos{i.stock ? ` / ${i.stock}` : ""}{i.perUserLimit ? ` · máx. ${i.perUserLimit}/pessoa` : ""}{i.availableFrom ? ` · de ${fmtDate(i.availableFrom)}` : ""}{i.availableUntil ? ` · até ${fmtDate(i.availableUntil)}` : ""}</p>
-              <div className="mt-2 flex gap-1"><Button size="sm" onClick={() => edit(i)}>Editar</Button><Button size="sm" variant="danger" onClick={() => setConfirmDel(i)}>{i.sold > 0 ? "Retirar" : "Excluir"}</Button></div>
+              <p className="type-caption text-muted">{i.kind === "WARDROBE" ? t("common.guarda_roupa_inteiro_blocos", { value: i.bundle?.length ?? 0 }) : `${i.blockLabel} · ${i.materialLabel} · ${i.colorName}`}</p>
+              <div className="mt-1 flex flex-wrap gap-1"><Badge tone={AVAILABILITY[i.availability]?.tone}>{AVAILABILITY[i.availability]?.label ?? i.availability}</Badge><Badge>{t("common.pts_2", { pricePoints: i.pricePoints })}</Badge><Badge>{t("common.nivel", { requiredLevel: i.requiredLevel })}</Badge>{i.seal && <Badge tone="chalk">{t("common.selo", { name: i.seal.name })}</Badge>}</div>
+              <p className="mt-1 type-data text-faint tabular">{t("room3d.wardrobeCreator.vendidos", { sold: i.sold, value: i.stock ? ` / ${i.stock}` : "", value2: i.perUserLimit ? t("room3d.wardrobeCreator.max_pessoa", { perUserLimit: i.perUserLimit }) : "", value3: i.availableFrom ? t("room3d.wardrobeCreator.de_2", { date: fmtDate(i.availableFrom) }) : "", value4: i.availableUntil ? t("common.ate_2", { date: fmtDate(i.availableUntil) }) : "" })}</p>
+              <div className="mt-2 flex gap-1"><Button size="sm" onClick={() => edit(i)}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={() => setConfirmDel(i)}>{i.sold > 0 ? t("room3d.wardrobeCreator.retirar") : t("common.delete")}</Button></div>
             </div>))}</div>)}
       </Card>
-      <Dialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title={confirmDel?.sold ? "Retirar da loja?" : "Excluir item?"} footer={<><Button onClick={() => setConfirmDel(null)}>Cancelar</Button><Button variant="danger" onClick={() => confirmDel && remove(confirmDel)}>Confirmar</Button></>}>
-        <p className="type-body">{confirmDel?.sold ? `${confirmDel.name} já foi vendido ${confirmDel.sold}×: ele sai da loja, mas quem comprou continua com ele no quarto.` : `${confirmDel?.name} será excluído.`}</p>
+      <Dialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title={confirmDel?.sold ? t("room3d.wardrobeCreator.retirar_da_loja") : t("room3d.wardrobeCreator.excluir_item")} footer={<><Button onClick={() => setConfirmDel(null)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => confirmDel && remove(confirmDel)}>{t("common.confirm")}</Button></>}>
+        <p className="type-body">{confirmDel?.sold ? t("room3d.wardrobeCreator.ja_foi_vendido_ele_sai", { name: confirmDel.name, sold: confirmDel.sold }) : t("room3d.wardrobeCreator.sera_excluido", { name: confirmDel?.name })}</p>
       </Dialog>
     </div>
   );

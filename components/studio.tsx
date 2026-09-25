@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /** RF4 · Estúdio — fundo de estúdio (cor do centro + cor da borda do degradê). */
 export interface StudioBackdrop { id: string; label: string; hex?: string; edge?: string; }
@@ -55,6 +56,7 @@ export function useStudioBackdrops(): StudioBackdrop[] {
 
 /** Chips de fundo: amostra do degradê + nome (a cor nunca é o único indicador). */
 export function BackdropChips({ value, onPick, busy, label = "Fundo do estúdio" }: { value?: string | null; onPick: (id: string) => void; busy?: boolean; label?: string }) {
+  const { t } = useI18n();
   const list = useStudioBackdrops();
   if (!list.length) return null;
   return (
@@ -66,7 +68,7 @@ export function BackdropChips({ value, onPick, busy, label = "Fundo do estúdio"
           <button key={b.id} type="button" role="radio" aria-checked={active} disabled={busy} onClick={() => onPick(b.id)}
             className={`chip inline-flex items-center gap-1.5 ${active ? "is-active" : ""}`} title={b.label}>
             <span aria-hidden className="inline-block h-4 w-4 rounded-full border border-line-soft" style={{ background: swatch }} />
-            {b.id === "auto" ? "Automático" : b.label}
+            {b.id === "auto" ? t("settings.auto") : b.label}
           </button>
         );
       })}
@@ -76,28 +78,29 @@ export function BackdropChips({ value, onPick, busy, label = "Fundo do estúdio"
 
 /** Etapas do pipeline + antes/depois (nitidez, contraste, resolução). */
 export function StudioReport({ info }: { info: StudioInfo }) {
+  const { rich, t } = useI18n();
   const m = info.metrics ?? {};
   const gain = (a?: number, b?: number) => (a && b ? `${b >= a ? "+" : ""}${Math.round(((b - a) / a) * 100)}%` : "—");
   return (
     <div className="type-caption text-muted">
-      <ol className="flex flex-wrap gap-1" aria-label="etapas do estúdio">
+      <ol className="flex flex-wrap gap-1" aria-label={t("studio.etapas_do_estudio")}>
         {(info.stages ?? []).map((s, i) => (
           <li key={i} className={`badge ${s.ok ? "" : "opacity-60"}`} title={`${s.provider}${s.note ? ` · ${s.note}` : ""}`}>
-            {s.ok ? "✓" : "–"} {STAGE_LABEL[s.name] ?? s.name} <span className="tabular">{s.ms} ms</span>
+            {s.ok ? "✓" : "–"} {STAGE_LABEL[s.name] ?? s.name} <span className="tabular">{t("common.ms", { ms: s.ms })}</span>
           </li>
         ))}
       </ol>
       <dl className="mt-2 grid grid-cols-3 gap-2">
-        <div><dt>Nitidez</dt><dd className="tabular text-ink">{gain(m.sharpnessBefore, m.sharpnessAfter)}</dd></div>
-        <div><dt>Contraste</dt><dd className="tabular text-ink">{gain(m.contrastBefore, m.contrastAfter)}</dd></div>
-        <div><dt>Resolução</dt><dd className="tabular text-ink">{m.resolutionBefore ?? "—"} → {m.resolutionAfter ?? "—"}</dd></div>
+        <div><dt>{t("studio.nitidez")}</dt><dd className="tabular text-ink">{gain(m.sharpnessBefore, m.sharpnessAfter)}</dd></div>
+        <div><dt>{t("common.contraste")}</dt><dd className="tabular text-ink">{gain(m.contrastBefore, m.contrastAfter)}</dd></div>
+        <div><dt>{t("studio.resolucao")}</dt><dd className="tabular text-ink">{m.resolutionBefore ?? "—"} → {m.resolutionAfter ?? "—"}</dd></div>
       </dl>
       <ul className="mt-2 space-y-0.5">
-        {info.framing && <li><strong className="text-ink">Enquadramento:</strong> {info.framing.aspect} · a peça ocupa {Math.round((info.framing.fill ?? 0) * 100)}% do quadro{info.framing.bleed?.length ? (info.framing.bleed.every((b) => info.framing?.flush?.includes(b)) ? ` · rente à ${info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ")} (nada cortado)` : ` · sangra na ${info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ")} (o corte da foto fica fora do quadro)`) : " · peça inteira, margem mínima"}</li>}
-        <li><strong className="text-ink">Manequim:</strong> {info.ghost?.length ? info.ghost.join(" · ") : "sem manequim fantasma — peça superior e vestido ganham a Foto com meu manequim"}</li>
-        <li><strong className="text-ink">Logo:</strong> {info.logo ? `encontrado (${info.logo.source === "ia" ? "IA de visão" : info.logo.source === "catalogo" ? "selo FAI da arte padrão" : "detector local"}) · foco e foto de detalhe` : "nenhum identificado"}</li>
+        {info.framing && <li>{rich("studio.enquadramento_a_peca_ocupa_do", { aspect: info.framing.aspect, Math: Math.round((info.framing.fill ?? 0) * 100) }, { 0: ($c) => <strong className="text-ink">{$c}</strong> })}{info.framing.bleed?.length ? (info.framing.bleed.every((b) => info.framing?.flush?.includes(b)) ? t("studio.rente_a_nada_cortado", { join: info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ") }) : t("studio.sangra_na_o_corte_da", { join: info.framing.bleed.map((b) => SIDE_LABEL[b] ?? b).join(" e ") })) : t("studio.peca_inteira_margem_minima")}</li>}
+        <li><strong className="text-ink">{t("studio.manequim")}</strong> {info.ghost?.length ? info.ghost.join(" · ") : t("studio.sem_manequim_fantasma_peca_superior")}</li>
+        <li><strong className="text-ink">{t("studio.logo")}</strong> {info.logo ? t("studio.encontrado_foco_e_foto_de", { value: info.logo.source === "ia" ? "IA de visão" : info.logo.source === "catalogo" ? "selo FAI da arte padrão" : "detector local" }) : t("studio.nenhum_identificado")}</li>
       </ul>
-      <p className="mt-1">Motor: {info.provider ?? "local"}{info.fallbackUsed ? " (plano B local)" : ""}{info.forced ? " · recorte conferido por você" : ""}</p>
+      <p className="mt-1">{t("studio.motor", { value: info.provider ?? t("common.local"), value2: info.fallbackUsed ? t("common.plano_b_local") : "", value3: info.forced ? t("studio.recorte_conferido_por_voce") : "" })}</p>
     </div>
   );
 }
@@ -112,6 +115,7 @@ export function sangria(framing?: StudioInfo["framing"] | null): string[] {
 }
 
 export function StudioLightbox({ images, edge, center, start = 0, onClose }: { images: { src: string; alt: string; anchor?: string[]; cover?: boolean }[]; edge: string; center?: string; start?: number; onClose: () => void }) {
+  const { t } = useI18n();
   const [i, setI] = useState(start);
   const imgRef = useRef<HTMLImageElement>(null); const [rect, setRect] = useState<DOMRect | null>(null);
   const measure = useCallback(() => setRect(imgRef.current?.getBoundingClientRect() ?? null), []);
@@ -134,10 +138,10 @@ export function StudioLightbox({ images, edge, center, start = 0, onClose }: { i
       style={{ background: continuedBackdrop(rect, center ?? edge, edge) }}>
       {/* detalhe do logo já é um recorte: preenche a tela inteira, centrado no logo */}
       <img ref={imgRef} src={img.src} alt={img.alt} className={img.cover ? "h-full w-full object-cover" : "max-h-full max-w-full object-contain"} onLoad={measure} onClick={(e) => e.stopPropagation()} />
-      <button type="button" className="chip absolute right-3 top-3" onClick={onClose} aria-label="fechar tela cheia">✕ Fechar</button>
+      <button type="button" className="chip absolute right-3 top-3" onClick={onClose} aria-label={t("studio.fechar_tela_cheia")}>{t("studio.fechar")}</button>
       {images.length > 1 && (
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2" onClick={(e) => e.stopPropagation()}>
-          {images.map((m, k) => <button key={k} type="button" className={`chip ${k === i ? "is-active" : ""}`} aria-pressed={k === i} onClick={() => setI(k)}>{m.alt.split(" — ")[1] ?? `Foto ${k + 1}`}</button>)}
+          {images.map((m, k) => <button key={k} type="button" className={`chip ${k === i ? "is-active" : ""}`} aria-pressed={k === i} onClick={() => setI(k)}>{m.alt.split(" — ")[1] ?? t("studio.foto", { value: k + 1 })}</button>)}
         </div>
       )}
     </div>

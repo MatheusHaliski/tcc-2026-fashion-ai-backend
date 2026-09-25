@@ -2,6 +2,8 @@
  * Cliente HTTP da API Fashion AI: JSON, Bearer JWT, renovação automática do access token e erros tipados.
  * Toda resposta de erro do backend tem o formato {status, code, message, details, path, timestamp, correlationId}.
  */
+import { tr } from "@/lib/i18n/core";
+import { acceptLanguage, getCurrentLocale } from "@/lib/i18n/state";
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -72,12 +74,12 @@ async function parseError(res: Response): Promise<ApiError> {
     const body = await res.json();
     return new ApiError(body.status ?? res.status, body.code ?? "ERRO", body.message ?? res.statusText, body.details, body.correlationId);
   } catch {
-    return new ApiError(res.status, res.status === 0 ? "OFFLINE" : "ERRO", res.status === 0 ? "Sem conexão com o servidor." : res.statusText);
+    return new ApiError(res.status, res.status === 0 ? "OFFLINE" : "ERRO", res.status === 0 ? tr("errors.offline") : res.statusText);
   }
 }
 
 async function request<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}, retry = true): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", ...(opts.headers ?? {}) };
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...(opts.headers ?? {}) };
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   const token = opts.anonymous ? null : tokenStore.access;
@@ -87,7 +89,7 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
     res = await fetch(`${API_BASE}${path}`, { method, headers, body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body), signal: opts.signal });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
-    throw new ApiError(0, "OFFLINE", "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.");
+    throw new ApiError(0, "OFFLINE", tr("errors.network"));
   }
   if (res.status === 401 && !opts.anonymous && retry && tokenStore.refresh) {
     const ok = await tryRefresh();

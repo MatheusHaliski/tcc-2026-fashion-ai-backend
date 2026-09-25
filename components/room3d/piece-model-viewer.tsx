@@ -4,9 +4,11 @@ import { Canvas } from "@react-three/fiber";
 import { Center, ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /** RF16.CA02 — modelo 3D da peça com rotação e zoom; a versão 2D continua disponível na página. */
 export default function PieceModelViewer({ url, name }: { url: string; name: string }) {
+  const { t } = useI18n();
   const [scene, setScene] = useState<THREE.Group | null>(null); const [error, setError] = useState(false);
   useEffect(() => {
     let alive = true; setScene(null); setError(false);
@@ -16,9 +18,9 @@ export default function PieceModelViewer({ url, name }: { url: string; name: str
     }, undefined, () => alive && setError(true));
     return () => { alive = false; };
   }, [url]);
-  if (error) return <div className="grid h-full place-items-center p-4 text-center type-body text-muted">Não foi possível carregar o modelo 3D. A foto 2D continua disponível.</div>;
+  if (error) return <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("room3d.pieceModelViewer.nao_foi_possivel_carregar_o")}</div>;
   return (
-    <Canvas shadows camera={{ position: [0, 0.6, 3], fov: 40 }} aria-label={`modelo 3D de ${name}`}>
+    <Canvas shadows camera={{ position: [0, 0.6, 3], fov: 40 }} aria-label={t("room3d.pieceModelViewer.modelo_3d_de", { name })}>
       <color attach="background" args={["#f1eee8"]} />
       <hemisphereLight args={["#ffffff", "#d9cbb5", 1]} />
       <directionalLight position={[2, 4, 3]} intensity={1.6} castShadow />

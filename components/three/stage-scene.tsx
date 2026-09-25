@@ -5,6 +5,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
 import { rng, useCanvasTexture, useReducedMotion, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * My Stage 3D (RF22 · aba Eras): a foto oficial da celebridade na cabeça do manequim, vestindo o look escolhido,
@@ -80,9 +81,10 @@ function Turntable({ children, reduced }: { children: React.ReactNode; reduced: 
 }
 
 export default function StageScene({ name, era, colors, mannequin, pieces, crowd = 150 }: { name: string; era?: string | null; colors: string[]; mannequin: Mannequin3d; pieces: Look3dPiece[]; crowd?: number }) {
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   return (
-    <Canvas shadows camera={{ position: [0, 2.6, 8.5], fov: 45 }} dpr={[1, 1.75]} aria-label={`My Stage 3D de ${name}`}>
+    <Canvas shadows camera={{ position: [0, 2.6, 8.5], fov: 45 }} dpr={[1, 1.75]} aria-label={t("three.stageScene.my_stage_3d_de", { name })}>
       <color attach="background" args={["#07080d"]} />
       <fog attach="fog" args={["#07080d", 10, 22]} />
       <hemisphereLight args={["#b9c6ff", "#0c0d12", 0.45]} />

@@ -5,6 +5,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
 import { rng, useCanvasTexture, useReducedMotion, type Look3d } from "@/components/three/common";
+import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Passarela 3D (Explorar): cada manequim veste o Look do Dia de uma pessoa e desfila da coxia até a ponta da
@@ -91,9 +92,10 @@ function Walker({ entry, index, total, still, onPick, selected }: { entry: Runwa
 }
 
 export default function RunwayScene({ entries, date, onPick, selectedId }: { entries: RunwayEntry[]; date: string; onPick: (e: RunwayEntry) => void; selectedId?: string | null }) {
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   return (
-    <Canvas shadows camera={{ position: [4.2, 3.2, 8.5], fov: 42 }} dpr={[1, 1.75]} aria-label="Passarela 3D com o Look do Dia de cada pessoa">
+    <Canvas shadows camera={{ position: [4.2, 3.2, 8.5], fov: 42 }} dpr={[1, 1.75]} aria-label={t("three.runwayScene.passarela_3d_com_o_look")}>
       <color attach="background" args={["#0b0e16"]} />
       <fog attach="fog" args={["#0b0e16", 12, 26]} />
       <hemisphereLight args={["#dfe7ff", "#1a1d26", 0.55]} />

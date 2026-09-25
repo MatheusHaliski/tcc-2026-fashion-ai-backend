@@ -23,7 +23,7 @@ const PAGE = 60;
 type Pending = { kind: "one"; photo: Photo; link?: Link_ } | { kind: "many"; ids: string[]; message: string; linked: number };
 
 function Photos() {
-  const { t, fmtDate } = useI18n(); const toast = useToast();
+  const { t, fmtDate, rich } = useI18n(); const toast = useToast();
   const [tab, setTab] = useState<"gallery" | "timeline">("gallery");
   const [origin, setOrigin] = useState(""); const [nonce, setNonce] = useState(0);
   const [pages, setPages] = useState<Listing[]>([]); const [loading, setLoading] = useState(false); const [error, setError] = useState<Error | null>(null);
@@ -62,8 +62,8 @@ function Photos() {
   async function confirmDelete() {
     if (!pending) return; setDeleting(true);
     try {
-      if (pending.kind === "one") { await api.delete(`/api/photos/${pending.photo.id}?confirmed=true`); toast.success(pending.link?.activeImage ? `Foto excluída. A peça «${pending.link.pieceName}» ficou sem imagem.` : "Foto excluída."); }
-      else { const r = await api.post<{ deleted: number }>("/api/photos/bulk-deletion", { ids: pending.ids, confirmed: true }); toast.success(`${r.deleted} foto(s) excluída(s).`); }
+      if (pending.kind === "one") { await api.delete(`/api/photos/${pending.photo.id}?confirmed=true`); toast.success(pending.link?.activeImage ? t("photos.foto_excluida_a_peca_ficou", { pieceName: pending.link.pieceName }) : t("photos.foto_excluida")); }
+      else { const r = await api.post<{ deleted: number }>("/api/photos/bulk-deletion", { ids: pending.ids, confirmed: true }); toast.success(t("photos.foto_s_excluida_s", { deleted: r.deleted })); }
       setPending(null); setSel([]); setNonce((n) => n + 1);
     } catch (e) {
       if (e instanceof ApiError && e.code === "CONFIRMACAO_NECESSARIA") toast.info(e.message); else toast.fromError(e);
@@ -82,78 +82,78 @@ function Photos() {
   const total = head ? Object.values(head.counts).reduce((a, b) => a + b, 0) : 0;
   return (
     <>
-      <PageHeader title={t("nav.photos")} kicker="RF12" lead={head ? `${total} foto(s) enviadas, agrupadas por origem e da mais recente para a mais antiga.` : undefined}
-        actions={<Button onClick={curate} loading={curating}>Curadoria (IA)</Button>} />
-      <Tabs tabs={[{ id: "gallery", label: "Galeria" }, { id: "timeline", label: "Momentos-chave" }]} value={tab} onChange={setTab} />
+      <PageHeader title={t("nav.photos")} kicker="RF12" lead={head ? t("photos.foto_s_enviadas_agrupadas_por", { total }) : undefined}
+        actions={<Button onClick={curate} loading={curating}>{t("photos.curadoria_ia")}</Button>} />
+      <Tabs tabs={[{ id: "gallery", label: t("photos.galeria") }, { id: "timeline", label: t("photos.momentos_chave") }]} value={tab} onChange={setTab} />
       {tab === "gallery" && (<>
-        <div className="mb-3 flex flex-wrap gap-1.5" aria-label="filtrar por origem">
+        <div className="mb-3 flex flex-wrap gap-1.5" aria-label={t("photos.filtrar_por_origem")}>
           <Chip active={origin === ""} onClick={() => setOrigin("")}>{t("common.all")} · {total}</Chip>
           {ORIGINS.filter(([o]) => head?.counts[o]).map(([o, l]) => <Chip key={o} active={origin === o} onClick={() => setOrigin(o)}>{l} · {head?.counts[o]}</Chip>)}
         </div>
         {sel.length > 0 && (
-          <div className="photo-batch" role="region" aria-label="seleção">
-            <b>{sel.length} selecionada(s)</b>
-            <Button size="sm" variant="danger" onClick={() => askMany(sel)}><FaiIcon id="ACT-18" size={24} decorative />Excluir {sel.length}</Button>
-            <Button size="sm" onClick={() => setSel(allIds)} disabled={sel.length === allIds.length}>Selecionar as {allIds.length} carregadas</Button>
-            <Button size="sm" variant="ghost" onClick={() => setSel([])}>Limpar seleção</Button>
+          <div className="photo-batch" role="region" aria-label={t("photos.selecao")}>
+            <b>{t("photos.selecionada_s", { selCount: sel.length })}</b>
+            <Button size="sm" variant="danger" onClick={() => askMany(sel)}><FaiIcon id="ACT-18" size={24} decorative />{t("photos.excluir_2", { selCount: sel.length })}</Button>
+            <Button size="sm" onClick={() => setSel(allIds)} disabled={sel.length === allIds.length}>{t("photos.selecionar_as_carregadas", { allIdsCount: allIds.length })}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setSel([])}>{t("photos.limpar_selecao")}</Button>
           </div>
         )}
         {error && <ErrorState error={error} onRetry={() => setNonce((n) => n + 1)} />}
         {loading && !pages.length && <SkeletonGrid n={12} h="h-32" />}
-        {!loading && !error && head && loaded === 0 && <EmptyState title={t("common.empty")} hint="As fotos das peças, dos looks, do provador e do DNA ficam aqui." />}
+        {!loading && !error && head && loaded === 0 && <EmptyState title={t("common.empty")} hint={t("photos.as_fotos_das_pecas_dos")} />}
         {groups.map(([o, list]) => (
           <section key={o} className="mb-5" aria-label={ORIGIN_LABEL[o] ?? o}>
             <h2 className="type-h3 mb-2">{ORIGIN_LABEL[o] ?? o} <span className="type-caption text-muted">· {head?.counts[o] ?? list.length}</span></h2>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
               {list.map((p) => { const link = links[p.id]; const on = sel.includes(p.id); return (
                 <figure key={p.id} className={`photo-tile ${on ? "is-selected" : ""}`}>
-                  <button type="button" className="block w-full" onClick={() => (sel.length ? toggle(p.id) : setEditing(p))} aria-label={sel.length ? "selecionar foto" : "editar foto"}>
-                    <img src={mediaUrl(p.thumbnailUrl ?? p.url)} alt={link?.pieceName ?? ORIGIN_LABEL[p.origin] ?? "foto"} className="aspect-square w-full object-cover" loading="lazy" decoding="async" width={200} height={200} />
+                  <button type="button" className="block w-full" onClick={() => (sel.length ? toggle(p.id) : setEditing(p))} aria-label={sel.length ? t("photos.selecionar_foto") : t("photos.editar_foto")}>
+                    <img src={mediaUrl(p.thumbnailUrl ?? p.url)} alt={link?.pieceName ?? ORIGIN_LABEL[p.origin] ?? t("photos.foto")} className="aspect-square w-full object-cover" loading="lazy" decoding="async" width={200} height={200} />
                   </button>
-                  <input type="checkbox" className="photo-check" checked={on} onChange={() => toggle(p.id)} aria-label="selecionar foto" />
-                  {link && <Link href={`/pieces/${link.pieceId}`} className="photo-link" title={link.activeImage ? "imagem atual da peça" : "foto da peça"}>{link.activeImage ? "● " : ""}{link.pieceName}</Link>}
+                  <input type="checkbox" className="photo-check" checked={on} onChange={() => toggle(p.id)} aria-label={t("photos.selecionar_foto")} />
+                  {link && <Link href={`/pieces/${link.pieceId}`} className="photo-link" title={link.activeImage ? t("photos.imagem_atual_da_peca") : t("photos.foto_da_peca")}>{link.activeImage ? "● " : ""}{link.pieceName}</Link>}
                   {p.keyMoment && <span className="absolute bottom-9 left-1.5 text-sm text-chalk" aria-label="momento-chave">★</span>}
                   <figcaption className="photo-actions">
-                    <button type="button" onClick={() => setEditing(p)} aria-label="editar no Canvas 2D" title="Editar"><FaiIcon id="SOC-11" size={24} decorative /></button>
-                    <button type="button" onClick={() => download(p)} aria-label="baixar original" title="Baixar original"><FaiIcon id="ACT-17" size={24} decorative /></button>
-                    <button type="button" onClick={() => keyMoment(p)} aria-label={p.keyMoment ? "desmarcar momento-chave" : "marcar momento-chave"} title="Momento-chave">{p.keyMoment ? "★" : "☆"}</button>
-                    <button type="button" onClick={() => setPending({ kind: "one", photo: p, link })} aria-label="excluir foto" title="Excluir"><FaiIcon id="ACT-18" size={24} decorative /></button>
+                    <button type="button" onClick={() => setEditing(p)} aria-label={t("photos.editar_no_canvas_2d")} title={t("common.edit")}><FaiIcon id="SOC-11" size={24} decorative /></button>
+                    <button type="button" onClick={() => download(p)} aria-label={t("photos.baixar_original")} title={t("photos.baixar_original_2")}><FaiIcon id="ACT-17" size={24} decorative /></button>
+                    <button type="button" onClick={() => keyMoment(p)} aria-label={p.keyMoment ? t("photos.desmarcar_momento_chave") : t("photos.marcar_momento_chave")} title={t("photos.momento_chave")}>{p.keyMoment ? "★" : "☆"}</button>
+                    <button type="button" onClick={() => setPending({ kind: "one", photo: p, link })} aria-label={t("photos.excluir_foto")} title={t("common.delete")}><FaiIcon id="ACT-18" size={24} decorative /></button>
                   </figcaption>
                   <span className="sr-only">{fmtDate(p.createdAt)}</span>
                 </figure>); })}
             </div>
           </section>
         ))}
-        <InfiniteSentinel hasMore={!!last?.hasMore} loading={loading} onMore={() => last && load(last.page + 1)} label={`Carregar mais (${loaded} de ${last?.total ?? 0})`} />
-        {head && <p className="mt-4 type-caption text-faint">{loaded} de {last?.total ?? 0} carregadas sob demanda · primeira página em {firstMs ?? "—"} ms (servidor {head.serverMs ?? "—"} ms) · miniaturas com carregamento lento</p>}
+        <InfiniteSentinel hasMore={!!last?.hasMore} loading={loading} onMore={() => last && load(last.page + 1)} label={t("photos.carregar_mais_de", { loaded, value: last?.total ?? 0 })} />
+        {head && <p className="mt-4 type-caption text-faint">{t("photos.de_carregadas_sob_demanda_primeira", { loaded, value: last?.total ?? 0, value2: firstMs ?? "—", value3: head.serverMs ?? "—" })}</p>}
       </>)}
       {tab === "timeline" && (timeline.loading ? <SkeletonGrid n={3} /> : timeline.error ? <ErrorState error={timeline.error} onRetry={timeline.reload} /> : (
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-          {(timeline.data?.moments ?? []).length === 0 ? <EmptyState title="Nenhum momento-chave ainda" hint="Marque fotos com ☆ na galeria para montar sua linha do tempo." /> : (
+          {(timeline.data?.moments ?? []).length === 0 ? <EmptyState title={t("photos.nenhum_momento_chave_ainda")} hint={t("photos.marque_fotos_com_na_galeria")} /> : (
             <ol className="relative ml-2 border-l-2 border-line-soft pl-6">{timeline.data!.moments.map((m) => (
               <li key={m.photo.id} className="relative mb-6"><span className="absolute -left-[33px] top-1 h-4 w-4 rounded-full bg-mark" /><p className="label">{fmtDate(m.date)} · {ORIGIN_LABEL[m.origin] ?? m.origin}</p>
                 <img src={mediaUrl(m.photo.thumbnailUrl ?? m.photo.url)} alt="" className="mt-2 h-40 rounded object-cover" loading="lazy" /></li>))}</ol>
           )}
-          <aside className="surface p-3"><p className="label mb-2">Fotos por mês</p>
+          <aside className="surface p-3"><p className="label mb-2">{t("photos.fotos_por_mes")}</p>
             <ul className="grid gap-1.5">{Object.entries(timeline.data?.months ?? {}).reverse().map(([mo, byOrigin]) => { const n = Object.values(byOrigin).reduce((a, b) => a + b, 0); const max = Math.max(1, ...Object.values(timeline.data?.months ?? {}).map((x) => Object.values(x).reduce((a, b) => a + b, 0))); return (
               <li key={mo} className="grid grid-cols-[64px_1fr_32px] items-center gap-2 type-caption"><span>{mo}</span><span className="h-2 rounded bg-mark" style={{ width: `${(n / max) * 100}%` }} title={Object.entries(byOrigin).map(([o, c]) => `${ORIGIN_LABEL[o] ?? o}: ${c}`).join(" · ")} /><span className="text-right type-data">{n}</span></li>); })}</ul>
           </aside>
         </div>
       ))}
-      <Dialog open={!!pending} onClose={() => setPending(null)} title={pending?.kind === "many" ? `Excluir ${pending.ids.length} foto(s)?` : "Excluir esta foto?"}
-        footer={<><Button onClick={() => setPending(null)}>{t("common.cancel")}</Button><Button variant="danger" loading={deleting} onClick={confirmDelete}>{pending?.kind === "many" ? `Excluir ${pending.ids.length}` : pending?.link?.activeImage ? "Excluir mesmo assim" : t("common.delete")}</Button></>}>
+      <Dialog open={!!pending} onClose={() => setPending(null)} title={pending?.kind === "many" ? t("photos.excluir_foto_s", { idsCount: pending.ids.length }) : t("photos.excluir_esta_foto")}
+        footer={<><Button onClick={() => setPending(null)}>{t("common.cancel")}</Button><Button variant="danger" loading={deleting} onClick={confirmDelete}>{pending?.kind === "many" ? t("photos.excluir", { idsCount: pending.ids.length }) : pending?.link?.activeImage ? t("photos.excluir_mesmo_assim") : t("common.delete")}</Button></>}>
         {pending?.kind === "one" && (pending.link?.activeImage
-          ? <p className="type-body"><b>Esta foto é a imagem da peça «{pending.link.pieceName}».</b> Se excluir, a peça volta para a imagem padrão da categoria até você enviar outra foto. Confirme para continuar.</p>
-          : <p className="type-body">A foto sai de Minhas Fotos. Esta ação não pode ser desfeita.</p>)}
-        {pending?.kind === "many" && <p className="type-body">{pending.message}{pending.linked > 0 ? " Essas peças ficarão sem imagem." : ""}</p>}
+          ? <p className="type-body">{rich("photos.esta_foto_e_a_imagem", { pieceName: pending.link.pieceName }, { 0: ($c) => <b>{$c}</b> })}</p>
+          : <p className="type-body">{t("photos.a_foto_sai_de_minhas")}</p>)}
+        {pending?.kind === "many" && <p className="type-body">{pending.message}{pending.linked > 0 ? t("photos.essas_pecas_ficarao_sem_imagem") : ""}</p>}
       </Dialog>
-      <Dialog open={!!curation} onClose={() => setCuration(null)} title="Curadoria de fotos (Photo Curator)">
-        {curation && (curation.duplicateGroups.length === 0 ? <p className="type-body">Nenhuma quase-duplicata encontrada.</p> : <>
-          <p className="type-body mb-2">{curation.duplicateGroups.length} grupo(s) de quase-duplicatas (hash perceptual local). A de melhor qualidade fica marcada.</p>
+      <Dialog open={!!curation} onClose={() => setCuration(null)} title={t("photos.curadoria_de_fotos_photo_curator")}>
+        {curation && (curation.duplicateGroups.length === 0 ? <p className="type-body">{t("photos.nenhuma_quase_duplicata_encontrada")}</p> : <>
+          <p className="type-body mb-2">{t("photos.grupo_s_de_quase_duplicatas", { duplicateGroupsCount: curation.duplicateGroups.length })}</p>
           {curation.duplicateGroups.map((g, i) => (
             <div key={i} className="mb-2 flex flex-wrap items-center gap-1">
               {g.photos.map((p) => <img key={p.id} src={mediaUrl(p.thumbnailUrl ?? p.url)} alt="" className={`h-14 w-14 rounded object-cover ${p.id === g.suggestKeep ? "ring-2 ring-thread" : "opacity-70"}`} />)}
-              <Button size="sm" variant="danger" onClick={() => { setCuration(null); void askMany(g.suggestDiscard); }}>Manter 1, excluir {g.suggestDiscard.length}</Button>
+              <Button size="sm" variant="danger" onClick={() => { setCuration(null); void askMany(g.suggestDiscard); }}>{t("photos.manter_1_excluir", { suggestDiscardCount: g.suggestDiscard.length })}</Button>
             </div>))}
         </>)}
         {curation?.note && <p className="mt-2 type-caption text-muted">{curation.note}</p>}

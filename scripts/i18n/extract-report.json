@@ -1,0 +1,200 @@
+{
+ "files": {
+  "app/(app)/admin/dashboard/page.tsx": {
+   "a": 2,
+   "b": 1
+  },
+  "app/(app)/autopilot/page.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "app/(app)/brands/[slug]/page.tsx": {
+   "a": 2,
+   "b": 0
+  },
+  "app/(app)/dashboard/page.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "app/(app)/explorer/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "app/(app)/flair/page.tsx": {
+   "a": 0,
+   "b": 2
+  },
+  "app/(app)/highlights/page.tsx": {
+   "a": 1,
+   "b": 1
+  },
+  "app/(app)/mirror/page.tsx": {
+   "a": 0,
+   "b": 2
+  },
+  "app/(app)/photos/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "app/(app)/pieces/new/page.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "app/(app)/room/page.tsx": {
+   "a": 2,
+   "b": 1
+  },
+  "app/(app)/schemes/[id]/page.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "app/(app)/settings/page.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "app/(app)/try-on/page.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "app/(app)/u/[username]/page.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/app-shell.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/background-studio.tsx": {
+   "a": 1,
+   "b": 1
+  },
+  "components/coupons/brand-coupons-tab.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/detail-modal.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/dna-builder.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/dna-card.tsx": {
+   "a": 3,
+   "b": 1
+  },
+  "components/edit-profile.tsx": {
+   "a": 0,
+   "b": 2
+  },
+  "components/flair/brand-flair-tab.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/flair/flair-card.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "components/flair/modes-shared.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/flair/modes.tsx": {
+   "a": 1,
+   "b": 1
+  },
+  "components/room3d/wardrobe-creator.tsx": {
+   "a": 4,
+   "b": 0
+  },
+  "components/scheme-anatomies.tsx": {
+   "a": 5,
+   "b": 0
+  },
+  "components/scheme-builder.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/seal-creator.tsx": {
+   "a": 0,
+   "b": 4
+  },
+  "components/showcase/runway-panel.tsx": {
+   "a": 0,
+   "b": 1
+  },
+  "components/showcase/showcase-tabs.tsx": {
+   "a": 1,
+   "b": 0
+  },
+  "lib/card-art.ts": {
+   "a": 1,
+   "b": 0
+  }
+ },
+ "skipped": [
+  {
+   "file": "app/(app)/layout.tsx",
+   "reason": "server component (tratar manualmente com translate(locale, …))"
+  },
+  {
+   "file": "app/(auth)/layout.tsx",
+   "reason": "server component (tratar manualmente com translate(locale, …))"
+  }
+ ],
+ "stats": {
+  "edits": 59,
+  "keys": 46,
+  "files": 33
+ },
+ "renamed": 5,
+ "newKeys": [
+  "admin.dashboard.arraste_as_linhas_para_mudar",
+  "autopilot.look_do_dia_por_ocasiao",
+  "autopilot.open_meteo_sem_cidade_ignora",
+  "common.vazio_imediato",
+  "common.vazio_sem_expiracao",
+  "common.n403_acesso_negado",
+  "common.passarela_3d",
+  "flair.n5_rodadas_edge_range_clout",
+  "flair.vitoria_3_pontos_na_liga",
+  "highlights.participar_dos_rankings_anonimo_k",
+  "highlights.n7_dimensoes",
+  "mirror.vista_me",
+  "photos.momentos_chave",
+  "pieces.new.luz_lateral_suave_sem_flash",
+  "room.todo_o_guarda_roupa",
+  "room.o_vista_me_usa_so",
+  "settings.todo_o_conteudo_das_paginas",
+  "tryOn.nao_deu_para_remover_o",
+  "backgroundStudio.cartela_sazonal_automatica_usa_a",
+  "backgroundStudio.medalhao_44_px_tamanho_do",
+  "common.vazio_ilimitado",
+  "dnaBuilder.como_a_lista_de_esquemas",
+  "dnaCard.fileira_rolavel_cada_item_vira",
+  "dnaCard.hero_lista_lateral_clicavel_fileira",
+  "dnaCard.o_marco_vira_capa_a",
+  "dnaCard.seasonaltheme_animacao",
+  "editProfile.o_e_unico_e_aparece",
+  "editProfile.o_rosto_3d_tem_nariz",
+  "flair.flairCard.qualidade_da_foto_estudio_88",
+  "flair.modesShared.cartas",
+  "flair.modes.seu_fashion_squad_vazio_o",
+  "flair.modes.o_hypescore_e_a_forca",
+  "room3d.wardrobeCreator.vazio_sem_limite",
+  "schemeAnatomies.card_em_blocos_de_encaixe_2",
+  "schemeAnatomies.linha_titulo_selos_preco_abaixo",
+  "schemeAnatomies.linha_do_titulo_cada_celula",
+  "schemeAnatomies.linha_do_titulo_abaixo_do",
+  "schemeAnatomies.placas_redondas_1_1_verde",
+  "schemeBuilder.pecas_do_seu_guarda_roupa",
+  "sealCreator.n1_elemento_central",
+  "sealCreator.n2_entre_a_borda_e",
+  "sealCreator.n3_disco_central",
+  "sealCreator.n4_borda_bisel",
+  "showcase.runwayPanel.manequim",
+  "showcase.showcaseTabs.salve_primeiro_depois_envie_a",
+  "lib.cardArt.imagem_enviada"
+ ]
+}

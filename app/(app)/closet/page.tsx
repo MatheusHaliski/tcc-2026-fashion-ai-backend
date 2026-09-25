@@ -26,14 +26,14 @@ function Closet() {
   const [studioBusy, setStudioBusy] = useState(false);
   async function studioAll() {
     setStudioBusy(true);
-    try { const r = await api.post<{ generated: number; skipped: number }>("/api/me/pieces/studio"); toast.success(r.generated ? `${r.generated} foto(s) de estúdio prontas` : "Todas as peças com foto própria já estão no estúdio."); reload(); }
+    try { const r = await api.post<{ generated: number; skipped: number }>("/api/me/pieces/studio"); toast.success(r.generated ? t("closet.foto_s_de_estudio_prontas", { generated: r.generated }) : t("closet.todas_as_pecas_com_foto")); reload(); }
     catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
   }
   const missingStudio = (data?.items ?? []).some((p) => !p.studioImageUrl && !p.defaultImage && p.photoProcessingStatus === "COMPLETED");
   return (
     <>
-      <PageHeader title={t("closet.title")} kicker="RF7 · RF31" lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
-        actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title="Gera a foto de produto (fundo de estúdio, luz e sombra) das peças que ainda não têm"><FaiIcon id="ACT-08" size={24} decorative />Levar peças ao estúdio</Button>}</>} />
+      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
+        actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button>}</>} />
       <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("closet.state")}>
         {STATES.map(([v, k]) => <Chip key={v} active={f.state === v} onClick={() => set("state", v)}>{t(k)}</Chip>)}
       </div>
@@ -42,7 +42,7 @@ function Closet() {
         <Select aria-label={t("common.category")} value={f.category} onChange={(e) => set("category", e.target.value)}><option value="">{t("common.category")}: {t("common.all")}</option>{Object.keys(tax?.subcategories ?? {}).map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
         <Select aria-label={t("common.color")} value={f.color} onChange={(e) => set("color", e.target.value)}><option value="">{t("common.color")}: {t("common.all")}</option>{Object.keys(tax?.colors ?? {}).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
         <Select aria-label={t("common.occasion")} value={f.occasion} onChange={(e) => set("occasion", e.target.value)}><option value="">{t("common.occasion")}: {t("common.all")}</option>{(tax?.occasions ?? []).map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select>
-        <Select aria-label="ordenar" value={f.sort} onChange={(e) => set("sort", e.target.value)}><option value="recentes">Mais recentes</option><option value="mais_usadas">Mais usadas</option><option value="menos_usadas">Menos usadas</option><option value="nome">Nome A–Z</option><option value="preco">Preço</option></Select>
+        <Select aria-label={t("common.ordenar")} value={f.sort} onChange={(e) => set("sort", e.target.value)}><option value="recentes">{t("common.mais_recentes")}</option><option value="mais_usadas">{t("closet.mais_usadas")}</option><option value="menos_usadas">{t("closet.menos_usadas")}</option><option value="nome">{t("closet.nome_a_z")}</option><option value="preco">{t("common.price")}</option></Select>
       </div>
       {error && <ErrorState error={error} onRetry={reload} />}
       {loading && <SkeletonGrid n={8} />}
