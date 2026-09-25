@@ -107,6 +107,14 @@ public final class Msg {
         return resolve(locale(), s);
     }
 
+    /** O texto enviado pelo cliente corresponde a este texto (marcador ou literal) em algum dos idiomas suportados? */
+    public static boolean matchesAnyLocale(String deferredOrLiteral, String value) {
+        if (value == null || deferredOrLiteral == null) return false;
+        if (deferredOrLiteral.equals(value)) return true;
+        for (Locale l : SUPPORTED) if (resolve(l, deferredOrLiteral).equals(value)) return true;
+        return false;
+    }
+
     /** Nome do idioma corrente para instruções a modelos de IA ("responda em …"). */
     public static String languageName() {
         Locale l = locale();

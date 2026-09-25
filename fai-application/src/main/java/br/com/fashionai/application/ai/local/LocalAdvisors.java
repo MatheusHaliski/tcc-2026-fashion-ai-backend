@@ -209,7 +209,7 @@ public final class LocalAdvisors {
         List<String> sty = new ArrayList<>(asList(current.get("style")));
         List<String[]> rules = List.of(
                 new String[]{"formal|elegante|social|trabalho|escritorio|reuniao", "occasion", "work", "style", "tailored"},
-                new String[]{Msg.t("localAdvisors.casual_relax_confort_dia_a"), "occasion", "casual", "style", "basic"},
+                new String[]{"casual|relax|confort|dia a dia|everyday|comfort|comod|cotidian", "occasion", "casual", "style", "basic"},
                 new String[]{"festa|balada|noite|party", "occasion", "party", "style", "glam"},
                 new String[]{"academia|treino|gym|esporte", "occasion", "gym", "style", "athleisure"},
                 new String[]{"viagem|viajar|travel", "occasion", "travel", "style", "utility"},

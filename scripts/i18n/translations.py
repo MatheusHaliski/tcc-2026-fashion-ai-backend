@@ -37,6 +37,11 @@ def read_json(p): return json.load(open(p, encoding="utf-8")) if os.path.exists(
 def write_json(p, d):
     json.dump(dict(sorted(d.items())), open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2); open(p, "a").write("\n")
 
+def mf_quote(v):
+    """Java MessageFormat: apóstrofo literal vira '' (preserva '' já duplicado e as chaves protegidas '{' e '}')."""
+    import re
+    return re.sub(r"'('|\{'|\}')?", lambda m: m.group(0) if m.group(1) else "''", v)
+
 def catalogs():
     return {"fe": (read_json(f"{FE}/pt-BR.json"), read_json(f"{FE}/en.json"), read_json(f"{FE}/es.json")),
             "be": (read_props(f"{BE}/messages.properties"), read_props(f"{BE}/messages_en.properties"), read_props(f"{BE}/messages_es.properties"))}
@@ -60,6 +65,7 @@ def apply(files):
             pt, en, es = cats[kind]
             if key not in pt: print("chave desconhecida:", k); continue
             if not isinstance(pair, list) or len(pair) != 2: print("formato inválido:", k); continue
+            if kind == "be": pair = [mf_quote(x) for x in pair]
             en[key], es[key] = pair; n[kind] += 1
     write_json(f"{FE}/en.json", cats["fe"][1]); write_json(f"{FE}/es.json", cats["fe"][2])
     write_props(f"{BE}/messages_en.properties", cats["be"][1], "# Fashion AI — backend texts (English). MessageFormat patterns; keep {0}, {1}… and %s.")

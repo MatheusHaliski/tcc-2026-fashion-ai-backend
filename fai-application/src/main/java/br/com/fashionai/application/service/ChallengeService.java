@@ -1419,7 +1419,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         String content;
         String kind;
         if (preset != null && !preset.isBlank()) {
-            if (!PRESET_NOTES.contains(preset)) {
+            if (PRESET_NOTES.stream().noneMatch(p -> Msg.matchesAnyLocale(p, preset))) {
                 throw ApiException.badRequest("FRASE_INVALIDA", Msg.t("challenge.escolha_uma_das_frases_prontas"));
             }
             content = preset;

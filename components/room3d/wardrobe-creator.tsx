@@ -102,7 +102,7 @@ export function WardrobeCreatorTab() {
   }, { price: 0, level: "ESTREIA" }), [parts, o]); // eslint-disable-line react-hooks/exhaustive-deps
   const finishes: Finishes = useMemo(() => {
     const f: Finishes = {};
-    Object.entries(parts).forEach(([s, p]) => { f[s] = { ...finishOf(mat(p.material), p), kelvin: s === "LIGHT" ? (p.colorName.startsWith("Quente") ? 2700 : p.colorName.startsWith("Fria") ? 6000 : 4000) : undefined }; });
+    Object.entries(parts).forEach(([s, p]) => { f[s] = { ...finishOf(mat(p.material), p), kelvin: s === "LIGHT" ? (Number(/(\d{4})\s*K/.exec(p.colorName)?.[1]) || 4000) : undefined }; });
     const logo = form.logoUrl || o?.identity.logoUrl || null;
     if (f.DOOR) f.DOOR = { ...f.DOOR, artUrl: form.artUrl || null };
     if (f.LOGO) f.LOGO = { ...f.LOGO, logoUrl: logo, labelText: form.labelText || null };

@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public final class InputSanitizer {
     private static final List<String> BLOCKED = List.of("nazista", "nazi", "hitler", "estupro", "pedofil", "kkk",
-            "macaco imundo", "viado imundo", "fag", "nigger", "retardado", "vagabunda", "puta que", Msg.k("inputSanitizer.vai_se_foder"));
+            "macaco imundo", "viado imundo", "fag", "nigger", "retardado", "vagabunda", "puta que", "vai se foder");
 
     private InputSanitizer() {
     }
