@@ -36,9 +36,10 @@ const THEME_BOOT = `(function(){try{var p=JSON.parse(localStorage.getItem("fai.t
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await requestLocale();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;   // CSP com nonce (middleware.ts)
   return (
     <html lang={locale === PSEUDO_LOCALE ? "pt-BR" : locale} suppressHydrationWarning className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
-      <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
+      <head><script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
       <body>
         <Providers initialLocale={locale}>{children}</Providers>
       </body>

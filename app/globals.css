@@ -1219,3 +1219,8 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .core-quiz-option[aria-pressed="true"] { border-color: var(--mark); box-shadow: inset 0 0 0 1px var(--mark); }
 .core-quiz-progress { height: 4px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
 .core-quiz-progress > i { display: block; height: 100%; background: var(--ink); }
+
+/* Gate de desenvolvedor (antes do lançamento público) */
+.gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--ground); }
+.gate-card { width: min(100%, 380px); display: grid; gap: 12px; padding: 24px; border: 1px solid var(--line-soft); border-radius: 16px; background: var(--surface); color: var(--ink); }
+.gate-error { color: var(--mark-ink, var(--mark)); }

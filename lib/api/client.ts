@@ -44,6 +44,13 @@ const unauthorizedListeners = new Set<Listener>();
 /** Chamado quando a sessão não pode ser renovada (logout global). */
 export function onUnauthorized(l: Listener) { unauthorizedListeners.add(l); return () => unauthorizedListeners.delete(l); }
 
+/** Gate de desenvolvedor: a cópia legível do token do /gate vai ao backend no cabeçalho X-Dev-Gate. */
+function gateHeader(): Record<string, string> {
+  if (typeof document === "undefined") return {};
+  const m = document.cookie.match(/(?:^|;\s*)fai_gate_h=([^;]+)/);
+  return m ? { "X-Dev-Gate": decodeURIComponent(m[1]) } : {};
+}
+
 let refreshing: Promise<boolean> | null = null;
 async function tryRefresh(): Promise<boolean> {
   if (refreshing) return refreshing;
@@ -52,7 +59,7 @@ async function tryRefresh(): Promise<boolean> {
     if (!refresh) return false;
     try {
       const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken: refresh }),
+        method: "POST", headers: { "Content-Type": "application/json", ...gateHeader() }, body: JSON.stringify({ refreshToken: refresh }),
       });
       if (!res.ok) return false;
       const s = await res.json();
@@ -80,7 +87,7 @@ async function parseError(res: Response): Promise<ApiError> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}, retry = true): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...(opts.headers ?? {}) };
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...gateHeader(), ...(opts.headers ?? {}) };
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   const token = opts.anonymous ? null : tokenStore.access;
@@ -97,6 +104,10 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
     if (ok) return request<T>(method, path, body, opts, false);
     tokenStore.clear();
     unauthorizedListeners.forEach((l) => l());
+  }
+  // gate expirado ou ausente no backend: volta para o /gate e retorna à página atual depois
+  if (res.status === 403 && res.headers.get("X-Dev-Gate-Required") === "1" && typeof window !== "undefined") {
+    window.location.assign(`/gate?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
   }
   if (!res.ok) throw await parseError(res);
   if (res.status === 204) return undefined as T;

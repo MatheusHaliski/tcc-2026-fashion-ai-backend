@@ -59,7 +59,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: ${MANAGEMENT_EXPOSURE:health,info,metrics,prometheus}   # métricas e prometheus exigem papel ADMIN
   endpoint:
     health:
       show-details: when_authorized
@@ -74,10 +74,12 @@ management:
 
 springdoc:
   swagger-ui:
+    enabled: ${API_DOCS_ENABLED:true}   # produção: API_DOCS_ENABLED=false
     path: /swagger-ui.html
     operations-sorter: alpha
     tags-sorter: alpha
   api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
     path: /v3/api-docs
 
 logging:
@@ -99,11 +101,20 @@ fashionai:
     display-name: ${FAI_ADMIN_DISPLAY_NAME:Administração Fashion AI}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  # Gate de desenvolvedor (antes do lançamento): cabeçalho X-Dev-Gate assinado pelo /gate do frontend com o mesmo segredo
+  dev-gate:
+    enabled: ${DEV_GATE_ENABLED:false}
+    secret: ${DEV_GATE_SECRET:}
+    user: ${DEV_GATE_USER:matheushaliskitcc20233}
   jwt:
     issuer: ${JWT_ISSUER:fashionai}
     access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
     private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
     public-key-pem: ${JWT_PUBLIC_KEY_PEM:}
+    require-keys: ${JWT_REQUIRE_KEYS:false}        # produção: true (sem as chaves a aplicação não sobe)
+  security:
+    auth-rate-limit:
+      enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
   assets:
     public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
   storage:
