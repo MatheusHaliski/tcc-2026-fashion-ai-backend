@@ -114,6 +114,7 @@ public class AccountService {
     private final CelebrityProfileRepository celebrities;
     private final IdentityService identity;
     private final MediaStoragePort storage;
+    private final Avatar3dService avatars3d;
     private final EmailSenderPort email;
     private final NotificationService notifications;
     private final Audit audit;
@@ -125,7 +126,8 @@ public class AccountService {
                           PhotoRepository photos, NotificationRepository notificationRepository, DnaSchemeRepository dnaSchemes,
                           StyleDnaRepository styleDna, AiInferenceLogRepository inferences, BrandProfileRepository brands,
                           CelebrityProfileRepository celebrities, IdentityService identity, MediaStoragePort storage,
-                          EmailSenderPort email, NotificationService notifications, Audit audit) {
+                          EmailSenderPort email, NotificationService notifications, Audit audit, Avatar3dService avatars3d) {
+        this.avatars3d = avatars3d;
         this.users = users;
         this.preferences = preferences;
         this.consents = consents;
@@ -494,6 +496,7 @@ public class AccountService {
                 }
                 p.setDeletedAt(Instant.now());
             });
+            avatars3d.deleteAllFor(u.getId());                     // RF40: rosto 3D e textura (dado biométrico) saem junto
             u.setUsername("deleted_" + tag);
             u.setDisplayName(Msg.t("account.conta_excluida"));
             u.setEmail("deleted+" + tag + "@fashionai.invalid");
