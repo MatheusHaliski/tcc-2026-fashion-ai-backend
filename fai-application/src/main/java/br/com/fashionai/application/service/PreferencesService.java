@@ -83,6 +83,9 @@ public class PreferencesService {
         out.put("fontScale", p.getFontScale());
         out.put("highContrast", p.isHighContrast());
         out.put("reduceMotion", p.isReduceMotion());
+        out.put("soundEnabled", p.isSoundEnabled());
+        out.put("hapticsEnabled", p.isHapticsEnabled());
+        out.put("coreAesthetic", p.getCoreAesthetic());
         out.put("chromeBackgroundId", p.getChromeBackgroundId());
         out.put("contentContainerColor", p.getContentContainerColor());
         out.put("sizeSystem", p.getSizeSystem());
@@ -117,8 +120,11 @@ public class PreferencesService {
                          Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
                          String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
-                         String contentContainerColor) {
+                         String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic) {
     }
+
+    /** DET-C06 — microestéticas "-core" do quiz "Qual é o seu core?" (vocabulário do arquétipo do DNA). */
+    public static final List<String> CORES = List.of("OLD_MONEY", "QUIET_LUXURY", "GORPCORE", "COQUETTE", "Y2K", "STREETWEAR", "DARK_ACADEMIA", "COTTAGECORE");
 
     @Transactional
     public Map<String, Object> update(CurrentUser user, Update u) {
@@ -147,6 +153,19 @@ public class PreferencesService {
         }
         if (u.reduceMotion() != null) {
             p.setReduceMotion(u.reduceMotion());
+        }
+        if (u.soundEnabled() != null) {
+            p.setSoundEnabled(u.soundEnabled());
+        }
+        if (u.hapticsEnabled() != null) {
+            p.setHapticsEnabled(u.hapticsEnabled());
+        }
+        if (u.coreAesthetic() != null) {
+            String core = u.coreAesthetic().trim().toUpperCase(java.util.Locale.ROOT);
+            if (!core.isEmpty() && !CORES.contains(core)) {
+                throw ApiException.badRequest("CORE_INVALIDO", Msg.t("preferences.core_desconhecido"));
+            }
+            p.setCoreAesthetic(core.isEmpty() ? null : core);
         }
         if (u.chromeBackgroundId() != null) {
             String id = u.chromeBackgroundId().isBlank() ? null : u.chromeBackgroundId();

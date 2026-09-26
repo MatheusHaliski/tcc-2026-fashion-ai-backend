@@ -35,7 +35,12 @@ public class JwtConfig {
 
     @Bean
     RSAKey fashionJwtKey(@Value("${fashionai.jwt.private-key-pem:}") String privatePem,
-                         @Value("${fashionai.jwt.public-key-pem:}") String publicPem) throws Exception {
+                         @Value("${fashionai.jwt.public-key-pem:}") String publicPem,
+                         @Value("${fashionai.jwt.require-keys:false}") boolean requireKeys) throws Exception {
+        if (requireKeys && !(isPem(privatePem) && isPem(publicPem))) {
+            // produção (JWT_REQUIRE_KEYS=true): um par efêmero derrubaria todas as sessões a cada reinício ou réplica
+            throw new IllegalStateException("JWT_PRIVATE_KEY_PEM e JWT_PUBLIC_KEY_PEM são obrigatórias com JWT_REQUIRE_KEYS=true");
+        }
         RSAPublicKey publicKey;
         RSAPrivateKey privateKey;
         if (isPem(privatePem) && isPem(publicPem)) {

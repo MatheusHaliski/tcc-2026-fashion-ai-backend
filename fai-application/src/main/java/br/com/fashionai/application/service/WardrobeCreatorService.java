@@ -73,7 +73,12 @@ public class WardrobeCreatorService {
             new Block("SHOE_RACK", "SAP-MOD90", 90, "Sapateira", 240, "CLOSET", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
             new Block("BAG_DISPLAY", "VIT-BOL", 60, Msg.k("common.vitrine_de_bolsas"), 300, "CLOSET", List.of("VIDRO", "ESPELHO", "MADEIRA", "OURO")),
             new Block("JEWELRY", "JOI-POR", 30, "Porta-joias", 260, "CLOSET", List.of("VELUDO", "COURO", "MADEIRA", "OURO", "PRATA", "VIDRO")),
-            new Block("ISLAND", "ILH-BAN", 120, Msg.k("wardrobeCreator.ilha_central"), 600, "ATELIER", List.of("MARMORE", "GRANITO", "MADEIRA", "LACA", "VIDRO", "CONCRETO")));
+            new Block("ISLAND", "ILH-BAN", 120, Msg.k("wardrobeCreator.ilha_central"), 600, "ATELIER", List.of("MARMORE", "GRANITO", "MADEIRA", "LACA", "VIDRO", "CONCRETO")),
+            // Smart Mirror (RF28) como item modular: o formato vem do molde; o material e a cor são da moldura
+            new Block("MIRROR", "ESP-RET", 0, Msg.k("wardrobeCreator.espelho_retangular"), 90, "ESTREIA", List.of("FOSCO", "LACA", "MADEIRA", "METAL", "RATTAN")),
+            new Block("MIRROR", "ESP-ARC", 0, Msg.k("wardrobeCreator.espelho_arco"), 160, "STUDIO", List.of("MADEIRA", "METAL", "LACA", "OURO", "PRATA", "BRONZE")),
+            new Block("MIRROR", "ESP-OVL", 0, Msg.k("wardrobeCreator.espelho_oval"), 140, "STUDIO", List.of("MADEIRA", "METAL", "VELUDO", "RATTAN", "OURO", "PRATA")),
+            new Block("MIRROR", "ESP-CAM", 0, Msg.k("wardrobeCreator.espelho_camarim"), 280, "LOFT", List.of("LACA", "METAL", "ACRILICO", "OURO")));
     public static final List<String> LEVELS = List.of("ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON");
 
     static {

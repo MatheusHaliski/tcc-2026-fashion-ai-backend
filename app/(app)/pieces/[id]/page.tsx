@@ -17,13 +17,14 @@ import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { BrandLogo } from "@/components/brand-logo";
 import { PhotoEditor } from "@/components/photo-editor";
 import { Model3dPanel } from "@/components/model3d-panel";
+import { BeforeAfter } from "@/components/before-after";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import dynamic from "next/dynamic";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 /** Visualizações da peça: foto de estúdio (RF4), recorte padronizado (2D) e modelo 3D (RF16.CA02 — a 2D continua disponível). */
-type HeroView = "studio" | "detail" | "mannequin" | "cut" | "3d";
-const HERO_LABEL: Record<HeroView, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get mannequin() { return tr("tryOn.no_manequim"); }, get cut() { return tr("pieces.id.recorte_2d"); }, get "3d"() { return tr("model3dPanel.modelo_3d"); } };
+type HeroView = "studio" | "detail" | "mannequin" | "cut" | "compare" | "3d";
+const HERO_LABEL: Record<HeroView, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get mannequin() { return tr("tryOn.no_manequim"); }, get cut() { return tr("pieces.id.recorte_2d"); }, get compare() { return tr("beforeAfter.aba"); }, get "3d"() { return tr("model3dPanel.modelo_3d"); } };
 
 interface Detail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; [k: string]: unknown; }
 
@@ -63,7 +64,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
   const back = origin && <p className="mb-3"><Link href={`/schemes/${origin.id}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={24} decorative />{t("pieces.id.voltar_ao_look", { value: origin.title ? ` «${origin.title}»` : "" })}</Link></p>;
   if (!loading && data && !p && data.snapshot) return <>{back}<PieceSnapshot snapshot={data.snapshot} /></>;
   if (loading || !p) return <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="aspect-square" /><Skeleton className="h-80" /></div>;
-  const views = ([p.studioImageUrl ? "studio" : null, p.studioImageUrl && p.studioDetailUrl ? "detail" : null, p.mannequinImageUrl ? "mannequin" : null, "cut", p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
+  const views = ([p.studioImageUrl ? "studio" : null, p.studioImageUrl && p.studioDetailUrl ? "detail" : null, p.mannequinImageUrl ? "mannequin" : null, "cut", mine && p.originalImageUrl && p.imageUrl && p.originalImageUrl !== p.imageUrl ? "compare" : null, p.model3dUrl ? "3d" : null] as (HeroView | null)[]).filter((v): v is HeroView => !!v);
   const edge = backdropEdge(backdrops, p.studioBackdrop);
   const framing = ((p.flatLayMetadata as { studio?: { framing?: StudioInfo["framing"] } } | undefined)?.studio?.framing) ?? null;
   const gallery = [p.studioImageUrl ? { src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), anchor: sangria(framing) } : null, p.studioDetailUrl ? { src: mediaUrl(p.studioDetailUrl)!, alt: t("pieces.id.detalhe_do_logo_2", { name: p.name }), anchor: [] as string[], cover: true } : null].filter((g): g is { src: string; alt: string; anchor: string[]; cover?: boolean } => !!g);
@@ -75,6 +76,8 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <Card pad={false} className="overflow-hidden">
           {views.length > 1 && <div className="flex gap-1 border-b border-line-soft p-2" role="tablist" aria-label={t("pieces.id.visualizacao_da_peca")}>{views.map((v) => <button key={v} role="tab" type="button" aria-selected={hero === v} className={`chip ${hero === v ? "is-active" : ""}`} onClick={() => setView(v)}>{HERO_LABEL[v]}</button>)}</div>}
+          {/* DET-D09 — antes e depois: foto original × flat lay tratado pelo RF4 */}
+          {hero === "compare" && p.originalImageUrl && p.imageUrl ? <BeforeAfter before={mediaUrl(p.originalImageUrl)!} after={mediaUrl(p.imageUrl)!} name={p.name} /> : <>
           {/* foto de estúdio no formato dela (5:4, 4:5, 9:16…): nada de faixas; recorte e 3D ficam no quadrado */}
           <div className={`relative ${(hero === "studio" || hero === "detail") && p.studioImageUrl ? "" : "aspect-square"} bg-surface-2`} style={hero === "studio" || hero === "detail" ? { background: edge } : undefined}>
             {hero === "3d" && p.model3dUrl ? <PieceModelViewer url={mediaUrl(p.model3dUrl) ?? p.model3dUrl} name={p.name} />
@@ -90,7 +93,7 @@ export default function PiecePage({ params }: { params: Promise<{ id: string }> 
             {!p.disponivel && <Badge className="absolute left-3 top-3">{t("common.unavailable")}</Badge>}
             {p.defaultImage && <Badge className="absolute right-3 top-3">{t("pieces.id.imagem_padrao")}</Badge>}
             {studioBusy && <div className="absolute inset-0 grid place-items-center bg-surface/70 type-body" aria-live="polite">{t("common.montando_o_estudio")}</div>}
-          </div>
+          </div></>}
           {mine && (
             <div className="flex flex-wrap gap-2 p-3">
               <Link href={`/mirror?piece=${p.id}`} className="btn btn-sm btn-primary"><FaiIcon id="ACT-32" size={20} decorative />{t("pieces.id.showInMirror")}</Link>

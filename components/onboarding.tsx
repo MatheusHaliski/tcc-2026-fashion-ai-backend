@@ -8,7 +8,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { UiIcon } from "@/components/ui";
 
 /**
- * Primeiros passos: mostra ao usuário novo o caminho que ativa o app (3 peças → 1 look → seguir 3 pessoas).
+ * Primeiros passos: mostra ao usuário novo o caminho que ativa o app (conta criada → 3 peças → 1 look → seguir 3 pessoas).
+ * O primeiro passo já nasce cumprido (DET-D06): a barra começa andada, o que aumenta a chance de concluir os demais.
  * Some sozinho quando os três passos estão feitos, ou quando a pessoa dispensa (lembrado neste navegador).
  */
 type Profile = { counters: { pieces?: number; schemes?: number; following: number } };
@@ -27,7 +28,9 @@ export function OnboardingChecklist() {
     return () => ctrl.abort();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!user || dismissed || !c) return null;
+  // DET-D06 — progresso concedido: o passo cumprido no cadastro já começa marcado (efeito de progresso dotado)
   const steps = [
+    { done: true, title: t("onboarding.account"), hint: t("onboarding.accountHint"), href: "/settings", cta: t("nav.settings"), icon: "NAV-08" },
     { done: (c.pieces ?? 0) >= GOALS.pieces, title: t("onboarding.pieces", { n: GOALS.pieces }), hint: t("onboarding.piecesHint", { count: c.pieces ?? 0, n: GOALS.pieces }), href: "/pieces/new", cta: t("nav.createPiece"), icon: "ACT-06" },
     { done: (c.schemes ?? 0) >= GOALS.looks, title: t("onboarding.look"), hint: t("onboarding.lookHint"), href: "/schemes/new", cta: t("nav.createLook"), icon: "NAV-03" },
     { done: c.following >= GOALS.following, title: t("onboarding.follow", { n: GOALS.following }), hint: t("onboarding.followHint", { count: c.following, n: GOALS.following }), href: "/search?tab=PESSOAS", cta: t("onboarding.findPeople"), icon: "SOC-12" },

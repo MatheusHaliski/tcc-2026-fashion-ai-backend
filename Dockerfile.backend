@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+# Backend Spring Boot (Java 21) do FashionAI para Railway, Render, Fly.io ou qualquer host de contêiner.
+# A Vercel hospeda só o frontend Next.js; a API roda aqui. Variáveis: ver .env.example e docs/deploy/DEPLOY.md.
+#   docker build -f Dockerfile.backend -t fashionai-api .
+#   docker run --env-file .env -p 8080:8080 fashionai-api
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY fai-domain fai-domain
+COPY fai-application fai-application
+COPY fai-infrastructure fai-infrastructure
+COPY fai-web fai-web
+COPY fai-bootstrap fai-bootstrap
+# sem --mount=type=cache: o Railway exige um id próprio no cache mount e recusa o Dockerfile sem ele
+RUN mvn -q -DskipTests package
+
+FROM eclipse-temurin:21-jre
+RUN useradd --system --uid 10001 fai && mkdir -p /app/data/media && chown -R fai /app
+WORKDIR /app
+COPY --from=build /src/fai-bootstrap/target/fai-bootstrap-*.jar app.jar
+# assets de /public (chrome, aura, materiais, ícones, peças padrão) usados pelo backend nos cards e no 3D
+COPY public /app/public
+ENV ASSETS_PUBLIC_DIR=/app/public \
+    STORAGE_LOCAL_DIR=/app/data/media \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError" \
+    API_DOCS_ENABLED=false \
+    MANAGEMENT_EXPOSURE=health,info \
+    JWT_REQUIRE_KEYS=true
+USER fai
+EXPOSE 8080
+# health check do host: GET /actuator/health (liberado pelo gate e pela segurança)
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

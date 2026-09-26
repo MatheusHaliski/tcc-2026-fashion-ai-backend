@@ -54,6 +54,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -170,6 +171,34 @@ public class DnaService {
                 "snapshot", Json.map(v.getSnapshotJson()))).toList());
         out.put("lifeForm", lifeFormSpec());
         return out;
+    }
+
+    /** DET-K06 / ETI-03 — tamanho mínimo do grupo para mostrar um número de prova social. */
+    public static final int SOCIAL_PROOF_MIN = 10;
+
+    /**
+     * DET-K06 — prova social pelo DNA: "12 pessoas com o seu arquétipo usaram jaqueta jeans esta semana". Conta pessoas
+     * distintas com o mesmo arquétipo que usaram cada subcategoria num Look do Dia nos últimos 7 dias. Só grupos com
+     * {@value #SOCIAL_PROOF_MIN} pessoas ou mais aparecem, e a resposta nunca identifica ninguém (só contagens).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> socialProof(CurrentUser user) {
+        StyleDna d = dnas.findByUserId(user.id()).orElse(null);
+        if (d == null || d.getArchetype() == null) {
+            return Map.of("items", List.of(), "minGroup", SOCIAL_PROOF_MIN);
+        }
+        String archetype = ARCHETYPE_LABEL.get(d.getArchetype());
+        List<Map<String, Object>> items = dnas.archetypeUsageSince(d.getArchetype(), LocalDate.now().minusDays(7)).stream()
+                .filter(r -> r[0] != null && ((Number) r[1]).longValue() >= SOCIAL_PROOF_MIN).limit(3)
+                .map(r -> {
+                    long n = ((Number) r[1]).longValue();
+                    String sub = String.valueOf(r[0]);
+                    String key = "taxonomy." + sub.toLowerCase(Locale.ROOT);
+                    String label = Msg.has(key) ? Msg.t(key).toLowerCase(Msg.locale()) : sub.replace('_', ' ');
+                    return Map.<String, Object>of("subcategory", sub, "people", n, "text", Msg.t("dna.prova_social", n, Msg.resolve(Msg.locale(), archetype), label));
+                }).toList();
+        return Map.of("archetype", d.getArchetype().name(), "items", items, "minGroup", SOCIAL_PROOF_MIN,
+                "note", Msg.t("dna.prova_social_nota", SOCIAL_PROOF_MIN));
     }
 
     /** DNA sintetizado do usuário; na primeira vez é gerado na hora (só Camada 1), sem pré-requisitos. */

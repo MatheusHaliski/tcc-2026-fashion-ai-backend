@@ -43,12 +43,17 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
                                  @Value("${fashionai.storage.s3.bucket:fashionai-media}") String bucket,
                                  @Value("${fashionai.storage.s3.access-key:}") String accessKey,
                                  @Value("${fashionai.storage.s3.secret-key:}") String secretKey,
-                                 @Value("${fashionai.storage.public-base-url:}") String publicBaseUrl) {
+                                 @Value("${fashionai.storage.public-base-url:}") String publicBaseUrl,
+                                 @Value("${fashionai.storage.s3.serve-through-api:false}") boolean serveThroughApi,
+                                 @Value("${fashionai.storage.s3.path-style:}") String pathStyle,
+                                 @Value("${fashionai.app.base-url:http://localhost:8080}") String appBaseUrl) {
         StaticCredentialsProvider credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+        // MinIO pede path-style; Railway Buckets (Tigris) e AWS usam virtual-hosted: S3_PATH_STYLE decide, padrão pelo endpoint
+        boolean pathStyleAccess = pathStyle.isBlank() ? !endpoint.isBlank() : Boolean.parseBoolean(pathStyle.trim());
         S3ClientBuilder builder = S3Client.builder().region(Region.of(region)).credentialsProvider(credentials)
-                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(!endpoint.isBlank()).build());
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccess).build());
         S3Presigner.Builder presignBuilder = S3Presigner.builder().region(Region.of(region)).credentialsProvider(credentials)
-                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(!endpoint.isBlank()).build());
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccess).build());
         if (!endpoint.isBlank()) {
             builder.endpointOverride(URI.create(endpoint));
             presignBuilder.endpointOverride(URI.create(endpoint));
@@ -56,8 +61,11 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
         this.s3 = builder.build();
         this.presigner = presignBuilder.build();
         this.bucket = bucket;
-        this.publicBase = (publicBaseUrl.isBlank() ? (endpoint.isBlank() ? "https://" + bucket + ".s3." + region + ".amazonaws.com" : endpoint + "/" + bucket) : publicBaseUrl)
-                .replaceAll("/+$", "") + "/";
+        // bucket privado: a própria API entrega /media/** (MediaProxyController), então a URL pública é a da API
+        String base = serveThroughApi ? appBaseUrl.replaceAll("/+$", "") + "/media"
+                : publicBaseUrl.isBlank() ? (endpoint.isBlank() ? "https://" + bucket + ".s3." + region + ".amazonaws.com" : endpoint + "/" + bucket)
+                : publicBaseUrl;
+        this.publicBase = base.replaceAll("/+$", "") + "/";
         log.info("Mídia em S3: bucket {} (público em {})", bucket, publicBase);
     }
 

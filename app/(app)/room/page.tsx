@@ -6,13 +6,15 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
 import { ActionMenu } from "@/components/ui";
 import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
+import { feel, fabricOf } from "@/lib/sensory";
+import { newCanvas, saveCanvas } from "@/lib/export/canvas";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">{tr("room.montando_o_quarto_em_3d")}</div> });
@@ -23,8 +25,8 @@ function webglOk(): boolean {
 }
 
 interface RoomPiece { id: string; name: string; category: string; subcategory: string; color: string; colorHex?: string; imageUrl?: string; thumbnailUrl?: string; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; costPerUse?: number | null; }
-interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
-interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string }; monogram?: string; }
+interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number; material?: string }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
+interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string; sound?: boolean; haptics?: boolean; reduceMotion?: boolean }; monogram?: string; }
 interface MirrorPieceView { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; moduleId?: string | null; addressLabel?: string | null; }
 interface MirrorState { slots: Record<string, MirrorPieceView | MirrorPieceView[] | null>; complete: boolean; postIt?: string | null; sequence?: { pieceId: string; name: string; moduleId: string; legend: string }[]; message?: string | null; }
 interface PieceTag { id: string; name: string; composition?: string | null; care?: string | null; origin?: string | null; garimpo: boolean; wearCount: number; thirtyWears: boolean; costPerUse?: number | null; location?: { address: string; label: string } | null; diary: { date: string; occasion: string }[]; }
@@ -35,6 +37,13 @@ const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).f
 interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
 
 const ZONE_ICON: Record<string, string> = { DOOR: "🚪", DRAWER: "🗄️", TOP: "🧢", BASE: "👜", SHOE: "👟", BAGS: "👜", JEWELRY: "💍", CHAIR: "🪑", SEASON: "📦" };
+
+/** DET-G04 — modo foto: 4 enquadramentos, profundidade de campo e 3 filtros; a exportação sai só com a cena (sem a interface). */
+type Framing = "overview" | "closet" | "mirror" | "shoes";
+type PhotoFilter = "none" | "editorial" | "filme" | "pb";
+const FRAMINGS: Framing[] = ["overview", "closet", "mirror", "shoes"];
+const PHOTO_FILTERS: PhotoFilter[] = ["none", "editorial", "filme", "pb"];
+const FILTER_CSS: Record<PhotoFilter, string> = { none: "none", editorial: "contrast(1.1) saturate(0.88) brightness(1.02)", filme: "sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05)", pb: "grayscale(1) contrast(1.15)" };
 
 function RoomInner() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
@@ -49,6 +58,7 @@ function RoomInner() {
   const [vista, setVista] = useState<{ open: boolean; prompt: string; busy: boolean; result: MirrorState | null }>({ open: false, prompt: "", busy: false, result: null });
   const [copilot, setCopilot] = useState<{ open: boolean; q: string; busy: boolean; text: string | null; point: string | null }>({ open: false, q: "", busy: false, text: null, point: null });
   const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
+  const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
   const [unboxing, setUnboxing] = useState(false); const [addTo, setAddTo] = useState<string | null>(null); const [addPiece, setAddPiece] = useState("");
   // Luzes do closet: um marco novo do Inventory Score acende uma luz e faz a animação de conquista no espelho
   useEffect(() => {
@@ -88,6 +98,35 @@ function RoomInner() {
       if (r.roomHighlight) { setHighlight(r.roomHighlight.pieceId); setFocusModule(mod); if (mod && (mod.startsWith("door:") || mod.startsWith("drawer:"))) setOpenSet(new Set([mod])); }
     } catch (e) { toast.fromError(e); setCopilot((c) => ({ ...c, busy: false })); }
   }
+  /** DET-D04 — som do tecido dominante no módulo + vibração leve, conforme as preferências. */
+  function touch(moduleId: string) {
+    if (!data) return; const m = data.modules.find((x) => x.id === moduleId);
+    const subs = m ? (m.hangers ?? m.slots ?? []).map((h) => (h.pieceId ? data.pieces[h.pieceId]?.subcategory : null)).filter((x): x is string => !!x) : [];
+    feel({ sound: data.ambient?.sound, haptics: data.ambient?.haptics !== false, reduceMotion: data.ambient?.reduceMotion, fabric: fabricOf(subs, m?.finish?.material) });
+  }
+  function frame(f: Framing) {
+    setPhoto((p) => (p ? { ...p, framing: f } : p)); setHighlight(null);
+    if (f === "overview") { setFocusModule(null); setOpenSet(new Set()); }
+    if (f === "closet") { setFocusModule(null); setOpenSet(new Set(data!.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))); }
+    if (f === "mirror") { setOpenSet(new Set()); setFocusModule("mirror"); }
+    if (f === "shoes") { setOpenSet(new Set()); setFocusModule("base"); }
+  }
+  async function shoot() {
+    if (!canvas || !photo) return; setShooting(true);
+    try {
+      const w = canvas.width, h = canvas.height; const [out, ctx] = newCanvas(w, h); const f = FILTER_CSS[photo.filter];
+      if (photo.dof) {
+        // profundidade de campo: fundo desfocado + centro nítido com borda suave (máscara radial)
+        ctx.filter = `${f === "none" ? "" : f} blur(${Math.max(3, Math.round(w / 160))}px)`.trim(); ctx.drawImage(canvas, 0, 0);
+        const [sharp, sctx] = newCanvas(w, h); sctx.filter = f; sctx.drawImage(canvas, 0, 0); sctx.filter = "none";
+        sctx.globalCompositeOperation = "destination-in";
+        const g = sctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.18, w / 2, h / 2, Math.max(w, h) * 0.46); g.addColorStop(0, "#000"); g.addColorStop(1, "rgba(0,0,0,0)");
+        sctx.fillStyle = g; sctx.fillRect(0, 0, w, h); ctx.filter = "none"; ctx.drawImage(sharp, 0, 0);
+      } else { ctx.filter = f; ctx.drawImage(canvas, 0, 0); }
+      await saveCanvas(out, `meu-quarto-${photo.framing}-${photo.filter}.jpg`, "image/jpeg", 0.94);
+      toast.success(t("room.photo.salva"));
+    } catch (e) { toast.fromError(e); } finally { setShooting(false); }
+  }
   async function openTag(pid: string) {
     if (!data?.owner) { modal?.openPiece(pid); return; }
     try { setTag(await api.get<PieceTag>(`/api/pieces/${pid}/tag`)); } catch { modal?.openPiece(pid); }
@@ -124,6 +163,15 @@ function RoomInner() {
       <Tabs tabs={[...(gl ? [{ id: "3d" as const, label: t("room.quarto_3d") }] : []), { id: "room" as const, label: gl ? "2.5D" : t("room.quarto_2_5d") }, { id: "list" as const, label: t("room.lista") }]} value={tab} onChange={setTab} />
       {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("room.este_aparelho_nao_tem_webgl")}</p>}
       {tab === "3d" && (<>
+          {photo ? (
+            <div className="photo-mode mb-2" role="region" aria-label={t("room.photo.modo_foto")}>
+              <div className="photo-mode-row"><span className="label mr-1">{t("room.photo.enquadramento")}</span>{FRAMINGS.map((f) => <Chip key={f} active={photo.framing === f} onClick={() => frame(f)}>{t(`room.photo.framing.${f}`)}</Chip>)}</div>
+              <div className="photo-mode-row"><span className="label mr-1">{t("room.photo.filtro")}</span>{PHOTO_FILTERS.map((f) => <Chip key={f} active={photo.filter === f} onClick={() => setPhoto({ ...photo, filter: f })}>{t(`room.photo.filter.${f}`)}</Chip>)}</div>
+              <div className="photo-mode-row justify-between"><Switch checked={photo.dof} onChange={(v) => setPhoto({ ...photo, dof: v })} label={t("room.photo.profundidade")} />
+                <span className="flex gap-2"><Button onClick={() => { setPhoto(null); frame("overview"); }}>{t("room.photo.sair")}</Button><Button variant="primary" onClick={shoot} loading={shooting}>{t("room.photo.tirar")}</Button></span></div>
+              <p className="type-caption text-muted">{t("room.photo.dica")}</p>
+            </div>
+          ) : (
           <div className="room3d-toolbar" role="toolbar" aria-label={t("room.toolbarLabel")}>
             <Button variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}><FaiIcon id="ACT-32" size={20} decorative />{t("room.vista_me_2")}</Button>
             <Button onClick={() => setCopilot((c) => ({ ...c, open: true }))}><FaiIcon id="ACT-13" size={20} decorative />{t("room.busto_copilot")}</Button>
@@ -133,17 +181,19 @@ function RoomInner() {
             <ActionMenu label={t("room.moreViews")} items={[
               { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },
               { label: t("room.abrir_portas"), onSelect: () => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))) },
-              { label: t("room.foto_do_quarto"), onSelect: () => { if (!canvas) return; const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "meu-quarto.png"; a.click(); } },
+              { label: t("room.photo.modo_foto"), onSelect: () => { setPhoto({ framing: "overview", filter: "none", dof: false }); frame("overview"); } },
             ]} />
-          </div>
+          </div>)}
         <div className="room3d">
-          <div className="room3d-stage">
+          <div className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
             <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
-              onToggle={(id) => { setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
+              onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
-              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate } satisfies MirrorOverlay}
+              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate,
+                onUse: acceptLook, onAnother: () => runVistaMe("/api/me/mirror/another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
               onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
+            {photo?.dof && <div className="room3d-dof" aria-hidden />}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>
           <nav className="room3d-positions" aria-label={t("room.posicoes_do_quarto")}>

@@ -17,7 +17,7 @@ import { useI18n } from "@/lib/i18n/i18n";
  * elementos dos desafios ativos. Unidades em metros. */
 
 export interface RoomPiece3D { id: string; name: string; category: string; subcategory: string; colorHex?: string | null; imageUrl?: string | null; thumbnailUrl?: string | null; model3dUrl?: string | null; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; salePrice?: number | null; origin?: string | null; }
-export interface RoomModule3D { id: string; slotType: string; label: string; capacity?: number; category?: string | null; empty?: boolean; finish?: { color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
+export interface RoomModule3D { id: string; slotType: string; label: string; mold?: string | null; capacity?: number; category?: string | null; empty?: boolean; finish?: { color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
 export interface RoomDecoration { type: string; name?: string; days?: number; polaroids?: { schemeId: string; coverImageUrl?: string | null }[]; tapedPieceIds?: string[]; taggedPieceIds?: string[]; theme?: string; }
 export interface RoomData3D {
   modules: RoomModule3D[]; pieces: Record<string, RoomPiece3D>; basket?: RoomPiece3D[]; chair?: RoomPiece3D[]; saleRack?: { name: string; pieces: RoomPiece3D[] } | null;
@@ -27,7 +27,9 @@ export interface RoomData3D {
   unboxing?: { inventoryId: string; sku: string; name: string; slotType: string }[]; keys?: { id: string; username: string }[]; light?: { kelvin?: number; guided?: boolean } | null;
 }
 /** Estado do espelho e do Vista-me vindo da página (RF28). */
-export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean; }
+export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
+  /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
+  onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
   data: RoomData3D; open: Set<string>; onToggle: (moduleId: string) => void; highlight: string | null; focusModule: string | null;
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
@@ -237,11 +239,34 @@ function LookBox({ b, x, season, count }: { b?: { id: string; title: string; cov
   );
 }
 
+/** Contorno do espelho pelo molde da loja (RF28 como item modular): retangular, arco, oval ou camarim. */
+function mirrorShape(mold: string | null | undefined, w: number, h: number): THREE.Shape {
+  const s = new THREE.Shape(); const hw = w / 2, hh = h / 2;
+  if (mold === "ESP-OVL") { s.absellipse(0, 0, hw, hh, 0, Math.PI * 2, false, 0); return s; }
+  if (mold === "ESP-ARC") { s.moveTo(-hw, -hh); s.lineTo(hw, -hh); s.lineTo(hw, hh - hw); s.absarc(0, hh - hw, hw, 0, Math.PI, false); s.lineTo(-hw, -hh); return s; }
+  const r = 0.02;
+  s.moveTo(-hw + r, -hh); s.lineTo(hw - r, -hh); s.quadraticCurveTo(hw, -hh, hw, -hh + r); s.lineTo(hw, hh - r); s.quadraticCurveTo(hw, hh, hw - r, hh);
+  s.lineTo(-hw + r, hh); s.quadraticCurveTo(-hw, hh, -hw, hh - r); s.lineTo(-hw, -hh + r); s.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+  return s;
+}
+
+/** Botão 3D no vidro do espelho (RF28): pílula com rótulo, alvo de clique maior que o desenho. */
+function GlassButton({ text, position, w, onClick, primary }: { text: string; position: [number, number, number]; w: number; onClick: () => void; primary?: boolean }) {
+  return (
+    <group position={position} onClick={(e) => { e.stopPropagation(); onClick(); }} {...pointer}>
+      <RoundedBox args={[w, 0.075, 0.014]} radius={0.03} smoothness={4}><meshStandardMaterial color={primary ? "#C6275E" : "#f6f1e7"} emissive={primary ? "#C6275E" : "#000000"} emissiveIntensity={primary ? 0.3 : 0} roughness={0.5} /></RoundedBox>
+      <Label3D text={text} w={w - 0.03} h={0.05} px={384} fg={primary ? "#ffffff" : "#2b2622"} font="600 30px Inter, Arial, sans-serif" position={[0, 0, 0.009]} />
+    </group>
+  );
+}
+
 /**
  * Smart Mirror (RF28): Look do Dia, peças penduradas com post-it do que falta, tema da Batalha na Passarela escrito no
- * vidro, fecho do Vista-me com a luz subindo, brilho de conquista das luzes do closet e o botão "+" do Vista-me.
+ * vidro, fecho do Vista-me com a luz subindo, brilho de conquista das luzes do closet e os botões 3D dentro do vidro
+ * (Vista-me, Usar este look, Outra sugestão, Tira uma coisa). O formato e a moldura vêm do módulo "mirror" do quarto,
+ * trocável na loja como qualquer outro componente (retangular, arco, oval, camarim com luzes).
  */
-function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean }) {
+function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: { position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
   const { t } = useI18n();
   const tex = useTex(look?.coverImageUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
@@ -252,24 +277,28 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced }: { positi
     m.visible = t < 1; if (t >= 1) return;
     m.scale.y = Math.max(0.01, t); m.position.y = 0.1 + (1.7 * t) / 2; (m.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - t * 0.6);
   });
+  const mold = module?.mold ?? "ESP-RET"; const f = module?.finish ?? {};
+  const frameGeo = useMemo(() => new THREE.ExtrudeGeometry(mirrorShape(mold, 0.62, 1.8), { depth: 0.04, bevelEnabled: false, curveSegments: 48 }), [mold]);
+  const glassGeo = useMemo(() => new THREE.ShapeGeometry(mirrorShape(mold, 0.54, 1.7), 48), [mold]);
   const hanging = overlay?.pieces ?? [];
+  const vanity = mold === "ESP-CAM";
   return (
     <group position={position} rotation={[0, deg(28), 0]}>
-      <mesh position={[0, 0.95, 0]} castShadow><boxGeometry args={[0.62, 1.8, 0.04]} /><meshStandardMaterial color="#2b2622" metalness={0.4} roughness={0.35} /></mesh>
-      <mesh position={[0, 0.95, 0.021]}><planeGeometry args={[0.54, 1.7]} /><meshStandardMaterial color="#cfd8de" metalness={0.95} roughness={0.08} /></mesh>
-      {tex && hanging.length === 0 && <mesh position={[0, 1.02, 0.024]}><planeGeometry args={[0.44, 0.9]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
-      {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.35 - Math.floor(i / 2) * 0.4, 0.026]} />)}
-      <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.5} h={0.06} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
-      {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.5} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, 1.72, 0.026]} />}
-      {overlay?.postIt && <group position={[0.2, 0.62, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
+      <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
+      <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
+      {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
+      {tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
+      {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
+      <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.46} h={0.055} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
+      {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.46} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, mold === "ESP-ARC" ? 1.55 : 1.72, 0.026]} />}
+      {overlay?.postIt && <group position={[0.2, 0.74, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
-      {/* botão "+" do Vista-me ao lado do móvel */}
-      {onVistaMe && <group position={[0.4, 1.3, 0.02]} onClick={(e) => { e.stopPropagation(); onVistaMe(); }} {...pointer}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.08, 0.08, 0.02, 32]} /><meshStandardMaterial color="#C6275E" emissive="#C6275E" emissiveIntensity={0.3} /></mesh>
-        <Label3D text="+" w={0.1} h={0.1} px={128} fg="#fff" font="700 110px Inter, Arial" position={[0, 0.005, 0.012]} />
-        <Label3D text={t("common.vista_me")} w={0.26} h={0.05} px={256} fg="#C6275E" position={[0, -0.12, 0.012]} />
-      </group>}
+      {/* botões 3D do RF28 dentro do vidro */}
+      {onVistaMe && <GlassButton text={`✨ ${t("common.vista_me")}`} w={0.34} position={[0, 0.58, 0.03]} onClick={onVistaMe} primary />}
+      {hanging.length > 0 && overlay?.onUse && <GlassButton text={t("room3d.mirror.usar")} w={0.24} position={[-0.125, 0.48, 0.03]} onClick={overlay.onUse} />}
+      {hanging.length > 0 && overlay?.onAnother && <GlassButton text={t("room3d.mirror.outra")} w={0.2} position={[0.135, 0.48, 0.03]} onClick={overlay.onAnother} />}
+      {hanging.length > 2 && overlay?.onTakeOneOff && <GlassButton text={t("room3d.mirror.tira_uma")} w={0.3} position={[0, 0.39, 0.03]} onClick={overlay.onTakeOneOff} />}
     </group>
   );
 }
@@ -395,7 +424,7 @@ function layoutFor(level?: string) {
     lamp: [xr + (atLeast(level, "CLOSET") ? 2.5 : 1.9), 0, 0.35] as [number, number, number],
     calendar: [xr + 0.35, 1.72, -D / 2 - 0.005] as [number, number, number],
     mirror: [-W / 2 - 1.1, 0, 0.3] as [number, number, number],
-    chair: [-W / 2 - 0.5, 0, 1.1] as [number, number, number],
+    chair: [-W / 2 - 0.75, 0, 1.75] as [number, number, number],
     bust: [-W / 2 - 0.45, 0, 0.0] as [number, number, number],
     switch: [-W / 2 - 0.2, 1.15, -D / 2 - 0.005] as [number, number, number],
     keys: [-W / 2 - 0.2, 1.5, -D / 2 - 0.005] as [number, number, number],
@@ -532,7 +561,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
       {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} />}
 
-      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} />
+      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       {(data.basket ?? []).length > 0 && <Basket position={L.basket} pieces={data.basket ?? []} ctx={ctx} />}
       {data.saleRack && data.saleRack.pieces.length > 0 && <SaleRack position={L.sale} rack={data.saleRack} ctx={ctx} />}

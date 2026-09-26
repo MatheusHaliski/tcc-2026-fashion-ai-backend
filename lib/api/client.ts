@@ -5,7 +5,14 @@
 import { tr } from "@/lib/i18n/core";
 import { acceptLanguage, getCurrentLocale } from "@/lib/i18n/state";
 import PIECE_THUMBS from "@/lib/assets/piece-thumbs.json";
-export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+// NEXT_PUBLIC_API_BASE_URL vazia (definida em branco, não ausente) sem isto virava caminho relativo — a chamada caía
+// na própria origem do frontend (Vercel) em vez do backend, com um 404 silencioso e sem pista do que faltava.
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+export const API_BASE = (RAW_API_BASE && RAW_API_BASE.trim() ? RAW_API_BASE : "http://localhost:8080").replace(/\/+$/, "");
+if (!RAW_API_BASE?.trim() && process.env.NODE_ENV === "production" && typeof window !== "undefined") {
+  // eslint-disable-next-line no-console
+  console.error("NEXT_PUBLIC_API_BASE_URL não está configurada em produção: as chamadas à API vão falhar. Defina-a na Vercel e faça um novo deploy (é uma variável de build).");
+}
 
 export class ApiError extends Error {
   status: number;
@@ -44,6 +51,13 @@ const unauthorizedListeners = new Set<Listener>();
 /** Chamado quando a sessão não pode ser renovada (logout global). */
 export function onUnauthorized(l: Listener) { unauthorizedListeners.add(l); return () => unauthorizedListeners.delete(l); }
 
+/** Gate de desenvolvedor: a cópia legível do token do /gate vai ao backend no cabeçalho X-Dev-Gate. */
+function gateHeader(): Record<string, string> {
+  if (typeof document === "undefined") return {};
+  const m = document.cookie.match(/(?:^|;\s*)fai_gate_h=([^;]+)/);
+  return m ? { "X-Dev-Gate": decodeURIComponent(m[1]) } : {};
+}
+
 let refreshing: Promise<boolean> | null = null;
 async function tryRefresh(): Promise<boolean> {
   if (refreshing) return refreshing;
@@ -52,7 +66,7 @@ async function tryRefresh(): Promise<boolean> {
     if (!refresh) return false;
     try {
       const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken: refresh }),
+        method: "POST", headers: { "Content-Type": "application/json", ...gateHeader() }, body: JSON.stringify({ refreshToken: refresh }),
       });
       if (!res.ok) return false;
       const s = await res.json();
@@ -80,7 +94,7 @@ async function parseError(res: Response): Promise<ApiError> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}, retry = true): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...(opts.headers ?? {}) };
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...gateHeader(), ...(opts.headers ?? {}) };
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   const token = opts.anonymous ? null : tokenStore.access;
@@ -97,6 +111,12 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
     if (ok) return request<T>(method, path, body, opts, false);
     tokenStore.clear();
     unauthorizedListeners.forEach((l) => l());
+  }
+  // gate expirado ou ausente no backend: volta para o gate e retorna à página atual depois
+  if (res.status === 403 && res.headers.get("X-Dev-Gate-Required") === "1" && typeof window !== "undefined") {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    // o backend recusou o token do gate: descarta os cookies do gate e volta para a tela inicial (que é o gate)
+    void fetch("/gate/verify", { method: "DELETE" }).finally(() => window.location.assign(`/?next=${next}`));
   }
   if (!res.ok) throw await parseError(res);
   if (res.status === 204) return undefined as T;
