@@ -59,6 +59,7 @@ import java.util.regex.Pattern;
 public class IdentityService {
     public static final Pattern EMAIL = Pattern.compile("^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
     public static final String TERMS_VERSION = "2026-09";
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IdentityService.class);
     private static final int MAX_LOGIN_FAILURES = 5;
     private static final Duration LOCK_WINDOW = Duration.ofMinutes(15);
 
@@ -688,6 +689,8 @@ public class IdentityService {
         String mail = rawEmail == null ? "" : rawEmail.trim().toLowerCase(Locale.ROOT);
         users.findByEmailHash(Hashing.emailHash(mail)).ifPresent(u -> {
             if (!rateLimit.tryAcquire(u.getId(), "password-reset", 5, Duration.ofHours(1))) {
+                // a tela responde igual (não revela se o e-mail existe), mas o log mostra por que nada foi enviado
+                log.info("Redefinição de senha não enviada: limite de 5 pedidos por hora atingido (user {})", u.getId());
                 return;
             }
             String token = Hashing.randomToken(32);
