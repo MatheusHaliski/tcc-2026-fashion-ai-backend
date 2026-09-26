@@ -185,11 +185,45 @@ const CREATE = [
   { href: "/photos", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
 ];
 
+const SIDEBAR_KEY = "fai.sidebar";
+const DESKTOP = "(min-width: 1024px)";
+
+/** true a partir de 1024 px (menu lateral fixo); abaixo disso o hambúrguer abre a gaveta. */
+function useIsDesktop(): boolean {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(DESKTOP);
+    const sync = () => setDesktop(mq.matches);
+    sync(); mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return desktop;
+}
+
+/** Menu lateral recolhido (desktop): lembrado neste navegador; no <html> o CSS libera o espaço e tira o véu do fundo. */
+function useSidebarCollapsed(): [boolean, (v: boolean) => void] {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "collapsed"); } catch { /* armazenamento indisponível */ }
+  }, []);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (collapsed) root.dataset.sidebar = "collapsed"; else delete root.dataset.sidebar;
+    return () => { delete root.dataset.sidebar; };
+  }, [collapsed]);
+  const set = (v: boolean) => {
+    setCollapsed(v);
+    try { localStorage.setItem(SIDEBAR_KEY, v ? "collapsed" : "open"); } catch { /* armazenamento indisponível */ }
+  };
+  return [collapsed, set];
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n(); const { user, ready } = useAuth(); const { prefs, update } = useTheme();
   const pathname = usePathname(); const router = useRouter(); const isActive = useIsActive();
   const [unread, setUnread] = useState(0); const [drawer, setDrawer] = useState(false); const [create, setCreate] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useSidebarCollapsed(); const desktop = useIsDesktop();
   useFocusTrap(drawerRef, drawer, () => setDrawer(false));
   useEffect(() => {
     if (!user) return;
@@ -216,7 +250,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a href="#conteudo" className="skip-link">{t("a11y.skip")}</a>
       <header className="app-header">
         <div className="app-header-inner">
-          <button type="button" className="btn btn-ghost btn-icon lg:hidden" aria-label={t("a11y.menu")} aria-expanded={drawer} aria-controls="app-drawer" onClick={() => setDrawer(true)}>
+          <button type="button" className="btn btn-ghost btn-icon menu-toggle" aria-label={t("a11y.menu")}
+            aria-expanded={desktop ? !collapsed : drawer} aria-controls={desktop ? "app-sidebar" : "app-drawer"}
+            onClick={() => (desktop ? setCollapsed(!collapsed) : setDrawer(true))}>
             <UiIcon name="menu" size={22} />
           </button>
           <Link href="/feed" className="brand-link" aria-label={t("nav.brandHome")}>
@@ -250,7 +286,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="app-body">
-        <nav aria-label={t("a11y.menu")} className="app-sidebar"><div className="side-nav-box"><NavGroups /></div></nav>
+        <nav id="app-sidebar" aria-label={t("a11y.menu")} className="app-sidebar" inert={collapsed || undefined}><div className="side-nav-box"><NavGroups /></div></nav>
         <main id="conteudo" tabIndex={-1} className="app-main"><div className="page-container">{children}</div></main>
       </div>
 
