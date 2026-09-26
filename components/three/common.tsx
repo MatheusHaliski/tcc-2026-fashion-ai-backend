@@ -3,12 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { mediaUrl } from "@/lib/api/client";
+import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
 
 /* Vitrines 3D (Passarela, My Stage, mini lojas, "Gerar 3D"): utilitários compartilhados. Unidades em metros. */
 
 export interface Look3dPiece { id: string; name: string; slot: string; category?: string; subcategory?: string; imageUrl?: string | null; studioUrl?: string | null; colorHex?: string | null; model3dUrl?: string | null; model3dStatus?: string | null; defaultImage?: boolean; }
 export interface FaceFit { offsetX?: number; offsetY?: number; scale?: number }
-export interface Mannequin3d { sex: "FEMININO" | "MASCULINO"; sexSource?: string; photoUrl?: string | null; head?: "FOTO" | "PADRAO"; skinTone?: string | null; build?: string | null; face?: FaceFit | null; }
+/** Avatar 3D (RF40) confirmado pela pessoa: forma do rosto + textura (rota autenticada) + ajustes finos. */
+export interface Avatar3dRef { version?: number; model: AvatarModel; adjust?: Partial<AvatarAdjust> | null; textureUrl?: string | null; texture?: THREE.Texture | null }
+export interface Mannequin3d { sex: "FEMININO" | "MASCULINO"; sexSource?: string; photoUrl?: string | null; head?: "FOTO" | "PADRAO" | "AVATAR"; skinTone?: string | null; build?: string | null; face?: FaceFit | null; avatar?: Avatar3dRef | null; }
 export interface Look3d { schemeId?: string; pieceId?: string; title: string; owner?: { id: string; username: string; displayName: string; avatarUrl?: string | null }; hypeScore?: number | null; likes?: number; mannequin: Mannequin3d; pieces: Look3dPiece[]; ready3d?: number; missing3d?: number; canRequest?: boolean; }
 
 /** "Reduzir movimento": preferência do app (RF23, data-reduce-motion no <html>) ou do sistema. */

@@ -4,15 +4,18 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { SKIN, VITRINE, useGlb, useTex, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
+import { AvatarBust } from "@/components/three/avatar-bust";
+import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
 
 /*
  * Manequim paramétrico da Passarela 3D, do My Stage 3D, do "Gerar 3D" e da "Foto com meu manequim" (sem malha
  * baixada: tudo sai de primitivas). Sexo do cadastro (RF1) → proporções; build do provador → largura; tom de pele do
  * provador ou marfim de vitrine.
  *
- * Rosto 3D: a cabeça tem traços (nariz, arco das sobrancelhas, órbitas, maçãs, lábios, queixo) e, com foto de perfil,
- * a foto é projetada de frente sobre esses traços (enquadramento ajustável: deslocamento e escala), com o cabelo da
- * foto continuando atrás. Sem foto, é o manequim padrão masculino/feminino.
+ * Cabeça: com o Avatar 3D (RF40) confirmado, o busto sai da própria pessoa (components/three/avatar-bust.tsx: rosto
+ * pelos pontos da foto, crânio, orelhas, pescoço e cabelo medidos, pele da foto no corpo inteiro). Sem avatar, vale o
+ * rosto antigo: foto de perfil projetada de frente sobre uma cabeça com traços genéricos (enquadramento ajustável).
+ * Sem foto, é o manequim padrão masculino/feminino.
  *
  * Roupas: a foto sem fundo de cada peça é projetada de frente sobre um "molde" com o volume do corpo — tronco, braços,
  * quadril, pernas, pés — um pouco maior que o manequim. Onde a foto é transparente, o molde some (o recorte da peça
@@ -253,7 +256,9 @@ export function Mannequin({ mannequin, pieces, sway = true, onClick }: { mannequ
   const sex = mannequin.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
   const f = BUILD[mannequin.build ?? "MEDIUM"] ?? 1;
   const b: Body = useMemo(() => { const base = BODY[sex]; return { ...base, sex, hipR: base.hipR * f, waistR: base.waistR * f, chestR: base.chestR * (0.5 + f / 2) }; }, [sex, f]);
-  const skin = mannequin.skinTone ? SKIN[mannequin.skinTone] ?? VITRINE : VITRINE; const k = b.h;
+  const avatar = mannequin.avatar && validateModel(mannequin.avatar.model) ? mannequin.avatar : null;
+  // com avatar, o corpo inteiro tem a pele medida na foto (o rosto e o pescoço nunca destoam do resto)
+  const skin = avatar ? skinWithLight(avatar.model.skin, clampAdjust(avatar.adjust).skinLight) : mannequin.skinTone ? SKIN[mannequin.skinTone] ?? VITRINE : VITRINE; const k = b.h;
   const torso = useMemo(() => { const g = new THREE.LatheGeometry(torsoProfile(b), 36); g.scale(1, 1, ZS); return g; }, [b]);
   const { arm, leg } = joints(b);
   const g = useRef<THREE.Group>(null);
@@ -262,8 +267,12 @@ export function Mannequin({ mannequin, pieces, sway = true, onClick }: { mannequ
   return (
     <group ref={g} onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}>
       <mesh geometry={torso} castShadow><meshStandardMaterial color={skin} roughness={0.55} /></mesh>
-      <mesh position={[0, (Y.neck + 0.02) * k, 0]} castShadow><cylinderGeometry args={[0.04, 0.05, 0.1, 14]} /><meshStandardMaterial color={skin} roughness={0.55} /></mesh>
-      <group position={[0, Y.head * k, 0]}><Head r={b.headR} skin={skin} photoUrl={mannequin.photoUrl} face={mannequin.face} /></group>
+      {avatar ? <AvatarBust avatar={avatar} stature={(Y.head + b.headR * 1.16) * k} torsoTopY={(Y.neck - 0.01) * k} /> : (
+        <>
+          <mesh position={[0, (Y.neck + 0.02) * k, 0]} castShadow><cylinderGeometry args={[0.04, 0.05, 0.1, 14]} /><meshStandardMaterial color={skin} roughness={0.55} /></mesh>
+          <group position={[0, Y.head * k, 0]}><Head r={b.headR} skin={skin} photoUrl={mannequin.photoUrl} face={mannequin.face} /></group>
+        </>
+      )}
       {[-1, 1].map((s) => (
         <group key={s}>
           <mesh position={[s * b.shoulder, Y.shoulder * k - 0.02, 0]} castShadow><sphereGeometry args={[0.052, 16, 12]} /><meshStandardMaterial color={skin} roughness={0.55} /></mesh>

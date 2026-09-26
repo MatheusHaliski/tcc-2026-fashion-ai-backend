@@ -16,7 +16,7 @@ const PROD = process.env.NODE_ENV === "production";
 function csp(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${PROD ? "" : " 'unsafe-eval'"}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${PROD ? "" : " 'unsafe-eval'"}`,   // wasm: MediaPipe do Avatar 3D (RF40); não libera eval de JS
     "style-src 'self' 'unsafe-inline'",                      // estilos inline do React (style={…}) e das cenas 3D
     `img-src 'self' data: blob: https: ${API}`,               // mídia do backend e logos de marca externos (https)
     "font-src 'self' data:",
