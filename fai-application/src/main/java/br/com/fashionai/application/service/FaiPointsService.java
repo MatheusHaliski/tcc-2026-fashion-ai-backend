@@ -144,6 +144,21 @@ public class FaiPointsService {
         return new Award(true, points, false, Msg.t("faiPoints.fai_pts", points), after, up);
     }
 
+    /**
+     * RF41 — ponte única entre qualquer jogo e os FAI Points: jogar pontua (GAME_PLAYED) e vencer pontua de novo
+     * (GAME_WON). A referência jogo:partida paga 1× por partida; os tetos diários das regras seguram o farm, e o teto
+     * atingido nunca impede de jogar. Devolve os pontos lançados agora (0 se já pontuado ou no teto).
+     */
+    @Transactional
+    public int game(UUID userId, String game, String matchRef, String outcome) {
+        String ref = game + ":" + matchRef;
+        int total = award(userId, "GAME_PLAYED", "GAME", ref, null).points();
+        if ("WIN".equals(outcome)) {
+            total += award(userId, "GAME_WON", "GAME", ref, null).points();
+        }
+        return total;
+    }
+
     public long balance(UUID userId) {
         return ledger.balance(userId);
     }

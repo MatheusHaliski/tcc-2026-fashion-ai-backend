@@ -107,14 +107,17 @@ public class FlairService {
     private final InstitutionalService institutional;
     private final Guard guard;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final FaiPointsService faiPoints;
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
                         FlairMatchRepository matches, FlairMatchEntryRepository entries, UserRepository users,
                         WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                         BrandProfileRepository brands, ReactionRepository reactions, SchemeService schemeService,
-                        InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events) {
+                        InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events,
+                        FaiPointsService faiPoints) {
         this.events = events;
+        this.faiPoints = faiPoints;
         this.profiles = profiles;
         this.coins = coins;
         this.combinations = combinations;
@@ -353,6 +356,7 @@ public class FlairService {
         if (!award(user.id(), (Integer) q.get("coins"), 10, "QUEST_" + code, ref)) {
             throw ApiException.conflict("QUEST_JA_RESGATADA", Msg.t("flair.recompensa_ja_resgatada_neste_periodo"));
         }
+        faiPoints.award(user.id(), "FLAIR_QUEST", "QUEST", "QUEST_" + code + ":" + ref, null);   // RF41
         return me(user);
     }
 
@@ -439,6 +443,7 @@ public class FlairService {
         out.put("outcome", outcome);
         out.put("coins", coinsWon);
         out.put("rewardCapReached", !rewarded);
+        out.put("faiPoints", faiPoints.game(user.id(), "FLAIR_DUEL", m.getId().toString(), outcome));   // RF41
         out.put("profile", me(user));
         rightsCheck(user.id());
         return out;
@@ -525,6 +530,7 @@ public class FlairService {
         FlairMatch m = arenaMatch(d, user.id());
         entry(m, users.findById(user.id()).orElseThrow(), s, "SOLO", deck, score);
         award(user.id(), 10 + (int) Math.round(score / 5), 5, "ARENA", d.toString());
+        faiPoints.game(user.id(), "FLAIR_ARENA", d.toString(), null);   // RF41: inscrever o deck do dia é jogar
         rightsCheck(user.id());
         return arena(user);
     }
@@ -677,6 +683,8 @@ public class FlairService {
         matches.save(m);
         a.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "A", e.getValue(), null));
         b.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "B", e.getValue(), null));
+        // RF41: quem dispara a partida joga (e vence, se o time dele vencer); antes do laço para contar os dois lançamentos
+        int teamFai = faiPoints.game(user.id(), "FLAIR_TEAM", m.getId().toString(), "A".equals(winner) ? "WIN" : "PLAYED");
         if ("DRAW".equals(winner)) {
             mine.setPoints(mine.getPoints() + 1);
             rival.setPoints(rival.getPoints() + 1);
@@ -684,6 +692,9 @@ public class FlairService {
             FlairTeam w = "A".equals(winner) ? mine : rival;
             w.setPoints(w.getPoints() + 3);
             members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x -> award(x.getUser().getId(), 30, 20, "TEAM_WIN", m.getId().toString()));
+            // RF41: a vitória vale FAI Points para cada integrante do time vencedor (idempotente para quem disparou)
+            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
+                    faiPoints.award(x.getUser().getId(), "GAME_WON", "GAME", "FLAIR_TEAM:" + m.getId(), null));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("matchId", m.getId());
@@ -692,6 +703,7 @@ public class FlairService {
         out.put("duels", duels);
         out.put("score", Map.of("a", wa, "b", wb));
         out.put("winner", winner);
+        out.put("faiPoints", teamFai);
         members.findByTeamIdOrderByCreatedAtAsc(mine.getId()).forEach(x -> rightsCheck(x.getUser().getId()));
         return out;
     }

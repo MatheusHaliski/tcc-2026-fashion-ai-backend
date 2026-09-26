@@ -135,6 +135,9 @@ public class WardrobeEventListeners {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceUpdated(DomainEvents.PieceUpdated ev) {
         safe("PieceUpdated", () -> {
+            // RF41: peça cadastrada sem foto real pontua quando fica pronta para o catálogo (1× por peça)
+            pieces.findById(ev.pieceId()).filter(InventoryScoreService::catalogReady)
+                    .ifPresent(w -> points.award(ev.userId(), "PIECE_CATALOGED", "PIECE", ev.pieceId().toString(), null));
             if (ev.completeness() >= 90) {
                 points.award(ev.userId(), "PIECE_COMPLETED", "PIECE", ev.pieceId().toString(), null);
             }

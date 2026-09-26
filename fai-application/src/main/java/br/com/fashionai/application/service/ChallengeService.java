@@ -1376,6 +1376,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             throw new ApiException(409, "JA_INSCRITO", Msg.t("challenge.voce_ja_inscreveu_um_look"));
         }
         record(i, user.id(), "LOOK_ENTRY", schemeId);
+        points.game(user.id(), "CHALLENGE", id.toString(), null);   // RF41: inscrever um look é jogar (1× por desafio)
         refresh(i, t);
         return detail(user, id);
     }

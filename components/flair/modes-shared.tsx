@@ -12,7 +12,7 @@ export interface LookCardMini { id: string; name: string; imageUrl: string; cate
 export interface ModeLook { schemeId: string | null; title: string; owner: string; coverUrl?: string | null; rating: number; stats: Record<string, number>; synergies: Synergy[]; styles: string[]; occasions: string[]; cards: LookCardMini[]; }
 export interface Theme { code: string; label: string; emoji: string; occasions: string[]; styles: string[]; weights: Record<string, number>; hint: string; }
 export interface Round { label: string; a: string; b: string; scoreA: number; scoreB: number; winner: "A" | "B" | "DRAW"; notes: string[]; breakdown: { stat: string; label: string; weight: number; a: number; b: number }[]; }
-export interface ModeResult { matchId?: string; mode: string; outcome: "WIN" | "LOSS" | "DRAW"; coins: number; rewardCapReached: boolean; scoreA: number; scoreB: number; rounds?: Round[]; theme?: Theme; opponent?: { label: string }; [k: string]: unknown; }
+export interface ModeResult { matchId?: string; mode: string; outcome: "WIN" | "LOSS" | "DRAW"; coins: number; rewardCapReached: boolean; faiPoints?: number; scoreA: number; scoreB: number; rounds?: Round[]; theme?: Theme; opponent?: { label: string }; [k: string]: unknown; }
 
 const OUT: Record<string, { label: string; tone: "thread" | "mark" | "chalk" }> = { WIN: { get label() { return tr("common.vitoria"); }, tone: "thread" }, LOSS: { get label() { return tr("common.derrota"); }, tone: "mark" }, DRAW: { get label() { return tr("common.empate"); }, tone: "chalk" } };
 
@@ -79,6 +79,7 @@ export function ResultView({ result, labelA = tr("flair.voce"), labelB }: { resu
         <span className="type-caption text-muted">{labelA} × {labelB ?? result.opponent?.label ?? t("flair.modesShared.oponente")}</span>
         <ThemeBadge theme={result.theme} />
         <span className="type-caption ml-auto">{result.rewardCapReached ? t("flair.modesShared.teto_diario_de_partidas_premiadas") : t("common.coins", { coins: result.coins })}</span>
+        {(result.faiPoints ?? 0) > 0 && <Badge tone="mark">{t("common.fai_points_ganhos", { points: result.faiPoints })}</Badge>}
       </div>
       {rounds.length > 0 && <ol className="mt-3 grid gap-2">{rounds.map((r, i) => (
         <li key={i} className="flair-round">

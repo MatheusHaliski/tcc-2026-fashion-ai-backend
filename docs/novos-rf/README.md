@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF39): índice e mapa de numeração
+# Novos RF (RF25–RF41): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -21,6 +21,8 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF37 | FLAIR (cartas, 15 modos, combinações das lojas) | FLAIR | [RF36-RF39.md](RF36-RF39.md) | `docs/diagramas/RF37/` |
 | RF38 | Cupons Fashion AI (Meus cupons promocionais / resgatados) | RF38 | [RF36-RF39.md](RF36-RF39.md) | `docs/diagramas/RF38/` |
 | RF39 | Criar guarda-roupa 3D + loja do guarda-roupa | RF39 | [RF39_Criar_Guarda_Roupa_3D.md](RF39_Criar_Guarda_Roupa_3D.md) | `docs/diagramas/RF39/` |
+| RF40 | Meu Avatar 3D (busto fiel à foto, usado no manequim) | RF40 | [RF40-RF41.md](RF40-RF41.md) | — |
+| RF41 | FAI Points em todos os jogos e criações | RF41 | [RF40-RF41.md](RF40-RF41.md) | — |
 
 ## Mudanças em RF antigos (2026-09-24)
 
@@ -28,6 +30,14 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 |---|---|---|---|
 | RF4 | Campo marca = buscador web de marcas (Wikidata, Simple Icons no GitHub, IA com busca na web), sem catálogo pré-cadastrado; logo filtrado (fundo branco, letras pretas nítidas) no slot | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF4/` (v3) |
 | RF5 / RF13 | Sem campo de marca no esquema/DNA: a marca de cada slot vem da peça inserida (somente leitura) | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF5/` (v4) |
+
+## Mudanças em RF antigos (2026-09-26)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF27 | CA12: peças e looks do quarto usados no FLAIR, Desafios, Destaques e Passarela 3D, com ou sem o Meu Avatar 3D | [RF40-RF41.md](RF40-RF41.md) |
+| RF28 | CA16: "Usar em…" leva o look do espelho para FLAIR, Desafios, Destaques e Passarela 3D, com ou sem o Meu Avatar 3D | [RF40-RF41.md](RF40-RF41.md) |
+| RF30 | Os jogos (RF32, RF37) passam a render FAI Points pelo RF41; peça que fica pronta numa edição também pontua | [RF40-RF41.md](RF40-RF41.md) |
 
 > Atenção à colisão: no código, "RF33" nos `@Operation` do `MirrorController` é o **Smart Mirror/Vista-me** (Trello
 > RF28), e "RF33" no `ShowcaseController` é a **Passarela 3D** (Trello RF33). O Swagger continua funcionando; a
