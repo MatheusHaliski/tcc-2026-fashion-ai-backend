@@ -5,7 +5,6 @@ import { CANON_TRI, CANON_UV, FACE_OVAL } from "@/lib/avatar3d/canonical-face";
 import { N, bustFit, canonicalWindingFlipped, headShell, type HeadShell } from "@/lib/avatar3d/geometry";
 import { clampAdjust, skinWithLight, validateModel, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
 import { api } from "@/lib/api/client";
-import { loadTexture } from "@/components/three/common";
 
 /*
  * Busto do Avatar 3D (RF40). Tudo em cm do espaço canônico dentro de um grupo escalado para metros:
@@ -158,7 +157,21 @@ function hairGeometry(model: AvatarModel, h: HeadShell, shape: number[], volume:
   return { cap, curtain };
 }
 
-/** Textura do avatar: a local (prévia no canvas) ou a do servidor, lida com o token (a rota é autenticada). */
+/**
+ * Textura do servidor (rota autenticada, lida com o token). Passa por um canvas, como a da prévia, para o avatar salvo
+ * sair igual ao que a pessoa confirmou.
+ */
+async function serverTexture(url: string): Promise<THREE.Texture | null> {
+  const blobUrl = await api.blobUrl(url);
+  try {
+    const img = new Image(); img.src = blobUrl; await img.decode();
+    const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext("2d")!.drawImage(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  } finally { URL.revokeObjectURL(blobUrl); }
+}
+
+/** Textura do avatar: a local (prévia no canvas) ou a do servidor. */
 const blobCache = new Map<string, Promise<THREE.Texture | null>>();
 export function useAvatarTexture(a: AvatarRef | null | undefined): THREE.Texture | null {
   const [t, setT] = useState<THREE.Texture | null>(a?.texture ?? null);
@@ -166,7 +179,7 @@ export function useAvatarTexture(a: AvatarRef | null | undefined): THREE.Texture
     if (a?.texture) { setT(a.texture); return; }
     const url = a?.textureUrl; if (!url) { setT(null); return; }
     let alive = true; let p = blobCache.get(url);
-    if (!p) { p = api.blobUrl(url).then((b) => loadTexture(b)).catch(() => null); blobCache.set(url, p); }
+    if (!p) { p = serverTexture(url).catch(() => null); blobCache.set(url, p); }
     p.then((x) => alive && setT(x));
     return () => { alive = false; };
   }, [a?.texture, a?.textureUrl]);
@@ -203,8 +216,8 @@ export function AvatarBust({ avatar, stature, torsoTopY }: { avatar: AvatarRef; 
   const skinC = new THREE.Color(skin); const skinMat = <meshStandardMaterial color={skinC.clone().multiplyScalar(0.6)} emissive={skinC.clone().multiplyScalar(0.32)} roughness={0.7} />;
   return (
     <group position={[0, y0, z0]} scale={s}>
-      <mesh geometry={built.face} castShadow>{/* dupla face: dobras finas (pálpebras) podem inverter um triângulo; sem isso o crânio apareceria pelo "buraco" */}
-        {tex ? <meshStandardMaterial map={tex} color={new THREE.Color(k * 0.6, k * 0.6, k * 0.6)} emissiveMap={tex} emissive={new THREE.Color(k * 0.32, k * 0.32, k * 0.32)} roughness={0.7} side={THREE.DoubleSide} /> : skinMat}</mesh>
+      <mesh geometry={built.face} castShadow>{/* dupla face: dobras finas (pálpebras) podem inverter um triângulo; sem isso o crânio apareceria pelo "buraco". key: a textura do servidor chega depois do 1º render, e sem trocar a instância do material o shader continua sem o map */}
+        {tex ? <meshStandardMaterial key={tex.uuid} map={tex} color={new THREE.Color(k * 0.6, k * 0.6, k * 0.6)} emissiveMap={tex} emissive={new THREE.Color(k * 0.32, k * 0.32, k * 0.32)} roughness={0.7} side={THREE.DoubleSide} /> : skinMat}</mesh>
       <mesh geometry={built.skull} castShadow>{skinMat}</mesh>
       <mesh geometry={built.jaw}>{skinMat}</mesh>
       <mesh geometry={built.neckGeo} castShadow>{skinMat}</mesh>

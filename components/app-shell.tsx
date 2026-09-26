@@ -27,6 +27,7 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
     { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
     { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
+    { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
   ] },
   { key: "nav.group.create", items: [
