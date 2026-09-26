@@ -62,16 +62,105 @@ public final class ImageOps {
         return mime;
     }
 
+    /**
+     * Decodifica já na orientação em que a foto foi tirada. O ImageIO ignora a tag EXIF Orientation e o JPEG regravado
+     * perde o EXIF: sem aplicar a tag aqui, a foto de celular em retrato (gravada deitada + Orientation 6/8) ficaria
+     * girada 90° em todo o app (avatar, rosto 3D, peças, looks).
+     */
     public static BufferedImage decode(byte[] bytes) {
         try {
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
             if (img == null) {
                 throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
             }
-            return toArgb(img);
+            return orient(toArgb(img), exifOrientation(bytes));
         } catch (IOException ex) {
             throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
         }
+    }
+
+    /** Tag EXIF Orientation (0x0112) do JPEG: 1..8, ou 1 quando não há EXIF, a tag ou o arquivo não é JPEG. */
+    public static int exifOrientation(byte[] b) {
+        if (b == null || b.length < 4 || (b[0] & 0xFF) != 0xFF || (b[1] & 0xFF) != 0xD8) {
+            return 1;
+        }
+        int i = 2;
+        while (i + 4 <= b.length && (b[i] & 0xFF) == 0xFF) {
+            int marker = b[i + 1] & 0xFF;
+            if (marker == 0xDA || marker == 0xD9) {
+                break;                                          // início da imagem comprimida: não há mais cabeçalhos
+            }
+            int len = ((b[i + 2] & 0xFF) << 8) | (b[i + 3] & 0xFF);
+            if (len < 2 || i + 2 + len > b.length) {
+                break;
+            }
+            int s = i + 4;
+            if (marker == 0xE1 && len >= 16 && b[s] == 'E' && b[s + 1] == 'x' && b[s + 2] == 'i' && b[s + 3] == 'f' && b[s + 4] == 0 && b[s + 5] == 0) {
+                int o = tiffOrientation(b, s + 6, i + 2 + len);
+                if (o > 0) {
+                    return o;
+                }
+            }
+            i += 2 + len;
+        }
+        return 1;
+    }
+
+    private static int tiffOrientation(byte[] b, int tiff, int end) {
+        if (tiff + 8 > end) {
+            return 0;
+        }
+        boolean le = b[tiff] == 'I' && b[tiff + 1] == 'I';
+        if (!le && !(b[tiff] == 'M' && b[tiff + 1] == 'M')) {
+            return 0;
+        }
+        java.util.function.IntUnaryOperator u16 = p -> le ? (b[p] & 0xFF) | ((b[p + 1] & 0xFF) << 8) : ((b[p] & 0xFF) << 8) | (b[p + 1] & 0xFF);
+        long ifd = le ? (b[tiff + 4] & 0xFFL) | ((b[tiff + 5] & 0xFFL) << 8) | ((b[tiff + 6] & 0xFFL) << 16) | ((b[tiff + 7] & 0xFFL) << 24)
+                : ((b[tiff + 4] & 0xFFL) << 24) | ((b[tiff + 5] & 0xFFL) << 16) | ((b[tiff + 6] & 0xFFL) << 8) | (b[tiff + 7] & 0xFFL);
+        long p0 = tiff + ifd;
+        if (ifd < 8 || p0 + 2 > end) {
+            return 0;
+        }
+        int p = (int) p0;
+        int n = u16.applyAsInt(p);
+        for (int k = 0; k < n; k++) {
+            int e = p + 2 + k * 12;
+            if (e + 12 > end) {
+                return 0;
+            }
+            if (u16.applyAsInt(e) == 0x0112) {
+                int v = u16.applyAsInt(e + 8);
+                return v >= 1 && v <= 8 ? v : 0;
+            }
+        }
+        return 0;
+    }
+
+    /** Aplica a orientação EXIF (1 = como está; 2..8 = espelhos e giros de 90°/180°) e devolve a imagem "em pé". */
+    public static BufferedImage orient(BufferedImage src, int orientation) {
+        if (orientation <= 1 || orientation > 8) {
+            return src;
+        }
+        int w = src.getWidth(), h = src.getHeight();
+        boolean swap = orientation >= 5;
+        int ow = swap ? h : w, oh = swap ? w : h;
+        BufferedImage out = new BufferedImage(ow, oh, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < oh; y++) {
+            for (int x = 0; x < ow; x++) {
+                int sx, sy;
+                switch (orientation) {
+                    case 2 -> { sx = w - 1 - x; sy = y; }
+                    case 3 -> { sx = w - 1 - x; sy = h - 1 - y; }
+                    case 4 -> { sx = x; sy = h - 1 - y; }
+                    case 5 -> { sx = y; sy = x; }
+                    case 6 -> { sx = y; sy = h - 1 - x; }
+                    case 7 -> { sx = w - 1 - y; sy = h - 1 - x; }
+                    default -> { sx = w - 1 - y; sy = x; }      // 8
+                }
+                out.setRGB(x, y, src.getRGB(sx, sy));
+            }
+        }
+        return out;
     }
 
     public static BufferedImage toArgb(BufferedImage src) {
