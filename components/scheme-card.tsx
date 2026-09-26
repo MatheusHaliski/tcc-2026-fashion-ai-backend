@@ -162,7 +162,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             <CompactSignature scheme={scheme} pieces={detailPieces} />
           </div>
         ) : (
-          <div className="scheme-container" data-anatomy={anatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI" ? t("schemeCard.madeWithAi") : undefined}>
+          <div className="scheme-container" data-anatomy={anatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
             {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />

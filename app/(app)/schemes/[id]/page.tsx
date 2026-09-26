@@ -57,7 +57,7 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
           {expanded && cardUrl && <img src={cardUrl} alt={t("schemes.id.card_renderizado", { title: s.title })} className="mt-3 w-full rounded border border-line-soft" />}
         </div>
         <div>
-          <p className="type-label text-muted">{s.origin === "AUTOPILOTO" ? t("nav.autopilot") : s.creationMode === "AI" ? t("schemes.id.composto_com_ia") : t("scheme.manual")} · {relative(s.publishedAt ?? s.createdAt)}</p>
+          <p className="type-label text-muted">{s.origin === "AUTOPILOTO" ? t("nav.autopilot") : s.creationMode === "AI_ASSISTED" ? t("schemes.id.composto_com_ia") : t("scheme.manual")} · {relative(s.publishedAt ?? s.createdAt)}</p>
           <h1 className="type-display text-ink">{s.title}</h1>
           <p className="type-body text-muted mt-1">{rich("common.por", { username: s.owner.username }, { 0: ($c) => <Link href={`/u/${s.owner.username}`} className="underline">{$c}</Link> })}{s.remixedFromId && <>{t("schemes.id.remix")}</>}</p>
           {s.description && <p className="type-body mt-3">{s.description}</p>}
