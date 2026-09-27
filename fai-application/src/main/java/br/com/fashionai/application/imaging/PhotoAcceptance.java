@@ -218,8 +218,11 @@ public final class PhotoAcceptance {
         if (viewAngle != null && GARMENTS.contains(category) && !viewAngle.startsWith("frontal")) {
             out.add(check("frontal_ia", false, round(confidence), 0.7, Msg.t("photoAcceptance.ia_angulo")));
         }
-        if (Boolean.FALSE.equals(singlePiece) && Set.of("upper_piece", "lower_piece").contains(category)) {
-            out.add(check("peca_unica_ia", false, round(confidence), 0.7, Msg.t("photoAcceptance.varias", 2)));
+        // o prompt já conta o par (tênis, brincos, luvas) como UMA peça: "não é peça única" com confiança alta são itens
+        // diferentes (duas bolsas, pés trocados, dois vestidos) — reprova em qualquer categoria. A contagem local de
+        // pedaços aceita 2 em calçado/acessório justamente por causa do par; quem separa par de "duas peças" é a IA.
+        if (Boolean.FALSE.equals(singlePiece)) {
+            out.add(check("peca_unica_ia", false, round(confidence), 0.7, Msg.t("photoAcceptance.ia_varias")));
         }
         return out;
     }

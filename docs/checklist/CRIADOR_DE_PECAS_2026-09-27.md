@@ -15,14 +15,18 @@ mudou e a evidência (arquivo, teste automatizado e captura da verificação no 
 ## Fluxo novo do criador
 
 1. A pessoa escolhe o **tipo** (parte de cima, parte de baixo, calçado, acessório). O botão "Enviar foto" só libera depois.
-2. A foto passa pelos critérios locais (tabela abaixo). Reprovou → a tela mostra "Foto recusada" e o que refazer.
+2. A foto passa pelos critérios locais (tabela abaixo) num passe **só local** — sem remove.bg/rembg e sem consumir a
+   cota diária. Reprovou → a tela mostra "Foto recusada" e o que refazer; só a foto aceita segue para a padronização
+   externa (paga) e para a IA.
 3. O **subtipo** é detectado comparando a foto com as imagens de referência dos subtipos **daquele tipo**
    (`/public/assets_pecas`): similaridade de silhueta (Jaccard da grade 32×32 + proporção + perfis + solidez, com
    espelho) e, com IA, uma **folha de contato numerada** das referências enviada junto com a foto. A tela mostra
    "Subtipo detectado: … (N% de semelhança)" e os parecidos para trocar num clique.
 4. A **marca** é procurada nas quatro zonas; a tela diz onde foi lida (ou onde há logo sem nome legível, ou que nada foi achado).
 5. Com IA, entram mais três critérios: a foto é do tipo escolhido, a peça está inteira e de frente.
-6. Trocar o tipo depois do envio refaz a análise com a mesma foto.
+6. Trocar o tipo depois do envio — com a análise pronta, recusada **ou ainda em curso** — refaz a análise com a mesma
+   foto. O pedido anterior é abortado e, se a resposta dele chegar mesmo assim, é ignorada (só vale o pedido mais
+   recente); o rascunho da análise anterior sai do formulário.
 
 ## Critérios de aceite da foto (`PhotoAcceptance`)
 
@@ -38,7 +42,7 @@ mudou e a evidência (arquivo, teste automatizado e captura da verificação no 
 | `nitidez` | variância do laplaciano normalizada | ≥ 0,05 |
 | `exposicao` | parte da peça sem detalhe (preto puro/branco estourado) — medida na peça, não no fundo | ≤ 50% |
 | `formato` | com IA: a foto é do tipo escolhido (reprova com confiança ≥ 0,7); sem IA: parece alguma referência do tipo (≥ 0,55) e nenhuma outra categoria é ≥ 0,10 mais parecida | — |
-| `inteira_ia`, `frontal_ia`, `peca_unica_ia` | o que a IA viu na foto (cortada, em ângulo/de lado/dobrada, várias peças) | confiança ≥ 0,7 |
+| `inteira_ia`, `frontal_ia`, `peca_unica_ia` | o que a IA viu na foto (cortada, em ângulo/de lado/dobrada, várias peças). "Não é peça única" reprova em **qualquer** categoria: o par (tênis, brincos, luvas) já conta como uma peça, então é item diferente (duas bolsas, pés trocados, dois vestidos) | confiança ≥ 0,7 |
 | `conteudo` | moderação: não é roupa / viola a política | — |
 
 Calibração (fotos montadas com as artes de referência, `PhotoAcceptanceTest`): peça inteira de frente é aceita nas
@@ -63,6 +67,14 @@ vale o palpite mais parecido, que a pessoa confere.
   depois de escolher (201).
 - E2E da API (`scripts/e2e/suite_1.py`): a análise usa `fixtures/peca_camiseta.jpg` (peça inteira, fundo liso) com
   `category=upper_piece`, e há um passo que espera 422 para a foto de pessoa cortada.
+
+## Revisão do PR #26 (27/09)
+
+| Ponto | Correção | Evidência |
+|-------|----------|-----------|
+| Aceite rodava depois do flat-lay pago (remove.bg + cota) | `analyze` faz um passe local, aplica `PhotoAcceptance` e só então chama `FLAT_LAY_STANDARDIZER`, reaproveitando o passe local como fallback | `WardrobeAnalyzeFlowTest.fotoRecusadaNaoChegaAoFlatLayPagoNemAIa` (nenhuma chamada ao flat-lay nem à IA) |
+| Várias peças vistas pela IA passavam em calçado/acessório/peça única | `aiPhotoChecks` reprova `singlePiece: false` confiante em todas as categorias, com mensagem própria | `PhotoAcceptanceTest.avaliacaoDaIaSoReprovaComConfiancaAlta` (5 categorias) |
+| Troca de tipo com a análise em curso não refazia; resposta antiga sobrescrevia | sequência de pedidos + `AbortController`; o tipo vem sempre do mais recente | Playwright: 1ª análise (tipo errado) em voo → troca de tipo → 1º pedido `ERR_ABORTED`, tela e formulário ficam "Parte superior / Camiseta", sem recusa (`img/criador-pecas-2026-09-27/09-troca-de-tipo-no-meio.png`) |
 
 ## Observações
 

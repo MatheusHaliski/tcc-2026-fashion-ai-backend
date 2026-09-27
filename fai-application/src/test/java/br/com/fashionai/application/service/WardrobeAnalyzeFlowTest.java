@@ -42,7 +42,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -56,6 +59,7 @@ class WardrobeAnalyzeFlowTest {
     String analyzerAnswer;
     WardrobeService service;
     CurrentUser user;
+    AiEngine ai;
 
     @BeforeEach
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -88,7 +92,7 @@ class WardrobeAnalyzeFlowTest {
         when(media.put(anyString(), any(), anyString())).thenAnswer(inv ->
                 new MediaStoragePort.StoredObject(inv.getArgument(0), "http://media/" + inv.getArgument(0), 1, inv.getArgument(2)));
 
-        AiEngine ai = mock(AiEngine.class);
+        ai = mock(AiEngine.class);
         // pipeline de imagem e estúdio: sempre o motor local (o de verdade)
         when(ai.execute(any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv ->
                 outcome(((Supplier<?>) inv.getArgument(6)).get(), "local"));
@@ -155,6 +159,20 @@ class WardrobeAnalyzeFlowTest {
         assertThat(p.photoChecks()).extracting(c -> c.get("id")).contains("inteira", "frontal", "formato");
         // estúdio no padrão do card: quadrado
         assertThat(((Map<?, ?>) d.studio().get("framing")).get("aspect")).isEqualTo("1:1");
+    }
+
+    /**
+     * Foto fora dos critérios locais é recusada ANTES da padronização externa (remove.bg/rembg, paga e com cota) e antes
+     * de qualquer chamada de IA: nada de custo nem de cota para foto que não entra.
+     */
+    @Test
+    void fotoRecusadaNaoChegaAoFlatLayPagoNemAIa() throws Exception {
+        byte[] person = java.nio.file.Files.readAllBytes(java.nio.file.Path.of("../scripts/e2e/fixtures/p1.jpg"));
+        assertThatThrownBy(() -> service.analyze(user, person, "upper_piece"))
+                .isInstanceOf(PhotoRejectedException.class)
+                .satisfies(e -> assertThat(((PhotoRejectedException) e).details().get("failed").toString()).contains("inteira"));
+        verify(ai, never()).execute(any(), eq(AiCapability.FLAT_LAY_STANDARDIZER), any(), any(), any(), any(), any());
+        verify(ai, never()).text(any());
     }
 
     @Test

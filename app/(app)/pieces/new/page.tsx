@@ -53,24 +53,48 @@ function NewPiece() {
   const [done, setDone] = useState<string | null>(null);
   // a última foto enviada: trocar o tipo depois do envio refaz a análise com a mesma foto
   const lastFile = useRef<File | null>(null); const [localError, setLocalError] = useState<ApiError | null>(null);
-  const analyze = useAction(async (file: File, category: string) => { const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category); return api.upload<Draft>("/api/pieces/analysis", fd); });
+  // análise da foto: só a resposta do pedido mais recente vale — trocar o tipo (ou a foto) no meio aborta o anterior e,
+  // se a resposta dele chegar mesmo assim, ela é ignorada; o tipo usado é sempre o último escolhido
+  const [analyze, setAnalyze] = useState<{ busy: boolean; error: ApiError | null }>({ busy: false, error: null });
+  const analysisSeq = useRef(0); const analysisAbort = useRef<AbortController | null>(null);
+  const categoryRef = useRef(value.category); categoryRef.current = value.category;
   const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
   const create = useAction(async () => api.post<PieceView>("/api/pieces", toPayload({ ...value, useDefaultImage: !draft, background })));
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || !value.category) return;
     if (files.length > 1) { setBatch(Array.from(files).slice(0, 10).map((file) => ({ file }))); return; }
+    // foto nova substitui a anterior: a análise em curso (se houver) deixa de valer
+    cancelAnalysis(); lastFile.current = null;
     let file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null);
     // etapa 0 do pipeline (no navegador): corpo humano sai da foto, só a roupa segue para o estúdio
     try { const r = await stripPerson(file); if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); } }
     catch { /* sem segmentação agora: a foto segue como está */ }
     lastFile.current = file;
-    await runAnalysis(file, value.category);
+    await runAnalysis(file, categoryRef.current);        // o tipo de agora (pode ter mudado durante o filtro de pessoa)
+  }
+  /** Descarta a análise em curso: o pedido é abortado e a resposta, se ainda chegar, ignorada. */
+  function cancelAnalysis() {
+    analysisSeq.current++; analysisAbort.current?.abort(); analysisAbort.current = null;
+    setAnalyze({ busy: false, error: null });
   }
   /** Analisa a foto dentro do tipo escolhido: critérios de aceite, subtipo por semelhança, marca nas zonas e pré-preenchimento. */
   async function runAnalysis(file: File, category: string) {
-    const d = await analyze.run(file, category);
-    if (!d) { setDraft(null); return; }
+    const seq = ++analysisSeq.current;
+    analysisAbort.current?.abort(); const ctrl = new AbortController(); analysisAbort.current = ctrl;
+    // o rascunho de outra análise (outro tipo) não pode ir para o cadastro
+    setAnalyze({ busy: true, error: null }); setDraft(null); setValue((v) => ({ ...v, draftId: null }));
+    let d: Draft;
+    try {
+      const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category);
+      d = await api.upload<Draft>("/api/pieces/analysis", fd, "POST", { signal: ctrl.signal });
+    } catch (e) {
+      if (seq !== analysisSeq.current) return;          // pedido antigo (abortado ou superado): nada a mostrar
+      setAnalyze({ busy: false, error: e instanceof ApiError ? e : new ApiError(0, "ERRO", (e as Error).message) });
+      return;
+    }
+    if (seq !== analysisSeq.current) return;            // resposta de um tipo (ou foto) que já foi trocado
+    analysisAbort.current = null; setAnalyze({ busy: false, error: null });
     setDraft(d); setMode(d.studio ? "studio" : "flat");
     // RF4: "Analisar peça" preenche todos os campos, sem exceção — o backend nunca devolve campo vazio (Prefill completo);
     // aqui só garantimos o mesmo no cliente, caso algum valor venha nulo de um motor antigo. O tipo é o que a pessoa escolheu.
@@ -90,8 +114,10 @@ function NewPiece() {
   /** Tipo da peça (primeira escolha da etapa Foto). Com foto já enviada, a análise é refeita com o novo tipo. */
   function chooseCategory(category: string) {
     if (category === value.category) return;
+    categoryRef.current = category;
     setValue((v) => ({ ...v, category, subcategory: "", occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
-    if (lastFile.current && (draft || analyze.error)) { toast.info(t("pieces.new.reanalisando")); runAnalysis(lastFile.current, category); }
+    // com foto já enviada — análise pronta, recusada ou ainda em curso — refaz com o tipo novo; a anterior é abortada
+    if (lastFile.current) { toast.info(t("pieces.new.reanalisando")); runAnalysis(lastFile.current, category); }
   }
   /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
   async function studio(backdrop: string, force = false) {
@@ -199,7 +225,7 @@ function NewPiece() {
                       </div>
                     )}
                     {draft?.studio && <label className="flex items-center gap-2 type-body-sm"><input type="checkbox" checked={value.studio !== false} onChange={(e) => setValue((v) => ({ ...v, studio: e.target.checked }))} />{t("pieces.new.usar_a_foto_de_estudio")}</label>}
-                    {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
+                    {draft && <Button size="sm" variant="ghost" onClick={() => { cancelAnalysis(); setDraft(null); setPreview(null); setPersonNote(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
                     <details className="more-details" open={!draft}>
                       <summary>{t("pieces.new.como_fotografar")}</summary>
                       <ul className="fai-list pt-2 type-body-sm">{PRINCIPLES.map((k) => <li key={k}>{t(k)}</li>)}</ul>

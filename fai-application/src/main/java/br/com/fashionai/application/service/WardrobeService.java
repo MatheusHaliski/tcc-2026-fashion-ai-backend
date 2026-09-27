@@ -217,6 +217,15 @@ public class WardrobeService {
             throw ApiException.badRequest("CATEGORIA_INVALIDA", Msg.t("taxonomy.categoria_invalida"), Map.of("category", Msg.t("taxonomy.categoria_invalida")));
         }
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        // Critérios de aceite num passe só local (sem provedor pago e sem cota): fundo separado, peça inteira,
+        // enquadramento, alinhamento, câmera a 90° (simetria), uma peça por foto, nitidez e luz. Só a foto aceita segue
+        // para a padronização externa (rembg/remove.bg), que custa e consome a cota diária de FLAT_LAY_STANDARDIZER.
+        FlatLayPipeline.Result localPass = flatLay.run(bytes, false);
+        PhotoAcceptance.Report acceptance = PhotoAcceptance.evaluate(chosen, localPass.originalWidth(), localPass.originalHeight(),
+                localPass.cutout(), localPass.truncated(), localPass.quality());
+        if (!acceptance.accepted()) {
+            throw rejection(acceptance.checks());
+        }
         AiOutcome<FlatLayPipeline.Result> pipeline = ai.execute(user.id(), AiCapability.FLAT_LAY_STANDARDIZER,
                 List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null,
                 List.of(new AiEngine.RemoteStep<>() {
@@ -240,16 +249,8 @@ public class WardrobeService {
                         FlatLayPipeline.Result r = flatLay.run(bytes, true);
                         return new AiEngine.RemoteResult<>(r, r.totalCostUsd(), "qualidade " + r.quality().overall());
                     }
-                }), () -> flatLay.run(bytes, false));
+                }), () -> localPass);                            // sem provedor externo: o passe local já feito
         FlatLayPipeline.Result r = pipeline.value();
-
-        // Critérios de aceite (locais, antes de qualquer IA paga): fundo separado, peça inteira, enquadramento,
-        // alinhamento, câmera a 90° (simetria), uma peça por foto, nitidez e luz
-        PhotoAcceptance.Report acceptance = PhotoAcceptance.evaluate(chosen, r.originalWidth(), r.originalHeight(), r.cutout(),
-                r.truncated(), r.quality());
-        if (!acceptance.accepted()) {
-            throw rejection(acceptance.checks());
-        }
         ImageOps.Cutout cutout = r.cutout();
         // a peça endireitada e justa na caixa (alta resolução): base da comparação com as referências e das zonas da marca
         BufferedImage piece = r.studioSource();

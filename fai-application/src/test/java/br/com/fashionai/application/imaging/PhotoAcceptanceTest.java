@@ -134,6 +134,12 @@ class PhotoAcceptanceTest {
                 .extracting(PhotoAcceptance.Check::id).containsExactly("inteira_ia", "frontal_ia");
         // calçado de perfil é o padrão: "lateral" não reprova calçado
         assertThat(PhotoAcceptance.aiPhotoChecks(true, "lateral", true, 0.9, "shoes_piece")).isEmpty();
+        // par conta como uma peça; "não é peça única" confiante (duas bolsas, pés trocados, dois vestidos) reprova em
+        // qualquer categoria — a contagem local aceita 2 pedaços em calçado/acessório/peça única por causa do par
+        for (String category : new String[]{"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}) {
+            assertThat(PhotoAcceptance.aiPhotoChecks(true, "frontal_90", false, 0.9, category))
+                    .as(category).extracting(PhotoAcceptance.Check::id).containsExactly("peca_unica_ia");
+        }
     }
 
     private static AffineTransform rotate(double degrees) {
