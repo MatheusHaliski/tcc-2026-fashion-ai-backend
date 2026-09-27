@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
 import * as THREE from "three";
-import { api } from "@/lib/api/client";
+import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -23,7 +23,6 @@ interface Saved {
   warnings?: string[]; publicOnRunway?: boolean; updatedAt?: string;
 }
 
-const SLOTS = ["front", "sideA", "sideB"] as const;
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
 const ADJ = Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[];
 /** Avisos cujo texto na hora da foto leva um número (px, graus, %): o avatar salvo guarda só o código. */
@@ -68,14 +67,20 @@ function ViewButtons({ view, onView }: { view: AvatarView; onView: (v: AvatarVie
   );
 }
 
-/** Criação/refação: fotos → análise no aparelho → prévia → consentimento → salvar (RF40.CA01–CA07). */
+/**
+ * Criação/refação (RF40.CA01–CA07): o avatar sai de UMA foto — a foto de perfil (RF1). Se ela não servir (sem rosto,
+ * rosto pequeno, virado), a pessoa escolhe outra foto aqui mesmo. Análise no aparelho → prévia → consentimento → salvar.
+ */
 function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "MASCULINO"; onSaved: () => void; onCancel?: () => void; initialPublic: boolean }) {
-  const { t } = useI18n(); const toast = useToast(); const issueText = useIssueText();
-  const [files, setFiles] = useState<(File | null)[]>([null, null, null]);
-  const previews = useMemo(() => files.map((f) => (f ? URL.createObjectURL(f) : null)), [files]);
-  useEffect(() => () => previews.forEach((u) => u && URL.revokeObjectURL(u)), [previews]);
+  const { t } = useI18n(); const toast = useToast(); const issueText = useIssueText(); const { user } = useAuth();
+  const profileUrl = mediaUrl(user?.avatarUrl);
+  const [file, setFile] = useState<Blob | null>(null);
+  const [source, setSource] = useState<"profile" | "upload" | null>(null);
+  const [profileState, setProfileState] = useState<"loading" | "ok" | "none" | "failed">(profileUrl ? "loading" : "none");
+  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const [busy, setBusy] = useState<"" | "analyze" | "save">("");
-  const [photos, setPhotos] = useState<(AnalyzedPhoto | null)[]>([null, null, null]);
+  const [photo, setPhoto] = useState<AnalyzedPhoto | null>(null);
   const [built, setBuilt] = useState<BuiltAvatar | null>(null);
   const [failed, setFailed] = useState(false);
   const [adjust, setAdjust] = useState<AvatarAdjust>({ ...DEFAULT_ADJUST });
@@ -88,18 +93,29 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   }, [built]);
   useEffect(() => () => texture?.dispose(), [texture]);
 
-  function pick(i: number, f: File | null) {
-    setFiles((xs) => xs.map((x, j) => (j === i ? f : x)));
-    setBuilt(null); setFailed(false); setPhotos([null, null, null]);
+  // A foto de perfil já é a foto do avatar: carrega sozinha, sem pedir outro envio.
+  useEffect(() => {
+    if (!profileUrl) { setProfileState("none"); return; }
+    const ctl = new AbortController();
+    fetch(profileUrl, { signal: ctl.signal, mode: "cors" })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => { if (!b.type.startsWith("image/")) throw new Error("tipo"); setFile((f) => f ?? b); setSource((x) => x ?? "profile"); setProfileState("ok"); })
+      .catch(() => { if (!ctl.signal.aborted) setProfileState("failed"); });
+    return () => ctl.abort();
+  }, [profileUrl]);
+
+  function pick(f: File | null) {
+    if (!f) return;
+    setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null);
   }
 
   async function analyze() {
+    if (!file) return;
     setBusy("analyze"); setBuilt(null); setFailed(false);
     try {
-      const out: (AnalyzedPhoto | null)[] = [];
-      for (let i = 0; i < SLOTS.length; i++) out.push(files[i] ? await analyzePhoto(files[i]!, i === 0 ? "front" : "side") : null);
-      setPhotos(out);
-      const b = buildAvatar(out.filter((p): p is AnalyzedPhoto => !!p));
+      const p = await analyzePhoto(file, "front");
+      setPhoto(p);
+      const b = buildAvatar([p]);
       setBuilt(b); setFailed(!b); setView("front");
     } catch {
       toast.error(t("avatar3d.page.erro_processar"));
@@ -111,8 +127,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     setBusy("save");
     try {
       const fd = new FormData();
-      const photosUsed = photos.filter((p) => p && p.fit && !p.issues.some((i) => i.severity === "block")).length;
-      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: photosUsed, warnings: built.model.warnings, consent: true, publicOnRunway: pub }));
+      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub }));
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
@@ -125,31 +140,29 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
       <div className="grid content-start gap-3">
         <Card>
-          <p className="label">{t("avatar3d.page.fotos")}</p>
+          <p className="label">{t("avatar3d.page.foto_do_avatar")}</p>
+          <p className="mb-2 type-body-sm text-muted">{t("avatar3d.page.uma_foto")}</p>
           <ul className="fai-list mb-3 type-body-sm text-muted">
-            <li>{t("avatar3d.page.dica_luz")}</li><li>{t("avatar3d.page.dica_rosto")}</li><li>{t("avatar3d.page.dica_lados")}</li>
+            <li>{t("avatar3d.page.dica_luz")}</li><li>{t("avatar3d.page.dica_rosto")}</li>
           </ul>
-          <div className="grid gap-3">
-            {SLOTS.map((s, i) => {
-              const p = photos[i]; const blocks = p?.issues.filter((x) => x.severity === "block") ?? []; const warns = p?.issues.filter((x) => x.severity === "warn") ?? [];
-              return (
-                <div key={s} className="grid grid-cols-[72px_1fr] items-start gap-3">
-                  <div className="grid aspect-square w-[72px] place-items-center overflow-hidden rounded-md border border-line bg-surface-2">
-                    {previews[i] ? <img src={previews[i]!} alt="" className="h-full w-full object-cover" /> : <span className="type-caption text-faint">{i === 0 ? "1" : i === 1 ? "2" : "3"}</span>}
-                  </div>
-                  <div className="grid gap-1">
-                    <label className="type-body-sm font-semibold" htmlFor={`avatar-photo-${s}`}>{t(`avatar3d.slot.${s}`)}</label>
-                    <input id={`avatar-photo-${s}`} type="file" accept="image/*" className="type-caption" onChange={(e) => pick(i, e.target.files?.[0] ?? null)} />
-                    {p && blocks.length === 0 && <span className="type-caption text-good">✓ {t("avatar3d.page.foto_ok")}</span>}
-                    {blocks.map((x) => <span key={x.code} role="alert" className="type-caption text-critical">✕ {issueText(x)}</span>)}
-                    {warns.map((x) => <span key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</span>)}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex items-start gap-3">
+            <div className="grid aspect-square w-28 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-surface-2">
+              {preview ? <img src={preview} alt={t(source === "profile" ? "avatar3d.page.foto_de_perfil" : "avatar3d.page.foto_escolhida")} className="h-full w-full object-cover" />
+                : profileState === "loading" ? <Spinner size={18} /> : <span className="type-caption text-faint">1</span>}
+            </div>
+            <div className="grid min-w-0 gap-1">
+              <p className="type-body-sm font-semibold">{source === "upload" ? t("avatar3d.page.foto_escolhida") : t("avatar3d.page.foto_de_perfil")}</p>
+              {!file && profileState === "none" && <p className="type-caption text-muted">{t("avatar3d.page.sem_foto_de_perfil")}</p>}
+              {!file && profileState === "failed" && <p className="type-caption text-muted">{t("avatar3d.page.foto_de_perfil_indisponivel")}</p>}
+              <label className="type-caption font-semibold" htmlFor="avatar-photo">{file ? t("avatar3d.page.usar_outra_foto") : t("avatar3d.page.enviar_foto")}</label>
+              <input id="avatar-photo" type="file" accept="image/*" className="type-caption" onChange={(e) => pick(e.target.files?.[0] ?? null)} />
+              {photo && !photo.issues.some((x) => x.severity === "block") && <span className="type-caption text-good">✓ {t("avatar3d.page.foto_ok")}</span>}
+              {photo?.issues.filter((x) => x.severity === "block").map((x) => <span key={x.code} role="alert" className="type-caption text-critical">✕ {issueText(x)}</span>)}
+              {photo?.issues.filter((x) => x.severity === "warn").map((x) => <span key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</span>)}
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="primary" loading={busy === "analyze"} disabled={!files[0] || !!busy} onClick={analyze}>{t("avatar3d.page.gerar_previa")}</Button>
+            <Button variant="primary" loading={busy === "analyze"} disabled={!file || !!busy} onClick={analyze}>{t("avatar3d.page.gerar_previa")}</Button>
             {onCancel && <Button variant="ghost" disabled={!!busy} onClick={onCancel}>{t("common.cancel")}</Button>}
           </div>
           {busy === "analyze" && <p className="mt-2 flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.processando")}</p>}
