@@ -81,6 +81,7 @@ public class ShowcaseService {
     private final InstitutionalService institutional;
     private final Model3dService model3d;
     private final Guard guard;
+    private final Avatar3dService avatars3d;
     private final UserRepository users;
     private final MediaService media;
     private final FollowRepository follows;
@@ -88,7 +89,9 @@ public class ShowcaseService {
     public ShowcaseService(FollowRepository follows, UserRepository users, MediaService media, SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                            SchemeGroupingRepository groupings, DailyLookRepository dailyLooks, DailyLookService dailyLookService,
                            UserPreferencesRepository preferences, CelebrityProfileRepository celebrities,
-                           SchemeService schemeService, InstitutionalService institutional, Model3dService model3d, Guard guard) {
+                           SchemeService schemeService, InstitutionalService institutional, Model3dService model3d, Guard guard,
+                           Avatar3dService avatars3d) {
+        this.avatars3d = avatars3d;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -127,7 +130,7 @@ public class ShowcaseService {
         out.put("pieceId", w.getId());
         out.put("title", w.getName());
         out.put("owner", Views.user(w.getUser()));
-        out.put("mannequin", mannequin(w.getUser(), List.of(w)));
+        out.put("mannequin", mannequin(w.getUser(), List.of(w), viewer));
         out.put("pieces", List.of(piece(w)));
         boolean own = viewer != null && viewer.id().equals(w.getUser().getId());
         out.put("canRequest", own && canRequest(w));
@@ -145,7 +148,7 @@ public class ShowcaseService {
         out.put("owner", Views.user(s.getUser()));
         out.put("hypeScore", s.getHypeScore());
         out.put("likes", s.getLikeCount());
-        out.put("mannequin", mannequin(s.getUser(), ws));
+        out.put("mannequin", mannequin(s.getUser(), ws, viewer));
         out.put("pieces", ws.stream().map(ShowcaseService::piece).toList());
         long ready = ws.stream().filter(w -> w.getModel3dStatus() == Model3dStatus.COMPLETED && w.getModel3dUrl() != null).count();
         out.put("ready3d", ready);
@@ -180,6 +183,25 @@ public class ShowcaseService {
      * Com foto de perfil, a cabeça do manequim recebe a foto; sem foto, é o manequim padrão (cabeça lisa).
      */
     Map<String, Object> mannequin(User u, List<WardrobeItem> ws) {
+        return mannequin(u, ws, null);
+    }
+
+    /**
+     * Com o Avatar 3D (RF40) confirmado e visível para quem está vendo (público na Passarela, ou o próprio dono), a
+     * cabeça é o busto da pessoa ({@code head=AVATAR}); senão continua a foto de perfil ou o manequim padrão.
+     */
+    Map<String, Object> mannequin(User u, List<WardrobeItem> ws, CurrentUser viewer) {
+        Map<String, Object> m = mannequinBase(u, ws);
+        if (u.getProfileType() != ProfileType.MARCA) {
+            avatars3d.forMannequin(u.getId(), viewer == null ? null : viewer.id()).ifPresent(a -> {
+                m.put("avatar", a);
+                m.put("head", "AVATAR");
+            });
+        }
+        return m;
+    }
+
+    private Map<String, Object> mannequinBase(User u, List<WardrobeItem> ws) {
         MannequinSex sex = u.getSex();
         String source = "cadastro";
         var prefs = preferences.findByUserId(u.getId());
