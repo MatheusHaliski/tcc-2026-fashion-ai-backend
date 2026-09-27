@@ -1,0 +1,240 @@
+{
+ "desktop": {
+  "lowConfidenceOnPhotoStep": 0,
+  "lowConfidenceOnDataStep": 1,
+  "prefillStyle": [
+   "Básico"
+  ],
+  "prefillOccasion": [
+   "Casual"
+  ],
+  "styleCount": "1 de 2",
+  "zeroStyles": {
+   "posts": 0,
+   "messages": [
+    "Escolha 1 ou 2 estilos para esta peça."
+   ]
+  },
+  "oneStyle": [
+   "Básico"
+  ],
+  "twoStyles": [
+   "Clássico",
+   "Básico"
+  ],
+  "chiqueAriaDisabled": "true",
+  "threeTry": {
+   "selected": [
+    "Clássico",
+    "Básico"
+   ],
+   "message": "Selecione até 2 estilos para esta peça. Toque num estilo marcado para tirá-lo e escolher outro."
+  },
+  "afterToggleOff": [
+   "Básico"
+  ],
+  "occasions": [
+   "Casual",
+   "Trabalho"
+  ],
+  "occCount": "2 de 2",
+  "success": 1,
+  "postsTotal": 1,
+  "lastPayload": {
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ],
+   "category": "upper_piece",
+   "subcategory": "t_shirt"
+  },
+  "reloaded": {
+   "status": 200,
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ]
+  },
+  "responses": [
+   {
+    "status": 201,
+    "style": [
+     "basic",
+     "classic"
+    ],
+    "occasion": [
+     "casual",
+     "work"
+    ]
+   }
+  ]
+ },
+ "ia-invalida": {
+  "lowConfidenceOnPhotoStep": 0,
+  "lowConfidenceOnDataStep": 1,
+  "prefillStyle": [],
+  "prefillOccasion": [
+   "Casual"
+  ],
+  "styleCount": "0 de 2",
+  "injected": "prefill.style = [casual]",
+  "fixMessage": "“Casual” é uma ocasião, não um estilo. Remova e escolha um estilo da lista.Remover “Casual”",
+  "postsWithInvalid": 0,
+  "fieldErrorAfterInvalid": [
+   "“Casual” é uma ocasião, não um estilo. Remova e escolha um estilo da lista.Remover “Casual”"
+  ],
+  "zeroStyles": {
+   "posts": 0,
+   "messages": [
+    "Escolha 1 ou 2 estilos para esta peça."
+   ]
+  },
+  "oneStyle": [
+   "Básico"
+  ],
+  "twoStyles": [
+   "Clássico",
+   "Básico"
+  ],
+  "chiqueAriaDisabled": "true",
+  "threeTry": {
+   "selected": [
+    "Clássico",
+    "Básico"
+   ],
+   "message": "Selecione até 2 estilos para esta peça. Toque num estilo marcado para tirá-lo e escolher outro."
+  },
+  "afterToggleOff": [
+   "Básico"
+  ],
+  "occasions": [
+   "Casual",
+   "Trabalho"
+  ],
+  "occCount": "2 de 2",
+  "success": 1,
+  "postsTotal": 1,
+  "lastPayload": {
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ],
+   "category": "upper_piece",
+   "subcategory": "t_shirt"
+  },
+  "reloaded": {
+   "status": 200,
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ]
+  },
+  "responses": [
+   {
+    "status": 201,
+    "style": [
+     "basic",
+     "classic"
+    ],
+    "occasion": [
+     "casual",
+     "work"
+    ]
+   }
+  ]
+ },
+ "celular": {
+  "lowConfidenceOnPhotoStep": 0,
+  "lowConfidenceOnDataStep": 1,
+  "prefillStyle": [
+   "Básico"
+  ],
+  "prefillOccasion": [
+   "Casual"
+  ],
+  "styleCount": "1 de 2",
+  "zeroStyles": {
+   "posts": 0,
+   "messages": [
+    "Escolha 1 ou 2 estilos para esta peça."
+   ]
+  },
+  "oneStyle": [
+   "Básico"
+  ],
+  "twoStyles": [
+   "Clássico",
+   "Básico"
+  ],
+  "chiqueAriaDisabled": "true",
+  "threeTry": {
+   "selected": [
+    "Clássico",
+    "Básico"
+   ],
+   "message": "Selecione até 2 estilos para esta peça. Toque num estilo marcado para tirá-lo e escolher outro."
+  },
+  "afterToggleOff": [
+   "Básico"
+  ],
+  "occasions": [
+   "Casual",
+   "Trabalho"
+  ],
+  "occCount": "2 de 2",
+  "success": 1,
+  "postsTotal": 1,
+  "lastPayload": {
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ],
+   "category": "upper_piece",
+   "subcategory": "t_shirt"
+  },
+  "reloaded": {
+   "status": 200,
+   "style": [
+    "basic",
+    "classic"
+   ],
+   "occasion": [
+    "casual",
+    "work"
+   ]
+  },
+  "responses": [
+   {
+    "status": 201,
+    "style": [
+     "basic",
+     "classic"
+    ],
+    "occasion": [
+     "casual",
+     "work"
+    ]
+   }
+  ]
+ }
+}
