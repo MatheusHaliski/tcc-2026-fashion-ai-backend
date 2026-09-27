@@ -1,6 +1,7 @@
 package br.com.fashionai.web.config;
 
 import br.com.fashionai.domain.model.enums.CreationMode;
+import br.com.fashionai.domain.model.enums.Mood;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /** O Criar Look publicado mandava creationMode "AI": o esquema no modo IA caía em 400 (JSON_INVALIDO). */
 class JsonCompatConfigTest {
     record Form(CreationMode creationMode) {
+    }
+
+    record MoodForm(Mood mood) {
     }
 
     private final ObjectMapper json = new ObjectMapper().registerModule(new JsonCompatConfig().jsonCompatModule());
@@ -34,5 +38,23 @@ class JsonCompatConfigTest {
     @Test
     void valorDesconhecidoContinuaSendoRecusado() {
         assertThrows(InvalidFormatException.class, () -> read("\"ROBO\""));
+    }
+
+    private Mood mood(String v) throws Exception {
+        return json.readValue("{\"mood\":" + v + "}", MoodForm.class).mood();
+    }
+
+    /** A tela antiga oferecia climas fora do enum; salvar o look com um deles dava "JSON inválido". */
+    @Test
+    void climasDaTelaAntigaViramOClimaEquivalente() throws Exception {
+        assertEquals(Mood.COMFORTABLE, mood("\"RELAXADO\""));
+        assertEquals(Mood.SOPHISTICATED, mood("\"CONFIANTE\""));
+        assertEquals(Mood.ELEGANT, mood("\"ROMANTICO\""));
+        assertEquals(Mood.ELEGANT, mood("\"romântico\""));
+        assertEquals(Mood.ENERGETIC, mood("\"OUSADO\""));
+        assertEquals(Mood.ENERGETIC, mood("\"ENERGICO\""));
+        assertEquals(Mood.ELEGANT, mood("\"ELEGANT\""));
+        assertNull(mood("null"));
+        assertThrows(InvalidFormatException.class, () -> mood("\"TRISTE\""));
     }
 }

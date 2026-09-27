@@ -6,7 +6,7 @@ import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { ActionMenu, Avatar, Button, Dialog, Textarea, UiIcon, useToast } from "@/components/ui";
+import { Avatar, Button, Dialog, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { Generate3DButton } from "@/components/generate-3d";
 
@@ -14,60 +14,10 @@ type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
 const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: string }[] = [{ id: "TREND", icon: "SOC-07" }, { id: "ELEGANTE", icon: "SOC-08" }, { id: "CRIATIVO", icon: "SOC-09" }];
 
-/**
- * Barra social (RF19): as 4 ações principais com rótulo visível (curtir, comentar, salvar, compartilhar) e o resto
- * (reações, remix, 3D) num menu. Curtir, reagir e salvar respondem na hora (atualização otimista) e voltam atrás se o
- * servidor recusar.
- */
-export function InteractionBar({ type, id, counters, viewer, onChange, remixHref, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
-  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
-  const [share, setShare] = useState(false); const [comments, setComments] = useState(false);
-  const [liked, setLiked] = useState(!!viewer?.liked); const [saved, setSaved] = useState(!!viewer?.saved);
-  const [mine3, setMine3] = useState<string[]>(viewer?.reactions ?? []);
-  const [likes, setLikes] = useState(counters?.likes ?? 0); const [saves, setSaves] = useState(counters?.saves ?? 0);
-  const [rx, setRx] = useState<Record<string, number>>(counters?.reactions ?? {});
-  useEffect(() => { setLiked(!!viewer?.liked); setSaved(!!viewer?.saved); setMine3(viewer?.reactions ?? []); }, [viewer?.liked, viewer?.saved, JSON.stringify(viewer?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setLikes(counters?.likes ?? 0); setSaves(counters?.saves ?? 0); setRx(counters?.reactions ?? {}); }, [counters?.likes, counters?.saves, JSON.stringify(counters?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
-  const base = `/api/interactions/${type}/${id}`;
-  const guard = () => { if (!user) { router.push("/login"); return false; } return true; };
-  async function optimistic(apply: () => void, undo: () => void, call: () => Promise<unknown>) {
-    if (!guard()) return;
-    apply();
-    try { await call(); } catch (e) { undo(); toast.fromError(e); }
-  }
-  const toggleLike = () => { const was = liked; optimistic(() => { setLiked(!was); setLikes((n) => n + (was ? -1 : 1)); }, () => { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); }, () => api.post(`${base}/reactions`, { reaction: "LIKE" })); };
-  const toggleSave = () => { const was = saved; optimistic(() => { setSaved(!was); setSaves((n) => n + (was ? -1 : 1)); }, () => { setSaved(was); setSaves((n) => n + (was ? 1 : -1)); }, () => api.post(`${base}/saves`)); };
-  const toggleReaction = (r: string) => {
-    const was = mine3.includes(r);
-    const apply = (on: boolean) => { setMine3((l) => on ? [...l, r] : l.filter((x) => x !== r)); setRx((m) => ({ ...m, [r]: Math.max(0, (m[r] ?? 0) + (on ? 1 : -1)) })); };
-    optimistic(() => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
-  };
-  async function remix() { if (!guard()) return; try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(remixHref ?? (type === "SCHEME" ? `/schemes/${nid}` : `/pieces/${nid}`)); else onChange?.(); } catch (e) { toast.fromError(e); } }
-  const mine = user && ownerId === user.id;
-  return (
-    <div className="social-bar" role="group" aria-label={t("interactions.interacoes")}>
-      <button type="button" className="social-btn" aria-pressed={liked} onClick={toggleLike}>
-        <FaiIcon id="SOC-01" size={24} variant="glyph" decorative /><span>{liked ? t("interactions.liked") : t("interactions.like")}</span><span className="social-count tabular">{fmtNumber(likes)}</span>
-      </button>
-      <button type="button" className="social-btn" aria-haspopup="dialog" onClick={() => setComments(true)}>
-        <FaiIcon id="SOC-02" size={24} variant="glyph" decorative /><span>{t("interactions.comment")}</span><span className="social-count tabular">{fmtNumber(counters?.comments ?? 0)}</span>
-      </button>
-      <button type="button" className="social-btn" aria-pressed={saved} title={t("interactions.saveHint")} onClick={toggleSave}>
-        <FaiIcon id="SOC-05" size={24} variant="glyph" decorative /><span>{saved ? t("interactions.saved") : t("interactions.save")}</span><span className="social-count tabular">{fmtNumber(saves)}</span>
-      </button>
-      <button type="button" className="social-btn" aria-haspopup="dialog" onClick={() => setShare(true)}>
-        <FaiIcon id="SOC-03" size={24} variant="glyph" decorative /><span>{t("interactions.share")}</span>
-      </button>
-      <ActionMenu label={t("interactions.moreActions")} items={[
-        ...REACTIONS.map((r) => ({ label: `${t(`interactions.reaction.${r.id}`)} · ${fmtNumber(rx[r.id] ?? 0)}`, icon: <span className="w-5">{mine3.includes(r.id) ? <UiIcon name="check" size={18} /> : null}</span>, onSelect: () => toggleReaction(r.id) })),
-        { label: t("interactions.remixAction"), onSelect: remix, hidden: !!mine, icon: <FaiIcon id="SOC-04" size={20} variant="glyph" decorative /> },
-      ]} />
-      {(type === "SCHEME" || type === "PIECE") && <Generate3DButton compact={false} targets={[{ kind: type === "SCHEME" ? "scheme" : "piece", id, title: title ?? "" }]} />}
-      <span className="ml-auto type-caption text-muted tabular">{t("interactions.views", { value: counters?.views ?? 0 })}</span>
-      <CommentsDialog type={type} id={id} open={comments} onClose={() => { setComments(false); onChange?.(); }} title={title} />
-      <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} onShared={onChange} />
-    </div>
-  );
+/** Barra social (RF19) fora de um card (ex.: DNA de estilo): o mesmo padrão de post das ações do card, com Salvar. */
+export function InteractionBar({ type, id, counters, viewer, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
+  if (type === "COMMENT") return null;
+  return <CardActions type={type} id={id} counters={counters} viewer={viewer} ownerId={ownerId} title={title} withSave />;
 }
 
 /** Compartilhar (RF19): copiar o link ou publicar no feed, com legenda opcional. */
@@ -92,37 +42,60 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
 }
 
 /**
- * Ações do post no rodapé do card (anatomias v18): Curtir, Comentar, Compartilhar e Remixar, com a contagem no próprio
- * botão. No compacto, Compartilhar vai para o menu ⋯ do cabeçalho. Curtir responde na hora e volta atrás se falhar.
+ * Ações do post (RF7.CA11 · RF19), no formato de post do Instagram: uma fileira de botões só com ícone — todos no mesmo
+ * padrão (disco verde, ícone preto) — e, abaixo, os contadores em texto (curtidas, comentários, compartilhamentos,
+ * remixes e reações). O contador nunca fica dentro do botão. Salvar, editar e excluir ficam no menu ⋯ do cabeçalho.
  */
-export function CardActions({ type, id, counters, viewer, ownerId, title, compact, extra }: { type: "SCHEME" | "PIECE"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode }) {
-  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+export function CardActions({ type, id, counters, viewer, ownerId, title, compact, extra, withSave, with3d = true }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; withSave?: boolean; with3d?: boolean }) {
+  const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const [liked, setLiked] = useState(!!viewer?.liked); const [likes, setLikes] = useState(counters?.likes ?? 0);
+  const [saved, setSaved] = useState(!!viewer?.saved);
+  const [mine3, setMine3] = useState<string[]>(viewer?.reactions ?? []); const [rx, setRx] = useState<Record<string, number>>(counters?.reactions ?? {});
   const [comments, setComments] = useState(false); const [share, setShare] = useState(false); const [busy, setBusy] = useState(false);
-  useEffect(() => { setLiked(!!viewer?.liked); setLikes(counters?.likes ?? 0); }, [viewer?.liked, counters?.likes]);
+  useEffect(() => { setLiked(!!viewer?.liked); setLikes(counters?.likes ?? 0); setSaved(!!viewer?.saved); }, [viewer?.liked, counters?.likes, viewer?.saved]);
+  useEffect(() => { setMine3(viewer?.reactions ?? []); setRx(counters?.reactions ?? {}); }, [JSON.stringify(viewer?.reactions), JSON.stringify(counters?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
   const base = `/api/interactions/${type}/${id}`;
   const guard = () => { if (!user) { router.push("/login"); return false; } return true; };
-  const like = async () => {
-    if (!guard()) return; const was = liked;
-    setLiked(!was); setLikes((n) => n + (was ? -1 : 1));
-    try { await api.post(`${base}/reactions`, { reaction: "LIKE" }); } catch (e) { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); toast.fromError(e); }
+  async function optimistic(apply: () => void, undo: () => void, call: () => Promise<unknown>) {
+    if (!guard()) return;
+    apply();
+    try { await call(); } catch (e) { undo(); toast.fromError(e); }
+  }
+  const like = () => { const was = liked; optimistic(() => { setLiked(!was); setLikes((n) => n + (was ? -1 : 1)); }, () => { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); }, () => api.post(`${base}/reactions`, { reaction: "LIKE" })); };
+  const react = (r: string) => {
+    const was = mine3.includes(r);
+    const apply = (on: boolean) => { setMine3((l) => (on ? [...l, r] : l.filter((x) => x !== r))); setRx((m) => ({ ...m, [r]: Math.max(0, (m[r] ?? 0) + (on ? 1 : -1)) })); };
+    optimistic(() => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
   };
+  const save = () => { const was = saved; optimistic(() => setSaved(!was), () => setSaved(was), () => api.post(`${base}/saves`)); };
   const mine = !!user && ownerId === user.id;
   async function remix() {
     if (!guard() || busy) return; setBusy(true);
-    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(type === "SCHEME" ? `/schemes/${nid}` : `/pieces/${nid}`); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
+    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(type === "PIECE" ? `/pieces/${nid}` : `/schemes/${nid}`); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
-  const n = (v?: number) => fmtNumber(v ?? 0);
+  const counts = [
+    (counters?.comments ?? 0) > 0 ? <button key="c" type="button" className="c-count-link" onClick={() => setComments(true)}>{t("interactions.count.comments", { count: counters?.comments ?? 0 })}</button> : null,
+    (counters?.shares ?? 0) > 0 ? <span key="s">{t("interactions.count.shares", { count: counters?.shares ?? 0 })}</span> : null,
+    (counters?.remixes ?? 0) > 0 ? <span key="r">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</span> : null,
+    ...REACTIONS.filter((r) => (rx[r.id] ?? 0) > 0).map((r) => <span key={r.id}>{t("interactions.count.reaction", { id: r.id, count: rx[r.id] ?? 0 })}</span>),
+  ].filter(Boolean);
+  const btn = (key: string, icon: string, label: string, onClick: () => void, pressed?: boolean, disabled?: boolean) => (
+    <button key={key} type="button" className="c-act" aria-pressed={pressed} aria-label={label} title={label} onClick={onClick} disabled={disabled}><FaiIcon id={icon} size={20} variant="glyph" decorative /></button>
+  );
   return (
-    <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
-      <button type="button" className="c-act" aria-pressed={liked} onClick={like} aria-label={t("anatomy.actions.like", { count: likes })}><FaiIcon id="SOC-01" size={20} variant="glyph" decorative /><span className="tabular">{n(likes)}</span></button>
-      <button type="button" className="c-act" aria-haspopup="dialog" onClick={() => setComments(true)} aria-label={t("anatomy.actions.comment", { count: counters?.comments ?? 0 })}><FaiIcon id="SOC-02" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.comments)}</span></button>
-      {!compact && <button type="button" className="c-act" aria-haspopup="dialog" onClick={() => { if (guard()) setShare(true); }} aria-label={t("anatomy.actions.share", { count: counters?.shares ?? 0 })}><FaiIcon id="SOC-03" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.shares)}</span></button>}
-      {mine
-        ? <span className="c-act is-static" role="img" aria-label={t("anatomy.actions.remixes", { count: counters?.remixes ?? 0 })}><FaiIcon id="SOC-04" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.remixes)}</span></span>
-        : <button type="button" className="c-act" onClick={remix} disabled={busy} aria-label={t("anatomy.actions.remix", { count: counters?.remixes ?? 0 })}><FaiIcon id="SOC-04" size={20} variant="glyph" decorative /><span className="tabular">{n(counters?.remixes)}</span></button>}
-      <span className="grow" />
-      {extra}
+    <div className={`c-post ${compact ? "is-compact" : ""}`}>
+      <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
+        {btn("like", "SOC-01", liked ? t("interactions.liked") : t("interactions.like"), like, liked)}
+        {btn("comment", "SOC-02", t("interactions.comment"), () => setComments(true))}
+        {btn("share", "SOC-03", t("interactions.share"), () => { if (guard()) setShare(true); })}
+        {type !== "DNA_SCHEME" && btn("remix", "SOC-04", mine ? t("interactions.remix_proprio") : t("interactions.remixAction"), remix, false, mine || busy)}
+        {REACTIONS.map((r) => btn(r.id, r.icon, t(`interactions.reaction.${r.id}`), () => react(r.id), mine3.includes(r.id)))}
+        {with3d && type !== "DNA_SCHEME" && <Generate3DButton glyph targets={[{ kind: type === "SCHEME" ? "scheme" : "piece", id, title: title ?? "" }]} />}
+        <span className="grow" />
+        {extra}
+        {withSave && btn("save", "SOC-05", saved ? t("interactions.saved") : t("interactions.save"), save, saved)}
+      </div>
+      <p className="c-counts"><b className="tabular">{t("interactions.count.likes", { count: likes })}</b>{counts.length > 0 && <span className="c-counts-rest">{counts.map((c, i) => <span key={i}>{i > 0 ? " · " : ""}{c}</span>)}</span>}</p>
       <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />
       <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />
     </div>

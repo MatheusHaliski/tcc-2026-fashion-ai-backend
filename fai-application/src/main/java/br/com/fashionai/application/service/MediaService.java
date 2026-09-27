@@ -14,8 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -102,5 +106,41 @@ public class MediaService {
         p.setModerationStatus(moderation == null ? ModerationStatus.APPROVED : moderation);
         p.setMetadataJson(metadata == null ? null : Json.write(metadata));
         return photos.save(p);
+    }
+
+    /** Liga a foto enviada antes de a entidade existir (ex.: foto do look, RF5) ao seu dono, para a exclusão em cascata. */
+    public void linkSource(UUID userId, String publicUrl, UUID sourceEntityId) {
+        if (publicUrl == null || sourceEntityId == null) {
+            return;
+        }
+        for (Photo p : photos.findByUserIdAndPublicUrlAndDeletedAtIsNull(userId, publicUrl)) {
+            if (p.getSourceEntityId() == null) {
+                p.setSourceEntityId(sourceEntityId);
+            }
+        }
+    }
+
+    /**
+     * RF12.CA13 — ao excluir uma peça ou um look, as fotos dele saem do acervo junto (integridade referencial): nada fica
+     * órfão em "Minhas Fotos". A baixa é lógica, como na exclusão manual (CA03); os arquivos continuam no armazenamento
+     * porque os looks antigos guardam um retrato da peça excluída e ainda o exibem.
+     */
+    public int retire(UUID userId, UUID sourceEntityId, Set<PhotoOrigin> origins, Collection<String> urls) {
+        Set<Photo> found = new LinkedHashSet<>();
+        if (sourceEntityId != null) {
+            photos.findByUserIdAndSourceEntityIdAndDeletedAtIsNull(userId, sourceEntityId).stream()
+                    .filter(p -> origins.contains(p.getOrigin())).forEach(found::add);
+        }
+        if (urls != null) {
+            for (String url : urls) {
+                if (url != null && !url.isBlank()) {
+                    photos.findByUserIdAndPublicUrlAndDeletedAtIsNull(userId, url).stream()
+                            .filter(p -> origins.contains(p.getOrigin())).forEach(found::add);
+                }
+            }
+        }
+        Instant now = Instant.now();
+        found.forEach(p -> p.setDeletedAt(now));
+        return found.size();
     }
 }

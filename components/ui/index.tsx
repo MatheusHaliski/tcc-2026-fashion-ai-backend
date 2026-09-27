@@ -122,7 +122,11 @@ export function Tabs<T extends string>({ tabs, value, onChange, className, label
   );
 }
 /** Progresso de um fluxo em etapas: "Passo 2 de 5 · Peças" + trilho com as etapas (as já feitas podem ser revisitadas). */
-export function Stepper({ steps, current, onStep, label }: { steps: string[]; current: number; onStep?: (i: number) => void; label: string }) {
+/**
+ * Etapas de um fluxo. Por padrão só as etapas já vistas são clicáveis; `canGo` libera a navegação livre (ir e voltar
+ * para qualquer etapa cujo pré-requisito já está cumprido).
+ */
+export function Stepper({ steps, current, onStep, label, canGo }: { steps: string[]; current: number; onStep?: (i: number) => void; label: string; canGo?: (i: number) => boolean }) {
   const { t } = useI18n();
   return (
     <nav aria-label={label} className="stepper">
@@ -130,7 +134,7 @@ export function Stepper({ steps, current, onStep, label }: { steps: string[]; cu
       <ol>
         {steps.map((s, i) => (
           <li key={s} className={i < current ? "is-done" : i === current ? "is-current" : undefined}>
-            <button type="button" disabled={!onStep || i > current} aria-current={i === current ? "step" : undefined} onClick={() => onStep?.(i)}>
+            <button type="button" disabled={!onStep || i === current || !(canGo ? canGo(i) : i < current)} aria-current={i === current ? "step" : undefined} onClick={() => onStep?.(i)}>
               <span className="stepper-dot" aria-hidden>{i < current ? <UiIcon name="check" size={14} /> : i + 1}</span>
               <span className="stepper-label">{s}</span>
             </button>
@@ -138,6 +142,17 @@ export function Stepper({ steps, current, onStep, label }: { steps: string[]; cu
         ))}
       </ol>
     </nav>
+  );
+}
+/**
+ * Segment picker: alterna entre visões/listas de uma mesma aba (uma de cada vez — nunca listas empilhadas na aba).
+ * Fica no cabeçalho da aba ou no topo do card.
+ */
+export function SegmentPicker<T extends string>({ options, value, onChange, label, className }: { options: { id: T; label: string; count?: number }[]; value: T; onChange: (v: T) => void; label: string; className?: string }) {
+  return (
+    <div role="tablist" aria-label={label} className={cn("segmented", className)}>
+      {options.map((o) => <button key={o.id} type="button" role="tab" aria-selected={value === o.id} className={value === o.id ? "is-active" : undefined} onClick={() => onChange(o.id)}>{o.label}{o.count != null && <span className="seg-count tabular">{o.count}</span>}</button>)}
+    </div>
   );
 }
 export function Skeleton({ className }: { className?: string }) { return <div className={cn("skeleton", className)} aria-hidden />; }

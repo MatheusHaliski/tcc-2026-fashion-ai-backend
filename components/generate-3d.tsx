@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
@@ -24,10 +25,20 @@ export function Cube3dIcon({ size = 20 }: { size?: number }) {
  * Botão "Gerar 3D" das anatomias (junto das interações sociais). Vale para toda tipologia de card: esquema (o look
  * no manequim), peça (a peça no manequim ou o modelo do RF16) e DNA (cada esquema referenciado, um de cada vez).
  */
-export function Generate3DButton({ targets, compact = true, className = "" }: { targets: Target3d[]; compact?: boolean; className?: string }) {
+export function Generate3DButton({ targets, compact = true, className = "", glyph }: { targets: Target3d[]; compact?: boolean; className?: string; glyph?: boolean }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (!targets.length) return null;
+  // glyph: mesmo padrão dos botões do post (disco verde, ícone preto), sem texto
+  if (glyph) return (
+    <>
+      <button type="button" className={`c-act ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
+        aria-haspopup="dialog" title={t("generate3d.gerar_3d_ver_no_manequim")} aria-label={t("generate3d.gerar_3d_de", { title: targets[0].title })}>
+        <FaiIcon id="ACT-20" size={20} variant="glyph" decorative />
+      </button>
+      {open && <Generate3DDialog targets={targets} onClose={() => setOpen(false)} />}
+    </>
+  );
   return (
     <>
       <button type="button" className={`btn btn-ghost btn-sm gen3d-btn ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}

@@ -34,5 +34,9 @@ public interface PhotoRepository extends JpaRepository<Photo, UUID> {
 
     List<Photo> findByUserIdAndSourceEntityId(UUID userId, UUID sourceEntityId);
 
+    List<Photo> findByUserIdAndSourceEntityIdAndDeletedAtIsNull(UUID userId, UUID sourceEntityId);
+
+    List<Photo> findByUserIdAndPublicUrlAndDeletedAtIsNull(UUID userId, String publicUrl);
+
     List<Photo> findByIdInAndUserId(Collection<UUID> ids, UUID userId);
 }

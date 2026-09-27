@@ -126,6 +126,12 @@ public class SchemeController {
         return schemes.archive(user, id);
     }
 
+    @DeleteMapping("/api/schemes/{id}")
+    @Operation(summary = "RF7.CA11 — Excluir o look (menu ⋯ do dono); a foto do look sai de Minhas Fotos junto (RF12.CA13)")
+    public Map<String, Object> delete(CurrentUser user, @PathVariable UUID id) {
+        return schemes.archive(user, id);
+    }
+
     @PostMapping("/api/schemes/{id}/remix")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF19 — Remixar um esquema público para o meu guarda-roupa")
