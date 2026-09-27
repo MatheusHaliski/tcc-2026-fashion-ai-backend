@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
-import { rng, useCanvasTexture, useReducedMotion, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
+import { rng, useCanvasTexture, useReducedMotion, type Look3dPiece, type Mannequin3d, StudioLight } from "@/components/three/common";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /*
@@ -87,6 +87,7 @@ export default function StageScene({ name, era, colors, mannequin, pieces, crowd
   return (
     <Canvas shadows camera={{ position: [0, 2.6, 8.5], fov: 45 }} dpr={[1, 1.75]} aria-label={t("three.stageScene.my_stage_3d_de", { name })}>
       <color attach="background" args={["#07080d"]} />
+      <StudioLight intensity={0.8} />
       <fog attach="fog" args={["#07080d", 10, 22]} />
       <hemisphereLight args={["#b9c6ff", "#0c0d12", 0.45]} />
       <spotLight position={[0, 7, 4]} angle={0.35} penumbra={0.5} intensity={60} distance={14} castShadow color="#fff3e2" target-position={[0, 1, 0]} />

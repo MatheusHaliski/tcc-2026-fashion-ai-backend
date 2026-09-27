@@ -30,7 +30,7 @@ export default function AvatarLab() {
   useEffect(() => {
     (window as unknown as { __avatarLab: unknown }).__avatarLab = {
       setView, setSex, run,
-      state: () => ({ status, ms, photos: photos.map((p) => ({ role: p.role, faces: p.faces, pose: p.fit?.pose, stats: p.stats, occlusion: p.occlusion, px: p.px ? [33, 133, 263, 362, 168, 6, 234, 454, 10, 152].map((i) => p.px![i]) : null, issues: p.issues, blend: { eyeBlinkLeft: p.blend.eyeBlinkLeft, eyeBlinkRight: p.blend.eyeBlinkRight, jawOpen: p.blend.jawOpen } })), set: built?.set, model: built ? { skin: built.model.skin, hair: built.model.hair, metrics: built.model.metrics, views: built.model.views, warnings: built.model.warnings } : null, lightEvened: built?.lightEvened }),
+      state: () => ({ status, ms, photos: photos.map((p) => ({ role: p.role, faces: p.faces, pose: p.fit?.pose, stats: p.stats, occlusion: p.occlusion, px: p.px ? [33, 133, 263, 362, 168, 6, 234, 454, 10, 152].map((i) => p.px![i]) : null, issues: p.issues, blend: { eyeBlinkLeft: p.blend.eyeBlinkLeft, eyeBlinkRight: p.blend.eyeBlinkRight, jawOpen: p.blend.jawOpen } })), set: built?.set, model: built ? { skin: built.model.skin, hair: built.model.hair, metrics: built.model.metrics, views: built.model.views, warnings: built.model.warnings } : null, lightEvened: built?.lightEvened, hairStats: built?.hair ?? null, hairProfile: built?.hairProfile ?? null }),
       atlas: () => built?.atlas.toDataURL("image/jpeg", 0.85) ?? null,
     };
   });

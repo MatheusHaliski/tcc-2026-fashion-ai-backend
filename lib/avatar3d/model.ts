@@ -6,10 +6,16 @@
 import type { FaceMetrics, Role } from "./geometry";
 import { N } from "./geometry";
 import type { BodyModel } from "./body-spec";
+import { HAIR_LENGTHS, HAIR_TEXTURES, type HairLength, type HairTexture } from "./hair";
 
 export const MODEL_VERSION = 1;
 
-export interface AvatarHair { present: boolean; color: string | null; top: number; side: number; bottom: number | null; fringe: number; cut: boolean }
+export interface AvatarHair {
+  present: boolean; color: string | null; top: number; side: number; bottom: number | null; fringe: number; cut: boolean;
+  length?: HairLength; texture?: HairTexture;            // comprimento e textura medidos na foto (lib/avatar3d/hair.ts)
+  cover?: string | null;                                 // cor da cobertura de cabeça (lenço, turbante, boné), se houver
+  outline?: number[];                                    // silhueta: meia-largura (cm, canônico) por altura (HAIR_LEVELS)
+}
 export interface AvatarModel {
   v: number;
   shape: number[];                          // 468×3 em cm canônicos
@@ -43,7 +49,13 @@ export function validateModel(x: unknown): AvatarModel | null {
   if (typeof m.skin !== "string" || !HEX.test(m.skin)) return null;
   const h = m.hair; if (!h || typeof h !== "object" || (h.color !== null && !HEX.test(String(h.color)))) return null;
   if (![h.top, h.side, h.fringe].every((v) => Number.isFinite(v))) return null;
-  return m;
+  // campos novos do cabelo: opcionais (avatares antigos não têm); valor desconhecido é descartado, não derruba o avatar
+  const hair: AvatarHair = { ...h };
+  if (hair.length !== undefined && !HAIR_LENGTHS.includes(hair.length)) delete hair.length;
+  if (hair.texture !== undefined && !HAIR_TEXTURES.includes(hair.texture)) delete hair.texture;
+  if (hair.cover !== undefined && hair.cover !== null && !HEX.test(String(hair.cover))) delete hair.cover;
+  if (hair.outline !== undefined && (!Array.isArray(hair.outline) || hair.outline.length > 32 || !hair.outline.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 30))) delete hair.outline;
+  return { ...m, hair };
 }
 
 export function roundShape(shape: ArrayLike<number>): number[] { return Array.from(shape, (v) => Math.round(v * 100) / 100); }

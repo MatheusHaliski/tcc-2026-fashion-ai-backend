@@ -5,9 +5,12 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { PRINT_MIN_NZ, ellipsoid, fitPhoto, garmentMold, limbGeo, loftGeo, photoBox, project, sectionAt, splitPrint } from "@/lib/avatar3d/garment-geometry";
 import { SKIN, VITRINE, useGlb, useTex, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
-import { AvatarBust } from "@/components/three/avatar-bust";
+import { AvatarBust, useAvatarTexture } from "@/components/three/avatar-bust";
+import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
+import { HumanOutfit } from "@/components/three/human-outfit";
+import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
-import { DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type Spec } from "@/lib/avatar3d/body-spec";
+import { BODY_KEYS, DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
 
 /*
  * Manequim da Passarela 3D, do My Stage 3D, do "Gerar 3D", da "Foto com meu manequim" e do Avatar 3D. O corpo sai
@@ -160,7 +163,8 @@ export function bodyParamsOf(m: Mannequin3d): BodyParams {
   return { ...DEFAULT_BODY[sex], build: BUILD[m.build ?? "MEDIUM"] ?? 0 };
 }
 
-export function Mannequin({ mannequin, pieces, sway = true, onClick, body }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null }) {
+/** Manequim de reserva (cápsulas, sem esqueleto): aparece só enquanto o corpo humano carrega ou se ele não puder ser usado. */
+export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null }) {
   const params = body ?? bodyParamsOf(mannequin);
   const s = useMemo(() => buildSpec(params), [params.stature, params.shoulderW, params.chestW, params.waistW, params.hipW, params.legLen, params.armLen, params.headH, params.build]); // eslint-disable-line react-hooks/exhaustive-deps
   const avatar = mannequin.avatar && validateModel(mannequin.avatar.model) ? mannequin.avatar : null;
@@ -176,6 +180,37 @@ export function Mannequin({ mannequin, pieces, sway = true, onClick, body }: { m
       {avatar ? <AvatarBust avatar={avatar} stature={s.stature} torsoTopY={s.torso[s.torso.length - 1].y} />
         : <mesh geometry={head} position={s.head.center} castShadow><meshStandardMaterial color={skin} roughness={0.55} /></mesh>}
       {pieces.map((p) => <Garment key={p.id} p={p} s={s} />)}
+    </group>
+  );
+}
+
+/**
+ * Manequim das vitrines 3D, do provador e do Avatar 3D: o corpo humano com esqueleto (components/three/human-avatar.tsx)
+ * na forma da pessoa — proporções medidas/informadas (ou as de referência do sexo), rosto e cabelo do Avatar 3D,
+ * tom de pele — vestindo as peças do look presas ao mesmo esqueleto (components/three/human-outfit.tsx).
+ * Sem Avatar 3D, é o manequim de vitrine (marfim ou o tom escolhido), sem rosto de ninguém.
+ */
+export function Mannequin({ mannequin, pieces, onClick, body, still = false, onHuman }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; onHuman?: (p: HumanParts) => void }) {
+  const reduced = useReducedMotion();
+  const sex: Sex = mannequin.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
+  const saved = validateBody(mannequin.avatar?.model?.body);
+  const params = body ?? bodyParamsOf(mannequin);
+  // origem de cada medida: a do corpo salvo; na prévia do editor, o que a pessoa vê é "informado"; sem nada, referência
+  const sources: BodySources = saved?.sources ?? (Object.fromEntries(BODY_KEYS.map((k) => [k, body ? "user" : k === "build" && mannequin.build && mannequin.build !== "MEDIUM" ? "estimated" : "default"])) as BodySources);
+  const avatar = mannequin.avatar && validateModel(mannequin.avatar.model) ? mannequin.avatar : null;
+  const adj = clampAdjust(avatar?.adjust);
+  const skin = avatar ? skinWithLight(avatar.model.skin, adj.skinLight) : mannequin.skinTone ? SKIN[mannequin.skinTone] ?? VITRINE : VITRINE;
+  const tex = useAvatarTexture(avatar);
+  const atlas = (tex?.image as (CanvasImageSource & { width: number; height: number }) | undefined) ?? null;
+  const pkey = JSON.stringify(params), skey = JSON.stringify(sources);
+  const input = useMemo(() => ({ sex, params, sources }), [sex, pkey, skey]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <group onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}>
+      <HumanAvatar body={input} stature={params.stature} skin={skin} face={avatar?.model ?? null} atlas={avatar ? atlas : null} hair={avatar?.model.hair ?? null}
+        adjust={avatar ? adj : null} motion={!reduced && !still} onReady={onHuman}
+        fallback={<CapsuleMannequin mannequin={mannequin} pieces={pieces} sway={false} body={body} />}>
+        {(p) => <HumanOutfit parts={p} pieces={pieces} sex={sex} />}
+      </HumanAvatar>
     </group>
   );
 }
