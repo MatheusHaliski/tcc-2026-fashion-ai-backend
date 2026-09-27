@@ -27,6 +27,7 @@ em camadas, a parte de cima cai do busto, a saia é um tubo por fora das pernas 
 | Costas | Vazias ou com a estampa da frente repetida | Cor do tecido medida na foto (sem estampa inventada) |
 | Exportação | Não existia | GLB com corpo, rosto, cabelo, roupa e animação. O validador oficial do glTF acusa 0 erros |
 | Custo por peça | — | Nenhum modelo 3D por peça. Montagem em 1–30 ms no navegador |
+| Look sem peça (ou incompleto) | Corpo sem roupa ou com roupa íntima neutra | Tronco, pernas e pés sempre vestidos, com peças dos assets do FashionAI (camiseta, jeans e tênis) |
 
 ---
 
@@ -145,16 +146,34 @@ foto, a barra ao pé da foto e a largura do tronco à largura da peça na foto, 
 costas e as laterais recebem a **cor do tecido** medida nos pixels da foto (`fabricColor`), porque a foto não mostra as
 costas e o sistema não inventa estampa. Calçados recebem cabedal e sola nas cores da foto (`shoeColors`).
 
-### 4.7 Sem roupa, nunca
+### 4.7 Sem roupa, nunca: look padrão do FashionAI
 
-Se o look não tiver parte de baixo, entra uma bermuda de base neutra. No corpo feminino, sem parte de cima, entra um
-top de base. O avatar nunca aparece sem roupa (`outfitOf`).
+Nenhuma imagem 3D mostra uma pessoa sem roupa. Quando o look não tem peça numa das três zonas do corpo, a zona recebe
+uma peça dos assets de peças do FashionAI (`public/assets_pecas`), em `lib/avatar3d/human/default-outfit.ts`:
+
+| Zona | Conta como coberta | Peça padrão |
+|---|---|---|
+| Tronco | camiseta, regata, cropped, manga longa, camisa, suéter, moletom, vestido, macacão | camiseta de referência (`01_camiseta_referencia`) |
+| Pernas | calça, bermuda, saia, legging, vestido, macacão | jeans (`01_jeans`) |
+| Pés | tênis, sapato, sandália, bota | tênis casual (`01_tenis_casual`) |
+
+- As peças do look têm prioridade. O padrão só completa o que falta: só uma camiseta leva jeans e tênis; só um vestido
+  leva tênis.
+- Jaqueta e casaco não contam como tronco coberto, porque são abertos na frente. Por baixo deles entra a camiseta.
+  O casaco longo também não substitui a calça.
+- Acessório (óculos, bolsa, chapéu) não é roupa: um look só de acessórios recebe camiseta, jeans e tênis.
+- As imagens são as versões WebP de 640 px dos assets, com transparência: cerca de 116 KB no total, em vez dos ~6 MB
+  dos PNG originais.
+- Vale para todas as telas 3D, porque todas passam pelo mesmo `Mannequin`: Meu Avatar 3D (inclusive o enquadramento
+  do rosto), provador, vitrines, Passarela, My Stage, Meu Quarto e Foto com meu manequim. Vale também para o manequim
+  de reserva, que aparece enquanto o corpo carrega, e para o GLB exportado.
 
 ---
 
 ## 5. Testes
 
-`npm test` roda `lib/avatar3d/human/garments.test.ts` e `human.test.ts`, 14 testes ao todo. Os principais:
+`npm test` roda `lib/avatar3d/human/garments.test.ts`, `default-outfit.test.ts` e `human.test.ts`, 18 testes ao todo. Os
+principais:
 
 | Teste | Critério |
 |---|---|
@@ -165,6 +184,7 @@ top de base. O avatar nunca aparece sem roupa (`outfitOf`).
 | Blusa sobre saia | Mais de 99% da blusa abaixo do cós fica por fora do tubo da saia, e no cós ela fica a menos de 3,5 cm do corpo (sem "aba") |
 | Pesos | 4 ossos por vértice, com soma 1 |
 | Tipo de molde | A subcategoria da taxonomia leva ao molde certo, e acessório não vira roupa |
+| Nunca sem roupa (`default-outfit.test.ts`) | Qualquer look, até vazio ou só de acessórios, sai com tronco, pernas e pés cobertos; as peças do look não são trocadas |
 
 ### 5.1 Medições (`vestir-metricas-2026-09-27.json`)
 
@@ -201,7 +221,8 @@ dos ossos.
 
 ## 6. Imagens
 
-Peças de referência de `public/assets_pecas/`. Da esquerda para a direita: roupa de base; camiseta, calça e tênis;
+Peças de referência de `public/assets_pecas/`. Da esquerda para a direita: look sem peça nenhuma (recebe o look padrão:
+camiseta, jeans e tênis); camiseta, calça e tênis;
 jaqueta sobre camiseta, calça e bota; vestido e sapatilha; regata, short e tênis; blusa, saia e salto.
 
 ![Looks no corpo feminino](img/vestir/looks-feminino.jpg)
@@ -260,6 +281,7 @@ Foto, avatar de frente e avatar de 3/4 (p21, p26, p28, p30, p37 com turbante e p
 |---|---|
 | `lib/avatar3d/human/garments.ts` | Tipos de molde, cobertura, molde da pele, camadas, caimento, tubo da saia, pose, foto |
 | `lib/avatar3d/human/garments.test.ts` | Testes de interseção, camadas, pesos e tipos |
+| `lib/avatar3d/human/default-outfit.ts` | Look padrão com os assets do FashionAI nas zonas sem roupa |
 | `components/three/human-outfit.tsx` | Monta as peças do look no corpo (texturas, materiais e malhas no esqueleto) |
 | `components/three/human-avatar.tsx` | Corpo, rosto, olhos e cabelo da pessoa, com pose e movimento |
 | `lib/avatar3d/human/pose.ts` | Pose de exibição, braços pela roupa e movimento parado |

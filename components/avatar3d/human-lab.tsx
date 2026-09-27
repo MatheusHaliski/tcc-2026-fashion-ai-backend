@@ -78,7 +78,7 @@ export default function HumanLab() {
             <HumanAvatar key={sex + (model ? "a" : "")} body={{ sex }} stature={H} skin={model?.skin ?? (sex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={model?.hair ?? null} motion={motion}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}>
-              {(p) => <HumanOutfit parts={p} pieces={OUTFITS[outfit] ?? []} sex={sex} />}
+              {(p) => <HumanOutfit parts={p} pieces={OUTFITS[outfit] ?? []} />}
             </HumanAvatar>
             <Cam view={view} H={H} />
           </Canvas>

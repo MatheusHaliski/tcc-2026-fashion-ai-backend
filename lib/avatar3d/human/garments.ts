@@ -10,7 +10,7 @@
  *      curva lisa, não em "escada" de triângulos;
  *   4. pesos — cada vértice da peça herda os pesos de pele do vértice do corpo de onde nasceu (o tubo da saia pesa no
  *      quadril e nas coxas): peça e corpo se movem juntos, sem atravessar;
- *   5. camadas — folga crescente: roupa íntima < legging < calça < camiseta < moletom < jaqueta < casaco; a parte de cima
+ *   5. camadas — folga crescente: legging < calça < camiseta < moletom < jaqueta < casaco; a parte de cima
  *      fica por fora da de baixo na cintura (sem "tuck");
  *   6. foto — a foto sem fundo da peça é projetada de frente, na pose em que o avatar é mostrado, alinhando gola↔alto
  *      da foto, barra↔pé da foto e largura do tronco↔largura do corpo da peça na foto; costas e laterais recebem a cor do
@@ -23,8 +23,7 @@ import type { Composed } from "./compose";
 
 export type GarmentKind =
   | "tee" | "tank" | "longsleeve" | "shirt" | "sweater" | "hoodie" | "jacket" | "coat" | "crop"
-  | "dress" | "jumpsuit" | "skirt" | "pants" | "shorts" | "leggings" | "shoes" | "boots"
-  | "baseTop" | "baseBottom";
+  | "dress" | "jumpsuit" | "skirt" | "pants" | "shorts" | "leggings" | "shoes" | "boots";
 
 export interface GarmentSpec {
   kind: GarmentKind;
@@ -43,8 +42,6 @@ export interface GarmentSpec {
 
 const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, ...o });
 export const SPECS: Record<GarmentKind, GarmentSpec> = {
-  baseTop: S("baseTop", { ease: 0.0015, hem: 0.58, neck: 0.86, vneck: 0.02, layer: 0 }),
-  baseBottom: S("baseBottom", { ease: 0.0015, waist: 0.1, leg: 0.07, layer: 0 }),
   leggings: S("leggings", { ease: 0.002, waist: 0.2, leg: 0.97, layer: 1 }),
   pants: S("pants", { ease: 0.009, waist: 0.18, leg: 0.985, flare: 0.03, layer: 2 }),
   shorts: S("shorts", { ease: 0.007, waist: 0.18, leg: 0.36, flare: 0.012, layer: 2 }),
@@ -91,11 +88,6 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (cat === "FULL_BODY" || cat === "CORPO_INTEIRO") return "dress";
   return null;
 }
-export const covers = (k: GarmentKind) => ({
-  upper: !["pants", "shorts", "skirt", "leggings", "shoes", "boots", "baseBottom"].includes(k),
-  lower: ["pants", "shorts", "skirt", "leggings", "dress", "jumpsuit", "baseBottom", "coat"].includes(k),
-  feet: k === "shoes" || k === "boots",
-});
 
 /**
  * Afastamento dos braços (graus) na pose de exibição para o look: saia rodada pede as mãos por fora dela, e camadas

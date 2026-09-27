@@ -6,37 +6,35 @@ import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
-  SPECS, armOutFor, bodyParam, covers, fabricColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
-  type GarmentKind, type GarmentSpec,
+  SPECS, armOutFor, bodyParam, fabricColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
+  type GarmentSpec,
 } from "@/lib/avatar3d/human/garments";
+import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
- * peça é uma malha presa ao mesmo esqueleto, em camadas, com a foto da peça na frente. Sem peça de cima (ou de baixo),
- * o corpo recebe uma roupa de base neutra: o avatar nunca aparece sem roupa.
+ * peça é uma malha presa ao mesmo esqueleto, em camadas, com a foto da peça na frente. A zona do corpo sem peça no
+ * look (tronco, pernas ou pés) recebe uma peça padrão dos assets do FashionAI (lib/avatar3d/human/default-outfit.ts):
+ * o avatar nunca aparece sem roupa.
  */
-export interface OutfitItem { key: string; spec: GarmentSpec; piece: Look3dPiece | null }
+export interface OutfitItem { key: string; spec: GarmentSpec; piece: Look3dPiece }
 
-export function outfitOf(pieces: Look3dPiece[], sex: "FEMININO" | "MASCULINO"): OutfitItem[] {
+export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   const items: OutfitItem[] = [];
-  for (const p of pieces) { const k = kindOf(p); if (k) items.push({ key: p.id, spec: SPECS[k], piece: p }); }
-  const has = (f: (k: GarmentKind) => boolean) => items.some((i) => f(i.spec.kind));
-  if (!has((k) => covers(k).lower)) items.push({ key: "base-bottom", spec: SPECS.baseBottom, piece: null });
-  if (sex === "FEMININO" && !has((k) => covers(k).upper && k !== "shoes" && k !== "boots")) items.push({ key: "base-top", spec: SPECS.baseTop, piece: null });
+  for (const p of withDefaultOutfit(pieces)) { const k = kindOf(p); if (k) items.push({ key: p.id, spec: SPECS[k], piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 
 type Img = CanvasImageSource & { width: number; height: number };
-const BASE_COLOR = "#8e8984";
 
-export function HumanOutfit({ parts, pieces, sex }: { parts: HumanParts; pieces: Look3dPiece[]; sex: "FEMININO" | "MASCULINO" }) {
+export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
   const [images, setImages] = useState<Record<string, Img | null>>({});
-  const items = outfitOf(pieces, sex);
-  const urlKey = items.map((i) => `${i.key}:${i.piece?.studioUrl ?? i.piece?.imageUrl ?? ""}`).join("|");
+  const items = outfitOf(pieces);
+  const urlKey = items.map((i) => `${i.key}:${i.piece.studioUrl ?? i.piece.imageUrl ?? ""}`).join("|");
   useEffect(() => {
     let alive = true;
     Promise.all(items.map(async (i) => {
-      const u = mediaUrl(i.piece?.studioUrl ?? i.piece?.imageUrl ?? null);
+      const u = mediaUrl(i.piece.studioUrl ?? i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       return [i.key, (t?.image as Img | undefined) ?? null] as const;
     })).then((kv) => { if (alive) setImages(Object.fromEntries(kv)); });
@@ -56,14 +54,14 @@ export function HumanOutfit({ parts, pieces, sex }: { parts: HumanParts; pieces:
       const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
       const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null);
       const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
-      const fabric = it.piece ? fabricColor(img, it.piece.colorHex) : BASE_COLOR;
-      const tex = garmentTexture(it.piece && !shoe ? img : null, shoe ? "#ffffff" : fabric);
+      const fabric = fabricColor(img, it.piece.colorHex);
+      const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric);
       if (shoe) {                                         // cabedal e sola nas cores da foto (cor por vértice)
-        const sc = shoeColors(img, it.piece?.colorHex); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
+        const sc = shoeColors(img, it.piece.colorHex); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
         const pos = geo.getAttribute("position"), col = geo.getAttribute("color");
         for (let i = 0; i < pos.count; i++) { const k = pos.getY(i) < 0.022 ? so : up; col.setXYZ(i, k.r, k.g, k.b); }
       }
-      const m = new THREE.SkinnedMesh(geo, garmentMaterial(tex, it.spec)); m.name = it.piece ? `peca-${it.piece.id}` : `base-${it.spec.kind}`;
+      const m = new THREE.SkinnedMesh(geo, garmentMaterial(tex, it.spec)); m.name = `peca-${it.piece.id}`;
       m.castShadow = true; m.frustumCulled = false;
       human.root.add(m); m.bind(human.skeleton, human.body.bindMatrix);
       meshes.push(m);
