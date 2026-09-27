@@ -1938,6 +1938,7 @@
   "interactions.reaction_nome.TREND": "Trend",
   "interactions.remixAction": "Remix: make my own version",
   "interactions.remixDone": "Remix created. It's yours to edit now.",
+  "interactions.remix_n": "Remix: make my own version — {count, plural, =0 {no remixes yet} one {# remix} other {# remixes}}",
   "interactions.remix_proprio": "You can't remix your own outfit.",
   "interactions.respondendo_a": "Replying to @",
   "interactions.responder": "Reply",

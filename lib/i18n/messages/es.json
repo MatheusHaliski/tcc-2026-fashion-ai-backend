@@ -1938,6 +1938,7 @@
   "interactions.reaction_nome.TREND": "Trend",
   "interactions.remixAction": "Remezclar: crear mi versión",
   "interactions.remixDone": "Remix creado. Ahora es tuyo para editar.",
+  "interactions.remix_n": "Remezclar: crear mi versión — {count, plural, =0 {ningún remix aún} one {# remix} other {# remixes}}",
   "interactions.remix_proprio": "No puedes remezclar tu propio look.",
   "interactions.respondendo_a": "Respondiendo a @",
   "interactions.responder": "Responder",
