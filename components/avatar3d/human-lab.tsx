@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { HumanAvatar } from "@/components/three/human-avatar";
+import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
+import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { HumanOutfit } from "@/components/three/human-outfit";
 import { StudioLight, type Look3dPiece } from "@/components/three/common";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
@@ -40,13 +41,18 @@ export default function HumanLab() {
   const [view, setView] = useState<View>("front"); const [motion, setMotion] = useState(false); const [ready, setReady] = useState(0);
   const [built, setBuilt] = useState<BuiltAvatar | null>(null); const [status, setStatus] = useState("idle"); const [outfit, setOutfit] = useState("none");
   const H = DEFAULT_BODY[sex].stature;
+  const parts = useRef<HumanParts | null>(null);
+  async function glb(): Promise<string | null> {
+    const p = parts.current; if (!p) return null; const b = await exportAvatarGlb(p.human, p.pose);
+    const buf = new Uint8Array(await b.arrayBuffer()); let s = ""; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode(...buf.subarray(i, i + 0x8000)); return btoa(s);
+  }
   async function run(file: File) {
     setStatus("running"); setBuilt(null); setReady(0);
     try { const p = await analyzePhoto(file, "front"); const b = buildAvatar([p]); setBuilt(b); setStatus(b ? "built" : "rejected"); }
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
-    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
+    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, glb, ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
   });
   const model = built?.model ?? null;
   return (
@@ -71,7 +77,7 @@ export default function HumanLab() {
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
             <HumanAvatar key={sex + (model ? "a" : "")} body={{ sex }} stature={H} skin={model?.skin ?? (sex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={model?.hair ?? null} motion={motion}
-              debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={() => setReady((r) => r + 1)}>
+              debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}>
               {(p) => <HumanOutfit parts={p} pieces={OUTFITS[outfit] ?? []} sex={sex} />}
             </HumanAvatar>
             <Cam view={view} H={H} />

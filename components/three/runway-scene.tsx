@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
-import { rng, useCanvasTexture, useReducedMotion, type Look3d } from "@/components/three/common";
+import { rng, useCanvasTexture, useReducedMotion, type Look3d, StudioLight } from "@/components/three/common";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /*
@@ -99,6 +99,7 @@ export default function RunwayScene({ entries, date, onPick, selectedId }: { ent
   return (
     <Canvas shadows camera={{ position: [4.2, 3.2, 8.5], fov: 42 }} dpr={[1, 1.75]} aria-label={t("three.runwayScene.passarela_3d_com_o_look")}>
       <color attach="background" args={["#0b0e16"]} />
+      <StudioLight intensity={0.8} />
       <fog attach="fog" args={["#0b0e16", 12, 26]} />
       <hemisphereLight args={["#dfe7ff", "#1a1d26", 0.55]} />
       <directionalLight position={[3, 7, 6]} intensity={1.1} castShadow shadow-mapSize={[1024, 1024]} />

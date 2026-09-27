@@ -10,6 +10,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Card, Dialog, ErrorState, PageHeader, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
 import { useWebGL } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
+import type { HumanParts } from "@/components/three/human-avatar";
+import { downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, clampAdjust, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
 import type { Issue } from "@/lib/avatar3d/quality";
@@ -206,9 +208,10 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
 function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO" | "MASCULINO"; onRedo: () => void; onChanged: () => void }) {
   const { t, fmtDateTime } = useI18n(); const toast = useToast(); const issueText = useIssueText();
   const [view, setView] = useState<AvatarView>("front");
+  const [framing, setFraming] = useState<"bust" | "full">("bust"); const human = useRef<HumanParts | null>(null);
   const [adjust, setAdjust] = useState<AvatarAdjust>(clampAdjust(saved.adjust));
   const [pub, setPub] = useState(!!saved.publicOnRunway);
-  const [busy, setBusy] = useState<"" | "patch" | "delete" | "body">("");
+  const [busy, setBusy] = useState<"" | "patch" | "delete" | "body" | "glb">("");
   const [confirm, setConfirm] = useState(false);
   const body = validateBody(saved.model?.body);
   const dirty = JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
@@ -221,6 +224,12 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean }) {
     setBusy("patch");
     try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
+  async function downloadGlb() {
+    const p = human.current; if (!p) return;
+    setBusy("glb");
+    try { downloadBlob(await exportAvatarGlb(p.human, p.pose), "fashionai-avatar.glb"); }
     catch (e) { toast.fromError(e); } finally { setBusy(""); }
   }
   async function remove() {
@@ -250,9 +259,14 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={sex} view={view} body={body?.params} />}
+          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={sex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; }} />}
         </div>
-        <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <ViewButtons view={view} onView={setView} />
+          <Button size="sm" variant={framing === "full" ? "primary" : "ghost"} aria-pressed={framing === "full"} onClick={() => setFraming(framing === "full" ? "bust" : "full")}>{t("avatar3d.page.corpo_inteiro")}</Button>
+          <Button size="sm" variant="ghost" loading={busy === "glb"} disabled={!!busy} onClick={downloadGlb}>{t("avatar3d.page.baixar_glb")}</Button>
+        </div>
+        <p className="mt-1 type-caption text-faint">{t("avatar3d.page.baixar_glb_hint")}</p>
         <p className="mt-2 type-caption text-faint">{t("avatar3d.page.onde_aparece")}</p>
       </Card>
       <div className="lg:col-span-2">

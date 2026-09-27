@@ -224,12 +224,12 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     // cai reto do busto (não cola na cintura nem na barriga)
     if (bust && (g === 1 || g === 3) && h < 0.72 && h > sp.hem - 0.1) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
-      const target = bust[j] * 0.965 + e; const k = sp.drape * smooth(0.72, 0.5, h);
+      const target = bust[j] * 0.965 + e; const k = sp.drape * smooth(0.72, 0.5, h) * (0.15 + 0.85 * Math.abs(zz) / r);   // cai reto na frente e atrás; dos lados, o braço encosta
       if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
     }
     if ((sp.kind === "shoes" || sp.kind === "boots") && c.body[v * 3 + 1] < 0.018) y = Math.min(y, -0.004 - 0.008 * smooth(0.018, 0.0, c.body[v * 3 + 1]));   // sola
     pos.push(x, y, z); al.push(cov[v]); src.push(v);
-    for (let k = 0; k < 4; k++) { si.push(a.body.skinIndex[v * 4 + k]); sw.push(a.body.skinWeight[v * 4 + k] / 255); }
+    for (let k = 0; k < 4; k++) { const w = a.body.skinWeight[v * 4 + k]; si.push(w ? a.body.skinIndex[v * 4 + k] : 0); sw.push(w / 255); }
     return i;
   };
   const index: number[] = [];

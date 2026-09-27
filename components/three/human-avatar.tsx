@@ -45,6 +45,7 @@ export interface HumanAvatarProps {
   children?: (p: HumanParts) => React.ReactNode;
   fallback?: React.ReactNode;
   debugHair?: boolean;
+  adjust?: { headScale?: number; neck?: number; hairVolume?: number } | null;   // ajustes finos do Avatar 3D
 }
 
 function imageOf(src: Img): HTMLCanvasElement {
@@ -52,9 +53,9 @@ function imageOf(src: Img): HTMLCanvasElement {
   const c = document.createElement("canvas"); c.width = src.width; c.height = src.height; c.getContext("2d")!.drawImage(src, 0, 0); return c;
 }
 
-export function HumanAvatar({ body, stature, skin, face, atlas, hair, motion = true, onReady, children, fallback = null, debugHair }: HumanAvatarProps) {
+export function HumanAvatar({ body, stature, skin, face, atlas, hair, motion = true, onReady, children, fallback = null, debugHair, adjust }: HumanAvatarProps) {
   const asset = useBodyAsset();
-  const key = JSON.stringify([body.sex, body.params ?? null, body.sources ?? null, stature, face?.shape?.length ? face.shape.slice(0, 24) : null]);
+  const key = JSON.stringify([body.sex, body.params ?? null, body.sources ?? null, stature, face?.shape?.length ? face.shape.slice(0, 24) : null, adjust?.headScale ?? 1, adjust?.neck ?? 0]);
   const built = useMemo(() => {
     if (!asset || asset === "error") return null;
     const fit = fitBody(asset, body);
@@ -66,12 +67,13 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, motion = t
     const c = compose(asset, fit.z, fz, stature);
     const h = buildHuman(asset, c, { skin, debugHair });
     const st = applyRestPose(h);
+    const head = h.bone("Head"); head.scale.setScalar(adjust?.headScale ?? 1); head.position.y += adjust?.neck ?? 0;
     return { h, st, c, asset };
   }, [asset, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hairKey = JSON.stringify(hair ?? null);
+  const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1]);
   const hairMesh = useMemo(() => {
     if (!built || !hair) return null;
-    const hb = buildHair(built.asset, built.c, built.h.rest.normals, hair); if (!hb) return null;
+    const hb = buildHair(built.asset, built.c, built.h.rest.normals, hair, adjust?.hairVolume ?? 1); if (!hb) return null;
     const m = new THREE.SkinnedMesh(hb.geometry, hb.material); m.name = hb.kind === "cover" ? "cobertura" : "cabelo"; m.castShadow = true;
     built.h.root.add(m); m.bind(built.h.skeleton);
     return m;

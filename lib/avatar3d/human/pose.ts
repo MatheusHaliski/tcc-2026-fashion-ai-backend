@@ -30,7 +30,8 @@ export interface PoseState { base: Map<THREE.Bone, THREE.Quaternion>; hips: THRE
 const jp = (h: Human, n: string) => { const i = h.bones.indexOf(h.bone(n)); return V(h.rest.joints[i * 3], h.rest.joints[i * 3 + 1], h.rest.joints[i * 3 + 2]); };
 
 /** Pose de exibição: braços ao longo do corpo. Devolve o estado de base para o movimento. */
-export function applyRestPose(h: Human): PoseState {
+export function applyRestPose(h: Human, opts: { armOut?: number } = {}): PoseState {
+  const armOut = opts.armOut ?? 10;                     // graus entre o braço e o tronco (saia rodada pede mais)
   for (const b of h.bones) b.quaternion.identity();
   for (const [side, s] of [["Left", 1], ["Right", -1]] as const) {
     const S = jp(h, `${side}Arm`), E = jp(h, `${side}ForeArm`), W = jp(h, `${side}Hand`);
@@ -38,7 +39,7 @@ export function applyRestPose(h: Human): PoseState {
     rotateWorld(h.bone(`${side}Shoulder`), new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), -s * 4 * D));
     const up = h.bone(`${side}Arm`);
     const cur = E.clone().sub(S).normalize().applyQuaternion(worldQuat(h.bone(`${side}Shoulder`), null));
-    const target = V(s * Math.sin(8 * D), -Math.cos(8 * D), 0.035).normalize();
+    const target = V(s * Math.sin(armOut * D), -Math.cos(armOut * D), 0.035).normalize();
     rotateWorld(up, new THREE.Quaternion().setFromUnitVectors(cur, target));
     // antebraço: cotovelo levemente dobrado para a frente
     const fore = h.bone(`${side}ForeArm`);
@@ -65,6 +66,11 @@ export function applyRestPose(h: Human): PoseState {
   const base = new Map(h.bones.map((b) => [b, b.quaternion.clone()]));
   const hipJ = jp(h, "LeftUpLeg"), foot = jp(h, "LeftFoot");
   return { base, hips: h.bone("Hips").position.clone(), legLen: hipJ.y - foot.y };
+}
+
+/** Refaz a pose de exibição com outro afastamento dos braços (saia/vestido rodado: as mãos passam por fora da saia). */
+export function setArmOut(h: Human, st: PoseState, deg: number) {
+  const n = applyRestPose(h, { armOut: deg }); st.base.clear(); n.base.forEach((q, b) => st.base.set(b, q));
 }
 
 const wave = (t: number, period: number, phase = 0) => Math.sin((2 * Math.PI * t) / period + phase);
@@ -119,7 +125,8 @@ export function idleClip(h: Human, st: PoseState, seconds = 21, fps = 15): THREE
     const hp = h.bone("Hips").position; p.push(hp.x, hp.y, hp.z);
   }
   applyIdle(h, st, 0, 0);
-  const tracks: THREE.KeyframeTrack[] = h.bones.map((b) => new THREE.QuaternionKeyframeTrack(`${b.name}.quaternion`, times, q[b.name]));
-  tracks.push(new THREE.VectorKeyframeTrack(`${h.bone("Hips").name}.position`, times, p));
+  // pelo uuid do osso: "mixamorig:Hips" tem ":", que o PropertyBinding do three.js reserva (a trilha se perderia)
+  const tracks: THREE.KeyframeTrack[] = h.bones.map((b) => new THREE.QuaternionKeyframeTrack(`${b.uuid}.quaternion`, times, q[b.name]));
+  tracks.push(new THREE.VectorKeyframeTrack(`${h.bone("Hips").uuid}.position`, times, p));
   return new THREE.AnimationClip("idle", seconds, tracks);
 }

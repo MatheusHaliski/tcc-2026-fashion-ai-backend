@@ -35,6 +35,9 @@ export function baseNormals(pos: Float32Array, index: ArrayLike<number>, map: Ar
   return n;
 }
 
+/** Índices de osso com peso zero viram 0 (o glTF recomenda; evita avisos no validador). */
+function cleanJoints(idx: Uint16Array, w: Uint8Array): Uint16Array { for (let i = 0; i < idx.length; i++) if (!w[i]) idx[i] = 0; return idx; }
+
 function expand(src: ArrayLike<number>, map: ArrayLike<number>, size: number, Ctor: Float32ArrayConstructor | Uint8ArrayConstructor | Uint16ArrayConstructor) {
   const out = new Ctor(map.length * size);
   for (let i = 0; i < map.length; i++) for (let k = 0; k < size; k++) out[i * size + k] = src[map[i] * size + k];
@@ -74,7 +77,7 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("position", new THREE.BufferAttribute(expand(c.body, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("normal", new THREE.BufferAttribute(expand(normals, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("uv", new THREE.BufferAttribute(b.renderUv, 2));
-  g.setAttribute("skinIndex", new THREE.BufferAttribute(expand(b.skinIndex, b.renderVertex, 4, Uint16Array), 4));
+  g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));
   g.computeBoundingSphere();
@@ -87,7 +90,7 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   eg.setAttribute("position", new THREE.BufferAttribute(expand(c.eye, e.renderVertex, 3, Float32Array), 3));
   eg.setAttribute("normal", new THREE.BufferAttribute(expand(enorm, e.renderVertex, 3, Float32Array), 3));
   eg.setAttribute("uv", new THREE.BufferAttribute(e.renderUv, 2));
-  eg.setAttribute("skinIndex", new THREE.BufferAttribute(expand(e.skinIndex, e.renderVertex, 4, Uint16Array), 4));
+  eg.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(e.skinIndex, e.renderVertex, 4, Uint16Array) as Uint16Array, expand(e.skinWeight, e.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   eg.setAttribute("skinWeight", new THREE.BufferAttribute(expand(e.skinWeight, e.renderVertex, 4, Uint8Array), 4, true));
   eg.setIndex(new THREE.BufferAttribute(e.index, 1));
   const eyeMat = new THREE.MeshPhysicalMaterial({ map: look.eyeMap ?? null, color: look.eyeMap ? "#ffffff" : "#f2eee8", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05 });

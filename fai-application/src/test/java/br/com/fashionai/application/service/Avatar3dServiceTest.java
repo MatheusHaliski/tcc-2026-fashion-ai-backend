@@ -148,6 +148,24 @@ class Avatar3dServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void cabeloComprimentoTexturaCoberturaESilhueta() {
+        Map<String, Object> m = model();
+        Map<String, Object> hair = new java.util.LinkedHashMap<>((Map<String, Object>) m.get("hair"));
+        hair.put("length", "medium"); hair.put("texture", "curly"); hair.put("cover", "#4a482b");
+        hair.put("outline", List.of(7.5, 9.1, 10.2, 0, 0)); hair.put("extra", "x");
+        m.put("hair", hair);
+        Map<String, Object> ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("hair");
+        assertEquals("medium", ok.get("length")); assertEquals("curly", ok.get("texture")); assertEquals("#4a482b", ok.get("cover"));
+        assertEquals(5, ((List<Object>) ok.get("outline")).size()); assertFalse(ok.containsKey("extra"));
+        // valores fora da lista são descartados sem derrubar o avatar
+        hair.put("length", "gigante"); hair.put("texture", 3); hair.put("cover", "verde"); hair.put("outline", List.of(-1, Double.NaN));
+        Map<String, Object> cleaned = (Map<String, Object>) Avatar3dService.validateModel(m).get("hair");
+        assertFalse(cleaned.containsKey("length")); assertFalse(cleaned.containsKey("texture"));
+        assertFalse(cleaned.containsKey("cover")); assertFalse(cleaned.containsKey("outline"));
+    }
+
+    @Test
     void texturaPrecisaSerQuadradaEDeTamanhoRazoavel() {
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(512, 300))));
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(128, 128))));

@@ -41,7 +41,8 @@ function hairline(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boolean
   const front = covered ? fr.toY(CANON_FOREHEAD + 1.2) : fr.toY(CANON_FOREHEAD + 0.3 - Math.min(1, hair.fringe) * 4.5);
   const temple = fr.toY(covered ? 5.5 : 4.2);
   const long = hair.length === "medium" || hair.length === "long";
-  const ear = covered ? fr.toY(3.2) : long ? fr.toY(-2.5) : fr.toY(2.9);   // cabelo médio/longo cobre as orelhas
+  // sobre a orelha: o cabelo desce até onde a foto mostra (médio/longo cobre a orelha toda; curto pode cobrir o alto dela)
+  const ear = covered ? fr.toY(3.2) : long ? fr.toY(-2.5) : fr.toY(Math.min(2.9, Math.max(-1.5, hair.bottom ?? 2.9)));
   const nape = covered ? fr.toY(0) : fr.toY(hair.length === "buzz" ? -4 : -6.5);
   if (a < 0.6) return lerp(front, temple, smooth(0.35, 0.6, a));
   if (a < 1.35) return lerp(temple, ear, smooth(0.6, 1.25, a));
@@ -119,7 +120,7 @@ function buzzShell(a: BodyAsset, c: Composed, normals: Float32Array, hair: Avata
     const t = 0.0025;
     pos.push(c.body[v * 3] + normals[v * 3] * t, c.body[v * 3 + 1] + normals[v * 3 + 1] * t, c.body[v * 3 + 2] + normals[v * 3 + 2] * t);
     uv.push((phiOf[v] / (2 * Math.PI) + 0.5) * 10, (fr.headTop - c.body[v * 3 + 1]) / 0.25);
-    for (let j = 0; j < 4; j++) { si.push(a.body.skinIndex[v * 4 + j]); sw.push(a.body.skinWeight[v * 4 + j] / 255); }
+    for (let j = 0; j < 4; j++) { const w = a.body.skinWeight[v * 4 + j]; si.push(w ? a.body.skinIndex[v * 4 + j] : 0); sw.push(w / 255); }
     const hl = hairline(fr, hair, phiOf[v], false); col.push(1, 1, 1, smooth(hl - 0.02, hl + 0.006, c.body[v * 3 + 1]));
     return i;
   };
@@ -144,7 +145,7 @@ function outlineAt(outline: number[] | undefined, yc: number): number {
  *   cortina — cabelo médio/longo: anéis que descem da borda da calota pelos lados e pelas costas até o comprimento
  *             medido, por fora do pescoço, dos ombros e das costas; abaixo dos ombros, só atrás.
  */
-export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair: AvatarHair): HairBuild | null {
+export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair: AvatarHair, volume = 1): HairBuild | null {
   const covered = !!hair.cover;
   if (!covered && (!hair.present || hair.length === "bald" || !hair.color)) return null;
   const fr = headFrame(a, c); const nb = a.meta.counts.body; const k = fr.k;
@@ -158,23 +159,20 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
   const maxSide = covered ? 0.05 : coily ? 0.09 : 0.045, maxTop = covered ? 0.09 : coily ? 0.1 : 0.05;
   const topCanon = covered ? Math.max(SKULL_TOP + 2, ...HAIR_TOPS(hair.outline)) : Math.max(SKULL_TOP + 0.5, hair.top || SKULL_TOP + 1);
   const tTop = Math.min(maxTop, Math.max(covered ? 0.02 : 0.006, (topCanon - SKULL_TOP) * k));
-  // meia-largura da cabeça por altura (lados, sem orelhas: mediana dos vértices da cabeça naquela faixa, 90%)
-  const halfW = (y: number) => {
-    const xs: number[] = [];
-    for (let v = 0; v < nb; v++) if (a.body.skinIndex[v * 4] === headB && Math.abs(c.body[v * 3 + 1] - y) < 0.006) xs.push(Math.abs(c.body[v * 3] - fr.cx));
-    xs.sort((p, q) => p - q); return xs.length ? xs[Math.floor(xs.length * 0.9)] : fr.halfW;
+  // meia-largura do crânio por altura: elipse pela largura do rosto na altura dos olhos e pelo topo da cabeça — lisa,
+  // sem as orelhas (que dariam "abas" no cabelo logo abaixo delas)
+  const halfW = (y: number) => y <= fr.earY ? fr.halfW * 0.97 : fr.halfW * 0.97 * Math.sqrt(Math.max(0.05, 1 - ((y - fr.earY) / Math.max(0.05, fr.headTop - fr.earY)) ** 2));
+  const rawSide = (y: number) => {
+    const W = outlineAt(hair.outline, CANON_FOREHEAD + (y - fr.y10) / k) * k;
+    return W ? Math.max(covered ? 0.012 : 0.004, Math.min(maxSide, W - halfW(y))) : covered ? 0.012 : 0.008;
   };
   const sideAt = new Map<number, number>();
-  const tSideAt = (y: number) => {
+  const tSideAt = (y: number) => {                                         // média móvel de ±1,5 cm na altura
     const key = Math.round(y / 0.005); let t = sideAt.get(key);
-    if (t === undefined) {
-      const W = outlineAt(hair.outline, CANON_FOREHEAD + (y - fr.y10) / k) * k;
-      t = W ? Math.max(covered ? 0.012 : 0.004, Math.min(maxSide, W - halfW(y))) : covered ? 0.012 : 0.008;
-      sideAt.set(key, t);
-    }
+    if (t === undefined) { t = 0; for (let d = -3; d <= 3; d++) t += rawSide(key * 0.005 + d * 0.005); t /= 7; sideAt.set(key, t); }
     return t;
   };
-  const vol = coily ? 1.12 : texture === "curly" ? 1.06 : 1;
+  const vol = (coily ? 1.12 : texture === "curly" ? 1.06 : 1) * volume;   // volume: ajuste fino da pessoa (0,6–1,6)
   // ---- calota
   const inScalp = new Uint8Array(nb); const phiOf = new Float32Array(nb); const thick = new Float32Array(nb);
   for (let v = 0; v < nb; v++) {
@@ -198,7 +196,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     if (!covered && (texture === "curly" || coily)) t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], coily ? 260 : 150) * (coily ? 0.006 : 0.0035);
     pos.push(c.body[v * 3] + normals[v * 3] * t, c.body[v * 3 + 1] + normals[v * 3 + 1] * t, c.body[v * 3 + 2] + normals[v * 3 + 2] * t);
     uv.push((phiOf[v] / (2 * Math.PI) + 0.5) * 10, (fr.headTop - c.body[v * 3 + 1]) / 0.25);
-    for (let j = 0; j < 4; j++) { si.push(a.body.skinIndex[v * 4 + j]); sw.push(a.body.skinWeight[v * 4 + j] / 255); }
+    for (let j = 0; j < 4; j++) { const w = a.body.skinWeight[v * 4 + j]; si.push(w ? a.body.skinIndex[v * 4 + j] : 0); sw.push(w / 255); }
     const hl = hairline(fr, hair, phiOf[v], covered); col.push(1, 1, 1, smooth(hl - 0.02, hl + 0.006, c.body[v * 3 + 1]));
     return i;
   };
@@ -206,7 +204,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
   // ---- cortina (médio/longo)
   if (long) {
     const bottomC = Math.min(hair.bottom ?? -12, -4);
-    const yStart = fr.toY(2.5), yBottom = fr.toY(bottomC), shoulderY = fr.chinY - 0.09;
+    const yStart = fr.toY(0.5), yBottom = fr.toY(bottomC), shoulderY = fr.chinY - 0.09;
     const NA = 64, dy = 0.008; const levels = Math.max(2, Math.ceil((yStart - yBottom) / dy));
     const rBody = new Float32Array((levels + 1) * NA);
     for (let v = 0; v < nb; v++) {

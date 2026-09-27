@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { mediaUrl } from "@/lib/api/client";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
-import { applyIdle } from "@/lib/avatar3d/human/pose";
+import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
   SPECS, bodyParam, covers, fabricColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
   type GarmentKind, type GarmentSpec,
@@ -45,6 +45,7 @@ export function HumanOutfit({ parts, pieces, sex }: { parts: HumanParts; pieces:
   useEffect(() => {
     if (!items.every((i) => i.key in images)) return;
     const { human, pose, composed, asset } = parts;
+    setArmOut(human, pose, items.some((i) => i.spec.skirt > 0) ? 15 : 10);   // saia rodada: mãos por fora dela
     applyIdle(human, pose, 0, 0);                         // pose de exibição, sem o movimento, para projetar a foto
     const P = bodyParam(asset, composed);
     const meshes: THREE.SkinnedMesh[] = []; const below: GarmentSpec[] = [];

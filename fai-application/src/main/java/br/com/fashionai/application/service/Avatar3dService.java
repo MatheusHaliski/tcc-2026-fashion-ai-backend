@@ -233,17 +233,42 @@ public class Avatar3dService {
                 throw invalid;
             }
         }
+        // campos novos do cabelo (opcionais): valor fora da lista é descartado, como no validateModel do app
+        @SuppressWarnings("unchecked") Map<String, Object> h = new LinkedHashMap<>((Map<String, Object>) hair);
+        if (h.containsKey("length") && !HAIR_LENGTHS.contains(h.get("length"))) h.remove("length");
+        if (h.containsKey("texture") && !HAIR_TEXTURES.contains(h.get("texture"))) h.remove("texture");
+        if (h.containsKey("cover") && h.get("cover") != null && !(h.get("cover") instanceof String cv && HEX.matcher(cv).matches())) h.remove("cover");
+        if (h.containsKey("outline") && !validOutline(h.get("outline"))) h.remove("outline");
+        h.keySet().retainAll(HAIR_KEYS);
         Map<String, Object> out = new LinkedHashMap<>();
         if (m.get("body") instanceof Map<?, ?> body) {
             @SuppressWarnings("unchecked") Map<String, Object> b = (Map<String, Object>) body;
             out.put("body", validateBody(b));
         }
-        for (String k : List.of("v", "shape", "skin", "hair", "metrics", "views", "warnings")) {
+        for (String k : List.of("v", "shape", "skin", "metrics", "views", "warnings")) {
             if (m.containsKey(k)) {
                 out.put(k, m.get(k));
             }
         }
+        out.put("hair", h);
         return out;
+    }
+
+    /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
+    static final List<String> HAIR_LENGTHS = List.of("bald", "buzz", "short", "medium", "long");
+    static final List<String> HAIR_TEXTURES = List.of("straight", "wavy", "curly", "coily");
+    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline");
+
+    static boolean validOutline(Object o) {
+        if (!(o instanceof List<?> l) || l.size() > 32) {
+            return false;
+        }
+        for (Object x : l) {
+            if (!(x instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > 30) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Faixas plausíveis de cada proporção do corpo (as mesmas de lib/avatar3d/body-spec.ts, BODY_RANGE). */
