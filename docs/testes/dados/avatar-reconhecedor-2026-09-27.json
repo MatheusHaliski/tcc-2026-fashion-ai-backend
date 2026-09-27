@@ -1,0 +1,350 @@
+{
+ "linhas": [
+  {
+   "nome": "p03-masc",
+   "rostoNaFoto": true,
+   "vistas": {}
+  },
+  {
+   "nome": "p07-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.341,
+     "arcface": 0.468,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p07-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.431,
+     "arcface": 0.624,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p07-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p08-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.538,
+     "arcface": 0.652,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p08-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.618,
+     "arcface": 0.628,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p08-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p16-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.585,
+     "arcface": 0.642,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p16-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.581,
+     "arcface": 0.632,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p16-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p20-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.515,
+     "arcface": 0.563,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p20-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.456,
+     "arcface": 0.425,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p20-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p21-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.424,
+     "arcface": 0.522,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p21-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.436,
+     "arcface": 0.418,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p21-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p24-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.395,
+     "arcface": 0.63,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p24-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.49,
+     "arcface": 0.649,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p24-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p26-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.615,
+     "arcface": 0.709,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p26-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.576,
+     "arcface": 0.627,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p26-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p28-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.617,
+     "arcface": 0.56,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p28-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.623,
+     "arcface": 0.475,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p28-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p29-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.563,
+     "arcface": 0.676,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p29-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.503,
+     "arcface": 0.51,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p29-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p30-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.565,
+     "arcface": 0.594,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p30-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.539,
+     "arcface": 0.506,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p30-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p37-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.657,
+     "arcface": 0.668,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p37-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.5,
+     "arcface": 0.498,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p37-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p48-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.454,
+     "arcface": 0.565,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p48-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.383,
+     "arcface": 0.504,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p48-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p54-fem",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.543,
+     "arcface": 0.597,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p54-fem",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.55,
+     "arcface": 0.536,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p54-fem",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p56-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.51,
+     "arcface": 0.508,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p56-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.263,
+     "arcface": 0.225,
+     "posicaoEntreFotos": 2,
+     "maisParecidaCom": "p03-masc",
+     "totalFotos": 16
+    }
+   }
+  },
+  {
+   "nome": "p64-masc",
+   "rostoNaFoto": true,
+   "vistas": {
+    "front": {
+     "rostoDetectado": true,
+     "sface": 0.534,
+     "arcface": 0.661,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p64-masc",
+     "totalFotos": 16
+    },
+    "left34": {
+     "rostoDetectado": true,
+     "sface": 0.557,
+     "arcface": 0.599,
+     "posicaoEntreFotos": 1,
+     "maisParecidaCom": "p64-masc",
+     "totalFotos": 16
+    }
+   }
+  }
+ ],
+ "impostores": {
+  "sfaceMedia": 0.101,
+  "sfaceMax": 0.293,
+  "arcfaceMedia": 0.007,
+  "arcfaceMax": 0.238,
+  "pares": 120
+ },
+ "limiares": {
+  "sface": 0.363,
+  "arcface": 0.3
+ }
+}

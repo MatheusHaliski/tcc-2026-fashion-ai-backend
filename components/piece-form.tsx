@@ -127,7 +127,7 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
 }
 
 /** Peça: até 2 ocasiões e até 2 estilos (esquemas de vestimenta: até 3 — regra própria, em scheme-builder). */
-export const PIECE_MAX_TAGS = 2;
+export const PIECE_MAX_TAGS = MAX_TAGS;
 
 /**
  * Mensagem para um valor que não pertence à lista do campo (sugestão da IA ou dado antigo): diz o que ele é e como

@@ -18,9 +18,9 @@ export const LIMITS = {
   frontYawWarn: 12, frontYawBlock: 22, pitchWarn: 14, pitchBlock: 24, rollWarn: 30,
   sideYawMin: 18, sideYawMax: 62,
   lumBlock: 50, lumWarn: 75, lumHigh: 215, clipHighBlock: 0.25, clipHighWarn: 0.1, clipLowBlock: 0.15,
-  balanceWarn: 1.4, balanceBlock: 1.9,
+  balanceWarn: 1.4, balanceBlock: 2.6,
   sharpBlock: 6, sharpWarn: 14,
-  blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115, occBlock: 0.22,
+  blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115,
 } as const;
 
 export interface PhotoCheck {
@@ -69,8 +69,9 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
     if ((b.jawOpen ?? 0) > L.jawOpen) out.push({ code: "MOUTH_OPEN", severity: "warn" });
   }
   const occ = p.occlusion ?? 0;
-  if (occ > L.occBlock) out.push({ code: "FACE_OCCLUDED", severity: "block", params: { pct: Math.round(occ * 100) } });
-  else if (occ > L.occWarn || (p.rms !== undefined && p.rms > L.rmsWarn)) out.push({ code: "FACE_OCCLUDED", severity: "warn", params: { pct: Math.round(occ * 100) } });
+  // Só avisa: o índice não separa barba, sombra e sardas de uma mão na frente do rosto (barba grisalha chega a 0,51;
+  // mão na testa, 0,25). Com o avatar feito de uma foto só, a pessoa vê a prévia antes de salvar e decide.
+  if (occ > L.occWarn || (p.rms !== undefined && p.rms > L.rmsWarn)) out.push({ code: "FACE_OCCLUDED", severity: "warn", params: { pct: Math.round(occ * 100) } });
   return out;
 }
 
@@ -85,9 +86,7 @@ export function checkSet(photos: { role: Role; issues: Issue[] }[], hair?: HairS
   const issues: Issue[] = []; const ask: string[] = [];
   const front = photos.find((p) => p.role === "front" && !blocking(p.issues));
   if (!front) { issues.push({ code: "NEED_FRONT", severity: "block" }); ask.push("front"); }
-  const sides = photos.filter((p) => p.role !== "front" && !blocking(p.issues));
-  if (front && sides.length === 0) { issues.push({ code: "DEPTH_ESTIMATED", severity: "warn" }); ask.push("left", "right"); }
-  else if (front && sides.length === 1) { issues.push({ code: "ONE_SIDE_ONLY", severity: "warn" }); ask.push(sides[0].role === "left" ? "right" : "left"); }
+  // O avatar é feito com UMA foto (a de perfil): não se pede foto de 3/4 nem de lado.
   if (hair?.cutTop) { issues.push({ code: "HAIR_CUT", severity: "warn" }); ask.push("front-head"); }
   if (hair?.unsure) { issues.push({ code: "HAIR_UNSURE", severity: "warn" }); ask.push("front-hair"); }
   return { ready: !!front, issues, ask };
