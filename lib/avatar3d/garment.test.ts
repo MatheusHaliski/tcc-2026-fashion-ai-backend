@@ -14,11 +14,11 @@ const BODIES = {
   plus: { stature: 1.8, shoulderW: 0.22, chestW: 0.21, waistW: 0.2, hipW: 0.21, legLen: 0.52, armLen: 0.333, headH: 0.13, build: 1.4 },
 };
 const PIECES = [
-  { id: "t", name: "Camiseta", slot: "upper", subcategory: "t_shirt" },
-  { id: "h", name: "Moletom", slot: "outer_layer", subcategory: "sweatshirt" },
-  { id: "d", name: "Vestido", slot: "dress", subcategory: "dress" },
-  { id: "j", name: "Calça", slot: "lower", subcategory: "jeans" },
-  { id: "s", name: "Saia", slot: "lower", subcategory: "skirt" },
+  { id: "t", name: "t_shirt", slot: "upper", subcategory: "t_shirt" },
+  { id: "h", name: "sweatshirt", slot: "outer_layer", subcategory: "sweatshirt" },
+  { id: "d", name: "dress", slot: "dress", subcategory: "dress" },
+  { id: "j", name: "jeans", slot: "lower", subcategory: "jeans" },
+  { id: "s", name: "skirt", slot: "lower", subcategory: "skirt" },
 ];
 
 describe("molde da roupa no corpo canônico", () => {

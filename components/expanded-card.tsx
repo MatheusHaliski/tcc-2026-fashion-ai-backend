@@ -8,9 +8,8 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
-import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
-import { UiIcon } from "@/components/ui/icons";
+import { label, CATEGORY_LABEL, useTaxonomy } from "@/lib/api/taxonomy";
+import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, SegmentPicker, Skeleton, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
@@ -20,11 +19,9 @@ import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
 import { PhotoEditor } from "@/components/photo-editor";
-import { EditImageDialog, hasRealLogo, studioMeta } from "@/components/edit-image";
-import { Generate3DDialog } from "@/components/generate-3d";
-import { emitPieceUpdate } from "@/lib/pieces/piece-events";
-import { StudioLightbox, StudioReport, backdropCenter, backdropEdge, backdropGradient, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
-import { PieceForm, toPayload, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
+import { BeforeAfter } from "@/components/before-after";
+import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
+import { PieceForm, toPayload, validatePieceForm, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -147,7 +144,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [editingPhoto, setEditingPhoto] = useState(false); const [editImage, setEditImage] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
-  const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null);
+  const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
@@ -169,7 +166,15 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], background: p.background ?? null });
     setEditing(true);
   }
-  async function saveEdit() { setSaving(true); setSaveError(null); try { setPiece(await api.put<PieceView>(`/api/pieces/${id}`, toPayload(form))); setEditing(false); toast.success(t("common.saved")); } catch (e) { setSaveError(e as ApiError); } finally { setSaving(false); } }
+  // edição: mesma regra do cadastro — uma tentativa por ação (trava síncrona) e validação antes de enviar
+  async function saveEdit() {
+    if (savingRef.current) return;
+    const local = validatePieceForm(form, tax); setEditErrors(local);
+    if (Object.keys(local).length) return;
+    savingRef.current = true; setSaving(true); setSaveError(null);
+    try { setPiece(await api.put<PieceView>(`/api/pieces/${id}`, toPayload(form))); setEditing(false); toast.success(t("common.saved")); }
+    catch (e) { setSaveError(e as ApiError); } finally { savingRef.current = false; setSaving(false); }
+  }
 
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!loading && data && !p) return data.snapshot ? <PieceSnapshot snapshot={data.snapshot} /> : <p className="type-body">{t("detailModal.esta_peca_nao_esta_mais")}</p>;
@@ -268,8 +273,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
           </div>
         </div>
       </article>
-      <Dialog open={editing} onClose={() => setEditing(false)} title={t("pieceDetail.editar_dados")}>
-        <PieceForm value={form} onChange={setForm} onSubmit={saveEdit} busy={saving} error={saveError} submitLabel={t("common.save")} />
+      <Dialog open={editing} onClose={() => setEditing(false)} title={t("common.edit")}>
+        <PieceForm value={form} onChange={(v) => { setForm(v); if (Object.keys(editErrors).length) setEditErrors({}); }} onSubmit={saveEdit} busy={saving} error={saveError} fieldErrors={editErrors} submitLabel={t("common.save")} />
       </Dialog>
       <Dialog open={confirmDelete.open} onClose={() => setConfirmDelete({ open: false })} title={t("common.delete")} footer={<><Button onClick={() => setConfirmDelete({ open: false })}>{t("common.cancel")}</Button><Button variant="danger" onClick={doDelete}>{t("common.delete")}</Button></>}>
         <p className="type-body">{confirmDelete.impact?.message ?? t("pieces.id.esta_peca_aparece_em_look", { value: confirmDelete.impact?.count ?? confirmDelete.impact?.schemes?.length ?? 0 })}</p>

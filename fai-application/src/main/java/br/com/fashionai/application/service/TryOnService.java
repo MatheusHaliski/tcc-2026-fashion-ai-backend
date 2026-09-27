@@ -41,8 +41,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * RF18 — Provador 2D: manequim masculino/feminino lembrado entre sessões (CA01), camadas base → intermediária →
- * externa → acessório (CA02), mesma camada substitui e avisa (CA03), salvar como esquema com origem "Provador" (CA04),
+ * RF18 — Provador: o manequim é o Avatar 3D da pessoa (ou o de referência, identificado como tal); as peças entram em
+ * quatro lugares pela categoria gravada — parte de cima, parte de baixo, calçado e acessório — e a peça nova de um lugar
+ * substitui só a daquele lugar. A tela não cria look nem post (o fluxo Criar Look é outro). Legado mantido na API:
+ * render 2D pelo compositor (camadas de vestir) e "salvar como esquema" (CA04), que a tela não usa mais;
  * remoção de fundo sob demanda ou aviso de sobreposição aproximada (CA05), tom de pele/porte salvos no perfil (CA06) e
  * limpar sem afetar o guarda-roupa (CA07). A renderização passa pela governança de IA (FASHN.ai → compositor local).
  */
@@ -104,21 +106,28 @@ public class TryOnService {
         if (own.isEmpty()) {
             throw new ApiException(422, "ACERVO_VAZIO", Msg.t("tryOn.cadastre_ao_menos_1_peca"), Map.of("href", "/add-piece"));
         }
-        Map<String, List<Map<String, Object>>> byLayer = new LinkedHashMap<>();
+        // quatro lugares no corpo, decididos pela CATEGORIA gravada da peça (nunca pelo nome, pela ordem de vestir ou pela
+        // imagem): parte de cima, parte de baixo, calçado e acessório. A peça inteira (vestido, macacão) ocupa a parte de cima.
+        Map<String, List<Map<String, Object>>> bySlot = new LinkedHashMap<>();
+        SLOTS.forEach(k -> bySlot.put(k, new ArrayList<>()));
+        List<Map<String, Object>> review = new ArrayList<>();
         for (WardrobeItem w : own) {
             if (!MannequinGeometry.sexMatches(sex, w.getSex())) {
                 continue;
             }
-            SchemeSlot slot = LocalSchemeComposer.slotOf(w);
-            String layer = MannequinGeometry.layerOf(slot).name();
+            SchemeSlot wear = LocalSchemeComposer.slotOf(w);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("piece", Views.piece(w, null, null));
-            m.put("slot", slot.name());
-            m.put("layer", layer);
-            m.put("anchor", MannequinGeometry.anchorOf(slot, w.getSubcategory()));
-            m.put("replacementKey", MannequinGeometry.replacementKey(slot, w.getSubcategory()));
+            m.put("slot", slotOf(w));
+            m.put("wear", wear.name());                                  // forma de vestir no corpo (molde 3D / âncora 2D)
+            m.put("anchor", MannequinGeometry.anchorOf(wear, w.getSubcategory()));
             m.put("backgroundRemoved", w.getPhotoProcessingStatus() == PhotoProcessingStatus.COMPLETED && !w.isDefaultImage());
-            byLayer.computeIfAbsent(layer, k -> new ArrayList<>()).add(m);
+            String slot = slotOf(w);
+            if (slot == null) {
+                review.add(m);                                           // categoria fora da taxonomia: pede revisão, não chuta
+            } else {
+                bySlot.get(slot).add(m);
+            }
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("mannequin", MannequinGeometry.describe(id.body(), p.getMannequinSkinTone(), id.identity().skinHex()));
@@ -127,10 +136,22 @@ public class TryOnService {
         out.put("sex", sex.name());
         out.put("skinTones", MannequinGeometry.SKIN_TONES);
         out.put("builds", BodyBuild.values());
-        out.put("layers", List.of("BASE", "INTERMEDIATE", "OUTER", "ACCESSORY"));
-        out.put("pieces", byLayer);
-        out.put("externalAvailable", compositor.externalAvailable() && ai.remoteEnabled());
+        out.put("slots", SLOTS);
+        out.put("pieces", bySlot);
+        out.put("needsReview", review);
         return out;
+    }
+
+    /** Os quatro lugares do provador, na ordem da tela — os mesmos tipos canônicos do cadastro de peça (RF4). */
+    static final List<String> SLOTS = List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece");
+
+    /** Lugar da peça pela categoria persistida; peça inteira vai para a parte de cima; categoria desconhecida → null (revisar). */
+    static String slotOf(WardrobeItem w) {
+        String c = w.getCategory();
+        if ("full_body_piece".equals(c)) {
+            return "upper_piece";
+        }
+        return c != null && SLOTS.contains(c) ? c : null;
     }
 
     /** Manequim resolvido: corpo, sexo, identidade (origem dos dados) e a referência do avatar para o 3D da tela. */

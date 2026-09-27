@@ -39,8 +39,60 @@ export function Input({ className, error, ...rest }: InputHTMLAttributes<HTMLInp
 export function Textarea({ className, error, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement> & { error?: boolean }) {
   return <textarea {...rest} aria-invalid={error || undefined} className={cn("input min-h-24", className)} />;
 }
-export function Select({ className, error, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean }) {
-  return <select {...rest} aria-invalid={error || undefined} className={cn("input", className)}>{children}</select>;
+/**
+ * Lista de escolha ÚNICA (padrão FashionAI): o <select> nativo, com a aparência do campo e o ícone de abertura do
+ * sistema. Nativo de propósito: teclado, leitor de tela, rolagem e teclado virtual do celular funcionam sem código.
+ * O valor enviado é sempre o ID canônico (value da <option>); o rótulo traduzido é só o texto da opção.
+ */
+export function Select({ className, error, loading, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean; loading?: boolean }) {
+  return (
+    <span className={cn("select-wrap", loading && "is-loading", rest.disabled && "is-disabled")}>
+      <select {...rest} disabled={rest.disabled || loading} aria-invalid={error || undefined} aria-busy={loading || undefined} className={cn("input select", className)}>{children}</select>
+      {loading ? <span className="select-icon"><Spinner size={14} /></span>
+        : <svg className="select-icon" aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+    </span>
+  );
+}
+
+/**
+ * Escolha MÚLTIPLA com limite (padrão FashionAI): etiquetas com ✓, contador "n de max", toque de novo remove; no limite a
+ * próxima escolha não entra e a mensagem explica. Valores recebidos fora da lista (IA, dado antigo) aparecem no topo com
+ * a explicação e o botão Remover e não ocupam vaga. `problem` diz o que o valor inválido é (ex.: ocasião no lugar de estilo).
+ */
+export function ChipMultiSelect({ legend, options, value, onChange, max, hint, limitMessage, problem, error, className, scroll }: {
+  legend: string; options: { id: string; label: string }[]; value: string[]; onChange: (v: string[]) => void; max: number;
+  hint?: string; limitMessage?: string; problem?: (v: string) => string; error?: string; className?: string; scroll?: boolean;
+}) {
+  const [limitHit, setLimitHit] = useState(false); const hid = useId();
+  const ids = options.map((o) => o.id);
+  const valid = value.filter((v) => ids.includes(v)); const invalid = value.filter((v) => !ids.includes(v));
+  const full = valid.length >= max;
+  const toggle = (v: string) => {
+    if (value.includes(v)) { setLimitHit(false); onChange(value.filter((x) => x !== v)); return; }
+    if (full) { setLimitHit(true); return; }
+    setLimitHit(false); onChange([...value, v]);
+  };
+  const labelOf = (v: string) => options.find((o) => o.id === v)?.label ?? v;
+  return (
+    <fieldset className={cn("multi-select", className)} aria-describedby={hid} aria-invalid={!!error || invalid.length > 0 || undefined}>
+      <legend className="label">{legend} <span className="multi-count" aria-live="polite">{tr("ui.multi.selecionados", { n: valid.length, max })}</span></legend>
+      {invalid.map((v) => (
+        <p key={v} className="tag-fix" role="alert">
+          <span>{problem ? problem(v) : tr("ui.multi.valor_fora_da_lista", { v })}</span>
+          <button type="button" className="btn btn-sm" onClick={() => onChange(value.filter((x) => x !== v))}>{tr("ui.multi.remover", { v: labelOf(v) })}</button>
+        </p>
+      ))}
+      <div className={cn("flex flex-wrap gap-1.5", scroll && "multi-scroll")}>
+        {options.map((o) => { const on = value.includes(o.id); return (
+          <Chip key={o.id} active={on} blocked={!on && full} onClick={() => toggle(o.id)}>{on && <span aria-hidden>✓ </span>}{o.label}</Chip>
+        ); })}
+      </div>
+      <p id={hid} className={limitHit ? "error-text" : "help"} role={limitHit ? "alert" : undefined}>
+        {limitHit ? limitMessage ?? tr("ui.multi.limite", { max }) : hint ?? tr("ui.multi.dica", { max })}
+      </p>
+      {error && !limitHit && invalid.length === 0 && <p className="error-text" role="alert">{error}</p>}
+    </fieldset>
+  );
 }
 export function Switch({ checked, onChange, label, id, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; hint?: string }) {
   const auto = useId(); const sid = id ?? auto;
@@ -58,8 +110,9 @@ export function Switch({ checked, onChange, label, id, hint }: { checked: boolea
     </div>
   );
 }
-export function Chip({ active, children, onClick, className, title }: { active?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
-  return <button type="button" className={cn("chip", className)} aria-pressed={active} onClick={onClick} title={title}>{children}</button>;
+/** `blocked`: a escolha não entra agora (ex.: limite atingido) — continua focável e clicável para explicar o porquê. */
+export function Chip({ active, blocked, children, onClick, className, title }: { active?: boolean; blocked?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
+  return <button type="button" className={cn("chip", blocked && "is-blocked", className)} aria-pressed={active} aria-disabled={blocked || undefined} onClick={onClick} title={title}>{children}</button>;
 }
 export function Badge({ tone, children, className }: { tone?: "mark" | "thread" | "chalk"; children: ReactNode; className?: string }) {
   return <span className={cn("badge", tone && `badge-${tone}`, className)}>{children}</span>;
@@ -148,10 +201,23 @@ export function Stepper({ steps, current, onStep, label, canGo }: { steps: strin
  * Segment picker: alterna entre visões/listas de uma mesma aba (uma de cada vez — nunca listas empilhadas na aba).
  * Fica no cabeçalho da aba ou no topo do card.
  */
+/**
+ * Escolha ÚNICA entre poucas opções sempre visíveis (padrão FashionAI): grupo de opção (radiogroup) — setas, Home e End
+ * movem e escolhem; só a opção marcada entra na ordem de Tab (tabindex móvel), como num grupo de rádios.
+ */
 export function SegmentPicker<T extends string>({ options, value, onChange, label, className }: { options: { id: T; label: string; count?: number }[]; value: T; onChange: (v: T) => void; label: string; className?: string }) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const cur = Math.max(0, options.findIndex((o) => o.id === value));
+  const move = (i: number) => { const n = (i + options.length) % options.length; onChange(options[n].id); refs.current[n]?.focus(); };
+  const onKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); move(cur + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); move(cur - 1); }
+    else if (e.key === "Home") { e.preventDefault(); move(0); }
+    else if (e.key === "End") { e.preventDefault(); move(options.length - 1); }
+  };
   return (
-    <div role="tablist" aria-label={label} className={cn("segmented", className)}>
-      {options.map((o) => <button key={o.id} type="button" role="tab" aria-selected={value === o.id} className={value === o.id ? "is-active" : undefined} onClick={() => onChange(o.id)}>{o.label}{o.count != null && <span className="seg-count tabular">{o.count}</span>}</button>)}
+    <div role="radiogroup" aria-label={label} className={cn("segmented", className)}>
+      {options.map((o, i) => <button key={o.id} ref={(el) => { refs.current[i] = el; }} type="button" role="radio" aria-checked={value === o.id} tabIndex={i === cur ? 0 : -1} className={value === o.id ? "is-active" : undefined} onClick={() => onChange(o.id)} onKeyDown={onKey}>{o.label}{o.count != null && <span className="seg-count tabular">{o.count}</span>}</button>)}
     </div>
   );
 }

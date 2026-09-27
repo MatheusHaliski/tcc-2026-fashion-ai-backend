@@ -110,6 +110,15 @@ public final class Taxonomy {
 
     public static void requirePiece(String category, String subcategory, String sex, String color, String material,
                                     String size, List<String> occasions, List<String> styles) {
+        Map<String, Object> errors = pieceErrors(category, subcategory, sex, color, material, size, occasions, styles);
+        if (!errors.isEmpty()) {
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
+        }
+    }
+
+    /** Todos os erros de taxonomia da peça de uma vez (o serviço junta com nome e preço numa só resposta). */
+    public static Map<String, Object> pieceErrors(String category, String subcategory, String sex, String color, String material,
+                                                  String size, List<String> occasions, List<String> styles) {
         Map<String, Object> errors = new LinkedHashMap<>();
         if (!isValidCategory(category)) {
             errors.put("category", Msg.t("taxonomy.categoria_invalida"));
@@ -128,18 +137,57 @@ public final class Taxonomy {
         if (size == null || !SIZES.contains(size)) {
             errors.put("size", Msg.t("taxonomy.selecione_um_tamanho_valido"));
         }
-        requireTags("occasion", occasions, allowedOccasions(category), 2, errors);
-        requireTags("style", styles, STYLES, 2, errors);
-        if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
-        }
+        requireTags("occasion", occasions, allowedOccasions(category), MAX_PIECE_TAGS, errors, "peca", category);
+        requireTags("style", styles, STYLES, MAX_PIECE_TAGS, errors, "peca", category);
+        return errors;
+    }
+
+    /** Peça (ClothesPiece): até 2 ocasiões e até 2 estilos. Esquema de vestimenta (look): até 3 de cada. */
+    public static final int MAX_PIECE_TAGS = 2;
+    public static final int MAX_SCHEME_TAGS = 3;
+
+    /** Versão genérica (esquemas de vestimenta). */
+    public static void requireTags(String field, List<String> values, List<String> allowed, int max, Map<String, Object> errors) {
+        requireTags(field, values, allowed, max, errors, "look", null);
     }
 
     /**
-     * Lista de ocasiões/estilos como a tela manda: tira espaços, vazios e repetidos e passa para minúsculas (os códigos da
-     * taxonomia são minúsculos). Não inventa nem descarta códigos desconhecidos — a validação continua apontando-os.
+     * Valida uma lista de códigos (ocasião ou estilo) com mensagens que a pessoa entende e consegue corrigir — nunca
+     * "valor fora da taxonomia". Duplicatas contam uma vez. `context` = "peca" ou "look" (limites e textos diferentes).
+     * Quando o valor pertence ao OUTRO campo (ex.: "casual", que é ocasião, enviado como estilo), a mensagem diz isso.
      */
-    public static List<String> normalizeTags(List<String> values) {
+    public static void requireTags(String field, List<String> values, List<String> allowed, int max, Map<String, Object> errors,
+                                   String context, String category) {
+        List<String> distinct = canonicalTags(values);
+        boolean style = "style".equals(field);
+        String base = "taxonomy." + context + "." + (style ? "estilo" : "ocasiao");
+        if (distinct.isEmpty()) {
+            errors.put(field, Msg.t(base + ".obrigatorio", max));
+            return;
+        }
+        if (distinct.size() > max) {
+            errors.put(field, Msg.t(base + ".maximo", max));
+            return;
+        }
+        for (String v : distinct) {
+            if (allowed.contains(v)) {
+                continue;
+            }
+            if (style && OCCASIONS.contains(v)) {
+                errors.put(field, Msg.t("taxonomy.e_ocasiao_nao_estilo", label(v)));
+            } else if (!style && STYLES.contains(v)) {
+                errors.put(field, Msg.t("taxonomy.e_estilo_nao_ocasiao", label(v)));
+            } else if (!style && OCCASIONS.contains(v) && category != null) {
+                errors.put(field, Msg.t("taxonomy.ocasiao_fora_da_categoria", label(v), label(category)));
+            } else {
+                errors.put(field, Msg.t(style ? "taxonomy.estilo_desconhecido" : "taxonomy.ocasiao_desconhecida", v));
+            }
+            return;
+        }
+    }
+
+    /** Códigos canônicos: sem espaços, minúsculos, sem vazios e sem repetição (a ordem da pessoa é mantida). */
+    public static List<String> canonicalTags(List<String> values) {
         if (values == null) {
             return List.of();
         }
@@ -152,26 +200,11 @@ public final class Taxonomy {
         return List.copyOf(out);
     }
 
-    /** Só os códigos permitidos, na ordem recebida, até {@code max} (palpites da IA: nada fora da taxonomia entra). */
-    public static List<String> keepAllowed(List<String> values, List<String> allowed, int max) {
-        return normalizeTags(values).stream().filter(allowed::contains).limit(max).toList();
-    }
-
-    public static void requireTags(String field, List<String> values, List<String> allowed, int max, Map<String, Object> errors) {
-        if (values == null || values.isEmpty()) {
-            errors.put(field, Msg.t("taxonomy.informe_ao_menos_1_valor"));
-            return;
-        }
-        if (values.size() > max) {
-            errors.put(field, Msg.t("taxonomy.maximo_de_valores_taxonomia_01", max));
-            return;
-        }
-        for (String v : values) {
-            if (!allowed.contains(v)) {
-                errors.put(field, Msg.t("taxonomy.valor_fora_da_taxonomia", v));
-                return;
-            }
-        }
+    /** Rótulo do código na língua de quem lê (ou o próprio código, se não houver rótulo). */
+    public static String label(String code) {
+        String key = "taxonomy." + code;
+        String l = Msg.t(key);
+        return key.equals(l) ? code : l;
     }
 
     /** Ocasiões permitidas para a parte do corpo (união dos grupos dos wearstyles permitidos). */
