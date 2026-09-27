@@ -21,10 +21,56 @@ public final class LocalVision {
     private LocalVision() {
     }
 
-    /** @param logoBox caixa do logo na imagem enviada à IA (0–1000: x0, y0, x1, y1); null quando não há logo */
+    /**
+     * @param logoBox  caixa do logo na imagem enviada à IA (0–1000: x0, y0, x1, y1); null quando não há logo
+     * @param insights o resto do que a análise viu (ocasião, estilo, zona da marca, avaliação da foto, subtipos)
+     */
     public record PieceGuess(String category, String subcategory, String color, String material, String brand,
                              String sex, Map<String, Double> confidence, double overall, List<String> palette,
-                             double[] logoBox) {
+                             double[] logoBox, Insights insights) {
+        public PieceGuess(String category, String subcategory, String color, String material, String brand, String sex,
+                          Map<String, Double> confidence, double overall, List<String> palette, double[] logoBox) {
+            this(category, subcategory, color, material, brand, sex, confidence, overall, palette, logoBox, Insights.NONE);
+        }
+
+        public PieceGuess {
+            insights = insights == null ? Insights.NONE : insights;
+        }
+
+        public PieceGuess withInsights(Insights i) {
+            return new PieceGuess(category, subcategory, color, material, brand, sex, confidence, overall, palette, logoBox, i);
+        }
+    }
+
+    /**
+     * O que a análise (IA ou motor local) viu além dos campos básicos.
+     *
+     * @param name             nome sugerido para a peça (null = montar pelo subtipo e cor)
+     * @param brandZone        zona onde a marca foi lida (gola, peito_esquerdo, peito_direito, centro_peito…)
+     * @param brandEvidence    o que foi lido/visto ("texto NIKE bordado")
+     * @param matchesCategory  a foto é do tipo escolhido pela pessoa (null = não avaliado)
+     * @param detectedCategory tipo que a análise viu na foto
+     * @param fullyVisible     a peça aparece inteira, sem cortes (null = não avaliado)
+     * @param viewAngle        frontal_90 · angulo · lateral · dobrada (null = não avaliado)
+     * @param singlePiece      uma peça só na foto (null = não avaliado)
+     * @param photoConfidence  confiança dessa avaliação da foto
+     * @param ranking          subtipos mais parecidos, do mais parecido para o menos
+     */
+    public record Insights(String name, List<String> occasion, List<String> style, String brandZone, String brandEvidence,
+                           Boolean matchesCategory, String detectedCategory, Boolean fullyVisible, String viewAngle,
+                           Boolean singlePiece, double photoConfidence, List<SubtypeReferences.Match> ranking) {
+        public static final Insights NONE = new Insights(null, List.of(), List.of(), null, null, null, null, null, null, null, 0, List.of());
+
+        public Insights {
+            occasion = occasion == null ? List.of() : occasion;
+            style = style == null ? List.of() : style;
+            ranking = ranking == null ? List.of() : ranking;
+        }
+
+        public Insights withRanking(List<SubtypeReferences.Match> r) {
+            return new Insights(name, occasion, style, brandZone, brandEvidence, matchesCategory, detectedCategory, fullyVisible,
+                    viewAngle, singlePiece, photoConfidence, r);
+        }
     }
 
     public static PieceGuess analyzePiece(ImageOps.Cutout cutout) {

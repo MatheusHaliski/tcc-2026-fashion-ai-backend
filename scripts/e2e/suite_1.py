@@ -6,6 +6,8 @@ FIX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures")
 IMG = open(os.path.join(FIX, 'p1.jpg'), 'rb').read()
 IMG2 = open(os.path.join(FIX, 'p2.jpg'), 'rb').read()
 LOGO = open(os.path.join(FIX, 'b10_logo.png'), 'rb').read()
+# RF4 — foto que segue os critérios de aceite (peça inteira, de frente, fundo liso); as fotos de pessoa acima são recusadas
+PIECE = open(os.path.join(FIX, 'peca_camiseta.jpg'), 'rb').read()
 JPG = lambda b=IMG: {'file': ('foto.jpg', b, 'image/jpeg')}
 
 
@@ -74,8 +76,11 @@ def run(C):
 
     # ---------------- RF4 peças (usuário e2e)
     step('RF4', 'CA01', 'taxonomia (categorias, cores, ocasiões)', 'GET', '/api/taxonomy', ctx=C)
-    step('RF4', 'CA02', 'analisar foto (remoção de fundo + pré-preenchimento por IA)', 'POST', '/api/pieces/analysis', files=JPG(), who=U, ctx=C,
+    step('RF4', 'CA02', 'analisar foto (critérios de aceite, remoção de fundo, subtipo por semelhança, marca, pré-preenchimento)', 'POST',
+         '/api/pieces/analysis', files=JPG(PIECE), fields={'category': 'upper_piece'}, who=U, ctx=C,
          save=lambda c, b: c.__setitem__('draft_id', b.get('draftId') or b.get('id')))
+    step('RF4', 'CA02', 'foto recusada: pessoa com a roupa cortada pela borda (422 FOTO_RECUSADA)', 'POST', '/api/pieces/analysis',
+         files=JPG(IMG), fields={'category': 'upper_piece'}, who=U, ctx=C, expect=(422,))
     # RF4 · buscador web de marcas (sem catálogo local): nome + logo filtrado (fundo branco, letras pretas)
     def keep_brand(key):
         def f(c, b):
@@ -99,7 +104,8 @@ def run(C):
         step('RF4', 'CA05', f'cadastrar peça ({name}) com imagem padrão e marca {C[brand]["brandName"]}', 'POST', '/api/pieces', who=U, ctx=C,
              body=dict(useDefaultImage=True, name=name, category=cat, subcategory=sub, sex='UNISSEX', color=color, material=mat, size=size, occasion=occ, style=style, visibility='PUBLIC', price=99, **C[brand]),
              save=lambda c, b, k=key: c.__setitem__(k, b['id']))
-    step('RF4', 'CA11', 'analisar várias fotos de uma vez', 'POST', '/api/pieces/analysis/batch', files={'files': ('a.jpg', IMG, 'image/jpeg')}, who=U, ctx=C)
+    step('RF4', 'CA11', 'analisar várias fotos de uma vez', 'POST', '/api/pieces/analysis/batch', files={'files': ('a.jpg', PIECE, 'image/jpeg')},
+         fields={'category': 'upper_piece'}, who=U, ctx=C)
     step('RF4', 'CA11', 'cadastrar peças em lote', 'POST', '/api/pieces/batch', who=U, ctx=C,
          body=[dict(useDefaultImage=True, name='Meia E2E', category='accessory_piece', subcategory='socks', sex='UNISSEX', color='white', material='COTTON', size='one_size', occasion=['casual'], style=['basic'], visibility='PRIVATE', price=15)])
     step('RF4', 'CA02', 'reprocessar remoção de fundo', 'POST', '/api/pieces/{p_top}/background-removal', who=U, ctx=C)

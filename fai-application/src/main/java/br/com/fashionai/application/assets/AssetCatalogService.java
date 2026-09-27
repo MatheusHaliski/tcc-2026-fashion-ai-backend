@@ -207,6 +207,23 @@ public class AssetCatalogService {
     }
 
     /**
+     * RF4 — imagem de referência de cada subtipo, na ordem da taxonomia: subcategoria → [categoria, url]. É a mesma arte
+     * da imagem padrão; a análise da foto compara a peça com essas referências para detectar o subtipo.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, String[]> pieceReferenceImages() {
+        Map<String, String[]> out = new LinkedHashMap<>();
+        if (manifest.get("defaultPieceImages") instanceof Map<?, ?> m && m.get("bySubcategory") instanceof Map<?, ?> bySub) {
+            ((Map<String, Object>) bySub).forEach((sub, v) -> {
+                if (v instanceof Map<?, ?> e && e.get("url") instanceof String url && e.get("category") instanceof String cat) {
+                    out.put(sub, new String[]{cat, url});
+                }
+            });
+        }
+        return out;
+    }
+
+    /**
      * RF4 · Estúdio da imagem padrão — caixa do selo FAI na arte (relativa à peça, 0–1), conferida nas folhas de
      * contato; vazio para arquivos fora do catálogo.
      */

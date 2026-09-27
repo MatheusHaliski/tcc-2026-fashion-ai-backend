@@ -61,7 +61,8 @@ public class StudioPipeline {
      * Dicas do cadastro para o estúdio.
      *
      * @param kind      TOP, OUTERWEAR, FULL_BODY, BOTTOM, SHOES, ACCESSORY ou null (manequim invisível só em peças com gola)
-     * @param truncated lados que a foto original cortou (top/bottom/left/right); null = deduzir do recorte
+     * @param truncated lados que a foto original cortou (top/bottom/left/right); vazio = peça inteira (margem em volta);
+     *                  null = deduzir do recorte (barra reta = corte)
      * @param logoBox   caixa do logo relativa à peça (x0, y0, x1, y1 em 0–1), vinda da IA de visão; null = detector local
      */
     public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource) {
@@ -69,7 +70,7 @@ public class StudioPipeline {
     }
 
     /**
-     * @param studioJpeg foto principal (quadro adaptado à peça) · @param thumbJpeg miniatura 640×640 para grades
+     * @param studioJpeg foto principal (quadrada, 1600×1600 — o padrão do card) · @param thumbJpeg miniatura 640×640 para grades
      * @param detailJpeg foto de detalhe do logo (null sem logo) · @param enhancedPng peça realçada, sem fundo
      */
     public record Result(byte[] studioJpeg, byte[] thumbJpeg, byte[] detailJpeg, byte[] enhancedPng, Backdrop backdrop,
@@ -134,9 +135,10 @@ public class StudioPipeline {
         GhostMannequin.Result clean = GhostMannequin.cleanup(piece, hint.kind());
         double[] logoBox = hint.logoBox() == null ? null : reframe(hint.logoBox(), piece, clean);
         piece = clean.image();
-        // lados cortados: os que a foto cortou (metadado do Flat Lay) + cortes retos no próprio recorte; um corte
-        // inclinado (celular torto) nivela a peça antes, para a sangria esconder o corte inteiro
-        java.util.Map<String, Double> cuts = StudioFraming.cuts(piece);
+        // lados cortados: os que a foto cortou (metadado do Flat Lay); só sem esse dado (truncated null) os cortes retos
+        // do próprio recorte contam como corte — a foto aceita pelos critérios (peça inteira) sai com margem em todos os
+        // lados, sem barra "rente" à borda. Um corte inclinado (celular torto) nivela a peça antes da sangria.
+        java.util.Map<String, Double> cuts = hint.truncated() == null ? StudioFraming.cuts(piece) : java.util.Map.of();
         double level = cuts.containsKey("bottom") ? cuts.get("bottom") : cuts.containsKey("top") ? cuts.get("top")
                 : cuts.containsKey("left") ? cuts.get("left") : cuts.getOrDefault("right", 0.0);
         if (Math.abs(level) >= 0.3 && Math.abs(level) <= 6) {
@@ -231,7 +233,8 @@ public class StudioPipeline {
         if (hint.truncated() != null) {
             flush.removeAll(hint.truncated());
         }
-        StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, true);
+        // padrão da peça: quadro quadrado (1:1), o mesmo do card — com 9:16/2:3 o card cortava calça e vestido no "cover"
+        StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, false);
         StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
         stages.add(new Stage("ENQUADRAMENTO", "local", 0, BigDecimal.ZERO, true, false,
                 Msg.t("studio.peca_ocupa_do_quadro", frame.aspect(), String.valueOf(frame.width()), String.valueOf(frame.height()), String.format(java.util.Locale.ROOT, "%.0f", frame.fill() * 100))
