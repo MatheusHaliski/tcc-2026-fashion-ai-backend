@@ -50,11 +50,11 @@ export function DetailModalProvider({ children }: { children: ReactNode }) {
   };
   useEffect(() => {
     if (!top) return;
-    // Esc fecha o modal — menos quando é para fechar um menu aberto dentro dele (o menu cuida do próprio Esc)
+    // Esc fecha o modal — menos quando é para fechar um menu ou lista aberta dentro dele (eles cuidam do próprio Esc)
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       const target = e.target as HTMLElement | null;
-      if (target?.closest?.('[role="menu"]') || dialogRef.current?.querySelector('[aria-haspopup="menu"][aria-expanded="true"]')) return;
+      if (target?.closest?.('[role="menu"], [role="listbox"]') || dialogRef.current?.querySelector('[aria-haspopup][aria-expanded="true"]')) return;
       close();
     };
     // o foco não escapa: se sair do modal (clique fora do conteúdo, Tab vindo de fora), volta para ele

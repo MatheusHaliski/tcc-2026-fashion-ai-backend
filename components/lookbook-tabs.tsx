@@ -129,7 +129,8 @@ function SavedPiecesTab() {
 function DailyTab() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const [withAi, setWithAi] = useState(false);
   const { data, loading, reload } = useApi<{ panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: Record<string, unknown>; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: { date: string; scheme?: SchemeView; feedback?: string | null; hype?: number }[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
-  if (loading || !data) return <Skeleton className="h-64" />;
+  // recarregar (depois de trocar a versão do painel) mantém a aba na tela: a lista não some e o foco fica nela
+  if (!data) return <Skeleton className="h-64" />;
   const panel = data.panel ?? {}; const hype = Number(panel.hype ?? panel.score ?? data.scheme?.hypeScore ?? 0);
   const metrics = (panel.metrics ?? panel.components ?? {}) as Record<string, number | { value?: number; label?: string }>;
   async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
