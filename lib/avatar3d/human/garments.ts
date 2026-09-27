@@ -10,7 +10,7 @@
  *      curva lisa, não em "escada" de triângulos;
  *   4. pesos — cada vértice da peça herda os pesos de pele do vértice do corpo de onde nasceu (o tubo da saia pesa no
  *      quadril e nas coxas): peça e corpo se movem juntos, sem atravessar;
- *   5. camadas — folga crescente: roupa íntima < legging < calça < camiseta < moletom < jaqueta < casaco; a parte de cima
+ *   5. camadas — folga crescente: legging < calça < camiseta < moletom < jaqueta < casaco; a parte de cima
  *      fica por fora da de baixo na cintura (sem "tuck");
  *   6. foto — a foto sem fundo da peça é projetada de frente, na pose em que o avatar é mostrado, alinhando gola↔alto
  *      da foto, barra↔pé da foto e largura do tronco↔largura do corpo da peça na foto; costas e laterais recebem a cor do
@@ -23,8 +23,7 @@ import type { Composed } from "./compose";
 
 export type GarmentKind =
   | "tee" | "tank" | "longsleeve" | "shirt" | "sweater" | "hoodie" | "jacket" | "coat" | "crop"
-  | "dress" | "jumpsuit" | "skirt" | "pants" | "shorts" | "leggings" | "shoes" | "boots"
-  | "baseTop" | "baseBottom";
+  | "dress" | "jumpsuit" | "skirt" | "pants" | "shorts" | "leggings" | "shoes" | "boots";
 
 export interface GarmentSpec {
   kind: GarmentKind;
@@ -43,8 +42,6 @@ export interface GarmentSpec {
 
 const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, ...o });
 export const SPECS: Record<GarmentKind, GarmentSpec> = {
-  baseTop: S("baseTop", { ease: 0.0015, hem: 0.58, neck: 0.86, vneck: 0.02, layer: 0 }),
-  baseBottom: S("baseBottom", { ease: 0.0015, waist: 0.1, leg: 0.07, layer: 0 }),
   leggings: S("leggings", { ease: 0.002, waist: 0.2, leg: 0.97, layer: 1 }),
   pants: S("pants", { ease: 0.009, waist: 0.18, leg: 0.985, flare: 0.03, layer: 2 }),
   shorts: S("shorts", { ease: 0.007, waist: 0.18, leg: 0.36, flare: 0.012, layer: 2 }),
@@ -85,17 +82,33 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
   if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
   if (is("tee", "camiseta", "polo", "top")) return "tee";
-  if (cat === "UPPER" || cat === "TOP" || cat === "PARTE_SUPERIOR") return "tee";
-  if (cat === "LOWER" || cat === "BOTTOM" || cat === "PARTE_INFERIOR") return "pants";
-  if (cat === "SHOES" || cat === "FOOTWEAR" || cat === "CALCADOS") return "shoes";
-  if (cat === "FULL_BODY" || cat === "CORPO_INTEIRO") return "dress";
+  // subcategoria desconhecida: pela categoria gravada ("upper_piece"…) ou pelo lugar no look ("upper", "outer_layer"…)
+  const cats = [cat, (p.slot ?? "").toUpperCase()].map((c) => c.replace(/_PIECE$/, ""));
+  const any = (...k: string[]) => cats.some((c) => k.includes(c));
+  if (any("OUTER_LAYER", "OUTERWEAR")) return "jacket";
+  if (any("FULL_BODY", "CORPO_INTEIRO", "DRESS")) return "dress";
+  if (any("UPPER", "TOP", "PARTE_SUPERIOR")) return "tee";
+  if (any("LOWER", "BOTTOM", "PARTE_INFERIOR")) return "pants";
+  if (any("SHOES", "FOOTWEAR", "CALCADOS")) return "shoes";
   return null;
 }
-export const covers = (k: GarmentKind) => ({
-  upper: !["pants", "shorts", "skirt", "leggings", "shoes", "boots", "baseBottom"].includes(k),
-  lower: ["pants", "shorts", "skirt", "leggings", "dress", "jumpsuit", "baseBottom", "coat"].includes(k),
-  feet: k === "shoes" || k === "boots",
-});
+
+/**
+ * Afastamento dos braços (graus) na pose de exibição para o look: saia rodada pede as mãos por fora dela, e camadas
+ * grossas no tronco (jaqueta sobre camiseta, casaco sobre suéter) pedem o braço mais aberto — como numa pessoa de
+ * casaco, o braço não "entra" na lateral do tronco. Espessura na axila = folga da peça + a maior das de baixo.
+ */
+export function armOutFor(specs: GarmentSpec[]): number {
+  let out = 10; let under = 0;
+  for (const sp of [...specs].sort((a, b) => a.layer - b.layer)) {
+    if (sp.skirt > 0) out = Math.max(out, 15);
+    if (Number.isNaN(sp.hem)) continue;                                  // não cobre o tronco
+    const thick = sp.ease + under;
+    out = Math.max(out, Math.min(18, 10 + (thick - 0.012) * 350));
+    under = Math.max(under, sp.ease + 0.004 + sp.flare * 0.3);
+  }
+  return Math.round(out * 10) / 10;
+}
 
 // ================================================================== parametrização do corpo
 
@@ -189,17 +202,58 @@ export function coverageOf(c: Composed, P: BodyParam, sp: GarmentSpec): Float32A
   return cov;
 }
 
-/** Folga extra por vértice para que uma peça passe por fora das que já estão vestidas por baixo. */
-export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): Float32Array {
-  const out = new Float32Array(P.h.length);
-  for (const sp of below) {
-    const cov = coverageOf(c, P, sp); const e = sp.ease + 0.004 + sp.flare * 0.3;
-    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] = Math.max(out[v], e);
+/** Tubo de saia/vestido/casaco longo: raio (em volta do eixo (0, torsoZ)) por linha e por ângulo. */
+export interface SkirtTube { y0: number; len: number; r: Float32Array[] }
+const TUBE_NA = 64;
+
+function skirtTop(sp: GarmentSpec): number { return sp.kind === "dress" ? sp.hem : sp.kind === "coat" ? 0.0 : sp.waist; }
+
+/** Anéis do tubo da saia de uma peça (os mesmos que `garmentGeometry` usa para montá-la). */
+function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null): SkirtTube {
+  const y0 = lerp(P.hipY, P.neckY, skirtTop(sp)); const rows = Math.max(6, Math.ceil(sp.skirt / 0.012));
+  const r: Float32Array[] = []; let prev: Float32Array | null = null;
+  for (let i = 0; i <= rows; i++) {
+    const y = y0 - (sp.skirt * i) / rows; const t = i / rows;
+    const body = ring(c, P, y, P.torsoZ, TUBE_NA, 0.014); const rr = new Float32Array(TUBE_NA);
+    for (let j = 0; j < TUBE_NA; j++) {
+      let v = body[j] + sp.ease + 0.004 + sp.flare * t * t * 0.5 + sp.flare * t * 0.5;
+      if (under) for (const tb of under.tubes) { const R = tubeRadius(tb, y, j); if (R > 0) v = Math.max(v, R + 0.005); }   // por fora do tubo de baixo
+      if (prev) v = Math.max(v, prev[j] - 0.002);                          // o tecido não entra de volta
+      rr[j] = v;
+    }
+    r.push(rr); prev = rr;
   }
-  return out;
+  return { y0, len: sp.skirt, r };
 }
 
-export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array, P: BodyParam, sp: GarmentSpec, under: Float32Array | null = null): GarmentGeometry | null {
+/** Raio do tubo na altura y e no ângulo j (0 fora do comprimento do tubo). */
+export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
+  const f = ((tb.y0 - y) / tb.len) * (tb.r.length - 1);
+  if (f < 0 || f > tb.r.length - 1 + 1.5) return 0;
+  const i = Math.min(tb.r.length - 1, Math.floor(f)), k = Math.min(tb.r.length - 1, i + 1), w = Math.min(1, f - i);
+  return lerp(tb.r[i][j], tb.r[k][j], w);
+}
+
+/**
+ * O que já está vestido por baixo: folga extra por vértice do corpo (para passar por fora das peças coladas ao corpo) e
+ * os tubos das saias — a peça de cima que desce sobre uma saia passa por fora do tubo NA ALTURA em que está (o tubo
+ * abre para baixo), em vez de afastar a cintura inteira pelo tamanho da barra.
+ */
+export interface UnderLayer { ease: Float32Array; tubes: SkirtTube[] }
+
+export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): UnderLayer {
+  const out = new Float32Array(P.h.length); const tubes: SkirtTube[] = []; let acc: UnderLayer | null = null;
+  for (const sp of [...below].sort((a, b) => a.layer - b.layer)) {
+    const cov = coverageOf(c, P, sp);
+    const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);     // o alargamento da saia está no tubo
+    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] = Math.max(out[v], e);
+    if (sp.skirt > 0) { tubes.push(skirtTube(c, P, sp, acc)); }
+    acc = { ease: out, tubes };
+  }
+  return { ease: out, tubes };
+}
+
+export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): GarmentGeometry | null {
   const nb = a.meta.counts.body; const cov = coverageOf(c, P, sp);
   const rv = a.body.renderVertex; const idx = a.body.index;
   const used = new Int32Array(nb).fill(-1); const tris: number[] = [];
@@ -207,7 +261,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]];
     if (Math.max(cov[p], cov[q], cov[r]) > 0.02 && Math.min(cov[p], cov[q], cov[r]) >= 0 && (cov[p] + cov[q] + cov[r]) > 0.3) tris.push(p, q, r);
   }
-  const skirtTop = sp.skirt > 0 ? (sp.kind === "dress" ? sp.hem : sp.kind === "coat" ? 0.0 : sp.waist) : NaN;
+  const top = sp.skirt > 0 ? skirtTop(sp) : NaN;
   const pos: number[] = [], al: number[] = [], si: number[] = [], sw: number[] = [], src: number[] = [];
   // caimento: anel do busto
   const NA = 64; const bustY = lerp(P.hipY, P.neckY, 0.72);
@@ -216,7 +270,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     if (used[v] >= 0) return used[v];
     const i = pos.length / 3; used[v] = i;
     const g = P.group[v]; const h = P.h[v];
-    let e = sp.ease + (under ? under[v] : 0);
+    let e = sp.ease + (under ? under.ease[v] : 0);
     if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
     if (g === 3 && sp.leg > 0) e += sp.flare * Math.max(0, P.leg[v] - 0.4);
     if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));   // biqueira
@@ -227,6 +281,13 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
       const target = bust[j] * 0.965 + e; const k = sp.drape * smooth(0.72, 0.5, h) * (0.15 + 0.85 * Math.abs(zz) / r);   // cai reto na frente e atrás; dos lados, o braço encosta
       if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
     }
+    // por fora da saia que está por baixo, na altura do vértice (tronco e alto das coxas)
+    if (under?.tubes.length && (g === 1 || g === 3)) {
+      const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      let target = 0; for (const tb of under.tubes) target = Math.max(target, tubeRadius(tb, y, j));
+      target += 0.004 + sp.ease * 0.5;
+      if (target > r && r > 1e-4) { x *= target / r; z = P.torsoZ + (zz * target) / r; }
+    }
     if ((sp.kind === "shoes" || sp.kind === "boots") && c.body[v * 3 + 1] < 0.018) y = Math.min(y, -0.004 - 0.008 * smooth(0.018, 0.0, c.body[v * 3 + 1]));   // sola
     pos.push(x, y, z); al.push(cov[v]); src.push(v);
     for (let k = 0; k < 4; k++) { const w = a.body.skinWeight[v * 4 + k]; si.push(w ? a.body.skinIndex[v * 4 + k] : 0); sw.push(w / 255); }
@@ -236,33 +297,26 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   for (let t = 0; t < tris.length; t += 3) {
     const [p, q, r] = [tris[t], tris[t + 1], tris[t + 2]];
     // a saia/vestido de baixo é o tubo: o molde não desce pelas pernas abaixo do começo da saia
-    if (!Number.isNaN(skirtTop) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < skirtTop - 0.02)) continue;
+    if (!Number.isNaN(top) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < top - 0.02)) continue;
     index.push(add(p), add(q), add(r));
   }
   // ---- tubo da saia (saia, vestido, casaco longo)
   if (sp.skirt > 0) {
-    const y0 = lerp(P.hipY, P.neckY, skirtTop), y1 = y0 - sp.skirt;
-    const rows = Math.max(6, Math.ceil(sp.skirt / 0.012)); const base = pos.length / 3; const names = a.meta.bones.map((b) => b.name);
+    const tube = skirtTube(c, P, sp, under); const rows = tube.r.length - 1;
+    const base = pos.length / 3; const names = a.meta.bones.map((b) => b.name);
     const hips = names.indexOf("mixamorig:Hips"), upL = names.indexOf("mixamorig:LeftUpLeg"), upR = names.indexOf("mixamorig:RightUpLeg");
-    let prev: Float32Array | null = null;
     for (let i = 0; i <= rows; i++) {
-      const y = y0 - (sp.skirt * i) / rows; const t = i / rows;
-      const body = ring(c, P, y, P.torsoZ, NA, 0.014);
-      const rr = new Float32Array(NA);
-      for (let j = 0; j < NA; j++) {
-        let r = body[j] + sp.ease + 0.004 + sp.flare * t * t * 0.5 + sp.flare * t * 0.5;
-        if (prev) r = Math.max(r, prev[j] - 0.002);                          // o tecido não entra de volta
-        rr[j] = r;
-        const phi = (j / NA) * 2 * Math.PI - Math.PI;
+      const y = tube.y0 - (sp.skirt * i) / rows; const t = i / rows;
+      for (let j = 0; j < TUBE_NA; j++) {
+        const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
         pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
-        al.push(1 - smooth(0.93, 1.0, t) * 0.0); src.push(-1);
+        al.push(1); src.push(-1);
         const leg = Math.sin(phi) >= 0 ? upL : upR; const wl = 0.55 * smooth(0.1, 0.9, t) * Math.min(1, Math.abs(Math.sin(phi)) * 1.6);
         si.push(hips, leg, 0, 0); sw.push(1 - wl, wl, 0, 0);
       }
-      prev = rr;
     }
-    for (let i = 0; i < rows; i++) for (let j = 0; j < NA; j++) {
-      const j2 = (j + 1) % NA; const p = base + i * NA + j, q = base + i * NA + j2, r = base + (i + 1) * NA + j, s2 = base + (i + 1) * NA + j2;
+    for (let i = 0; i < rows; i++) for (let j = 0; j < TUBE_NA; j++) {
+      const j2 = (j + 1) % TUBE_NA; const p = base + i * TUBE_NA + j, q = base + i * TUBE_NA + j2, r = base + (i + 1) * TUBE_NA + j, s2 = base + (i + 1) * TUBE_NA + j2;
       index.push(p, r, q, q, r, s2);
     }
   }

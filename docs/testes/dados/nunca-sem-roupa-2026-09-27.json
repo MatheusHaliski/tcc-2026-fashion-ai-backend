@@ -1,0 +1,199 @@
+[
+ {
+  "name": "meu-avatar-busto",
+  "url": "/avatar",
+  "frames": 23,
+  "humanFrames": 2,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "meu-avatar-corpo",
+  "url": "/avatar",
+  "frames": 54,
+  "humanFrames": 22,
+  "maxHumans": 2,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ],
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "try-on-vazio-3d",
+  "url": "/try-on",
+  "frames": 26,
+  "humanFrames": 1,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "try-on-so-acessorio-3d",
+  "url": "/try-on",
+  "frames": 59,
+  "humanFrames": 33,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "try-on-so-parte-de-cima-3d",
+  "url": "/try-on",
+  "frames": 96,
+  "humanFrames": 1,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-ab295590-7f26-429e-bbc8-e5fb7b6ac3ea"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "try-on-vazio-2d",
+  "url": "/try-on",
+  "frames": 215,
+  "humanFrames": 8,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "try-on-sem-corpo-3d-reserva",
+  "url": "/try-on",
+  "frames": 86,
+  "humanFrames": 0,
+  "maxHumans": 0,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [],
+  "errors": []
+ },
+ {
+  "name": "passarela",
+  "url": "/explorer?tab=passarela",
+  "frames": 45,
+  "humanFrames": 12,
+  "maxHumans": 3,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ],
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "my-stage",
+  "url": "/brands/demo?tab=eras",
+  "frames": 406,
+  "humanFrames": 11,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-fai-padrao-camiseta",
+    "peca-x3"
+   ]
+  ],
+  "errors": []
+ },
+ {
+  "name": "meu-quarto",
+  "url": "/room",
+  "frames": 114,
+  "humanFrames": 0,
+  "maxHumans": 0,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [],
+  "errors": []
+ },
+ {
+  "name": "meu-quarto-espelho",
+  "url": "/room",
+  "frames": 159,
+  "humanFrames": 0,
+  "maxHumans": 0,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [],
+  "errors": []
+ },
+ {
+  "name": "foto-com-meu-manequim",
+  "url": "/pieces/ab295590-7f26-429e-bbc8-e5fb7b6ac3ea",
+  "frames": 316,
+  "humanFrames": 9,
+  "maxHumans": 1,
+  "violations": 0,
+  "firstViolation": null,
+  "garments": [
+   [
+    "peca-fai-padrao-jeans",
+    "peca-fai-padrao-tenis",
+    "peca-ab295590-7f26-429e-bbc8-e5fb7b6ac3ea"
+   ]
+  ],
+  "errors": []
+ }
+]

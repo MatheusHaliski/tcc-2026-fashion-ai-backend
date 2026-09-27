@@ -15,6 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { validateBody } from "@/lib/avatar3d/body-spec";
+import { DEFAULT_PIECES, missingZones, type Zone } from "@/lib/avatar3d/human/default-outfit";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
@@ -44,6 +45,11 @@ const WEAR3D: Record<string, string> = { TOP: "upper", OUTERWEAR: "outer_layer",
 // articulações — colocá-lo sobre o corpo daria uma peça rígida flutuando
 const toLook3d = (e: Entry): Look3dPiece => ({ id: e.piece.id, name: e.piece.name, slot: WEAR3D[e.wear] ?? "accessory", category: e.piece.category, subcategory: e.piece.subcategory, imageUrl: e.piece.imageUrl ?? e.piece.thumbnailUrl, colorHex: e.piece.colorHex, model3dUrl: null, defaultImage: e.piece.defaultImage });
 const MEASURES = ["stature", "shoulderW", "chestW", "waistW", "hipW"] as const;
+/** Prévia 2D: âncora da peça padrão do FashionAI de cada zona do corpo sem peça (o manequim nunca fica sem roupa). */
+const ZONE_WEAR: Record<Zone, string> = { upper: "TOP", lower: "BOTTOM", feet: "SHOES" };
+// ordem de desenho na silhueta: parte de cima (camiseta por baixo da jaqueta) → baixo → calçado → acessório
+const WEAR_ORDER: Record<string, number> = { TOP: 0, FULL_BODY: 0, OUTERWEAR: 1, BOTTOM: 2, SHOES: 3, ACCESSORY: 4 };
+interface Layer2d { id: string; src: string; anchor: string; wear: string; blend: boolean }
 const SESSION_KEY = "fai.tryon.worn";
 
 function readSession(): Worn { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? "{}") as Worn; } catch { return {}; } }
@@ -81,6 +87,45 @@ function MannequinBody({ m }: { m: Mannequin }) {
   );
 }
 
+/**
+ * Camada da prévia 2D recortada pelo alfa da imagem (como o compositor do servidor faz): a foto da peça costuma ter
+ * margens transparentes, e encaixar a imagem inteira na caixa deixava a peça menor que o corpo (o jeans virava bermuda).
+ */
+const ALPHA_BOX = new Map<string, { x: number; y: number; w: number; h: number; W: number; H: number } | null>();
+function useAlphaBox(src: string) {
+  const [box, setBox] = useState(() => ALPHA_BOX.get(src));
+  useEffect(() => {
+    if (ALPHA_BOX.has(src)) { setBox(ALPHA_BOX.get(src)); return; }
+    let alive = true; const img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = () => {
+      let b: { x: number; y: number; w: number; h: number; W: number; H: number } | null = null;
+      try {
+        const k = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight)); const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+        const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d", { willReadFrequently: true })!; g.drawImage(img, 0, 0, w, h);
+        const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        if (x1 >= x0 && y1 >= y0) b = { x: x0 / k, y: y0 / k, w: (x1 - x0 + 1) / k, h: (y1 - y0 + 1) / k, W: img.naturalWidth, H: img.naturalHeight };
+      } catch { b = null; }                                    // imagem de outra origem sem CORS: sem recorte
+      ALPHA_BOX.set(src, b); if (alive) setBox(b);
+    };
+    img.onerror = () => { ALPHA_BOX.set(src, null); if (alive) setBox(null); };
+    img.src = src;
+    return () => { alive = false; };
+  }, [src]);
+  return box;
+}
+function Layer2dImage({ src, x, y, width, height, align, blend }: { src: string; x: number; y: number; width: number; height: number; align: string; blend: boolean }) {
+  const box = useAlphaBox(src); const style = blend ? { mixBlendMode: "multiply" as const, opacity: 0.92 } : undefined;
+  if (!box) return <image href={src} x={x} y={y} width={width} height={height} preserveAspectRatio={align} style={style} />;
+  return (
+    <svg x={x} y={y} width={width} height={height} viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} preserveAspectRatio={align} overflow="hidden">
+      <image href={src} x={0} y={0} width={box.W} height={box.H} style={style} />
+    </svg>
+  );
+}
+
+interface RenderResult { imageUrl: string; warnings?: string[]; message?: string | null }
+
 function TryOnInner() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
   const { data, loading, error, reload } = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
@@ -88,6 +133,7 @@ function TryOnInner() {
   const [confirmClear, setConfirmClear] = useState(false); const [fixing, setFixing] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [stage, setStage] = useState<"3d" | "2d">("3d"); const [view3d, setView3d] = useState<AvatarView>("front");
+  const [rendered, setRendered] = useState<RenderResult | null>(null); const [rendering, setRendering] = useState(false);
   const rackRefs = useRef<Partial<Record<SlotKey, HTMLElement | null>>>({});
   const byId = useMemo(() => { const m = new Map<string, Entry>(); SLOTS.forEach((s) => (data?.pieces?.[s] ?? []).forEach((e) => m.set(e.piece.id, e))); return m; }, [data]);
   const slotName: Record<SlotKey, string> = { upper_piece: t("tryOn.slot_upper"), lower_piece: t("tryOn.slot_lower"), shoes_piece: t("tryOn.slot_shoes"), accessory_piece: t("tryOn.slot_accessory") };
@@ -102,6 +148,14 @@ function TryOnInner() {
     }).catch(() => undefined);
   }, [sp, data, byId]);
 
+  // peças mudaram: a imagem gerada deixa de valer
+  useEffect(() => { setRendered(null); }, [worn]);
+  /** RF18.CA03 — imagem do provador no servidor (FASHN quando disponível, compositor local senão); o que faltar vem das peças padrão. */
+  async function renderImage(ids: string[]) {
+    setRendering(true);
+    try { setRendered(await api.post<RenderResult>("/api/try-on/renders", { pieceIds: ids })); }
+    catch (e) { toast.fromError(e); } finally { setRendering(false); }
+  }
   function choose(e: Entry) {
     const next = { ...worn, [e.slot]: e.piece.id }; setWorn(next); writeSession(next);
     setStatus(t("tryOn.vestiu_no_lugar", { name: e.piece.name, slot: slotName[e.slot] }));
@@ -123,6 +177,11 @@ function TryOnInner() {
   // peça inteira na parte de cima cobre a parte de baixo: a de baixo fica guardada e não é desenhada
   const fullBody = on.find((e) => e.wear === "FULL_BODY");
   const shown = fullBody ? on.filter((e) => e.slot !== "lower_piece") : on;
+  // prévia 2D: as peças vestidas + a peça padrão do FashionAI em cada zona vazia (tronco, pernas, pés)
+  const layers2d: Layer2d[] = [
+    ...missingZones(shown.map(toLook3d)).map((z) => ({ id: DEFAULT_PIECES[z].id, src: DEFAULT_PIECES[z].imageUrl!, anchor: ZONE_WEAR[z], wear: ZONE_WEAR[z], blend: false })),
+    ...shown.flatMap((e) => { const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); return src ? [{ id: e.piece.id, src, anchor: e.anchor, wear: e.wear, blend: !(e.backgroundRemoved || e.piece.defaultImage) }] : []; }),
+  ].sort((a, b) => (WEAR_ORDER[a.wear] ?? 4) - (WEAR_ORDER[b.wear] ?? 4));
   const avatar = data.avatar ?? null; const identity = data.identity;
   const bodyParams = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
   const skin = m.skinTone ?? "media";
@@ -144,13 +203,15 @@ function TryOnInner() {
                 <div className="h-full w-full">
                   <AvatarViewer avatar={avatar} sex={data.sex} build={m.build} skinTone={avatar ? null : m.skinTone} body={bodyParams} pieces={shown.map(toLook3d)} view={view3d} framing="full" controls background="#EFECE7" />
                 </div>
+              ) : rendered ? (
+                <img src={mediaUrl(rendered.imageUrl)} alt={t("tryOn.imagem_gerada_alt")} className="h-full w-full object-contain" />
               ) : (
                 <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={t("tryOn.previa_2d_aria", { n: shown.length })}>
                   <MannequinBody m={m} />
-                  {shown.map((e) => {
-                    const b = m.anchors[e.anchor] ?? m.anchors[e.wear]; if (!b) return null; const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); if (!src) return null;
-                    return <image key={e.piece.id} href={src} x={b.x * m.width} y={b.y * m.height} width={b.w * m.width} height={b.h * m.height} preserveAspectRatio={e.slot === "shoes_piece" ? "xMidYMax meet" : e.slot === "accessory_piece" ? "xMidYMid meet" : "xMidYMin meet"}
-                      style={e.backgroundRemoved || e.piece.defaultImage ? undefined : { mixBlendMode: "multiply", opacity: 0.92 }} />;
+                  {layers2d.map((l) => {
+                    const b = m.anchors[l.anchor] ?? m.anchors[l.wear]; if (!b) return null;
+                    return <Layer2dImage key={l.id} src={l.src} x={b.x * m.width} y={b.y * m.height} width={b.w * m.width} height={b.h * m.height} blend={l.blend}
+                      align={l.wear === "SHOES" ? "xMidYMax meet" : l.wear === "ACCESSORY" ? "xMidYMid meet" : "xMidYMin meet"} />;
                   })}
                 </svg>
               )}
@@ -163,6 +224,17 @@ function TryOnInner() {
               {stage === "3d" && <SegmentPicker label={t("tryOn.vista")} value={view3d} onChange={setView3d} options={[{ id: "front", label: t("tryOn.vista_frente") }, { id: "profile", label: t("tryOn.vista_perfil") }, { id: "back", label: t("tryOn.vista_costas") }]} />}
               {stage === "3d" && <p className="type-caption text-muted">{t("tryOn.girar_dica")}</p>}
               <p className="type-caption text-muted" role="note">{stage === "3d" ? t("tryOn.nao_e_prova_3d") : t("tryOn.previa_2d_nota")}</p>
+              <p className="type-caption text-muted" role="note">{t("tryOn.padrao_nota")}</p>
+              {stage === "2d" && (
+                <div className="grid gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="primary" loading={rendering} disabled={!on.length || rendering} onClick={() => renderImage(on.map((e) => e.piece.id))}>{t("tryOn.gerar_imagem")}</Button>
+                    {rendered && <Button size="sm" variant="ghost" onClick={() => setRendered(null)}>{t("tryOn.voltar_previa")}</Button>}
+                  </div>
+                  <p className="type-caption text-muted">{on.length ? t("tryOn.gerar_imagem_hint") : t("tryOn.gerar_precisa_peca")}</p>
+                  {rendered?.warnings?.length ? <ul className="type-caption text-muted">{rendered.warnings.map((w) => <li key={w}>{w}</li>)}</ul> : null}
+                </div>
+              )}
             </div>
           </Card>
           <Card>

@@ -11,6 +11,7 @@ import br.com.fashionai.domain.model.enums.SchemeSlot;
 import br.com.fashionai.domain.model.enums.TryOnLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.awt.BasicStroke;
@@ -35,7 +36,8 @@ import java.util.UUID;
  * TOP/BOTTOM/OUTER/FULL_BODY, ou sobreposição aproximada por âncoras) → ENHANCING (Cleanup.ai ou
  * polimento local) → COMPOSITING (Category Fallback Compositor: calçados e acessórios rígidos por
  * landmark, nunca pelo FASHN) → validação de qualidade. As camadas seguem base → intermediária →
- * externa → acessório (RF18.CA02).
+ * externa → acessório (RF18.CA02). Nunca sem roupa: a zona do corpo sem peça (tronco, pernas, pés) recebe a peça padrão
+ * do FashionAI ({@link DefaultOutfit}), sobreposta localmente.
  */
 @Component
 public class TryOnCompositor {
@@ -43,10 +45,18 @@ public class TryOnCompositor {
 
     private final List<TryOnProviderPort> tryOnProviders;
     private final List<ArtifactCleanupPort> cleaners;
+    private final DefaultOutfit defaults;
 
-    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners) {
+    @Autowired
+    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners, DefaultOutfit defaults) {
         this.tryOnProviders = tryOnProviders;
         this.cleaners = cleaners;
+        this.defaults = defaults;
+    }
+
+    /** Sem acesso aos assets (testes): as peças padrão são desenhadas. */
+    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners) {
+        this(tryOnProviders, cleaners, new DefaultOutfit(url -> Optional.empty()));
     }
 
     public record Garment(UUID itemId, SchemeSlot slot, String subcategory, BufferedImage cutout, byte[] imageBytes,
@@ -87,23 +97,47 @@ public class TryOnCompositor {
             }
             ordered.add(g);
         }
+        // nunca sem roupa: tronco, pernas e pés sem peça legível recebem a peça padrão do FashionAI
+        for (Garment d : defaults.complete(ordered)) {
+            ordered.add(d);
+            warnings.add(Msg.t("tryOnCompositor.lugar_vazio_peca_padrao", d.slot()));
+        }
         ordered.sort(Comparator.comparingInt(g -> MannequinGeometry.layerOf(g.slot()).ordinal()));
 
-        // RENDERING — peças de tecido
+        // RENDERING — peças de tecido. Primeiro as peças padrão (zonas que o look não cobre): o manequim já está vestido
+        // quando qualquer peça do usuário é vestida — inclusive na imagem enviada ao provedor externo.
         long t = System.nanoTime();
         boolean fallback = false;
+        java.util.EnumSet<DefaultOutfit.Zone> covered = java.util.EnumSet.noneOf(DefaultOutfit.Zone.class);
         for (Garment g : ordered) {
-            if (MannequinGeometry.layerOf(g.slot()) == TryOnLayer.ACCESSORY) {
+            if (DefaultOutfit.isDefault(g.itemId()) && MannequinGeometry.layerOf(g.slot()) != TryOnLayer.ACCESSORY) {
+                placements.add(overlay(canvas, body, g, "padrao-fashionai"));
+                covered.addAll(DefaultOutfit.zonesOf(g.slot()));
+            }
+        }
+        for (Garment g : ordered) {
+            if (MannequinGeometry.layerOf(g.slot()) == TryOnLayer.ACCESSORY || DefaultOutfit.isDefault(g.itemId())) {
                 continue;
             }
             boolean done = false;
             if (allowExternal) {
+                // o provedor externo troca a roupa da zona: ele recebe o manequim com a peça padrão como marcador ali,
+                // nunca o manequim de roupa íntima
+                BufferedImage model = canvas;
+                java.util.EnumSet<DefaultOutfit.Zone> missing = DefaultOutfit.zonesOf(g.slot());
+                missing.removeAll(covered);
+                if (!missing.isEmpty()) {
+                    model = ImageOps.toArgb(copyOf(canvas));
+                    for (DefaultOutfit.Zone z : missing) {
+                        overlay(model, body, defaults.garment(z), "marcador");
+                    }
+                }
                 for (TryOnProviderPort port : tryOnProviders) {
                     if (!port.available()) {
                         continue;
                     }
                     try {
-                        Optional<ProviderImage> res = port.tryOn(ImageOps.png(canvas), g.imageBytes(), fashnCategory(g.slot()));
+                        Optional<ProviderImage> res = port.tryOn(ImageOps.png(model), g.imageBytes(), fashnCategory(g.slot()));
                         if (res.isPresent()) {
                             canvas = ImageOps.scale(ImageOps.decode(res.get().bytes()), MannequinGeometry.WIDTH, MannequinGeometry.HEIGHT);
                             costs.merge(res.get().provider(), res.get().costUsd(), BigDecimal::add);
@@ -125,6 +159,7 @@ public class TryOnCompositor {
                 placements.add(overlay(canvas, body, g, "local-ancora"));
                 fallback |= allowExternal && externalAvailable();
             }
+            covered.addAll(DefaultOutfit.zonesOf(g.slot()));
         }
         stages.add(new FlatLayPipeline.Stage("RENDERING", costs.isEmpty() ? "local-ancora" : String.join("+", costs.keySet()),
                 ms(t), sum(costs), true, fallback, Msg.t("tryOnCompositor.pecas_de_tecido", (placements.size()))));
@@ -163,7 +198,7 @@ public class TryOnCompositor {
             if (MannequinGeometry.layerOf(g.slot()) != TryOnLayer.ACCESSORY) {
                 continue;
             }
-            placements.add(overlay(canvas, body, g, "compositor-landmark"));
+            placements.add(overlay(canvas, body, g, DefaultOutfit.isDefault(g.itemId()) ? "padrao-fashionai" : "compositor-landmark"));
             rigid++;
         }
         stages.add(new FlatLayPipeline.Stage("COMPOSITING", "local-landmarks", ms(t), BigDecimal.ZERO, true, false,
@@ -180,6 +215,14 @@ public class TryOnCompositor {
         quality.put("fabric_realism", costs.isEmpty() ? 0.55 : 0.85);
         quality.put("composition_score", round(Math.max(0, composition)));
         return new Result(ImageOps.png(canvas), stages, sum(costs), ms(started), fallback, quality, warnings, placements, costs);
+    }
+
+    private static BufferedImage copyOf(BufferedImage src) {
+        BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = out.createGraphics();
+        g.drawImage(src, 0, 0, null);
+        g.dispose();
+        return out;
     }
 
     private static String fashnCategory(SchemeSlot slot) {

@@ -7,7 +7,7 @@ import { PRINT_MIN_NZ, ellipsoid, fitPhoto, garmentMold, limbGeo, loftGeo, photo
 import { SKIN, VITRINE, useGlb, useTex, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
 import { AvatarBust, useAvatarTexture } from "@/components/three/avatar-bust";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
-import { HumanOutfit } from "@/components/three/human-outfit";
+import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
 import { BODY_KEYS, DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
@@ -66,21 +66,13 @@ function Garment({ p, s }: { p: Look3dPiece; s: Spec }) {
   const box0 = photoBox(p, s);
   const img = tex?.image as CanvasImageSource & { width: number; height: number } | undefined;
   const aspect = img ? img.width / Math.max(1, img.height) : 1;
+  // o molde existe desde o primeiro quadro (sem foto ainda: na cor do tecido) — o manequim nunca aparece sem roupa
   const mold = useMemo(() => {
-    if (!box0.w || !tex) return null;
+    if (!box0.w) return null;
     const g = garmentMold(p, s); if (!g) return null;
     project(g, fitPhoto(p, box0, aspect)); return splitPrint(g);
   }, [tex, aspect, box0.w, box0.h, box0.top, box0.x, p, s]); // eslint-disable-line react-hooks/exhaustive-deps
   const fabric = useMemo(() => fabricColor(img, p.colorHex), [img, p.colorHex]);
-  // costas e laterais: cor do tecido, mas com o recorte (alfa) da foto — a peça termina onde a foto termina
-  const plainMat = useMemo(() => {
-    if (!tex) return null;
-    const m = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, alphaTest: 0.4, roughness: 0.85, side: THREE.DoubleSide });
-    const color = new THREE.Color(fabric);
-    m.onBeforeCompile = (sh) => { sh.uniforms.fabric = { value: color }; sh.fragmentShader = "uniform vec3 fabric;\n" + sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n diffuseColor.rgb = fabric;"); };
-    m.customProgramCacheKey = () => "fabric-" + fabric;
-    return m;
-  }, [tex, fabric]);
   useEffect(() => { if (tex) { tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true; } }, [tex]);
   if (glb) {
     const bb = new THREE.Box3().setFromObject(glb); const size = bb.getSize(new THREE.Vector3()); const c = bb.getCenter(new THREE.Vector3());
@@ -89,12 +81,12 @@ function Garment({ p, s }: { p: Look3dPiece; s: Spec }) {
   }
   if (!box0.w) return <Accessory p={p} s={s} tex={tex} />;
   if (!mold) return null;
+  // reserva: a peça na cor do tecido medida na foto (a projeção da foto neste molde antigo saía escura); o manequim de
+  // reserva só aparece enquanto o corpo humano carrega ou se ele falhar — o que importa aqui é nunca ficar sem roupa
   return (
     <group>
-      <mesh geometry={mold.print} castShadow>
-        <meshStandardMaterial map={tex ?? undefined} vertexColors alphaTest={0.4} roughness={0.82} side={THREE.DoubleSide} />
-      </mesh>
-      {plainMat && <mesh geometry={mold.plain} material={plainMat} castShadow />}
+      <mesh geometry={mold.print} castShadow><meshStandardMaterial color={fabric} roughness={0.85} side={THREE.DoubleSide} /></mesh>
+      <mesh geometry={mold.plain} castShadow><meshStandardMaterial color={fabric} roughness={0.85} side={THREE.DoubleSide} /></mesh>
     </group>
   );
 }
@@ -163,7 +155,11 @@ export function bodyParamsOf(m: Mannequin3d): BodyParams {
   return { ...DEFAULT_BODY[sex], build: BUILD[m.build ?? "MEDIUM"] ?? 0 };
 }
 
-/** Manequim de reserva (cápsulas, sem esqueleto): aparece só enquanto o corpo humano carrega ou se ele não puder ser usado. */
+/**
+ * Manequim de reserva (cápsulas, sem esqueleto): aparece só enquanto o corpo humano carrega ou se ele não puder ser usado.
+ * Recebe as peças já completadas pelo look padrão (Mannequin) e as desenha desde o primeiro quadro, na cor do tecido
+ * enquanto a foto carrega.
+ */
 export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null }) {
   const params = body ?? bodyParamsOf(mannequin);
   const s = useMemo(() => buildSpec(params), [params.stature, params.shoulderW, params.chestW, params.waistW, params.hipW, params.legLen, params.armLen, params.headH, params.build]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -187,7 +183,8 @@ export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body
 /**
  * Manequim das vitrines 3D, do provador e do Avatar 3D: o corpo humano com esqueleto (components/three/human-avatar.tsx)
  * na forma da pessoa — proporções medidas/informadas (ou as de referência do sexo), rosto e cabelo do Avatar 3D,
- * tom de pele — vestindo as peças do look presas ao mesmo esqueleto (components/three/human-outfit.tsx).
+ * tom de pele — vestindo as peças do look presas ao mesmo esqueleto (components/three/human-outfit.tsx). O que o look
+ * não cobre (tronco, pernas, pés) veste peças padrão dos assets do FashionAI: nenhuma tela 3D mostra o corpo sem roupa.
  * Sem Avatar 3D, é o manequim de vitrine (marfim ou o tom escolhido), sem rosto de ninguém.
  */
 export function Mannequin({ mannequin, pieces, onClick, body, still = false, onHuman }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; onHuman?: (p: HumanParts) => void }) {
@@ -204,13 +201,13 @@ export function Mannequin({ mannequin, pieces, onClick, body, still = false, onH
   const atlas = (tex?.image as (CanvasImageSource & { width: number; height: number }) | undefined) ?? null;
   const pkey = JSON.stringify(params), skey = JSON.stringify(sources);
   const input = useMemo(() => ({ sex, params, sources }), [sex, pkey, skey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // nunca sem roupa: o que o look não cobre (tronco, pernas, pés) vem dos assets de peças do FashionAI
+  const dressed = useMemo(() => withDefaultOutfit(pieces), [pieces]);
   return (
     <group onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}>
       <HumanAvatar body={input} stature={params.stature} skin={skin} face={avatar?.model ?? null} atlas={avatar ? atlas : null} hair={avatar?.model.hair ?? null}
-        adjust={avatar ? adj : null} motion={!reduced && !still} onReady={onHuman}
-        fallback={<CapsuleMannequin mannequin={mannequin} pieces={pieces} sway={false} body={body} />}>
-        {(p) => <HumanOutfit parts={p} pieces={pieces} sex={sex} />}
-      </HumanAvatar>
+        pieces={dressed} adjust={avatar ? adj : null} motion={!reduced && !still} onReady={onHuman}
+        fallback={<CapsuleMannequin mannequin={mannequin} pieces={dressed} sway={false} body={body} />} />
     </group>
   );
 }

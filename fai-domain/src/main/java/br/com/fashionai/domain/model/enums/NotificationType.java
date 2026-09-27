@@ -25,6 +25,8 @@ public enum NotificationType {
     SCHEME_CREATED(NotificationCategory.SYSTEM, true),
     AI_JOB_FINISHED(NotificationCategory.SYSTEM, true),
     ACCOUNT_APPROVAL(NotificationCategory.SYSTEM, false),
+    /** Foto enviada retida pela moderação (docs/seguranca/moderacao-de-imagens.md): aprovada ou recusada na revisão humana. */
+    CONTENT_REVIEW(NotificationCategory.SYSTEM, false),
     DAILY_LOOK(NotificationCategory.SOCIAL, true),
     /** RF36 — convite para desafio (Equipe/Duelo) e resultado. Nunca há notificação de culpa ou de perda (ETI-02). */
     CHALLENGE_INVITE(NotificationCategory.SOCIAL, true),

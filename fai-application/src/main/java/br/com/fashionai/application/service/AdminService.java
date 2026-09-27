@@ -8,6 +8,7 @@ import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.moderation.UploadQuarantine;
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.ports.BackupPort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -66,6 +67,7 @@ public class AdminService {
     private final SealService seals;
     private final IdentityService identity;
     private final NotificationService notifications;
+    private final UploadQuarantine quarantine;
     private final AssetCatalogService assets;
     private final ChallengeService challenges;
     private final HypeScoreService hype;
@@ -78,7 +80,9 @@ public class AdminService {
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
                         BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics, SealService seals,
                         IdentityService identity, NotificationService notifications, AssetCatalogService assets, ChallengeService challenges,
-                        HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit) {
+                        HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
+                        UploadQuarantine quarantine) {
+        this.quarantine = quarantine;
         this.users = users;
         this.brands = brands;
         this.celebrities = celebrities;
@@ -163,6 +167,13 @@ public class AdminService {
             m.put("createdAt", q.getCreatedAt());
             if ("PIECE".equals(q.getTargetType()) && q.getTargetId() != null) {
                 pieces.findById(q.getTargetId()).ifPresent(w -> m.put("imageUrl", w.getImageUrl()));
+            } else if (UploadQuarantine.TARGET.equals(q.getTargetType())) {
+                // foto retida pela moderação: a imagem sai só pelo endpoint autenticado do admin (restricted/)
+                Map<String, Object> meta = UploadQuarantine.meta(q);
+                m.put("categories", UploadQuarantine.reasons(q));
+                m.put("upload", Map.of("kind", String.valueOf(meta.get("kind")), "engine", String.valueOf(meta.get("engine")),
+                        "signals", meta.getOrDefault("signals", Map.of())));
+                m.put("imageEndpoint", "/api/admin/moderation/" + q.getId() + "/image");
             }
             return m;
         }).toList();
@@ -180,9 +191,23 @@ public class AdminService {
             pieces.findById(q.getTargetId()).ifPresent(w -> w.setModerationStatus(approve ? ModerationStatus.APPROVED : ModerationStatus.REJECTED_POLICY));
         } else if ("COMMENT".equals(q.getTargetType()) && q.getTargetId() != null && !approve) {
             comments.findById(q.getTargetId()).ifPresent(c -> c.setActive(false));
+        } else if (UploadQuarantine.TARGET.equals(q.getTargetType())) {
+            quarantine.decide(q, admin.id(), approve);
         }
         audit.log(admin, approve ? "MODERACAO_APROVADA" : "MODERACAO_REJEITADA", q.getTargetType() + ":" + q.getTargetId(), Map.of());
         return Map.of("id", itemId, "status", q.getStatus().name());
+    }
+
+    /** Foto retida pela moderação, para o admin revisar (o arquivo fica em restricted/). */
+    @Transactional(readOnly = true)
+    public byte[] moderationImage(CurrentUser admin, UUID itemId) {
+        guard.requireAdmin(admin);
+        ModerationQueueItem q = moderation.findById(itemId).orElseThrow(() -> ApiException.notFound(Msg.t("admin.item_de_moderacao")));
+        if (!UploadQuarantine.TARGET.equals(q.getTargetType()) || q.getStatus() != ModerationQueueStatus.PENDING_REVIEW) {
+            throw ApiException.notFound(Msg.t("admin.item_de_moderacao"));
+        }
+        audit.log(admin, "MODERACAO_FOTO_VISTA", "UPLOAD:" + q.getTargetId(), Map.of());
+        return quarantine.image(q);
     }
 
     // ================================================================== contas
