@@ -1719,3 +1719,9 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .c-reaction[aria-pressed="true"] .c-reaction-n { color: var(--ink); }
 @media (pointer: coarse) { .c-reaction { min-height: var(--touch); } }
 @media (prefers-reduced-motion: reduce) { .c-reaction { transition: none; } .c-reaction:active { transform: none; } }
+/* aprovação da foto de estúdio (Editar imagem): aprovada × nova, lado a lado, como aparecem no feed */
+.ei-approval { display: grid; gap: 10px; margin-bottom: 14px; padding: 12px; border: 1.5px solid var(--chalk, #D9A521); border-radius: 10px; background: var(--chalk-soft); }
+.ei-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 460px; }
+.ei-frame.is-pending { outline: 2px dashed var(--chalk, #D9A521); outline-offset: 2px; }
+/* o invólucro do nome (link no card publicado, span na prévia) não herda o estilo da linha secundária do cabeçalho */
+.fai-card .c-who .c-who-link { font-size: inherit; color: inherit; }

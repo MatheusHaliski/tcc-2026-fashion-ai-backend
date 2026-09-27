@@ -1,5 +1,7 @@
 # Card de peça e detalhe da peça — leitura de rede social (27/09/2026)
 
+> Continuação (card em camadas, arte do card RF11, aprovação da foto de estúdio, reações): [CARDS_ARTE_RF11_2026-09-27.md](CARDS_ARTE_RF11_2026-09-27.md).
+
 Branch `claude/fashionai-cards-detail-modal-ysdpjw`. O card e o modal passam a seguir a lógica de um post de rede
 social de imagens: a peça é o foco; autor, interações e informações complementares vêm em ordem de importância.
 As ferramentas de imagem e de processamento saíram da leitura social e foram para "Editar imagem" (só o dono).

@@ -91,7 +91,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
               <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />
               <div className="pc-id">
                 <span className="seal-row">
-                  {preview ? name : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+                  {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
                   {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
                 <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>

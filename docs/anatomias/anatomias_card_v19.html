@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anatomias do Card v19</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Tokens com os mesmos nomes de app/globals.css. Texto só em pares com contraste ≥ 4,5:1. */
+:root{
+  color-scheme:light;
+  --ground:#F7F6F2; --surface:#FFFFFF; --surface-2:#F1F0EA; --surface-3:#E7E5DD;
+  --ink:#191A19; --muted:#5C6058; --line:#1A1A18; --line-soft:#D8D6CC;
+  --mark:#C6275E; --mark-soft:#FBE7EE; --thread:#1F7A76; --thread-soft:#E0F0EE; --chalk-ink:#7D5A12; --chalk-soft:#FAF0DC;
+  --focus:#C6275E;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter","Helvetica Neue",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --line:#C9C7BE; --line-soft:#3A3D42; --mark:#F06A93; --mark-soft:#3A1E28;
+  --thread:#5FBFB8; --thread-soft:#1B3331; --chalk-ink:#E2C27A; --chalk-soft:#3A3120; --focus:#F06A93; } }
+:root[data-theme="dark"]{
+  color-scheme:dark; --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --line:#C9C7BE; --line-soft:#3A3D42; --mark:#F06A93; --mark-soft:#3A1E28;
+  --thread:#5FBFB8; --thread-soft:#1B3331; --chalk-ink:#E2C27A; --chalk-soft:#3A3120; --focus:#F06A93; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans)}
+main{max-width:1080px;margin:0 auto;padding:32px 16px 80px}
+h1{font:600 34px/1.15 var(--serif);margin:0 0 6px}
+h2.sec{font:600 24px/1.2 var(--serif);margin:48px 0 10px;padding-top:18px;border-top:1.5px solid var(--line-soft)}
+h3{font:600 17px/1.3 var(--sans);margin:24px 0 8px}
+p{margin:0 0 10px;max-width:72ch}
+.kicker{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{color:var(--muted);font-size:16px}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font:600 11px/1.6 var(--mono);letter-spacing:.04em;text-transform:uppercase}
+.tag.real{background:var(--thread-soft);color:var(--thread)} .tag.diagrama{background:var(--chalk-soft);color:var(--chalk-ink)}
+table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+code{font:500 13px/1.4 var(--mono);background:var(--surface-2);padding:1px 5px;border-radius:4px}
+figure{margin:12px 0 20px} figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line-soft);border-radius:8px;background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+.grid2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.note{background:var(--surface);border:1.5px solid var(--line-soft);border-radius:10px;padding:12px 14px;margin:12px 0}
+.toc{columns:2;column-gap:32px;padding-left:18px} @media (max-width:640px){.toc{columns:1}}
+/* diagrama das camadas (ilustração, não é o componente) */
+.layers{display:grid;gap:18px;grid-template-columns:minmax(0,300px) minmax(0,1fr);align-items:start} @media (max-width:720px){.layers{grid-template-columns:1fr}}
+.d-outer{position:relative;border:2px solid var(--line);border-radius:12px;padding:16px 16px 30px;background:repeating-linear-gradient(135deg,#F3D9C2 0 10px,#EFCDAE 10px 20px)}
+.d-outer.em-top{padding:30px 16px 16px}
+.d-content{position:relative;background:var(--surface);border-radius:8px;box-shadow:0 0 0 2px #fff,0 0 14px 2px rgba(198,39,94,.45);overflow:hidden}
+.d-row{padding:8px 10px;font:600 11px/1.3 var(--mono);color:var(--muted);border-bottom:1px dashed var(--line-soft)}
+.d-media{aspect-ratio:4/5;background:linear-gradient(160deg,#2340A0,#10225E);display:grid;place-items:center;color:#fff;font:600 12px var(--mono)}
+.d-num{position:absolute;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 12px var(--mono)}
+.legend li{margin-bottom:6px}
+</style>
+</head>
+<body>
+<main>
+<p class="kicker">FashionAI · anatomia do card · v19 · 27/09/2026</p>
+<h1>Card da peça em camadas, detalhe e arte do card (RF11)</h1>
+<p class="lead">A v19 substitui a seção C (anatomias da peça) da <a href="anatomias_card_v18.html">v18</a>, que fica como histórico. Looks e DNA continuam na v18.</p>
+<div class="note">
+  <p><span class="tag real">Captura real</span> são imagens do app rodando (Next.js), geradas por <code>scripts/e2e/verify-card-art.mjs</code> e <code>scripts/e2e/verify-cards.mjs</code> com a API simulada e fotos saídas do pipeline de imagem de verdade.</p>
+  <p><span class="tag diagrama">Diagrama</span> são ilustrações feitas neste documento para explicar a estrutura. Não são capturas do produto.</p>
+  <p>As capturas anexadas ao pedido não estavam disponíveis nesta sessão. As referências de rede social abaixo seguem padrões públicos e conhecidos; nenhuma tela do Instagram foi aberta ou analisada.</p>
+</div>
+<ol class="toc">
+  <li><a href="#camadas">Camadas, empilhamento e recorte</a></li>
+  <li><a href="#tokens">Dimensões, tokens e zona segura</a></li>
+  <li><a href="#densidade">Compacto e ampliado, desktop e celular</a></li>
+  <li><a href="#modal">Detalhe: dono × visitante</a></li>
+  <li><a href="#familias">Famílias de arte e variações</a></li>
+  <li><a href="#efeitos">Efeitos, limites e movimento</a></li>
+  <li><a href="#editor">Editor RF11: controle → camada</a></li>
+  <li><a href="#foto">Fotografia de produto e aprovação</a></li>
+  <li><a href="#contrato">Contrato visual compartilhado</a></li>
+  <li><a href="#estados">Estados</a></li>
+</ol>
+
+<h2 class="sec" id="camadas">1. Camadas, empilhamento e recorte</h2>
+<div class="layers">
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> ênfase na base</p>
+    <div class="d-outer" aria-hidden="true">
+      <span class="d-num" style="left:-10px;top:-10px">1</span>
+      <span class="d-num" style="right:-10px;bottom:6px">2</span>
+      <div class="d-content">
+        <span class="d-num" style="right:6px;top:6px">3</span>
+        <div class="d-row">@usuario</div>
+        <div class="d-media"><span>4 · foto aprovada</span></div>
+        <div class="d-row">♡ 12 · 💬 3 · ➤ 1 · 🔖</div>
+        <div class="d-row">Nome da peça · Marca</div>
+      </div>
+    </div>
+    <p class="kicker" style="margin-top:8px">5 · aura atrás do container e luz de contorno na borda dele</p>
+  </div>
+  <ol class="legend">
+    <li><b>1 · Superfície externa</b> — <code>article.pc</code>: borda (cor da skin), raio e <code>overflow:hidden</code> que recorta tudo o que é decorativo.</li>
+    <li><b>2 · Área artística</b> — <code>.pc-art</code> (z-index 0): fundo do Background Studio (ou o fundo padrão da família), a composição da família e os efeitos de fundo. <code>aria-hidden</code>, <code>pointer-events:none</code>, <code>contain:paint</code>.</li>
+    <li><b>3 · Container de conteúdo</b> — <code>.pc-frame &gt; .pc-content</code> (z-index 1): cabeçalho, área da peça, ações e identificação. Fundo próprio (<code>--container-bg</code> ou o da skin), sólido ou vidro fosco; <code>overflow:clip</code>.</li>
+    <li><b>4 · Área da peça</b> — <code>.pc-media</code>: a foto aprovada em 4:5 com fundo próprio (<code>--pc-media-bg</code>). Nada da arte passa por cima dela.</li>
+    <li><b>5 · Efeitos decorativos</b> — aura (dentro da área artística, atrás do container), luz de contorno e relevo (sombras do container). Nenhum recebe clique ou foco.</li>
+  </ol>
+</div>
+<h3>Os cinco fundos, sem confusão</h3>
+<table>
+  <tr><th>Fundo</th><th>Onde no código</th><th>Quem controla</th></tr>
+  <tr><td>Fundo do app</td><td><code>body</code> · <code>--ground</code></td><td>Tema (claro, escuro, contraste)</td></tr>
+  <tr><td>Arte do card</td><td><code>.pc-art</code> · <code>ArtStage</code> (<code>components/piece-art.tsx</code>)</td><td>Editor RF11: template, composição, fundo artístico, efeitos</td></tr>
+  <tr><td>Superfície interna</td><td><code>.pc-content</code> · <code>--container-bg</code>, <code>data-surface</code></td><td>Editor RF11: skin, cor do container, sólido/vidro</td></tr>
+  <tr><td>Fundo da área da peça</td><td><code>.pc-media</code> · <code>--pc-media-bg</code> + o fundo da própria foto de estúdio</td><td>Fundo do estúdio (cadastro ou <i>Editar imagem</i>), com aprovação</td></tr>
+  <tr><td>Borda e efeitos externos</td><td><code>article.pc</code> border, <code>--pc-sh-rim</code>, <code>--pc-sh-relief</code>, <code>.pc-fx-aura</code></td><td>Skin (borda) e efeitos do editor</td></tr>
+</table>
+<h3>Decorativo × interativo</h3>
+<table>
+  <tr><th>Elemento</th><th>Clique</th><th>Foco / leitor de tela</th></tr>
+  <tr><td>Toda a área artística, composição, partículas, colagem, aura</td><td>Não (<code>pointer-events:none</code>)</td><td>Não (<code>aria-hidden</code>)</td></tr>
+  <tr><td>Foto da peça</td><td>Abre o detalhe</td><td>Fora da ordem de Tab (o nome é o link): um destino, um link</td></tr>
+  <tr><td>Nome da peça, @usuário</td><td>Detalhe / perfil</td><td>Sim</td></tr>
+  <tr><td>Curtir, comentar, compartilhar, salvar</td><td>Sim</td><td>Sim, com contagem no nome acessível e <code>aria-pressed</code></td></tr>
+</table>
+<p>Verificado: o clique no meio da faixa lateral cai no <code>.pc-frame</code> (não interativo), nunca num filho da arte; a arte tem zero elementos focáveis.</p>
+
+<h2 class="sec" id="tokens">2. Dimensões, tokens e zona segura</h2>
+<table>
+  <tr><th>Token</th><th>Compacto (feed, grades)</th><th>Ampliado (detalhe)</th></tr>
+  <tr><td><code>--pc-x</code> (laterais)</td><td><code>clamp(12px, 6cqi, 20px)</code></td><td><code>clamp(20px, 3cqi, 32px)</code></td></tr>
+  <tr><td><code>--pc-top</code> / <code>--pc-bottom</code></td><td colspan="2"><code>--pc-x × k</code>. A soma é sempre <b>2,9 × --pc-x</b>: equilibrada 1,45/1,45 · ênfase no topo 1,9/1,0 · ênfase na base 1,0/1,9</td></tr>
+  <tr><td>Raio</td><td><code>--pc-r-out</code> = raio da skin (padrão 10 px); <code>--pc-r-in</code> = 70% dele (mín. 4 px)</td><td>mín. 12 px</td></tr>
+  <tr><td>Área da peça</td><td colspan="2">4:5, largura do container. <b>Zona segura</b>: todo o container; a arte só ocupa as quatro faixas entre a borda externa e o container.</td></tr>
+</table>
+<p>Medido na verificação (cqi resolve no próprio card): grade no desktop (card ≈ 220 px) — laterais 13,06 px, topo + base 38 px; grade no celular (card ≈ 165 px) — 12 px e 35 px; detalhe no desktop — 31,14 px e 45,15 + 45,15 px; detalhe no celular — 20 px e 29 + 29 px.</p>
+<p>Consequências: as laterais têm a mesma largura em todas as famílias, então a foto tem a <b>mesma escala</b> em qualquer arte (variação medida: 0 px em 10 cards e em 12 famílias/variações); como a soma topo + base é constante, cards da mesma linha têm a mesma altura (variação 0 px).</p>
+
+<h2 class="sec" id="densidade">3. Compacto e ampliado, desktop e celular</h2>
+<div class="grid2">
+  <figure><img src="img/v19/grade-familias-misturadas-desktop.jpg" alt="Grade no desktop com 5 camisetas e 5 calças em famílias diferentes"><figcaption><span class="tag real">Captura real</span> 5 camisetas + 5 calças, famílias misturadas, desktop.</figcaption></figure>
+  <figure><img src="img/v19/grade-familias-misturadas-celular.jpg" alt="Grade no celular, duas colunas, famílias misturadas"><figcaption><span class="tag real">Captura real</span> O mesmo, celular (2 colunas).</figcaption></figure>
+  <figure><img src="img/v19/grade-mesmo-template-desktop.jpg" alt="Grade com as 10 peças na família Clássica"><figcaption><span class="tag real">Captura real</span> Mesmo template (Clássica A) nas 10 peças.</figcaption></figure>
+  <figure><img src="img/v19/modal-visitante-desktop.jpg" alt="Detalhe ampliado no desktop visto por visitante"><figcaption><span class="tag real">Captura real</span> Ampliado: a mesma arte com faixas de 31 px.</figcaption></figure>
+</div>
+
+<h2 class="sec" id="modal">4. Detalhe: dono × visitante</h2>
+<p>Ordem: imagem inteira (toque amplia) → nome e marca (preço só à venda) → <b>uma</b> ação principal com a alternativa como texto-link → uma linha de ações sociais com as contagens → reações → detalhes agrupados → looks com a peça (só se existirem) → opções.</p>
+<table>
+  <tr><th></th><th>Dono</th><th>Visitante</th></tr>
+  <tr><td>Ação principal</td><td>Adicionar ao look</td><td>Experimentar (manequim 3D)</td></tr>
+  <tr><td>Alternativa (secundária)</td><td>ou experimente no manequim 3D</td><td>ou guarde uma cópia no seu guarda-roupa</td></tr>
+  <tr><td>Mais opções</td><td>Editar dados · Editar imagem · Editar arte do card · Trocar foto · Disponível/indisponível · Favorita · Foto com meu manequim · Mostrar no quarto · Excluir</td><td>Não aparece (não há opção para visitante)</td></tr>
+  <tr><td>Técnico</td><td>Detalhes técnicos (motor, etapas, 3D) recolhidos</td><td>—</td></tr>
+</table>
+<p>Teclado: ao abrir, o foco vai ao diálogo (o leitor anuncia “detalhe da peça”); Tab e Shift+Tab não saem dele (0 saídas em 40 + 10 toques); Esc fecha o menu aberto sem fechar o modal e, sem menu, fecha o modal; o foco volta ao nome da peça no card. Abrir o detalhe não dispara curtida nem salvamento (0 pedidos).</p>
+<div class="grid2">
+  <figure><img src="img/v19/modal-dono-desktop.jpg" alt="Detalhe visto pelo dono no desktop"><figcaption><span class="tag real">Captura real</span> Dono, desktop.</figcaption></figure>
+  <figure><img src="img/v19/modal-visitante-celular.jpg" alt="Detalhe visto por visitante no celular"><figcaption><span class="tag real">Captura real</span> Visitante, celular.</figcaption></figure>
+</div>
+
+<h2 class="sec" id="familias">5. Famílias de arte e variações</h2>
+<table>
+  <tr><th>Família</th><th>Variação A</th><th>Variação B</th><th>Ênfase padrão</th></tr>
+  <tr><td>Clássica</td><td>passe-partout de linha fina</td><td>cantoneiras de galeria</td><td>equilibrada</td></tr>
+  <tr><td>Bento</td><td>mosaico de painéis, destaque no topo</td><td>coluna larga à esquerda + disco</td><td>topo</td></tr>
+  <tr><td>Blocos (genérico, sem marca)</td><td>moldura de tijolos + placa-base</td><td>torres laterais + placa-base</td><td>base</td></tr>
+  <tr><td>Sazonal (4 estações)</td><td>guirlanda, peças nas laterais e chão</td><td>janela em arco com paisagem</td><td>topo</td></tr>
+  <tr><td>Raio-X</td><td>planta técnica: grade, contornos, cotas, registro</td><td>planos translúcidos + varredura</td><td>equilibrada</td></tr>
+  <tr><td>Passarela</td><td>treliça de luz, fachos e piso em perspectiva</td><td>cortinas, bambinela e letreiro de lâmpadas</td><td>A: base · B: topo</td></tr>
+</table>
+<p>A composição é desenhada só nas faixas (os painéis do Bento, por exemplo, cobrem o card inteiro por baixo do container; as bordas e os vãos aparecem nas quatro faixas). Nenhuma família corta, cobre ou altera a foto. A família define também a zona do selo (anatomia sincronizada: Bento → BENTO, Blocos → LEGO, Raio-X → RAIO_X, Passarela → PASSARELA; as demais → PECA_AMPLIADO).</p>
+<figure><img src="img/v19/mesma-peca-cinco-familias.jpg" alt="A mesma camiseta vermelha nas seis famílias, variações A e B"><figcaption><span class="tag real">Captura real</span> A mesma peça (camiseta The Best Plan) em todas as famílias e variações: foto idêntica (mesmo arquivo e enquadramento) e mesma escala; variação de 0 px na largura e na altura da foto.</figcaption></figure>
+
+<h2 class="sec" id="efeitos">6. Efeitos, limites e movimento</h2>
+<table>
+  <tr><th>Efeito</th><th>Camada</th><th>Famílias</th></tr>
+  <tr><td>Aura (intensidade ≤ 0,8 e alcance)</td><td>2, atrás do container</td><td>Clássica, Bento, Sazonal, Passarela</td></tr>
+  <tr><td>Luz de contorno</td><td>5, borda do container</td><td>Clássica, Bento, Blocos, Raio-X, Passarela</td></tr>
+  <tr><td>Brilho localizado</td><td>2</td><td>todas</td></tr>
+  <tr><td>Painel de vidro</td><td>2, moldura translúcida</td><td>Clássica, Bento, Raio-X</td></tr>
+  <tr><td>Metálico / iridescente</td><td>2</td><td>Clássica, Raio-X, Passarela</td></tr>
+  <tr><td>Relevo da moldura</td><td>1 e 5</td><td>Clássica, Blocos</td></tr>
+  <tr><td>Textura papel / tecido / cerâmica</td><td>2</td><td>Clássica, Bento, Blocos, Sazonal</td></tr>
+  <tr><td>Colagem</td><td>2</td><td>Bento, Sazonal</td></tr>
+  <tr><td>Partículas (+ movimento opcional)</td><td>2, só nas faixas</td><td>Clássica, Blocos, Sazonal, Raio-X, Passarela</td></tr>
+</table>
+<p>Limites: no máximo <b>3 efeitos</b> ao mesmo tempo (a aura e o movimento não contam); nenhum ligado por padrão; o que não combina com a família fica desabilitado no editor e é ignorado na renderização. Vidro fosco da superfície: sem desfoque no card compacto (feed leve), com desfoque no ampliado.</p>
+<p>Movimento: só no card ampliado e só com a opção ligada. Verificado: 0 animações na arte do feed; no detalhe, 20 animações rodando, pausadas quando o card sai da tela (<code>data-inview="false"</code>, IntersectionObserver) e 0 com “reduzir movimento” (do sistema ou do app). Deslocamento de layout (CLS) da grade: 0.</p>
+<figure><img src="img/v19/efeitos-combinados.jpg" alt="Oito cards da mesma calça com combinações de efeitos"><figcaption><span class="tag real">Captura real</span> Combinações permitidas na mesma peça (calça jeans): a foto não muda.</figcaption></figure>
+
+<h2 class="sec" id="editor">7. Editor RF11: controle → camada</h2>
+<p>Fluxo: <b>Template → Composição → Fundo artístico → Superfície interna → Efeitos → Prévia e aplicação</b>. A prévia é o próprio <code>PieceCard</code> do feed, na largura de uma coluna da grade (sem o lugar reservado do selo, para ficar idêntica). Existe no cadastro (etapa “Arte de fundo”) e no detalhe, para o dono (<i>Mais opções › Editar arte do card</i>).</p>
+<table>
+  <tr><th>Controle</th><th>Camada</th><th>Campo gravado</th></tr>
+  <tr><td>Família e variação (+ estação)</td><td>2</td><td><code>template.family / variant / season</code> (+ <code>anatomy</code> do selo)</td></tr>
+  <tr><td>Equilibrada / topo / base</td><td>2 (tamanho das faixas)</td><td><code>composition.emphasis</code></td></tr>
+  <tr><td>Cor, gradiente, cartela sazonal, AURA, material, arte com IA, upload (Background Studio reaproveitado)</td><td>2 (fundo atrás da composição)</td><td><code>color, gradient, aura, materialId, aiArt, uploadUrl…</code></td></tr>
+  <tr><td>Skin</td><td>1 (borda) e 3 (tinta, tipografia)</td><td><code>skin</code></td></tr>
+  <tr><td>Cor do container, sólido/vidro</td><td>3</td><td><code>surface.color / style</code> (+ <code>container.color</code> para leitores da v1)</td></tr>
+  <tr><td>Fundo do estúdio (no cadastro)</td><td>4</td><td>foto de estúdio do rascunho</td></tr>
+  <tr><td>Efeitos</td><td>2 e 5</td><td><code>effects</code></td></tr>
+</table>
+<p>Persistência: <code>PUT /api/pieces/{id}/background</code> (só o dono). O editor trabalha num rascunho: <b>Cancelar</b> fecha sem gravar (0 pedidos); <b>Restaurar padrão</b> volta à Clássica sem arte só no rascunho; <b>Aplicar</b> grava com a revisão lida (<code>baseRev</code>) — se outra janela aplicou antes, o servidor responde 409 e o editor avisa em vez de sobrescrever. Configs antigos (v1) são lidos como v2 sem regravar: a anatomia vira a família equivalente e a cor do container vira a superfície.</p>
+<p>Verificado: prévia e card salvo com a mesma largura, altura, faixas e posição de todos os elementos internos; reaberto depois de recarregar, o editor volta com Bento B marcado.</p>
+<div class="grid2">
+  <figure><img src="img/v19/editor-1-template.jpg" alt="Editor, etapa Template"><figcaption><span class="tag real">Captura real</span> Template.</figcaption></figure>
+  <figure><img src="img/v19/editor-5-efeitos.jpg" alt="Editor, etapa Efeitos com contador de limite"><figcaption><span class="tag real">Captura real</span> Efeitos, com limite e família.</figcaption></figure>
+  <figure><img src="img/v19/editor-6-previa.jpg" alt="Editor, prévia e aplicação"><figcaption><span class="tag real">Captura real</span> Prévia no feed e moldura ampliada.</figcaption></figure>
+  <figure><img src="img/v19/editor-conflito.jpg" alt="Aviso de conflito de revisão no editor"><figcaption><span class="tag real">Captura real</span> Outra janela aplicou antes: nada é sobrescrito.</figcaption></figure>
+</div>
+
+<h2 class="sec" id="foto">8. Fotografia de produto e aprovação</h2>
+<p>Pipeline: upload → validação (critérios da foto) → identificação (tipo escolhido antes, subtipo, marca) → remoção de pessoa e cenário (no navegador, só a peça do tipo escolhido segue) → revisão do recorte → enquadramento pelo template da categoria (camisetas, jaquetas, calças, shorts, saias, vestidos, calçados, bolsas, acessórios) → variantes (foto inteira, miniatura, feed 4:5, detalhe do logo só com logo real, recorte realçado) → aprovação.</p>
+<p>A foto aprovada nunca é trocada em silêncio: um processamento novo sobre ela vira uma <b>versão pendente</b> (com todos os derivados e os marcos do enquadramento para ajuste manual). O dono compara aprovada × nova em <i>Editar imagem</i> e aprova ou descarta; visitantes não recebem a versão pendente na API.</p>
+<figure><img src="img/v19/estudio-aprovacao.jpg" alt="Editar imagem com a foto aprovada e a nova versão lado a lado"><figcaption><span class="tag real">Captura real</span> Aprovada (v1, no feed) × nova (v2, aguardando).</figcaption></figure>
+
+<h2 class="sec" id="contrato">9. Contrato visual compartilhado</h2>
+<table>
+  <tr><th>Parte</th><th>Componente</th><th>Regra</th></tr>
+  <tr><td>Cabeçalho</td><td><code>CardHeader</code></td><td>avatar 24 px, @usuário (marca: nome), linha secundária opcional; peça, look e DNA</td></tr>
+  <tr><td>Imagem</td><td><code>.pc-media</code></td><td>4:5, foto aprovada, fundo próprio</td></tr>
+  <tr><td>Ações</td><td><code>CardActions</code> + <code>SocialIcon</code></td><td>ícones de traço 24 px (20 px na coluna estreita), contagem ao lado em Inter 14/13 px; salvar à direita; estado por forma (contorno → preenchido)</td></tr>
+  <tr><td>Reações</td><td>pílulas <code>.c-reaction</code></td><td>ícone FAI 30 px (variante <code>glyph-lg</code>, o desenho ocupa ~84% do disco), nome em Inter 14 px, contagem em negrito; ativo = fundo e borda</td></tr>
+  <tr><td>Identificação</td><td><code>.pc-id</code></td><td>nome (serifada, 2 linhas), marca ou tipo, preço só à venda</td></tr>
+</table>
+<p>A liberdade do RF11 fica nas camadas 1, 2 e 5 (e na cor da 3); o contrato acima não muda com a arte.</p>
+<h3>Padrões de rede social usados como referência</h3>
+<table>
+  <tr><th>Padrão (conhecido publicamente)</th><th>No FashionAI</th></tr>
+  <tr><td>Cabeçalho curto com avatar e nome de usuário</td><td>CardHeader</td></tr>
+  <tr><td>Mídia dominante com proporção fixa no feed</td><td>foto 4:5 do template da categoria</td></tr>
+  <tr><td>Linha única de ações com ícones de traço; salvar isolado à direita</td><td>CardActions</td></tr>
+  <tr><td>Contagem junto do ícone, sem linha “N curtidas” separada</td><td>contagem inline, número também no nome acessível</td></tr>
+  <tr><td>Reações como pílulas com ícone, nome e contagem</td><td>Trend, Elegante, Criativo</td></tr>
+  <tr><td>Detalhe com ação principal única</td><td>Adicionar ao look / Experimentar + alternativa em texto</td></tr>
+</table>
+
+<h2 class="sec" id="estados">10. Estados</h2>
+<p>Capturas do <code>verify-cards.mjs</code> na versão em camadas: 3D processando (barra indeterminada; porcentagem só com progresso real do provedor), 3D com falha (mensagem + “Tentar de novo”, só dono), sem 3D (nada aparece — não há mais botão para gerar), sem logo, sem looks e foto vestida com parte encoberta (pede revisão).</p>
+<div class="grid2">
+  <figure><img src="img/v19/estado-3d-processando.jpg" alt="Detalhe com modelo 3D processando"><figcaption><span class="tag real">Captura real</span> 3D processando.</figcaption></figure>
+  <figure><img src="img/v19/estado-3d-falhou.jpg" alt="Detalhe com modelo 3D que falhou"><figcaption><span class="tag real">Captura real</span> 3D com falha.</figcaption></figure>
+  <figure><img src="img/v19/estado-sem-logo-indisponivel.jpg" alt="Detalhe de peça sem logo e indisponível"><figcaption><span class="tag real">Captura real</span> Sem logo, indisponível.</figcaption></figure>
+  <figure><img src="img/v19/estado-calca-sem-looks.jpg" alt="Detalhe de calça sem looks"><figcaption><span class="tag real">Captura real</span> Sem looks (a seção não aparece).</figcaption></figure>
+</div>
+</main>
+</body>
+</html>

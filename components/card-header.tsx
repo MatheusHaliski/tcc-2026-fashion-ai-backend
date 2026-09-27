@@ -25,7 +25,8 @@ export function CardHeader({ owner, sub, trailing, linked = true, className = ""
     <div className={`c-header ${className}`}>
       <span className="c-avatar"><Avatar src={mediaUrl(owner?.avatarUrl)} name={owner?.displayName} size={24} /></span>
       <span className="c-who">
-        {owner?.username && linked ? <Link href={`/u/${owner.username}`} className="c-who-link">{name}</Link> : name}
+        {/* sem link (prévia), o mesmo invólucro: a altura do cabeçalho é idêntica à do card publicado */}
+        {owner?.username && linked ? <Link href={`/u/${owner.username}`} className="c-who-link">{name}</Link> : <span className="c-who-link">{name}</span>}
         {sub ? <span>{sub}</span> : null}
       </span>
       {trailing}

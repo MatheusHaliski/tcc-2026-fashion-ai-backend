@@ -20,7 +20,7 @@ import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
 import { PhotoEditor } from "@/components/photo-editor";
-import { EditImageDialog, hasRealLogo, studioMeta } from "@/components/edit-image";
+import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { emitPieceUpdate } from "@/lib/pieces/piece-events";
 import { StudioLightbox, StudioReport, backdropCenter, backdropEdge, backdropGradient, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
@@ -163,8 +163,19 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   async function flag(field: "favorite" | "disponivel") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function studioShot(backdrop: string) {
     setStudioBusy(true);
-    try { setPiece(await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`)); toast.success(t("pieces.id.foto_de_estudio_pronta")); }
-    catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+    try {
+      const np = await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`); setPiece(np);
+      // com uma foto aprovada no ar, a nova versão espera a aprovação (nada troca no feed sozinho)
+      if (studioVersion(np).pending) toast.info(t("editImage.nova_para_revisar")); else toast.success(t("pieces.id.foto_de_estudio_pronta"));
+    } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+  }
+  const [approvalBusy, setApprovalBusy] = useState(false);
+  async function decideStudio(approve: boolean) {
+    setApprovalBusy(true);
+    try {
+      setPiece(approve ? await api.post<PieceView>(`/api/pieces/${id}/studio/approve`) : await api.delete<PieceView>(`/api/pieces/${id}/studio/pending`));
+      toast.success(approve ? t("editImage.aprovada_ok") : t("editImage.descartada_ok"));
+    } catch (e) { toast.fromError(e); } finally { setApprovalBusy(false); }
   }
   async function replaceImage(file: File) { const fd = new FormData(); fd.append("file", file); try { setPiece(await api.upload<PieceView>(`/api/pieces/${id}/image`, fd, "PUT")); toast.success(t("closet.replaceImage") + " ✓"); } catch (e) { toast.fromError(e); } }
   async function copyToWardrobe() { if (!user) { router.push("/login"); return; } try { const np = await api.post<PieceView>(`/api/pieces/${id}/copy`); toast.success(t("closet.addToWardrobe") + " ✓"); router.push(`/pieces/${np.id}`); } catch (e) { toast.fromError(e); } }
@@ -270,6 +281,9 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               </section>
             )}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
+              {mine && studioNeedsReview(p) && (
+                <p className="pd-warn" role="status">{t("pieceDetail.estudio_para_aprovar")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
+              )}
               {mine && (studioMeta(p).feed?.missing?.length ?? 0) > 0 && (
                 <p className="pd-warn" role="status">{t("pieceDetail.foto_incompleta")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
               )}
@@ -297,7 +311,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <p className="mt-2 type-caption text-muted">{t("expanded.fotos_excluidas_junto")}</p>
       </Dialog>
       {mine && <PieceArtDialog piece={p} open={editArt} onClose={() => setEditArt(false)} onSaved={setPiece} />}
-      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); setEditingPhoto(true); }} />}
+      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); setEditingPhoto(true); }} />}
       <Dialog open={view3d} onClose={() => setView3d(false)} title={t("pieceDetail.viewer3d_title", { name: p.name })} size="lg">
         {view3d && (p.model3dUrl || model.st?.modelUrl) && <div className="h-[420px] overflow-hidden rounded-lg border border-line-soft"><PieceModelViewer url={mediaUrl(p.model3dUrl ?? model.st?.modelUrl) ?? ""} name={p.name} /></div>}
         <p className="mt-2 type-caption text-muted">{t("model3d.viewer_aviso")}</p>

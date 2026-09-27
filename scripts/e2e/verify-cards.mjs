@@ -59,8 +59,10 @@ for (const who of ["owner", "visitor"]) {
       await page.evaluate(() => { const d = document.querySelector('[role="dialog"]'); d.scrollTop = d.scrollHeight; });
       await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/modal-${tag}-fim.png` });
     }
-    if (!BEFORE && vname === "desktop") {
-      const more = page.getByRole("button", { name: "Mais opções" }).last();
+    // "Mais opções" só existe quando há opção para quem vê (o visitante não tem nenhuma: o menu não aparece)
+    const more = page.locator('[role="dialog"]').getByRole("button", { name: "Mais opções" });
+    if (!BEFORE && vname === "desktop" && !(await more.count())) results[`menu-${tag}`] = "(sem menu)";
+    else if (!BEFORE && vname === "desktop") {
       await more.click(); await page.waitForTimeout(300);
       results[`menu-${tag}`] = await page.locator('[role="menu"] [role="menuitem"]').allTextContents();
       await page.screenshot({ path: `${OUT}/mais-opcoes-${tag}.png` });

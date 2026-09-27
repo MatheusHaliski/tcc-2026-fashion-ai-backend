@@ -110,7 +110,9 @@ for (const who of ["owner", "visitor"]) {
     // Tab 40 vezes: o foco nunca sai do modal
     let saiu = 0; for (let i = 0; i < 40; i++) { await page.keyboard.press("Tab"); if (!(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')))) saiu++; }
     let saiuShift = 0; for (let i = 0; i < 10; i++) { await page.keyboard.press("Shift+Tab"); if (!(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')))) saiuShift++; }
-    await page.evaluate(() => document.querySelector('[role="dialog"]').focus());
+    // o teste de Tab rolou a coluna de informações: a captura mostra o detalhe como abre (topo)
+    await page.evaluate(() => { const d = document.querySelector('[role="dialog"]'); d.scrollTop = 0; d.querySelectorAll(".pd-info").forEach((e) => { e.scrollTop = 0; }); d.focus(); });
+    await page.waitForTimeout(300);
     await page.screenshot({ path: `${OUT}/modal-${tag}.png` });
     const modal = await page.evaluate(() => {
       const d = document.querySelector('[role="dialog"]'); const a = d.querySelector("article.pc");
@@ -207,7 +209,12 @@ for (const who of ["owner", "visitor"]) {
   const partDisabled = await ed.getByRole("switch", { name: "Partículas" }).isDisabled();
   await ed.screenshot({ path: `${OUT}/editor-5-efeitos.png` });
   await ed.getByRole("button", { name: /Prévia e aplicação$/ }).click(); await page.waitForTimeout(500); await ed.screenshot({ path: `${OUT}/editor-6-previa.png` });
+  // posição inteira na página antes da captura: sem isso, a diferença de subpixel entre a prévia e a grade vira ruído
+  const snap = (loc) => loc.evaluate((el) => { el.style.transform = ""; const r = el.getBoundingClientRect(); el.style.transform = `translate3d(${Math.round(r.left) - r.left}px, ${Math.round(r.top) - r.top}px, 0)`; el.style.willChange = "transform"; });
+  await snap(ed.locator(".pae-preview-card article"));
   const previewShot = await ed.locator(".pae-preview-card article").screenshot({ path: `${OUT}/previa-card.png`, animations: "disabled" });
+  const layout = (el) => { const r0 = el.getBoundingClientRect(); return [...el.querySelectorAll(".c-header, .pc-media, .pc-media img, .c-actions, .c-act, .pc-id, .pc-name, .pc-sub, .pc-content")].map((x) => { const r = x.getBoundingClientRect(); return [r.top - r0.top, r.left - r0.left, r.width, r.height].map((n) => Math.round(n * 100) / 100).join(","); }); };
+  const previewLayout = await ed.locator(".pae-preview-card article").evaluate(layout);
   const previewGeom = await ed.locator(".pae-preview-card article").evaluate((c) => { const r = c.getBoundingClientRect(); const f = getComputedStyle(c.querySelector(".pc-frame")); return { w: r.width, h: r.height, pad: [f.paddingTop, f.paddingLeft, f.paddingBottom], family: c.dataset.family, variant: c.dataset.variant, cls: c.className }; });
   await ed.getByRole("button", { name: "Aplicar" }).click(); await page.waitForTimeout(800);
   const applied = { puts: puts.length, corpo: puts[0]?.body && { v: puts[0].body.v, template: puts[0].body.template, composition: puts[0].body.composition, surface: puts[0].body.surface, baseRev: puts[0].body.baseRev, anatomy: puts[0].body.anatomy, efeitosLigados: Object.entries(puts[0].body.effects).filter(([, x]) => x === true || (x && x.on)).map(([k]) => k) }, editorFechou: (await page.locator('[role="dialog"]').count()) === 1 };
@@ -219,15 +226,18 @@ for (const who of ["owner", "visitor"]) {
   // a grade estica o card até a altura da linha: para comparar com a prévia, cada card fica com a altura natural
   await page.addStyleTag({ content: ".grid-cards { align-items: start !important; }" }); await page.waitForTimeout(200);
   const card = page.locator(".grid-cards article").first();
+  const savedLayout = await card.evaluate(layout);
   const savedGeom = await card.evaluate((c) => { const r = c.getBoundingClientRect(); const f = getComputedStyle(c.querySelector(".pc-frame")); return { w: r.width, h: r.height, pad: [f.paddingTop, f.paddingLeft, f.paddingBottom], family: c.dataset.family, variant: c.dataset.variant, cls: c.className }; });
+  await snap(card);
   const savedShot = await card.screenshot({ path: `${OUT}/card-salvo.png`, animations: "disabled" });
   const diff = await page.evaluate(async ([a, b]) => {
     const load = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = src; });
     const [ia, ib] = await Promise.all([load(a), load(b)]);
-    if (ia.width !== ib.width || ia.height !== ib.height) return { mesmoTamanho: false, a: [ia.width, ia.height], b: [ib.width, ib.height] };
-    const px = (img) => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const x = c.getContext("2d"); x.drawImage(img, 0, 0); return x.getImageData(0, 0, c.width, c.height).data; };
+    // a captura arredonda a posição do elemento na página (±1 px): compara a área comum, alinhada pelo canto superior
+    const w = Math.min(ia.width, ib.width), h = Math.min(ia.height, ib.height);
+    const px = (img) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.drawImage(img, 0, 0); return x.getImageData(0, 0, w, h).data; };
     const da = px(ia), db = px(ib); let n = 0; for (let i = 0; i < da.length; i += 4) if (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]) > 24) n++;
-    return { mesmoTamanho: true, tamanho: [ia.width, ia.height], pixelsDiferentes: n, percentual: Math.round((n / (da.length / 4)) * 10000) / 100 };
+    return { capturas: [[ia.width, ia.height], [ib.width, ib.height]], areaComparada: [w, h], pixelsDiferentes: n, percentual: Math.round((n / (da.length / 4)) * 10000) / 100 };
   }, [`data:image/png;base64,${previewShot.toString("base64")}`, `data:image/png;base64,${savedShot.toString("base64")}`]);
   // reabre: o editor volta com os valores salvos; cancelar não grava; restaurar + aplicar volta à Clássica
   await card.locator(".pc-name-link").click(); await page.waitForSelector('[role="dialog"] article');
@@ -246,7 +256,8 @@ for (const who of ["owner", "visitor"]) {
   await ed2.getByRole("button", { name: "Aplicar" }).click(); await page.waitForTimeout(600);
   const conflito = { alerta: await ed2.locator('[role="alert"]').allTextContents(), editorContinuaAberto: await ed2.isVisible() };
   await ed2.screenshot({ path: `${OUT}/editor-conflito.png` });
-  log("editor-rf11", { aplicado: applied, previa: previewGeom, salvo: savedGeom, comparacaoPixel: diff, reabertoComValoresSalvos: reaberto, cancelar: aposCancelar, restaurarPadrao: previaRestaurada, conflitoDeRevisao: conflito, erros: errors.filter((e) => !/409/.test(e)) });
+  const layoutIgual = previewLayout.length === savedLayout.length && previewLayout.every((x, i) => x === savedLayout[i]);
+  log("editor-rf11", { aplicado: applied, previa: previewGeom, salvo: savedGeom, elementosInternosNaMesmaPosicao: layoutIgual, elementosComparados: previewLayout.length, comparacaoPixel: diff, reabertoComValoresSalvos: reaberto, cancelar: aposCancelar, restaurarPadrao: previaRestaurada, conflitoDeRevisao: conflito, erros: errors.filter((e) => !/409/.test(e)) });
   await ctx.close();
 }
 
@@ -272,6 +283,39 @@ for (const who of ["owner", "visitor"]) {
     log(`movimento-${reduce}`, { feed, modal, foraDaTela: fora });
     await ctx.close();
   }
+}
+
+// ---------- 8. foto de estúdio com versão: a nova fica pendente; aprovar troca o feed, descartar mantém a aprovada ----------
+{
+  const withPending = (ps) => onlyTen(ps).map((p, i) => i !== 0 ? p : { ...p, flatLayMetadata: { ...p.flatLayMetadata, studio: { ...p.flatLayMetadata.studio, version: 1, approved: true,
+    pending: { version: 2, approved: false, url: "/media/fx/tee_vermelha_vestida.studio.jpg", feedUrl: "/media/fx/tee_vermelha_vestida.feed.jpg", backdrop: "grafite", createdAt: "2026-09-27T12:00:00Z" } } } });
+  let approved = 0;
+  const { ctx, page, errors } = await context(browser, "owner", desktop, { pieces: withPending,
+    api: (route, url, rq, { pieces }) => {
+      if (rq.method() === "POST" && url.pathname === "/api/pieces/p1/studio/approve") {
+        approved++; const x = pieces[0]; const pend = x.flatLayMetadata.studio.pending;
+        const np = { ...x, studioImageUrl: pend.url, studioFeedUrl: pend.feedUrl, flatLayMetadata: { ...x.flatLayMetadata, studio: { ...x.flatLayMetadata.studio, ...pend, approved: true, pending: undefined, previous: { version: 1 } } } };
+        pieces[0] = np; return route.fulfill({ json: np });
+      }
+      return null;
+    } });
+  await openGrid(page);
+  const feedAntes = await page.locator(".grid-cards article").first().locator(".pc-media img").getAttribute("src");
+  await page.locator(".grid-cards article").first().locator(".pc-name-link").click(); await page.waitForSelector('[role="dialog"] article');
+  const aviso = await page.locator('[role="dialog"] .pd-warn').allTextContents();
+  await page.locator('[role="dialog"]').locator(".pd-warn button").first().click();
+  await page.waitForTimeout(800);
+  const ed = page.locator('[role="dialog"]').last();
+  await ed.screenshot({ path: `${OUT}/estudio-aprovacao.png` });
+  const painel = await ed.locator(".ei-approval").allTextContents();
+  await ed.getByRole("button", { name: "Aprovar nova foto" }).click(); await page.waitForTimeout(800);
+  const depois = { chamadas: approved, painelSumiu: (await ed.locator(".ei-approval").count()) === 0 };
+  log("estudio-aprovacao", { feedAntes, avisoNoDetalhe: aviso, painel, depois, erros: errors });
+  await ctx.close();
+  const v = await context(browser, "visitor", desktop, { pieces: withPending });
+  await openGrid(v.page); await v.page.locator(".grid-cards article").first().locator(".pc-name-link").click(); await v.page.waitForSelector('[role="dialog"] article');
+  log("estudio-aprovacao-visitante", { avisoNoDetalhe: await v.page.locator('[role="dialog"] .pd-warn').count(), maisOpcoes: await v.page.locator('[role="dialog"]').getByRole("button", { name: "Mais opções" }).count() });
+  await v.ctx.close();
 }
 
 writeFileSync(`${OUT}/resultado-arte.json`, JSON.stringify(R, null, 1));
