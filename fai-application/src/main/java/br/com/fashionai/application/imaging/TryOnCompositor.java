@@ -11,6 +11,7 @@ import br.com.fashionai.domain.model.enums.SchemeSlot;
 import br.com.fashionai.domain.model.enums.TryOnLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.awt.BasicStroke;
@@ -35,7 +36,8 @@ import java.util.UUID;
  * TOP/BOTTOM/OUTER/FULL_BODY, ou sobreposição aproximada por âncoras) → ENHANCING (Cleanup.ai ou
  * polimento local) → COMPOSITING (Category Fallback Compositor: calçados e acessórios rígidos por
  * landmark, nunca pelo FASHN) → validação de qualidade. As camadas seguem base → intermediária →
- * externa → acessório (RF18.CA02).
+ * externa → acessório (RF18.CA02). Nunca sem roupa: a zona do corpo sem peça (tronco, pernas, pés) recebe a peça padrão
+ * do FashionAI ({@link DefaultOutfit}), sobreposta localmente.
  */
 @Component
 public class TryOnCompositor {
@@ -43,10 +45,18 @@ public class TryOnCompositor {
 
     private final List<TryOnProviderPort> tryOnProviders;
     private final List<ArtifactCleanupPort> cleaners;
+    private final DefaultOutfit defaults;
 
-    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners) {
+    @Autowired
+    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners, DefaultOutfit defaults) {
         this.tryOnProviders = tryOnProviders;
         this.cleaners = cleaners;
+        this.defaults = defaults;
+    }
+
+    /** Sem acesso aos assets (testes): as peças padrão são desenhadas. */
+    public TryOnCompositor(List<TryOnProviderPort> tryOnProviders, List<ArtifactCleanupPort> cleaners) {
+        this(tryOnProviders, cleaners, new DefaultOutfit(url -> Optional.empty()));
     }
 
     public record Garment(UUID itemId, SchemeSlot slot, String subcategory, BufferedImage cutout, byte[] imageBytes,
@@ -87,6 +97,11 @@ public class TryOnCompositor {
             }
             ordered.add(g);
         }
+        // nunca sem roupa: tronco, pernas e pés sem peça legível recebem a peça padrão do FashionAI
+        for (Garment d : defaults.complete(ordered)) {
+            ordered.add(d);
+            warnings.add(Msg.t("tryOnCompositor.lugar_vazio_peca_padrao", d.slot()));
+        }
         ordered.sort(Comparator.comparingInt(g -> MannequinGeometry.layerOf(g.slot()).ordinal()));
 
         // RENDERING — peças de tecido
@@ -97,7 +112,8 @@ public class TryOnCompositor {
                 continue;
             }
             boolean done = false;
-            if (allowExternal) {
+            boolean standard = DefaultOutfit.isDefault(g.itemId());
+            if (allowExternal && !standard) {                // a peça padrão é sobreposta aqui, nunca enviada ao FASHN
                 for (TryOnProviderPort port : tryOnProviders) {
                     if (!port.available()) {
                         continue;
@@ -122,8 +138,8 @@ public class TryOnCompositor {
                 if (!g.backgroundRemoved()) {
                     warnings.add(Msg.t("tryOnCompositor.a_peca_nao_teve_o", g.slot()));
                 }
-                placements.add(overlay(canvas, body, g, "local-ancora"));
-                fallback |= allowExternal && externalAvailable();
+                placements.add(overlay(canvas, body, g, standard ? "padrao-fashionai" : "local-ancora"));
+                fallback |= allowExternal && externalAvailable() && !standard;
             }
         }
         stages.add(new FlatLayPipeline.Stage("RENDERING", costs.isEmpty() ? "local-ancora" : String.join("+", costs.keySet()),
@@ -163,7 +179,7 @@ public class TryOnCompositor {
             if (MannequinGeometry.layerOf(g.slot()) != TryOnLayer.ACCESSORY) {
                 continue;
             }
-            placements.add(overlay(canvas, body, g, "compositor-landmark"));
+            placements.add(overlay(canvas, body, g, DefaultOutfit.isDefault(g.itemId()) ? "padrao-fashionai" : "compositor-landmark"));
             rigid++;
         }
         stages.add(new FlatLayPipeline.Stage("COMPOSITING", "local-landmarks", ms(t), BigDecimal.ZERO, true, false,

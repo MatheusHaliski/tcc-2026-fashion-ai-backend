@@ -164,6 +164,8 @@ uma peça dos assets de peças do FashionAI (`public/assets_pecas`), em `lib/ava
 - Acessório (óculos, bolsa, chapéu) não é roupa: um look só de acessórios recebe camiseta, jeans e tênis.
 - As imagens são as versões WebP de 640 px dos assets, com transparência: cerca de 116 KB no total, em vez dos ~6 MB
   dos PNG originais.
+- A certificação completa (todas as telas, o manequim de reserva, a prévia 2D, o compositor do servidor, o GLB e a
+  auditoria quadro a quadro) está em `nunca-sem-roupa.md`.
 - Vale para todas as telas 3D, porque todas passam pelo mesmo `Mannequin`: Meu Avatar 3D (inclusive o enquadramento
   do rosto), provador, vitrines, Passarela, My Stage, Meu Quarto e Foto com meu manequim. Vale também para o manequim
   de reserva, que aparece enquanto o corpo carrega, e para o GLB exportado.

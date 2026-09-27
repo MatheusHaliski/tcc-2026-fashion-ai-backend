@@ -82,10 +82,14 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
   if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
   if (is("tee", "camiseta", "polo", "top")) return "tee";
-  if (cat === "UPPER" || cat === "TOP" || cat === "PARTE_SUPERIOR") return "tee";
-  if (cat === "LOWER" || cat === "BOTTOM" || cat === "PARTE_INFERIOR") return "pants";
-  if (cat === "SHOES" || cat === "FOOTWEAR" || cat === "CALCADOS") return "shoes";
-  if (cat === "FULL_BODY" || cat === "CORPO_INTEIRO") return "dress";
+  // subcategoria desconhecida: pela categoria gravada ("upper_piece"…) ou pelo lugar no look ("upper", "outer_layer"…)
+  const cats = [cat, (p.slot ?? "").toUpperCase()].map((c) => c.replace(/_PIECE$/, ""));
+  const any = (...k: string[]) => cats.some((c) => k.includes(c));
+  if (any("OUTER_LAYER", "OUTERWEAR")) return "jacket";
+  if (any("FULL_BODY", "CORPO_INTEIRO", "DRESS")) return "dress";
+  if (any("UPPER", "TOP", "PARTE_SUPERIOR")) return "tee";
+  if (any("LOWER", "BOTTOM", "PARTE_INFERIOR")) return "pants";
+  if (any("SHOES", "FOOTWEAR", "CALCADOS")) return "shoes";
   return null;
 }
 

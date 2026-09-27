@@ -11,7 +11,7 @@ import { Badge, Button, Card, Dialog, ErrorState, PageHeader, Skeleton, Spinner,
 import { useWebGL } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { HumanParts } from "@/components/three/human-avatar";
-import { downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
+import { AVATAR_NOT_DRESSED, downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, clampAdjust, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
 import type { Issue } from "@/lib/avatar3d/quality";
@@ -230,7 +230,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
     const p = human.current; if (!p) return;
     setBusy("glb");
     try { downloadBlob(await exportAvatarGlb(p.human, p.pose), "fashionai-avatar.glb"); }
-    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+    catch (e) { if (e instanceof Error && e.message === AVATAR_NOT_DRESSED) toast.info(t("avatar3d.page.glb_aguarde_roupa")); else toast.fromError(e); } finally { setBusy(""); }
   }
   async function remove() {
     setBusy("delete");

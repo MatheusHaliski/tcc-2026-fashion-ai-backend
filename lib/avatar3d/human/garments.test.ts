@@ -53,6 +53,13 @@ describe("roupa que veste — moldes presos ao esqueleto", () => {
     expect(kindOf({ subcategory: "hoodie" })).toBe("hoodie");
     expect(kindOf({ subcategory: "sunglasses" })).toBeNull();
     expect(kindOf({ category: "LOWER", subcategory: "" })).toBe("pants");
+    // categorias gravadas do app e lugares do look, quando a subcategoria não é conhecida
+    expect(kindOf({ category: "upper_piece", subcategory: "outra" })).toBe("tee");
+    expect(kindOf({ category: "lower_piece", subcategory: "outra" })).toBe("pants");
+    expect(kindOf({ category: "shoes_piece", subcategory: "outra" })).toBe("shoes");
+    expect(kindOf({ category: "full_body_piece", subcategory: "outra" })).toBe("dress");
+    expect(kindOf({ category: "upper_piece", slot: "outer_layer", subcategory: "outra" })).toBe("jacket");
+    expect(kindOf({ category: "accessory_piece", slot: "accessory", subcategory: "outra" })).toBeNull();
   });
 
   for (const sex of ["FEMININO", "MASCULINO"] as const) {

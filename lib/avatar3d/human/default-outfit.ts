@@ -11,7 +11,7 @@ import { kindOf, type GarmentKind } from "./garments";
 
 /** Imagens em WebP de 640 px (com transparência) das peças padrão — ~116 KB no total, em vez de ~6 MB dos PNG. O nome
  * é interno (a peça padrão só aparece vestida no 3D, nunca nas listas do look). */
-export const DEFAULT_PIECES: Record<"upper" | "lower" | "feet", Look3dPiece> = {
+export const DEFAULT_PIECES: Record<Zone, Look3dPiece> = {
   upper: {
     id: "fai-padrao-camiseta", name: "fai-padrao-camiseta", slot: "upper", category: "UPPER", subcategory: "t_shirt",
     imageUrl: "/_derived/pecas_thumb/01_parte_superior_01_camiseta_referencia-640.webp", colorHex: "#1972c4", defaultImage: true,
@@ -26,20 +26,28 @@ export const DEFAULT_PIECES: Record<"upper" | "lower" | "feet", Look3dPiece> = {
   },
 };
 
+export type Zone = "upper" | "lower" | "feet";
+export const ZONES: Zone[] = ["upper", "lower", "feet"];
+
 // peças que cobrem o tronco por baixo (jaqueta e casaco abertos na frente não bastam: vão por cima de uma camiseta)
 const TORSO: GarmentKind[] = ["tee", "tank", "crop", "longsleeve", "shirt", "sweater", "hoodie", "dress", "jumpsuit"];
 // peças que cobrem as pernas (o casaco longo não: por baixo dele vai uma calça)
 const LEGS: GarmentKind[] = ["pants", "shorts", "skirt", "leggings", "dress", "jumpsuit"];
 const FEET: GarmentKind[] = ["shoes", "boots"];
 
-/** Zonas do corpo que o look deixa sem roupa. */
-export function missingZones(pieces: Look3dPiece[]): ("upper" | "lower" | "feet")[] {
-  const kinds = pieces.map((p) => kindOf(p)).filter((k): k is GarmentKind => !!k);
-  const out: ("upper" | "lower" | "feet")[] = [];
-  if (!kinds.some((k) => TORSO.includes(k))) out.push("upper");
-  if (!kinds.some((k) => LEGS.includes(k))) out.push("lower");
-  if (!kinds.some((k) => FEET.includes(k))) out.push("feet");
+/** Zonas do corpo que um conjunto de moldes cobre. */
+export function zonesCovered(kinds: GarmentKind[]): Set<Zone> {
+  const out = new Set<Zone>();
+  if (kinds.some((k) => TORSO.includes(k))) out.add("upper");
+  if (kinds.some((k) => LEGS.includes(k))) out.add("lower");
+  if (kinds.some((k) => FEET.includes(k))) out.add("feet");
   return out;
+}
+
+/** Zonas do corpo que o look deixa sem roupa. */
+export function missingZones(pieces: Look3dPiece[]): Zone[] {
+  const covered = zonesCovered(pieces.map((p) => kindOf(p)).filter((k): k is GarmentKind => !!k));
+  return ZONES.filter((z) => !covered.has(z));
 }
 
 /** As peças do look mais as peças padrão do FashionAI nas zonas que ficariam sem roupa. */

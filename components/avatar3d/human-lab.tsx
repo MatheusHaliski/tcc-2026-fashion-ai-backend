@@ -4,7 +4,6 @@ import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
 import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
-import { HumanOutfit } from "@/components/three/human-outfit";
 import { StudioLight, type Look3dPiece } from "@/components/three/common";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
 import { analyzePhoto, buildAvatar, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
@@ -77,9 +76,8 @@ export default function HumanLab() {
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
             <HumanAvatar key={sex + (model ? "a" : "")} body={{ sex }} stature={H} skin={model?.skin ?? (sex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={model?.hair ?? null} motion={motion}
-              debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}>
-              {(p) => <HumanOutfit parts={p} pieces={OUTFITS[outfit] ?? []} />}
-            </HumanAvatar>
+              debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}
+              pieces={OUTFITS[outfit] ?? []} />
             <Cam view={view} H={H} />
           </Canvas>
         </div>

@@ -72,8 +72,9 @@ class TryOnDigitalDoubleTest {
         TryOnCompositor.Result ra = c.render(avatar, "#B7825E", List.of(garment(shirt)), false);
         ImageIO.write(ImageOps.decode(ra.png()), "png", new File(dir, "2d-avatar.png"));
         ImageIO.write(c.drawMannequin(avatar, new Color(0xB7825E)), "png", new File(dir, "2d-avatar-corpo.png"));
-        TryOnCompositor.Placement pg = rg.placements().get(0);
-        TryOnCompositor.Placement pa = ra.placements().get(0);
+        // a camisa do teste (as demais camadas são as peças padrão que vestem pernas e pés)
+        TryOnCompositor.Placement pg = rg.placements().stream().filter(x -> x.slot() == SchemeSlot.TOP).findFirst().orElseThrow();
+        TryOnCompositor.Placement pa = ra.placements().stream().filter(x -> x.slot() == SchemeSlot.TOP).findFirst().orElseThrow();
         // a camisa fica dentro da caixa do TOP nos dois casos e escala com os ombros do corpo
         MannequinGeometry.Box box = avatar.anchors().get("TOP");
         assertTrue(pa.x() >= box.x() - 0.01 && pa.x() + pa.w() <= box.x() + box.w() + 0.01, "camisa dentro da caixa TOP");

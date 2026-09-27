@@ -15,6 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { validateBody } from "@/lib/avatar3d/body-spec";
+import { DEFAULT_PIECES, missingZones, type Zone } from "@/lib/avatar3d/human/default-outfit";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
@@ -44,6 +45,11 @@ const WEAR3D: Record<string, string> = { TOP: "upper", OUTERWEAR: "outer_layer",
 // articulações — colocá-lo sobre o corpo daria uma peça rígida flutuando
 const toLook3d = (e: Entry): Look3dPiece => ({ id: e.piece.id, name: e.piece.name, slot: WEAR3D[e.wear] ?? "accessory", category: e.piece.category, subcategory: e.piece.subcategory, imageUrl: e.piece.imageUrl ?? e.piece.thumbnailUrl, colorHex: e.piece.colorHex, model3dUrl: null, defaultImage: e.piece.defaultImage });
 const MEASURES = ["stature", "shoulderW", "chestW", "waistW", "hipW"] as const;
+/** Prévia 2D: âncora da peça padrão do FashionAI de cada zona do corpo sem peça (o manequim nunca fica sem roupa). */
+const ZONE_WEAR: Record<Zone, string> = { upper: "TOP", lower: "BOTTOM", feet: "SHOES" };
+// ordem de desenho na silhueta: parte de cima (camiseta por baixo da jaqueta) → baixo → calçado → acessório
+const WEAR_ORDER: Record<string, number> = { TOP: 0, FULL_BODY: 0, OUTERWEAR: 1, BOTTOM: 2, SHOES: 3, ACCESSORY: 4 };
+interface Layer2d { id: string; src: string; anchor: string; wear: string; blend: boolean }
 const SESSION_KEY = "fai.tryon.worn";
 
 function readSession(): Worn { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? "{}") as Worn; } catch { return {}; } }
@@ -123,6 +129,11 @@ function TryOnInner() {
   // peça inteira na parte de cima cobre a parte de baixo: a de baixo fica guardada e não é desenhada
   const fullBody = on.find((e) => e.wear === "FULL_BODY");
   const shown = fullBody ? on.filter((e) => e.slot !== "lower_piece") : on;
+  // prévia 2D: as peças vestidas + a peça padrão do FashionAI em cada zona vazia (tronco, pernas, pés)
+  const layers2d: Layer2d[] = [
+    ...missingZones(shown.map(toLook3d)).map((z) => ({ id: DEFAULT_PIECES[z].id, src: DEFAULT_PIECES[z].imageUrl!, anchor: ZONE_WEAR[z], wear: ZONE_WEAR[z], blend: false })),
+    ...shown.flatMap((e) => { const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); return src ? [{ id: e.piece.id, src, anchor: e.anchor, wear: e.wear, blend: !(e.backgroundRemoved || e.piece.defaultImage) }] : []; }),
+  ].sort((a, b) => (WEAR_ORDER[a.wear] ?? 4) - (WEAR_ORDER[b.wear] ?? 4));
   const avatar = data.avatar ?? null; const identity = data.identity;
   const bodyParams = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
   const skin = m.skinTone ?? "media";
@@ -147,10 +158,10 @@ function TryOnInner() {
               ) : (
                 <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={t("tryOn.previa_2d_aria", { n: shown.length })}>
                   <MannequinBody m={m} />
-                  {shown.map((e) => {
-                    const b = m.anchors[e.anchor] ?? m.anchors[e.wear]; if (!b) return null; const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); if (!src) return null;
-                    return <image key={e.piece.id} href={src} x={b.x * m.width} y={b.y * m.height} width={b.w * m.width} height={b.h * m.height} preserveAspectRatio={e.slot === "shoes_piece" ? "xMidYMax meet" : e.slot === "accessory_piece" ? "xMidYMid meet" : "xMidYMin meet"}
-                      style={e.backgroundRemoved || e.piece.defaultImage ? undefined : { mixBlendMode: "multiply", opacity: 0.92 }} />;
+                  {layers2d.map((l) => {
+                    const b = m.anchors[l.anchor] ?? m.anchors[l.wear]; if (!b) return null;
+                    return <image key={l.id} href={l.src} x={b.x * m.width} y={b.y * m.height} width={b.w * m.width} height={b.h * m.height} preserveAspectRatio={l.wear === "SHOES" ? "xMidYMax meet" : l.wear === "ACCESSORY" ? "xMidYMid meet" : "xMidYMin meet"}
+                      style={l.blend ? { mixBlendMode: "multiply", opacity: 0.92 } : undefined} />;
                   })}
                 </svg>
               )}
@@ -163,6 +174,7 @@ function TryOnInner() {
               {stage === "3d" && <SegmentPicker label={t("tryOn.vista")} value={view3d} onChange={setView3d} options={[{ id: "front", label: t("tryOn.vista_frente") }, { id: "profile", label: t("tryOn.vista_perfil") }, { id: "back", label: t("tryOn.vista_costas") }]} />}
               {stage === "3d" && <p className="type-caption text-muted">{t("tryOn.girar_dica")}</p>}
               <p className="type-caption text-muted" role="note">{stage === "3d" ? t("tryOn.nao_e_prova_3d") : t("tryOn.previa_2d_nota")}</p>
+              <p className="type-caption text-muted" role="note">{t("tryOn.padrao_nota")}</p>
             </div>
           </Card>
           <Card>
