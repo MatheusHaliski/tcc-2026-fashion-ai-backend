@@ -65,10 +65,10 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
 }
 
 /**
- * Menu ⋯ do post: salvar mora na linha de ações; aqui ficam as opções contextuais — remixar (quem não é o autor), ver o
- * look no manequim 3D e, para quem publicou, editar e excluir.
+ * Menu ⋯ do post: salvar mora na linha de ações; aqui ficam as opções contextuais — remixar (quem não é o autor; no
+ * look ampliado ele já está na linha de interações), ver o look no manequim 3D e, para quem publicou, editar e excluir.
  */
-function PostMenu({ scheme }: { scheme: SchemeView }) {
+function PostMenu({ scheme, remixInRow }: { scheme: SchemeView; remixInRow?: boolean }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false); const [view3d, setView3d] = useState(false);
   const { remix } = useRemix("SCHEME", scheme.id);
@@ -81,7 +81,7 @@ function PostMenu({ scheme }: { scheme: SchemeView }) {
   return (
     <>
       <ActionMenu className="c-menu" label={t("anatomy.menu.label")} items={[
-        { label: t("interactions.remixAction"), onSelect: remix, hidden: owner, icon: <FaiIcon id="SOC-04" size={20} variant="glyph" decorative /> },
+        { label: t("interactions.remixAction"), onSelect: remix, hidden: owner || remixInRow, icon: <FaiIcon id="SOC-04" size={20} variant="glyph" decorative /> },
         { label: t("pieceDetail.manequim_3d"), onSelect: () => setView3d(true), icon: <FaiIcon id="ACT-20" size={20} variant="glyph" decorative /> },
         { label: t("anatomy.menu.edit"), href: `/schemes/${scheme.id}/edit`, hidden: !owner, icon: <FaiIcon id="SOC-11" size={20} variant="glyph" decorative /> },
         { label: t("common.delete"), onSelect: () => setConfirm(true), hidden: !owner, danger: true },
@@ -158,7 +158,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   return (
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
-        trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} />}{headerExtra}</>} />
+        trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
       <div className="scheme-stage">
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (

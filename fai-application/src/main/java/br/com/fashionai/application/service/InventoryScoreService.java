@@ -974,7 +974,7 @@ public class InventoryScoreService {
         m.put("name", w.getName());
         m.put("imageUrl", w.getImageUrl());
         m.put("value", value);
-        m.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_peca"), "href", "/my-wardrobe/" + w.getId()),
+        m.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_peca"), "href", "/pieces/" + w.getId()),
                 Map.of("label", Msg.t("inventoryScore.mostrar_no_quarto"), "action", "showInRoom", "pieceId", w.getId().toString())));
         return m;
     }
@@ -1086,7 +1086,7 @@ public class InventoryScoreService {
         out.put("eligible", r.eligible());
         out.put("weakest", weakest);
         out.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas_esquecidas"), "filter", "state:forgotten"),
-                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/my-wardrobe/room")));
+                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/room")));
         out.put("suggestedChallenges", suggestedChallenges(r));
         return out;
     }

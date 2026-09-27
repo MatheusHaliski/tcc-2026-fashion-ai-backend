@@ -24,8 +24,8 @@ const results = [], errors = [];
     await P.goto(BASE + '/pieces/new'); await pset(1500);
     await P.getByRole('button', { name: 'Usar imagem padrão da categoria' }).click(); await P.waitForTimeout(500);
     await P.fill('#name', 'Camisa listrada (teste da marca)');
-    await P.selectOption('#category', 'upper_piece'); await P.waitForTimeout(300); await P.selectOption('#subcategory', 'shirt');
-    await P.selectOption('#color', 'white'); await P.selectOption('#material', 'COTTON');
+    await P.click('#category').then(() => P.click('[role=\"option\"][data-value=\"upper_piece\"]')); await P.waitForTimeout(300); await P.click('#subcategory').then(() => P.click('[role=\"option\"][data-value=\"shirt\"]'));
+    await P.click('#color').then(() => P.click('[role=\"option\"][data-value=\"white\"]')); await P.click('#material').then(() => P.click('[role=\"option\"][data-value=\"COTTON\"]'));
     await P.fill('#price', '129');
     // marca brasileira fora das fontes alcançáveis daqui: mostra o status de cada fonte e a opção de texto livre
     await typeBrand('osklen'); await brandArea(); await shot('01_rf4_busca_osklen_status_das_fontes');

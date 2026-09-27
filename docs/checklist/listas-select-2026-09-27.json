@@ -1,0 +1,167 @@
+{
+  "hype.desktop": {
+    "closed": {
+      "role": "combobox",
+      "expanded": "false",
+      "focused": false,
+      "value": "Clássico",
+      "options": 0,
+      "active": null,
+      "selected": null,
+      "inViewport": null,
+      "above": null,
+      "nativeSelects": 0
+    },
+    "opened": {
+      "role": "combobox",
+      "expanded": "true",
+      "focused": true,
+      "value": "Clássico",
+      "listRole": "listbox",
+      "listName": "versão do painel",
+      "options": 4,
+      "active": "Clássico",
+      "selected": "Clássico",
+      "inViewport": true,
+      "above": false,
+      "nativeSelects": 0
+    },
+    "axeOpen": [],
+    "afterDown": "Passarela",
+    "afterEnter": {
+      "expanded": "false",
+      "focused": true,
+      "value": "Passarela"
+    },
+    "typed": {
+      "expanded": "true",
+      "active": "Editorial"
+    },
+    "afterEsc": {
+      "expanded": "false",
+      "focused": true
+    },
+    "end": "Mínimo",
+    "outside": "false",
+    "puts": [
+      "PASSARELA",
+      "MINIMO"
+    ],
+    "errors": []
+  },
+  "hype.celular": {
+    "closed": {
+      "role": "combobox",
+      "expanded": "false",
+      "focused": false,
+      "value": "Clássico",
+      "options": 0,
+      "active": null,
+      "selected": null,
+      "inViewport": null,
+      "above": null,
+      "nativeSelects": 0
+    },
+    "opened": {
+      "role": "combobox",
+      "expanded": "true",
+      "focused": true,
+      "value": "Clássico",
+      "listRole": "listbox",
+      "listName": "versão do painel",
+      "options": 4,
+      "active": "Clássico",
+      "selected": "Clássico",
+      "inViewport": true,
+      "above": false,
+      "nativeSelects": 0
+    },
+    "afterDown": "Passarela",
+    "afterEnter": {
+      "expanded": "false",
+      "focused": true,
+      "value": "Passarela"
+    },
+    "typed": {
+      "expanded": "true",
+      "active": "Editorial"
+    },
+    "afterEsc": {
+      "expanded": "false",
+      "focused": true
+    },
+    "end": "Mínimo",
+    "outside": "false",
+    "puts": [
+      "PASSARELA",
+      "MINIMO"
+    ],
+    "errors": []
+  },
+  "cadastro.desktop": {
+    "comboboxes": [
+      "category",
+      "subcategory",
+      "color",
+      "material",
+      "sex",
+      "size"
+    ],
+    "native": 0,
+    "subBefore": true,
+    "subAfter": false,
+    "category": "Parte superior",
+    "colorTyped": {
+      "expanded": "true",
+      "active": "Cinza"
+    },
+    "color": "Cinza",
+    "size": {
+      "options": 13,
+      "inViewport": true,
+      "above": true,
+      "listName": "Tamanho *"
+    },
+    "axe": [],
+    "errors": []
+  },
+  "cadastro.celular": {
+    "comboboxes": [
+      "category",
+      "subcategory",
+      "color",
+      "material",
+      "sex",
+      "size"
+    ],
+    "native": 0,
+    "subBefore": true,
+    "subAfter": false,
+    "category": "Parte superior",
+    "colorTyped": {
+      "expanded": "true",
+      "active": "Cinza"
+    },
+    "color": "Cinza",
+    "size": {
+      "options": 13,
+      "inViewport": true,
+      "above": false,
+      "listName": "Tamanho *"
+    },
+    "errors": []
+  },
+  "modal": {
+    "inModal": {
+      "options": 16,
+      "inViewport": true
+    },
+    "escListOnly": {
+      "dialogs": 2,
+      "expanded": "false",
+      "focused": true
+    },
+    "secondEscDialogs": 1,
+    "errors": []
+  }
+}
