@@ -6,6 +6,7 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
+import { MAX_TAGS, keepAllowed, sameTags } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -19,6 +20,9 @@ export interface PieceFormValue {
   background?: Record<string, unknown> | null;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false, background: null };
+/** "Sem marca" é o que a análise escreve no campo quando não acha marca na peça; o backend salva a peça sem marca. */
+const NO_BRAND = ["sem marca", "no brand", "sin marca"];
+export const isNoBrand = (name?: string | null) => !!name && NO_BRAND.includes(name.trim().toLowerCase());
 /** As quatro categorias de peça (RF4.CA): parte de cima, parte de baixo, calçado e acessório. */
 export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 
@@ -89,13 +93,20 @@ export function PieceFields({ value, onChange, error }: { value: PieceFormValue;
   const toggleIn = (k: "occasion" | "style", v: string, max: number) => {
     const cur = value[k]; if (cur.includes(v)) set(k, cur.filter((x) => x !== v)); else if (cur.length < max) set(k, [...cur, v]);
   };
-  const occasions = value.category ? tax?.allowedOccasionsByCategory?.[value.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
+  const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
+  const occasions = allowedOccasions(value.category) ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
+  // código fora da taxonomia (palpite antigo da IA, peça antiga) não vira chip e não poderia ser desmarcado: sai da lista
+  useEffect(() => {
+    if (!tax) return;
+    const occasion = keepAllowed(value.occasion, allowedOccasions(value.category)); const style = keepAllowed(value.style, tax.styles);
+    if (!sameTags(occasion, value.occasion) || !sameTags(style, value.style)) onChange({ ...value, occasion, style });
+  }, [tax, value.category, value.occasion.join(), value.style.join()]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>
       <Field label={t("common.category")} id="category" required error={err.category}>
-        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: [] })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
+        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: keepAllowed(value.occasion, allowedOccasions(e.target.value)) })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
       </Field>
       <Field label={t("common.subcategory")} id="subcategory" required error={err.subcategory}>
         <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
@@ -115,8 +126,8 @@ export function PieceFields({ value, onChange, error }: { value: PieceFormValue;
           onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
       </Field>
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
-      <Field label={t("common.ate_3", { txt: t("common.occasion") })} error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>
-      <Field label={t("common.ate_3", { txt: t("common.style") })} error={err.style} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={value.style.includes(s)} onClick={() => toggleIn("style", s, 2)}>{label(s)}</Chip>)}</div></Field>
+      <Field label={t("common.ate_3", { txt: t("common.occasion") })} required error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5" role="group" aria-label={t("common.occasion")}>{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, MAX_TAGS)}>{label(o)}</Chip>)}</div></Field>
+      <Field label={t("common.ate_3", { txt: t("common.style") })} required error={err.style} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5" role="group" aria-label={t("common.style")}>{(tax?.styles ?? []).map((s) => <Chip key={s} active={value.style.includes(s)} onClick={() => toggleIn("style", s, MAX_TAGS)}>{label(s)}</Chip>)}</div></Field>
     </div>
   );
 }

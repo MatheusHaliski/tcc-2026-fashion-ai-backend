@@ -64,6 +64,6 @@ class WardrobePrefillTest {
         assertEquals("jeans", p.subcategory());
         assertEquals("blue", p.color());
         assertEquals("COTTON", p.material());
-        assertEquals("Jeans Blue", p.name());
+        assertEquals("Calça jeans azul", p.name());                  // rótulos da taxonomia, não os códigos
     }
 }

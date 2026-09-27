@@ -227,8 +227,14 @@ public final class AiCatalog {
                 List.of(Msg.t("aiCatalog.rnf5_registro_da_inferencia"), Msg.t("aiCatalog.rnf6_consentimento_transparencia"), Msg.t("aiCatalog.rnf8_timeout_30_s_fallback"))));
     }
 
+    /**
+     * Mesmo id com que o adaptador do Claude se registra ({@code ClaudeProvider.ID = "claude"}): com "anthropic" aqui o
+     * motor não achava o provedor e nenhuma capacidade chegava a chamar o Claude (caía direto no local).
+     */
+    static final String CLAUDE_PROVIDER_ID = "claude";
+
     static ProviderOption claude(String model, Kind kind, String cost, String note, long latency) {
-        return new ProviderOption("anthropic", Msg.t("aiCatalog.claude_anthropic_api"), model, CostMode.P, new BigDecimal(cost), note,
+        return new ProviderOption(CLAUDE_PROVIDER_ID, Msg.t("aiCatalog.claude_anthropic_api"), model, CostMode.P, new BigDecimal(cost), note,
                 latency, "ANTHROPIC_API_KEY", kind);
     }
 
