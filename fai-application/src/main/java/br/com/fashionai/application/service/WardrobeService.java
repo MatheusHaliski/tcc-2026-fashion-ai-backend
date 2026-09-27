@@ -759,6 +759,7 @@ public class WardrobeService {
         if (STREET.contains(sub)) {
             return "streetwear";
         }
+        // "casual" é OCASIÃO, não estilo: a peça do dia a dia sem estilo marcado é "basic" (taxonomia §01, estilos)
         return CLASSIC.contains(sub) ? "classic" : "basic";
     }
 
@@ -834,14 +835,23 @@ public class WardrobeService {
         guard.requireCanCreate(user);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         validate(form);
+        // o rascunho é travado (SELECT … FOR UPDATE): dois envios simultâneos do mesmo rascunho são atendidos um depois do outro
+        PipelineJob draft = form.draftId() == null ? null : jobs.findByIdForUpdate(form.draftId()).orElse(null);
+        if (draft != null && !draft.getUser().getId().equals(owner.getId())) {
+            throw guard.deny(user, "draft:" + form.draftId(), Msg.t("wardrobe.rascunho_de_outro_usuario"));
+        }
+        // idempotência: um rascunho de foto vira UMA peça. Duplo clique ou nova tentativa depois de uma resposta perdida
+        // devolvem a peça já criada, em vez de criar outra igual.
+        if (draft != null && "PIECE".equals(draft.getTargetType()) && draft.getInputResourceId() != null) {
+            Optional<WardrobeItem> existing = pieces.findById(draft.getInputResourceId()).filter(p -> p.getUser().getId().equals(owner.getId()));
+            if (existing.isPresent()) {
+                return Views.piece(existing.get(), viewerState(user, existing.get()), Map.of());
+            }
+        }
         WardrobeItem w = new WardrobeItem();
         w.setUser(owner);
         apply(w, form, true);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
-        PipelineJob draft = form.draftId() == null ? null : jobs.findById(form.draftId()).orElse(null);
-        if (draft != null && !draft.getUser().getId().equals(owner.getId())) {
-            throw guard.deny(user, "draft:" + form.draftId(), Msg.t("wardrobe.rascunho_de_outro_usuario"));
-        }
         if (draft == null && !form.useDefaultImage()) {
             throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
         }
@@ -998,8 +1008,9 @@ public class WardrobeService {
     }
 
     private void validate(PieceForm f) {
-        Taxonomy.requirePiece(f.category(), f.subcategory(), f.sex(), f.color(), f.material(), f.size(), f.occasion(), f.style());
-        Map<String, Object> errors = new LinkedHashMap<>();
+        // uma resposta com TODOS os campos a corrigir (antes: primeiro a taxonomia, depois nome e preço, em duas rodadas)
+        Map<String, Object> errors = new LinkedHashMap<>(Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
+                f.material(), f.size(), f.occasion(), f.style()));
         if (f.name() == null || f.name().isBlank()) {
             errors.put("name", Msg.t("wardrobe.informe_o_nome_da_peca"));
         }
@@ -1026,8 +1037,8 @@ public class WardrobeService {
         w.setMaterial(f.material());
         w.setSizeLabel(f.size());
         w.setMarket(f.market());
-        w.setOccasionTags(Json.csv(f.occasion()));
-        w.setStyleTags(Json.csv(f.style()));
+        w.setOccasionTags(Json.csv(Taxonomy.canonicalTags(f.occasion())));
+        w.setStyleTags(Json.csv(Taxonomy.canonicalTags(f.style())));
         w.setSealIdsJson(Json.write(f.seals() == null ? List.of() : f.seals()));
         w.setPrice(f.price());
         w.setTags(Json.csv(f.tags()));

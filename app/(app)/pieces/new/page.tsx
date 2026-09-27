@@ -9,7 +9,7 @@ import { useAction } from "@/lib/hooks/use-api";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
-import { EMPTY_PIECE, PIECE_CATEGORIES, PieceFields, PieceMoreDetails, isNoBrand, toPayload, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -17,7 +17,7 @@ import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT } from "@/components/scheme-anato
 import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson, type GarmentPart, type PersonFilterResult } from "@/lib/pieces/person-filter";
-import { keepAllowed, missingTags } from "@/lib/pieces/tags";
+import { keepAllowed } from "@/lib/pieces/tags";
 
 /** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
 interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null }
@@ -53,10 +53,15 @@ function NewPiece() {
   const [bg, setBg] = useState<BgConfig>({}); const [skin, setSkin] = useState("atelier"); const [anatomy, setAnatomy] = useState("PECA_AMPLIADO");
   const [done, setDone] = useState<string | null>(null);
   // a última foto enviada: trocar o tipo depois do envio refaz a análise com a mesma foto
-  const lastFile = useRef<File | null>(null); const [localError, setLocalError] = useState<ApiError | null>(null);
+  const lastFile = useRef<File | null>(null);
   const analyze = useAction(async (file: File, category: string) => { const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
-  const create = useAction(async () => api.post<PieceView>("/api/pieces", toPayload({ ...value, useDefaultImage: !draft, background })));
+  // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
+  // envia outro pedido; o servidor ainda devolve a mesma peça se o mesmo rascunho chegar duas vezes (idempotência).
+  const saving = useRef(false); const [busy, setBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [saveProblem, setSaveProblem] = useState<string | null>(null);
+  const [analyzed, setAnalyzed] = useState(false);
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || !value.category) return;
@@ -68,7 +73,7 @@ function NewPiece() {
    * só a peça escolhida segue (a que ocupa mais área, por padrão) — a outra roupa não entra na foto de produto.
    */
   async function process(original: File, keep?: GarmentPart) {
-    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null);
+    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null); setAnalyzed(false);
     try {
       const r = await stripPerson(file, { keep });
       if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); setGarments(r.garments ?? null); }
@@ -94,7 +99,8 @@ function NewPiece() {
         occasion: occasion.length ? occasion : [allowedOccasions?.[0] ?? "casual"], style: style.length ? style : ["basic"],
         brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" };
     });
-    toast.info(p.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all"));
+    // um aviso só, no lugar certo: a nota da etapa Dados diz quais campos conferir (antes: notificação + faixa ao mesmo tempo)
+    setAnalyzed(true); setFieldErrors({}); setSaveProblem(null);
   }
   /** Tipo da peça (primeira escolha da etapa Foto). Com foto já enviada, a análise é refeita com o novo tipo. */
   function chooseCategory(category: string) {
@@ -111,14 +117,29 @@ function NewPiece() {
       setDraft({ ...draft, studio: info }); setMode("studio"); setValue((v) => ({ ...v, studio: true }));
     } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
   }
+  /** Leva a pessoa à etapa do primeiro campo com problema e mostra o erro junto do campo. */
+  function showFieldErrors(errors: Record<string, string>) {
+    setFieldErrors(errors);
+    const first = Object.keys(errors)[0];
+    if (first) go(PIECE_FIELD_STEP[first] ?? "data");
+  }
   async function submit() {
-    // ocasião e estilo são obrigatórios: aponta aqui mesmo, sem ida ao servidor
-    const missing = missingTags(value);
-    if (missing.length) { setLocalError(new ApiError(400, "FORMULARIO_INVALIDO", t("pieceForm.corrija_os_campos"), Object.fromEntries(missing.map((k) => [k, t("pieceForm.escolha_ao_menos_um")])))); go("data"); return; }
-    setLocalError(null);
-    const p = await create.run();
-    if (p) { toast.success(t("piece.created")); setDone(p.id); }
-    else if (create.error?.fields) { const f = Object.keys(create.error.fields); setStep(f.some((k) => ["seals", "visibility", "forSale"].includes(k)) ? "more" : "data"); }
+    if (saving.current || done) return;                                         // já salvando ou já salvo: nada de novo pedido
+    setSaveProblem(null);
+    const local = validatePieceForm(value, tax);
+    if (Object.keys(local).length) { showFieldErrors(local); return; }          // validação: nem chega a enviar
+    saving.current = true; setBusy(true);
+    try {
+      const p = await api.post<PieceView>("/api/pieces", toPayload({ ...value, useDefaultImage: !draft, background }));
+      setFieldErrors({}); toast.success(t("piece.created")); setDone(p.id);
+    } catch (e) {
+      // foto, recorte e campos continuam no estado da página: nada se perde numa falha
+      const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
+      if (Object.keys(err.fields).length && (err.status === 400 || err.status === 422)) showFieldErrors(err.fields);
+      else if (err.status === 0) setSaveProblem(t("piece.err_rede"));
+      else if (err.status >= 500) setSaveProblem(t("piece.err_servidor", { ref: err.correlationId ? err.correlationId.slice(0, 8) : "—" }));
+      else setSaveProblem(err.message);                                          // 401/403/409: a mensagem do servidor já é para a pessoa
+    } finally { saving.current = false; setBusy(false); }
   }
   async function submitBatch() {
     // RF4.CA11: analisa todas, depois cadastra as que tiverem pré-preenchimento suficiente; as demais ficam para edição individual.
@@ -134,6 +155,13 @@ function NewPiece() {
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); window.location.href = user ? `/u/${user.username}` : "/closet";
     } catch (e) { toast.fromError(e); }
   }
+  /** Nota única depois da análise: com baixa confiança, diz QUAIS campos conferir (e não impede salvar). */
+  const prefillNote = (p: NonNullable<Draft["prefill"]>) => {
+    if (!p.manualFillRequired) return t("piece.prefilled_all");
+    const names: Record<string, string> = { category: t("common.category"), subcategory: t("common.subcategory"), color: t("common.color"), material: t("common.material"), brand: t("common.brand") };
+    const unsure = Object.entries(names).filter(([k]) => (p.confidence?.[k] ?? 0) < 0.55).map(([, n]) => n.toLowerCase());
+    return unsure.length ? t("piece.lowConfidence_campos", { campos: unsure.join(", ") }) : t("piece.lowConfidence");
+  };
   const realLogo = !!draft?.studio?.detailUrl && draft.studio.logo?.kind !== "print";
   const modes = draft ? ([draft.studio ? "studio" : null, realLogo ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
   const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
@@ -150,7 +178,7 @@ function NewPiece() {
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
       <Button onClick={() => go(STEPS[Math.max(0, idx - 1)])} disabled={idx === 0}>{t("common.back")}</Button>
-      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={create.busy}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
+      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
@@ -213,7 +241,8 @@ function NewPiece() {
                         <p className="mt-1">{t("pieces.new.refaca_a_foto")}</p>
                         <ul className="fai-list mt-1">{failedTips(analyze.error.details.checks).map((tip) => <li key={tip}>{tip}</li>)}</ul>
                       </div>
-                    ) : <p role="alert" className="error-text">{analyze.error.message}</p>)}
+                    ) : <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>)}
+                    {analyzed && !analyze.busy && <p role="status" className="type-body-sm">{t("pieces.new.foto_analisada")}</p>}
                     {draft && <AnalysisSummary draft={draft} category={value.category} subcategory={value.subcategory} onPick={(sub) => setValue((v) => ({ ...v, subcategory: sub }))} />}
                     {draft && modes.length > 1 && <SegmentPicker label={t("pieces.new.versao_da_foto")} value={shown} onChange={setMode} options={modes.map((m) => ({ id: m, label: PREVIEW_LABEL[m] }))} />}
                     {draft && !draft.backgroundRemoved && !draft.studio?.forced && (
@@ -235,8 +264,8 @@ function NewPiece() {
               {batch.length === 0 && nav}
             </Card>
           )}
-          {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{draft.prefill.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all")}</p>}<PieceFields value={value} onChange={(v) => { setLocalError(null); setValue(v); }} error={localError ?? create.error} />{nav}</Card>}
-          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={create.error} />{nav}</Card>}
+          {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{prefillNote(draft.prefill)}</p>}<PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />{nav}</Card>}
+          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
           {step === "art" && <div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} styles={value.style} occasions={value.occasion} layoutPanel={artPanel} />{nav}</div>}
           {step === "review" && (
             <Card>
@@ -244,7 +273,7 @@ function NewPiece() {
               <dl className="c-facts mb-3">
                 {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? label(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
-              {create.error && <p role="alert" className="error-text mb-2">{create.error.message}</p>}
+              {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
               {nav}
             </Card>
           )}

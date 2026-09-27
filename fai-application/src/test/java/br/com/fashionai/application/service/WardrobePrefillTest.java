@@ -1,6 +1,7 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.taxonomy.Taxonomy;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -65,5 +66,26 @@ class WardrobePrefillTest {
         assertEquals("blue", p.color());
         assertEquals("COTTON", p.material());
         assertEquals("Calça jeans azul", p.name());                  // rótulos da taxonomia, não os códigos
+    }
+
+    /**
+     * P0 (27/09): o pré-preenchimento colocava "casual" (código de OCASIÃO) no campo ESTILO; o servidor recusava a peça.
+     * Para cada subcategoria da taxonomia, com e sem reconhecimento da IA, o pré-preenchimento tem de passar pela mesma
+     * validação do salvamento — estilo em STYLES, ocasião permitida para a parte do corpo, nada misturado.
+     */
+    @Test
+    void preenchimentoDeQualquerSubcategoriaPassaNaValidacaoDoSalvamento() {
+        Taxonomy.SUBCATEGORIES.forEach((category, subs) -> subs.forEach((sub) -> {
+            for (double overall : new double[]{0.9, 0.1}) {
+                LocalVision.PieceGuess g = new LocalVision.PieceGuess(category, sub, null, null, null, null,
+                        Map.of("category", overall, "subcategory", overall), overall, List.of(), null);
+                WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+                assertTrue(Taxonomy.STYLES.containsAll(p.style()), sub + " estilo=" + p.style());
+                assertFalse(p.style().stream().anyMatch(Taxonomy.OCCASIONS::contains), sub + " estilo com código de ocasião: " + p.style());
+                assertTrue(Taxonomy.allowedOccasions(p.category()).containsAll(p.occasion()), sub + " ocasião=" + p.occasion());
+                org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> Taxonomy.requirePiece(p.category(), p.subcategory(), p.sex(), p.color(),
+                        p.material(), p.size(), p.occasion(), p.style()), sub);
+            }
+        }));
     }
 }

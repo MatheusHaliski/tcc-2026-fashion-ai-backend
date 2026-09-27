@@ -10,6 +10,7 @@ import { CreationSuccess } from "@/components/expanded-card";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast, Stepper } from "@/components/ui";
+import { SchemeTags } from "@/components/scheme-tags";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { DNA_LAYOUTS, DNA_NARRATIVES, DnaCard, SEASON_PRESETS, dnaNarrativeLabel, narrativeHasOwnArt, type DnaView } from "@/components/dna-card";
@@ -84,7 +85,6 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
 
   const toggle = (s: SchemeView) => setCells((cs) => cs.some((c) => c.schemeId === s.id) ? cs.filter((c) => c.schemeId !== s.id) : cs.length >= 6 ? (toast.info(t("dnaBuilder.um_dna_referencia_no_maximo")), cs) : [...cs, { schemeId: s.id, eraLabel: eraOf(s.createdAt), milestone: false }]);
   const move = (i: number, d: number) => setCells((cs) => { const a = [...cs]; const j = i + d; if (j < 0 || j >= a.length) return a; [a[i], a[j]] = [a[j], a[i]]; return a; });
-  const toggleTag = (k: "occasion" | "style", v: string) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : f[k].length < 3 ? [...f[k], v] : f[k] }));
   async function compose() {
     setBusy(true); setProposals(null);
     try {
@@ -140,8 +140,8 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
             {mode === "ai" && (
               <div className="mt-4 grid gap-3">
                 <p className="type-body text-muted">{t("dnaBuilder.a_ia_propoe_ate_3")}</p>
-                <div><p className="label">{t("common.occasion")}</p><div className="flex flex-wrap gap-1.5">{(tax?.occasions ?? []).map((o) => <Chip key={o} active={aiReq.occasion.includes(o)} onClick={() => setAiReq((r) => ({ ...r, occasion: r.occasion.includes(o) ? r.occasion.filter((x) => x !== o) : [...r.occasion, o].slice(0, 2) }))}>{label(o)}</Chip>)}</div></div>
-                <div><p className="label">{t("common.style")}</p><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={aiReq.style.includes(s)} onClick={() => setAiReq((r) => ({ ...r, style: r.style.includes(s) ? r.style.filter((x) => x !== s) : [...r.style, s].slice(0, 2) }))}>{label(s)}</Chip>)}</div></div>
+                <SchemeTags k="occasion" form={aiReq} setForm={setAiReq} tax={tax} />
+                <SchemeTags k="style" form={aiReq} setForm={setAiReq} tax={tax} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label={t("dnaBuilder.narrativa_opcional")} id="ai-narr"><Select id="ai-narr" value={aiReq.narrative} onChange={(e) => setAiReq({ ...aiReq, narrative: e.target.value })}><option value="">{t("dnaBuilder.a_ia_escolhe")}</option>{DNA_NARRATIVES.map((nv) => <option key={nv.id} value={nv.id}>{nv.code} · {nv.label}</option>)}</Select></Field>
                   <Field label={t("dnaBuilder.estacao_opcional")} id="ai-season"><Select id="ai-season" value={aiReq.season} onChange={(e) => setAiReq({ ...aiReq, season: e.target.value })}><option value="">—</option>{SEASONS.map((s) => <option key={s} value={s}>{SEASON_PRESETS[s].label}</option>)}</Select></Field>
@@ -185,8 +185,8 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
             <Field label={t("scheme.title")} id="dtitle" required className="sm:col-span-2"><Input id="dtitle" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={120} required /></Field>
             <Field label={t("dnaBuilder.elemento_alvo")} id="dtarget" hint={t("dnaBuilder.dna_completo_libera_as_12")}><Select id="dtarget" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })}><option value="DNA_COMPLETO">{t("dnaBuilder.conjunto_dna_completo")}</option><option value="ESQUEMA">{t("dnaBuilder.esquema_de_vestimenta_especifico")}</option></Select></Field>
             <Field label={t("common.visibility")} id="dvis"><Select id="dvis" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
-            <Field label={t("dnaBuilder.ate_3", { txt: t("common.occasion") })} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.occasions ?? []).map((o) => <Chip key={o} active={form.occasion.includes(o)} onClick={() => toggleTag("occasion", o)}>{label(o)}</Chip>)}</div></Field>
-            <Field label={t("dnaBuilder.ate_3", { txt: t("common.style") })} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={form.style.includes(s)} onClick={() => toggleTag("style", s)}>{label(s)}</Chip>)}</div></Field>
+            <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
+            <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <Field label={t("dnaBuilder.estacao_cartela_sazonal")} id="dseason"><Select id="dseason" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })}><option value="">—</option>{SEASONS.map((s) => <option key={s} value={s}>{SEASON_PRESETS[s].label}</option>)}</Select></Field>
             <div className="sm:col-span-2 flex justify-between"><Button onClick={() => setStep(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => setStep(3)}>{t("common.next")}</Button></div>
           </div>

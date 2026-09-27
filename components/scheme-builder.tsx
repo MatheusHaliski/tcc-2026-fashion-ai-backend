@@ -6,6 +6,7 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Spinner, Switch, Textarea, useToast } from "@/components/ui";
+import { SchemeTags } from "@/components/scheme-tags";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -120,7 +121,6 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const go = (i: number) => { setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
   const canGo = (i: number) => i < step || i <= 1 || (selected.length >= 2 && (i === 2 || !!form.title.trim()));
-  const toggleTag = (k: "occasion" | "style", v: string, max: number) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : f[k].length < max ? [...f[k], v] : f[k] }));
   const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
   async function uploadPhoto(file: File) {
     const fd = new FormData(); fd.append("file", file);
@@ -184,8 +184,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             {mode === "ai" && (
               <div className="mt-4 grid gap-3">
                 <p className="type-body text-muted">{t("schemeBuilder.escolha_ocasiao_estilo_e_se")}</p>
-                <div><p className="label">{t("common.occasion")}</p><div className="flex flex-wrap gap-1.5">{(tax?.occasions ?? []).map((o) => <Chip key={o} active={form.occasion.includes(o)} onClick={() => toggleTag("occasion", o, 2)}>{label(o)}</Chip>)}</div></div>
-                <div><p className="label">{t("common.style")}</p><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={form.style.includes(s)} onClick={() => toggleTag("style", s, 2)}>{label(s)}</Chip>)}</div></div>
+                <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} />
+                <SchemeTags k="style" form={form} setForm={setForm} tax={tax} />
                 <Field label={t("common.orientacao_opcional")} id="prompt" hint={t("schemeBuilder.pode_citar_materiais_cores_estampas")}><Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("schemeBuilder.ex_algo_leve_em_linho")} maxLength={500} /></Field>
                 <Button variant="primary" onClick={compose} loading={busy}><FaiIcon id="ACT-09" size={24} decorative />{t("scheme.generate")}</Button>
                 {aiMsg && <p className="type-caption text-muted">{aiMsg}</p>}
@@ -219,8 +219,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           <div className="surface grid gap-x-4 p-4 sm:grid-cols-2">
             <Field label={t("scheme.title")} id="title" required className="sm:col-span-2"><Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={80} required /></Field>
             <Field label={t("common.descricao")} id="description" className="sm:col-span-2"><Textarea id="description" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} /></Field>
-            <Field label={t("common.ate_3", { txt: t("common.occasion") })} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.occasions ?? []).map((o) => <Chip key={o} active={form.occasion.includes(o)} onClick={() => toggleTag("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>
-            <Field label={t("common.ate_3", { txt: t("common.style") })} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={form.style.includes(s)} onClick={() => toggleTag("style", s, 2)}>{label(s)}</Chip>)}</div></Field>
+            <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
+            <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <Field label={t("common.season")} id="season"><Select id="season" value={form.season ?? ""} onChange={(e) => setForm({ ...form, season: e.target.value })}><option value="">—</option>{["SPRING", "SUMMER", "AUTUMN", "WINTER"].map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
             <Field label={t("common.mood")} id="mood"><Select id="mood" value={form.mood ?? ""} onChange={(e) => setForm({ ...form, mood: e.target.value })}><option value="">—</option>{MOODS.map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>

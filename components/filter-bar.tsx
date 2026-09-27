@@ -1,7 +1,7 @@
 "use client";
 import { useId, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Button, Sheet, UiIcon, cn } from "@/components/ui";
+import { Button, Sheet, UiIcon, cn, Select } from "@/components/ui";
 
 /**
  * Barra de filtros única do app (Closet, Busca, Explorador, loja do quarto): busca + botão "Filtros (n)" que abre um
@@ -46,9 +46,9 @@ export function FilterBar({ search, onSearch, searchLabel, filters, values, onCh
         {sort && (
           <div className="filter-sort">
             <label htmlFor={sortId} className="sr-only">{t("filters.sortBy")}</label>
-            <select id={sortId} className="input" value={sort.value} onChange={(e) => sort.onChange(e.target.value)}>
+            <Select id={sortId} value={sort.value} onChange={(e) => sort.onChange(e.target.value)}>
               {sort.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         {extra}
