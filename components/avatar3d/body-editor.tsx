@@ -64,12 +64,12 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
         <div className="grid content-start gap-3">
           <div className="grid gap-2 rounded-md border border-line-soft p-3">
             <p className="type-body-sm font-semibold">{t("avatar3d.body.foto")}</p>
-            <ul className="grid gap-0.5 type-caption text-muted">{["dica1", "dica2", "dica3", "dica4"].map((k) => <li key={k}>· {t(`avatar3d.body.${k}`)}</li>)}</ul>
+            <ul className="fai-list type-caption text-muted">{["dica1", "dica2", "dica3", "dica4"].map((k) => <li key={k}>{t(`avatar3d.body.${k}`)}</li>)}</ul>
             <input ref={input} id="avatar-body-photo" type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void analyze(f); e.target.value = ""; }} />
             <Button size="sm" onClick={() => input.current?.click()} loading={busy}>{analysis ? t("avatar3d.body.trocar_foto") : t("avatar3d.body.enviar_foto")}</Button>
             {busy && <p className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.body.analisando")}</p>}
             {error && <p role="alert" className="type-body-sm text-critical">{error}</p>}
-            {analysis && analysis.obs.warnings.length > 0 && <ul className="grid gap-1">{analysis.obs.warnings.filter((w) => !w.startsWith("OUT_OF_RANGE")).map((w) => <li key={w} className="type-caption text-muted">⚠ {t(`avatar3d.body.aviso.${w}`)}</li>)}</ul>}
+            {analysis && analysis.obs.warnings.length > 0 && <ul className="fai-list">{analysis.obs.warnings.filter((w) => !w.startsWith("OUT_OF_RANGE")).map((w) => <li key={w} className="type-caption text-muted">⚠ {t(`avatar3d.body.aviso.${w}`)}</li>)}</ul>}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <label className="grid gap-1 type-body-sm" htmlFor="avatar-height">{t("avatar3d.body.altura")}
@@ -112,7 +112,7 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
           </div>
           <div>
             <p className="type-body-sm font-semibold">{t("avatar3d.body.metricas")}</p>
-            <ul className="mt-1 grid gap-1 type-body-sm">
+            <ul className="fai-list mt-1 type-body-sm">
               <li>{report.completeness.ok ? "✓" : "⚠"} {t("avatar3d.body.m.completude", { v: pct(report.completeness.value) })}</li>
               <li>{report.connectivity.ok ? "✓" : "⚠"} {t("avatar3d.body.m.conexoes", { v: fmtNumber(Math.round(report.connectivity.value * 1000)) })}</li>
               <li>{report.symmetry.ok ? "✓" : "⚠"} {t("avatar3d.body.m.simetria")}</li>

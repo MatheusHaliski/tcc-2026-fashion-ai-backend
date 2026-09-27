@@ -11,6 +11,9 @@ import { useDetailModal } from "@/components/detail-modal";
 import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
+import { CardArtLayer } from "@/components/card-art";
+import { resolveCardArt } from "@/lib/card-art";
+import { skinStyle } from "@/lib/skins";
 
 /** Card de peça (anatomia "peça de roupa" v17): foto, nome editorial, cor com nome escrito (acessibilidade para daltônicos), estado. */
 export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals, anatomy, extra }: {
@@ -28,12 +31,16 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
   const raw = piece.thumbnailUrl ?? piece.imageUrl;
   const img = studio ?? thumbUrl(raw, 640);
   const srcSet = studio ? undefined : thumbSrcSet(raw);
+  // arte de fundo da peça (RF4 · etapa "Arte de fundo"): aura, material e skin ficam atrás da foto, como no card do look
+  const art = resolveCardArt(piece.background);
+  const hasArt = art.kind !== "none";
+  const skin = (piece.background?.skin as string | undefined) ?? null;
   const body = (
     <>
       <div className="c-photo" style={{ aspectRatio: "1" }}>
+        {hasArt && <CardArtLayer art={art} />}
         {img ? <img src={img} srcSet={srcSet} sizes="(max-width: 639px) 50vw, 240px" alt={piece.name} loading="lazy" decoding="async" style={studio ? { objectFit: "cover" } : { objectFit: "contain", padding: 8 }} /> : null}
         {(zone === "COVER_CORNER" || zone === "HEADER") && <SealSlot size="sm" seals={seals} />}
-        {!piece.disponivel && <span className="badge absolute left-2 top-2">{t("common.unavailable")}</span>}
         {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
       </div>
       <span className="c-kicker" style={{ padding: "10px 12px 0" }}>{t("anatomy.pieceKicker", { category: CATEGORY_LABEL[piece.category] ?? label(piece.subcategory) })}</span>
@@ -50,7 +57,7 @@ export function PieceCard({ piece, href, onFavorite, onAvailability, selectable,
     </>
   );
   return (
-    <article className={`fai-card relative ${selected ? "ring-2 ring-mark" : ""}`} aria-label={piece.name}>
+    <article className={`fai-card relative ${selected ? "ring-2 ring-mark" : ""} ${hasArt ? "has-art" : ""}`} style={skin ? skinStyle(skin) : undefined} aria-label={piece.name} data-art={hasArt ? art.label : undefined}>
       {selectable ? (
         <button type="button" className="text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>{body}</button>
       ) : (

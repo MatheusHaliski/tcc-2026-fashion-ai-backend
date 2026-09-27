@@ -10,7 +10,7 @@ import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { Avatar } from "@/components/ui";
-import { CommentButton } from "@/components/interactions";
+import { CardActions } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
 import { BrandLogo } from "@/components/brand-logo";
 
@@ -129,10 +129,8 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
         </>}
       </div>
       </div>
-      <div className="c-foot">
-        <span className="metrics tabular"><span title={t("common.curtidas")}>♥ {dna.counters?.likes ?? 0}</span>{dna.id ? <CommentButton type="DNA_SCHEME" id={dna.id} count={dna.counters?.comments} title={dna.title} /> : <span>💬 0</span>}<span title={t("common.remixes")}>↻ {dna.counters?.remixes ?? 0}</span><span title={t("dnaCard.compartilhamentos")}>⤴ {dna.counters?.shares ?? 0}</span><Generate3DButton targets={cells.map((c) => ({ kind: "scheme" as const, id: c.schemeId, title: c.title }))} /></span>
-        <span className="truncate">{dna.archetypeLabel ?? ""}{dna.boldnessIndex != null ? t("dnaCard.ousadia", { boldnessIndex: dna.boldnessIndex }) : ""}</span>
-      </div>
+      {/* ações do post no mesmo formato dos demais cards (RF7.CA11): botões só com ícone e contadores em texto abaixo */}
+      {dna.id && !expanded && <CardActions type="DNA_SCHEME" id={dna.id} counters={{ ...dna.counters, views: 0, saves: 0, reactions: {} }} viewer={{ liked: false, reactions: [], saved: false, canEdit: dna.canEdit, following: false }} ownerId={dna.owner?.id} title={dna.title} compact extra={<Generate3DButton glyph targets={cells.map((c) => ({ kind: "scheme" as const, id: c.schemeId, title: c.title }))} />} />}
       {extra && <div className="c-extra">{extra}</div>}
     </article>
   );

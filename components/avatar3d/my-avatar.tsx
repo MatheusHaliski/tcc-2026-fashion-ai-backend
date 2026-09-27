@@ -126,7 +126,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       <div className="grid content-start gap-3">
         <Card>
           <p className="label">{t("avatar3d.page.fotos")}</p>
-          <ul className="mb-3 list-disc pl-5 type-body-sm text-muted">
+          <ul className="fai-list mb-3 type-body-sm text-muted">
             <li>{t("avatar3d.page.dica_luz")}</li><li>{t("avatar3d.page.dica_rosto")}</li><li>{t("avatar3d.page.dica_lados")}</li>
           </ul>
           <div className="grid gap-3">
@@ -170,7 +170,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
               : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
           </div>
           {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
-          {setIssues.length > 0 && <ul className="mt-3 grid gap-1">{setIssues.map((x) => <li key={x.code} className="type-body-sm text-muted">⚠ {issueText(x)}</li>)}</ul>}
+          {setIssues.length > 0 && <ul className="fai-list mt-3">{setIssues.map((x) => <li key={x.code} className="type-body-sm text-muted">⚠ {issueText(x)}</li>)}</ul>}
         </Card>
         {built && (
           <Card>
@@ -222,7 +222,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         <Card>
           <p className="label">{t("avatar3d.page.seu_avatar")}</p>
           <p className="type-body-sm">{t("avatar3d.page.feito_com", { n: saved.photos ?? 1 })}{saved.updatedAt ? ` · ${fmtDateTime(saved.updatedAt)}` : ""}</p>
-          {(saved.warnings ?? []).length > 0 && <ul className="mt-2 grid gap-1">{saved.warnings!.map((c) => <li key={c} className="type-caption text-muted">⚠ {SAVED_TEXT.has(c) ? t(`avatar3d.saved.${c}`) : issueText({ code: c })}</li>)}</ul>}
+          {(saved.warnings ?? []).length > 0 && <ul className="fai-list mt-2">{saved.warnings!.map((c) => <li key={c} className="type-caption text-muted">⚠ {SAVED_TEXT.has(c) ? t(`avatar3d.saved.${c}`) : issueText({ code: c })}</li>)}</ul>}
           <div className="mt-3"><Switch checked={pub} onChange={(v) => { setPub(v); void patch({ publicOnRunway: v }); }} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button onClick={onRedo} disabled={!!busy}>{t("avatar3d.page.refazer")}</Button>

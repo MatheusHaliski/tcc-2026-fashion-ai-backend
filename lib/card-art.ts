@@ -14,11 +14,10 @@ export interface CardArt {
   kind: ArtKind; base?: string; image?: string; video?: { src: string; poster?: string | null }; material?: string; animation?: string | null;
   season?: string | null; label: string; presetId?: string;
 }
-export interface PhotoFilters { brightness?: number; contrast?: number; saturation?: number; hue?: number; blur?: number; sepia?: number; grayscale?: number; }
 interface Studio {
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
-  container?: { color?: string | null } | null; photo?: { url?: string | null; filters?: PhotoFilters; preset?: string } | null; skin?: string;
+  container?: { color?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
   /** família de silhueta declarada por quem publica (anatomia Silhueta & Proporção) */
   silhouette?: string | null;
 }
@@ -101,27 +100,6 @@ export function inkOn(hex: string): string {
 }
 
 /** Presets do pipeline de filtros da foto do look (não destrutivos: guardados no config e aplicados na exibição). */
-export const PHOTO_PRESETS: { id: string; label: string; filters: PhotoFilters }[] = [
-  { id: "original", get label() { return tr("common.original"); }, filters: {} },
-  { id: "luz_natural", get label() { return tr("lib.cardArt.luz_natural"); }, filters: { brightness: 108, contrast: 104, saturation: 106 } },
-  { id: "editorial", get label() { return tr("lib.cardArt.editorial"); }, filters: { brightness: 102, contrast: 118, saturation: 92 } },
-  { id: "quente", get label() { return tr("lib.cardArt.quente"); }, filters: { brightness: 104, saturation: 112, sepia: 18, hue: -6 } },
-  { id: "frio", get label() { return tr("lib.cardArt.frio"); }, filters: { brightness: 102, saturation: 96, hue: 12 } },
-  { id: "vintage", label: "Vintage", filters: { contrast: 92, saturation: 80, sepia: 35 } },
-  { id: "pb", label: "P&B", filters: { contrast: 112, grayscale: 100 } },
-];
-export function photoFilterCss(f?: PhotoFilters | null): string | undefined {
-  if (!f) return undefined;
-  const parts: string[] = [];
-  if (f.brightness != null && f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
-  if (f.contrast != null && f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
-  if (f.saturation != null && f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
-  if (f.hue) parts.push(`hue-rotate(${f.hue}deg)`);
-  if (f.sepia) parts.push(`sepia(${f.sepia}%)`);
-  if (f.grayscale) parts.push(`grayscale(${f.grayscale}%)`);
-  if (f.blur) parts.push(`blur(${f.blur}px)`);
-  return parts.length ? parts.join(" ") : undefined;
-}
 
 /** 10 cores clássicas de blocos de encaixe: a cor dominante é quantizada para a mais próxima (anatomia/narrativa LEGO). */
 export const BRICKS = ["#C91A09", "#0055BF", "#F2CD37", "#237841", "#1B2A34", "#F4F4F4", "#FE8A18", "#E4CD9E", "#6C6E68", "#582A12"];

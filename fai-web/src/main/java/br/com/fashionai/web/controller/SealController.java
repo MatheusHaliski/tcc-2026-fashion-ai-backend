@@ -74,6 +74,17 @@ public class SealController {
         return seals.preview(user, body.pieceIds(), body.occasion(), body.style());
     }
 
+    public record PiecePreviewRequest(String name, String category, String subcategory, String color, String brandName,
+                                      java.util.List<String> occasion, java.util.List<String> style) {
+    }
+
+    @PostMapping("/api/seal-suggestions/preview-piece")
+    @Operation(summary = "RF4 — Selos possíveis para uma peça ainda não salva: marca/celebridade com peça semelhante (nada é gravado)")
+    public Map<String, Object> previewPiece(CurrentUser user, @RequestBody PiecePreviewRequest body) {
+        return seals.previewPiece(user, new SealService.PieceFields(body.name(), body.category(), body.subcategory(), body.color(),
+                body.brandName(), body.occasion(), body.style()));
+    }
+
     @GetMapping("/api/schemes/{schemeId}/seal-suggestions")
     @Operation(summary = "RF21.CA01 — Sugestões de vínculo de selo para o esquema (SealBond Matcher)")
     public Map<String, Object> suggest(CurrentUser user, @PathVariable UUID schemeId) {

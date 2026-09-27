@@ -60,16 +60,16 @@ function Explorer() {
                   {global.data?.selected ? (<>
                     <p className="type-h3 mb-2">{countryName(global.data.selected.country)}</p>
                     <p className="label">{t("explorer.hype_medio_por_estacao")}</p>
-                    <ul className="mb-3 type-body-sm">{(global.data.selected.hypeBySeason ?? []).map((s) => <li key={s.season} className="flex justify-between"><span>{label(String(s.season).toLowerCase())}</span><span className="type-data">{s.avg_hype != null ? Math.round(s.avg_hype) : "—"}</span></li>)}{!(global.data.selected.hypeBySeason ?? []).length && <li className="text-muted">{t("explorer.sem_looks_com_estacao")}</li>}</ul>
+                    <ul className="fai-list mb-3 type-body-sm">{(global.data.selected.hypeBySeason ?? []).map((s) => <li key={s.season} className="flex justify-between"><span>{label(String(s.season).toLowerCase())}</span><span className="type-data">{s.avg_hype != null ? Math.round(s.avg_hype) : "—"}</span></li>)}{!(global.data.selected.hypeBySeason ?? []).length && <li className="text-muted">{t("explorer.sem_looks_com_estacao")}</li>}</ul>
                     <p className="label">{t("explorer.cores_mais_usadas")}</p>
-                    <ul className="type-body-sm">{(global.data.selected.topColors ?? []).map((c) => <li key={c.color} className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c.color] ?? "#999" }} /><span className="flex-1">{label(c.color)}</span><span className="type-data">{c.total}</span></li>)}</ul>
+                    <ul className="fai-list type-body-sm">{(global.data.selected.topColors ?? []).map((c) => <li key={c.color} className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c.color] ?? "#999" }} /><span className="flex-1">{label(c.color)}</span><span className="type-data">{c.total}</span></li>)}</ul>
                     <Button size="sm" className="mt-3" onClick={() => setCountry("")}>{t("explorer.fechar_pais")}</Button>
                   </>) : <p className="type-body text-muted">{t("explorer.clique_num_ponto_do_globo")}</p>}
                 </Card>
                 <Card>
                   <p className="label">{t("explorer.de_paises_com_dados_suficientes", { litCount: lit.length, pointsCount: points.length, value: global.data?.minData ?? 3 })}</p>
                   {points.length === 0 ? <EmptyState title={t("explorer.nada_neste_recorte")} hint={t("explorer.troque_a_estacao_a_cor")} /> : (
-                    <ul className="grid gap-1">{points.map((c) => (
+                    <ul className="fai-list">{points.map((c) => (
                       <li key={c.country}><button type="button" aria-pressed={country === c.country} className={`grid w-full grid-cols-[8rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded p-1.5 text-left hover:bg-surface-2 ${country === c.country ? "bg-surface-2" : ""}`} onClick={() => setCountry(c.country)}>
                         <span className="truncate type-body-sm font-semibold">{countryName(c.country)}</span>
                         <span className="h-3.5 flex-1 overflow-hidden rounded bg-surface-2"><span className="block h-full rounded" style={{ width: `${(100 * c.total) / maxTotal}%`, background: c.dominantColorHex ?? "var(--thread)", opacity: c.sufficient ? 1 : 0.4, boxShadow: "inset 0 0 0 1px rgba(0,0,0,.22)" }} /></span>
@@ -110,7 +110,7 @@ function Explorer() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-3"><p className="label">{t("explorer.leitura_de_tendencia", { value: insights.data.fallbackUsed ? t("explorer.motor_local") : t("explorer.ia_rf24") })}</p><p className="type-h2">{insights.data.aiInsight}</p>{insights.data.note && <p className="type-caption text-faint mt-2">{insights.data.note}</p>}</Card>
           {Object.entries(insights.data.rankings).map(([k, rows]) => { const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0)); return (
-            <Card key={k}><p className="label">{RANK_LABEL[k] ?? k}</p>{rows.length === 0 ? <p className="type-caption text-muted">{t("explorer.sem_dados_suficientes")}</p> : <ul className="grid gap-1.5 type-body-sm">{rows.map((r, i) => (
+            <Card key={k}><p className="label">{RANK_LABEL[k] ?? k}</p>{rows.length === 0 ? <p className="type-caption text-muted">{t("explorer.sem_dados_suficientes")}</p> : <ul className="fai-list type-body-sm">{rows.map((r, i) => (
               <li key={i} className="grid grid-cols-[minmax(0,1fr)_90px_36px] items-center gap-2"><span className="flex min-w-0 items-center gap-1.5 truncate">{r.hex && <span className="h-3 w-3 shrink-0 rounded-full border border-line-soft" style={{ background: r.hex }} />}{k.includes("Brand") && <BrandLogo name={String(r.label)} size={20} />}{k === "topCountries" ? countryName(String(r.label)) : k.includes("Season") ? label(String(r.label).toLowerCase()) : k.includes("Color") ? label(String(r.label)) : String(r.label)}</span>
                 <span className="h-2.5 overflow-hidden rounded bg-surface-2"><span className="block h-full rounded bg-[var(--thread)]" style={{ width: `${(100 * (Number(r.value) || 0)) / max}%`, background: r.hex ?? undefined }} /></span><span className="text-right type-data tabular">{fmtNumber(Number(r.value))}</span></li>))}</ul>}</Card>); })}
         </div>

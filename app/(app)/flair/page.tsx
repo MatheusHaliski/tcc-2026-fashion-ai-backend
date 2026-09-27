@@ -139,7 +139,7 @@ function FlairInner() {
                 onClick={() => run("arena", () => api.post<Arena>("/api/flair/arena", { schemeId: deckId }), (r) => { arena.setData(r); me.reload(); })}>
                 {arena.data.leaderboard.some((x) => x.you) ? t("flair.voce_ja_esta_na_batalha") : t("flair.inscrever_deck")}
               </Button>
-              <ol className="mt-3 grid gap-1">
+              <ol className="fai-list mt-3">
                 {arena.data.leaderboard.slice(0, 10).map((x) => (
                   <li key={x.position} className={`flex items-center gap-2 rounded px-2 py-1 ${x.you ? "bg-surface-2 ring-1 ring-thread" : ""}`}>
                     <span className="w-6 tabular type-caption">{x.position}º</span><Avatar src={x.user.avatarUrl} name={x.user.displayName} size={24} />
@@ -181,14 +181,14 @@ function FlairInner() {
                       </div>
                     </div>
                   )}
-                  {(league.data.battles?.length ?? 0) > 0 && <><p className="label mt-3">{t("flair.batalhas_da_minha_equipe")}</p><ul className="grid gap-1">{league.data.battles!.map((b) => <li key={b.id} className="type-caption flex justify-between gap-2"><span className="truncate">{b.theme} · {b.date}</span><Badge tone={b.winner === "DRAW" ? "chalk" : b.winner === b.side ? "thread" : "mark"}>{b.winner === "DRAW" ? t("common.empate") : b.winner === b.side ? t("common.vitoria") : t("common.derrota")}</Badge></li>)}</ul></>}
+                  {(league.data.battles?.length ?? 0) > 0 && <><p className="label mt-3">{t("flair.batalhas_da_minha_equipe")}</p><ul className="fai-list">{league.data.battles!.map((b) => <li key={b.id} className="type-caption flex justify-between gap-2"><span className="truncate">{b.theme} · {b.date}</span><Badge tone={b.winner === "DRAW" ? "chalk" : b.winner === b.side ? "thread" : "mark"}>{b.winner === "DRAW" ? t("common.empate") : b.winner === b.side ? t("common.vitoria") : t("common.derrota")}</Badge></li>)}</ul></>}
                 </div>
                 <div>
                   <p className="label">{t("flair.liga_semanal")}</p>
                   <table className="w-full type-body-sm"><thead><tr className="text-left type-caption text-muted"><th>#</th><th>{t("flair.equipe")}</th><th>{t("flair.integrantes")}</th><th className="text-right">{t("common.pts")}</th></tr></thead>
                     <tbody>{league.data.teams.map((t, i) => <tr key={t.id} className={t.mine ? "font-semibold" : ""}><td className="tabular">{i + 1}</td><td><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full" style={{ background: t.color }} />{t.name}</td><td className="tabular">{t.members.length}/5</td><td className="text-right tabular">{t.points}</td></tr>)}</tbody></table>
                   <p className="label mt-3">{t("flair.ranking_de_jogadores")}</p>
-                  <ol className="grid gap-1">{league.data.players.slice(0, 8).map((p, i) => <li key={p.user.id} className="flex items-center gap-2 type-body-sm"><span className="w-5 tabular type-caption">{i + 1}</span><Avatar src={p.user.avatarUrl} name={p.user.displayName} size={20} /><span className="min-w-0 flex-1 truncate">@{p.user.username}</span><Badge>{p.rank.label}</Badge><span className="tabular type-caption">{p.wins}V</span></li>)}</ol>
+                  <ol className="fai-list">{league.data.players.slice(0, 8).map((p, i) => <li key={p.user.id} className="flex items-center gap-2 type-body-sm"><span className="w-5 tabular type-caption">{i + 1}</span><Avatar src={p.user.avatarUrl} name={p.user.displayName} size={20} /><span className="min-w-0 flex-1 truncate">@{p.user.username}</span><Badge>{p.rank.label}</Badge><span className="tabular type-caption">{p.wins}V</span></li>)}</ol>
                 </div>
               </div>
             )}
@@ -196,7 +196,7 @@ function FlairInner() {
 
           <Card className="lg:col-span-2">
             <h2 className="type-h3 mb-1">{t("flair.variacoes_de_jogo")}</h2>
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 type-body-sm">
+            <ul className="fai-list sm:grid-cols-2 lg:grid-cols-3 type-body-sm">
               <li>{rich("flair.combinacao_da_loja_um_deck", undefined, { 0: ($c) => <b>{$c}</b> })}</li>
               <li>{rich("flair.colecao_a_loja_pede_um", undefined, { 0: ($c) => <b>{$c}</b> })}</li>
               <li>{rich("flair.duelo_patrocinado_vencer_duelos_na", undefined, { 0: ($c) => <b>{$c}</b> })}</li>
@@ -244,7 +244,7 @@ function FlairInner() {
               </div>
               <div className="p-3">
                 {c.description && <p className="type-body-sm text-muted mb-2">{c.description}</p>}
-                <ul className="grid gap-1">{(c.checks ?? []).map((x, i) => <li key={i} className="flex items-start gap-2 type-body-sm"><span className={x.ok ? "flair-check ok" : "flair-check"} aria-hidden>{x.ok ? "✓" : "✕"}</span><span>{checkLabel(x)}</span><span className="sr-only">{x.ok ? t("flair.cumprido") : t("flair.faltando")}</span></li>)}</ul>
+                <ul className="fai-list">{(c.checks ?? []).map((x, i) => <li key={i} className="flex items-start gap-2 type-body-sm"><span className={x.ok ? "flair-check ok" : "flair-check"} aria-hidden>{x.ok ? "✓" : "✕"}</span><span>{checkLabel(x)}</span><span className="sr-only">{x.ok ? t("flair.cumprido") : t("flair.faltando")}</span></li>)}</ul>
                 {c.bestDeck && <p className="type-caption mt-2">{rich("flair.melhor_deck_poder", { title: c.bestDeck.title, power: c.bestDeck.power }, { 0: ($c) => <b>{$c}</b> })}</p>}
                 <p className="type-caption text-faint mt-1">{t("flair.validade_de_dias_apos_a", { value: c.stock != null ? t("flair.cupons_restantes", { Math: Math.max(0, c.stock - c.redeemed) }) : "", validDays: c.coupon.validDays })}</p>
                 <div className="mt-3">
@@ -263,7 +263,7 @@ function FlairInner() {
           <Card className="lg:col-span-2">
             <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("flair.cupons")}</h2><Link href="/lookbook?tab=cupons" className="btn btn-sm">{t("common.meus_cupons_resgatados")}</Link></div>
             {vouchers.loading ? <Skeleton className="h-32" /> : (vouchers.data ?? []).length === 0 ? <EmptyState title={t("flair.nenhum_cupom_ainda")} hint={t("flair.complete_uma_combinacao_de_loja")} action={<Button size="sm" onClick={() => setTab("lojas")}>{t("flair.ver_combinacoes")}</Button>} /> :
-              <ul className="grid gap-2">{vouchers.data!.map((v) => (
+              <ul className="fai-list">{vouchers.data!.map((v) => (
                 <li key={v.id}><button type="button" className="flair-voucher w-full text-left" style={{ borderColor: v.combination.accentColor }} onClick={() => setVoucher(v)}>
                   <div className="min-w-0 flex-1"><p className="type-caption text-muted">{v.combination.brandName} · {v.combination.name}</p><p className="type-body font-semibold">{v.combination.coupon}</p><p className="type-caption">{couponText(v.combination)}</p></div>
                   <div className="text-right"><code className="flair-code">{v.code}</code><p className="type-caption mt-1"><Badge tone={v.status === "EMITIDO" ? "thread" : v.status === "USADO" ? "chalk" : "mark"}>{v.status}</Badge></p></div>
@@ -279,9 +279,9 @@ function FlairInner() {
                   onClick={() => run(s, () => api.post<Me>(`/api/flair/skins/${s}`), (r) => me.setData(r))}>{active ? t("flair.ativa") : owned ? t("flair.usar") : t("flair.coins", { price })}</Button></div>;
             })}
             <h3 className="label mt-3">{t("common.extrato")}</h3>
-            <ul className="grid gap-0.5">{(m?.ledger ?? []).slice(0, 12).map((e, i) => <li key={i} className="flex justify-between type-caption"><span className="truncate">{e.reason.replace(/_/g, " ").toLowerCase()}</span><b className={`tabular ${e.delta < 0 ? "text-mark" : ""}`}>{e.delta > 0 ? "+" : ""}{e.delta}</b></li>)}</ul>
+            <ul className="fai-list">{(m?.ledger ?? []).slice(0, 12).map((e, i) => <li key={i} className="flex justify-between type-caption"><span className="truncate">{e.reason.replace(/_/g, " ").toLowerCase()}</span><b className={`tabular ${e.delta < 0 ? "text-mark" : ""}`}>{e.delta > 0 ? "+" : ""}{e.delta}</b></li>)}</ul>
             <h3 className="label mt-3">{t("flair.partidas_recentes")}</h3>
-            <ul className="grid gap-0.5">{(m?.recent ?? []).map((e) => <li key={e.matchId} className="flex justify-between gap-2 type-caption"><span className="truncate">{MODE_LABEL[e.mode] ?? e.mode} · {e.theme ? label(e.theme.replace(/^@/, "@")) : ""}</span>{e.outcome ? <Badge tone={OUTCOME[e.outcome]?.tone}>{OUTCOME[e.outcome]?.label}</Badge> : <span className="tabular">{e.score}</span>}</li>)}</ul>
+            <ul className="fai-list">{(m?.recent ?? []).map((e) => <li key={e.matchId} className="flex justify-between gap-2 type-caption"><span className="truncate">{MODE_LABEL[e.mode] ?? e.mode} · {e.theme ? label(e.theme.replace(/^@/, "@")) : ""}</span>{e.outcome ? <Badge tone={OUTCOME[e.outcome]?.tone}>{OUTCOME[e.outcome]?.label}</Badge> : <span className="tabular">{e.score}</span>}</li>)}</ul>
           </Card>
         </div>
       )}

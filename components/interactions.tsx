@@ -162,14 +162,14 @@ function CommentsPanel({ type, id }: { type: TargetType; id: string }) {
             </div>
           </div>
         </div>
-        {(children.get(c.id) ?? c.replies ?? []).length ? <ul>{(children.get(c.id) ?? c.replies ?? []).map((r) => <Item key={r.id} c={r} depth={depth + 1} />)}</ul> : null}
+        {(children.get(c.id) ?? c.replies ?? []).length ? <ul className="fai-list">{(children.get(c.id) ?? c.replies ?? []).map((r) => <Item key={r.id} c={r} depth={depth + 1} />)}</ul> : null}
       </li>
     );
   };
   return (
     <section aria-label={t("interactions.comentarios_3")}>
       <p className="type-caption text-muted mb-1 tabular">{list.length} {list.length === 1 ? t("interactions.comentario") : t("interactions.comentarios_3")}</p>
-      {loading ? <p className="type-body text-muted">{t("common.loading")}</p> : list.length === 0 ? <p className="type-body text-muted">{t("interactions.seja_o_primeiro_a_comentar")}</p> : <ul className="max-h-[50vh] overflow-y-auto divide-y divide-line-soft">{roots.map((c) => <Item key={c.id} c={c} depth={0} />)}</ul>}
+      {loading ? <p className="type-body text-muted">{t("common.loading")}</p> : list.length === 0 ? <p className="type-body text-muted">{t("interactions.seja_o_primeiro_a_comentar")}</p> : <ul className="fai-list max-h-[50vh] overflow-y-auto">{roots.map((c) => <Item key={c.id} c={c} depth={0} />)}</ul>}
       <div className="mt-3 flex flex-col gap-2">
         {parentId && <p className="type-caption text-muted">{t("interactions.respondendo_a")}{(list.find((c) => c.id === parentId)?.author ?? list.find((c) => c.id === parentId)?.user)?.username ?? t("interactions.comentario")}… <button type="button" className="underline" onClick={() => setParentId(null)}>{t("common.cancel")}</button></p>}
         <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder={user ? t("interactions.escreva_um_comentario") : t("common.loginRequired")} maxLength={500} aria-label={t("interactions.novo_comentario")} />

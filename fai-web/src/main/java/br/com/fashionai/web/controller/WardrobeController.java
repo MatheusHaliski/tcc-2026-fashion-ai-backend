@@ -74,11 +74,13 @@ public class WardrobeController {
                                              @RequestParam(required = false) String season,
                                              @RequestParam(required = false) String occasion,
                                              @RequestParam(required = false) String style,
+                                             @RequestParam(required = false) String state,
                                              @RequestParam(required = false) String q,
                                              @RequestParam(required = false) String sort,
                                              @RequestParam(defaultValue = "0") int page,
                                              @RequestParam(defaultValue = "24") int size) {
-        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, null, q, sort, page, size));
+        // estado (disponível / indisponível / à venda) também vale no perfil: são dados públicos da peça
+        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
     }
 
     @GetMapping("/api/pieces/{id}")

@@ -46,13 +46,13 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </>} />
       {!data.contentVisible
         ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
-        : <LookbookTabs ownerId={data.user.id} initialTab={data.self && initialTab === "cupons" ? "coupons" : "closet"} />}
+        : <LookbookTabs ownerId={data.user.id} initialTab={data.self && initialTab === "cupons" ? "coupons" : data.self && initialTab === "dna" ? "dna" : "closet"} />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}
         footer={<><Button onClick={() => setConfirmBlock(false)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => { setConfirmBlock(false); block(); }}>{t("lookbook.block")}</Button></>}>
         <p className="type-body">{t("profile.blockBody")}</p>
       </Dialog>
       <Dialog open={conn} onClose={() => setConn(false)} title={t("u.username.conexoes")}>
-        {connections.loading ? <Skeleton className="h-32" /> : <div className="grid gap-4 sm:grid-cols-2">{(["followers", "following"] as const).map((k) => <div key={k}><p className="label">{t(`lookbook.${k}`)}</p><ul className="divide-y divide-line-soft">{(connections.data?.[k] ?? []).map((u) => <li key={u.id} className="flex items-center gap-2 py-1"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={28} /><Link href={`/u/${u.username}`} className="underline">@{u.username}</Link></li>)}</ul></div>)}</div>}
+        {connections.loading ? <Skeleton className="h-32" /> : <div className="grid gap-4 sm:grid-cols-2">{(["followers", "following"] as const).map((k) => <div key={k}><p className="label">{t(`lookbook.${k}`)}</p><ul className="fai-list">{(connections.data?.[k] ?? []).map((u) => <li key={u.id} className="flex items-center gap-2 py-1"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={28} /><Link href={`/u/${u.username}`} className="underline">@{u.username}</Link></li>)}</ul></div>)}</div>}
       </Dialog>
     </>
   );

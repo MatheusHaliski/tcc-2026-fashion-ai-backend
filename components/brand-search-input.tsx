@@ -113,10 +113,8 @@ export function BrandSearchInput({ value, onChange, error }: { value: BrandChoic
             : value.brandName ? <b style={{ background: mono.color }}>{mono.initials}</b> : <em>{t("brandSearchInput.logo_da_marca")}</em>}
         </span>
         <span className="min-w-0 flex-1 type-caption">
-          {value.brandName ? <><b className="type-body-sm">{value.brandName}</b><br />
-            {value.brandLogoUrl ? <>{t("brandSearchInput.logo_via_filtro_fundo_branco", { labelOf: labelOf(value.brandSource), value: value.brandDomain ? ` · ${value.brandDomain}` : "", value2: value.edgePx != null ? t("brandSearchInput.borda_px", { replace: value.edgePx.toFixed(1).replace(".", ",") }) : "" })}</>
-              : value.brandSource === "TEXTO_LIVRE" ? t("brandSearchInput.texto_livre_sem_logo_da") : t("brandSearchInput.escolha_um_resultado_da_busca")}</>
-            : t("brandSearchInput.o_logo_aparece_aqui_quando")}
+          {/* só o nome da marca: fonte, domínio e medidas do filtro do logo são detalhes do pipeline, não do formulário */}
+          {value.brandName ? <b className="type-body-sm">{value.brandName}</b> : t("brandSearchInput.o_logo_aparece_aqui_quando")}
         </span>
         {value.brandName && <button type="button" className="btn btn-sm btn-ghost" onClick={clear}>{t("common.trocar")}</button>}
       </div>

@@ -433,7 +433,8 @@ public class WardrobeService {
                             String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef) {
+                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                            Map<String, Object> background) {
     }
 
     @Transactional
@@ -643,6 +644,10 @@ public class WardrobeService {
         w.setPurchaseLocation(InputSanitizer.clean(f.purchaseLocation(), 160));
         w.setSku(InputSanitizer.clean(f.sku(), 80));
         w.setCareInstructions(InputSanitizer.clean(f.careInstructions(), 500));
+        // arte de fundo da peça (RF4 · etapa "Arte de fundo": aura, material, skin, anatomia) — mesmo formato do look
+        if (f.background() != null) {
+            w.setBackgroundConfigJson(f.background().isEmpty() ? null : Json.write(f.background()));
+        }
         if (f.forSale() != null) {
             w.setForSale(f.forSale());
         }
@@ -772,9 +777,9 @@ public class WardrobeService {
         }
         return switch (state.toLowerCase(Locale.ROOT)) {
             case "favoritos", "favorites" -> w.isFavorite();
-            case "disponivel", "available" -> w.isDisponivel();
-            case "indisponivel", "unavailable" -> !w.isDisponivel();
-            case "venda", "for_sale" -> w.isForSale();
+            case "disponivel", "disponiveis", "available" -> w.isDisponivel();
+            case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
+            case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
             default -> true;
         };
     }
@@ -1454,9 +1459,11 @@ public class WardrobeService {
         out.put("allowedOccasionsByCategory", allowed);
         out.put("wearstylesByPart", Taxonomy.WEARSTYLES_BY_PART);
         out.put("wearstyleGroups", Taxonomy.WEARSTYLE_GROUPS);
-        out.put("pieceSeals", List.of("premium", "eco-friendly", "trending", "limited-edition", "exclusive", "budget-friendly",
-                "luxury", "casual-chic"));
-        out.put("schemeSeals", List.of("affordable-chic", "premium-look", "eco-conscious", "trendy-combo", "casual-elegance"));
+        // selos nunca são rótulos padronizados: vêm da análise da IA (marca/celebridade com peça semelhante — SealService)
+        Map<String, String> defaults = new LinkedHashMap<>();
+        defaults.put("generic", assets.defaultPieceImage(null, null));
+        Taxonomy.SUBCATEGORIES.keySet().forEach(c -> defaults.put(c, assets.defaultPieceImage(c, null)));
+        out.put("defaultImages", defaults);
         out.put("brands", brands.findAllByOrderByName().stream().map(b -> Map.of("id", b.getId(), "name", b.getName(),
                 "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList());
         return out;

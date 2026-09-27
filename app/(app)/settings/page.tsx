@@ -107,7 +107,7 @@ function Settings() {
           <Card>
             <h2 className="type-h3 mb-3">{t("settings.lgpd_rf24", { txt: t("settings.consents") })}</h2>
             {consents.loading && <Skeleton className="h-32" />}
-            <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => <li key={c.purpose}><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); } catch (e) { toast.fromError(e); } }} label={c.label ?? c.purpose.replace(/_/g, " ").toLowerCase()} />{c.description && <p className="type-caption text-muted -mt-1 pb-2">{c.description}</p>}</li>)}</ul>
+            <ul className="fai-list">{(consents.data ?? []).map((c) => <li key={c.purpose}><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); } catch (e) { toast.fromError(e); } }} label={c.label ?? c.purpose.replace(/_/g, " ").toLowerCase()} />{c.description && <p className="type-caption text-muted -mt-1 pb-2">{c.description}</p>}</li>)}</ul>
           </Card>
         </div>
       )}
@@ -117,7 +117,7 @@ function Settings() {
             <h2 className="type-h3 mb-2">{t("settings.export")}</h2>
             <p className="type-body text-muted mb-3">{t("settings.geramos_um_pacote_com_todos")}</p>
             <Button variant="primary" onClick={() => call(() => api.post("/api/me/exports"), t("settings.exportacao_solicitada")).then(exports.reload)}>{t("settings.export")}</Button>
-            <ul className="mt-3 divide-y divide-line-soft">{(exports.data ?? []).map((x) => <li key={x.id} className="flex items-center justify-between py-2 type-body-sm"><span>{x.status} · {x.requestedAt?.slice(0, 10)}</span>{x.status === "READY" && <a className="btn btn-sm" href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}/api/me/exports/${x.id}/file`} onClick={async (e) => { e.preventDefault(); const u = await api.blobUrl(`/api/me/exports/${x.id}/file`); window.open(u); }}>{t("settings.baixar")}</a>}</li>)}</ul>
+            <ul className="fai-list mt-3">{(exports.data ?? []).map((x) => <li key={x.id} className="flex items-center justify-between py-2 type-body-sm"><span>{x.status} · {x.requestedAt?.slice(0, 10)}</span>{x.status === "READY" && <a className="btn btn-sm" href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}/api/me/exports/${x.id}/file`} onClick={async (e) => { e.preventDefault(); const u = await api.blobUrl(`/api/me/exports/${x.id}/file`); window.open(u); }}>{t("settings.baixar")}</a>}</li>)}</ul>
           </Card>
           <Card>
             <h2 className="type-h3 mb-2">{t("settings.deleteAccount")}</h2>
@@ -130,7 +130,7 @@ function Settings() {
         <Card>
           <h2 className="type-h3 mb-3">{t("settings.sessions")}</h2>
           {sessions.loading && <Skeleton className="h-32" />}
-          <ul className="divide-y divide-line-soft">{(sessions.data ?? []).map((s) => <li key={s.id} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.deviceName ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.id}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
+          <ul className="fai-list">{(sessions.data ?? []).map((s) => <li key={s.id} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.deviceName ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.id}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
           <Button className="mt-3" variant="danger" onClick={() => call(() => api.delete("/api/auth/sessions"), t("settings.outras_sessoes_encerradas")).then(sessions.reload)}>{t("settings.sair_de_todos_os_outros")}</Button>
         </Card>
       )}

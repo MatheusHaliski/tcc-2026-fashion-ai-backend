@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import type { SchemeView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
+import { useAuth } from "@/lib/auth/session";
+import { CreationSuccess } from "@/components/expanded-card";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast, Stepper } from "@/components/ui";
@@ -54,7 +56,7 @@ function SchemeBrands({ scheme }: { scheme?: SchemeView }) {
  * vestimenta do próprio usuário e cujo layout vem das anatomias A1–A4 e das narrativas B1–B12 (anatomia_cards_DNA_v4).
  */
 export function DnaBuilder({ initial }: { initial?: DnaView }) {
-  const { t, rich } = useI18n(); const router = useRouter(); const toast = useToast(); const tax = useTaxonomy();
+  const { t, rich } = useI18n(); const router = useRouter(); const toast = useToast(); const tax = useTaxonomy(); const { user } = useAuth();
   const { data: b, loading, error, reload } = useApi<Builder>((signal) => api.get("/api/dna-schemes/builder", { signal }), []);
   const split = (v?: string | null) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const [step, setStep] = useState(0); const [mode, setMode] = useState<"manual" | "ai">(initial?.creationMode === "AI_ASSISTED" ? "ai" : "manual");
@@ -64,7 +66,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   const [bg, setBg] = useState<BgConfig>((initial?.background as BgConfig) ?? {}); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier");
   const [prompt, setPrompt] = useState(""); const [aiReq, setAiReq] = useState({ occasion: [] as string[], style: [] as string[], narrative: "", season: "" });
   const [proposals, setProposals] = useState<Proposal[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<DnaView | null>(null);
+  const [preview, setPreview] = useState<DnaView | null>(null); const [done, setDone] = useState<string | null>(null);
   const byId = useMemo(() => new Map((b?.schemes ?? []).map((s) => [s.id, s])), [b]);
   useEffect(() => { if (b?.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
   const effNarrative = form.target === "DNA_COMPLETO" ? narrative : null;
@@ -101,7 +103,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
     try {
       const body = { ...payload(), publish, visibility: publish && form.visibility === "PRIVATE" ? "PUBLIC" : form.visibility };
       const r = initial?.id ? await api.put<DnaView>(`/api/dna-schemes/${initial.id}`, body) : await api.post<DnaView>("/api/dna-schemes", body);
-      toast.success(publish ? t("dnaBuilder.dna_publicado") : t("dnaBuilder.dna_salvo")); router.push(`/dna-schemes/${r.id ?? initial?.id}`);
+      toast.success(publish ? t("dnaBuilder.dna_publicado") : t("dnaBuilder.dna_salvo")); setDone(r.id ?? initial?.id ?? null);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -129,7 +131,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">
-        <Stepper steps={steps} current={step} onStep={setStep} label={t("builder.stepsLabel")} />
+        <Stepper steps={steps} current={step} onStep={setStep} label={t("builder.stepsLabel")} canGo={(i) => i < step || i <= 1 || (cells.length >= 2 && (i === 2 || !!form.title.trim()))} />
         {step === 0 && (
           <div className="surface p-4">
             {b.dna && <p className="mb-3 flex flex-wrap items-center gap-2 type-body-sm">{rich("dnaBuilder.dna_seu_dna_agora_ousadia", { archetypeLabel: b.dna.archetypeLabel, value: b.dna.boldnessIndex ?? 0 }, { 0: ($c) => <span className="badge" style={{ background: "#7C3AED", color: "#fff" }}>{$c}</span>, 1: ($c) => <b>{$c}</b> })}{(b.dna.palette ?? []).map((p) => <span key={p.color} className="inline-block h-4 w-4 rounded-full border border-line-soft" style={{ background: p.hex }} />)}</p>}
@@ -150,7 +152,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
                 {proposals && <div className="grid gap-2 sm:grid-cols-3">{proposals.map((p, i) => (
                   <button key={i} type="button" className="surface p-3 text-left hover:bg-surface-2" onClick={() => applyProposal(p)}>
                     <p className="type-label" style={{ color: "#7C3AED" }}>{p.narrativeType ? dnaNarrativeLabel(p.narrativeType) : DNA_LAYOUTS.find((l) => l.id === p.cardLayout)?.label}</p>
-                    <p className="type-h3">{p.title}</p><ul className="mt-1 type-caption text-muted">{p.cells.map((c) => <li key={c.schemeId} className="truncate">{c.milestone ? "★ " : ""}{c.eraLabel ? `${c.eraLabel} · ` : ""}{c.title ?? byId.get(c.schemeId)?.title}</li>)}</ul>{p.rationale && <p className="mt-1 type-caption">{p.rationale}</p>}
+                    <p className="type-h3">{p.title}</p><ul className="fai-list mt-1 type-caption text-muted">{p.cells.map((c) => <li key={c.schemeId} className="truncate">{c.milestone ? "★ " : ""}{c.eraLabel ? `${c.eraLabel} · ` : ""}{c.title ?? byId.get(c.schemeId)?.title}</li>)}</ul>{p.rationale && <p className="mt-1 type-caption">{p.rationale}</p>}
                   </button>))}</div>}
               </div>
             )}
@@ -161,7 +163,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
           <div>
             <p className="type-body text-muted mb-3">{rich("dnaBuilder.esquemas_de_vestimenta_seus_rf5", { totalSchemes: b.totalSchemes }, { 0: ($c) => <Link href="/schemes/new" className="underline">{$c}</Link> })}</p>
             {cells.length > 0 && (
-              <ol className="surface mb-4 divide-y divide-line-soft" aria-label={t("common.esquemas_do_dna")}>
+              <ol className="fai-list surface mb-4" aria-label={t("common.esquemas_do_dna")}>
                 {cells.map((c, i) => { const s = byId.get(c.schemeId); return (
                   <li key={c.schemeId} className="flex flex-wrap items-center gap-2 p-2">
                     <span className="badge">{i + 1}</span><span className="min-w-0 flex-1 truncate type-body-sm font-medium">{s?.title ?? c.schemeId}</span>
@@ -203,6 +205,8 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
         )}
       </div>
       <aside aria-label={t("common.pre_visualizacao")} className="xl:sticky xl:top-16 xl:self-start"><p className="label">{t("dnaBuilder.card_do_dna_pre_visualizacao")}</p>{preview ? <DnaCard dna={preview} /> : <Skeleton className="h-80" />}</aside>
+      {/* os looks DNA criados aqui ficam na sub-aba "Meus looks DNA de estilo" do perfil */}
+      {done && <CreationSuccess kind="dna" id={done} edited={!!initial?.id} onDone={() => router.push(user ? `/u/${user.username}?tab=dna` : "/lookbook")} />}
     </div>
   );
 }

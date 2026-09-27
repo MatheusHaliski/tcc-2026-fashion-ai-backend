@@ -27,10 +27,19 @@ public class PhotoController {
     }
 
     @GetMapping("/api/me/photos")
-    @Operation(summary = "RF12.CA01 — Minhas fotos por origem (peças, try-on, desafios…)")
+    @Operation(summary = "RF12.CA01 — Minhas fotos com filtros (origem, ocasião, estilo, cor, mês, período) e facetas")
     public Map<String, Object> list(CurrentUser user, @RequestParam(required = false) PhotoOrigin origin,
-                                    @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "40") int size) {
-        return photos.list(user, origin, page, size);
+                                    @RequestParam(required = false) String occasion, @RequestParam(required = false) String style,
+                                    @RequestParam(required = false) String color, @RequestParam(required = false) String month,
+                                    @RequestParam(required = false) Integer days,
+                                    @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "60") int size) {
+        return photos.gallery(user, new br.com.fashionai.application.service.PhotoInsights.Filter(origin, occasion, style, color, month, days), page, size);
+    }
+
+    @GetMapping("/api/me/photos/insights")
+    @Operation(summary = "RF12 — Insights de IA das fotos: cor, ocasião, estilo e ritmo (StyleInsight local)")
+    public Map<String, Object> insights(CurrentUser user) {
+        return photos.insights(user);
     }
 
     @DeleteMapping("/api/photos/{id}")

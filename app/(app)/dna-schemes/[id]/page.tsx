@@ -30,7 +30,7 @@ export default function DnaSchemePage({ params }: { params: Promise<{ id: string
         <div className="grid content-start gap-3">
           <Card>
             <p className="label">{t("dnaSchemes.id.esquemas_referenciados", { cellsCount: data.cells.length })}</p>
-            <ul className="divide-y divide-line-soft">{data.cells.map((c, i) => (
+            <ul className="fai-list">{data.cells.map((c, i) => (
               <li key={c.schemeId}><button type="button" className="flex w-full items-center gap-2 py-2 text-left hover:bg-surface-2" onClick={() => detail ? detail.openScheme(c.schemeId) : router.push(`/schemes/${c.schemeId}`)}>
                 <span className="badge">{i + 1}</span><span className="min-w-0 flex-1"><span className="block truncate type-body-sm font-medium">{c.title}{c.milestone && " ★"}</span><span className="block truncate type-caption text-muted">{[c.eraLabel, ...(c.occasion ?? []).map((o) => label(o)), c.dominantBrand].filter(Boolean).join(" · ")}</span></span><span className="type-caption text-muted">{t("dnaSchemes.id.abrir")}</span>
               </button></li>))}</ul>

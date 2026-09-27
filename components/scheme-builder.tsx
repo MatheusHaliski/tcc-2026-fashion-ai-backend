@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
@@ -86,7 +85,7 @@ export function SlotBrand({ piece }: { piece?: PieceView | null }) {
 
 /** Construtor de looks (RF5 criar / RF9 editar): modo → peças → dados → Background Studio → pré-visualização → salvar. */
 export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
-  const { t, rich } = useI18n(); const router = useRouter(); const toast = useToast(); const tax = useTaxonomy();
+  const { t, rich } = useI18n(); const toast = useToast(); const tax = useTaxonomy();
   const { data: b, loading, error, reload } = useApi<Builder>((signal) => api.get("/api/schemes/builder", { signal }), []);
   const [mode, setMode] = useState<"manual" | "ai">(initial?.creationMode === "AI_ASSISTED" ? "ai" : "manual");
   const [selected, setSelected] = useState<{ id: string; slot: string }[]>(initial ? initial.items.map((i) => ({ id: i.wardrobeItemId, slot: i.slot })) : []);
@@ -119,8 +118,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     if (out.length) toast.info(t("schemeBuilder.troca_mesmo_tipo", { old: out.map((o) => byId.get(o.id)?.name ?? "").join(", "), name: p.name }));
   };
   const go = (i: number) => { setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
-  // navegação livre (RF5): qualquer etapa cujo pré-requisito já está cumprido
-  const canGo = (i: number) => i <= 1 || (selected.length >= 2 && (i === 2 || !!form.title.trim()));
+  // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
+  const canGo = (i: number) => i < step || i <= 1 || (selected.length >= 2 && (i === 2 || !!form.title.trim()));
   const toggleTag = (k: "occasion" | "style", v: string, max: number) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : f[k].length < max ? [...f[k], v] : f[k] }));
   const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
   async function uploadPhoto(file: File) {
@@ -254,7 +253,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         )}
       </div>
       <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><SchemeCard scheme={draft} href="#" /></aside>
-      {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} onDone={() => router.push("/lookbook")} />}
+      {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );
 }
