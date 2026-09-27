@@ -13,11 +13,19 @@ A troca recomendada tem quatro peças:
 |---|---|---|
 | Avatar parecido, feito de uma foto | **Avatar SDK — MetaPerson** (serviço comercial) | Gera avatar de corpo inteiro a partir de **uma selfie de frente**, exporta GLB com esqueleto humanoide compatível com animações Mixamo e integra na web |
 | Roupa que veste e se mexe | **Moldes 3D de roupa por subcategoria**, com o mesmo esqueleto do avatar, e a foto da peça como textura; **animações Mixamo** | É assim que jogos e provadores 3D fazem: a roupa é uma malha própria presa aos ossos, então acompanha o corpo e o movimento |
-| Foto "vestida de verdade" | **Vertex AI Virtual Try-On** (Google, disponível em GA como `virtual-try-on-001`) ou **FASHN API** | Gera a imagem fotográfica da pessoa com a peça. Exige foto de corpo inteiro, então fica como opção |
+| Foto "vestida de verdade" | **FASHN API**, que já está integrada ao provador 2D (`TryOnService`); alternativa: **Vertex AI Virtual Try-On** (Google, GA como `virtual-try-on-001`) | Gera a imagem fotográfica da pessoa com a peça. Exige foto de corpo inteiro, então fica como opção |
 | Analisador que sempre preenche | A IA de visão que o projeto já usa, com **saída estruturada restrita à taxonomia**, cor medida nos pixels e confirmação da pessoa | Com a lista de valores dentro do esquema, a IA não consegue responder um valor fora da lista |
 | Marca pelo logo | O **pipeline de recortes** deste repositório (texto + símbolo, local) e um reconhecedor remoto: **IA de visão com os recortes** ou **Google Cloud Vision (detecção de logo)** | O logo pequeno some quando a foto inteira é reduzida; olhar recortes ampliados resolve a maior parte, e o estado "confirmar" cobre o resto |
 
 **Não usar Ready Player Me.** Foi comprado pela Netflix e encerrou a plataforma pública e as APIs em 31/01/2026.
+
+**Relação com o levantamento `servicos-externos-avatar-provador.md`** (outra sessão, já na main). Ele recomenda o
+"Plano A": nenhum serviço novo, corpo aberto com esqueleto (Anny, da NAVER LABS, ou SAM 3D Body + MHR, da Meta, ambos
+Apache-2.0) no worker que já existe, e o rosto como está hoje. Esta proposta concorda com o corpo e a roupa desse plano.
+A diferença está no rosto: a planilha de semelhança de hoje mostra que o rosto atual não chega a "parecido" (0 de 16).
+Para esse requisito, o caminho é o "Plano B" daquele documento, com um serviço de rosto. A dúvida que ele deixou
+aberta foi respondida: no MetaPerson, a **API REST é só do Enterprise**, mas o **editor embutido na página (JS API)**
+exporta o GLB no plano Pro. Não é preciso REST para integrar.
 
 ---
 
@@ -84,8 +92,9 @@ inteiro. Nenhum produto atual entrega as duas coisas numa só.
 | Opção | O que entrega | Custo e licença | Risco |
 |---|---|---|---|
 | **Avatar SDK — MetaPerson** (recomendado) | Uma selfie de frente vira avatar de corpo inteiro realista em cerca de um minuto; GLB/glTF/FBX com esqueleto humanoide e compatível com Mixamo; editor com cabelo, roupas e corpo; SDK web e API | Primeiro avatar grátis; integração no produto no plano Pro; API REST e roupas próprias só no Enterprise. Preço não publicado: pedir cotação | Depender de fornecedor; dado biométrico sai para terceiro (precisa de contrato de tratamento de dados e do consentimento que o app já coleta) |
-| **Meshcapade** (SMPL) | Avatar de foto, medidas, escaneamento ou vídeo; corpo anatomicamente correto, com esqueleto | Preço sob consulta | Mais forte em corpo e medidas que em rosto |
-| **MPFB 2 + rosto nosso** | Corpo base aberto (CC0) com esqueleto e medidas | Grátis | Rosto continua com a qualidade atual |
+| **Anny ou SAM 3D Body + MHR, com o rosto atual** (Plano A do outro levantamento) | Corpo aberto com esqueleto, ajustado pela foto e pelas medidas | Grátis (Apache-2.0), roda no worker existente | Rosto continua com a qualidade medida hoje: não resolve "parecido" |
+| **MPFB 2 + rosto atual** | Corpo base aberto (CC0) com esqueleto e medidas | Grátis | Mesma limitação de rosto |
+| Meshcapade (SMPL) | Corpo de foto ou medidas, com esqueleto | Sob consulta | O outro levantamento achou indício de descontinuação do Meshcapade Me; não recomendar sem confirmar |
 
 Critério para aceitar qualquer opção: nos mesmos 16 retratos da planilha, pelo menos 12 julgados "parecido" por três
 pessoas diferentes, e o reconhecedor facial confirmando a pessoa de frente e de 3/4.
@@ -189,7 +198,7 @@ orelhas do manequim, turbante, lenço e barba longa ausentes, manchas onde a fot
 | 2 · Roupa 3D | Moldes das 6 subcategorias mais comuns; pesos dos ossos; textura da foto; 3 animações Mixamo | 0% de interseção em 10 poses; animação sem descolar |
 | 3 · Analisador | Esquema da taxonomia na IA, cor por pixels, recortes, novas tentativas, confiança por campo | Metas da seção 5.3 no conjunto de avaliação |
 | 4 · Marca | Pipeline de recortes no backend (serviço de visão em Python) e reconhecedor remoto | 100% das fotos com estado; marca confirmada ≥ 98% certa num conjunto novo |
-| 5 · Foto vestida (opcional) | Vertex AI Virtual Try-On ou FASHN com foto de corpo inteiro | Comparação lado a lado aprovada por você |
+| 5 · Foto vestida (opcional) | FASHN, já integrado, com foto de corpo inteiro; Vertex AI como alternativa | Comparação lado a lado aprovada por você |
 
 ---
 
