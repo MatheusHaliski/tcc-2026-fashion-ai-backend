@@ -64,6 +64,16 @@ export async function detectBody(img: HTMLCanvasElement): Promise<BodyDetection>
   return { people, pose, world, mask, chin, ms: Math.round(performance.now() - t0) };
 }
 
+/** Máscara de classes (fundo, cabelo, pele, rosto, roupa, acessórios) de uma foto qualquer, até 720 px; null se falhar. */
+export async function segmentClasses(img: HTMLCanvasElement): Promise<ClassMask | null> {
+  try {
+    const k = Math.min(1, 720 / Math.max(img.width, img.height));
+    const seg = (await multiclassSegmenter()).segment(k < 1 ? scaled(img, k) : img);
+    const cm = seg.categoryMask; const out = cm ? { width: cm.width, height: cm.height, data: Uint8Array.from(cm.getAsUint8Array()) } : null;
+    seg.close(); return out;
+  } catch { return null; }
+}
+
 function scaled(img: HTMLCanvasElement, k: number): HTMLCanvasElement {
   const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
   c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height); return c;

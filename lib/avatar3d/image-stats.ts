@@ -168,6 +168,9 @@ export function fit2D(img: Pt[], canon: Pt[]): Sim2D {
 }
 export const apply2D = (t: Sim2D, x: number, y: number): Pt => [t.a * x - t.b * -y + t.tx, t.b * x + t.a * -y + t.ty];
 
+/** Alturas (canônico, cm) em que a silhueta do cabelo é medida: do alto da cabeça até abaixo dos ombros. */
+export const HAIR_LEVELS = Array.from({ length: 21 }, (_, i) => 16 - 2 * i);
+
 export interface HairStats {
   present: boolean;
   color: string | null;
@@ -177,6 +180,7 @@ export interface HairStats {
   bottom: number | null;   // ponto mais baixo do cabelo ao lado do rosto (cabelo longo: abaixo do queixo)
   fringe: number;          // fração da testa coberta (franja)
   cutTop: boolean;         // o cabelo encosta no topo da foto: a altura real é desconhecida
+  outline: number[];       // meia-largura do cabelo (cm) em HAIR_LEVELS (y = 16, 14, …, −24 no canônico); 0 = sem cabelo
   unsure: boolean;         // acima da testa há algo que não é pele nem cabelo reconhecido (peruca, chapéu, fundo)
 }
 
@@ -195,7 +199,7 @@ export function hairStats(img: Raster, mask: ArrayLike<number>, px: Pt[], toCano
   for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
     const x = gx * step, y = gy * step, i = y * w + x; const [X, Y] = apply2D(toCanon, x, y);
     if (Y > foreheadY - 3.5 && Y < foreheadY && Math.abs(X) < 4 && face[i]) { frN++; if (mask[i] > 0.5) fr++; }
-    if (Math.abs(X) > 13 || Y < -30) continue;           // longe demais da cabeça (meia-largura do rosto + 6 cm)
+    if (Math.abs(X) > 18 || Y < -30) continue;           // longe demais da cabeça (meia-largura do rosto + 10 cm)
     const isHair = mask[i] > 0.5 && !face[i]; if (isHair) hair[gy * W + gx] = 1;
     if (Y > foreheadY + 0.4 && Y < foreheadY + 3 && Math.abs(X) < 3) { if (isHair) seed.push(gy * W + gx); else if (!face[i]) { const o = i * 4; seedCol.push([data[o], data[o + 1], data[o + 2]]); } }
   }
@@ -207,17 +211,18 @@ export function hairStats(img: Raster, mask: ArrayLike<number>, px: Pt[], toCano
   }
   const rs: number[] = [], gs: number[] = [], bs: number[] = []; const tops: number[] = [], sides: number[] = [], bottoms: number[] = [];
   const near: number[][] = [], all: number[][] = [];
-  let area = 0, cutTop = false;
+  let area = 0, cutTop = false; const byLevel: number[][] = HAIR_LEVELS.map(() => []);
   for (let c = 0; c < W * H; c++) {
     if (!reach[c]) continue; const gx = c % W, gy = (c - gx) / W; const x = gx * step, y = gy * step, i = y * w + x; const [X, Y] = apply2D(toCanon, x, y);
     area += step * step;
     if (mask[i] > 0.75) {
-      const o = i * 4; const c = [data[o], data[o + 1], data[o + 2]]; all.push(c);
+      const o = i * 4; const c = [data[o], data[o + 1], data[o + 2]]; if (Math.abs(X) <= 13) all.push(c);
       if (Y > foreheadY - 2 && Math.abs(X) < 10) { near.push(c); rs.push(c[0]); gs.push(c[1]); bs.push(c[2]); }   // cor: o cabelo junto da cabeça
     }
     if (Math.abs(X) < 6) tops.push(Y);
     if (Y > -3 && Y < 8) sides.push(Math.abs(X));
     if (Math.abs(X) > 5.5) bottoms.push(Y);
+    const lv = Math.round((16 - Y) / 2); if (lv >= 0 && lv < HAIR_LEVELS.length) byLevel[lv].push(Math.abs(X));
     if (y <= Math.max(2, h * 0.015) && Math.abs(X) < 7) cutTop = true;
   }
   const coverage = faceArea ? area / faceArea : 0; let present = coverage > 0.08 && rs.length > 20;
@@ -236,7 +241,8 @@ export function hairStats(img: Raster, mask: ArrayLike<number>, px: Pt[], toCano
   }
   return {
     present, color: present ? hex([median(rs), median(gs), median(bs)]) : null, coverage,
-    top: tops.length ? percentile(tops, 98) : 0, side: sides.length ? percentile(sides, 98) : 0,
+    top: tops.length ? percentile(tops, 98) : 0, side: sides.length ? percentile(sides.filter((v) => v <= 13), 98) || 0 : 0,
+    outline: byLevel.map((v) => (v.length > 6 ? +percentile(v, 97).toFixed(1) : 0)),
     bottom: bottoms.length > 30 ? percentile(bottoms, 3) : null, fringe: frN ? fr / frN : 0, cutTop, unsure,
   };
 }

@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { useThree } from "@react-three/fiber";
 import { mediaUrl } from "@/lib/api/client";
 import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
 
@@ -86,3 +88,18 @@ export function rng(seed: number) {
 /** Tons de pele do provador (MannequinGeometry.SKIN_TONES); sem tom escolhido, o manequim é o de vitrine (marfim). */
 export const SKIN: Record<string, string> = { porcelana: "#F4D7C5", clara: "#E8C1A0", media: "#C99A6E", oliva: "#A97C50", morena: "#8A5A3B", escura: "#5E3A26", retinta: "#3F261A" };
 export const VITRINE = "#ECE6DC";
+
+/**
+ * Luz de estúdio por ambiente (sala neutra gerada no próprio navegador, sem baixar HDR): pele, cabelo e tecido
+ * aparecem na cor medida, sem o escurecimento de luzes só direcionais.
+ */
+export function StudioLight({ intensity = 0.9 }: { intensity?: number }) {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    const pm = new THREE.PMREMGenerator(gl); const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    const prev = scene.environment; const prevI = scene.environmentIntensity;
+    scene.environment = env; scene.environmentIntensity = intensity;
+    return () => { scene.environment = prev; scene.environmentIntensity = prevI; env.dispose(); pm.dispose(); };
+  }, [gl, scene, intensity]);
+  return null;
+}

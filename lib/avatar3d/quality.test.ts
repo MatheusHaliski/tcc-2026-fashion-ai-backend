@@ -62,11 +62,11 @@ describe("o conjunto de fotos", () => {
     expect(full.ready).toBe(true); expect(full.issues).toEqual([]); expect(full.ask).toEqual([]);
   });
   test("cabelo cortado pela foto pede uma foto com a cabeça inteira", () => {
-    const r = checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }, { role: "right", issues: [] }], { present: true, color: "#000000", coverage: 1, top: 9, side: 8, bottom: null, fringe: 0, cutTop: true, unsure: false });
+    const r = checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }, { role: "right", issues: [] }], { present: true, color: "#000000", coverage: 1, top: 9, side: 8, bottom: null, fringe: 0, cutTop: true, unsure: false, outline: [] });
     expect(codes(r.issues)).toEqual(["HAIR_CUT:warn"]); expect(r.ask).toEqual(["front-head"]);
   });
   test("peruca, chapéu ou fundo onde deveria haver cabelo: não inventa cabelo e pede outra foto", () => {
-    const r = checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }, { role: "right", issues: [] }], { present: false, color: null, coverage: 0, top: 0, side: 0, bottom: null, fringe: 0, cutTop: false, unsure: true });
+    const r = checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }, { role: "right", issues: [] }], { present: false, color: null, coverage: 0, top: 0, side: 0, bottom: null, fringe: 0, cutTop: false, unsure: true, outline: [] });
     expect(codes(r.issues)).toEqual(["HAIR_UNSURE:warn"]); expect(r.ask).toEqual(["front-hair"]);
   });
   test("blocking", () => { expect(blocking([{ code: "X", severity: "warn" }])).toBe(false); expect(blocking([{ code: "X", severity: "block" }])).toBe(true); });
