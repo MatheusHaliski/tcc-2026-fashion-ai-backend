@@ -8,7 +8,7 @@ import { CLS, P, mergeObservation, observeBody, type BodyObservation, type PoseP
 import { DEFAULT_BODY, buildSpec, defaultBodyModel, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
 import { legacyHeadSample, qualityReport } from "@/lib/avatar3d/metrics";
 import { legacySpec } from "@/lib/avatar3d/eval/legacy-spec";
-import { stripPerson } from "@/lib/pieces/person-filter";
+import { stripPerson, type GarmentPart } from "@/lib/pieces/person-filter";
 import { PRINT_MIN_NZ, garmentGeometry } from "@/lib/avatar3d/garment-geometry";
 import { garmentReport } from "@/lib/avatar3d/garment-metrics";
 import type { Look3dPiece } from "@/components/three/common";
@@ -106,7 +106,7 @@ export default function BodyLab() {
         const t0 = performance.now(); const gg = garmentGeometry(p, spec, img.width / img.height); const ms = Math.round(performance.now() - t0);
         return gg ? garmentReport(spec, gg.geo, gg.box, ms, alphaAt, { printMinNz: PRINT_MIN_NZ }) : null;
       },
-      stripPerson: async (url: string) => { const blob = await (await fetch(url)).blob(); const r = await stripPerson(new File([blob], "foto.jpg", { type: blob.type || "image/jpeg" })); const out = URL.createObjectURL(r.file); return { ...r, file: undefined, outUrl: out, bytes: r.file.size }; },
+      stripPerson: async (url: string, keep?: GarmentPart) => { const blob = await (await fetch(url)).blob(); const r = await stripPerson(new File([blob], "foto.jpg", { type: blob.type || "image/jpeg" }), { keep }); const out = URL.createObjectURL(r.file); return { ...r, file: undefined, outUrl: out, bytes: r.file.size }; },
       overlay: () => overlay.current?.toDataURL("image/png"), legacy: () => legacyCv.current?.toDataURL("image/png"),
       canvas: () => (document.querySelector("#body-lab-3d canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
     };

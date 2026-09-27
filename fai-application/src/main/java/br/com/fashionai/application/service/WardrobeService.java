@@ -350,7 +350,8 @@ public class WardrobeService {
         if (r.backgroundRemoved()) {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoSource));
+                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia",
+                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
         }
 
         Map<String, Object> quality = new LinkedHashMap<>();
@@ -487,67 +488,18 @@ public class WardrobeService {
     }
 
     static final String ANALYZER_SYSTEM = """
-            Você é o Piece Analyzer do Fashion AI. Você recebe fotos de UMA peça (roupa, calçado ou acessório) e responde
-            SOMENTE com JSON. A mensagem diz quais imagens vieram e em que ordem:
-            - Imagem 1: a peça inteira, recortada do fundo e endireitada.
-            - Folha de referências (quando vier): grade numerada com a imagem de referência de cada subtipo do tipo escolhido
-              pela pessoa. Compare o FORMATO da peça (silhueta, comprimento, gola, mangas, cano, abertura, bolsos) com cada
-              referência e escolha o subtipo mais parecido. Ignore cores, estampas e o selo "FAI" das referências: elas são
-              só modelos de formato.
-            - Zonas de marca (quando vierem): recortes ampliados dos lugares onde a marca costuma estar. Peça de cima:
-              · fundo da gola (etiqueta interna, vista pelo decote);
-              · peito esquerdo de quem veste (fica à DIREITA da foto);
-              · peito direito de quem veste (fica à ESQUERDA da foto);
-              · centro do peito.
-              Leia logotipos, bordados, estampas e etiquetas. Só informe a marca se conseguir ler o nome ou reconhecer o
-              logotipo com segurança; nunca invente.
-            JSON:
-            {"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
-             "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
-             "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
-             "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
-             "color": código da paleta, "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
-             "sex": um de [MASCULINO, FEMININO, UNISSEX], "occasion": até 2 códigos da lista de ocasiões,
-             "style": até 2 códigos da lista de estilos,
-             "brand": nome da marca ou null, "brandZone": id da zona em que a marca foi lida (ou "outra") ou null,
-             "brandEvidence": o que foi lido ou visto (ex.: "texto NIKE bordado no peito") ou null,
-             "photo": {"fullyVisible": a peça aparece inteira, sem partes cortadas pela borda da foto?,
-                       "viewAngle": "frontal_90" (câmera a 90°, de frente/de cima) | "angulo" | "lateral" | "dobrada",
-                       "singlePiece": há uma peça só (par de calçados conta como uma)?},
-             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1, "photo": 0-1},
-             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} caixa do logotipo/etiqueta de marca NA IMAGEM 1, em
-                     0–1000 relativos à imagem inteira, ou null}
-            Nunca descreva pessoas. Se não houver peça, devolva matchesCategory false e confidence 0 em tudo.""";
-
-    /** Mensagem do analisador: tipo escolhido, vocabulário permitido e o que é cada imagem anexada (na ordem). */
-    static String analyzerPrompt(String chosen, List<String> sheetLegend, List<BrandRegions.Zone> zones, List<SubtypeReferences.Match> ranking) {
-        StringBuilder p = new StringBuilder();
-        String category = chosen == null ? null : chosen;
-        if (category != null) {
-            p.append("Tipo escolhido pela pessoa: ").append(category).append(".\n");
-            p.append("Subtipos possíveis desse tipo: ").append(String.join(", ", Taxonomy.SUBCATEGORIES.get(category))).append(".\n");
-        } else {
-            p.append("Tipo não informado: descubra pela foto. Subtipos por tipo: ").append(Taxonomy.SUBCATEGORIES).append(".\n");
-        }
-        p.append("Ocasiões permitidas: ").append(String.join(", ", Taxonomy.allowedOccasions(category))).append(".\n");
-        p.append("Estilos: ").append(String.join(", ", Taxonomy.STYLES)).append(".\n");
-        p.append("Cores (códigos): ").append(String.join(", ", Taxonomy.COLORS.keySet())).append(".\n");
-        int n = 1;
-        p.append("Imagens anexadas: ").append(n++).append(" = peça inteira");
-        if (!sheetLegend.isEmpty()) {
-            p.append("; ").append(n++).append(" = folha de referências (").append(String.join(", ", sheetLegend)).append(")");
-        }
-        for (BrandRegions.Zone z : zones) {
-            p.append("; ").append(n++).append(" = zona de marca \"").append(z.id()).append("\"");
-        }
-        p.append(".\n");
-        if (!ranking.isEmpty()) {
-            p.append("Similaridade de silhueta medida localmente (0–1, só uma pista; decida pela comparação visual): ")
-                    .append(String.join(", ", ranking.stream().limit(5).map(m -> m.subcategory() + " " + m.score()).toList())).append(".\n");
-        }
-        p.append("Analise e responda só com o JSON.");
-        return p.toString();
-    }
+            Você é o Piece Analyzer do Fashion AI. Identifique a peça de roupa da imagem e responda SOMENTE com JSON:
+            {"name": string, "category": one of [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
+             "subcategory": string (código da taxonomia, ex.: t_shirt, jeans, casual_sneakers, handbag, dress),
+             "color": código da paleta (ex.: black, white, navy, denim, beige, red, olive, multicolor, print),
+             "material": one of [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+             "brand": string ou null (só se o logotipo for legível), "sex": one of [MASCULINO, FEMININO, UNISSEX],
+             "occasion": até 2 códigos, "style": até 2 códigos,
+             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1},
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (só logotipo ou símbolo de MARCA: bordado, etiqueta,
+                     patch ou marca pequena; caixa em 0–1000 relativa à imagem inteira) ou null se não houver. Frases,
+                     palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO são logo: devolva null}
+            Nunca descreva pessoas. Se não houver peça de roupa, devolva confidence 0 em tudo.""";
 
     static final String MODERATION_SYSTEM = """
             Você é o Content Moderator do Fashion AI. Avalie a imagem e responda SOMENTE com JSON:
@@ -894,6 +846,7 @@ public class WardrobeService {
             if (r.get("studio") instanceof Map<?, ?> st && !Boolean.FALSE.equals(form.studio())) {
                 Map<String, Object> summary = new LinkedHashMap<>();
                 summary.put("framing", st.get("framing"));
+                summary.put("feed", st.get("feed"));
                 summary.put("logo", st.get("logo"));
                 summary.put("metrics", st.get("metrics"));
                 flatMeta.put("studio", summary);
@@ -1482,7 +1435,8 @@ public class WardrobeService {
     }
 
     /** Dicas do estúdio a partir do que já foi guardado: lados cortados (Flat Lay) e logo apontado pela IA. */
-    static br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(String kind, Object truncatedSides, Object logo) {
+    static br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(String category, String subcategory, Object truncatedSides, Object logo) {
+        String kind = studioKind(category, subcategory);
         java.util.Set<String> truncated = truncatedSides instanceof List<?> l
                 ? l.stream().map(String::valueOf).collect(Collectors.toCollection(java.util.LinkedHashSet::new)) : null;
         double[] box = null;
@@ -1490,13 +1444,14 @@ public class WardrobeService {
                 && b.stream().allMatch(v -> v instanceof Number)) {
             box = b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray();
         }
-        return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia");
+        return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia",
+                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind));
     }
 
     br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(WardrobeItem w) {
         Map<String, Object> meta = Json.map(w.getFlatLayMetadataJson());
         Object logo = meta.get("detected") instanceof Map<?, ?> d ? d.get("logo") : null;
-        return studioHints(studioKind(w.getCategory(), w.getSubcategory()), meta.get("truncated_sides"), logo);
+        return studioHints(w.getCategory(), w.getSubcategory(), meta.get("truncated_sides"), logo);
     }
 
     /** Fonte do estúdio da peça: o recorte em alta resolução guardado no cadastro ou, sem ele, a imagem atual. */
@@ -1522,6 +1477,7 @@ public class WardrobeService {
             summary.put("stages", info.get("stages"));
             summary.put("metrics", info.get("metrics"));
             summary.put("framing", info.get("framing"));
+            summary.put("feed", info.get("feed"));
             summary.put("logo", info.get("logo"));
             summary.put("provider", String.valueOf(info.get("provider")));
             meta.put("studio", summary);
@@ -1538,8 +1494,7 @@ public class WardrobeService {
         if (w.getStudioImageUrl() == null && !createIfMissing) {
             return;
         }
-        var hints = sameSource ? studioHints(w) : new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                studioKind(w.getCategory(), w.getSubcategory()), null, null, null);
+        var hints = sameSource ? studioHints(w) : studioHints(w.getCategory(), w.getSubcategory(), null, null);
         Map<String, Object> info = studioShot(w.getUser().getId(), cutout, w.getStudioBackdrop() == null ? "auto" : w.getStudioBackdrop(),
                 "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/", hints);
         applyStudio(w, info);
@@ -1594,11 +1549,14 @@ public class WardrobeService {
             String name = basePath + "studio-" + res.backdrop().id() + "-" + stamp;
             MediaStoragePort.StoredObject shot = media.put(name + ".jpg", res.studioJpeg(), "image/jpeg");
             media.put(name + ".thumb.jpg", res.thumbJpeg(), "image/jpeg");       // miniatura: mesma URL com ".thumb.jpg"
+            media.put(name + ".feed.jpg", res.feedJpeg(), "image/jpeg");         // feed 4:5 por template: ".feed.jpg"
             String detailUrl = res.detailJpeg() == null ? null : media.put(name + ".detail.jpg", res.detailJpeg(), "image/jpeg").url();
             MediaStoragePort.StoredObject enhanced = media.put(basePath + "enhanced-" + stamp + ".png", res.enhancedPng(), "image/png");
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("url", shot.url());
             info.put("thumbUrl", Views.studioThumb(shot.url()));
+            info.put("feedUrl", Views.studioFeed(shot.url()));
+            info.put("feed", res.feed());
             info.put("detailUrl", detailUrl);
             info.put("enhancedUrl", enhanced.url());
             info.put("backdrop", res.backdrop().id());
@@ -1654,8 +1612,9 @@ public class WardrobeService {
         }
         String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
-                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), Set.of(),
-                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo"));
+                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
+                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
+                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
         if (info != null) {
             applyStudio(w, info);
         }
@@ -1702,8 +1661,8 @@ public class WardrobeService {
         }
         Map<?, ?> pf = r.get("prefill") instanceof Map<?, ?> m ? m : Map.of();
         Map<?, ?> flat = r.get("flatLayMetadata") instanceof Map<?, ?> m ? m : Map.of();
-        var hints = studioHints(studioKind(pf.get("category") == null ? null : String.valueOf(pf.get("category")),
-                pf.get("subcategory") == null ? null : String.valueOf(pf.get("subcategory"))), flat.get("truncated_sides"), pf.get("logo"));
+        var hints = studioHints(pf.get("category") == null ? null : String.valueOf(pf.get("category")),
+                pf.get("subcategory") == null ? null : String.valueOf(pf.get("subcategory")), flat.get("truncated_sides"), pf.get("logo"));
         Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
                 "users/" + user.id() + "/drafts/" + draftId + "/", hints);
         if (info == null) {

@@ -14,7 +14,8 @@ import { useRouter } from "next/navigation";
 import { FaiIcon } from "@/components/fai-icon";
 import { AnatomyBody, CompactSignature, effectiveAnatomy, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
-import { CardActions } from "@/components/interactions";
+import { CardActions, useRemix } from "@/components/interactions";
+import { Generate3DDialog } from "@/components/generate-3d";
 import { useDetailModal } from "@/components/detail-modal";
 
 /** Escala da popularidade (Hype): sem vermelho — nota baixa não é erro, é look novo ou pouco visto. */
@@ -62,15 +63,14 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
   );
 }
 
-/** Menu ⋯ do post (trailing): só salvar o look no feed e, para quem publicou, editar e excluir. */
+/**
+ * Menu ⋯ do post: salvar mora na linha de ações; aqui ficam as opções contextuais — remixar (quem não é o autor), ver o
+ * look no manequim 3D e, para quem publicou, editar e excluir.
+ */
 function PostMenu({ scheme }: { scheme: SchemeView }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
-  const [saved, setSaved] = useState(!!scheme.viewer?.saved); const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false);
-  const toggleSave = async () => {
-    if (!user) { window.location.href = "/login"; return; }
-    const was = saved; setSaved(!was);
-    try { await api.post(`/api/interactions/SCHEME/${scheme.id}/saves`); toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved")); } catch (e) { setSaved(was); toast.fromError(e); }
-  };
+  const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false); const [view3d, setView3d] = useState(false);
+  const { remix } = useRemix("SCHEME", scheme.id);
   const owner = !!user && (scheme.viewer?.canEdit || scheme.owner?.id === user.id);
   async function remove() {
     setBusy(true);
@@ -80,10 +80,12 @@ function PostMenu({ scheme }: { scheme: SchemeView }) {
   return (
     <>
       <ActionMenu className="c-menu" label={t("anatomy.menu.label")} items={[
-        { label: saved ? t("anatomy.menu.unsave") : t("anatomy.menu.save"), onSelect: toggleSave, icon: <FaiIcon id="SOC-05" size={20} variant="glyph" decorative /> },
+        { label: t("interactions.remixAction"), onSelect: remix, hidden: owner, icon: <FaiIcon id="SOC-04" size={20} variant="glyph" decorative /> },
+        { label: t("pieceDetail.manequim_3d"), onSelect: () => setView3d(true), icon: <FaiIcon id="ACT-20" size={20} variant="glyph" decorative /> },
         { label: t("anatomy.menu.edit"), href: `/schemes/${scheme.id}/edit`, hidden: !owner, icon: <FaiIcon id="SOC-11" size={20} variant="glyph" decorative /> },
         { label: t("common.delete"), onSelect: () => setConfirm(true), hidden: !owner, danger: true },
       ]} />
+      {view3d && <Generate3DDialog targets={[{ kind: "scheme", id: scheme.id, title: scheme.title }]} onClose={() => setView3d(false)} />}
       <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("schemeCard.excluir_titulo")}
         footer={<><Button onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy} onClick={remove}>{t("common.delete")}</Button></>}>
         <p className="type-body">{t("schemeCard.excluir_texto")}</p>
@@ -204,7 +206,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         )}
       </div>
-      {!preview && <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact} />}
+      {!preview && <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact} reactions={expanded} />}
       {footer && <div className="c-owner">{footer}</div>}
       {extra && <div className="c-extra">{extra}</div>}
     </article>
