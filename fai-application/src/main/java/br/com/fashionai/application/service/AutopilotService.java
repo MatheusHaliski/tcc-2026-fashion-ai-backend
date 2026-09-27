@@ -296,7 +296,7 @@ public class AutopilotService {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         long total = pieces.countByUserId(user.id());
         if (eligible.size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.o_autopiloto_precisa_de_ao", MIN_PIECES, eligible.size()), Map.of("href", "/add-piece", "pieces", total));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.o_autopiloto_precisa_de_ao", MIN_PIECES, eligible.size()), Map.of("href", "/pieces/new", "pieces", total));
         }
         WeatherService.Context ctx = weather.resolve(req.latitude(), req.longitude(), req.city());
         List<String> occasions = req.occasion() == null ? List.of() : req.occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).toList();
@@ -376,7 +376,7 @@ public class AutopilotService {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         if (eligible.size() < MIN_PIECES) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.cadastre_ao_menos_pecas_disponiveis", MIN_PIECES),
-                    Map.of("href", "/add-piece"));
+                    Map.of("href", "/pieces/new"));
         }
         LocalDate start = (req.weekStart() == null ? LocalDate.now(FaiPointsService.ZONE) : req.weekStart()).with(DayOfWeek.MONDAY);
         List<DayRequest> days = new ArrayList<>();

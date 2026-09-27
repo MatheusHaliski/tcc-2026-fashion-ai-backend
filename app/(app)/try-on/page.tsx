@@ -115,7 +115,7 @@ function TryOnInner() {
     try { const r = await api.post<{ ok: boolean; message?: string }>(`/api/pieces/${id}/background-removal`); if (r.ok) { toast.success(t("tryOn.fundo_removido_a_peca_agora")); reload(); } else toast.info(r.message ?? t("tryOn.nao_deu_para_remover_o")); } catch (e) { toast.fromError(e); } finally { setFixing(null); }
   }
 
-  if (error instanceof ApiError && error.code === "ACERVO_VAZIO") return <><PageHeader title={t("nav.tryon")} kicker="RF18" /><EmptyState title={t("tryOn.seu_guarda_roupa_ainda_esta")} hint={error.message} action={<Link href="/add-piece" className="btn btn-primary">{t("common.cadastrar_peca")}</Link>} /></>;
+  if (error instanceof ApiError && error.code === "ACERVO_VAZIO") return <><PageHeader title={t("nav.tryon")} kicker="RF18" /><EmptyState title={t("tryOn.seu_guarda_roupa_ainda_esta")} hint={error.message} action={<Link href="/pieces/new" className="btn btn-primary">{t("common.cadastrar_peca")}</Link>} /></>;
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
   const m = data.mannequin;
@@ -217,7 +217,7 @@ function TryOnInner() {
           {SLOTS.map((s) => { const list = data.pieces?.[s] ?? []; return (
             <section key={s} ref={(el) => { rackRefs.current[s] = el; }} aria-label={t("tryOn.guarda_roupa_lugar", { slot: slotName[s] })} className="scroll-mt-20">
               <h2 className="type-h3 mb-2">{slotName[s]} <span className="type-caption text-muted">· {list.length}</span></h2>
-              {list.length === 0 ? <p className="type-caption text-muted">{t("tryOn.nenhuma_peca_neste_lugar")} <Link href="/add-piece" className="underline">{t("common.cadastrar_peca")}</Link></p> : (
+              {list.length === 0 ? <p className="type-caption text-muted">{t("tryOn.nenhuma_peca_neste_lugar")} <Link href="/pieces/new" className="underline">{t("common.cadastrar_peca")}</Link></p> : (
                 <div className="flex flex-wrap gap-2">{list.map((e) => { const isOn = worn[s] === e.piece.id; return (
                   <div key={e.piece.id} className="grid gap-1">
                     <button type="button" aria-pressed={isOn} title={isOn ? t("tryOn.vestida_toque_para_tirar") : t("tryOn.toque_para_vestir")}

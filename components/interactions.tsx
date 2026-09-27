@@ -27,7 +27,9 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
     if (!user) { router.push("/login"); return; }
     try {
       const r = await api.post<{ url?: string; link?: string }>(`/api/interactions/${type}/${id}/shares`, { channel, caption });
-      const url = r.url ?? r.link ?? `${window.location.origin}/${type === "PIECE" ? "pieces" : "schemes"}/${id}`;
+      // a API devolve o caminho no app (/pieces/…, /schemes/…, /dna-schemes/…): o link copiado leva o domínio
+      const path = r.url ?? r.link ?? `/${type === "PIECE" ? "pieces" : type === "DNA_SCHEME" ? "dna-schemes" : "schemes"}/${id}`;
+      const url = path.startsWith("/") ? `${window.location.origin}${path}` : path;
       if (channel === "EXTERNAL") { await navigator.clipboard.writeText(url); toast.success(t("common.copied")); } else toast.success(t("interactions.sharedToFeed"));
       onClose(); onShared?.();
     } catch (e) { toast.fromError(e); }

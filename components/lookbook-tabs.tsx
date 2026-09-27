@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { Page, PieceView, SchemeView, UserCard } from "@/lib/api/types";
@@ -16,7 +16,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
-type TabId = "closet" | "looks" | "dna" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
+export type TabId = "closet" | "looks" | "dna" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 /** estado da peça no closet (valores aceitos por WardrobeService.stateMatches); "venda" = sub-aba Peças à venda (RF4.CA8) */
@@ -27,6 +27,8 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
   const { t } = useI18n(); const { user } = useAuth();
   const { data: ov, loading, error, reload } = useApi<Overview>((signal) => api.get(`/api/users/${ownerId}/lookbook`, { signal, anonymous: !user }), [ownerId, !!user]);
   const [tab, setTab] = useState<TabId>(initialTab);
+  // um link para a própria página com outro ?tab= (ex.: "Marcar um look salvo" na aba Look do dia) troca a aba
+  useEffect(() => { setTab(initialTab); }, [initialTab]);
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !ov) return <Skeleton className="h-64" />;
   if (!ov.visible) return <EmptyState title={t("lookbookTabs.perfil_privado")} hint={t("lookbookTabs.siga_esta_pessoa_para_ver")} />;
