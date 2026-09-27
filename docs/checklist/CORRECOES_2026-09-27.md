@@ -66,3 +66,37 @@ Verificação geral desta entrega: `tsc` sem erros · 56 testes de frontend (vit
 - Métricas de fotografia profissional no estúdio da peça (RF4) — refino do pipeline de servidor.
 - Relatórios de pesquisa do pipeline de imagem de peças (qualidade e isolamento/enquadramento).
 - Validação ponta a ponta com banco e fotos reais (as capturas usam API simulada).
+
+## 4. Itens acrescentados ao plano depois da primeira entrega
+
+| # | Ponto | Estado | Evidência / plano |
+|---|-------|--------|-------------------|
+| 2h | "Analisar peça" (RF4) preenche **todos** os campos, sem exceção | ✅ feito | Backend `WardrobeService.prefill` (estático): nome, categoria, subcategoria, cor, material, marca ("Sem marca" quando não há logo), sexo, ocasião, estilo, tamanho (M) e preço estimado pelo tipo — o palpite da IA abaixo da confiança entra em vez de ficar vazio; taxonomia cobre o resto. Teste `WardrobePrefillTest` (3 casos: IA confiante, sem reconhecimento, palpite fraco). Frontend `pieces/new/page.tsx` aplica todos os campos e avisa "A IA preencheu todos os campos… confira". |
+| 3 | Provador: a peça deve vestir o corpo do manequim com precisão; o manequim deve ser o avatar 3D do usuário (semblante, busto, corpo, proporções, tipo de corpo, cintura, pele, cabelo, olhos, nariz) | ⏳ planejado | Trabalho da próxima etapa (tarefa #127): (1) provador 2D e 3D passam a usar o avatar salvo (`/api/me/avatar3d`: rosto medido pelas fotos + corpo medido pela foto de corpo inteiro) em vez do manequim genérico; (2) vestir a peça pelo molde do corpo (seções do tronco/braços do `buildSpec`) com deformação da foto da peça para os contornos do manequim, em vez de colagem plana; (3) pele, cabelo e olhos do avatar aplicados ao busto; (4) métricas de aderência (sobreposição peça × silhueta do manequim, vazamento fora do corpo) com limiar de aceitação. Limite honesto: com uma única foto, proporções e tipo de corpo são **estimados** (fonte marcada como estimada/ajustada pela pessoa no editor do corpo), não medidos com precisão de escâner. |
+
+## 5. Conferência final (27/09, depois de tudo pronto)
+
+Roteiro automatizado `verify.mjs` (Playwright, API simulada) + verificações estáticas; resultado bruto em
+`conferencia-2026-09-27.json`.
+
+| Item | O que foi conferido | Resultado |
+|------|---------------------|-----------|
+| 1a | Clique no stepper volta de "Detalhes" para "Peças" | ✅ etapa atual = "Peças" |
+| 1b | Escolher Peça 1 e depois Peça 2 (mesmo tipo) | ✅ prévia fica com Peça 2, 3 e 4 (uma por tipo); cada linha da prévia com borda (`v-criar-look-pecas.png`) |
+| 1c/1d | `applyComposition` + `onePerType` | ✅ estático (código) + `SchemeRulesTest` |
+| 1e | Payload real do builder lido pelo backend | ✅ `SchemeFormPayloadTest` |
+| 1f | Etapa Detalhes: "Pesquisando selos possíveis…" e depois a lista | ✅ status visível; opções "Zara · marca", "Anitta · celebridade" (`v-criar-look-detalhes.png`) |
+| 1g | Salvar na última etapa | ✅ modal "Parabéns! Seu look foi criado com sucesso!" com o look ampliado dentro (`v-criar-look-sucesso.png`) |
+| 1h | Filtro de estado do closet | ✅ `WardrobeStateFilterTest` (singular/plural, à venda, favoritos) |
+| 1i/1p | `/schemes/s1` e `/pieces/p1` | ✅ um único card, 0 texto fora dele, último bloco = botões do dono (`c-owner`) (`v-scheme-ampliado.png`, `v-piece-ampliada.png`) |
+| 1j/1m/1n/1v | Textos/botões removidos | ✅ 0 ocorrências no código |
+| 1o | Menu ⋯ do look | ✅ só "Salvar, Editar, Excluir"; 8 ações do post em ícone (curtir, comentar, compartilhar, remixar, 3 reações, 3D) |
+| 1u | Contadores | ✅ "12 curtidas · Ver os 3 comentários · 1 compartilhamento · 2 remixes · 2 Trend" abaixo dos ícones |
+| 1l | `ul/ol` cruas | ✅ 0 restantes fora dos componentes estruturais (nav, stepper, gráficos) |
+| 1q/1r | Clicar no picker "Casual" | ✅ pedido `GET /api/me/photos?occasion=casual…`; 0 seções empilhadas |
+| 1s/1t | Estático | ✅ 0 ocorrências de "Criar look" na aba e de filtros de foto |
+| 2a/2b/2d/2f/2g | Estático | ✅ 0 ocorrências (peça única, textos de marca, campos removidos, dados de processamento, botão/mensagem de upload) |
+| 2c | Marca "Zara" + tipo → aba Mais detalhes | ✅ sugestão "Zara · marca · peça semelhante" por IA; seta "›" no summary (`v-peca-selos-ia.png`) |
+| 2g | Corpo humano na foto da peça | ✅ `portrait.jpg`: pessoa detectada, rosto/mãos removidos (9% da imagem), terno preservado (`v-sem-corpo-portrait.jpg`); `male_full_height_hands.jpg`: 2% removido, roupa preservada |
+| 2h | Prefill completo | ✅ `WardrobePrefillTest` |
+| geral | tsc · vitest 56 · i18n 0 erros · backend `mvn test` verde | ✅ |

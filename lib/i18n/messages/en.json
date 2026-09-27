@@ -2235,6 +2235,7 @@
   "piece.lowConfidence": "AI was not confident enough; fill in manually.",
   "piece.maxFiles": "up to 10 photos",
   "piece.prefilled": "Pre-filled by AI — review before saving",
+  "piece.prefilled_all": "The AI filled in every field (price estimated by piece type) — check before saving.",
   "piece.useDefault": "Use the category's default image",
   "pieceCard.favorite": "Mark as favorite",
   "pieceCard.markAvailable": "Mark as available",

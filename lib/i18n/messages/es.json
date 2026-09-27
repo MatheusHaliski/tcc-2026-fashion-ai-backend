@@ -2235,6 +2235,7 @@
   "piece.lowConfidence": "La IA no tuvo confianza suficiente; completa manualmente.",
   "piece.maxFiles": "hasta 10 fotos",
   "piece.prefilled": "Rellenado por la IA — revisa antes de guardar",
+  "piece.prefilled_all": "La IA completó todos los campos (precio estimado por tipo de pieza) — revisa antes de guardar.",
   "piece.useDefault": "Usar imagen por defecto de la categoría",
   "pieceCard.favorite": "Marcar como favorita",
   "pieceCard.markAvailable": "Marcar como disponible",

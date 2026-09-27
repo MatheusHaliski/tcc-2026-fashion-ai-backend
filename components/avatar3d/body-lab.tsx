@@ -8,6 +8,7 @@ import { CLS, P, mergeObservation, observeBody, type BodyObservation, type PoseP
 import { DEFAULT_BODY, buildSpec, defaultBodyModel, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
 import { legacyHeadSample, qualityReport } from "@/lib/avatar3d/metrics";
 import { legacySpec } from "@/lib/avatar3d/eval/legacy-spec";
+import { stripPerson } from "@/lib/pieces/person-filter";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false });
@@ -89,6 +90,8 @@ export default function BodyLab() {
   useEffect(() => {
     (window as unknown as { __bodyLab: unknown }).__bodyLab = {
       run, setView: (v: AvatarView) => setView(v),
+      // conferência do pipeline da peça (RF4): corpo humano fora da foto, só a roupa fica
+      stripPerson: async (url: string) => { const blob = await (await fetch(url)).blob(); const r = await stripPerson(new File([blob], "foto.jpg", { type: blob.type || "image/jpeg" })); const out = URL.createObjectURL(r.file); return { ...r, file: undefined, outUrl: out, bytes: r.file.size }; },
       overlay: () => overlay.current?.toDataURL("image/png"), legacy: () => legacyCv.current?.toDataURL("image/png"),
       canvas: () => (document.querySelector("#body-lab-3d canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
     };

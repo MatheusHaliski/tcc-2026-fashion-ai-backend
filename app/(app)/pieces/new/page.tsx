@@ -18,7 +18,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson } from "@/lib/pieces/person-filter";
 
-interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; overall?: number; manualFillRequired?: boolean; warning?: string }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
+interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
 type Preview = "studio" | "detail" | "flat" | "original";
 const PREVIEW_LABEL: Record<Preview, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get flat() { return tr("pieces.new.flat_lay"); }, get original() { return tr("common.original"); } };
 /** Etapas do criador de peça (RF4): foto → dados → mais detalhes → arte de fundo → revisar e salvar. */
@@ -56,9 +56,16 @@ function NewPiece() {
     const d = await analyze.run(file);
     if (!d) return;
     setDraft(d); setMode(d.studio ? "studio" : "flat");
-    const p = d.prefill;
-    setValue((v) => ({ ...v, draftId: d.draftId, useDefaultImage: false, name: p?.name ?? v.name, category: p?.category ?? v.category, subcategory: p?.subcategory ?? v.subcategory, color: p?.color ?? v.color, material: p?.material ?? v.material, brandName: p?.brand ?? v.brandName, sex: p?.sex ?? v.sex, occasion: p?.occasion ?? v.occasion, style: p?.style ?? v.style }));
-    if (p?.manualFillRequired) toast.info(t("piece.lowConfidence"));
+    // RF4: "Analisar peça" preenche todos os campos, sem exceção — o backend nunca devolve campo vazio (Prefill completo);
+    // aqui só garantimos o mesmo no cliente, caso algum valor venha nulo de um motor antigo
+    const p = d.prefill ?? {};
+    const category = p.category ?? "upper_piece";
+    setValue((v) => ({ ...v, draftId: d.draftId, useDefaultImage: false,
+      name: p.name ?? v.name ?? "", category, subcategory: p.subcategory ?? tax?.subcategories?.[category]?.[0] ?? v.subcategory, color: p.color ?? v.color ?? "black",
+      material: p.material ?? (v.material || "COTTON"), sex: p.sex ?? v.sex ?? "UNISSEX", size: p.size ?? v.size ?? "m", price: p.price != null ? String(p.price) : v.price || "0",
+      occasion: p.occasion?.length ? p.occasion : v.occasion.length ? v.occasion : ["casual"], style: p.style?.length ? p.style : v.style.length ? v.style : ["classic"],
+      brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" }));
+    toast.info(p.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all"));
   }
   /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
   async function studio(backdrop: string, force = false) {
@@ -152,7 +159,7 @@ function NewPiece() {
               {batch.length === 0 && nav}
             </Card>
           )}
-          {step === "data" && <Card>{draft?.prefill && !draft.prefill.manualFillRequired && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{t("piece.prefilled")}</p>}<PieceFields value={value} onChange={setValue} error={create.error} />{nav}</Card>}
+          {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{draft.prefill.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all")}</p>}<PieceFields value={value} onChange={setValue} error={create.error} />{nav}</Card>}
           {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={create.error} />{nav}</Card>}
           {step === "art" && <div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} styles={value.style} occasions={value.occasion} layoutPanel={artPanel} />{nav}</div>}
           {step === "review" && (
