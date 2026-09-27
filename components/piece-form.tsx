@@ -6,7 +6,7 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
-import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
+import { keepAllowed } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -93,8 +93,7 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
   const occasions = allowedOccasions(value.category) ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
-  // código fora da lista (palpite antigo da IA, peça antiga): o seletor mostra com a explicação e o botão Remover, e
-  // validatePieceForm não deixa salvar — nada é apagado sem a pessoa ver.
+  // código fora da taxonomia (peça antiga): o ChipMultiSelect mostra o problema com "Remover" — nada some em silêncio
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
@@ -48,7 +48,7 @@ const SOCIAL_PATHS = {
   bookmark: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z",
 } as const;
 export type SocialIconName = keyof typeof SOCIAL_PATHS;
-export function SocialIcon({ name, filled, size = 22 }: { name: SocialIconName; filled?: boolean; size?: number }) {
+export function SocialIcon({ name, filled, size = 24 }: { name: SocialIconName; filled?: boolean; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false" className="c-act-icon"
       fill={filled && name !== "share" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
@@ -71,10 +71,11 @@ export function useRemix(type: TargetType, id: string) {
 
 /**
  * Ações do post (RF7.CA11 · RF19) — uma linha só, igual em todo card: curtir, comentar e compartilhar à esquerda, cada
- * ícone com a sua contagem ao lado; salvar à direita. Todos com o mesmo tamanho (ícone 22 px), a mesma área de toque
+ * ícone com a sua contagem ao lado; salvar à direita. Todos com o mesmo tamanho (ícone 24 px), a mesma área de toque
  * (44 px em tela de toque), nome acessível com a contagem e estado (aria-pressed) — curtido e salvo ficam preenchidos.
  * Não existe linha "N curtidas" separada: cada número aparece uma vez, junto da ação. Reações (Trend, Elegante,
- * Criativo) são detalhe: aparecem como etiquetas com texto só no detalhe (`reactions`).
+ * Criativo) são detalhe (`reactions`): pílulas com o ícone FAI grande (28 px, variante glyph-lg), o nome e a contagem,
+ * no padrão das reações de redes sociais atuais — o estado ativo muda fundo e borda, não só a cor.
  */
 export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
   /** compatibilidade: salvar agora está sempre na linha */ withSave?: boolean; with3d?: boolean }) {
@@ -87,30 +88,38 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   useEffect(() => { setMine3(viewer?.reactions ?? []); setRx(counters?.reactions ?? {}); }, [JSON.stringify(viewer?.reactions), JSON.stringify(counters?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
   const base = `/api/interactions/${type}/${id}`;
   const guard = () => { if (!user) { router.push("/login"); return false; } return true; };
-  async function optimistic(apply: () => void, undo: () => void, call: () => Promise<unknown>) {
-    if (!guard()) return;
+  // uma requisição por ação de cada vez: enquanto curtir/salvar está a caminho, novos toques são ignorados (sem pedidos
+  // duplicados nem contagem que anda duas vezes); se o servidor recusar, o estado e a contagem voltam e aparece o erro
+  const inflight = useRef(new Set<string>()); const [busy, setBusy] = useState<Record<string, boolean>>({});
+  async function optimistic(key: string, apply: () => void, undo: () => void, call: () => Promise<unknown>, done?: () => void) {
+    if (!guard() || inflight.current.has(key)) return;
+    inflight.current.add(key); setBusy((b) => ({ ...b, [key]: true }));
     apply();
-    try { await call(); } catch (e) { undo(); toast.fromError(e); }
+    try { await call(); done?.(); } catch (e) { undo(); toast.fromError(e); }
+    finally { inflight.current.delete(key); setBusy((b) => ({ ...b, [key]: false })); }
   }
-  const like = () => { const was = liked; optimistic(() => { setLiked(!was); setLikes((n) => n + (was ? -1 : 1)); }, () => { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); }, () => api.post(`${base}/reactions`, { reaction: "LIKE" })); };
+  const like = () => { const was = liked; optimistic("like", () => { setLiked(!was); setLikes((n) => n + (was ? -1 : 1)); }, () => { setLiked(was); setLikes((n) => n + (was ? 1 : -1)); }, () => api.post(`${base}/reactions`, { reaction: "LIKE" })); };
   const react = (r: string) => {
     const was = mine3.includes(r);
     const apply = (on: boolean) => { setMine3((l) => (on ? [...l, r] : l.filter((x) => x !== r))); setRx((m) => ({ ...m, [r]: Math.max(0, (m[r] ?? 0) + (on ? 1 : -1)) })); };
-    optimistic(() => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
+    optimistic(`rx-${r}`, () => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
   };
-  const save = () => { const was = saved; optimistic(() => { setSaved(!was); toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved")); }, () => setSaved(was), () => api.post(`${base}/saves`)); };
+  // "Salvo" só aparece depois que o servidor confirmou
+  const save = () => { const was = saved; optimistic("save", () => setSaved(!was), () => setSaved(was), () => api.post(`${base}/saves`), () => toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved"))); };
   // no card, números grandes sem decimal ("1 mil"), para a linha caber em 2 colunas no celular; no detalhe, "1,2 mil"
   const n = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: compact ? 0 : 1 });
   const commentsN = counters?.comments ?? 0, sharesN = counters?.shares ?? 0;
   const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean } = {}) => (
-    <button key={key} type="button" className={`c-act is-${key}`} aria-pressed={opts.pressed} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
+    <button key={key} type="button" className={`c-act is-${key}`} aria-pressed={opts.pressed} aria-busy={busy[key] || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
       onClick={preview ? undefined : onClick} disabled={preview} tabIndex={preview ? -1 : undefined}>
       <SocialIcon name={icon} filled={opts.pressed} />
       {opts.count !== undefined && <span className="c-act-n tabular" aria-hidden>{n(opts.count)}</span>}
     </button>
   );
   return (
-    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""}`}>
+    // contagens muito longas (ex.: "12 mi" + "988 mil"): no card estreito o número de comentários sai da linha
+    // (continua no nome acessível e no detalhe) para a linha nunca estourar a coluna
+    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
       <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
         {act("like", "heart", t("interactions.like_n", { count: likes }), like, { pressed: liked, count: likes })}
         {act("comment", "comment", t("interactions.comment_n", { count: commentsN }), () => setComments(true), { count: commentsN, haspopup: true })}
@@ -121,11 +130,17 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
       </div>
       {reactions && !preview && (
         <div className="c-reactions" role="group" aria-label={t("interactions.reacoes")}>
-          {REACTIONS.map((r) => (
-            <button key={r.id} type="button" className="chip c-reaction" aria-pressed={mine3.includes(r.id)} onClick={() => react(r.id)}>
-              {t("interactions.reaction_chip", { id: r.id, count: rx[r.id] ?? 0 })}
-            </button>
-          ))}
+          {REACTIONS.map((r) => {
+            const count = rx[r.id] ?? 0;
+            return (
+              <button key={r.id} type="button" className="c-reaction" aria-pressed={mine3.includes(r.id)} aria-busy={busy[`rx-${r.id}`] || undefined} onClick={() => react(r.id)}
+                aria-label={t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count })}>
+                <FaiIcon id={r.icon} size={28} variant="glyph-lg" decorative className="c-reaction-icon" />
+                <span className="c-reaction-label">{t(`interactions.reaction_nome.${r.id}`)}</span>
+                {count > 0 && <span className="c-reaction-n tabular" aria-hidden>{n(count)}</span>}
+              </button>
+            );
+          })}
           {(counters?.remixes ?? 0) > 0 && <span className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</span>}
         </div>
       )}

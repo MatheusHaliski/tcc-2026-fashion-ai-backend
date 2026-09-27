@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
@@ -12,11 +12,10 @@ import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/compo
 import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
-import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
-import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT } from "@/components/scheme-anatomies";
+import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
-import { stripPerson, type GarmentPart, type PersonFilterResult } from "@/lib/pieces/person-filter";
+import { stripPerson, type GarmentPart } from "@/lib/pieces/person-filter";
 import { keepAllowed } from "@/lib/pieces/tags";
 
 /** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
@@ -48,14 +47,13 @@ function NewPiece() {
   const [value, setValue] = useState<PieceFormValue>({ ...EMPTY_PIECE, useDefaultImage: true });
   const [batch, setBatch] = useState<{ file: File; draft?: Draft }[]>([]);
   const [mode, setMode] = useState<Preview>("studio"); const [studioBusy, setStudioBusy] = useState(false); const [personNote, setPersonNote] = useState<string | null>(null);
-  const [source, setSource] = useState<File | null>(null); const [garments, setGarments] = useState<PersonFilterResult["garments"]>(null);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
-  const [bg, setBg] = useState<BgConfig>({}); const [skin, setSkin] = useState("atelier"); const [anatomy, setAnatomy] = useState("PECA_AMPLIADO");
+  // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
+  const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
   const [done, setDone] = useState<string | null>(null);
   // a última foto enviada: trocar o tipo depois do envio refaz a análise com a mesma foto
   const lastFile = useRef<File | null>(null);
   const analyze = useAction(async (file: File, category: string) => { const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category); return api.upload<Draft>("/api/pieces/analysis", fd); });
-  const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
   // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
   // envia outro pedido; o servidor ainda devolve a mesma peça se o mesmo rascunho chegar duas vezes (idempotência).
   const saving = useRef(false); const [busy, setBusy] = useState(false);
@@ -66,18 +64,17 @@ function NewPiece() {
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || !value.category) return;
     if (files.length > 1) { setBatch(Array.from(files).slice(0, 10).map((file) => ({ file }))); return; }
-    setSource(files[0]); await process(files[0]);
+    await process(files[0]);
   }
   /**
-   * Remoção de pessoa e cenário (no navegador): o corpo sai da foto e, quando a foto mostra peça de cima e de baixo,
-   * só a peça escolhida segue (a que ocupa mais área, por padrão) — a outra roupa não entra na foto de produto.
+   * Remoção de pessoa e cenário (no navegador): o corpo e o cenário saem da foto e, como o tipo já foi escolhido, só a
+   * peça desse tipo segue (parte de cima, de baixo, corpo inteiro ou calçado) — a outra roupa não entra na foto de produto.
    */
-  async function process(original: File, keep?: GarmentPart) {
-    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null); setAnalyzed(false);
-    try {
-      const r = await stripPerson(file, { keep });
-      if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); setGarments(r.garments ?? null); }
-    } catch { /* sem segmentação agora: a foto segue como está */ }
+  async function process(original: File) {
+    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false);
+    const keep: GarmentPart | undefined = ({ upper_piece: "upper", lower_piece: "lower", full_body_piece: "full", shoes_piece: "feet" } as Record<string, GarmentPart>)[value.category];
+    try { const r = await stripPerson(file, { keep }); if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); } }
+    catch { /* sem segmentação agora: a foto segue como está */ }
     lastFile.current = file;
     await runAnalysis(file, value.category);
   }
@@ -183,18 +180,16 @@ function NewPiece() {
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
   const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioThumbUrl: draft?.studio?.thumbUrl ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  const artPanel = (
-    <div>
-      <p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p>
-      <div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={anatomy === a.id} onClick={() => setAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div>
-      {draft && (draft.backgroundRemoved || draft.studio) && <div className="mt-3"><p className="label">{t("pieces.new.estudio_fundo")}</p><BackdropChips value={draft.studio?.backdrop ?? "auto"} busy={studioBusy} onPick={(b) => studio(b, !!draft.studio?.forced)} />{studioBusy && <p className="mt-1 type-caption text-muted" aria-live="polite">{t("common.montando_o_estudio")}</p>}</div>}
-    </div>
-  );
+  // fundo da área da peça (camada 4): o fundo da própria foto de estúdio, escolhido aqui antes de salvar
+  const mediaPanel = draft && (draft.backgroundRemoved || draft.studio)
+    ? <div><p className="label">{t("pieces.new.estudio_fundo")}</p><BackdropChips value={draft.studio?.backdrop ?? "auto"} busy={studioBusy} onPick={(b) => studio(b, !!draft.studio?.forced)} />{studioBusy && <p className="mt-1 type-caption text-muted" aria-live="polite">{t("common.montando_o_estudio")}</p>}</div>
+    : undefined;
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF4" lead={t("pieces.new.lead_etapas")} />
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
+      <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
           {step === "photo" && (
             <Card>
@@ -221,14 +216,6 @@ function NewPiece() {
                     <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy} disabled={!value.category}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
                     {!draft && <p className="type-caption text-muted">{t("pieces.new.sem_foto_asset")}</p>}
                     {personNote && <p className="type-body-sm" role="status">{personNote}</p>}
-                    {garments && source && (garments.ambiguous || garments.kept !== "full") && (
-                      <div className="grid gap-1.5">
-                        <p className="type-body-sm">{t("pieces.new.qual_peca")}</p>
-                        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("pieces.new.qual_peca")}>
-                          {(["upper", "lower", "full"] as GarmentPart[]).map((k) => <button key={k} type="button" role="radio" aria-checked={garments.kept === k} className={`chip ${garments.kept === k ? "is-active" : ""}`} disabled={analyze.busy} onClick={() => garments.kept !== k && process(source, k)}>{t("pieces.new.parte", { part: k })}</button>)}
-                        </div>
-                      </div>
-                    )}
                     {draft?.studio?.feed?.missing?.length ? (
                       <div role="alert" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
                         <p className="font-medium">{t("editImage.falta", { list: draft.studio.feed.missing.map((m) => t("editImage.regiao", { id: m })).join(", ") })}</p>
@@ -266,7 +253,7 @@ function NewPiece() {
           )}
           {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{prefillNote(draft.prefill)}</p>}<PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />{nav}</Card>}
           {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
-          {step === "art" && <div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} styles={value.style} occasions={value.occasion} layoutPanel={artPanel} />{nav}</div>}
+          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} mediaPanel={mediaPanel} />{nav}</Card>}
           {step === "review" && (
             <Card>
               <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
@@ -278,7 +265,7 @@ function NewPiece() {
             </Card>
           )}
         </div>
-        <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><PieceCard piece={previewPiece} href="#" /></aside>
+        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><PieceCard piece={previewPiece} href="#" /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {fullscreen !== null && gallery.length > 0 && <StudioLightbox images={gallery} edge={edge} center={backdropCenter(backdrops, draft?.studio?.backdrop)} start={Math.min(fullscreen, gallery.length - 1)} onClose={() => setFullscreen(null)} />}

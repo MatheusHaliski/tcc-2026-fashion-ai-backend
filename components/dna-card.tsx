@@ -9,10 +9,10 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
-import { Avatar } from "@/components/ui";
 import { CardActions } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
 import { BrandLogo } from "@/components/brand-logo";
+import { CardHeader } from "@/components/card-header";
 
 /** Célula do Esquema de DNA: um esquema de vestimenta (RF5) referenciado — sempre foto + título (nunca vazio). */
 export interface DnaCellView {
@@ -112,11 +112,7 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const body = narrative ? <NarrativeBody dna={dna} narrative={narrative} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} /> : <LayoutBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} expanded={expanded} />;
   return (
     <article className={`fai-card dna-card ${narrative === "LEGO" ? "dna-blocks" : ""} ${expanded ? "dna-expanded" : ""} ${hasArt ? "has-art" : ""}`} style={{ ...skinStyle(skin), ...stageVars }} aria-label={t("dnaCard.dna_de_estilo", { title: dna.title })} data-art={art?.label}>
-      <div className="c-header">
-        <span className="c-avatar"><Avatar src={mediaUrl(dna.owner?.avatarUrl)} name={dna.owner?.displayName} size={18} /></span>
-        <span className="c-meta">@{dna.owner?.username} · {relative(dna.publishedAt ?? dna.createdAt ?? new Date().toISOString())} · {label(dna.visibility.toLowerCase())}</span>
-        <span className="badge dna-badge">DNA</span>
-      </div>
+      <CardHeader owner={dna.owner} sub={<>{relative(dna.publishedAt ?? dna.createdAt ?? new Date().toISOString())} · {label(dna.visibility.toLowerCase())}</>} trailing={<span className="badge dna-badge">DNA</span>} />
       <div className="scheme-stage">
       {hasArt && art && <CardArtLayer art={art} />}
       <div style={hasArt && studio.container?.color ? surfaceToneStyle(boxColor) : undefined} className={`dna-container ${href && !expanded ? "cursor-pointer" : ""}`} data-label={containerLabel} onClick={open} role={href && !expanded ? "link" : undefined} tabIndex={href && !expanded ? 0 : undefined} onKeyDown={(e) => { if (e.key === "Enter" && href && !expanded) router.push(href); }}>

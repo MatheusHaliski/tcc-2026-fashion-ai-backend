@@ -194,6 +194,46 @@ class FeedFramingTest {
         assertThat(b.frame().bleed()).isEmpty();
     }
 
+    static BufferedImage asset(String rel) throws Exception {
+        java.io.File f = new java.io.File("../public/assets_pecas/" + rel);
+        org.junit.jupiter.api.Assumptions.assumeTrue(f.isFile(), "assets de peças fora do checkout");
+        return cropScaled(ImageOps.toArgb(javax.imageio.ImageIO.read(f)), 1);
+    }
+
+    /**
+     * Vestido, saia, jaqueta, bolsa e relógio (imagens de referência do catálogo, em duas escalas): o mesmo template põe
+     * a peça na mesma altura e com o mesmo tamanho no quadro, qualquer que seja o tamanho da foto, e peça inteira não é
+     * cortada nem marcada como incompleta.
+     */
+    @Test
+    void vestidoSaiaJaquetaBolsaERelogioTemPosicaoEEscalaEstaveis() throws Exception {
+        Object[][] cases = {
+                {"05_Corpo_inteiro/01_vestido.png", FeedFraming.Template.FULL_BODY},
+                {"02_Parte_inferior/12_saia.png", FeedFraming.Template.SKIRT},
+                {"01_Parte_superior/14_jacket_jaqueta.png", FeedFraming.Template.OUTERWEAR},
+                {"04_Acessorios/02_bolsa_mao.png", FeedFraming.Template.BAG},
+                {"04_Acessorios/19_relogio.png", FeedFraming.Template.ACCESSORY},
+        };
+        for (Object[] c : cases) {
+            BufferedImage big = asset((String) c[0]);
+            BufferedImage small = ImageOps.scale(big, big.getWidth() / 2, big.getHeight() / 2);
+            FeedFraming.Template tpl = (FeedFraming.Template) c[1];
+            FeedFraming.Feed a = FeedFraming.frame(big, tpl, Set.of()), b = FeedFraming.frame(small, tpl, Set.of());
+            assertThat(a.missing()).as("%s sem regiões faltando", c[0]).isEmpty();
+            assertThat(fy(a, 0)).as("%s: topo na mesma altura", c[0]).isCloseTo(fy(b, 0), within(0.01));
+            assertThat(fy(a, big.getHeight())).as("%s: base na mesma altura", c[0]).isCloseTo(fy(b, small.getHeight()), within(0.015));
+            assertThat(fx(a, big.getWidth() / 2.0)).as("%s: centralizado", c[0]).isCloseTo(0.5, within(0.06));
+            if (tpl != FeedFraming.Template.OUTERWEAR) {
+                assertThat(a.frame().bleed()).as("%s inteiro no quadro", c[0]).isEmpty();
+            }
+        }
+        // jaqueta e blazer: a gola na mesma altura (como nas camisetas), para a grade de peças de cima ficar alinhada
+        FeedFraming.Feed jacket = FeedFraming.frame(asset("01_Parte_superior/14_jacket_jaqueta.png"), FeedFraming.Template.OUTERWEAR, Set.of());
+        FeedFraming.Feed blazer = FeedFraming.frame(asset("01_Parte_superior/13_blazer.png"), FeedFraming.Template.OUTERWEAR, Set.of());
+        assertThat(fy(jacket, 0)).isCloseTo(FeedFraming.TOP_COLLAR_Y, within(0.01));
+        assertThat(fy(blazer, 0)).isCloseTo(FeedFraming.TOP_COLLAR_Y, within(0.01));
+    }
+
     /** Estampa de frase no peito ("THE BEST PLAN") não vira logo: sem foco extra nem foto de detalhe. */
     @Test
     void estampaDeFraseNaoEhLogo() {

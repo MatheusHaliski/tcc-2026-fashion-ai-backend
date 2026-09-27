@@ -186,10 +186,7 @@ public final class Taxonomy {
         }
     }
 
-    /**
-     * Lista de ocasiões/estilos como a tela manda: tira espaços, vazios e repetidos e passa para minúsculas (os códigos da
-     * taxonomia são minúsculos). Não inventa nem descarta códigos desconhecidos — a validação continua apontando-os.
-     */
+    /** Mesmo que {@link #canonicalTags}: lista de ocasiões/estilos como a tela manda, limpa (nome usado pelo cadastro). */
     public static List<String> normalizeTags(List<String> values) {
         return canonicalTags(values);
     }

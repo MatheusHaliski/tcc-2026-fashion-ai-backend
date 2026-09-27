@@ -14,6 +14,15 @@ export function studioMeta(p: PieceView): { feed: FeedMeta | null; logoKind: "lo
   const kind = st?.logo?.kind === "print" ? "print" : st?.logo || p.studioDetailUrl ? "logo" : null;
   return { feed: st?.feed ?? null, logoKind: kind };
 }
+/** Versão da foto de estúdio no ar, se a pessoa já aprovou, e a versão nova esperando aprovação (só o dono recebe). */
+export interface StudioVersion { version: number; approved: boolean; pending: { url?: string; feedUrl?: string; version?: number; backdrop?: string; createdAt?: string } | null }
+export function studioVersion(p: PieceView): StudioVersion {
+  const st = (p.flatLayMetadata as { studio?: { version?: number; approved?: boolean; pending?: StudioVersion["pending"] } } | undefined)?.studio;
+  return { version: st?.version ?? (p.studioImageUrl ? 1 : 0), approved: st?.approved !== false, pending: st?.pending ?? null };
+}
+/** Há algo para a pessoa decidir: uma versão nova pendente ou a atual ainda não aprovada. */
+export const studioNeedsReview = (p: PieceView) => { const v = studioVersion(p); return !!v.pending || (!!p.studioImageUrl && !v.approved); };
+
 /** Há logo de verdade para inspecionar: foto de detalhe gerada e o achado não é estampa. */
 export const hasRealLogo = (p: PieceView) => !!p.studioDetailUrl && studioMeta(p).logoKind !== "print";
 
@@ -24,9 +33,11 @@ type Section = "framing" | "cut" | "compare" | "logo";
  * (template da categoria, regiões que a foto não mostra, fundo do estúdio), revisão do recorte (correção da máscara no
  * editor), original × processado e — só quando há logo real — o detalhe do logo. Nada aqui aparece para visitantes.
  */
-export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, onReplace, onManual }: {
+export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, onReplace, onManual, onApprove, onDiscard, approvalBusy }: {
   piece: PieceView; open: boolean; onClose: () => void; onStudio: (backdrop: string) => void; studioBusy?: boolean;
   onReplace: (file: File) => void; onManual: () => void;
+  /** aprovação da foto de estúdio: a versão nova só vai ao feed depois de aprovada */
+  onApprove?: () => void; onDiscard?: () => void; approvalBusy?: boolean;
 }) {
   const { t } = useI18n();
   const file = useRef<HTMLInputElement>(null);
@@ -48,6 +59,7 @@ export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, on
   return (
     <Dialog open={open} onClose={onClose} title={t("editImage.titulo")} size="lg">
       <input ref={file} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label={t("closet.replaceImage")} onChange={(e) => e.target.files?.[0] && onReplace(e.target.files[0])} />
+      <ApprovalPanel piece={piece} onApprove={onApprove} onDiscard={onDiscard} busy={approvalBusy} />
       <SegmentPicker className="mb-3" label={t("editImage.etapas")} value={cur} onChange={setSection} options={sections.map((s) => ({ id: s, label: label[s] }))} />
       {cur === "framing" && (
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -96,5 +108,37 @@ export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, on
       )}
       {logoKind === "print" && cur === "framing" && <p className="mt-3 type-caption text-muted">{t("editImage.estampa_preservada")}</p>}
     </Dialog>
+  );
+}
+
+/**
+ * Aprovação da foto de estúdio: a aprovada continua no feed até a pessoa decidir. Com uma versão nova pendente, as duas
+ * aparecem lado a lado (como ficam no feed) com "Aprovar nova foto" e "Descartar"; com a atual ainda não aprovada (foto
+ * trocada ou estúdio feito em lote), um aviso com "Aprovar".
+ */
+function ApprovalPanel({ piece, onApprove, onDiscard, busy }: { piece: PieceView; onApprove?: () => void; onDiscard?: () => void; busy?: boolean }) {
+  const { t } = useI18n();
+  const v = studioVersion(piece);
+  if (!onApprove || (!v.pending && v.approved)) return null;
+  const current = mediaUrl(piece.studioFeedUrl ?? piece.studioThumbUrl ?? piece.studioImageUrl);
+  if (!v.pending) return (
+    <div className="ei-approval" role="region" aria-label={t("editImage.aprovacao")}>
+      <p className="type-body-sm">{t("editImage.ainda_nao_aprovada", { v: v.version })}</p>
+      <div className="flex flex-wrap gap-2"><Button size="sm" variant="primary" onClick={onApprove} loading={busy}>{t("editImage.aprovar_foto")}</Button></div>
+    </div>
+  );
+  const next = mediaUrl(v.pending.feedUrl ?? v.pending.url);
+  return (
+    <div className="ei-approval" role="region" aria-label={t("editImage.aprovacao")}>
+      <p className="type-body-sm font-medium">{t("editImage.nova_versao", { v: v.pending.version ?? v.version + 1 })}</p>
+      <div className="ei-compare">
+        <figure className="grid gap-1"><div className="ei-frame is-feed">{current && <img src={current} alt={t("editImage.alt_aprovada", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.aprovada_no_feed", { v: v.version })}</figcaption></figure>
+        <figure className="grid gap-1"><div className="ei-frame is-feed is-pending">{next && <img src={next} alt={t("editImage.alt_nova", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.nova_aguardando", { v: v.pending.version ?? v.version + 1 })}</figcaption></figure>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="primary" onClick={onApprove} loading={busy}>{t("editImage.aprovar_nova")}</Button>
+        <Button size="sm" onClick={onDiscard} disabled={busy}>{t("editImage.descartar_nova")}</Button>
+      </div>
+    </div>
   );
 }

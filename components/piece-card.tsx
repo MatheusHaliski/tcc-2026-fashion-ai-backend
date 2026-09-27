@@ -4,7 +4,6 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { Avatar } from "@/components/ui";
 import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
@@ -12,9 +11,10 @@ import { CardActions } from "@/components/interactions";
 import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { CardArtLayer } from "@/components/card-art";
-import { resolveCardArt } from "@/lib/card-art";
 import { skinStyle } from "@/lib/skins";
+import { ArtStage, artSurfaceProps } from "@/components/piece-art";
+import { readPieceArt } from "@/lib/piece-art";
+import { CardHeader } from "@/components/card-header";
 
 /**
  * Imagem da peça para o card: a foto do feed (4:5, enquadrada pelo template da categoria) quando existe; senão a
@@ -33,6 +33,9 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
  * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome e marca — preço só quando a
  * peça está à venda. Categoria, material, tamanho, ocasião, estilo, usos, processamento e os controles do dono ficam no
  * detalhe da peça: o card convida a abrir, o detalhe permite investigar.
+ *
+ * Camadas (RF11): superfície externa (o article) → área artística visível nas quatro laterais ({@link ArtStage}) →
+ * container com o conteúdo acima → área da peça com fundo próprio. A arte é decorativa: não recebe clique nem foco.
  */
 export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
@@ -46,14 +49,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const img = pieceCardImage(piece);
-  // arte de fundo da peça (RF4 · etapa "Arte de fundo"): aura, material e skin ficam atrás do recorte; a foto de
-  // estúdio já traz o próprio fundo e cobre a arte
-  const art = resolveCardArt(piece.background);
-  const hasArt = art.kind !== "none" && !img.cover;
+  const art = readPieceArt(piece.background);
+  const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
   const mine = !!user && piece.owner?.id === user.id;
-  const owner = piece.owner;
-  const brandProfile = owner?.profileType === "MARCA";
   const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const link = href ?? `/pieces/${piece.id}`;
   const secondary = piece.brandName
@@ -61,7 +60,6 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
     : <span>{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {hasArt && <CardArtLayer art={art} />}
       {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || (mine && piece.favorite)) && (
@@ -74,42 +72,38 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   );
   const name = <span className="pc-name">{piece.name}</span>;
   return (
-    <article className={`fai-card piece-card ${selected ? "ring-2 ring-mark" : ""} ${hasArt ? "has-art" : ""}`} style={skin ? skinStyle(skin) : undefined} aria-label={piece.name} data-art={hasArt ? art.label : undefined}>
-      {!selectable && (
-        <div className="c-header pc-header">
-          <span className="c-avatar"><Avatar src={mediaUrl(owner?.avatarUrl)} name={owner?.displayName} size={24} /></span>
-          <span className="c-who">
-            {owner?.username && !preview
-              ? <Link href={`/u/${owner.username}`} className="c-who-link"><b>{brandProfile ? owner.displayName : `@${owner.username}`}</b></Link>
-              : <b>{brandProfile ? owner?.displayName : `@${owner?.username ?? ""}`}</b>}
-            {visibility && <span>{visibility}</span>}
-          </span>
+    <article {...surface} className={`fai-card piece-card ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} />
+      <div className="pc-frame">
+        <div className="pc-content">
+          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" />}
+          {selectable ? (
+            <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
+              <span className="pc-media">{media}</span>
+              <span className="pc-id">{name}<span className="pc-sub">{secondary}</span></span>
+            </button>
+          ) : (
+            <>
+              {preview
+                ? <div className="pc-media">{media}</div>
+                // a foto repete o link do nome: fora da ordem de tabulação e do leitor de tela (um destino, um link)
+                : <Link href={link} onClick={openModal} className="pc-media" aria-hidden tabIndex={-1}>{media}</Link>}
+              <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />
+              <div className="pc-id">
+                <span className="seal-row">
+                  {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+                  {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
+                </span>
+                <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+                {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
+                {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
+                {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
+              </div>
+            </>
+          )}
+          {extra && <div className="c-extra">{extra}</div>}
         </div>
-      )}
-      {selectable ? (
-        <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
-          <span className="pc-media">{media}</span>
-          <span className="pc-id">{name}<span className="pc-sub">{secondary}</span></span>
-        </button>
-      ) : (
-        <>
-          {preview
-            ? <div className="pc-media">{media}</div>
-            // a foto repete o link do nome: fora da ordem de tabulação e do leitor de tela (um destino, um link)
-            : <Link href={link} onClick={openModal} className="pc-media" aria-hidden tabIndex={-1}>{media}</Link>}
-          <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />
-          <div className="pc-id">
-            <span className="seal-row">
-              {preview ? name : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
-              {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
-            </span>
-            <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
-            {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
-            {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
-          </div>
-        </>
-      )}
-      {extra && <div className="c-extra">{extra}</div>}
+      </div>
     </article>
   );
 }

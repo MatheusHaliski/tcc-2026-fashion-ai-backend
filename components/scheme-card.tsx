@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { containerColorOf, inkOn, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
-import { ActionMenu, Avatar, Button, Dialog, useToast } from "@/components/ui";
+import { ActionMenu, Button, Dialog, useToast } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { FaiIcon } from "@/components/fai-icon";
 import { AnatomyBody, CompactSignature, effectiveAnatomy, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
@@ -17,6 +17,7 @@ import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CardActions, useRemix } from "@/components/interactions";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { useDetailModal } from "@/components/detail-modal";
+import { CardHeader } from "@/components/card-header";
 
 /** Escala da popularidade (Hype): sem vermelho — nota baixa não é erro, é look novo ou pouco visto. */
 export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)";
@@ -156,13 +157,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
 
   return (
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
-      <div className="c-header">
-        <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={24} /></span>
-        <span className="c-who"><b>{scheme.owner?.displayName ?? `@${scheme.owner?.username}`}</b><span>@{scheme.owner?.username} · {relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</span></span>
-        {scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}
-        {!preview && <PostMenu scheme={scheme} />}
-        {headerExtra}
-      </div>
+      <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
+        trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} />}{headerExtra}</>} />
       <div className="scheme-stage">
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (

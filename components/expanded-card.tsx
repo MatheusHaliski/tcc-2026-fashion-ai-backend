@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, CATEGORY_LABEL, useTaxonomy } from "@/lib/api/taxonomy";
-import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
+import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
@@ -20,11 +20,16 @@ import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
 import { PhotoEditor } from "@/components/photo-editor";
-import { EditImageDialog, hasRealLogo, studioMeta } from "@/components/edit-image";
+import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { emitPieceUpdate } from "@/lib/pieces/piece-events";
 import { StudioLightbox, StudioReport, backdropCenter, backdropEdge, backdropGradient, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { PieceForm, toPayload, validatePieceForm, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
+import { ArtStage, artSurfaceProps, useInView } from "@/components/piece-art";
+import { readPieceArt } from "@/lib/piece-art";
+import { CardHeader } from "@/components/card-header";
+import { PieceArtDialog } from "@/components/piece-art-editor";
+import { skinStyle } from "@/lib/skins";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -144,7 +149,7 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
-  const [editingPhoto, setEditingPhoto] = useState(false); const [editImage, setEditImage] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState(false); const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
@@ -152,13 +157,25 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const replaceRef = useRef<HTMLInputElement>(null);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
+  const [artRef, inView] = useInView<HTMLElement>();
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const setPiece = (np: PieceView) => { setData((d) => (d ? { ...d, piece: np } : d)); emitPieceUpdate(np); };
   async function flag(field: "favorite" | "disponivel") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function studioShot(backdrop: string) {
     setStudioBusy(true);
-    try { setPiece(await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`)); toast.success(t("pieces.id.foto_de_estudio_pronta")); }
-    catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+    try {
+      const np = await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`); setPiece(np);
+      // com uma foto aprovada no ar, a nova versão espera a aprovação (nada troca no feed sozinho)
+      if (studioVersion(np).pending) toast.info(t("editImage.nova_para_revisar")); else toast.success(t("pieces.id.foto_de_estudio_pronta"));
+    } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
+  }
+  const [approvalBusy, setApprovalBusy] = useState(false);
+  async function decideStudio(approve: boolean) {
+    setApprovalBusy(true);
+    try {
+      setPiece(approve ? await api.post<PieceView>(`/api/pieces/${id}/studio/approve`) : await api.delete<PieceView>(`/api/pieces/${id}/studio/pending`));
+      toast.success(approve ? t("editImage.aprovada_ok") : t("editImage.descartada_ok"));
+    } catch (e) { toast.fromError(e); } finally { setApprovalBusy(false); }
   }
   async function replaceImage(file: File) { const fd = new FormData(); fd.append("file", file); try { setPiece(await api.upload<PieceView>(`/api/pieces/${id}/image`, fd, "PUT")); toast.success(t("closet.replaceImage") + " ✓"); } catch (e) { toast.fromError(e); } }
   async function copyToWardrobe() { if (!user) { router.push("/login"); return; } try { const np = await api.post<PieceView>(`/api/pieces/${id}/copy`); toast.success(t("closet.addToWardrobe") + " ✓"); router.push(`/pieces/${np.id}`); } catch (e) { toast.fromError(e); } }
@@ -208,30 +225,35 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("pieceDetail.situacao"), !p.disponivel ? t("common.unavailable") : null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
-  // uma ação principal de uso, conforme o contexto: o dono monta um look com a peça; quem visita leva a peça
+  // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
+  // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)
   const primary = mine
-    ? <Link href={`/mirror?piece=${p.id}`} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
-    : <Button variant="primary" className="pd-cta" onClick={copyToWardrobe}>{t("closet.addToWardrobe")}</Button>;
+    ? <><Link href={`/mirror?piece=${p.id}`} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
+        <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
+    : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
+        <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
   const more: MenuItem[] = [
     { label: t("pieceDetail.editar_dados"), onSelect: startEdit, hidden: !mine },
     { label: t("pieceDetail.editar_imagem"), onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
+    { label: t("pieceDetail.editar_arte"), onSelect: () => setEditArt(true), hidden: !mine },
     { label: t("closet.replaceImage"), onSelect: () => replaceRef.current?.click(), hidden: !mine },
     { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), onSelect: () => flag("disponivel"), hidden: !mine },
     { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), onSelect: () => flag("favorite"), hidden: !mine },
     { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
-    { label: t("pieceDetail.manequim_3d"), onSelect: () => setMannequin3d(true) },
     { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, hidden: !mine },
     { label: t("common.delete"), onSelect: askDelete, hidden: !mine, danger: true },
   ];
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
+  // RF11: o detalhe usa as mesmas camadas do card, na densidade ampliada (faixas de 20–32 px e movimento opcional)
+  const art = readPieceArt(p.background);
+  const surface = artSurfaceProps(p.background, art, "expanded");
+  const skin = (p.background?.skin as string | undefined) ?? null;
   return (
     <>
-      <article className="fai-card is-expanded piece-detail" aria-label={p.name}>
-        <div className="c-header">
-          <span className="c-avatar"><Avatar src={mediaUrl(p.owner?.avatarUrl)} name={p.owner?.displayName} size={24} /></span>
-          <span className="c-who"><Link href={`/u/${p.owner?.username}`} className="c-who-link"><b>{p.owner?.profileType === "MARCA" ? p.owner.displayName : `@${p.owner?.username}`}</b></Link>{vis && <span>{vis}</span>}</span>
-          {headerExtra}
-        </div>
+      <article {...surface} ref={artRef} data-inview={inView} className={`fai-card is-expanded piece-detail ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+        <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
+        <div className="pc-frame"><div className="pc-content">
+        <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
           <div className="pd-media">
             <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
@@ -259,6 +281,9 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               </section>
             )}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
+              {mine && studioNeedsReview(p) && (
+                <p className="pd-warn" role="status">{t("pieceDetail.estudio_para_aprovar")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
+              )}
               {mine && (studioMeta(p).feed?.missing?.length ?? 0) > 0 && (
                 <p className="pd-warn" role="status">{t("pieceDetail.foto_incompleta")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
               )}
@@ -275,6 +300,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
             )}
           </div>
         </div>
+        </div></div>
       </article>
       <Dialog open={editing} onClose={() => setEditing(false)} title={t("pieceDetail.editar_dados")}>
         <PieceForm value={form} onChange={(v) => { setForm(v); if (Object.keys(editErrors).length) setEditErrors({}); }} onSubmit={saveEdit} busy={saving} error={saveError} fieldErrors={editErrors} submitLabel={t("common.save")} />
@@ -284,7 +310,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         {confirmDelete.impact?.schemes?.length ? <div className="mt-2 grid gap-1.5">{confirmDelete.impact.schemes.map((s) => <span key={s.id} className="list-row type-body-sm">{s.title}</span>)}</div> : null}
         <p className="mt-2 type-caption text-muted">{t("expanded.fotos_excluidas_junto")}</p>
       </Dialog>
-      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); setEditingPhoto(true); }} />}
+      {mine && <PieceArtDialog piece={p} open={editArt} onClose={() => setEditArt(false)} onSaved={setPiece} />}
+      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); setEditingPhoto(true); }} />}
       <Dialog open={view3d} onClose={() => setView3d(false)} title={t("pieceDetail.viewer3d_title", { name: p.name })} size="lg">
         {view3d && (p.model3dUrl || model.st?.modelUrl) && <div className="h-[420px] overflow-hidden rounded-lg border border-line-soft"><PieceModelViewer url={mediaUrl(p.model3dUrl ?? model.st?.modelUrl) ?? ""} name={p.name} /></div>}
         <p className="mt-2 type-caption text-muted">{t("model3d.viewer_aviso")}</p>

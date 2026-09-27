@@ -11,6 +11,8 @@ export interface Model3dStatus {
   providers?: string[]; jobId?: string; provider?: string | null; progress?: number; stages?: { name: string; provider: string; note?: string; at?: string }[];
   queuedAt?: string | null; startedAt?: string | null; finishedAt?: string | null; fallbackUsed?: boolean; error?: string | null; canRetryFree?: boolean;
   freeRetry?: boolean; model?: { kind?: string; vertices?: number; triangles?: number; widthM?: number; heightM?: number; depthM?: number };
+  /** o provedor informou o progresso (fila e relevo local não informam: a tela não mostra porcentagem) */
+  progressReal?: boolean;
 }
 
 const STAGE_LABEL: Record<string, string> = {
@@ -53,9 +55,10 @@ export function useModel3d(pieceId: string, { enabled, onCompleted }: { enabled:
 const isRelief = (st?: Model3dStatus | null) => st?.model?.kind === "relevo" || (!!st?.provider && /local|relevo/i.test(st.provider));
 
 /**
- * Modelo 3D no fluxo de leitura: um controle compacto e contextual, sem motor, provedor nem diagnóstico (esses ficam
- * nos detalhes técnicos). Não gerado → "Gerar modelo 3D" (dono); processando → barra de progresso; concluído →
- * "Ver em 3D"; falhou → mensagem curta + "Tentar de novo". Visitante vê só "Ver em 3D" quando o modelo existe.
+ * Modelo 3D no fluxo de leitura: um estado compacto, sem motor, provedor nem diagnóstico (esses ficam nos detalhes
+ * técnicos). A peça não oferece mais um botão para GERAR o modelo 3D (pedido de produto): aparecem só os estados de um
+ * modelo que já existe ou de um job já iniciado — processando (barra indeterminada; porcentagem só com progresso real do
+ * provedor), concluído ("Ver em 3D", para dono e visitante) e falhou (mensagem curta + "Tentar de novo", só para o dono).
  */
 export function Model3dAction({ model, mine, modelUrl, onView }: { model: ReturnType<typeof useModel3d>; mine: boolean; modelUrl?: string | null; onView: () => void }) {
   const { t } = useI18n();
@@ -67,13 +70,15 @@ export function Model3dAction({ model, mine, modelUrl, onView }: { model: Return
       {isRelief(st) && <span className="type-caption text-muted">{t("model3d.relevo_aviso")}</span>}
     </div>
   );
-  if (!mine || !st || (st.featureEnabled === false && !s)) return null;
+  if (!mine || !st) return null;
   if (running(s)) {
-    const pct = Math.max(3, Math.min(100, st.progress ?? 5));
+    const real = !!st.progressReal && typeof st.progress === "number";
+    const pct = real ? Math.max(1, Math.min(100, Math.round(st.progress!))) : null;
     return (
       <div className="m3d-compact is-running" aria-live="polite">
-        <span className="type-body-sm">{s === "QUEUED" ? t("model3d.na_fila") : t("model3d.gerando")}</span>
-        <span className="m3d-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t("model3dPanel.progresso_do_modelo_3d")}><span style={{ width: `${pct}%` }} /></span>
+        <span className="type-body-sm">{s === "QUEUED" ? t("model3d.na_fila") : t("model3d.gerando")}{pct != null ? ` ${pct}%` : ""}</span>
+        <span className={`m3d-bar ${pct == null ? "is-indeterminate" : ""}`} role="progressbar" aria-label={t("model3dPanel.progresso_do_modelo_3d")}
+          {...(pct != null ? { "aria-valuemin": 0, "aria-valuemax": 100, "aria-valuenow": pct } : {})}><span style={pct != null ? { width: `${pct}%` } : undefined} /></span>
       </div>
     );
   }
@@ -83,7 +88,7 @@ export function Model3dAction({ model, mine, modelUrl, onView }: { model: Return
       <Button size="sm" onClick={model.request} loading={model.busy}>{st.canRetryFree ? t("model3d.tentar_gratis") : t("common.retry")}</Button>
     </div>
   );
-  return <div className="m3d-compact"><Button size="sm" onClick={model.request} loading={model.busy}><Cube />{t("model3dPanel.gerar_modelo_3d")}</Button></div>;
+  return null;
 }
 
 function Cube() {
@@ -106,7 +111,6 @@ export function Model3dTechnical({ model }: { model: ReturnType<typeof useModel3
       {st.status === "FAILED" && <p>{t("model3dPanel.por_que_falhou")} {st.error ?? t("model3dPanel.o_provedor_nao_devolveu_o")} · {st.canRetryFree ? t("model3dPanel.o_primeiro_reprocessamento_e_gratis") : t("model3dPanel.novas_tentativas_usam_a_cota")}</p>}
       <p>{t("model3dPanel.motores_leva_de_segundos_relevo", { engines })}</p>
       {(st.stages?.length ?? 0) > 0 && <ol className="fai-list is-plain">{st.stages!.map((x, i) => <li key={i}>✓ {STAGE_LABEL[x.name] ?? x.name} <span className="text-faint">· {x.provider}{x.note ? ` · ${x.note}` : ""}</span></li>)}</ol>}
-      {st.status === "COMPLETED" && <p><button type="button" className="underline" onClick={model.request}>{t("common.gerar_de_novo")}</button></p>}
     </div>
   );
 }

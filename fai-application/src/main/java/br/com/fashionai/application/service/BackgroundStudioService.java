@@ -567,8 +567,28 @@ public class BackgroundStudioService {
     private Map<String, Object> savePieceInternal(CurrentUser user, UUID pieceId, Object cfg) {
         WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
-        w.setBackgroundConfigJson(cfg == null ? null : Json.write(cfg));
-        return Map.of("pieceId", pieceId, "background", cfg == null ? Map.of() : cfg);
+        Object saved = withRevision(w.getBackgroundConfigJson(), cfg);
+        w.setBackgroundConfigJson(saved == null ? null : Json.write(saved));
+        return Map.of("pieceId", pieceId, "background", saved == null ? Map.of() : saved);
+    }
+
+    /**
+     * Arte do card da peça (RF11 v2): cada gravação ganha uma revisão ({@code rev}). Quando o editor manda a revisão que
+     * leu ({@code baseRev}) e ela não é mais a atual (outra aba ou outro aparelho aplicou antes), a gravação é recusada
+     * com 409 em vez de sobrescrever em silêncio. Sem {@code baseRev} (clientes antigos, criação da peça) grava como antes.
+     */
+    static Object withRevision(String currentJson, Object cfg) {
+        if (!(cfg instanceof Map<?, ?> in)) return cfg;
+        Map<String, Object> current = currentJson == null || currentJson.isBlank() ? Map.of() : Json.map(currentJson);
+        int rev = current.get("rev") instanceof Number n ? n.intValue() : 0;
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        in.forEach((k, v) -> out.put(String.valueOf(k), v));
+        Object base = out.remove("baseRev");
+        if (base instanceof Number b && b.intValue() != rev) {
+            throw ApiException.conflict("ARTE_ALTERADA", Msg.t("backgroundStudio.arte_alterada_em_outra_janela"));
+        }
+        out.put("rev", rev + 1);
+        return out;
     }
 
     /**

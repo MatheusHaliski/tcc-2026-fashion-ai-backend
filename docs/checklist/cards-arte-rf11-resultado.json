@@ -1,0 +1,472 @@
+{
+ "grade-mesmo-template-desktop": {
+  "cards": 10,
+  "fotoLarguraVariacaoPx": 0,
+  "fotoAlturaVariacaoPx": 0,
+  "faixaLateralPx": [
+   13.0622,
+   13.0631
+  ],
+  "somaTopoBasePx": [
+   38
+  ],
+  "familias": [
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a"
+  ],
+  "erros": []
+ },
+ "grade-familias-misturadas-desktop": {
+  "cards": 10,
+  "fotoLarguraVariacaoPx": 0,
+  "fotoAlturaVariacaoPx": 0,
+  "faixaLateralPx": [
+   13.0622,
+   13.0631
+  ],
+  "somaTopoBasePx": [
+   38
+  ],
+  "familias": [
+   "classic:a",
+   "bento:a",
+   "blocks:a",
+   "seasonal:a",
+   "xray:a",
+   "runway:b",
+   "seasonal:b",
+   "runway:a",
+   "bento:b",
+   "blocks:b"
+  ],
+  "erros": []
+ },
+ "grade-mesmo-template-celular": {
+  "cards": 10,
+  "fotoLarguraVariacaoPx": 0,
+  "fotoAlturaVariacaoPx": 0,
+  "faixaLateralPx": [
+   12
+  ],
+  "somaTopoBasePx": [
+   35
+  ],
+  "familias": [
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a",
+   "classic:a"
+  ],
+  "erros": []
+ },
+ "grade-familias-misturadas-celular": {
+  "cards": 10,
+  "fotoLarguraVariacaoPx": 0,
+  "fotoAlturaVariacaoPx": 0,
+  "faixaLateralPx": [
+   12
+  ],
+  "somaTopoBasePx": [
+   35
+  ],
+  "familias": [
+   "classic:a",
+   "bento:a",
+   "blocks:a",
+   "seasonal:a",
+   "xray:a",
+   "runway:b",
+   "seasonal:b",
+   "runway:a",
+   "bento:b",
+   "blocks:b"
+  ],
+  "erros": []
+ },
+ "mesma-peca-cinco-familias": {
+  "cards": 12,
+  "fotoLarguraVariacaoPx": 0,
+  "fotoAlturaVariacaoPx": 0,
+  "alturaCardVariacaoPx": 0,
+  "imagensDistintas": [
+   "http://localhost:8080/media/fx/tee_camiseta_vermelha_the_best_plan.feed.jpg|cover"
+  ],
+  "erros": []
+ },
+ "efeitos-combinados": {
+  "cards": 8,
+  "fotoLarguraVariacaoPx": 0,
+  "erros": []
+ },
+ "responsivo-celular": {
+  "estouros": [],
+  "paginaRolaNaHorizontal": false,
+  "erros": []
+ },
+ "feed-modal-dono-desktop": {
+  "decorativo": {
+   "ariaHidden": "true",
+   "pointerEvents": "none",
+   "focaveisNaArte": 0,
+   "cliqueNaFaixaCaiEm": "pc-frame"
+  },
+  "abriuPorTeclado": {
+   "focoNoDialogo": true,
+   "nome": "detalhe da peça"
+  },
+  "tabSaiuDoModal": 0,
+  "shiftTabSaiuDoModal": 0,
+  "modal": {
+   "familia": "classic",
+   "faixaPx": [
+    45.153,
+    31.14,
+    45.153
+   ],
+   "acaoPrincipal": [
+    "Adicionar ao look"
+   ],
+   "alternativa": [
+    "ou experimente no manequim 3D"
+   ],
+   "controlesDoDono": []
+  },
+  "menuMaisOpcoes": [
+   "Editar dados",
+   "Editar imagem",
+   "Editar arte do card",
+   "Trocar foto",
+   "Marcar como indisponível (lavando, emprestada…)",
+   "Tirar dos favoritos",
+   "Foto com meu manequim",
+   "Mostrar no quarto",
+   "Excluir"
+  ],
+  "escNoMenu": {
+   "menuFechou": true,
+   "modalContinuaAberto": true
+  },
+  "fechar": {
+   "fechou": true,
+   "focoVoltouAoNome": true
+  },
+  "curtidasOuSalvosDisparadosAoAbrir": 0,
+  "axeNaGrade": [],
+  "erros": []
+ },
+ "feed-modal-dono-celular": {
+  "decorativo": {
+   "ariaHidden": "true",
+   "pointerEvents": "none",
+   "focaveisNaArte": 0,
+   "cliqueNaFaixaCaiEm": "pc-frame"
+  },
+  "abriuPorTeclado": {
+   "focoNoDialogo": true,
+   "nome": "detalhe da peça"
+  },
+  "tabSaiuDoModal": 0,
+  "shiftTabSaiuDoModal": 0,
+  "modal": {
+   "familia": "classic",
+   "faixaPx": [
+    29,
+    20,
+    29
+   ],
+   "acaoPrincipal": [
+    "Adicionar ao look"
+   ],
+   "alternativa": [
+    "ou experimente no manequim 3D"
+   ],
+   "controlesDoDono": []
+  },
+  "menuMaisOpcoes": [
+   "Editar dados",
+   "Editar imagem",
+   "Editar arte do card",
+   "Trocar foto",
+   "Marcar como indisponível (lavando, emprestada…)",
+   "Tirar dos favoritos",
+   "Foto com meu manequim",
+   "Mostrar no quarto",
+   "Excluir"
+  ],
+  "escNoMenu": {
+   "menuFechou": true,
+   "modalContinuaAberto": true
+  },
+  "fechar": {
+   "fechou": true,
+   "focoVoltouAoNome": true
+  },
+  "curtidasOuSalvosDisparadosAoAbrir": 0,
+  "axeNaGrade": null,
+  "erros": []
+ },
+ "feed-modal-visitante-desktop": {
+  "decorativo": {
+   "ariaHidden": "true",
+   "pointerEvents": "none",
+   "focaveisNaArte": 0,
+   "cliqueNaFaixaCaiEm": "pc-frame"
+  },
+  "abriuPorTeclado": {
+   "focoNoDialogo": true,
+   "nome": "detalhe da peça"
+  },
+  "tabSaiuDoModal": 0,
+  "shiftTabSaiuDoModal": 0,
+  "modal": {
+   "familia": "classic",
+   "faixaPx": [
+    45.153,
+    31.14,
+    45.153
+   ],
+   "acaoPrincipal": [
+    "Experimentar"
+   ],
+   "alternativa": [
+    "ou guarde uma cópia no seu guarda-roupa"
+   ],
+   "controlesDoDono": []
+  },
+  "menuMaisOpcoes": "(sem menu)",
+  "escNoMenu": null,
+  "fechar": {
+   "fechou": true,
+   "focoVoltouAoNome": true
+  },
+  "curtidasOuSalvosDisparadosAoAbrir": 0,
+  "axeNaGrade": [],
+  "erros": []
+ },
+ "feed-modal-visitante-celular": {
+  "decorativo": {
+   "ariaHidden": "true",
+   "pointerEvents": "none",
+   "focaveisNaArte": 0,
+   "cliqueNaFaixaCaiEm": "pc-frame"
+  },
+  "abriuPorTeclado": {
+   "focoNoDialogo": true,
+   "nome": "detalhe da peça"
+  },
+  "tabSaiuDoModal": 0,
+  "shiftTabSaiuDoModal": 0,
+  "modal": {
+   "familia": "classic",
+   "faixaPx": [
+    29,
+    20,
+    29
+   ],
+   "acaoPrincipal": [
+    "Experimentar"
+   ],
+   "alternativa": [
+    "ou guarde uma cópia no seu guarda-roupa"
+   ],
+   "controlesDoDono": []
+  },
+  "menuMaisOpcoes": "(sem menu)",
+  "escNoMenu": null,
+  "fechar": {
+   "fechou": true,
+   "focoVoltouAoNome": true
+  },
+  "curtidasOuSalvosDisparadosAoAbrir": 0,
+  "axeNaGrade": null,
+  "erros": []
+ },
+ "acoes-sociais": {
+  "falha": {
+   "antes": {
+    "pressed": "false",
+    "n": "1"
+   },
+   "durante": {
+    "pressed": "true",
+    "busy": "true",
+    "n": "2"
+   },
+   "depois": {
+    "pressed": "false",
+    "n": "1",
+    "toast": [
+     "Falha ao curtir (simulada)",
+     ""
+    ]
+   }
+  },
+  "tresToquesSeguidos": {
+   "pedidosEnviados": 1,
+   "contagemAntes": 12,
+   "contagemDepois": 13
+  },
+  "salvar": {
+   "avisoAntesDaResposta": 0,
+   "avisoDepois": 1
+  },
+  "erros": []
+ },
+ "editor-rf11": {
+  "aplicado": {
+   "puts": 1,
+   "corpo": {
+    "v": 2,
+    "template": {
+     "family": "bento",
+     "variant": "b",
+     "season": "SPRING"
+    },
+    "composition": {
+     "emphasis": "bottom"
+    },
+    "surface": {
+     "color": null,
+     "style": "frosted"
+    },
+    "baseRev": 0,
+    "anatomy": "BENTO",
+    "efeitosLigados": [
+     "aura",
+     "rim",
+     "collage"
+    ]
+   },
+   "editorFechou": true
+  },
+  "previa": {
+   "w": 219.703125,
+   "h": 435.859375,
+   "pad": [
+    "13.0622px",
+    "13.0622px",
+    "24.8182px"
+   ],
+   "family": "bento",
+   "variant": "b",
+   "cls": "fai-card piece-card pc pc-compact em-bottom fx-rim "
+  },
+  "salvo": {
+   "w": 219.703125,
+   "h": 435.859375,
+   "pad": [
+    "13.0622px",
+    "13.0622px",
+    "24.8182px"
+   ],
+   "family": "bento",
+   "variant": "b",
+   "cls": "fai-card piece-card pc pc-compact em-bottom fx-rim "
+  },
+  "elementosInternosNaMesmaPosicao": true,
+  "elementosComparados": 12,
+  "comparacaoPixel": {
+   "capturas": [
+    [
+     220,
+     436
+    ],
+    [
+     220,
+     436
+    ]
+   ],
+   "areaComparada": [
+    220,
+    436
+   ],
+   "pixelsDiferentes": 5548,
+   "percentual": 5.78
+  },
+  "reabertoComValoresSalvos": "true",
+  "cancelar": {
+   "pedidos": 0,
+   "familiaNoDetalhe": "bento"
+  },
+  "restaurarPadrao": "classic",
+  "conflitoDeRevisao": {
+   "alerta": [
+    "A arte deste card foi alterada em outra janela. Recarregue para ver a versão atual antes de aplicar."
+   ],
+   "editorContinuaAberto": true
+  },
+  "erros": []
+ },
+ "movimento-no-preference": {
+  "feed": {
+   "cls": 0,
+   "animacoesNaArteDoFeed": 0
+  },
+  "modal": {
+   "classe": true,
+   "animacoes": 20,
+   "nomes": [
+    "pc-sway",
+    "pc-float",
+    "pc-breathe"
+   ],
+   "inview": "true"
+  },
+  "foraDaTela": {
+   "inviewAntes": "true",
+   "inview": "false",
+   "estados": [
+    "paused"
+   ]
+  }
+ },
+ "movimento-reduce": {
+  "feed": {
+   "cls": 0,
+   "animacoesNaArteDoFeed": 0
+  },
+  "modal": {
+   "classe": true,
+   "animacoes": 0,
+   "nomes": [],
+   "inview": "true"
+  },
+  "foraDaTela": {
+   "inviewAntes": "true",
+   "inview": "false",
+   "estados": []
+  }
+ },
+ "estudio-aprovacao": {
+  "feedAntes": "http://localhost:8080/media/fx/tee_camiseta_vermelha_the_best_plan.feed.jpg",
+  "avisoNoDetalhe": [
+   "Há uma foto de estúdio esperando sua aprovação. Revisar a imagem"
+  ],
+  "painel": [
+   "Nova versão 2 pronta. A foto aprovada continua no feed até você decidir.Aprovada (v1) · no feed agoraNova (v2) · aguardando aprovaçãoAprovar nova fotoDescartar"
+  ],
+  "depois": {
+   "chamadas": 1,
+   "painelSumiu": true
+  },
+  "erros": []
+ },
+ "estudio-aprovacao-visitante": {
+  "avisoNoDetalhe": 0,
+  "maisOpcoes": 0
+ }
+}

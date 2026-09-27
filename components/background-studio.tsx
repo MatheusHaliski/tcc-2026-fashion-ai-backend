@@ -16,7 +16,7 @@ const STEPS = ["1 · Cor & gradiente", "2 · Presets AURA & materiais", "3 · Ar
 
 /** Cor do container do esquema (RF11 · "3. Cor do container"): com arte de fundo ele fica sempre visível por cima dela. */
 const BOX_SWATCHES = ["#FFFFFF", "#F7F4EE", "#FBF7EF", "#EEF2F6", "#141414", "#0D1B2A", "#3A2416"];
-function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; skin: string }) {
+export function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; skin: string }) {
   const { rich, t } = useI18n();
   const current = value.container?.color ?? null;
   return (
@@ -37,19 +37,24 @@ function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: 
  * Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, LEGO) trazem arte própria e SOBREPÕEM o que foi
  * escolhido nas etapas 2 e 3 (presets AURA/recomendados, materiais, arte com IA e upload) — a etapa fica desativada.
  */
-export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel, season }: {
+export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel, season, artOnly }: {
   value: BgConfig; onChange: (v: BgConfig) => void; skin: string; onSkin: (s: string) => void; anatomy: string; onAnatomy: (a: string) => void; pieceAnatomy?: string; onPieceAnatomy?: (a: string) => void; styles?: string[]; occasions?: string[];
   /** estação do look (etapa 3): a Cartela sazonal e a arte sazonal automática só existem com ela preenchida */
   season?: string | null;
   /** RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar das anatomias do card v17. */
   layoutPanel?: ReactNode; ownArt?: boolean; ownArtLabel?: string;
+  /**
+   * RF11 · editor da arte do card da peça: só as etapas do fundo artístico (cor e gradiente, AURA e materiais, arte com
+   * IA ou upload). Layout, skin e cor do container ficam nas etapas próprias do editor (template e superfície interna).
+   */
+  artOnly?: boolean;
 }) {
   const { t, rich } = useI18n(); const toast = useToast();
   const { data: cat } = useApi<Catalog>((signal) => api.get("/api/backgrounds/catalog", { signal, anonymous: true }), []);
   const { data: rec } = useApi<{ skins?: { id: string; reason?: string }[]; direction?: string; recommended?: string[]; aura?: string; material?: string }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
-  const [prompt, setPrompt] = useState(""); const [busy, setBusy] = useState(false); const [step, setStep] = useState(3);
+  const [prompt, setPrompt] = useState(""); const [busy, setBusy] = useState(false); const [step, setStep] = useState(artOnly ? 0 : 3);
   const set = (p: Partial<BgConfig>) => onChange({ ...value, ...p });
-  const special = ownArt ?? hasOwnArt(anatomy);
+  const special = artOnly ? false : ownArt ?? hasOwnArt(anatomy);
   const clearArt = { aura: null, materialId: null, aiArt: null, uploadUrl: null, posterUrl: undefined } as Partial<BgConfig>;
   function chooseAnatomy(a: string) {
     onAnatomy(a);
@@ -68,12 +73,12 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
     const fd = new FormData(); fd.append("file", file); fd.append("target", "card");
     try { const r = await api.upload<{ url: string }>("/api/backgrounds/uploads", fd); set({ uploadUrl: r.url, aiArt: null, aura: null, materialId: null, posterUrl: undefined }); toast.success(t("backgroundStudio.imagem_enviada")); } catch (e) { toast.fromError(e); }
   }
-  const auraPreset = cat?.auraPresets.find((a) => (a.variants ?? []).some((v) => v.id === value.aura?.variantId) || a.id === value.aura?.variantId);
+  const auraPreset = cat?.auraPresets?.find((a) => (a.variants ?? []).some((v) => v.id === value.aura?.variantId) || a.id === value.aura?.variantId);
   const recommendedSkins = new Set([...(rec?.recommended ?? []), ...((rec?.skins ?? []).map((s) => s.id))]);
   const disabledNote = <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{ownArtLabel ? <>{rich("backgroundStudio.narrativa", { ownArtLabel }, { 0: ($c) => <b>{$c}</b> })}</> : <>{t("scheme.anatomy")}{" "}<b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b></>}{" "}{t("backgroundStudio.traz_arte_propria_presets_aura")}</p>;
   return (
     <div className="surface p-3">
-      <ol className="mb-3 flex flex-wrap gap-1" aria-label={t("backgroundStudio.etapas_do_background_studio")}>{STEPS.map((s, i) => <li key={s}><button type="button" className="chip" aria-pressed={step === i} onClick={() => setStep(i)}>{s}</button></li>)}</ol>
+      <ol className="mb-3 flex flex-wrap gap-1" aria-label={t("backgroundStudio.etapas_do_background_studio")}>{(artOnly ? STEPS.slice(0, 3) : STEPS).map((s, i) => <li key={s}><button type="button" className="chip" aria-pressed={step === i} onClick={() => setStep(i)}>{s}</button></li>)}</ol>
       {step === 0 && (
         <div className="grid gap-3">
           <div><p className="label">{t("common.color")}</p><div className="flex flex-wrap gap-1.5">{(cat?.colors ?? []).map((c) => <button key={c} type="button" aria-label={c} aria-pressed={value.color === c} className={`h-8 w-8 rounded-full border-2 ${value.color === c ? "border-mark" : "border-line-soft"}`} style={{ background: c }} onClick={() => set({ color: c, gradient: null, gradientPresetId: null, seasonalPresetId: null })} />)}</div></div>
@@ -91,7 +96,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
           {auraPreset && (auraPreset.variants ?? []).length > 0 && <div><p className="label">{t("backgroundStudio.variacao", { name: auraPreset.name })}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className={`rounded border-2 p-0.5 ${value.aura?.variantId === v.id ? "border-mark" : "border-line-soft"}`} title={v.description} onClick={() => set({ aura: { variantId: v.id, format: value.aura?.format } })}>{v.static?.previewUrl ? <img src={v.static.previewUrl} alt={v.theme ?? v.id} className="aspect-[4/3] w-full rounded object-cover" /> : <span className="block p-2 type-caption">{v.theme ?? v.code}</span>}<span className="block truncate type-caption">{v.code} {v.theme}</span></button>)}</div></div>}
           <div><p className="label">{t("backgroundStudio.material_camada")}</p><div className="flex flex-wrap gap-1.5">{(cat?.materials ?? []).map((m) => <Chip key={m.id} active={value.materialId === m.id} title={m.finish} onClick={() => set({ materialId: value.materialId === m.id ? null : m.id })}>{m.name}{auraPreset?.recommendedMaterials?.includes(m.id) && " ★"}</Chip>)}</div></div>
           {value.aura && value.materialId && <div><p className="label">{t("backgroundStudio.formato_rf11_7_6")}</p><div className="flex gap-1.5">{(["IMAGEM_UNICA", "MOSAICO"] as const).map((f) => <Chip key={f} active={value.aura?.format === f} onClick={() => set({ aura: { ...value.aura!, format: f } })}>{f === "MOSAICO" ? t("backgroundStudio.mosaico_modelagem_11") : t("backgroundStudio.imagem_unica")}</Chip>)}</div></div>}
-          <ContainerColor value={value} onChange={set} skin={skin} />
+          {!artOnly && <ContainerColor value={value} onChange={set} skin={skin} />}
         </div>
       ))}
       {step === 2 && (special ? disabledNote : (
@@ -106,7 +111,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
           {(value.aiArt?.url || value.uploadUrl) && <img src={value.aiArt?.url ?? value.uploadUrl ?? ""} alt={t("backgroundStudio.fundo_escolhido")} className="max-h-48 rounded object-cover" />}
         </div>
       ))}
-      {step === 3 && (
+      {step === 3 && !artOnly && (
         <div className="grid gap-4">
           {layoutPanel ?? <div>
             <p className="label">{t("backgroundStudio.layout_do_esquema_anatomia_do")}</p>
@@ -117,12 +122,20 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
             {anatomy === "SILHUETA_PROPORCAO" && <div className="mt-3"><p className="label">{t("anatomy.studio.silhouette")}</p><p className="type-caption text-muted mb-1.5">{t("anatomy.studio.silhouetteHint")}</p><div className="flex flex-wrap gap-1.5"><Chip active={!value.silhouette} onClick={() => set({ silhouette: null })}>{t("anatomy.silhouette.notDeclared")}</Chip>{SILHOUETTES.map((f) => <Chip key={f} active={value.silhouette === f} onClick={() => set({ silhouette: f })}>{silhouetteLabel(f)}</Chip>)}</div></div>}
           </div>}
           {!layoutPanel && onPieceAnatomy && <div><p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p><div className="flex flex-wrap gap-1.5">{PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}</div><p className="mt-1 type-caption text-muted">{t("backgroundStudio.selo_da_peca_36_px", { description: pieceSealPlacement(pieceAnatomy).description })}</p></div>}
-          <div><p className="label">{t("scheme.skin")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(CARD_SKINS).map(([id, s]) => (
-            <button key={id} type="button" aria-pressed={skin === id} onClick={() => onSkin(id)} className={`rounded border-2 p-2 text-left ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: s.bg, color: s.ink }}>
-              <span className="block type-caption" style={{ fontWeight: s.titleWeight }}>{cat?.skins?.find((x) => x.id === id)?.displayName ?? id}</span>{recommendedSkins.has(id) && <span className="badge badge-chalk mt-1">{t("backgroundStudio.recomendada")}</span>}
-            </button>))}</div></div>
+          <SkinPicker skin={skin} onSkin={onSkin} names={cat?.skins} recommended={recommendedSkins} />
         </div>
       )}
     </div>
+  );
+}
+
+/** Skin do card (tipografia, tinta e cor nativa do container) — a mesma grade no Studio e no editor da arte da peça. */
+export function SkinPicker({ skin, onSkin, names, recommended }: { skin: string; onSkin: (s: string) => void; names?: { id: string; displayName?: string }[]; recommended?: Set<string> }) {
+  const { t } = useI18n();
+  return (
+    <div><p className="label">{t("scheme.skin")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(CARD_SKINS).map(([id, s]) => (
+      <button key={id} type="button" aria-pressed={skin === id} onClick={() => onSkin(id)} className={`rounded border-2 p-2 text-left ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: s.bg, color: s.ink }}>
+        <span className="block type-caption" style={{ fontWeight: s.titleWeight }}>{names?.find((x) => x.id === id)?.displayName ?? id}</span>{recommended?.has(id) && <span className="badge badge-chalk mt-1">{t("backgroundStudio.recomendada")}</span>}
+      </button>))}</div></div>
   );
 }

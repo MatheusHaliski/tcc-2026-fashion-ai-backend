@@ -158,6 +158,18 @@ public class WardrobeController {
         return wardrobe.studioPiece(user, id, backdrop);
     }
 
+    @PostMapping("/api/pieces/{id}/studio/approve")
+    @Operation(summary = "RF4 · Estúdio — aprova a foto de estúdio (a versão pendente vai ao ar; a anterior fica no histórico)")
+    public Views.PieceView approveStudio(CurrentUser user, @PathVariable UUID id) {
+        return wardrobe.approveStudio(user, id);
+    }
+
+    @DeleteMapping("/api/pieces/{id}/studio/pending")
+    @Operation(summary = "RF4 · Estúdio — descarta a versão pendente (a aprovada continua no ar)")
+    public Views.PieceView discardStudio(CurrentUser user, @PathVariable UUID id) {
+        return wardrobe.discardStudio(user, id);
+    }
+
     @PostMapping("/api/me/pieces/studio")
     @Operation(summary = "RF4 · Estúdio — leva ao estúdio as peças que ainda não têm foto de estúdio (até 40)")
     public Map<String, Object> studioAll(CurrentUser user, @RequestParam(defaultValue = "auto") String backdrop) {

@@ -130,6 +130,8 @@ public class Model3dService {
             out.put("jobId", job.getId());
             out.put("provider", job.getProvider());
             out.put("progress", st == Model3dStatus.COMPLETED ? 100 : st == Model3dStatus.QUEUED ? 5 : result.getOrDefault("progress", 15));
+            // só o provedor externo informa progresso de verdade; fila e relevo local têm números de referência
+            out.put("progressReal", st == Model3dStatus.PROCESSING && Boolean.TRUE.equals(result.get("progressReal")));
             out.put("stages", Json.list(job.getStagesJson()));
             out.put("queuedAt", job.getQueuedAt());
             out.put("startedAt", job.getStartedAt());
@@ -305,7 +307,8 @@ public class Model3dService {
             error = Msg.t("model3d.passou_do_tempo_limite_de", timeout.toMinutes());
         } else {
             int progress = status == null ? 15 : Math.max(10, Math.min(95, status.progress()));
-            tx.executeWithoutResult(s -> jobs.findById(jobId).ifPresent(j -> j.setResultJson(Json.write(Map.of("progress", progress)))));
+            boolean real = status != null;
+            tx.executeWithoutResult(s -> jobs.findById(jobId).ifPresent(j -> j.setResultJson(Json.write(Map.of("progress", progress, "progressReal", real)))));
             return;
         }
         byte[] ready = glb;
