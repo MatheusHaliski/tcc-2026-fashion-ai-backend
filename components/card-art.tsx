@@ -19,18 +19,18 @@ export function CardArtLayer({ art }: { art: CardArt }) {
   );
 }
 
-const Snowflake = () => (
+export const Snowflake = () => (
   <svg viewBox="-10 -10 20 20" aria-hidden><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none">
     {[0, 60, 120].map((r) => <g key={r} transform={`rotate(${r})`}><line x1="-8.5" y1="0" x2="8.5" y2="0" /><path d="M5.5 0 l2 -2 M5.5 0 l2 2 M-5.5 0 l-2 -2 M-5.5 0 l-2 2" /></g>)}
   </g></svg>
 );
-const Leaf = ({ color }: { color: string }) => (
+export const Leaf = ({ color }: { color: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden><path fill={color} d="M12 1 l2.2 4.6 4.3-1.6-1.2 4.6 4.7 1-3.9 3.1 2 3.2-4.9-.6-.7 4.9L12 16.9 9.5 20.2l-.7-4.9-4.9.6 2-3.2L2 9.6l4.7-1-1.2-4.6 4.3 1.6z" /><path d="M12 13v10" stroke="#5a2b10" strokeWidth="1.2" /></svg>
 );
-const Blossom = ({ color }: { color: string }) => (
+export const Blossom = ({ color }: { color: string }) => (
   <svg viewBox="-12 -12 24 24" aria-hidden>{[0, 72, 144, 216, 288].map((r) => <ellipse key={r} cx="0" cy="-6" rx="4" ry="6" fill={color} transform={`rotate(${r})`} />)}<circle r="2.6" fill="#F6C343" /></svg>
 );
-const Palm = ({ flip }: { flip?: boolean }) => (
+export const Palm = ({ flip }: { flip?: boolean }) => (
   <svg viewBox="0 0 80 120" aria-hidden style={flip ? { transform: "scaleX(-1)" } : undefined}>
     <path d="M44 118 C42 92 38 66 46 40" stroke="#6B4423" strokeWidth="7" fill="none" strokeLinecap="round" />
     {[98, 84, 70, 56].map((y) => <path key={y} d={`M${40 + (118 - y) * 0.06} ${y} l8 -3`} stroke="#4A2E17" strokeWidth="1.4" />)}
@@ -42,7 +42,7 @@ const Palm = ({ flip }: { flip?: boolean }) => (
     <g fill="#7A4B22"><circle cx="43" cy="45" r="3.4" /><circle cx="49" cy="46" r="3.2" /><circle cx="46" cy="49" r="3" /></g>
   </svg>
 );
-const Sun = () => (
+export const Sun = () => (
   <svg viewBox="-50 -50 100 100" aria-hidden>
     <defs><radialGradient id="sun-glow"><stop offset="0" stopColor="#FFF6C8" /><stop offset=".55" stopColor="#FFD24A" /><stop offset="1" stopColor="#FFB020" stopOpacity="0" /></radialGradient></defs>
     <circle r="46" fill="url(#sun-glow)" opacity=".55" />

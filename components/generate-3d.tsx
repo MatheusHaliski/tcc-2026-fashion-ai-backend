@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
-import { Button, Dialog, Skeleton, useToast } from "@/components/ui";
+import { Dialog, Skeleton } from "@/components/ui";
 import { useWebGL, type Look3d } from "@/components/three/common";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
@@ -34,7 +34,7 @@ export function Generate3DButton({ targets, compact = true, className = "", glyp
   if (glyph) return (
     <>
       <button type="button" className={`c-act ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        aria-haspopup="dialog" title={t("generate3d.gerar_3d_ver_no_manequim")} aria-label={t("generate3d.gerar_3d_de", { title: targets[0].title })}>
+        aria-haspopup="dialog" title={t("generate3d.ver_no_manequim_3d")} aria-label={t("generate3d.ver_no_manequim_de", { title: targets[0].title })}>
         <FaiIcon id="ACT-20" size={20} variant="glyph" decorative />
       </button>
       {open && <Generate3DDialog targets={targets} onClose={() => setOpen(false)} />}
@@ -43,8 +43,8 @@ export function Generate3DButton({ targets, compact = true, className = "", glyp
   return (
     <>
       <button type="button" className={`btn btn-ghost btn-sm gen3d-btn ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        aria-haspopup="dialog" title={t("generate3d.gerar_3d_ver_no_manequim")} aria-label={t("generate3d.gerar_3d_de", { title: targets[0].title })}>
-        <Cube3dIcon /><span>{compact ? "3D" : t("closet.request3d")}</span>
+        aria-haspopup="dialog" title={t("generate3d.ver_no_manequim_3d")} aria-label={t("generate3d.ver_no_manequim_de", { title: targets[0].title })}>
+        <Cube3dIcon /><span>{compact ? "3D" : t("generate3d.ver_no_manequim_3d")}</span>
       </button>
       {open && <Generate3DDialog targets={targets} onClose={() => setOpen(false)} />}
     </>
@@ -54,8 +54,8 @@ export function Generate3DButton({ targets, compact = true, className = "", glyp
 const SLOT: Record<string, string> = { get upper() { return tr("common.superior"); }, get outer_layer() { return tr("common.camada_externa"); }, get dress() { return tr("generate3d.corpo_inteiro"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("common.calcado"); }, get accessory() { return tr("common.acessorio"); } };
 
 export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; onClose: () => void }) {
-  const { user } = useAuth(); const toast = useToast(); const webgl = useWebGL();
-  const [i, setI] = useState(0); const [look, setLook] = useState<Look3d | null>(null); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  const { user } = useAuth(); const webgl = useWebGL();
+  const [i, setI] = useState(0); const [look, setLook] = useState<Look3d | null>(null); const [err, setErr] = useState<string | null>(null);
   const t = targets[i];
   const path = t.kind === "scheme" ? `/api/schemes/${t.id}/look3d` : `/api/pieces/${t.id}/look3d`;
   useEffect(() => {
@@ -70,23 +70,9 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
     const h = setInterval(() => api.get<Look3d>(path, { anonymous: !user }).then(setLook).catch(() => undefined), 5000);
     return () => clearInterval(h);
   }, [pending, path, user]);
-  async function requestModels() {
-    setBusy(true);
-    try {
-      if (t.kind === "scheme") {
-        const r = await api.post<{ requested: number; skipped: { name: string; reason: string }[]; look: Look3d }>(`/api/schemes/${t.id}/model3d`);
-        setLook(r.look);
-        toast.success(r.requested ? tr("generate3d.peca_s_na_fila_do", { requested: r.requested }) : tr("generate3d.nenhuma_peca_nova_para_gerar"));
-        r.skipped.slice(0, 2).forEach((s) => toast.info(`${s.name}: ${s.reason}`));
-      } else {
-        await api.post(`/api/pieces/${t.id}/model3d`); toast.success(tr("generate3d.peca_na_fila_do_3d"));
-        setLook(await api.get<Look3d>(path));
-      }
-    } catch (e) { toast.fromError(e); } finally { setBusy(false); }
-  }
   const m = look?.mannequin;
   return (
-    <Dialog open onClose={onClose} title={tr("generate3d.gerar_3d", { title: t.title })} size="lg">
+    <Dialog open onClose={onClose} title={tr("generate3d.manequim_3d_titulo", { title: t.title })} size="lg">
       {targets.length > 1 && (
         <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label={tr("common.esquemas_do_dna")}>
           {targets.map((x, k) => <button key={x.id} type="button" role="tab" aria-selected={k === i} className={`chip ${k === i ? "is-active" : ""}`} onClick={() => setI(k)}>{x.title}</button>)}
@@ -112,8 +98,7 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
                 </li>
               ))}
             </ul>
-            {look.canRequest && <Button className="mt-3 w-full" variant="primary" loading={busy} onClick={requestModels}>{tr("generate3d.gerar_modelos_3d_das_pecas")}</Button>}
-            {!look.canRequest && (look.missing3d ?? 0) > 0 && <p className="mt-3 type-caption text-muted">{tr("generate3d.as_pecas_sem_modelo_3d", { value: user ? tr("generate3d.so_o_dono_pede_o") : "" })}</p>}
+            {(look.missing3d ?? 0) > 0 && <p className="mt-3 type-caption text-muted">{tr("generate3d.pecas_sem_modelo_foto")}</p>}
             <p className="mt-3 type-caption text-faint">{tr("generate3d.arraste_para_girar_role_para", { value: webgl === false ? tr("generate3d.sem_webgl_versao_2d") : "" })}</p>
           </div>
         </div>

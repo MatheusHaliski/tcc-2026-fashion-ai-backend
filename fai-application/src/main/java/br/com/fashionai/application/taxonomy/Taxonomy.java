@@ -186,6 +186,16 @@ public final class Taxonomy {
         }
     }
 
+    /** Mesmo que {@link #canonicalTags}: lista de ocasiões/estilos como a tela manda, limpa (nome usado pelo cadastro). */
+    public static List<String> normalizeTags(List<String> values) {
+        return canonicalTags(values);
+    }
+
+    /** Só os códigos permitidos, na ordem recebida, até {@code max} (palpites da IA: nada fora da taxonomia entra). */
+    public static List<String> keepAllowed(List<String> values, List<String> allowed, int max) {
+        return canonicalTags(values).stream().filter(allowed::contains).limit(max).toList();
+    }
+
     /** Códigos canônicos: sem espaços, minúsculos, sem vazios e sem repetição (a ordem da pessoa é mantida). */
     public static List<String> canonicalTags(List<String> values) {
         if (values == null) {

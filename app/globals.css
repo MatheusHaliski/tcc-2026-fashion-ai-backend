@@ -1467,3 +1467,255 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .c-reactions .c-remixes { align-self: center; margin-left: 4px; }
 .menu-pop.is-up { top: auto; bottom: calc(100% + 6px); }
 @container (max-width: 200px) { .fai-card.piece-card .c-post .c-act-n { font-size: 11px; letter-spacing: -.02em; } }
+.m3d-bar.is-indeterminate > span { width: 35%; animation: m3d-indet 1.6s ease-in-out infinite; }
+@keyframes m3d-indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) { .m3d-bar.is-indeterminate > span { animation: none; width: 100%; opacity: .45; } }
+:root[data-reduce-motion="true"] .m3d-bar.is-indeterminate > span { animation: none; width: 100%; opacity: .45; }
+
+/* =====================================================================================================================
+   RF11 · Card da peça em camadas (de trás para a frente) — ver docs/anatomias/anatomias_card_v19.html
+   1 superfície externa  `article.pc`         borda, raio e recorte de tudo que é decorativo
+   2 área artística      `.pc-art`            arte do Background Studio + composição da família + efeitos de fundo
+   3 container           `.pc-frame > .pc-content`  cabeçalho, área da peça, ações e identificação (interativo)
+   4 área da peça        `.pc-media`          a foto aprovada, com fundo próprio (--pc-media-bg); a arte nunca passa por cima
+   5 efeitos             aura (atrás do container), luz de contorno e relevo (na borda do container)
+   A área artística aparece nas QUATRO laterais do container: --pc-x (laterais, igual em todas as famílias → a foto tem a
+   mesma escala na grade), --pc-top e --pc-bottom (a soma é constante: 2,9 × --pc-x; a família só troca a ênfase).
+   ===================================================================================================================== */
+.pc { position: relative; isolation: isolate; container-type: inline-size;
+  --pc-x: clamp(12px, 6cqi, 20px); --pc-sum: 2.9; --pc-top-k: 1.45; --pc-bottom-k: 1.45;
+  --pc-top: calc(var(--pc-x) * var(--pc-top-k)); --pc-bottom: calc(var(--pc-x) * var(--pc-bottom-k));
+  --pc-r-out: var(--card-radius, 10px); --pc-r-in: max(4px, calc(var(--pc-r-out) * .7));
+  --pc-accent: #E8C9A0; --pc-media-bg: var(--surface-2);
+  --pc-sh-base: 0 1px 2px rgba(0,0,0,.14), 0 8px 22px rgba(0,0,0,.2);
+  border-radius: var(--pc-r-out); }
+/* os tokens usam cqi do PRÓPRIO card: por isso ficam declarados nele e só são resolvidos nos descendentes */
+.pc-expanded { --pc-x: clamp(20px, 3cqi, 32px); --pc-r-out: max(12px, var(--card-radius, 12px)); }
+.pc.em-top { --pc-top-k: 1.9; --pc-bottom-k: 1; }
+.pc.em-bottom { --pc-top-k: 1; --pc-bottom-k: 1.9; }
+.pc > .pc-frame { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-width: 0; padding: var(--pc-top) var(--pc-x) var(--pc-bottom); }
+.pc .pc-content { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--container-bg, var(--card-bg, var(--surface))); color: var(--card-ink, var(--ink));
+  border-radius: var(--pc-r-in); overflow: clip; box-shadow: var(--pc-sh-relief, 0 0 #0000), var(--pc-sh-rim, 0 0 #0000), var(--pc-sh-base); }
+.pc .pc-media { background: var(--pc-media-bg); }
+/* camada 2: decorativa — sem clique, sem foco, fora do leitor de tela (aria-hidden no componente) */
+.pc-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; user-select: none; contain: paint; }
+.pc-art * { pointer-events: none; }
+.pc-art > * { position: absolute; }
+.pc-art .pc-base, .pc-art .card-art { inset: 0; }
+/* superfície interna: sólida (padrão) ou vidro fosco. No compacto sem desfoque (feed leve); no ampliado com desfoque */
+.pc[data-surface="frosted"] .pc-content { background: color-mix(in srgb, var(--container-bg, var(--card-bg, var(--surface))) 88%, transparent); }
+.pc-expanded[data-surface="frosted"] .pc-content { background: color-mix(in srgb, var(--container-bg, var(--card-bg, var(--surface))) 80%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.15); backdrop-filter: blur(14px) saturate(1.15); }
+.pc[data-surface="frosted"] .pc-content :is(.c-header, .c-actions, .c-post) { background: transparent; }
+/* a skin da peça continua valendo: a borda externa usa a cor dela */
+.fai-card.pc { border-color: var(--card-border, color-mix(in srgb, var(--ink) 14%, transparent)); }
+
+/* ---- efeitos do container (camada 5) ---- */
+.pc.fx-rim { --pc-sh-rim: 0 0 0 1.5px color-mix(in srgb, var(--pc-accent) 85%, white), 0 0 14px 2px color-mix(in srgb, var(--pc-accent) 60%, transparent); }
+.pc.fx-relief { --pc-sh-relief: 0 0 0 3px rgba(255,255,255,.38), 0 0 0 4px rgba(0,0,0,.14); }
+.pc-art .pc-fx-relief { inset: 0; border-radius: inherit; box-shadow: inset 2px 2px 0 rgba(255,255,255,.55), inset -2px -2px 0 rgba(0,0,0,.2), inset 0 0 0 calc(var(--pc-x) * .5) rgba(255,255,255,.06), inset 0 0 calc(var(--pc-x) * .8) rgba(0,0,0,.18); }
+.pc-art .pc-fx-aura { top: var(--pc-top); bottom: var(--pc-bottom); left: var(--pc-x); right: var(--pc-x); border-radius: var(--pc-r-in); opacity: var(--aura-i, .5);
+  box-shadow: 0 0 calc(var(--pc-x) * (.5 + var(--aura-r, .5) * 1.4)) calc(var(--pc-x) * var(--aura-r, .5) * .6) var(--pc-accent); }
+.pc-art .pc-fx-glow { inset: 0; mix-blend-mode: screen; background:
+  radial-gradient(38% 26% at 10% 4%, color-mix(in srgb, var(--pc-accent) 75%, white) 0%, transparent 72%),
+  radial-gradient(38% 26% at 92% 97%, color-mix(in srgb, var(--pc-accent) 60%, white) 0%, transparent 72%); }
+.pc-art .pc-fx-finish { inset: 0; }
+.pc-art .pc-fx-finish.is-metallic { mix-blend-mode: soft-light; background: linear-gradient(115deg, rgba(255,255,255,0) 14%, rgba(255,255,255,.75) 30%, rgba(255,255,255,0) 44%, rgba(0,0,0,.28) 62%, rgba(255,255,255,.6) 80%, rgba(255,255,255,0) 94%); }
+.pc-art .pc-fx-finish.is-iridescent { mix-blend-mode: soft-light; opacity: .8; background: conic-gradient(from 210deg at 30% 20%, #FF9ECF, #9EC9FF, #A8FFD8, #FFF3A0, #FFB0E5, #FF9ECF); }
+.pc-art .pc-fx-texture { inset: 0; }
+.pc-art .pc-fx-texture.is-paper { mix-blend-mode: multiply; opacity: .55; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .33 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.pc-art .pc-fx-texture.is-fabric { mix-blend-mode: multiply; opacity: .5; background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0,0,0,.1) 0 1px, transparent 1px 3px), repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 2px, transparent 2px 6px); }
+.pc-art .pc-fx-texture.is-ceramic { background: radial-gradient(120% 60% at 30% 0%, rgba(255,255,255,.55), transparent 55%), radial-gradient(circle at 20% 30%, rgba(0,0,0,.08) 0 1px, transparent 1.5px) 0 0 / 14px 14px, radial-gradient(circle at 70% 60%, rgba(0,0,0,.06) 0 1px, transparent 1.5px) 0 0 / 23px 23px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+.pc-art .pc-collage { inset: 0; }
+.pc-collage .tape { position: absolute; width: calc(var(--pc-x) * 3.2); height: calc(var(--pc-x) * .95); background: repeating-linear-gradient(90deg, rgba(255,245,210,.82) 0 6px, rgba(255,238,190,.82) 6px 12px); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.pc-collage .tape.t1 { left: calc(var(--pc-x) * -.4); top: calc(var(--pc-top) * .35); transform: rotate(-38deg); }
+.pc-collage .tape.t2 { right: calc(var(--pc-x) * -.4); bottom: calc(var(--pc-bottom) * .3); transform: rotate(-38deg); }
+.pc-collage .torn { position: absolute; right: calc(var(--pc-x) * .6); top: calc(var(--pc-top) * .08); width: calc(var(--pc-x) * 3.4); height: calc(var(--pc-top) * .84); transform: rotate(4deg); filter: drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
+.pc-collage .sticker { position: absolute; left: calc(var(--pc-x) * .8); bottom: calc(var(--pc-bottom) * .14); width: calc(var(--pc-bottom) * .72); height: calc(var(--pc-bottom) * .72); border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 18%, transparent 19%), var(--pc-accent); box-shadow: 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 2px rgba(255,255,255,.7); }
+.pc-art .pc-particles { inset: 0; }
+.pc-particles i { position: absolute; width: var(--s, 3px); height: var(--s, 3px); border-radius: 50%; background: color-mix(in srgb, var(--pc-accent) 55%, white); box-shadow: 0 0 6px color-mix(in srgb, var(--pc-accent) 70%, transparent); opacity: .85; }
+
+/* ---- famílias (composição da área artística; a variação b é sempre uma composição diferente, não só outra cor) ---- */
+/* Clássica · a: passe-partout de linha fina; b: cantoneiras de galeria */
+.pc-art .pc-classic-a { inset: calc(var(--pc-top) * .42) calc(var(--pc-x) * .42) calc(var(--pc-bottom) * .42); border: 1px solid rgba(255,255,255,.7); border-radius: calc(var(--pc-r-in) + 3px); box-shadow: 0 0 0 1px rgba(0,0,0,.06); }
+.pc-art .pc-classic-b { inset: calc(var(--pc-x) * .3); }
+.pc-classic-b i { position: absolute; width: calc(var(--pc-x) * 2); height: calc(var(--pc-x) * 2); border: 2px solid color-mix(in srgb, var(--pc-accent) 55%, #3A2E22); }
+.pc-classic-b .c1 { left: 0; top: 0; border-right: 0; border-bottom: 0; } .pc-classic-b .c2 { right: 0; top: 0; border-left: 0; border-bottom: 0; }
+.pc-classic-b .c3 { left: 0; bottom: 0; border-right: 0; border-top: 0; } .pc-classic-b .c4 { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+/* Bento: mosaico de painéis cobrindo o card; o container fica por cima e as bordas dos painéis aparecem nas quatro faixas */
+.pc-art .pc-bento { inset: 3px; display: grid; gap: 3px; --b1: #E7D5BF; --b2: #D9C2A7; --b3: #F4EBDF; --b4: #CDB596; --b5: #D98C5F; }
+.pc-bento i { border-radius: max(3px, calc(var(--pc-r-in) * .8)); background: var(--b1); box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+.pc-bento.v-a { grid-template-columns: 1.3fr 1fr 1.2fr; grid-template-rows: 1fr 1.6fr 1.3fr 1fr; grid-template-areas: "t1 t2 t3" "l1 x r1" "l2 x r2" "b1 b1 b2"; }
+.pc-bento.v-a .t1 { grid-area: t1; background: var(--b2); } .pc-bento.v-a .t2 { grid-area: t2; background: var(--b5); } .pc-bento.v-a .t3 { grid-area: t3; background: var(--b3); }
+.pc-bento.v-a .l1 { grid-area: l1; background: var(--b3); } .pc-bento.v-a .l2 { grid-area: l2; background: var(--b4); }
+.pc-bento.v-a .r1 { grid-area: r1; background: var(--b4); } .pc-bento.v-a .r2 { grid-area: r2; background: var(--b1); }
+.pc-bento.v-a .b1 { grid-area: b1; background: var(--b1); } .pc-bento.v-a .b2 { grid-area: b2; background: var(--b2); }
+.pc-bento.v-b { grid-template-columns: .9fr 1.4fr 1fr; grid-template-rows: 1.2fr 1fr 1.4fr .9fr; grid-template-areas: "L t2 t2" "L x r1" "L x r2" "b1 b2 r2"; }
+.pc-bento.v-b .L { grid-area: L; background: var(--b5); } .pc-bento.v-b .t2 { grid-area: t2; background: var(--b3); }
+.pc-bento.v-b .r1 { grid-area: r1; background: var(--b2); } .pc-bento.v-b .r2 { grid-area: r2; background: var(--b4); }
+.pc-bento.v-b .b1 { grid-area: b1; background: var(--b1); } .pc-bento.v-b .b2 { grid-area: b2; background: var(--b2); }
+.pc-bento.v-b .dot { position: absolute; right: calc(var(--pc-x) * .35); top: calc(var(--pc-top) * .2); width: calc(var(--pc-top) * .6); height: calc(var(--pc-top) * .6); border-radius: 50%; background: var(--b3); box-shadow: inset 0 0 0 3px var(--b5); }
+.pc-bento.is-tinted i { background: rgba(255,255,255,.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+.pc-bento.is-tinted .t2, .pc-bento.is-tinted .L { background: color-mix(in srgb, var(--pc-accent) 45%, transparent); }
+/* Blocos (genéricos, sem marca): tijolos com pinos e placa-base; a ênfase é o chão (a peça "montada" em cima) */
+.pc-art .pc-blocks { inset: 0; }
+.pc-blocks .brick { position: relative; display: block; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.4); min-width: 6px; min-height: 6px; }
+.pc-blocks .brick::after { content: ""; position: absolute; inset: 2px 3px auto; height: 6px; background: radial-gradient(circle, rgba(255,255,255,.45) 0 2px, rgba(0,0,0,.22) 2.4px 3px, transparent 3.3px) 0 0 / 9px 6px repeat-x; }
+.pc-blocks .row, .pc-blocks .col, .pc-blocks .tower { position: absolute; display: flex; gap: 2px; }
+.pc-blocks .row.top { top: 3px; left: 3px; right: 3px; height: calc(var(--pc-top) - 6px); }
+.pc-blocks .col { flex-direction: column; top: var(--pc-top); bottom: var(--pc-bottom); width: calc(var(--pc-x) - 5px); }
+.pc-blocks .col.left { left: 3px; } .pc-blocks .col.right { right: 3px; }
+.pc-blocks .plate { left: 0; right: 0; bottom: 0; height: calc(var(--pc-bottom) + 2px); position: absolute; background: radial-gradient(circle, rgba(255,255,255,.35) 0 2.2px, rgba(0,0,0,.2) 2.6px 3.2px, transparent 3.5px) 3px 50% / 11px 11px, linear-gradient(180deg, #5DAA48, #3F8A33); box-shadow: inset 0 2px 0 rgba(255,255,255,.3); }
+.pc-blocks.v-b .tower { flex-direction: column-reverse; bottom: var(--pc-bottom); top: calc(var(--pc-top) * .4); width: calc(var(--pc-x) - 4px); }
+.pc-blocks.v-b .tower.left { left: 2px; } .pc-blocks.v-b .tower.right { right: 2px; }
+.pc-blocks.v-b .tower .brick { flex: 1; } .pc-blocks.v-b .tower .brick:nth-child(odd) { margin-inline: 1px; }
+/* Sazonal · a: guirlanda no topo, peças pousadas nas laterais e o chão da estação; b: janela em arco com a paisagem */
+.pc-art .pc-season { inset: 0; }
+.pc-season .garland { position: absolute; left: 0; right: 0; top: 0; height: var(--pc-top); color: #5E9E4B; }
+.pc-season.s-summer .garland { color: #C9953A; } .pc-season.s-autumn .garland { color: #7A4320; } .pc-season.s-winter .garland { color: #7FA7C9; }
+.pc-season .garland svg { position: absolute; inset: 8% 0 auto; width: 100%; height: 70%; }
+.pc-season .g-item { position: absolute; top: calc(var(--pc-top) * .12); width: calc(var(--pc-top) * .72); height: calc(var(--pc-top) * .72); transform: rotate(var(--rot, 0deg)); color: #fff; }
+.pc-season .g-item svg, .pc-season .pin svg, .pc-season .bloom svg, .pc-season .leafy svg { width: 100%; height: 100%; display: block; }
+.pc-season .pin { position: absolute; width: calc(var(--pc-x) * .95); height: calc(var(--pc-x) * .95); transform: rotate(var(--rot, 0deg)); color: #fff; }
+.pc-season .pin.l { left: calc(var(--pc-x) * .08); } .pc-season .pin.r { right: calc(var(--pc-x) * .08); }
+.pc-season.s-winter :is(.g-item, .pin) { color: #fff; filter: drop-shadow(0 0 2px rgba(80,120,170,.8)); }
+.pc-season .shell { display: block; width: 100%; height: 100%; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%; background: repeating-conic-gradient(from -60deg at 50% 100%, #F7C9A8 0 8deg, #F2B08A 8deg 16deg); box-shadow: inset 0 -2px 0 rgba(0,0,0,.12); }
+.pc-season .ground { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pc-bottom) * .72); }
+.pc-season.s-spring .ground { background: linear-gradient(180deg, #A8D98A, #6FB25A); border-radius: 60% 40% 0 0 / 30% 30% 0 0; }
+.pc-season.s-summer .ground { background: linear-gradient(180deg, #F6DFA6, #E9C27A); }
+.pc-season.s-autumn .ground { background: radial-gradient(circle at 20% 30%, #C2410C 0 3px, transparent 3.5px) 0 0 / 14px 10px, radial-gradient(circle at 60% 70%, #D97706 0 3px, transparent 3.5px) 0 0 / 17px 11px, linear-gradient(180deg, #B97A45, #8A5530); }
+.pc-season.s-winter .ground { background: linear-gradient(180deg, #FFFFFF, #E4EEF8); border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-shadow: 0 -1px 0 rgba(120,150,190,.35); }
+.pc-season.v-b .arch { position: absolute; inset: 3px 3px 0; border-radius: 50% 50% 0 0 / calc(var(--pc-top) * 2.4) calc(var(--pc-top) * 2.4) 0 0; overflow: hidden; }
+.pc-season.v-b.s-spring .arch { background: linear-gradient(180deg, #FDE7F0 0%, #F9F4E8 60%); }
+.pc-season.v-b.s-summer .arch { background: linear-gradient(180deg, #7CCBEB 0%, #CDEFF9 55%, #FFE9B8 100%); }
+.pc-season.v-b.s-autumn .arch { background: linear-gradient(180deg, #F2C58E 0%, #E59A5B 60%, #B8643D 100%); }
+.pc-season.v-b.s-winter .arch { background: linear-gradient(180deg, #2E4A6B 0%, #6B8DB3 60%, #C9DAEC 100%); }
+.pc-season .sun-disc { position: absolute; left: 50%; top: 2%; width: calc(var(--pc-top) * 1.3); height: calc(var(--pc-top) * 1.3); transform: translateX(-50%); }
+.pc-season .sun-disc svg, .pc-season .palm svg { width: 100%; height: 100%; display: block; }
+.pc-season .palm { position: absolute; bottom: calc(var(--pc-bottom) * .5); width: calc(var(--pc-x) * 2.6); height: 58%; }
+.pc-season .palm.l { left: calc(var(--pc-x) * -1.2); } .pc-season .palm.r { right: calc(var(--pc-x) * -1.2); }
+.pc-season .sea { position: absolute; left: 0; right: 0; bottom: calc(var(--pc-bottom) * .6); height: 10%; background: linear-gradient(180deg, #3FA7D6, #7CCBEB); }
+.pc-season .moon { position: absolute; right: calc(var(--pc-x) * 1.2); top: calc(var(--pc-top) * .18); width: calc(var(--pc-top) * .7); height: calc(var(--pc-top) * .7); border-radius: 50%; box-shadow: inset -6px 2px 0 0 #FFF8DC; }
+.pc-season .hill { position: absolute; bottom: 0; height: 30%; border-radius: 50% 50% 0 0; background: #EAF2FA; }
+.pc-season .hill.h1 { left: -20%; width: 80%; } .pc-season .hill.h2 { right: -25%; width: 90%; height: 24%; background: #DCE8F4; }
+.pc-season .canopy { position: absolute; left: -10%; right: -10%; top: -30%; height: 55%; border-radius: 50%; background: radial-gradient(circle at 30% 60%, #F9C6DA 0 20%, transparent 21%), radial-gradient(circle at 60% 70%, #F4A7C0 0 18%, transparent 19%), radial-gradient(circle at 85% 55%, #FBD5E4 0 16%, transparent 17%), #FCE4EE; }
+.pc-season :is(.bloom, .leafy) { position: absolute; width: calc(var(--pc-x) * 1.1); height: calc(var(--pc-x) * 1.1); transform: rotate(var(--rot, 0deg)); }
+/* Raio-X · a: planta técnica (grade, contornos tracejados, marcas de registro, cotas); b: planos translúcidos e varredura */
+.pc-art .pc-xray { inset: 0; --xr: #6FE7FF; }
+.pc-xray .grid { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(111,231,255,.13) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(111,231,255,.13) 0 1px, transparent 1px 12px); }
+.pc-xray .outline { position: absolute; border: 1px dashed rgba(111,231,255,.6); border-radius: calc(var(--pc-r-in) + 4px); }
+.pc-xray .outline.o1 { inset: calc(var(--pc-top) * .45) calc(var(--pc-x) * .45) calc(var(--pc-bottom) * .45); }
+.pc-xray .outline.o2 { inset: calc(var(--pc-top) * .15) calc(var(--pc-x) * .15) calc(var(--pc-bottom) * .15); border-style: solid; border-color: rgba(111,231,255,.22); }
+.pc-xray .reg { position: absolute; width: 12px; height: 12px; background: linear-gradient(var(--xr), var(--xr)) center / 100% 1px no-repeat, linear-gradient(var(--xr), var(--xr)) center / 1px 100% no-repeat; opacity: .85; }
+.pc-xray .reg::after { content: ""; position: absolute; inset: 3px; border: 1px solid var(--xr); border-radius: 50%; }
+.pc-xray .reg.tl { left: 3px; top: 3px; } .pc-xray .reg.tr { right: 3px; top: 3px; } .pc-xray .reg.bl { left: 3px; bottom: 3px; } .pc-xray .reg.br { right: 3px; bottom: 3px; }
+.pc-xray .dim { position: absolute; background: rgba(111,231,255,.7); }
+.pc-xray .dim.h { left: var(--pc-x); right: var(--pc-x); top: calc(var(--pc-top) * .5); height: 1px; }
+.pc-xray .dim.v { top: var(--pc-top); bottom: var(--pc-bottom); left: calc(var(--pc-x) * .5); width: 1px; }
+.pc-xray .dim.h::before, .pc-xray .dim.h::after { content: ""; position: absolute; top: -3px; width: 1px; height: 7px; background: inherit; } .pc-xray .dim.h::before { left: 0; } .pc-xray .dim.h::after { right: 0; }
+.pc-xray .dim.v::before, .pc-xray .dim.v::after { content: ""; position: absolute; left: -3px; height: 1px; width: 7px; background: inherit; } .pc-xray .dim.v::before { top: 0; } .pc-xray .dim.v::after { bottom: 0; }
+.pc-xray .plane { position: absolute; border-radius: calc(var(--pc-r-in) + 2px); border: 1px solid rgba(111,231,255,.45); background: linear-gradient(160deg, rgba(111,231,255,.16), rgba(111,231,255,.03)); }
+.pc-xray .plane.p1 { inset: calc(var(--pc-top) * .25) calc(var(--pc-x) * .2) calc(var(--pc-bottom) * .6) calc(var(--pc-x) * .6); }
+.pc-xray .plane.p2 { inset: calc(var(--pc-top) * .55) calc(var(--pc-x) * .6) calc(var(--pc-bottom) * .25) calc(var(--pc-x) * .2); }
+.pc-xray .plane.p3 { inset: calc(var(--pc-top) * .08) calc(var(--pc-x) * .08) calc(var(--pc-bottom) * .08); border-style: dashed; background: none; }
+.pc-xray .scan { position: absolute; left: 0; right: 0; top: calc(var(--pc-top) * .45); height: 2px; background: linear-gradient(90deg, transparent, var(--xr), transparent); box-shadow: 0 0 10px var(--xr); }
+.pc-xray .ring { position: absolute; left: 50%; top: calc(var(--pc-top) * -.9); width: calc(var(--pc-top) * 3); height: calc(var(--pc-top) * 3); transform: translateX(-50%); border-radius: 50%; border: 1px solid rgba(111,231,255,.5); box-shadow: 0 0 22px rgba(111,231,255,.35), inset 0 0 22px rgba(111,231,255,.2); }
+/* Passarela · a: palco com treliça de luz, fachos e piso em perspectiva; b: cortinas, bambinela e letreiro de lâmpadas */
+.pc-art .pc-runway { inset: 0; }
+.pc-runway .beam { position: absolute; top: 0; width: 46%; height: 100%; transform: translateX(-50%); background: conic-gradient(from 166deg at 50% 0%, transparent 0deg, rgba(255,226,160,.55) 14deg, transparent 28deg); filter: blur(1.5px); }
+.pc-runway .rig { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--pc-top) * .42); background: repeating-linear-gradient(45deg, #3B3440 0 2px, transparent 2px 7px), linear-gradient(#2A2330, #2A2330); border-bottom: 1px solid #4A4252; }
+.pc-runway .rig i { position: absolute; bottom: -4px; width: 8px; height: 8px; transform: translateX(-50%); border-radius: 50%; background: #FFE3A3; box-shadow: 0 0 10px 3px rgba(255,210,122,.7); }
+.pc-runway .floor { position: absolute; left: 0; right: 0; bottom: 0; height: var(--pc-bottom); background: linear-gradient(180deg, #3A2F3E 0%, #1D171F 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.pc-runway .floor svg { width: 100%; height: 100%; display: block; }
+.pc-runway .curtain { position: absolute; top: 0; bottom: 0; width: calc(var(--pc-x) * 1.6); background: repeating-linear-gradient(90deg, #7A1426 0 5px, #9E1C33 5px 9px, #6A1020 9px 12px); box-shadow: inset 0 -20px 30px rgba(0,0,0,.45); }
+.pc-runway .curtain.l { left: 0; border-radius: 0 0 60% 0 / 0 0 12% 0; } .pc-runway .curtain.r { right: 0; border-radius: 0 0 0 60% / 0 0 0 12%; }
+.pc-runway .valance { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--pc-top) * .55); background: radial-gradient(circle at 50% 0, #9E1C33 0 62%, transparent 64%) 0 100% / 26px 14px repeat-x, linear-gradient(#8A1A2E, #8A1A2E) 0 0 / 100% calc(100% - 10px) no-repeat; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+.pc-runway .bulbs { position: absolute; left: calc(var(--pc-x) * 1.4); right: calc(var(--pc-x) * 1.4); top: calc(var(--pc-top) * .66); display: flex; justify-content: space-between; }
+.pc-runway .bulbs i { width: 7px; height: 7px; border-radius: 50%; background: #FFF1C7; box-shadow: 0 0 8px 2px rgba(255,210,122,.75); }
+
+/* ---- movimento: só no card ampliado com "movimento ambiente" ligado, na tela, e sem "reduzir movimento" ---- */
+@keyframes pc-float { 0%, 100% { transform: translateY(0); opacity: .85; } 50% { transform: translateY(-8px); opacity: .45; } }
+@keyframes pc-breathe { 0%, 100% { opacity: calc(var(--aura-i, .5) * .75); } 50% { opacity: var(--aura-i, .5); } }
+@keyframes pc-scan { 0% { top: 0; } 100% { top: 100%; } }
+@keyframes pc-sway { 0%, 100% { transform: translateX(-50%) rotate(-4deg); } 50% { transform: translateX(-50%) rotate(4deg); } }
+.pc.fx-motion .pc-particles i { animation: pc-float 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.pc.fx-motion .pc-fx-aura { animation: pc-breathe 5s ease-in-out infinite; }
+.pc.fx-motion .pc-xray .scan { animation: pc-scan 5s linear infinite; }
+.pc.fx-motion .pc-runway .beam { transform-origin: 50% 0; animation: pc-sway 7s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -2.3s); }
+.pc.fx-motion .pc-season :is(.g-item, .pin) { animation: pc-float 7s ease-in-out infinite; }
+/* fora da tela: pausa (IntersectionObserver marca data-inview) */
+.pc[data-inview="false"] .pc-art *, .pc[data-inview="false"] .pc-art *::after { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .pc .pc-art *, .pc .pc-art *::after { animation: none !important; } }
+:root[data-reduce-motion="true"] .pc .pc-art *, :root[data-reduce-motion="true"] .pc .pc-art *::after { animation: none !important; }
+
+/* ---- o card de peça dentro das camadas ---- */
+.fai-card.piece-card.pc { overflow: hidden; }
+.piece-card.pc .pc-media { border-radius: 0; }
+/* ampliado: a altura útil do modal desconta as faixas da arte */
+@media (min-width: 900px) {
+  .dialog-card.is-piece .piece-detail.pc .pd-slide { max-height: calc(90dvh - 52px - var(--pc-top) - var(--pc-bottom)); }
+  .dialog-card.is-piece .piece-detail.pc .pd-info { max-height: calc(90dvh - 52px - var(--pc-top) - var(--pc-bottom)); }
+}
+.dialog.dialog-card > .fai-card.pc { box-shadow: var(--shadow); }
+.piece-detail.pc .pd-media { background: var(--pc-media-bg); }
+
+/* ---------- Editor da arte do card da peça (RF11): controles à esquerda, o card do feed de verdade à direita ---------- */
+.pae { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .pae { grid-template-columns: minmax(0, 1fr) 260px; align-items: start; } .pae-preview { position: sticky; top: 0; } }
+.pae-steps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.pae-steps .chip[aria-current="step"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.pae-h { margin: 0; font-family: var(--font-data); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pae-families { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.pae-family { display: grid; gap: 6px; }
+.pae-variants { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.pae-swatch-btn { display: grid; gap: 4px; padding: 4px; border: 2px solid var(--line-soft); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; }
+.pae-swatch-btn[aria-pressed="true"], .pae-swatch-btn[aria-checked="true"] { border-color: var(--mark); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 30%, transparent); }
+.pae-swatch-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pae-swatch-cap { font-size: 12px; line-height: 1.25; color: var(--muted); }
+.pae-swatch { display: flex; width: 100%; }
+.pae-swatch .pc-content { aspect-ratio: 4 / 5.6; }
+.pae-swatch-box { flex: 1; margin: 8px; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--surface-3) 6px 12px); }
+.pae-swatch-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pae-expanded { max-width: 420px; }
+.pae-expanded .pae-swatch .pc-content { aspect-ratio: 4 / 5; }
+.pae-fx { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pae-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.pae-preview { display: grid; gap: 8px; }
+/* a prévia tem a largura de uma coluna da grade: o que se vê aqui é o que aparece no feed */
+.pae-preview-card { width: min(100%, var(--pae-preview-w, 240px)); }
+.switch-track:disabled { opacity: .45; cursor: not-allowed; }
+.chip:disabled { opacity: .45; cursor: not-allowed; }
+/* alternativa à ação principal (posição secundária): texto-link, alvo de toque próprio */
+.piece-detail .pd-alt { justify-self: start; min-height: 32px; padding: 0 2px; font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; cursor: pointer; }
+.piece-detail .pd-alt:hover { color: var(--ink); }
+.piece-detail .pd-alt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+@media (pointer: coarse) { .piece-detail .pd-alt { min-height: var(--touch); } }
+.dialog.dialog-card:focus { outline: none; }
+@container (max-width: 200px) { .fai-card.piece-card .c-post[data-dense] .c-act.is-comment .c-act-n { display: none; } }
+.piece-card .pc-price { flex-wrap: wrap; row-gap: 2px; min-width: 0; }
+.piece-card .pc-price b { white-space: nowrap; }
+.pc-sale { white-space: nowrap; }
+@container (max-width: 200px) { .piece-card .pc-price { font-size: 12px; } .piece-card .pc-price b { white-space: normal; overflow-wrap: anywhere; } }
+/* contagens enormes no card estreito: alvos com a largura mínima da WCAG 2.5.8 (24 px), altura de toque mantida */
+@container (max-width: 200px) { .fai-card.piece-card .c-post[data-dense] .c-act { min-width: 24px; padding: 0 2px; } .fai-card.piece-card .c-post[data-dense] .c-actions { padding: 2px 0; } }
+
+/* ---------- Ações sociais: tipografia de interface (não monoespaçada), ícones 24 px ---------- */
+.c-act { font-family: var(--font-ui); font-size: 14px; font-weight: 600; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.c-act-icon { width: 24px; height: 24px; }
+.c-post.is-compact .c-act { font-size: 13px; }
+/* coluna estreita (2 por linha no celular): ícones 20 px para a linha caber sem esconder contagens */
+@container (max-width: 200px) { .fai-card.piece-card .c-post .c-act-n { font-size: 12px; letter-spacing: 0; } .piece-card .c-act-icon { width: 20px; height: 20px; } }
+/* Reações (Trend, Elegante, Criativo): pílulas com o ícone FAI grande, nome e contagem */
+.c-reactions { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 16px 14px; }
+.c-reaction { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 14px 4px 5px; border-radius: 999px;
+  border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer;
+  font-family: var(--font-ui); font-size: 14px; font-weight: 500; line-height: 1; letter-spacing: 0; transition: background .15s, border-color .15s, transform .1s; }
+.c-reaction-icon { flex: none; width: 30px; height: 30px; border-radius: 999px; }
+.c-reaction-label { white-space: nowrap; }
+.c-reaction-n { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.c-reaction:hover { background: var(--surface-2); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
+.c-reaction:active { transform: scale(.97); }
+.c-reaction:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.c-reaction[aria-pressed="true"] { background: var(--mark-soft); border-color: var(--mark); font-weight: 600; }
+.c-reaction[aria-pressed="true"] .c-reaction-n { color: var(--ink); }
+@media (pointer: coarse) { .c-reaction { min-height: var(--touch); } }
+@media (prefers-reduced-motion: reduce) { .c-reaction { transition: none; } .c-reaction:active { transform: none; } }

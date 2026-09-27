@@ -94,7 +94,7 @@ export function ChipMultiSelect({ legend, options, value, onChange, max, hint, l
     </fieldset>
   );
 }
-export function Switch({ checked, onChange, label, id, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; hint?: string }) {
+export function Switch({ checked, onChange, label, id, hint, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; hint?: string; disabled?: boolean }) {
   const auto = useId(); const sid = id ?? auto;
   // O nome acessível vem do rótulo visível (aria-labelledby); a linha inteira é clicável e tem altura de toque.
   return (
@@ -104,15 +104,20 @@ export function Switch({ checked, onChange, label, id, hint }: { checked: boolea
         {hint && <span id={`${sid}-hint`} className="type-caption block text-muted">{hint}</span>}
       </span>
       <button id={sid} type="button" role="switch" aria-checked={checked} aria-labelledby={`${sid}-label`} aria-describedby={hint ? `${sid}-hint` : undefined}
-        onClick={() => onChange(!checked)} className="switch-track">
+        onClick={() => onChange(!checked)} className="switch-track" disabled={disabled}>
         <span className="switch-thumb" />
       </button>
     </div>
   );
 }
-/** `blocked`: a escolha não entra agora (ex.: limite atingido) — continua focável e clicável para explicar o porquê. */
-export function Chip({ active, blocked, children, onClick, className, title }: { active?: boolean; blocked?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
-  return <button type="button" className={cn("chip", blocked && "is-blocked", className)} aria-pressed={active} aria-disabled={blocked || undefined} onClick={onClick} title={title}>{children}</button>;
+/**
+ * `blocked`: a escolha não entra agora (ex.: limite atingido) — continua focável e clicável para explicar o porquê.
+ * `role="radio"`: o chip faz parte de um radiogroup e o estado vai em aria-checked (e não em aria-pressed).
+ */
+export function Chip({ active, blocked, children, onClick, className, title, disabled, role, ...aria }: { active?: boolean; blocked?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string; disabled?: boolean;
+  role?: "radio"; "aria-checked"?: boolean }) {
+  return <button type="button" className={cn("chip", blocked && "is-blocked", className)} role={role} aria-pressed={role ? undefined : active} aria-checked={role ? aria["aria-checked"] ?? active : undefined}
+    aria-disabled={blocked || undefined} disabled={disabled} onClick={onClick} title={title}>{children}</button>;
 }
 export function Badge({ tone, children, className }: { tone?: "mark" | "thread" | "chalk"; children: ReactNode; className?: string }) {
   return <span className={cn("badge", tone && `badge-${tone}`, className)}>{children}</span>;
@@ -275,7 +280,7 @@ export function Pagination({ page, hasMore, onPage, total, size }: { page: numbe
 }
 
 /* ---------- Sobreposições: foco preso, Escape, rolagem travada e foco devolvido ao gatilho ---------- */
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+export const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean, onClose: () => void, opts?: { lockScroll?: boolean; initial?: "first" | "container" }) {
   const close = useRef(onClose); close.current = onClose;
   useEffect(() => {

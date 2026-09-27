@@ -15,7 +15,7 @@ import { P, type PosePoint } from "@/lib/avatar3d/body";
  * roupa e os acessórios saem. Na faixa em que as duas se encontram (barra da camiseta sobre o cós), cada pixel vai para
  * a peça de cor mais parecida. Fotos sem pessoa passam intactas; a peça segue para o estúdio.
  */
-export type GarmentPart = "upper" | "lower" | "full";
+export type GarmentPart = "upper" | "lower" | "full" | "feet";
 export interface PersonFilterResult {
   file: File; personFound: boolean; removedPct: number; people: number; ms: number;
   /** partes com roupa na foto (fração da roupa em cada zona) e a parte mantida */
@@ -96,6 +96,7 @@ export async function stripPerson(file: File, opts: { keep?: GarmentPart } = {})
       let out = skin[m] === 1 || k === 0;
       if (!out && z && keep !== "full" && (k === CLOTHES || k === OTHERS)) {
         if (k === OTHERS) out = true;
+        else if (keep === "feet") out = v < z.ankle - z.torso * 0.3;
         else if (keep === "upper") out = v > bandBottom || (v >= bandTop && d2(o, lowerMean) < d2(o, upperMean));
         else out = v < bandTop || v > z.ankle - z.torso * 0.05 || (v <= bandBottom && d2(o, upperMean) < d2(o, lowerMean));
       }

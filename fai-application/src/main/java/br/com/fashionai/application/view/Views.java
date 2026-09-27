@@ -96,7 +96,7 @@ public final class Views {
                 w.getCondition() == null ? null : w.getCondition().name(), w.isFavorite(), w.isForSale(), w.getWearCount(),
                 w.getLastWornDate(), w.getModerationStatus().name(),
                 w.getPhotoProcessingStatus() == null ? null : w.getPhotoProcessingStatus().name(),
-                Json.map(w.getPhotoQualityScoresJson()), Json.map(w.getFlatLayMetadataJson()),
+                Json.map(w.getPhotoQualityScoresJson()), pieceMeta(w.getFlatLayMetadataJson(), viewer),
                 Json.map(w.getBackgroundConfigJson()), w.getHypeScore(), w.getHypeScoreGlobal(), w.getRemixedFromPieceId(),
                 Json.csv(w.getTags()), w.getNotes(), w.getPurchaseDate(), w.getPurchaseLocation(), w.getSku(),
                 w.getCareInstructions(), w.getModel3dStatus() == null ? null : w.getModel3dStatus().name(),
@@ -105,6 +105,24 @@ public final class Views {
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
                 w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w));
+    }
+
+    /**
+     * Metadados da foto como cada um pode ver: a versão de estúdio pendente (ainda não aprovada) e o histórico só vão
+     * para quem pode editar a peça — para os outros, existe apenas a foto aprovada.
+     */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> pieceMeta(String json, ViewerState viewer) {
+        Map<String, Object> meta = Json.map(json);
+        if ((viewer != null && viewer.canEdit()) || !(meta.get("studio") instanceof Map<?, ?> st)) {
+            return meta;
+        }
+        Map<String, Object> out = new java.util.LinkedHashMap<>(meta);
+        Map<String, Object> studio = new java.util.LinkedHashMap<>((Map<String, Object>) st);
+        studio.remove("pending");
+        studio.remove("previous");
+        out.put("studio", studio);
+        return out;
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */

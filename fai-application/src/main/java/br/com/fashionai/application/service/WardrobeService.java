@@ -350,7 +350,7 @@ public class WardrobeService {
         if (r.backgroundRemoved()) {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia",
+                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoSource,
                     br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
         }
 
@@ -488,18 +488,68 @@ public class WardrobeService {
     }
 
     static final String ANALYZER_SYSTEM = """
-            Você é o Piece Analyzer do Fashion AI. Identifique a peça de roupa da imagem e responda SOMENTE com JSON:
-            {"name": string, "category": one of [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
-             "subcategory": string (código da taxonomia, ex.: t_shirt, jeans, casual_sneakers, handbag, dress),
-             "color": código da paleta (ex.: black, white, navy, denim, beige, red, olive, multicolor, print),
-             "material": one of [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
-             "brand": string ou null (só se o logotipo for legível), "sex": one of [MASCULINO, FEMININO, UNISSEX],
-             "occasion": até 2 códigos, "style": até 2 códigos,
-             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1},
-             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (só logotipo ou símbolo de MARCA: bordado, etiqueta,
-                     patch ou marca pequena; caixa em 0–1000 relativa à imagem inteira) ou null se não houver. Frases,
-                     palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO são logo: devolva null}
-            Nunca descreva pessoas. Se não houver peça de roupa, devolva confidence 0 em tudo.""";
+            Você é o Piece Analyzer do Fashion AI. Você recebe fotos de UMA peça (roupa, calçado ou acessório) e responde
+            SOMENTE com JSON. A mensagem diz quais imagens vieram e em que ordem:
+            - Imagem 1: a peça inteira, recortada do fundo e endireitada.
+            - Folha de referências (quando vier): grade numerada com a imagem de referência de cada subtipo do tipo escolhido
+              pela pessoa. Compare o FORMATO da peça (silhueta, comprimento, gola, mangas, cano, abertura, bolsos) com cada
+              referência e escolha o subtipo mais parecido. Ignore cores, estampas e o selo "FAI" das referências: elas são
+              só modelos de formato.
+            - Zonas de marca (quando vierem): recortes ampliados dos lugares onde a marca costuma estar. Peça de cima:
+              · fundo da gola (etiqueta interna, vista pelo decote);
+              · peito esquerdo de quem veste (fica à DIREITA da foto);
+              · peito direito de quem veste (fica à ESQUERDA da foto);
+              · centro do peito.
+              Leia logotipos, bordados, estampas e etiquetas. Só informe a marca se conseguir ler o nome ou reconhecer o
+              logotipo com segurança; nunca invente.
+            JSON:
+            {"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+             "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
+             "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
+             "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
+             "color": código da paleta, "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+             "sex": um de [MASCULINO, FEMININO, UNISSEX], "occasion": até 2 códigos da lista de ocasiões,
+             "style": até 2 códigos da lista de estilos,
+             "brand": nome da marca ou null, "brandZone": id da zona em que a marca foi lida (ou "outra") ou null,
+             "brandEvidence": o que foi lido ou visto (ex.: "texto NIKE bordado no peito") ou null,
+             "photo": {"fullyVisible": a peça aparece inteira, sem partes cortadas pela borda da foto?,
+                       "viewAngle": "frontal_90" (câmera a 90°, de frente/de cima) | "angulo" | "lateral" | "dobrada",
+                       "singlePiece": há uma peça só (par de calçados conta como uma)?},
+             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1, "photo": 0-1},
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} caixa do logotipo/etiqueta de marca NA IMAGEM 1, em
+                     0–1000 relativos à imagem inteira, ou null. Frases, palavras decorativas e estampas gráficas
+                     (ex.: "THE BEST PLAN" no peito) NÃO são logo: devolva null}
+            Nunca descreva pessoas. Se não houver peça, devolva matchesCategory false e confidence 0 em tudo.""";
+
+    /** Mensagem do analisador: tipo escolhido, vocabulário permitido e o que é cada imagem anexada (na ordem). */
+    static String analyzerPrompt(String chosen, List<String> sheetLegend, List<BrandRegions.Zone> zones, List<SubtypeReferences.Match> ranking) {
+        StringBuilder p = new StringBuilder();
+        String category = chosen == null ? null : chosen;
+        if (category != null) {
+            p.append("Tipo escolhido pela pessoa: ").append(category).append(".\n");
+            p.append("Subtipos possíveis desse tipo: ").append(String.join(", ", Taxonomy.SUBCATEGORIES.get(category))).append(".\n");
+        } else {
+            p.append("Tipo não informado: descubra pela foto. Subtipos por tipo: ").append(Taxonomy.SUBCATEGORIES).append(".\n");
+        }
+        p.append("Ocasiões permitidas: ").append(String.join(", ", Taxonomy.allowedOccasions(category))).append(".\n");
+        p.append("Estilos: ").append(String.join(", ", Taxonomy.STYLES)).append(".\n");
+        p.append("Cores (códigos): ").append(String.join(", ", Taxonomy.COLORS.keySet())).append(".\n");
+        int n = 1;
+        p.append("Imagens anexadas: ").append(n++).append(" = peça inteira");
+        if (!sheetLegend.isEmpty()) {
+            p.append("; ").append(n++).append(" = folha de referências (").append(String.join(", ", sheetLegend)).append(")");
+        }
+        for (BrandRegions.Zone z : zones) {
+            p.append("; ").append(n++).append(" = zona de marca \"").append(z.id()).append("\"");
+        }
+        p.append(".\n");
+        if (!ranking.isEmpty()) {
+            p.append("Similaridade de silhueta medida localmente (0–1, só uma pista; decida pela comparação visual): ")
+                    .append(String.join(", ", ranking.stream().limit(5).map(m -> m.subcategory() + " " + m.score()).toList())).append(".\n");
+        }
+        p.append("Analise e responda só com o JSON.");
+        return p.toString();
+    }
 
     static final String MODERATION_SYSTEM = """
             Você é o Content Moderator do Fashion AI. Avalie a imagem e responda SOMENTE com JSON:
@@ -665,9 +715,17 @@ public class WardrobeService {
         String material = firstNonBlank(keep(g.material(), c.get("material")), g.material(), defaultMaterial(category, sub));
         String brand = firstNonBlank(keep(g.brand(), c.get("brand")), g.brand(), Msg.t("wardrobe.sem_marca"));
         String sex = g.sex() != null && Taxonomy.SEXES.contains(g.sex()) ? g.sex() : "UNISSEX";
-        String name = humanize(sub) + " " + humanize(color);
-        List<String> occasion = List.of(Taxonomy.allowedOccasions(category).get(0));
-        List<String> style = List.of(defaultStyle(sub));           // sempre um código de Taxonomy.STYLES (WardrobePrefillTest)
+        LocalVision.Insights seen = g.insights();
+        String name = firstNonBlank(seen.name(), pieceName(sub, color));
+        List<String> allowedOccasions = Taxonomy.allowedOccasions(category);
+        List<String> occasion = Taxonomy.keepAllowed(seen.occasion(), allowedOccasions, 2);
+        if (occasion.isEmpty()) {
+            occasion = List.of(allowedOccasions.get(0));
+        }
+        List<String> style = Taxonomy.keepAllowed(seen.style(), Taxonomy.STYLES, 2);
+        if (style.isEmpty()) {
+            style = List.of(defaultStyle(sub));
+        }
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
                 manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),
                 candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks);
@@ -846,12 +904,10 @@ public class WardrobeService {
                 flatMeta.put("studio_source_url", r.get("studioSourceUrl"));        // refazer o estúdio em alta depois
             }
             if (r.get("studio") instanceof Map<?, ?> st && !Boolean.FALSE.equals(form.studio())) {
-                Map<String, Object> summary = new LinkedHashMap<>();
-                summary.put("framing", st.get("framing"));
-                summary.put("feed", st.get("feed"));
-                summary.put("logo", st.get("logo"));
-                summary.put("metrics", st.get("metrics"));
-                flatMeta.put("studio", summary);
+                // a pessoa revisou a foto no cadastro e salvou: é a versão 1, aprovada
+                Map<String, Object> info = new LinkedHashMap<>();
+                st.forEach((k, v) -> info.put(String.valueOf(k), v));
+                flatMeta.put("studio", studioSummary(info, 1, true));
             }
             w.setFlatLayMetadataJson(Json.write(flatMeta));
             w.setProcessingJobId(draft.getId());
@@ -1311,7 +1367,7 @@ public class WardrobeService {
         if (hasTransparency(img)) {
             refreshStudio(w, img, false, false);
         } else {
-            applyStudio(w, null);
+            applyStudio(w, null, false);
         }
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "image"));
         return Views.piece(w, viewerState(user, w), null);
@@ -1393,9 +1449,13 @@ public class WardrobeService {
     /** Metadados do Flat Lay refeito + a nova fonte do estúdio em alta resolução; a detecção da IA (logo) é mantida. */
     private Map<String, Object> withStudioSource(WardrobeItem w, FlatLayPipeline.Result r, String base) {
         Map<String, Object> meta = new LinkedHashMap<>(r.metadata());
-        Object detected = Json.map(w.getFlatLayMetadataJson()).get("detected");
+        Map<String, Object> old = Json.map(w.getFlatLayMetadataJson());
+        Object detected = old.get("detected");
         if (detected != null) {
             meta.put("detected", detected);
+        }
+        if (old.get("studio") != null) {
+            meta.put("studio", old.get("studio"));                       // versões e aprovação da foto de estúdio
         }
         meta.put("studio_source_url", media.put(base + "-studio-source.png", ImageOps.png(r.studioSource()), "image/png").url());
         return meta;
@@ -1468,30 +1528,184 @@ public class WardrobeService {
     }
 
     /** Grava o resultado do estúdio na peça (foto, fundo, detalhe do logo) e o resumo nos metadados. */
-    private void applyStudio(WardrobeItem w, Map<String, Object> info) {
+    /** Coloca uma foto de estúdio no ar (nova versão; {@code approved} diz se a pessoa já aprovou). {@code null} tira o estúdio. */
+    private void applyStudio(WardrobeItem w, Map<String, Object> info, boolean approved) {
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        Map<String, Object> cur = studioMeta(meta);
         w.setStudioImageUrl(info == null ? null : String.valueOf(info.get("url")));
         w.setStudioBackdrop(info == null ? null : String.valueOf(info.get("backdrop")));
         w.setStudioDetailUrl(info == null || info.get("detailUrl") == null ? null : String.valueOf(info.get("detailUrl")));
-        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
         if (info == null) {
             meta.remove("studio");
         } else {
-            Map<String, Object> summary = new LinkedHashMap<>();
-            summary.put("stages", info.get("stages"));
-            summary.put("metrics", info.get("metrics"));
-            summary.put("framing", info.get("framing"));
-            summary.put("feed", info.get("feed"));
-            summary.put("logo", info.get("logo"));
-            summary.put("provider", String.valueOf(info.get("provider")));
+            Map<String, Object> summary = studioSummary(info, studioVersion(cur, w) + 1, approved);
+            if (cur != null && cur.get("url") != null) {
+                summary.put("previous", studioRef(cur));
+            }
             meta.put("studio", summary);
         }
         w.setFlatLayMetadataJson(Json.write(meta));
     }
 
+    // ================================================================== RF4 · versões e aprovação da foto de estúdio
+    // A foto de estúdio aprovada nunca é trocada em silêncio por um processamento novo: com uma aprovada no ar, o
+    // resultado novo fica em flatLayMetadata.studio.pending (com a própria versão e todos os derivados: foto inteira,
+    // miniatura, variante do feed, detalhe do logo, recorte realçado, enquadramento e marcos para ajuste manual) até a
+    // pessoa aprovar (POST /studio/approve) ou descartar (DELETE /studio/pending). Peças antigas sem esses campos
+    // contam como versão 1 aprovada.
+    private static final List<String> STUDIO_KEYS = List.of("url", "thumbUrl", "feedUrl", "detailUrl", "enhancedUrl", "backdrop",
+            "stages", "metrics", "framing", "feed", "logo", "provider");
+
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> studioMeta(Map<String, Object> meta) {
+        return meta.get("studio") instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : null;
+    }
+
+    static int studioVersion(Map<String, Object> cur, WardrobeItem w) {
+        if (cur != null && cur.get("version") instanceof Number n) {
+            return n.intValue();
+        }
+        return w.getStudioImageUrl() != null ? 1 : 0;
+    }
+
+    /** Aprovada: marcada como tal ou legada (sem o campo). */
+    static boolean studioApproved(Map<String, Object> cur, WardrobeItem w) {
+        return w.getStudioImageUrl() != null && (cur == null || !Boolean.FALSE.equals(cur.get("approved")));
+    }
+
+    static Map<String, Object> studioSummary(Map<String, Object> info, int version, boolean approved) {
+        Map<String, Object> s = new LinkedHashMap<>();
+        for (String k : STUDIO_KEYS) {
+            if (info.get(k) != null) {
+                s.put(k, "provider".equals(k) ? String.valueOf(info.get(k)) : info.get(k));
+            }
+        }
+        String now = java.time.Instant.now().toString();
+        s.put("version", version);
+        s.put("approved", approved);
+        s.put("createdAt", now);
+        if (approved) {
+            s.put("approvedAt", now);
+        }
+        return s;
+    }
+
+    /** O que fica da versão anterior (histórico curto): versão e as URLs, sem a versão anterior dela. */
+    private static Map<String, Object> studioRef(Map<String, Object> cur) {
+        Map<String, Object> ref = new LinkedHashMap<>();
+        for (String k : List.of("version", "url", "feedUrl", "backdrop", "approvedAt")) {
+            if (cur.get(k) != null) {
+                ref.put(k, cur.get(k));
+            }
+        }
+        return ref;
+    }
+
+    /**
+     * Resultado novo do estúdio. Com uma foto APROVADA no ar e a mesma foto de origem, ele fica pendente (a aprovada
+     * continua no feed). Sem aprovada, ou quando a pessoa trocou a foto de origem (a aprovada é de outra imagem), ele
+     * entra no ar marcado "aguardando aprovação". Devolve "pending", "applied" ou "failed".
+     */
+    String offerStudio(WardrobeItem w, Map<String, Object> info, boolean sourceChanged) {
+        if (info == null) {
+            if (sourceChanged) {
+                applyStudio(w, null, false);                    // estúdio de outra imagem é pior que nenhum
+            }
+            return "failed";
+        }
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        Map<String, Object> cur = studioMeta(meta);
+        if (!sourceChanged && studioApproved(cur, w)) {
+            if (cur == null) {                                  // legado: a aprovada ganha o resumo mínimo
+                cur = new LinkedHashMap<>(Map.of("url", w.getStudioImageUrl(), "version", 1, "approved", true));
+            }
+            dropPendingMedia(cur);
+            cur.put("pending", studioSummary(info, Math.max(studioVersion(cur, w), pendingVersion(cur)) + 1, false));
+            meta.put("studio", cur);
+            w.setFlatLayMetadataJson(Json.write(meta));
+            return "pending";
+        }
+        applyStudio(w, info, false);
+        return "applied";
+    }
+
+    private static int pendingVersion(Map<String, Object> cur) {
+        return cur.get("pending") instanceof Map<?, ?> p && p.get("version") instanceof Number n ? n.intValue() : 0;
+    }
+
+    /** Apaga os arquivos de uma versão pendente que não vai ao ar (melhor esforço: arquivo que sobrar não quebra nada). */
+    private void dropPendingMedia(Map<String, Object> cur) {
+        if (!(cur.get("pending") instanceof Map<?, ?> p)) {
+            return;
+        }
+        for (String k : List.of("url", "thumbUrl", "feedUrl", "detailUrl", "enhancedUrl")) {
+            if (p.get(k) != null) {
+                try {
+                    media.deleteUrl(String.valueOf(p.get(k)));
+                } catch (RuntimeException e) {
+                    log.debug("não apagou {}: {}", p.get(k), e.toString());
+                }
+            }
+        }
+    }
+
+    /** Aprova a foto de estúdio: a pendente vai ao ar (a anterior fica no histórico) ou a atual é marcada como aprovada. */
+    @Transactional
+    public Views.PieceView approveStudio(CurrentUser user, UUID id) {
+        guard.requireCanCreate(user);
+        WardrobeItem w = owned(user, id);
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        Map<String, Object> cur = studioMeta(meta);
+        String now = java.time.Instant.now().toString();
+        if (cur != null && cur.get("pending") instanceof Map<?, ?> pm) {
+            Map<String, Object> next = new LinkedHashMap<>();
+            pm.forEach((k, v) -> next.put(String.valueOf(k), v));
+            next.put("approved", true);
+            next.put("approvedAt", now);
+            if (w.getStudioImageUrl() != null) {
+                Map<String, Object> prev = new LinkedHashMap<>(cur);
+                prev.putIfAbsent("url", w.getStudioImageUrl());
+                next.put("previous", studioRef(prev));
+            }
+            w.setStudioImageUrl(String.valueOf(next.get("url")));
+            w.setStudioBackdrop(next.get("backdrop") == null ? null : String.valueOf(next.get("backdrop")));
+            w.setStudioDetailUrl(next.get("detailUrl") == null ? null : String.valueOf(next.get("detailUrl")));
+            meta.put("studio", next);
+        } else if (w.getStudioImageUrl() != null && cur != null && Boolean.FALSE.equals(cur.get("approved"))) {
+            cur.put("approved", true);
+            cur.put("approvedAt", now);
+            meta.put("studio", cur);
+        } else {
+            throw ApiException.conflict("NADA_A_APROVAR", Msg.t("wardrobe.nenhuma_foto_de_estudio_aguardando"));
+        }
+        w.setFlatLayMetadataJson(Json.write(meta));
+        audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "studio", "action", "approve"));
+        return Views.piece(w, viewerState(user, w), null);
+    }
+
+    /** Descarta a versão pendente: a aprovada continua no ar e os arquivos da pendente são apagados. */
+    @Transactional
+    public Views.PieceView discardStudio(CurrentUser user, UUID id) {
+        guard.requireCanCreate(user);
+        WardrobeItem w = owned(user, id);
+        Map<String, Object> meta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));
+        Map<String, Object> cur = studioMeta(meta);
+        if (cur == null || !(cur.get("pending") instanceof Map<?, ?>)) {
+            throw ApiException.conflict("NADA_A_DESCARTAR", Msg.t("wardrobe.nenhuma_foto_de_estudio_aguardando"));
+        }
+        dropPendingMedia(cur);
+        cur.remove("pending");
+        meta.put("studio", cur);
+        w.setFlatLayMetadataJson(Json.write(meta));
+        audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "studio", "action", "discard"));
+        return Views.piece(w, viewerState(user, w), null);
+    }
+
     /**
      * Refaz a foto de estúdio quando a imagem da peça muda (mesmo fundo de antes). {@code createIfMissing}: peça que não
      * tinha estúdio passa a ter. {@code sameSource}: a foto de origem é a mesma (logo e cortes continuam valendo); numa
-     * imagem editada eles são recalculados. Se o estúdio falhar, a foto antiga sai — estúdio de outra imagem é pior que nenhum.
+     * imagem editada eles são recalculados. Se o estúdio falhar numa imagem nova, a foto antiga sai — estúdio de outra
+     * imagem é pior que nenhum. Veja {@link #offerStudio}: um reprocessamento da mesma foto nunca troca a aprovada sozinho.
      */
     void refreshStudio(WardrobeItem w, BufferedImage cutout, boolean createIfMissing, boolean sameSource) {
         if (w.getStudioImageUrl() == null && !createIfMissing) {
@@ -1500,7 +1714,8 @@ public class WardrobeService {
         var hints = sameSource ? studioHints(w) : studioHints(w.getCategory(), w.getSubcategory(), null, null);
         Map<String, Object> info = studioShot(w.getUser().getId(), cutout, w.getStudioBackdrop() == null ? "auto" : w.getStudioBackdrop(),
                 "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/", hints);
-        applyStudio(w, info);
+        // mesma foto de origem (reprocessamento): com uma aprovada no ar, a nova espera a aprovação
+        offerStudio(w, info, !sameSource);
     }
 
     private static boolean hasTransparency(BufferedImage img) {
@@ -1615,11 +1830,11 @@ public class WardrobeService {
         }
         String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
-                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
+                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), Set.of(),
                         assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
                         br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
         if (info != null) {
-            applyStudio(w, info);
+            applyStudio(w, info, true);                         // arte padrão do catálogo: não há foto da pessoa a aprovar
         }
     }
 
@@ -1696,7 +1911,7 @@ public class WardrobeService {
         if (info == null) {
             throw new ApiException(503, "ESTUDIO_INDISPONIVEL", Msg.t("wardrobe.nao_deu_para_gerar_o_2"));
         }
-        applyStudio(w, info);
+        offerStudio(w, info, false);                            // aprovada no ar → a nova fica pendente
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -1730,7 +1945,7 @@ public class WardrobeService {
                 skipped++;
                 continue;
             }
-            applyStudio(w, info);
+            offerStudio(w, info, false);                        // sem estúdio antes: entra no ar aguardando aprovação
             done++;
         }
         return Map.of("generated", done, "skipped", skipped);
