@@ -56,12 +56,25 @@ public final class Views {
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
-                            String mannequinImageUrl, String mannequinImageFace, String brandSource) {
+                            String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
     public static String studioThumb(String studioUrl) {
         return studioUrl == null || !studioUrl.endsWith(".jpg") ? studioUrl : studioUrl.substring(0, studioUrl.length() - 4) + ".thumb.jpg";
+    }
+
+    /**
+     * Foto do feed (4:5, enquadrada pelo template da categoria) fica ao lado da foto grande: {@code studio-x.feed.jpg}.
+     * Só existe nas fotos de estúdio geradas depois dos templates — por isso o metadado {@code studio.feed} decide.
+     */
+    public static String studioFeed(String studioUrl) {
+        return studioUrl == null || !studioUrl.endsWith(".jpg") ? null : studioUrl.substring(0, studioUrl.length() - 4) + ".feed.jpg";
+    }
+
+    static String studioFeed(WardrobeItem w) {
+        Map<String, Object> meta = Json.map(w.getFlatLayMetadataJson());
+        return meta.get("studio") instanceof Map<?, ?> st && st.get("feed") != null ? studioFeed(w.getStudioImageUrl()) : null;
     }
 
     /** Logo da marca da peça: o escolhido no buscador web (RF4) ou o da marca cadastrada na plataforma. */
@@ -91,7 +104,7 @@ public final class Views {
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
-                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource());
+                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w));
     }
 
     /** Linha compacta da lista de peças do esquema (≤ 18 mm: logo + marca + nome + tipo + tamanho). */

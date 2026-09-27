@@ -30,6 +30,8 @@ export interface PieceView {
   studioImageUrl?: string | null; studioBackdrop?: string | null; studioThumbUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null;
   /** foto de detalhe 4:5 enquadrada no logo (quando há logo) */
   studioDetailUrl?: string | null;
+  /** foto do feed 4:5 enquadrada pelo template da categoria (gola/peito, cós/joelhos…); null em fotos antigas */
+  studioFeedUrl?: string | null;
   counters: Counters; viewer: ViewerState; notAvailableAnymore: boolean; createdAt: string; updatedAt: string;
 }
 export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: string; sortOrder?: number; zIndex?: number; piece?: PieceView | null; name?: string; imageUrl?: string | null; [k: string]: unknown; }

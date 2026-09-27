@@ -1,0 +1,236 @@
+{
+ "feed-dono-desktop": {
+  "buttons": 66,
+  "unnamed": [],
+  "socialButtons": 44,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 11,
+  "likeButtons": 11,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-dono-desktop": {
+  "buttons": 15,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "menu-dono-desktop": [
+  "Editar dados",
+  "Editar imagem",
+  "Trocar foto",
+  "Marcar como indisponível (lavando, emprestada…)",
+  "Tirar dos favoritos",
+  "Foto com meu manequim",
+  "Ver no manequim 3D",
+  "Mostrar no quarto",
+  "Excluir"
+ ],
+ "erros-dono-desktop": [],
+ "feed-dono-celular": {
+  "buttons": 66,
+  "unnamed": [],
+  "socialButtons": 44,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 11,
+  "likeButtons": 11,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-dono-celular": {
+  "buttons": 15,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "erros-dono-celular": [],
+ "feed-visitante-desktop": {
+  "buttons": 66,
+  "unnamed": [],
+  "socialButtons": 44,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 11,
+  "likeButtons": 11,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-visitante-desktop": {
+  "buttons": 14,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "menu-visitante-desktop": [
+  "Ver no manequim 3D"
+ ],
+ "erros-visitante-desktop": [],
+ "feed-visitante-celular": {
+  "buttons": 66,
+  "unnamed": [],
+  "socialButtons": 44,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 11,
+  "likeButtons": 11,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-visitante-celular": {
+  "buttons": 14,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "erros-visitante-celular": [],
+ "feed-looks": {
+  "buttons": 6,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "menu-look-visitante": [
+  "Remixar: criar a minha versão",
+  "Ver no manequim 3D"
+ ],
+ "erros-feed-looks": [],
+ "estado-foto-vestida-encoberta": {
+  "buttons": 13,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Gerar modelo 3D"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "estado-3d-processando": {
+  "buttons": 11,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Gerando o modelo 3D…"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "estado-3d-falhou": {
+  "buttons": 12,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Não deu para gerar o 3D.Tentar de novo (grátis)"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "estado-3d-nao-gerado-a-venda": {
+  "buttons": 12,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Gerar modelo 3D"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "estado-sem-logo-indisponivel": {
+  "buttons": 12,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Gerar modelo 3D"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "estado-calca-sem-looks": {
+  "buttons": 12,
+  "unnamed": [],
+  "socialButtons": 4,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 1,
+  "likeButtons": 1,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false,
+  "m3dTexto": [
+   "Gerar modelo 3D"
+  ],
+  "looks": 0,
+  "logoNaTelaCheia": null
+ },
+ "erros-estados": []
+}

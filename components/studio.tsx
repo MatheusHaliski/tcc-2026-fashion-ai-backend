@@ -10,7 +10,9 @@ export interface StudioInfo {
   url: string; thumbUrl?: string; detailUrl?: string | null; enhancedUrl?: string; backdrop: string; backdropLabel?: string; stages?: StudioStage[];
   metrics?: { sharpnessBefore?: number; sharpnessAfter?: number; contrastBefore?: number; contrastAfter?: number; resolutionBefore?: string; resolutionAfter?: string; fillPercent?: number; noiseSigma?: number };
   framing?: { aspect?: string; width?: number; height?: number; fill?: number; bleed?: string[]; flush?: string[] };
-  logo?: { box?: number[]; confidence?: number; source?: string } | null; ghost?: string[];
+  logo?: { box?: number[]; confidence?: number; source?: string; kind?: "logo" | "print" } | null; ghost?: string[];
+  /** foto do feed 4:5 (template da categoria) e o que o template achou/faltou */
+  feedUrl?: string; feed?: { template?: string; missing?: string[]; estimated?: boolean } | null;
   provider?: string; fallbackUsed?: boolean; forced?: boolean;
 }
 
@@ -37,7 +39,12 @@ export function backdropCenter(list: StudioBackdrop[], id?: string | null): stri
  */
 function continuedBackdrop(rect: DOMRect | null, center: string, edge: string): string {
   if (!rect || rect.width === 0) return edge;
-  const cx = rect.left + rect.width * 0.5, cy = rect.top + rect.height * 0.4, r = Math.max(rect.width, rect.height) * 0.78;
+  return backdropGradient({ left: rect.left, top: rect.top, width: rect.width, height: rect.height }, center, edge);
+}
+
+/** O degradê do estúdio para uma foto desenhada em {left, top, width, height} (px do elemento que recebe o fundo). */
+export function backdropGradient(box: { left: number; top: number; width: number; height: number }, center: string, edge: string): string {
+  const cx = box.left + box.width * 0.5, cy = box.top + box.height * 0.4, r = Math.max(box.width, box.height) * 0.78;
   const stop = (t: number) => { const s = t * t * (3 - 2 * t); return `color-mix(in srgb, ${edge} ${Math.round(s * 100)}%, ${center}) ${Math.round(t * r)}px`; };
   return `radial-gradient(circle at ${Math.round(cx)}px ${Math.round(cy)}px, ${[0, 0.2, 0.4, 0.6, 0.8, 1].map(stop).join(", ")})`;
 }

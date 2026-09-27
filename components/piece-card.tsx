@@ -3,11 +3,12 @@ import Link from "next/link";
 import type { PieceView } from "@/lib/api/types";
 import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { FaiIcon } from "@/components/fai-icon";
-import { Generate3DButton } from "@/components/generate-3d";
+import { useAuth } from "@/lib/auth/session";
+import { Avatar } from "@/components/ui";
 import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
+import { CardActions } from "@/components/interactions";
 import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -15,61 +16,98 @@ import { CardArtLayer } from "@/components/card-art";
 import { resolveCardArt } from "@/lib/card-art";
 import { skinStyle } from "@/lib/skins";
 
-/** Card de peça (anatomia "peça de roupa" v17): foto, nome editorial, cor com nome escrito (acessibilidade para daltônicos), estado. */
-export function PieceCard({ piece, href, onFavorite, onAvailability, selectable, selected, onSelect, seals, anatomy, extra }: {
-  piece: PieceView; href?: string; onFavorite?: (p: PieceView) => void; onAvailability?: (p: PieceView) => void; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
+/**
+ * Imagem da peça para o card: a foto do feed (4:5, enquadrada pelo template da categoria) quando existe; senão a
+ * miniatura/foto de estúdio (preenchendo o quadro); sem estúdio, o recorte inteiro, contido com respiro.
+ */
+export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: string; cover: boolean } {
+  const studio = mediaUrl(piece.studioFeedUrl ?? piece.studioThumbUrl ?? piece.studioImageUrl);
+  if (studio) return { src: studio, cover: true };
+  const raw = piece.thumbnailUrl ?? piece.imageUrl;
+  return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
+}
+
+/**
+ * Card de peça no feed e nas grades (leitura rápida, como um post): (1) cabeçalho compacto com quem publicou — e
+ * visibilidade só quando é informação útil (peça privada ou só para seguidores, vista pelo dono); (2) a foto de produto
+ * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome e marca — preço só quando a
+ * peça está à venda. Categoria, material, tamanho, ocasião, estilo, usos, processamento e os controles do dono ficam no
+ * detalhe da peça: o card convida a abrir, o detalhe permite investigar.
+ */
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra }: {
+  piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
 }) {
   const detail = useDetailModal();
+  const { t, fmtMoney } = useI18n(); const { user } = useAuth();
+  const preview = href === "#";
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
-  const { t, fmtMoney } = useI18n();
-  // RF4 · Estúdio: com foto de estúdio, o card mostra a foto de produto de ponta a ponta (fundo faz parte da imagem)
-  const studio = mediaUrl(piece.studioThumbUrl ?? piece.studioImageUrl);
-  const raw = piece.thumbnailUrl ?? piece.imageUrl;
-  const img = studio ?? thumbUrl(raw, 640);
-  const srcSet = studio ? undefined : thumbSrcSet(raw);
-  // arte de fundo da peça (RF4 · etapa "Arte de fundo"): aura, material e skin ficam atrás da foto, como no card do look
+  const img = pieceCardImage(piece);
+  // arte de fundo da peça (RF4 · etapa "Arte de fundo"): aura, material e skin ficam atrás do recorte; a foto de
+  // estúdio já traz o próprio fundo e cobre a arte
   const art = resolveCardArt(piece.background);
-  const hasArt = art.kind !== "none";
+  const hasArt = art.kind !== "none" && !img.cover;
   const skin = (piece.background?.skin as string | undefined) ?? null;
-  const body = (
+  const mine = !!user && piece.owner?.id === user.id;
+  const owner = piece.owner;
+  const brandProfile = owner?.profileType === "MARCA";
+  const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
+  const link = href ?? `/pieces/${piece.id}`;
+  const secondary = piece.brandName
+    ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName />
+    : <span>{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
+  const media = (
     <>
-      <div className="c-photo" style={{ aspectRatio: "1" }}>
-        {hasArt && <CardArtLayer art={art} />}
-        {img ? <img src={img} srcSet={srcSet} sizes="(max-width: 639px) 50vw, 240px" alt={piece.name} loading="lazy" decoding="async" style={studio ? { objectFit: "cover" } : { objectFit: "contain", padding: 8 }} /> : null}
-        {(zone === "COVER_CORNER" || zone === "HEADER") && <SealSlot size="sm" seals={seals} />}
-        {piece.favorite && <span className="absolute bottom-2 right-2"><FaiIcon id="SOC-06" size={24} active decorative /></span>}
-      </div>
-      <span className="c-kicker" style={{ padding: "10px 12px 0" }}>{t("anatomy.pieceKicker", { category: CATEGORY_LABEL[piece.category] ?? label(piece.subcategory) })}</span>
-      <div className="c-title seal-row" style={{ paddingTop: 2 }}><span className="min-w-0 flex-1">{piece.name}</span>{zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}</div>
-      {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
-      <div className="c-row piece-meta">
-        <span className="piece-brand">{piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={22} withName /> : <span className="text-muted">{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>}</span>
-        {piece.price != null && <span className="type-data tabular">{fmtMoney(piece.price, "BRL")}</span>}
-      </div>
-      <div className="c-row piece-meta">
-        <span className="flex min-w-0 items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: piece.colorHex ?? "#ccc" }} /><span className="truncate">{label(piece.color)}</span>{piece.brandName && <span className="truncate text-muted">· {label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>}</span>
-        {zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
-      </div>
+      {hasArt && <CardArtLayer art={art} />}
+      {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
+      {(!piece.disponivel || (mine && piece.favorite)) && (
+        <span className="pc-flags">
+          {!piece.disponivel && <span className="pc-flag">{t("common.unavailable")}</span>}
+          {mine && piece.favorite && <span className="pc-flag is-fav"><span aria-hidden>★</span><span className="sr-only">{t("pieceCard.favorita")}</span></span>}
+        </span>
+      )}
     </>
   );
+  const name = <span className="pc-name">{piece.name}</span>;
   return (
-    <article className={`fai-card relative ${selected ? "ring-2 ring-mark" : ""} ${hasArt ? "has-art" : ""}`} style={skin ? skinStyle(skin) : undefined} aria-label={piece.name} data-art={hasArt ? art.label : undefined}>
-      {selectable ? (
-        <button type="button" className="text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>{body}</button>
-      ) : (
-        <Link href={href ?? `/pieces/${piece.id}`} onClick={openModal}>{body}</Link>
-      )}
+    <article className={`fai-card piece-card ${selected ? "ring-2 ring-mark" : ""} ${hasArt ? "has-art" : ""}`} style={skin ? skinStyle(skin) : undefined} aria-label={piece.name} data-art={hasArt ? art.label : undefined}>
       {!selectable && (
-        <div className="c-foot">
-          {onFavorite && <button type="button" className="metric metric-btn" onClick={() => onFavorite(piece)} aria-pressed={piece.favorite} aria-label={piece.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite")} title={piece.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite")}><FaiIcon id="SOC-06" size={20} variant="glyph" decorative /></button>}
-          {onAvailability && <button type="button" className="metric metric-btn" onClick={() => onAvailability(piece)} aria-pressed={piece.disponivel} aria-label={piece.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable")} title={piece.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable")}><FaiIcon id={piece.disponivel ? "SOC-14" : "SOC-15"} size={20} variant="glyph" decorative /></button>}
-          <Generate3DButton targets={piece.id ? [{ kind: "piece", id: piece.id, title: piece.name }] : []} />
-          {piece.wearCount > 0 && <span className="ml-auto type-caption text-muted tabular">{t("pieceCard.worn", { count: piece.wearCount })}</span>}
+        <div className="c-header pc-header">
+          <span className="c-avatar"><Avatar src={mediaUrl(owner?.avatarUrl)} name={owner?.displayName} size={24} /></span>
+          <span className="c-who">
+            {owner?.username && !preview
+              ? <Link href={`/u/${owner.username}`} className="c-who-link"><b>{brandProfile ? owner.displayName : `@${owner.username}`}</b></Link>
+              : <b>{brandProfile ? owner?.displayName : `@${owner?.username ?? ""}`}</b>}
+            {visibility && <span>{visibility}</span>}
+          </span>
         </div>
+      )}
+      {selectable ? (
+        <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
+          <span className="pc-media">{media}</span>
+          <span className="pc-id">{name}<span className="pc-sub">{secondary}</span></span>
+        </button>
+      ) : (
+        <>
+          {preview
+            ? <div className="pc-media">{media}</div>
+            // a foto repete o link do nome: fora da ordem de tabulação e do leitor de tela (um destino, um link)
+            : <Link href={link} onClick={openModal} className="pc-media" aria-hidden tabIndex={-1}>{media}</Link>}
+          <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />
+          <div className="pc-id">
+            <span className="seal-row">
+              {preview ? name : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+              {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
+            </span>
+            <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+            {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
+            {zone === "STUDS" && <SealStuds seals={seals ?? []} />}
+          </div>
+        </>
       )}
       {extra && <div className="c-extra">{extra}</div>}
     </article>
