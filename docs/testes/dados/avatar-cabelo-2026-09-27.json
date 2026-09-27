@@ -1,0 +1,274 @@
+[
+ {
+  "foto": "p03-masc",
+  "status": "rejected",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": null,
+   "textura": null,
+   "cobertura": null,
+   "cor": null,
+   "fluxo": null,
+   "volume": null
+  }
+ },
+ {
+  "foto": "p07-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#453830",
+   "fluxo": 0.726,
+   "volume": 1.42
+  }
+ },
+ {
+  "foto": "p08-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "—",
+   "textura": "—",
+   "cobertura": "gorro branco (kufi)"
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": "#fffeff",
+   "cor": null,
+   "fluxo": 0,
+   "volume": 0
+  }
+ },
+ {
+  "foto": "p16-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "careca",
+   "textura": "—",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "bald",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": null,
+   "fluxo": 0,
+   "volume": 0
+  }
+ },
+ {
+  "foto": "p20-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "buzz",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#515051",
+   "fluxo": 0,
+   "volume": 0
+  }
+ },
+ {
+  "foto": "p21-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#443029",
+   "fluxo": 0.736,
+   "volume": 1.09
+  }
+ },
+ {
+  "foto": "p24-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#c4c2b8",
+   "fluxo": 0.841,
+   "volume": 1.32
+  }
+ },
+ {
+  "foto": "p26-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "médio",
+   "textura": "liso",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "medium",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#514331",
+   "fluxo": 0.766,
+   "volume": 1.69
+  }
+ },
+ {
+  "foto": "p28-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "longo",
+   "textura": "cacheado",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "long",
+   "textura": "curly",
+   "cobertura": null,
+   "cor": "#ba8b77",
+   "fluxo": 0.72,
+   "volume": 1.66
+  }
+ },
+ {
+  "foto": "p29-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "curto",
+   "textura": "liso (espetado)",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#333241",
+   "fluxo": 0.853,
+   "volume": 1.24
+  }
+ },
+ {
+  "foto": "p30-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "médio",
+   "textura": "cacheado",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "medium",
+   "textura": "curly",
+   "cobertura": null,
+   "cor": "#a65e3c",
+   "fluxo": 0.584,
+   "volume": 1.64
+  }
+ },
+ {
+  "foto": "p37-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "—",
+   "textura": "—",
+   "cobertura": "turbante estampado"
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": "#4a482b",
+   "cor": "#10110e",
+   "fluxo": 0.823,
+   "volume": 1.13
+  }
+ },
+ {
+  "foto": "p48-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "careca",
+   "textura": "—",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "bald",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": null,
+   "fluxo": 0,
+   "volume": 0
+  }
+ },
+ {
+  "foto": "p54-fem",
+  "status": "built",
+  "verdade": {
+   "comprimento": "longo",
+   "textura": "dreads",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "long",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#553f3d",
+   "fluxo": 0.852,
+   "volume": 1.68
+  }
+ },
+ {
+  "foto": "p56-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "—",
+   "textura": "—",
+   "cobertura": "gorro preto"
+  },
+  "detectado": {
+   "comprimento": "short",
+   "textura": "straight",
+   "cobertura": "#2d3e3e",
+   "cor": null,
+   "fluxo": 0,
+   "volume": 1.39
+  }
+ },
+ {
+  "foto": "p64-masc",
+  "status": "built",
+  "verdade": {
+   "comprimento": "raspado",
+   "textura": "—",
+   "cobertura": null
+  },
+  "detectado": {
+   "comprimento": "buzz",
+   "textura": "straight",
+   "cobertura": null,
+   "cor": "#7d773f",
+   "fluxo": 0,
+   "volume": 0.9
+  }
+ }
+]
