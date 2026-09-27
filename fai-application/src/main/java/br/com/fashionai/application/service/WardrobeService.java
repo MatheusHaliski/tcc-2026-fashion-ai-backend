@@ -163,7 +163,7 @@ public class WardrobeService {
     public record Prefill(String name, String category, String subcategory, String color, String material, String brand,
                           String sex, List<String> occasion, List<String> style, List<String> seals,
                           Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning,
-                          Map<String, Object> logo) {
+                          Map<String, Object> logo, String size, BigDecimal price) {
     }
 
     public record Draft(UUID draftId, String processedUrl, String flatLayUrl, String thumbnailUrl, String originalUrl,
@@ -404,18 +404,94 @@ public class WardrobeService {
                 List.of(Msg.t("wardrobe.peca_de_roupa_sem_violacao")), conf < 0.6);
     }
 
-    private Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo) {
+    /**
+     * RF4 — "Analisar peça" preenche TODOS os campos, sem exceção: o que a IA reconheceu com confiança entra como está;
+     * o resto entra com o melhor palpite dela ou com o padrão da taxonomia (categoria pela subcategoria, ocasião e
+     * estilo pelo tipo da peça, tamanho M, preço estimado pelo tipo). Nada fica em branco; a pessoa confere antes de salvar.
+     */
+    static Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo) {
         Map<String, Double> c = g.confidence() == null ? Map.of() : g.confidence();
         boolean manual = g.overall() < LocalVision.PREFILL_CONFIDENCE;
-        String category = keep(g.category(), c.get("category"));
-        String sub = keep(g.subcategory(), c.get("subcategory"));
-        String color = keep(g.color(), c.get("color"));
-        String material = keep(g.material(), c.get("material"));
-        String brand = keep(g.brand(), c.get("brand"));
-        String name = sub == null ? null : humanize(sub) + (color == null ? "" : " " + humanize(color));
-        return new Prefill(manual ? null : name, manual ? null : category, manual ? null : sub, color, manual ? null : material,
-                brand, manual ? null : g.sex(), List.of(), List.of(), List.of(), c, g.overall(), manual,
-                manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo);
+        String sub = firstNonBlank(keep(g.subcategory(), c.get("subcategory")), g.subcategory());
+        String category = firstNonBlank(keep(g.category(), c.get("category")), g.category(), sub == null ? null : Taxonomy.categoryOf(sub));
+        if (category == null || !Taxonomy.SUBCATEGORIES.containsKey(category)) {
+            category = "upper_piece";
+        }
+        if (sub == null || !Taxonomy.SUBCATEGORIES.get(category).contains(sub)) {
+            sub = Taxonomy.SUBCATEGORIES.get(category).get(0);
+        }
+        String color = firstNonBlank(keep(g.color(), c.get("color")), g.color(),
+                g.palette() == null || g.palette().isEmpty() ? null : g.palette().get(0), "black");
+        if (!Taxonomy.COLORS.containsKey(color)) {
+            color = "black";
+        }
+        String material = firstNonBlank(keep(g.material(), c.get("material")), g.material(), defaultMaterial(category, sub));
+        String brand = firstNonBlank(keep(g.brand(), c.get("brand")), g.brand(), Msg.t("wardrobe.sem_marca"));
+        String sex = g.sex() != null && Taxonomy.SEXES.contains(g.sex()) ? g.sex() : "UNISSEX";
+        String name = humanize(sub) + " " + humanize(color);
+        List<String> occasion = List.of(Taxonomy.allowedOccasions(category).get(0));
+        List<String> style = List.of(defaultStyle(sub));
+        return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
+                manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub));
+    }
+
+    static String firstNonBlank(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    private static final Set<String> SPORTY = Set.of("running_shoes", "training_shoes", "basketball_shoes", "skate_shoes", "sweatpants",
+            "jogger_pants", "leggings", "sweatshirt", "hoodie", "tank_top", "cap", "socks");
+    private static final Set<String> CLASSIC = Set.of("blazer", "shirt", "tailored_pants", "chino_pants", "loafers", "oxford_shoes",
+            "derby_shoes", "moccasins", "tie", "bow_tie", "coat", "watch", "belt", "dress", "heels", "flats");
+    private static final Set<String> STREET = Set.of("cargo_pants", "denim_shorts", "high_top_sneakers", "casual_sneakers", "bermuda_shorts",
+            "windbreaker", "beanie", "backpack", "parka");
+
+    /** Estilo mais provável pelo tipo da peça (quando a IA não o reconhece). */
+    static String defaultStyle(String sub) {
+        if (SPORTY.contains(sub)) {
+            return "sporty";
+        }
+        if (STREET.contains(sub)) {
+            return "streetwear";
+        }
+        return CLASSIC.contains(sub) ? "classic" : "casual";
+    }
+
+    static String defaultMaterial(String category, String sub) {
+        if ("shoes_piece".equals(category)) {
+            return Set.of("sandals", "flip_flops", "espadrilles").contains(sub) ? "SYNTHETIC" : "LEATHER";
+        }
+        if ("accessory_piece".equals(category)) {
+            return Set.of("scarf", "beanie", "socks", "gloves", "cap", "hat", "tie", "bow_tie").contains(sub) ? "COTTON" : "SYNTHETIC";
+        }
+        return Set.of("jeans", "denim_shorts").contains(sub) ? "COTTON" : Set.of("sweater", "cardigan", "coat").contains(sub) ? "WOOL"
+                : Set.of("blazer", "tailored_pants", "parka", "windbreaker", "leggings").contains(sub) ? "POLYESTER" : "COTTON";
+    }
+
+    /** Preço estimado (R$) por tipo da peça — só um ponto de partida que a pessoa confere. */
+    static BigDecimal estimatedPrice(String category, String sub) {
+        Map<String, Integer> bySub = Map.ofEntries(Map.entry("t_shirt", 79), Map.entry("shirt", 149), Map.entry("blouse", 129),
+                Map.entry("blazer", 349), Map.entry("jacket", 299), Map.entry("coat", 449), Map.entry("hoodie", 179), Map.entry("sweater", 199),
+                Map.entry("jeans", 199), Map.entry("tailored_pants", 229), Map.entry("shorts", 99), Map.entry("skirt", 139),
+                Map.entry("casual_sneakers", 299), Map.entry("running_shoes", 399), Map.entry("heels", 249), Map.entry("ankle_boots", 349),
+                Map.entry("handbag", 249), Map.entry("backpack", 199), Map.entry("watch", 399), Map.entry("sunglasses", 199),
+                Map.entry("dress", 249), Map.entry("jumpsuit", 229));
+        Integer v = bySub.get(sub);
+        if (v == null) {
+            v = switch (category) {
+                case "lower_piece" -> 169;
+                case "shoes_piece" -> 249;
+                case "accessory_piece" -> 99;
+                case "full_body_piece" -> 229;
+                default -> 129;
+            };
+        }
+        return BigDecimal.valueOf(v);
     }
 
     private static String keep(String value, Double confidence) {
@@ -433,7 +509,8 @@ public class WardrobeService {
                             String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef) {
+                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                            Map<String, Object> background) {
     }
 
     @Transactional
@@ -643,6 +720,10 @@ public class WardrobeService {
         w.setPurchaseLocation(InputSanitizer.clean(f.purchaseLocation(), 160));
         w.setSku(InputSanitizer.clean(f.sku(), 80));
         w.setCareInstructions(InputSanitizer.clean(f.careInstructions(), 500));
+        // arte de fundo da peça (RF4 · etapa "Arte de fundo": aura, material, skin, anatomia) — mesmo formato do look
+        if (f.background() != null) {
+            w.setBackgroundConfigJson(f.background().isEmpty() ? null : Json.write(f.background()));
+        }
         if (f.forSale() != null) {
             w.setForSale(f.forSale());
         }
@@ -766,15 +847,15 @@ public class WardrobeService {
         return new Views.Page<>(items, page, size, all.size(), to < all.size());
     }
 
-    private static boolean stateMatches(WardrobeItem w, String state) {
+    static boolean stateMatches(WardrobeItem w, String state) {
         if (blank(state) || "todos".equalsIgnoreCase(state)) {
             return true;
         }
         return switch (state.toLowerCase(Locale.ROOT)) {
             case "favoritos", "favorites" -> w.isFavorite();
-            case "disponivel", "available" -> w.isDisponivel();
-            case "indisponivel", "unavailable" -> !w.isDisponivel();
-            case "venda", "for_sale" -> w.isForSale();
+            case "disponivel", "disponiveis", "available" -> w.isDisponivel();
+            case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
+            case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
             default -> true;
         };
     }
@@ -1454,9 +1535,11 @@ public class WardrobeService {
         out.put("allowedOccasionsByCategory", allowed);
         out.put("wearstylesByPart", Taxonomy.WEARSTYLES_BY_PART);
         out.put("wearstyleGroups", Taxonomy.WEARSTYLE_GROUPS);
-        out.put("pieceSeals", List.of("premium", "eco-friendly", "trending", "limited-edition", "exclusive", "budget-friendly",
-                "luxury", "casual-chic"));
-        out.put("schemeSeals", List.of("affordable-chic", "premium-look", "eco-conscious", "trendy-combo", "casual-elegance"));
+        // selos nunca são rótulos padronizados: vêm da análise da IA (marca/celebridade com peça semelhante — SealService)
+        Map<String, String> defaults = new LinkedHashMap<>();
+        defaults.put("generic", assets.defaultPieceImage(null, null));
+        Taxonomy.SUBCATEGORIES.keySet().forEach(c -> defaults.put(c, assets.defaultPieceImage(c, null)));
+        out.put("defaultImages", defaults);
         out.put("brands", brands.findAllByOrderByName().stream().map(b -> Map.of("id", b.getId(), "name", b.getName(),
                 "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList());
         return out;

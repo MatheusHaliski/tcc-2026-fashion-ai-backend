@@ -535,9 +535,7 @@ public class SchemeService {
         if (s.getCoverImageUrl() == null && !result.isEmpty()) {
             s.setCoverImageUrl(result.get(0).getWardrobeItem().getImageUrl());
         }
-        List<String> tagSeals = LocalSchemeComposer.toComposition(result.stream().map(SchemeItem::getWardrobeItem).toList(),
-                Json.csv(s.getOccasion()), Json.csv(s.getStyle()), s.getSeason() == null ? null : s.getSeason().name(), 0).seals();
-        s.setRenderingMetadataJson(Json.write(Map.of("suggestedSeals", tagSeals)));
+        // selos nunca são rótulos automáticos por preço/material: só vínculos com marca ou celebridade (RF20/RF21)
         return result;
     }
 

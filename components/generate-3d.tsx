@@ -104,7 +104,7 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
             <p className="type-body-sm">{m?.sex === "MASCULINO" ? tr("common.masculino") : tr("common.feminino")} <span className="text-muted">({m?.sexSource === "cadastro" ? tr("generate3d.sexo_do_cadastro") : m?.sexSource === "provador" ? tr("generate3d.preferencia_do_provador") : m?.sexSource === "pecas" ? tr("generate3d.pelas_pecas") : tr("common.padrao")})</span></p>
             <p className="type-caption text-muted">{m?.head === "AVATAR" ? tr("generate3d.rosto_avatar_de", { value: (look.owner?.username ?? "") }) : tr("generate3d.rosto_cabeca_neutra")}</p>
             <p className="label mt-3">{tr("common.pecas_2", { piecesCount: look.pieces.length })}</p>
-            <ul className="mt-1 space-y-1.5">
+            <ul className="fai-list mt-1">
               {look.pieces.map((p) => (
                 <li key={p.id} className="flex items-center gap-2">
                   <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">{(p.studioUrl ?? p.imageUrl) && <img src={mediaUrl(p.studioUrl ?? p.imageUrl)} alt="" className="h-full w-full object-cover" />}</span>

@@ -8,6 +8,10 @@ import { CLS, P, mergeObservation, observeBody, type BodyObservation, type PoseP
 import { DEFAULT_BODY, buildSpec, defaultBodyModel, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
 import { legacyHeadSample, qualityReport } from "@/lib/avatar3d/metrics";
 import { legacySpec } from "@/lib/avatar3d/eval/legacy-spec";
+import { stripPerson } from "@/lib/pieces/person-filter";
+import { PRINT_MIN_NZ, garmentGeometry } from "@/lib/avatar3d/garment-geometry";
+import { garmentReport } from "@/lib/avatar3d/garment-metrics";
+import type { Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false });
@@ -27,6 +31,7 @@ export default function BodyLab() {
   const overlay = useRef<HTMLCanvasElement>(null); const legacyCv = useRef<HTMLCanvasElement>(null);
   const [model, setModel] = useState<BodyModel | null>(null); const [sex, setSex] = useState<Sex>("FEMININO");
   const [view, setView] = useState<AvatarView>("front"); const [status, setStatus] = useState("idle"); const [result, setResult] = useState<unknown>(null);
+  const [pieces, setPieces] = useState<Look3dPiece[]>([]);
 
   async function run(url: string, sx: Sex) {
     setStatus("running"); setSex(sx); setModel(null);
@@ -89,6 +94,19 @@ export default function BodyLab() {
   useEffect(() => {
     (window as unknown as { __bodyLab: unknown }).__bodyLab = {
       run, setView: (v: AvatarView) => setView(v),
+      // conferência do pipeline da peça (RF4): corpo humano fora da foto, só a roupa fica
+      // digital double: veste peças no corpo (avatar ou referência) e mede interseção, folga, cobertura e estiramento
+      dress: (list: Look3dPiece[], sx: Sex, params?: BodyModel["params"] | null) => { setSex(sx); setModel({ ...defaultBodyModel(sx), ...(params ? { params } : {}) }); setPieces(list); setStatus("dressed"); },
+      garmentMetrics: async (p: Look3dPiece, sx: Sex, params?: BodyModel["params"] | null) => {
+        const spec = buildSpec(params ?? DEFAULT_BODY[sx]);
+        const img = await createImageBitmap(await (await fetch(p.imageUrl!)).blob());
+        const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const g = c.getContext("2d")!; g.drawImage(img, 0, 0);
+        const px = g.getImageData(0, 0, c.width, c.height).data;
+        const alphaAt = (u: number, v: number) => { const x = Math.min(c.width - 1, Math.max(0, Math.floor(u * c.width))), y = Math.min(c.height - 1, Math.max(0, Math.floor((1 - v) * c.height))); return px[(y * c.width + x) * 4 + 3] / 255; };
+        const t0 = performance.now(); const gg = garmentGeometry(p, spec, img.width / img.height); const ms = Math.round(performance.now() - t0);
+        return gg ? garmentReport(spec, gg.geo, gg.box, ms, alphaAt, { printMinNz: PRINT_MIN_NZ }) : null;
+      },
+      stripPerson: async (url: string) => { const blob = await (await fetch(url)).blob(); const r = await stripPerson(new File([blob], "foto.jpg", { type: blob.type || "image/jpeg" })); const out = URL.createObjectURL(r.file); return { ...r, file: undefined, outUrl: out, bytes: r.file.size }; },
       overlay: () => overlay.current?.toDataURL("image/png"), legacy: () => legacyCv.current?.toDataURL("image/png"),
       canvas: () => (document.querySelector("#body-lab-3d canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
     };
@@ -101,7 +119,7 @@ export default function BodyLab() {
       <div className="flex flex-wrap gap-4">
         <figure><canvas ref={overlay} /><figcaption className="type-caption">{CAPTIONS[2]}</figcaption></figure>
         <figure><canvas ref={legacyCv} /><figcaption className="type-caption">{CAPTIONS[3]}</figcaption></figure>
-        <div id="body-lab-3d" style={{ width: 320, height: 520 }}>{model && <AvatarViewer avatar={null} sex={sex} body={model.params} view={view} framing="full" controls={false} background="#ECE7DE" />}</div>
+        <div id="body-lab-3d" style={{ width: 320, height: 520 }}>{model && <AvatarViewer avatar={null} sex={sex} body={model.params} view={view} framing="full" controls={false} background="#ECE7DE" pieces={pieces} />}</div>
       </div>
       <pre className="type-caption" style={{ maxWidth: 900, whiteSpace: "pre-wrap" }}>{result ? JSON.stringify(result, null, 1).slice(0, 4000) : ""}</pre>
     </main>

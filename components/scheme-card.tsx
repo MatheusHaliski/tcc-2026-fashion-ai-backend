@@ -153,7 +153,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
   return (
-    <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
+    <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <div className="c-header">
         <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={24} /></span>
         <span className="c-who"><b>{scheme.owner?.displayName ?? `@${scheme.owner?.username}`}</b><span>@{scheme.owner?.username} · {relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</span></span>
@@ -190,7 +190,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             {!ownArt && !expanded && l === "grade" && <div className="grid-pieces">
               {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtMoney(p.price, "BRL") : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
             </div>}
-            {((!ownArt && l === "lista") || expanded) && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
+            {((!ownArt && l === "lista") || expanded) && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${pieceClick ? "is-action" : ""}`} role={pieceClick ? "button" : undefined} tabIndex={pieceClick ? 0 : undefined}
                 onClick={pieceClick ? (e) => { e.preventDefault(); e.stopPropagation(); pieceClick(p.id); } : undefined} onKeyDown={pieceClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pieceClick(p.id); } } : undefined}>
                 <span className="p-thumb">{p.img ? <img src={p.img} alt="" loading="lazy" /> : null}</span>

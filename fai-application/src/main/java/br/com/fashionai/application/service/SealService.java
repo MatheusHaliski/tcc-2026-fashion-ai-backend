@@ -357,6 +357,49 @@ public class SealService {
         AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
                 List.of(Msg.t("seal.marcas_das_pecas"), Msg.t("seal.estilo_ocasiao_do_esquema"), Msg.t("seal.assinatura_de_estilo_das_celebridades")),
                 () -> candidates(draft, items, unregistered));
+        return previewResult(outcome, unregistered);
+    }
+
+    /** Campos da peça (RF4) que a IA compara para achar marcas e celebridades com peça semelhante. */
+    public record PieceFields(String name, String category, String subcategory, String color, String brandName,
+                              List<String> occasion, List<String> style) {
+    }
+
+    /**
+     * Adicionar peça (RF4 · "Mais detalhes" › selos): antes de salvar a peça, a IA procura marcas e celebridades com peça
+     * semelhante à cadastrada, comparando marca, tipo, cor, ocasião e estilo. Nada é gravado: o vínculo só nasce depois,
+     * com a peça salva, pelas mesmas regras de {@link #preview}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> previewPiece(CurrentUser user, PieceFields f) {
+        if (f == null || (blank(f.brandName()) && blank(f.subcategory()) && (f.style() == null || f.style().isEmpty()))) {
+            return Map.of("suggestions", List.of(), "unregisteredBrands", List.of(), "message", Msg.t("seal.preencha_marca_tipo_ou_estilo"));
+        }
+        WardrobeItem w = new WardrobeItem();
+        w.setName(f.name() == null ? "" : f.name());
+        w.setCategory(f.category());
+        w.setSubcategory(f.subcategory());
+        w.setColor(f.color());
+        w.setBrandName(blank(f.brandName()) ? null : f.brandName().trim());
+        w.setOccasionTags(Json.csv(f.occasion() == null ? List.of() : f.occasion()));
+        w.setStyleTags(Json.csv(f.style() == null ? List.of() : f.style()));
+        Scheme draft = new Scheme();
+        draft.setOccasion(w.getOccasionTags());
+        draft.setStyle(w.getStyleTags());
+        SchemeItem si = new SchemeItem();
+        si.setWardrobeItem(w);
+        List<String> unregistered = new ArrayList<>();
+        AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
+                List.of(Msg.t("seal.campos_da_peca"), Msg.t("seal.assinatura_de_estilo_das_celebridades")),
+                () -> candidates(draft, List.of(si), unregistered));
+        return previewResult(outcome, unregistered);
+    }
+
+    private static boolean blank(String s) {
+        return s == null || s.isBlank();
+    }
+
+    private static Map<String, Object> previewResult(AiOutcome<List<Candidate>> outcome, List<String> unregistered) {
         List<Map<String, Object>> suggestions = new ArrayList<>();
         for (Candidate c : outcome.value()) {
             Map<String, Object> m = new LinkedHashMap<>();

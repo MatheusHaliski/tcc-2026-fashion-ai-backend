@@ -212,7 +212,7 @@ function ErasInsights({ slug }: { slug: string }) {
         <Card><p className="label">{t("showcase.showcaseTabs.mais_curtidas_totais")}</p><p className="type-h2">{data.mostLiked ?? "—"}</p></Card>
         <Card><p className="label">{t("showcase.showcaseTabs.maior_hype_score")}</p><p className="type-h2">{data.mostHype ?? "—"}</p></Card>
       </div>
-      <ol className="grid gap-3 lg:grid-cols-2" aria-label={t("showcase.showcaseTabs.ranking_de_eras")}>
+      <ol className="fai-list lg:grid-cols-2" aria-label={t("showcase.showcaseTabs.ranking_de_eras")}>
         {data.ranking.map((r) => (
           <li key={r.id} className="era-rank surface p-3" style={{ ["--accent" as string]: r.accentColor }}>
             <div className="flex items-start gap-3">
@@ -288,7 +288,7 @@ function MyStage({ slug }: { slug: string }) {
         <p className="label">{t("showcase.showcaseTabs.no_palco")}</p>
         <p className="type-body-sm">{t("showcase.showcaseTabs.manequim", { value: data.photoUrl ? t("showcase.showcaseTabs.foto_oficial_da_celebridade_no") : t("showcase.showcaseTabs.sem_foto_oficial_manequim_padrao"), value2: mannequin.sex === "MASCULINO" ? t("common.masculino_2") : t("common.feminino_2") })}</p>
         <Field label={t("showcase.showcaseTabs.look_no_palco")} id="stagelook"><Select id="stagelook" value={schemeId || data.look?.schemeId || ""} onChange={(e) => setSchemeId(e.target.value)}>{data.looks.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</Select></Field>
-        {data.look && <ul className="mt-2 space-y-1">{data.look.pieces.map((p) => <li key={p.id} className="flex items-center gap-2 type-body-sm"><span className="h-8 w-8 overflow-hidden rounded bg-surface-2">{p.imageUrl && <img src={mediaUrl(p.imageUrl)} alt="" className="h-full w-full object-contain" />}</span>{p.name}</li>)}</ul>}
+        {data.look && <ul className="fai-list mt-2">{data.look.pieces.map((p) => <li key={p.id} className="flex items-center gap-2 type-body-sm"><span className="h-8 w-8 overflow-hidden rounded bg-surface-2">{p.imageUrl && <img src={mediaUrl(p.imageUrl)} alt="" className="h-full w-full object-contain" />}</span>{p.name}</li>)}</ul>}
         {data.eras.length > 0 && <><p className="label mt-3">{t("showcase.showcaseTabs.cores_do_telao_eras")}</p><div className="flex flex-wrap gap-1">{data.eras.map((e) => <span key={e.id} className="badge"><i aria-hidden className="mr-1 inline-block h-2.5 w-2.5 rounded-full" style={{ background: e.accentColor }} />{e.label}</span>)}</div></>}
         <p className="mt-3 type-caption text-faint">{t("showcase.showcaseTabs.arraste_para_girar_role_para")}</p>
       </div>
@@ -330,7 +330,7 @@ function CollectionsInsights({ slug }: { slug: string }) {
           <dl className="grid grid-cols-3 gap-3 type-caption tabular"><div><dt className="text-muted">{t("common.curtidas")}</dt><dd className="type-body font-semibold">{picked.likes}</dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.maior_hype")}</dt><dd className="type-body font-semibold">{picked.topHype}</dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.pontuacao_2")}</dt><dd className="type-body font-semibold">{picked.score}</dd></div></dl>
         </div>
       </div>
-      <ol className="surface divide-y divide-line-soft" aria-label={t("showcase.showcaseTabs.ranking_de_colecoes")}>
+      <ol className="fai-list surface" aria-label={t("showcase.showcaseTabs.ranking_de_colecoes")}>
         {data.ranking.map((r) => (
           <li key={r.id}><button type="button" onClick={() => setSel(r.id)} className={`flex w-full items-center gap-3 p-3 text-left hover:bg-surface-2 ${r.id === picked.id ? "bg-surface-2" : ""}`}>
             <span className="w-8 type-h3 tabular">#{r.rank}</span>

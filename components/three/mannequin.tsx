@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { PRINT_MIN_NZ, ellipsoid, fitPhoto, garmentMold, limbGeo, loftGeo, photoBox, project, sectionAt, splitPrint } from "@/lib/avatar3d/garment-geometry";
 import { SKIN, VITRINE, useGlb, useTex, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
 import { AvatarBust } from "@/components/three/avatar-bust";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
-import { DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type Section, type Spec, type V3 } from "@/lib/avatar3d/body-spec";
+import { DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type Spec } from "@/lib/avatar3d/body-spec";
 
 /*
  * Manequim da Passarela 3D, do My Stage 3D, do "Gerar 3D", da "Foto com meu manequim" e do Avatar 3D. O corpo sai
@@ -20,56 +21,15 @@ import { DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type Section, t
  * Cabeça: só o Avatar 3D (RF40) põe o rosto da pessoa (pontos do rosto + textura do próprio rosto). Sem avatar, a
  * cabeça é neutra, sem foto: projetar a foto de perfil inteira na cabeça levava o fundo e a roupa para o rosto.
  *
- * Roupas: a foto sem fundo de cada peça é projetada de frente sobre um "molde" com o volume do corpo, um pouco maior
- * que ele. Onde a foto é transparente, o molde some; as costas repetem a estampa, mais escuras. Peça com modelo do
- * RF16 pronto entra como GLB.
+ * Roupas (lib/avatar3d/garment-geometry.ts): a foto sem fundo de cada peça é projetada de frente sobre um "molde" com o
+ * volume do corpo, um pouco maior que ele, sem atravessar a pele (colisões resolvidas). Onde a foto é transparente, o
+ * molde some. A foto só aparece nas faces que encaram a câmera dela; costas e laterais recebem a cor do tecido (a foto
+ * não as mostra — nada de estampa inventada ou esticada). É uma PRÉVIA aproximada: sem rig, sem simulação de tecido,
+ * sem tamanho real. Peça com modelo do RF16 pronto entra como GLB.
  */
 
 /** Compleição do provador (preferências) → parâmetro build do corpo (só quando não há corpo medido/informado). */
 const BUILD: Record<string, number> = { SLIM: -0.8, MEDIUM: 0, ATHLETIC: 0.3, CURVY: 0.8, PLUS: 1.6 };
-const SHORT_LOWER = new Set(["bermuda_shorts", "denim_shorts", "shorts", "skort"]);
-const SKIRTS = new Set(["skirt", "culottes"]);
-const SEG = 40;
-
-/** Corte do tronco numa altura, interpolado. */
-function sectionAt(t: Section[], y: number): Section {
-  if (y <= t[0].y) return { ...t[0], y };
-  for (let i = 1; i < t.length; i++) if (y <= t[i].y) { const a = t[i - 1], b = t[i]; const k = (y - a.y) / Math.max(1e-9, b.y - a.y); return { y, a: a.a + (b.a - a.a) * k, b: a.b + (b.b - a.b) * k }; }
-  return { ...t[t.length - 1], y };
-}
-
-/** Tronco (ou trecho dele) como superfície de cortes elípticos, com tampas; `inflate` afasta a roupa do corpo. */
-function loftGeo(sections: Section[], inflate = 0, capBottom = true, capTop = true): THREE.BufferGeometry {
-  const pos: number[] = [], idx: number[] = [], uv: number[] = [];
-  sections.forEach((s, r) => {
-    for (let i = 0; i <= SEG; i++) {
-      const t = (i / SEG) * Math.PI * 2; pos.push(Math.sin(t) * (s.a + inflate), s.y, Math.cos(t) * (s.b + inflate)); uv.push(i / SEG, r / (sections.length - 1));
-    }
-  });
-  for (let r = 0; r < sections.length - 1; r++) for (let i = 0; i < SEG; i++) {
-    const a = r * (SEG + 1) + i, b = a + SEG + 1; idx.push(a, b, a + 1, b, b + 1, a + 1);
-  }
-  const cap = (r: number, down: boolean) => {
-    const c = pos.length / 3; const s = sections[r]; pos.push(0, s.y, 0); uv.push(0.5, r / (sections.length - 1));
-    for (let i = 0; i < SEG; i++) { const a = r * (SEG + 1) + i; if (down) idx.push(c, a + 1, a); else idx.push(c, a, a + 1); }
-  };
-  if (capBottom) cap(0, true); if (capTop) cap(sections.length - 1, false);
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
-  g.computeVertexNormals(); return g;
-}
-
-/** Trecho do tronco entre duas alturas (com os cortes intermediários). */
-function torsoBetween(t: Section[], y0: number, y1: number): Section[] {
-  return [sectionAt(t, y0), ...t.filter((s) => s.y > y0 && s.y < y1), sectionAt(t, y1)];
-}
-
-function limbGeo(a: V3, b: V3, r0: number, r1: number): THREE.BufferGeometry {
-  const va = new THREE.Vector3(...a), vb = new THREE.Vector3(...b); const dir = vb.clone().sub(va); const len = dir.length();
-  const g = new THREE.CylinderGeometry(r1, r0, len, 20, 3, false);
-  g.applyMatrix4(new THREE.Matrix4().compose(va.clone().add(vb).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()), new THREE.Vector3(1, 1, 1)));
-  return g;
-}
-const ellipsoid = (c: V3, r: V3, seg = 20) => { const g = new THREE.SphereGeometry(1, seg, Math.round(seg * 0.75)); g.scale(r[0], r[1], r[2]); g.translate(c[0], c[1], c[2]); return g; };
 
 /** O corpo inteiro numa geometria só (uma malha, um material): tronco, pescoço, membros, articulações, mãos e pés. */
 function bodyGeo(s: Spec, withNeck: boolean): THREE.BufferGeometry {
@@ -97,72 +57,27 @@ function bodyGeo(s: Spec, withNeck: boolean): THREE.BufferGeometry {
 }
 
 // ================================================================== roupas
-/** Caixa onde a foto da peça é projetada (centro x, topo y, largura/altura máximas). */
-function photoBox(p: Look3dPiece, s: Spec): { x: number; top: number; w: number; h: number } {
-  const sh = Math.abs(s.joints.shoulderL[0]); const hw = Math.abs(s.joints.hipL[0]) / 0.52; const sub = p.subcategory ?? "";
-  const neck = s.joints.neckBase[1]; const crotch = s.levels.crotch; const knee = s.joints.kneeL[1]; const waist = sectionAtName(s, "waist");
-  switch (p.slot) {
-    case "upper": return { x: 0, top: neck + 0.01 * s.stature, w: sh * 3.4, h: neck - crotch + 0.04 * s.stature };
-    case "outer_layer": return { x: 0, top: neck + 0.02 * s.stature, w: sh * 3.7, h: neck - crotch + 0.09 * s.stature };
-    case "dress": return { x: 0, top: neck + 0.01 * s.stature, w: sh * 3.4, h: neck - knee + 0.05 * s.stature };
-    case "lower": return { x: 0, top: waist + 0.025 * s.stature, w: hw * 3.1, h: SHORT_LOWER.has(sub) || SKIRTS.has(sub) ? waist - knee + 0.04 * s.stature : waist - 0.005 * s.stature };
-    case "shoes": return { x: 0, top: 0.1 * s.stature, w: hw * 2.4, h: 0.12 * s.stature };
-    default: return { x: 0, top: 0, w: 0, h: 0 };
-  }
-}
-/** Altura da cintura do corpo. */
-const sectionAtName = (s: Spec, _name: "waist"): number => s.levels.waist;
-
-/** Molde da roupa: as partes do corpo que a peça cobre, um pouco infladas. */
-function garmentMold(p: Look3dPiece, s: Spec): THREE.BufferGeometry | null {
-  const H = s.stature; const sub = p.subcategory ?? ""; const parts: THREE.BufferGeometry[] = [];
-  const crotch = s.levels.crotch, neck = s.joints.neckBase[1], waist = sectionAtName(s, "waist"), hip = s.joints.hipL[1];
-  const limb = (n: string, inf: number) => { const l = s.limbs.find((x) => x.name === n)!; parts.push(limbGeo(l.from, l.to, l.r0 + inf, l.r1 + inf)); };
-  const arms = (inf: number) => ["L", "R"].forEach((sd) => { limb(`upperArm${sd}`, inf); limb(`forearm${sd}`, inf); });
-  const legs = (inf: number, toKnee: boolean) => ["L", "R"].forEach((sd) => { limb(`thigh${sd}`, inf); if (!toKnee) limb(`shin${sd}`, inf); });
-  const skirt = (yTop: number, yHem: number, flare: number) => { const top = sectionAt(s.torso, yTop); parts.push(loftGeo([{ y: yHem, a: top.a * flare, b: top.b * flare * 1.1 }, { y: (yTop + yHem) / 2, a: top.a * (1 + (flare - 1) * 0.5), b: top.b * (1 + (flare - 1) * 0.55) }, top], 0.012 * H, false, false)); };
-  switch (p.slot) {
-    case "upper": parts.push(loftGeo(torsoBetween(s.torso, crotch + 0.012 * H, neck), 0.008 * H, false, false)); arms(0.006 * H); break;
-    case "outer_layer": parts.push(loftGeo(torsoBetween(s.torso, crotch - 0.02 * H, neck + 0.01 * H), 0.018 * H, false, false)); arms(0.013 * H); break;
-    case "dress": parts.push(loftGeo(torsoBetween(s.torso, hip, neck), 0.009 * H, false, false)); arms(0.006 * H); skirt(hip, s.joints.kneeL[1] - 0.012 * H, 1.45); break;
-    case "lower":
-      if (SKIRTS.has(sub)) skirt(waist + 0.025 * H, s.joints.kneeL[1] - 0.012 * H, 1.6);
-      else { parts.push(loftGeo(torsoBetween(s.torso, s.levels.crotch, waist + 0.025 * H), 0.007 * H, true, false)); legs(0.007 * H, SHORT_LOWER.has(sub)); }
-      break;
-    case "shoes": for (const f of s.feet) parts.push(ellipsoid([f.center[0], f.center[1] + f.size[1] * 0.1, f.center[2]], [f.size[0] / 2 + 0.012 * H * 0.5, f.size[1] / 2 + 0.006 * H, f.size[2] / 2 + 0.008 * H])); break;
-    default: return null;
-  }
-  const clean = parts.map((g) => { if (!g.getAttribute("normal")) g.computeVertexNormals(); const n = g.index ? g.toNonIndexed() : g; ["uv", "uv1", "uv2"].forEach((a) => n.deleteAttribute(a)); n.setAttribute("uv", new THREE.Float32BufferAttribute(new Float32Array(n.getAttribute("position").count * 2), 2)); return n; });
-  return mergeGeometries(clean, false);
-}
-
-/** Projeção frontal da foto no molde (UV planar) e sombreado das costas por cor de vértice. */
-function project(geo: THREE.BufferGeometry, box: { x: number; top: number; w: number; h: number }) {
-  const pos = geo.getAttribute("position"), nor = geo.getAttribute("normal"); const n = pos.count;
-  const uv = new Float32Array(n * 2), col = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    uv[i * 2] = (pos.getX(i) - (box.x - box.w / 2)) / box.w; uv[i * 2 + 1] = (pos.getY(i) - (box.top - box.h)) / box.h;
-    const nz = nor.getZ(i); const shade = nz >= 0 ? 1 : 0.8 + 0.2 * (1 + nz);
-    col.set([shade, shade, shade], i * 3);
-  }
-  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-}
-
 function Garment({ p, s }: { p: Look3dPiece; s: Spec }) {
   const tex = useTex(p.model3dUrl ? null : p.imageUrl);
   const glb = useGlb(p.model3dUrl);
   const box0 = photoBox(p, s);
-  const img = tex?.image as { width: number; height: number } | undefined;
+  const img = tex?.image as CanvasImageSource & { width: number; height: number } | undefined;
   const aspect = img ? img.width / Math.max(1, img.height) : 1;
   const mold = useMemo(() => {
     if (!box0.w || !tex) return null;
-    // superior: ajusta pela largura (mangas); vestido e inferior: pelo comprimento (barra no joelho / no tornozelo)
-    let w = box0.w, h = box0.w / aspect;
-    if (p.slot === "dress" || p.slot === "lower") { h = box0.h; w = h * aspect; if (w > box0.w * 1.25) { w = box0.w * 1.25; h = w / aspect; } }
-    else if (h > box0.h) { h = box0.h; w = box0.h * aspect; }
     const g = garmentMold(p, s); if (!g) return null;
-    project(g, { x: box0.x, top: box0.top, w, h }); return g;
+    project(g, fitPhoto(p, box0, aspect)); return splitPrint(g);
   }, [tex, aspect, box0.w, box0.h, box0.top, box0.x, p, s]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fabric = useMemo(() => fabricColor(img, p.colorHex), [img, p.colorHex]);
+  // costas e laterais: cor do tecido, mas com o recorte (alfa) da foto — a peça termina onde a foto termina
+  const plainMat = useMemo(() => {
+    if (!tex) return null;
+    const m = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, alphaTest: 0.4, roughness: 0.85, side: THREE.DoubleSide });
+    const color = new THREE.Color(fabric);
+    m.onBeforeCompile = (sh) => { sh.uniforms.fabric = { value: color }; sh.fragmentShader = "uniform vec3 fabric;\n" + sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n diffuseColor.rgb = fabric;"); };
+    m.customProgramCacheKey = () => "fabric-" + fabric;
+    return m;
+  }, [tex, fabric]);
   useEffect(() => { if (tex) { tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true; } }, [tex]);
   if (glb) {
     const bb = new THREE.Box3().setFromObject(glb); const size = bb.getSize(new THREE.Vector3()); const c = bb.getCenter(new THREE.Vector3());
@@ -172,10 +87,28 @@ function Garment({ p, s }: { p: Look3dPiece; s: Spec }) {
   if (!box0.w) return <Accessory p={p} s={s} tex={tex} />;
   if (!mold) return null;
   return (
-    <mesh geometry={mold} castShadow>
-      <meshStandardMaterial map={tex ?? undefined} vertexColors alphaTest={0.4} roughness={0.82} side={THREE.DoubleSide} />
-    </mesh>
+    <group>
+      <mesh geometry={mold.print} castShadow>
+        <meshStandardMaterial map={tex ?? undefined} vertexColors alphaTest={0.4} roughness={0.82} side={THREE.DoubleSide} />
+      </mesh>
+      {plainMat && <mesh geometry={mold.plain} material={plainMat} castShadow />}
+    </group>
   );
+}
+
+/** Cor do tecido: mediana (por canal) dos pixels opacos do miolo da foto — sem as bordas, onde há sombra e recorte, e sem
+ * deixar uma estampa ou sombra puxar a média; sem foto legível, a cor cadastrada. */
+function fabricColor(img: (CanvasImageSource & { width: number; height: number }) | undefined, fallback?: string | null): string {
+  const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#8a8a8a";
+  if (!img || typeof document === "undefined") return base;
+  try {
+    const c = document.createElement("canvas"); c.width = 48; c.height = 48; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return base;
+    g.drawImage(img, 0, 0, 48, 48); const d = g.getImageData(8, 8, 32, 32).data; const ch: number[][] = [[], [], []];
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { ch[0].push(d[i]); ch[1].push(d[i + 1]); ch[2].push(d[i + 2]); }
+    if (ch[0].length < 20) return base;
+    const med = (a: number[]) => { const v = [...a].sort((x, y) => x - y); return v[Math.floor(v.length / 2)]; };
+    return "#" + ch.map((a) => med(a).toString(16).padStart(2, "0")).join("");
+  } catch { return base; }
 }
 
 /** Acessório: placa com a foto no lugar em que ele é usado (cabeça, rosto, pescoço, punho, cintura, mão). */
@@ -186,7 +119,7 @@ function accessoryBox(p: Look3dPiece, s: Spec): { x: number; top: number; w: num
   if (["necklace", "scarf", "tie", "bow_tie"].includes(sub)) return { x: 0, top: s.joints.neckBase[1] + 0.01 * H, w: 0.15 * H, h: sub === "tie" || sub === "scarf" ? 0.26 * H : 0.11 * H, z: chest.b + 0.03 * H };
   if (["watch", "bracelet", "ring", "gloves"].includes(sub)) return { x: wr[0] + 0.01, top: wr[1] + 0.04 * H, w: 0.08 * H, h: 0.08 * H, z: wr[2] + 0.04 };
   if (sub === "earrings") return { x: 0, top: hd.center[1], w: hd.rx * 2.7, h: hd.ry * 0.7, z: 0.02 };
-  if (sub === "belt") { const y = sectionAtName(s, "waist"); const sec = sectionAt(s.torso, y); return { x: 0, top: y + 0.025 * H, w: sec.a * 3, h: 0.05 * H, z: sec.b + 0.02 * H }; }
+  if (sub === "belt") { const y = s.levels.waist; const sec = sectionAt(s.torso, y); return { x: 0, top: y + 0.025 * H, w: sec.a * 3, h: 0.05 * H, z: sec.b + 0.02 * H }; }
   if (sub === "socks") return { x: 0, top: 0.16 * H, w: 0.21 * H, h: 0.12 * H, z: 0.04 * H };
   return { x: wr[0] + 0.06 * H, top: wr[1] + 0.07 * H, w: 0.2 * H, h: 0.2 * H, z: 0.07 * H };                // bolsas e demais: na mão
 }

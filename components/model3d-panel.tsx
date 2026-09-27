@@ -107,7 +107,7 @@ export function Model3dPanel({ pieceId, initialStatus, onCompleted, onView }: {
       {(st.stages?.length ?? 0) > 0 && (
         <details className="mt-2 type-caption text-muted" open={running(s)}>
           <summary className="cursor-pointer">{t("model3dPanel.etapas", { itemCount: st.stages!.length })}</summary>
-          <ol className="mt-1 space-y-0.5">{st.stages!.map((x, i) => <li key={i}>✓ {STAGE_LABEL[x.name] ?? x.name} <span className="text-faint">· {x.provider}{x.note ? ` · ${x.note}` : ""}</span></li>)}</ol>
+          <ol className="fai-list mt-1">{st.stages!.map((x, i) => <li key={i}>✓ {STAGE_LABEL[x.name] ?? x.name} <span className="text-faint">· {x.provider}{x.note ? ` · ${x.note}` : ""}</span></li>)}</ol>
         </details>
       )}
       <div className="mt-3 flex flex-wrap gap-2">

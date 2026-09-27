@@ -49,14 +49,14 @@ function Inbox() {
           {error && <ErrorState error={error} onRetry={reload} />}
           {loading && <Skeleton className="h-64" />}
           {!loading && items.length === 0 && <EmptyState title={t("common.empty")} />}
-          <ul className="surface divide-y divide-line-soft">{grouped.map((g) => g.kind === "group" ? (
+          <ul className="fai-list surface">{grouped.map((g) => g.kind === "group" ? (
             <li key={g.key} className={`p-3 ${g.items.some((n) => !n.read) ? "bg-thread-soft/40" : ""}`}>
               <details>
                 <summary className="notif-summary">
                   <span className="notif-icon"><FaiIcon id="ACT-39" size={28} decorative /></span>
                   <span className="min-w-0 flex-1"><b>{t("notifications.achievementsGroup", { count: g.items.length })}</b><span className="block type-caption text-muted">{relative(g.items[0].createdAt)} · {g.items.slice(0, 2).map((n) => n.title).join(" · ")}{g.items.length > 2 ? "…" : ""}</span></span>
                 </summary>
-                <ul className="mt-2 grid gap-1 pl-12">{g.items.map((n) => <li key={n.id} className="type-body-sm"><b>{n.title}</b> <span className="text-muted">{n.body}</span></li>)}</ul>
+                <ul className="fai-list mt-2 pl-12">{g.items.map((n) => <li key={n.id} className="type-body-sm"><b>{n.title}</b> <span className="text-muted">{n.body}</span></li>)}</ul>
                 {g.items.some((n) => !n.read) && <button type="button" className="btn btn-sm btn-ghost mt-2 ml-10" onClick={() => markMany(g.items.filter((n) => !n.read).map((n) => n.id))}>{t("notifications.marcar_como_lida")}</button>}
               </details>
             </li>
@@ -75,7 +75,7 @@ function Inbox() {
           {prefs.data && (
             <>
               <Switch checked={prefs.data.some((p) => p.enabled)} onChange={master} label={t("notifications.todas_as_notificacoes")} />
-              <ul className="divide-y divide-line-soft">{prefs.data.map((p) => <li key={p.type}><Switch checked={p.enabled} onChange={() => togglePref(p)} label={`${p.label ?? p.type.replace(/_/g, " ").toLowerCase()}${p.category ? ` · ${catLabel(p.category)}` : ""}`} /></li>)}</ul>
+              <ul className="fai-list">{prefs.data.map((p) => <li key={p.type}><Switch checked={p.enabled} onChange={() => togglePref(p)} label={`${p.label ?? p.type.replace(/_/g, " ").toLowerCase()}${p.category ? ` · ${catLabel(p.category)}` : ""}`} /></li>)}</ul>
             </>
           )}
         </Card>

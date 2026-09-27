@@ -9,7 +9,8 @@ import { pseudo } from "@/lib/i18n/pseudo";
 
 export interface Taxonomy {
   subcategories: Record<string, string[]>; colors: Record<string, string>; colorFamilies?: Record<string, string>; materials: string[]; sizes: string[]; sexes: string[];
-  occasions: string[]; styles: string[]; allowedOccasionsByCategory: Record<string, string[]>; pieceSeals: string[]; schemeSeals: string[];
+  occasions: string[]; styles: string[]; allowedOccasionsByCategory: Record<string, string[]>;
+  /** imagem padrão (asset) por categoria e a genérica — preenchida na peça antes de qualquer upload (RF4) */ defaultImages?: Record<string, string>;
   brands: { id: string; name: string; slug: string; logoUrl?: string | null }[]; marketSeasons?: string[]; marketGenders?: string[];
 }
 let cache: Taxonomy | null = null;

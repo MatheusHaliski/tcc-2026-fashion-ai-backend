@@ -12,7 +12,8 @@ import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 
-const STATES = [["", "common.all"], ["favoritos", "common.favorite"], ["disponiveis", "common.available"], ["indisponiveis", "common.unavailable"]] as const;
+// valores iguais aos aceitos pelo backend (WardrobeService.stateMatches); "venda" = peças à venda (RF4.CA8)
+const STATES = [["", "common.all"], ["favoritos", "common.favorite"], ["disponivel", "common.available"], ["indisponivel", "common.unavailable"], ["venda", "common.forSale"]] as const;
 
 function Closet() {
   const { t } = useI18n(); const tax = useTaxonomy(); const toast = useToast();

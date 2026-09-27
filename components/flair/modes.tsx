@@ -162,7 +162,7 @@ function TourPanel({ looks, onDone }: PanelProps) {
       {pending ? <div className="surface p-3"><p className="type-body">{trRich("flair.modes.alvo_vale", { emoji: pending.emoji, title: pending.title, rule: pending.rule, target: pending.target, reward: pending.reward }, { 0: ($c) => <b>{$c}</b> })}</p><LookPicker looks={looks} value={pick} onChange={setPick} /><div className="mt-2"><PlayButton busy={busy} disabled={!pick[0]} onClick={() => play(async () => { const r = await api.post<ModeResult & { tour: TourState }>("/api/flair/modes/tour/resolve", { schemeId: pick[0] }); tour.setData(r.tour); onDone(); return r; })}>{tr("flair.modes.cumprir_o_desafio")}</PlayButton></div></div>
         : <div><Button variant="primary" loading={rolling} disabled={t.rollsLeft === 0} onClick={roll}>{tr("flair.modes.rolar_o_dado")}</Button></div>}
       <ResultView result={result} labelB={tr("flair.modes.nota_alvo")} />
-      <ul className="type-caption grid gap-0.5">{t.log.slice(0, 8).map((l, i) => <li key={i}>{l.text}</li>)}</ul>
+      <ul className="fai-list type-caption">{t.log.slice(0, 8).map((l, i) => <li key={i}>{l.text}</li>)}</ul>
       <p className="type-caption text-muted">{t.rule}</p>
     </div>
   );
@@ -252,7 +252,7 @@ function RunwayPanel({ looks, onDone }: PanelProps) {
       {!info.data.entry && !r && <><LookPicker looks={looks} value={pick} onChange={setPick} /><div><PlayButton busy={busy} disabled={!pick[0]} onClick={() => play(() => api.post("/api/flair/modes/runway", { schemeId: pick[0] })).then(() => { info.reload(); onDone(); })}>{t("flair.modes.desfilar")}</PlayButton></div></>}
       {place && <p className="mode-banner">{rich("flair.modes.colocacao", { place }, { 0: ($c) => <b>{$c}</b> })}</p>}
       {card && card !== "null" && <div className="mode-trophy-card"><span aria-hidden>🏆</span><b>{card}</b><small>{t("flair.modes.aparece_no_seu_perfil")}</small></div>}
-      {stages.map((s) => <div key={s.stage}><p className="label">{s.stage}</p><ul className="grid gap-1">{s.results.map((x, i) => <li key={i} className={cn("type-body-sm", x.you && "font-semibold")}>{x.title ? `${x.advanced ? "✔" : "·"} ${x.title} (@${x.owner}) — ${x.score}` : `${x.a} ${x.scoreA} × ${x.scoreB} ${x.b} → ${x.winner === "A" ? "◀" : "▶"}`}</li>)}</ul></div>)}
+      {stages.map((s) => <div key={s.stage}><p className="label">{s.stage}</p><ul className="fai-list">{s.results.map((x, i) => <li key={i} className={cn("type-body-sm", x.you && "font-semibold")}>{x.title ? `${x.advanced ? "✔" : "·"} ${x.title} (@${x.owner}) — ${x.score}` : `${x.a} ${x.scoreA} × ${x.scoreB} ${x.b} → ${x.winner === "A" ? "◀" : "▶"}`}</li>)}</ul></div>)}
     </div>
   );
 }
@@ -324,7 +324,7 @@ function ComboPanel({ looks, onDone }: PanelProps) {
       <OpponentField value={opp} onChange={setOpp} />
       <div><PlayButton busy={busy} disabled={!pick[0]} onClick={() => play(() => api.post("/api/flair/modes/combo", { schemeId: pick[0], opponent: opp || "CASA" })).then(onDone)}>{t("flair.modes.combo_battle")}</PlayButton></div>
       <ResultView result={result} />
-      <ul className="type-caption grid gap-0.5">{(book ?? [t("flair.modes.streetwear_combo_tenis_cargo_jeans"), t("flair.modes.classic_formal_blazer_camisa_sapato"), t("flair.modes.monochrome_3_pecas_da_mesma"), t("flair.modes.brand_loyalty_3_da_mesma"), t("flair.modes.mix_match_3_marcas_diferentes"), t("flair.modes.vintage_revival_2_pecas_vintage")]).map((x) => <li key={x}>{x}</li>)}</ul>
+      <ul className="fai-list type-caption">{(book ?? [t("flair.modes.streetwear_combo_tenis_cargo_jeans"), t("flair.modes.classic_formal_blazer_camisa_sapato"), t("flair.modes.monochrome_3_pecas_da_mesma"), t("flair.modes.brand_loyalty_3_da_mesma"), t("flair.modes.mix_match_3_marcas_diferentes"), t("flair.modes.vintage_revival_2_pecas_vintage")]).map((x) => <li key={x}>{x}</li>)}</ul>
     </div>
   );
 }
@@ -348,9 +348,9 @@ function ChessPanel({ onDone }: PanelProps) {
         <p className="type-caption">{t("flair.modes.toque_numa_carta_e_depois")}</p>
         <div className="flex gap-2 overflow-x-auto pb-1">{info.data.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" selected={hand === c.id} dim={Object.values(board).includes(c.id)} onClick={() => setHand(c.id)} />)}</div>
         <div className="flex flex-wrap gap-2"><Button onClick={() => setBoard(info.data!.suggestion)}>{t("flair.modes.sugestao")}</Button><PlayButton busy={busy} disabled={Object.keys(board).length < 3} onClick={() => play(() => api.post("/api/flair/modes/chess", { board })).then(onDone)}>{t("flair.modes.jogar_contra_a_ia")}</PlayButton></div>
-        <ul className="type-caption grid gap-0.5 text-muted">{info.data.rules.map((x) => <li key={x}>{x}</li>)}</ul>
+        <ul className="fai-list type-caption text-muted">{info.data.rules.map((x) => <li key={x}>{x}</li>)}</ul>
         <ResultView result={result} labelB={t("flair.modes.ia_estrategista")} />
-        {r?.me && <div className="grid gap-2 md:grid-cols-2"><div><p className="label">{t("flair.modes.seus_bonus")}</p><ul className="type-caption">{r.me.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div><div><p className="label">{t("flair.modes.bonus_da_ia")}</p><ul className="type-caption">{r.opponent?.board.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div></div>}
+        {r?.me && <div className="grid gap-2 md:grid-cols-2"><div><p className="label">{t("flair.modes.seus_bonus")}</p><ul className="fai-list type-caption">{r.me.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div><div><p className="label">{t("flair.modes.bonus_da_ia")}</p><ul className="fai-list type-caption">{r.opponent?.board.bonuses.map((x, i) => <li key={i}>{x}</li>)}</ul></div></div>}
       </div>
     </div>
   );

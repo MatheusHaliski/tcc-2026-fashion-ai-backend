@@ -12,7 +12,8 @@ import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, SegmentPicker, Skeleton, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
-import { CardActions } from "@/components/interactions";
+import { CardActions, InteractionBar } from "@/components/interactions";
+import { DnaCard, type DnaView } from "@/components/dna-card";
 import { BrandLogo } from "@/components/brand-logo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton } from "@/components/mannequin-photo";
@@ -119,7 +120,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   async function toggleSave() { if (!user) { router.push("/login"); return; } try { await api.post(`/api/interactions/PIECE/${id}/saves`); toast.success(p?.viewer?.saved ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved")); reload(); } catch (e) { toast.fromError(e); } }
   function startEdit() {
     if (!p) return;
-    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale });
+    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], background: p.background ?? null });
     setEditing(true);
   }
   async function saveEdit() { setSaving(true); setSaveError(null); try { setPiece(await api.put<PieceView>(`/api/pieces/${id}`, toPayload(form))); setEditing(false); toast.success(t("common.saved")); } catch (e) { setSaveError(e as ApiError); } finally { setSaving(false); } }
@@ -182,6 +183,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
             <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">{s.coverImageUrl && s.coverImageUrl !== "null" && <img src={mediaUrl(s.coverImageUrl)} alt="" className="h-full w-full object-cover" />}</span>
             <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span></button>))}</div></div>}
         <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} />
+        {mine && studioOpen && canStudio && <div className="border-t border-line-soft px-3 py-2"><p className="mb-1.5 type-caption text-muted">{t("pieces.id.escolha_o_fundo_a_peca")}</p><BackdropChips value={p.studioBackdrop ?? "auto"} busy={studioBusy} onPick={studioShot} /></div>}
+        {mine && !p.defaultImage && <div className="border-t border-line-soft p-3"><Model3dPanel pieceId={p.id} initialStatus={p.model3dStatus} onCompleted={() => { reload(); setView("3d"); }} onView={() => setView("3d")} /></div>}
         <div className="c-owner">
           {mine ? (
             <>
@@ -196,8 +199,6 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
             </>
           ) : user ? <Button size="sm" variant="primary" onClick={copyToWardrobe}><FaiIcon id="ACT-06" size={20} variant="glyph" decorative />{t("closet.addToWardrobe")}</Button> : null}
         </div>
-        {mine && studioOpen && canStudio && <div className="border-t border-line-soft px-3 py-2"><p className="mb-1.5 type-caption text-muted">{t("pieces.id.escolha_o_fundo_a_peca")}</p><BackdropChips value={p.studioBackdrop ?? "auto"} busy={studioBusy} onPick={studioShot} /></div>}
-        {mine && !p.defaultImage && <div className="border-t border-line-soft p-3"><Model3dPanel pieceId={p.id} initialStatus={p.model3dStatus} onCompleted={() => { reload(); setView("3d"); }} onView={() => setView("3d")} /></div>}
       </article>
       <Dialog open={editing} onClose={() => setEditing(false)} title={t("common.edit")}>
         <PieceForm value={form} onChange={setForm} onSubmit={saveEdit} busy={saving} error={saveError} submitLabel={t("common.save")} />
@@ -213,19 +214,30 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   );
 }
 
+/** Look DNA de estilo ampliado (RF13), no mesmo padrão: tudo dentro da borda do card, ações do post no fim. */
+export function ExpandedDna({ id }: { id: string }) {
+  const { user } = useAuth();
+  const { data, error, loading, reload } = useApi<DnaView>((signal) => api.get(`/api/dna-schemes/${id}`, { signal, anonymous: !user }), [id, !!user]);
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (loading || !data) return <Skeleton className="h-96" />;
+  return <DnaCard dna={data} expanded extra={<InteractionBar type="DNA_SCHEME" id={data.id ?? id} counters={{ ...data.counters, views: 0, saves: 0, reactions: {} }} viewer={{ liked: false, reactions: [], saved: false, canEdit: data.canEdit, following: false }} ownerId={data.owner.id} onChange={reload} />} />;
+}
+
 /**
- * Janela de sucesso (RF5/RF4): "Parabéns! Seu look foi criado com sucesso!" com o item ampliado dentro dela. Fechar ou
- * "Ir para o meu perfil" leva ao perfil.
+ * Janela de sucesso (RF5/RF4/RF13): "Parabéns! Seu look foi criado com sucesso!" com o item ampliado dentro dela. Fechar
+ * ou "Ir para o meu perfil" leva ao perfil.
  */
-export function CreationSuccess({ kind, id, edited, onDone }: { kind: "scheme" | "piece"; id: string; edited?: boolean; onDone: () => void }) {
-  const { t } = useI18n();
+export function CreationSuccess({ kind, id, edited, onDone: onDoneProp }: { kind: "scheme" | "piece" | "dna"; id: string; edited?: boolean; onDone?: () => void }) {
+  const { t } = useI18n(); const { user } = useAuth(); const router = useRouter();
+  // fechar leva ao meu perfil (RF5.CA/RF4): é lá que o look ou a peça recém-criados aparecem
+  const onDone = onDoneProp ?? (() => router.push(user ? `/u/${user.username}` : "/lookbook"));
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onDone(); };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [onDone]);
-  const title = kind === "scheme" ? (edited ? t("expanded.sucesso_look_editado") : t("expanded.sucesso_look")) : (edited ? t("expanded.sucesso_peca_editada") : t("expanded.sucesso_peca"));
+  const title = kind === "scheme" ? (edited ? t("expanded.sucesso_look_editado") : t("expanded.sucesso_look")) : kind === "dna" ? (edited ? t("expanded.sucesso_dna_editado") : t("expanded.sucesso_dna")) : (edited ? t("expanded.sucesso_peca_editada") : t("expanded.sucesso_peca"));
   return (
     <div className="dialog-backdrop">
       <div role="dialog" aria-modal="true" aria-label={title} className="dialog dialog-card">
@@ -233,7 +245,7 @@ export function CreationSuccess({ kind, id, edited, onDone }: { kind: "scheme" |
           <p className="type-h2">{title}</p>
           <Button variant="primary" onClick={onDone}>{t("expanded.ir_para_o_perfil")}</Button>
         </div>
-        {kind === "scheme" ? <ExpandedScheme id={id} /> : <ExpandedPiece id={id} />}
+        {kind === "scheme" ? <ExpandedScheme id={id} /> : kind === "dna" ? <ExpandedDna id={id} /> : <ExpandedPiece id={id} />}
       </div>
     </div>
   );

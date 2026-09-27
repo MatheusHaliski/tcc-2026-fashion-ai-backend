@@ -13,11 +13,13 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Photo;
+import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
 import br.com.fashionai.domain.repository.PhotoRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +33,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,10 +60,12 @@ public class PhotoService {
     private final Guard guard;
     private final WardrobeService wardrobe;
     private final FlatLayPipeline flatLay;
+    private final SchemeRepository schemes;
 
     public PhotoService(PhotoRepository photos, WardrobeItemRepository pieces, MediaService media, AiEngine ai, Guard guard,
-                        WardrobeService wardrobe, FlatLayPipeline flatLay) {
+                        WardrobeService wardrobe, FlatLayPipeline flatLay, SchemeRepository schemes) {
         this.photos = photos;
+        this.schemes = schemes;
         this.pieces = pieces;
         this.media = media;
         this.ai = ai;
@@ -117,6 +122,81 @@ public class PhotoService {
         out.put("total", p.getTotalElements());
         out.put("lazy", true);
         out.put("serverMs", (System.nanoTime() - started) / 1_000_000);
+        return out;
+    }
+
+    /**
+     * RF12 — galeria de Minhas Fotos com os filtros dos segment pickers (origem, ocasião, estilo, cor, mês da publicação
+     * e período) e as facetas com os valores presentes. Ocasião, estilo e cor vêm da peça (RF4) ou do look (RF5) de que a
+     * foto faz parte; fotos de peças e looks excluídos não entram (CA13: saem junto com a peça ou o look).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> gallery(CurrentUser user, PhotoInsights.Filter f, int page, int size) {
+        long started = System.nanoTime();
+        ZoneId zone = FaiPointsService.ZONE;
+        List<Photo> all = photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id());
+        Map<UUID, PhotoInsights.Subject> subjects = subjects(user, all);
+        Instant now = Instant.now();
+        List<Photo> matched = all.stream().filter(p -> PhotoInsights.matches(p, subjects.get(p.getId()), f, zone, now)).toList();
+        int s = Math.max(1, Math.min(size <= 0 ? 60 : size, 120));
+        int from = Math.min(matched.size(), Math.max(0, page) * s);
+        int to = Math.min(matched.size(), from + s);
+        List<Map<String, Object>> items = matched.subList(from, to).stream().map(p -> PhotoInsights.view(p, subjects.get(p.getId()), zone)).toList();
+        List<Photo> scope = f.origin() == null ? all : all.stream().filter(p -> p.getOrigin() == f.origin()).toList();
+        Map<String, Long> counts = new LinkedHashMap<>();
+        all.forEach(p -> counts.merge(p.getOrigin().name(), 1L, Long::sum));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("items", items);
+        out.put("facets", PhotoInsights.facets(scope, subjects, zone));
+        out.put("counts", counts);
+        out.put("page", Math.max(0, page));
+        out.put("size", s);
+        out.put("hasMore", to < matched.size());
+        out.put("total", matched.size());
+        out.put("all", all.size());
+        out.put("serverMs", (System.nanoTime() - started) / 1_000_000);
+        return out;
+    }
+
+    /** Peça ou look de cada foto (só do próprio dono): é de onde saem ocasião, estilo e cor. */
+    private Map<UUID, PhotoInsights.Subject> subjects(CurrentUser user, List<Photo> all) {
+        Set<UUID> pieceIds = PhotoInsights.ids(all, Set.of(PhotoOrigin.WARDROBE_ITEM, PhotoOrigin.EDITOR));
+        Set<UUID> schemeIds = PhotoInsights.ids(all, Set.of(PhotoOrigin.SCHEME));
+        Map<UUID, WardrobeItem> pieceMap = pieceIds.isEmpty() ? Map.of() : pieces.findAllById(pieceIds).stream()
+                .filter(w -> w.getUser().getId().equals(user.id())).collect(Collectors.toMap(WardrobeItem::getId, w -> w));
+        Map<UUID, Scheme> schemeMap = schemeIds.isEmpty() ? Map.of() : schemes.findAllById(schemeIds).stream()
+                .filter(sc -> sc.getUser().getId().equals(user.id())).collect(Collectors.toMap(Scheme::getId, sc -> sc));
+        Map<UUID, PhotoInsights.Subject> out = new HashMap<>();
+        for (Photo p : all) {
+            out.put(p.getId(), PhotoInsights.subjectOf(p, pieceMap, schemeMap));
+        }
+        return out;
+    }
+
+    /**
+     * RF12 — insights de IA (StyleInsight, calculado localmente): distribuição por cor, ocasião e estilo das peças e
+     * looks fotografados, ritmo por mês e frases com o que mais aparece.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> insights(CurrentUser user) {
+        ZoneId zone = FaiPointsService.ZONE;
+        List<Photo> all = photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id());
+        Map<UUID, PhotoInsights.Subject> subjects = subjects(user, all);
+        Map<String, Object> facets = PhotoInsights.facets(all, subjects, zone);
+        @SuppressWarnings("unchecked") Map<String, Long> color = (Map<String, Long>) facets.get("color");
+        @SuppressWarnings("unchecked") Map<String, Long> occasion = (Map<String, Long>) facets.get("occasion");
+        @SuppressWarnings("unchecked") Map<String, Long> style = (Map<String, Long>) facets.get("style");
+        @SuppressWarnings("unchecked") Map<String, Long> months = (Map<String, Long>) facets.get("month");
+        AiOutcome<List<String>> outcome = ai.local(user.id(), AiCapability.STYLE_INSIGHT,
+                List.of(Msg.t("photo.insight_entrada", all.size())),
+                () -> PhotoInsights.sentences(color, occasion, style, months, all.size(), WardrobeService::humanize));
+        Map<String, Object> out = new LinkedHashMap<>(facets);
+        out.put("total", all.size());
+        out.put("keyMoments", all.stream().filter(Photo::isKeyMoment).count());
+        out.put("withSubject", subjects.values().stream().filter(x -> x.kind() != null).count());
+        out.put("sentences", outcome.value());
+        out.put("explanation", outcome.explanation());
+        out.put("inferenceId", outcome.inferenceId());
         return out;
     }
 
@@ -268,7 +348,28 @@ public class PhotoService {
             m.put("origin", p.getOrigin().name());
             moments.add(m);
         }
-        return Map.of("months", byMonth, "moments", moments);
+        // linha do tempo completa (RF12.CA07/CA08): todas as fotos, mês a mês, da mais recente para a mais antiga
+        List<Photo> all = photos.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id());
+        Map<UUID, PhotoInsights.Subject> subjects = subjects(user, all);
+        Map<String, List<Photo>> perMonth = new java.util.TreeMap<>(Comparator.reverseOrder());
+        for (Photo p : all) {
+            perMonth.computeIfAbsent(PhotoInsights.month(p, zone), k -> new ArrayList<>()).add(p);
+        }
+        List<Map<String, Object>> timeline = new ArrayList<>();
+        for (Map.Entry<String, List<Photo>> e : perMonth.entrySet()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("month", e.getKey());
+            m.put("count", e.getValue().size());
+            m.put("keyMoments", e.getValue().stream().filter(Photo::isKeyMoment).count());
+            m.put("byOrigin", byMonth.getOrDefault(e.getKey(), Map.of()));
+            m.put("photos", e.getValue().stream().map(p -> PhotoInsights.view(p, subjects.get(p.getId()), zone)).toList());
+            timeline.add(m);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("months", byMonth);
+        out.put("moments", moments);
+        out.put("timeline", timeline);
+        return out;
     }
 
     /**

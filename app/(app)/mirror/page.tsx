@@ -59,8 +59,8 @@ function MirrorInner() {
           </Card>
           <Card>
             <h2 className="type-h3 mb-2">{t("mirror.slots")}</h2>
-            <ul className="divide-y divide-line-soft">{Object.entries(SLOT_LABEL).map(([slot, lbl]) => { const v = data.slots[slot]; const items = Array.isArray(v) ? v : v ? [v] : []; const miss = data.missing.find((m) => m.slot === slot); return <li key={slot} className="flex items-center gap-3 py-2"><span className="w-28 type-label text-muted">{lbl}</span><span className="flex-1 type-body">{items.length ? items.map((p) => p.name).join(", ") : <span className="text-faint">{miss?.message ?? "—"}</span>}</span><Button size="sm" onClick={async () => { const r = await run("sug", () => api.get(`/api/me/mirror/suggestions?slot=${slot}`)); if (r) setSuggest(r as typeof suggest); }}><FaiIcon id={slot === "shoes" ? "ACT-35" : "ACT-34"} size={24} decorative />{miss?.action ?? t("mirror.sugerir")}</Button></li>; })}</ul>
-            {data.warnings?.length ? <ul className="mt-2 type-caption text-chalk">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
+            <ul className="fai-list">{Object.entries(SLOT_LABEL).map(([slot, lbl]) => { const v = data.slots[slot]; const items = Array.isArray(v) ? v : v ? [v] : []; const miss = data.missing.find((m) => m.slot === slot); return <li key={slot} className="flex items-center gap-3 py-2"><span className="w-28 type-label text-muted">{lbl}</span><span className="flex-1 type-body">{items.length ? items.map((p) => p.name).join(", ") : <span className="text-faint">{miss?.message ?? "—"}</span>}</span><Button size="sm" onClick={async () => { const r = await run("sug", () => api.get(`/api/me/mirror/suggestions?slot=${slot}`)); if (r) setSuggest(r as typeof suggest); }}><FaiIcon id={slot === "shoes" ? "ACT-35" : "ACT-34"} size={24} decorative />{miss?.action ?? t("mirror.sugerir")}</Button></li>; })}</ul>
+            {data.warnings?.length ? <ul className="fai-list mt-2 type-caption text-chalk">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
           </Card>
           <div className="flex flex-wrap gap-2">
             <Button variant="accent" disabled={!data.complete} onClick={() => run("use", () => api.post("/api/me/mirror/use"), t("mirror.look_do_dia_registrado"))}><FaiIcon id="ACT-36" size={24} decorative />{t("mirror.usar_este_look_hoje")}</Button>
@@ -78,7 +78,7 @@ function MirrorInner() {
         <Field label={t("scheme.title")} id="mtitle"><Input id="mtitle" value={saveTitle ?? ""} onChange={(e) => setSaveTitle(e.target.value)} /></Field>
       </Dialog>
       <Dialog open={!!grwm} onClose={() => setGrwm(null)} title={grwm?.title ?? t("mirror.grwm_storyboard")}>
-        <ol className="list-decimal pl-5 type-body">{(grwm?.steps ?? []).map((s, i) => <li key={i} className="py-1"><b>{s.title}</b> {s.text}</li>)}</ol>
+        <ol className="fai-list type-body">{(grwm?.steps ?? []).map((s, i) => <li key={i} className="py-1"><b>{s.title}</b> {s.text}</li>)}</ol>
       </Dialog>
     </>
   );

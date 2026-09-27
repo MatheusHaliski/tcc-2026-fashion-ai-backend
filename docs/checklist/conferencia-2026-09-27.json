@@ -1,0 +1,62 @@
+{
+ "previewPieces": 3,
+ "previewBordered": "1px",
+ "previewNames": [
+  "Peça 2",
+  "Peça 3",
+  "Peça 4"
+ ],
+ "sealLoadingText": 1,
+ "sealOptions": [
+  "Zara · marca2 de 3 peças identificadas como Zara82%",
+  "Anitta · celebridadeestilo clássico compatível61%"
+ ],
+ "stepperBackWorks": "Peças",
+ "successTitle": "Parabéns! Seu look foi criado com sucesso!",
+ "successHasExpandedCard": 1,
+ "schemeCards": 1,
+ "schemeOutsideCardText": 0,
+ "schemeLastBlock": "c-owner",
+ "schemeActionButtons": 8,
+ "schemeCounts": "12 curtidasVer os 3 comentários · 1 compartilhamento · 2 remixes · 2 Trend",
+ "schemeMenuItems": [
+  "Salvar",
+  "Editar",
+  "Excluir"
+ ],
+ "pieceLastBlock": "c-owner",
+ "pieceOwnerButtons": [
+  "Favorito",
+  "Disponível",
+  "Mostrar no espelho",
+  "Mostrar no quarto",
+  "Trocar foto",
+  "Editar foto (Canvas 2D)",
+  "Foto com meu manequim"
+ ],
+ "pieceSealOptions": [
+  "Zara · marcapeça semelhante: camiseta preta Zara82%"
+ ],
+ "moreDetailsArrow": "\"›\"",
+ "photosFilterRequest": "GET /api/me/photos?occasion=casual&page=0&size=60",
+ "photosSections": 0,
+ "person": {
+  "male_full_height_hands.jpg": {
+   "personFound": true,
+   "removedPct": 2,
+   "people": 1,
+   "ms": 3094
+  },
+  "portrait.jpg": {
+   "personFound": true,
+   "removedPct": 9,
+   "people": 1,
+   "ms": 638
+  }
+ },
+ "errors": [
+  "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+  "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+  "INFO: Created TensorFlow Lite XNNPACK delegate for CPU."
+ ]
+}

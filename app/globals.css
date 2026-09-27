@@ -228,7 +228,7 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card .scheme-container::before { content: attr(data-label); position: absolute; top: 8px; left: 8px; z-index: 3; background: rgba(255,255,255,.94); color: #191A19; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.18); pointer-events: none; }
 .card-preview .fai-card .scheme-container { border: 1.5px dashed var(--card-accent, var(--mark)); }
 .fai-card .c-photo { aspect-ratio: 1/1; position: relative; overflow: hidden; background: var(--surface-2); border-bottom: 1px solid var(--line-soft); }
-.fai-card .c-photo img { width: 100%; height: 100%; object-fit: cover; }
+.fai-card .c-photo img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1; }
 .fai-card .c-photo.is-look { aspect-ratio: 4/5; }
 .fai-card .c-title { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 17px; line-height: 1.25; padding: 10px 12px 4px; }
 .fai-card .c-row { padding: 8px 12px; border-bottom: 1px solid var(--line-soft); font-size: 13px; }
@@ -287,8 +287,16 @@ h1, h2, h3, h4 { margin: 0; }
 .list-row { border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface); min-width: 0; }
 .list-row.is-action { cursor: pointer; }
 .list-row.is-action:hover { background: var(--surface-2); }
+/* Lista padrão do produto: nunca a lista HTML crua — cada item é uma linha com borda, no mesmo estilo dos demais elementos. */
+.fai-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.fai-list > li { border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface); min-width: 0; }
+.fai-list > li > ul, .fai-list > li > ol { margin-top: 6px; }
+.fai-list.is-plain > li { border: 0; padding: 4px 0; background: transparent; }
 .fai-card.is-expanded .piece2 { border: 1.5px solid var(--line); border-radius: 8px; margin: 6px 12px 0; }
 .fai-card.is-expanded .piece2 + .piece2 { margin-top: 6px; }
+/* pré-visualização do Criar Look (RF7.CA12): cada peça da lista com borda, como no card ampliado */
+.fai-card.is-preview .piece2 { border: 1.5px solid var(--line); border-radius: 8px; margin: 6px 12px 0; }
+.fai-card.is-preview .piece2 + .piece2 { margin-top: 6px; }
 .fai-card .c-owner { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--line-soft); }
 .c-act { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; min-width: 36px; padding: 0 8px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--card-ink, var(--ink)); cursor: pointer; }
 .c-act:hover:not(.is-static):not(:disabled) { background: var(--surface-2); }
@@ -921,7 +929,11 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 /* primeiros passos no topo do feed */
 /* etapas de um fluxo (criar look, criar DNA) */
 .more-details { margin: 4px 0 12px; border: 1px solid var(--line-soft); border-radius: 12px; padding: 10px 14px; }
-.more-details > summary { cursor: pointer; min-height: var(--control-md); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-weight: 600; }
+.more-details > summary { cursor: pointer; min-height: var(--control-md); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 600; list-style: none; }
+.more-details > summary::-webkit-details-marker { display: none; }
+/* seta que indica a expansão do formulário */
+.more-details > summary::before { content: "›"; display: inline-block; width: 16px; font-size: 18px; line-height: 1; transition: transform .15s; }
+.more-details[open] > summary::before { transform: rotate(90deg); }
 .stepper { margin-bottom: 18px; }
 .stepper-count { margin-bottom: 8px; font-size: var(--text-body); }
 .stepper ol { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
@@ -1284,6 +1296,10 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .c-modal-controls { display: inline-flex; gap: 2px; margin-left: 2px; }
 .expanded-page { max-width: 560px; margin: 0 auto; }
 .fai-card .c-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; padding: 4px 12px 10px; }
+/* a mesma lista de fatos fora do card (revisar e salvar, comparação de fotos) */
+.c-facts:not(.fai-card .c-facts) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.c-facts:not(.fai-card .c-facts) dt { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.c-facts:not(.fai-card .c-facts) dd { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .fai-card .c-facts dt { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .fai-card .c-facts dd { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .success-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); border: 1.5px solid var(--line-soft); border-radius: var(--radius); }

@@ -2,6 +2,8 @@ package br.com.fashionai.web.config;
 
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.Mood;
+import br.com.fashionai.domain.model.enums.Season;
+import br.com.fashionai.domain.model.enums.Visibility;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.Module;
@@ -28,7 +30,33 @@ public class JsonCompatConfig {
         SimpleModule m = new SimpleModule("fai-json-compat");
         m.addDeserializer(CreationMode.class, new CreationModeDeserializer());
         m.addDeserializer(Mood.class, new MoodDeserializer());
+        m.addDeserializer(Season.class, new BlankAsNullDeserializer<>(Season.class));
+        m.addDeserializer(Visibility.class, new BlankAsNullDeserializer<>(Visibility.class));
         return m;
+    }
+
+    /** Campo de seleção deixado vazio na tela ("") é o mesmo que não escolhido (null) — nunca um 400 "JSON inválido". */
+    static final class BlankAsNullDeserializer<E extends Enum<E>> extends StdDeserializer<E> {
+        private final Class<E> type;
+
+        BlankAsNullDeserializer(Class<E> type) {
+            super(type);
+            this.type = type;
+        }
+
+        @Override
+        public E deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+            String raw = p.getValueAsString();
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+            try {
+                return Enum.valueOf(type, raw.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                @SuppressWarnings("unchecked") E weird = (E) ctx.handleWeirdStringValue(type, raw, "valor fora do enum " + type.getSimpleName());
+                return weird;
+            }
+        }
     }
 
     static final class CreationModeDeserializer extends StdDeserializer<CreationMode> {
