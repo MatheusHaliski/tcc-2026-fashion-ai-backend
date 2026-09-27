@@ -43,7 +43,13 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
   const s = data.scheme; const mine = !!user && s.owner?.id === user.id;
   async function dailyLook() { try { await api.post("/api/me/daily-look", { schemeId: s.id }); toast.success(t("schemes.id.look_do_dia")); reload(); } catch (e) { toast.fromError(e); } }
   async function publish() { try { await api.post(`/api/schemes/${s.id}/publication`, { visibility: "PUBLIC" }); toast.success(t("scheme.published")); reload(); } catch (e) { toast.fromError(e); } }
-  async function suggestSeals() { try { setSealSuggest(await api.get(`/api/schemes/${s.id}/seal-suggestions`)); } catch (e) { toast.fromError(e); } }
+  // a API devolve "suggestions" (vínculos SUGGESTED); a lista usa nome, tipo, confiança e o porquê de cada um
+  async function suggestSeals() {
+    try {
+      const r = await api.get<{ suggestions?: { id: string; kind: string; confidence: number; justification?: string; target: { id: string; displayName?: string; username: string } }[]; message?: string }>(`/api/schemes/${s.id}/seal-suggestions`);
+      setSealSuggest({ message: r.message, candidates: (r.suggestions ?? []).map((x) => ({ bondId: x.id, name: x.target.displayName || x.target.username, kind: x.kind, confidence: Number(x.confidence), reason: x.justification, targetOwnerId: x.target.id })) });
+    } catch (e) { toast.fromError(e); }
+  }
   async function acceptBond(c: { bondId?: string; targetOwnerId: string }) { try { if (c.bondId) await api.post(`/api/seal-bonds/${c.bondId}/accept`, { imageRightsConsent: true }); else await api.post(`/api/schemes/${s.id}/seal-bonds`, { targetOwnerId: c.targetOwnerId, imageRightsConsent: true }); toast.success(t("schemes.id.vinculo_enviado_para_revisao_da")); setSealSuggest(null); reload(); } catch (e) { toast.fromError(e); } }
   async function askImprove() { setBusy(true); try { setDiff(await api.post(`/api/schemes/${s.id}/improvements`, { instruction })); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
   async function applyDiff() { if (!diff) return; setBusy(true); try { await api.post(`/api/schemes/${s.id}/improvements/apply`, diff); toast.success(t("common.saved")); setImprove(false); setDiff(null); reload(); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
@@ -66,7 +72,7 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
       </Dialog>
       <Dialog open={!!sealSuggest} onClose={() => setSealSuggest(null)} title={t("schemes.id.vinculos_de_selo_sugeridos_rf21")}>
         {sealSuggest?.message && <p className="type-body text-muted mb-2">{sealSuggest.message}</p>}
-        <div className="grid gap-2">{(sealSuggest?.candidates ?? []).map((c, i) => <div key={i} className="list-row flex items-center gap-3"><div className="flex-1"><p className="type-body"><b>{c.name}</b> <span className="text-faint">· {c.kind}</span></p><p className="type-caption text-muted">{t("schemes.id.confianca", { Math: Math.round(c.confidence * 100), value: c.reason ? `· ${c.reason}` : "" })}</p></div><Button size="sm" variant="primary" onClick={() => acceptBond(c)}>{t("schemes.id.vincular")}</Button></div>)}</div>
+        <div className="grid gap-2">{(sealSuggest?.candidates ?? []).map((c, i) => <div key={i} className="list-row flex items-center gap-3"><div className="flex-1"><p className="type-body"><b>{c.name}</b> <span className="text-faint">· {c.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}</span></p><p className="type-caption text-muted">{t("schemes.id.confianca", { Math: Math.round(c.confidence * 100), value: c.reason ? `· ${c.reason}` : "" })}</p></div><Button size="sm" variant="primary" onClick={() => acceptBond(c)}>{t("schemes.id.vincular")}</Button></div>)}</div>
         {sealSuggest && (sealSuggest.candidates ?? []).length === 0 && <p className="type-body">{t("schemes.id.nenhuma_sugestao_agora_voce_pode")}</p>}
       </Dialog>
     </>
