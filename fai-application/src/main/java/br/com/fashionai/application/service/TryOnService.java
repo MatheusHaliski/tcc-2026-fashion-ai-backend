@@ -58,10 +58,12 @@ public class TryOnService {
     private final MediaService media;
     private final AiEngine ai;
     private final br.com.fashionai.application.assets.AssetCatalogService assets;
+    private final Avatar3dService avatars3d;
 
     public TryOnService(WardrobeItemRepository pieces, UserPreferencesRepository preferences, UserRepository users, SchemeRepository schemes,
                         WardrobeService wardrobe, SchemeService schemeService, TryOnCompositor compositor, MediaService media, AiEngine ai,
-                        br.com.fashionai.application.assets.AssetCatalogService assets) {
+                        br.com.fashionai.application.assets.AssetCatalogService assets,
+                        Avatar3dService avatars3d) {
         this.pieces = pieces;
         this.preferences = preferences;
         this.users = users;
@@ -72,6 +74,7 @@ public class TryOnService {
         this.media = media;
         this.ai = ai;
         this.assets = assets;
+        this.avatars3d = avatars3d;
     }
 
     /** Bytes da imagem da peça: storage de mídia ou, para a imagem padrão (RF4), o arquivo em /public/assets_pecas. */
@@ -93,7 +96,9 @@ public class TryOnService {
     @Transactional(readOnly = true)
     public Map<String, Object> state(CurrentUser user, MannequinSex requested) {
         UserPreferences p = prefs(user.id());
-        MannequinSex sex = requested != null ? requested : p.getMannequinSex() == null ? MannequinSex.FEMININO : p.getMannequinSex();
+        // identidade canônica: com Avatar 3D, o manequim É o avatar (sexo, corpo medido e pele); sem avatar, preferências
+        Resolved id = resolve(user, p, requested);
+        MannequinSex sex = id.sex();
         List<WardrobeItem> own = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
                 .filter(w -> w.getAvailabilityStatus() != br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED).toList();
         if (own.isEmpty()) {
@@ -116,7 +121,9 @@ public class TryOnService {
             byLayer.computeIfAbsent(layer, k -> new ArrayList<>()).add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("mannequin", MannequinGeometry.describe(sex, p.getMannequinBuild(), p.getMannequinSkinTone()));
+        out.put("mannequin", MannequinGeometry.describe(id.body(), p.getMannequinSkinTone(), id.identity().skinHex()));
+        out.put("identity", id.identity());
+        out.put("avatar", id.avatar());
         out.put("sex", sex.name());
         out.put("skinTones", MannequinGeometry.SKIN_TONES);
         out.put("builds", BodyBuild.values());
@@ -124,6 +131,30 @@ public class TryOnService {
         out.put("pieces", byLayer);
         out.put("externalAvailable", compositor.externalAvailable() && ai.remoteEnabled());
         return out;
+    }
+
+    /** Manequim resolvido: corpo, sexo, identidade (origem dos dados) e a referência do avatar para o 3D da tela. */
+    record Resolved(MannequinSex sex, MannequinGeometry.Body body, MannequinGeometry.Identity identity, Map<String, Object> avatar) {
+    }
+
+    /**
+     * Digital double: o manequim do provador é o mesmo personagem do Avatar 3D do perfil — sexo do corpo do avatar,
+     * proporções medidas/informadas e pele medida na foto. Só sem avatar valem o sexo escolhido, o porte e o tom de pele
+     * das preferências (manequim genérico).
+     */
+    Resolved resolve(CurrentUser user, UserPreferences p, MannequinSex requested) {
+        Map<String, Object> avatar = avatars3d.forMannequin(user.id(), user.id()).orElse(null);
+        @SuppressWarnings("unchecked") Map<String, Object> model = avatar == null ? null : (Map<String, Object>) avatar.get("model");
+        java.util.Optional<MannequinGeometry.Params> params = MannequinGeometry.paramsOf(model);
+        if (params.isPresent()) {
+            MannequinSex sex = MannequinGeometry.sexOf(model).orElse(p.getMannequinSex() == null ? MannequinSex.FEMININO : p.getMannequinSex());
+            MannequinGeometry.Body body = MannequinGeometry.fromParams(sex, params.get());
+            return new Resolved(sex, body, MannequinGeometry.identity(avatar, sex, p.getMannequinSkinTone(), true), avatar);
+        }
+        // sem avatar: o sexo é o do cadastro (RF1), como no manequim 3D do perfil — o provador não pede escolha de sexo
+        MannequinSex profileSex = users.findById(user.id()).map(User::getSex).orElse(null);
+        MannequinSex sex = profileSex != null ? profileSex : p.getMannequinSex() != null ? p.getMannequinSex() : requested != null ? requested : MannequinSex.FEMININO;
+        return new Resolved(sex, MannequinGeometry.body(sex, p.getMannequinBuild()), MannequinGeometry.identity(avatar, sex, p.getMannequinSkinTone(), false), avatar);
     }
 
     /** CA01/CA06 — manequim, tom de pele e porte salvos no perfil (RF23). */
@@ -178,7 +209,8 @@ public class TryOnService {
             throw ApiException.badRequest("SEM_PECAS", Msg.t("tryOn.leve_ao_menos_uma_peca"));
         }
         UserPreferences p = prefs(user.id());
-        MannequinSex s = sex != null ? sex : p.getMannequinSex() == null ? MannequinSex.FEMININO : p.getMannequinSex();
+        Resolved who = resolve(user, p, sex);
+        MannequinSex s = who.sex();
         List<WardrobeItem> ordered = new ArrayList<>();
         for (UUID id : pieceIds) {
             WardrobeItem w = wardrobe.owned(user, id);
@@ -197,10 +229,10 @@ public class TryOnService {
             BufferedImage cutout = img == null ? null : removed ? ImageOps.toArgb(img) : ImageOps.removeBackgroundLocal(img).image();
             garments.add(new TryOnCompositor.Garment(w.getId(), LocalSchemeComposer.slotOf(w), w.getSubcategory(), cutout, bytes, removed, w.getColor()));
         }
-        BodyBuild build = p.getMannequinBuild();
-        String skin = p.getMannequinSkinTone();
+        MannequinGeometry.Body body = who.body();
+        String skinHex = who.identity().skinHex();
         AiOutcome<TryOnCompositor.Result> outcome = ai.execute(user.id(), AiCapability.TRY_ON,
-                List.of(Msg.t("tryOn.pecas_do_proprio_acervo_recortes", (garments.size())), "manequim " + s.name().toLowerCase()), null, null,
+                List.of(Msg.t("tryOn.pecas_do_proprio_acervo_recortes", (garments.size())), "manequim " + s.name().toLowerCase() + " · " + who.identity().source()), null, null,
                 List.of(new AiEngine.RemoteStep<>() {
                     public String provider() {
                         return "fashn";
@@ -215,10 +247,10 @@ public class TryOnService {
                     }
 
                     public AiEngine.RemoteResult<TryOnCompositor.Result> call() {
-                        TryOnCompositor.Result r = compositor.render(s, build, skin, garments, true);
+                        TryOnCompositor.Result r = compositor.render(body, skinHex, garments, true);
                         return new AiEngine.RemoteResult<>(r, r.costUsd(), r.placements().size() + " camadas");
                     }
-                }), () -> compositor.render(s, build, skin, garments, false));
+                }), () -> compositor.render(body, skinHex, garments, false));
         TryOnCompositor.Result r = outcome.value();
         User owner = users.findById(user.id()).orElseThrow();
         MediaStoragePort.StoredObject stored = media.put("users/" + user.id() + "/tryon/" + System.currentTimeMillis() + ".png", r.png(), "image/png");

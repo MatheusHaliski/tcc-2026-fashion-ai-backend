@@ -8,16 +8,29 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
+import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, PageHeader, SegmentPicker, Select, Skeleton, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
+import type { AvatarView } from "@/components/three/avatar-viewer";
+import { validateBody } from "@/lib/avatar3d/body-spec";
+
+const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
 type Sex = "MASCULINO" | "FEMININO";
 type Layer = "BASE" | "INTERMEDIATE" | "OUTER" | "ACCESSORY";
 interface Box { x: number; y: number; w: number; h: number; }
-interface Mannequin { sex: Sex; build: string; skinTone?: string | null; skinHex: string; width: number; height: number; shoulderW: number; waistW: number; hipW: number; headR: number; landmarks: Record<string, { x: number; y: number }>; anchors: Record<string, Box>; }
+interface Mannequin { sex: Sex; build: string; skinTone?: string | null; skinHex: string; width: number; height: number; shoulderW: number; waistW: number; hipW: number; headR: number; landmarks: Record<string, { x: number; y: number }>; anchors: Record<string, Box>; levels?: Record<string, number>; params?: Record<string, number>; }
+/** De onde vem o manequim: "avatar" (digital double do perfil: sexo, corpo medido/informado e pele) ou "preferences" (genérico). */
+interface Identity { source: "avatar" | "preferences"; sex: Sex; sexSource: string; skinHex: string; skinSource: "observed" | "preference"; heightCm?: number | null; sources: Record<string, string>; warnings: string[]; }
 /** Cada peça elegível chega com a camada, a âncora no corpo e a chave de substituição calculadas pelo servidor. */
 interface Entry { piece: PieceView; slot: string; layer: Layer; anchor: string; replacementKey: string; backgroundRemoved: boolean; }
-interface State { mannequin: Mannequin; sex: Sex; skinTones: Record<string, string>; builds: string[]; layers: Layer[]; pieces: Partial<Record<Layer, Entry[]>>; externalAvailable: boolean; }
+interface State { mannequin: Mannequin; sex: Sex; skinTones: Record<string, string>; builds: string[]; layers: Layer[]; pieces: Partial<Record<Layer, Entry[]>>; externalAvailable: boolean; identity?: Identity; avatar?: Avatar3dRef | null; }
+/** slot do provador → slot do manequim 3D (mesma peça, mesmo corpo). */
+const SLOT3D: Record<string, string> = { TOP: "upper", OUTERWEAR: "outer_layer", BOTTOM: "lower", FULL_BODY: "dress", SHOES: "shoes", ACCESSORY: "accessory" };
+const toLook3d = (e: Entry): Look3dPiece => ({ id: e.piece.id, name: e.piece.name, slot: SLOT3D[e.slot] ?? "accessory", category: e.piece.category, subcategory: e.piece.subcategory, imageUrl: e.piece.imageUrl ?? e.piece.thumbnailUrl, colorHex: e.piece.colorHex, model3dUrl: e.piece.model3dUrl ?? null, defaultImage: e.piece.defaultImage });
+const MEASURES = ["stature", "shoulderW", "chestW", "waistW", "hipW"] as const;
 interface Render { imageUrl: string; photoId?: string; pieceIds: string[]; warnings?: string[]; replaced?: string[]; stages?: { name: string; provider?: string; ms?: number }[]; costUsd?: number; totalMs?: number; fallbackUsed?: boolean; message?: string; explanation?: { provider?: string }; }
 
 const LAYER_ORDER: Layer[] = ["BASE", "INTERMEDIATE", "OUTER", "ACCESSORY"];
@@ -47,7 +60,9 @@ function dress(current: string[], id: string, byId: Map<string, Entry>): { next:
 function MannequinBody({ m }: { m: Mannequin }) {
   const W = m.width, H = m.height, cx = W / 2, male = m.sex === "MASCULINO";
   const shoulder = m.shoulderW * W, waist = m.waistW * W, hip = m.hipW * W, headR = m.headR * W;
-  const yS = 0.205 * H, yW = (male ? 0.455 : 0.43) * H, yH = 0.52 * H, yA = 0.9 * H;
+  // níveis do corpo: com avatar vêm das mesmas fórmulas do corpo 3D; sem avatar, os do manequim genérico
+  const lv = m.levels ?? { headTop: 0.045, shoulder: 0.205, waist: male ? 0.455 : 0.43, hip: 0.52, crotch: 0.52, ankle: 0.9 };
+  const yS = lv.shoulder * H, yW = lv.waist * H, yH = (m.params ? lv.crotch : lv.hip) * H, yA = lv.ankle * H, yTop = lv.headTop * H;
   const legs = [-1, 1].map((sd) => {
     const outer = cx + sd * hip / 2, inner = cx + sd * hip * 0.04, ankle = cx + sd * hip * 0.2;
     return { d: `M ${outer} ${yH - 10} C ${outer + sd * 6} ${0.62 * H} ${ankle + sd * 26} ${0.78 * H} ${ankle + sd * 16} ${yA} L ${ankle - sd * 14} ${yA} C ${ankle - sd * 20} ${0.78 * H} ${inner} ${0.64 * H} ${inner} ${yH + 20} Z`, foot: [ankle + sd * 6, yA + 9] };
@@ -68,8 +83,8 @@ function MannequinBody({ m }: { m: Mannequin }) {
       </g>
       <path d={`M ${cx - hip / 2 + 2} ${yH - 34} L ${cx + hip / 2 - 2} ${yH - 34} L ${cx + hip * 0.12} ${yH + 38} L ${cx - hip * 0.12} ${yH + 38} Z`} fill="#B9B4AD" />
       {!male && <rect x={cx - shoulder * 0.36} y={yS + 58} width={shoulder * 0.72} height={62} rx={15} fill="#B9B4AD" />}
-      <rect x={cx - headR * 0.45} y={0.14 * H} width={headR * 0.9} height={0.075 * H} rx={9} fill={m.skinHex} />
-      <ellipse cx={cx} cy={0.045 * H + headR * 1.225} rx={headR} ry={headR * 1.225} fill="url(#tryon-skin)" />
+      <rect x={cx - headR * 0.45} y={yTop + headR * 2.1} width={headR * 0.9} height={Math.max(8, yS - (yTop + headR * 2.1))} rx={9} fill={m.skinHex} />
+      <ellipse cx={cx} cy={yTop + headR * 1.225} rx={headR} ry={headR * 1.225} fill="url(#tryon-skin)" />
     </g>
   );
 }
@@ -81,6 +96,8 @@ function TryOnInner() {
   const [render, setRender] = useState<Render | null>(null); const [busy, setBusy] = useState(false); const [title, setTitle] = useState("");
   const [over, setOver] = useState(false); const [confirmClear, setConfirmClear] = useState(false); const [fixing, setFixing] = useState<string | null>(null);
   const [notices, setNotices] = useState<string[]>([]);
+  // digital double: com avatar, o palco mostra o mesmo personagem 3D do perfil (vestido com as peças); a silhueta 2D é a projeção dele
+  const [stage, setStage] = useState<"avatar" | "silhueta">("avatar"); const [view3d, setView3d] = useState<AvatarView>("front");
   const byId = useMemo(() => { const m = new Map<string, Entry>(); LAYER_ORDER.forEach((l) => (data?.pieces[l] ?? []).forEach((e) => m.set(e.piece.id, e))); return m; }, [data]);
   // peças que já vieram de um look (?scheme=) entram na ordem de camadas
   useEffect(() => {
@@ -96,10 +113,6 @@ function TryOnInner() {
     const r = dress(dressed, id, byId); setDressed(r.next); setRender(null); setNotices(r.notices); r.notices.forEach((n) => toast.info(n));
   }
   function takeOff(id: string) { setDressed((d) => d.filter((x) => x !== id)); setRender(null); }
-  async function setSex(sex: Sex) {
-    if (sex === data?.sex) return;
-    try { await api.put("/api/try-on/preferences", { sex }); setRender(null); reload(); toast.success(t("tryOn.manequim_salvo_ele_volta_assim", { value: sex === "MASCULINO" ? "masculino" : "feminino" })); } catch (e) { toast.fromError(e); }
-  }
   async function savePrefs(patch: { skinTone?: string; build?: string }) { try { await api.put("/api/try-on/preferences", patch); setRender(null); reload(); } catch (e) { toast.fromError(e); } }
   async function doRender() {
     setBusy(true);
@@ -120,6 +133,10 @@ function TryOnInner() {
   const on = LAYER_ORDER.flatMap((l) => dressed.map((id) => byId.get(id)).filter((e): e is Entry => !!e && e.layer === l));
   const approximate = on.filter((e) => !e.backgroundRemoved);
   const skin = m.skinTone ?? "media";
+  const avatar = data.avatar ?? null; const identity = data.identity;
+  const bodyParams = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
+  const sourceLabel = (src?: string) => src === "observed" ? t("tryOn.fonte_observed") : src === "user" ? t("tryOn.fonte_user") : src === "estimated" ? t("tryOn.fonte_estimated") : t("tryOn.fonte_default");
+  const measureLabel: Record<(typeof MEASURES)[number], string> = { stature: t("tryOn.m_stature"), shoulderW: t("tryOn.m_shoulderW"), chestW: t("tryOn.m_chestW"), waistW: t("tryOn.m_waistW"), hipW: t("tryOn.m_hipW") };
   return (
     <>
       <PageHeader title={t("nav.tryon")} kicker="RF18" lead={t("tryOn.arraste_uma_peca_ate_o", { value: data.externalAvailable ? t("tryOn.o_render_final_usa_try") : t("tryOn.o_render_final_usa_o") })} />
@@ -130,7 +147,11 @@ function TryOnInner() {
               onDragOver={(e) => { if (e.dataTransfer.types.includes(DRAG_TYPE)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(true); } }}
               onDragLeave={() => setOver(false)}
               onDrop={(e) => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData(DRAG_TYPE); if (id) put(id); }}>
-              {render?.imageUrl ? <img src={mediaUrl(render.imageUrl)} alt={t("tryOn.look_provado_no_manequim")} className="h-full w-full object-contain" /> : (
+              {render?.imageUrl ? <img src={mediaUrl(render.imageUrl)} alt={t("tryOn.look_provado_no_manequim")} className="h-full w-full object-contain" /> : avatar && stage === "avatar" ? (
+                <div className="h-full w-full" aria-label={t("tryOn.manequim_com_peca_s", { toLowerCase: m.sex.toLowerCase(), onCount: on.length })}>
+                  <AvatarViewer avatar={avatar} sex={data.sex} body={bodyParams} pieces={on.map(toLook3d)} view={view3d} framing="full" controls={false} background="#EFECE7" />
+                </div>
+              ) : (
                 <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={t("tryOn.manequim_com_peca_s", { toLowerCase: m.sex.toLowerCase(), onCount: on.length })}>
                   <MannequinBody m={m} />
                   {on.map((e, i) => {
@@ -144,16 +165,38 @@ function TryOnInner() {
               {render && <Badge tone="thread" className="absolute left-2 top-2">{t("tryOn.render", { value: render.fallbackUsed ? t("common.local") : render.explanation?.provider ?? "" })}</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-2 p-3">
-              <span className="label mr-1">{t("common.manequim")}</span>
-              <Chip active={data.sex === "MASCULINO"} onClick={() => setSex("MASCULINO")}><FaiIcon id="ACT-22" size={24} decorative />{t("common.masculino")}</Chip>
-              <Chip active={data.sex === "FEMININO"} onClick={() => setSex("FEMININO")}><FaiIcon id="ACT-23" size={24} decorative />{t("common.feminino")}</Chip>
+              {avatar ? (
+                <>
+                  <SegmentPicker label={t("common.manequim")} value={stage} onChange={(v) => { setStage(v); setRender(null); }} options={[{ id: "avatar", label: t("tryOn.avatar_3d") }, { id: "silhueta", label: t("tryOn.silhueta_2d") }]} />
+                  {stage === "avatar" && <SegmentPicker label={t("tryOn.vista")} value={view3d} onChange={setView3d} options={[{ id: "front", label: t("tryOn.vista_frente") }, { id: "profile", label: t("tryOn.vista_perfil") }, { id: "back", label: t("tryOn.vista_costas") }]} />}
+                </>
+              ) : (
+                // sem escolha de sexo: o manequim é o do perfil (sexo do cadastro), o mesmo do Avatar 3D quando ele existir
+                <span className="type-caption text-muted">{t("tryOn.manequim_do_perfil")}</span>
+              )}
               <Button size="sm" variant="ghost" className="ml-auto" disabled={!dressed.length && !render} onClick={() => setConfirmClear(true)}><FaiIcon id="ACT-24" size={24} decorative />{t("common.limpar")}</Button>
             </div>
           </Card>
           <Card>
-            <p className="label">{rich("tryOn.tom_de_pele_salvo_no", undefined, { 0: ($c) => <span className="type-caption text-faint">{$c}</span> })}</p>
-            <div className="mb-2 flex flex-wrap gap-1.5">{Object.entries(data.skinTones).map(([id, hex]) => <button key={id} type="button" title={label(id)} aria-label={t("tryOn.tom_de_pele", { label: label(id) })} aria-pressed={skin === id} className={`h-7 w-7 rounded-full border-2 ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: hex }} onClick={() => savePrefs({ skinTone: id })} />)}</div>
-            <Field label={t("tryOn.porte")} id="build"><Select id="build" value={m.build} onChange={(e) => savePrefs({ build: e.target.value })}>{data.builds.map((b) => <option key={b} value={b}>{BUILD_LABEL[b] ?? b.toLowerCase()}</option>)}</Select></Field>
+            {avatar && identity ? (
+              <>
+                <p className="label">{t("tryOn.identidade")}</p>
+                <p className="type-body-sm">{t("tryOn.manequim_e_seu_avatar")}</p>
+                <div className="fai-list mt-2 type-caption">
+                  <p className="list-row flex items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: identity.skinHex }} />{identity.skinSource === "observed" ? t("tryOn.pele_medida") : t("tryOn.pele_preferencia")}</p>
+                  {MEASURES.map((k) => <p key={k} className="list-row flex items-center justify-between gap-2"><span>{measureLabel[k]}</span><span className={`badge src-${identity.sources[k] ?? "default"}`}>{sourceLabel(identity.sources[k])}</span></p>)}
+                </div>
+                <p className="mt-2 type-caption text-muted">{t("tryOn.previa_3d_nota")}</p>
+                <Link href="/avatar" className="btn btn-sm mt-2"><FaiIcon id="ACT-21" size={20} variant="glyph" decorative />{t("tryOn.ajustar_no_avatar")}</Link>
+              </>
+            ) : (
+              <>
+                <p className="mb-2 rounded-md border border-line-soft bg-surface-2 p-2 type-caption">{t("tryOn.sem_avatar_crie")} <Link href="/avatar" className="underline">{t("tryOn.ajustar_no_avatar")}</Link></p>
+                <p className="label">{rich("tryOn.tom_de_pele_salvo_no", undefined, { 0: ($c) => <span className="type-caption text-faint">{$c}</span> })}</p>
+                <div className="mb-2 flex flex-wrap gap-1.5">{Object.entries(data.skinTones).map(([id, hex]) => <button key={id} type="button" title={label(id)} aria-label={t("tryOn.tom_de_pele", { label: label(id) })} aria-pressed={skin === id} className={`h-7 w-7 rounded-full border-2 ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: hex }} onClick={() => savePrefs({ skinTone: id })} />)}</div>
+                <Field label={t("tryOn.porte")} id="build"><Select id="build" value={m.build} onChange={(e) => savePrefs({ build: e.target.value })}>{data.builds.map((b) => <option key={b} value={b}>{BUILD_LABEL[b] ?? b.toLowerCase()}</option>)}</Select></Field>
+              </>
+            )}
           </Card>
           {render && <Card><p className="label">{t("tryOn.render_2")}</p><p className="type-caption text-muted">{t("tryOn.ms_2", { value: render.fallbackUsed ? t("tryOn.compositor_local") : render.explanation?.provider ?? "", value2: render.totalMs ?? 0, value3: render.costUsd ? t("tryOn.us", { costUsd: render.costUsd }) : "" })}</p>{render.stages?.length ? <ul className="type-caption">{render.stages.map((s, i) => <li key={i}>{s.name} · {s.provider ?? ""} {s.ms ? t("common.ms", { ms: s.ms }) : ""}</li>)}</ul> : null}{render.warnings?.length ? <ul className="mt-2 grid gap-1 type-caption text-muted">{render.warnings.map((w, i) => <li key={i}>⚠ {w}</li>)}</ul> : null}</Card>}
         </div>

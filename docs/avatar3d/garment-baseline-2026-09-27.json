@@ -1,0 +1,326 @@
+[
+ {
+  "body": "F-ref",
+  "piece": "tshirt",
+  "penetration": 0.08333333333333333,
+  "gapMeanCm": 1.3507567351579937,
+  "gapP95Cm": 1.6176742730302478,
+  "gapMaxCm": 1.6455169392363689,
+  "floating": 0,
+  "coverage": 0.38405797101449274,
+  "stretchMean": 3.5692400811430995,
+  "stretchP95": 12.231680935103139,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 3,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.387946913359291,
+    "penetration": 0.037520391517128875,
+    "n": 3678
+   },
+   "arms": {
+    "gapMeanCm": 0.7577241638400098,
+    "penetration": 0.4788732394366197,
+    "n": 426
+   }
+  }
+ },
+ {
+  "body": "F-ref",
+  "piece": "shirt",
+  "penetration": 0.07420318725099602,
+  "gapMeanCm": 1.2785232777281033,
+  "gapP95Cm": 1.5425275261499922,
+  "gapMaxCm": 1.6230387213662962,
+  "floating": 0,
+  "coverage": 0.3278985507246377,
+  "stretchMean": 3.569240548685405,
+  "stretchP95": 12.231608493812166,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 4,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.3615911727019079,
+    "penetration": 0.03056768558951965,
+    "n": 3206
+   },
+   "arms": {
+    "gapMeanCm": 0.8552855439927074,
+    "penetration": 0.24691358024691357,
+    "n": 810
+   }
+  }
+ },
+ {
+  "body": "F-ref",
+  "piece": "hoodie",
+  "penetration": 0.0584385226741468,
+  "gapMeanCm": 3.1157172986929043,
+  "gapP95Cm": 3.523902836518994,
+  "gapMaxCm": 14.369980029716361,
+  "floating": 0.423562412342216,
+  "coverage": 0.4945652173913043,
+  "stretchMean": 3.6091381274868723,
+  "stretchP95": 12.370055543986583,
+  "vertices": 13200,
+  "triangles": 4400,
+  "buildMs": 3,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 3.0375171421570686,
+    "penetration": 0.034777956126270736,
+    "n": 3738
+   },
+   "arms": {
+    "gapMeanCm": 3.787493881505438,
+    "penetration": 0.2222222222222222,
+    "n": 540
+   }
+  }
+ },
+ {
+  "body": "M-ref",
+  "piece": "tshirt",
+  "penetration": 0.08073654390934844,
+  "gapMeanCm": 1.4588589106989427,
+  "gapP95Cm": 1.716691809311155,
+  "gapMaxCm": 1.7606572564067502,
+  "floating": 0,
+  "coverage": 0.38768115942028986,
+  "stretchMean": 3.6500093282226733,
+  "stretchP95": 13.023209163287076,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 5,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.496554207024972,
+    "penetration": 0.03924646781789639,
+    "n": 3822
+   },
+   "arms": {
+    "gapMeanCm": 0.8353583336305772,
+    "penetration": 0.463768115942029,
+    "n": 414
+   }
+  }
+ },
+ {
+  "body": "M-ref",
+  "piece": "shirt",
+  "penetration": 0.05829383886255924,
+  "gapMeanCm": 1.3948138052509398,
+  "gapP95Cm": 1.641700359807824,
+  "gapMaxCm": 1.7366194196320266,
+  "floating": 0,
+  "coverage": 0.34601449275362317,
+  "stretchMean": 3.6500101646274743,
+  "stretchP95": 13.023280490116573,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 20,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.4720578489911131,
+    "penetration": 0.020126509488211614,
+    "n": 3478
+   },
+   "arms": {
+    "gapMeanCm": 0.9297118599037365,
+    "penetration": 0.2371967654986523,
+    "n": 742
+   }
+  }
+ },
+ {
+  "body": "M-ref",
+  "piece": "hoodie",
+  "penetration": 0.05688336520076482,
+  "gapMeanCm": 3.184251392666878,
+  "gapP95Cm": 3.6727171467446915,
+  "gapMaxCm": 12.66519795338043,
+  "floating": 0.8432122370936902,
+  "coverage": 0.447463768115942,
+  "stretchMean": 3.6823432347748994,
+  "stretchP95": 13.154215152972107,
+  "vertices": 13200,
+  "triangles": 4400,
+  "buildMs": 3,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 3.26690092045593,
+    "penetration": 0.03544165757906216,
+    "n": 3668
+   },
+   "arms": {
+    "gapMeanCm": 2.4675503404176107,
+    "penetration": 0.20930232558139536,
+    "n": 516
+   }
+  }
+ },
+ {
+  "body": "F-medida",
+  "piece": "tshirt",
+  "penetration": 0.08233569508917664,
+  "gapMeanCm": 1.42725122676096,
+  "gapP95Cm": 1.6759685439510175,
+  "gapMaxCm": 1.7184884482465939,
+  "floating": 0,
+  "coverage": 0.3786231884057971,
+  "stretchMean": 3.711339072844211,
+  "stretchP95": 12.759635631158707,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 5,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.459110763772467,
+    "penetration": 0.038968019349637194,
+    "n": 3721
+   },
+   "arms": {
+    "gapMeanCm": 0.7943084247990262,
+    "penetration": 0.5161290322580645,
+    "n": 372
+   }
+  }
+ },
+ {
+  "body": "F-medida",
+  "piece": "shirt",
+  "penetration": 0.05890736342042755,
+  "gapMeanCm": 1.3601665429766634,
+  "gapP95Cm": 1.557393154156153,
+  "gapMaxCm": 1.6759685439510175,
+  "floating": 0,
+  "coverage": 0.3423913043478261,
+  "stretchMean": 3.7113387611678794,
+  "stretchP95": 12.759790746533698,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 3,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.4316753051113082,
+    "penetration": 0.017271157167530225,
+    "n": 3474
+   },
+   "arms": {
+    "gapMeanCm": 0.9146721744954789,
+    "penetration": 0.2554347826086957,
+    "n": 736
+   }
+  }
+ },
+ {
+  "body": "F-medida",
+  "piece": "hoodie",
+  "penetration": 0.05669366364935684,
+  "gapMeanCm": 3.0830310235092555,
+  "gapP95Cm": 3.585862807992984,
+  "gapMaxCm": 3.7474544918933455,
+  "floating": 0.8489757027155789,
+  "coverage": 0.4365942028985507,
+  "stretchMean": 3.7420251333757717,
+  "stretchP95": 12.8515433425001,
+  "vertices": 13200,
+  "triangles": 4400,
+  "buildMs": 4,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 3.2004536228313687,
+    "penetration": 0.034740780331373594,
+    "n": 3742
+   },
+   "arms": {
+    "gapMeanCm": 1.8642654236486804,
+    "penetration": 0.23684210526315788,
+    "n": 456
+   }
+  }
+ },
+ {
+  "body": "M-plus",
+  "piece": "tshirt",
+  "penetration": 0.0908130939809926,
+  "gapMeanCm": 1.4846068481589,
+  "gapP95Cm": 1.6557542173385094,
+  "gapMaxCm": 1.6905755568546843,
+  "floating": 0,
+  "coverage": 0.33152173913043476,
+  "stretchMean": 3.857706952182999,
+  "stretchP95": 13.735868286719263,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 7,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.5014786252317958,
+    "penetration": 0.04669703872437358,
+    "n": 3512
+   },
+   "arms": {
+    "gapMeanCm": 0.8962036227416743,
+    "penetration": 0.6521739130434783,
+    "n": 276
+   }
+  }
+ },
+ {
+  "body": "M-plus",
+  "piece": "shirt",
+  "penetration": 0.1075317604355717,
+  "gapMeanCm": 1.3797644390963213,
+  "gapP95Cm": 1.57775202191526,
+  "gapMaxCm": 1.6629077556934213,
+  "floating": 0,
+  "coverage": 0.34057971014492755,
+  "stretchMean": 3.8577072917185014,
+  "stretchP95": 13.735954406635543,
+  "vertices": 12480,
+  "triangles": 4160,
+  "buildMs": 2,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 1.4619941456971635,
+    "penetration": 0.042801556420233464,
+    "n": 3598
+   },
+   "arms": {
+    "gapMeanCm": 0.8018070727018233,
+    "penetration": 0.3950617283950617,
+    "n": 810
+   }
+  }
+ },
+ {
+  "body": "M-plus",
+  "piece": "hoodie",
+  "penetration": 0.08337493759360959,
+  "gapMeanCm": 3.2406308086544677,
+  "gapP95Cm": 3.617994895939622,
+  "gapMaxCm": 3.7420540872689507,
+  "floating": 0.8657014478282576,
+  "coverage": 0.4076086956521739,
+  "stretchMean": 3.8630804471108324,
+  "stretchP95": 13.513142483888506,
+  "vertices": 13200,
+  "triangles": 4400,
+  "buildMs": 3,
+  "byRegion": {
+   "torso": {
+    "gapMeanCm": 3.314338607406024,
+    "penetration": 0.05774419859686994,
+    "n": 3706
+   },
+   "arms": {
+    "gapMeanCm": 1.810699512874097,
+    "penetration": 0.4,
+    "n": 300
+   }
+  }
+ }
+]

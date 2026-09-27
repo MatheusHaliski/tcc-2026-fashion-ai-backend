@@ -67,13 +67,17 @@ public class TryOnCompositor {
     }
 
     public Result render(MannequinSex sex, BodyBuild build, String skinTone, List<Garment> garments, boolean allowExternal) {
+        return render(MannequinGeometry.body(sex, build), MannequinGeometry.SKIN_TONES.getOrDefault(skinTone, MannequinGeometry.SKIN_TONES.get("media")),
+                garments, allowExternal);
+    }
+
+    /** Renderiza sobre um corpo já resolvido (o do Avatar 3D, quando existe) com a cor de pele dele. */
+    public Result render(MannequinGeometry.Body body, String skinHex, List<Garment> garments, boolean allowExternal) {
         long started = System.nanoTime();
         List<FlatLayPipeline.Stage> stages = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         List<Placement> placements = new ArrayList<>();
         Map<String, BigDecimal> costs = new LinkedHashMap<>();
-        MannequinGeometry.Body body = MannequinGeometry.body(sex, build);
-        String skinHex = MannequinGeometry.SKIN_TONES.getOrDefault(skinTone, MannequinGeometry.SKIN_TONES.get("media"));
         BufferedImage canvas = drawMannequin(body, new Color(ColorMath.parseHex(skinHex)));
         List<Garment> ordered = new ArrayList<>();
         for (Garment g : garments) {
@@ -224,10 +228,12 @@ public class TryOnCompositor {
         double shoulder = body.shoulderW() * W;
         double waist = body.waistW() * W;
         double hip = body.hipW() * W;
-        double yShoulder = 0.205 * H;
-        double yWaist = (male ? 0.455 : 0.43) * H;
-        double yHip = 0.52 * H;
-        double yAnkle = 0.9 * H;
+        Map<String, Double> lv = body.levels();
+        double yShoulder = lv.get("shoulder") * H;
+        double yWaist = lv.get("waist") * H;
+        double yHip = (body.params() != null ? lv.get("crotch") : lv.get("hip")) * H;   // base do tronco: virilha
+        double yAnkle = lv.get("ankle") * H;
+        double yHeadTop = lv.get("headTop") * H;
         // pernas
         for (int side : new int[]{-1, 1}) {
             GeneralPath leg = new GeneralPath();
@@ -287,9 +293,9 @@ public class TryOnCompositor {
         // pescoço e cabeça (sem traços faciais)
         double headR = body.headR() * W;
         g.setColor(skin);
-        g.fill(new RoundRectangle2D.Double(cx - headR * 0.45, 0.14 * H, headR * 0.9, 0.075 * H, 18, 18));
+        g.fill(new RoundRectangle2D.Double(cx - headR * 0.45, yHeadTop + headR * 2.1, headR * 0.9, Math.max(8, yShoulder - (yHeadTop + headR * 2.1)), 18, 18));
         g.setPaint(new GradientPaint((float) (cx - headR), 0, shade, (float) (cx + headR * 0.3), 0, skin));
-        g.fill(new Ellipse2D.Double(cx - headR, 0.045 * H, headR * 2, headR * 2.45));
+        g.fill(new Ellipse2D.Double(cx - headR, yHeadTop, headR * 2, headR * 2.45));
         g.setStroke(new BasicStroke(1.2f));
         g.setColor(new Color(0, 0, 0, 30));
         g.draw(torso);
