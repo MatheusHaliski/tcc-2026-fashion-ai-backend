@@ -9,7 +9,8 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, CATEGORY_LABEL, useTaxonomy } from "@/lib/api/taxonomy";
-import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, SegmentPicker, Skeleton, useToast } from "@/components/ui";
+import { ActionMenu, Avatar, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
+import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
@@ -19,8 +20,10 @@ import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
 import { PhotoEditor } from "@/components/photo-editor";
-import { BeforeAfter } from "@/components/before-after";
-import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
+import { EditImageDialog, hasRealLogo, studioMeta } from "@/components/edit-image";
+import { Generate3DDialog } from "@/components/generate-3d";
+import { emitPieceUpdate } from "@/lib/pieces/piece-events";
+import { StudioLightbox, StudioReport, backdropCenter, backdropEdge, backdropGradient, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { PieceForm, toPayload, validatePieceForm, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
@@ -273,7 +276,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
           </div>
         </div>
       </article>
-      <Dialog open={editing} onClose={() => setEditing(false)} title={t("common.edit")}>
+      <Dialog open={editing} onClose={() => setEditing(false)} title={t("pieceDetail.editar_dados")}>
         <PieceForm value={form} onChange={(v) => { setForm(v); if (Object.keys(editErrors).length) setEditErrors({}); }} onSubmit={saveEdit} busy={saving} error={saveError} fieldErrors={editErrors} submitLabel={t("common.save")} />
       </Dialog>
       <Dialog open={confirmDelete.open} onClose={() => setConfirmDelete({ open: false })} title={t("common.delete")} footer={<><Button onClick={() => setConfirmDelete({ open: false })}>{t("common.cancel")}</Button><Button variant="danger" onClick={doDelete}>{t("common.delete")}</Button></>}>

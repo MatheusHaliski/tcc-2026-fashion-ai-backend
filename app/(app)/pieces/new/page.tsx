@@ -9,7 +9,7 @@ import { useAction } from "@/lib/hooks/use-api";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
-import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -17,8 +17,17 @@ import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT } from "@/components/scheme-anato
 import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson, type GarmentPart, type PersonFilterResult } from "@/lib/pieces/person-filter";
+import { keepAllowed } from "@/lib/pieces/tags";
 
-interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
+/** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
+interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null }
+/** Critério de aceite da foto avaliado pelo backend; `message` só nos reprovados (a orientação para refazer). */
+interface PhotoCheck { id: string; ok: boolean; message?: string }
+interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null; subcategoryCandidates?: { code: string; score: number }[]; brandSearch?: BrandSearch | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; rejection?: { message?: string; checks?: PhotoCheck[] } | null; }
+/** Orientações dos critérios reprovados (422 FOTO_RECUSADA → details.checks). */
+const failedTips = (checks: unknown): string[] => (Array.isArray(checks) ? (checks as PhotoCheck[]) : []).filter((c) => !c.ok && c.message).map((c) => c.message!);
+/** Princípios de fotografia da peça — os mesmos critérios que o backend aplica. */
+const PRINCIPLES = ["pieces.new.principio_inteira", "pieces.new.principio_90", "pieces.new.principio_fundo", "pieces.new.principio_uma", "pieces.new.principio_luz", "pieces.new.principio_marca"];
 type Preview = "studio" | "detail" | "flat" | "original";
 const PREVIEW_LABEL: Record<Preview, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get flat() { return tr("pieces.new.flat_lay"); }, get original() { return tr("common.original"); } };
 /** Etapas do criador de peça (RF4): foto → dados → mais detalhes → arte de fundo → revisar e salvar. */
@@ -44,7 +53,7 @@ function NewPiece() {
   const [bg, setBg] = useState<BgConfig>({}); const [skin, setSkin] = useState("atelier"); const [anatomy, setAnatomy] = useState("PECA_AMPLIADO");
   const [done, setDone] = useState<string | null>(null);
   // a última foto enviada: trocar o tipo depois do envio refaz a análise com a mesma foto
-  const lastFile = useRef<File | null>(null); const [localError, setLocalError] = useState<ApiError | null>(null);
+  const lastFile = useRef<File | null>(null);
   const analyze = useAction(async (file: File, category: string) => { const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
   // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
@@ -57,22 +66,40 @@ function NewPiece() {
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || !value.category) return;
     if (files.length > 1) { setBatch(Array.from(files).slice(0, 10).map((file) => ({ file }))); return; }
-    let file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false);
-    // etapa 0 do pipeline (no navegador): corpo humano sai da foto, só a roupa segue para o estúdio
-    try { const r = await stripPerson(file); if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); } }
-    catch { /* sem segmentação agora: a foto segue como está */ }
-    const d = await analyze.run(file);
-    if (!d) return;
+    setSource(files[0]); await process(files[0]);
+  }
+  /**
+   * Remoção de pessoa e cenário (no navegador): o corpo sai da foto e, quando a foto mostra peça de cima e de baixo,
+   * só a peça escolhida segue (a que ocupa mais área, por padrão) — a outra roupa não entra na foto de produto.
+   */
+  async function process(original: File, keep?: GarmentPart) {
+    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null);
+    try {
+      const r = await stripPerson(file, { keep });
+      if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); setGarments(r.garments ?? null); }
+    } catch { /* sem segmentação agora: a foto segue como está */ }
+    lastFile.current = file;
+    await runAnalysis(file, value.category);
+  }
+  /** Analisa a foto dentro do tipo escolhido: critérios de aceite, subtipo por semelhança, marca nas zonas e pré-preenchimento. */
+  async function runAnalysis(file: File, category: string) {
+    setAnalyzed(false);
+    const d = await analyze.run(file, category);
+    if (!d) { setDraft(null); return; }
     setDraft(d); setMode(d.studio ? "studio" : "flat");
     // RF4: "Analisar peça" preenche todos os campos, sem exceção — o backend nunca devolve campo vazio (Prefill completo);
     // aqui só garantimos o mesmo no cliente, caso algum valor venha nulo de um motor antigo. O tipo é o que a pessoa escolheu.
     const p = d.prefill ?? {};
-    const category = p.category ?? "upper_piece";
-    setValue((v) => ({ ...v, draftId: d.draftId, useDefaultImage: false,
-      name: p.name ?? v.name ?? "", category, subcategory: p.subcategory ?? tax?.subcategories?.[category]?.[0] ?? v.subcategory, color: p.color ?? v.color ?? "black",
-      material: p.material ?? (v.material || "COTTON"), sex: p.sex ?? v.sex ?? "UNISSEX", size: p.size ?? v.size ?? "m", price: p.price != null ? String(p.price) : v.price || "0",
-      occasion: p.occasion?.length ? p.occasion : v.occasion.length ? v.occasion : ["casual"], style: p.style?.length ? p.style : v.style.length ? v.style : ["classic"],
-      brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" }));
+    const cat = category || p.category || "upper_piece";
+    const allowedOccasions = tax?.allowedOccasionsByCategory?.[cat] ?? tax?.occasions;
+    setValue((v) => {
+      const occasion = keepAllowed(p.occasion?.length ? p.occasion : v.occasion, allowedOccasions); const style = keepAllowed(p.style?.length ? p.style : v.style, tax?.styles);
+      return { ...v, draftId: d.draftId, useDefaultImage: false,
+        name: p.name ?? v.name ?? "", category: cat, subcategory: p.subcategory ?? tax?.subcategories?.[cat]?.[0] ?? v.subcategory, color: p.color ?? v.color ?? "black",
+        material: p.material ?? (v.material || "COTTON"), sex: p.sex ?? v.sex ?? "UNISSEX", size: p.size ?? v.size ?? "m", price: p.price != null ? String(p.price) : v.price || "0",
+        occasion: occasion.length ? occasion : [allowedOccasions?.[0] ?? "casual"], style: style.length ? style : ["basic"],
+        brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" };
+    });
     // um aviso só, no lugar certo: a nota da etapa Dados diz quais campos conferir (antes: notificação + faixa ao mesmo tempo)
     setAnalyzed(true); setFieldErrors({}); setSaveProblem(null);
   }
@@ -136,7 +163,8 @@ function NewPiece() {
     const unsure = Object.entries(names).filter(([k]) => (p.confidence?.[k] ?? 0) < 0.55).map(([, n]) => n.toLowerCase());
     return unsure.length ? t("piece.lowConfidence_campos", { campos: unsure.join(", ") }) : t("piece.lowConfidence");
   };
-  const modes = draft ? ([draft.studio ? "studio" : null, draft.studio?.detailUrl ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
+  const realLogo = !!draft?.studio?.detailUrl && draft.studio.logo?.kind !== "print";
+  const modes = draft ? ([draft.studio ? "studio" : null, realLogo ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
   const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
   const isStudio = !!draft?.studio && (shown === "studio" || shown === "detail");
   const edge = backdropEdge(backdrops, draft?.studio?.backdrop);
@@ -155,7 +183,7 @@ function NewPiece() {
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName || null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const artPanel = (
     <div>
       <p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p>
@@ -194,8 +222,29 @@ function NewPiece() {
                     <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy} disabled={!value.category}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
                     {!draft && <p className="type-caption text-muted">{t("pieces.new.sem_foto_asset")}</p>}
                     {personNote && <p className="type-body-sm" role="status">{personNote}</p>}
-                    {analyze.error && <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>}
+                    {garments && source && (garments.ambiguous || garments.kept !== "full") && (
+                      <div className="grid gap-1.5">
+                        <p className="type-body-sm">{t("pieces.new.qual_peca")}</p>
+                        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("pieces.new.qual_peca")}>
+                          {(["upper", "lower", "full"] as GarmentPart[]).map((k) => <button key={k} type="button" role="radio" aria-checked={garments.kept === k} className={`chip ${garments.kept === k ? "is-active" : ""}`} disabled={analyze.busy} onClick={() => garments.kept !== k && process(source, k)}>{t("pieces.new.parte", { part: k })}</button>)}
+                        </div>
+                      </div>
+                    )}
+                    {draft?.studio?.feed?.missing?.length ? (
+                      <div role="alert" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
+                        <p className="font-medium">{t("editImage.falta", { list: draft.studio.feed.missing.map((m) => t("editImage.regiao", { id: m })).join(", ") })}</p>
+                        <p className="mt-1 text-muted">{t("editImage.falta_acao")}</p>
+                      </div>
+                    ) : null}
+                    {analyze.error && (analyze.error.code === "FOTO_RECUSADA" ? (
+                      <div role="alert" className="rounded-md border border-critical p-2 type-body-sm">
+                        <p className="font-medium text-critical">{t("pieces.new.foto_recusada")}</p>
+                        <p className="mt-1">{t("pieces.new.refaca_a_foto")}</p>
+                        <ul className="fai-list mt-1">{failedTips(analyze.error.details.checks).map((tip) => <li key={tip}>{tip}</li>)}</ul>
+                      </div>
+                    ) : <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>)}
                     {analyzed && !analyze.busy && <p role="status" className="type-body-sm">{t("pieces.new.foto_analisada")}</p>}
+                    {draft && <AnalysisSummary draft={draft} category={value.category} subcategory={value.subcategory} onPick={(sub) => setValue((v) => ({ ...v, subcategory: sub }))} />}
                     {draft && modes.length > 1 && <SegmentPicker label={t("pieces.new.versao_da_foto")} value={shown} onChange={setMode} options={modes.map((m) => ({ id: m, label: PREVIEW_LABEL[m] }))} />}
                     {draft && !draft.backgroundRemoved && !draft.studio?.forced && (
                       <div role="status" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
