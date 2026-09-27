@@ -6,7 +6,7 @@ import type { PieceView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { useAction } from "@/lib/hooks/use-api";
-import { label, useTaxonomy } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
 import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
@@ -16,7 +16,7 @@ import { BackgroundStudio, type BgConfig } from "@/components/background-studio"
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT } from "@/components/scheme-anatomies";
 import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
-import { stripPerson } from "@/lib/pieces/person-filter";
+import { stripPerson, type GarmentPart, type PersonFilterResult } from "@/lib/pieces/person-filter";
 
 interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
 type Preview = "studio" | "detail" | "flat" | "original";
@@ -39,10 +39,13 @@ function NewPiece() {
   const [value, setValue] = useState<PieceFormValue>({ ...EMPTY_PIECE, useDefaultImage: true });
   const [batch, setBatch] = useState<{ file: File; draft?: Draft }[]>([]);
   const [mode, setMode] = useState<Preview>("studio"); const [studioBusy, setStudioBusy] = useState(false); const [personNote, setPersonNote] = useState<string | null>(null);
+  const [source, setSource] = useState<File | null>(null); const [garments, setGarments] = useState<PersonFilterResult["garments"]>(null);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const [bg, setBg] = useState<BgConfig>({}); const [skin, setSkin] = useState("atelier"); const [anatomy, setAnatomy] = useState("PECA_AMPLIADO");
   const [done, setDone] = useState<string | null>(null);
-  const analyze = useAction(async (file: File) => { const fd = new FormData(); fd.append("file", file); return api.upload<Draft>("/api/pieces/analysis", fd); });
+  // a última foto enviada: trocar o tipo depois do envio refaz a análise com a mesma foto
+  const lastFile = useRef<File | null>(null); const [localError, setLocalError] = useState<ApiError | null>(null);
+  const analyze = useAction(async (file: File, category: string) => { const fd = new FormData(); fd.append("file", file); if (category) fd.append("category", category); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
   // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
   // envia outro pedido; o servidor ainda devolve a mesma peça se o mesmo rascunho chegar duas vezes (idempotência).
@@ -52,7 +55,7 @@ function NewPiece() {
   const [analyzed, setAnalyzed] = useState(false);
 
   async function onFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !value.category) return;
     if (files.length > 1) { setBatch(Array.from(files).slice(0, 10).map((file) => ({ file }))); return; }
     let file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false);
     // etapa 0 do pipeline (no navegador): corpo humano sai da foto, só a roupa segue para o estúdio
@@ -62,7 +65,7 @@ function NewPiece() {
     if (!d) return;
     setDraft(d); setMode(d.studio ? "studio" : "flat");
     // RF4: "Analisar peça" preenche todos os campos, sem exceção — o backend nunca devolve campo vazio (Prefill completo);
-    // aqui só garantimos o mesmo no cliente, caso algum valor venha nulo de um motor antigo
+    // aqui só garantimos o mesmo no cliente, caso algum valor venha nulo de um motor antigo. O tipo é o que a pessoa escolheu.
     const p = d.prefill ?? {};
     const category = p.category ?? "upper_piece";
     setValue((v) => ({ ...v, draftId: d.draftId, useDefaultImage: false,
@@ -72,6 +75,12 @@ function NewPiece() {
       brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" }));
     // um aviso só, no lugar certo: a nota da etapa Dados diz quais campos conferir (antes: notificação + faixa ao mesmo tempo)
     setAnalyzed(true); setFieldErrors({}); setSaveProblem(null);
+  }
+  /** Tipo da peça (primeira escolha da etapa Foto). Com foto já enviada, a análise é refeita com o novo tipo. */
+  function chooseCategory(category: string) {
+    if (category === value.category) return;
+    setValue((v) => ({ ...v, category, subcategory: "", occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
+    if (lastFile.current && (draft || analyze.error)) { toast.info(t("pieces.new.reanalisando")); runAnalysis(lastFile.current, category); }
   }
   /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
   async function studio(backdrop: string, force = false) {
@@ -108,10 +117,14 @@ function NewPiece() {
   }
   async function submitBatch() {
     // RF4.CA11: analisa todas, depois cadastra as que tiverem pré-preenchimento suficiente; as demais ficam para edição individual.
-    const fd = new FormData(); batch.forEach((b) => fd.append("files", b.file));
+    const fd = new FormData(); batch.forEach((b) => fd.append("files", b.file)); if (value.category) fd.append("category", value.category);
     try {
-      const drafts = await api.upload<Draft[]>("/api/pieces/analysis/batch", fd);
-      const forms = drafts.map((d) => ({ ...toPayload({ ...EMPTY_PIECE, draftId: d.draftId, name: d.prefill?.name ?? t("common.peca"), category: d.prefill?.category ?? "", subcategory: d.prefill?.subcategory ?? "", color: d.prefill?.color ?? "", material: d.prefill?.material ?? "COTTON", sex: d.prefill?.sex ?? "UNISSEX", occasion: d.prefill?.occasion ?? ["casual"], style: d.prefill?.style ?? ["classic"], price: "0" }) }));
+      const all = await api.upload<Draft[]>("/api/pieces/analysis/batch", fd);
+      // foto recusada pelos critérios volta com o motivo e não entra no lote; as demais seguem
+      const rejected = all.filter((d) => d.rejection || !d.draftId); const drafts = all.filter((d) => !d.rejection && d.draftId);
+      if (rejected.length) toast.info(t("pieces.new.lote_recusadas", { count: rejected.length, reason: rejected[0].rejection?.message ?? "" }));
+      if (!drafts.length) return;
+      const forms = drafts.map((d) => ({ ...toPayload({ ...EMPTY_PIECE, draftId: d.draftId, name: d.prefill?.name ?? t("common.peca"), category: d.prefill?.category ?? value.category, subcategory: d.prefill?.subcategory ?? "", color: d.prefill?.color ?? "", material: d.prefill?.material ?? "COTTON", sex: d.prefill?.sex ?? "UNISSEX", occasion: d.prefill?.occasion ?? ["casual"], style: d.prefill?.style ?? ["basic"], price: "0" }) }));
       const created = await api.post<PieceView[]>("/api/pieces/batch", forms);
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); window.location.href = user ? `/u/${user.username}` : "/closet";
     } catch (e) { toast.fromError(e); }
@@ -131,7 +144,7 @@ function NewPiece() {
   const asset = tax?.defaultImages?.[value.category] ?? tax?.defaultImages?.generic ?? GENERIC_ASSET;
   const draftSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "detail" ? draft.studio?.detailUrl : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
   const imgSrc = draftSrc ?? asset;
-  const gallery = draft?.studio ? [{ src: mediaUrl(draft.studio.url)!, alt: t("pieces.new.previa_estudio"), anchor: sangria(draft.studio.framing) }, ...(draft.studio.detailUrl ? [{ src: mediaUrl(draft.studio.detailUrl)!, alt: t("pieces.new.previa_detalhe_do_logo"), cover: true }] : [])] : [];
+  const gallery = draft?.studio ? [{ src: mediaUrl(draft.studio.url)!, alt: t("pieces.new.previa_estudio"), anchor: sangria(draft.studio.framing) }, ...(realLogo && draft.studio.detailUrl ? [{ src: mediaUrl(draft.studio.detailUrl)!, alt: t("pieces.new.previa_detalhe_do_logo"), cover: true }] : [])] : [];
   const stepLabel: Record<Step, string> = { photo: t("pieces.new.etapa_foto"), data: t("pieces.new.etapa_dados"), more: t("pieceForm.moreDetails"), art: t("pieces.new.etapa_arte"), review: t("builder.step.review") };
   const idx = STEPS.indexOf(step);
   const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -142,7 +155,7 @@ function NewPiece() {
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName || null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName || null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const artPanel = (
     <div>
       <p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p>
@@ -165,14 +178,20 @@ function NewPiece() {
                   <div className="flex gap-2"><Button variant="primary" onClick={submitBatch}>{t("piece.analyze")} + {t("common.save")}</Button><Button onClick={() => setBatch([])}>{t("common.cancel")}</Button></div>
                 </>
               ) : (
+                <>
+                <div className="mb-3">
+                  <p className="label" id="piece-type-label">{t("pieces.new.tipo_da_peca")}<span aria-hidden className="text-critical"> *</span></p>
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="piece-type-label">{PIECE_CATEGORIES.map((c) => <Chip key={c} active={value.category === c} onClick={() => chooseCategory(c)}>{CATEGORY_LABEL[c] ?? label(c)}</Chip>)}</div>
+                  <p className="help">{t("pieces.new.escolha_o_tipo")}</p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,320px)_1fr]">
-                  <button type="button" className={`flex ${isStudio ? "" : "aspect-square"} items-center justify-center overflow-hidden rounded-md border border-line-soft bg-surface-2`} aria-label={t("piece.analyze")}
-                    onClick={() => (isStudio ? setFullscreen(shown === "detail" ? 1 : 0) : fileRef.current?.click())} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}>
+                  <button type="button" className={`flex self-start ${isStudio ? "" : "aspect-square"} items-center justify-center overflow-hidden rounded-md border border-line-soft bg-surface-2`} aria-label={t("piece.analyze")}
+                    onClick={() => (isStudio ? setFullscreen(shown === "detail" ? 1 : 0) : value.category && fileRef.current?.click())} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}>
                     <img src={imgSrc} alt={draft ? t("pieces.new.previa", { PREVIEW_LABEL: PREVIEW_LABEL[shown] }) : t("pieces.new.asset_da_categoria")} className={isStudio ? "block h-auto w-full cursor-zoom-in" : "h-full w-full object-contain p-3"} />
                   </button>
                   <div className="grid content-start gap-2">
                     <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => onFiles(e.target.files)} aria-label={t("piece.analyze")} />
-                    <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
+                    <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy} disabled={!value.category}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
                     {!draft && <p className="type-caption text-muted">{t("pieces.new.sem_foto_asset")}</p>}
                     {personNote && <p className="type-body-sm" role="status">{personNote}</p>}
                     {analyze.error && <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>}
@@ -185,9 +204,14 @@ function NewPiece() {
                       </div>
                     )}
                     {draft?.studio && <label className="flex items-center gap-2 type-body-sm"><input type="checkbox" checked={value.studio !== false} onChange={(e) => setValue((v) => ({ ...v, studio: e.target.checked }))} />{t("pieces.new.usar_a_foto_de_estudio")}</label>}
-                    {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
+                    {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
+                    <details className="more-details" open={!draft}>
+                      <summary>{t("pieces.new.como_fotografar")}</summary>
+                      <ul className="fai-list pt-2 type-body-sm">{PRINCIPLES.map((k) => <li key={k}>{t(k)}</li>)}</ul>
+                    </details>
                   </div>
                 </div>
+                </>
               )}
               {batch.length === 0 && nav}
             </Card>
@@ -199,7 +223,7 @@ function NewPiece() {
             <Card>
               <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
               <dl className="c-facts mb-3">
-                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? label(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? label(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
               {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
               {nav}
@@ -214,4 +238,27 @@ function NewPiece() {
     </>
   );
 }
+/**
+ * O que a análise achou, logo abaixo da foto: o subtipo detectado dentro do tipo escolhido (com os parecidos para trocar
+ * num clique) e a busca da marca nas zonas da peça (fundo da gola, peito esquerdo, peito direito, centro do peito).
+ */
+function AnalysisSummary({ draft, category, subcategory, onPick }: { draft: Draft; category: string; subcategory: string; onPick: (sub: string) => void }) {
+  const { t } = useI18n();
+  const p = draft.prefill; if (!p) return null;
+  const candidates = (p.subcategoryCandidates ?? []).filter((c) => c.code !== subcategory);
+  const top = (p.subcategoryCandidates ?? []).find((c) => c.code === subcategory);
+  const zone = (z?: string | null) => (z ? t(`pieces.zona.${z}`) : "");
+  const bs = p.brandSearch;
+  const brand = bs?.brand ?? null;
+  return (
+    <div className="grid gap-1.5 rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm" role="status" aria-label={CATEGORY_LABEL[category] ?? label(category)}>
+      {subcategory && <p>{top ? t("pieces.new.subtipo_detectado", { sub: label(subcategory), pct: Math.round(top.score * 100) }) : label(subcategory)}</p>}
+      {candidates.length > 0 && <div className="flex flex-wrap items-center gap-1.5"><span className="text-muted">{t("pieces.new.subtipos_parecidos")}</span>{candidates.map((c) => <Chip key={c.code} onClick={() => onPick(c.code)}>{label(c.code)}</Chip>)}</div>}
+      {bs && (brand ? <p>{t("pieces.new.marca_lida", { brand, zone: zone(bs.foundIn) || "—" })}</p>
+        : bs.foundIn ? <p>{t("pieces.new.marca_logo_sem_nome", { zone: zone(bs.foundIn) })}</p>
+        : <p className="text-muted">{t("pieces.new.marca_nao_encontrada", { zones: (bs.zones ?? []).map(zone).join(", ") })}</p>)}
+    </div>
+  );
+}
+
 export default function NewPiecePage() { return <RequireAuth><NewPiece /></RequireAuth>; }

@@ -6,7 +6,7 @@ const ts = require("typescript"); const fs = require("fs"); const path = require
 const R = require("./rules");
 const ROOT = path.resolve(__dirname, "..", "..");
 const DIRS = ["app", "components", "lib"].map((d) => path.join(ROOT, d));
-const SKIP = [/\/lib\/i18n\//, /\/lib\/api\/labels-/, /\.d\.ts$/, /\/lib\/assets\//, /\/lib\/icons\//, /\/app\/gate\// /* gate: tela neutra, sem os catálogos do app de propósito */, /\/app\/lab\//, /\/components\/avatar3d\/lab\.tsx$/ /* laboratório de desenvolvimento do Avatar 3D (fora da produção) */];
+const SKIP = [/\.test\.tsx?$/ /* testes (vitest) não vão para a tela */, /\/lib\/i18n\//, /\/lib\/api\/labels-/, /\.d\.ts$/, /\/lib\/assets\//, /\/lib\/icons\//, /\/app\/gate\// /* gate: tela neutra, sem os catálogos do app de propósito */, /\/app\/lab\//, /\/components\/avatar3d\/lab\.tsx$/ /* laboratório de desenvolvimento do Avatar 3D (fora da produção) */];
 const args = process.argv.slice(2); const jsonOut = args.includes("--json") ? args[args.indexOf("--json") + 1] : null; const fail = args.includes("--fail"); const wide = args.includes("--wide");
 const found = [];
 function walk(dir) { for (const f of fs.readdirSync(dir)) { const p = path.join(dir, f); const st = fs.statSync(p); if (st.isDirectory()) { if (!/node_modules|\.next/.test(f)) walk(p); } else if (/\.(tsx|ts)$/.test(f) && !SKIP.some((re) => re.test(p))) scan(p); } }

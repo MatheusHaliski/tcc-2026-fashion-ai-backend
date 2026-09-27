@@ -356,7 +356,8 @@ export function Sheet({ open, onClose, title, children, footer, side = "auto" }:
 
 export interface MenuItem { label: string; onSelect?: () => void; href?: string; danger?: boolean; icon?: ReactNode; hidden?: boolean; disabled?: boolean; }
 /** Menu de ações secundárias ("Mais"): botão + lista com navegação por setas, Escape e clique fora. */
-export function ActionMenu({ items, label, className, trigger, align = "end" }: { items: MenuItem[]; label?: string; className?: string; trigger?: ReactNode; align?: "start" | "end" }) {
+export function ActionMenu({ items, label, className, trigger, align = "end", direction = "down" }: { items: MenuItem[]; label?: string; className?: string; trigger?: ReactNode; align?: "start" | "end";
+  /** "up": abre acima do botão (menu no fim de uma coluna rolável, onde abrir para baixo cortaria os itens) */ direction?: "down" | "up" }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -379,7 +380,7 @@ export function ActionMenu({ items, label, className, trigger, align = "end" }: 
         {trigger ?? <UiIcon name="more" />}
       </button>
       {open && (
-        <div id={menuId} role="menu" aria-label={label ?? t("common.moreOptions")} className={cn("menu-pop", align === "start" ? "left-0" : "right-0")} onKeyDown={onKey}>
+        <div id={menuId} role="menu" aria-label={label ?? t("common.moreOptions")} className={cn("menu-pop", align === "start" ? "left-0" : "right-0", direction === "up" && "is-up")} onKeyDown={onKey}>
           {visible.map((it) => it.href
             ? <a key={it.label} role="menuitem" tabIndex={-1} href={it.href} className={cn("menu-item", it.danger && "is-danger")} onClick={() => setOpen(false)}>{it.icon}{it.label}</a>
             : <button key={it.label} role="menuitem" tabIndex={-1} type="button" disabled={it.disabled} className={cn("menu-item", it.danger && "is-danger")} onClick={() => { setOpen(false); it.onSelect?.(); }}>{it.icon}{it.label}</button>)}

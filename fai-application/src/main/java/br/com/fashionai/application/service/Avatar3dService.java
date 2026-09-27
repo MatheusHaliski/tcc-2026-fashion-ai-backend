@@ -251,6 +251,13 @@ public class Avatar3dService {
             "stature", new double[]{1.2, 2.2}, "shoulderW", new double[]{0.15, 0.26}, "chestW", new double[]{0.13, 0.26},
             "waistW", new double[]{0.11, 0.26}, "hipW", new double[]{0.15, 0.27}, "legLen", new double[]{0.46, 0.58},
             "armLen", new double[]{0.29, 0.38}, "headH", new double[]{0.11, 0.155}, "build", new double[]{-1.5, 2});
+    /**
+     * Profundidades do tronco (frente → costas): só existem quando uma foto de perfil as mediu ou a pessoa as
+     * ajustou. Ausentes, o corpo é o mesmo de antes (a profundidade sai da largura) — por isso são opcionais aqui,
+     * e corpos salvos antes desta versão continuam válidos.
+     */
+    static final Map<String, double[]> BODY_DEPTH_RANGE = Map.of(
+            "chestD", new double[]{0.08, 0.22}, "waistD", new double[]{0.07, 0.24}, "hipD", new double[]{0.08, 0.24});
     static final List<String> BODY_SOURCES = List.of("observed", "user", "estimated", "default");
 
     /**
@@ -276,6 +283,19 @@ public class Avatar3dService {
             }
             Object sv = sources.get(e.getKey());
             if (!(sv instanceof String so) || !BODY_SOURCES.contains(so)) {
+                throw invalid;
+            }
+            p.put(e.getKey(), num.doubleValue());
+            src.put(e.getKey(), so);
+        }
+        // profundidades: opcionais, mas quando vêm precisam do valor na faixa E da origem, como qualquer medida
+        for (Map.Entry<String, double[]> e : BODY_DEPTH_RANGE.entrySet()) {
+            Object n = params.get(e.getKey()), sv = sources.get(e.getKey());
+            if (n == null && sv == null) {
+                continue;
+            }
+            if (!(n instanceof Number num) || !Double.isFinite(num.doubleValue()) || num.doubleValue() < e.getValue()[0] || num.doubleValue() > e.getValue()[1]
+                    || !(sv instanceof String so) || !BODY_SOURCES.contains(so)) {
                 throw invalid;
             }
             p.put(e.getKey(), num.doubleValue());

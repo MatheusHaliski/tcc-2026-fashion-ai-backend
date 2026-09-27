@@ -41,7 +41,7 @@ export function DetailModalProvider({ children }: { children: ReactNode }) {
       {children}
       {top && (
         <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-          <div role="dialog" aria-modal="true" aria-label={top.kind === "scheme" ? t("detailModal.detalhe_do_esquema") : t("detailModal.detalhe_da_peca")} className="dialog dialog-card">
+          <div role="dialog" aria-modal="true" aria-label={top.kind === "scheme" ? t("detailModal.detalhe_do_esquema") : t("detailModal.detalhe_da_peca")} className={`dialog dialog-card ${top.kind === "piece" ? "is-piece" : ""}`}>
             {top.kind === "scheme"
               ? <ExpandedScheme key={top.id} id={top.id} headerExtra={controls} />
               : <ExpandedPiece key={top.id} id={top.id} from={top.from} headerExtra={controls} onScheme={openScheme} />}

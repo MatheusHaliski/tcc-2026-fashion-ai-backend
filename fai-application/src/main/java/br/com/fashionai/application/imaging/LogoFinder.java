@@ -16,8 +16,14 @@ final class LogoFinder {
     private LogoFinder() {
     }
 
-    /** @param box caixa relativa à peça (0–1: x0, y0, x1, y1) · @param source "ia" ou "local" */
-    record Logo(double[] box, double confidence, String source) {
+    /**
+     * @param box   caixa relativa à peça (0–1: x0, y0, x1, y1) · @param source "ia" ou "local"
+     * @param print a marca achada faz parte de uma estampa (frase, gráfico grande): não é logo a destacar
+     */
+    record Logo(double[] box, double confidence, String source, boolean print) {
+        Logo(double[] box, double confidence, String source) {
+            this(box, confidence, source, false);
+        }
     }
 
     /**
@@ -87,8 +93,8 @@ final class LogoFinder {
         }
         int[] label = new int[n];
         java.util.ArrayDeque<Integer> q = new java.util.ArrayDeque<>();
-        double bestScore = 0;
-        double[] bestBox = null;
+        // candidatos (pontuação, caixa na imagem, caixa relativa à peça): o melhor que não for estampa é o logo
+        java.util.List<Object[]> candidates = new java.util.ArrayList<>();
         int id = 0;
         for (int s0 = 0; s0 < n; s0++) {
             if (!grown[s0] || label[s0] != 0) {
@@ -129,18 +135,182 @@ final class LogoFinder {
             double meanC = sumC / core;
             double fillRatio = core / (double) (bw0 * bh0);
             double score = (meanC / 60.0) * Math.sqrt(core) * (0.5 + Math.min(0.5, fillRatio));
-            if (score > bestScore) {
-                bestScore = score;
+            if (score >= 4) {
                 double pad = Math.max(size * 0.20, minSide * 0.015);
-                bestBox = new double[]{
+                candidates.add(new Object[]{score, new int[]{x0, y0, x1, y1}, new double[]{
                         clamp01((x0 - pad - gb.x()) / gb.w()), clamp01((y0 - pad - gb.y()) / gb.h()),
-                        clamp01((x1 + pad - gb.x()) / gb.w()), clamp01((y1 + pad - gb.y()) / gb.h())};
+                        clamp01((x1 + pad - gb.x()) / gb.w()), clamp01((y1 + pad - gb.y()) / gb.h())}});
             }
         }
-        if (bestBox == null || bestScore < 4) {
-            return detectDetail(img, in, dist, gb, minSide, margin, L);
+        candidates.sort((a, b) -> Double.compare((double) b[0], (double) a[0]));
+        Logo print = null;
+        for (Object[] c : candidates) {
+            double score = (double) c[0];
+            int[] rect = (int[]) c[1];
+            double[] box = (double[]) c[2];
+            if (isPrint(distinct, in, label, w, h, rect, gb, minSide)) {
+                if (print == null) {
+                    print = new Logo(box, Math.min(0.8, 0.35 + score / 40), "local", true);
+                }
+                continue;                                   // a frase fica intacta; um selo de marca ao lado ainda vale
+            }
+            return new Logo(box, Math.min(0.8, 0.35 + score / 40), "local", false);
         }
-        return new Logo(bestBox, Math.min(0.8, 0.35 + bestScore / 40), "local");
+        return print != null ? print : detectDetail(img, in, dist, gb, minSide, margin, L);
+    }
+
+    /**
+     * Estampa × logo. Um logo é uma marca compacta e isolada, em geral fora do eixo (peito esquerdo, bolso, barra).
+     * Estampa é: (1) um bloco largo no eixo do peito (frase ou gráfico frontal, ≥ 18% da largura da peça);
+     * (2) texto em 2+ linhas; ou (3) vários blocos próximos que juntos passam de 30% da peça ({@link #partOfPrint}).
+     */
+    static boolean isPrint(boolean[] distinct, boolean[][] in, int[] label, int w, int h, int[] rect, ImageOps.Box gb, int minSide) {
+        double cx = ((rect[0] + rect[2]) / 2.0 - gb.x()) / gb.w(), bw = (rect[2] - rect[0] + 1) / (double) gb.w();
+        if (cx > 0.40 && cx < 0.60 && bw >= 0.18) {
+            return true;
+        }
+        if (textLines(distinct, w, rect) >= 2) {
+            return true;
+        }
+        return partOfPrint(distinct, in, label, w, h, rect, minSide);
+    }
+
+    /** Linhas de texto no bloco: faixas horizontais com pixels de marca separadas por vãos (entrelinha). */
+    static int textLines(boolean[] distinct, int w, int[] rect) {
+        int bh = rect[3] - rect[1] + 1, bw = rect[2] - rect[0] + 1;
+        int[] rows = new int[bh];
+        for (int y = rect[1]; y <= rect[3]; y++) {
+            for (int x = rect[0]; x <= rect[2]; x++) {
+                if (distinct[y * w + x]) {
+                    rows[y - rect[1]]++;
+                }
+            }
+        }
+        int lines = 0, run = 0, minRun = Math.max(3, bh / 10);
+        boolean inLine = false;
+        for (int v : rows) {
+            boolean on = v >= Math.max(2, bw * 0.06);
+            if (on) {
+                run++;
+                if (!inLine && run >= minRun) {
+                    lines++;
+                    inLine = true;
+                }
+            } else {
+                run = 0;
+                inLine = false;
+            }
+        }
+        return lines;
+    }
+
+    /**
+     * Estampa × logo: um logo é uma marca isolada e pequena (bordado no peito, etiqueta, símbolo). Uma frase
+     * ("THE BEST PLAN") ou um gráfico grande aparece como vários blocos de cor próximos que, juntos, ocupam boa parte
+     * do peito. Aproxima os blocos (dilatação de ~3,5% da peça, que junta letras, palavras e linhas de uma frase) e
+     * olha o grupo que contém a marca achada: se ele passa de 30% da peça ou reúne 3+ blocos do tamanho de uma
+     * palavra, é estampa — fica intacta, sem foco extra nem foto de detalhe.
+     */
+    static boolean partOfPrint(boolean[] distinct, boolean[][] in, int[] label, int w, int h, int[] rect, int minSide) {
+        if (rect == null) {
+            return false;
+        }
+        int n = w * h, r = Math.max(2, (int) Math.round(minSide * 0.035));
+        // dilatação separável (caixa r × r) restrita à peça
+        boolean[] row = new boolean[n], grown = new boolean[n];
+        for (int y = 0; y < h; y++) {
+            int last = -100000;
+            for (int x = 0; x < w; x++) {
+                if (distinct[y * w + x]) {
+                    last = x;
+                }
+                if (x - last <= r) {
+                    row[y * w + x] = true;
+                }
+            }
+            last = 100000;
+            for (int x = w - 1; x >= 0; x--) {
+                if (distinct[y * w + x]) {
+                    last = x;
+                }
+                if (last - x <= r) {
+                    row[y * w + x] = true;
+                }
+            }
+        }
+        for (int x = 0; x < w; x++) {
+            int last = -100000;
+            for (int y = 0; y < h; y++) {
+                if (row[y * w + x]) {
+                    last = y;
+                }
+                if (y - last <= r && in[y][x]) {
+                    grown[y * w + x] = true;
+                }
+            }
+            last = 100000;
+            for (int y = h - 1; y >= 0; y--) {
+                if (row[y * w + x]) {
+                    last = y;
+                }
+                if (last - y <= r && in[y][x]) {
+                    grown[y * w + x] = true;
+                }
+            }
+        }
+        int seed = -1;
+        for (int y = rect[1]; y <= rect[3] && seed < 0; y++) {
+            for (int x = rect[0]; x <= rect[2]; x++) {
+                if (distinct[y * w + x] && grown[y * w + x]) {
+                    seed = y * w + x;
+                    break;
+                }
+            }
+        }
+        if (seed < 0) {
+            return false;
+        }
+        boolean[] seen = new boolean[n];
+        java.util.ArrayDeque<Integer> q = new java.util.ArrayDeque<>();
+        q.add(seed);
+        seen[seed] = true;
+        int x0 = w, y0 = h, x1 = -1, y1 = -1;
+        while (!q.isEmpty()) {
+            int i = q.poll(), x = i % w, y = i / w;
+            x0 = Math.min(x0, x);
+            y0 = Math.min(y0, y);
+            x1 = Math.max(x1, x);
+            y1 = Math.max(y1, y);
+            int[] nb = {x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w};
+            for (int j : nb) {
+                if (j >= 0 && j < n && grown[j] && !seen[j]) {
+                    seen[j] = true;
+                    q.add(j);
+                }
+            }
+        }
+        int size = Math.max(x1 - x0 + 1, y1 - y0 + 1);
+        if (size > minSide * 0.30) {
+            return true;
+        }
+        // blocos do tamanho de palavra dentro do grupo: os grupos do detector (letras de uma palavra já unidas)
+        java.util.Map<Integer, int[]> boxes = new java.util.HashMap<>();
+        for (int y = y0; y <= y1; y++) {
+            for (int x = x0; x <= x1; x++) {
+                int i = y * w + x;
+                if (!seen[i] || label[i] == 0) {
+                    continue;
+                }
+                int fx = x, fy = y;
+                int[] b = boxes.computeIfAbsent(label[i], k -> new int[]{fx, fy, fx, fy});
+                b[0] = Math.min(b[0], x);
+                b[1] = Math.min(b[1], y);
+                b[2] = Math.max(b[2], x);
+                b[3] = Math.max(b[3], y);
+            }
+        }
+        long words = boxes.values().stream().filter(b -> Math.max(b[2] - b[0] + 1, b[3] - b[1] + 1) >= minSide * 0.04).count();
+        return words >= 3;
     }
 
     /**
@@ -181,6 +351,8 @@ final class LogoFinder {
         java.util.ArrayDeque<Integer> q = new java.util.ArrayDeque<>();
         double bestScore = 0;
         double[] bestBox = null;
+        double printScore = 0;
+        double[] printBox = null;
         int id = 0;
         for (int s0 = 0; s0 < n; s0++) {
             if (label[s0] != 0 || sd[s0] < t) {
@@ -217,17 +389,27 @@ final class LogoFinder {
                 continue;                                   // pontinho, área grande, linha (zíper, cadarço) ou borda
             }
             double score = (sumSd / area) / 10.0 * Math.sqrt(area) * compact * (1.0 / aspect);
+            // a janela do desvio alarga a mancha em r px de cada lado: a caixa volta ao tamanho do selo
+            double pad = Math.max(size * 0.06, minSide * 0.01) - r * 0.5;
+            double[] box = {
+                    clamp01((x0 - pad - gb.x()) / gb.w()), clamp01((y0 - pad - gb.y()) / gb.h()),
+                    clamp01((x1 + pad - gb.x()) / gb.w()), clamp01((y1 + pad - gb.y()) / gb.h())};
+            // estampa frontal (bloco largo no eixo do peito): fica de fora do logo, mas é registrada
+            double bcx = (box[0] + box[2]) / 2, boxW = box[2] - box[0];
+            if (bcx > 0.40 && bcx < 0.60 && boxW >= 0.18) {
+                if (score > printScore) {
+                    printScore = score;
+                    printBox = box;
+                }
+                continue;
+            }
             if (score > bestScore) {
                 bestScore = score;
-                // a janela do desvio alarga a mancha em r px de cada lado: a caixa volta ao tamanho do selo
-                double pad = Math.max(size * 0.06, minSide * 0.01) - r * 0.5;
-                bestBox = new double[]{
-                        clamp01((x0 - pad - gb.x()) / gb.w()), clamp01((y0 - pad - gb.y()) / gb.h()),
-                        clamp01((x1 + pad - gb.x()) / gb.w()), clamp01((y1 + pad - gb.y()) / gb.h())};
+                bestBox = box;
             }
         }
         if (bestBox == null || bestScore < 20) {
-            return null;
+            return printBox != null && printScore >= 20 ? new Logo(printBox, Math.min(0.75, 0.3 + printScore / 400), "local", true) : null;
         }
         return new Logo(bestBox, Math.min(0.75, 0.3 + bestScore / 400), "local");
     }

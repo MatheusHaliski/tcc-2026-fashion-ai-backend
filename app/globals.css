@@ -1353,3 +1353,117 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .badge.src-user { background: #dbeafe; border-color: #2563eb; color: #1e3a8a; }
 .badge.src-estimated { background: #fef3c7; border-color: #d97706; color: #78350f; }
 .badge.src-default, .badge.src-hidden { background: var(--surface-2); border-color: var(--line-soft); color: var(--muted); }
+
+/* ---------- Ações sociais (RF19): uma linha, ícones 22 px com a contagem ao lado, mesma área de toque e estados
+   visíveis por forma (contorno → preenchido), não só por cor. Sem linha "N curtidas" separada. ---------- */
+.c-actions { gap: 0; }
+.fai-card .c-actions, .fai-card .c-post .c-actions { flex-wrap: nowrap; min-height: 44px; padding: 2px 4px; }
+.c-act { gap: 4px; min-height: 40px; min-width: 40px; padding: 0 8px; border-radius: 999px; background: transparent; font-family: var(--font-data); font-size: 13px; font-weight: 600; line-height: 1; justify-content: center; }
+.c-act:hover:not(.is-static):not(:disabled) { background: var(--surface-2); }
+.c-act:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.c-act[aria-pressed="true"] { background: transparent; color: var(--card-ink, var(--ink)); }
+.c-act.is-like[aria-pressed="true"] { color: var(--mark); }
+.c-act-icon { flex: none; }
+.c-act-n { min-width: 1ch; text-align: left; white-space: nowrap; }
+.c-act { white-space: nowrap; flex: none; }
+.c-post.is-preview .c-act:disabled { cursor: default; opacity: 1; }
+.c-post.is-compact .c-act { min-width: 36px; min-height: 40px; padding: 0 6px; }
+@media (pointer: coarse) { .c-act, .c-post.is-compact .c-act { min-height: var(--touch); } }
+.c-reactions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.c-reaction { min-height: 30px; padding: .2rem .7rem; font-size: 12px; }
+:root[data-theme="contrast"] .c-act.is-like[aria-pressed="true"] { color: var(--mark); }
+
+/* ---------- Card de peça (feed e grades): cabeçalho compacto → foto 4:5 dominante → ações → nome e marca ---------- */
+.fai-card.piece-card { container-type: inline-size; }
+.piece-card .pc-header { min-height: 40px; padding: 4px 10px; gap: 8px; }
+.fai-card .c-who-link { color: inherit; text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fai-card .c-who-link:hover { text-decoration: underline; }
+.piece-card .pc-media { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.piece-card .pc-media img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; }
+.piece-card .pc-media img.is-cover { object-fit: cover; }
+.piece-card .pc-media img.is-contain { object-fit: contain; padding: 9%; }
+.piece-card .pc-flags { position: absolute; z-index: 2; left: 8px; top: 8px; display: flex; gap: 4px; }
+.piece-card .pc-flag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.92); color: #191A19; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .03em; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.piece-card .pc-flag.is-fav { color: #B8862B; font-size: 13px; }
+.piece-card .pc-seal { position: absolute; z-index: 2; right: 6px; top: 6px; }
+.piece-card .pc-id { display: grid; gap: 3px; padding: 2px 12px 12px; min-width: 0; }
+.piece-card .pc-name { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.piece-card .pc-name-link { color: inherit; text-decoration: none; min-width: 0; }
+.piece-card .pc-name-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.piece-card .pc-name-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+.piece-card .pc-sub { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-price { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.pc-sale { font-family: var(--font-data); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--thread-soft); color: var(--thread-ink); }
+.piece-card .pc-select { display: block; width: 100%; }
+.piece-card .pc-select .pc-id { padding-top: 8px; }
+/* card estreito (2 colunas no celular): menos respiro lateral, a mesma altura de toque */
+/* (compartilhar fica só com o ícone ali; o número segue no nome acessível e no detalhe) */
+@container (max-width: 200px) {
+  .fai-card.piece-card .c-post .c-actions { justify-content: space-between; padding: 2px 2px; }
+  .fai-card.piece-card .c-post .c-actions .grow { display: none; }
+  .fai-card.piece-card .c-post .c-act { padding: 0 3px; gap: 2px; min-width: 26px; font-size: 12px; }
+  .fai-card.piece-card .c-post .c-act.is-share .c-act-n { display: none; }
+  .piece-card .c-act-icon { width: 20px; height: 20px; }
+  .piece-card .pc-id { padding: 0 10px 10px; }
+}
+
+/* ---------- Detalhe da peça: imagem dominante; no desktop, foto à esquerda e informações à direita ---------- */
+.dialog.dialog-card.is-piece { max-width: min(1040px, 100%); }
+.expanded-page:has(> .piece-detail) { max-width: 1040px; }
+.fai-card.piece-detail { container-type: inline-size; }
+.piece-detail .pd-layout { display: grid; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 760px) {
+  .piece-detail .pd-layout { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); align-items: start; }
+  .piece-detail .pd-media { position: sticky; top: 0; }
+  .piece-detail .pd-info { border-left: 1px solid var(--line-soft); }
+}
+.piece-detail .pd-media { position: relative; }
+.pd-gallery { position: relative; }
+.pd-slide { display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; border: 0; background: var(--surface-2); cursor: zoom-in; overflow: hidden; }
+.pd-slide img { display: block; width: 100%; height: 100%; }
+.pd-slide img.is-contain { object-fit: contain; }
+.pd-slide img.is-cover { object-fit: cover; }
+.pd-slide:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.pd-slide-tag { position: absolute; left: 10px; top: 10px; padding: 2px 9px; border-radius: 999px; background: rgba(255,255,255,.92); color: #191A19; font-family: var(--font-data); font-size: 11px; font-weight: 700; pointer-events: none; }
+.pd-nav { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: var(--touch); height: var(--touch); border-radius: 999px; background: rgba(255,255,255,.9); color: #191A19; font-size: 24px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.pd-nav.is-prev { left: 8px; } .pd-nav.is-next { right: 8px; }
+.pd-nav:focus-visible, .pd-dot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pd-dots { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; gap: 2px; padding: 2px 6px; border-radius: 999px; background: rgba(0,0,0,.28); }
+.pd-dot { width: 24px; height: 24px; display: grid; place-items: center; }
+.pd-dot::after { content: ""; width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.6); }
+.pd-dot[aria-current="true"]::after { background: #fff; transform: scale(1.2); }
+.pd-busy { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 70%, transparent); font-size: var(--text-body); }
+.piece-detail .pd-info { display: flex; flex-direction: column; min-width: 0; }
+.piece-detail .pd-id { display: grid; gap: 6px; padding: 14px 16px 8px; }
+.piece-detail .pd-name { margin: 0; font-family: var(--font-editorial); font-weight: 600; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.piece-detail .pd-brand { margin: 0; font-size: 13px; color: var(--muted); }
+.piece-detail .pd-cta { justify-self: start; margin-top: 6px; min-width: 200px; }
+@media (max-width: 639px) { .piece-detail .pd-cta { justify-self: stretch; } }
+.piece-detail .pd-section { padding: 12px 16px; border-top: 1px solid var(--line-soft); }
+.piece-detail .pd-h { margin: 0 0 8px; font-family: var(--font-data); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.piece-detail .c-facts { padding: 0; }
+.piece-detail .pd-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.piece-detail .pd-tech { padding: 10px 16px 14px; border-top: 1px solid var(--line-soft); }
+.piece-detail .pd-tech > summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
+.piece-detail .pd-tech[open] > summary { margin-bottom: 6px; }
+.piece-detail .c-post { border-top: 1px solid var(--line-soft); background: transparent; }
+
+/* ---------- Modelo 3D compacto (estado → uma ação) ---------- */
+.m3d-compact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m3d-bar { display: inline-block; width: 140px; height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.m3d-bar > span { display: block; height: 100%; background: var(--ink); transition: width .7s; }
+
+/* ---------- Editar imagem (dono) ---------- */
+.ei-frame { position: relative; aspect-ratio: 4 / 5; border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.ei-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ei-frame.is-full { aspect-ratio: auto; max-height: 240px; }
+.ei-frame.is-full img { max-height: 240px; }
+.ei-frame.is-checker { background-color: #fff; background-image: linear-gradient(45deg, #e6e6e6 25%, transparent 25%), linear-gradient(-45deg, #e6e6e6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e6e6e6 75%), linear-gradient(-45deg, transparent 75%, #e6e6e6 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+@media (min-width: 900px) {
+  .dialog-card.is-piece .piece-detail .pd-slide { max-height: calc(90dvh - 52px); }
+  .dialog-card.is-piece .piece-detail .pd-info { max-height: calc(90dvh - 52px); overflow-y: auto; }
+}
+.piece-detail .pd-warn { flex-basis: 100%; margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--chalk-soft); color: var(--chalk-ink); font-size: 13px; }
+.c-reactions .c-remixes { align-self: center; margin-left: 4px; }
+.menu-pop.is-up { top: auto; bottom: calc(100% + 6px); }
+@container (max-width: 200px) { .fai-card.piece-card .c-post .c-act-n { font-size: 11px; letter-spacing: -.02em; } }

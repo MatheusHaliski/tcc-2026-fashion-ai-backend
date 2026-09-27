@@ -6,6 +6,7 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
+import { MAX_TAGS, keepAllowed, sameTags } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -19,6 +20,9 @@ export interface PieceFormValue {
   background?: Record<string, unknown> | null;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false, background: null };
+/** "Sem marca" é o que a análise escreve no campo quando não acha marca na peça; o backend salva a peça sem marca. */
+const NO_BRAND = ["sem marca", "no brand", "sin marca"];
+export const isNoBrand = (name?: string | null) => !!name && NO_BRAND.includes(name.trim().toLowerCase());
 /** As quatro categorias de peça (RF4.CA): parte de cima, parte de baixo, calçado e acessório. */
 export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 
@@ -88,6 +92,12 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const occasions = value.category ? tax?.allowedOccasionsByCategory?.[value.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
+  // código fora da taxonomia (palpite antigo da IA, peça antiga) não vira chip e não poderia ser desmarcado: sai da lista
+  useEffect(() => {
+    if (!tax) return;
+    const occasion = keepAllowed(value.occasion, allowedOccasions(value.category)); const style = keepAllowed(value.style, tax.styles);
+    if (!sameTags(occasion, value.occasion) || !sameTags(style, value.style)) onChange({ ...value, occasion, style });
+  }, [tax, value.category, value.occasion.join(), value.style.join()]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>

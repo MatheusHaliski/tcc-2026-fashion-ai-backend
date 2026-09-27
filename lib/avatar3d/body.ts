@@ -15,8 +15,11 @@
  *   - roupa na borda da silhueta: a largura é da roupa, não do corpo — vira "estimated" (limite superior) (CLOTHING);
  *   - costas e profundidade (barriga, glúteos, busto de perfil) nunca aparecem numa foto de frente.
  * Peso e idade não são medidos: a foto não sustenta esses números.
+ *
+ * A **profundidade** do tronco tem função própria (`observeProfile`): ela só existe numa segunda foto, de perfil,
+ * onde a largura horizontal da silhueta é justamente a distância frente → costas.
  */
-import { BODY_RANGE, clampParam, type BodyKey, type BodyModel, type Source } from "./body-spec";
+import { BODY_RANGE, clampParam, type BodyKey, type BodyModel, type BodySources, type Source } from "./body-spec";
 
 export interface PosePoint { x: number; y: number; z?: number; visibility?: number }
 export interface ClassMask { width: number; height: number; data: Uint8Array }
@@ -61,6 +64,18 @@ function edgeClass(m: ClassMask, y: number, run: { x0: number; x1: number }): nu
   const k = Math.max(2, Math.round((run.x1 - run.x0) * 0.04)); const count = new Map<number, number>(); const row = Math.round(y) * m.width;
   for (let i = 0; i < k; i++) for (const x of [run.x0 + i, run.x1 - i]) { const c = m.data[row + x]; count.set(c, (count.get(c) ?? 0) + 1); }
   return [...count.entries()].sort((a, b) => b[1] - a[1])[0][0];
+}
+
+/**
+ * Topo da cabeça na foto (px da imagem), ou null se não dá para achar. `cx`/`band` são a faixa de colunas onde
+ * procurar; `warnings` recebe HEAD_CUT quando a cabeça encosta na borda de cima (aí não há estatura confiável).
+ */
+function headTopPx(mask: ClassMask, W: number, H: number, cx: number, band: number, warnings: string[]): number | null {
+  const sx = mask.width / W, sy = mask.height / H;
+  const t = topOfHead(mask, cx * sx, band * sx);
+  const topPx = t === null ? null : t / sy;
+  if (topPx !== null && topPx < H * 0.004) { warnings.push("HEAD_CUT"); return null; }
+  return topPx;
 }
 
 /** Topo da pessoa (cabelo incluído) na faixa de colunas em volta do nariz, em pixels da máscara. */
@@ -114,10 +129,8 @@ export function observeBody(pose: PosePoint[] | null, world: PosePoint[] | null,
   if (floorPx === null) out.warnings.push("FEET_HIDDEN");
   let topPx: number | null = null;
   if (mask && seen(L(P.nose), 0.5)) {
-    const sx = mask.width / W, sy = mask.height / H;
     const band = shoulders ? dist(L(P.shL), L(P.shR), W, H) * 0.45 : W * 0.08;
-    const t = topOfHead(mask, L(P.nose).x * W * sx, band * sx); topPx = t === null ? null : t / sy;
-    if (topPx !== null && topPx < H * 0.004) { out.warnings.push("HEAD_CUT"); topPx = null; }
+    topPx = headTopPx(mask, W, H, L(P.nose).x * W, band, out.warnings);
   }
   const stature = floorPx !== null && topPx !== null ? floorPx - topPx : null;
   out.debug.topY = topPx ?? undefined; out.debug.floorY = floorPx ?? undefined;
@@ -211,15 +224,129 @@ export function observeBody(pose: PosePoint[] | null, world: PosePoint[] | null,
 }
 
 /**
+ * Segunda foto, de perfil: a única que mostra a profundidade do tronco (barriga, glúteos, busto de lado). Nesta
+ * vista, a largura horizontal da silhueta numa altura **é** a distância frente → costas daquele nível.
+ *
+ * Mede só `chestD`, `waistD` e `hipD` — nunca larguras, que de lado encolhem. As alturas dos níveis são as mesmas
+ * que o corpo paramétrico usa (tórax a 72% e cintura a 38% do caminho do quadril até o ombro), em vez de procurar
+ * "a linha mais estreita": de lado, em quem tem barriga, a linha mais estreita seria o tórax, não a cintura.
+ *
+ * Regras herdadas da foto de frente: sem pés ou sem topo da cabeça não há estatura e nada é medido; roupa na borda
+ * vira limite superior ("estimated"); pose fora de "em pé" derruba a medida para estimativa. A regra do braço muda:
+ * de lado o braço fica na frente do tronco e normalmente **não** alarga a silhueta, então só atrapalha quando ele
+ * passa para fora do contorno (mão no bolso da frente, braço para trás, celular na mão).
+ */
+export function observeProfile(pose: PosePoint[] | null, world: PosePoint[] | null, mask: ClassMask | null, img: { width: number; height: number }): BodyObservation {
+  const regions: Record<Region, RegionState> = { head: "hidden", shoulders: "hidden", chest: "hidden", waist: "hidden", hips: "hidden", arms: "hidden", legs: "hidden", feet: "hidden", back: "estimated", depth: "estimated" };
+  const out: BodyObservation = { measures: {}, regions, warnings: [], debug: {} };
+  if (!pose || pose.length < 33) { out.warnings.push("NO_PERSON"); return out; }
+  const W = img.width, H = img.height; const L = (i: number) => pose[i];
+  const shoulders = seen(L(P.shL), 0.4) && seen(L(P.shR), 0.4); const hips = seen(L(P.hipL), 0.4) && seen(L(P.hipR), 0.4);
+  if (!shoulders || !hips || !mask) { out.warnings.push("NO_PERSON"); return out; }
+
+  // ---- estatura na foto (topo da cabeça → chão): a faixa da cabeça vai do nariz à orelha, não entre os ombros
+  const feet = [P.heelL, P.heelR, P.toeL, P.toeR, P.ankL, P.ankR].filter((i) => seen(L(i), 0.5));
+  const floorPx = feet.length >= 1 ? Math.max(...feet.map((i) => L(i).y * H)) : null;
+  if (floorPx === null) out.warnings.push("FEET_HIDDEN");
+  const ear = [P.earL, P.earR].map((i) => L(i)).find((p) => seen(p, 0.4));
+  let topPx: number | null = null;
+  if (seen(L(P.nose), 0.4)) {
+    const nose = L(P.nose);
+    const band = ear ? Math.max(W * 0.04, dist(nose, ear, W, H) * 2.2) : W * 0.09;
+    const cx = ear ? ((nose.x + ear.x) / 2) * W : nose.x * W;      // centro do crânio, não a ponta do nariz
+    topPx = headTopPx(mask, W, H, cx, band, out.warnings);
+  }
+  const stature = floorPx !== null && topPx !== null ? floorPx - topPx : null;
+  out.debug.topY = topPx ?? undefined; out.debug.floorY = floorPx ?? undefined;
+  if (stature !== null) {
+    out.debug.statureFrac = stature / H;
+    if (stature / H > 0.97) out.warnings.push("TIGHT_FRAMING");
+  }
+
+  // ---- é mesmo de perfil? de lado os dois ombros se projetam quase no mesmo ponto
+  let profile = false;
+  const wL = world?.[P.shL], wR = world?.[P.shR];
+  if (wL && wR) profile = Math.abs((wL.z ?? 0) - (wR.z ?? 0)) / Math.max(1e-6, Math.abs(wL.x - wR.x)) > 1;
+  if (!profile && stature !== null) profile = dist(L(P.shL), L(P.shR), W, H) / stature < 0.12;
+  if (!profile) { out.warnings.push("NOT_PROFILE"); return out; }
+  if (stature === null) return out;
+
+  // ---- em pé? (mesma regra da foto de frente, no lado visível)
+  let standing = false;
+  for (const [h, k, a] of [[P.hipL, P.kneeL, P.ankL], [P.hipR, P.kneeR, P.ankR]] as const) {
+    if (!seen(L(h), 0.4) || !seen(L(k), 0.4) || !seen(L(a), 0.4)) continue;
+    if (angle(L(h), L(k), L(a), W, H) > 160) standing = true;
+  }
+  const midS = { x: (L(P.shL).x + L(P.shR).x) / 2, y: (L(P.shL).y + L(P.shR).y) / 2 };
+  const midH = { x: (L(P.hipL).x + L(P.hipR).x) / 2, y: (L(P.hipL).y + L(P.hipR).y) / 2 };
+  const tilt = (Math.atan2(Math.abs(midS.x - midH.x) * W, Math.abs(midS.y - midH.y) * H) * 180) / Math.PI;
+  if (tilt > 14) standing = false;                                  // de lado o tronco inclina mais na foto: 14° em vez de 12°
+  if (!standing) out.warnings.push("NOT_STANDING");
+
+  const put = (k: BodyKey, v: number, source: Source, reason?: string) => {
+    if (!Number.isFinite(v)) return;
+    const [lo, hi] = BODY_RANGE[k];
+    if (v < lo * 0.85 || v > hi * 1.15) { out.warnings.push(`OUT_OF_RANGE_${k}`); return; }
+    out.measures[k] = { value: clampParam(k, v), source, reason };
+  };
+
+  // ---- profundidade por nível: a largura horizontal da silhueta naquela altura
+  const sx = mask.width / W, sy = mask.height / H;
+  const shY = midS.y * H, hipY = midH.y * H; const cx = midH.x * W; const span = hipY - shY;
+  const armSegs = ([[P.shL, P.elL], [P.elL, P.wrL], [P.shR, P.elR], [P.elR, P.wrR]] as const).filter(([a, b]) => seen(L(a), 0.4) && seen(L(b), 0.4))
+    .map(([a, b]) => ({ ax: L(a).x * W, ay: L(a).y * H, bx: L(b).x * W, by: L(b).y * H }));
+  const armXAt = (y: number) => armSegs.filter((g) => y >= Math.min(g.ay, g.by) && y <= Math.max(g.ay, g.by))
+    .map((g) => g.ax + (g.bx - g.ax) * ((y - g.ay) / Math.max(1e-6, g.by - g.ay)));
+  const rows: Record<string, { y: number; x0: number; x1: number; edge: string }> = {};
+  const measureRow = (name: string, y: number) => {
+    const run = runAt(mask, y * sy, cx * sx); if (!run) return null;
+    const x0 = run.x0 / sx, x1 = run.x1 / sx;
+    // de lado, o braço só atrapalha se o eixo dele sai do contorno do tronco (para a frente ou para trás)
+    const m = stature * 0.02;
+    const arm = armXAt(y).some((x) => x < x0 + m || x > x1 - m);
+    const edge = edgeClass(mask, y * sy, run);
+    rows[name] = { y, x0, x1, edge: arm ? "arm" : edge === CLS.clothes ? "clothes" : edge === CLS.bodySkin ? "skin" : "other" };
+    return { d: (x1 - x0) / stature, arm, clothes: edge === CLS.clothes || edge === CLS.other };
+  };
+  const setDepth = (k: BodyKey, r: { d: number; arm: boolean; clothes: boolean } | null) => {
+    if (!r) return false;
+    if (r.arm) { if (!out.warnings.includes("ARMS_ON_TORSO")) out.warnings.push("ARMS_ON_TORSO"); return false; }
+    if (r.clothes) { put(k, r.d * 0.95, "estimated", "roupa na borda: limite superior"); if (!out.warnings.includes("CLOTHING")) out.warnings.push("CLOTHING"); return true; }
+    put(k, r.d, standing ? "observed" : "estimated", standing ? undefined : "pose");
+    return true;
+  };
+  // tórax a 72% e cintura a 38% do caminho quadril → ombro: as mesmas alturas que buildSpec desenha
+  let any = setDepth("chestD", measureRow("chestD", hipY - span * 0.72));
+  any = setDepth("waistD", measureRow("waistD", hipY - span * 0.38)) || any;
+  // quadril: a linha mais funda em volta da articulação (o glúteo, que mais avança para trás, fica na altura dela
+  // ou um pouco acima — por isso a busca sobe um pouco, ao contrário da largura, que só desce)
+  let deepest: { d: number; arm: boolean; clothes: boolean } | null = null;
+  for (let f = -0.04; f <= 0.1201; f += 0.02) { const r = measureRow(`hipD${f.toFixed(2)}`, hipY + stature * f); if (r && !r.arm && (!deepest || r.d > deepest.d)) deepest = r; }
+  any = setDepth("hipD", deepest) || any;
+  out.debug.rows = rows;
+  if (any) {
+    const measured = Object.keys(out.measures) as BodyKey[];
+    regions.depth = measured.every((k) => out.measures[k]!.source === "observed") ? "observed" : "estimated";
+  } else {
+    regions.depth = "hidden";
+  }
+  return out;
+}
+
+/**
  * Junta o que a foto mediu ao modelo: medida observada ou estimada substitui só o que não foi informado pela pessoa.
  * Uma medida ajustada à mão continua valendo (a pessoa tem a palavra final).
+ *
+ * `keepWarnings` soma os avisos aos que já estavam no modelo, em vez de substituí-los: é o que a foto de perfil
+ * precisa, porque ela chega depois da foto de frente e os dois conjuntos de avisos valem ao mesmo tempo.
  */
-export function mergeObservation(m: BodyModel, obs: BodyObservation): BodyModel {
-  const out: BodyModel = { ...m, params: { ...m.params }, sources: { ...m.sources }, photo: true, warnings: [...new Set(obs.warnings)] };
+export function mergeObservation(m: BodyModel, obs: BodyObservation, opts?: { keepWarnings?: boolean }): BodyModel {
+  const warnings = opts?.keepWarnings ? [...new Set([...m.warnings, ...obs.warnings])] : [...new Set(obs.warnings)];
+  const out: BodyModel = { ...m, params: { ...m.params }, sources: { ...m.sources } as BodySources, photo: true, warnings };
   (Object.keys(obs.measures) as BodyKey[]).forEach((k) => {
     const me = obs.measures[k]!;
     if (out.sources[k] === "user") return;
-    out.params[k] = clampParam(k, me.value); out.sources[k] = me.source;
+    out.params[k] = clampParam(k, me.value); (out.sources as Record<BodyKey, Source>)[k] = me.source;
   });
   return out;
 }

@@ -61,23 +61,38 @@ public class StudioPipeline {
      * Dicas do cadastro para o estúdio.
      *
      * @param kind      TOP, OUTERWEAR, FULL_BODY, BOTTOM, SHOES, ACCESSORY ou null (manequim invisível só em peças com gola)
-     * @param truncated lados que a foto original cortou (top/bottom/left/right); null = deduzir do recorte
+     * @param truncated lados que a foto original cortou (top/bottom/left/right); vazio = peça inteira (margem em volta);
+     *                  null = deduzir do recorte (barra reta = corte)
      * @param logoBox   caixa do logo relativa à peça (x0, y0, x1, y1 em 0–1), vinda da IA de visão; null = detector local
+     * @param feed      template de enquadramento do feed (categoria + subcategoria); null = deduzido de {@code kind}
      */
-    public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource) {
+    public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource, FeedFraming.Template feed) {
         public static final Hints NONE = new Hints(null, null, null, null);
+
+        public Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource) {
+            this(kind, truncated, logoBox, logoSource, null);
+        }
+
+        public FeedFraming.Template feedTemplate() {
+            return feed != null ? feed : FeedFraming.template(null, null, kind);
+        }
     }
 
     /**
-     * @param studioJpeg foto principal (quadro adaptado à peça) · @param thumbJpeg miniatura 640×640 para grades
+     * @param studioJpeg foto principal (quadrada, 1600×1600 — o padrão do card) · @param thumbJpeg miniatura 640×640 para grades
      * @param detailJpeg foto de detalhe do logo (null sem logo) · @param enhancedPng peça realçada, sem fundo
+     * @param feedJpeg   foto do feed 4:5 enquadrada pelo template da categoria · @param feed template, pontos de
+     *                   referência e regiões que faltam na foto
      */
     public record Result(byte[] studioJpeg, byte[] thumbJpeg, byte[] detailJpeg, byte[] enhancedPng, Backdrop backdrop,
                          List<Stage> stages, BigDecimal costUsd, boolean fallbackUsed, Map<String, Object> metrics,
-                         Map<String, Object> framing, Map<String, Object> logo, List<String> ghost) {
+                         Map<String, Object> framing, Map<String, Object> logo, List<String> ghost, byte[] feedJpeg,
+                         Map<String, Object> feed) {
     }
 
     public static final int THUMB = 640;
+    /** Confiança mínima de um logo achado pelo detector local para ganhar foco e foto de detalhe. */
+    static final double LOGO_MIN_CONFIDENCE = 0.5;
 
     private final List<UpscalePort> upscalers;
     private final List<StudioShotPort> studios;
@@ -134,9 +149,10 @@ public class StudioPipeline {
         GhostMannequin.Result clean = GhostMannequin.cleanup(piece, hint.kind());
         double[] logoBox = hint.logoBox() == null ? null : reframe(hint.logoBox(), piece, clean);
         piece = clean.image();
-        // lados cortados: os que a foto cortou (metadado do Flat Lay) + cortes retos no próprio recorte; um corte
-        // inclinado (celular torto) nivela a peça antes, para a sangria esconder o corte inteiro
-        java.util.Map<String, Double> cuts = StudioFraming.cuts(piece);
+        // lados cortados: os que a foto cortou (metadado do Flat Lay); só sem esse dado (truncated null) os cortes retos
+        // do próprio recorte contam como corte — a foto aceita pelos critérios (peça inteira) sai com margem em todos os
+        // lados, sem barra "rente" à borda. Um corte inclinado (celular torto) nivela a peça antes da sangria.
+        java.util.Map<String, Double> cuts = hint.truncated() == null ? StudioFraming.cuts(piece) : java.util.Map.of();
         double level = cuts.containsKey("bottom") ? cuts.get("bottom") : cuts.containsKey("top") ? cuts.get("top")
                 : cuts.containsKey("left") ? cuts.get("left") : cuts.getOrDefault("right", 0.0);
         if (Math.abs(level) >= 0.3 && Math.abs(level) <= 6) {
@@ -192,7 +208,8 @@ public class StudioPipeline {
         double upFactor = up.getWidth() / (double) piece.getWidth();
         up = StudioQuality.refineEdges(up, upFactor);
         int fineRadius = (int) Math.max(1, Math.min(3, Math.round(upFactor * 0.6)));
-        BufferedImage enhanced = StudioQuality.sharpen(up, 0.25f, 0.9f, 0.18f, fineRadius);
+        // sem "vibração": a cor e a estampa da peça ficam como na foto (só contraste local e nitidez de borda)
+        BufferedImage enhanced = StudioQuality.sharpen(up, 0.25f, 0.9f, 0f, fineRadius);
         stages.add(new Stage("NITIDEZ", "local", ms(t2), BigDecimal.ZERO, true, false,
                 Msg.t("studio.contorno_suavizado_sem_franja_nitidez", ((localUp ? String.format(java.util.Locale.ROOT, Msg.t("studio.ampliacao_bicubica_progressiva_1f"), upFactor) : "")), enhanced.getWidth(), enhanced.getHeight())));
 
@@ -213,8 +230,18 @@ public class StudioPipeline {
         long tl = System.nanoTime();
         LogoFinder.Logo logo = logoBox != null ? new LogoFinder.Logo(logoBox, 0.85, hint.logoSource() == null ? "ia" : hint.logoSource())
                 : LogoFinder.detect(enhanced);
-        stages.add(new Stage("LOGO", logo == null ? "local" : logo.source(), ms(tl), BigDecimal.ZERO, true, false,
-                logo == null ? Msg.t("studio.nenhum_logo_identificado") : String.format(java.util.Locale.ROOT, Msg.t("studio.logo_em_0f_0f_confianca"),
+        // estampa (frase, gráfico grande) não é logo: fica intacta, sem foco extra nem foto de detalhe
+        LogoFinder.Logo printFound = logo != null && logo.print() ? logo : null;
+        if (printFound != null) {
+            logo = null;
+        }
+        // palpite fraco do detector local (textura, listra, costura) não vira "logo": sem foto de detalhe
+        if (logo != null && "local".equals(logo.source()) && logo.confidence() < LOGO_MIN_CONFIDENCE) {
+            logo = null;
+        }
+        stages.add(new Stage("LOGO", logo == null ? (printFound == null ? "local" : printFound.source()) : logo.source(), ms(tl), BigDecimal.ZERO, true, false,
+                logo == null ? (printFound != null ? Msg.t("studio.estampa_nao_e_logo") : Msg.t("studio.nenhum_logo_identificado"))
+                        : String.format(java.util.Locale.ROOT, Msg.t("studio.logo_em_0f_0f_confianca"),
                         (logo.box()[0] + logo.box()[2]) * 50, (logo.box()[1] + logo.box()[3]) * 50, logo.confidence())));
 
         // 4) volume e luz (+ nitidez extra no logo)
@@ -231,8 +258,12 @@ public class StudioPipeline {
         if (hint.truncated() != null) {
             flush.removeAll(hint.truncated());
         }
-        StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, true);
+        // padrão da peça: quadro quadrado (1:1), o mesmo do card — com 9:16/2:3 o card cortava calça e vestido no "cover"
+        StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, false);
         StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
+        // foto do feed: template da categoria por pontos de referência da peça (gola/peito, cós/joelhos…), sempre 4:5
+        // (só os lados que a própria foto cortou contam como região faltando; barra ou cós retos não são corte)
+        FeedFraming.Feed feed = FeedFraming.frame(lit, hint.feedTemplate(), hint.truncated() == null ? Set.of() : hint.truncated());
         stages.add(new Stage("ENQUADRAMENTO", "local", 0, BigDecimal.ZERO, true, false,
                 Msg.t("studio.peca_ocupa_do_quadro", frame.aspect(), String.valueOf(frame.width()), String.valueOf(frame.height()), String.format(java.util.Locale.ROOT, "%.0f", frame.fill() * 100))
                         + (bleed.isEmpty() ? Msg.t("studio.peca_inteira_com_margem_minima")
@@ -273,6 +304,10 @@ public class StudioPipeline {
             stages.add(new Stage("COMPOSICAO", "local", ms(t5), BigDecimal.ZERO, true, false, frame.width() + "×" + frame.height() + " + miniatura " + THUMB + "×" + THUMB));
         }
         BufferedImage thumb = StudioFraming.compose(lit, bd, thumbFrame);
+        BufferedImage feedShot = StudioFraming.compose(lit, bd, feed.frame());
+        stages.add(new Stage("FEED", "local", 0, BigDecimal.ZERO, feed.missing().isEmpty(), false,
+                Msg.t("studio.feed_template", feed.template().name(), String.format(java.util.Locale.ROOT, "%.0f", feed.frame().fill() * 100))
+                        + (feed.missing().isEmpty() ? "" : Msg.t("studio.feed_falta", String.join(", ", feed.missing())))));
         byte[] detail = null;
         if (logo != null) {
             long t7 = System.nanoTime();
@@ -305,14 +340,16 @@ public class StudioPipeline {
         framing.put("bleed", List.copyOf(bleed));
         framing.put("flush", List.copyOf(flush));
         Map<String, Object> logoInfo = null;
-        if (logo != null) {
+        LogoFinder.Logo mark = logo != null ? logo : printFound;
+        if (mark != null) {
             logoInfo = new LinkedHashMap<>();
-            logoInfo.put("box", java.util.Arrays.stream(logo.box()).map(v -> Math.round(v * 1000) / 1000.0).boxed().toList());
-            logoInfo.put("confidence", Math.round(logo.confidence() * 100) / 100.0);
-            logoInfo.put("source", logo.source());
+            logoInfo.put("kind", mark.print() ? "print" : "logo");
+            logoInfo.put("box", java.util.Arrays.stream(mark.box()).map(v -> Math.round(v * 1000) / 1000.0).boxed().toList());
+            logoInfo.put("confidence", Math.round(mark.confidence() * 100) / 100.0);
+            logoInfo.put("source", mark.source());
         }
         return new Result(ImageOps.jpeg(finalShot, 0.93f), ImageOps.jpeg(thumb, 0.88f), detail, ImageOps.png(lit), bd, stages,
-                cost, fallback, metrics, framing, logoInfo, ghostNotes);
+                cost, fallback, metrics, framing, logoInfo, ghostNotes, ImageOps.jpeg(feedShot, 0.9f), feed.toMap());
     }
 
     /** Caixa do logo (relativa à peça original) levada para a peça depois da limpeza (que pode ter cortado o gancho). */

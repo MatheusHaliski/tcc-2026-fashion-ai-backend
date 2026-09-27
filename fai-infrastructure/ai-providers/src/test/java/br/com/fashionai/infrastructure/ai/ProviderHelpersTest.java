@@ -16,6 +16,24 @@ class ProviderHelpersTest {
         assertThat(ClaudeProvider.stripFences(null)).isEmpty();
     }
 
+    /**
+     * O motor acha o provedor pelo id do catálogo: com o Claude catalogado como "anthropic" (e registrado como "claude")
+     * nenhuma capacidade chegava a chamá-lo — a análise da peça caía no motor local, que não lê marca.
+     */
+    @Test
+    void catalogUsesTheIdsTheAdaptersRegisterWith() {
+        var analyzer = br.com.fashionai.application.ai.AiCatalog.spec(br.com.fashionai.application.ai.AiCapability.PIECE_ANALYZER);
+        assertThat(analyzer.primary().providerId()).isEqualTo(GeminiProvider.ID);
+        assertThat(analyzer.alternative().providerId()).isEqualTo(ClaudeProvider.ID);
+        assertThat(br.com.fashionai.application.ai.AiCatalog.all()).allSatisfy(spec -> {
+            for (var option : new br.com.fashionai.application.ai.AiCatalog.ProviderOption[]{spec.primary(), spec.alternative()}) {
+                if (option != null) {
+                    assertThat(option.providerId()).isNotEqualTo("anthropic");
+                }
+            }
+        });
+    }
+
     @Test
     void pricingUsesPerMillionTokenTables() {
         assertThat(Pricing.estimate("claude-opus-5", 1_000_000, 0)).isEqualByComparingTo(new BigDecimal("5.000000"));

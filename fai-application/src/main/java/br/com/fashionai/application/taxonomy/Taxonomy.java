@@ -101,6 +101,9 @@ public final class Taxonomy {
     }
 
     public static String categoryOf(String subcategory) {
+        if (subcategory == null) {
+            return null;                              // List.of(...).contains(null) lança NPE
+        }
         return SUBCATEGORIES.entrySet().stream().filter(e -> e.getValue().contains(subcategory)).map(Map.Entry::getKey)
                 .findFirst().orElse(null);
     }

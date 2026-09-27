@@ -7,6 +7,7 @@ import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.ai.local.LocalAdvisors;
 import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.assets.PieceReferenceCatalog;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
@@ -17,6 +18,10 @@ import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.imaging.BrandRegions;
+import br.com.fashionai.application.imaging.PhotoAcceptance;
+import br.com.fashionai.application.imaging.Silhouette;
+import br.com.fashionai.application.imaging.SubtypeReferences;
 import br.com.fashionai.application.ports.JobQueuePort;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -120,6 +125,7 @@ public class WardrobeService {
     private final ApplicationEventPublisher events;
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
+    private final PieceReferenceCatalog pieceReferences;
 
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
@@ -130,7 +136,8 @@ public class WardrobeService {
                            NotificationService notifications, JobQueuePort queue,
                            Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
                            ApplicationEventPublisher events, BrandLogoService brandLogos,
-                           br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles) {
+                           br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles,
+                           PieceReferenceCatalog pieceReferences) {
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -157,27 +164,58 @@ public class WardrobeService {
         this.events = events;
         this.brandLogos = brandLogos;
         this.brandProfiles = brandProfiles;
+        this.pieceReferences = pieceReferences;
     }
 
     // ================================================================== RF4 — análise da foto (rascunho)
+    /**
+     * @param subcategoryCandidates subtipos mais parecidos com a foto ({code, score}), do mais parecido para o menos
+     * @param brandSearch           onde a marca foi procurada (zonas), onde foi achada, por quem (ia/local) e a evidência
+     * @param photoChecks           critérios de aceite da foto, todos aprovados (id, medida, limite)
+     */
     public record Prefill(String name, String category, String subcategory, String color, String material, String brand,
                           String sex, List<String> occasion, List<String> style, List<String> seals,
                           Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning,
-                          Map<String, Object> logo, String size, BigDecimal price) {
+                          Map<String, Object> logo, String size, BigDecimal price,
+                          List<Map<String, Object>> subcategoryCandidates, Map<String, Object> brandSearch,
+                          List<Map<String, Object>> photoChecks) {
     }
 
+    /** @param rejection só na análise em lote: a foto recusada pelos critérios (as demais seguem) */
     public record Draft(UUID draftId, String processedUrl, String flatLayUrl, String thumbnailUrl, String originalUrl,
                         Prefill prefill, Map<String, Object> quality, Map<String, Object> moderation,
                         List<FlatLayPipeline.Stage> stages, BigDecimal costUsd, long totalMs, boolean backgroundRemoved,
                         boolean reprocessPending, AiOutcome.Explanation explanation, String aiMessage,
-                        AiOutcome.Quota quota, Map<String, Object> studio, String backgroundWarning) {
+                        AiOutcome.Quota quota, Map<String, Object> studio, String backgroundWarning,
+                        Map<String, Object> rejection) {
+        static Draft rejected(ApiException e) {
+            Map<String, Object> r = new LinkedHashMap<>(e.details() == null ? Map.of() : e.details());
+            r.put("code", e.code());
+            r.put("message", e.getMessage());
+            return new Draft(null, null, null, null, null, null, null, null, List.of(), BigDecimal.ZERO, 0, false, false, null,
+                    e.getMessage(), null, null, null, r);
+        }
     }
 
-    /** RF4.CA01–CA03/CA06: valida, padroniza (Flat Lay), modera e pré-preenche; nada vai ao acervo ainda. */
-    @Transactional
     public Draft analyze(CurrentUser user, byte[] bytes) {
+        return analyze(user, bytes, null);
+    }
+
+    /**
+     * RF4.CA01–CA03/CA06: valida, padroniza (Flat Lay), aplica os critérios de aceite da foto, detecta o subtipo dentro
+     * do tipo escolhido pela pessoa, procura a marca nas zonas da peça, modera e pré-preenche; nada vai ao acervo ainda.
+     * Foto fora dos critérios → 422 FOTO_RECUSADA (o registro da inferência e a cota consumida ficam gravados).
+     *
+     * @param category tipo escolhido pela pessoa (upper_piece, lower_piece…); null = descobrir pela foto
+     */
+    @Transactional(noRollbackFor = PhotoRejectedException.class)
+    public Draft analyze(CurrentUser user, byte[] bytes, String category) {
         guard.requireCanCreate(user);
         ImageOps.requireAcceptedImage(bytes);
+        String chosen = category == null || category.isBlank() ? null : category.trim();
+        if (chosen != null && !Taxonomy.isValidCategory(chosen)) {
+            throw ApiException.badRequest("CATEGORIA_INVALIDA", Msg.t("taxonomy.categoria_invalida"), Map.of("category", Msg.t("taxonomy.categoria_invalida")));
+        }
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         AiOutcome<FlatLayPipeline.Result> pipeline = ai.execute(user.id(), AiCapability.FLAT_LAY_STANDARDIZER,
                 List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null,
@@ -204,6 +242,90 @@ public class WardrobeService {
                     }
                 }), () -> flatLay.run(bytes, false));
         FlatLayPipeline.Result r = pipeline.value();
+
+        // Critérios de aceite (locais, antes de qualquer IA paga): fundo separado, peça inteira, enquadramento,
+        // alinhamento, câmera a 90° (simetria), uma peça por foto, nitidez e luz
+        PhotoAcceptance.Report acceptance = PhotoAcceptance.evaluate(chosen, r.originalWidth(), r.originalHeight(), r.cutout(),
+                r.truncated(), r.quality());
+        if (!acceptance.accepted()) {
+            throw rejection(acceptance.checks());
+        }
+        ImageOps.Cutout cutout = r.cutout();
+        // a peça endireitada e justa na caixa (alta resolução): base da comparação com as referências e das zonas da marca
+        BufferedImage piece = r.studioSource();
+        SubtypeReferences refs = pieceReferences.get();
+        Silhouette.Descriptor shape = Silhouette.of(piece);
+        List<SubtypeReferences.Match> ranking = refs.rank(chosen, shape);
+        LocalVision.PieceGuess localGuess = localGuess(LocalVision.analyzePiece(cutout), chosen, ranking);
+        String zonesCategory = chosen != null ? chosen : localGuess.category();
+        List<BrandRegions.Zone> zones = BrandRegions.zones(piece, zonesCategory);
+
+        // Moderação (#2) — nunca aprova por omissão.
+        LocalVision.ModerationVerdict localVerdict = LocalVision.moderate(r.original(), cutout);
+        AiOutcome<LocalVision.ModerationVerdict> moderation = ai.text(new AiEngine.TextCall<>(user.id(),
+                AiCapability.CONTENT_MODERATOR, MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
+                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(r.original(), 768, 768), 0.85f), "image/jpeg")),
+                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), this::parseModeration, () -> localVerdict, null));
+        LocalVision.ModerationVerdict verdict = moderation.value();
+
+        // Detecção (#1): peça inteira + folha de referências do tipo escolhido + zonas da marca ampliadas
+        byte[] sheet = chosen == null ? null : refs.contactSheet(chosen);
+        List<AiRequest.AiImage> images = new ArrayList<>();
+        images.add(new AiRequest.AiImage(ImageOps.png(ImageOps.composeCentered(piece, 768, 0.06, java.awt.Color.WHITE, false)), "image/png"));
+        if (sheet != null) {
+            images.add(new AiRequest.AiImage(sheet, "image/png"));
+        }
+        for (BrandRegions.Zone z : zones) {
+            images.add(new AiRequest.AiImage(ImageOps.jpeg(BrandRegions.crop(piece, z), 0.92f), "image/jpeg"));
+        }
+        AiOutcome<LocalVision.PieceGuess> analysis = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.PIECE_ANALYZER,
+                ANALYZER_SYSTEM, analyzerPrompt(chosen, sheet == null ? List.of() : refs.sheetLegend(chosen), zones, ranking),
+                images, 1200, List.of(Msg.t("wardrobe.foto_padronizada_da_peca"), Msg.t("wardrobe.vocabulario_da_taxonomia_v3_7")),
+                text -> parseAnalysis(text, chosen), () -> localGuess, null));
+        LocalVision.PieceGuess guess = analysis.value();
+        boolean aiRan = analysis.value() != localGuess;
+
+        // Critérios que dependem da análise: tipo/formato identificável, peça inteira e de frente aos olhos da IA, conteúdo
+        List<PhotoAcceptance.Check> checks = new ArrayList<>(acceptance.checks());
+        LocalVision.Insights seen = guess.insights();
+        String categoryLabel = Msg.t("taxonomy." + (chosen != null ? chosen : guess.category() == null ? "upper_piece" : guess.category()));
+        String detectedLabel = seen.detectedCategory() == null ? null : Msg.t("taxonomy." + seen.detectedCategory());
+        double categoryConfidence = guess.confidence() == null ? 0 : guess.confidence().getOrDefault("category", 0.0);
+        if (chosen != null) {
+            // sem referências carregadas (ambiente sem /public) a silhueta não tem com o que comparar: não reprova por ela
+            Map<String, Double> bestBy = refs.isEmpty() ? Map.of() : refs.bestByCategory(shape);
+            Map.Entry<String, Double> other = bestBy.entrySet().stream().filter(e -> !e.getKey().equals(chosen))
+                    .max(Map.Entry.comparingByValue()).orElse(null);
+            double bestLocal = bestBy.getOrDefault(chosen, 1.0);
+            String seenLabel = detectedLabel != null ? detectedLabel : other == null ? null : Msg.t("taxonomy." + other.getKey());
+            checks.add(PhotoAcceptance.shapeCheck(categoryLabel, aiRan ? seen.matchesCategory() : null, categoryConfidence, seenLabel,
+                    bestLocal, other == null ? 0 : other.getValue()));
+        }
+        if (aiRan) {
+            checks.addAll(PhotoAcceptance.aiPhotoChecks(seen.fullyVisible(), seen.viewAngle(), seen.singlePiece(), seen.photoConfidence(),
+                    zonesCategory));
+        }
+        if (verdict.status() == ModerationStatus.REJECTED_NOT_CLOTHING || verdict.status() == ModerationStatus.REJECTED_POLICY) {
+            checks.add(new PhotoAcceptance.Check("conteudo", false, verdict.confidence(), 0.85,
+                    verdict.status() == ModerationStatus.REJECTED_POLICY ? Msg.t("wardrobe.a_foto_viola_a_politica") : Msg.t("photoAcceptance.nao_roupa")));
+        }
+        if (checks.stream().anyMatch(c -> !c.ok())) {
+            throw rejection(checks);
+        }
+
+        // Marca: logo apontado pela IA na imagem 1 (0–1000) → caixa relativa à peça; sem IA, o detector local diz onde está
+        double[] logoRel = logoRelative(guess.logoBox(), piece.getWidth(), piece.getHeight());
+        String logoSource = logoRel == null ? null : "ia";
+        if (logoRel == null) {
+            logoRel = BrandRegions.detectLogo(piece);
+            logoSource = logoRel == null ? null : "local";
+        }
+        Map<String, Object> logo = logoRel == null ? null : Map.of("box", java.util.Arrays.stream(logoRel).boxed().toList(), "source", logoSource);
+        Map<String, Object> brandSearch = brandSearch(zones, guess, logoRel, logoSource);
+        List<Map<String, Object>> candidates = candidates(seen.ranking().isEmpty() ? ranking : seen.ranking(), chosen != null ? chosen : guess.category());
+        Prefill prefill = prefill(guess.withInsights(seen.withRanking(seen.ranking().isEmpty() ? ranking : seen.ranking())), logo, candidates,
+                brandSearch, checks.stream().map(c -> Map.<String, Object>of("id", c.id(), "value", c.value(), "threshold", c.threshold())).toList());
+
         PipelineJob job = new PipelineJob();
         job.setUser(owner);
         job.setType(PipelineJobType.FLAT_LAY_STANDARDIZATION);
@@ -221,28 +343,6 @@ public class WardrobeService {
         MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg", r.processedWhiteJpeg(), "image/jpeg");
         MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png", r.thumbnailPng(), "image/png");
 
-        // Moderação (#2) — nunca aprova por omissão.
-        ImageOps.Cutout cutout = r.cutout();
-        LocalVision.ModerationVerdict localVerdict = LocalVision.moderate(r.original(), cutout);
-        AiOutcome<LocalVision.ModerationVerdict> moderation = ai.text(new AiEngine.TextCall<>(user.id(),
-                AiCapability.CONTENT_MODERATOR, MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
-                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(r.original(), 768, 768), 0.85f), "image/jpeg")),
-                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), this::parseModeration, () -> localVerdict, null));
-        LocalVision.ModerationVerdict verdict = moderation.value();
-
-        // Detecção (#1) — pré-preenchimento só com confiança suficiente (RF4.CA02/CA03).
-        LocalVision.PieceGuess localGuess = LocalVision.analyzePiece(cutout);
-        AiOutcome<LocalVision.PieceGuess> analysis = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.PIECE_ANALYZER,
-                ANALYZER_SYSTEM, "Analise a peça de roupa da imagem anexada e responda só com o JSON.",
-                List.of(new AiRequest.AiImage(ImageOps.png(ImageOps.scaleToFit(ImageOps.composeCentered(
-                        ImageOps.crop(cutout.image(), ImageOps.alphaBounds(cutout.image())), 768, 0.06, java.awt.Color.WHITE, false), 768, 768)), "image/png")),
-                600, List.of(Msg.t("wardrobe.foto_padronizada_da_peca"), Msg.t("wardrobe.vocabulario_da_taxonomia_v3_7")), this::parseAnalysis, () -> localGuess, null));
-        // logo apontado pela IA: caixa da imagem enviada (0–1000) → caixa relativa à peça (a mesma em qualquer escala)
-        ImageOps.Box cutBox = ImageOps.alphaBounds(cutout.image());
-        double[] logoRel = logoRelative(analysis.value() == null ? null : analysis.value().logoBox(), cutBox.w(), cutBox.h());
-        Map<String, Object> logo = logoRel == null ? null : Map.of("box", java.util.Arrays.stream(logoRel).boxed().toList(), "source", "ia");
-        Prefill prefill = prefill(analysis.value(), logo);
-
         // RF4 · Estúdio: foto de produto a partir da fonte em alta resolução, com o tipo da peça (manequim invisível),
         // os lados que a foto cortou (sangria) e o logo (foco) — nunca trava o cadastro (RNF8)
         String studioSourceUrl = null;
@@ -250,7 +350,8 @@ public class WardrobeService {
         if (r.backgroundRemoved()) {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia"));
+                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia",
+                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
         }
 
         Map<String, Object> quality = new LinkedHashMap<>();
@@ -260,6 +361,7 @@ public class WardrobeService {
         quality.put("threshold", br.com.fashionai.application.imaging.QualityMetrics.ACCEPTANCE_THRESHOLD);
         quality.put("issues", r.quality().issues());
         quality.put("recommendations", r.quality().recommendations());
+        quality.put("acceptance", new PhotoAcceptance.Report(true, checks).toMap());
         Map<String, Object> mod = new LinkedHashMap<>();
         mod.put("status", verdict.status().name());
         mod.put("confidence", verdict.confidence());
@@ -304,11 +406,70 @@ public class WardrobeService {
         String message = analysis.userMessage() != null ? analysis.userMessage() : pipeline.userMessage();
         return new Draft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), prefill, quality, mod,
                 r.stages(), job.getTotalCostUsd(), r.totalMs(), r.backgroundRemoved(), !r.backgroundRemoved(),
-                analysis.explanation(), message, analysis.quota(), studioInfo, r.cutout().warning());
+                analysis.explanation(), message, analysis.quota(), studioInfo, r.cutout().warning(), null);
     }
 
-    /** RF4.CA05 — várias fotos: um rascunho por foto, revisáveis antes de confirmar o lote. */
+    /** Recusa com a primeira orientação como mensagem principal e todos os critérios no detalhe. */
+    static PhotoRejectedException rejection(List<PhotoAcceptance.Check> checks) {
+        String first = checks.stream().filter(c -> !c.ok()).map(PhotoAcceptance.Check::message).findFirst().orElse("");
+        return new PhotoRejectedException(Msg.t("photoAcceptance.recusada", first), checks);
+    }
+
+    /**
+     * Palpite local (sem IA): cor pela paleta; tipo = o escolhido pela pessoa; subtipo = a referência mais parecida
+     * (similaridade de silhueta), com confiança pela similaridade e pela folga para o segundo colocado.
+     */
+    static LocalVision.PieceGuess localGuess(LocalVision.PieceGuess base, String chosen, List<SubtypeReferences.Match> ranking) {
+        String category = chosen != null ? chosen : base.category();
+        String sub = base.subcategory();
+        double subConf = base.confidence().getOrDefault("subcategory", 0.0);
+        List<SubtypeReferences.Match> inCategory = ranking.stream()
+                .filter(m -> category != null && Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).contains(m.subcategory())).toList();
+        if (!inCategory.isEmpty()) {
+            sub = inCategory.get(0).subcategory();
+            double gap = inCategory.size() > 1 ? inCategory.get(0).score() - inCategory.get(1).score() : 0.1;
+            subConf = Math.min(0.9, Math.max(0, (inCategory.get(0).score() - 0.6) * 1.2 + gap * 3));
+        } else if (chosen != null && (sub == null || !Taxonomy.SUBCATEGORIES.get(chosen).contains(sub))) {
+            sub = Taxonomy.SUBCATEGORIES.get(chosen).get(0);
+            subConf = 0.2;
+        }
+        Map<String, Double> conf = new LinkedHashMap<>(base.confidence());
+        conf.put("category", chosen != null ? 1.0 : conf.getOrDefault("category", 0.0));
+        conf.put("subcategory", Math.round(subConf * 100) / 100.0);
+        double overall = Math.round((conf.get("category") + conf.get("subcategory") + conf.getOrDefault("color", 0.0)) / 3 * 100) / 100.0;
+        return new LocalVision.PieceGuess(category, sub, base.color(), base.material(), base.brand(), base.sex(), conf, overall,
+                base.palette(), null, LocalVision.Insights.NONE.withRanking(inCategory.isEmpty() ? ranking : inCategory));
+    }
+
+    /** Subtipos candidatos para a tela ({code, score}), só da categoria, os 3 primeiros. */
+    static List<Map<String, Object>> candidates(List<SubtypeReferences.Match> ranking, String category) {
+        return ranking.stream()
+                .filter(m -> category == null || Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).contains(m.subcategory()))
+                .limit(3).map(m -> Map.<String, Object>of("code", m.subcategory(), "score", m.score())).toList();
+    }
+
+    /** Resumo da busca da marca: as zonas olhadas, onde achou (zona da IA ou a zona do logo) e quem achou. */
+    static Map<String, Object> brandSearch(List<BrandRegions.Zone> zones, LocalVision.PieceGuess guess, double[] logoRel, String logoSource) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("zones", zones.stream().map(BrandRegions.Zone::id).toList());
+        String brand = guess.brand() == null || guess.brand().isBlank() ? null : guess.brand();
+        String zone = guess.insights().brandZone();
+        if (zone == null || zones.stream().noneMatch(z -> z.id().equals(guess.insights().brandZone()))) {
+            zone = BrandRegions.zoneOf(zones, logoRel);
+        }
+        out.put("brand", brand);
+        out.put("foundIn", brand != null || logoRel != null ? zone : null);
+        out.put("logoSource", logoSource);
+        out.put("evidence", guess.insights().brandEvidence());
+        return out;
+    }
+
+    /** RF4.CA05 — várias fotos: um rascunho por foto; a foto recusada volta com o motivo e as demais seguem. */
     public List<Draft> analyzeBatch(CurrentUser user, List<byte[]> files) {
+        return analyzeBatch(user, files, null);
+    }
+
+    public List<Draft> analyzeBatch(CurrentUser user, List<byte[]> files, String category) {
         if (files == null || files.isEmpty()) {
             throw ApiException.badRequest("SEM_FOTOS", Msg.t("wardrobe.envie_ao_menos_uma_foto"));
         }
@@ -317,7 +478,11 @@ public class WardrobeService {
         }
         List<Draft> drafts = new ArrayList<>();
         for (byte[] f : files) {
-            drafts.add(analyze(user, f));
+            try {
+                drafts.add(analyze(user, f, category));
+            } catch (PhotoRejectedException e) {
+                drafts.add(Draft.rejected(e));
+            }
         }
         return drafts;
     }
@@ -331,8 +496,9 @@ public class WardrobeService {
              "brand": string ou null (só se o logotipo for legível), "sex": one of [MASCULINO, FEMININO, UNISSEX],
              "occasion": até 2 códigos, "style": até 2 códigos,
              "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1},
-             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (logotipo, etiqueta de marca ou estampa de marca na
-                     peça; caixa em 0–1000 relativa à imagem inteira) ou null se não houver}
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (só logotipo ou símbolo de MARCA: bordado, etiqueta,
+                     patch ou marca pequena; caixa em 0–1000 relativa à imagem inteira) ou null se não houver. Frases,
+                     palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO são logo: devolva null}
             Nunca descreva pessoas. Se não houver peça de roupa, devolva confidence 0 em tudo.""";
 
     static final String MODERATION_SYSTEM = """
@@ -340,14 +506,40 @@ public class WardrobeService {
             {"isClothing": boolean, "safe": boolean, "categories": [strings de violação, ex.: nudity, violence, hate, minor],
              "confidence": 0-1}. Em dúvida, safe=false.""";
 
-    LocalVision.PieceGuess parseAnalysis(String text) {
+    static LocalVision.PieceGuess parseAnalysis(String text) {
+        return parseAnalysis(text, null);
+    }
+
+    /**
+     * Resposta do analisador → palpite validado pela taxonomia: nada fora do vocabulário entra. Com o tipo escolhido pela
+     * pessoa, a categoria é a dela e o subtipo só vale se for desse tipo (senão, o primeiro do ranking da IA que for).
+     */
+    static LocalVision.PieceGuess parseAnalysis(String text, String chosen) {
         Map<String, Object> m = extractJson(text);
         if (m.isEmpty()) {
             return null;
         }
         String category = str(m.get("category"));
         String sub = str(m.get("subcategory"));
-        if (sub != null && Taxonomy.categoryOf(sub) != null) {
+        String detected = Taxonomy.isValidCategory(str(m.get("detectedCategory"))) ? str(m.get("detectedCategory"))
+                : Taxonomy.isValidCategory(category) ? category : null;
+        List<SubtypeReferences.Match> ranking = new ArrayList<>();
+        if (m.get("subcategoryRanking") instanceof List<?> rl) {
+            for (Object o : rl) {
+                if (o instanceof Map<?, ?> rm && str(rm.get("code")) != null && Taxonomy.categoryOf(str(rm.get("code"))) != null) {
+                    double sim = rm.get("similarity") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0;
+                    ranking.add(new SubtypeReferences.Match(str(rm.get("code")), Math.round(sim * 1000) / 1000.0));
+                }
+            }
+        }
+        if (chosen != null) {
+            category = chosen;
+            List<String> allowed = Taxonomy.SUBCATEGORIES.get(chosen);
+            ranking.removeIf(x -> !allowed.contains(x.subcategory()));
+            if (sub == null || !allowed.contains(sub)) {
+                sub = ranking.isEmpty() ? null : ranking.get(0).subcategory();
+            }
+        } else if (sub != null && Taxonomy.categoryOf(sub) != null) {
             category = Taxonomy.categoryOf(sub);
         } else if (!Taxonomy.isValidCategory(category)) {
             category = null;
@@ -355,17 +547,56 @@ public class WardrobeService {
         } else {
             sub = null;
         }
-        String color = Taxonomy.COLORS.containsKey(str(m.get("color"))) ? str(m.get("color")) : null;
-        String material = Taxonomy.MATERIALS.contains(str(m.get("material"))) ? str(m.get("material")) : null;
-        String sex = Taxonomy.SEXES.contains(str(m.get("sex"))) ? str(m.get("sex")) : null;
+        // campo ausente ou null na resposta não pode derrubar o parser: List.of(...).contains(null) lança NPE, o motor
+        // tomava a resposta inteira por falha do provedor e caía no motor local (que não lê marca)
+        String color = oneOf(str(m.get("color")), Taxonomy.COLORS.keySet());
+        String material = oneOf(str(m.get("material")), Taxonomy.MATERIALS);
+        String sex = oneOf(str(m.get("sex")), Taxonomy.SEXES);
         Map<String, Double> conf = new LinkedHashMap<>();
         Object c = m.get("confidence");
         if (c instanceof Map<?, ?> cm) {
             cm.forEach((k, v) -> conf.put(String.valueOf(k), v instanceof Number n ? n.doubleValue() : 0.0));
         }
+        double photoConf = conf.getOrDefault("photo", 0.0);
+        conf.remove("photo");
         double overall = conf.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.5);
-        return new LocalVision.PieceGuess(category, sub, color, material, str(m.get("brand")), sex, conf,
-                Math.round(overall * 100) / 100.0, List.of(), logoBox(m.get("logo")));
+        Map<?, ?> photo = m.get("photo") instanceof Map<?, ?> pm ? pm : Map.of();
+        String name = str(m.get("name"));
+        LocalVision.Insights insights = new LocalVision.Insights(
+                name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),
+                Taxonomy.keepAllowed(strings(m.get("occasion")), Taxonomy.allowedOccasions(category), 2),
+                Taxonomy.keepAllowed(strings(m.get("style")), Taxonomy.STYLES, 2),
+                str(m.get("brandZone")), str(m.get("brandEvidence")),
+                m.get("matchesCategory") instanceof Boolean b ? b : null, detected,
+                photo.get("fullyVisible") instanceof Boolean b ? b : null, str(photo.get("viewAngle")),
+                photo.get("singlePiece") instanceof Boolean b ? b : null, photoConf, ranking);
+        return new LocalVision.PieceGuess(category, sub, color, material, brandName(str(m.get("brand"))), sex, conf,
+                Math.round(overall * 100) / 100.0, List.of(), logoBox(m.get("logo")), insights);
+    }
+
+    /** O valor, se for um dos permitidos (null-safe). */
+    static String oneOf(String value, java.util.Collection<String> allowed) {
+        return value != null && allowed.contains(value) ? value : null;
+    }
+
+    /** Nome de marca da IA: "null", "none", "sem marca" e afins não são marca; texto limpo e curto. */
+    static String brandName(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String b = raw.trim();
+        if (b.isEmpty() || b.length() > 60 || Set.of("null", "none", "n/a", "desconhecida", "unknown", "nenhuma", "generic", "genérica")
+                .contains(b.toLowerCase(Locale.ROOT)) || isNoBrandPlaceholder(b)) {
+            return null;
+        }
+        return InputSanitizer.clean(b, 60);
+    }
+
+    static List<String> strings(Object o) {
+        if (o instanceof List<?> l) {
+            return l.stream().filter(java.util.Objects::nonNull).map(String::valueOf).toList();
+        }
+        return o instanceof String s && !s.isBlank() ? List.of(s) : List.of();
     }
 
     /** Caixa do logo devolvida pela IA (0–1000), validada: 4 números em ordem, com área mínima. */
@@ -408,8 +639,14 @@ public class WardrobeService {
      * RF4 — "Analisar peça" preenche TODOS os campos, sem exceção: o que a IA reconheceu com confiança entra como está;
      * o resto entra com o melhor palpite dela ou com o padrão da taxonomia (categoria pela subcategoria, ocasião e
      * estilo pelo tipo da peça, tamanho M, preço estimado pelo tipo). Nada fica em branco; a pessoa confere antes de salvar.
+     * Ocasião e estilo saem sempre de dentro da taxonomia — o que a IA sugeriu (já filtrado) ou o padrão do tipo.
      */
     static Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo) {
+        return prefill(g, logo, List.of(), null, List.of());
+    }
+
+    static Prefill prefill(LocalVision.PieceGuess g, Map<String, Object> logo, List<Map<String, Object>> candidates,
+                           Map<String, Object> brandSearch, List<Map<String, Object>> photoChecks) {
         Map<String, Double> c = g.confidence() == null ? Map.of() : g.confidence();
         boolean manual = g.overall() < LocalVision.PREFILL_CONFIDENCE;
         String sub = firstNonBlank(keep(g.subcategory(), c.get("subcategory")), g.subcategory());
@@ -432,7 +669,8 @@ public class WardrobeService {
         List<String> occasion = List.of(Taxonomy.allowedOccasions(category).get(0));
         List<String> style = List.of(defaultStyle(sub));           // sempre um código de Taxonomy.STYLES (WardrobePrefillTest)
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
-                manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub));
+                manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),
+                candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks);
     }
 
     static String firstNonBlank(String... values) {
@@ -451,7 +689,10 @@ public class WardrobeService {
     private static final Set<String> STREET = Set.of("cargo_pants", "denim_shorts", "high_top_sneakers", "casual_sneakers", "bermuda_shorts",
             "windbreaker", "beanie", "backpack", "parka");
 
-    /** Estilo mais provável pelo tipo da peça (quando a IA não o reconhece). */
+    /**
+     * Estilo mais provável pelo tipo da peça (quando a IA não o reconhece). Sempre um código de {@link Taxonomy#STYLES}:
+     * "casual" é ocasião, não estilo — devolvê-lo aqui fazia o cadastro falhar com "Valor fora da taxonomia: casual".
+     */
     static String defaultStyle(String sub) {
         if (SPORTY.contains(sub)) {
             return "sporty";
@@ -499,6 +740,17 @@ public class WardrobeService {
         return value != null && confidence != null && confidence >= LocalVision.PREFILL_CONFIDENCE ? value : null;
     }
 
+    /** Nome da peça sem IA, no idioma de quem cadastra: "Camiseta azul", "Calça jeans azul-marinho". */
+    static String pieceName(String sub, String color) {
+        return label(sub) + " " + label(color).toLowerCase(Msg.locale());
+    }
+
+    /** Rótulo da taxonomia no idioma corrente (catálogo i18n); sem rótulo, o código legível. */
+    static String label(String code) {
+        String t = Msg.t("taxonomy." + code);
+        return t.equals("taxonomy." + code) ? humanize(code) : t;
+    }
+
     static String humanize(String code) {
         String s = code.replace('_', ' ');
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
@@ -512,6 +764,11 @@ public class WardrobeService {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
                             Map<String, Object> background) {
+        /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
+        public PieceForm {
+            occasion = Taxonomy.normalizeTags(occasion);
+            style = Taxonomy.normalizeTags(style);
+        }
     }
 
     @Transactional
@@ -591,6 +848,7 @@ public class WardrobeService {
             if (r.get("studio") instanceof Map<?, ?> st && !Boolean.FALSE.equals(form.studio())) {
                 Map<String, Object> summary = new LinkedHashMap<>();
                 summary.put("framing", st.get("framing"));
+                summary.put("feed", st.get("feed"));
                 summary.put("logo", st.get("logo"));
                 summary.put("metrics", st.get("metrics"));
                 flatMeta.put("studio", summary);
@@ -770,7 +1028,7 @@ public class WardrobeService {
             return;
         }
         w.setBrand(null);
-        if (brandName == null || brandName.isBlank()) {
+        if (brandName == null || brandName.isBlank() || isNoBrandPlaceholder(brandName)) {
             w.setBrandName(null);
             w.setBrandProfile(null);
             return;
@@ -781,6 +1039,16 @@ public class WardrobeService {
         w.setBrandProfile(brandProfiles.findByApprovalStatus(br.com.fashionai.domain.model.enums.ApprovalStatus.APROVADO).stream()
                 .filter(bp -> key.equals(BrandLogoService.keyOf(bp.getNomeFantasia())) || key.equals(BrandLogoService.keyOf(bp.getBrandName())))
                 .findFirst().orElse(null));
+    }
+
+    /**
+     * "Sem marca" é o que a análise escreve no campo quando não acha marca na gola nem no peito: o campo nunca fica em
+     * branco na tela, mas a peça é salva sem marca (nada de uma marca fictícia chamada "Sem marca" no card).
+     */
+    static boolean isNoBrandPlaceholder(String name) {
+        String n = name.trim();
+        return java.util.stream.Stream.of(Locale.forLanguageTag("pt-BR"), Locale.ENGLISH, Locale.forLanguageTag("es"))
+                .anyMatch(l -> n.equalsIgnoreCase(Msg.t(l, "wardrobe.sem_marca")));
     }
 
     static final java.util.Set<String> WEB_BRAND_SOURCES = java.util.Set.of("WIKIDATA", "SIMPLE_ICONS", "IA_BUSCA_WEB");
@@ -1170,7 +1438,8 @@ public class WardrobeService {
     }
 
     /** Dicas do estúdio a partir do que já foi guardado: lados cortados (Flat Lay) e logo apontado pela IA. */
-    static br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(String kind, Object truncatedSides, Object logo) {
+    static br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(String category, String subcategory, Object truncatedSides, Object logo) {
+        String kind = studioKind(category, subcategory);
         java.util.Set<String> truncated = truncatedSides instanceof List<?> l
                 ? l.stream().map(String::valueOf).collect(Collectors.toCollection(java.util.LinkedHashSet::new)) : null;
         double[] box = null;
@@ -1178,13 +1447,14 @@ public class WardrobeService {
                 && b.stream().allMatch(v -> v instanceof Number)) {
             box = b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray();
         }
-        return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia");
+        return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia",
+                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind));
     }
 
     br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(WardrobeItem w) {
         Map<String, Object> meta = Json.map(w.getFlatLayMetadataJson());
         Object logo = meta.get("detected") instanceof Map<?, ?> d ? d.get("logo") : null;
-        return studioHints(studioKind(w.getCategory(), w.getSubcategory()), meta.get("truncated_sides"), logo);
+        return studioHints(w.getCategory(), w.getSubcategory(), meta.get("truncated_sides"), logo);
     }
 
     /** Fonte do estúdio da peça: o recorte em alta resolução guardado no cadastro ou, sem ele, a imagem atual. */
@@ -1210,6 +1480,7 @@ public class WardrobeService {
             summary.put("stages", info.get("stages"));
             summary.put("metrics", info.get("metrics"));
             summary.put("framing", info.get("framing"));
+            summary.put("feed", info.get("feed"));
             summary.put("logo", info.get("logo"));
             summary.put("provider", String.valueOf(info.get("provider")));
             meta.put("studio", summary);
@@ -1226,8 +1497,7 @@ public class WardrobeService {
         if (w.getStudioImageUrl() == null && !createIfMissing) {
             return;
         }
-        var hints = sameSource ? studioHints(w) : new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                studioKind(w.getCategory(), w.getSubcategory()), null, null, null);
+        var hints = sameSource ? studioHints(w) : studioHints(w.getCategory(), w.getSubcategory(), null, null);
         Map<String, Object> info = studioShot(w.getUser().getId(), cutout, w.getStudioBackdrop() == null ? "auto" : w.getStudioBackdrop(),
                 "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/", hints);
         applyStudio(w, info);
@@ -1282,11 +1552,14 @@ public class WardrobeService {
             String name = basePath + "studio-" + res.backdrop().id() + "-" + stamp;
             MediaStoragePort.StoredObject shot = media.put(name + ".jpg", res.studioJpeg(), "image/jpeg");
             media.put(name + ".thumb.jpg", res.thumbJpeg(), "image/jpeg");       // miniatura: mesma URL com ".thumb.jpg"
+            media.put(name + ".feed.jpg", res.feedJpeg(), "image/jpeg");         // feed 4:5 por template: ".feed.jpg"
             String detailUrl = res.detailJpeg() == null ? null : media.put(name + ".detail.jpg", res.detailJpeg(), "image/jpeg").url();
             MediaStoragePort.StoredObject enhanced = media.put(basePath + "enhanced-" + stamp + ".png", res.enhancedPng(), "image/png");
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("url", shot.url());
             info.put("thumbUrl", Views.studioThumb(shot.url()));
+            info.put("feedUrl", Views.studioFeed(shot.url()));
+            info.put("feed", res.feed());
             info.put("detailUrl", detailUrl);
             info.put("enhancedUrl", enhanced.url());
             info.put("backdrop", res.backdrop().id());
@@ -1343,7 +1616,8 @@ public class WardrobeService {
         String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
                 new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
-                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo"));
+                        assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
+                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
         if (info != null) {
             applyStudio(w, info);
         }
@@ -1390,8 +1664,8 @@ public class WardrobeService {
         }
         Map<?, ?> pf = r.get("prefill") instanceof Map<?, ?> m ? m : Map.of();
         Map<?, ?> flat = r.get("flatLayMetadata") instanceof Map<?, ?> m ? m : Map.of();
-        var hints = studioHints(studioKind(pf.get("category") == null ? null : String.valueOf(pf.get("category")),
-                pf.get("subcategory") == null ? null : String.valueOf(pf.get("subcategory"))), flat.get("truncated_sides"), pf.get("logo"));
+        var hints = studioHints(pf.get("category") == null ? null : String.valueOf(pf.get("category")),
+                pf.get("subcategory") == null ? null : String.valueOf(pf.get("subcategory")), flat.get("truncated_sides"), pf.get("logo"));
         Map<String, Object> info = studioShot(user.id(), ImageOps.decode(png), backdrop == null ? "auto" : backdrop,
                 "users/" + user.id() + "/drafts/" + draftId + "/", hints);
         if (info == null) {

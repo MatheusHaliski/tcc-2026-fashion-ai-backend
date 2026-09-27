@@ -7,8 +7,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { Avatar3dRef } from "@/components/three/common";
 import { loadOriented } from "@/lib/avatar3d/pipeline";
-import { CLS, mergeObservation, observeBody, type BodyObservation, type ClassMask, type PosePoint, type Region } from "@/lib/avatar3d/body";
-import { BODY_RANGE, applyUserData, buildSpec, defaultBodyModel, setParam, validateBody, type BodyKey, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
+import { CLS, mergeObservation, observeBody, observeProfile, type BodyObservation, type ClassMask, type PosePoint, type Region } from "@/lib/avatar3d/body";
+import { BODY_RANGE, DEPTH_KEYS, applyUserData, buildSpec, defaultBodyModel, effectiveDepth, setParam, validateBody, type BodyKey, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
 import { qualityReport } from "@/lib/avatar3d/metrics";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
@@ -18,6 +18,7 @@ const EDITABLE: BodyKey[] = ["shoulderW", "chestW", "waistW", "hipW", "legLen", 
 const REGIONS: Region[] = ["head", "shoulders", "chest", "waist", "hips", "arms", "legs", "feet", "back", "depth"];
 
 interface Analysis { obs: BodyObservation; pose: PosePoint[] | null; mask: ClassMask | null; width: number; height: number; people: number; photoUrl: string }
+interface SideAnalysis { obs: BodyObservation; photoUrl: string }
 
 /**
  * Corpo do Avatar 3D. A foto de corpo inteiro (opcional) mede o que ela mostra; o resto é estimativa, marcada como tal.
@@ -30,10 +31,13 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
   const [height, setHeight] = useState<string>(initial?.heightCm ? String(initial.heightCm) : "");
   const [weight, setWeight] = useState<string>(initial?.weightKg ? String(initial.weightKg) : "");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [side, setSide] = useState<SideAnalysis | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<AvatarView>("front");
   const input = useRef<HTMLInputElement>(null);
+  const sideInput = useRef<HTMLInputElement>(null);
   useEffect(() => () => { if (analysis) URL.revokeObjectURL(analysis.photoUrl); }, [analysis]);
+  useEffect(() => () => { if (side) URL.revokeObjectURL(side.photoUrl); }, [side]);
 
   async function analyze(file: File) {
     setBusy(true); setError(null);
@@ -48,13 +52,42 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
       setModel((m) => applyUserData(mergeObservation(m, obs), m.heightCm, m.weightKg));
     } catch { setError(t("avatar3d.body.falhou")); } finally { setBusy(false); }
   }
+  /** Segunda foto, de lado: só a profundidade do tronco. Se não for de perfil, a foto é recusada e nada muda. */
+  async function analyzeSide(file: File) {
+    setBusy(true); setError(null);
+    try {
+      const img = await loadOriented(file);
+      const { detectBody } = await import("@/lib/avatar3d/body-detect");
+      const det = await detectBody(img);
+      if (!det.pose) { setError(t("avatar3d.body.sem_pessoa")); return; }
+      if (det.people > 1) { setError(t("avatar3d.body.duas_pessoas")); return; }
+      const obs = observeProfile(det.pose, det.world, det.mask, { width: img.width, height: img.height });
+      if (obs.warnings.includes("NOT_PROFILE")) { setError(t("avatar3d.body.nao_e_perfil")); return; }
+      setSide({ obs, photoUrl: URL.createObjectURL(file) });
+      setModel((m) => mergeObservation(m, obs, { keepWarnings: true }));
+    } catch { setError(t("avatar3d.body.falhou")); } finally { setBusy(false); }
+  }
   function userData(h: string, w: string) {
     const hc = Number(h) || null, wk = Number(w) || null;
     setModel((m) => applyUserData(m, hc && hc >= 120 && hc <= 220 ? hc : null, wk && wk >= 30 && wk <= 250 ? wk : null));
   }
   const report = useMemo(() => qualityReport(buildSpec(model.params), model.params, analysis ? { obs: analysis.obs, pose: analysis.pose ?? undefined, mask: analysis.mask ?? undefined, width: analysis.width, height: analysis.height } : undefined), [model.params, analysis]);
-  const cm = (k: BodyKey) => k === "build" ? `${model.params.build > 0 ? "+" : ""}${fmtNumber(Math.round(model.params.build * 100) / 100)}` : `${fmtNumber(Math.round(model.params[k] * model.params.stature * 100))} cm`;
+  // sem foto de perfil a profundidade não é um número da pessoa: é a razão fixa sobre a largura, marcada como estimativa
+  const depth = effectiveDepth(model.params);
+  const valueOf = (k: BodyKey) => model.params[k] ?? depth[k as keyof typeof depth];
+  const sourceOf = (k: BodyKey) => model.sources[k] ?? "estimated";
+  const cm = (k: BodyKey) => k === "build" ? `${model.params.build > 0 ? "+" : ""}${fmtNumber(Math.round(model.params.build * 100) / 100)}` : `${fmtNumber(Math.round(valueOf(k) * model.params.stature * 100))} cm`;
   const pct = (v: number) => `${fmtNumber(Math.round(v * 1000) / 10)}%`;
+  const regionState = (r: Region) => (r === "depth" ? side?.obs.regions.depth : analysis?.obs.regions[r]) ?? analysis?.obs.regions[r] ?? (r === "back" || r === "depth" ? "estimated" : "hidden");
+  const slider = (k: BodyKey) => {
+    const [lo, hi, step] = BODY_RANGE[k]; const id = `body-${k}`; const src = sourceOf(k);
+    return (
+      <label key={k} htmlFor={id} className="grid gap-1">
+        <span className="flex items-center justify-between gap-2 type-body-sm"><span>{t(`avatar3d.body.param.${k}`)}</span><span className="flex items-center gap-2"><Badge className={`src-${src}`}>{t(`avatar3d.body.fonte.${src}`)}</Badge><span className="type-data">{cm(k)}</span></span></span>
+        <input id={id} type="range" min={lo} max={hi} step={step} value={valueOf(k)} onChange={(e) => setModel((m) => setParam(m, k, Number(e.target.value)))} />
+      </label>
+    );
+  };
 
   return (
     <Card>
@@ -71,6 +104,14 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
             {error && <p role="alert" className="type-body-sm text-critical">{error}</p>}
             {analysis && analysis.obs.warnings.length > 0 && <ul className="fai-list">{analysis.obs.warnings.filter((w) => !w.startsWith("OUT_OF_RANGE")).map((w) => <li key={w} className="type-caption text-muted">⚠ {t(`avatar3d.body.aviso.${w}`)}</li>)}</ul>}
           </div>
+          <div className="grid gap-2 rounded-md border border-line-soft p-3">
+            <p className="type-body-sm font-semibold">{t("avatar3d.body.perfil")}</p>
+            <p className="type-caption text-muted">{t("avatar3d.body.perfil_explica")}</p>
+            <ul className="fai-list type-caption text-muted">{["dica_perfil1", "dica_perfil2", "dica_perfil3"].map((k) => <li key={k}>{t(`avatar3d.body.${k}`)}</li>)}</ul>
+            <input ref={sideInput} id="avatar-side-photo" type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void analyzeSide(f); e.target.value = ""; }} />
+            <Button size="sm" onClick={() => sideInput.current?.click()} loading={busy}>{side ? t("avatar3d.body.trocar_perfil") : t("avatar3d.body.enviar_perfil")}</Button>
+            {side && side.obs.warnings.length > 0 && <ul className="fai-list">{side.obs.warnings.filter((w) => !w.startsWith("OUT_OF_RANGE")).map((w) => <li key={w} className="type-caption text-muted">⚠ {t(`avatar3d.body.aviso.${w}`)}</li>)}</ul>}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <label className="grid gap-1 type-body-sm" htmlFor="avatar-height">{t("avatar3d.body.altura")}
               <input id="avatar-height" className="input" inputMode="numeric" value={height} placeholder="170" onChange={(e) => { setHeight(e.target.value); userData(e.target.value, weight); }} /></label>
@@ -78,20 +119,15 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
               <input id="avatar-weight" className="input" inputMode="numeric" value={weight} placeholder="—" onChange={(e) => { setWeight(e.target.value); userData(height, e.target.value); }} /></label>
           </div>
           <p className="type-caption text-faint">{t("avatar3d.body.peso_idade")}</p>
-          <div className="grid gap-3">
-            {EDITABLE.map((k) => {
-              const [lo, hi, step] = BODY_RANGE[k]; const id = `body-${k}`;
-              return (
-                <label key={k} htmlFor={id} className="grid gap-1">
-                  <span className="flex items-center justify-between gap-2 type-body-sm"><span>{t(`avatar3d.body.param.${k}`)}</span><span className="flex items-center gap-2"><Badge className={`src-${model.sources[k]}`}>{t(`avatar3d.body.fonte.${model.sources[k]}`)}</Badge><span className="type-data">{cm(k)}</span></span></span>
-                  <input id={id} type="range" min={lo} max={hi} step={step} value={model.params[k]} onChange={(e) => setModel((m) => setParam(m, k, Number(e.target.value)))} />
-                </label>
-              );
-            })}
+          <div className="grid gap-3">{EDITABLE.map(slider)}</div>
+          <div className="grid gap-3 rounded-md border border-line-soft p-3">
+            <p className="type-body-sm font-semibold">{t("avatar3d.body.profundidade")}</p>
+            <p className="type-caption text-muted">{side ? t("avatar3d.body.profundidade_medida") : t("avatar3d.body.profundidade_estimada")}</p>
+            {DEPTH_KEYS.map(slider)}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" size="sm" loading={saving} onClick={() => onSave(model)}>{t("avatar3d.body.salvar")}</Button>
-            <Button variant="ghost" size="sm" disabled={saving} onClick={() => { setModel(defaultBodyModel(sex)); setAnalysis(null); setHeight(""); setWeight(""); onSave(null); }}>{t("avatar3d.body.voltar_referencia")}</Button>
+            <Button variant="ghost" size="sm" disabled={saving} onClick={() => { setModel(defaultBodyModel(sex)); setAnalysis(null); setSide(null); setHeight(""); setWeight(""); onSave(null); }}>{t("avatar3d.body.voltar_referencia")}</Button>
           </div>
         </div>
         <div className="grid content-start gap-3">
@@ -100,7 +136,9 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
               <AvatarViewer avatar={avatar} sex={sex} body={model.params} view={view} framing="full" background="#ECE7DE" />
             </div>
             <div className="aspect-[3/5] overflow-hidden rounded-md bg-surface-2">
-              {analysis ? <PhotoOverlay a={analysis} /> : <p className="grid h-full place-items-center p-4 text-center type-body-sm text-muted">{t("avatar3d.body.sem_foto_comparar")}</p>}
+              {/* de perfil, a comparação é com a foto de lado: é ela que mostra a profundidade que o boneco está usando */}
+              {view === "profile" && side ? <img src={side.photoUrl} alt={t("avatar3d.body.perfil")} className="h-full w-full object-contain" />
+                : analysis ? <PhotoOverlay a={analysis} /> : <p className="grid h-full place-items-center p-4 text-center type-body-sm text-muted">{t("avatar3d.body.sem_foto_comparar")}</p>}
             </div>
           </div>
           <div role="group" aria-label={t("avatar3d.view.label")} className="flex flex-wrap gap-2">
@@ -108,7 +146,7 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
           </div>
           <div>
             <p className="type-body-sm font-semibold">{t("avatar3d.body.regioes")}</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">{REGIONS.map((r) => { const st = analysis?.obs.regions[r] ?? (r === "back" || r === "depth" ? "estimated" : "hidden"); return <span key={r} className={`badge src-${st}`}>{t(`avatar3d.body.regiao.${r}`)} · {t(`avatar3d.body.estado.${st}`)}</span>; })}</div>
+            <div className="mt-1 flex flex-wrap gap-1.5">{REGIONS.map((r) => { const st = regionState(r); return <span key={r} className={`badge src-${st}`}>{t(`avatar3d.body.regiao.${r}`)} · {t(`avatar3d.body.estado.${st}`)}</span>; })}</div>
           </div>
           <div>
             <p className="type-body-sm font-semibold">{t("avatar3d.body.metricas")}</p>
