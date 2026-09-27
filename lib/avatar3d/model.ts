@@ -5,6 +5,7 @@
  */
 import type { FaceMetrics, Role } from "./geometry";
 import { N } from "./geometry";
+import type { BodyModel } from "./body-spec";
 
 export const MODEL_VERSION = 1;
 
@@ -17,6 +18,7 @@ export interface AvatarModel {
   metrics: FaceMetrics;
   views: { role: Role; yaw: number; pitch: number; roll: number }[];
   warnings: string[];                       // o que ficou estimado (ex.: DEPTH_ESTIMATED)
+  body?: BodyModel | null;                  // corpo: proporções com a origem de cada uma (lib/avatar3d/body-spec.ts)
 }
 export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number }
 export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0 };

@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import * as THREE from "three";
 import { analyzePhoto, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 
-const AvatarViewer = dynamic(() => import("@/components/three/avatar-viewer"), { ssr: false });
+const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false });
 
 /**
  * Laboratório (desenvolvimento): roda o pipeline do Avatar 3D em fotos escolhidas e expõe window.__avatarLab para o

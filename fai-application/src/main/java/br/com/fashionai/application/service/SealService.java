@@ -48,6 +48,7 @@ import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
 import br.com.fashionai.domain.repository.SealRepository;
 import br.com.fashionai.domain.repository.UserRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,6 +89,7 @@ public class SealService {
     private final BrandProfileRepository brandProfiles;
     private final CelebrityProfileRepository celebrityProfiles;
     private final UserRepository users;
+    private final WardrobeItemRepository wardrobeItems;
     private final NotificationService notifications;
     private final AiEngine ai;
     private final Guard guard;
@@ -97,9 +99,10 @@ public class SealService {
     public SealService(SealRepository seals, SealBondRepository bonds, PromotionRepository promotions,
                        PromotionRedemptionRepository redemptions, SchemeRepository schemes, SchemeItemRepository schemeItems,
                        BrandProfileRepository brandProfiles, CelebrityProfileRepository celebrityProfiles,
-                       UserRepository users, NotificationService notifications, AiEngine ai, Guard guard, Audit audit,
-                       ApplicationEventPublisher events) {
+                       UserRepository users, WardrobeItemRepository wardrobeItems, NotificationService notifications, AiEngine ai,
+                       Guard guard, Audit audit, ApplicationEventPublisher events) {
         this.events = events;
+        this.wardrobeItems = wardrobeItems;
         this.seals = seals;
         this.bonds = bonds;
         this.promotions = promotions;
@@ -325,6 +328,55 @@ public class SealService {
             out.put("unregisteredMessage", Msg.t("seal.somente_marcas_com_perfil_cadastrado", String.join(", ", unregistered)));
         }
         out.put("explanation", outcome.explanation());
+        out.put("inferenceId", outcome.inferenceId());
+        return out;
+    }
+
+    /**
+     * Criar Look (RF5 + RF21.CA01): antes de salvar, a IA procura marcas e celebridades com que o look pode ter selo, a
+     * partir das peças escolhidas, do estilo e da ocasião. Nada é gravado: a pessoa marca as que quer pedir e o vínculo
+     * nasce ao salvar (as mesmas regras de {@link #suggest}: só marca validada e celebridade verificada com consentimento).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> preview(CurrentUser user, List<UUID> pieceIds, List<String> occasion, List<String> style) {
+        List<WardrobeItem> pieces = wardrobeItems.findByIdIn(pieceIds == null ? List.of() : pieceIds).stream()
+                .filter(w -> w.getUser().getId().equals(user.id())).toList();
+        if (pieces.isEmpty()) {
+            return Map.of("suggestions", List.of(), "unregisteredBrands", List.of(), "message", Msg.t("seal.nenhuma_marca_ou_celebridade_atingiu"));
+        }
+        Scheme draft = new Scheme();
+        draft.setOccasion(Json.csv(occasion == null ? List.of() : occasion));
+        draft.setStyle(Json.csv(style == null ? List.of() : style));
+        List<SchemeItem> items = new ArrayList<>();
+        for (WardrobeItem w : pieces) {
+            SchemeItem si = new SchemeItem();
+            si.setWardrobeItem(w);
+            items.add(si);
+        }
+        List<String> unregistered = new ArrayList<>();
+        AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
+                List.of(Msg.t("seal.marcas_das_pecas"), Msg.t("seal.estilo_ocasiao_do_esquema"), Msg.t("seal.assinatura_de_estilo_das_celebridades")),
+                () -> candidates(draft, items, unregistered));
+        List<Map<String, Object>> suggestions = new ArrayList<>();
+        for (Candidate c : outcome.value()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("targetOwnerId", c.targetOwnerId());
+            m.put("kind", c.kind());
+            m.put("name", c.name());
+            m.put("logoUrl", c.logoUrl());
+            m.put("confidence", c.confidence());
+            m.put("justification", c.justification());
+            m.put("tier", c.tier());
+            m.put("eraLabel", c.eraLabel());
+            suggestions.add(m);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("suggestions", suggestions);
+        out.put("unregisteredBrands", unregistered);
+        out.put("message", suggestions.isEmpty() ? Msg.t("seal.nenhuma_marca_ou_celebridade_atingiu") : null);
+        if (!unregistered.isEmpty()) {
+            out.put("unregisteredMessage", Msg.t("seal.somente_marcas_com_perfil_cadastrado", String.join(", ", unregistered)));
+        }
         out.put("inferenceId", outcome.inferenceId());
         return out;
     }

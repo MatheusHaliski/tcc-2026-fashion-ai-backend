@@ -1,6 +1,8 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.Visibility;
 import org.junit.jupiter.api.Test;
 
@@ -41,5 +43,28 @@ class SchemeRulesTest {
         assertThat(SearchService.Cursor.parse(null)).isNull();
         assertThatThrownBy(() -> SearchService.Cursor.parse("nao-e-um-cursor")).isInstanceOf(ApiException.class)
                 .satisfies(e -> assertThat(((ApiException) e).code()).isEqualTo("CURSOR_INVALIDO"));
+    }
+
+    private static WardrobeItem piece(String name, String category) {
+        WardrobeItem w = new WardrobeItem();
+        w.assignId(UUID.randomUUID());
+        w.setName(name);
+        w.setCategory(category);
+        return w;
+    }
+
+    /** RF5: um look nunca tem duas peças do mesmo tipo — nem no modo IA, quando o modelo repete o tipo. */
+    @Test
+    void lookKeepsOnePiecePerType() {
+        WardrobeItem blusa = piece("Blusa", "upper_piece"), jaqueta = piece("Jaqueta", "upper_piece");
+        WardrobeItem calca = piece("Calça", "lower_piece"), vestido = piece("Vestido", "full_body_piece");
+        WardrobeItem tenis = piece("Tênis", "shoes_piece"), bota = piece("Bota", "shoes_piece");
+        WardrobeItem bolsa = piece("Bolsa", "accessory_piece"), colar = piece("Colar", "accessory_piece");
+
+        assertThat(LocalSchemeComposer.onePerType(List.of(blusa, jaqueta, calca, tenis, bota, bolsa, colar)))
+                .containsExactly(blusa, calca, tenis, bolsa);
+        // a peça inteira ocupa cima e baixo
+        assertThat(LocalSchemeComposer.onePerType(List.of(vestido, blusa, calca, tenis))).containsExactly(vestido, tenis);
+        assertThat(LocalSchemeComposer.onePerType(List.of(calca, vestido, blusa))).containsExactly(calca, blusa);
     }
 }

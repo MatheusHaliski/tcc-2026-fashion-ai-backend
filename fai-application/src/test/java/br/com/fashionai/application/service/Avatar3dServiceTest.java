@@ -165,7 +165,7 @@ class Avatar3dServiceTest {
         assertTrue(service.forMannequin(owner.getId(), null).isEmpty());
         assertTrue(service.forMannequin(owner.getId(), me.id()).isPresent());
 
-        service.update(me, new Avatar3dService.SettingsCommand(null, true));
+        service.update(me, new Avatar3dService.SettingsCommand(null, true, null));
         assertTrue(service.texture(other, owner.getId()).length > 0);
         Map<String, Object> ref = service.forMannequin(owner.getId(), other.id()).orElseThrow();
         assertTrue(((String) ref.get("textureUrl")).startsWith("/api/avatar3d/" + owner.getId() + "/texture"));
@@ -186,5 +186,46 @@ class Avatar3dServiceTest {
         service.deleteAllFor(owner.getId());                           // exclusão da conta
         assertTrue(rows.isEmpty());
         assertTrue(blobs.isEmpty());
+    }
+
+    private static Map<String, Object> body(double waist, String waistSource) {
+        Map<String, Object> params = new LinkedHashMap<>(Map.of("stature", 1.7, "shoulderW", 0.19, "chestW", 0.175, "waistW", waist,
+                "hipW", 0.205, "legLen", 0.53, "armLen", 0.333, "headH", 0.13, "build", 0.0));
+        Map<String, Object> sources = new LinkedHashMap<>();
+        params.keySet().forEach(k -> sources.put(k, "default"));
+        sources.put("waistW", waistSource);
+        sources.put("stature", "user");
+        Map<String, Object> b = new LinkedHashMap<>();
+        b.put("v", 1);
+        b.put("sex", "FEMININO");
+        b.put("params", params);
+        b.put("sources", sources);
+        b.put("heightCm", 170);
+        b.put("weightKg", null);
+        b.put("photo", true);
+        b.put("warnings", List.of("CLOTHING", "<b>"));
+        b.put("comentario", "texto livre não passa");
+        return b;
+    }
+
+    /** Corpo do avatar: proporções dentro das faixas, origem conhecida; nada de texto livre; vai junto do modelo. */
+    @Test
+    void corpoValidadoEGuardadoComOModelo() {
+        service.save(me, cmd(true, null), texture(512, 512));
+        Map<String, Object> v = service.update(me, new Avatar3dService.SettingsCommand(null, null, body(0.15, "observed")));
+        Map<?, ?> saved = (Map<?, ?>) ((Map<?, ?>) v.get("model")).get("body");
+        assertEquals("observed", ((Map<?, ?>) saved.get("sources")).get("waistW"));
+        assertEquals(List.of("CLOTHING", "b"), saved.get("warnings"));
+        assertFalse(saved.containsKey("comentario"));
+        assertTrue(audited.contains("AVATAR3D_CORPO"));
+        // fora da faixa, origem desconhecida ou altura impossível: recusado
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(body(0.5, "observed"))));
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(body(0.15, "medido pela IA"))));
+        Map<String, Object> tall = body(0.15, "user");
+        tall.put("heightCm", 400);
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(tall)));
+        // corpo vazio remove o corpo e o manequim volta às proporções de referência
+        Map<String, Object> cleared = service.update(me, new Avatar3dService.SettingsCommand(null, null, Map.of()));
+        assertFalse(((Map<?, ?>) cleared.get("model")).containsKey("body"));
     }
 }

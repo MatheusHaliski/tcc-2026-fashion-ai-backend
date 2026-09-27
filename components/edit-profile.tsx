@@ -1,17 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { Button, Dialog, Input, Textarea, useToast } from "@/components/ui";
 import { MannequinGlyph } from "@/components/photo-picker";
-import type { FaceFit, Look3d } from "@/components/three/common";
-import { tr, useI18n } from "@/lib/i18n/i18n";
-
-const LookViewer = dynamic(() => import("@/components/three/look-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("editProfile.montando_o_rosto")}</div> });
+import { useI18n } from "@/lib/i18n/i18n";
 
 /**
- * RF23 · Editar perfil no formato do Instagram: foto de perfil + "avatar" (o rosto 3D do manequim feito da foto),
+ * RF23 · Editar perfil no formato do Instagram: foto de perfil (o "+" no círculo envia a foto) e o avatar 3D (a caixa
+ * isométrica abre o criador do avatar, RF40),
  * e as linhas Nome, Nome de usuário (o @ único), Pronomes, Bio, Links e Gênero (o manequim da Passarela/foto com
  * manequim). A mesma tela abre nas Configurações, no próprio perfil e no Lookbook.
  */
@@ -20,7 +18,7 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
   const { me, refreshMe } = useAuth(); const toast = useToast();
   const [f, setF] = useState({ displayName: "", username: "", pronouns: "", bio: "", links: [] as { title: string; url: string }[], sex: null as "FEMININO" | "MASCULINO" | null });
   const [free, setFree] = useState<{ available?: boolean; suggestions?: string[] } | null>(null);
-  const [busy, setBusy] = useState(false); const [photoMenu, setPhotoMenu] = useState(false); const [faceOpen, setFaceOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => { if (me) setF({ displayName: me.user.displayName ?? "", username: me.user.username, pronouns: me.pronouns ?? "", bio: me.bio ?? "", links: me.links ?? [], sex: me.sex ?? null }); }, [me]);
   useEffect(() => {
@@ -32,7 +30,7 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
   const brand = me.user.profileType === "MARCA";
   async function upload(fl?: File) {
     if (!fl) return; setBusy(true);
-    try { const fd = new FormData(); fd.append("file", fl); await api.upload("/api/me/avatar", fd); await refreshMe(); toast.success(t("editProfile.foto_de_perfil_atualizada")); } catch (e) { toast.fromError(e); } finally { setBusy(false); setPhotoMenu(false); }
+    try { const fd = new FormData(); fd.append("file", fl); await api.upload("/api/me/avatar", fd); await refreshMe(); toast.success(t("editProfile.foto_de_perfil_atualizada")); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function save() {
     setBusy(true);
@@ -49,12 +47,15 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
   );
   return (
     <div className="edit-profile">
-      <div className="flex flex-col items-center gap-2 border-b border-line-soft pb-4">
-        <div className="flex items-center gap-4">
-          <span className="h-24 w-24 overflow-hidden rounded-full bg-surface-2 ring-1 ring-line-soft">{me.user.avatarUrl ? <img src={mediaUrl(me.user.avatarUrl)} alt={t("editProfile.sua_foto_de_perfil")} className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-3xl text-muted">{me.user.displayName?.[0] ?? "?"}</span>}</span>
-          {!brand && <button type="button" onClick={() => setFaceOpen(true)} className="flex h-24 w-24 items-center justify-center rounded-full border border-line-soft bg-surface hover:bg-surface-2" aria-label={t("editProfile.ver_e_ajustar_o_rosto")} title={t("editProfile.rosto_do_manequim_avatar_3d")}><MannequinGlyph sex={f.sex ?? "FEMININO"} size={40} /></button>}
+      <div className="flex items-center justify-center gap-6 border-b border-line-soft pb-4">
+        <div className="relative h-24 w-24">
+          <span className="block h-24 w-24 overflow-hidden rounded-full bg-surface-2 ring-1 ring-line-soft">{me.user.avatarUrl ? <img src={mediaUrl(me.user.avatarUrl)} alt={t("editProfile.sua_foto_de_perfil")} className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-3xl text-muted">{me.user.displayName?.[0] ?? "?"}</span>}</span>
+          {/* foto de perfil: o "+" no círculo abre a escolha do arquivo */}
+          <button type="button" onClick={() => file.current?.click()} disabled={busy} className="ep-plus" aria-label={t("editProfile.nova_foto_de_perfil")} title={t("editProfile.nova_foto_de_perfil")}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg></button>
+          {me.user.avatarUrl && <button type="button" className="ep-remove" disabled={busy} aria-label={t("common.remover_foto")} title={t("common.remover_foto")} onClick={async () => { try { await api.patch("/api/me/profile", { avatarUrl: "" }); await refreshMe(); toast.success(t("editProfile.foto_removida_o_manequim_volta")); } catch (e) { toast.fromError(e); } }}>✕</button>}
         </div>
-        <button type="button" className="type-body font-semibold text-[#3B5BDB] hover:underline" onClick={() => setPhotoMenu(true)} disabled={busy}>{t("editProfile.editar_foto_ou_avatar")}</button>
+        {/* avatar 3D: a caixa isométrica leva ao criador do avatar (RF40) */}
+        {!brand && <Link href="/avatar" className="ep-cube" aria-label={t("editProfile.meu_avatar_3d")} title={t("editProfile.meu_avatar_3d")}><IsoCube size={44} /></Link>}
         <input ref={file} type="file" accept="image/*" className="sr-only" tabIndex={-1} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
       </div>
       {row(t("common.nome"), <Input id="ep-name" value={f.displayName} onChange={(e) => setF({ ...f, displayName: e.target.value })} maxLength={80} />, "ep-name")}
@@ -67,45 +68,19 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
       </div>)}
       {!brand && row(t("editProfile.genero"), <div role="radiogroup" aria-label={t("editProfile.genero_do_manequim")} className="flex gap-2 pt-1">{(["FEMININO", "MASCULINO"] as const).map((s) => <button key={s} type="button" role="radio" aria-checked={f.sex === s} className={`chip inline-flex items-center gap-1.5 ${f.sex === s ? "is-active" : ""}`} onClick={() => setF({ ...f, sex: s })}><MannequinGlyph sex={s} />{s === "FEMININO" ? t("editProfile.mulher") : t("editProfile.homem")}</button>)}<span className="self-center type-caption text-faint">{t("editProfile.define_o_manequim")}</span></div>)}
       <div className="mt-4 flex justify-end gap-2">{onDone && <Button onClick={onDone}>{t("common.cancel")}</Button>}<Button variant="primary" loading={busy} onClick={save} disabled={free?.available === false || f.displayName.trim().length < 2}>{t("common.save")}</Button></div>
-      <Dialog open={photoMenu} onClose={() => setPhotoMenu(false)} title={t("editProfile.editar_foto_ou_avatar")}>
-        <div className="grid gap-2">
-          <Button onClick={() => file.current?.click()} loading={busy}>{t("editProfile.nova_foto_de_perfil")}</Button>
-          {!brand && <Button onClick={() => { setPhotoMenu(false); setFaceOpen(true); }} disabled={!me.user.avatarUrl}>{t("editProfile.ajustar_o_rosto_do_manequim")}</Button>}
-          {me.user.avatarUrl && <Button variant="danger" onClick={async () => { try { await api.patch("/api/me/profile", { avatarUrl: "" }); await refreshMe(); setPhotoMenu(false); toast.success(t("editProfile.foto_removida_o_manequim_volta")); } catch (e) { toast.fromError(e); } }}>{t("common.remover_foto")}</Button>}
-          <p className="type-caption text-muted">{t("editProfile.a_foto_aparece_no_seu")}</p>
-        </div>
-      </Dialog>
-      {faceOpen && <FaceFitDialog onClose={() => setFaceOpen(false)} />}
     </div>
   );
 }
 
-/** Rosto 3D do manequim (avatar): a foto de perfil projetada na cabeça, com ajuste de tamanho e posição. */
-function FaceFitDialog({ onClose }: { onClose: () => void }) {
-  const { t } = useI18n();
-  const { me } = useAuth(); const toast = useToast();
-  const [face, setFace] = useState<FaceFit>({ offsetX: 0, offsetY: 0, scale: 1 });
-  const [base, setBase] = useState<Look3d | null>(null);
-  useEffect(() => {
-    // o manequim da própria pessoa, sem peças: vem do primeiro look dela; sem look, monta com os dados do perfil
-    api.get<{ items: { id: string }[] }>("/api/me/schemes?size=1").then(async (p) => {
-      if (p.items[0]) { const l = await api.get<Look3d>(`/api/schemes/${p.items[0].id}/look3d`); setBase({ ...l, pieces: [], title: t("editProfile.meu_manequim") }); if (l.mannequin.face) setFace((f) => ({ ...f, ...l.mannequin.face })); }
-      else setBase({ title: t("editProfile.meu_manequim"), pieces: [], mannequin: { sex: me?.sex ?? "FEMININO", photoUrl: me?.user.avatarUrl ?? null, head: me?.user.avatarUrl ? "FOTO" : "PADRAO" } });
-    }).catch(() => setBase({ title: t("editProfile.meu_manequim"), pieces: [], mannequin: { sex: me?.sex ?? "FEMININO", photoUrl: me?.user.avatarUrl ?? null, head: me?.user.avatarUrl ? "FOTO" : "PADRAO" } }));
-  }, [me]);
+/** Caixa isométrica 3D: o acesso ao avatar 3D (três faces do cubo com tons diferentes). */
+function IsoCube({ size = 40 }: { size?: number }) {
   return (
-    <Dialog open onClose={onClose} title={t("editProfile.rosto_do_manequim")} size="lg" footer={<Button variant="primary" onClick={async () => { try { await api.patch("/api/me/profile", { mannequinFace: face }); toast.success(t("editProfile.rosto_ajustado")); onClose(); } catch (e) { toast.fromError(e); } }}>{t("editProfile.salvar_ajuste")}</Button>}>
-      <div className="grid gap-4 md:grid-cols-[1fr_240px]">
-        <div className="h-[380px] overflow-hidden rounded-lg border border-line-soft">{base && <LookViewer look={{ ...base, mannequin: { ...base.mannequin, face } }} still framing="upper" background="#ECE7DE" />}</div>
-        <div>
-          {!me?.user.avatarUrl && <p className="type-body-sm text-muted">{t("editProfile.sem_foto_de_perfil_o")}</p>}
-          {([["scale", t("common.size"), 0.6, 1.8, 0.02], ["offsetX", t("common.horizontal"), -0.3, 0.3, 0.01], ["offsetY", t("common.vertical"), -0.3, 0.3, 0.01]] as const).map(([k, lbl, min, max, step]) => (
-            <label key={k} className="mt-2 block type-caption">{lbl}<input type="range" min={min} max={max} step={step} value={face[k] ?? (k === "scale" ? 1 : 0)} onChange={(e) => setFace((x) => ({ ...x, [k]: Number(e.target.value) }))} className="block w-full" /></label>
-          ))}
-          <p className="mt-3 type-caption text-faint">{t("editProfile.o_rosto_3d_tem_nariz")}</p>
-        </div>
-      </div>
-    </Dialog>
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <path d="M24 4 42 14 24 24 6 14Z" fill="var(--color-accent, #22c55e)" />
+      <path d="M6 14 24 24v20L6 34Z" fill="currentColor" opacity=".78" />
+      <path d="M42 14 24 24v20l18-10Z" fill="currentColor" opacity=".45" />
+      <path d="M24 4 42 14v20L24 44 6 34V14Z M6 14l18 10 18-10 M24 24v20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
   );
 }
 

@@ -65,6 +65,15 @@ public class SealController {
         return seals.mySeals(user);
     }
 
+    public record PreviewRequest(java.util.List<UUID> pieceIds, java.util.List<String> occasion, java.util.List<String> style) {
+    }
+
+    @PostMapping("/api/seal-suggestions/preview")
+    @Operation(summary = "RF5/RF21.CA01 — Selos possíveis para um look ainda não salvo (nada é gravado)")
+    public Map<String, Object> preview(CurrentUser user, @RequestBody PreviewRequest body) {
+        return seals.preview(user, body.pieceIds(), body.occasion(), body.style());
+    }
+
     @GetMapping("/api/schemes/{schemeId}/seal-suggestions")
     @Operation(summary = "RF21.CA01 — Sugestões de vínculo de selo para o esquema (SealBond Matcher)")
     public Map<String, Object> suggest(CurrentUser user, @PathVariable UUID schemeId) {

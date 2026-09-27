@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { Button, Dialog, Skeleton, useToast } from "@/components/ui";
 import { useWebGL, type Look3d } from "@/components/three/common";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
-const LookViewer = dynamic(() => import("@/components/three/look-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("generate3d.montando_o_manequim_em_3d")}</div> });
+const LookViewer = dynamic(() => retryImport(() => import("@/components/three/look-viewer")), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("generate3d.montando_o_manequim_em_3d")}</div> });
 
 export type Target3d = { kind: "scheme" | "piece"; id: string; title: string };
 
@@ -24,10 +26,20 @@ export function Cube3dIcon({ size = 20 }: { size?: number }) {
  * Botão "Gerar 3D" das anatomias (junto das interações sociais). Vale para toda tipologia de card: esquema (o look
  * no manequim), peça (a peça no manequim ou o modelo do RF16) e DNA (cada esquema referenciado, um de cada vez).
  */
-export function Generate3DButton({ targets, compact = true, className = "" }: { targets: Target3d[]; compact?: boolean; className?: string }) {
+export function Generate3DButton({ targets, compact = true, className = "", glyph }: { targets: Target3d[]; compact?: boolean; className?: string; glyph?: boolean }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (!targets.length) return null;
+  // glyph: mesmo padrão dos botões do post (disco verde, ícone preto), sem texto
+  if (glyph) return (
+    <>
+      <button type="button" className={`c-act ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
+        aria-haspopup="dialog" title={t("generate3d.gerar_3d_ver_no_manequim")} aria-label={t("generate3d.gerar_3d_de", { title: targets[0].title })}>
+        <FaiIcon id="ACT-20" size={20} variant="glyph" decorative />
+      </button>
+      {open && <Generate3DDialog targets={targets} onClose={() => setOpen(false)} />}
+    </>
+  );
   return (
     <>
       <button type="button" className={`btn btn-ghost btn-sm gen3d-btn ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
@@ -90,7 +102,7 @@ export function Generate3DDialog({ targets, onClose }: { targets: Target3d[]; on
           <div className="min-w-0">
             <p className="label">{tr("common.manequim")}</p>
             <p className="type-body-sm">{m?.sex === "MASCULINO" ? tr("common.masculino") : tr("common.feminino")} <span className="text-muted">({m?.sexSource === "cadastro" ? tr("generate3d.sexo_do_cadastro") : m?.sexSource === "provador" ? tr("generate3d.preferencia_do_provador") : m?.sexSource === "pecas" ? tr("generate3d.pelas_pecas") : tr("common.padrao")})</span></p>
-            <p className="type-caption text-muted">{m?.head === "FOTO" ? tr("generate3d.rosto_foto_de_perfil_de", { value: (look.owner?.username ?? "") }) : tr("generate3d.rosto_manequim_padrao_sem_foto")}</p>
+            <p className="type-caption text-muted">{m?.head === "AVATAR" ? tr("generate3d.rosto_avatar_de", { value: (look.owner?.username ?? "") }) : tr("generate3d.rosto_cabeca_neutra")}</p>
             <p className="label mt-3">{tr("common.pecas_2", { piecesCount: look.pieces.length })}</p>
             <ul className="mt-1 space-y-1.5">
               {look.pieces.map((p) => (

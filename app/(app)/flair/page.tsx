@@ -21,9 +21,9 @@ interface Me { coins: number; rank: Rank; wins: number; losses: number; draws: n
 interface League { teams: Team[]; mine?: Team | null; players: { user: UserCard; rank: Rank; wins: number }[]; rule: string; battles?: { id: string; theme: string; winner: string; date: string; side: string }[]; }
 interface Arena { date: string; theme: string; rule: string; leaderboard: { position: number; user: UserCard; deck?: string; score: number; power: number; you: boolean }[]; }
 interface Quest { code: string; label: string; period: "DAY" | "WEEK"; rule: string; coins: number; progress: number; target: number; done: boolean; claimed: boolean; }
-interface DuelResult { matchId: string; mode: string; me: FlairDeck; opponent: { label: string; deck: FlairDeck }; rounds: FlairRound[]; score: { me: number; opponent: number }; outcome: "WIN" | "LOSS" | "DRAW"; coins: number; rewardCapReached: boolean; }
+interface DuelResult { matchId: string; mode: string; me: FlairDeck; opponent: { label: string; deck: FlairDeck }; rounds: FlairRound[]; score: { me: number; opponent: number }; outcome: "WIN" | "LOSS" | "DRAW"; coins: number; rewardCapReached: boolean; faiPoints?: number; }
 interface TeamSide { user: UserCard; deck: string; power: number; }
-interface TeamBattle { teamA: Team; teamB: Team; duels: { slot: number; a: TeamSide | null; b: TeamSide | null; winner: string; rounds: FlairRound[] }[]; score: { a: number; b: number }; winner: string; }
+interface TeamBattle { teamA: Team; teamB: Team; duels: { slot: number; a: TeamSide | null; b: TeamSide | null; winner: string; rounds: FlairRound[] }[]; score: { a: number; b: number }; winner: string; faiPoints?: number; }
 
 const OUTCOME: Record<string, { label: string; tone: "mark" | "thread" | "chalk" }> = { WIN: { get label() { return tr("common.vitoria"); }, tone: "thread" }, LOSS: { get label() { return tr("common.derrota"); }, tone: "mark" }, DRAW: { get label() { return tr("common.empate"); }, tone: "chalk" } };
 const MODE_LABEL: Record<string, string> = { get DUEL() { return tr("flair.duelo_1_1"); }, get TREINO() { return tr("flair.treino_com_a_casa"); }, get ARENA() { return tr("flair.batalha_de_ocasiao"); }, get TEAM() { return tr("flair.equipes_3_3"); } };
@@ -304,7 +304,8 @@ function FlairInner() {
           </div>
           <Rounds rounds={duel.rounds} a={t("flair.voce")} b={duel.opponent.label} />
           <div className="flair-result"><Badge tone={OUTCOME[duel.outcome].tone}>{OUTCOME[duel.outcome].label}</Badge><b className="tabular">{duel.score.me} × {duel.score.opponent}</b>
-            <span className="type-caption">{duel.rewardCapReached ? t("flair.teto_diario_de_duelos_premiados") : t("common.coins", { coins: duel.coins })}</span></div>
+            <span className="type-caption">{duel.rewardCapReached ? t("flair.teto_diario_de_duelos_premiados") : t("common.coins", { coins: duel.coins })}</span>
+            {(duel.faiPoints ?? 0) > 0 && <Badge tone="mark">{t("common.fai_points_ganhos", { points: duel.faiPoints })}</Badge>}</div>
         </div>}
       </Dialog>
 
@@ -319,7 +320,7 @@ function FlairInner() {
               </div>
               {d.rounds.length > 0 && <p className="type-caption mt-1">{d.rounds.map((r) => `${r.stat} ${r.winner === "DRAW" ? "=" : r.winner === "A" ? "◀" : "▶"}`).join(" · ")}</p>}
             </div>))}
-          <div className="flair-result"><Badge tone={battle.winner === "A" ? "thread" : battle.winner === "B" ? "mark" : "chalk"}>{battle.winner === "A" ? t("flair.vitoria_da_sua_equipe") : battle.winner === "B" ? t("flair.vitoria_da_equipe_rival") : t("common.empate")}</Badge><b className="tabular">{battle.score.a} × {battle.score.b}</b><span className="type-caption">{t("flair.vitoria_3_pontos_na_liga")}</span></div>
+          <div className="flair-result"><Badge tone={battle.winner === "A" ? "thread" : battle.winner === "B" ? "mark" : "chalk"}>{battle.winner === "A" ? t("flair.vitoria_da_sua_equipe") : battle.winner === "B" ? t("flair.vitoria_da_equipe_rival") : t("common.empate")}</Badge><b className="tabular">{battle.score.a} × {battle.score.b}</b><span className="type-caption">{t("flair.vitoria_3_pontos_na_liga")}</span>{(battle.faiPoints ?? 0) > 0 && <Badge tone="mark">{t("common.fai_points_ganhos", { points: battle.faiPoints })}</Badge>}</div>
         </div>}
       </Dialog>
 

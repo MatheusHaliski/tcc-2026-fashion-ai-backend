@@ -90,7 +90,10 @@ public final class LocalSchemeComposer {
             }
         }
         if (candidates.isEmpty() && usable.size() >= 2) {
-            candidates.add(usable.subList(0, Math.min(3, usable.size())));
+            List<WardrobeItem> fallback = onePerType(usable);
+            if (fallback.size() >= 2) {
+                candidates.add(fallback.subList(0, Math.min(3, fallback.size())));
+            }
         }
         List<WardrobeItem> accessories = top(byCat, "accessory_piece");
         List<Composition> result = new ArrayList<>();
@@ -132,6 +135,31 @@ public final class LocalSchemeComposer {
         String title = title(sty, occ, season);
         String rationale = Msg.t("localSchemeComposer.combinacao_de_pecas_do_seu", pieces.size(), (occ.isEmpty() ? Msg.t("localSchemeComposer.ocasiao_livre") : Msg.t("localSchemeComposer.ocasiao", String.join("/", occ))), (sty.isEmpty() ? "" : " e estilo " + String.join("/", sty)));
         return new Composition(title, picks, occ, sty, season, mood, seals, total, score, rationale);
+    }
+
+    /**
+     * RF5 — um look tem no máximo uma peça de cada tipo (cima, baixo, calçado, acessório); a peça inteira ocupa cima e
+     * baixo. Mantém a primeira de cada tipo, na ordem recebida (a IA ou o ranking já vêm em ordem de preferência).
+     */
+    public static List<WardrobeItem> onePerType(List<WardrobeItem> pieces) {
+        List<WardrobeItem> out = new ArrayList<>();
+        for (WardrobeItem w : pieces) {
+            String type = typeOf(w);
+            if (out.stream().noneMatch(o -> clashes(typeOf(o), type))) {
+                out.add(w);
+            }
+        }
+        return out;
+    }
+
+    static String typeOf(WardrobeItem w) {
+        return w.getCategory() == null ? "accessory_piece" : w.getCategory();
+    }
+
+    static boolean clashes(String a, String b) {
+        boolean aBody = a.equals("upper_piece") || a.equals("lower_piece");
+        boolean bBody = b.equals("upper_piece") || b.equals("lower_piece");
+        return a.equals(b) || (a.equals("full_body_piece") && bBody) || (b.equals("full_body_piece") && aBody);
     }
 
     public static SchemeSlot slotOf(WardrobeItem item) {

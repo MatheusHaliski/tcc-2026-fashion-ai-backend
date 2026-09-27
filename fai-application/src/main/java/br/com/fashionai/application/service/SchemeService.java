@@ -239,8 +239,8 @@ public class SchemeService {
         dna.findByUserId(user.id()).ifPresent(d -> profile.put("styleDna", dnaContext(d)));
         String system = """
                 Você é o Scheme Composer do Fashion AI. Monte EXATAMENTE 3 looks distintos usando SOMENTE as peças do
-                acervo informado (referências p1, p2...). Nunca invente peças. Cada look: 2 a 5 peças, no máximo 1 por
-                slot (upper/lower/shoes/full_body; acessórios até 2), sexo coerente.
+                acervo informado (referências p1, p2...). Nunca invente peças. Cada look: 2 a 4 peças, no máximo 1 de cada
+                tipo (upper/lower/shoes/accessory; full_body ocupa upper e lower), sexo coerente.
                 Interprete TUDO que o acervo oferece: materiais (texturas e combinações — linho/algodão para calor, lã/couro
                 para frio, evite três materiais pesados juntos), cores (harmonia, contraste, paleta e estação cromática do
                 DNA de estilo), padrões/estampas (no máximo uma estampa forte por look; leia a estampa real nas fotos),
@@ -251,8 +251,7 @@ public class SchemeService {
                 Sintetize ocasião e estilo (máx. 3 cada, nunca concatene as tags das peças). No rationale, cite os
                 atributos que pesaram (ex.: "linho cru + terracota, sem estampa, clima quente"). Responda SOMENTE com JSON:
                 {"compositions":[{"title":string,"refs":["p1",...],"occasion":[...],"style":[...],"mood":one of
-                [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"seals":[até 4 de affordable-chic, premium-look,
-                eco-conscious, trendy-combo, casual-elegance],"rationale":"até 2 frases"}]}""";
+                [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"rationale":"até 2 frases"}]}""";
         String prompt = Msg.t("scheme.acervo_ocasiao_estilo_humor_estacao", Json.write(catalog), (photoRefs.isEmpty() ? "" : "\nFotos anexadas, na ordem, das peças: " + photoRefs), (profile.isEmpty() ? "" : "\nPerfil do usuário: " + Json.write(profile)), req.occasion(), req.style(), req.mood(), req.season(), (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500)), (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude));
         List<String> inputs = new ArrayList<>(List.of(Msg.t("scheme.pecas_do_acervo_com_todos", (eligible.size())),
                 Msg.t("scheme.ocasiao_estilo_humor_estacao_pedidos"), Msg.t("common.orientacoes_livres")));
@@ -320,7 +319,9 @@ public class SchemeService {
             if (!(o instanceof Map<?, ?> c) || !(c.get("refs") instanceof List<?> refs)) {
                 continue;
             }
-            List<WardrobeItem> chosen = refs.stream().map(String::valueOf).map(byRef::get).filter(Objects::nonNull).distinct().toList();
+            // a IA às vezes repete o tipo (duas blusas); o look fica com a primeira de cada tipo
+            List<WardrobeItem> chosen = LocalSchemeComposer.onePerType(
+                    refs.stream().map(String::valueOf).map(byRef::get).filter(Objects::nonNull).distinct().toList());
             if (chosen.size() < 2) {
                 continue;
             }
@@ -334,10 +335,10 @@ public class SchemeService {
             String title = c.get("title") == null ? base.title() : InputSanitizer.clean(String.valueOf(c.get("title")), 120);
             String mood = c.get("mood") != null && Set.of("ENERGETIC", "ELEGANT", "COMFORTABLE", "SOPHISTICATED")
                     .contains(String.valueOf(c.get("mood"))) ? String.valueOf(c.get("mood")) : base.mood();
-            List<String> sealsList = c.get("seals") instanceof List<?> sl ? sl.stream().map(String::valueOf).limit(4).toList() : base.seals();
             String rationale = c.get("rationale") == null ? base.rationale() : InputSanitizer.clean(String.valueOf(c.get("rationale")), 300);
+            // selos só vêm de vínculo com marca/celebridade (RF25), nunca de rótulo genérico da composição
             out.add(new LocalSchemeComposer.Composition(title, base.items(), base.occasions(), base.styles(), req.season(), mood,
-                    sealsList, base.totalPrice(), 1, rationale));
+                    List.of(), base.totalPrice(), 1, rationale));
             if (out.size() == 3) {
                 break;
             }
@@ -589,6 +590,7 @@ public class SchemeService {
             throw ApiException.badRequest("FOTO_INVALIDA", Msg.t("scheme.envie_a_foto_do_look"));
         }
         s.setCoverImageUrl(url);
+        media.linkSource(user.id(), url, s.getId());
     }
 
     private void publishInternal(Scheme s, List<SchemeItem> items) {
@@ -858,8 +860,11 @@ public class SchemeService {
         s.setStatus(SchemeStatus.ARCHIVED);
         seals.revokeForScheme(id, Msg.t("scheme.esquema_excluido_pelo_autor"));
         projections.removeScheme(id);
-        audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("op", "archive"));
-        return Map.of("id", id, "status", s.getStatus());
+        // RF12.CA13: a foto do look sai de "Minhas Fotos" junto com ele (as antigas, sem vínculo, casam pela URL da capa)
+        String cover = s.getCoverImageUrl() != null && s.getCoverImageUrl().contains("/users/" + user.id() + "/looks/") ? s.getCoverImageUrl() : null;
+        int photosRemoved = media.retire(user.id(), id, Set.of(PhotoOrigin.SCHEME), cover == null ? List.of() : List.of(cover));
+        audit.log(user, AuditActions.EDICAO_ESQUEMA, "scheme:" + id, Map.of("op", "archive", "photosRemoved", photosRemoved));
+        return Map.of("id", id, "status", s.getStatus(), "photosRemoved", photosRemoved);
     }
 
     // ================================================================== RF19.CA13 — remixar

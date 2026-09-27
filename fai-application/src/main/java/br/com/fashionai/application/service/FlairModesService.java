@@ -85,11 +85,13 @@ public class FlairModesService {
     private final FlairCoinEntryRepository coins;
     private final NotificationService notifications;
     private final Guard guard;
+    private final FaiPointsService faiPoints;
 
     public FlairModesService(FlairService flair, SchemeService schemeService, SchemeRepository schemes, SchemeItemRepository schemeItems,
                              WardrobeItemRepository pieces, UserRepository users, FlairMatchRepository matches, FlairMatchEntryRepository entries,
                              FlairModeStateRepository states, FlairTerritoryRepository territories, FlairTrophyRepository trophies,
-                             FlairCoinEntryRepository coins, NotificationService notifications, Guard guard) {
+                             FlairCoinEntryRepository coins, NotificationService notifications, Guard guard, FaiPointsService faiPoints) {
+        this.faiPoints = faiPoints;
         this.flair = flair;
         this.schemeService = schemeService;
         this.schemes = schemes;
@@ -392,6 +394,7 @@ public class FlairModesService {
         out.put("outcome", outcome);
         out.put("coins", coinsWon);
         out.put("rewardCapReached", !rewarded);
+        out.put("faiPoints", faiPoints.game(user.id(), "FLAIR_" + mode, m.getId().toString(), outcome));   // RF41
         return out;
     }
 

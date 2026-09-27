@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { Page, PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
@@ -12,8 +13,8 @@ import { useReducedMotion, useWebGL, type Look3d, type Mannequin3d } from "@/com
 import type { StoreEntry } from "@/components/three/store-street-scene";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
-const StageScene = dynamic(() => import("@/components/three/stage-scene"), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.montando_o_palco")}</div> });
-const StoreStreetScene = dynamic(() => import("@/components/three/store-street-scene"), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.abrindo_as_lojas")}</div> });
+const StageScene = dynamic(() => retryImport(() => import("@/components/three/stage-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.montando_o_palco")}</div> });
+const StoreStreetScene = dynamic(() => retryImport(() => import("@/components/three/store-street-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.abrindo_as_lojas")}</div> });
 
 /*
  * RF22 — aba Eras (celebridade) e aba Coleções (marca). As duas usam os mesmos agrupamentos (eras/fases/turnês ou

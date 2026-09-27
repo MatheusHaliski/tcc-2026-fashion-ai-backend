@@ -913,9 +913,14 @@ public class WardrobeService {
         w.setDisponivel(false);
         w.setVisibility(Visibility.PRIVATE);
         projections.removePiece(id);
+        // RF12.CA13: as fotos da peça (original e edições) saem de "Minhas Fotos" junto com ela
+        int photosRemoved = media.retire(user.id(), id, Set.of(PhotoOrigin.WARDROBE_ITEM, PhotoOrigin.EDITOR),
+                java.util.stream.Stream.of(w.getImageUrl(), w.getOriginalImageUrl()).filter(java.util.Objects::nonNull).toList());
         events.publishEvent(new DomainEvents.PieceDeleted(user.id(), id));
-        audit.log(user, AuditActions.EXCLUSAO_PECA, "piece:" + id, Map.of("schemesAffected", impact.get("schemesAffected")));
-        return impact;
+        audit.log(user, AuditActions.EXCLUSAO_PECA, "piece:" + id, Map.of("schemesAffected", impact.get("schemesAffected"), "photosRemoved", photosRemoved));
+        Map<String, Object> out = new java.util.LinkedHashMap<>(impact);
+        out.put("photosRemoved", photosRemoved);
+        return out;
     }
 
     // ================================================================== RF15.CA02 — imagem editada no Canvas 2D

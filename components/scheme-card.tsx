@@ -7,11 +7,11 @@ import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { containerColorOf, inkOn, photoFilterCss, resolveCardArt, studioOf } from "@/lib/card-art";
+import { containerColorOf, inkOn, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
-import { ActionMenu, Avatar, useToast } from "@/components/ui";
+import { ActionMenu, Avatar, Button, Dialog, useToast } from "@/components/ui";
+import { useRouter } from "next/navigation";
 import { FaiIcon } from "@/components/fai-icon";
-import { Generate3DButton } from "@/components/generate-3d";
 import { AnatomyBody, CompactSignature, effectiveAnatomy, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CardActions } from "@/components/interactions";
@@ -62,23 +62,33 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
   );
 }
 
-/** Menu ⋯ do post: salvar, copiar link, editar (só quem publicou) e ver o original (só em remixes). */
+/** Menu ⋯ do post (trailing): só salvar o look no feed e, para quem publicou, editar e excluir. */
 function PostMenu({ scheme }: { scheme: SchemeView }) {
-  const { t } = useI18n(); const { user } = useAuth(); const toast = useToast();
-  const [saved, setSaved] = useState(!!scheme.viewer?.saved);
+  const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const [saved, setSaved] = useState(!!scheme.viewer?.saved); const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false);
   const toggleSave = async () => {
     if (!user) { window.location.href = "/login"; return; }
     const was = saved; setSaved(!was);
     try { await api.post(`/api/interactions/SCHEME/${scheme.id}/saves`); toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved")); } catch (e) { setSaved(was); toast.fromError(e); }
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(`${window.location.origin}/schemes/${scheme.id}`); toast.success(t("common.copied")); } catch { toast.info(`${window.location.origin}/schemes/${scheme.id}`); } };
+  const owner = !!user && (scheme.viewer?.canEdit || scheme.owner?.id === user.id);
+  async function remove() {
+    setBusy(true);
+    try { await api.delete(`/api/schemes/${scheme.id}`); toast.success(t("schemeCard.excluido")); setConfirm(false); if (window.location.pathname.startsWith("/schemes/")) router.push("/lookbook"); else window.location.reload(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(false); }
+  }
   return (
-    <ActionMenu className="c-menu" label={t("anatomy.menu.label")} items={[
-      { label: saved ? t("anatomy.menu.unsave") : t("anatomy.menu.save"), onSelect: toggleSave, icon: <FaiIcon id="SOC-05" size={20} variant="glyph" decorative /> },
-      { label: t("interactions.copyLink"), onSelect: copy },
-      { label: t("anatomy.menu.edit"), href: `/schemes/${scheme.id}/edit`, hidden: !scheme.viewer?.canEdit },
-      { label: t("anatomy.menu.original"), href: `/schemes/${scheme.remixedFromId}`, hidden: !scheme.remixedFromId },
-    ]} />
+    <>
+      <ActionMenu className="c-menu" label={t("anatomy.menu.label")} items={[
+        { label: saved ? t("anatomy.menu.unsave") : t("anatomy.menu.save"), onSelect: toggleSave, icon: <FaiIcon id="SOC-05" size={20} variant="glyph" decorative /> },
+        { label: t("anatomy.menu.edit"), href: `/schemes/${scheme.id}/edit`, hidden: !owner, icon: <FaiIcon id="SOC-11" size={20} variant="glyph" decorative /> },
+        { label: t("common.delete"), onSelect: () => setConfirm(true), hidden: !owner, danger: true },
+      ]} />
+      <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("schemeCard.excluir_titulo")}
+        footer={<><Button onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy} onClick={remove}>{t("common.delete")}</Button></>}>
+        <p className="type-body">{t("schemeCard.excluir_texto")}</p>
+      </Dialog>
+    </>
   );
 }
 
@@ -88,12 +98,16 @@ function PostMenu({ scheme }: { scheme: SchemeView }) {
  * inteiro (área de clique estendida); botões internos ficam por cima. `compact` usa miniatura, título, preço e a
  * assinatura da anatomia. Em pré-visualização (href "#") e no detalhe expandido as ações ficam de fora.
  */
-export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode }) {
+export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra, footer, headerExtra }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode;
+  /** ampliado (RF7.CA11): botões do dono, sempre DENTRO do card, depois das ações do post */ footer?: ReactNode;
+  /** ampliado no modal: voltar/fechar no próprio cabeçalho do card (borda do card = borda do modal) */ headerExtra?: ReactNode }) {
   const detail = useDetailModal();
   const preview = href === "#";
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || preview || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
   const { t, fmtMoney, relative } = useI18n();
+  // ampliado: cada peça da lista abre a peça ampliada, com "voltar" para este look (RF7.CA01/CA03)
+  const pieceClick = onPiece ?? (expanded && detail && !preview ? (pid: string) => detail.openPiece(pid, scheme.id) : undefined);
   const anatomy = effectiveAnatomy(scheme);
   const l = layout ?? (anatomy === "GRADE_PECAS" ? "grade" : anatomy === "HERO_LISTA" ? "lateral" : "lista");
   const ownArt = hasOwnArt(anatomy);
@@ -114,7 +128,6 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const hasArt = !!art && art.kind !== "none";
   const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
   const manualBox = !!(scheme.containerColor ?? studio.container?.color);
-  const photoFilter = photoFilterCss(studio.photo?.filters);
   const boxTone = hasArt && manualBox ? surfaceToneStyle(boxColor) : undefined;
   const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(manualBox ? { "--card-ink": inkOn(boxColor) } : {}) } as React.CSSProperties) : undefined;
   const vis = scheme.visibility === "PRIVATE" ? t("common.private") : scheme.visibility === "FOLLOWERS" ? t("common.followers") : t("common.public");
@@ -136,16 +149,17 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );
-  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" style={{ filter: photoFilter }} />}</div>;
+  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
   return (
-    <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
+    <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <div className="c-header">
         <span className="c-avatar"><Avatar src={mediaUrl(scheme.owner?.avatarUrl)} name={scheme.owner?.displayName} size={24} /></span>
         <span className="c-who"><b>{scheme.owner?.displayName ?? `@${scheme.owner?.username}`}</b><span>@{scheme.owner?.username} · {relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</span></span>
         {scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}
         {!preview && <PostMenu scheme={scheme} />}
+        {headerExtra}
       </div>
       <div className="scheme-stage">
         {hasArt && art && <CardArtLayer art={art} />}
@@ -162,23 +176,23 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             <CompactSignature scheme={scheme} pieces={detailPieces} />
           </div>
         ) : (
-          <div className="scheme-container" data-anatomy={anatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI" ? t("schemeCard.madeWithAi") : undefined}>
+          <div className="scheme-container" data-anatomy={anatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
             {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
-            ) : l === "lateral" ? (
+            ) : l === "lateral" && !expanded ? (
               <div className="hero-lateral-row">
                 {photo()}
                 <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>
               </div>
             ) : photo()}
             {titleBlock}
-            {!ownArt && l === "grade" && <div className="grid-pieces">
+            {!ownArt && !expanded && l === "grade" && <div className="grid-pieces">
               {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtMoney(p.price, "BRL") : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
             </div>}
-            {!ownArt && l === "lista" && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
-              <div key={i} className={`piece2 ${onPiece ? "is-action" : ""}`} role={onPiece ? "button" : undefined} tabIndex={onPiece ? 0 : undefined}
-                onClick={onPiece ? (e) => { e.preventDefault(); e.stopPropagation(); onPiece(p.id); } : undefined} onKeyDown={onPiece ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPiece(p.id); } } : undefined}>
+            {((!ownArt && l === "lista") || expanded) && pieces.slice(0, expanded ? pieces.length : 4).map((p, i) => (
+              <div key={i} className={`piece2 ${pieceClick ? "is-action" : ""}`} role={pieceClick ? "button" : undefined} tabIndex={pieceClick ? 0 : undefined}
+                onClick={pieceClick ? (e) => { e.preventDefault(); e.stopPropagation(); pieceClick(p.id); } : undefined} onKeyDown={pieceClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pieceClick(p.id); } } : undefined}>
                 <span className="p-thumb">{p.img ? <img src={p.img} alt="" loading="lazy" /> : null}</span>
                 <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.size ? p.size.replace(/^(br|shoe)_/i, "").toUpperCase() : null, p.color ? label(p.color) : null].filter(Boolean).join(" · ") || label(p.slot.toLowerCase())}</span></span>
                 <span className="p-price tabular">{p.price != null ? fmtMoney(p.price, "BRL") : "—"}</span>
@@ -190,10 +204,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         )}
       </div>
-      {!expanded && !preview && (
-        <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact}
-          extra={<Generate3DButton targets={scheme.id ? [{ kind: "scheme", id: scheme.id, title: scheme.title }] : []} />} />
-      )}
+      {!preview && <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact} />}
+      {footer && <div className="c-owner">{footer}</div>}
       {extra && <div className="c-extra">{extra}</div>}
     </article>
   );
