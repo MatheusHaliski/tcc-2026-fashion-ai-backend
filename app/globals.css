@@ -1735,3 +1735,9 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .c-act .c-act-n { font-family: inherit; font-variant-numeric: tabular-nums; }
 .c-act-n .n-short { display: none; }
 @container (max-width: 420px) { .c-post:not(.is-compact) .c-act-n .n-long { display: none; } .c-post:not(.is-compact) .c-act-n .n-short { display: inline; } }
+
+/* Minhas Fotos · filtros em cascata: etiquetas do que já foi escolhido + um único seletor (o próximo nível) */
+.photo-cascade { display: grid; gap: 8px; }
+.photo-trail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.photo-trail .chip { display: inline-flex; align-items: center; gap: 4px; }
+.photo-trail-k { opacity: .78; font-weight: 500; }
