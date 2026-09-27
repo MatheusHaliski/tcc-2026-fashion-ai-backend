@@ -6,7 +6,7 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
-import { MAX_TAGS, keepAllowed, sameTags } from "@/lib/pieces/tags";
+import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -93,12 +93,8 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
   const occasions = allowedOccasions(value.category) ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
-  // código fora da taxonomia (palpite antigo da IA, peça antiga) não vira chip e não poderia ser desmarcado: sai da lista
-  useEffect(() => {
-    if (!tax) return;
-    const occasion = keepAllowed(value.occasion, allowedOccasions(value.category)); const style = keepAllowed(value.style, tax.styles);
-    if (!sameTags(occasion, value.occasion) || !sameTags(style, value.style)) onChange({ ...value, occasion, style });
-  }, [tax, value.category, value.occasion.join(), value.style.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  // código fora da lista (palpite antigo da IA, peça antiga): o seletor mostra com a explicação e o botão Remover, e
+  // validatePieceForm não deixa salvar — nada é apagado sem a pessoa ver.
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>
@@ -132,7 +128,7 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
 }
 
 /** Peça: até 2 ocasiões e até 2 estilos (esquemas de vestimenta: até 3 — regra própria, em scheme-builder). */
-export const PIECE_MAX_TAGS = 2;
+export const PIECE_MAX_TAGS = MAX_TAGS;
 
 /**
  * Mensagem para um valor que não pertence à lista do campo (sugestão da IA ou dado antigo): diz o que ele é e como

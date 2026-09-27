@@ -21,7 +21,8 @@ describe("uma foto", () => {
     expect(codes(checkPhoto({ ...front, stats: { ...good, lum: 65 } }))).toContain("TOO_DARK:warn");
     expect(codes(checkPhoto({ ...front, stats: { ...good, clipHigh: 0.3 } }))).toContain("TOO_BRIGHT:block");
     expect(codes(checkPhoto({ ...front, stats: { ...good, clipLow: 0.2 } }))).toContain("DEEP_SHADOWS:block");
-    expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.2 } }))).toContain("SIDE_LIGHT:block");
+    expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.8 } }))).toContain("SIDE_LIGHT:block");
+    expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.2 } }))).toContain("SIDE_LIGHT:warn");
     expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 1.5 } }))).toContain("SIDE_LIGHT:warn");
     expect(codes(checkPhoto({ ...front, stats: { ...good, sharpness: 3 } }))).toContain("BLURRY:block");
   });
@@ -40,7 +41,8 @@ describe("uma foto", () => {
     expect(codes(checkPhoto({ ...front, blend: { jawOpen: 0.5 } }))).toContain("MOUTH_OPEN:warn");
     expect(codes(checkPhoto({ ...front, rms: 1.5 }))).toContain("FACE_OCCLUDED:warn");
     expect(codes(checkPhoto({ ...front, occlusion: 0.13 }))).toContain("FACE_OCCLUDED:warn");   // armação de óculos
-    expect(codes(checkPhoto({ ...front, occlusion: 0.25 }))).toContain("FACE_OCCLUDED:block");  // mão e manga na testa
+    expect(codes(checkPhoto({ ...front, occlusion: 0.25 }))).toContain("FACE_OCCLUDED:warn");   // mão e manga na testa: avisa
+    expect(codes(checkPhoto({ ...front, occlusion: 0.51 }))).toContain("FACE_OCCLUDED:warn");   // barba grisalha: avisa, não recusa
     expect(codes(checkPhoto({ ...front, occlusion: 0.08 }))).toEqual([]);
   });
 });
@@ -48,14 +50,14 @@ describe("uma foto", () => {
 describe("o conjunto de fotos", () => {
   test("só a frente: pronto, mas avisa que a profundidade é estimada e pede as fotos de 3/4", () => {
     const r = checkSet([{ role: "front", issues: [] }]);
-    expect(r.ready).toBe(true); expect(codes(r.issues)).toEqual(["DEPTH_ESTIMATED:warn"]); expect(r.ask).toEqual(["left", "right"]);
+    expect(r.ready).toBe(true); expect(codes(r.issues)).toEqual([]); expect(r.ask).toEqual([]);
   });
   test("frente bloqueada: não gera e pede outra foto de frente", () => {
     const r = checkSet([{ role: "front", issues: [{ code: "BLURRY", severity: "block" }] }, { role: "left", issues: [] }]);
     expect(r.ready).toBe(false); expect(r.ask).toContain("front");
   });
-  test("frente + um lado: pede o outro; frente + dois lados: sem pedidos", () => {
-    expect(checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }]).ask).toEqual(["right"]);
+  test("uma foto basta: nunca pede foto de 3/4 ou de lado", () => {
+    expect(checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }]).ask).toEqual([]);
     const full = checkSet([{ role: "front", issues: [] }, { role: "left", issues: [] }, { role: "right", issues: [] }]);
     expect(full.ready).toBe(true); expect(full.issues).toEqual([]); expect(full.ask).toEqual([]);
   });

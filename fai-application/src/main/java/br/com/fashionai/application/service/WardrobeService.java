@@ -516,9 +516,9 @@ public class WardrobeService {
                        "viewAngle": "frontal_90" (câmera a 90°, de frente/de cima) | "angulo" | "lateral" | "dobrada",
                        "singlePiece": há uma peça só (par de calçados conta como uma)?},
              "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1, "photo": 0-1},
-             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} caixa do logotipo/etiqueta de marca NA IMAGEM 1 (só
-                     logotipo ou símbolo de MARCA: bordado, etiqueta, patch ou marca pequena), em 0–1000 relativos à imagem
-                     inteira, ou null. Frases, palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} caixa do logotipo/etiqueta de marca NA IMAGEM 1, em
+                     0–1000 relativos à imagem inteira, ou null. Só logotipo ou símbolo de MARCA (bordado, etiqueta, patch,
+                     marca pequena). Frases, palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO
                      são logo: devolva null}
             Nunca descreva pessoas. Se não houver peça, devolva matchesCategory false e confidence 0 em tudo.""";
 
@@ -725,7 +725,7 @@ public class WardrobeService {
         }
         List<String> style = Taxonomy.keepAllowed(seen.style(), Taxonomy.STYLES, 2);
         if (style.isEmpty()) {
-            style = List.of(defaultStyle(sub));                    // sempre um código de Taxonomy.STYLES (WardrobePrefillTest)
+            style = List.of(defaultStyle(sub));
         }
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
                 manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),

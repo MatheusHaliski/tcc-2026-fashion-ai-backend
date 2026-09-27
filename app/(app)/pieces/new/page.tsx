@@ -73,7 +73,7 @@ function NewPiece() {
    * só a peça escolhida segue (a que ocupa mais área, por padrão) — a outra roupa não entra na foto de produto.
    */
   async function process(original: File, keep?: GarmentPart) {
-    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null);
+    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setGarments(null); setAnalyzed(false);
     try {
       const r = await stripPerson(file, { keep });
       if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); setGarments(r.garments ?? null); }
@@ -83,7 +83,6 @@ function NewPiece() {
   }
   /** Analisa a foto dentro do tipo escolhido: critérios de aceite, subtipo por semelhança, marca nas zonas e pré-preenchimento. */
   async function runAnalysis(file: File, category: string) {
-    setAnalyzed(false);
     const d = await analyze.run(file, category);
     if (!d) { setDraft(null); return; }
     setDraft(d); setMode(d.studio ? "studio" : "flat");
@@ -183,7 +182,7 @@ function NewPiece() {
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: draft ? (draft.flatLayUrl ?? draft.processedUrl ?? draft.originalUrl) : asset, thumbnailUrl: draft ? (draft.thumbnailUrl ?? draft.flatLayUrl) : asset, studioImageUrl: draft?.studio?.url ?? null, studioThumbUrl: draft?.studio?.thumbUrl ?? null, studioFeedUrl: draft?.studio?.feedUrl ?? null, defaultImage: !draft, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const artPanel = (
     <div>
       <p className="label">{t("backgroundStudio.layout_das_pecas_secao_c")}</p>

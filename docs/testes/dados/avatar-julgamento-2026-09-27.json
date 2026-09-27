@@ -1,0 +1,114 @@
+{
+ "p03-masc": {
+  "parecido": "Não",
+  "obs": "Não gerou avatar: o rosto está virado 22° e o pipeline só projeta fotos quase de frente.",
+  "cabelo": "—",
+  "pele": "—",
+  "cabeca": "—"
+ },
+ "p07-masc": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível, com manchas na textura perto dos olhos; o cabelo penteado para trás virou calota lisa.",
+  "cabelo": "Parcial (cor certa, forma não)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p08-masc": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível; o turbante sumiu e a barba longa foi cortada no queixo; manchas na testa.",
+  "cabelo": "Não (turbante e barba longa ausentes)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p16-masc": {
+  "parecido": "Não",
+  "obs": "O mais próximo do teste: careca como na foto e rosto reconhecível; orelhas e crânio são os do manequim.",
+  "cabelo": "Sim (careca)",
+  "pele": "Parcial",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p20-masc": {
+  "parecido": "Não",
+  "obs": "Rosto e barba reconhecíveis, mas o cabelo preto não foi detectado e o avatar ficou careca.",
+  "cabelo": "Não (ficou careca)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p21-masc": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível; cabelo curto preto virou calota preta lisa.",
+  "cabelo": "Parcial (cor certa, forma não)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p24-masc": {
+  "parecido": "Não",
+  "obs": "Cabelo branco virou calota cinza; manchas fortes na metade do rosto por causa da luz lateral da foto.",
+  "cabelo": "Parcial (cor aproximada)",
+  "pele": "Parcial",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p26-fem": {
+  "parecido": "Não",
+  "obs": "Rosto bem reproduzido; o cabelo preto na altura do ombro virou um bloco preto em forma de capacete.",
+  "cabelo": "Parcial (cor certa, forma não)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p28-fem": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível, mas o cabelo loiro cacheado longo virou castanho liso com franja.",
+  "cabelo": "Não (cor e forma erradas)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p29-fem": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível; o cabelo curto espetado virou calota preta.",
+  "cabelo": "Parcial (cor certa, forma não)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p30-fem": {
+  "parecido": "Não",
+  "obs": "Cabelo ruivo cacheado virou calota castanho-avermelhada; manchas perto dos olhos.",
+  "cabelo": "Parcial (cor aproximada)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p37-fem": {
+  "parecido": "Não",
+  "obs": "Rosto e tom de pele bem reproduzidos; o lenço estampado da cabeça foi trocado por cabelo preto liso.",
+  "cabelo": "Não (lenço ausente)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p48-masc": {
+  "parecido": "Não",
+  "obs": "Careca e barba como na foto, mas a pele ficou bem mais escura e avermelhada que a do rosto.",
+  "cabelo": "Sim (careca)",
+  "pele": "Não (mais escura)",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p54-fem": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível; os dreads castanho-claros viraram cabelo preto liso.",
+  "cabelo": "Não (cor e forma erradas)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p56-masc": {
+  "parecido": "Não",
+  "obs": "Rosto e barba reconhecíveis de frente; o gorro sumiu; de 3/4 o reconhecedor já não confirma a pessoa.",
+  "cabelo": "Não (gorro ausente)",
+  "pele": "Parcial (mais escura)",
+  "cabeca": "Genérica (manequim)"
+ },
+ "p64-masc": {
+  "parecido": "Não",
+  "obs": "Rosto reconhecível; o cabelo raspado não foi detectado e o avatar ficou careca.",
+  "cabelo": "Não (ficou careca)",
+  "pele": "Sim",
+  "cabeca": "Genérica (manequim)"
+ }
+}

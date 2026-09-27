@@ -1,0 +1,214 @@
+{
+ "antes": {
+  "p03-masc": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "LOOK_AT_CAMERA:block"
+   ]
+  },
+  "p07-masc": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "SIDE_LIGHT:warn",
+    "HEAD_UP_DOWN:warn",
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p08-masc": {
+   "status": "rejected",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p16-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p20-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn"
+   ]
+  },
+  "p21-masc": {
+   "status": "built",
+   "avisos": []
+  },
+  "p24-masc": {
+   "status": "rejected",
+   "avisos": [
+    "SIDE_LIGHT:block",
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p26-fem": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p28-fem": {
+   "status": "built",
+   "avisos": [
+    "HEAD_UP_DOWN:warn"
+   ]
+  },
+  "p29-fem": {
+   "status": "built",
+   "avisos": [
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p30-fem": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p37-fem": {
+   "status": "rejected",
+   "avisos": [
+    "TOO_DARK:warn",
+    "SIDE_LIGHT:warn",
+    "FACE_OCCLUDED:block"
+   ]
+  },
+  "p48-masc": {
+   "status": "built",
+   "avisos": []
+  },
+  "p54-fem": {
+   "status": "built",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "HEAD_UP_DOWN:warn"
+   ]
+  },
+  "p56-masc": {
+   "status": "built",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p64-masc": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_OCCLUDED:block"
+   ]
+  }
+ },
+ "depois": {
+  "p03-masc": {
+   "status": "rejected",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "LOOK_AT_CAMERA:block"
+   ]
+  },
+  "p07-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "SIDE_LIGHT:warn",
+    "HEAD_UP_DOWN:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p08-masc": {
+   "status": "built",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p16-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p20-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn"
+   ]
+  },
+  "p21-masc": {
+   "status": "built",
+   "avisos": []
+  },
+  "p24-masc": {
+   "status": "built",
+   "avisos": [
+    "SIDE_LIGHT:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p26-fem": {
+   "status": "built",
+   "avisos": [
+    "FACE_SMALL:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p28-fem": {
+   "status": "built",
+   "avisos": [
+    "HEAD_UP_DOWN:warn"
+   ]
+  },
+  "p29-fem": {
+   "status": "built",
+   "avisos": [
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p30-fem": {
+   "status": "built",
+   "avisos": [
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p37-fem": {
+   "status": "built",
+   "avisos": [
+    "TOO_DARK:warn",
+    "SIDE_LIGHT:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p48-masc": {
+   "status": "built",
+   "avisos": []
+  },
+  "p54-fem": {
+   "status": "built",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "HEAD_UP_DOWN:warn"
+   ]
+  },
+  "p56-masc": {
+   "status": "built",
+   "avisos": [
+    "LOOK_AT_CAMERA:warn",
+    "FACE_OCCLUDED:warn"
+   ]
+  },
+  "p64-masc": {
+   "status": "built",
+   "avisos": [
+    "FACE_OCCLUDED:warn"
+   ]
+  }
+ }
+}

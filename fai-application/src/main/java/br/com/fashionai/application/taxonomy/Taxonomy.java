@@ -186,6 +186,19 @@ public final class Taxonomy {
         }
     }
 
+    /**
+     * Lista de ocasiões/estilos como a tela manda: tira espaços, vazios e repetidos e passa para minúsculas (os códigos da
+     * taxonomia são minúsculos). Não inventa nem descarta códigos desconhecidos — a validação continua apontando-os.
+     */
+    public static List<String> normalizeTags(List<String> values) {
+        return canonicalTags(values);
+    }
+
+    /** Só os códigos permitidos, na ordem recebida, até {@code max} (palpites da IA: nada fora da taxonomia entra). */
+    public static List<String> keepAllowed(List<String> values, List<String> allowed, int max) {
+        return canonicalTags(values).stream().filter(allowed::contains).limit(max).toList();
+    }
+
     /** Códigos canônicos: sem espaços, minúsculos, sem vazios e sem repetição (a ordem da pessoa é mantida). */
     public static List<String> canonicalTags(List<String> values) {
         if (values == null) {
