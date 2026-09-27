@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import * as THREE from "three";
 import { api } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
@@ -12,8 +13,10 @@ import type { AvatarView } from "@/components/three/avatar-viewer";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, clampAdjust, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
 import type { Issue } from "@/lib/avatar3d/quality";
+import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
+import { BodyEditor } from "@/components/avatar3d/body-editor";
 
-const AvatarViewer = dynamic(() => import("@/components/three/avatar-viewer"), { ssr: false, loading: () => <Skeleton className="h-full" /> });
+const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
 
 interface Saved {
   exists: boolean; model?: AvatarModel; adjust?: Partial<AvatarAdjust>; textureUrl?: string; photos?: number;
@@ -192,10 +195,16 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   const [view, setView] = useState<AvatarView>("front");
   const [adjust, setAdjust] = useState<AvatarAdjust>(clampAdjust(saved.adjust));
   const [pub, setPub] = useState(!!saved.publicOnRunway);
-  const [busy, setBusy] = useState<"" | "patch" | "delete">("");
+  const [busy, setBusy] = useState<"" | "patch" | "delete" | "body">("");
   const [confirm, setConfirm] = useState(false);
+  const body = validateBody(saved.model?.body);
   const dirty = JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
 
+  async function saveBody(b: BodyModel | null) {
+    setBusy("body");
+    try { await api.patch("/api/me/avatar3d", { body: b ?? {} }); toast.success(t("avatar3d.body.salvo")); onChanged(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
   async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean }) {
     setBusy("patch");
     try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
@@ -228,11 +237,14 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={sex} view={view} />}
+          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={sex} view={view} body={body?.params} />}
         </div>
         <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>
         <p className="mt-2 type-caption text-faint">{t("avatar3d.page.onde_aparece")}</p>
       </Card>
+      <div className="lg:col-span-2">
+        {saved.model && <BodyEditor sex={sex} initial={body} avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} saving={busy === "body"} onSave={saveBody} />}
+      </div>
       <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("avatar3d.page.excluir_titulo")}
         footer={<><Button variant="ghost" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy === "delete"} onClick={remove}>{t("avatar3d.page.excluir")}</Button></>}>
         <p className="type-body">{t("avatar3d.page.excluir_texto")}</p>

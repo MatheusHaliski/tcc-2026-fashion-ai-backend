@@ -63,7 +63,7 @@ public class Avatar3dService {
                               Boolean consent, Boolean publicOnRunway) {
     }
 
-    public record SettingsCommand(Map<String, Object> adjust, Boolean publicOnRunway) {
+    public record SettingsCommand(Map<String, Object> adjust, Boolean publicOnRunway, Map<String, Object> body) {
     }
 
     @Transactional(readOnly = true)
@@ -114,6 +114,17 @@ public class Avatar3dService {
         }
         if (cmd != null && cmd.publicOnRunway() != null) {
             a.setPublicOnRunway(cmd.publicOnRunway());
+        }
+        if (cmd != null && cmd.body() != null) {
+            // corpo: proporções com a origem de cada uma (foto, pessoa, estimativa); vai junto do modelo do rosto
+            Map<String, Object> model = new LinkedHashMap<>(Json.map(a.getModelJson()));
+            if (cmd.body().isEmpty()) {
+                model.remove("body");
+            } else {
+                model.put("body", validateBody(cmd.body()));
+            }
+            a.setModelJson(Json.write(model));
+            audit.log(user, "AVATAR3D_CORPO", "avatar3d:" + user.id(), Map.of("photo", Boolean.TRUE.equals(model.get("body") instanceof Map<?, ?> b ? b.get("photo") : null)));
         }
         avatars.save(a);
         return view(a);
@@ -223,12 +234,74 @@ public class Avatar3dService {
             }
         }
         Map<String, Object> out = new LinkedHashMap<>();
+        if (m.get("body") instanceof Map<?, ?> body) {
+            @SuppressWarnings("unchecked") Map<String, Object> b = (Map<String, Object>) body;
+            out.put("body", validateBody(b));
+        }
         for (String k : List.of("v", "shape", "skin", "hair", "metrics", "views", "warnings")) {
             if (m.containsKey(k)) {
                 out.put(k, m.get(k));
             }
         }
         return out;
+    }
+
+    /** Faixas plausíveis de cada proporção do corpo (as mesmas de lib/avatar3d/body-spec.ts, BODY_RANGE). */
+    static final Map<String, double[]> BODY_RANGE = Map.of(
+            "stature", new double[]{1.2, 2.2}, "shoulderW", new double[]{0.15, 0.26}, "chestW", new double[]{0.13, 0.26},
+            "waistW", new double[]{0.11, 0.26}, "hipW", new double[]{0.15, 0.27}, "legLen", new double[]{0.46, 0.58},
+            "armLen", new double[]{0.29, 0.38}, "headH", new double[]{0.11, 0.155}, "build", new double[]{-1.5, 2});
+    static final List<String> BODY_SOURCES = List.of("observed", "user", "estimated", "default");
+
+    /**
+     * Corpo do avatar: só números finitos dentro das faixas, uma origem conhecida por proporção, altura e peso
+     * informados dentro de limites humanos. Devolve só os campos conhecidos (nada de texto livre).
+     */
+    static Map<String, Object> validateBody(Map<String, Object> b) {
+        ApiException invalid = ApiException.badRequest("CORPO_INVALIDO", Msg.t("avatar3d.corpo_invalido"));
+        if (b == null || !(b.get("v") instanceof Number v) || v.intValue() != 1) {
+            throw invalid;
+        }
+        if (!"FEMININO".equals(b.get("sex")) && !"MASCULINO".equals(b.get("sex"))) {
+            throw invalid;
+        }
+        if (!(b.get("params") instanceof Map<?, ?> params) || !(b.get("sources") instanceof Map<?, ?> sources)) {
+            throw invalid;
+        }
+        Map<String, Object> p = new LinkedHashMap<>(), src = new LinkedHashMap<>();
+        for (Map.Entry<String, double[]> e : BODY_RANGE.entrySet()) {
+            Object n = params.get(e.getKey());
+            if (!(n instanceof Number num) || !Double.isFinite(num.doubleValue()) || num.doubleValue() < e.getValue()[0] || num.doubleValue() > e.getValue()[1]) {
+                throw invalid;
+            }
+            Object sv = sources.get(e.getKey());
+            if (!(sv instanceof String so) || !BODY_SOURCES.contains(so)) {
+                throw invalid;
+            }
+            p.put(e.getKey(), num.doubleValue());
+            src.put(e.getKey(), so);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("v", 1);
+        out.put("sex", b.get("sex"));
+        out.put("params", p);
+        out.put("sources", src);
+        out.put("heightCm", bounded(b.get("heightCm"), 120, 220));
+        out.put("weightKg", bounded(b.get("weightKg"), 30, 250));
+        out.put("photo", Boolean.TRUE.equals(b.get("photo")));
+        out.put("warnings", b.get("warnings") instanceof List<?> w ? w.stream().limit(20).map(String::valueOf)
+                .map(x -> x.replaceAll("[^A-Za-z0-9_]", "")).filter(x -> !x.isEmpty()).toList() : List.of());
+        return out;
+    }
+
+    private static Double bounded(Object o, double lo, double hi) {
+        if (o == null) {
+            return null;
+        }
+        if (!(o instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < lo || n.doubleValue() > hi) {
+            throw ApiException.badRequest("CORPO_INVALIDO", Msg.t("avatar3d.corpo_invalido"));
+        }
+        return n.doubleValue();
     }
 
     static Map<String, Object> clampAdjust(Map<String, Object> a) {

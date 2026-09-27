@@ -228,7 +228,8 @@ public class ShowcaseService {
         m.put("sex", sex.name());
         m.put("sexSource", source);
         m.put("photoUrl", photo);
-        m.put("head", photo == null ? "PADRAO" : "FOTO");
+        // a foto de perfil não vai para a cabeça 3D (levava o fundo e a roupa para o rosto): o rosto só vem do Avatar 3D
+        m.put("head", "PADRAO");
         m.put("skinTone", prefs.map(p -> p.getMannequinSkinTone()).orElse(null));
         m.put("build", prefs.map(p -> p.getMannequinBuild() == null ? null : p.getMannequinBuild().name()).orElse(null));
         m.put("face", prefs.map(p -> p.getMannequinFaceJson() == null ? null : br.com.fashionai.application.common.Json.map(p.getMannequinFaceJson())).orElse(null));
@@ -784,7 +785,8 @@ public class ShowcaseService {
         if (chosen == null) {
             Map<String, Object> m = mannequin(u, List.of());
             m.put("photoUrl", photo);
-            m.put("head", photo == null ? "PADRAO" : "FOTO");
+            // a foto de perfil não vai para a cabeça 3D (levava o fundo e a roupa para o rosto): o rosto só vem do Avatar 3D
+        m.put("head", "PADRAO");
             out.put("mannequin", m);
         }
         out.put("eras", groupingsOf(u, Kind.ERAS).stream().map(g -> Map.of("id", g.getId(), "label", g.getLabel(),

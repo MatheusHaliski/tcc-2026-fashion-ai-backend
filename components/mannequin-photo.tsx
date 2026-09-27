@@ -1,14 +1,16 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { Button, Dialog, Skeleton, Switch, useToast } from "@/components/ui";
-import { useWebGL, type FaceFit, type Look3d } from "@/components/three/common";
+import { useWebGL, type Look3d } from "@/components/three/common";
 import { Cube3dIcon } from "@/components/generate-3d";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
-const LookViewer = dynamic(() => import("@/components/three/look-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("mannequinPhoto.vestindo_o_manequim")}</div> });
+const LookViewer = dynamic(() => retryImport(() => import("@/components/three/look-viewer")), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("mannequinPhoto.vestindo_o_manequim")}</div> });
 
 /** Peças que ganham a foto com manequim sozinhas (RF4). Inferior, calçado e acessório aparecem na foto do look (RF5). */
 export const MANNEQUIN_PHOTO_CATEGORIES = new Set(["upper_piece", "full_body_piece"]);
@@ -33,25 +35,24 @@ export function MannequinPhotoDialog({ kind, id, title, current, onClose }: { ki
   const { t } = useI18n();
   const { me, refreshMe } = useAuth(); const toast = useToast(); const webgl = useWebGL();
   const [look, setLook] = useState<Look3d | null>(null); const [err, setErr] = useState<string | null>(null);
-  const [face, setFace] = useState<FaceFit>({ offsetX: 0, offsetY: 0, scale: 1 }); const [asCover, setAsCover] = useState(kind === "scheme");
+  const [asCover, setAsCover] = useState(kind === "scheme");
   const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     let alive = true;
-    api.get<Look3d>(kind === "scheme" ? `/api/schemes/${id}/look3d` : `/api/pieces/${id}/look3d`).then((l) => { if (!alive) return; setLook(l); if (l.mannequin.face) setFace({ offsetX: 0, offsetY: 0, scale: 1, ...l.mannequin.face }); }).catch((e) => alive && setErr(e?.message ?? t("mannequinPhoto.nao_foi_possivel_montar_o")));
+    api.get<Look3d>(kind === "scheme" ? `/api/schemes/${id}/look3d` : `/api/pieces/${id}/look3d`).then((l) => { if (!alive) return; setLook(l); }).catch((e) => alive && setErr(e?.message ?? t("mannequinPhoto.nao_foi_possivel_montar_o")));
     return () => { alive = false; };
   }, [kind, id]);
-  const lookWithFace = look ? { ...look, mannequin: { ...look.mannequin, face } } : null;
+  const lookWithFace = look;
   async function shoot() {
     const c = canvas.current; if (!c) return;
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));   // o quadro atual já com o ajuste do rosto
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));   // o quadro atual, já renderizado
     const blob: Blob | null = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.93));
     if (!blob) { toast.error(t("mannequinPhoto.nao_foi_possivel_capturar_a")); return; }
     setBusy(true);
     try {
       const fd = new FormData(); fd.append("file", blob, "manequim.jpg");
       const r = await api.upload<{ url: string; face: string }>(kind === "scheme" ? `/api/schemes/${id}/mannequin-photo?asCover=${asCover}` : `/api/pieces/${id}/mannequin-photo`, fd);
-      if (look?.mannequin.head === "FOTO") await api.patch("/api/me/profile", { mannequinFace: face }).catch(() => undefined);
       setPreview(r.url); toast.success(kind === "scheme" && asCover ? t("mannequinPhoto.foto_com_manequim_salva_e") : t("mannequinPhoto.foto_com_manequim_salva"));
       refreshMe().catch(() => undefined);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
@@ -70,16 +71,8 @@ export function MannequinPhotoDialog({ kind, id, title, current, onClose }: { ki
           </div>
           <div className="min-w-0">
             <p className="label">{t("common.manequim")}</p>
-            <p className="type-body-sm">{m?.sex === "MASCULINO" ? t("common.masculino") : t("common.feminino")} · {m?.head === "FOTO" ? t("mannequinPhoto.rosto_3d_da_sua_foto") : t("mannequinPhoto.padrao_sem_foto_de_perfil")}</p>
-            {m?.head !== "FOTO" && me?.user.profileType !== "MARCA" && <p className="mt-1 type-caption text-muted">{t("mannequinPhoto.envie_uma_foto_de_perfil")}</p>}
-            {m?.head === "FOTO" && !preview && (
-              <fieldset className="mt-3">
-                <legend className="label">{t("mannequinPhoto.ajustar_o_rosto")}</legend>
-                {([["scale", t("common.size"), 0.6, 1.8, 0.02], ["offsetX", t("common.horizontal"), -0.3, 0.3, 0.01], ["offsetY", t("common.vertical"), -0.3, 0.3, 0.01]] as const).map(([k, lbl, min, max, step]) => (
-                  <label key={k} className="mt-1 block type-caption">{lbl}<input type="range" min={min} max={max} step={step} value={face[k] ?? (k === "scale" ? 1 : 0)} onChange={(e) => setFace((f) => ({ ...f, [k]: Number(e.target.value) }))} className="block w-full" /></label>
-                ))}
-              </fieldset>
-            )}
+            <p className="type-body-sm">{m?.sex === "MASCULINO" ? t("common.masculino") : t("common.feminino")} · {m?.head === "AVATAR" ? t("mannequinPhoto.rosto_do_avatar") : t("mannequinPhoto.cabeca_neutra")}</p>
+            {m?.head !== "AVATAR" && me?.user.profileType !== "MARCA" && <p className="mt-1 type-caption text-muted"><Link href="/avatar" className="underline">{t("mannequinPhoto.crie_o_avatar")}</Link></p>}
             {kind === "scheme" && !preview && <div className="mt-3"><Switch checked={asCover} onChange={setAsCover} label={t("mannequinPhoto.usar_como_foto_do_post")} /></div>}
             <p className="mt-3 type-caption text-muted">{t("mannequinPhoto.arraste_para_girar_antes_de", { value: kind === "scheme" ? t("mannequinPhoto.o_manequim_veste_todas_as") : t("mannequinPhoto.pecas_inferiores_calcados_e_acessorios") })}</p>
             <div className="mt-3 flex flex-wrap gap-2">

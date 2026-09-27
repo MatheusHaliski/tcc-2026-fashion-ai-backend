@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { retryImport } from "@/lib/chunk-recovery";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
@@ -12,7 +13,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { useWebGL, type Look3d } from "@/components/three/common";
 import type { RunwayEntry } from "@/components/three/runway-scene";
 
-const RunwayScene = dynamic(() => import("@/components/three/runway-scene"), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.runwayPanel.acendendo_a_passarela")}</div> });
+const RunwayScene = dynamic(() => retryImport(() => import("@/components/three/runway-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.runwayPanel.acendendo_a_passarela")}</div> });
 
 interface Facet { value: string; count: number; }
 interface Row { position: number; schemeId: string; title: string; owner: { username: string; displayName: string; avatarUrl?: string | null }; hypeScore?: number | null; likes: number; country?: string | null; region: string; you: boolean; }

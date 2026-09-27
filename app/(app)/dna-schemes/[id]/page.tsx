@@ -26,7 +26,7 @@ export default function DnaSchemePage({ params }: { params: Promise<{ id: string
       <h1 className="type-display">{data.title}</h1>
       <p className="type-body text-muted">{t("dnaSchemes.id.por", { username: data.owner.username, value: data.archetypeLabel ?? data.archetype, value2: data.publishedAt ? t("dnaSchemes.id.publicado_em", { date: fmtDate(data.publishedAt) }) : t("dnaSchemes.id.rascunho") })}</p>
       <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,460px)_1fr]">
-        <DnaCard dna={data} expanded />
+        <DnaCard dna={data} expanded extra={<InteractionBar type="DNA_SCHEME" id={data.id ?? id} counters={{ ...data.counters, views: 0, saves: 0, reactions: {} }} viewer={{ liked: false, reactions: [], saved: false, canEdit: data.canEdit, following: false }} ownerId={data.owner.id} onChange={reload} />} />
         <div className="grid content-start gap-3">
           <Card>
             <p className="label">{t("dnaSchemes.id.esquemas_referenciados", { cellsCount: data.cells.length })}</p>
@@ -36,7 +36,6 @@ export default function DnaSchemePage({ params }: { params: Promise<{ id: string
               </button></li>))}</ul>
           </Card>
           <Card><p className="label">{t("common.identidade")}</p><p className="type-body-sm">{data.identityPhrase ? `“${data.identityPhrase}”` : "—"}</p><div className="mt-2 flex gap-1">{data.palette.map((c) => <span key={c} className="h-6 w-6 rounded-full border border-line-soft" style={{ background: c }} title={c} />)}</div></Card>
-          <InteractionBar type="DNA_SCHEME" id={data.id ?? id} counters={{ ...data.counters, views: 0, saves: 0, reactions: {} }} viewer={{ liked: false, reactions: [], saved: false, canEdit: data.canEdit, following: false }} ownerId={data.owner.id} onChange={reload} />
           {data.canEdit && <div className="flex flex-wrap gap-2"><Link href={`/dna-schemes/${id}/edit`} className="btn btn-primary">{t("common.edit")}</Link><Button variant="danger" onClick={remove}>{t("common.delete")}</Button><Link href="/dna" className="btn">{t("dnaSchemes.id.meus_dnas")}</Link></div>}
           <p className="type-caption text-faint">{t("common.visibility")}: {label(data.visibility.toLowerCase())}</p>
         </div>
