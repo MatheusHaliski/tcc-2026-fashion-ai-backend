@@ -228,4 +228,33 @@ class Avatar3dServiceTest {
         Map<String, Object> cleared = service.update(me, new Avatar3dService.SettingsCommand(null, null, Map.of()));
         assertFalse(((Map<?, ?>) cleared.get("model")).containsKey("body"));
     }
+
+    /**
+     * Profundidade do tronco (foto de perfil): opcional — um corpo salvo antes dela continua válido —, mas quando
+     * vem precisa do valor na faixa e da origem, como qualquer outra medida.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void profundidadeDoPerfilEOpcionalMasValidadaQuandoVem() {
+        service.save(me, cmd(true, null), texture(512, 512));
+        // sem profundidade: o corpo continua válido e nada de profundidade é gravado
+        Map<?, ?> semPerfil = (Map<?, ?>) ((Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, body(0.15, "observed"))).get("model")).get("body");
+        assertFalse(((Map<?, ?>) semPerfil.get("params")).containsKey("hipD"));
+
+        Map<String, Object> comPerfil = body(0.15, "observed");
+        ((Map<String, Object>) comPerfil.get("params")).put("hipD", 0.15);
+        ((Map<String, Object>) comPerfil.get("sources")).put("hipD", "observed");
+        Map<?, ?> saved = (Map<?, ?>) ((Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, comPerfil)).get("model")).get("body");
+        assertEquals(0.15, ((Map<?, ?>) saved.get("params")).get("hipD"));
+        assertEquals("observed", ((Map<?, ?>) saved.get("sources")).get("hipD"));
+
+        // fora da faixa, ou sem dizer de onde veio: recusado
+        Map<String, Object> fundoDemais = body(0.15, "observed");
+        ((Map<String, Object>) fundoDemais.get("params")).put("hipD", 0.9);
+        ((Map<String, Object>) fundoDemais.get("sources")).put("hipD", "observed");
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(fundoDemais)));
+        Map<String, Object> semOrigem = body(0.15, "observed");
+        ((Map<String, Object>) semOrigem.get("params")).put("waistD", 0.12);
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(semOrigem)));
+    }
 }

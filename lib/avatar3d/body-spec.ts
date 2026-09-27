@@ -22,7 +22,13 @@
 export type Sex = "FEMININO" | "MASCULINO";
 export type Source = "observed" | "user" | "estimated" | "default";
 
-/** Proporções editáveis (todas relativas à estatura, exceto `stature`, em metros, e `build`). */
+/**
+ * Proporções editáveis (todas relativas à estatura, exceto `stature`, em metros, e `build`).
+ *
+ * As três profundidades (frente → costas, na horizontal) são **opcionais**: só existem quando uma foto de perfil as
+ * mediu ou a pessoa as ajustou. Ausentes, o corpo é exatamente o de antes — a profundidade sai de uma razão fixa
+ * sobre a largura (`effectiveDepth`), que é estimativa de projeto, não medida.
+ */
 export interface BodyParams {
   stature: number;        // m
   shoulderW: number;      // distância entre os centros das articulações dos ombros / H (o que a foto mede)
@@ -33,9 +39,34 @@ export interface BodyParams {
   armLen: number;         // acrômio → punho / H
   headH: number;          // topo da cabeça → queixo / H
   build: number;          // compleição: 0 = referência; ±1 ≈ ±12% nas larguras e raios dos membros
+  chestD?: number;        // profundidade do tórax / H — só com foto de perfil
+  waistD?: number;        // profundidade da cintura / H — só com foto de perfil
+  hipD?: number;          // profundidade do quadril / H — só com foto de perfil
 }
+export type DepthKey = "chestD" | "waistD" | "hipD";
+/** As proporções que todo corpo tem (a foto de frente, a pessoa ou a referência sempre dão um valor). */
+export type BodyCoreKey = Exclude<keyof BodyParams, DepthKey>;
 export type BodyKey = keyof BodyParams;
-export const BODY_KEYS: BodyKey[] = ["stature", "shoulderW", "chestW", "waistW", "hipW", "legLen", "armLen", "headH", "build"];
+export const BODY_KEYS: BodyCoreKey[] = ["stature", "shoulderW", "chestW", "waistW", "hipW", "legLen", "armLen", "headH", "build"];
+export const DEPTH_KEYS: DepthKey[] = ["chestD", "waistD", "hipD"];
+/** Origem de cada proporção: as profundidades só aparecem quando existem. */
+export type BodySources = Record<BodyCoreKey, Source> & Partial<Record<DepthKey, Source>>;
+
+/**
+ * Razão profundidade/largura de cada nível quando não há foto de perfil. São os mesmos números que o tronco já
+ * usava em `buildSpec` — ficam aqui só para que a estimativa tenha nome e possa ser substituída por uma medida.
+ */
+export const DEPTH_FROM_WIDTH: Record<DepthKey, number> = { chestD: 0.7, waistD: 0.72, hipD: 0.64 };
+
+/** Profundidade de cada nível: a medida quando existe; senão a razão fixa sobre a largura (com a compleição). */
+export function effectiveDepth(p: BodyParams): Record<DepthKey, number> {
+  const g = 1 + 0.12 * p.build, gc = 1 + 0.08 * p.build;
+  return {
+    chestD: p.chestD ?? DEPTH_FROM_WIDTH.chestD * p.chestW * gc,
+    waistD: p.waistD ?? DEPTH_FROM_WIDTH.waistD * p.waistW * g,
+    hipD: p.hipD ?? DEPTH_FROM_WIDTH.hipD * p.hipW * g,
+  };
+}
 
 export const DEFAULT_BODY: Record<Sex, BodyParams> = {
   FEMININO: { stature: 1.63, shoulderW: 0.19, chestW: 0.175, waistW: 0.15, hipW: 0.205, legLen: 0.53, armLen: 0.333, headH: 0.13, build: 0 },
@@ -46,13 +77,14 @@ export const DEFAULT_BODY: Record<Sex, BodyParams> = {
 export const BODY_RANGE: Record<BodyKey, [number, number, number]> = {
   stature: [1.2, 2.2, 0.01], shoulderW: [0.15, 0.26, 0.002], chestW: [0.13, 0.26, 0.002], waistW: [0.11, 0.26, 0.002],
   hipW: [0.15, 0.27, 0.002], legLen: [0.46, 0.58, 0.002], armLen: [0.29, 0.38, 0.002], headH: [0.11, 0.155, 0.001], build: [-1.5, 2, 0.05],
+  chestD: [0.08, 0.22, 0.002], waistD: [0.07, 0.24, 0.002], hipD: [0.08, 0.24, 0.002],
 };
 
 export interface BodyModel {
   v: 1;
   sex: Sex;
   params: BodyParams;
-  sources: Record<BodyKey, Source>;
+  sources: BodySources;
   heightCm: number | null;     // informado pela pessoa
   weightKg: number | null;     // informado pela pessoa (só orienta a compleição estimada; nunca é "medido")
   photo: boolean;              // se alguma medida veio de uma foto de corpo inteiro
@@ -62,7 +94,7 @@ export interface BodyModel {
 export const clampParam = (k: BodyKey, v: number) => Math.min(BODY_RANGE[k][1], Math.max(BODY_RANGE[k][0], v));
 
 export function defaultBodyModel(sex: Sex): BodyModel {
-  const sources = Object.fromEntries(BODY_KEYS.map((k) => [k, "default"])) as Record<BodyKey, Source>;
+  const sources = Object.fromEntries(BODY_KEYS.map((k) => [k, "default"])) as BodySources;
   return { v: 1, sex, params: { ...DEFAULT_BODY[sex] }, sources, heightCm: null, weightKg: null, photo: false, warnings: [] };
 }
 
@@ -83,20 +115,30 @@ export function applyUserData(m: BodyModel, heightCm: number | null, weightKg: n
   return out;
 }
 
-/** Ajuste manual de uma proporção: passa a ser "informado pela pessoa". */
+/** Ajuste manual de uma proporção: passa a ser "informado pela pessoa" (vale também para uma profundidade). */
 export function setParam(m: BodyModel, k: BodyKey, v: number): BodyModel {
-  return { ...m, params: { ...m.params, [k]: clampParam(k, v) }, sources: { ...m.sources, [k]: "user" } };
+  return { ...m, params: { ...m.params, [k]: clampParam(k, v) }, sources: { ...m.sources, [k]: "user" } as BodySources };
 }
 
+/**
+ * Corpo válido? As proporções obrigatórias precisam existir, ser finitas e estar na faixa plausível — fora disso o
+ * corpo inteiro é recusado. As profundidades são opcionais (corpos salvos antes da foto de perfil não as têm): uma
+ * profundidade ausente é o caso normal, e uma fora da faixa é **descartada** em vez de derrubar o avatar da pessoa.
+ */
 export function validateBody(x: unknown): BodyModel | null {
   const m = x as BodyModel;
   if (!m || typeof m !== "object" || m.v !== 1 || (m.sex !== "FEMININO" && m.sex !== "MASCULINO") || !m.params || !m.sources) return null;
+  const ok = (v: unknown, k: BodyKey) => typeof v === "number" && Number.isFinite(v) && v >= BODY_RANGE[k][0] && v <= BODY_RANGE[k][1];
+  const known = (s: unknown) => s === "observed" || s === "user" || s === "estimated" || s === "default";
   for (const k of BODY_KEYS) {
-    const v = m.params[k];
-    if (typeof v !== "number" || !Number.isFinite(v) || v < BODY_RANGE[k][0] || v > BODY_RANGE[k][1]) return null;
-    if (!["observed", "user", "estimated", "default"].includes(m.sources[k])) return null;
+    if (!ok(m.params[k], k) || !known(m.sources[k])) return null;
   }
-  return m;
+  const params: BodyParams = { ...m.params }; const sources = { ...m.sources } as BodySources;
+  for (const k of DEPTH_KEYS) {
+    if (params[k] === undefined && sources[k] === undefined) continue;
+    if (!ok(params[k], k) || !known(sources[k])) { delete params[k]; delete sources[k]; }
+  }
+  return { ...m, params, sources };
 }
 
 // ================================================================== geometria
@@ -132,16 +174,21 @@ export function buildSpec(p: BodyParams): Spec {
   const waistY = hipJointY + (shoulderY - hipJointY) * 0.38; const chestY = hipJointY + (shoulderY - hipJointY) * 0.72;
   const sh = (p.shoulderW * H) / 2; const hw = (p.hipW * H) / 2 * g; const ww = (p.waistW * H) / 2 * g; const cw = (p.chestW * H) / 2 * (1 + 0.08 * p.build);
   const delt = y(0.034) * g;                               // espessura do deltoide além da articulação
+  // meia-profundidade de cada nível: medida na foto de perfil quando existe, senão a razão fixa sobre a largura.
+  // Os níveis intermediários guardam a mesma proporção de antes em relação ao nível de referência (virilha e
+  // articulação do quadril acompanham o quadril; do tórax para cima, o tórax), então sem perfil nada muda.
+  const d = effectiveDepth(p);
+  const dHip = (d.hipD * H) / 2, dWaist = (d.waistD * H) / 2, dChest = (d.chestD * H) / 2;
   const key: Section[] = [
-    { y: crotchY, a: hw * 0.5, b: hw * 0.42 },
-    { y: hipJointY, a: hw * 0.97, b: hw * 0.62 },
-    { y: hipJointY + (waistY - hipJointY) * 0.5, a: hw, b: hw * 0.64 },
-    { y: waistY, a: ww, b: ww * 0.72 },
-    { y: chestY, a: Math.max(cw, ww), b: cw * 0.7 },
-    { y: shoulderY - y(0.035), a: Math.max(cw, sh + delt * 0.7), b: cw * 0.62 },
-    { y: shoulderY - y(0.008), a: sh + delt * 0.55, b: cw * 0.56 },
-    { y: shoulderY + y(0.012), a: sh * 0.72, b: cw * 0.48 },            // trapézio: o ombro desce até o pescoço
-    { y: shoulderY + y(0.022), a: sh * 0.42, b: cw * 0.42 },
+    { y: crotchY, a: hw * 0.5, b: dHip * (0.42 / 0.64) },
+    { y: hipJointY, a: hw * 0.97, b: dHip * (0.62 / 0.64) },
+    { y: hipJointY + (waistY - hipJointY) * 0.5, a: hw, b: dHip },
+    { y: waistY, a: ww, b: dWaist },
+    { y: chestY, a: Math.max(cw, ww), b: dChest },
+    { y: shoulderY - y(0.035), a: Math.max(cw, sh + delt * 0.7), b: dChest * (0.62 / 0.7) },
+    { y: shoulderY - y(0.008), a: sh + delt * 0.55, b: dChest * (0.56 / 0.7) },
+    { y: shoulderY + y(0.012), a: sh * 0.72, b: dChest * (0.48 / 0.7) },            // trapézio: o ombro desce até o pescoço
+    { y: shoulderY + y(0.022), a: sh * 0.42, b: dChest * (0.42 / 0.7) },
     { y: neckBaseY, a: y(0.036) * g, b: y(0.034) * g },
   ];
   const torso = smoothSections(key, 5);

@@ -14,7 +14,7 @@
  *                    lido junto com a origem das larguras, nunca sozinho;
  *   rosto na textura — que fração da imagem aplicada no rosto 3D é rosto/cabelo de verdade (e não fundo ou roupa).
  */
-import { REQUIRED_PARTS, specParts, torsoHalfWidth, type BodyKey, type BodyParams, type Spec, type V3 } from "./body-spec";
+import { REQUIRED_PARTS, effectiveDepth, specParts, torsoHalfWidth, type BodyKey, type BodyParams, type Spec, type V3 } from "./body-spec";
 import { CLS, P, type BodyObservation, type ClassMask, type PosePoint } from "./body";
 
 export interface Check { ok: boolean; value: number; detail?: string }
@@ -60,7 +60,9 @@ export function symmetry(s: Spec): Check {
 /** Erro relativo médio entre o modelo e as medidas observadas na foto. Sem medida observada, não há erro a medir. */
 export function proportionError(p: BodyParams, obs: BodyObservation): Check & { per: Partial<Record<BodyKey, number>>; n: number } {
   const per: Partial<Record<BodyKey, number>> = {};
-  (Object.keys(obs.measures) as BodyKey[]).forEach((k) => { const m = obs.measures[k]!; if (m.source === "observed") per[k] = Math.abs(p[k] - m.value) / m.value; });
+  // a profundidade do modelo é a medida, quando existe, ou a derivada da largura: é ela que a foto de perfil confere
+  const eff = { ...p, ...effectiveDepth(p) } as Record<BodyKey, number>;
+  (Object.keys(obs.measures) as BodyKey[]).forEach((k) => { const m = obs.measures[k]!; if (m.source === "observed") per[k] = Math.abs(eff[k] - m.value) / m.value; });
   const vals = Object.values(per) as number[]; const mean = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
   return { ok: vals.length > 0 && mean <= 0.05, value: mean, per, n: vals.length };
 }
