@@ -350,7 +350,7 @@ public class WardrobeService {
         if (r.backgroundRemoved()) {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
-                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoRel == null ? null : "ia",
+                    studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoSource,
                     br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
         }
 
@@ -488,18 +488,69 @@ public class WardrobeService {
     }
 
     static final String ANALYZER_SYSTEM = """
-            Você é o Piece Analyzer do Fashion AI. Identifique a peça de roupa da imagem e responda SOMENTE com JSON:
-            {"name": string, "category": one of [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
-             "subcategory": string (código da taxonomia, ex.: t_shirt, jeans, casual_sneakers, handbag, dress),
-             "color": código da paleta (ex.: black, white, navy, denim, beige, red, olive, multicolor, print),
-             "material": one of [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
-             "brand": string ou null (só se o logotipo for legível), "sex": one of [MASCULINO, FEMININO, UNISSEX],
-             "occasion": até 2 códigos, "style": até 2 códigos,
-             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1},
-             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} (só logotipo ou símbolo de MARCA: bordado, etiqueta,
-                     patch ou marca pequena; caixa em 0–1000 relativa à imagem inteira) ou null se não houver. Frases,
-                     palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO são logo: devolva null}
-            Nunca descreva pessoas. Se não houver peça de roupa, devolva confidence 0 em tudo.""";
+            Você é o Piece Analyzer do Fashion AI. Você recebe fotos de UMA peça (roupa, calçado ou acessório) e responde
+            SOMENTE com JSON. A mensagem diz quais imagens vieram e em que ordem:
+            - Imagem 1: a peça inteira, recortada do fundo e endireitada.
+            - Folha de referências (quando vier): grade numerada com a imagem de referência de cada subtipo do tipo escolhido
+              pela pessoa. Compare o FORMATO da peça (silhueta, comprimento, gola, mangas, cano, abertura, bolsos) com cada
+              referência e escolha o subtipo mais parecido. Ignore cores, estampas e o selo "FAI" das referências: elas são
+              só modelos de formato.
+            - Zonas de marca (quando vierem): recortes ampliados dos lugares onde a marca costuma estar. Peça de cima:
+              · fundo da gola (etiqueta interna, vista pelo decote);
+              · peito esquerdo de quem veste (fica à DIREITA da foto);
+              · peito direito de quem veste (fica à ESQUERDA da foto);
+              · centro do peito.
+              Leia logotipos, bordados, estampas e etiquetas. Só informe a marca se conseguir ler o nome ou reconhecer o
+              logotipo com segurança; nunca invente.
+            JSON:
+            {"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+             "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
+             "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
+             "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
+             "color": código da paleta, "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+             "sex": um de [MASCULINO, FEMININO, UNISSEX], "occasion": até 2 códigos da lista de ocasiões,
+             "style": até 2 códigos da lista de estilos,
+             "brand": nome da marca ou null, "brandZone": id da zona em que a marca foi lida (ou "outra") ou null,
+             "brandEvidence": o que foi lido ou visto (ex.: "texto NIKE bordado no peito") ou null,
+             "photo": {"fullyVisible": a peça aparece inteira, sem partes cortadas pela borda da foto?,
+                       "viewAngle": "frontal_90" (câmera a 90°, de frente/de cima) | "angulo" | "lateral" | "dobrada",
+                       "singlePiece": há uma peça só (par de calçados conta como uma)?},
+             "confidence": {"category": 0-1, "subcategory": 0-1, "color": 0-1, "material": 0-1, "brand": 0-1, "photo": 0-1},
+             "logo": {"visible": boolean, "box": [x0, y0, x1, y1]} caixa do logotipo/etiqueta de marca NA IMAGEM 1 (só
+                     logotipo ou símbolo de MARCA: bordado, etiqueta, patch ou marca pequena), em 0–1000 relativos à imagem
+                     inteira, ou null. Frases, palavras decorativas e estampas gráficas (ex.: "THE BEST PLAN" no peito) NÃO
+                     são logo: devolva null}
+            Nunca descreva pessoas. Se não houver peça, devolva matchesCategory false e confidence 0 em tudo.""";
+
+    /** Mensagem do analisador: tipo escolhido, vocabulário permitido e o que é cada imagem anexada (na ordem). */
+    static String analyzerPrompt(String chosen, List<String> sheetLegend, List<BrandRegions.Zone> zones, List<SubtypeReferences.Match> ranking) {
+        StringBuilder p = new StringBuilder();
+        String category = chosen == null ? null : chosen;
+        if (category != null) {
+            p.append("Tipo escolhido pela pessoa: ").append(category).append(".\n");
+            p.append("Subtipos possíveis desse tipo: ").append(String.join(", ", Taxonomy.SUBCATEGORIES.get(category))).append(".\n");
+        } else {
+            p.append("Tipo não informado: descubra pela foto. Subtipos por tipo: ").append(Taxonomy.SUBCATEGORIES).append(".\n");
+        }
+        p.append("Ocasiões permitidas: ").append(String.join(", ", Taxonomy.allowedOccasions(category))).append(".\n");
+        p.append("Estilos: ").append(String.join(", ", Taxonomy.STYLES)).append(".\n");
+        p.append("Cores (códigos): ").append(String.join(", ", Taxonomy.COLORS.keySet())).append(".\n");
+        int n = 1;
+        p.append("Imagens anexadas: ").append(n++).append(" = peça inteira");
+        if (!sheetLegend.isEmpty()) {
+            p.append("; ").append(n++).append(" = folha de referências (").append(String.join(", ", sheetLegend)).append(")");
+        }
+        for (BrandRegions.Zone z : zones) {
+            p.append("; ").append(n++).append(" = zona de marca \"").append(z.id()).append("\"");
+        }
+        p.append(".\n");
+        if (!ranking.isEmpty()) {
+            p.append("Similaridade de silhueta medida localmente (0–1, só uma pista; decida pela comparação visual): ")
+                    .append(String.join(", ", ranking.stream().limit(5).map(m -> m.subcategory() + " " + m.score()).toList())).append(".\n");
+        }
+        p.append("Analise e responda só com o JSON.");
+        return p.toString();
+    }
 
     static final String MODERATION_SYSTEM = """
             Você é o Content Moderator do Fashion AI. Avalie a imagem e responda SOMENTE com JSON:
@@ -665,9 +716,17 @@ public class WardrobeService {
         String material = firstNonBlank(keep(g.material(), c.get("material")), g.material(), defaultMaterial(category, sub));
         String brand = firstNonBlank(keep(g.brand(), c.get("brand")), g.brand(), Msg.t("wardrobe.sem_marca"));
         String sex = g.sex() != null && Taxonomy.SEXES.contains(g.sex()) ? g.sex() : "UNISSEX";
-        String name = humanize(sub) + " " + humanize(color);
-        List<String> occasion = List.of(Taxonomy.allowedOccasions(category).get(0));
-        List<String> style = List.of(defaultStyle(sub));           // sempre um código de Taxonomy.STYLES (WardrobePrefillTest)
+        LocalVision.Insights seen = g.insights();
+        String name = firstNonBlank(seen.name(), pieceName(sub, color));
+        List<String> allowedOccasions = Taxonomy.allowedOccasions(category);
+        List<String> occasion = Taxonomy.keepAllowed(seen.occasion(), allowedOccasions, 2);
+        if (occasion.isEmpty()) {
+            occasion = List.of(allowedOccasions.get(0));
+        }
+        List<String> style = Taxonomy.keepAllowed(seen.style(), Taxonomy.STYLES, 2);
+        if (style.isEmpty()) {
+            style = List.of(defaultStyle(sub));                    // sempre um código de Taxonomy.STYLES (WardrobePrefillTest)
+        }
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
                 manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),
                 candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks);
@@ -1615,7 +1674,7 @@ public class WardrobeService {
         }
         String stem = w.getImageUrl().replaceAll("^.*/", "").replaceAll("\\.[a-zA-Z]+$", "").replaceAll("[^A-Za-z0-9_-]", "_");
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
-                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), null,
+                new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), Set.of(),
                         assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
                         br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
         if (info != null) {
