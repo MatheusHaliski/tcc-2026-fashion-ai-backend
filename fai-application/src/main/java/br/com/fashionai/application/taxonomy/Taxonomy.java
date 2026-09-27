@@ -213,6 +213,19 @@ public final class Taxonomy {
         return List.copyOf(out);
     }
 
+    /**
+     * Lista de ocasiões/estilos como a tela manda: tira espaços, vazios e repetidos e passa para minúsculas (os códigos da
+     * taxonomia são minúsculos). Não inventa nem descarta códigos desconhecidos — a validação continua apontando-os.
+     */
+    public static List<String> normalizeTags(List<String> values) {
+        return canonicalTags(values);
+    }
+
+    /** Só os códigos permitidos, na ordem recebida, até {@code max} (palpites da IA: nada fora da taxonomia entra). */
+    public static List<String> keepAllowed(List<String> values, List<String> allowed, int max) {
+        return canonicalTags(values).stream().filter(allowed::contains).limit(max).toList();
+    }
+
     /** Rótulo do código na língua de quem lê (ou o próprio código, se não houver rótulo). */
     public static String label(String code) {
         String key = "taxonomy." + code;
