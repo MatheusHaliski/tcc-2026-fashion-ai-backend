@@ -10,6 +10,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, EmptyState, ErrorState, PageHeader, Pagination, SkeletonGrid, useToast } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
+import { usePieceUpdates } from "@/lib/pieces/piece-events";
 import { FaiIcon } from "@/components/fai-icon";
 
 // valores iguais aos aceitos pelo backend (WardrobeService.stateMatches); "venda" = peças à venda (RF4.CA8)
@@ -20,10 +21,8 @@ function Closet() {
   const [f, setF] = useState({ category: "", color: "", season: "", occasion: "", style: "", state: "", q: "", sort: "recentes", page: 0, size: 24 });
   const { data, loading, error, reload, setData } = useApi<Page<PieceView>>((signal) => api.get(`/api/me/closet${qs(f)}`, { signal }), [JSON.stringify(f)]);
   const set = (k: keyof typeof f, v: string | number) => setF((o) => ({ ...o, [k]: v, page: k === "page" ? (v as number) : 0 }));
-  const patch = (p: PieceView) => setData((d) => (d ? { ...d, items: d.items.map((x) => (x.id === p.id ? p : x)) } : d));
-  async function toggle(p: PieceView, field: "favorite" | "disponivel") {
-    try { patch(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); }
-  }
+  // favorita/disponível agora se marcam no detalhe da peça ("Mais opções"): a grade acompanha a mudança
+  usePieceUpdates((p) => setData((d) => (d ? { ...d, items: d.items.map((x) => (x.id === p.id ? p : x)) } : d)));
   // RF4 · Estúdio: leva ao estúdio as peças que ainda estão só com o recorte (até 40 por vez)
   const [studioBusy, setStudioBusy] = useState(false);
   async function studioAll() {
@@ -54,7 +53,7 @@ function Closet() {
       {!loading && data && data.items.length === 0 && <EmptyState title={t("closet.empty")} hint={t("closet.emptyHint")} action={<Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link>} />}
       {data && data.items.length > 0 && (
         <>
-          <div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} onFavorite={(x) => toggle(x, "favorite")} onAvailability={(x) => toggle(x, "disponivel")} />)}</div>
+          <div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} />)}</div>
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />
         </>
       )}

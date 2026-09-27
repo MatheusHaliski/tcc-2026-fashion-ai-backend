@@ -1,0 +1,133 @@
+{
+ "feed-dono-desktop": {
+  "buttons": 22,
+  "unnamed": [],
+  "socialButtons": 0,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 0,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-dono-desktop": {
+  "buttons": 26,
+  "unnamed": [],
+  "socialButtons": 8,
+  "smallTargets": 8,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 1,
+  "linhaCurtidas": true,
+  "abasTecnicas": [
+   "Estúdio",
+   "Detalhe do logo",
+   "Recorte 2D",
+   "Antes e depois"
+  ],
+  "blocoModelo3d": true
+ },
+ "erros-dono-desktop": [],
+ "feed-dono-celular": {
+  "buttons": 22,
+  "unnamed": [],
+  "socialButtons": 0,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 0,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-dono-celular": {
+  "buttons": 26,
+  "unnamed": [],
+  "socialButtons": 8,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 1,
+  "linhaCurtidas": true,
+  "abasTecnicas": [
+   "Estúdio",
+   "Detalhe do logo",
+   "Recorte 2D",
+   "Antes e depois"
+  ],
+  "blocoModelo3d": true
+ },
+ "erros-dono-celular": [],
+ "feed-visitante-desktop": {
+  "buttons": 22,
+  "unnamed": [],
+  "socialButtons": 0,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 0,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-visitante-desktop": {
+  "buttons": 17,
+  "unnamed": [],
+  "socialButtons": 8,
+  "smallTargets": 8,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 1,
+  "linhaCurtidas": true,
+  "abasTecnicas": [
+   "Estúdio",
+   "Detalhe do logo",
+   "Recorte 2D"
+  ],
+  "blocoModelo3d": false
+ },
+ "erros-visitante-desktop": [],
+ "feed-visitante-celular": {
+  "buttons": 22,
+  "unnamed": [],
+  "socialButtons": 0,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 0,
+  "linhaCurtidas": false,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "modal-visitante-celular": {
+  "buttons": 17,
+  "unnamed": [],
+  "socialButtons": 8,
+  "smallTargets": 0,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 1,
+  "linhaCurtidas": true,
+  "abasTecnicas": [
+   "Estúdio",
+   "Detalhe do logo",
+   "Recorte 2D"
+  ],
+  "blocoModelo3d": false
+ },
+ "erros-visitante-celular": [],
+ "feed-looks": {
+  "buttons": 11,
+  "unnamed": [],
+  "socialButtons": 8,
+  "smallTargets": 8,
+  "toggleWithoutState": 0,
+  "saveButtons": 0,
+  "likeButtons": 1,
+  "linhaCurtidas": true,
+  "abasTecnicas": [],
+  "blocoModelo3d": false
+ },
+ "erros-feed-looks": []
+}

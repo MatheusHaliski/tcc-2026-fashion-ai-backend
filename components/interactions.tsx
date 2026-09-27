@@ -8,16 +8,15 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { Avatar, Button, Dialog, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
-import { Generate3DButton } from "@/components/generate-3d";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
 const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: string }[] = [{ id: "TREND", icon: "SOC-07" }, { id: "ELEGANTE", icon: "SOC-08" }, { id: "CRIATIVO", icon: "SOC-09" }];
 
-/** Barra social (RF19) fora de um card (ex.: DNA de estilo): o mesmo padrão de post das ações do card, com Salvar. */
+/** Barra social (RF19) do detalhe fora de um card (ex.: DNA de estilo): a mesma linha de ações, com as reações. */
 export function InteractionBar({ type, id, counters, viewer, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
   if (type === "COMMENT") return null;
-  return <CardActions type={type} id={id} counters={counters} viewer={viewer} ownerId={ownerId} title={title} withSave />;
+  return <CardActions type={type} id={id} counters={counters} viewer={viewer} ownerId={ownerId} title={title} reactions />;
 }
 
 /** Compartilhar (RF19): copiar o link ou publicar no feed, com legenda opcional. */
@@ -41,17 +40,49 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
   );
 }
 
-/**
- * Ações do post (RF7.CA11 · RF19), no formato de post do Instagram: uma fileira de botões só com ícone — todos no mesmo
- * padrão (disco verde, ícone preto) — e, abaixo, os contadores em texto (curtidas, comentários, compartilhamentos,
- * remixes e reações). O contador nunca fica dentro do botão. Salvar, editar e excluir ficam no menu ⋯ do cabeçalho.
- */
-export function CardActions({ type, id, counters, viewer, ownerId, title, compact, extra, withSave, with3d = true }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; withSave?: boolean; with3d?: boolean }) {
+/** Glifos das ações sociais (traço 1,8 px, 24×24): contorno no estado normal, preenchido quando ativo. */
+const SOCIAL_PATHS = {
+  heart: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z",
+  comment: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z",
+  share: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z",
+  bookmark: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z",
+} as const;
+export type SocialIconName = keyof typeof SOCIAL_PATHS;
+export function SocialIcon({ name, filled, size = 22 }: { name: SocialIconName; filled?: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false" className="c-act-icon"
+      fill={filled && name !== "share" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
+      <path d={SOCIAL_PATHS[name]} />
+    </svg>
+  );
+}
+
+/** Remixar (RF19.CA13): cria a própria versão do look; peça entra como semente de um look novo. */
+export function useRemix(type: TargetType, id: string) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  async function remix() {
+    if (!user) { router.push("/login"); return; }
+    if (busy) return; setBusy(true);
+    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`/api/interactions/${type}/${id}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(type === "PIECE" ? `/pieces/${nid}` : `/schemes/${nid}`); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
+  }
+  return { remix, busy };
+}
+
+/**
+ * Ações do post (RF7.CA11 · RF19) — uma linha só, igual em todo card: curtir, comentar e compartilhar à esquerda, cada
+ * ícone com a sua contagem ao lado; salvar à direita. Todos com o mesmo tamanho (ícone 22 px), a mesma área de toque
+ * (44 px em tela de toque), nome acessível com a contagem e estado (aria-pressed) — curtido e salvo ficam preenchidos.
+ * Não existe linha "N curtidas" separada: cada número aparece uma vez, junto da ação. Reações (Trend, Elegante,
+ * Criativo) são detalhe: aparecem como etiquetas com texto só no detalhe (`reactions`).
+ */
+export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
+  /** compatibilidade: salvar agora está sempre na linha */ withSave?: boolean; with3d?: boolean }) {
+  const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const [liked, setLiked] = useState(!!viewer?.liked); const [likes, setLikes] = useState(counters?.likes ?? 0);
   const [saved, setSaved] = useState(!!viewer?.saved);
   const [mine3, setMine3] = useState<string[]>(viewer?.reactions ?? []); const [rx, setRx] = useState<Record<string, number>>(counters?.reactions ?? {});
-  const [comments, setComments] = useState(false); const [share, setShare] = useState(false); const [busy, setBusy] = useState(false);
+  const [comments, setComments] = useState(false); const [share, setShare] = useState(false);
   useEffect(() => { setLiked(!!viewer?.liked); setLikes(counters?.likes ?? 0); setSaved(!!viewer?.saved); }, [viewer?.liked, counters?.likes, viewer?.saved]);
   useEffect(() => { setMine3(viewer?.reactions ?? []); setRx(counters?.reactions ?? {}); }, [JSON.stringify(viewer?.reactions), JSON.stringify(counters?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
   const base = `/api/interactions/${type}/${id}`;
@@ -67,37 +98,39 @@ export function CardActions({ type, id, counters, viewer, ownerId, title, compac
     const apply = (on: boolean) => { setMine3((l) => (on ? [...l, r] : l.filter((x) => x !== r))); setRx((m) => ({ ...m, [r]: Math.max(0, (m[r] ?? 0) + (on ? 1 : -1)) })); };
     optimistic(() => apply(!was), () => apply(was), () => api.post(`${base}/reactions`, { reaction: r }));
   };
-  const save = () => { const was = saved; optimistic(() => setSaved(!was), () => setSaved(was), () => api.post(`${base}/saves`)); };
-  const mine = !!user && ownerId === user.id;
-  async function remix() {
-    if (!guard() || busy) return; setBusy(true);
-    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>(`${base}/remixes`); toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(type === "PIECE" ? `/pieces/${nid}` : `/schemes/${nid}`); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
-  }
-  const counts = [
-    (counters?.comments ?? 0) > 0 ? <button key="c" type="button" className="c-count-link" onClick={() => setComments(true)}>{t("interactions.count.comments", { count: counters?.comments ?? 0 })}</button> : null,
-    (counters?.shares ?? 0) > 0 ? <span key="s">{t("interactions.count.shares", { count: counters?.shares ?? 0 })}</span> : null,
-    (counters?.remixes ?? 0) > 0 ? <span key="r">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</span> : null,
-    ...REACTIONS.filter((r) => (rx[r.id] ?? 0) > 0).map((r) => <span key={r.id}>{t("interactions.count.reaction", { id: r.id, count: rx[r.id] ?? 0 })}</span>),
-  ].filter(Boolean);
-  const btn = (key: string, icon: string, label: string, onClick: () => void, pressed?: boolean, disabled?: boolean) => (
-    <button key={key} type="button" className="c-act" aria-pressed={pressed} aria-label={label} title={label} onClick={onClick} disabled={disabled}><FaiIcon id={icon} size={20} variant="glyph" decorative /></button>
+  const save = () => { const was = saved; optimistic(() => { setSaved(!was); toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved")); }, () => setSaved(was), () => api.post(`${base}/saves`)); };
+  // no card, números grandes sem decimal ("1 mil"), para a linha caber em 2 colunas no celular; no detalhe, "1,2 mil"
+  const n = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: compact ? 0 : 1 });
+  const commentsN = counters?.comments ?? 0, sharesN = counters?.shares ?? 0;
+  const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean } = {}) => (
+    <button key={key} type="button" className={`c-act is-${key}`} aria-pressed={opts.pressed} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
+      onClick={preview ? undefined : onClick} disabled={preview} tabIndex={preview ? -1 : undefined}>
+      <SocialIcon name={icon} filled={opts.pressed} />
+      {opts.count !== undefined && <span className="c-act-n tabular" aria-hidden>{n(opts.count)}</span>}
+    </button>
   );
   return (
-    <div className={`c-post ${compact ? "is-compact" : ""}`}>
+    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""}`}>
       <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
-        {btn("like", "SOC-01", liked ? t("interactions.liked") : t("interactions.like"), like, liked)}
-        {btn("comment", "SOC-02", t("interactions.comment"), () => setComments(true))}
-        {btn("share", "SOC-03", t("interactions.share"), () => { if (guard()) setShare(true); })}
-        {type !== "DNA_SCHEME" && btn("remix", "SOC-04", mine ? t("interactions.remix_proprio") : t("interactions.remixAction"), remix, false, mine || busy)}
-        {REACTIONS.map((r) => btn(r.id, r.icon, t(`interactions.reaction.${r.id}`), () => react(r.id), mine3.includes(r.id)))}
-        {with3d && type !== "DNA_SCHEME" && <Generate3DButton glyph targets={[{ kind: type === "SCHEME" ? "scheme" : "piece", id, title: title ?? "" }]} />}
-        <span className="grow" />
+        {act("like", "heart", t("interactions.like_n", { count: likes }), like, { pressed: liked, count: likes })}
+        {act("comment", "comment", t("interactions.comment_n", { count: commentsN }), () => setComments(true), { count: commentsN, haspopup: true })}
+        {act("share", "share", t("interactions.share_n", { count: sharesN }), () => { if (guard()) setShare(true); }, { count: sharesN, haspopup: true })}
         {extra}
-        {withSave && btn("save", "SOC-05", saved ? t("interactions.saved") : t("interactions.save"), save, saved)}
+        <span className="grow" />
+        {act("save", "bookmark", t("interactions.save"), save, { pressed: saved })}
       </div>
-      <p className="c-counts"><b className="tabular">{t("interactions.count.likes", { count: likes })}</b>{counts.length > 0 && <span className="c-counts-rest">{counts.map((c, i) => <span key={i}>{i > 0 ? " · " : ""}{c}</span>)}</span>}</p>
-      <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />
-      <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />
+      {reactions && !preview && (
+        <div className="c-reactions" role="group" aria-label={t("interactions.reacoes")}>
+          {REACTIONS.map((r) => (
+            <button key={r.id} type="button" className="chip c-reaction" aria-pressed={mine3.includes(r.id)} onClick={() => react(r.id)}>
+              {t("interactions.reaction_chip", { id: r.id, count: rx[r.id] ?? 0 })}
+            </button>
+          ))}
+          {(counters?.remixes ?? 0) > 0 && <span className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</span>}
+        </div>
+      )}
+      {!preview && <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />}
+      {!preview && <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />}
     </div>
   );
 }
