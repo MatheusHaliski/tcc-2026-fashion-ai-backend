@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Button, Chip, Field, Input, Select, Spinner } from "@/components/ui";
+import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
 
@@ -112,8 +112,10 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
           onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
       </Field>
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
-      <TagPicker field="occasion" title={t("common.occasion")} options={occasions} value={value.occasion} onChange={(v) => set("occasion", v)} error={err.occasion} category={value.category} />
-      <TagPicker field="style" title={t("common.style")} options={tax?.styles ?? []} value={value.style} onChange={(v) => set("style", v)} error={err.style} category={value.category} />
+      <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
+        error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />
+      <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
+        error={err.style} hint={t("pieceForm.dica_estilos")} limitMessage={t("pieceForm.limite_estilos")} problem={(v) => tagProblem("style", v, tax, value.category)} />
     </div>
   );
 }
@@ -131,45 +133,6 @@ export function tagProblem(field: "occasion" | "style", v: string, tax: ReturnTy
   if (field === "occasion" && sty.includes(v)) return tr("pieceForm.e_estilo_nao_ocasiao", { v: label(v) });
   if (field === "occasion" && occ.includes(v)) return tr("pieceForm.ocasiao_fora_da_categoria", { v: label(v), cat: CATEGORY_LABEL[category] ?? label(category) });
   return tr(field === "style" ? "pieceForm.estilo_desconhecido" : "pieceForm.ocasiao_desconhecida", { v });
-}
-
-/**
- * Seletor de 1 a 2 valores (ocasião ou estilo): o contador mostra quantos estão escolhidos, tocar de novo remove, ao
- * atingir o limite a próxima escolha não entra e a mensagem explica o limite. Valores fora da lista (IA ou dado antigo)
- * aparecem no topo com a explicação e o botão Remover — não ocupam vaga escondidos.
- */
-export function TagPicker({ field, title, options, value, onChange, error, category }: {
-  field: "occasion" | "style"; title: string; options: string[]; value: string[]; onChange: (v: string[]) => void; error?: string; category: string;
-}) {
-  const { t } = useI18n(); const tax = useTaxonomy(); const [limitHit, setLimitHit] = useState(false);
-  const valid = value.filter((v) => options.includes(v)); const invalid = value.filter((v) => !options.includes(v));
-  const full = valid.length >= PIECE_MAX_TAGS;
-  const toggle = (v: string) => {
-    if (value.includes(v)) { setLimitHit(false); onChange(value.filter((x) => x !== v)); return; }
-    if (full) { setLimitHit(true); return; }
-    setLimitHit(false); onChange([...value, v]);
-  };
-  const id = `tags-${field}`;
-  return (
-    <fieldset className="tag-picker mb-3 sm:col-span-2" aria-describedby={`${id}-help`} aria-invalid={!!error || invalid.length > 0 || undefined}>
-      <legend className="label">{title} <span className="tag-count" aria-live="polite">{t("pieceForm.selecionados", { n: valid.length, max: PIECE_MAX_TAGS })}</span></legend>
-      {invalid.map((v) => (
-        <p key={v} className="tag-fix" role="alert">
-          <span>{tagProblem(field, v, tax, category)}</span>
-          <button type="button" className="btn btn-sm" onClick={() => onChange(value.filter((x) => x !== v))}>{t("pieceForm.remover_valor", { v: label(v) })}</button>
-        </p>
-      ))}
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((o) => { const on = value.includes(o); return (
-          <Chip key={o} active={on} blocked={!on && full} onClick={() => toggle(o)}>{on && <span aria-hidden>✓ </span>}{label(o)}</Chip>
-        ); })}
-      </div>
-      <p id={`${id}-help`} className={limitHit ? "error-text" : "help"} role={limitHit ? "alert" : undefined}>
-        {limitHit ? t(field === "style" ? "pieceForm.limite_estilos" : "pieceForm.limite_ocasioes") : t(field === "style" ? "pieceForm.dica_estilos" : "pieceForm.dica_ocasioes")}
-      </p>
-      {error && !limitHit && invalid.length === 0 && <p className="error-text" role="alert">{error}</p>}
-    </fieldset>
-  );
 }
 
 /** Campos da peça em cada etapa do criador (para levar a pessoa ao campo com problema). */

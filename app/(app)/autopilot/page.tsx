@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Button, Card, Chip, EmptyState, Field, Input, PageHeader, Select, Skeleton, Tabs, useToast } from "@/components/ui";
+import { Button, Card, Chip, EmptyState, Field, Input, PageHeader, Select, Skeleton, Tabs, useToast, ChipMultiSelect } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 
 interface Weather { available: boolean; temperatureC?: number | null; description?: string | null; city?: string | null; band?: string | null; season?: string | null; note?: string | null; }
@@ -44,7 +44,7 @@ function Autopilot() {
       {tab === "daily" && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <Card>
-            <p className="label">{t("common.occasion")}</p><div className="mb-3 flex flex-wrap gap-1.5">{(tax?.occasions ?? ["casual", "work"]).map((o) => <Chip key={o} active={req.occasion.includes(o)} onClick={() => setReq({ ...req, occasion: req.occasion.includes(o) ? req.occasion.filter((x) => x !== o) : [...req.occasion, o].slice(-2) })}>{label(o)}</Chip>)}</div>
+            <ChipMultiSelect legend={t("common.occasion")} max={2} options={(tax?.occasions ?? ["casual", "work"]).map((o) => ({ id: o, label: label(o) }))} value={req.occasion} onChange={(v) => setReq({ ...req, occasion: v })} />
             <Field label={t("common.mood")} id="mood"><Select id="mood" value={req.mood} onChange={(e) => setReq({ ...req, mood: e.target.value })}><option value="">—</option>{["relaxado", "confiante", "romantico", "ousado", "elegante", "criativo", "energico"].map((m) => <option key={m} value={m}>{label(m)}</option>)}</Select></Field>
             <Field label={t("autopilot.cidade_clima")} id="city" hint={t("autopilot.open_meteo_sem_cidade_ignora")}><Input id="city" value={req.city} onChange={(e) => setReq({ ...req, city: e.target.value })} placeholder={t("autopilot.curitiba")} /></Field>
             <Button variant="primary" className="w-full" onClick={() => suggest(false)} loading={busy}><FaiIcon id="NAV-06" size={24} decorative />{t("autopilot.sugerir_look_de_hoje")}</Button>

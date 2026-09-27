@@ -5,7 +5,7 @@ import { api } from "@/lib/api/client";
 import { label, useTaxonomy, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
-import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast, ChipMultiSelect } from "@/components/ui";
 import { couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
@@ -18,7 +18,6 @@ interface Form {
 }
 const EMPTY: Form = { name: "", description: "", gameType: "COMBINACAO", requiredCategories: [], requiredStyles: [], requiredOccasions: [], minBrandPieces: "1", minDeckPower: "0", minRarity: "",
   minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "" };
-const toggle = (xs: string[], x: string) => (xs.includes(x) ? xs.filter((y) => y !== x) : xs.length >= 6 ? xs : [...xs, x]);
 
 /**
  * RF14/RF22 — aba "Minhas combinações FLAIR" do perfil da loja: a loja participante define qual combinação de cartas
@@ -115,9 +114,9 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
           <Field label={t("flair.brandFlairTab.nome_do_jogo")} id="fc-name" required><Input id="fc-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label={t("common.descricao")} id="fc-desc"><Textarea id="fc-desc" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
           <Field label={t("flair.brandFlairTab.tipo_de_jogo")} id="fc-type"><Select id="fc-type" value={form.gameType} onChange={(e) => setForm({ ...form, gameType: e.target.value })}>{(d.gameTypes ?? []).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}</Select></Field>
-          <div><p className="label">{t("flair.brandFlairTab.categorias_exigidas_cartas")}</p><div className="flex flex-wrap gap-1.5">{Object.keys(CATEGORY_LABEL).map((c) => <Chip key={c} active={form.requiredCategories.includes(c)} onClick={() => setForm({ ...form, requiredCategories: toggle(form.requiredCategories, c) })}>{CATEGORY_LABEL[c]}</Chip>)}</div></div>
-          <div><p className="label">{t("flair.brandFlairTab.estilos_styles_ate_6")}</p><div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">{(tax?.styles ?? []).map((s) => <Chip key={s} active={form.requiredStyles.includes(s)} onClick={() => setForm({ ...form, requiredStyles: toggle(form.requiredStyles, s) })}>{label(s)}</Chip>)}</div></div>
-          <div><p className="label">{t("flair.brandFlairTab.ocasioes_occasions_ate_6")}</p><div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">{(tax?.occasions ?? []).map((s) => <Chip key={s} active={form.requiredOccasions.includes(s)} onClick={() => setForm({ ...form, requiredOccasions: toggle(form.requiredOccasions, s) })}>{label(s)}</Chip>)}</div></div>
+          <ChipMultiSelect legend={t("flair.brandFlairTab.categorias_exigidas_cartas")} max={Object.keys(CATEGORY_LABEL).length} options={Object.keys(CATEGORY_LABEL).map((c) => ({ id: c, label: CATEGORY_LABEL[c] }))} value={form.requiredCategories} onChange={(v) => setForm({ ...form, requiredCategories: v })} />
+          <ChipMultiSelect legend={t("flair.brandFlairTab.estilos")} max={6} scroll options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={form.requiredStyles} onChange={(v) => setForm({ ...form, requiredStyles: v })} />
+          <ChipMultiSelect legend={t("flair.brandFlairTab.ocasioes")} max={6} scroll options={(tax?.occasions ?? []).map((o) => ({ id: o, label: label(o) }))} value={form.requiredOccasions} onChange={(v) => setForm({ ...form, requiredOccasions: v })} />
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label={t("flair.brandFlairTab.pecas", { brandName: d.brandName })} id="fc-bp"><Input id="fc-bp" type="number" min={0} max={10} value={form.minBrandPieces} onChange={(e) => setForm({ ...form, minBrandPieces: e.target.value })} /></Field>
             <Field label={t("flair.brandFlairTab.poder_minimo_do_deck")} id="fc-pow"><Input id="fc-pow" type="number" min={0} max={1000} value={form.minDeckPower} onChange={(e) => setForm({ ...form, minDeckPower: e.target.value })} /></Field>

@@ -124,6 +124,28 @@ h1, h2, h3, h4 { margin: 0; }
 .input { width: 100%; min-height: var(--control-md); font-size: var(--text-body); padding: .5rem .8rem; border: 1.5px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); }
 .input:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
 .input[aria-invalid="true"] { border-color: var(--status-critical); }
+/* ---- Padrão FashionAI de campos de lista (docs/ui/listas-padrao.md) ----
+   Tokens: altura --control-md; raio --radius-sm; borda --line-soft → hover --line → foco --ink + anel --focus;
+   erro --status-critical; desabilitado --surface-2. Tudo por variável: responde a claro, escuro e alto contraste. */
+.input:hover:not(:disabled):not(:focus) { border-color: var(--line); }
+.input:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; opacity: 1; }
+.select-wrap { position: relative; display: block; width: 100%; }
+.select-wrap .select { appearance: none; -webkit-appearance: none; padding-right: 2.5rem; cursor: pointer; text-overflow: ellipsis; }
+.select-wrap .select:disabled { cursor: not-allowed; }
+.select-icon { position: absolute; right: .8rem; top: 50%; transform: translateY(-50%); display: inline-flex; color: var(--muted); pointer-events: none; }
+.select-wrap:hover .select-icon, .select-wrap:focus-within .select-icon { color: var(--ink); }
+.select-wrap.is-disabled .select-icon { opacity: .5; }
+.select option { color: var(--ink); background: var(--surface); }
+.filter-sort .select-wrap { width: auto; }
+/* seleção única entre poucas opções (grupo de opção) */
+.segmented > button:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+/* seleção múltipla com limite */
+.multi-select { border: 0; padding: 0; margin: 0 0 .75rem; min-width: 0; }
+.multi-select legend { display: flex; align-items: baseline; gap: .5rem; width: 100%; }
+.multi-count { font-family: var(--font-data); font-size: var(--text-caption); color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.multi-scroll { max-height: 8.5rem; overflow-y: auto; padding: 2px; }
+.chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.chip:hover:not([aria-pressed="true"]) { border-color: var(--line); }
 .label { display: block; font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); margin-bottom: .35rem; font-weight: 500; }
 .help { font-size: var(--text-caption); color: var(--muted); margin-top: .3rem; }
 .error-text { font-size: var(--text-caption); color: var(--status-critical); margin-top: .3rem; font-weight: 500; }
@@ -137,9 +159,6 @@ h1, h2, h3, h4 { margin: 0; }
 .chip:disabled { opacity: .55; cursor: progress; }
 /* Seletor de 1–2 valores (ocasião/estilo da peça): escolha fora do limite fica apagada mas focável (explica o limite) */
 .chip.is-blocked { opacity: .5; border-style: dashed; }
-.tag-picker { border: 0; padding: 0; min-width: 0; }
-.tag-picker legend { display: flex; align-items: baseline; gap: .5rem; width: 100%; }
-.tag-count { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption); color: var(--muted); letter-spacing: .04em; text-transform: none; }
 .tag-fix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: .5rem .75rem; border-radius: var(--radius-sm); border: 1.5px solid var(--status-critical); background: color-mix(in srgb, var(--status-critical) 8%, var(--surface)); font-size: var(--text-body-sm); }
 .tag-fix > span { flex: 1 1 16rem; }
 .tabs-wrap { position: relative; }
