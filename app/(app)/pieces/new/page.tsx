@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { api, mediaUrl } from "@/lib/api/client";
+import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
@@ -9,7 +9,7 @@ import { useAction } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
-import { EMPTY_PIECE, PieceFields, PieceMoreDetails, toPayload, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -18,7 +18,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson } from "@/lib/pieces/person-filter";
 
-interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
+interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; }
 type Preview = "studio" | "detail" | "flat" | "original";
 const PREVIEW_LABEL: Record<Preview, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get flat() { return tr("pieces.new.flat_lay"); }, get original() { return tr("common.original"); } };
 /** Etapas do criador de peça (RF4): foto → dados → mais detalhes → arte de fundo → revisar e salvar. */
@@ -44,12 +44,17 @@ function NewPiece() {
   const [done, setDone] = useState<string | null>(null);
   const analyze = useAction(async (file: File) => { const fd = new FormData(); fd.append("file", file); return api.upload<Draft>("/api/pieces/analysis", fd); });
   const background = useMemo(() => ({ ...bg, skin, anatomy }), [bg, skin, anatomy]);
-  const create = useAction(async () => api.post<PieceView>("/api/pieces", toPayload({ ...value, useDefaultImage: !draft, background })));
+  // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
+  // envia outro pedido; o servidor ainda devolve a mesma peça se o mesmo rascunho chegar duas vezes (idempotência).
+  const saving = useRef(false); const [busy, setBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [saveProblem, setSaveProblem] = useState<string | null>(null);
+  const [analyzed, setAnalyzed] = useState(false);
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     if (files.length > 1) { setBatch(Array.from(files).slice(0, 10).map((file) => ({ file }))); return; }
-    let file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null);
+    let file = files[0]; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false);
     // etapa 0 do pipeline (no navegador): corpo humano sai da foto, só a roupa segue para o estúdio
     try { const r = await stripPerson(file); if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); } }
     catch { /* sem segmentação agora: a foto segue como está */ }
@@ -65,7 +70,8 @@ function NewPiece() {
       material: p.material ?? (v.material || "COTTON"), sex: p.sex ?? v.sex ?? "UNISSEX", size: p.size ?? v.size ?? "m", price: p.price != null ? String(p.price) : v.price || "0",
       occasion: p.occasion?.length ? p.occasion : v.occasion.length ? v.occasion : ["casual"], style: p.style?.length ? p.style : v.style.length ? v.style : ["classic"],
       brandName: p.brand ?? v.brandName, brandSource: p.brand ? (p.logo ? "LOGO_DETECTADO" : "IA") : v.brandSource ?? null, visibility: v.visibility || "PRIVATE" }));
-    toast.info(p.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all"));
+    // um aviso só, no lugar certo: a nota da etapa Dados diz quais campos conferir (antes: notificação + faixa ao mesmo tempo)
+    setAnalyzed(true); setFieldErrors({}); setSaveProblem(null);
   }
   /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
   async function studio(backdrop: string, force = false) {
@@ -76,10 +82,29 @@ function NewPiece() {
       setDraft({ ...draft, studio: info }); setMode("studio"); setValue((v) => ({ ...v, studio: true }));
     } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
   }
+  /** Leva a pessoa à etapa do primeiro campo com problema e mostra o erro junto do campo. */
+  function showFieldErrors(errors: Record<string, string>) {
+    setFieldErrors(errors);
+    const first = Object.keys(errors)[0];
+    if (first) go(PIECE_FIELD_STEP[first] ?? "data");
+  }
   async function submit() {
-    const p = await create.run();
-    if (p) { toast.success(t("piece.created")); setDone(p.id); }
-    else if (create.error?.fields) { const f = Object.keys(create.error.fields); setStep(f.some((k) => ["seals", "visibility", "forSale"].includes(k)) ? "more" : "data"); }
+    if (saving.current || done) return;                                         // já salvando ou já salvo: nada de novo pedido
+    setSaveProblem(null);
+    const local = validatePieceForm(value, tax);
+    if (Object.keys(local).length) { showFieldErrors(local); return; }          // validação: nem chega a enviar
+    saving.current = true; setBusy(true);
+    try {
+      const p = await api.post<PieceView>("/api/pieces", toPayload({ ...value, useDefaultImage: !draft, background }));
+      setFieldErrors({}); toast.success(t("piece.created")); setDone(p.id);
+    } catch (e) {
+      // foto, recorte e campos continuam no estado da página: nada se perde numa falha
+      const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
+      if (Object.keys(err.fields).length && (err.status === 400 || err.status === 422)) showFieldErrors(err.fields);
+      else if (err.status === 0) setSaveProblem(t("piece.err_rede"));
+      else if (err.status >= 500) setSaveProblem(t("piece.err_servidor", { ref: err.correlationId ? err.correlationId.slice(0, 8) : "—" }));
+      else setSaveProblem(err.message);                                          // 401/403/409: a mensagem do servidor já é para a pessoa
+    } finally { saving.current = false; setBusy(false); }
   }
   async function submitBatch() {
     // RF4.CA11: analisa todas, depois cadastra as que tiverem pré-preenchimento suficiente; as demais ficam para edição individual.
@@ -91,6 +116,13 @@ function NewPiece() {
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); window.location.href = user ? `/u/${user.username}` : "/closet";
     } catch (e) { toast.fromError(e); }
   }
+  /** Nota única depois da análise: com baixa confiança, diz QUAIS campos conferir (e não impede salvar). */
+  const prefillNote = (p: NonNullable<Draft["prefill"]>) => {
+    if (!p.manualFillRequired) return t("piece.prefilled_all");
+    const names: Record<string, string> = { category: t("common.category"), subcategory: t("common.subcategory"), color: t("common.color"), material: t("common.material"), brand: t("common.brand") };
+    const unsure = Object.entries(names).filter(([k]) => (p.confidence?.[k] ?? 0) < 0.55).map(([, n]) => n.toLowerCase());
+    return unsure.length ? t("piece.lowConfidence_campos", { campos: unsure.join(", ") }) : t("piece.lowConfidence");
+  };
   const modes = draft ? ([draft.studio ? "studio" : null, draft.studio?.detailUrl ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
   const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
   const isStudio = !!draft?.studio && (shown === "studio" || shown === "detail");
@@ -106,7 +138,7 @@ function NewPiece() {
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
       <Button onClick={() => go(STEPS[Math.max(0, idx - 1)])} disabled={idx === 0}>{t("common.back")}</Button>
-      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={create.busy}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
+      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
@@ -143,7 +175,8 @@ function NewPiece() {
                     <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
                     {!draft && <p className="type-caption text-muted">{t("pieces.new.sem_foto_asset")}</p>}
                     {personNote && <p className="type-body-sm" role="status">{personNote}</p>}
-                    {analyze.error && <p role="alert" className="error-text">{analyze.error.message}</p>}
+                    {analyze.error && <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>}
+                    {analyzed && !analyze.busy && <p role="status" className="type-body-sm">{t("pieces.new.foto_analisada")}</p>}
                     {draft && modes.length > 1 && <SegmentPicker label={t("pieces.new.versao_da_foto")} value={shown} onChange={setMode} options={modes.map((m) => ({ id: m, label: PREVIEW_LABEL[m] }))} />}
                     {draft && !draft.backgroundRemoved && !draft.studio?.forced && (
                       <div role="status" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
@@ -159,8 +192,8 @@ function NewPiece() {
               {batch.length === 0 && nav}
             </Card>
           )}
-          {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{draft.prefill.manualFillRequired ? t("piece.lowConfidence") : t("piece.prefilled_all")}</p>}<PieceFields value={value} onChange={setValue} error={create.error} />{nav}</Card>}
-          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={create.error} />{nav}</Card>}
+          {step === "data" && <Card>{draft?.prefill && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{prefillNote(draft.prefill)}</p>}<PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />{nav}</Card>}
+          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
           {step === "art" && <div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} styles={value.style} occasions={value.occasion} layoutPanel={artPanel} />{nav}</div>}
           {step === "review" && (
             <Card>
@@ -168,7 +201,7 @@ function NewPiece() {
               <dl className="c-facts mb-3">
                 {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? label(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
-              {create.error && <p role="alert" className="error-text mb-2">{create.error.message}</p>}
+              {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
               {nav}
             </Card>
           )}

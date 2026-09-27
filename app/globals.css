@@ -135,6 +135,13 @@ h1, h2, h3, h4 { margin: 0; }
 .chip[aria-pressed="true"], .chip.active, .chip.is-active, .chip[aria-selected="true"], .chip[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 :root[data-theme="contrast"] .chip[aria-pressed="true"], :root[data-theme="contrast"] .chip.is-active, :root[data-theme="contrast"] .chip[aria-selected="true"], :root[data-theme="contrast"] .chip[aria-checked="true"] { background: var(--line); color: #000; }
 .chip:disabled { opacity: .55; cursor: progress; }
+/* Seletor de 1–2 valores (ocasião/estilo da peça): escolha fora do limite fica apagada mas focável (explica o limite) */
+.chip.is-blocked { opacity: .5; border-style: dashed; }
+.tag-picker { border: 0; padding: 0; min-width: 0; }
+.tag-picker legend { display: flex; align-items: baseline; gap: .5rem; width: 100%; }
+.tag-count { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption); color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.tag-fix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: .5rem .75rem; border-radius: var(--radius-sm); border: 1.5px solid var(--status-critical); background: color-mix(in srgb, var(--status-critical) 8%, var(--surface)); font-size: var(--text-body-sm); }
+.tag-fix > span { flex: 1 1 16rem; }
 .tabs-wrap { position: relative; }
 .tabs { display: flex; gap: .25rem; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
 .tabs::-webkit-scrollbar { display: none; }

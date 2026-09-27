@@ -4,7 +4,9 @@ import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,4 +28,9 @@ public interface PipelineJobRepository extends JpaRepository<PipelineJob, UUID> 
     List<PipelineJob> findByTypeAndFinishedAtBetween(PipelineJobType type, Instant from, Instant to);
 
     List<PipelineJob> findTop200ByOrderByCreatedAtDesc();
+
+    /** Rascunho travado para escrita: serializa dois "Salvar" simultâneos do mesmo rascunho (idempotência do RF4). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select j from PipelineJob j where j.id = :id")
+    Optional<PipelineJob> findByIdForUpdate(@Param("id") UUID id);
 }

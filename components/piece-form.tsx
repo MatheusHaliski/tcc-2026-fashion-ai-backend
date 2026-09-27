@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
-import { useI18n } from "@/lib/i18n/i18n";
+import { tr, useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
@@ -83,19 +83,16 @@ export function PieceMoreDetails({ value, onChange, error }: { value: PieceFormV
 }
 
 /** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
-export function PieceFields({ value, onChange, error }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null }) {
-  const { t } = useI18n(); const tax = useTaxonomy(); const err = error?.fields ?? {};
+export function PieceFields({ value, onChange, error, fieldErrors }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string> }) {
+  const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
-  const toggleIn = (k: "occasion" | "style", v: string, max: number) => {
-    const cur = value[k]; if (cur.includes(v)) set(k, cur.filter((x) => x !== v)); else if (cur.length < max) set(k, [...cur, v]);
-  };
   const occasions = value.category ? tax?.allowedOccasionsByCategory?.[value.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>
       <Field label={t("common.category")} id="category" required error={err.category}>
-        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: [] })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
+        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "" })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
       </Field>
       <Field label={t("common.subcategory")} id="subcategory" required error={err.subcategory}>
         <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
@@ -115,15 +112,97 @@ export function PieceFields({ value, onChange, error }: { value: PieceFormValue;
           onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
       </Field>
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
-      <Field label={t("common.ate_3", { txt: t("common.occasion") })} error={err.occasion} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{occasions.map((o) => <Chip key={o} active={value.occasion.includes(o)} onClick={() => toggleIn("occasion", o, 2)}>{label(o)}</Chip>)}</div></Field>
-      <Field label={t("common.ate_3", { txt: t("common.style") })} error={err.style} className="sm:col-span-2"><div className="flex flex-wrap gap-1.5">{(tax?.styles ?? []).map((s) => <Chip key={s} active={value.style.includes(s)} onClick={() => toggleIn("style", s, 2)}>{label(s)}</Chip>)}</div></Field>
+      <TagPicker field="occasion" title={t("common.occasion")} options={occasions} value={value.occasion} onChange={(v) => set("occasion", v)} error={err.occasion} category={value.category} />
+      <TagPicker field="style" title={t("common.style")} options={tax?.styles ?? []} value={value.style} onChange={(v) => set("style", v)} error={err.style} category={value.category} />
     </div>
   );
 }
 
+/** Peça: até 2 ocasiões e até 2 estilos (esquemas de vestimenta: até 3 — regra própria, em scheme-builder). */
+export const PIECE_MAX_TAGS = 2;
+
+/**
+ * Mensagem para um valor que não pertence à lista do campo (sugestão da IA ou dado antigo): diz o que ele é e como
+ * corrigir — nunca "valor fora da taxonomia". Ex.: "casual" é ocasião, não estilo.
+ */
+export function tagProblem(field: "occasion" | "style", v: string, tax: ReturnType<typeof useTaxonomy>, category: string): string {
+  const occ = tax?.occasions ?? [], sty = tax?.styles ?? [];
+  if (field === "style" && occ.includes(v)) return tr("pieceForm.e_ocasiao_nao_estilo", { v: label(v) });
+  if (field === "occasion" && sty.includes(v)) return tr("pieceForm.e_estilo_nao_ocasiao", { v: label(v) });
+  if (field === "occasion" && occ.includes(v)) return tr("pieceForm.ocasiao_fora_da_categoria", { v: label(v), cat: CATEGORY_LABEL[category] ?? label(category) });
+  return tr(field === "style" ? "pieceForm.estilo_desconhecido" : "pieceForm.ocasiao_desconhecida", { v });
+}
+
+/**
+ * Seletor de 1 a 2 valores (ocasião ou estilo): o contador mostra quantos estão escolhidos, tocar de novo remove, ao
+ * atingir o limite a próxima escolha não entra e a mensagem explica o limite. Valores fora da lista (IA ou dado antigo)
+ * aparecem no topo com a explicação e o botão Remover — não ocupam vaga escondidos.
+ */
+export function TagPicker({ field, title, options, value, onChange, error, category }: {
+  field: "occasion" | "style"; title: string; options: string[]; value: string[]; onChange: (v: string[]) => void; error?: string; category: string;
+}) {
+  const { t } = useI18n(); const tax = useTaxonomy(); const [limitHit, setLimitHit] = useState(false);
+  const valid = value.filter((v) => options.includes(v)); const invalid = value.filter((v) => !options.includes(v));
+  const full = valid.length >= PIECE_MAX_TAGS;
+  const toggle = (v: string) => {
+    if (value.includes(v)) { setLimitHit(false); onChange(value.filter((x) => x !== v)); return; }
+    if (full) { setLimitHit(true); return; }
+    setLimitHit(false); onChange([...value, v]);
+  };
+  const id = `tags-${field}`;
+  return (
+    <fieldset className="tag-picker mb-3 sm:col-span-2" aria-describedby={`${id}-help`} aria-invalid={!!error || invalid.length > 0 || undefined}>
+      <legend className="label">{title} <span className="tag-count" aria-live="polite">{t("pieceForm.selecionados", { n: valid.length, max: PIECE_MAX_TAGS })}</span></legend>
+      {invalid.map((v) => (
+        <p key={v} className="tag-fix" role="alert">
+          <span>{tagProblem(field, v, tax, category)}</span>
+          <button type="button" className="btn btn-sm" onClick={() => onChange(value.filter((x) => x !== v))}>{t("pieceForm.remover_valor", { v: label(v) })}</button>
+        </p>
+      ))}
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => { const on = value.includes(o); return (
+          <Chip key={o} active={on} blocked={!on && full} onClick={() => toggle(o)}>{on && <span aria-hidden>✓ </span>}{label(o)}</Chip>
+        ); })}
+      </div>
+      <p id={`${id}-help`} className={limitHit ? "error-text" : "help"} role={limitHit ? "alert" : undefined}>
+        {limitHit ? t(field === "style" ? "pieceForm.limite_estilos" : "pieceForm.limite_ocasioes") : t(field === "style" ? "pieceForm.dica_estilos" : "pieceForm.dica_ocasioes")}
+      </p>
+      {error && !limitHit && invalid.length === 0 && <p className="error-text" role="alert">{error}</p>}
+    </fieldset>
+  );
+}
+
+/** Campos da peça em cada etapa do criador (para levar a pessoa ao campo com problema). */
+export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
+  name: "data", category: "data", subcategory: "data", color: "data", material: "data", sex: "data", size: "data", brandName: "data",
+  price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
+};
+
+/** Validação no cliente, antes de enviar — as mesmas regras do servidor, com as mesmas mensagens compreensíveis. */
+export function validatePieceForm(v: PieceFormValue, tax: ReturnType<typeof useTaxonomy>): Record<string, string> {
+  const e: Record<string, string> = {};
+  const need = (k: string, ok: boolean, msg: string) => { if (!ok) e[k] = msg; };
+  need("name", !!v.name.trim(), tr("pieceForm.err_nome"));
+  need("category", !!v.category, tr("pieceForm.err_escolha", { campo: tr("common.category").toLowerCase() }));
+  need("subcategory", !!v.subcategory, tr("pieceForm.err_escolha", { campo: tr("common.subcategory").toLowerCase() }));
+  need("color", !!v.color, tr("pieceForm.err_escolha", { campo: tr("common.color").toLowerCase() }));
+  need("material", !!v.material, tr("pieceForm.err_escolha", { campo: tr("common.material").toLowerCase() }));
+  need("price", v.price !== "" && Number(v.price) >= 0, tr("pieceForm.err_preco"));
+  const occasions = v.category ? tax?.allowedOccasionsByCategory?.[v.category] ?? tax?.occasions ?? [] : tax?.occasions ?? [];
+  const check = (k: "occasion" | "style", allowed: string[]) => {
+    const list = Array.from(new Set(v[k]));
+    const bad = list.find((x) => !allowed.includes(x));
+    if (bad) e[k] = tagProblem(k, bad, tax, v.category);
+    else if (list.length === 0) e[k] = tr(k === "style" ? "pieceForm.err_estilo_obrigatorio" : "pieceForm.err_ocasiao_obrigatoria");
+    else if (list.length > PIECE_MAX_TAGS) e[k] = tr(k === "style" ? "pieceForm.limite_estilos" : "pieceForm.limite_ocasioes");
+  };
+  if (tax) { check("occasion", occasions); check("style", tax.styles ?? []); }
+  return e;
+}
+
 /** Formulário completo (edição da peça no card ampliado): dados + "Mais detalhes" recolhível com seta. */
-export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel, prefilledNote }: {
-  value: PieceFormValue; onChange: (v: PieceFormValue) => void; onSubmit: () => void; busy?: boolean; error?: ApiError | null; submitLabel: string; prefilledNote?: string;
+export function PieceForm({ value, onChange, onSubmit, busy, error, fieldErrors, submitLabel, prefilledNote }: {
+  value: PieceFormValue; onChange: (v: PieceFormValue) => void; onSubmit: () => void; busy?: boolean; error?: ApiError | null; fieldErrors?: Record<string, string>; submitLabel: string; prefilledNote?: string;
 }) {
   const { t } = useI18n(); const err = error?.fields ?? {};
   function submit(e: FormEvent) { e.preventDefault(); onSubmit(); }
@@ -132,7 +211,7 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, submitLabel,
   return (
     <form onSubmit={submit} noValidate className="grid gap-2">
       {prefilledNote && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{prefilledNote}</p>}
-      <PieceFields value={value} onChange={onChange} error={error} />
+      <PieceFields value={value} onChange={onChange} error={error} fieldErrors={fieldErrors} />
       <details className="more-details" open={moreOpen}>
         <summary>{t("pieceForm.moreDetails")}</summary>
         <div className="pt-3"><PieceMoreDetails value={value} onChange={onChange} error={error} /></div>

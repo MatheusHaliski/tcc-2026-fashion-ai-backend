@@ -58,8 +58,9 @@ export function Switch({ checked, onChange, label, id, hint }: { checked: boolea
     </div>
   );
 }
-export function Chip({ active, children, onClick, className, title }: { active?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
-  return <button type="button" className={cn("chip", className)} aria-pressed={active} onClick={onClick} title={title}>{children}</button>;
+/** `blocked`: a escolha não entra agora (ex.: limite atingido) — continua focável e clicável para explicar o porquê. */
+export function Chip({ active, blocked, children, onClick, className, title }: { active?: boolean; blocked?: boolean; children: ReactNode; onClick?: () => void; className?: string; title?: string }) {
+  return <button type="button" className={cn("chip", blocked && "is-blocked", className)} aria-pressed={active} aria-disabled={blocked || undefined} onClick={onClick} title={title}>{children}</button>;
 }
 export function Badge({ tone, children, className }: { tone?: "mark" | "thread" | "chalk"; children: ReactNode; className?: string }) {
   return <span className={cn("badge", tone && `badge-${tone}`, className)}>{children}</span>;
