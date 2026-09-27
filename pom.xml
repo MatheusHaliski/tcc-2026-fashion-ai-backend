@@ -31,6 +31,7 @@
         <testcontainers.version>1.20.3</testcontainers.version>
         <aws-sdk.version>2.29.6</aws-sdk.version>
         <anthropic-java.version>2.34.0</anthropic-java.version>
+        <onnxruntime.version>1.20.0</onnxruntime.version>
         <bouncycastle.version>1.79</bouncycastle.version>
         <lombok.version>1.18.34</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>

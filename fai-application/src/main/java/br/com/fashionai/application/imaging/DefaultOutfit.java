@@ -32,7 +32,9 @@ import java.util.function.Function;
  * (tronco, pernas, pés) recebe a peça padrão dos assets do FashionAI — camiseta de referência, jeans e tênis casual de
  * {@code /public/assets_pecas} —, a mesma regra do 3D ({@code lib/avatar3d/human/default-outfit.ts}). Jaqueta e casaco
  * não cobrem o tronco (vão por cima da camiseta); o casaco longo não substitui a calça. Sem o arquivo do asset, a peça é
- * desenhada (silhueta lisa na cor do tecido): a zona nunca fica descoberta. As peças padrão nunca vão ao FASHN.
+ * desenhada (silhueta lisa na cor do tecido): a zona nunca fica descoberta. As peças padrão nunca vão ao FASHN como peça;
+ * servem de marcador na imagem do manequim enviada a ele (o FASHN troca a roupa da zona, então nunca recebe o manequim
+ * de roupa íntima).
  */
 @Component
 public class DefaultOutfit {
@@ -70,19 +72,23 @@ public class DefaultOutfit {
         return itemId != null && SPECS.keySet().stream().anyMatch(z -> idOf(z).equals(itemId));
     }
 
+    /** Zonas do corpo que uma peça cobre pelo lugar dela no look. */
+    public static EnumSet<Zone> zonesOf(SchemeSlot slot) {
+        return switch (slot) {
+            case TOP -> EnumSet.of(Zone.UPPER);
+            case BOTTOM -> EnumSet.of(Zone.LOWER);
+            case FULL_BODY -> EnumSet.of(Zone.UPPER, Zone.LOWER);
+            case SHOES -> EnumSet.of(Zone.FEET);
+            default -> EnumSet.noneOf(Zone.class);         // jaqueta/casaco e acessório não cobrem a zona sozinhos
+        };
+    }
+
     /** Zonas cobertas pelas peças com imagem legível. */
     public static Set<Zone> covered(List<TryOnCompositor.Garment> garments) {
         EnumSet<Zone> out = EnumSet.noneOf(Zone.class);
         for (TryOnCompositor.Garment g : garments) {
-            if (g.cutout() == null) {
-                continue;
-            }
-            switch (g.slot()) {
-                case TOP -> out.add(Zone.UPPER);
-                case BOTTOM -> out.add(Zone.LOWER);
-                case FULL_BODY -> { out.add(Zone.UPPER); out.add(Zone.LOWER); }
-                case SHOES -> out.add(Zone.FEET);
-                default -> { }          // jaqueta/casaco e acessório não cobrem a zona sozinhos
+            if (g.cutout() != null) {
+                out.addAll(zonesOf(g.slot()));
             }
         }
         return out;

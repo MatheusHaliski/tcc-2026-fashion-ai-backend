@@ -403,7 +403,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const push = useCallback((kind: Toast["kind"], text: string) => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, kind, text }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "error" ? 7000 : 4000);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), text.length > 120 ? 10000 : kind === "error" ? 7000 : 4000);   // aviso longo: tempo de ler
   }, []);
   const value = useMemo(() => ({ push }), [push]);
   return (
@@ -422,6 +422,8 @@ export function useToast() {
   return {
     info: (t: string) => push("info", t), success: (t: string) => push("success", t), error: (t: string) => push("error", t),
     /** Mostra a mensagem tratada do backend (ApiError) ou uma genérica. */
-    fromError: (e: unknown, fallback = tr("ui.index.algo_deu_errado_tente_de")) => push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
+    fromError: (e: unknown, fallback = tr("ui.index.algo_deu_errado_tente_de")) => e instanceof ApiError && e.code === "IMAGEM_EM_REVISAO"
+      ? push("info", e.message)   // foto retida pela moderação: não é erro de quem enviou, é um aviso
+      : push("error", e instanceof ApiError ? `${e.message}${e.correlationId ? ` (${e.correlationId.slice(0, 8)})` : ""}` : fallback),
   };
 }

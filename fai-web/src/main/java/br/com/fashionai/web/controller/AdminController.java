@@ -1,13 +1,17 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.AdminService;
 import br.com.fashionai.application.view.Views;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,6 +58,15 @@ public class AdminController {
     @Operation(summary = "RNF — Decidir item da fila de moderação")
     public Map<String, Object> moderate(CurrentUser user, @PathVariable UUID itemId, @RequestBody ModerationRequest body) {
         return admin.moderate(user, itemId, body.approve(), body.reason());
+    }
+
+    @GetMapping("/moderation/{itemId}/image")
+    @Operation(summary = "Moderação de imagens — foto retida para revisão humana (só ADMIN, sem cache)")
+    public ResponseEntity<byte[]> moderationImage(CurrentUser user, @PathVariable UUID itemId) {
+        byte[] bytes = admin.moderationImage(user, itemId);
+        String mime = ImageOps.detectMime(bytes);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(mime == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(mime)).body(bytes);
     }
 
     @GetMapping("/users")

@@ -168,6 +168,9 @@ fashionai:
     photoroom-api-key: ${PHOTOROOM_API_KEY:}               # RF4 estúdio (fundo + reiluminação + sombra por IA)
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
+    google-vision-api-key: ${GOOGLE_VISION_API_KEY:}       # moderação de fotos enviadas (SafeSearch); vazio = segmentação local + revisão humana
+  moderation:
+    uploads-enabled: ${UPLOAD_MODERATION_ENABLED:true}    # confere nudez nas fotos enviadas antes de gravar (docs/seguranca/moderacao-de-imagens.md)
   features:
     rf16-3d: ${FEATURE_RF16_3D:true}                       # sem chave de 3D, o gerador local em relevo assume
     rf16-3d-timeout-minutes: ${RF16_3D_TIMEOUT_MINUTES:10}

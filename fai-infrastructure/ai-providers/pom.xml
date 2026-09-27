@@ -29,6 +29,12 @@
             <artifactId>anthropic-java</artifactId>
             <version>${anthropic-java.version}</version>
         </dependency>
+        <!-- moderação local de imagens enviadas: segmentador de pessoa do MediaPipe (Apache-2.0) convertido para ONNX -->
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>${onnxruntime.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -90,6 +90,27 @@ class TryOnDefaultOutfitTest {
         assertEquals(0, calls[0]);
     }
 
+    @Test
+    void provedorExternoSempreRecebeOManequimVestido() {
+        MannequinGeometry.Body body = MannequinGeometry.body(MannequinSex.FEMININO, BodyBuild.MEDIUM);
+        Color skin = new Color(0xC99A6E);
+        for (SchemeSlot slot : List.of(SchemeSlot.TOP, SchemeSlot.BOTTOM, SchemeSlot.FULL_BODY)) {
+            List<BufferedImage> sent = new java.util.ArrayList<>();
+            ImageProviderPorts.TryOnProviderPort port = new ImageProviderPorts.TryOnProviderPort() {
+                @Override public boolean available() { return true; }
+                @Override public Optional<ImageProviderPorts.ProviderImage> tryOn(byte[] model, byte[] garment, String category) { sent.add(ImageOps.decode(model)); return Optional.empty(); }
+            };
+            TryOnCompositor c = new TryOnCompositor(List.of(port), List.of(), assets);
+            c.render(body, "#C99A6E", List.of(piece(slot)), true);
+            assertEquals(1, sent.size(), slot + ": uma chamada ao provedor");
+            // tronco e coxas da imagem enviada: cobertos (peça padrão já vestida ou como marcador da zona trocada)
+            for (String anchor : List.of("TOP", "BOTTOM")) {
+                double share = skinShare(sent.get(0), body.anchors().get(anchor), skin);
+                assertTrue(share < 0.15, slot + "/" + anchor + ": " + Math.round(share * 100) + "% de pele na imagem enviada ao provedor");
+            }
+        }
+    }
+
     private static double skinShare(BufferedImage img, MannequinGeometry.Box b, Color skin) {
         // miolo da caixa (a metade central), onde fica o corpo
         int x0 = (int) ((b.x() + b.w() * 0.35) * img.getWidth()), x1 = (int) ((b.x() + b.w() * 0.65) * img.getWidth());
