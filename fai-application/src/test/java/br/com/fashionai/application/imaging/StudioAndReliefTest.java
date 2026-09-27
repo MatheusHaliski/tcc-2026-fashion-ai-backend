@@ -57,9 +57,10 @@ class StudioAndReliefTest {
         StudioPipeline studio = new StudioPipeline(List.of(), List.of());
         StudioPipeline.Result r = studio.run(jacket(), "auto", true);
         BufferedImage shot = ImageIO.read(new ByteArrayInputStream(r.studioJpeg()));
-        // quadro adaptado à peça (lado maior 1600) + miniatura quadrada para grades
-        assertThat(Math.max(shot.getWidth(), shot.getHeight())).isEqualTo(StudioPipeline.SIZE);
-        assertThat(r.framing().get("aspect")).isIn("9:16", "2:3", "4:5", "1:1", "5:4");
+        // padrão da peça: quadro quadrado de 1600 (o mesmo formato do card) + miniatura quadrada para grades
+        assertThat(shot.getWidth()).isEqualTo(StudioPipeline.SIZE);
+        assertThat(shot.getHeight()).isEqualTo(StudioPipeline.SIZE);
+        assertThat(r.framing().get("aspect")).isEqualTo("1:1");
         BufferedImage thumb = ImageIO.read(new ByteArrayInputStream(r.thumbJpeg()));
         assertThat(thumb.getWidth()).isEqualTo(StudioPipeline.THUMB);
         assertThat(thumb.getHeight()).isEqualTo(StudioPipeline.THUMB);

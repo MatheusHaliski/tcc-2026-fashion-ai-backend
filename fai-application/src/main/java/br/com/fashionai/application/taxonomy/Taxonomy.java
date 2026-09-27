@@ -101,6 +101,9 @@ public final class Taxonomy {
     }
 
     public static String categoryOf(String subcategory) {
+        if (subcategory == null) {
+            return null;                              // List.of(...).contains(null) lança NPE
+        }
         return SUBCATEGORIES.entrySet().stream().filter(e -> e.getValue().contains(subcategory)).map(Map.Entry::getKey)
                 .findFirst().orElse(null);
     }
@@ -130,6 +133,28 @@ public final class Taxonomy {
         if (!errors.isEmpty()) {
             throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
+    }
+
+    /**
+     * Lista de ocasiões/estilos como a tela manda: tira espaços, vazios e repetidos e passa para minúsculas (os códigos da
+     * taxonomia são minúsculos). Não inventa nem descarta códigos desconhecidos — a validação continua apontando-os.
+     */
+    public static List<String> normalizeTags(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                out.add(v.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    /** Só os códigos permitidos, na ordem recebida, até {@code max} (palpites da IA: nada fora da taxonomia entra). */
+    public static List<String> keepAllowed(List<String> values, List<String> allowed, int max) {
+        return normalizeTags(values).stream().filter(allowed::contains).limit(max).toList();
     }
 
     public static void requireTags(String field, List<String> values, List<String> allowed, int max, Map<String, Object> errors) {
