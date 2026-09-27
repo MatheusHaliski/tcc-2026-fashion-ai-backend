@@ -25,8 +25,8 @@ function Rig({ view, target, dist }: { view: AvatarView; target: [number, number
   return null;
 }
 
-export default function AvatarViewer({ avatar, sex, build, view = "front", background = "#e9e4dc", onCanvas, pieces = [], framing = "bust", body, controls = true }: {
-  avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; view?: AvatarView; background?: string;
+export default function AvatarViewer({ avatar, sex, build, skinTone, view = "front", background = "#e9e4dc", onCanvas, pieces = [], framing = "bust", body, controls = true }: {
+  avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; view?: AvatarView; background?: string;
   onCanvas?: (c: HTMLCanvasElement) => void; pieces?: Look3dPiece[]; framing?: "bust" | "upper" | "full"; body?: BodyParams | null; controls?: boolean;
 }) {
   const { t } = useI18n();
@@ -44,7 +44,7 @@ export default function AvatarViewer({ avatar, sex, build, view = "front", backg
       <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.8} />
       <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
       <directionalLight position={[0, 2.2, -2.5]} intensity={0.35} />
-      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />
+      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />
       <Rig view={view} target={target} dist={dist} />
       {controls && <OrbitControls target={target} enablePan={false} minDistance={0.5} maxDistance={Math.max(3.5, dist * 1.4)} />}
     </Canvas>

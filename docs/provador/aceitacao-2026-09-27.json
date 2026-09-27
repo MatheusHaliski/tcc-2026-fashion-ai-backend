@@ -1,0 +1,40 @@
+{
+ "comAvatar": {
+  "t1_badgeAvatar": 1,
+  "t1_badgeReferencia": 0,
+  "t1_canvas": 1,
+  "t5_textos": {
+   "titulo": 0,
+   "salvarLook": 0,
+   "provar": 0,
+   "meusLooks": 0
+  },
+  "t2_upper": "PARTE DE CIMA Minha Camisa Azul Lacoste Prévia 2D disponível; modelo 3D da peça ainda não gerado. Gerar modelo 3D da peça Trocar Remover",
+  "t2_outrosIguais": true,
+  "t4_nota": true,
+  "t4_notaPalco": 1,
+  "t3_upperTrocada": true,
+  "t3_calcaETenisFicam": true,
+  "slots": {
+   "upper": "PARTE DE CIMA Minha Camisa Azul Lacoste Prévia 2D disponível; modelo 3D da peça ainda não gerado. Gerar modelo 3D da peça Trocar Remover",
+   "lower": "PARTE DE BAIXO Calça jeans reta Prévia 2D disponível; modelo 3D da peça ainda não gerado. Gerar modelo 3D da peça Trocar Remover",
+   "shoes": "CALÇADO Tênis branco Prévia 2D disponível; modelo 3D da peça ainda não gerado. Gerar modelo 3D da peça Trocar Remover",
+   "acc": "ACESSÓRIO Boné preto Prévia 2D disponível; modelo 3D da peça ainda não gerado. Gerar modelo 3D da peça Trocar Remover"
+  },
+  "previa2dBadge": 2,
+  "recarregou": {
+   "upper": true,
+   "lower": true
+  },
+  "removeuAcessorio": true,
+  "escritasNoServidor": [],
+  "erros": []
+ },
+ "celularErros": [],
+ "semAvatar": {
+  "badgeReferencia": 1,
+  "cta": 1,
+  "canvas": 1,
+  "erros": []
+ }
+}
