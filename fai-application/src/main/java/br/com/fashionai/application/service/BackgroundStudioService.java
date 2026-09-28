@@ -417,7 +417,7 @@ public class BackgroundStudioService {
         }
         Map<String, Object> aiArt = scheme.get("aiArt") instanceof Map<?, ?> art ? (Map<String, Object>) art : null;
         String upload = (String) scheme.get("uploadUrl");
-        s.setBackgroundArtUrl(aiArt != null ? (String) aiArt.get("url") : upload);
+        s.setBackgroundArtUrl(artUrl(s, aiArt != null ? (String) aiArt.get("url") : upload));
         if (scheme.get("animation") instanceof String anim) {
             s.setBackgroundAnimationType(BackgroundAnimation.valueOf(anim));
         }
@@ -524,6 +524,24 @@ public class BackgroundStudioService {
         if (!color.matches("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")) {
             throw ApiException.badRequest("COR_INVALIDA", Msg.t("backgroundStudio.use_cor_hexadecimal_rrggbb"));
         }
+    }
+
+    /**
+     * Arte de fundo vinda do cliente: só um arquivo da própria pessoa (gerado ou enviado no estúdio), um asset do catálogo,
+     * a arte que o esquema já tinha ou a do esquema original num remix. Sem isso, o card.png e a prévia liam do storage
+     * qualquer chave que o cliente mandasse.
+     */
+    private String artUrl(Scheme s, String requested) {
+        if (requested == null || requested.isBlank()) {
+            return null;
+        }
+        if (requested.equals(s.getBackgroundArtUrl())
+                || s.getOriginalScheme() != null && requested.equals(s.getOriginalScheme().getBackgroundArtUrl())) {
+            return requested;
+        }
+        UUID owner = s.getUser() == null ? null : s.getUser().getId();
+        return media.requireOwnedMedia(owner, requested, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.CATALOG),
+                "background.uploadUrl").url();
     }
 
     @Transactional

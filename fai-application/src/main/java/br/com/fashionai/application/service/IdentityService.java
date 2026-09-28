@@ -34,6 +34,7 @@ import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.VerificationCodeRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -155,9 +156,52 @@ public class IdentityService {
         return Map.of("url", stored.url(), "kind", kind, "width", img.getWidth(), "height", img.getHeight());
     }
 
-    /** URL aceita no cadastro: emitida pelo storage (upload acima) ou https externo (logo encontrado na internet). */
-    private boolean preRegistrationUpload(String url) {
-        return url.startsWith("https://") || storage.keyOf(url).isPresent();
+    /** Envios do cadastro abandonados (a conta nunca foi criada) somem depois disso. */
+    static final Duration PENDING_TTL = Duration.ofHours(24);
+    private static final Set<MediaService.MediaScope> PENDING_SCOPES =
+            Set.of(MediaService.MediaScope.PENDING, MediaService.MediaScope.PENDING_RESTRICTED);
+
+    /**
+     * URL aceita no cadastro: só um envio deste formulário ({@code POST /api/auth/uploads}) do tipo certo para o campo —
+     * nunca uma URL externa nem uma chave qualquer do storage (o cadastro copia o arquivo para a conta nova).
+     */
+    private Optional<MediaService.OwnedMedia> pendingUpload(String url, String kind) {
+        return MediaService.ownedMedia(storage, null, url, PENDING_SCOPES)
+                .filter(m -> kind.equals(MediaService.pendingKind(m.key())));
+    }
+
+    /**
+     * Job de hora em hora: apaga envios do cadastro com mais de 24 h. Os usados num cadastro já foram copiados para a
+     * conta; os que ainda aparecem em alguma conta são de cadastros anteriores a essa cópia e ficam.
+     */
+    @Scheduled(cron = "0 35 * * * *", zone = "America/Sao_Paulo")
+    public int purgeStalePendingUploads() {
+        Instant cutoff = Instant.now().minus(PENDING_TTL);
+        int removed = 0;
+        for (String prefix : List.of("pending/", "restricted/pending/")) {
+            for (String key : storage.listOlderThan(prefix, cutoff, 2_000)) {
+                if (pendingReferenced(key)) {
+                    continue;
+                }
+                try {
+                    storage.delete(key);
+                    removed++;
+                } catch (RuntimeException ex) {
+                    log.warn("Envio de cadastro {} não apagado: {}", key, ex.getMessage());
+                }
+            }
+        }
+        if (removed > 0) {
+            log.info("Envios de cadastro abandonados apagados: {}", removed);
+        }
+        return removed;
+    }
+
+    private boolean pendingReferenced(String key) {
+        String suffix = key.startsWith("restricted/") ? key.substring("restricted/".length()) : key;
+        return users.existsByAvatarUrlEndingWithOrCoverUrlEndingWith(suffix, suffix)
+                || brands.existsByLogoUrlEndingWithOrActivityProofUrlEndingWith(suffix, suffix)
+                || celebrities.existsByAvatarUrlEndingWithOrIdentityProofUrlEndingWith(suffix, suffix);
     }
 
     public record BrandData(String razaoSocial, String cnpj, String nomeFantasia, String logoUrl, String fashionCategory,
@@ -249,13 +293,22 @@ public class IdentityService {
                 errors.put("username", problem);
             }
         }
-        for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl()},
-                {"brand.logoUrl", cmd.brand() == null ? null : cmd.brand().logoUrl()},
-                {"brand.activityProofUrl", cmd.brand() == null ? null : cmd.brand().activityProofUrl()},
-                {"celebrity.officialPhotoUrl", cmd.celebrity() == null ? null : cmd.celebrity().officialPhotoUrl()},
-                {"celebrity.identityProofUrl", cmd.celebrity() == null ? null : cmd.celebrity().identityProofUrl()}}) {
-            if (!blank(f[1]) && !preRegistrationUpload(f[1])) {
+        // arquivos do cadastro: lidos já aqui (confere que o envio existe) e copiados para a conta depois de criada
+        Map<String, byte[]> uploads = new LinkedHashMap<>();
+        for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl(), "avatar"},
+                {"brand.logoUrl", cmd.brand() == null ? null : cmd.brand().logoUrl(), "logo"},
+                {"brand.activityProofUrl", cmd.brand() == null ? null : cmd.brand().activityProofUrl(), "activity-proof"},
+                {"celebrity.officialPhotoUrl", cmd.celebrity() == null ? null : cmd.celebrity().officialPhotoUrl(), "official-photo"},
+                {"celebrity.identityProofUrl", cmd.celebrity() == null ? null : cmd.celebrity().identityProofUrl(), "identity"}}) {
+            if (blank(f[1])) {
+                continue;
+            }
+            Optional<MediaService.OwnedMedia> upload = pendingUpload(f[1], f[2]);
+            byte[] bytes = upload.map(m -> readQuietly(m.key())).orElse(null);
+            if (bytes == null) {
                 errors.put(f[0], Msg.t("identity.envie_o_arquivo_pelo_formulario"));
+            } else {
+                uploads.put(upload.get().key(), bytes);
             }
         }
         if (!errors.isEmpty()) {
@@ -287,17 +340,22 @@ public class IdentityService {
         u.setTermsAcceptedAt(Instant.now());
         u.setTermsVersion(TERMS_VERSION);
         u.setStatus(AccountStatus.PENDING_EMAIL_VERIFICATION);
-        if (type == ProfileType.MARCA && cmd.brand() != null) {
-            u.setAvatarUrl(cmd.brand().logoUrl());
-        }
-        if (type == ProfileType.CELEBRIDADE && cmd.celebrity() != null) {
-            u.setAvatarUrl(cmd.celebrity().officialPhotoUrl());
-        }
-        if (!blank(cmd.avatarUrl())) {
-            u.setAvatarUrl(cmd.avatarUrl());       // a foto de perfil escolhida vence o logo/foto oficial no avatar
-        }
         u.setSex(cmd.sex());
         users.save(u);
+        Map<String, String> claimed = new LinkedHashMap<>();
+        uploads.forEach((key, bytes) -> claimed.put(key, claimPendingUpload(u.getId(), key, bytes)));
+        java.util.function.UnaryOperator<String> own = url -> blank(url) ? null
+                : MediaService.ownedMedia(storage, null, url, PENDING_SCOPES).map(m -> claimed.get(m.key())).orElse(null);
+        String avatar = own.apply(cmd.avatarUrl());
+        if (type == ProfileType.MARCA && cmd.brand() != null) {
+            u.setAvatarUrl(own.apply(cmd.brand().logoUrl()));
+        }
+        if (type == ProfileType.CELEBRIDADE && cmd.celebrity() != null) {
+            u.setAvatarUrl(own.apply(cmd.celebrity().officialPhotoUrl()));
+        }
+        if (avatar != null) {
+            u.setAvatarUrl(avatar);                // a foto de perfil escolhida vence o logo/foto oficial no avatar
+        }
         UserPreferences prefs = new UserPreferences();
         prefs.setUser(u);
         prefs.setLanguage(UiLanguage.valueOf(Msg.preferenceCode(Msg.locale())));   // o idioma da interface no cadastro vira a preferência (RF23)
@@ -311,7 +369,7 @@ public class IdentityService {
             bp.setOwner(u);
             bp.setBrandName(blank(b.nomeFantasia()) ? b.razaoSocial().trim() : b.nomeFantasia().trim());
             bp.setSlug(uniqueBrandSlug(bp.getBrandName()));
-            bp.setLogoUrl(b.logoUrl());
+            bp.setLogoUrl(own.apply(b.logoUrl()));
             bp.setCnpj(b.cnpj().replaceAll("\\D", ""));
             bp.setRazaoSocial(b.razaoSocial().trim());
             bp.setNomeFantasia(b.nomeFantasia());
@@ -319,7 +377,7 @@ public class IdentityService {
             bp.setStoreUrl(b.storeUrl());
             bp.setCommercialContact(b.commercialContact());
             bp.setOfficialHashtag(b.officialHashtag());
-            bp.setActivityProofUrl(b.activityProofUrl());
+            bp.setActivityProofUrl(own.apply(b.activityProofUrl()));
             bp.setCountry(u.getCountry());
             bp.setApprovalStatus(ApprovalStatus.PENDENTE);
             brands.save(bp);
@@ -330,9 +388,9 @@ public class IdentityService {
             cp.setOwner(u);
             cp.setStageName(c.stageName().trim());
             cp.setSlug(uniqueCelebritySlug(c.stageName()));
-            cp.setAvatarUrl(c.officialPhotoUrl());
+            cp.setAvatarUrl(own.apply(c.officialPhotoUrl()));
             cp.setRealName(c.realName());
-            cp.setIdentityProofUrl(c.identityProofUrl());
+            cp.setIdentityProofUrl(own.apply(c.identityProofUrl()));
             cp.setAreasJson(Json.write(c.areas()));
             cp.setVerifiableFollowersJson(Json.write(c.verifiableFollowers()));
             cp.setVerificationUrl(c.verificationUrl());
@@ -356,6 +414,24 @@ public class IdentityService {
         audit.log(u.getId().toString(), AuditActions.CADASTRO_CONTA, "user:" + u.getId(), "SUCESSO", ip, userAgent,
                 Map.of("profileType", type.name()));
         return openSession(u, true, ip, userAgent, null);
+    }
+
+    private byte[] readQuietly(String key) {
+        try {
+            return storage.get(key);
+        } catch (RuntimeException ex) {
+            return null;                                   // envio apagado (mais de 24 h) ou inexistente
+        }
+    }
+
+    /**
+     * Copia o envio do cadastro para a conta: foto, logo e foto oficial em {@code users/{id}/profile/}; documentos em
+     * {@code restricted/users/{id}/documents/} (só ADMIN lê). O original em pending/ sai no job de limpeza.
+     */
+    private String claimPendingUpload(UUID userId, String pendingKey, byte[] bytes) {
+        String kind = MediaService.pendingKind(pendingKey);
+        String folder = pendingKey.startsWith("restricted/") ? "restricted/users/" + userId + "/documents/" : "users/" + userId + "/profile/";
+        return storage.put(folder + kind + "-" + System.currentTimeMillis() + ".jpg", bytes, "image/jpeg").url();
     }
 
     public static void validatePassword(String password, Map<String, Object> errors) {
@@ -602,6 +678,9 @@ public class IdentityService {
         }
         if (u.getStatus() == AccountStatus.DELETED || u.getStatus() == AccountStatus.SUSPENDED) {
             throw new ApiException(403, "CONTA_INDISPONIVEL", Msg.t("identity.esta_conta_nao_esta_disponivel"));
+        }
+        if (hasher.needsRehash(u.getPasswordHash())) {
+            u.setPasswordHash(hasher.hash(password));       // parâmetros do Argon2 atualizados: refaz com a senha certa
         }
         if (u.isTwoFactorEnabled()) {
             if (cmd.twoFactorCode() == null || cmd.twoFactorCode().isBlank()) {

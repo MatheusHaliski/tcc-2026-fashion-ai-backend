@@ -40,13 +40,29 @@ class MediaProxyControllerTest {
     }
 
     @Test
-    void entregaOArquivoDoBucketComTipoECachePublico() {
+    void entregaFotoDePessoaComCacheSoNoNavegador() {
         byte[] png = {(byte) 0x89, 'P', 'N', 'G'};
         objects.put("users/u1/foto de perfil.png", png);
         ResponseEntity<byte[]> res = controller.media(get("/media/users/u1/foto%20de%20perfil.png"));
         assertThat(res.getBody()).isEqualTo(png);
         assertThat(res.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_PNG);
-        assertThat(res.getHeaders().getCacheControl()).contains("max-age=86400").contains("public");
+        assertThat(res.getHeaders().getCacheControl()).contains("max-age=86400").contains("private").doesNotContain("public");
+    }
+
+    @Test
+    void logoDeMarcaTemCachePublico() {
+        objects.put("brands/logos/nike.png", new byte[]{1});
+        ResponseEntity<byte[]> res = controller.media(get("/media/brands/logos/nike.png"));
+        assertThat(res.getHeaders().getCacheControl()).contains("public");
+    }
+
+    @Test
+    void exportacaoLgpdEDumpAntigosNuncaSaemPelaMidiaPublica() {
+        objects.put("users/u1/exports/e1.json", new byte[]{1});
+        objects.put("backups/fashionai-2026.sql.gz", new byte[]{1});
+        assertThatThrownBy(() -> controller.media(get("/media/users/u1/exports/e1.json"))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> controller.media(get("/media/backups/fashionai-2026.sql.gz"))).isInstanceOf(ApiException.class);
+        assertThat(reads).isEmpty();
     }
 
     @Test

@@ -46,6 +46,9 @@ import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.VerificationCodeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +69,9 @@ import java.util.UUID;
  */
 @Service
 public class AccountService {
+    private static final Logger log = LoggerFactory.getLogger(AccountService.class);
     public static final Duration DELETION_GRACE = Duration.ofDays(30);
+    public static final Duration EXPORT_TTL = Duration.ofDays(7);
 
     /** Finalidades, base legal e artigo exibidos em cada controle da seção Privacidade (artefato #6). */
     public static final Map<ConsentPurpose, String[]> PURPOSES = new LinkedHashMap<>();
@@ -354,17 +359,42 @@ public class AccountService {
         exports.save(req);
         Map<String, Object> data = exportData(u);
         byte[] json = Json.write(Msg.resolveDeep(mailLocale(u), data)).getBytes(StandardCharsets.UTF_8);
-        MediaStoragePort.StoredObject stored = storage.put("users/" + u.getId() + "/exports/" + req.getId() + ".json", json,
-                "application/json");
+        // restricted/: o /media/** público não entrega (nem guarda em cache) o pacote; só o download autenticado do dono
+        MediaStoragePort.StoredObject stored = storage.put(exportKey(u.getId(), req.getId()), json, "application/json");
         req.setFileKey(stored.key());
         req.setStatus(ExportStatus.READY);
         req.setReadyAt(Instant.now());
-        req.setExpiresAt(Instant.now().plus(Duration.ofDays(7)));
+        req.setExpiresAt(Instant.now().plus(EXPORT_TTL));
         notifications.notify(u.getId(), null, NotificationType.DATA_EXPORT_READY, "EXPORT", req.getId(),
                 Msg.k("account.seus_dados_estao_prontos"), Msg.k("account.a_exportacao_em_json_fica"), null);
         audit.log(user, AuditActions.EXPORTACAO_CONTA, "export:" + req.getId(), Map.of("bytes", json.length));
         return Map.of("id", req.getId(), "status", req.getStatus(), "readyAt", req.getReadyAt(), "expiresAt", req.getExpiresAt(),
                 "bytes", json.length);
+    }
+
+    static String exportKey(UUID userId, UUID exportId) {
+        return "restricted/users/" + userId + "/exports/" + exportId + ".json";
+    }
+
+    /** Job de hora em hora: apaga o arquivo das exportações vencidas (7 dias); o registro fica como EXPIRED. */
+    @Scheduled(cron = "0 50 * * * *", zone = "America/Sao_Paulo")
+    @Transactional
+    public int purgeExpiredExports() {
+        int removed = 0;
+        for (DataExportRequest req : exports.findByExpiresAtBeforeAndFileKeyIsNotNull(Instant.now())) {
+            try {
+                storage.delete(req.getFileKey());
+            } catch (RuntimeException ex) {
+                log.warn("Exportação {}: arquivo já ausente ({})", req.getId(), ex.getMessage());
+            }
+            req.setFileKey(null);
+            req.setStatus(ExportStatus.EXPIRED);
+            removed++;
+        }
+        if (removed > 0) {
+            log.info("Exportações LGPD vencidas removidas: {}", removed);
+        }
+        return removed;
     }
 
     /** Idioma dos e-mails e arquivos do usuário: a preferência salva (RF23) e, sem ela, o idioma da requisição. */
@@ -390,7 +420,7 @@ public class AccountService {
         if (!req.getUser().getId().equals(user.id())) {
             throw ApiException.forbidden(Msg.t("account.exportacao_de_outro_usuario"));
         }
-        if (req.getExpiresAt() != null && req.getExpiresAt().isBefore(Instant.now())) {
+        if (req.getExpiresAt() != null && req.getExpiresAt().isBefore(Instant.now()) || req.getFileKey() == null) {
             throw new ApiException(410, "EXPORTACAO_EXPIRADA", Msg.t("account.esta_exportacao_expirou_gere_uma"));
         }
         return storage.get(req.getFileKey());

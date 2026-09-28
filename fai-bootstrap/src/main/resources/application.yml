@@ -110,6 +110,7 @@ fashionai:
     user: ${DEV_GATE_USER:matheushaliskitcc20233}
   jwt:
     issuer: ${JWT_ISSUER:fashionai}
+    audience: ${JWT_AUDIENCE:fashionai-api}              # claim aud exigido pela API
     access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
     private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
     public-key-pem: ${JWT_PUBLIC_KEY_PEM:}

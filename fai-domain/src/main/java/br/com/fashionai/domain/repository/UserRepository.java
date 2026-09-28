@@ -25,6 +25,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUsernameIgnoreCase(String username);
 
+    boolean existsByAvatarUrlEndingWithOrCoverUrlEndingWith(String avatarSuffix, String coverSuffix);
+
     List<User> findByProfileTypeAndStatusOrderByCreatedAtDesc(ProfileType profileType, AccountStatus status);
 
     List<User> findTop50ByProfileTypeOrderByCreatedAtDesc(ProfileType profileType);

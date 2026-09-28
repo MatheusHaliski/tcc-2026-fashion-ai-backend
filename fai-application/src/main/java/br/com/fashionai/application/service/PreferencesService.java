@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * RF23 — preferências de interface e dados NÃO sensíveis (salvam direto, sem reautenticação): tema,
@@ -234,11 +235,15 @@ public class PreferencesService {
         if (cmd.bio() != null) {
             u.setBio(InputSanitizer.moderated("bio", cmd.bio(), 300));
         }
-        if (cmd.avatarUrl() != null) {
-            u.setAvatarUrl(cmd.avatarUrl().isBlank() ? null : cmd.avatarUrl());
+        // avatar/capa: vazio remove; senão só um arquivo da própria pessoa (users/{id}/…), gravado pela URL canônica
+        // (o valor atual reenviado sem mudança passa: contas antigas têm a foto do cadastro em pending/)
+        if (cmd.avatarUrl() != null && !cmd.avatarUrl().equals(u.getAvatarUrl())) {
+            u.setAvatarUrl(cmd.avatarUrl().isBlank() ? null
+                    : media.requireOwnedMedia(u.getId(), cmd.avatarUrl(), Set.of(MediaService.MediaScope.OWNER), "avatarUrl").url());
         }
-        if (cmd.coverUrl() != null) {
-            u.setCoverUrl(cmd.coverUrl().isBlank() ? null : cmd.coverUrl());
+        if (cmd.coverUrl() != null && !cmd.coverUrl().equals(u.getCoverUrl())) {
+            u.setCoverUrl(cmd.coverUrl().isBlank() ? null
+                    : media.requireOwnedMedia(u.getId(), cmd.coverUrl(), Set.of(MediaService.MediaScope.OWNER), "coverUrl").url());
         }
         if (cmd.country() != null) {
             String c = cmd.country().trim().toUpperCase(Locale.ROOT);
@@ -347,7 +352,9 @@ public class PreferencesService {
             throw ApiException.badRequest("ROTACAO_INVALIDA", Msg.t("preferences.rotacao_invalida"));
         }
         User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        BufferedImage current = u.getAvatarUrl() == null ? null : media.readImage(u.getAvatarUrl()).orElse(null);
+        // só a foto da própria pessoa (ou a do cadastro, em pending/): nunca republica em users/ um arquivo de terceiros
+        BufferedImage current = media.ownedMedia(u.getId(), u.getAvatarUrl(), Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PENDING))
+                .flatMap(m -> media.readImage(m.url())).orElse(null);
         if (current == null) {
             throw ApiException.badRequest("SEM_FOTO", Msg.t("preferences.sem_foto_de_perfil_para_girar"));
         }
