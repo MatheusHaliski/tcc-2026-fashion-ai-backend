@@ -328,10 +328,34 @@ public class PreferencesService {
     @Transactional
     public Views.UserCard uploadProfileImage(CurrentUser user, byte[] bytes, boolean cover) {
         String mime = ImageOps.requireAcceptedImage(bytes);
-        BufferedImage img = ImageOps.decode(bytes);
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        return saveProfileImage(u, ImageOps.decode(bytes), cover, mime);
+    }
+
+    /**
+     * RF3 — gira a foto de perfil atual em passos de 90° (foto que chegou deitada: enviada antes da leitura da orientação
+     * EXIF ou por um app que não grava a tag). Gera uma nova versão; a anterior continua no acervo de fotos.
+     */
+    @Transactional
+    public Views.UserCard rotateAvatar(CurrentUser user, int degrees) {
+        int turns = Math.floorMod(Math.round(degrees / 90f), 4);
+        if (degrees % 90 != 0 || turns == 0) {
+            throw ApiException.badRequest("ROTACAO_INVALIDA", Msg.t("preferences.rotacao_invalida"));
+        }
+        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        BufferedImage current = u.getAvatarUrl() == null ? null : media.readImage(u.getAvatarUrl()).orElse(null);
+        if (current == null) {
+            throw ApiException.badRequest("SEM_FOTO", Msg.t("preferences.sem_foto_de_perfil_para_girar"));
+        }
+        // EXIF 6 = 90° horário, 3 = 180°, 8 = 90° anti-horário
+        BufferedImage turned = ImageOps.orient(ImageOps.toArgb(current), turns == 1 ? 6 : turns == 2 ? 3 : 8);
+        audit.log(user, AuditActions.ALTERACAO_PERFIL, "user:" + u.getId(), Map.of("field", "avatar", "rotate", turns * 90));
+        return saveProfileImage(u, turned, false, "image/jpeg");
+    }
+
+    private Views.UserCard saveProfileImage(User u, BufferedImage img, boolean cover, String mime) {
         BufferedImage fitted = ImageOps.scaleToFit(img, cover ? 1600 : 512, cover ? 900 : 512);
         byte[] jpeg = ImageOps.jpeg(fitted, 0.9f);
-        User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         String key = "users/" + u.getId() + "/profile/" + (cover ? "cover" : "avatar") + "-" + System.currentTimeMillis() + ".jpg";
         MediaStoragePort.StoredObject stored = media.put(key, jpeg, "image/jpeg");
         media.register(u, PhotoOrigin.PROFILE, u.getId(), stored, null, null, jpeg, fitted.getWidth(), fitted.getHeight(), null,

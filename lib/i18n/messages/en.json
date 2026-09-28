@@ -3566,5 +3566,7 @@
   "backgroundStudio.anim.SHIMMER": "Shimmer",
   "backgroundStudio.arte_propria": "Your own art (AI or uploaded image)",
   "pieceArt.previa_feed": "Feed",
-  "pieceArt.previa_ampliado": "Expanded"
+  "pieceArt.previa_ampliado": "Expanded",
+  "editProfile.girar_foto": "Rotate photo 90°",
+  "editProfile.foto_girada": "Profile photo rotated."
 }

@@ -31,17 +31,7 @@ class ImageOrientationTest {
     /** JPEG com um APP1 Exif mínimo (IFD0 com a tag 0x0112) logo depois do APP0 do JFIF. */
     static byte[] jpegWithOrientation(BufferedImage img, int orientation, boolean littleEndian) {
         byte[] jpeg = ImageOps.jpeg(img, 0.95f);
-        ByteArrayOutputStream tiff = new ByteArrayOutputStream();
-        writeBytes(tiff, littleEndian ? new byte[]{'I', 'I', 0x2A, 0} : new byte[]{'M', 'M', 0, 0x2A});
-        write32(tiff, 8, littleEndian);                  // IFD0 logo após o cabeçalho
-        write16(tiff, 1, littleEndian);                  // uma entrada
-        write16(tiff, 0x0112, littleEndian);
-        write16(tiff, 3, littleEndian);                  // SHORT
-        write32(tiff, 1, littleEndian);
-        write16(tiff, orientation, littleEndian);
-        write16(tiff, 0, littleEndian);
-        write32(tiff, 0, littleEndian);                  // sem próximo IFD
-        byte[] t = tiff.toByteArray();
+        byte[] t = tiff(orientation, littleEndian);
         int len = 2 + 6 + t.length;
         ByteArrayOutputStream app1 = new ByteArrayOutputStream();
         writeBytes(app1, new byte[]{(byte) 0xFF, (byte) 0xE1, (byte) (len >> 8), (byte) len, 'E', 'x', 'i', 'f', 0, 0});
@@ -52,6 +42,67 @@ class ImageOrientationTest {
         writeBytes(out, app1.toByteArray());
         out.write(jpeg, app0End, jpeg.length - app0End);
         return out.toByteArray();
+    }
+
+    /** PNG com o chunk eXIf (TIFF direto) logo depois do IHDR, como gravam o macOS e o Pillow. */
+    static byte[] pngWithOrientation(BufferedImage img, int orientation) {
+        byte[] png = ImageOps.png(img);
+        byte[] t = tiff(orientation, false);
+        int ihdrEnd = 8 + 4 + 4 + 13 + 4;
+        ByteArrayOutputStream chunk = new ByteArrayOutputStream();
+        write32(chunk, t.length, false);
+        byte[] typeAndData = new byte[4 + t.length];
+        System.arraycopy(new byte[]{'e', 'X', 'I', 'f'}, 0, typeAndData, 0, 4);
+        System.arraycopy(t, 0, typeAndData, 4, t.length);
+        writeBytes(chunk, typeAndData);
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        crc.update(typeAndData);
+        write32(chunk, (int) crc.getValue(), false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(png, 0, ihdrEnd);
+        writeBytes(out, chunk.toByteArray());
+        out.write(png, ihdrEnd, png.length - ihdrEnd);
+        return out.toByteArray();
+    }
+
+    /** Estrutura RIFF de um WebP estendido (VP8X + EXIF); só os cabeçalhos, para a leitura da tag. */
+    static byte[] webpHeadersWithOrientation(int orientation, boolean exifPrefix) {
+        byte[] t = tiff(orientation, true);
+        byte[] exif = exifPrefix ? new byte[6 + t.length] : t;
+        if (exifPrefix) {
+            System.arraycopy(new byte[]{'E', 'x', 'i', 'f', 0, 0}, 0, exif, 0, 6);
+            System.arraycopy(t, 0, exif, 6, t.length);
+        }
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        writeBytes(body, new byte[]{'W', 'E', 'B', 'P', 'V', 'P', '8', 'X'});
+        write32(body, 10, true);
+        writeBytes(body, new byte[]{0x08, 0, 0, 0, 63, 0, 0, 31, 0, 0});
+        writeBytes(body, new byte[]{'E', 'X', 'I', 'F'});
+        write32(body, exif.length, true);
+        writeBytes(body, exif);
+        if ((exif.length & 1) == 1) {
+            body.write(0);
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writeBytes(out, new byte[]{'R', 'I', 'F', 'F'});
+        write32(out, body.size(), true);
+        writeBytes(out, body.toByteArray());
+        return out.toByteArray();
+    }
+
+    /** TIFF mínimo do EXIF: IFD0 com uma entrada, a tag Orientation. */
+    private static byte[] tiff(int orientation, boolean littleEndian) {
+        ByteArrayOutputStream tiff = new ByteArrayOutputStream();
+        writeBytes(tiff, littleEndian ? new byte[]{'I', 'I', 0x2A, 0} : new byte[]{'M', 'M', 0, 0x2A});
+        write32(tiff, 8, littleEndian);                  // IFD0 logo após o cabeçalho
+        write16(tiff, 1, littleEndian);                  // uma entrada
+        write16(tiff, 0x0112, littleEndian);
+        write16(tiff, 3, littleEndian);                  // SHORT
+        write32(tiff, 1, littleEndian);
+        write16(tiff, orientation, littleEndian);
+        write16(tiff, 0, littleEndian);
+        write32(tiff, 0, littleEndian);                  // sem próximo IFD
+        return tiff.toByteArray();
     }
 
     private static void writeBytes(ByteArrayOutputStream o, byte[] b) {
@@ -130,6 +181,33 @@ class ImageOrientationTest {
             int[] sorted = java.util.Arrays.stream(seen).map(p -> p & 0xFFFFFF).sorted().toArray();
             assertArrayEquals(new int[]{1, 2, 3, 4, 5, 6}, sorted, "nenhum pixel perdido na orientação " + o);
         }
+    }
+
+    @Test
+    void pngComEXifTambemFicaEmPe() {
+        byte[] png = pngWithOrientation(landscape(), 6);
+        assertEquals(6, ImageOps.exifOrientation(png));
+        BufferedImage img = ImageOps.decode(png);
+        assertEquals(32, img.getWidth());
+        assertEquals(64, img.getHeight());
+        assertTrue(red(img, 28, 4));
+    }
+
+    @Test
+    void webpComChunkExifDaAOrientacao() {
+        assertEquals(6, ImageOps.exifOrientation(webpHeadersWithOrientation(6, false)));
+        assertEquals(8, ImageOps.exifOrientation(webpHeadersWithOrientation(8, true)));
+    }
+
+    @Test
+    void jpegComBytesDePreenchimentoAntesDoMarcador() {
+        byte[] jpeg = jpegWithOrientation(landscape(), 6, true);
+        byte[] padded = new byte[jpeg.length + 1];
+        padded[0] = jpeg[0];
+        padded[1] = jpeg[1];
+        padded[2] = (byte) 0xFF;                          // FF extra antes do APP0
+        System.arraycopy(jpeg, 2, padded, 3, jpeg.length - 2);
+        assertEquals(6, ImageOps.exifOrientation(padded));
     }
 
     @Test

@@ -3566,5 +3566,7 @@
   "backgroundStudio.anim.SHIMMER": "Brillo",
   "backgroundStudio.arte_propria": "Arte propio (IA o imagen subida)",
   "pieceArt.previa_feed": "Feed",
-  "pieceArt.previa_ampliado": "Ampliada"
+  "pieceArt.previa_ampliado": "Ampliada",
+  "editProfile.girar_foto": "Girar foto 90°",
+  "editProfile.foto_girada": "Foto de perfil girada."
 }
