@@ -19,4 +19,10 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(a.kind).not.toBe("none"); expect(a.motion).toBe("leaves"); expect(a.base).toMatch(/gradient/);
     expect(resolveCardArt({}).kind).toBe("none");
   });
+  test("Aura Electro usa o GIF da variante no card", () => {
+    const art = resolveCardArt({ aura: { variantId: "aura_electro__01_cyan_pulse" } });
+    expect(art.kind).toBe("aura");
+    expect(art.image).toBe("/aura/electro/01_cyan_pulse/loading_10s.gif");
+    expect(art.presetId).toBe("aura_electro");
+  });
 });

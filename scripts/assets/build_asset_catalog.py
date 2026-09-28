@@ -83,6 +83,11 @@ AURA_PRESETS = [
      "gradient": {"type": "radial", "angle": 0}, "animation": {"kind": "shimmer", "durationS": 5},
      "prompt": "evening glam red-carpet fashion background, dark monochrome palette with warm bronze-gold jewel-tone spotlight accent, radial stage-spotlight glow, dramatic high-contrast luxury lighting",
      "recommendedMaterials": ["cetim_liquido", "veludo_profundo"], "skinFamilyRisk": "medium"},
+    {"id": "aura_electro", "name": "Aura Electro", "archetype": "Efeitos de luz e cor eletro",
+     "palette": ["#087bff", "#00e5ff", "#ac53ff", "#ff39d5"], "season": "Todo o ano · editorial/urbano",
+     "gradient": {"type": "conic", "angle": 0}, "animation": {"kind": "gif", "durationS": 10},
+     "prompt": "electro fashion aura, vibrant neon light trails with transparent center, high-energy color gradients",
+     "recommendedMaterials": ["laminado_metalico", "malha_canelada"], "skinFamilyRisk": "high"},
     {"id": "aura_dark_academia", "name": "Ivy Library", "archetype": "Dark academia",
      "palette": ["#1c1917", "#451a03", "#78350f", "#14532d"], "season": "Outono/inverno · editorial intelectual",
      "gradient": {"type": "linear", "angle": 140}, "animation": {"kind": "flicker", "durationS": 5},
@@ -315,8 +320,8 @@ CATEGORY_FOLDERS = {
 CATEGORY_META = {
     "material_static": ("Material (sem GIF)", 12, "asset"),
     "material_animated": ("Material (com GIF)", 12, "asset"),
-    "aura_static": ("Aura (sem GIF)", 18, "asset"),
-    "aura_animated": ("Aura (com GIF)", 18, "css-animation-over-static"),
+    "aura_static": ("Aura (sem GIF)", 30, "asset"),
+    "aura_animated": ("Aura (com GIF)", 30, "css-animation-over-static"),
     "aura_material_static": ("Material com Aura (sem GIF)", 216, "css-blend(aura_static + material_static)"),
     "aura_material_animated": ("Material com Aura (com GIF)", 216, "css-blend(aura_static + material_animated video)"),
     "aura_material_mosaic_animated": ("Material em mosaico com Aura (somente com GIF)", 216, "asset"),
@@ -625,6 +630,39 @@ def build(derived_enabled: bool) -> dict:
                             "expected": f"/aura_com_GIF/{variant}.mp4 (ou .gif/.webm)"})
         preset["variants"].append(v)
         variants_flat.append(v)
+
+    # ---------------- Aura Electro (PNG + GIF próprio por variante) ----------------
+    electro_catalog = PUBLIC / "aura" / "electro" / "catalogo.json"
+    if electro_catalog.is_file() and "aura_electro" in presets:
+        electro = json.loads(electro_catalog.read_text(encoding="utf-8"))
+        preset = presets["aura_electro"]
+        asset_by_id = {item["id"]: item for item in electro.get("assets", [])}
+        variant_by_id = {slug(item["name"]): item for item in electro.get("variants", [])}
+        for idx, (asset_id, asset) in enumerate(sorted(asset_by_id.items()), start=1):
+            variant_info = variant_by_id.get(asset_id, {})
+            variant_id = f"aura_electro__{asset_id}"
+            theme = re.sub(r"^\d+_", "", asset_id).replace("_", " ")
+            v = {"id": variant_id, "presetId": "aura_electro", "theme": theme, "code": f"E{idx:02d}",
+                 "description": f"Aura Electro · movimento {variant_info.get('movement', 'dinâmico')}",
+                 "index": len(variants_flat) + 1, "palette": variant_info.get("colors", [])}
+            static_file = PUBLIC / asset["image"].lstrip("/")
+            animated_file = PUBLIC / asset["gif"].lstrip("/")
+            if static_file.is_file():
+                v["static"] = {"url": url_of(static_file),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80),
+                               **d.image_info(static_file)}
+            else:
+                v["static"] = None
+                missing.append({"category": "aura_static", "id": variant_id, "expected": asset["image"]})
+            if animated_file.is_file():
+                v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
+                                 "posterUrl": (v.get("static") or {}).get("previewUrl"), **d.image_info(animated_file)}
+            else:
+                v["animated"] = None
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset["gif"]})
+            preset["variants"].append(v)
+            variants_flat.append(v)
 
     # ---------------- Combinações aura × material ----------------
     def combo_items(key: str, exts: set[str]) -> list[dict]:

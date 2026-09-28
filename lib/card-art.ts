@@ -30,7 +30,7 @@ interface Studio {
 }
 type Idx = {
   presets: Record<string, { name: string; palette: string[]; animation?: string; recommendedMaterials: string[]; variants: string[] }>;
-  variants: Record<string, { presetId: string; code?: string; theme?: string; card?: string | null; preview?: string | null; animation?: string | null }>;
+  variants: Record<string, { presetId: string; code?: string; theme?: string; card?: string | null; preview?: string | null; animated?: string | null; animation?: string | null }>;
   materials: Record<string, { name: string; code?: string; card?: string | null; preview?: string | null }>;
   combos: Record<string, { single?: { url: string; poster?: string | null }; mosaic?: { url: string; poster?: string | null } }>;
   seasonal: Record<string, { season: string; name: string; stops: string[]; animation?: string }>;
@@ -99,9 +99,9 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
       const combo = ART_INDEX.combos[`${s.aura!.variantId}|${s.materialId}`];
       if (s.aura?.format === "MOSAICO" && combo?.mosaic) return { ...withPalette, kind: "mosaic", video: { src: media(combo.mosaic.url)!, poster: media(combo.mosaic.poster) }, image: media(combo.mosaic.poster), label: tr("lib.cardArt.aura_mosaico", { name: preset?.name, name2: m.name }) };
       if (combo?.single && s.aura?.format) return { ...withPalette, kind: "aura_material", video: { src: media(combo.single.url)!, poster: media(combo.single.poster) }, image: media(combo.single.poster), label: tr("lib.cardArt.aura_imagem_unica", { name: preset?.name, name2: m.name }) };
-      return { ...withPalette, kind: "aura_material", image: media(v.card), material: media(m.card), animation: v.animation, label: `AURA ${preset?.name} + ${m.name}` };
+      return { ...withPalette, kind: "aura_material", image: media(v.animated) ?? media(v.card), material: media(m.card), animation: v.animation, label: `AURA ${preset?.name} + ${m.name}` };
     }
-    return { ...withPalette, kind: "aura", image: media(v.card), animation: v.animation, label: `AURA ${preset?.name} · ${v.theme ?? ""}` };
+    return { ...withPalette, kind: "aura", image: media(v.animated) ?? media(v.card), animation: v.animation, label: `AURA ${preset?.name} · ${v.theme ?? ""}` };
   }
   if (m) return { ...art, kind: "material", image: media(m.card), label: tr("lib.cardArt.material", { name: m.name }) };
   return art.kind === "none" ? NONE : art;

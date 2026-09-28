@@ -24,6 +24,7 @@ for p in manifest["auraPresets"]:
         fallback = (v.get("staticFallback") or {}).get("posterUrl")
         variants[v["id"]] = {"presetId": p["id"], "code": v.get("code"), "theme": v.get("theme"),
                              "card": static.get("cardUrl") or fallback, "preview": static.get("previewUrl") or fallback,
+                             "animated": (v.get("animated") or {}).get("url"),
                              "animation": (v.get("animatedFallback") or {}).get("animation") or (p.get("animation") or {}).get("kind")}
 
 materials = {m["id"]: {"name": m["name"], "code": m.get("code"), "finish": m.get("finish"),
