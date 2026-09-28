@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { GATE_API_COOKIE, GATE_API_TTL_SECONDS, GATE_COOKIE, gateConfig, signGate, verifyGate } from "@/lib/gate/token";
+import { GATE_API_COOKIE, GATE_API_TTL_SECONDS, GATE_COOKIE, gateConfig, signApiToken, verifyGate } from "@/lib/gate/token";
 
 /**
  * Renova o token curto da API (cookie fai_gate_a, 1 h) a partir do token da página (HttpOnly). O cliente da API chama
@@ -16,6 +16,6 @@ export async function POST(req: NextRequest) {
   if (!who) return NextResponse.json({ error: "GATE_EXPIRADO" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   const secure = process.env.NODE_ENV === "production" && req.nextUrl.protocol === "https:";
   const res = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
-  res.cookies.set(GATE_API_COOKIE, await signGate("ga", who.id, who.jti, cfg.secret), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
+  res.cookies.set(GATE_API_COOKIE, await signApiToken(cfg, who.id, who.jti), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
   return res;
 }

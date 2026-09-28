@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  GATE_API_COOKIE, GATE_API_RENEW_BEFORE_SECONDS, GATE_API_TTL_SECONDS, GATE_COOKIE, gateConfig, signGate, tokenExp,
+  GATE_API_COOKIE, GATE_API_RENEW_BEFORE_SECONDS, GATE_API_TTL_SECONDS, GATE_COOKIE, apiTokenMatches, gateConfig, signApiToken, tokenExp,
   verifyCloudflareAccess, verifyGate, type GateConfig, type GateIdentity,
 } from "@/lib/gate/token";
 
@@ -86,9 +86,9 @@ export async function middleware(req: NextRequest) {
   if (identity && cfg.enabled && cfg.mode === "builtin" && cfg.secret && !GATE_ROUTES.has(path) && res.status < 300) {
     const current = req.cookies.get(GATE_API_COOKIE)?.value;
     const exp = tokenExp(current);
-    if (!current || !exp || exp - Math.floor(Date.now() / 1000) < GATE_API_RENEW_BEFORE_SECONDS) {
+    if (!apiTokenMatches(cfg, current) || !exp || exp - Math.floor(Date.now() / 1000) < GATE_API_RENEW_BEFORE_SECONDS) {
       const secure = PROD && req.nextUrl.protocol === "https:";
-      res.cookies.set(GATE_API_COOKIE, await signGate("ga", identity.id, identity.jti, cfg.secret), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
+      res.cookies.set(GATE_API_COOKIE, await signApiToken(cfg, identity.id, identity.jti), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
     }
   }
   res.headers.set("Content-Security-Policy", policy);

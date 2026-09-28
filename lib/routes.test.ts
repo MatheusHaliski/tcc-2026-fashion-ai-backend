@@ -17,7 +17,8 @@ const walk = (dir: string, ext: string, out: string[] = []): string[] => {
   return out;
 };
 const routes = walk(join(ROOT, "app"), "page.tsx").map((p) => "/" + relative(join(ROOT, "app"), p).replace(/\\/g, "/").replace(/(^|\/)\([^)]+\)/g, "").replace(/\/?page\.tsx$/, "")).map((r) => r.replace(/^\/+/, "/") || "/");
-const matchers = routes.map((r) => new RegExp("^" + r.replace(/\[[^\]]+\]/g, "[^/]+") + "/?$"));
+// o catch-all de 404 (app/(site)/[...missing]) casaria qualquer caminho: fica de fora para o teste continuar valendo
+const matchers = routes.filter((r) => !r.includes("[...")).map((r) => new RegExp("^" + r.replace(/\[[^\]]+\]/g, "[^/]+") + "/?$"));
 const exists = (path: string) => matchers.some((m) => m.test(path.split(/[?#]/)[0]));
 const IGNORE = /^\/(api|media|icons|assets|_next|_derived|users|defaults|public)\b/;
 

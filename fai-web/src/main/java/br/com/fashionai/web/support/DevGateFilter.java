@@ -64,6 +64,8 @@ public class DevGateFilter extends OncePerRequestFilter {
 
     private final boolean enabled;
     private final boolean cloudflareMode;
+    private final boolean acceptLegacy;
+    private final String user;
     private final String secret;
     private final Set<String> allowed;
     private final List<String> origins;
@@ -76,8 +78,11 @@ public class DevGateFilter extends OncePerRequestFilter {
                          @Value("${fashionai.dev-gate.allowed-emails:}") String allowedEmails,
                          @Value("${fashionai.dev-gate.cloudflare.team-domain:}") String teamDomain,
                          @Value("${fashionai.dev-gate.cloudflare.aud:}") String aud,
+                         @Value("${fashionai.dev-gate.accept-legacy:true}") boolean acceptLegacy,
                          @Value("${fashionai.cors.allowed-origins:http://localhost:3000}") String origins) {
         this.enabled = enabled;
+        this.acceptLegacy = acceptLegacy;
+        this.user = user == null ? "" : user.trim();
         this.cloudflareMode = "cloudflare".equalsIgnoreCase(mode == null ? "" : mode.trim());
         this.secret = secret == null ? "" : secret.trim();
         this.origins = Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
@@ -133,7 +138,8 @@ public class DevGateFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
         boolean ok = cloudflareMode
                 ? validCloudflare(req.getHeader(CLOUDFLARE_HEADER))
-                : valid(req.getHeader(HEADER), secret, allowed, Instant.now().getEpochSecond());
+                : valid(req.getHeader(HEADER), secret, allowed, Instant.now().getEpochSecond())
+                  || (acceptLegacy && validLegacy(req.getHeader(HEADER), secret, user, Instant.now().getEpochSecond()));
         if (ok) {
             chain.doFilter(req, res);
             return;
@@ -163,6 +169,32 @@ public class DevGateFilter extends OncePerRequestFilter {
             String id = (who == null ? token.getSubject() : who);
             return id != null && (allowed.isEmpty() || allowed.contains(id.toLowerCase(Locale.ROOT)));
         } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Transição (DEV_GATE_ACCEPT_LEGACY=true, padrão): aceita também o token antigo {@code v1.<usuário>.<expira>.<HMAC>},
+     * que o front manda enquanto DEV_GATE_API_TOKEN=legacy. Assim front e API podem ser publicados em qualquer ordem.
+     * Depois da troca para DEV_GATE_API_TOKEN=v2 na Vercel, desligue com DEV_GATE_ACCEPT_LEGACY=false.
+     */
+    static boolean validLegacy(String token, String secret, String user, long nowEpoch) {
+        if (token == null || secret == null || secret.length() < MIN_SECRET_LENGTH || user == null || user.isEmpty()) {
+            return false;
+        }
+        String[] p = token.trim().split("\\.");
+        if (p.length != 4 || !"v1".equals(p[0]) || !p[1].equals(user)) {
+            return false;
+        }
+        try {
+            if (Long.parseLong(p[2]) < nowEpoch) {
+                return false;
+            }
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] expected = mac.doFinal(("v1." + p[1] + "." + p[2]).getBytes(StandardCharsets.UTF_8));
+            return MessageDigest.isEqual(expected, Base64.getUrlDecoder().decode(p[3]));
+        } catch (Exception e) {
             return false;
         }
     }

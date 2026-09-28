@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { GATE_COOKIE, GATE_HEADER, gateConfig, hmacB64url, randomToken, signGate, verifyGate } from "@/lib/gate/token";
+import { GATE_COOKIE, GATE_HEADER, gateConfig, hmacB64url, randomToken, signApiToken, verifyGate } from "@/lib/gate/token";
 
 /**
  * BFF da sessão (RF1/RF2/RF3): o refresh token nunca chega ao JavaScript da página. Login, cadastro e renovação passam
@@ -43,7 +43,7 @@ async function upstreamHeaders(req: NextRequest, authorization?: string): Promis
   const cfg = await gateConfig();
   if (cfg.enabled && cfg.mode === "builtin" && cfg.secret) {
     const who = await verifyGate("gp", req.cookies.get(GATE_COOKIE)?.value, cfg);
-    if (who) h[GATE_HEADER] = await signGate("ga", who.id, who.jti || randomToken(12), cfg.secret, 120);
+    if (who) h[GATE_HEADER] = await signApiToken(cfg, who.id, who.jti || randomToken(12), 120);
   } else if (cfg.enabled && cfg.mode === "cloudflare") {
     const jwt = req.headers.get("cf-access-jwt-assertion") ?? req.cookies.get("CF_Authorization")?.value;
     if (jwt) h["cf-access-token"] = jwt;   // o Access da API aceita o mesmo JWT por este cabeçalho

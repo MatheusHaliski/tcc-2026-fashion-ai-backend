@@ -23,12 +23,22 @@ Enquanto `DEV_GATE_ENABLED` não for `false`, **todas as páginas** (inclusive c
 | 2º fator: PIN | `POST /gate/verify` compara o SHA-256 do PIN em tempo constante; mesma resposta para qualquer fator errado; atraso fixo. **PIN errado descarta o 1º fator**: cada tentativa exige um novo login Google com conta autorizada. Além disso, 8 erros por IP em 15 min → 429 | `app/(gate)/gate/verify/route.ts` |
 | Auditoria | Cada entrada vai ao log do servidor (`gate.entrada`: e-mail mascarado + hash, id da entrada, IP) | idem |
 | Tela neutra | Layout raiz próprio (`app/(gate)/layout.tsx`): a tela do gate não baixa nenhum pacote do produto (sem nome, textos, ícone, provedores ou catálogos) | `app/(gate)/**`, `app/global-error.tsx` |
-| Segredo | `DEV_GATE_SECRET` com menos de 32 caracteres conta como ausente no Next (gate fechado) e impede a API de subir | `lib/gate/token.ts`, `DevGateFilter.java` |
+| Segredo | `DEV_GATE_SECRET` com menos de 32 caracteres gera aviso no Next e impede a API nova de subir (a versão anterior continua no ar) | `lib/gate/token.ts`, `DevGateFilter.java` |
+| CSP | O layout do gate é dinâmico (`force-dynamic`) e o 404 passa por `app/(site)/[...missing]`: páginas geradas no build sairiam sem o nonce da CSP e ficariam em branco | `app/(gate)/layout.tsx`, `app/(site)/not-found.tsx` |
 | Indexação | `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /` | `middleware.ts`, `next.config.ts`, `app/robots.ts` |
 
 `/media/**` continua fora do gate (imagens carregadas por `<img>` não enviam cabeçalhos). Nada sensível mora ali: fotos
 do desafio Espelho Real, exportações LGPD, documentos do cadastro e backups ficam em `restricted/` (só ADMIN) ou atrás
 de rotas autenticadas; o resto tem caminho com UUID.
+
+**Transição de formato do token da API.** Front e API são publicados em lugares diferentes (Vercel e Railway), então o
+token que vai no `X-Dev-Gate` tem um modo de transição que dispensa publicar os dois ao mesmo tempo:
+
+1. Hoje: `DEV_GATE_API_TOKEN=legacy` (padrão na Vercel) — o front manda o formato antigo `v1.<usuário>.…`, aceito pela
+   API antiga e pela nova (`DEV_GATE_ACCEPT_LEGACY=true`, padrão na API).
+2. Com a API nova no ar e `DEV_GATE_ALLOWED_EMAILS` definida também no Railway: `DEV_GATE_API_TOKEN=v2` na Vercel
+   (token por pessoa). Confira o app.
+3. Por fim, `DEV_GATE_ACCEPT_LEGACY=false` no Railway (a API passa a exigir o token por pessoa).
 
 **O PIN nunca fica no código nem em chat.** Gere o hash no seu computador e cole só o hash nas variáveis do Vercel:
 

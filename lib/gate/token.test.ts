@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { gateConfig, identityAllowed, signGate, signValue, tokenExp, verifyCloudflareAccess, verifyGate, type GateConfig } from "./token";
+import { apiTokenMatches, gateConfig, identityAllowed, signApiToken, signGate, signLegacyApiToken, signValue, tokenExp, verifyCloudflareAccess, verifyGate, type GateConfig } from "./token";
 import { safeNext } from "@/lib/safe-next";
 
 const SECRET = "segredo-de-teste-com-pelo-menos-32-caracteres";
@@ -7,7 +7,7 @@ const ENV = { ...process.env };
 
 function cfg(over: Partial<GateConfig> = {}): GateConfig {
   return {
-    enabled: true, mode: "builtin", user: "equipe", pinHash: "x", secret: SECRET, google: true,
+    enabled: true, mode: "builtin", apiToken: "v2", user: "equipe", pinHash: "x", secret: SECRET, google: true,
     googleClientId: null, googleClientSecret: null, allowedEmails: ["ana@exemplo.com"], publicUrl: null,
     cloudflare: { teamDomain: null, aud: null }, ...over,
   };
@@ -30,18 +30,40 @@ describe("safeNext", () => {
 });
 
 describe("gateConfig", () => {
-  it("segredo curto conta como ausente (o gate falha fechado)", async () => {
+  it("segredo ou PIN curtos só geram aviso (não trancam a equipe fora); sem segredo, o gate fica fechado", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     process.env.DEV_GATE_SECRET = "curto";
+    expect((await gateConfig()).secret).toBe("curto");
+    delete process.env.DEV_GATE_SECRET;
     expect((await gateConfig()).secret).toBeNull();
-    process.env.DEV_GATE_SECRET = SECRET;
-    expect((await gateConfig()).secret).toBe(SECRET);
-  });
-  it("PIN em texto curto conta como ausente; o hash vale como está", async () => {
     delete process.env.DEV_GATE_PIN_HASH;
     process.env.DEV_GATE_PIN = "1234";
-    expect((await gateConfig()).pinHash).toBeNull();
-    process.env.DEV_GATE_PIN = "12345678";
     expect((await gateConfig()).pinHash).toMatch(/^[0-9a-f]{64}$/);
+    warn.mockRestore();
+  });
+  it("token da API: formato antigo por padrão (transição), por pessoa com DEV_GATE_API_TOKEN=v2", async () => {
+    delete process.env.DEV_GATE_API_TOKEN;
+    expect((await gateConfig()).apiToken).toBe("legacy");
+    process.env.DEV_GATE_API_TOKEN = "v2";
+    expect((await gateConfig()).apiToken).toBe("v2");
+  });
+});
+
+describe("token da API na transição", () => {
+  it("formato antigo idêntico ao que a API em produção confere (v1.<usuário>.<expira>.<assinatura>)", async () => {
+    vi.useFakeTimers(); vi.setSystemTime((1790345791 - 3600) * 1000);
+    try {
+      expect(await signLegacyApiToken("matheushaliskitcc20233", "segredo-de-teste"))
+        .toBe("v1.matheushaliskitcc20233.1790345791.rCeGXFacw1O6AO8lYXTb4Mymjel43E8btNOyIJe_0ZE");
+    } finally { vi.useRealTimers(); }
+  });
+  it("signApiToken segue o formato configurado e a troca de formato força renovação", async () => {
+    const legacy = await signApiToken(cfg({ apiToken: "legacy" }), "ana@exemplo.com", "j");
+    const v2 = await signApiToken(cfg({ apiToken: "v2" }), "ana@exemplo.com", "j");
+    expect(legacy.startsWith("v1.equipe.")).toBe(true);
+    expect(v2.startsWith("ga.")).toBe(true);
+    expect(apiTokenMatches(cfg({ apiToken: "legacy" }), v2)).toBe(false);
+    expect(apiTokenMatches(cfg({ apiToken: "v2" }), v2)).toBe(true);
   });
 });
 

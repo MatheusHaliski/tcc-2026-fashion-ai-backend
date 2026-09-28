@@ -111,6 +111,7 @@ fashionai:
     secret: ${DEV_GATE_SECRET:}
     user: ${DEV_GATE_USER:matheushaliskitcc20233}
     allowed-emails: ${DEV_GATE_ALLOWED_EMAILS:}            # a mesma lista da Vercel: revogação por pessoa também na API
+    accept-legacy: ${DEV_GATE_ACCEPT_LEGACY:true}          # transição: aceita o token antigo (v1); false depois de DEV_GATE_API_TOKEN=v2
     cloudflare:
       team-domain: ${CF_ACCESS_TEAM_DOMAIN:}               # ex.: fashionai.cloudflareaccess.com
       aud: ${CF_ACCESS_AUD:}                               # "Application Audience (AUD) Tag" da aplicação no Access

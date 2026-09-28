@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   GATE_API_COOKIE, GATE_API_TTL_SECONDS, GATE_COOKIE, GATE_GOOGLE_COOKIE, GATE_TTL_SECONDS, gateConfig, maskIdentity,
-  randomToken, safeEqual, safeNext, sha256Hex, signGate, verifyValue,
+  randomToken, safeEqual, safeNext, sha256Hex, signApiToken, signGate, verifyValue,
 } from "@/lib/gate/token";
 
 /**
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true, next: safeNext(body.next) });
   res.cookies.set(GATE_COOKIE, await signGate("gp", identity, jti, cfg.secret), { httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: GATE_TTL_SECONDS });
   // token curto só para o cabeçalho X-Dev-Gate do backend (não abre páginas; não autentica usuário: o JWT continua)
-  res.cookies.set(GATE_API_COOKIE, await signGate("ga", identity, jti, cfg.secret), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
+  res.cookies.set(GATE_API_COOKIE, await signApiToken(cfg, identity, jti), { httpOnly: false, secure, sameSite: "strict", path: "/", maxAge: GATE_API_TTL_SECONDS });
   res.cookies.set(GATE_GOOGLE_COOKIE, "", { path: "/", maxAge: 0 });   // 1º fator é de uso único
   res.headers.set("Cache-Control", "no-store");
   // trilha de auditoria: quem entrou, quando e de onde (logs do servidor da Vercel)

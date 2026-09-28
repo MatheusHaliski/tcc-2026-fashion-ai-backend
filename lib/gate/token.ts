@@ -25,9 +25,9 @@ export const GATE_API_TTL_SECONDS = 60 * 60;
 export const GATE_API_RENEW_BEFORE_SECONDS = 20 * 60;
 export const GATE_GOOGLE_COOKIE = "fai_gate_g";      // 1º fator concluído (conta Google autorizada), 15 min
 export const GATE_OAUTH_COOKIE = "fai_gate_oauth";    // state + nonce + PKCE do login Google em andamento, 10 min
-/** Segredo HMAC mais curto que isto conta como ausente (o gate falha fechado). */
+/** Segredo HMAC mais curto que isto gera aviso no Next; a API nova não sobe com ele. */
 export const MIN_SECRET_LENGTH = 32;
-/** PIN em texto (DEV_GATE_PIN) mais curto que isto conta como ausente; com hash, a equipe garante o tamanho. */
+/** PIN em texto (DEV_GATE_PIN) mais curto que isto gera aviso; com hash, a equipe garante o tamanho. */
 export const MIN_PIN_LENGTH = 8;
 
 export type GateKind = "gp" | "ga";
@@ -68,6 +68,12 @@ export function safeEqual(a: string, b: string): boolean {
 
 export interface GateConfig {
   enabled: boolean; mode: "builtin" | "cloudflare"; user: string; pinHash: string | null; secret: string | null;
+  /**
+   * Formato do token que vai à API no X-Dev-Gate (DEV_GATE_API_TOKEN). "legacy" (padrão, transição): `v1.<usuário>...`,
+   * aceito tanto pela API antiga quanto pela nova — permite publicar front e API em qualquer ordem. "v2": token por
+   * pessoa ("ga"), aceito só pela API nova; troque para "v2" depois que a API nova estiver no ar.
+   */
+  apiToken: "legacy" | "v2";
   /** 1º fator: login Google (padrão). DEV_GATE_GOOGLE=false volta para usuário + PIN. */
   google: boolean; googleClientId: string | null; googleClientSecret: string | null;
   /** Contas Google autorizadas (e-mails separados por vírgula). Vazio = ninguém entra. */
@@ -88,14 +94,14 @@ export async function gateConfig(): Promise<GateConfig> {
   const mode = (process.env.DEV_GATE_MODE ?? "builtin").trim().toLowerCase() === "cloudflare" ? "cloudflare" : "builtin";
   const user = (process.env.DEV_GATE_USER ?? "matheushaliskitcc20233").trim();
   const rawPin = process.env.DEV_GATE_PIN?.trim();
-  const pinHash = process.env.DEV_GATE_PIN_HASH?.trim().toLowerCase()
-    || (rawPin && rawPin.length >= MIN_PIN_LENGTH ? await sha256Hex(rawPin) : null);
-  const rawSecret = process.env.DEV_GATE_SECRET?.trim() ?? "";
-  const secret = rawSecret.length >= MIN_SECRET_LENGTH ? rawSecret : null;
+  const pinHash = process.env.DEV_GATE_PIN_HASH?.trim().toLowerCase() || (rawPin ? await sha256Hex(rawPin) : null);
+  const secret = process.env.DEV_GATE_SECRET?.trim() || null;
+  warnWeakConfig(secret, rawPin);
   const google = (process.env.DEV_GATE_GOOGLE ?? "true").toLowerCase() !== "false";
   const allowedEmails = (process.env.DEV_GATE_ALLOWED_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  const apiToken = (process.env.DEV_GATE_API_TOKEN ?? "legacy").trim().toLowerCase() === "v2" ? "v2" : "legacy";
   return {
-    enabled, mode, user, pinHash, secret, google,
+    enabled, mode, apiToken, user, pinHash, secret, google,
     googleClientId: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || null,
     googleClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || null,
     allowedEmails, publicUrl: process.env.DEV_GATE_PUBLIC_URL?.trim().replace(/\/+$/, "") || null,
@@ -104,6 +110,14 @@ export async function gateConfig(): Promise<GateConfig> {
       aud: process.env.CF_ACCESS_AUD?.trim() || null,
     },
   };
+}
+
+let warned = false;
+/** Segredo curto ou PIN curto: avisa no log (a API nova recusa segredo com menos de 32 caracteres ao subir). */
+function warnWeakConfig(secret: string | null, rawPin: string | undefined) {
+  if (warned) return;
+  if (secret && secret.length < MIN_SECRET_LENGTH) { warned = true; console.warn(`[gate] DEV_GATE_SECRET tem menos de ${MIN_SECRET_LENGTH} caracteres; gere outro com: openssl rand -base64 48`); }
+  if (rawPin && rawPin.length < MIN_PIN_LENGTH) { warned = true; console.warn(`[gate] DEV_GATE_PIN tem menos de ${MIN_PIN_LENGTH} caracteres; use um PIN mais longo`); }
 }
 
 /** Identidade que o gate aceita agora: e-mail da lista (modo Google) ou o usuário da equipe (sem Google). */
@@ -147,6 +161,24 @@ export async function pkceChallenge(verifier: string): Promise<string> {
 /** Assina um token do gate para uma identidade ("gp" = página, "ga" = API). */
 export async function signGate(kind: GateKind, id: string, jti: string, secret: string, ttl = kind === "gp" ? GATE_TTL_SECONDS : GATE_API_TTL_SECONDS): Promise<string> {
   return signValue(kind, JSON.stringify({ i: id.trim().toLowerCase(), j: jti }), secret, ttl);
+}
+
+/** Token no formato antigo da API (`v1.<usuário>.<expira>.<assinatura>`), aceito pela API antiga e, na transição, pela nova. */
+export async function signLegacyApiToken(user: string, secret: string, ttl = GATE_API_TTL_SECONDS): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + ttl;
+  const payload = `v1.${user}.${exp}`;
+  return `${payload}.${await hmacB64url(secret, payload)}`;
+}
+
+/** Token que vai à API no X-Dev-Gate, no formato configurado (DEV_GATE_API_TOKEN). */
+export async function signApiToken(cfg: GateConfig, id: string, jti: string, ttl = GATE_API_TTL_SECONDS): Promise<string> {
+  if (!cfg.secret) throw new Error("gate sem segredo");
+  return cfg.apiToken === "v2" ? signGate("ga", id, jti, cfg.secret, ttl) : signLegacyApiToken(cfg.user, cfg.secret, ttl);
+}
+
+/** O token de API guardado no cookie é do formato configurado? (troca de formato força a renovação) */
+export function apiTokenMatches(cfg: GateConfig, token: string | undefined | null): boolean {
+  return !!token && token.startsWith(cfg.apiToken === "v2" ? "ga." : "v1.");
 }
 
 /** Confere tipo, assinatura, validade e se a identidade ainda está autorizada. */
