@@ -18,4 +18,7 @@ import java.util.UUID;
 /** Repositório Spring Data de BackupRecord (MySQL — fonte da verdade). */
 public interface BackupRecordRepository extends JpaRepository<BackupRecord, UUID> {
     List<BackupRecord> findTop50ByOrderByStartedAtDesc();
+
+    /** Retenção dos backups: todos os de um status, do mais novo ao mais antigo. */
+    List<BackupRecord> findByStatusOrderByStartedAtDesc(String status);
 }

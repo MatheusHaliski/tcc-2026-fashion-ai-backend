@@ -150,6 +150,14 @@ fashionai:
     username: ${OPENSEARCH_USERNAME:}
     password: ${OPENSEARCH_PASSWORD:}
     index-prefix: fai-
+  backup:                                                  # backup do MySQL (AdminService -> mysqldump -> storage em restricted/backups/)
+    cron: ${BACKUP_CRON:0 0 3 * * *}                       # diário às 3 h (America/Sao_Paulo); "-" desliga o job agendado
+    retention-count: ${BACKUP_RETENTION_COUNT:14}          # mantém os N backups mais recentes; os antigos saem do storage
+    user: ${MYSQL_BACKUP_USER:${MYSQL_USER:fashionai}}     # usuário só de leitura para o dump (infra/railway/mysql)
+    password: ${MYSQL_BACKUP_PASSWORD:${MYSQL_PASSWORD:}}  # sem senha padrão: vazia, o backup falha com o motivo
+    ssl-mode: ${MYSQL_SSL_MODE:PREFERRED}                  # o mesmo modo TLS da conexão JDBC
+    timeout-minutes: ${BACKUP_TIMEOUT_MINUTES:10}
+    mysqldump-command: ${BACKUP_MYSQLDUMP_COMMAND:mysqldump}
   email:
     provider: ${EMAIL_PROVIDER:log}                        # log | resend
     resend-api-key: ${RESEND_API_KEY:}
