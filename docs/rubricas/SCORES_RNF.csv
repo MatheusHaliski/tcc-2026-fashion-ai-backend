@@ -1,0 +1,9 @@
+﻿Código;Requisito;Score / 10;Evidência;Pode melhorar;Como Bryan pode ajudar
+RNF1;Controle de acesso por perfil;9.0;Guards no backend, menus/rotas por perfil e testes 403.;Manter matriz RBAC versionada e testes negativos por endpoint.;Criar a matriz papel × endpoint e automatizar casos proibidos.
+RNF2;JWT e recuperação de sessão;8.5;Access/refresh tokens, sessões e revogação implementados.;Testar rotação, replay e revogação sob concorrência.;Produzir testes de segurança focados em tokens.
+RNF3;Criptografia de dados sensíveis;9.0;Senha com hash e campos sensíveis com AES-GCM.;Documentar gestão/rotação de chaves e threat model.;Escrever runbook de rotação e verificar ausência de segredos em logs.
+RNF4;Backup e recuperação;4.0;Persistência estruturada, mas sem evidência forte de restore testado.;Criar backup automatizado, RPO/RTO e teste de restauração.;Liderar exercício de restore e anexar tempos/evidências ao Trello.
+RNF5;Auditoria e logging;8.5;audit_log, ai_inference_log e correlationId.;Centralizar logs, alertas e política de retenção/mascaramento.;Montar dashboard/consulta de auditoria e validar dados sensíveis.
+RNF6;Privacidade e LGPD;8.0;Consentimentos, exportação, exclusão e proteção de biometria.;Formalizar RIPD, bases legais, retenção e teste do titular.;Executar checklist LGPD e registrar lacunas como cards.
+RNF7;Desempenho e usabilidade;7.5;UI responsiva, estados de erro/loading e recursos acessíveis.;Definir SLOs, testes de carga, Lighthouse e teste com público.;Coletar métricas por jornada e abrir melhorias mensuráveis.
+RNF8;Resiliência a APIs externas;8.5;Fallback local, retry/circuit breaker e jobs assíncronos.;Realizar game day com indisponibilidade e provar alertas/recuperação.;Desligar provedores em ambiente de teste e documentar o comportamento.
