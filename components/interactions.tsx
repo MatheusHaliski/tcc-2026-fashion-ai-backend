@@ -11,7 +11,8 @@ import { FaiIcon } from "@/components/fai-icon";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
-const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: string }[] = [{ id: "TREND", icon: "SOC-07" }, { id: "ELEGANTE", icon: "SOC-08" }, { id: "CRIATIVO", icon: "SOC-09" }];
+/** Reações do detalhe (RF19): desenhadas como curtir/comentar/compartilhar — glifo de traço 24 px + contagem ao lado. */
+const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: SocialIconName }[] = [{ id: "TREND", icon: "trend" }, { id: "ELEGANTE", icon: "elegant" }, { id: "CRIATIVO", icon: "creative" }];
 
 /** Barra social (RF19) do detalhe fora de um card (ex.: DNA de estilo): a mesma linha de ações, com as reações. */
 export function InteractionBar({ type, id, counters, viewer, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
@@ -40,19 +41,29 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
   );
 }
 
-/** Glifos das ações sociais (traço 1,8 px, 24×24): contorno no estado normal, preenchido quando ativo. */
-const SOCIAL_PATHS = {
-  heart: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z",
-  comment: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z",
-  share: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z",
-  bookmark: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z",
-} as const;
-export type SocialIconName = keyof typeof SOCIAL_PATHS;
+/**
+ * Glifos das ações sociais (traço 1,8 px, 24×24): contorno no estado normal, preenchido quando ativo. As reações seguem o
+ * mesmo desenho: Trend = linha de tendência subindo, Elegante = gravata-borboleta, Criativo = paleta de pintor.
+ * `fill` = partes que se preenchem quando ativo (as linhas abertas continuam traço).
+ */
+const SOCIAL_PATHS: Record<string, { d: string; fill?: string }> = {
+  heart: { d: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z", fill: "all" },
+  comment: { d: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z", fill: "all" },
+  share: { d: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z" },
+  bookmark: { d: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z", fill: "all" },
+  trend: { d: "M3 18.5 9.2 12.3l3.9 3.9L21 8.3", fill: "M15.5 8.3H21v5.5" },
+  elegant: { d: "M10.4 12 3.9 7.6a.9.9 0 0 0-1.4.7v7.4a.9.9 0 0 0 1.4.7l6.5-4.4zm3.2 0 6.5-4.4a.9.9 0 0 1 1.4.7v7.4a.9.9 0 0 1-1.4.7L13.6 12zm-3.2-1.8h3.2v3.6h-3.2z", fill: "all" },
+  creative: { d: "M12 3.2a8.8 8.8 0 1 0 0 17.6c1.2 0 1.8-.8 1.8-1.7 0-1-.8-1.4-.8-2.3 0-1 .8-1.7 1.8-1.7h2.2a4.3 4.3 0 0 0 4.3-4.3c0-4.3-4-7.6-9.3-7.6zM7.4 12.4h.01M9 8.2h.01M13.4 6.9h.01M17 9.6h.01", fill: "all" },
+};
+export type SocialIconName = "heart" | "comment" | "share" | "bookmark" | "trend" | "elegant" | "creative";
 export function SocialIcon({ name, filled, size = 24 }: { name: SocialIconName; filled?: boolean; size?: number }) {
+  const g = SOCIAL_PATHS[name]; const fillAll = filled && g.fill === "all";
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false" className="c-act-icon"
-      fill={filled && name !== "share" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
-      <path d={SOCIAL_PATHS[name]} />
+      fill={fillAll ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
+      {filled && g.fill && g.fill !== "all" && <path d={g.fill} fill="currentColor" />}
+      {!filled && g.fill && g.fill !== "all" && name === "trend" && <path d={g.fill} />}
+      <path d={g.d} />
     </svg>
   );
 }
@@ -74,8 +85,8 @@ export function useRemix(type: TargetType, id: string) {
  * ícone com a sua contagem ao lado; salvar à direita. Todos com o mesmo tamanho (ícone 24 px), a mesma área de toque
  * (44 px em tela de toque), nome acessível com a contagem e estado (aria-pressed) — curtido e salvo ficam preenchidos.
  * Não existe linha "N curtidas" separada: cada número aparece uma vez, junto da ação. Reações (Trend, Elegante,
- * Criativo) são detalhe (`reactions`): pílulas com o ícone FAI grande (28 px, variante glyph-lg), o nome e a contagem,
- * no padrão das reações de redes sociais atuais — o estado ativo muda fundo e borda, não só a cor.
+ * Criativo) são do detalhe (`reactions`) e ficam NA MESMA LINHA, logo depois de compartilhar, desenhadas igual às
+ * demais (glifo de traço 24 px, contagem ao lado, preenchido quando ativo); o nome vai no aria-label e no title.
  */
 export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
   /** compatibilidade: salvar agora está sempre na linha */ withSave?: boolean; with3d?: boolean }) {
@@ -119,31 +130,18 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   return (
     // contagens muito longas (ex.: "12 mi" + "988 mil"): no card estreito o número de comentários sai da linha
     // (continua no nome acessível e no detalhe) para a linha nunca estourar a coluna
-    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
+    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""} ${reactions ? "has-reactions" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
       <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
         {act("like", "heart", t("interactions.like_n", { count: likes }), like, { pressed: liked, count: likes })}
         {act("comment", "comment", t("interactions.comment_n", { count: commentsN }), () => setComments(true), { count: commentsN, haspopup: true })}
         {act("share", "share", t("interactions.share_n", { count: sharesN }), () => { if (guard()) setShare(true); }, { count: sharesN, haspopup: true })}
+        {/* reações no detalhe: na mesma linha, mesmo glifo de traço, mesmo tamanho e a contagem ao lado */}
+        {reactions && REACTIONS.map((r) => act(`rx-${r.id}`, r.icon, t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count: rx[r.id] ?? 0 }), () => react(r.id), { pressed: mine3.includes(r.id), count: rx[r.id] ?? 0 }))}
         {extra}
         <span className="grow" />
         {act("save", "bookmark", t("interactions.save"), save, { pressed: saved })}
       </div>
-      {reactions && !preview && (
-        <div className="c-reactions" role="group" aria-label={t("interactions.reacoes")}>
-          {REACTIONS.map((r) => {
-            const count = rx[r.id] ?? 0;
-            return (
-              <button key={r.id} type="button" className="c-reaction" aria-pressed={mine3.includes(r.id)} aria-busy={busy[`rx-${r.id}`] || undefined} onClick={() => react(r.id)}
-                aria-label={t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count })}>
-                <FaiIcon id={r.icon} size={28} variant="glyph-lg" decorative className="c-reaction-icon" />
-                <span className="c-reaction-label">{t(`interactions.reaction_nome.${r.id}`)}</span>
-                {count > 0 && <span className="c-reaction-n tabular" aria-hidden>{n(count)}</span>}
-              </button>
-            );
-          })}
-          {(counters?.remixes ?? 0) > 0 && <span className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</span>}
-        </div>
-      )}
+      {reactions && !preview && (counters?.remixes ?? 0) > 0 && <p className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</p>}
       {!preview && <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />}
       {!preview && <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />}
     </div>

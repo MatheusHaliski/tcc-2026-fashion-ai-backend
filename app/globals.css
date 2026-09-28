@@ -1798,3 +1798,15 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .hair-tone.is-auto { color: #fff; font: 600 11px/1 var(--font-sans, system-ui); text-shadow: 0 1px 2px rgb(0 0 0 / .6); }
 .hair-tone[aria-checked="true"] { box-shadow: 0 0 0 2px var(--color-ink, #111); }
 .hair-tone:focus-visible { outline: 2px solid var(--color-accent, #22c55e); outline-offset: 2px; }
+
+/* RF4 · 1-Foto — marca lida: o logo da marca ao lado do texto (o nome nunca depende só da imagem) */
+.brand-read { display: flex; align-items: flex-start; gap: 10px; }
+.brand-read .brand-logo { flex: none; }
+
+/* RF19 — reações (Trend, Elegante, Criativo) na mesma linha de curtir/comentar/compartilhar: mesmo glifo de traço
+   24 px, mesma contagem ao lado, ativo preenchido na cor de destaque; com seis ações contadas, o espaçamento aperta
+   no celular para a linha caber sem quebrar */
+.c-act[class*="is-rx-"][aria-pressed="true"] { color: var(--mark); }
+.c-post.has-reactions .c-act { padding: 0 6px; }
+.c-post > .c-remixes { padding: 0 12px 8px; }
+@media (max-width: 440px) { .c-post.has-reactions .c-act { padding: 0 3px; gap: 3px; min-width: 32px; } }
