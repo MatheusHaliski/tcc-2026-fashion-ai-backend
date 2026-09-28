@@ -36,6 +36,8 @@ import br.com.fashionai.domain.repository.VerificationCodeRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -47,7 +49,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 /**
@@ -62,6 +68,16 @@ public class IdentityService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IdentityService.class);
     private static final int MAX_LOGIN_FAILURES = 5;
     private static final Duration LOCK_WINDOW = Duration.ofMinutes(15);
+    static final String LOGIN_FAIL = "login-fail";
+    /** Tentativas erradas por código de 6 dígitos (e-mail, troca de e-mail, 2FA): depois disso ele é invalidado. */
+    public static final int MAX_CODE_ATTEMPTS = 5;
+    /** Tentativas por hora e finalidade, contadas no RateLimitPort (atômico): segura palpites em paralelo. */
+    static final int CODE_ATTEMPTS_PER_HOUR = 10;
+    /** @ que ninguém escolhe no cadastro nem na troca (a conta de administração vem do AdminBootstrap). */
+    public static final Set<String> RESERVED_USERNAMES = Set.of("admin", "administrador", "administrator", "adm", "root",
+            "support", "suporte", "fashionai", "fashion_ai", "fashion.ai", "fai", "api", "gate", "system", "sistema",
+            "moderador", "moderadora", "moderator", "moderacao", "staff", "equipe", "oficial", "official", "seguranca",
+            "security", "ajuda", "help", "contato", "null", "undefined", "anonymous", "anonimo");
 
     private final UserRepository users;
     private final UserPreferencesRepository preferences;
@@ -78,6 +94,8 @@ public class IdentityService {
     private final String frontendUrl;
     private final String dummyHash;
     private final MediaStoragePort storage;
+    /** Envio fora da requisição (redefinição de senha): o tempo de resposta não depende de o e-mail existir. */
+    private Executor mailExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public IdentityService(UserRepository users, UserPreferencesRepository preferences, BrandProfileRepository brands,
                            CelebrityProfileRepository celebrities, RefreshTokenRepository refreshTokens,
@@ -225,6 +243,12 @@ public class IdentityService {
         if (type != ProfileType.MARCA && cmd.sex() == null) {
             errors.put("sex", Msg.t("identity.escolha_o_manequim_feminino_ou"));
         }
+        if (cmd.username() != null && !cmd.username().isBlank()) {
+            String problem = usernameProblem(normalizeUsername(cmd.username()));
+            if (problem != null) {
+                errors.put("username", problem);
+            }
+        }
         for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl()},
                 {"brand.logoUrl", cmd.brand() == null ? null : cmd.brand().logoUrl()},
                 {"brand.activityProofUrl", cmd.brand() == null ? null : cmd.brand().activityProofUrl()},
@@ -371,7 +395,7 @@ public class IdentityService {
         }
         String candidate = base;
         int i = 1;
-        while (users.existsByUsernameIgnoreCase(candidate)) {
+        while (reservedUsername(candidate) || users.existsByUsernameIgnoreCase(candidate)) {
             candidate = base + (i++);
         }
         return candidate;
@@ -398,6 +422,25 @@ public class IdentityService {
         return u.length() > 30 ? u.substring(0, 30) : u;
     }
 
+    /** @ reservado (administração, suporte, a própria marca): comparação exata depois da normalização. */
+    public static boolean reservedUsername(String normalized) {
+        return normalized != null && RESERVED_USERNAMES.contains(normalized.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Motivo de recusa de um @ já normalizado, ou null se ele pode ser usado. A normalização descarta tudo que não é
+     * letra, número, ponto ou "_": "!!!" viraria um @ vazio.
+     */
+    public static String usernameProblem(String normalized) {
+        if (normalized == null || normalized.length() < 3) {
+            return Msg.t("preferences.o_precisa_de_ao_menos");
+        }
+        if (reservedUsername(normalized)) {
+            return Msg.t("identity.username_reservado");
+        }
+        return null;
+    }
+
     private String uniqueBrandSlug(String name) {
         String base = Hashing.slug(name);
         String s = base;
@@ -420,6 +463,7 @@ public class IdentityService {
 
     // ------------------------------------------------------------------ confirmação de e-mail
     private void sendEmailVerification(User u) {
+        invalidateCodes(u.getId(), VerificationPurpose.EMAIL_VERIFICATION);   // só o código mais novo vale
         String code = Hashing.numericCode(6);
         VerificationCode vc = new VerificationCode();
         vc.setUser(u);
@@ -435,7 +479,11 @@ public class IdentityService {
                 "SECURITY");
     }
 
-    @Transactional
+    /**
+     * Sem {@code noRollbackFor}, o {@code attempts++} de um código errado era desfeito junto com o erro e os palpites
+     * ficavam ilimitados. Agora a tentativa é gravada e, na quinta errada, o código é invalidado (pede-se um novo).
+     */
+    @Transactional(noRollbackFor = ApiException.class)
     public Views.UserCard verifyEmail(CurrentUser current, String code) {
         User u = users.findById(current.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         if (u.isEmailVerified()) {
@@ -444,12 +492,12 @@ public class IdentityService {
         VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
                 VerificationPurpose.EMAIL_VERIFICATION).orElseThrow(() -> ApiException.badRequest("CODIGO_INVALIDO",
                 Msg.t("identity.codigo_invalido_peca_um_novo")));
-        if (vc.getExpiresAt().isBefore(Instant.now()) || vc.getAttempts() >= 5) {
+        requireCodeAttemptQuota(u.getId(), VerificationPurpose.EMAIL_VERIFICATION);
+        if (!vc.isUsable(Instant.now())) {
             throw ApiException.badRequest("CODIGO_EXPIRADO", Msg.t("identity.o_codigo_expirou_peca_um"));
         }
-        if (!vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + (code == null ? "" : code.trim())))) {
-            vc.setAttempts(vc.getAttempts() + 1);
-            throw ApiException.badRequest("CODIGO_INVALIDO", Msg.t("identity.codigo_incorreto_restam_tentativas", (5 - vc.getAttempts())));
+        if (!codeMatches(vc, u.getId(), code)) {
+            throw wrongCode(vc);
         }
         vc.setConsumedAt(Instant.now());
         u.setEmailVerified(true);
@@ -457,6 +505,43 @@ public class IdentityService {
         u.setStatus(needsApproval ? AccountStatus.PENDING_VALIDATION : AccountStatus.ACTIVE);
         audit.log(current, AuditActions.EMAIL_CONFIRMADO, "user:" + u.getId(), Map.of());
         return Views.user(u);
+    }
+
+    // ------------------------------------------------------------------ códigos de 6 dígitos (tentativas)
+    /** Invalida os códigos ainda abertos da finalidade (novo envio, senha trocada): só o mais novo pode valer. */
+    public void invalidateCodes(UUID userId, VerificationPurpose purpose) {
+        Instant now = Instant.now();
+        codes.findByUserIdAndPurposeAndConsumedAtIsNull(userId, purpose).forEach(c -> c.setConsumedAt(now));
+    }
+
+    /** Comparação em tempo constante do código digitado com o hash guardado ({@code userId:código}). */
+    public static boolean codeMatches(VerificationCode vc, UUID userId, String code) {
+        String given = Hashing.sha256(userId + ":" + (code == null ? "" : code.trim()));
+        return Hashing.constantTimeEquals(vc.getCodeHash(), given);
+    }
+
+    /**
+     * Conta uma tentativa errada (persistida: os métodos que chamam não desfazem a transação no ApiException) e, na
+     * {@value #MAX_CODE_ATTEMPTS}ª, invalida o código. Devolve o erro para a pessoa: quantas restam ou "peça um novo".
+     */
+    public static ApiException wrongCode(VerificationCode vc) {
+        vc.setAttempts(vc.getAttempts() + 1);
+        int remaining = MAX_CODE_ATTEMPTS - vc.getAttempts();
+        if (remaining <= 0) {
+            vc.setExpiresAt(Instant.now());
+            return ApiException.badRequest("CODIGO_EXPIRADO", Msg.t("identity.muitas_tentativas_codigo"));
+        }
+        return ApiException.badRequest("CODIGO_INVALIDO", Msg.t("identity.codigo_incorreto_restam_tentativas", remaining));
+    }
+
+    /**
+     * Palpites em paralelo leriam o mesmo {@code attempts} antes de gravar: o contador atômico do RateLimitPort limita
+     * as tentativas por hora de cada finalidade, independentemente disso.
+     */
+    public void requireCodeAttemptQuota(UUID userId, VerificationPurpose purpose) {
+        if (!rateLimit.tryAcquire(userId, "code-attempt:" + purpose.name(), CODE_ATTEMPTS_PER_HOUR, Duration.ofHours(1))) {
+            throw new ApiException(429, "MUITAS_TENTATIVAS", Msg.t("identity.muitas_tentativas_codigo"));
+        }
     }
 
     private boolean approved(User u) {
@@ -486,27 +571,34 @@ public class IdentityService {
     public record LoginCommand(String identifier, String password, boolean rememberMe, String deviceName, String twoFactorCode) {
     }
 
+    /**
+     * Conta bloqueada (5 falhas em 15 min) responde igual a credencial errada — o mesmo 401 NAO_AUTENTICADO de uma conta
+     * que não existe, e sempre depois de conferir o hash (tempo uniforme). Um 423 só para contas existentes revelaria o
+     * cadastro; um 423 só com a senha certa viraria um oráculo de senha durante o bloqueio. Códigos 2FA errados contam
+     * no mesmo bloqueio; o login completo zera o contador.
+     */
     @Transactional(noRollbackFor = ApiException.class)
     public Session login(LoginCommand cmd, String ip, String userAgent) {
         String id = cmd.identifier() == null ? "" : cmd.identifier().trim();
-        User u = id.contains("@") ? users.findByEmailHash(Hashing.emailHash(id)).orElse(null)
+        String password = cmd.password() == null ? "" : cmd.password();
+        User u = id.contains("@") ? findByEmail(id).orElse(null)
                 : users.findByUsernameIgnoreCase(normalizeUsername(id)).orElse(null);
         if (u == null) {
-            hasher.matches(cmd.password() == null ? "" : cmd.password(), dummyHash);
+            hasher.matches(password, dummyHash);
             audit.log("anonymous", AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "usuario_inexistente"));
-            throw ApiException.unauthorized(Msg.t("identity.e_mail_usuario_ou_senha"));
+            throw invalidCredentials();
         }
-        RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), "login-fail", MAX_LOGIN_FAILURES, LOCK_WINDOW);
+        RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
+        boolean passwordOk = hasher.matches(password, u.getPasswordHash());
         if (lock.exhausted()) {
-            audit.log(u.getId().toString(), AuditActions.LOGIN_BLOQUEADO_TENTATIVAS, "auth", "BLOQUEADO", ip, userAgent, Map.of());
-            throw new ApiException(423, "CONTA_BLOQUEADA_TEMPORARIAMENTE",
-                    Msg.t("identity.muitas_tentativas_tente_de_novo", lock.resetAt()),
+            audit.log(u.getId().toString(), AuditActions.LOGIN_BLOQUEADO_TENTATIVAS, "auth", "BLOQUEADO", ip, userAgent,
                     Map.of("resetAt", lock.resetAt().toString()));
+            throw invalidCredentials();
         }
-        if (!hasher.matches(cmd.password() == null ? "" : cmd.password(), u.getPasswordHash())) {
-            rateLimit.tryAcquire(u.getId(), "login-fail", MAX_LOGIN_FAILURES, LOCK_WINDOW);
+        if (!passwordOk) {
+            rateLimit.tryAcquire(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
             audit.log(u.getId().toString(), AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "senha"));
-            throw ApiException.unauthorized(Msg.t("identity.e_mail_usuario_ou_senha"));
+            throw invalidCredentials();
         }
         if (u.getStatus() == AccountStatus.DELETED || u.getStatus() == AccountStatus.SUSPENDED) {
             throw new ApiException(403, "CONTA_INDISPONIVEL", Msg.t("identity.esta_conta_nao_esta_disponivel"));
@@ -519,12 +611,21 @@ public class IdentityService {
             }
             VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
                     VerificationPurpose.TWO_FACTOR).orElseThrow(() -> ApiException.unauthorized(Msg.t("identity.codigo_de_verificacao_invalido")));
-            if (vc.getExpiresAt().isBefore(Instant.now())
-                    || !vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + cmd.twoFactorCode().trim()))) {
+            if (!vc.isUsable(Instant.now())) {
+                throw ApiException.unauthorized(Msg.t("identity.codigo_de_verificacao_invalido_ou"));
+            }
+            if (!codeMatches(vc, u.getId(), cmd.twoFactorCode())) {
+                vc.setAttempts(vc.getAttempts() + 1);
+                if (vc.getAttempts() >= MAX_CODE_ATTEMPTS) {
+                    vc.setExpiresAt(Instant.now());           // quinto erro: o código morre, é preciso pedir outro
+                }
+                rateLimit.tryAcquire(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
+                audit.log(u.getId().toString(), AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "2fa"));
                 throw ApiException.unauthorized(Msg.t("identity.codigo_de_verificacao_invalido_ou"));
             }
             vc.setConsumedAt(Instant.now());
         }
+        rateLimit.reset(u.getId(), LOGIN_FAIL);
         boolean newDevice = refreshTokens.findByUserIdAndRevokedAtIsNullAndExpiresAtAfter(u.getId(), Instant.now()).stream()
                 .noneMatch(t -> userAgent != null && userAgent.equals(t.getUserAgent()));
         u.setLastLoginAt(Instant.now());
@@ -536,7 +637,12 @@ public class IdentityService {
         return openSession(u, cmd.rememberMe(), ip, userAgent, cmd.deviceName());
     }
 
+    private static ApiException invalidCredentials() {
+        return ApiException.unauthorized(Msg.t("identity.credenciais_invalidas_ou_bloqueio"));
+    }
+
     private void sendTwoFactor(User u) {
+        invalidateCodes(u.getId(), VerificationPurpose.TWO_FACTOR);
         String code = Hashing.numericCode(6);
         VerificationCode vc = new VerificationCode();
         vc.setUser(u);
@@ -684,10 +790,14 @@ public class IdentityService {
     }
 
     // ------------------------------------------------------------------ RF3.CA29–CA30 recuperação de senha
+    /**
+     * Resposta uniforme (RF3.CA29): nunca revela se o e-mail existe — nem pelo corpo nem pelo tempo. O e-mail, que é a
+     * parte lenta (chamada HTTP ao provedor), sai depois do commit numa thread à parte.
+     */
     @Transactional
     public void requestPasswordReset(String rawEmail, String ip, String userAgent) {
         String mail = rawEmail == null ? "" : rawEmail.trim().toLowerCase(Locale.ROOT);
-        users.findByEmailHash(Hashing.emailHash(mail)).ifPresent(u -> {
+        findByEmail(mail).ifPresent(u -> {
             if (!rateLimit.tryAcquire(u.getId(), "password-reset", 5, Duration.ofHours(1))) {
                 // a tela responde igual (não revela se o e-mail existe), mas o log mostra por que nada foi enviado
                 log.info("Redefinição de senha não enviada: limite de 5 pedidos por hora atingido (user {})", u.getId());
@@ -703,13 +813,39 @@ public class IdentityService {
             vc.setLastSentAt(Instant.now());
             codes.save(vc);
             Locale loc = mailLocale(u);
-            email.send(u.getEmail(), Msg.t(loc, "identity.redefinicao_de_senha_fashion_ai"),
+            sendAfterCommit(u.getEmail(), Msg.t(loc, "identity.redefinicao_de_senha_fashion_ai"),
                     Msg.t(loc, "identity.p_recebemos_um_pedido_para", frontendUrl, token), "SECURITY");
             notifications.notify(u.getId(), null, NotificationType.PASSWORD_RESET, "USER", u.getId(),
                     Msg.k("identity.pedido_de_redefinicao_de_senha"), Msg.k("identity.se_nao_foi_voce_ignore"), null);
             audit.log(u.getId().toString(), AuditActions.RECUPERACAO_SENHA, "auth", "SOLICITADA", ip, userAgent, Map.of());
         });
         // resposta uniforme: nunca revela se o e-mail existe (RF3.CA29).
+    }
+
+    /** Envia o e-mail só depois do commit (o link precisa do token gravado) e fora da thread da requisição. */
+    private void sendAfterCommit(String to, String subject, String html, String category) {
+        Runnable send = () -> {
+            try {
+                email.send(to, subject, html, category);
+            } catch (RuntimeException ex) {
+                log.warn("Falha ao enviar e-mail de {}: {}", category, ex.getMessage());
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    mailExecutor.execute(send);
+                }
+            });
+        } else {
+            mailExecutor.execute(send);
+        }
+    }
+
+    /** Testes: executa o envio assíncrono na própria thread. */
+    void mailExecutor(Executor executor) {
+        this.mailExecutor = executor;
     }
 
     @Transactional
@@ -731,6 +867,8 @@ public class IdentityService {
         User u = vc.getUser();
         u.setPasswordHash(hasher.hash(newPassword));
         vc.setConsumedAt(Instant.now());
+        invalidateCodes(u.getId(), VerificationPurpose.PASSWORD_RESET);   // os outros links pedidos antes morrem junto
+        rateLimit.reset(u.getId(), LOGIN_FAIL);                           // quem provou o e-mail sai do bloqueio
         revokeOtherSessions(u.getId(), null);
         audit.log(u.getId().toString(), AuditActions.TROCA_SENHA, "user:" + u.getId(), "SUCESSO", null, null,
                 Map.of("via", "reset"));
@@ -752,6 +890,7 @@ public class IdentityService {
             throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
         }
         u.setPasswordHash(hasher.hash(newPassword));
+        invalidateCodes(u.getId(), VerificationPurpose.PASSWORD_RESET);
         int ended = revokeOtherSessions(u.getId(), currentSession);
         audit.log(user, AuditActions.TROCA_SENHA, "user:" + u.getId(), Map.of("sessoesEncerradas", ended));
         return ended;
@@ -763,6 +902,11 @@ public class IdentityService {
         if (!hasher.matches(password == null ? "" : password, u.getPasswordHash())) {
             throw new ApiException(401, "REAUTENTICACAO_FALHOU", Msg.t("identity.confirme_sua_senha_para_alterar"));
         }
+    }
+
+    /** Conta pelo e-mail (hash de busca). */
+    public Optional<User> findByEmail(String rawEmail) {
+        return users.findByEmailHash(Hashing.emailHash(rawEmail == null ? "" : rawEmail));
     }
 
     public static String maskEmail(String mail) {

@@ -305,6 +305,10 @@ public class PreferencesService {
             throw ApiException.badRequest("USERNAME_INVALIDO", Msg.t("preferences.o_precisa_de_ao_menos"));
         }
         User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        if (IdentityService.reservedUsername(username) && !username.equalsIgnoreCase(u.getUsername())) {
+            throw ApiException.badRequest("USERNAME_RESERVADO", Msg.t("identity.username_reservado"),
+                    Map.of("suggestions", identity.usernameSuggestions(username)));
+        }
         if (username.equalsIgnoreCase(u.getUsername())) {
             return Map.of("username", username);
         }
@@ -319,7 +323,7 @@ public class PreferencesService {
 
     public Map<String, Object> checkUsername(String requested) {
         String username = IdentityService.normalizeUsername(requested);
-        boolean available = username.length() >= 3 && !users.existsByUsernameIgnoreCase(username);
+        boolean available = IdentityService.usernameProblem(username) == null && !users.existsByUsernameIgnoreCase(username);
         return Map.of("username", username, "available", available,
                 "suggestions", available ? java.util.List.of() : identity.usernameSuggestions(username));
     }

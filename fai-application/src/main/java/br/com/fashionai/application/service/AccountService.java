@@ -215,6 +215,7 @@ public class AccountService {
             if (users.existsByEmailHash(Hashing.emailHash(mail))) {
                 throw ApiException.conflict("EMAIL_EM_USO", Msg.t("account.este_e_mail_ja_esta"));
             }
+            identity.invalidateCodes(u.getId(), VerificationPurpose.EMAIL_CHANGE);   // só o pedido mais novo vale
             String code = Hashing.numericCode(6);
             VerificationCode vc = new VerificationCode();
             vc.setUser(u);
@@ -247,13 +248,25 @@ public class AccountService {
         return out;
     }
 
-    @Transactional
+    /**
+     * Código de 6 dígitos com tentativas contadas e gravadas (noRollbackFor): na quinta errada o pedido de troca é
+     * invalidado e é preciso pedir outro código.
+     */
+    @Transactional(noRollbackFor = ApiException.class)
     public Views.UserCard confirmEmailChange(CurrentUser user, String code) {
         User u = load(user);
         VerificationCode vc = codes.findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(u.getId(),
                 VerificationPurpose.EMAIL_CHANGE).orElseThrow(() -> ApiException.badRequest("CODIGO_INVALIDO", Msg.t("account.nenhuma_troca_pendente")));
-        if (vc.getExpiresAt().isBefore(Instant.now()) || !vc.getCodeHash().equals(Hashing.sha256(u.getId() + ":" + code))) {
+        identity.requireCodeAttemptQuota(u.getId(), VerificationPurpose.EMAIL_CHANGE);
+        if (!vc.isUsable(Instant.now())) {
             throw ApiException.badRequest("CODIGO_INVALIDO", Msg.t("account.codigo_invalido_ou_expirado"));
+        }
+        if (!IdentityService.codeMatches(vc, u.getId(), code)) {
+            throw IdentityService.wrongCode(vc);
+        }
+        if (users.existsByEmailHash(Hashing.emailHash(vc.getTarget()))) {
+            vc.setConsumedAt(Instant.now());                  // o endereço foi tomado por outra conta depois do pedido
+            throw ApiException.conflict("EMAIL_EM_USO", Msg.t("account.este_e_mail_ja_esta"));
         }
         vc.setConsumedAt(Instant.now());
         u.setEmail(vc.getTarget());
