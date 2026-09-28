@@ -30,7 +30,7 @@ for r in res:
 # telas que chamam cada endpoint
 def pages(ep):
     fs = fmap.get(ep) or []
-    return [f.replace('app/(app)/', '').replace('app/(auth)/', '').replace('/page.tsx', '').replace('components/', 'componente ') or '/' for f in fs]
+    return [f.replace('app/(site)/(app)/', '').replace('app/(site)/(auth)/', '').replace('app/(app)/', '').replace('app/(auth)/', '').replace('/page.tsx', '').replace('components/', 'componente ') or '/' for f in fs]
 
 
 # para cada tabela: GETs (com tela) que a leem, com o nº de tabelas lidas (quanto menos, mais específico)

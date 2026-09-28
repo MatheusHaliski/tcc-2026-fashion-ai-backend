@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { api, onUnauthorized, tokenStore } from "@/lib/api/client";
+import { api, onUnauthorized, restoreSession, tokenStore } from "@/lib/api/client";
 import type { Me, Session, UserCard } from "@/lib/api/types";
 
 interface Auth {
@@ -27,24 +27,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(tokenStore.userKey);
-      if (cached && tokenStore.access) setUser(JSON.parse(cached));
-    } catch { /* ignore */ }
-    refreshMe().finally(() => setReady(true));
+    let cancelled = false;
+    // a sessão volta pelo cookie HttpOnly (BFF): primeiro o access token em memória, depois os dados da conta
+    (async () => {
+      const restored = await restoreSession();
+      if (cancelled) return;
+      if (restored) {
+        try { const cached = localStorage.getItem(tokenStore.userKey); if (cached) setUser(JSON.parse(cached)); } catch { /* ignore */ }
+      }
+      await refreshMe();
+    })().finally(() => { if (!cancelled) setReady(true); });
     const off = onUnauthorized(() => { setUser(null); setMe(null); router.push("/login?reason=session"); });
-    return () => { off(); };
+    return () => { cancelled = true; off(); };
   }, [refreshMe, router]);
 
   const signIn = useCallback((s: Session) => {
-    tokenStore.set(s.accessToken, s.refreshToken);
+    tokenStore.set(s.accessToken);
     setUser(s.user);
     try { localStorage.setItem(tokenStore.userKey, JSON.stringify(s.user)); } catch { /* ignore */ }
     void refreshMe();
   }, [refreshMe]);
 
   const signOut = useCallback(async () => {
-    try { await api.post("/api/auth/logout"); } catch { /* sessão já encerrada */ }
+    try { await api.post("/bff/auth/logout"); } catch { /* sessão já encerrada */ }
     tokenStore.clear(); setUser(null); setMe(null); router.push("/login");
   }, [router]);
 
