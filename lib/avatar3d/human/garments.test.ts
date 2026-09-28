@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
-import { SPECS, armOutFor, bodyParam, garmentGeometry, kindOf, posedPositions, tubeRadius, underLayer, type GarmentKind } from "./garments";
+import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
@@ -149,5 +149,37 @@ describe("roupa que veste — moldes presos ao esqueleto", () => {
     const { gs: [tee] } = dressed("FEMININO", ["tee"]);
     for (let i = 0; i < tee.skinWeight.length; i += 4) expect(tee.skinWeight[i] + tee.skinWeight[i + 1] + tee.skinWeight[i + 2] + tee.skinWeight[i + 3]).toBeCloseTo(1, 2);
     void THREE;
+  });
+});
+
+describe("gola 3D (ribana) em volta do decote inteiro", () => {
+  const c = compose(asset, fitBody(asset, { sex: "MASCULINO" }).z, null, DEFAULT_BODY.MASCULINO.stature);
+  const P = bodyParam(asset, c);
+  it("decote: mais baixo na frente, alto na nuca, sem degrau dos lados", () => {
+    const sp = SPECS.tee;
+    expect(necklineH(sp, 0, 1)).toBeCloseTo(sp.neck - sp.vneck, 5);             // frente
+    expect(necklineH(sp, 0, -1)).toBeCloseTo(sp.neck, 5);                          // nuca
+    let prev = necklineH(sp, 0, -1);
+    for (let a = 1; a <= 36; a++) {                                                // da nuca à frente, sempre descendo, suave
+      const phi = Math.PI - (a / 36) * Math.PI; const h = necklineH(sp, Math.sin(phi), Math.cos(phi));
+      expect(h).toBeLessThanOrEqual(prev + 1e-9); expect(prev - h).toBeLessThan(0.02); prev = h;          // antes: degrau de vneck inteiro num ponto
+    }
+  });
+  it("a faixa fecha a volta (frente, lados e nuca), na altura do decote, perto do pescoço", () => {
+    const b = collarBand(asset, c, P, SPECS.tee)!;
+    expect(b).not.toBeNull();
+    const NA = 72; const ring = b.position.subarray(0, NA * 3);                    // anel externo de cima
+    const ys = (phi: number) => { const j = Math.round(((phi + Math.PI) / (2 * Math.PI)) * NA) % NA; return ring[j * 3 + 1]; };
+    expect(ys(Math.PI - 1e-6)).toBeGreaterThan(ys(0) + 0.02);                      // nuca mais alta que a frente
+    for (let j = 0; j < NA; j++) {
+      const x = ring[j * 3], dz = ring[j * 3 + 2] - P.neckZ;
+      const r = Math.hypot(x, dz); expect(r).toBeGreaterThan(0.04); expect(r).toBeLessThan(0.13);   // em volta do pescoço, não do ombro
+    }
+    // pesos de pele válidos (somam 1) e só ossos do pescoço/tronco
+    for (let i = 0; i < b.skinWeight.length; i += 4) expect(b.skinWeight[i] + b.skinWeight[i + 1] + b.skinWeight[i + 2] + b.skinWeight[i + 3]).toBeCloseTo(1, 3);
+  });
+  it("jaqueta e calçado não ganham faixa (aberta na frente / sem gola)", () => {
+    expect(collarBand(asset, c, P, SPECS.jacket)).toBeNull();
+    expect(collarBand(asset, c, P, SPECS.shoes)).toBeNull();
   });
 });

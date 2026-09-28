@@ -158,13 +158,18 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
   const coily = texture === "coily";
   const maxSide = covered ? 0.05 : coily ? 0.09 : 0.045, maxTop = covered ? 0.09 : coily ? 0.1 : 0.05;
   const topCanon = covered ? Math.max(SKULL_TOP + 2, ...HAIR_TOPS(hair.outline)) : Math.max(SKULL_TOP + 0.5, hair.top || SKULL_TOP + 1);
-  const tTop = Math.min(maxTop, Math.max(covered ? 0.02 : 0.006, (topCanon - SKULL_TOP) * k));
+  // volume mínimo de cabelo de verdade (fios têm corpo: nunca "pintado" no crânio). A silhueta da foto só aumenta isso;
+  // com o alto da cabeça cortado na foto (hair.cut), a altura medida não vale e fica o mínimo do comprimento.
+  const curlyish = texture === "curly" || coily;
+  const minSide = covered ? 0.012 : (hair.length === "medium" || hair.length === "long" ? 0.014 : 0.01) * (coily ? 1.6 : curlyish ? 1.3 : 1);
+  const minTop = covered ? 0.02 : (hair.length === "medium" || hair.length === "long" ? 0.022 : hair.cut ? 0.024 : 0.018) * (coily ? 1.6 : curlyish ? 1.3 : 1);
+  const tTop = Math.min(maxTop, Math.max(minTop, hair.cut && !covered ? 0 : (topCanon - SKULL_TOP) * k));
   // meia-largura do crânio por altura: elipse pela largura do rosto na altura dos olhos e pelo topo da cabeça — lisa,
   // sem as orelhas (que dariam "abas" no cabelo logo abaixo delas)
   const halfW = (y: number) => y <= fr.earY ? fr.halfW * 0.97 : fr.halfW * 0.97 * Math.sqrt(Math.max(0.05, 1 - ((y - fr.earY) / Math.max(0.05, fr.headTop - fr.earY)) ** 2));
   const rawSide = (y: number) => {
     const W = outlineAt(hair.outline, CANON_FOREHEAD + (y - fr.y10) / k) * k;
-    return W ? Math.max(covered ? 0.012 : 0.004, Math.min(maxSide, W - halfW(y))) : covered ? 0.012 : 0.008;
+    return W ? Math.max(minSide, Math.min(maxSide, W - halfW(y))) : minSide;
   };
   const sideAt = new Map<number, number>();
   const tSideAt = (y: number) => {                                         // média móvel de ±1,5 cm na altura
@@ -194,6 +199,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     let i = map.get(v); if (i !== undefined) return i; i = pos.length / 3; map.set(v, i);
     let t = thick[v];
     if (!covered && (texture === "curly" || coily)) t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], coily ? 260 : 150) * (coily ? 0.006 : 0.0035);
+    else if (!covered && t > 0.006) t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], 70) * 0.0022;   // mechas: sem capacete liso
     pos.push(c.body[v * 3] + normals[v * 3] * t, c.body[v * 3 + 1] + normals[v * 3 + 1] * t, c.body[v * 3 + 2] + normals[v * 3 + 2] * t);
     uv.push((phiOf[v] / (2 * Math.PI) + 0.5) * 10, (fr.headTop - c.body[v * 3 + 1]) / 0.25);
     for (let j = 0; j < 4; j++) { const w = a.body.skinWeight[v * 4 + j]; si.push(w ? a.body.skinIndex[v * 4 + j] : 0); sw.push(w / 255); }
