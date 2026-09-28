@@ -97,13 +97,15 @@ public class AutopilotController {
         return copilot.ask(user, body);
     }
 
-    public record AcceptRequest(@NotEmpty List<UUID> pieceIds, String title, List<String> occasion) {
+    public record AcceptRequest(@NotEmpty List<UUID> pieceIds, String title, List<String> occasion, List<String> style, String mood,
+                                String season, String description, Map<String, Object> background) {
     }
 
     @PostMapping("/api/copilot/looks")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF10 — Aceitar um look sugerido pelo Copilot como esquema")
     public Map<String, Object> accept(CurrentUser user, @RequestBody AcceptRequest body) {
-        return copilot.accept(user, body.pieceIds(), body.title(), body.occasion());
+        return copilot.accept(user, body.pieceIds(), body.title(), body.occasion(), body.style(), body.mood(), body.season(),
+                body.description(), body.background());
     }
 }
