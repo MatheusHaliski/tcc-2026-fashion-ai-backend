@@ -649,8 +649,8 @@ def build(derived_enabled: bool) -> dict:
             animated_file = PUBLIC / asset["gif"].lstrip("/")
             if static_file.is_file():
                 v["static"] = {"url": url_of(static_file),
-                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78),
-                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78) or url_of(static_file),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80) or url_of(static_file),
                                **d.image_info(static_file)}
             else:
                 v["static"] = None
