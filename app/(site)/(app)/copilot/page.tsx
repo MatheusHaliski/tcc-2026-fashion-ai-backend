@@ -14,11 +14,13 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
-interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: { title?: string; pieceIds?: string[]; pieces?: Chip[]; why?: string }[]; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
+interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; background?: Record<string, unknown>; }
+interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
-interface Ctx { view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
+interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
 
 interface Suggestions { weather?: { available?: boolean; temperatureC?: number; city?: string; description?: string }; weatherBand?: string; readyLooks: SchemeView[]; newCombinations: { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number }[]; forgottenPieces: PieceView[]; weatherPieces: PieceView[]; trendingLooks: SchemeView[]; }
+type SuggestionSection = "ready" | "new" | "forgotten" | "weather" | "trending";
 
 /** Seção rolável de sugestões (cards de esquema ou peça — clique abre o detalhe ampliado em modal). */
 function Row({ title, hint, children, empty }: { title: string; hint?: string; children: React.ReactNode; empty?: boolean }) {
@@ -32,48 +34,85 @@ function Copilot() {
   const sug = useApi<Suggestions>((signal) => api.get("/api/copilot/suggestions", { signal }), []);
   const detail = useDetailModal();
   const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const endRef = useRef<HTMLDivElement>(null);
+  const [section, setSection] = useState<SuggestionSection>("ready"); const [savedLooks, setSavedLooks] = useState<SuggestedLook[]>([]); const [activeLook, setActiveLook] = useState<string | null>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  const storageKey = ctx?.userId ? `fashionai.copilot.looks.v1.${ctx.userId}` : null;
+  useEffect(() => {
+    if (!storageKey) return;
+    try { const stored = JSON.parse(localStorage.getItem(storageKey) ?? "[]"); if (Array.isArray(stored)) setSavedLooks(stored.filter((x): x is SuggestedLook => !!x && typeof x.title === "string" && Array.isArray(x.pieceIds)).slice(0, 40)); } catch { setSavedLooks([]); }
+  }, [storageKey]);
+  useEffect(() => { if (storageKey) localStorage.setItem(storageKey, JSON.stringify(savedLooks.slice(0, 40))); }, [savedLooks, storageKey]);
+  useEffect(() => {
+    if (!sug.data) return;
+    rememberLooks([
+      ...sug.data.readyLooks.map((look) => ({ title: look.title, pieceIds: look.items.map((item) => item.wardrobeItemId), pieces: look.items.map((item) => ({ pieceId: item.wardrobeItemId, name: item.name ?? item.piece?.name ?? "", imageUrl: item.imageUrl ?? item.piece?.thumbnailUrl ?? item.piece?.imageUrl ?? undefined })) })),
+      ...sug.data.newCombinations.map((look) => ({ title: look.title, pieceIds: look.pieceIds, pieces: look.pieces.map((piece) => ({ pieceId: piece.id, name: piece.name, imageUrl: piece.thumbnailUrl ?? piece.imageUrl ?? undefined })), why: look.rationale, occasion: look.occasions })),
+    ]);
+  }, [sug.data]);
+  function rememberLooks(looks: SuggestedLook[]) {
+    if (!looks.length) return;
+    setSavedLooks((existing) => {
+      const next = [...looks, ...existing].filter((look, index, all) => all.findIndex((other) => other.title === look.title && other.pieceIds.join(",") === look.pieceIds.join(",")) === index);
+      return next.slice(0, 40);
+    });
+  }
   async function ask(text: string) {
     if (!text.trim()) return;
     setMsgs((m) => [...m, { role: "user", text }]); setInput(""); setBusy(true);
-    try { const r = await api.post<Reply>("/api/copilot/messages", { message: text, view: "copilot" }); setMsgs((m) => [...m, { role: "copilot", text: r.text, reply: r }]); }
+    try { const r = await api.post<Reply>("/api/copilot/messages", { message: text, view: "copilot" }); setMsgs((m) => [...m, { role: "copilot", text: r.text, reply: r }]); rememberLooks(r.looks ?? []); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
-  async function accept(a: Action | { pieceIds?: string[]; title?: string }) {
-    try { const r = await api.post<{ scheme?: { id: string }; id?: string }>("/api/copilot/looks", { pieceIds: a.pieceIds ?? [], title: a.title ?? t("copilot.look_do_copilot"), occasion: (a as Action).occasion ?? [] }); const id = r.scheme?.id ?? r.id; toast.success(t("scheme.saved")); if (id) window.location.href = `/schemes/${id}`; } catch (e) { toast.fromError(e); }
+  async function accept(a: Action | SuggestedLook) {
+    try { const look = a as SuggestedLook; const r = await api.post<{ scheme?: { id: string }; id?: string }>("/api/copilot/looks", { pieceIds: a.pieceIds ?? [], title: a.title ?? t("copilot.look_do_copilot"), occasion: (a as Action).occasion ?? look.occasion ?? [], style: look.style ?? [], mood: look.mood, season: look.season, background: look.background }); const id = r.scheme?.id ?? r.id; toast.success(t("scheme.saved")); if (id) window.location.href = `/schemes/${id}`; } catch (e) { toast.fromError(e); }
   }
   const prompts = msgs.length ? msgs[msgs.length - 1].reply?.suggestedPrompts ?? ctx?.suggestedPrompts : ctx?.suggestedPrompts;
   const md = (s: string) => s.split(/(\*\*[^*]+\*\*)/g).map((part, i) => part.startsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : <span key={i}>{part}</span>);
+  const sections: { id: SuggestionSection; title: string; content: React.ReactNode; empty: boolean }[] = [
+    { id: "ready", title: t("copilot.looks_prontos_para_hoje"), content: (sug.data?.readyLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />), empty: !sug.data?.readyLooks.length },
+    { id: "new", title: t("copilot.combinacoes_novas_com_o_seu"), content: (sug.data?.newCombinations ?? []).map((c, i) => (
+      <article key={i} className="fai-card" aria-label={c.title}>
+        <div className="c-header"><span className="c-meta">{t("copilot.sugestao_do_copilot")}</span></div>
+        <div className="grid grid-cols-2 gap-1 p-2">{c.pieces.map((p) => <button key={p.id} type="button" className="aspect-square overflow-hidden rounded bg-surface-2 hover:ring-2 hover:ring-mark" title={p.name} onClick={() => detail?.openPiece(p.id)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} className="h-full w-full object-contain p-1" /></button>)}</div>
+        <div className="c-title">{c.title}</div>
+        {c.rationale && <div className="c-row">{c.rationale}</div>}
+        <div className="c-extra"><Button size="sm" variant="primary" onClick={() => accept({ pieceIds: c.pieceIds, title: c.title, occasion: c.occasions })}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button></div>
+      </article>)), empty: !sug.data?.newCombinations.length },
+    { id: "forgotten", title: t("copilot.pecas_esquecidas"), content: (sug.data?.forgottenPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />), empty: !sug.data?.forgottenPieces.length },
+    { id: "weather", title: t("copilot.para_o_clima_de_hoje"), content: (sug.data?.weatherPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />), empty: !sug.data?.weatherPieces.length },
+    { id: "trending", title: t("copilot.em_alta_na_rede"), content: (sug.data?.trendingLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />), empty: !sug.data?.trendingLooks.length },
+  ];
   return (
     <>
       <PageHeader title={t("nav.copilot")} kicker={t("copilot.rf10_ca08_ca16")} lead={t("copilot.pergunte_onde_esta_uma_peca")} />
       {ctx?.limitation && <p className="mb-3 rounded-md bg-chalk-soft p-3 type-body-sm">{ctx.limitation.message} <Link href="/pieces/new" className="underline">{t("closet.addPiece")}</Link></p>}
       {ctx?.weather?.available && <p className="mb-3 type-caption text-muted">{ctx.weather.city} · {ctx.weather.temperatureC}°C · {ctx.weather.description}</p>}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
-      <div className="min-w-0">
-        {sug.loading ? <p className="type-body text-muted">{t("copilot.montando_sugestoes")}</p> : sug.data && <>
-          <Row title={t("copilot.looks_prontos_para_hoje")} hint={t("copilot.seus_looks_clique_para_ver")} empty={!sug.data.readyLooks.length}>{sug.data.readyLooks.map((sc) => <SchemeCard key={sc.id} scheme={sc} />)}</Row>
-          <Row title={t("copilot.combinacoes_novas_com_o_seu")} hint={t("copilot.so_pecas_suas", { value: sug.data.weather?.available ? ` · ${sug.data.weather.temperatureC}°C` : "" })} empty={!sug.data.newCombinations.length}>{sug.data.newCombinations.map((c, i) => (
-            <article key={i} className="fai-card" aria-label={c.title}>
-              <div className="c-header"><span className="c-meta">{t("copilot.sugestao_do_copilot")}</span></div>
-              <div className="grid grid-cols-2 gap-1 p-2">{c.pieces.map((p) => <button key={p.id} type="button" className="aspect-square overflow-hidden rounded bg-surface-2 hover:ring-2 hover:ring-mark" title={p.name} onClick={() => detail?.openPiece(p.id)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} className="h-full w-full object-contain p-1" /></button>)}</div>
-              <div className="c-title">{c.title}</div>
-              {c.rationale && <div className="c-row">{c.rationale}</div>}
-              <div className="c-extra"><Button size="sm" variant="primary" onClick={() => accept({ pieceIds: c.pieceIds, title: c.title })}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button></div>
-            </article>))}</Row>
-          <Row title={t("copilot.pecas_esquecidas")} hint={t("copilot.sem_uso_ha_30_dias")} empty={!sug.data.forgottenPieces.length}>{sug.data.forgottenPieces.map((p) => <PieceCard key={p.id} piece={p} />)}</Row>
-          <Row title={t("copilot.para_o_clima_de_hoje")} hint={sug.data.weather?.available ? `${sug.data.weather.city ?? ""} · ${sug.data.weather.description ?? ""}` : t("copilot.sem_clima_pecas_versateis")} empty={!sug.data.weatherPieces.length}>{sug.data.weatherPieces.map((p) => <PieceCard key={p.id} piece={p} />)}</Row>
-          <Row title={t("copilot.em_alta_na_rede")} hint={t("copilot.looks_publicos_com_mais_hype")} empty={!sug.data.trendingLooks.length}>{sug.data.trendingLooks.map((sc) => <SchemeCard key={sc.id} scheme={sc} />)}</Row>
-        </>}
-      </div>
-      <div className="surface flex min-h-[60vh] flex-col xl:sticky xl:top-16 xl:self-start xl:max-h-[calc(100vh-6rem)]">
+      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="surface self-start p-3 lg:sticky lg:top-16" aria-label={t("copilot.sugestao_do_copilot")}>
+        <h2 className="mb-2 type-h3">{t("copilot.looks_prontos_para_hoje")}</h2>
+        <nav className="grid gap-1" aria-label={t("copilot.seus_looks_clique_para_ver")}>
+          {savedLooks.map((look, i) => <button key={`${look.title}-${i}`} type="button" aria-pressed={activeLook === `${look.title}-${i}`} className={`truncate rounded px-3 py-2 text-left type-body-sm ${activeLook === `${look.title}-${i}` ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`} title={look.title} onClick={() => setActiveLook(`${look.title}-${i}`)}>{look.title}</button>)}
+          {!savedLooks.length && <p className="px-3 py-2 type-caption text-muted">{t("copilot.montando_sugestoes")}</p>}
+        </nav>
+      </aside>
+      <div className="min-w-0 space-y-4">
+        <section className="surface p-4">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("copilot.sugestao_do_copilot")}>
+            {sections.map((item) => <button key={item.id} type="button" role="tab" aria-selected={section === item.id} className={`chip ${section === item.id ? "is-active" : ""}`} onClick={() => { setSection(item.id); setActiveLook(null); }}>{item.title}</button>)}
+          </div>
+          {sug.loading ? <p className="mt-4 type-body text-muted">{t("copilot.montando_sugestoes")}</p> : activeLook ? (() => {
+            const look = savedLooks.find((item, i) => `${item.title}-${i}` === activeLook);
+            return look ? <Card className="mt-4"><h2 className="type-h3">{look.title}</h2>{look.why && <p className="mt-1 type-body-sm text-muted">{look.why}</p>}<div className="mt-3 flex flex-wrap gap-2">{(look.pieces ?? []).map((piece) => <button key={piece.pieceId} type="button" title={piece.name} onClick={() => detail?.openPiece(piece.pieceId)}><img src={mediaUrl(piece.imageUrl)} alt={piece.name} className="h-16 w-16 rounded bg-surface-2 object-contain" /></button>)}</div><Button size="sm" className="mt-3" variant="primary" onClick={() => accept(look)}>{t("common.salvar_como_look")}</Button></Card> : null;
+          })() : sections.find((item) => item.id === section)?.empty ? <p className="mt-4 type-body-sm text-muted">{t("copilot.sem_clima_pecas_versateis")}</p>
+            : <div role="tabpanel" className="hscroll mt-4">{sections.find((item) => item.id === section)?.content}</div>}
+        </section>
+        <div className="surface flex min-h-[50vh] flex-col">
         <div className="flex-1 space-y-3 overflow-auto p-4" role="log" aria-live="polite">
           {msgs.length === 0 && <p className="type-body text-muted">{t("copilot.ola_sou_o_copilot_do", { value: ctx?.available ?? 0 })}</p>}
           {msgs.map((m, i) => (
             <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
               {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}</Link>)}</div> : null}
-              {m.reply?.looks?.length ? <div className="mt-2 grid gap-2 sm:grid-cols-2">{m.reply.looks.map((l, j) => <Card key={j}><p className="type-h3">{l.title}</p><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept({ pieceIds: l.pieceIds ?? (l.pieces ?? []).map((p) => p.pieceId), title: l.title })}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
+              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
               {m.reply?.purchases?.length ? <div className="mt-2 rounded border border-line-soft p-2"><p className="label">{t("copilot.sugestoes_de_compra_genericas")}</p><ul className="fai-list type-body-sm">{m.reply.purchases.map((p, j) => <li key={j}>• {p.name}{p.delta != null ? t("copilot.combinacoes", { delta: p.delta }) : ""}{p.reason ? ` · ${p.reason}` : ""}{p.sponsored && <span className="badge ml-1">{t("copilot.patrocinado")}</span>}</li>)}</ul></div> : null}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}
               {m.reply?.challengeNotice && <p className="mt-2 type-caption text-chalk">{m.reply.challengeNotice}</p>}
@@ -86,6 +125,7 @@ function Copilot() {
         <div className="border-t border-line-soft p-3">
           {prompts?.length ? <div className="mb-2 flex flex-wrap gap-1.5">{prompts.map((p) => <button key={p} type="button" className="chip" onClick={() => ask(p)}>{p}</button>)}</div> : null}
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask(input); }}><Input aria-label={t("copilot.mensagem")} value={input} onChange={(e) => setInput(e.target.value)} placeholder={t("copilot.onde_esta_meu_jeans_o")} /><Button type="submit" variant="primary" loading={busy}><FaiIcon id="ACT-13" size={24} decorative />{t("auth.send")}</Button></form>
+        </div>
         </div>
       </div>
       </div>
