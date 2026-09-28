@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { MyCoupons } from "@/components/coupons/my-coupons";
-import { Avatar, Button, Card, Chip, EmptyState, ErrorState, Field, Input, Pagination, SegmentPicker, Select, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
+import { Avatar, Button, Card, Chip, Dropdown, EmptyState, ErrorState, Field, Input, Pagination, SegmentPicker, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { SchemeCard, hypeColor } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
@@ -89,8 +89,8 @@ function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
   if (!self) { const list = theirs.data?.schemes ?? []; return theirs.loading ? <SkeletonGrid /> : list.length === 0 ? <EmptyState title={t("common.empty")} /> : <div className="grid-looks">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>; }
   return (
     <>
-      <div className="mb-3 flex flex-wrap gap-2"><Select aria-label={t("common.occasion")} value={occasion} onChange={(e) => { setOccasion(e.target.value); setPage(0); }}><option value="">{t("common.occasion")}: {t("common.all")}</option>{["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => <option key={o} value={o}>{label(o)}</option>)}</Select>
-        <Select aria-label={t("lookbookTabs.estado")} value={state} onChange={(e) => { setState(e.target.value); setPage(0); }}><option value="">{t("common.all")}</option><option value="favoritos">{t("common.favorite")}</option><option value="publicados">{t("common.public")}</option><option value="rascunhos">{t("lookbookTabs.rascunhos")}</option><option value="arquivados">{t("lookbookTabs.arquivados")}</option></Select>
+      <div className="mb-3 flex flex-wrap gap-2"><Dropdown label={t("common.occasion")} prefix={`${t("common.occasion")}:`} value={occasion} onChange={(v) => { setOccasion(v); setPage(0); }} options={[{ id: "", label: t("common.all") }, ...["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => ({ id: o, label: label(o) }))]} />
+        <Dropdown label={t("closet.state")} prefix={`${t("closet.state")}:`} value={state} onChange={(v) => { setState(v); setPage(0); }} options={[{ id: "", label: t("common.all") }, { id: "favoritos", label: t("common.favorite") }, { id: "publicados", label: t("common.public") }, { id: "rascunhos", label: t("lookbookTabs.rascunhos") }, { id: "arquivados", label: t("lookbookTabs.arquivados") }]} />
       </div>
       {mine.loading ? <SkeletonGrid /> : (mine.data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.empty")} /> : <><div className="grid-looks">{mine.data!.items.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div><Pagination page={mine.data!.page} hasMore={mine.data!.hasMore} total={mine.data!.total} size={mine.data!.size} onPage={setPage} /></>}
     </>
@@ -104,7 +104,7 @@ function SavedLooksTab() {
   const list = (data?.items ?? []).filter((x) => x.origin !== "PROPRIO");
   return (
     <>
-      <div className="mb-3 flex flex-wrap gap-2"><Select aria-label={t("common.occasion")} value={occasion} onChange={(e) => { setOccasion(e.target.value); setPage(0); }}><option value="">{t("common.occasion")}: {t("common.all")}</option>{["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => <option key={o} value={o}>{label(o)}</option>)}</Select></div>
+      <div className="mb-3 flex flex-wrap gap-2"><Dropdown label={t("common.occasion")} prefix={`${t("common.occasion")}:`} value={occasion} onChange={(v) => { setOccasion(v); setPage(0); }} options={[{ id: "", label: t("common.all") }, ...["casual", "work", "party", "formal", "sport", "travel", "date"].map((o) => ({ id: o, label: label(o) }))]} /></div>
       {loading ? <SkeletonGrid /> : list.length === 0 ? <EmptyState title={t("lookbookTabs.nenhum_look_salvo")} hint={t("lookbookTabs.use_o_botao_salvar_em")} /> : <div className="grid-looks">{list.map((x) => <SchemeCard key={x.scheme.id} scheme={x.scheme} extra={<><span className="caption">{x.originLabel}</span><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/me/saved-looks/${x.scheme.id}/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.delete(`/api/me/saved-looks/${x.scheme.id}`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></>} />)}</div>}
       {data && data.total > data.size && <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />}
     </>
@@ -137,7 +137,7 @@ function DailyTab() {
       <div>
         <Card className="mb-4">
           <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("lookbook.hype")} · {t("lookbook.panel")}</h2>
-            <Select aria-label={t("lookbookTabs.versao_do_painel")} className="w-auto" value={data.panelVersion} onChange={async (e) => { try { await api.put("/api/me/hype-panel-version", { version: e.target.value }); reload(); } catch (err) { toast.fromError(err); } }}>{data.panelVersions.map((v) => <option key={v.code} value={v.code}>{v.name}</option>)}</Select></div>
+            <Dropdown label={t("lookbookTabs.versao_do_painel")} value={data.panelVersion} onChange={async (v) => { try { await api.put("/api/me/hype-panel-version", { version: v }); reload(); } catch (err) { toast.fromError(err); } }} options={data.panelVersions.map((v) => ({ id: v.code, label: v.name }))} /></div>
           {data.scheme ? (
             <div className={`grid gap-3 ${data.panelVersion === "PASSARELA" ? "grid-cols-[80px_1fr]" : ""}`}>
               {data.panelVersion === "PASSARELA" ? <div className="flex h-40 items-end rounded bg-surface-2 p-1"><div className="w-full rounded" style={{ height: `${hype}%`, background: hypeColor(hype) }} /></div> : null}
@@ -180,7 +180,7 @@ function GroupsTab({ ownerId, self, suggestions }: { ownerId: string; self: bool
   return (
     <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
       <div>
-        {self && <Card className="mb-4"><h2 className="type-h3 mb-2">{t("lookbookTabs.novo_agrupamento")}</h2><Field label={t("common.tipo")} id="gtype"><Select id="gtype" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{["COLECAO", "TEMPORADA", "EDITORIAL", "CAPSULA", "VIAGEM"].map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field><Field label={t("common.nome")} id="glabel"><Input id="glabel" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /></Field><Button variant="primary" onClick={create} disabled={!form.label.trim()}>{t("common.add")}</Button></Card>}
+        {self && <Card className="mb-4"><h2 className="type-h3 mb-2">{t("lookbookTabs.novo_agrupamento")}</h2><Field label={t("common.tipo")} id="gtype"><Dropdown id="gtype" label={t("common.tipo")} value={form.type} onChange={(v) => setForm({ ...form, type: v })} options={["COLECAO", "TEMPORADA", "EDITORIAL", "CAPSULA", "VIAGEM"].map((x) => ({ id: x, label: label(x.toLowerCase()) }))} /></Field><Field label={t("common.nome")} id="glabel"><Input id="glabel" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /></Field><Button variant="primary" onClick={create} disabled={!form.label.trim()}>{t("common.add")}</Button></Card>}
         {self && suggestions && <Card className="mb-4"><h2 className="type-h3 mb-1">{t("lookbookTabs.hypegroups_ia")}</h2><p className="type-caption text-muted mb-2">{t("lookbookTabs.agrupa_looks_com_similaridade_0")}</p><Button size="sm" onClick={suggest}>{t("lookbookTabs.sugerir_grupos")}</Button><ul className="fai-list mt-2">{(hype.data ?? []).map((g) => <li key={g.id} className="flex items-center justify-between py-1 type-body-sm"><span>{g.label ?? g.name}</span><button type="button" className="underline type-caption" onClick={async () => { await api.delete(`/api/me/hype-groups/${g.id}`); hype.reload(); }}>{t("common.remove")}</button></li>)}</ul></Card>}
         <ul className="fai-list surface">{(groups.data ?? []).map((g) => <li key={g.id}><button type="button" className={`flex w-full items-center gap-3 p-3 text-left hover:bg-surface-2 ${open === g.id ? "bg-surface-2" : ""}`} onClick={() => setOpen(g.id)}><Avatar src={mediaUrl(g.coverUrl)} name={g.label} size={36} /><span className="flex-1"><b>{g.label}</b><span className="block type-caption text-muted">{label(g.type.toLowerCase())}{g.count != null ? ` · ${g.count}` : ""}</span></span></button></li>)}{(groups.data ?? []).length === 0 && <li className="p-3 type-body text-muted">{t("common.empty")}</li>}</ul>
       </div>

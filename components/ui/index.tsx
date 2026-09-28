@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { Children, Fragment, createContext, isValidElement, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { ApiError } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { REQUIREMENT_CODE, useDevRefs } from "@/lib/dev-refs";
@@ -39,18 +39,118 @@ export function Input({ className, error, ...rest }: InputHTMLAttributes<HTMLInp
 export function Textarea({ className, error, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement> & { error?: boolean }) {
   return <textarea {...rest} aria-invalid={error || undefined} className={cn("input min-h-24", className)} />;
 }
+/** Texto puro de um nó React (rótulo de <option> montado com vários pedaços). */
+function textOf(node: ReactNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement(node)) return textOf((node.props as { children?: ReactNode }).children);
+  return "";
+}
+function optionsOf(children: ReactNode): { id: string; label: string; disabled?: boolean }[] {
+  const out: { id: string; label: string; disabled?: boolean }[] = [];
+  Children.forEach(children, (ch) => {
+    if (!isValidElement(ch)) return;
+    const p = ch.props as { value?: string | number; children?: ReactNode; disabled?: boolean };
+    if (ch.type === "option") {
+      const label = textOf(p.children);
+      out.push({ id: p.value != null ? String(p.value) : label, label, disabled: !!p.disabled });
+    } else if (ch.type === Fragment || ch.type === "optgroup") out.push(...optionsOf(p.children));
+  });
+  return out;
+}
+
 /**
- * Lista de escolha ÚNICA (padrão FashionAI): o <select> nativo, com a aparência do campo e o ícone de abertura do
- * sistema. Nativo de propósito: teclado, leitor de tela, rolagem e teclado virtual do celular funcionam sem código.
- * O valor enviado é sempre o ID canônico (value da <option>); o rótulo traduzido é só o texto da opção.
+ * Lista de escolha ÚNICA (padrão FashionAI). Mesma API do <select> (value/defaultValue, onChange com e.target.value e
+ * filhos <option>), mas a lista aberta é a do FashionAI em todo navegador: o <select> nativo abre a lista do sistema e,
+ * em algumas versões do Chrome, chegou a mostrar o texto de todas as opções dentro da caixa. O valor enviado é sempre o
+ * ID canônico (value da <option>); o rótulo traduzido é só o texto da opção.
  */
-export function Select({ className, error, loading, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean; loading?: boolean }) {
+export function Select({ className, error, loading, children, value, defaultValue, onChange, disabled, id, name, ...rest }: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean; loading?: boolean }) {
+  const options = useMemo(() => optionsOf(children), [children]);
+  const [inner, setInner] = useState<string>(defaultValue != null ? String(defaultValue) : options[0]?.id ?? "");
+  const current = value != null ? String(value) : inner;
+  const change = (v: string) => {
+    if (value == null) setInner(v);
+    const target = { value: v, name: name ?? "", id: id ?? "" };
+    onChange?.({ target, currentTarget: target } as unknown as ChangeEvent<HTMLSelectElement>);
+  };
   return (
-    <span className={cn("select-wrap", loading && "is-loading", rest.disabled && "is-disabled")}>
-      <select {...rest} disabled={rest.disabled || loading} aria-invalid={error || undefined} aria-busy={loading || undefined} className={cn("input select", className)}>{children}</select>
-      {loading ? <span className="select-icon"><Spinner size={14} /></span>
-        : <svg className="select-icon" aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-    </span>
+    <Dropdown block id={id} value={current} onChange={change} options={options} disabled={disabled} loading={loading} invalid={error}
+      label={rest["aria-label"]} labelledBy={rest["aria-labelledby"]} triggerClassName={className} />
+  );
+}
+
+/**
+ * Lista de escolha ÚNICA com a lista aberta no visual FashionAI (tokens de superfície, linha, tinta e marca) em qualquer
+ * navegador — o <select> nativo abre a lista do sistema. Filtros e escolhas curtas. Teclado de listbox: setas, Home, End,
+ * Enter/Espaço escolhem, Esc fecha, letras pulam para a opção; o valor é sempre o ID canônico.
+ */
+export function Dropdown<T extends string>({ value, onChange, options, label, labelledBy, className, triggerClassName, prefix, id: fieldId, disabled, loading, invalid, block }: {
+  value: T; onChange: (v: T) => void; options: { id: T; label: string; disabled?: boolean }[];
+  /** id do botão, para o <label htmlFor> de um Field */
+  id?: string;
+  /** nome acessível da lista (e do botão); sem ele, vale o <label htmlFor> do campo */
+  label?: string; labelledBy?: string; className?: string; triggerClassName?: string;
+  /** texto antes do valor no botão (ex.: "Ocasião:") */
+  prefix?: string;
+  disabled?: boolean; loading?: boolean; invalid?: boolean;
+  /** ocupa a largura do campo (formulários) */
+  block?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  const cur = Math.max(0, options.findIndex((o) => o.id === value));
+  useEffect(() => {
+    if (!open) return;
+    setActive(cur);
+    list.current?.focus();
+    const away = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) list.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" }); }, [open, active]);
+  const choose = (i: number) => { if (options[i]?.disabled) return; onChange(options[i].id); setOpen(false); btn.current?.focus(); };
+  const off = disabled || loading;
+  function onListKey(e: ReactKeyboardEvent<HTMLUListElement>) {
+    const last = options.length - 1;
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(last, a + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+    else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+    else if (e.key === "End") { e.preventDefault(); setActive(last); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(active); }
+    else if (e.key === "Escape" || e.key === "Tab") { if (e.key === "Escape") e.preventDefault(); setOpen(false); btn.current?.focus(); }
+    else if (e.key.length === 1) {
+      const k = e.key.toLowerCase();
+      const n = options.findIndex((o, i) => i > active && o.label.toLowerCase().startsWith(k));
+      const m = n >= 0 ? n : options.findIndex((o) => o.label.toLowerCase().startsWith(k));
+      if (m >= 0) setActive(m);
+    }
+  }
+  return (
+    <div ref={root} className={cn("dd", block && "is-block", className)}>
+      <button ref={btn} id={fieldId} type="button" className={cn("input dd-trigger", triggerClassName)} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? `${id}-list` : undefined}
+        aria-label={label ? `${label}: ${options[cur]?.label ?? ""}` : undefined} aria-labelledby={label ? undefined : labelledBy} aria-invalid={invalid || undefined} aria-busy={loading || undefined} disabled={off}
+        onClick={() => setOpen((o) => !o)} onKeyDown={(e) => { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setOpen(true); } }}>
+        <span className="dd-value">{prefix && <span className="dd-prefix">{prefix} </span>}{options[cur]?.label}</span>
+        {loading ? <Spinner size={14} /> : <svg className="dd-icon" aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+      </button>
+      {open && !off && (
+        <ul ref={list} id={`${id}-list`} role="listbox" aria-label={label} aria-labelledby={label ? undefined : fieldId} tabIndex={-1} className="dd-list" aria-activedescendant={`${id}-o${active}`} onKeyDown={onListKey}>
+          {options.map((o, i) => (
+            <li key={`${o.id}-${i}`} id={`${id}-o${i}`} data-i={i} role="option" aria-selected={o.id === value} aria-disabled={o.disabled || undefined} className={cn("dd-option", i === active && "is-active", o.disabled && "is-disabled")}
+              onPointerEnter={() => setActive(i)} onClick={() => choose(i)}>
+              <span className="min-w-0 truncate">{o.label}</span>
+              {o.id === value && <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

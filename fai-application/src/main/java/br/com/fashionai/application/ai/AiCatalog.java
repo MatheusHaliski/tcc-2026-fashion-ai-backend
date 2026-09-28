@@ -21,7 +21,17 @@ import java.util.Map;
 public final class AiCatalog {
     public static final String CLAUDE_DEFAULT_MODEL = "claude-opus-5";
     public static final String CLAUDE_LIGHT_MODEL = "claude-haiku-4-5";
-    public static final String GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+    /**
+     * Modelo do Gemini: o gemini-2.5-flash foi desligado para contas novas (404 "no longer available to new users",
+     * visto nos logs de produção em 27/09/2026); o Google indica o gemini-3.8-flash. GEMINI_MODEL no ambiente troca o
+     * modelo sem mexer no código quando o Google aposentar este.
+     */
+    public static final String GEMINI_DEFAULT_MODEL = envOr("GEMINI_MODEL", "gemini-3.8-flash");
+
+    private static String envOr(String name, String fallback) {
+        String v = System.getenv(name);
+        return v == null || v.isBlank() ? fallback : v.trim();
+    }
 
     public enum CostMode { G, P, H }
 

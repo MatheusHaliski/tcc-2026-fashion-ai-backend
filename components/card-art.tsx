@@ -10,7 +10,7 @@ const vars = (o: Record<string, string | number>) => o as unknown as CSSProperti
 export function CardArtLayer({ art }: { art: CardArt }) {
   if (art.kind === "none") return null;
   return (
-    <div className={`card-art ${art.animation ? `anim-${art.animation}` : ""} art-${art.kind}`} style={{ background: art.base }} aria-hidden data-art={art.label}>
+    <div className={`card-art ${art.animation ? `anim-${art.animation}` : ""} art-${art.kind}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label}>
       {art.image && <img src={art.image} alt="" className="card-art-img" />}
       {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
       {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}

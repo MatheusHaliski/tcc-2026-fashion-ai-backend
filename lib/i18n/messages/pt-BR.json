@@ -3553,5 +3553,18 @@
   "ui.multi.selecionados": "{n} de {max}",
   "ui.multi.valor_fora_da_lista": "“{v}” não está nesta lista. Remova e escolha uma opção da lista.",
   "ui.stepOf": "Passo {n} de {total}",
-  "verifyEmail.codigo_reenviado": "Código reenviado."
+  "verifyEmail.codigo_reenviado": "Código reenviado.",
+  "artSeg.rotulo": "Arte de fundo",
+  "artSeg.cor": "Cor",
+  "artSeg.aura": "Aura & Material",
+  "artSeg.layout": "Layout & Estilo",
+  "artSeg.container": "Container",
+  "backgroundStudio.sem_animacao": "Sem animação",
+  "backgroundStudio.anim.SNOW": "Neve",
+  "backgroundStudio.anim.PETALS": "Pétalas",
+  "backgroundStudio.anim.LEAVES": "Folhas",
+  "backgroundStudio.anim.SHIMMER": "Brilho",
+  "backgroundStudio.arte_propria": "Arte própria (IA ou imagem enviada)",
+  "pieceArt.previa_feed": "Feed",
+  "pieceArt.previa_ampliado": "Ampliado"
 }
