@@ -14,12 +14,15 @@ import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson, type GarmentPart } from "@/lib/pieces/person-filter";
 import { keepAllowed } from "@/lib/pieces/tags";
 
 /** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
-interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null }
+interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null; suggestion?: string | null; certainty?: "confirmada" | "possivel" | null }
+/** Nova busca da marca em sub-retângulos da foto (POST /api/pieces/analysis/{id}/brand?grid=N). */
+interface BrandRetry { grid: number; regions: number; source?: "ocr" | "ia" | null; ocrAvailable?: boolean; brand?: string; region?: string; evidence?: string; certainty?: "confirmada" | "possivel"; regionUrl?: string }
 /** Critério de aceite da foto avaliado pelo backend; `message` só nos reprovados (a orientação para refazer). */
 interface PhotoCheck { id: string; ok: boolean; message?: string }
 interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null; subcategoryCandidates?: { code: string; score: number }[]; brandSearch?: BrandSearch | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; rejection?: { message?: string; checks?: PhotoCheck[] } | null; }
@@ -60,6 +63,8 @@ function NewPiece() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
   const [analyzed, setAnalyzed] = useState(false);
+  // recorte onde a nova busca leu a marca: vira a versão "Detalhe do logo" da foto
+  const [brandRegion, setBrandRegion] = useState<string | null>(null);
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0 || !value.category) return;
@@ -71,7 +76,7 @@ function NewPiece() {
    * peça desse tipo segue (parte de cima, de baixo, corpo inteiro ou calçado) — a outra roupa não entra na foto de produto.
    */
   async function process(original: File) {
-    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false);
+    let file = original; setPreview(URL.createObjectURL(file)); setDraft(null); setPersonNote(null); setAnalyzed(false); setBrandRegion(null);
     const keep: GarmentPart | undefined = ({ upper_piece: "upper", lower_piece: "lower", full_body_piece: "full", shoes_piece: "feet" } as Record<string, GarmentPart>)[value.category];
     try { const r = await stripPerson(file, { keep }); if (r.personFound) { file = r.file; setPreview(URL.createObjectURL(file)); setPersonNote(t("pieces.new.corpo_removido", { pct: r.removedPct })); } }
     catch { /* sem segmentação agora: a foto segue como está */ }
@@ -152,6 +157,17 @@ function NewPiece() {
       toast.success(`${created.length} ${t("common.pieces")} — ${t("piece.created")}`); window.location.href = user ? `/u/${user.username}` : "/closet";
     } catch (e) { toast.fromError(e); }
   }
+  /** Marca achada na foto (análise ou nova busca) vai para o campo Marca da etapa Dados. */
+  function applyBrand(brand: string) { setValue((v) => ({ ...v, brandName: brand, brandLogoUrl: null, brandSource: "LOGO_DETECTADO" })); }
+  /** Resultado da nova busca: atualiza o resumo da análise (o rascunho no servidor já foi atualizado). */
+  function onBrandRetry(r: BrandRetry) {
+    if (!draft || !r.brand) return;
+    const bs: BrandSearch = { ...(draft.prefill?.brandSearch ?? {}), foundIn: r.region ?? null, evidence: r.evidence ?? null, certainty: r.certainty ?? null, logoSource: r.source ?? null,
+      ...(r.certainty === "confirmada" ? { brand: r.brand, suggestion: null } : { suggestion: r.brand }) };
+    setDraft({ ...draft, prefill: { ...(draft.prefill ?? {}), ...(r.certainty === "confirmada" ? { brand: r.brand } : {}), brandSearch: bs } });
+    if (r.certainty === "confirmada") applyBrand(r.brand);
+    if (r.regionUrl) { setBrandRegion(r.regionUrl); setMode("detail"); }
+  }
   /** Nota única depois da análise: com baixa confiança, diz QUAIS campos conferir (e não impede salvar). */
   const prefillNote = (p: NonNullable<Draft["prefill"]>) => {
     if (!p.manualFillRequired) return t("piece.prefilled_all");
@@ -160,13 +176,13 @@ function NewPiece() {
     return unsure.length ? t("piece.lowConfidence_campos", { campos: unsure.join(", ") }) : t("piece.lowConfidence");
   };
   const realLogo = !!draft?.studio?.detailUrl && draft.studio.logo?.kind !== "print";
-  const modes = draft ? ([draft.studio ? "studio" : null, realLogo ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
+  const modes = draft ? ([draft.studio ? "studio" : null, realLogo || brandRegion ? "detail" : null, "flat", "original"] as (Preview | null)[]).filter((m): m is Preview => !!m) : [];
   const shown: Preview = modes.includes(mode) ? mode : modes[0] ?? "flat";
-  const isStudio = !!draft?.studio && (shown === "studio" || shown === "detail");
+  const isStudio = !!draft?.studio && (shown === "studio" || (shown === "detail" && !brandRegion));
   const edge = backdropEdge(backdrops, draft?.studio?.backdrop);
   // sem foto: o asset da categoria (ou o genérico) já ocupa o quadro — é a imagem que a peça terá se ficar sem foto
   const asset = tax?.defaultImages?.[value.category] ?? tax?.defaultImages?.generic ?? GENERIC_ASSET;
-  const draftSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "detail" ? draft.studio?.detailUrl : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
+  const draftSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "detail" ? brandRegion ?? draft.studio?.detailUrl : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
   const imgSrc = draftSrc ?? asset;
   const gallery = draft?.studio ? [{ src: mediaUrl(draft.studio.url)!, alt: t("pieces.new.previa_estudio"), anchor: sangria(draft.studio.framing) }, ...(realLogo && draft.studio.detailUrl ? [{ src: mediaUrl(draft.studio.detailUrl)!, alt: t("pieces.new.previa_detalhe_do_logo"), cover: true }] : [])] : [];
   const stepLabel: Record<Step, string> = { photo: t("pieces.new.etapa_foto"), data: t("pieces.new.etapa_dados"), more: t("pieceForm.moreDetails"), art: t("pieces.new.etapa_arte"), review: t("builder.step.review") };
@@ -207,10 +223,14 @@ function NewPiece() {
                   <p className="help">{t("pieces.new.escolha_o_tipo")}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,320px)_1fr]">
+                  <div className="grid content-start gap-2">
+                  {/* versão da foto em cima da imagem: estúdio, detalhe do logo (ou o recorte onde a marca foi lida), flat lay, original */}
+                  {draft && modes.length > 1 && <SegmentPicker label={t("pieces.new.versao_da_foto")} value={shown} onChange={setMode} options={modes.map((m) => ({ id: m, label: PREVIEW_LABEL[m] }))} />}
                   <button type="button" className={`flex self-start ${isStudio ? "" : "aspect-square"} items-center justify-center overflow-hidden rounded-md border border-line-soft bg-surface-2`} aria-label={t("piece.analyze")}
                     onClick={() => (isStudio ? setFullscreen(shown === "detail" ? 1 : 0) : value.category && fileRef.current?.click())} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}>
                     <img src={imgSrc} alt={draft ? t("pieces.new.previa", { PREVIEW_LABEL: PREVIEW_LABEL[shown] }) : t("pieces.new.asset_da_categoria")} className={isStudio ? "block h-auto w-full cursor-zoom-in" : "h-full w-full object-contain p-3"} />
                   </button>
+                  </div>
                   <div className="grid content-start gap-2">
                     <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => onFiles(e.target.files)} aria-label={t("piece.analyze")} />
                     <Button variant="primary" onClick={() => fileRef.current?.click()} loading={analyze.busy} disabled={!value.category}><FaiIcon id="ACT-07" size={24} decorative />{analyze.busy ? t("piece.analyzing") : t("pieces.new.enviar_foto")}</Button>
@@ -230,8 +250,8 @@ function NewPiece() {
                       </div>
                     ) : <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>)}
                     {analyzed && !analyze.busy && <p role="status" className="type-body-sm">{t("pieces.new.foto_analisada")}</p>}
-                    {draft && <AnalysisSummary draft={draft} category={value.category} subcategory={value.subcategory} onPick={(sub) => setValue((v) => ({ ...v, subcategory: sub }))} />}
-                    {draft && modes.length > 1 && <SegmentPicker label={t("pieces.new.versao_da_foto")} value={shown} onChange={setMode} options={modes.map((m) => ({ id: m, label: PREVIEW_LABEL[m] }))} />}
+                    {draft && <AnalysisSummary draft={draft} category={value.category} subcategory={value.subcategory} onPick={(sub) => setValue((v) => ({ ...v, subcategory: sub }))}
+                      brandInForm={value.brandName} onApplyBrand={applyBrand} onRetry={onBrandRetry} />}
                     {draft && !draft.backgroundRemoved && !draft.studio?.forced && (
                       <div role="status" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
                         <p className="font-medium">{t("pieces.new.o_fundo_nao_saiu_com")}</p>
@@ -239,7 +259,7 @@ function NewPiece() {
                       </div>
                     )}
                     {draft?.studio && <label className="flex items-center gap-2 type-body-sm"><input type="checkbox" checked={value.studio !== false} onChange={(e) => setValue((v) => ({ ...v, studio: e.target.checked }))} />{t("pieces.new.usar_a_foto_de_estudio")}</label>}
-                    {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
+                    {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); setBrandRegion(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
                     <details className="more-details" open={!draft}>
                       <summary>{t("pieces.new.como_fotografar")}</summary>
                       <ul className="fai-list pt-2 type-body-sm">{PRINCIPLES.map((k) => <li key={k}>{t(k)}</li>)}</ul>
@@ -275,25 +295,78 @@ function NewPiece() {
 }
 /**
  * O que a análise achou, logo abaixo da foto: o subtipo detectado dentro do tipo escolhido (com os parecidos para trocar
- * num clique) e a busca da marca nas zonas da peça (fundo da gola, peito esquerdo, peito direito, centro do peito).
+ * num clique) e a marca — lida (com o logo dela), possível (a pessoa confirma), logo sem nome legível ou não achada.
+ * Nos três últimos casos, "Procurar a marca de novo" divide a foto em sub-retângulos (grade 3×3, depois 4×4 e 5×5, mais a
+ * área do logo) e lê cada um ampliado: primeiro o leitor de texto do servidor, depois a IA de visão.
  */
-function AnalysisSummary({ draft, category, subcategory, onPick }: { draft: Draft; category: string; subcategory: string; onPick: (sub: string) => void }) {
-  const { t } = useI18n();
+function AnalysisSummary({ draft, category, subcategory, onPick, brandInForm, onApplyBrand, onRetry }: {
+  draft: Draft; category: string; subcategory: string; onPick: (sub: string) => void;
+  brandInForm?: string | null; onApplyBrand: (brand: string) => void; onRetry: (r: BrandRetry) => void;
+}) {
+  const { t } = useI18n(); const toast = useToast();
+  const [grid, setGrid] = useState(3); const [busy, setBusy] = useState(false);
+  const [last, setLast] = useState<BrandRetry | null>(null); const [dismissed, setDismissed] = useState(false);
   const p = draft.prefill; if (!p) return null;
   const candidates = (p.subcategoryCandidates ?? []).filter((c) => c.code !== subcategory);
   const top = (p.subcategoryCandidates ?? []).find((c) => c.code === subcategory);
-  const zone = (z?: string | null) => (z ? t(`pieces.zona.${z}`) : "");
   const bs = p.brandSearch;
   const brand = bs?.brand ?? null;
+  const suggestion = !brand && !dismissed ? bs?.suggestion ?? null : null;
+  const zone = (z?: string | null) => zoneName(t, z);
+  async function retry() {
+    setBusy(true);
+    try {
+      const r = await api.post<BrandRetry>(`/api/pieces/analysis/${draft.draftId}/brand?grid=${grid}`);
+      setLast(r); setDismissed(false); onRetry(r);
+      if (!r.brand) setGrid((g) => Math.min(5, g + 1));
+    } catch (e) { toast.fromError(e); } finally { setBusy(false); }
+  }
+  const canRetry = !brand && !(last && !last.brand && last.grid >= 5);
   return (
     <div className="grid gap-1.5 rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm" role="status" aria-label={CATEGORY_LABEL[category] ?? label(category)}>
       {subcategory && <p>{top ? t("pieces.new.subtipo_detectado", { sub: label(subcategory), pct: Math.round(top.score * 100) }) : label(subcategory)}</p>}
       {candidates.length > 0 && <div className="flex flex-wrap items-center gap-1.5"><span className="text-muted">{t("pieces.new.subtipos_parecidos")}</span>{candidates.map((c) => <Chip key={c.code} onClick={() => onPick(c.code)}>{label(c.code)}</Chip>)}</div>}
-      {bs && (brand ? <p>{t("pieces.new.marca_lida", { brand, zone: zone(bs.foundIn) || "—" })}</p>
-        : bs.foundIn ? <p>{t("pieces.new.marca_logo_sem_nome", { zone: zone(bs.foundIn) })}</p>
+      {bs && (brand ? (
+        <div className="brand-read">
+          <BrandLogo name={brand} size={36} shape="square" />
+          <p className="min-w-0">{t("pieces.new.marca_lida", { brand, zone: zone(bs.foundIn) || "—" })}{bs.certainty === "confirmada" && <span className="badge ml-1.5">{t("pieces.new.marca_confirmada")}</span>}
+            {bs.evidence && bs.evidence.toLowerCase() !== brand.toLowerCase() && <span className="block type-caption text-muted">{t("pieces.new.marca_texto_lido", { text: bs.evidence })}</span>}
+            {brandInForm !== brand && <Button size="sm" variant="ghost" className="mt-1" onClick={() => onApplyBrand(brand)}>{t("pieces.new.marca_usar", { brand })}</Button>}</p>
+        </div>
+      ) : suggestion ? (
+        <div className="brand-read">
+          <BrandLogo name={suggestion} size={36} shape="square" />
+          <div className="min-w-0">
+            <p>{t("pieces.new.marca_possivel", { brand: suggestion, zone: zone(bs.foundIn) || "—" })}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <Button size="sm" variant="primary" onClick={() => { onApplyBrand(suggestion); onRetry({ grid, regions: 0, brand: suggestion, region: bs.foundIn ?? undefined, certainty: "confirmada", evidence: bs.evidence ?? undefined }); }}>{t("pieces.new.marca_e_essa", { brand: suggestion })}</Button>
+              <Button size="sm" onClick={() => setDismissed(true)}>{t("pieces.new.marca_nao_e")}</Button>
+            </div>
+          </div>
+        </div>
+      ) : bs.foundIn ? <p>{t("pieces.new.marca_logo_sem_nome", { zone: zone(bs.foundIn) })}</p>
         : <p className="text-muted">{t("pieces.new.marca_nao_encontrada", { zones: (bs.zones ?? []).map(zone).join(", ") })}</p>)}
+      {bs && last && !last.brand && <p className="text-muted">{t("pieces.new.marca_retry_nada", { regions: last.regions, grid: last.grid })}</p>}
+      {bs && canRetry && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" loading={busy} onClick={retry}><FaiIcon id="ACT-07" size={20} decorative />{t(last ? "pieces.new.marca_retry_mais" : "pieces.new.marca_retry", { grid })}</Button>
+          {busy && <span className="type-caption text-muted" aria-live="polite">{t("pieces.new.marca_retry_busy", { grid })}</span>}
+        </div>
+      )}
+      {bs && !brand && last && !last.brand && last.grid >= 5 && <p className="text-muted">{t("pieces.new.marca_retry_fim")}</p>}
     </div>
   );
+}
+
+/** Nome da região onde a marca foi procurada/lida: zonas fixas, a peça inteira, a área do logo ou um recorte da grade. */
+function zoneName(t: (k: string, v?: Record<string, unknown>) => string, z?: string | null): string {
+  if (!z) return "";
+  if (z === "peca") return t("pieces.zona.peca");
+  if (z === "logo" || z.startsWith("logo_")) return t("pieces.zona.logo");
+  const g = /^grade_r(\d+)c(\d+)$/.exec(z);
+  if (g) return t("pieces.zona.grade", { r: Number(g[1]), c: Number(g[2]) });
+  const key = `pieces.zona.${z}`; const s = t(key);
+  return s === key ? z : s;
 }
 
 export default function NewPiecePage() { return <RequireAuth><NewPiece /></RequireAuth>; }

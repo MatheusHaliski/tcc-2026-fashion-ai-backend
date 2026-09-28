@@ -3588,5 +3588,19 @@
   "avatar3d.hairTone.auto_curto": "A",
   "avatar3d.hairTone.detectado": "De la foto: {name}",
   "avatar3d.hairTone.family.ash": "ceniza",
-  "avatar3d.hairTone.family.golden": "dorado"
+  "avatar3d.hairTone.family.golden": "dorado",
+  "pieces.new.marca_confirmada": "confirmada",
+  "pieces.new.marca_texto_lido": "Texto leído en la prenda: “{text}”",
+  "pieces.new.marca_usar": "Usar {brand} en el campo Marca",
+  "pieces.new.marca_possivel": "Puede ser {brand} ({zone}). ¿Es esa la marca?",
+  "pieces.new.marca_e_essa": "Sí, es {brand}",
+  "pieces.new.marca_nao_e": "No es",
+  "pieces.new.marca_retry": "Buscar la marca de nuevo",
+  "pieces.new.marca_retry_mais": "Buscar en más áreas (cuadrícula {grid}×{grid})",
+  "pieces.new.marca_retry_busy": "Leyendo la foto dividida en {grid}×{grid} recortes ampliados y el área del logo…",
+  "pieces.new.marca_retry_nada": "Ningún nombre legible en {regions} recortes (cuadrícula {grid}×{grid}).",
+  "pieces.new.marca_retry_fim": "Ya se leyeron todos los recortes de la foto. Escribe o busca la marca en el paso Datos — o envía una foto con el logo más cerca y nítido.",
+  "pieces.zona.peca": "prenda entera",
+  "pieces.zona.logo": "área del logo",
+  "pieces.zona.grade": "recorte fila {r}, columna {c}"
 }

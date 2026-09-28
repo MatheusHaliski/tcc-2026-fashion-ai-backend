@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -61,15 +62,23 @@ class OnnxTextReaderTest {
         assertTrue(ocr.read(img).stream().noneMatch(l -> l.confidence() > 0.8 && l.text().length() >= 3));
     }
 
+    /** Letra grande que vira bloco à parte ("L" + "ACOSTE") volta a ser uma linha só; outra linha continua separada. */
+    @Test
+    void juntaBlocosDaMesmaLinha() {
+        List<int[]> out = OnnxTextReader.mergeLine(List.of(new int[]{100, 200, 150, 290, 10}, new int[]{160, 205, 600, 292, 90}, new int[]{120, 500, 400, 540, 30}));
+        assertEquals(2, out.size());
+        assertTrue(out.stream().anyMatch(b -> b[0] == 100 && b[2] == 600 && b[1] == 200 && b[3] == 292));
+    }
+
     /** Fotos reais de peças fora do repositório: FAI_OCR_DIR=/pasta imprime o que foi lido (comparação com o RapidOCR). */
     @Test
     void fotosDePecas() throws IOException {
         String dir = System.getenv("FAI_OCR_DIR");
         assumeTrue(dir != null && !dir.isBlank(), "FAI_OCR_DIR não definida");
         try (Stream<Path> s = Files.walk(Path.of(dir))) {
-            for (Path f : s.filter(p -> p.getFileName().toString().equals("processed.png")).sorted().limit(40).toList()) {
+            for (Path f : s.filter(p -> p.getFileName().toString().equals("processed.png") || p.getFileName().toString().matches("\\d+\\.jpg")).sorted().limit(40).toList()) {
                 List<Line> lines = ocr.read(ImageOps.decode(Files.readAllBytes(f)));
-                System.out.println("OCR " + f.getParent().getFileName() + " " + lines.stream().filter(l -> l.confidence() > 0.5)
+                System.out.println("OCR " + f.getParent().getFileName() + "/" + f.getFileName() + " " + lines.stream().filter(l -> l.confidence() > 0.5)
                         .map(l -> l.text() + String.format("(%.2f)", l.confidence())).toList());
             }
         }

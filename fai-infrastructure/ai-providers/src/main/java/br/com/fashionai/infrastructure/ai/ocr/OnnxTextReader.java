@@ -157,10 +157,41 @@ public class OnnxTextReader implements TextReaderPort {
                 boxes.add(new int[]{ax0, ay0, ax1, ay1, n});
             }
         }
+        boxes = mergeLine(boxes);
         boxes.sort(Comparator.comparingInt((int[] b) -> -b[4]));
         List<int[]> top = new ArrayList<>(boxes.subList(0, Math.min(MAX_BOXES, boxes.size())));
         top.sort(Comparator.<int[]>comparingInt(b -> b[1]).thenComparingInt(b -> b[0]));
         return top;
+    }
+
+    /**
+     * Junta caixas da mesma linha de texto: em letra grande (logo no peito), a primeira ou a última letra às vezes vira
+     * um bloco à parte, mais alto que largo, que sozinho seria descartado como texto vertical ("L" + "ACOSTE"). Duas
+     * caixas se juntam quando se sobrepõem na vertical (≥ 55% da menor altura), têm altura parecida (razão ≤ 1,6) e o vão
+     * entre elas é menor que 0,6 × a altura.
+     */
+    static List<int[]> mergeLine(List<int[]> in) {
+        List<int[]> boxes = new ArrayList<>(in);
+        boolean merged = true;
+        while (merged) {
+            merged = false;
+            outer:
+            for (int i = 0; i < boxes.size(); i++) {
+                for (int j = i + 1; j < boxes.size(); j++) {
+                    int[] a = boxes.get(i), b = boxes.get(j);
+                    int ha = a[3] - a[1], hb = b[3] - b[1];
+                    int overlap = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
+                    int gap = Math.max(a[0], b[0]) - Math.min(a[2], b[2]);
+                    if (overlap >= 0.55 * Math.min(ha, hb) && Math.max(ha, hb) <= 1.6 * Math.min(ha, hb) && gap < 0.6 * Math.max(ha, hb)) {
+                        boxes.set(i, new int[]{Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3]), a[4] + b[4]});
+                        boxes.remove(j);
+                        merged = true;
+                        break outer;
+                    }
+                }
+            }
+        }
+        return boxes;
     }
 
     // ------------------------------------------------------------------ reconhecimento (CRNN + CTC)

@@ -42,6 +42,11 @@ class BrandReaderTest {
         assertEquals("Lacoste", r.match("LAC0STE").orElseThrow(), "uma letra trocada em nome longo");
         assertTrue(r.match("GAPNLAHASN").isEmpty(), "marca curta não casa dentro de outra palavra");
         assertTrue(r.match("SINCE 1933").isEmpty());
+        // logo parcialmente escondido (dobra do tecido, borda): sem a primeira ou a última letra, em nome longo
+        assertEquals("Lacoste", r.match("ACOSTE").orElseThrow());
+        assertEquals("Lacoste", r.match("LACOST").orElseThrow());
+        assertTrue(r.match("COSTE").isEmpty(), "duas letras a menos já não é a marca");
+        assertTrue(r.match("NIK").isEmpty(), "nome curto não aceita letra faltando");
     }
 
     @Test
@@ -51,6 +56,14 @@ class BrandReaderTest {
         assertEquals("Lacoste", f.brand());
         assertTrue(f.confirmed());
         assertEquals("peca", f.region());
+    }
+
+    @Test
+    void fraseDeEstampaNaoViraMarca() {
+        assertNull(BrandReader.wordmark(new TextReaderPort.Line("GOOD VIBES ONLY", 0.99, null)));
+        assertNull(BrandReader.wordmark(new TextReaderPort.Line("GOODVIBESONLY", 0.99, null)));
+        assertNull(BrandReader.wordmark(new TextReaderPort.Line("DVIBES", 0.99, null)), "frase cortada pelo recorte");
+        assertEquals("Korvano", BrandReader.wordmark(new TextReaderPort.Line("KORVANO", 0.99, null)));
     }
 
     @Test

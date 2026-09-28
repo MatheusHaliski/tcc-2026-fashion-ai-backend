@@ -3588,5 +3588,19 @@
   "avatar3d.hairTone.auto_curto": "A",
   "avatar3d.hairTone.detectado": "From the photo: {name}",
   "avatar3d.hairTone.family.ash": "ash",
-  "avatar3d.hairTone.family.golden": "golden"
+  "avatar3d.hairTone.family.golden": "golden",
+  "pieces.new.marca_confirmada": "confirmed",
+  "pieces.new.marca_texto_lido": "Text read on the piece: “{text}”",
+  "pieces.new.marca_usar": "Use {brand} in the Brand field",
+  "pieces.new.marca_possivel": "It may be {brand} ({zone}). Is this the brand?",
+  "pieces.new.marca_e_essa": "Yes, it's {brand}",
+  "pieces.new.marca_nao_e": "No",
+  "pieces.new.marca_retry": "Search for the brand again",
+  "pieces.new.marca_retry_mais": "Search more areas ({grid}×{grid} grid)",
+  "pieces.new.marca_retry_busy": "Reading the photo split into {grid}×{grid} enlarged crops and the logo area…",
+  "pieces.new.marca_retry_nada": "No readable name in {regions} crops ({grid}×{grid} grid).",
+  "pieces.new.marca_retry_fim": "Every crop of the photo has been read. Type or search the brand in the Details step — or send a photo with the logo closer and sharper.",
+  "pieces.zona.peca": "whole piece",
+  "pieces.zona.logo": "logo area",
+  "pieces.zona.grade": "crop row {r}, column {c}"
 }

@@ -23,7 +23,8 @@ import java.util.Set;
  * RF4 — marca pelo texto do logo, lida no próprio servidor (OCR local, {@link TextReaderPort}). Procura primeiro na peça
  * inteira (logo grande no peito), depois em cada região ampliada (etiqueta da gola, peito, sub-retângulos da grade).
  * <ul>
- *   <li><b>confirmada</b> — o texto lido é uma marca do catálogo (igual, ou a uma letra de distância em nomes longos);</li>
+ *   <li><b>confirmada</b> — o texto lido é uma marca do catálogo (igual, a uma letra de distância em nomes longos, ou
+ *   sem a primeira/última letra — logo parcialmente escondido);</li>
  *   <li><b>possível</b> — palavra de logo (maiúsculas, 4+ letras, leitura firme) fora do catálogo: a pessoa confirma.</li>
  * </ul>
  */
@@ -37,7 +38,11 @@ public class BrandReader {
             "sports", "world", "brand", "paris", "london", "milano", "italy", "france", "usa", "new", "york", "city", "vintage",
             "premium", "quality", "authentic", "genuine", "established", "estd", "design", "designed", "registered", "number",
             "lot", "only", "love", "best", "free", "life", "style", "fashion", "wear", "apparel", "company", "athletic",
-            "university", "college", "engineering", "school", "champions", "champion", "league", "rookie", "allstar");
+            "university", "college", "engineering", "school", "champions", "champion", "league", "rookie", "allstar",
+            "good", "vibes", "vibe", "happy", "summer", "beach", "surf", "dream", "dreams", "cool", "peace", "just", "have",
+            "your", "with", "from", "this", "that", "more", "less", "time", "wild", "girl", "girls", "boys", "baby", "star",
+            "stars", "hello", "yeah", "crew", "gang", "squad", "mood", "weekend", "hustle", "energy", "positive", "stay",
+            "keep", "calm", "never", "give", "better", "together", "smile", "sunshine", "tropical", "paradise", "vacation");
 
     public record Found(String brand, String region, String evidence, double confidence, boolean confirmed, double[] box) {
     }
@@ -129,6 +134,10 @@ public class BrandReader {
                     if (t.length() >= 6 && t.charAt(0) == key.charAt(0) && Math.abs(t.length() - key.length()) <= 1 && distance(t, key) <= 1) {
                         return Optional.of(e.getValue());
                     }
+                    // logo com a primeira ou a última letra escondida (dobra do tecido, borda da foto): "ACOSTE" → Lacoste
+                    if (t.length() >= 5 && t.length() == key.length() - 1 && (key.endsWith(t) || key.startsWith(t))) {
+                        return Optional.of(e.getValue());
+                    }
                 }
             }
         }
@@ -145,7 +154,10 @@ public class BrandReader {
                 continue;
             }
             String n = norm(raw);
-            if (n.length() == raw.length() && !NOT_BRAND.contains(n)) {
+            // frase colada pelo OCR ("GOODVIBESONLY") ou cortada pelo recorte ("DVIBES"): com uma palavra comum de
+            // estampa dentro, não é logo (marca do catálogo já foi casada antes; aqui é só a sugestão "possível")
+            boolean phrase = NOT_BRAND.stream().anyMatch(w -> w.length() >= 4 && n.contains(w));
+            if (n.length() == raw.length() && !NOT_BRAND.contains(n) && !phrase) {
                 return raw.charAt(0) + raw.substring(1).toLowerCase(Locale.ROOT);
             }
         }
