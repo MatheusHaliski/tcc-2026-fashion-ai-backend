@@ -14,7 +14,15 @@ COPY fai-bootstrap fai-bootstrap
 # sem --mount=type=cache: o Railway exige um id próprio no cache mount e recusa o Dockerfile sem ele
 RUN mvn -q -DskipTests package
 
-FROM eclipse-temurin:21-jre
+# Ubuntu 24.04 (noble) fixo: o nome do pacote do cliente MySQL não muda entre builds (a tag 21-jre muda de Ubuntu sozinha)
+FROM eclipse-temurin:21-jre-noble
+# Cliente MySQL da Oracle empacotado pelo Ubuntu (mysql-client 8.0.x, com atualizações de segurança da Canonical):
+# o mysqldump do backup diário (AdminService -> MysqlDumpBackupAdapter). Conecta em MySQL 8.4 LTS e 9.x, entende
+# --ssl-mode e caching_sha2_password. Só o pacote, sem recomendados, e sem as listas do apt na imagem final.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends mysql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && mysqldump --version
 RUN useradd --system --uid 10001 fai && mkdir -p /app/data/media && chown -R fai /app
 WORKDIR /app
 COPY --from=build /src/fai-bootstrap/target/fai-bootstrap-*.jar app.jar
