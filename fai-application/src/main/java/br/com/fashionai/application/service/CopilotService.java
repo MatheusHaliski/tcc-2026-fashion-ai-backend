@@ -213,7 +213,7 @@ public class CopilotService {
         out.put("available", eligible.size());
         out.put("ready", eligible.size() >= MIN_PIECES);
         if (eligible.size() < MIN_PIECES) {
-            out.put("limitation", Map.of("message", Msg.t("copilot.o_copilot_precisa_de_ao"), "href", "/add-piece"));
+            out.put("limitation", Map.of("message", Msg.t("copilot.o_copilot_precisa_de_ao"), "href", "/pieces/new"));
         }
         // ocasião e humor pré-preenchidos pelo que o sistema conhece (último Look do Dia e ocasiões mais usadas)
         List<DailyLook> recent = dailyLooks.findTop30ByUserIdOrderByLookDateDesc(user.id());
@@ -396,7 +396,7 @@ public class CopilotService {
         Map<String, Object> out = new LinkedHashMap<>();
         if (found.isEmpty()) {
             out.put("text", Msg.t("copilot.nao_encontrei_essa_peca_no"));
-            out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/add-piece")));
+            out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/pieces/new")));
             out.put("chips", List.of());
             return out;
         }
@@ -471,7 +471,7 @@ public class CopilotService {
         Map<String, Object> out = new LinkedHashMap<>();
         if (!Boolean.TRUE.equals(hints.get("eligible"))) {
             out.put("text", Msg.t("copilot.o_inventory_score_aparece_a"));
-            out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/add-piece")));
+            out.put("actions", List.of(Map.of("type", "ADD_PIECE", "href", "/pieces/new")));
             return out;
         }
         @SuppressWarnings("unchecked") List<InventoryScoreService.Dimension> weakest = (List<InventoryScoreService.Dimension>) hints.get("weakest");
@@ -491,7 +491,7 @@ public class CopilotService {
     Map<String, Object> different(CurrentUser user, AskRequest req) {
         List<WardrobeItem> eligible = mirror.eligible(user.id());
         if (eligible.size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.cadastre_ao_menos_3_pecas"), Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.cadastre_ao_menos_3_pecas"), Map.of("href", "/pieces/new"));
         }
         Map<UUID, Long> freq = new HashMap<>();
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
@@ -594,7 +594,7 @@ public class CopilotService {
                 if (gain > 0) {
                     purchases.add(Map.of("category", String.valueOf(cat), "subcategory", g.subcategory(), "color", g.color(), "occasions", occ,
                             "gain", gain, "gainText", Msg.t("copilot.combinacoes_possiveis", gain), "reason", g.reason(), "external", true,
-                            "action", Map.of("type", "ADD_PIECE", "label", Msg.t("copilot.cadastrar_se_voce_ja_tiver"), "href", "/add-piece")));
+                            "action", Map.of("type", "ADD_PIECE", "label", Msg.t("copilot.cadastrar_se_voce_ja_tiver"), "href", "/pieces/new")));
                 }
             }
             purchases.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("gain")).reversed());
@@ -611,7 +611,7 @@ public class CopilotService {
     /** CA02/CA03/CA05 — 3 looks distintos com justificativa; sem repetir a rodada anterior; fallback local. */
     Map<String, Object> looks(CurrentUser user, AskRequest req, String message) {
         if (wardrobe.eligible(user.id()).size() < MIN_PIECES) {
-            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.o_copilot_precisa_de_ao_2"), Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.o_copilot_precisa_de_ao_2"), Map.of("href", "/pieces/new"));
         }
         List<String> occasions = new ArrayList<>(req.occasion() == null ? List.of() : req.occasion());
         if (occasions.isEmpty()) {

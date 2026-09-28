@@ -104,7 +104,7 @@ public class TryOnService {
         List<WardrobeItem> own = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
                 .filter(w -> w.getAvailabilityStatus() != br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED).toList();
         if (own.isEmpty()) {
-            throw new ApiException(422, "ACERVO_VAZIO", Msg.t("tryOn.cadastre_ao_menos_1_peca"), Map.of("href", "/add-piece"));
+            throw new ApiException(422, "ACERVO_VAZIO", Msg.t("tryOn.cadastre_ao_menos_1_peca"), Map.of("href", "/pieces/new"));
         }
         // quatro lugares no corpo, decididos pela CATEGORIA gravada da peça (nunca pelo nome, pela ordem de vestir ou pela
         // imagem): parte de cima, parte de baixo, calçado e acessório. A peça inteira (vestido, macacão) ocupa a parte de cima.

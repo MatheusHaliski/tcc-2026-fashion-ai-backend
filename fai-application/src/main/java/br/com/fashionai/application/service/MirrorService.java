@@ -458,7 +458,7 @@ public class MirrorService {
                 .filter(w -> !inMirror.contains(w.getId())).toList();
         if (candidates.isEmpty()) {
             throw new ApiException(422, "SEM_CANDIDATAS", Msg.t("mirror.voce_nao_tem_peca_disponivel"),
-                    Map.of("href", "/add-piece", "slot", slot));
+                    Map.of("href", "/pieces/new", "slot", slot));
         }
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
         List<Map<String, Object>> catalog = new ArrayList<>();
@@ -751,7 +751,7 @@ public class MirrorService {
         List<WardrobeItem> eligible = eligible(user.id());
         boolean hasTop = eligible.stream().anyMatch(w -> slotOf(w).equals("upper") || slotOf(w).equals("dress"));
         if (!hasTop) {
-            throw new ApiException(422, "ACERVO_SEM_SUPERIOR", Msg.t("mirror.voce_ainda_nao_tem_peca"), Map.of("href", "/add-piece", "rf", "RF33.CA14"));
+            throw new ApiException(422, "ACERVO_SEM_SUPERIOR", Msg.t("mirror.voce_ainda_nao_tem_peca"), Map.of("href", "/pieces/new", "rf", "RF33.CA14"));
         }
         Set<UUID> eligibleIds = eligible.stream().map(WardrobeItem::getId).collect(Collectors.toSet());
         LinkedHashSet<UUID> anchors = new LinkedHashSet<>();
@@ -772,7 +772,7 @@ public class MirrorService {
         AiOutcome<?> composeOutcome = holder[0];
         if (composed.isEmpty()) {
             throw new ApiException(422, "SEM_COMBINACAO_NOVA", Msg.t("mirror.nao_encontrei_uma_combinacao_nova"),
-                    Map.of("href", "/add-piece"));
+                    Map.of("href", "/pieces/new"));
         }
         List<WardrobeItem> look = composed.get();
         Map<String, Object> newSlots = new LinkedHashMap<>();

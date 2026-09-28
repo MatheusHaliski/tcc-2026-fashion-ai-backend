@@ -451,7 +451,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             case "MY_SEASON" -> {
                 var dna = dnas.findByUserId(user.id()).orElse(null);
                 if (dna == null || (dna.getColorPalette() == null && dna.getColorSeason() == null)) {
-                    throw new ApiException(409, "SEM_COLORACAO", Msg.t("challenge.minha_estacao_usa_a_cartela"), Map.of("href", "/style-dna"));
+                    throw new ApiException(409, "SEM_COLORACAO", Msg.t("challenge.minha_estacao_usa_a_cartela"), Map.of("href", "/dna"));
                 }
             }
             case "RUNWAY_BATTLE" -> params.put("theme", runwayTheme(today()));

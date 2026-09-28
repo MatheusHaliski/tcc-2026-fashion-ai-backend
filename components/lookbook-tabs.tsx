@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { Page, PieceView, SchemeView, UserCard } from "@/lib/api/types";
@@ -16,7 +16,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
-type TabId = "closet" | "looks" | "dna" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
+export type TabId = "closet" | "looks" | "dna" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 /** estado da peça no closet (valores aceitos por WardrobeService.stateMatches); "venda" = sub-aba Peças à venda (RF4.CA8) */
@@ -27,6 +27,8 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
   const { t } = useI18n(); const { user } = useAuth();
   const { data: ov, loading, error, reload } = useApi<Overview>((signal) => api.get(`/api/users/${ownerId}/lookbook`, { signal, anonymous: !user }), [ownerId, !!user]);
   const [tab, setTab] = useState<TabId>(initialTab);
+  // um link para a própria página com outro ?tab= (ex.: "Marcar um look salvo" na aba Look do dia) troca a aba
+  useEffect(() => { setTab(initialTab); }, [initialTab]);
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !ov) return <Skeleton className="h-64" />;
   if (!ov.visible) return <EmptyState title={t("lookbookTabs.perfil_privado")} hint={t("lookbookTabs.siga_esta_pessoa_para_ver")} />;
@@ -127,7 +129,8 @@ function SavedPiecesTab() {
 function DailyTab() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const [withAi, setWithAi] = useState(false);
   const { data, loading, reload } = useApi<{ panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: Record<string, unknown>; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: { date: string; scheme?: SchemeView; feedback?: string | null; hype?: number }[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
-  if (loading || !data) return <Skeleton className="h-64" />;
+  // recarregar (depois de trocar a versão do painel) mantém a aba na tela: a lista não some e o foco fica nela
+  if (!data) return <Skeleton className="h-64" />;
   const panel = data.panel ?? {}; const hype = Number(panel.hype ?? panel.score ?? data.scheme?.hypeScore ?? 0);
   const metrics = (panel.metrics ?? panel.components ?? {}) as Record<string, number | { value?: number; label?: string }>;
   async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }

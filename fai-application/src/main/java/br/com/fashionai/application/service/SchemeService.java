@@ -145,7 +145,7 @@ public class SchemeService {
         if (eligible.size() < 2) {
             out.put("status", "INSUFICIENTE");
             out.put("message", Msg.t("scheme.voce_precisa_de_ao_menos"));
-            out.put("action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/add-piece"));
+            out.put("action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/pieces/new"));
         } else {
             out.put("status", "PRONTO");
         }
@@ -182,7 +182,7 @@ public class SchemeService {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         if (eligible.size() < 2) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE",
-                    Msg.t("scheme.cadastre_ao_menos_2_pecas"), Map.of("href", "/add-piece"));
+                    Msg.t("scheme.cadastre_ao_menos_2_pecas"), Map.of("href", "/pieces/new"));
         }
         Set<String> exclude = new HashSet<>(req.excludeCombinations() == null ? List.of() : req.excludeCombinations());
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();

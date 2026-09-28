@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { Select } from "@/components/ui";
 import { retryImport } from "@/lib/chunk-recovery";
 import * as THREE from "three";
 import { analyzePhoto, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
@@ -40,7 +41,7 @@ export default function AvatarLab() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {["front", "side-a", "side-b"].map((id, i) => <label key={id}>{id} <input id={`lab-${id}`} type="file" accept="image/*" onChange={(e) => { files.current[i] = e.target.files?.[0] ?? null; }} /></label>)}
         <button id="lab-run" onClick={run}>run</button>
-        <select id="lab-sex" value={sex} onChange={(e) => setSex(e.target.value as typeof sex)}><option>FEMININO</option><option>MASCULINO</option></select>
+        <span style={{ width: 160 }}><Select id="lab-sex" aria-label="sexo" value={sex} onChange={(e) => setSex(e.target.value as typeof sex)}><option>FEMININO</option><option>MASCULINO</option></Select></span>
         {(["front", "left34", "right34", "profile"] as AvatarView[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
       </div>
       <p id="lab-status">{status} {ms ? `${ms} ms` : ""}</p>

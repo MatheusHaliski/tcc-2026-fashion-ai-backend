@@ -79,7 +79,7 @@ SOC = [
 ]
 NAV = [
     ("NAV-01", "RF9", "Dashboard", "Dashboard", "Panel", "a small dress form mannequin bust with a round gauge dial on its chest", "resumo e sugestões da IA sobre o seu estilo", "an orange gauge needle", "bustgauge", "/home", False),
-    ("NAV-02", "RF4", "Guarda-Roupa", "Wardrobe", "Armario", "a two-door wardrobe with one door slightly open showing hangers inside", "o próprio acervo", "orange hangers inside", "wardrobe", "/my-wardrobe", False),
+    ("NAV-02", "RF4", "Guarda-Roupa", "Wardrobe", "Armario", "a two-door wardrobe with one door slightly open showing hangers inside", "o próprio acervo", "orange hangers inside", "wardrobe", "/closet", False),
     ("NAV-03", "RF5", "Criar Look", "Create Look", "Crear Look", "a dress form mannequin with a small four-point sparkle above its shoulder", "montar um look novo", "an orange sparkle", "bustsparkle", "/create-my-scheme", True),
     ("NAV-04", "RF6", "Looks Salvos", "Saved Looks", "Looks guardados", "three garment bags hanging side by side on a short rail", "coleção de looks guardados", "an orange rail", "garmentbags", "/explore-scheme", False),
     ("NAV-05", "RF7", "The Runway", "The Runway", "The Runway", "a high-heeled shoe standing at the end of a short catwalk under a spotlight cone", "feed social = passarela", "an orange spotlight cone", "heel", "/feed", False),
@@ -93,7 +93,7 @@ NAV = [
     ("NAV-13", "RF16", "Temas Futuros", "Future Topics", "Temas futuros", "a small telescope whose barrel is a spool of thread", "funcionalidades que vêm por aí", "an orange lens", "telescope", "/future-topics", False),
     ("NAV-14", "RF23", "Configurações", "Settings", "Configuración", "a gear wheel with a four-hole sewing button at its center", "preferências e privacidade", "an orange button", "gear", "/profile/settings", False),
     ("NAV-15", "RF6", "Perfil Lookbook", "Lookbook Profile", "Perfil Lookbook", "an open lookbook magazine with a round blank avatar cutout on the left page", "a vitrine pessoal: closet digital e looks salvos (RF6)", "an orange avatar ring", "lookbook", "/profile", False),
-    ("NAV-16", "RF32", "Meu Quarto", "My Room", "Mi cuarto", "a wardrobe next to a tall standing mirror", "o guarda-roupa espacial com o Smart Mirror", "an orange mirror frame", "room", "/my-wardrobe/room", False),
+    ("NAV-16", "RF32", "Meu Quarto", "My Room", "Mi cuarto", "a wardrobe next to a tall standing mirror", "o guarda-roupa espacial com o Smart Mirror", "an orange mirror frame", "room", "/room", False),
 ]
 ACT = [
     ("ACT-01", "RF1", "Criar conta", "Create account", "Crear cuenta", "a blank clothing name tag with a small plus sign stitched on it", "ativo", "an orange plus sign", "tagplus", "signup", False),

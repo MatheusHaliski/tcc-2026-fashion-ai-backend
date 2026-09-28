@@ -126,9 +126,11 @@ public class PhotoService {
     }
 
     /**
-     * RF12 — galeria de Minhas Fotos com os filtros dos segment pickers (origem, ocasião, estilo, cor, mês da publicação
-     * e período) e as facetas com os valores presentes. Ocasião, estilo e cor vêm da peça (RF4) ou do look (RF5) de que a
-     * foto faz parte; fotos de peças e looks excluídos não entram (CA13: saem junto com a peça ou o look).
+     * RF12 — galeria de Minhas Fotos com os filtros em cascata (origem → ocasião → estilo → cor → mês da publicação →
+     * período) e as facetas com os valores presentes NAS FOTOS QUE JÁ PASSARAM pelos filtros escolhidos: cada nível herda
+     * os anteriores e só oferece o que existe ali. As contagens por origem (primeiro nível) são sobre todas as fotos.
+     * Ocasião, estilo e cor vêm da peça (RF4) ou do look (RF5) de que a foto faz parte; fotos de peças e looks excluídos
+     * não entram (CA13: saem junto com a peça ou o look).
      */
     @Transactional(readOnly = true)
     public Map<String, Object> gallery(CurrentUser user, PhotoInsights.Filter f, int page, int size) {
@@ -142,12 +144,11 @@ public class PhotoService {
         int from = Math.min(matched.size(), Math.max(0, page) * s);
         int to = Math.min(matched.size(), from + s);
         List<Map<String, Object>> items = matched.subList(from, to).stream().map(p -> PhotoInsights.view(p, subjects.get(p.getId()), zone)).toList();
-        List<Photo> scope = f.origin() == null ? all : all.stream().filter(p -> p.getOrigin() == f.origin()).toList();
         Map<String, Long> counts = new LinkedHashMap<>();
         all.forEach(p -> counts.merge(p.getOrigin().name(), 1L, Long::sum));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", items);
-        out.put("facets", PhotoInsights.facets(scope, subjects, zone));
+        out.put("facets", PhotoInsights.facets(matched, subjects, zone));
         out.put("counts", counts);
         out.put("page", Math.max(0, page));
         out.put("size", s);
