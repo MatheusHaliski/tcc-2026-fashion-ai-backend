@@ -120,6 +120,8 @@ fashionai:
     # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
     edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
     client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga
+    image-max-pixels: ${IMAGE_MAX_PIXELS:40000000}  # teto de decodificação (bomba de descompressão); também limitado pelo heap
+    image-max-side: ${IMAGE_MAX_SIDE:12000}         # px por lado
   assets:
     public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
   storage:

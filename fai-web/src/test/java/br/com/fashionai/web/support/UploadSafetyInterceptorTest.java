@@ -112,6 +112,34 @@ class UploadSafetyInterceptorTest {
     }
 
     @Test
+    void arquivosDemaisNaRequisicaoSaoRecusadosAntesDeDecodificar() {
+        MockMultipartHttpServletRequest r = upload("/api/auth/uploads");
+        for (int i = 0; i < UploadSafetyInterceptor.MAX_FILE_PARTS; i++) {
+            r.addFile(new MockMultipartFile("extra", "x" + i + ".jpg", "image/jpeg", new byte[]{1}));
+        }
+        ApiException ex = assertThrows(ApiException.class,
+                () -> interceptor(fixed(ImageSafety.Decision.ALLOW)).preHandle(r, new MockHttpServletResponse(), null));
+        assertEquals(400, ex.status());
+        assertEquals("ARQUIVOS_DEMAIS", ex.code());
+    }
+
+    @Test
+    void bombaDeDescompressaoNaRotaPublicaDeCadastroERecusada() {
+        byte[] png = ImageOps.png(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+        java.nio.ByteBuffer.wrap(png, 16, 8).putInt(60_000).putInt(60_000);
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        crc.update(png, 12, 17);
+        java.nio.ByteBuffer.wrap(png, 29, 4).putInt((int) crc.getValue());
+        MockMultipartHttpServletRequest r = new MockMultipartHttpServletRequest();
+        r.setRequestURI("/api/auth/uploads");
+        r.addFile(new MockMultipartFile("file", "bomba.png", "image/png", png));
+        ImageSafety real = new ImageSafety(List.of(), List.of(), false);
+        ApiException ex = assertThrows(ApiException.class, () -> interceptor(real).preHandle(r, new MockHttpServletResponse(), null));
+        assertEquals(400, ex.status());
+        assertEquals(ImageOps.TOO_LARGE, ex.code());
+    }
+
+    @Test
     void imagemIlegivelNaoEntra() {
         login();
         MockMultipartHttpServletRequest r = new MockMultipartHttpServletRequest();
