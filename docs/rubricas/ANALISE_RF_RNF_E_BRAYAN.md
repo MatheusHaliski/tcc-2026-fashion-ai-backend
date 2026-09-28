@@ -122,6 +122,8 @@ Para concluir a conexão:
 2. **Leitura automatizada:** configurar `TRELLO_API_KEY`, `TRELLO_TOKEN` e `TRELLO_BOARD_ID` como segredos do ambiente, com acesso somente ao board necessário e sem gravá-los no git.
 3. **Sincronização controlada:** primeiro comparar listas/cards/checklists em modo `--dry-run`; somente depois, com revisão humana, habilitar comentários ou atualização de checklists.
 
+O passo a passo de configuração e o verificador de acesso estão em `docs/rubricas/TRELLO_ACESSO.md` e `scripts/rubricas/verificar_trello.py`.
+
 Com acesso de leitura, a próxima versão da análise deve confrontar diretamente: RF/HU, CAs, responsável, sprint, status, checklist `[BE]/[DB]/[FE]/[INT]/[IA]/[QA]`, links de PR e evidências. Até isso ocorrer, o board **não pode ser declarado sincronizado**.
 
 ## Fontes internas usadas
