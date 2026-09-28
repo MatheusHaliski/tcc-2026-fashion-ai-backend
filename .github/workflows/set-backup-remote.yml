@@ -3,6 +3,9 @@ name: Set Backup Remote URL
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   set-backup-remote:
     runs-on: ubuntu-latest
