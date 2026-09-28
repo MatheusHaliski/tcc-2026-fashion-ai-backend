@@ -2195,6 +2195,10 @@ public class WardrobeService {
         defaults.put("generic", assets.defaultPieceImage(null, null));
         Taxonomy.SUBCATEGORIES.keySet().forEach(c -> defaults.put(c, assets.defaultPieceImage(c, null)));
         out.put("defaultImages", defaults);
+        // imagem-asset de cada subtipo: a prévia do card troca a imagem ao escolher a subcategoria (peça ainda sem foto)
+        Map<String, String> bySub = new LinkedHashMap<>();
+        Taxonomy.SUBCATEGORIES.forEach((c, subs) -> subs.forEach(sub -> bySub.putIfAbsent(sub, assets.defaultPieceImage(c, sub))));
+        out.put("defaultImagesBySubcategory", bySub);
         out.put("brands", brands.findAllByOrderByName().stream().map(b -> Map.of("id", b.getId(), "name", b.getName(),
                 "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList());
         return out;
