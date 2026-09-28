@@ -130,8 +130,25 @@ public class MediaService {
     }
 
     /**
+     * Lê um arquivo de {@code restricted/} pela URL gravada. Só para fluxos que JÁ conferiram quem pode ver (ex.: foto do
+     * Espelho de Verdade: autor, colegas com consentimento ou ADMIN). Qualquer outra chave fica de fora.
+     */
+    public Optional<byte[]> readRestricted(String url) {
+        if (url == null) {
+            return Optional.empty();
+        }
+        return storage.keyOf(url).filter(k -> k.startsWith("restricted/") && safeKey(k)).map(key -> {
+            try {
+                return storage.get(key);
+            } catch (RuntimeException ex) {
+                return null;
+            }
+        });
+    }
+
+    /**
      * Lê um arquivo do storage pela URL gravada. Nunca devolve {@code restricted/} (documentos, quarentena, textura do
-     * rosto 3D): quem precisa deles lê pela chave, no fluxo que confere o acesso.
+     * rosto 3D): quem precisa deles usa {@link #readRestricted} no fluxo que confere o acesso.
      */
     public Optional<byte[]> read(String url) {
         if (url == null) {

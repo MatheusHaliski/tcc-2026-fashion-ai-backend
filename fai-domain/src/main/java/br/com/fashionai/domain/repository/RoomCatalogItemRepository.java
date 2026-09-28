@@ -16,4 +16,9 @@ public interface RoomCatalogItemRepository extends JpaRepository<RoomCatalogItem
     List<RoomCatalogItem> findByActiveTrueOrderByPricePoints();
 
     List<RoomCatalogItem> findByCreatorUserIdOrderByCreatedAtDesc(java.util.UUID creatorUserId);
+
+    /** Compra: trava o item (SELECT … FOR UPDATE) até o commit — o estoque de edição limitada é conferido e baixado em fila. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from RoomCatalogItem c where c.sku = :sku")
+    Optional<RoomCatalogItem> lockBySku(@Param("sku") String sku);
 }

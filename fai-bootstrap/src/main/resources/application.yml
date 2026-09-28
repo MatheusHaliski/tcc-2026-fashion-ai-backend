@@ -183,6 +183,8 @@ fashionai:
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
     google-vision-api-key: ${GOOGLE_VISION_API_KEY:}       # moderação de fotos enviadas (SafeSearch); vazio = segmentação local + revisão humana
+    daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.00}          # teto global de gasto com IA externa por dia UTC (0 = sem teto)
+    user-daily-budget-usd: ${AI_USER_DAILY_BUDGET_USD:0.50} # teto por usuário por dia UTC (0 = sem teto)
   moderation:
     uploads-enabled: ${UPLOAD_MODERATION_ENABLED:true}    # confere nudez nas fotos enviadas antes de gravar (docs/seguranca/moderacao-de-imagens.md)
   features:

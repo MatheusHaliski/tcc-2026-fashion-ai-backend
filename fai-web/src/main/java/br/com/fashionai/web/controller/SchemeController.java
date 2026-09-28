@@ -1,6 +1,8 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.SchemeService;
 import br.com.fashionai.application.view.Views;
@@ -31,6 +33,10 @@ public class SchemeController {
     @GetMapping("/api/schemes/builder")
     @Operation(summary = "RF5.CA01 — Dados para montar um esquema: peças elegíveis, slots, opções")
     public Map<String, Object> builder(CurrentUser user) {
+        if (user == null) {
+            // a rota cai no curinga público de GET /api/schemes/*: sem login é 401, não 500
+            throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
+        }
         return schemes.builder(user);
     }
 

@@ -75,11 +75,12 @@ public class LookbookService {
     private final HypeScoreService hype;
     private final AiEngine ai;
     private final Guard guard;
+    private final OwnMedia ownMedia;
 
     public LookbookService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces, SavedItemRepository saved,
                            UserRepository users, AcervoGroupRepository acervoGroups, SchemeGroupingRepository groupings, WardrobeService wardrobe,
                            SchemeService schemeService, SocialService social, DailyLookService dailyLooks, HypeScoreService hype, AiEngine ai,
-                           Guard guard) {
+                           Guard guard, OwnMedia ownMedia) {
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -94,6 +95,7 @@ public class LookbookService {
         this.hype = hype;
         this.ai = ai;
         this.guard = guard;
+        this.ownMedia = ownMedia;
     }
 
     // ================================================================== visão geral (CA01/CA08)
@@ -394,7 +396,7 @@ public class LookbookService {
         g.setType(f.type());
         g.setLabel(InputSanitizer.required("label", f.label(), 2, 80));
         g.setDescription(f.description() == null ? null : InputSanitizer.clean(f.description(), 300));
-        g.setCoverUrl(f.coverUrl());
+        g.setCoverUrl(ownMedia.require(owner.getId(), f.coverUrl(), "coverUrl", true));
         g.setAtmospherePrompt(f.atmospherePrompt() == null ? null : InputSanitizer.clean(f.atmospherePrompt(), 300));
         applyPeriod(g, f);
         groupings.save(g);
@@ -440,7 +442,8 @@ public class LookbookService {
             g.setDescription(InputSanitizer.clean(f.description(), 300));
         }
         if (f.coverUrl() != null) {
-            g.setCoverUrl(f.coverUrl());
+            // capa: imagem enviada pelo próprio dono (ou do catálogo do sistema); vazio remove a capa
+            g.setCoverUrl(ownMedia.requireOrUnchanged(g.getOwner().getId(), f.coverUrl(), "coverUrl", true, g.getCoverUrl()));
         }
         if (f.atmospherePrompt() != null) {
             g.setAtmospherePrompt(InputSanitizer.clean(f.atmospherePrompt(), 300));
@@ -491,6 +494,10 @@ public class LookbookService {
     public List<Map<String, Object>> groupingsOf(CurrentUser viewer, UUID ownerId) {
         User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
         boolean self = viewer != null && viewer.id().equals(ownerId);
+        // mesma regra do perfil: perfil privado/restrito (ou bloqueio) não expõe nem os nomes dos agrupamentos
+        if (!self && !guard.canView(viewer, ownerId, owner.getProfileVisibility())) {
+            return List.of();
+        }
         Map<UUID, Long> schemeCounts = new HashMap<>();
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED)) {
             boolean visible = self || (s.getStatus() == SchemeStatus.PUBLISHED && guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility())));
