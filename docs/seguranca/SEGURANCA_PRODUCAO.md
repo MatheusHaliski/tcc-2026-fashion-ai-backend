@@ -5,37 +5,70 @@ que fecha o app antes do lançamento público e a lista de variáveis que precis
 
 ## 1. Gate de desenvolvedor (antes do lançamento)
 
-Enquanto `DEV_GATE_ENABLED` não for `false`, **todas as páginas** (inclusive cadastro e login, RF1/RF2) e **toda a API**
-exigem passar pelo `/gate` com usuário e PIN da equipe.
+Enquanto `DEV_GATE_ENABLED` não for `false`, **todas as páginas** (inclusive cadastro e login, RF1/RF2), os arquivos de
+`/public` e **toda a API** exigem passar pelo gate. Há dois modos (`DEV_GATE_MODE`):
 
-| Camada | Como funciona | Código |
+- **`builtin`** (padrão): login Google (conta de `DEV_GATE_ALLOWED_EMAILS`) + PIN, na tela `/gate`.
+- **`cloudflare`** (recomendado quando houver domínio próprio): o **Cloudflare Access** (Zero Trust) faz o login, com MFA,
+  política por e-mail/grupo, log de auditoria por pessoa, revogação imediata e service tokens para testes automatizados. O
+  middleware e o `DevGateFilter` conferem o JWT do Access (RS256 pelas chaves da equipe, emissor e audiência
+  `CF_ACCESS_AUD`); quem chega pela URL da Vercel ou do Railway sem passar pelo Cloudflare recebe 403.
+
+| Camada | Como funciona (modo `builtin`) | Código |
 |---|---|---|
-| Páginas (Next) | `middleware.ts` confere o cookie `fai_gate` (HttpOnly, 12 h) em toda rota; sem ele, redireciona para `/gate?next=…` | `middleware.ts`, `lib/gate/token.ts` |
-| 1º fator: Google | `/gate/google` inicia OpenID Connect (código + PKCE, state e nonce em cookie assinado); `/gate/google/callback` troca o código no servidor, valida emissor, audiência, validade, nonce e e-mail verificado, e só aceita contas de `DEV_GATE_ALLOWED_EMAILS` | `app/gate/google/**` |
-| 2º fator: PIN | `POST /gate/verify` exige o 1º fator (cookie de 15 min, uso único) e compara o SHA-256 do PIN em tempo constante; mesma resposta para qualquer fator errado; atraso fixo; 8 erros por IP em 15 min → 429 | `app/gate/verify/route.ts` |
-| Tela neutra | `/gate` não carrega nada do app: sem nome, descrição, ícone, catálogos de texto nem provedores (título da aba `/gate`) | `app/gate/page.tsx`, `app/layout.tsx` |
-| API (Spring) | `DevGateFilter` exige o cabeçalho `X-Dev-Gate` com o mesmo token HMAC-SHA256; `/actuator/health`, `/actuator/info`, `/media/**` e o preflight CORS ficam de fora | `fai-web/.../support/DevGateFilter.java` |
-| Indexação | `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /` enquanto o gate estiver ligado | `middleware.ts`, `next.config.ts`, `app/robots.ts` |
+| Identidade | Os tokens carregam a identidade (e-mail Google, ou `DEV_GATE_USER` sem Google) e um id de entrada. A identidade é conferida contra a lista **atual** a cada requisição: tirar um e-mail de `DEV_GATE_ALLOWED_EMAILS` revoga aquela pessoa na hora, sem trocar o segredo de todo mundo | `lib/gate/token.ts` |
+| Página | Cookie `fai_gate` (tipo `gp`, HttpOnly, 12 h). Sem ele, toda rota volta para `/`, que mostra o gate; qualquer `/gate/*` desconhecido também mostra o gate | `middleware.ts` |
+| API | Cookie `fai_gate_a` (tipo `ga`, 1 h, legível pelo cliente) vai no cabeçalho `X-Dev-Gate`. O middleware renova quando faltam 20 min; `/gate/renew` renova sob demanda. Um token de API não abre páginas, e um token de página não abre a API | `middleware.ts`, `app/(gate)/gate/renew`, `DevGateFilter.java` |
+| 1º fator: Google | `/gate/google` inicia OpenID Connect (código + PKCE, state e nonce em cookie assinado); o callback troca o código no servidor e valida emissor, audiência, validade, nonce e e-mail verificado | `app/(gate)/gate/google/**` |
+| 2º fator: PIN | `POST /gate/verify` compara o SHA-256 do PIN em tempo constante; mesma resposta para qualquer fator errado; atraso fixo. **PIN errado descarta o 1º fator**: cada tentativa exige um novo login Google com conta autorizada. Além disso, 8 erros por IP em 15 min → 429 | `app/(gate)/gate/verify/route.ts` |
+| Auditoria | Cada entrada vai ao log do servidor (`gate.entrada`: e-mail mascarado + hash, id da entrada, IP) | idem |
+| Tela neutra | Layout raiz próprio (`app/(gate)/layout.tsx`): a tela do gate não baixa nenhum pacote do produto (sem nome, textos, ícone, provedores ou catálogos) | `app/(gate)/**`, `app/global-error.tsx` |
+| Segredo | `DEV_GATE_SECRET` com menos de 32 caracteres conta como ausente no Next (gate fechado) e impede a API de subir | `lib/gate/token.ts`, `DevGateFilter.java` |
+| Indexação | `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /` | `middleware.ts`, `next.config.ts`, `app/robots.ts` |
 
-Token: `v1.<usuário>.<expira>.<assinatura>`, assinado com `DEV_GATE_SECRET` (o mesmo valor no Vercel e no backend).
-O teste `DevGateFilterTest` garante que um token gerado pelo frontend vale no backend.
+`/media/**` continua fora do gate (imagens carregadas por `<img>` não enviam cabeçalhos). Nada sensível mora ali: fotos
+do desafio Espelho Real, exportações LGPD, documentos do cadastro e backups ficam em `restricted/` (só ADMIN) ou atrás
+de rotas autenticadas; o resto tem caminho com UUID.
 
 **O PIN nunca fica no código nem em chat.** Gere o hash no seu computador e cole só o hash nas variáveis do Vercel:
 
 ```bash
-printf '%s' 'SEU_PIN' | sha256sum          # → DEV_GATE_PIN_HASH (64 caracteres hexadecimais)
+printf '%s' 'SEU_PIN' | sha256sum          # → DEV_GATE_PIN_HASH (64 caracteres hexadecimais); PIN de 8+ dígitos
 openssl rand -base64 48                   # → DEV_GATE_SECRET (use o MESMO valor no Vercel e no backend)
+openssl rand -base64 48                   # → EDGE_PROXY_SECRET (outro valor; o MESMO no Vercel e no backend)
 ```
 
 Login Google (1º fator): crie um cliente OAuth "Aplicativo da Web" no Google Cloud Console (APIs e serviços →
-Credenciais), com URI de redirecionamento autorizado `https://<seu-domínio>/gate/google/callback`, e defina no Vercel
-`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` e `DEV_GATE_ALLOWED_EMAILS` (e-mails autorizados, separados por
-vírgula). `DEV_GATE_PUBLIC_URL` fixa a origem do redirect quando o app tem mais de um domínio. `DEV_GATE_GOOGLE=false`
-troca o Google pelo campo de usuário (`DEV_GATE_USER`).
+Credenciais), com **apenas** o URI de redirecionamento `https://<seu-domínio>/gate/google/callback`, e defina no Vercel
+`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` e `DEV_GATE_ALLOWED_EMAILS`. Defina a **mesma**
+`DEV_GATE_ALLOWED_EMAILS` no backend para a revogação valer também na API. `DEV_GATE_PUBLIC_URL` fixa a origem do
+redirect quando o app tem mais de um domínio. `DEV_GATE_GOOGLE=false` troca o Google pelo campo de usuário
+(`DEV_GATE_USER`) — nesse modo o PIN é o único segredo; prefira o Google.
 
-Sem `DEV_GATE_PIN_HASH` (ou `DEV_GATE_PIN`) e `DEV_GATE_SECRET`, o gate falha fechado: ninguém entra (503 no `/gate`).
-Sem o cliente Google ou com a lista de e-mails vazia, ninguém passa do 1º fator.
-No lançamento público: `DEV_GATE_ENABLED=false` nos dois lados.
+Firewall da Vercel: crie uma regra de rate limit para `POST /gate/verify` (ex.: 10 por minuto por IP) — o contador do
+Next vive na memória de cada instância.
+
+### 1.1 Migrar para o Cloudflare Access
+
+1. Compre/aponte um domínio para o Cloudflare (ex.: `app.<domínio>` → Vercel e `api.<domínio>` → Railway, ambos com proxy).
+2. Zero Trust → Access → Applications → *Self-hosted*: uma aplicação cobrindo os dois hostnames; política *Allow* com os
+   e-mails da equipe (ou um grupo) e MFA; copie o **Application Audience (AUD) Tag**. Para os testes E2E, crie um
+   *Service Token* e uma política *Service Auth*.
+3. Vercel: `DEV_GATE_MODE=cloudflare`, `CF_ACCESS_TEAM_DOMAIN=<equipe>.cloudflareaccess.com`, `CF_ACCESS_AUD=<tag>`,
+   `NEXT_PUBLIC_GATE_MODE=cloudflare` (as chamadas à API passam a levar o cookie do Access) e
+   `NEXT_PUBLIC_API_BASE_URL=https://api.<domínio>`.
+4. Railway (API): as mesmas `DEV_GATE_MODE`, `CF_ACCESS_TEAM_DOMAIN` e `CF_ACCESS_AUD`; `APP_CORS_ALLOWED_ORIGINS=https://app.<domínio>`.
+5. Mantenha a proteção de deploy da Vercel ligada para as URLs `*.vercel.app`.
+
+### 1.2 Sessão do usuário (RF2) — refresh token fora do alcance do JavaScript
+
+O login, o cadastro e a renovação passam pelo BFF do Next (`app/bff/auth/[action]`): a rota chama a API, guarda o refresh
+token num cookie `fai_rt` **HttpOnly + Secure + SameSite=Strict** restrito a `/bff/auth` e devolve ao navegador só o
+access token (15 min), que vive na memória da aba. Um XSS não consegue mais uma sessão persistente. As abas coordenam a
+renovação (Web Locks + BroadcastChannel) para não disparar a detecção de reuso do refresh token. O BFF só aceita POST da
+própria origem e envia à API o IP real do cliente assinado (`X-Fai-Client-Ip` + HMAC com `EDGE_PROXY_SECRET`), para o
+limite por IP e a auditoria não verem o IP da Vercel. Sessões antigas (refresh token no `localStorage`) são migradas para
+o cookie na primeira abertura e apagadas do armazenamento.
 
 ## 2. OWASP Top 10 (2021)
 

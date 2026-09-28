@@ -14,6 +14,9 @@ if (!RAW_API_BASE?.trim() && process.env.NODE_ENV === "production" && typeof win
   console.error("NEXT_PUBLIC_API_BASE_URL não está configurada em produção: as chamadas à API vão falhar. Defina-a na Vercel e faça um novo deploy (é uma variável de build).");
 }
 
+/** Gate pelo Cloudflare Access: o cookie CF_Authorization do domínio da API precisa ir junto nas chamadas. */
+const API_CREDENTIALS: RequestCredentials = process.env.NEXT_PUBLIC_GATE_MODE === "cloudflare" ? "include" : "same-origin";
+
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -33,16 +36,36 @@ export class ApiError extends Error {
   }
 }
 
-const KEYS = { access: "fai.access", refresh: "fai.refresh", user: "fai.user" } as const;
+const KEYS = { user: "fai.user" } as const;
+/** Onde versões antigas guardavam os tokens (migrados e apagados na primeira abertura). */
+const LEGACY = { access: "fai.access", refresh: "fai.refresh" } as const;
+
+/**
+ * Sessão (RF2): o access token (15 min) vive só na memória desta aba; o refresh token fica num cookie HttpOnly gravado
+ * pelo BFF do Next (/bff/auth/*) e nunca é visível ao JavaScript. Ao abrir o app, a sessão volta por /bff/auth/refresh.
+ */
+let accessToken: string | null = null;
+const channel: BroadcastChannel | null = typeof window !== "undefined" && typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("fai-auth") : null;
+let sharedAt = 0;
 
 export const tokenStore = {
-  get access() { return typeof window === "undefined" ? null : localStorage.getItem(KEYS.access); },
-  get refresh() { return typeof window === "undefined" ? null : localStorage.getItem(KEYS.refresh); },
-  set(access: string, refresh?: string | null) {
-    localStorage.setItem(KEYS.access, access);
-    if (refresh) localStorage.setItem(KEYS.refresh, refresh);
+  get access() { return accessToken; },
+  set(access: string) {
+    accessToken = access;
+    sharedAt = Date.now();
+    channel?.postMessage({ type: "access", token: access });   // outras abas passam a usar o token novo
   },
-  clear() { [KEYS.access, KEYS.refresh, KEYS.user].forEach((k) => localStorage.removeItem(k)); },
+  clear() {
+    accessToken = null;
+    channel?.postMessage({ type: "logout" });
+    try { [LEGACY.access, LEGACY.refresh, KEYS.user].forEach((k) => localStorage.removeItem(k)); } catch { /* sem storage */ }
+  },
+  /** Há sessão para restaurar? (cookie-sinal sem segredo gravado pelo BFF, ou refresh token antigo a migrar) */
+  get restorable() {
+    if (typeof document === "undefined") return false;
+    if (/(?:^|;\s*)fai_rt_h=1/.test(document.cookie)) return true;
+    try { return !!localStorage.getItem(LEGACY.refresh); } catch { return false; }
+  },
   userKey: KEYS.user,
 };
 
@@ -51,30 +74,64 @@ const unauthorizedListeners = new Set<Listener>();
 /** Chamado quando a sessão não pode ser renovada (logout global). */
 export function onUnauthorized(l: Listener) { unauthorizedListeners.add(l); return () => unauthorizedListeners.delete(l); }
 
-/** Gate de desenvolvedor: a cópia legível do token do /gate vai ao backend no cabeçalho X-Dev-Gate. */
+channel?.addEventListener("message", (e: MessageEvent) => {
+  const msg = e.data as { type?: string; token?: string } | null;
+  if (msg?.type === "access" && typeof msg.token === "string") { accessToken = msg.token; sharedAt = Date.now(); }
+  if (msg?.type === "logout" && accessToken) { accessToken = null; unauthorizedListeners.forEach((l) => l()); }
+});
+
+/** Gate de desenvolvedor: o token curto de API (cookie fai_gate_a) vai ao backend no cabeçalho X-Dev-Gate. */
 function gateHeader(): Record<string, string> {
   if (typeof document === "undefined") return {};
-  const m = document.cookie.match(/(?:^|;\s*)fai_gate_h=([^;]+)/);
+  const m = document.cookie.match(/(?:^|;\s*)fai_gate_a=([^;]+)/);
   return m ? { "X-Dev-Gate": decodeURIComponent(m[1]) } : {};
+}
+
+/** Pede ao Next um token de API novo do gate (vence em 1 h); false = o gate da página venceu ou a pessoa foi revogada. */
+let renewingGate: Promise<boolean> | null = null;
+function renewGate(): Promise<boolean> {
+  if (!renewingGate) {
+    renewingGate = fetch("/gate/renew", { method: "POST", cache: "no-store" }).then((r) => r.ok).catch(() => false)
+      .finally(() => { renewingGate = null; });
+  }
+  return renewingGate;
+}
+
+/** Serializa a renovação entre abas (a rotação do refresh token invalida o anterior; duas abas juntas derrubariam a sessão). */
+async function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? (navigator as Navigator & { locks?: LockManager }).locks : undefined;
+  return locks ? locks.request("fai-auth-refresh", fn) : fn();
 }
 
 let refreshing: Promise<boolean> | null = null;
 async function tryRefresh(): Promise<boolean> {
   if (refreshing) return refreshing;
-  refreshing = (async () => {
-    const refresh = tokenStore.refresh;
-    if (!refresh) return false;
+  const startedAt = Date.now();
+  refreshing = withRefreshLock(async () => {
+    if (sharedAt > startedAt && accessToken) return true;       // outra aba renovou enquanto esperávamos a vez
+    let legacy: string | null = null;
+    try { legacy = localStorage.getItem(LEGACY.refresh); } catch { /* sem storage */ }
     try {
-      const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: "POST", headers: { "Content-Type": "application/json", ...gateHeader() }, body: JSON.stringify({ refreshToken: refresh }),
+      const res = await fetch("/bff/auth/refresh", {
+        method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(legacy ? { migrateRefreshToken: legacy } : {}),
       });
+      if (legacy && res.status !== 502) { try { localStorage.removeItem(LEGACY.refresh); localStorage.removeItem(LEGACY.access); } catch { /* ignore */ } }
       if (!res.ok) return false;
       const s = await res.json();
-      tokenStore.set(s.accessToken, s.refreshToken);
+      if (typeof s.accessToken !== "string") return false;
+      tokenStore.set(s.accessToken);
       return true;
-    } catch { return false; } finally { refreshing = null; }
-  })();
+    } catch { return false; }
+  }).finally(() => { refreshing = null; });
   return refreshing;
+}
+
+/** Restaura a sessão ao abrir o app (cookie HttpOnly → access token em memória). */
+export async function restoreSession(): Promise<boolean> {
+  if (accessToken) return true;
+  if (!tokenStore.restorable) return false;
+  return tryRefresh();
 }
 
 export interface RequestOptions {
@@ -93,29 +150,42 @@ async function parseError(res: Response): Promise<ApiError> {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}, retry = true): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...gateHeader(), ...(opts.headers ?? {}) };
+/** Caminhos da API vindos de parâmetros de rota: nada de "..", barra invertida ou caractere de controle. */
+function checkPath(path: string) {
+  const bare = path.split("?")[0];
+  if (/[\u0000-\u001F\\]/.test(bare) || /(^|\/)(\.|%2e){2}(\/|$)/i.test(bare) || /%2f/i.test(bare)) {
+    throw new ApiError(400, "CAMINHO_INVALIDO", tr("errors.network"));
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}, retry = true, retryGate = true): Promise<T> {
+  checkPath(path);
+  const bff = path.startsWith("/bff/");
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Language": acceptLanguage(getCurrentLocale()), ...(bff ? {} : gateHeader()), ...(opts.headers ?? {}) };
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   const token = opts.anonymous ? null : tokenStore.access;
   if (token) headers.Authorization = `Bearer ${token}`;
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, { method, headers, body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body), signal: opts.signal });
+    res = await fetch(bff ? path : `${API_BASE}${path}`, {
+      method, headers, body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body), signal: opts.signal,
+      cache: bff ? "no-store" : undefined, credentials: bff ? "same-origin" : API_CREDENTIALS,
+    });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
     throw new ApiError(0, "OFFLINE", tr("errors.network"));
   }
-  if (res.status === 401 && !opts.anonymous && retry && tokenStore.refresh) {
+  if (res.status === 401 && !opts.anonymous && retry && (token || tokenStore.restorable)) {
     const ok = await tryRefresh();
-    if (ok) return request<T>(method, path, body, opts, false);
+    if (ok) return request<T>(method, path, body, opts, false, retryGate);
     tokenStore.clear();
     unauthorizedListeners.forEach((l) => l());
   }
-  // gate expirado ou ausente no backend: volta para o gate e retorna à página atual depois
+  // gate: o token curto da API venceu → renova pelo cookie da página e repete; se o gate da página venceu, volta a ele
   if (res.status === 403 && res.headers.get("X-Dev-Gate-Required") === "1" && typeof window !== "undefined") {
+    if (retryGate && await renewGate()) return request<T>(method, path, body, opts, retry, false);
     const next = encodeURIComponent(window.location.pathname + window.location.search);
-    // o backend recusou o token do gate: descarta os cookies do gate e volta para a tela inicial (que é o gate)
     void fetch("/gate/verify", { method: "DELETE" }).finally(() => window.location.assign(`/?next=${next}`));
   }
   if (!res.ok) throw await parseError(res);

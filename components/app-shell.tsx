@@ -343,7 +343,8 @@ export function RequireAuth({ children, admin }: { children: ReactNode; admin?: 
       <div className="grid-cards">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56" />)}</div>
     </div>
   );
-  if (admin && me && !isAdmin) return (
+  if (admin && !me) return <div aria-busy="true"><span className="sr-only">{t("common.loading")}</span><Skeleton className="mb-2 h-8 w-56" /></div>;   // área de admin: nada aparece antes de /api/me confirmar o papel
+  if (admin && !isAdmin) return (
     <div role="alert" className="surface mx-auto mt-6 max-w-lg p-6 text-center">
       <p className="type-label text-mark">{t("common.n403_acesso_negado")}</p>
       <h1 className="type-h2 mt-1">{t("appShell.area_restrita_a_administradores")}</h1>

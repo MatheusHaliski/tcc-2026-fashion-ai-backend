@@ -4,7 +4,8 @@ export interface UserCard {
   verified: boolean; country?: string | null; privateAccount: boolean;
 }
 export interface Session {
-  accessToken: string; expiresInSeconds: number; refreshToken: string; refreshExpiresAt: string; sessionId: string;
+  /** refreshToken não chega ao navegador: o BFF (/bff/auth/*) o guarda num cookie HttpOnly. */
+  accessToken: string; expiresInSeconds: number; refreshToken?: never; refreshExpiresAt: string; sessionId: string;
   user: UserCard; status: string; emailVerified: boolean; warnings: string[];
 }
 export interface Me {
