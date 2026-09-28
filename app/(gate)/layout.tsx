@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+/**
+ * Sempre renderizada por requisição: a CSP do middleware usa um nonce novo a cada resposta e o Next só o aplica aos
+ * scripts de páginas dinâmicas. Estática (gerada no build), a página sairia sem nonce e o navegador bloquearia todos os
+ * scripts (tela em branco).
+ */
+export const dynamic = "force-dynamic";
 
 export default function GateRootLayout({ children }: { children: React.ReactNode }) {
   return <html lang="en"><body className="gate-body">{children}</body></html>;

@@ -42,6 +42,18 @@ class ProviderHelpersTest {
     }
 
     @Test
+    void pricingPrefersTheLongestPrefixAndNeverZeroesAGeminiModel() {
+        // "claude-opus-5-5" não pode cair no preço de "claude-opus-5" por ordem de mapa
+        assertThat(Pricing.estimate("claude-opus-5-5", 1_000_000, 0)).isEqualByComparingTo(new BigDecimal("4.000000"));
+        assertThat(Pricing.estimate("gemini-2.5-flash-lite", 1_000_000, 0)).isEqualByComparingTo(new BigDecimal("0.100000"));
+        // modelo padrão do catálogo e um Flash novo fora da tabela: preço do Flash (custo nunca zero no teto diário)
+        assertThat(Pricing.estimate(br.com.fashionai.application.ai.AiCatalog.GEMINI_DEFAULT_MODEL, 0, 1_000_000))
+                .isEqualByComparingTo(new BigDecimal("2.500000"));
+        assertThat(Pricing.estimate("gemini-3.8-flash", 0, 1_000_000)).isEqualByComparingTo(new BigDecimal("2.500000"));
+        assertThat(Pricing.estimate("gemini-3-pro-preview", 1_000_000, 0)).isEqualByComparingTo(new BigDecimal("1.250000"));
+    }
+
+    @Test
     void circuitOpensAfterFiveConsecutiveFailuresAndClosesOnSuccess() throws Exception {
         String provider = "teste-" + System.nanoTime();
         for (int i = 0; i < 5; i++) {

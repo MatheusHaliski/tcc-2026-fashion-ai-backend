@@ -1,23 +1,28 @@
 # Ambiente local do Fashion AI. Só o MySQL é obrigatório:
+#   cp .env.example .env          # o compose e a API leem MYSQL_PASSWORD daqui (não há senha padrão)
 #   docker compose -f docker-compose.dev.yml up -d mysql
 # Serviços opcionais (perfis): redis, cassandra, opensearch, minio, rembg
 #   docker compose -f docker-compose.dev.yml --profile redis --profile cassandra up -d
+# Todas as portas ficam presas em 127.0.0.1: as credenciais daqui são de desenvolvimento e não podem ir para a rede.
 services:
   mysql:
-    image: mysql:8.0
+    # 8.4 LTS (o 8.0 saiu de suporte em abril/2026), o alvo recomendado para produção (infra/railway/mysql).
+    # Um volume criado no 8.0 é atualizado sozinho na primeira subida (sem volta para o 8.0).
+    image: mysql:8.4
     container_name: fai-mysql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-fashionai}
       MYSQL_USER: ${MYSQL_USER:-fashionai}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?defina MYSQL_PASSWORD no .env (cp .env.example .env)}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}   # só desenvolvimento; a porta não sai de 127.0.0.1
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci --default-time-zone=+00:00
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
     volumes:
       - fai-mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      # mysqladmin ping responde 0 com o servidor no ar mesmo sem credenciais: nenhuma senha na linha de comando
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --protocol=TCP --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,7 +32,7 @@ services:
     container_name: fai-redis
     profiles: ["redis"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   cassandra:
     image: cassandra:4.1
@@ -38,21 +43,23 @@ services:
       CASSANDRA_DC: datacenter1
       CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
     ports:
-      - "9042:9042"
+      - "127.0.0.1:9042:9042"
     volumes:
       - fai-cassandra:/var/lib/cassandra
       - ./fai-infrastructure/persistence-cassandra/src/main/resources/cassandra/schema.cql:/docker-entrypoint-initdb.d/schema.cql:ro
 
   opensearch:
-    image: opensearchproject/opensearch:2.17.0
+    # mesma linha 2.19.x da produção; segurança desligada só aqui (porta local). Produção: infra/railway/opensearch
+    image: opensearchproject/opensearch:2.19.6
     container_name: fai-opensearch
     profiles: ["opensearch"]
     environment:
       discovery.type: single-node
       DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
 
   minio:
     image: minio/minio:latest
@@ -63,8 +70,8 @@ services:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-fashionai}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-fashionai-secret}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - fai-minio:/data
 
@@ -74,7 +81,7 @@ services:
     profiles: ["rembg"]
     command: s --host 0.0.0.0 --port 7000
     ports:
-      - "7000:7000"
+      - "127.0.0.1:7000:7000"
 
 volumes:
   fai-mysql:

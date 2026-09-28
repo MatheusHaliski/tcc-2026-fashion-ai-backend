@@ -16,4 +16,7 @@ public interface ChallengeVoteRepository extends JpaRepository<ChallengeVote, UU
     List<ChallengeVote> findByInstanceId(UUID instanceId);
 
     boolean existsByInstanceIdAndVoterUserIdAndEntrySchemeId(UUID i, UUID v, UUID e);
+
+    /** Um voto por pessoa em cada batalha (garantido também por uq_ch_vote_voter). */
+    boolean existsByInstanceIdAndVoterUserId(UUID i, UUID v);
 }

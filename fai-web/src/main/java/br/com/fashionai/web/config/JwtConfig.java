@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
@@ -24,6 +25,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Par de chaves RSA do JWT próprio (RNF2). Em produção as chaves vêm de JWT_PRIVATE_KEY_PEM / JWT_PUBLIC_KEY_PEM;
@@ -62,9 +64,12 @@ public class JwtConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(RSAKey key, @Value("${fashionai.jwt.issuer:fashionai}") String issuer) throws Exception {
+    JwtDecoder jwtDecoder(RSAKey key, @Value("${fashionai.jwt.issuer:fashionai}") String issuer,
+                          @Value("${fashionai.jwt.audience:fashionai-api}") String audience) throws Exception {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(key.toRSAPublicKey()).build();
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(issuer)));
+        // emissor + validade + audiência: um token assinado com a mesma chave para outro fim não vale aqui
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(issuer),
+                new JwtClaimValidator<List<String>>("aud", aud -> aud != null && aud.contains(audience))));
         return decoder;
     }
 

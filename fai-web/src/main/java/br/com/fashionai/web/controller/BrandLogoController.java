@@ -32,15 +32,16 @@ public class BrandLogoController {
     }
 
     @GetMapping("/api/brand-logos")
-    @Operation(summary = "Logo de uma marca pelo nome — procura na internet (Wikidata → IA com busca na web → ícone do site) na primeira vez")
-    public Map<String, Object> logo(@RequestParam String name) {
-        return logos.logo(name, false);
+    @Operation(summary = "Logo de uma marca pelo nome — logado: procura na internet (Wikidata → IA com busca na web → ícone do site) na primeira vez, dentro da cota; visitante: só o cache")
+    public Map<String, Object> logo(CurrentUser user, @RequestParam String name) {
+        // visitante nunca dispara busca paga nem grava linha: recebe o logo já conhecido ou o monograma
+        return user == null ? logos.cached(name) : logos.logo(user.id(), name, false);
     }
 
     @GetMapping("/api/brand-logos/batch")
-    @Operation(summary = "Logos de várias marcas (até 40); até 4 buscas novas por chamada, o resto entra no job de busca")
-    public Map<String, Map<String, Object>> batch(@RequestParam List<String> names) {
-        return logos.batch(names, 4);
+    @Operation(summary = "Logos de várias marcas (até 40); logado: até 4 buscas novas por chamada, o resto entra no job de busca; visitante: só o cache")
+    public Map<String, Map<String, Object>> batch(CurrentUser user, @RequestParam List<String> names) {
+        return logos.batch(user == null ? null : user.id(), names, 4);
     }
 
     @GetMapping("/api/admin/brand-logos")
@@ -54,7 +55,7 @@ public class BrandLogoController {
     @Operation(summary = "Admin — força nova busca do logo de uma marca")
     public Map<String, Object> refresh(CurrentUser user, @RequestParam String name) {
         guard.requireAdmin(user);
-        return logos.logo(name, true);
+        return logos.logo(user.id(), name, true);
     }
 
     @PostMapping(value = "/api/admin/brand-logos/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)

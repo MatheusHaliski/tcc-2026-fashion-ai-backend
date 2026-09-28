@@ -23,7 +23,8 @@ import java.util.UUID;
  * Limite por IP nas rotas públicas de autenticação (OWASP API4 — consumo irrestrito; API2 — autenticação quebrada).
  * O bloqueio por conta (5 senhas erradas) já existe no IdentityService; este filtro freia o "credential stuffing" que
  * troca de conta a cada tentativa e a criação de contas em massa. Usa o mesmo RateLimitPort (Redis quando configurado,
- * memória no ambiente local), com o IP como dono do balde. O IP vem do proxy (server.forward-headers-strategy).
+ * memória no ambiente local), com o IP como dono do balde. O IP vem do {@link ClientIpResolver} (nunca do
+ * X-Forwarded-For) e a regra casa com o caminho decodificado e normalizado ({@link RequestPaths}), não com a URI crua.
  */
 @Component
 @Order(-102)   // depois do gate (-103), antes do Spring Security (-100)
@@ -40,27 +41,30 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/auth/password-reset/confirm", new Rule(20, Duration.ofHours(1)));
 
     private final RateLimitPort rateLimit;
+    private final ClientIpResolver clientIp;
     private final boolean enabled;
     private final List<String> origins;
 
-    public AuthRateLimitFilter(RateLimitPort rateLimit,
+    public AuthRateLimitFilter(RateLimitPort rateLimit, ClientIpResolver clientIp,
                                @Value("${fashionai.security.auth-rate-limit.enabled:true}") boolean enabled,
                                @Value("${fashionai.cors.allowed-origins:http://localhost:3000}") String origins) {
         this.rateLimit = rateLimit;
+        this.clientIp = clientIp;
         this.enabled = enabled;
         this.origins = Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest req) {
-        return !enabled || !"POST".equalsIgnoreCase(req.getMethod()) || !RULES.containsKey(req.getRequestURI());
+        return !enabled || !"POST".equalsIgnoreCase(req.getMethod()) || !RULES.containsKey(RequestPaths.normalized(req));
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
-        Rule rule = RULES.get(req.getRequestURI());
-        UUID owner = UUID.nameUUIDFromBytes(("ip:" + req.getRemoteAddr()).getBytes(StandardCharsets.UTF_8));
-        String bucket = "ip" + req.getRequestURI().replace('/', ':');
+        String path = RequestPaths.normalized(req);
+        Rule rule = RULES.get(path);
+        UUID owner = UUID.nameUUIDFromBytes(("ip:" + clientIp.resolve(req)).getBytes(StandardCharsets.UTF_8));
+        String bucket = "ip" + path.replace('/', ':');
         if (rateLimit.tryAcquire(owner, bucket, rule.limit(), rule.window())) {
             chain.doFilter(req, res);
             return;

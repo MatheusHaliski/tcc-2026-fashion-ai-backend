@@ -26,6 +26,7 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.Model3dStatus;
+import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
@@ -715,12 +716,16 @@ public class FlairService {
 
     // ================================================================== combinações das lojas (cupons)
 
+    /** Loja das combinações: marca/celebridade validada pela administração e com conta ativa (igual aos selos). */
     private User brandOwner(CurrentUser user) {
-        User u = users.findById(user.id()).orElseThrow();
-        if (u.getProfileType() != ProfileType.MARCA && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw guard.deny(user, "flair:combinations", Msg.t("flair.so_perfis_de_marca_ou"));
-        }
-        return u;
+        guard.requireApprovedInstitutional(user, "flair:combinations", Msg.t("flair.so_perfis_de_marca_ou"));
+        return users.findById(user.id()).orElseThrow();
+    }
+
+    /** Loja apta a oferecer cupom: perfil de marca/celebridade aprovado e conta ativa (pendente, suspensa ou excluída não). */
+    static boolean sellerActive(User owner) {
+        return owner != null && owner.getStatus() == AccountStatus.ACTIVE
+                && (owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE);
     }
 
     public record CombinationForm(String name, String description, String gameType, List<String> requiredCategories,
@@ -800,7 +805,7 @@ public class FlairService {
 
     boolean available(FlairCombination c) {
         Instant now = Instant.now();
-        return c.isActive() && (c.getStartsAt() == null || !now.isBefore(c.getStartsAt())) && (c.getEndsAt() == null || now.isBefore(c.getEndsAt()))
+        return c.isActive() && sellerActive(c.getBrand()) && (c.getStartsAt() == null || !now.isBefore(c.getStartsAt())) && (c.getEndsAt() == null || now.isBefore(c.getEndsAt()))
                 && (c.getStock() == null || c.getRedeemed() < c.getStock());
     }
 
@@ -892,6 +897,9 @@ public class FlairService {
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
         List<Map<String, Object>> out = new ArrayList<>();
         for (FlairCombination c : combinations.findByActiveTrueOrderByCreatedAtDesc()) {
+            if (!sellerActive(c.getBrand())) {
+                continue;                                  // loja aguardando aprovação (ou suspensa) não aparece na vitrine
+            }
             Map<String, Object> v = combinationView(c, user, null);
             if (user != null) {
                 Deck best = null;

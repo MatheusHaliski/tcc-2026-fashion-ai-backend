@@ -37,7 +37,17 @@ public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID
 
     @Query("select w from WardrobeItem w where w.user.country = :country and w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC") List<WardrobeItem> findPublicByCountry(@Param("country") String country);
 
-    @Query("select w from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC") List<WardrobeItem> findAllPublic(Pageable pageable);
+    /**
+     * Peças públicas de verdade (vitrines, decks da Casa no FLAIR, busca sem termo): visibilidade pública da peça E do
+     * perfil do dono, conta ativa, moderação aprovada e peça não arquivada. Bloqueios dependem de quem vê e são
+     * filtrados por quem chama.
+     */
+    @Query("select w from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC"
+            + " and w.user.profileVisibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC"
+            + " and w.user.status = br.com.fashionai.domain.model.enums.AccountStatus.ACTIVE"
+            + " and w.moderationStatus = br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED"
+            + " and w.availabilityStatus <> br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED")
+    List<WardrobeItem> findAllPublic(Pageable pageable);
 
     /** RF8 — peças públicas e aprovadas de uma marca do catálogo (aba Marcas da busca). */
     @Query("select count(w) from WardrobeItem w where w.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and w.moderationStatus = br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED and lower(w.brandName) = lower(:brand)")

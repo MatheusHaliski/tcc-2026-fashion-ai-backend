@@ -1,5 +1,9 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
@@ -9,6 +13,7 @@ import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAvatar3d;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -29,7 +34,9 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>consentimento explícito obrigatório (dado biométrico, LGPD art. 11): sem ele nada é gravado;</li>
  *   <li>a textura fica em {@code restricted/} (o proxy de mídia só a entrega a ADMIN) e sai por
- *       {@link #texture}: para o dono sempre, para os outros só se ele deixou o avatar público na Passarela;</li>
+ *       {@link #texture}: para o dono sempre, para os outros só se ele deixou o avatar público na Passarela <b>e</b> a
+ *       textura passou pela moderação (a foto do rosto não passa pelo filtro de upload). A moderação só roda quando o
+ *       avatar é público — rosto de avatar privado não sai para provedor externo; sem veredito, fica pendente;</li>
  *   <li>o modelo é validado com as mesmas regras do cliente (lib/avatar3d/model.ts): nada de NaN ou tamanho errado
  *       quebrando a cena de outra pessoa;</li>
  *   <li>excluir apaga o registro e a textura; a exclusão da conta faz o mesmo.</li>
@@ -49,16 +56,24 @@ public class Avatar3dService {
             "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
             "hairTone", new double[]{0, HAIR_TONES, 0});
 
+    /** Moderação da textura do rosto (mesma capacidade CONTENT_MODERATOR, com critério de rosto em vez de peça). */
+    static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
+            + "rosto de um avatar 3D, gerada a partir de uma foto da própria pessoa. Aprove quando for um rosto humano comum. "
+            + "Recuse nudez ou conteúdo sexual, violência ou sangue, símbolos de ódio, texto ou gestos ofensivos, ou imagem que "
+            + "não seja um rosto. Responda só JSON: {\"approved\": true|false, \"reason\": \"motivo curto\"}.";
+
     private final UserAvatar3dRepository avatars;
     private final UserRepository users;
     private final MediaStoragePort storage;
     private final Audit audit;
+    private final AiEngine ai;
 
-    public Avatar3dService(UserAvatar3dRepository avatars, UserRepository users, MediaStoragePort storage, Audit audit) {
+    public Avatar3dService(UserAvatar3dRepository avatars, UserRepository users, MediaStoragePort storage, Audit audit, AiEngine ai) {
         this.avatars = avatars;
         this.users = users;
         this.storage = storage;
         this.audit = audit;
+        this.ai = ai;
     }
 
     /** O que o cliente envia junto com a textura (parte "meta" do multipart). */
@@ -101,6 +116,8 @@ public class Avatar3dService {
             a.setPublicOnRunway(cmd.publicOnRunway());
         }
         a.setConsentAt(Instant.now());
+        // textura nova: moderada agora se o avatar for público; privado, só quando a pessoa o tornar público
+        a.setTextureModeration(a.isPublicOnRunway() ? moderateTexture(u.getId(), jpeg) : ModerationStatus.PENDING);
         avatars.save(a);
         if (oldKey != null && !oldKey.equals(key)) {
             deleteQuietly(oldKey);
@@ -117,6 +134,9 @@ public class Avatar3dService {
         }
         if (cmd != null && cmd.publicOnRunway() != null) {
             a.setPublicOnRunway(cmd.publicOnRunway());
+            if (a.isPublicOnRunway() && a.getTextureModeration() == ModerationStatus.PENDING) {
+                a.setTextureModeration(moderateTexture(user.id(), storage.get(a.getTextureKey())));
+            }
         }
         if (cmd != null && cmd.body() != null) {
             // corpo: proporções com a origem de cada uma (foto, pessoa, estimativa); vai junto do modelo do rosto
@@ -151,15 +171,40 @@ public class Avatar3dService {
         });
     }
 
-    /** Textura do rosto: o dono sempre; outra pessoa só se o avatar for público. Senão, 404 (não revela que existe). */
+    /**
+     * Textura do rosto: o dono sempre; outra pessoa só se o avatar for público e a textura aprovada na moderação. Senão,
+     * 404 (não revela que existe).
+     */
     @Transactional(readOnly = true)
     public byte[] texture(CurrentUser viewer, UUID ownerId) {
         UserAvatar3d a = avatars.findByUserId(ownerId).orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.avatar")));
         boolean owner = viewer != null && viewer.id().equals(ownerId);
-        if (!owner && !a.isPublicOnRunway()) {
+        if (!owner && !publicTexture(a)) {
             throw ApiException.notFound(Msg.t("avatar3d.avatar"));
         }
         return storage.get(a.getTextureKey());
+    }
+
+    /** A textura pode ser vista por outras pessoas: avatar público e textura aprovada na moderação. */
+    static boolean publicTexture(UserAvatar3d a) {
+        return a.isPublicOnRunway() && a.getTextureModeration() == ModerationStatus.APPROVED;
+    }
+
+    /**
+     * Modera a textura do rosto pelo motor de IA (consentimento, cota, teto de gasto e registro valem). Sem veredito
+     * remoto — sem provedor, sem consentimento, fora da cota — fica PENDING: nunca aprova por omissão.
+     */
+    ModerationStatus moderateTexture(UUID userId, byte[] jpeg) {
+        byte[] small = ImageOps.jpeg(ImageOps.scaleToFit(ImageOps.decode(jpeg), 512, 512), 0.85f);
+        AiOutcome<Boolean> out = ai.text(new AiEngine.TextCall<>(userId, AiCapability.CONTENT_MODERATOR, TEXTURE_MODERATION_SYSTEM,
+                Msg.t("wardrobe.classifique_a_imagem_anexada"), List.of(new AiRequest.AiImage(small, "image/jpeg")), 200,
+                List.of(Msg.t("avatar3d.textura_do_rosto_reduzida")), Avatar3dService::parseVerdict, () -> null, null));
+        Boolean approved = out == null ? null : out.value();
+        return approved == null ? ModerationStatus.PENDING : approved ? ModerationStatus.APPROVED : ModerationStatus.REJECTED_POLICY;
+    }
+
+    static Boolean parseVerdict(String text) {
+        return Json.map(text).get("approved") instanceof Boolean b ? b : null;
     }
 
     /** Referência do avatar para o manequim (look3d, Passarela, Quarto, Espelho), ou vazio quando quem vê não pode. */
@@ -172,7 +217,8 @@ public class Avatar3dService {
                     m.put("version", a.getUpdatedAt() == null ? 0 : a.getUpdatedAt().toEpochMilli());
                     m.put("model", Json.map(a.getModelJson()));
                     m.put("adjust", a.getAdjustJson() == null ? Map.of() : Json.map(a.getAdjustJson()));
-                    m.put("textureUrl", textureUrl(a));
+                    // textura ainda não aprovada: quem não é o dono vê a forma com o rosto padrão (sem a foto)
+                    m.put("textureUrl", ownerId.equals(viewerId) || publicTexture(a) ? textureUrl(a) : null);
                     return m;
                 });
     }
@@ -186,6 +232,7 @@ public class Avatar3dService {
         m.put("photos", a.getPhotosCount());
         m.put("warnings", a.getWarningsJson() == null ? List.of() : Json.strings(a.getWarningsJson()));
         m.put("publicOnRunway", a.isPublicOnRunway());
+        m.put("textureModeration", a.getTextureModeration() == null ? ModerationStatus.PENDING.name() : a.getTextureModeration().name());
         m.put("consentAt", a.getConsentAt());
         m.put("updatedAt", a.getUpdatedAt());
         return m;

@@ -35,8 +35,8 @@ import java.util.function.Supplier;
 /**
  * Motor transversal de IA (RF24). Um motor, não dez requisitos: toda capacidade passa pelo mesmo
  * funil de governança — validação de prompt (CA16/HU-RF6.CA19), cota por usuário (CA14), consentimento
- * por finalidade (CA15), provedor primário → alternativo → fallback local (CA13/RNF8), registro da
- * inferência (CA16/RNF5) e explicação "por quê?" (CA12/RNF6).
+ * por finalidade (CA15), teto de gasto diário em dólar global e por usuário ({@link AiBudget}), provedor primário →
+ * alternativo → fallback local (CA13/RNF8), registro da inferência (CA16/RNF5) e explicação "por quê?" (CA12/RNF6).
  */
 @Service
 public class AiEngine {
@@ -48,11 +48,12 @@ public class AiEngine {
     private final UserConsentRepository consents;
     private final AiInferenceLogRepository inferenceLogs;
     private final AuditService auditService;
+    private final AiBudget budget;
     private final boolean remoteEnabled;
     private final boolean feature3d;
 
     public AiEngine(List<AiProviderPort> providerPorts, RateLimitPort rateLimit, UserConsentRepository consents,
-                    AiInferenceLogRepository inferenceLogs, AuditService auditService,
+                    AiInferenceLogRepository inferenceLogs, AuditService auditService, AiBudget budget,
                     @Value("${fashionai.ai.remote-enabled:true}") boolean remoteEnabled,
                     @Value("${fashionai.features.rf16-3d:false}") boolean feature3d) {
         providerPorts.forEach(p -> providers.put(p.providerId(), p));
@@ -60,6 +61,7 @@ public class AiEngine {
         this.consents = consents;
         this.inferenceLogs = inferenceLogs;
         this.auditService = auditService;
+        this.budget = budget;
         this.remoteEnabled = remoteEnabled;
         this.feature3d = feature3d;
     }
@@ -168,6 +170,17 @@ public class AiEngine {
                     consentState, null, correlationId);
         }
 
+        // teto de gasto em dólar (global e por usuário): estourado, nenhum provedor pago é chamado
+        AiBudget.Verdict verdict = budget.check(userId, estimatedCost(spec));
+        if (verdict != AiBudget.Verdict.OK) {
+            log.info("IA {}: orçamento diário {} — processamento local", capability, verdict);
+            return verdict == AiBudget.Verdict.USER_EXHAUSTED
+                    ? localOutcome(userId, capability, inputs, local, AiCallResult.RATE_LIMITED,
+                    Msg.t("ai.orcamento_diario_do_usuario_atingido"), consentState, null, correlationId)
+                    : localOutcome(userId, capability, inputs, local, AiCallResult.FALLBACK_LOCAL,
+                    Msg.t("ai.orcamento_diario_atingido"), consentState, null, correlationId);
+        }
+
         AiOutcome.Quota quota = null;
         if (userId != null) {
             String bucket = "ai:" + capability.name();
@@ -211,6 +224,30 @@ public class AiEngine {
                 Msg.t("ai.o_servico_de_ia_externo", failure),
                 consentState, quota, correlationId);
         return fallback;
+    }
+
+    /**
+     * Custo estimado da chamada pendente para o teto diário: o do provedor que o motor tenta primeiro (o primário, ou o
+     * alternativo quando o primário é local). O custo real, devolvido pelo provedor, é o que fica no log.
+     */
+    static BigDecimal estimatedCost(AiCatalog.CapabilitySpec spec) {
+        if (spec == null) {
+            return BigDecimal.ZERO;
+        }
+        for (AiCatalog.ProviderOption option : new AiCatalog.ProviderOption[]{spec.primary(), spec.alternative()}) {
+            if (option != null && !"local".equals(option.providerId()) && option.costPerCallUsd() != null) {
+                return option.costPerCallUsd();
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Um provedor remoto poderia ser chamado agora para esta capacidade (IA remota ligada e dentro do teto de gasto)?
+     * Para jobs que só fazem sentido com o provedor externo — sem isso, deixam o item na fila para a próxima rodada.
+     */
+    public boolean remoteAllowed(UUID userId, AiCapability capability) {
+        return remoteEnabled && budget.check(userId, estimatedCost(AiCatalog.spec(capability))) == AiBudget.Verdict.OK;
     }
 
     private <T> AiOutcome<T> localOutcome(UUID userId, AiCapability capability, List<String> inputs, Supplier<T> local,

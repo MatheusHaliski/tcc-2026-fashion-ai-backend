@@ -35,6 +35,7 @@ import br.com.fashionai.domain.repository.ModerationQueueRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -75,6 +76,9 @@ public class AdminService {
     private final AiEngine ai;
     private final Guard guard;
     private final Audit audit;
+    /** Quantos backups COMPLETED manter (os mais antigos têm o arquivo apagado do storage). */
+    @Value("${fashionai.backup.retention-count:14}")
+    private int backupRetention = 14;
 
     public AdminService(UserRepository users, BrandProfileRepository brands, CelebrityProfileRepository celebrities, ModerationQueueRepository moderation,
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
@@ -266,24 +270,14 @@ public class AdminService {
     }
 
     // ================================================================== backups (RNF) e jobs
-    @Transactional
+    /**
+     * Backup manual. Sem transação envolvendo o dump (pode levar minutos): o registro RUNNING aparece na hora e o
+     * resultado (COMPLETED/FAILED com o motivo) é gravado ao fim; falhas também vão para o log como ERROR.
+     */
     public Map<String, Object> runBackup(CurrentUser admin) {
         guard.requireAdmin(admin);
-        BackupRecord r = new BackupRecord();
-        r.setId(UUID.randomUUID());
-        r.setKind("MYSQL_FULL");
-        r.setStatus("RUNNING");
-        r.setStartedAt(Instant.now());
-        backups.save(r);
-        BackupPort port = backupPort.getIfAvailable();
-        BackupPort.Result res = port == null ? new BackupPort.Result(false, null, 0, null, Msg.t("admin.nenhum_adaptador_de_backup_configurado")) : port.run("MYSQL_FULL");
-        r.setStatus(res.ok() ? "COMPLETED" : "FAILED");
-        r.setFileKey(res.fileKey());
-        r.setSizeBytes(res.sizeBytes());
-        r.setChecksum(res.checksum());
-        r.setNotes(res.notes());
-        r.setFinishedAt(Instant.now());
-        audit.log(admin, "BACKUP_EXECUTADO", "backup:" + r.getId(), Map.of("ok", res.ok()));
+        BackupRecord r = new BackupJob(backups, backupPort.getIfAvailable(), backupRetention).run("manual");
+        audit.log(admin, "BACKUP_EXECUTADO", "backup:" + r.getId(), Map.of("ok", BackupJob.COMPLETED.equals(r.getStatus())));
         return Map.of("id", r.getId(), "status", r.getStatus(), "notes", String.valueOf(r.getNotes()));
     }
 
@@ -295,24 +289,13 @@ public class AdminService {
                 "notes", String.valueOf(b.getNotes()))).toList();
     }
 
-    /** Backup diário automático às 3 h. */
-    @Scheduled(cron = "0 0 3 * * *", zone = "America/Sao_Paulo")
+    /**
+     * Backup diário automático às 3 h (BACKUP_CRON; "-" desliga). Falha fica registrada como FAILED e logada como
+     * ERROR; com sucesso, a retenção mantém só os BACKUP_RETENTION_COUNT mais recentes.
+     */
+    @Scheduled(cron = "${fashionai.backup.cron:0 0 3 * * *}", zone = "America/Sao_Paulo")
     public void scheduledBackup() {
-        BackupPort port = backupPort.getIfAvailable();
-        if (port != null) {
-            BackupRecord r = new BackupRecord();
-            r.setId(UUID.randomUUID());
-            r.setKind("MYSQL_FULL");
-            r.setStartedAt(Instant.now());
-            BackupPort.Result res = port.run("MYSQL_FULL");
-            r.setStatus(res.ok() ? "COMPLETED" : "FAILED");
-            r.setFileKey(res.fileKey());
-            r.setSizeBytes(res.sizeBytes());
-            r.setChecksum(res.checksum());
-            r.setNotes(res.notes());
-            r.setFinishedAt(Instant.now());
-            backups.save(r);
-        }
+        new BackupJob(backups, backupPort.getIfAvailable(), backupRetention).run("agendado");
     }
 
     @Transactional

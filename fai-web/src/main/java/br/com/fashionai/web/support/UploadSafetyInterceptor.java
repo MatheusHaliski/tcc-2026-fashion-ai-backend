@@ -45,6 +45,8 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
     private static final List<String> EXEMPT = List.of("/api/me/avatar3d");
     /** Itens pendentes por pessoa: acima disso a foto é recusada sem ir para a fila (evita encher a quarentena). */
     static final int MAX_PENDING = 20;
+    /** Arquivos por requisição (o maior fluxo legítimo, a análise em lote de peças, aceita 12). */
+    static final int MAX_FILE_PARTS = 12;
 
     private final ObjectProvider<ImageSafety> safety;
     private final ObjectProvider<UploadQuarantine> quarantine;
@@ -64,12 +66,21 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        ImageSafety checker = safety.getIfAvailable();
-        if (!enabled || checker == null || !(request instanceof MultipartHttpServletRequest multipart)) {
+        if (!(request instanceof MultipartHttpServletRequest multipart)) {
             return true;
         }
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        if (EXEMPT.stream().anyMatch(path::startsWith)) {
+        // cada parte é decodificada abaixo (e de novo no fluxo): muitas partes numa requisição multiplicam o custo
+        int parts = multipart.getMultiFileMap().values().stream().mapToInt(List::size).sum();
+        if (parts > MAX_FILE_PARTS) {
+            throw ApiException.badRequest("ARQUIVOS_DEMAIS", Msg.t("uploads.arquivos_demais", MAX_FILE_PARTS),
+                    Map.of("max", MAX_FILE_PARTS));
+        }
+        ImageSafety checker = safety.getIfAvailable();
+        if (!enabled || checker == null) {
+            return true;
+        }
+        String path = RequestPaths.normalized(request);
+        if (EXEMPT.stream().anyMatch(e -> path.equals(e) || path.startsWith(e + "/"))) {
             return true;
         }
         for (List<MultipartFile> files : multipart.getMultiFileMap().values()) {

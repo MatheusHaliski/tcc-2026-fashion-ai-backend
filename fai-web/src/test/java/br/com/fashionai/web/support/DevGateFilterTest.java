@@ -32,6 +32,28 @@ class DevGateFilterTest {
     }
 
     @Test
+    void transicaoAceitaTokenAntigoDoFront() {
+        // signLegacyApiToken("matheushaliskitcc20233", SECRET) com expiração 1790345791 (lib/gate/token.ts)
+        String v1 = "v1.matheushaliskitcc20233.1790345791." + legacySig();
+        assertTrue(DevGateFilter.validLegacy(v1, SECRET, "matheushaliskitcc20233", BEFORE_EXPIRY));
+        assertFalse(DevGateFilter.validLegacy(v1, SECRET, "outro_usuario", BEFORE_EXPIRY));
+        assertFalse(DevGateFilter.validLegacy(v1, SECRET, "matheushaliskitcc20233", 1790345792L));
+        assertFalse(DevGateFilter.validLegacy(GA, SECRET, "matheushaliskitcc20233", BEFORE_EXPIRY));
+        assertFalse(DevGateFilter.validLegacy(v1, "curto", "matheushaliskitcc20233", BEFORE_EXPIRY));
+    }
+
+    private static String legacySig() {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(SECRET.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+                    mac.doFinal("v1.matheushaliskitcc20233.1790345791".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Test
     void recusaSegredoOuAssinaturaDiferentes() {
         assertFalse(DevGateFilter.valid(GA, SECRET + "x", LIST, BEFORE_EXPIRY));
         assertFalse(DevGateFilter.valid(GA.substring(0, GA.length() - 2) + "AA", SECRET, LIST, BEFORE_EXPIRY));
@@ -48,9 +70,9 @@ class DevGateFilterTest {
 
     @Test
     void naoSobeComSegredoCurtoOuCloudflareIncompleto() {
-        assertThrows(IllegalStateException.class, () -> new DevGateFilter(true, "builtin", "curto", "equipe", "", "", "", "http://localhost:3000"));
-        assertThrows(IllegalStateException.class, () -> new DevGateFilter(true, "cloudflare", "", "equipe", "", "", "", "http://localhost:3000"));
-        new DevGateFilter(false, "builtin", "", "equipe", "", "", "", "http://localhost:3000");   // desligado: sem exigências
-        new DevGateFilter(true, "builtin", SECRET, "equipe", "ana@exemplo.com", "", "", "http://localhost:3000");
+        assertThrows(IllegalStateException.class, () -> new DevGateFilter(true, "builtin", "curto", "equipe", "", "", "", true, "http://localhost:3000"));
+        assertThrows(IllegalStateException.class, () -> new DevGateFilter(true, "cloudflare", "", "equipe", "", "", "", true, "http://localhost:3000"));
+        new DevGateFilter(false, "builtin", "", "equipe", "", "", "", true, "http://localhost:3000");   // desligado: sem exigências
+        new DevGateFilter(true, "builtin", SECRET, "equipe", "ana@exemplo.com", "", "", true, "http://localhost:3000");
     }
 }

@@ -16,18 +16,25 @@ import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Mídia em S3 ou compatível (MinIO, Cloudflare R2) — ligado com {@code fashionai.storage.type=s3}.
- * URLs públicas vêm de {@code fashionai.storage.public-base-url} (CDN ou o próprio bucket).
+ * URLs públicas vêm de {@code fashionai.storage.public-base-url} (CDN ou o próprio bucket). Chaves {@code restricted/}
+ * (documentos do cadastro, quarentena da moderação, textura do rosto 3D) sempre saem pela API
+ * ({@code APP_BASE_URL/media/restricted/…}), onde só ADMIN lê — mesmo com S3_SERVE_THROUGH_API=false; o bucket precisa
+ * negar leitura pública desse prefixo.
  */
 @Component
 @ConditionalOnProperty(name = "fashionai.storage.type", havingValue = "s3")
@@ -37,6 +44,8 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
     private final S3Presigner presigner;
     private final String bucket;
     private final String publicBase;
+    /** Base da API ({@code APP_BASE_URL/media/}): sempre usada para {@code restricted/}. */
+    private final String apiBase;
 
     public S3MediaStorageAdapter(@Value("${fashionai.storage.s3.endpoint:}") String endpoint,
                                  @Value("${fashionai.storage.s3.region:us-east-1}") String region,
@@ -66,7 +75,8 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
                 : publicBaseUrl.isBlank() ? (endpoint.isBlank() ? "https://" + bucket + ".s3." + region + ".amazonaws.com" : endpoint + "/" + bucket)
                 : publicBaseUrl;
         this.publicBase = base.replaceAll("/+$", "") + "/";
-        log.info("Mídia em S3: bucket {} (público em {})", bucket, publicBase);
+        this.apiBase = appBaseUrl.replaceAll("/+$", "") + "/media/";
+        log.info("Mídia em S3: bucket {} (público em {}; restricted/ em {})", bucket, publicBase, apiBase);
     }
 
     @Override
@@ -79,7 +89,7 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
 
     @Override
     public URI publicUrl(String objectKey) {
-        return URI.create(publicBase + objectKey);
+        return URI.create((objectKey.startsWith("restricted/") ? apiBase : publicBase) + objectKey);
     }
 
     @Override
@@ -105,6 +115,25 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
 
     @Override
     public Optional<String> keyOf(String url) {
-        return url != null && url.startsWith(publicBase) ? Optional.of(url.substring(publicBase.length())) : Optional.empty();
+        if (url == null) {
+            return Optional.empty();
+        }
+        String key = url.startsWith(publicBase) ? url.substring(publicBase.length())
+                : url.startsWith(apiBase) ? url.substring(apiBase.length())
+                : url.startsWith("/media/") ? url.substring("/media/".length()) : null;
+        if (key == null || key.isBlank() || key.startsWith("/") || key.contains("..") || key.contains("\\")) {
+            return Optional.empty();
+        }
+        return Optional.of(key);
+    }
+
+    @Override
+    public List<String> listOlderThan(String prefix, Instant before, int limit) {
+        return s3.listObjectsV2Paginator(ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build())
+                .contents().stream()
+                .filter(o -> o.lastModified() != null && o.lastModified().isBefore(before))
+                .limit(limit)
+                .map(S3Object::key)
+                .toList();
     }
 }

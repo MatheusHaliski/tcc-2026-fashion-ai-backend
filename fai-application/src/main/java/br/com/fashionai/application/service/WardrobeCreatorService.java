@@ -259,13 +259,15 @@ public class WardrobeCreatorService {
 
     // ================================================================== "Criar guarda-roupa 3D" (marca / celebridade)
 
+    /** Criador da loja: marca/celebridade validada pela administração e com conta ativa (perfil pendente não vende). */
     User creator(CurrentUser user) {
-        guard.requireCanCreate(user);
-        User u = users.findById(user.id()).orElseThrow();
-        if (u.getProfileType() != ProfileType.MARCA && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw guard.deny(user, "room-creator", Msg.t("wardrobeCreator.so_marcas_e_celebridades_criam"));
-        }
-        return u;
+        guard.requireApprovedInstitutional(user, "room-creator", Msg.t("wardrobeCreator.so_marcas_e_celebridades_criam"));
+        return users.findById(user.id()).orElseThrow();
+    }
+
+    /** Item à venda só de criador apto: fábrica FAI ou marca/celebridade aprovada com conta ativa. */
+    public boolean sellerActive(RoomCatalogItem c) {
+        return c.getCreatorUserId() == null || users.findById(c.getCreatorUserId()).map(FlairService::sellerActive).orElse(false);
     }
 
     public Map<String, Object> identity(User u) {
@@ -485,6 +487,9 @@ public class WardrobeCreatorService {
                 case "ESGOTADO" -> "Esgotado.";
                 default -> Msg.t("wardrobeCreator.item_fora_da_loja");
             };
+        }
+        if (!sellerActive(c)) {
+            return Msg.t("wardrobeCreator.item_fora_da_loja");
         }
         if (c.getPerUserLimit() != null && inventory.countByUserIdAndSku(buyer, c.getSku()) >= c.getPerUserLimit()) {
             return Msg.t("wardrobeCreator.limite_de_por_pessoa", c.getPerUserLimit());

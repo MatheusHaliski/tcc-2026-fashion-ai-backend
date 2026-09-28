@@ -19,5 +19,7 @@ import java.util.UUID;
 public interface VerificationCodeRepository extends JpaRepository<VerificationCode, UUID> {
     Optional<VerificationCode> findFirstByUserIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(UUID userId, VerificationPurpose purpose);
 
+    List<VerificationCode> findByUserIdAndPurposeAndConsumedAtIsNull(UUID userId, VerificationPurpose purpose);
+
     Optional<VerificationCode> findByCodeHashAndPurpose(String codeHash, VerificationPurpose purpose);
 }

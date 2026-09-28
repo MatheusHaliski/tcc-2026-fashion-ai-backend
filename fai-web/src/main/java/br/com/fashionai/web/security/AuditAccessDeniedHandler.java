@@ -38,7 +38,7 @@ public class AuditAccessDeniedHandler implements AccessDeniedHandler {
                 AuditActions.ACESSO_NEGADO_403,
                 request.getRequestURI(),
                 "NEGADO",
-                request.getRemoteAddr(),
+                br.com.fashionai.web.support.CorrelationIdFilter.clientIp(request),
                 request.getHeader("User-Agent"),
                 Instant.now(),
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),
