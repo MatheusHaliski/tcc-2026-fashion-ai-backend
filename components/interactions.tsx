@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
@@ -43,27 +43,60 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
 
 /**
  * Glifos das ações sociais (traço 1,8 px, 24×24): contorno no estado normal, preenchido quando ativo. As reações seguem o
- * mesmo desenho: Trend = linha de tendência subindo, Elegante = gravata-borboleta, Criativo = paleta de pintor.
- * `fill` = partes que se preenchem quando ativo (as linhas abertas continuam traço).
+ * mesmo desenho e peso de traço (referência do design): Trend = trilha de contas subindo até uma estrela de brilho,
+ * Elegante = gravata-borboleta, Criativo = carretel de linha com agulha. Ativo: a estrela, a gravata e o carretel ficam
+ * sólidos (o carretel com as listras vazadas), como o coração.
  */
-const SOCIAL_PATHS: Record<string, { d: string; fill?: string }> = {
-  heart: { d: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z", fill: "all" },
-  comment: { d: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z", fill: "all" },
-  share: { d: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z" },
-  bookmark: { d: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z", fill: "all" },
-  trend: { d: "M3 18.5 9.2 12.3l3.9 3.9L21 8.3", fill: "M15.5 8.3H21v5.5" },
-  elegant: { d: "M10.4 12 3.9 7.6a.9.9 0 0 0-1.4.7v7.4a.9.9 0 0 0 1.4.7l6.5-4.4zm3.2 0 6.5-4.4a.9.9 0 0 1 1.4.7v7.4a.9.9 0 0 1-1.4.7L13.6 12zm-3.2-1.8h3.2v3.6h-3.2z", fill: "all" },
-  creative: { d: "M12 3.2a8.8 8.8 0 1 0 0 17.6c1.2 0 1.8-.8 1.8-1.7 0-1-.8-1.4-.8-2.3 0-1 .8-1.7 1.8-1.7h2.2a4.3 4.3 0 0 0 4.3-4.3c0-4.3-4-7.6-9.3-7.6zM7.4 12.4h.01M9 8.2h.01M13.4 6.9h.01M17 9.6h.01", fill: "all" },
-};
-export type SocialIconName = "heart" | "comment" | "share" | "bookmark" | "trend" | "elegant" | "creative";
+const SOCIAL_PATHS = {
+  heart: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z",
+  comment: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z",
+  share: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z",
+  bookmark: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z",
+} as const;
+export type SocialIconName = keyof typeof SOCIAL_PATHS | "trend" | "elegant" | "creative";
+
+/** Trend: trilha curva com contas, subindo até a estrela de quatro pontas. */
+const TREND_STAR = "M18.2 1.8c.4 1.9 1.6 3.2 3.6 3.6-2 .4-3.2 1.7-3.6 3.6-.4-1.9-1.6-3.2-3.6-3.6 2-.4 3.2-1.7 3.6-3.6z";
+const TREND_TRAIL = "M4 19.8c3.4-.9 6.4-2.4 8.8-4.6 1.6-1.5 2.8-3.2 3.7-5";
+const TREND_BEADS: [number, number, number][] = [[4, 19.8, 1.75], [8.2, 18.3, 1.4], [12, 15.9, 1.4], [14.8, 12.9, 1.4]];
+/** Elegante: duas asas e o nó da gravata-borboleta. */
+const BOW_WINGS = "M10 10.1 4.4 6.9a1.3 1.3 0 0 0-2 1.1v8a1.3 1.3 0 0 0 2 1.1l5.6-3.2zM14 10.1l5.6-3.2a1.3 1.3 0 0 1 2 1.1v8a1.3 1.3 0 0 1-2 1.1L14 13.9z";
+const BOW_KNOT = "M10.6 9.3h2.8a.6.6 0 0 1 .6.6v4.2a.6.6 0 0 1-.6.6h-2.8a.6.6 0 0 1-.6-.6V9.9a.6.6 0 0 1 .6-.6z";
+/** Criativo: carretel (abas em cima e embaixo, linha enrolada em diagonal) e a agulha com o buraco. */
+const SPOOL_FLANGES = "M3.8 2.9h9.4a1 1 0 0 1 1 1v.8a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1v-.8a1 1 0 0 1 1-1zM3.8 18.3h9.4a1 1 0 0 1 1 1v.8a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1v-.8a1 1 0 0 1 1-1z";
+const SPOOL_BODY = "M4.9 5.7h7.2v12.6H4.9z";
+const SPOOL_THREAD = "M4.9 9.4l7.2-2.2M4.9 13l7.2-2.2M4.9 16.6l7.2-2.2";
+const NEEDLE = "M16.6 21.1 20.3 5.6M20.3 5.6c-.4-1.4-.2-2.6.5-2.8.7-.2 1.2 1 .9 2.4";
+
 export function SocialIcon({ name, filled, size = 24 }: { name: SocialIconName; filled?: boolean; size?: number }) {
-  const g = SOCIAL_PATHS[name]; const fillAll = filled && g.fill === "all";
+  const mask = useId().replace(/:/g, "");
+  const common = { width: size, height: size, viewBox: "0 0 24 24", "aria-hidden": true, focusable: "false" as const, className: "c-act-icon",
+    stroke: "currentColor", strokeWidth: 1.8, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+  if (name === "trend") return (
+    <svg {...common} fill="none">
+      <path d={TREND_TRAIL} />
+      {TREND_BEADS.map(([x, y, r]) => <circle key={x} cx={x} cy={y} r={r} fill="currentColor" stroke="none" />)}
+      <path d={TREND_STAR} fill={filled ? "currentColor" : "none"} />
+    </svg>
+  );
+  if (name === "elegant") return (
+    <svg {...common} fill={filled ? "currentColor" : "none"}>
+      <path d={BOW_WINGS} /><path d={BOW_KNOT} />
+    </svg>
+  );
+  if (name === "creative") return (
+    <svg {...common} fill="none">
+      {filled && (
+        <defs><mask id={mask}><rect width="24" height="24" fill="#fff" /><path d={SPOOL_THREAD} stroke="#000" strokeWidth={1.5} /></mask></defs>
+      )}
+      {filled ? <path d={SPOOL_BODY} fill="currentColor" mask={`url(#${mask})`} /> : <><path d="M4.9 5.7v12.6M12.1 5.7v12.6" /><path d={SPOOL_THREAD} strokeWidth={1.5} /></>}
+      <path d={SPOOL_FLANGES} fill={filled ? "currentColor" : "none"} />
+      <path d={NEEDLE} />
+    </svg>
+  );
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false" className="c-act-icon"
-      fill={fillAll ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
-      {filled && g.fill && g.fill !== "all" && <path d={g.fill} fill="currentColor" />}
-      {!filled && g.fill && g.fill !== "all" && name === "trend" && <path d={g.fill} />}
-      <path d={g.d} />
+    <svg {...common} fill={filled && name !== "share" ? "currentColor" : "none"}>
+      <path d={SOCIAL_PATHS[name]} />
     </svg>
   );
 }
