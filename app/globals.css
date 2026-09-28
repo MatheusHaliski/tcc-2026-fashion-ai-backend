@@ -1791,3 +1791,10 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 /* skins do card: tiles largos como no editor v19 (4 colunas no desktop, 2 no celular) */
 .opt-grid:has(> .is-skin) { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 @media (max-width: 520px) { .opt-grid:has(> .is-skin) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Avatar 3D — tom do cabelo: amostras redondas (rádios), "A" = o tom medido na foto */
+.hair-tones { display: flex; flex-wrap: wrap; gap: 8px; }
+.hair-tone { width: 30px; height: 30px; border-radius: 9999px; border: 2px solid var(--color-surface, #fff); box-shadow: 0 0 0 1px var(--color-line, #ccc); cursor: pointer; display: grid; place-items: center; }
+.hair-tone.is-auto { color: #fff; font: 600 11px/1 var(--font-sans, system-ui); text-shadow: 0 1px 2px rgb(0 0 0 / .6); }
+.hair-tone[aria-checked="true"] { box-shadow: 0 0 0 2px var(--color-ink, #111); }
+.hair-tone:focus-visible { outline: 2px solid var(--color-accent, #22c55e); outline-offset: 2px; }

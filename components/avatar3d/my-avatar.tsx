@@ -13,7 +13,8 @@ import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { AVATAR_NOT_DRESSED, downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
-import { ADJUST_RANGE, DEFAULT_ADJUST, clampAdjust, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
+import { ADJUST_RANGE, DEFAULT_ADJUST, SLIDER_ADJUSTS, clampAdjust, type AvatarAdjust, type AvatarHair, type AvatarModel } from "@/lib/avatar3d/model";
+import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
 import { BodyEditor } from "@/components/avatar3d/body-editor";
@@ -26,7 +27,6 @@ interface Saved {
 }
 
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
-const ADJ = Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[];
 /** Avisos cujo texto na hora da foto leva um número (px, graus, %): o avatar salvo guarda só o código. */
 const SAVED_TEXT = new Set(["FACE_SMALL", "LOOK_AT_CAMERA", "HEAD_UP_DOWN", "HEAD_TILT", "FACE_OCCLUDED", "MULTIPLE_FACES", "TURN_MORE", "TURN_LESS"]);
 
@@ -41,11 +41,11 @@ function useIssueText() {
 }
 
 /** Ajustes finos: faixas pequenas de propósito (ajuste fino, não outra pessoa). */
-function AdjustSliders({ value, onChange }: { value: AvatarAdjust; onChange: (a: AvatarAdjust) => void }) {
+function AdjustSliders({ value, onChange, hair }: { value: AvatarAdjust; onChange: (a: AvatarAdjust) => void; hair?: AvatarHair | null }) {
   const { t, fmtNumber } = useI18n();
   return (
     <div className="grid gap-3">
-      {ADJ.map((k) => {
+      {SLIDER_ADJUSTS.map((k) => {
         const [lo, hi, step] = ADJUST_RANGE[k]; const id = `adj-${k}`;
         const shown = k === "headScale" || k === "hairVolume" ? `${fmtNumber(Math.round(value[k] * 100))}%` : k === "neck" ? `${value[k] > 0 ? "+" : ""}${fmtNumber(Math.round(value[k] * 1000) / 10)} cm` : `${value[k] > 0 ? "+" : ""}${fmtNumber(Math.round(value[k] * 100))}%`;
         return (
@@ -55,7 +55,34 @@ function AdjustSliders({ value, onChange }: { value: AvatarAdjust; onChange: (a:
           </label>
         );
       })}
+      {hair?.color && !hair.cover && <HairTonePicker value={value.hairTone} onChange={(v) => onChange({ ...value, hairTone: v })} hair={hair} />}
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...DEFAULT_ADJUST })}>{t("avatar3d.adjust.reset")}</Button>
+    </div>
+  );
+}
+
+/**
+ * Tom do cabelo: o medido na foto ("Da foto", com o nome do tom detectado) ou um da paleta — do preto ao loiro platinado,
+ * acobreado, ruivo, grisalho e branco. Rádios com amostra de cor e nome (a cor nunca é o único sinal).
+ */
+function HairTonePicker({ value, onChange, hair }: { value: number; onChange: (v: number) => void; hair: AvatarHair }) {
+  const { t } = useI18n();
+  const detected = hair.tone ? paletteId(hair.tone) : null;
+  const nameOf = (id: number) => t(`avatar3d.hairTone.${id}`);
+  const detectedName = hair.tone && detected ? `${nameOf(detected)}${hair.tone.family === "ash" || hair.tone.family === "golden" ? ` ${t(`avatar3d.hairTone.family.${hair.tone.family}`)}` : ""}` : null;
+  const current = value === 0 ? detectedName ?? t("avatar3d.hairTone.auto") : nameOf(value);
+  return (
+    <div className="grid gap-1">
+      <span className="flex justify-between gap-2 type-body-sm"><span id="adj-hairTone">{t("avatar3d.adjust.hairTone")}</span><span className="type-caption text-muted">{current}</span></span>
+      <div role="radiogroup" aria-labelledby="adj-hairTone" className="hair-tones">
+        <button type="button" role="radio" aria-checked={value === 0} className="hair-tone is-auto" style={{ background: hair.color ?? undefined }} onClick={() => onChange(0)}
+          aria-label={detectedName ? t("avatar3d.hairTone.detectado", { name: detectedName }) : t("avatar3d.hairTone.auto")} title={detectedName ? t("avatar3d.hairTone.detectado", { name: detectedName }) : t("avatar3d.hairTone.auto")}>
+          <span aria-hidden>{t("avatar3d.hairTone.auto_curto")}</span>
+        </button>
+        {HAIR_TONES.map((h) => (
+          <button key={h.id} type="button" role="radio" aria-checked={value === h.id} className="hair-tone" style={{ background: h.color }} onClick={() => onChange(h.id)} aria-label={nameOf(h.id)} title={nameOf(h.id)} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -174,7 +201,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
         {built && (
           <Card>
             <p className="label">{t("avatar3d.page.ajustes")}</p>
-            <AdjustSliders value={adjust} onChange={setAdjust} />
+            <AdjustSliders value={adjust} onChange={setAdjust} hair={built?.model.hair} />
           </Card>
         )}
       </div>
@@ -253,7 +280,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         </Card>
         <Card>
           <p className="label">{t("avatar3d.page.ajustes")}</p>
-          <AdjustSliders value={adjust} onChange={setAdjust} />
+          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} />
           <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
         </Card>
       </div>

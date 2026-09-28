@@ -7,6 +7,9 @@ import type { FaceMetrics, Role } from "./geometry";
 import { N } from "./geometry";
 import type { BodyModel } from "./body-spec";
 import { HAIR_LENGTHS, HAIR_TEXTURES, type HairLength, type HairTexture } from "./hair";
+import { HAIR_TONE_MAX, type HairFamily, type HairTone } from "./hair-tone";
+
+const HAIR_FAMILIES: HairFamily[] = ["natural", "ash", "golden", "copper", "red", "gray", "white"];
 
 export const MODEL_VERSION = 1;
 
@@ -15,6 +18,7 @@ export interface AvatarHair {
   length?: HairLength; texture?: HairTexture;            // comprimento e textura medidos na foto (lib/avatar3d/hair.ts)
   cover?: string | null;                                 // cor da cobertura de cabeça (lenço, turbante, boné), se houver
   outline?: number[];                                    // silhueta: meia-largura (cm, canônico) por altura (HAIR_LEVELS)
+  tone?: HairTone | null;                                // tom medido: nível 1–10 + família (lib/avatar3d/hair-tone.ts)
 }
 export interface AvatarModel {
   v: number;
@@ -26,17 +30,22 @@ export interface AvatarModel {
   warnings: string[];                       // o que ficou estimado (ex.: DEPTH_ESTIMATED)
   body?: BodyModel | null;                  // corpo: proporções com a origem de cada uma (lib/avatar3d/body-spec.ts)
 }
-export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number }
-export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0 };
+/** hairTone: 0 = o tom medido na foto; 1–14 = um tom da paleta (HAIR_TONES), escolhido pela pessoa. */
+export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number; hairTone: number }
+export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0 };
 /** Faixas dos ajustes: pequenas de propósito (ajuste fino, não outra pessoa). */
 export const ADJUST_RANGE: Record<keyof AvatarAdjust, [number, number, number]> = {
   headScale: [0.94, 1.06, 0.01], neck: [-0.02, 0.02, 0.002], hairVolume: [0.6, 1.6, 0.05], skinLight: [-0.08, 0.08, 0.01],
+  hairTone: [0, HAIR_TONE_MAX, 1],
 };
+/** Ajustes desenhados como controle deslizante (o tom do cabelo é uma paleta de amostras). */
+export const SLIDER_ADJUSTS = (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).filter((k) => k !== "hairTone");
 
 const clamp = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
 export function clampAdjust(a?: Partial<AvatarAdjust> | null): AvatarAdjust {
   const out = { ...DEFAULT_ADJUST };
   (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).forEach((k) => { out[k] = clamp(a?.[k], ADJUST_RANGE[k][0], ADJUST_RANGE[k][1], DEFAULT_ADJUST[k]); });
+  out.hairTone = Math.round(out.hairTone);
   return out;
 }
 
@@ -54,6 +63,7 @@ export function validateModel(x: unknown): AvatarModel | null {
   if (hair.length !== undefined && !HAIR_LENGTHS.includes(hair.length)) delete hair.length;
   if (hair.texture !== undefined && !HAIR_TEXTURES.includes(hair.texture)) delete hair.texture;
   if (hair.cover !== undefined && hair.cover !== null && !HEX.test(String(hair.cover))) delete hair.cover;
+  if (hair.tone !== undefined && hair.tone !== null && !(typeof hair.tone === "object" && Number.isInteger(hair.tone.level) && hair.tone.level >= 1 && hair.tone.level <= 10 && HAIR_FAMILIES.includes(hair.tone.family))) delete hair.tone;
   if (hair.outline !== undefined && (!Array.isArray(hair.outline) || hair.outline.length > 32 || !hair.outline.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 30))) delete hair.outline;
   return { ...m, hair };
 }

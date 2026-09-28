@@ -77,7 +77,7 @@ export function buildAvatar(photos: AnalyzedPhoto[]): BuiltAvatar | null {
   const model: AvatarModel = {
     v: MODEL_VERSION, shape: roundShape(shape), skin: skin.hex,
     hair: hair ? { present: hair.present && !hair.unsure, color: profile?.color ?? hair.color, top: +hair.top.toFixed(2), side: +hair.side.toFixed(2), bottom: hair.bottom === null ? null : +hair.bottom.toFixed(2), fringe: +hair.fringe.toFixed(2), cut: hair.cutTop,
-      ...(profile ? { length: profile.length, texture: profile.texture, cover: profile.cover, outline: profile.outline } : {}) }
+      ...(profile ? { length: profile.length, texture: profile.texture, cover: profile.cover, outline: profile.outline, tone: profile.tone } : {}) }
       : { present: false, color: null, top: 0, side: 0, bottom: null, fringe: 0, cut: false },
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),

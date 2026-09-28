@@ -166,6 +166,28 @@ class Avatar3dServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void tomDoCabeloMedidoEEscolhido() {
+        Map<String, Object> m = model();
+        Map<String, Object> hair = new java.util.LinkedHashMap<>((Map<String, Object>) m.get("hair"));
+        hair.put("tone", Map.of("level", 7, "family", "golden"));
+        m.put("hair", hair);
+        Map<String, Object> ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("hair");
+        assertEquals(Map.of("level", 7, "family", "golden"), ok.get("tone"));
+        // nível fora de 1–10, família desconhecida ou campo a mais: o tom é descartado, o avatar continua válido
+        for (Object bad : List.of(Map.of("level", 11, "family", "natural"), Map.of("level", 3, "family", "verde"),
+                Map.of("level", 3.5, "family", "ash"), Map.of("level", 3, "family", "ash", "x", 1), "castanho")) {
+            hair.put("tone", bad);
+            assertFalse(((Map<String, Object>) Avatar3dService.validateModel(m).get("hair")).containsKey("tone"), String.valueOf(bad));
+        }
+        // ajuste: 0 = o medido, 1–14 = da paleta; inteiro e limitado
+        Map<String, Object> adj = Avatar3dService.clampAdjust(Map.of("hairTone", 8.4));
+        assertEquals(8, adj.get("hairTone"));
+        assertEquals(14, Avatar3dService.clampAdjust(Map.of("hairTone", 99)).get("hairTone"));
+        assertEquals(0, Avatar3dService.clampAdjust(Map.of()).get("hairTone"));
+    }
+
+    @Test
     void texturaPrecisaSerQuadradaEDeTamanhoRazoavel() {
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(512, 300))));
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(128, 128))));

@@ -13,6 +13,7 @@
  * Cobertura: acima da testa há algo que não é pele nem cabelo (lenço, turbante, boné, gorro): vira a cor dessa
  * cobertura, em vez de sumir ou de virar cabelo.
  */
+import { measureTone, type HairTone } from "./hair-tone";
 import { HAIR_LEVELS, apply2D, facePolygon, luma, median, percentile, polygonMask, type HairStats, type Pt, type Raster, type Sim2D } from "./image-stats";
 
 export type HairLength = "bald" | "buzz" | "short" | "medium" | "long";
@@ -24,7 +25,8 @@ export interface HairProfile {
   length: HairLength;
   texture: HairTexture;
   cover: string | null;       // cor da cobertura de cabeça (lenço, turbante, boné), quando houver
-  color: string | null;       // cor do cabelo (a de hairStats, ou a do raspado)
+  color: string | null;       // cor do cabelo desenhada (a do tom medido: hair-tone.ts)
+  tone: HairTone | null;      // nível 1–10 (preto … platinado) + família (natural, acinzentado, dourado, acobreado, ruivo, grisalho)
   coherence: number;          // 0–1: coerência média dos fios em cada bloco (diagnóstico)
   flow: number;               // 0–1: continuidade da direção dos fios entre blocos vizinhos (liso ≈ 1)
   volume: number;             // meia-largura do cabelo ÷ meia-largura do rosto
@@ -161,7 +163,7 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
   const cr = crown(img, mask, cls, toCanon, foreheadY, skin);
   const volume = stats.side ? stats.side / FACE_HALF : 0;
   const med = (cs: number[][]) => [0, 1, 2].map((k) => median(cs.map((c) => c[k])));
-  let length: HairLength; let cover: string | null = null; let color = stats.color;
+  let length: HairLength; let cover: string | null = null; let color = stats.color; let tone: HairTone | null = stats.tone?.tone ?? null;
   if (cr.n > 30 && (cr.cover > 0.35 || cr.upperCover > 0.4) && cr.coverC.length > 10) {
     // lenço, turbante, boné, gorro: a cabeça é desenhada coberta, na cor da cobertura
     // cor da cobertura: a metade mais clara (dobras e sombras escurecem o tecido)
@@ -169,21 +171,22 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
     cover = toHex(med(byL.slice(0, Math.max(5, Math.ceil(byL.length * 0.5)))));
     length = stats.present && stats.bottom !== null && stats.bottom < SHOULDER_Y ? "long" : stats.present && stats.bottom !== null && stats.bottom < EAR_LOBE_Y + 1 ? "medium" : "short";
   } else if (cr.n > 30 && cr.upperSkin > 0.5 && cr.hair < 0.25) {
-    length = "bald"; color = null;
+    length = "bald"; color = null; tone = null;
   } else if (stats.present && !stats.unsure) {
     const b = stats.bottom;
-    if (cr.hairC.length > 60) {                                            // cor no alto da cabeça (sem pele de franja/testa)
-      // o 3D põe a própria sombra: a cor do fio é a das partes iluminadas (faixa 60–95% de luminância), não a média com sombras
-      const byL = cr.hairC.slice().sort((p, q) => luma(p[0], p[1], p[2]) - luma(q[0], q[1], q[2]));
-      color = toHex(med(byL.slice(Math.floor(byL.length * 0.6), Math.ceil(byL.length * 0.95))));
-    }
+    // cor: o tom medido nos meios-tons em CIELAB (hairStats → hair-tone.ts). A faixa clara do alto da cabeça (60–95%
+    // de luminância) puxava o preto e o castanho escuro para castanho médio: não é mais usada. Sem tom junto da cabeça,
+    // o alto da cabeça (classe cabelo) mede.
+    const m = stats.tone ?? measureTone(cr.hairC);
+    tone = m?.tone ?? null; color = m?.color ?? color;
     length = b === null || b > EAR_LOBE_Y + 1 ? "short" : b > SHOULDER_Y ? "medium" : "long";
     if (length === "short" && stats.top - foreheadY < 5.2 && stats.coverage < 0.35) length = "buzz";
   } else if (cr.n > 30 && cr.hair > 0.3) {
-    length = "buzz"; color = toHex(med(cr.hairC));                       // raspado: a classe vê cabelo, o segmentador fino não
+    length = "buzz";                                                       // raspado: a classe vê cabelo, o segmentador fino não
+    const m = measureTone(cr.hairC); tone = m?.tone ?? null; color = m?.color ?? toHex(med(cr.hairC));
   } else if (cr.n > 30 && cr.other.length > cr.n * 0.4) {
     const m = med(cr.other);
-    if (luma(m[0], m[1], m[2]) < cr.skinL * 0.7) { length = "buzz"; color = toHex(m); } else { length = "bald"; color = null; }
+    if (luma(m[0], m[1], m[2]) < cr.skinL * 0.7) { length = "buzz"; const t = measureTone(cr.other); tone = t?.tone ?? null; color = t?.color ?? toHex(m); } else { length = "bald"; color = null; }
   } else {
     length = stats.present ? "short" : "bald";
   }
@@ -196,7 +199,8 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
   }
   if (volume > 1.9 && (texture === "wavy" || texture === "curly")) texture = texture === "wavy" ? "curly" : "coily";
   if (length === "bald" || length === "buzz") texture = "straight";
-  return { length, texture, cover, color, coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
+  if (!color) tone = null;
+  return { length, texture, cover, color, tone, coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
 }
 
 /** Limiares do "fluxo" dos fios (calibrados nas fotos de teste de docs/testes; ver scripts/avatar3d). */
