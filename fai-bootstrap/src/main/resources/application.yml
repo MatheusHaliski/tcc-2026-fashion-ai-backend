@@ -159,6 +159,7 @@ fashionai:
     provider: ${EMAIL_PROVIDER:log}                        # log | resend
     resend-api-key: ${RESEND_API_KEY:}
     from: ${RESEND_FROM_EMAIL:nao-responda@fashionai.app}
+    log-bodies: ${EMAIL_LOG_BODIES:false}                  # provider=log: corpo (códigos, links de senha) no log só em dev local
   weather:
     enabled: ${WEATHER_ENABLED:true}                       # Open-Meteo (gratuito, sem chave)
   ai:

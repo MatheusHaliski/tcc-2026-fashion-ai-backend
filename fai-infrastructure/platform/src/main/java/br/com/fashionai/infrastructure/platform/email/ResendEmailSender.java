@@ -40,7 +40,7 @@ public class ResendEmailSender implements EmailSenderPort {
                     .retrieve().toBodilessEntity();
         } catch (RuntimeException e) {
             // O fluxo do usuário não pode quebrar por causa do e-mail (RNF8): fica registrado para reenvio manual.
-            log.error("Falha ao enviar e-mail '{}' para {}: {}", subject, to, e.getMessage());
+            log.error("Falha ao enviar e-mail '{}' para {}: {}", subject, LoggingEmailSender.mask(to), e.getMessage());
         }
     }
 }
