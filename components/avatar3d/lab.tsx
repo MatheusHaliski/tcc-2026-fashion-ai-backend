@@ -1,4 +1,5 @@
 "use client";
+import { FileButton } from "@/components/ui";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Select } from "@/components/ui";
@@ -39,7 +40,7 @@ export default function AvatarLab() {
     <main style={{ padding: 16, fontFamily: "system-ui", background: "#f4f1ec", minHeight: "100vh" }}>
       <h1>Avatar 3D lab</h1>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {["front", "side-a", "side-b"].map((id, i) => <label key={id}>{id} <input id={`lab-${id}`} type="file" accept="image/*" onChange={(e) => { files.current[i] = e.target.files?.[0] ?? null; }} /></label>)}
+        {["front", "side-a", "side-b"].map((id, i) => <FileButton key={id} id={`lab-${id}`} accept="image/*" onFiles={(fs) => { files.current[i] = fs[0] ?? null; }}>{id}</FileButton>)}
         <button id="lab-run" onClick={run}>run</button>
         <span style={{ width: 160 }}><Select id="lab-sex" aria-label="sexo" value={sex} onChange={(e) => setSex(e.target.value as typeof sex)}><option>FEMININO</option><option>MASCULINO</option></Select></span>
         {(["front", "left34", "right34", "profile"] as AvatarView[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}

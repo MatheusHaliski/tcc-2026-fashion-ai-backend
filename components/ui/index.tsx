@@ -18,6 +18,26 @@ export function Button({ variant = "default", size, loading, className, children
     </button>
   );
 }
+/**
+ * Escolher arquivo no padrão FAI: um botão do sistema (tokens de tema, foco, toque de 44 px) no lugar do campo nativo
+ * "Escolher arquivo · Nenhum escolhido". O input fica oculto (sr-only, ainda acessível e testável) e o nome do arquivo
+ * escolhido aparece ao lado, em texto do sistema.
+ */
+export function FileButton({ id, accept, onFiles, multiple, disabled, loading, variant = "default", size = "sm", children, showName = true, className }: {
+  id?: string; accept?: string; onFiles: (files: File[]) => void; multiple?: boolean; disabled?: boolean; loading?: boolean;
+  variant?: Variant; size?: "sm" | "lg"; children: React.ReactNode; showName?: boolean; className?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null); const [name, setName] = useState<string | null>(null);
+  return (
+    <span className={cn("file-button", className)}>
+      <Button variant={variant} size={size} loading={loading} disabled={disabled} onClick={() => ref.current?.click()} aria-controls={id}>{children}</Button>
+      {showName && name && <span className="file-button-name type-caption text-muted" title={name}>{name}</span>}
+      <input ref={ref} id={id} type="file" accept={accept} multiple={multiple} disabled={disabled} className="sr-only" tabIndex={-1}
+        onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) { setName(fs.length > 1 ? tr("ui.file.n_arquivos", { n: fs.length }) : fs[0].name); onFiles(fs); } e.target.value = ""; }} />
+    </span>
+  );
+}
+
 export function Spinner({ size = 18 }: { size?: number }) {
   return <span aria-hidden className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent" style={{ width: size, height: size }} />;
 }
