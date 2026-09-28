@@ -126,6 +126,13 @@ public class WardrobeService {
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
     private final PieceReferenceCatalog pieceReferences;
+    /** OCR local da marca (RF4): lê o logo quando a IA de visão não leu (ou está fora do ar). Opcional nos testes. */
+    private br.com.fashionai.application.imaging.BrandReader brandReader;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setBrandReader(br.com.fashionai.application.imaging.BrandReader brandReader) {
+        this.brandReader = brandReader;
+    }
 
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
@@ -320,8 +327,27 @@ public class WardrobeService {
             logoRel = BrandRegions.detectLogo(piece);
             logoSource = logoRel == null ? null : "local";
         }
+        // Marca não lida pela IA (ou IA fora do ar): o servidor lê o texto do logo (OCR local) na peça e nas zonas
+        br.com.fashionai.application.imaging.BrandReader.Found ocr = null;
+        if ((guess.brand() == null || guess.brand().isBlank()) && brandReader != null && brandReader.available()) {
+            List<BrandRegions.Zone> where = new ArrayList<>(zones);
+            if (logoRel != null) {
+                where.add(0, new BrandRegions.Zone("logo", logoRel));
+            }
+            ocr = brandReader.find(piece, where).orElse(null);
+            if (ocr != null && ocr.confirmed()) {
+                guess = guess.withBrand(ocr.brand());
+                if (logoRel == null) {
+                    logoRel = ocr.box();
+                    logoSource = "ocr";
+                }
+            }
+        }
         Map<String, Object> logo = logoRel == null ? null : Map.of("box", java.util.Arrays.stream(logoRel).boxed().toList(), "source", logoSource);
         Map<String, Object> brandSearch = brandSearch(zones, guess, logoRel, logoSource);
+        if (ocr != null) {
+            applyOcr(brandSearch, ocr, zones);
+        }
         List<Map<String, Object>> candidates = candidates(seen.ranking().isEmpty() ? ranking : seen.ranking(), chosen != null ? chosen : guess.category());
         Prefill prefill = prefill(guess.withInsights(seen.withRanking(seen.ranking().isEmpty() ? ranking : seen.ranking())), logo, candidates,
                 brandSearch, checks.stream().map(c -> Map.<String, Object>of("id", c.id(), "value", c.value(), "threshold", c.threshold())).toList());
@@ -461,6 +487,135 @@ public class WardrobeService {
         out.put("foundIn", brand != null || logoRel != null ? zone : null);
         out.put("logoSource", logoSource);
         out.put("evidence", guess.insights().brandEvidence());
+        return out;
+    }
+
+    /** Resultado do OCR local no resumo da busca da marca: onde leu, o texto visto e se é marca do catálogo. */
+    static void applyOcr(Map<String, Object> brandSearch, br.com.fashionai.application.imaging.BrandReader.Found ocr, List<BrandRegions.Zone> zones) {
+        String zone = zones.stream().anyMatch(z -> z.id().equals(ocr.region())) ? ocr.region() : BrandRegions.zoneOf(zones, ocr.box());
+        if (ocr.confirmed()) {
+            brandSearch.put("brand", ocr.brand());
+            brandSearch.put("foundIn", zone != null ? zone : ocr.region());
+            brandSearch.put("logoSource", "ocr");
+        } else {
+            brandSearch.put("suggestion", ocr.brand());
+            if (brandSearch.get("foundIn") == null) {
+                brandSearch.put("foundIn", zone != null ? zone : ocr.region());
+            }
+        }
+        brandSearch.put("evidence", ocr.evidence());
+        brandSearch.put("certainty", ocr.confirmed() ? "confirmada" : "possivel");
+    }
+
+    static final String BRAND_TILES_SYSTEM = """
+            Você lê a MARCA de uma peça de roupa. Cada imagem é um recorte ampliado da mesma peça (a legenda diz de onde).
+            Procure o nome da marca escrito (logo, etiqueta, bordado, estampa) em qualquer recorte. Responda SOMENTE com JSON:
+            {"brand": "nome exato da marca ou null", "image": número da imagem onde leu ou null, "text": "texto que você leu",
+             "confidence": 0-1}. Não invente: sem nome legível, brand = null.""";
+
+    /**
+     * RF4 — nova tentativa de ler a marca de um rascunho: a peça é dividida numa grade de sub-retângulos sobrepostos (e a
+     * região do logo em quatro), cada um ampliado. Primeiro o OCR local lê todos; se não achar marca do catálogo, a IA
+     * de visão recebe os recortes. A cada nova tentativa a grade fica mais fina (3×3 → 4×4 → 5×5).
+     */
+    @Transactional
+    public Map<String, Object> retryBrand(CurrentUser user, UUID draftId, int grid) {
+        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
+        if (!draft.getUser().getId().equals(user.id())) {
+            throw guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
+        }
+        Map<String, Object> r = new LinkedHashMap<>(Json.map(draft.getResultJson()));
+        byte[] png = r.get("studioSourceUrl") == null ? null : media.read(String.valueOf(r.get("studioSourceUrl"))).orElse(null);
+        if (png == null) {
+            png = media.read((String) r.get("processedUrl")).orElseThrow(() -> ApiException.notFound(Msg.t("wardrobe.recorte_do_rascunho")));
+        }
+        BufferedImage piece = ImageOps.toArgb(ImageOps.decode(png));
+        Map<String, Object> pf = r.get("prefill") instanceof Map<?, ?> m ? new LinkedHashMap<>(Json.map(Json.write(m))) : new LinkedHashMap<>();
+        double[] logoRel = boxOf(pf.get("logo"));
+        int g = Math.max(3, Math.min(5, grid));
+        List<BrandRegions.Zone> tiles = BrandRegions.tiles(piece, logoRel, g);
+        br.com.fashionai.application.imaging.BrandReader.Found found = brandReader == null ? null : brandReader.find(piece, tiles).orElse(null);
+        String source = found == null ? null : "ocr";
+        if (found == null || !found.confirmed()) {
+            List<BrandRegions.Zone> sent = tiles.stream().filter(z -> !z.id().startsWith("logo_q")).limit(12).toList();
+            List<AiRequest.AiImage> images = sent.stream()
+                    .map(z -> new AiRequest.AiImage(ImageOps.jpeg(BrandRegions.crop(piece, z, 640), 0.9f), "image/jpeg")).toList();
+            StringBuilder legend = new StringBuilder(Msg.t("wardrobe.recortes_da_peca_legenda"));
+            for (int i = 0; i < sent.size(); i++) {
+                legend.append("\n").append(i + 1).append(": ").append(sent.get(i).id());
+            }
+            AiOutcome<Map<String, Object>> out = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.PIECE_ANALYZER, BRAND_TILES_SYSTEM,
+                    legend.toString(), images, 300, List.of(Msg.t("wardrobe.recortes_da_peca")), WardrobeService::parseBrandTiles, () -> null, null));
+            Map<String, Object> v = out.value();
+            if (v != null && v.get("brand") instanceof String b) {
+                int idx = v.get("image") instanceof Number n ? n.intValue() - 1 : -1;
+                BrandRegions.Zone z = idx >= 0 && idx < sent.size() ? sent.get(idx) : sent.get(0);
+                double conf = v.get("confidence") instanceof Number n ? n.doubleValue() : 0.7;
+                found = new br.com.fashionai.application.imaging.BrandReader.Found(b, z.id(), String.valueOf(v.getOrDefault("text", b)), conf, true, z.box());
+                source = "ia";
+            }
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("grid", g);
+        result.put("regions", tiles.size());
+        result.put("source", source);
+        result.put("ocrAvailable", brandReader != null && brandReader.available());
+        if (found != null) {
+            result.put("brand", found.brand());
+            result.put("region", found.region());
+            result.put("evidence", found.evidence());
+            result.put("certainty", found.confirmed() ? "confirmada" : "possivel");
+            result.put("box", java.util.Arrays.stream(found.box()).boxed().toList());
+            BrandRegions.Zone at = new BrandRegions.Zone(found.region(), found.box());
+            MediaStoragePort.StoredObject crop = media.put("users/" + user.id() + "/drafts/" + draftId + "/marca-" + System.currentTimeMillis() + ".jpg",
+                    ImageOps.jpeg(BrandRegions.crop(piece, at, 640), 0.9f), "image/jpeg");
+            result.put("regionUrl", crop.url());
+            Map<String, Object> bs = pf.get("brandSearch") instanceof Map<?, ?> m ? new LinkedHashMap<>(Json.map(Json.write(m))) : new LinkedHashMap<>();
+            if (found.confirmed()) {
+                pf.put("brand", found.brand());
+                bs.put("brand", found.brand());
+                bs.remove("suggestion");
+            } else {
+                bs.put("suggestion", found.brand());
+            }
+            bs.put("foundIn", found.region());
+            bs.put("evidence", found.evidence());
+            bs.put("certainty", result.get("certainty"));
+            bs.put("logoSource", source);
+            pf.put("brandSearch", bs);
+            if (logoRel == null) {
+                pf.put("logo", Map.of("box", result.get("box"), "source", source));
+            }
+            r.put("prefill", pf);
+            draft.setResultJson(Json.write(r));
+        }
+        return result;
+    }
+
+    static double[] boxOf(Object logo) {
+        if (logo instanceof Map<?, ?> m && m.get("box") instanceof List<?> l && l.size() == 4) {
+            double[] b = new double[4];
+            for (int i = 0; i < 4; i++) {
+                if (!(l.get(i) instanceof Number n)) {
+                    return null;
+                }
+                b[i] = n.doubleValue();
+            }
+            return b;
+        }
+        return null;
+    }
+
+    /** Resposta da IA sobre os recortes → {brand, image, text, confidence}; marca vazia ou fraca = sem marca. */
+    static Map<String, Object> parseBrandTiles(String text) {
+        Map<String, Object> m = extractJson(text);
+        if (m.isEmpty()) {
+            return null;
+        }
+        Map<String, Object> out = new LinkedHashMap<>(m);
+        String b = brandName(str(m.get("brand")));
+        double conf = m.get("confidence") instanceof Number n ? n.doubleValue() : 0.7;
+        out.put("brand", b != null && conf >= 0.5 ? b : null);
         return out;
     }
 

@@ -145,6 +145,12 @@ public class WardrobeController {
         return wardrobe.studioBackdrops();
     }
 
+    @PostMapping("/api/pieces/analysis/{draftId}/brand")
+    @Operation(summary = "RF4 — Nova tentativa de ler a marca: grade de sub-retângulos (3×3, 4×4, 5×5) com OCR local e IA de visão")
+    public Map<String, Object> retryBrand(CurrentUser user, @PathVariable UUID draftId, @RequestParam(defaultValue = "3") int grid) {
+        return wardrobe.retryBrand(user, draftId, grid);
+    }
+
     @PostMapping("/api/pieces/analysis/{draftId}/studio")
     @Operation(summary = "RF4 · Estúdio — refaz a foto de estúdio do rascunho com outro fundo (force=true usa o recorte incerto)")
     public Map<String, Object> studioDraft(CurrentUser user, @PathVariable UUID draftId, @RequestParam(defaultValue = "auto") String backdrop,
