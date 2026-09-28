@@ -37,6 +37,11 @@ public final class LocalVision {
             insights = insights == null ? Insights.NONE : insights;
         }
 
+        /** Mesmo palpite com a marca lida por outro caminho (OCR local do logo). */
+        public PieceGuess withBrand(String b) {
+            return new PieceGuess(category, subcategory, color, material, b, sex, confidence, overall, palette, logoBox, insights);
+        }
+
         public PieceGuess withInsights(Insights i) {
             return new PieceGuess(category, subcategory, color, material, brand, sex, confidence, overall, palette, logoBox, i);
         }

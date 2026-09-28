@@ -3,6 +3,7 @@
  * O tom de pele é o que a foto mostra (mediana nas bochechas e na testa, sem clarear, escurecer nem "corrigir"); só
  * reflexos estourados e sombras profundas ficam de fora da amostra.
  */
+import { measureTone, type ToneMeasure } from "./hair-tone";
 import { FACE_OVAL } from "./canonical-face";
 
 export interface Raster { data: Uint8ClampedArray | Uint8Array; width: number; height: number }
@@ -182,6 +183,7 @@ export interface HairStats {
   cutTop: boolean;         // o cabelo encosta no topo da foto: a altura real é desconhecida
   outline: number[];       // meia-largura do cabelo (cm) em HAIR_LEVELS (y = 16, 14, …, −24 no canônico); 0 = sem cabelo
   unsure: boolean;         // acima da testa há algo que não é pele nem cabelo reconhecido (peruca, chapéu, fundo)
+  tone?: ToneMeasure | null; // tom (nível 1–10 + família) pelos meios-tons em CIELAB (lib/avatar3d/hair-tone.ts)
 }
 
 /**
@@ -239,8 +241,9 @@ export function hairStats(img: Raster, mask: ArrayLike<number>, px: Pt[], toCano
     const S = skin[0] + skin[1] + skin[2] || 1, T = m[0] + m[1] + m[2] || 1; const ratio = luma(m[0], m[1], m[2]) / (luma(...skin) || 1);
     unsure = Math.hypot(m[0] / T - skin[0] / S, m[1] / T - skin[1] / S) > 0.05 || ratio < 0.6 || ratio > 1.5;
   }
+  const tone = present ? measureTone(near) : null;
   return {
-    present, color: present ? hex([median(rs), median(gs), median(bs)]) : null, coverage,
+    present, color: present ? tone?.color ?? hex([median(rs), median(gs), median(bs)]) : null, tone, coverage,
     top: tops.length ? percentile(tops, 98) : 0, side: sides.length ? percentile(sides.filter((v) => v <= 13), 98) || 0 : 0,
     outline: byLevel.map((v) => (v.length > 6 ? +percentile(v, 97).toFixed(1) : 0)),
     bottom: bottoms.length > 30 ? percentile(bottoms, 3) : null, fringe: frN ? fr / frN : 0, cutTop, unsure,

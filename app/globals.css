@@ -1365,6 +1365,9 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .edit-profile .ep-plus:hover { filter: brightness(1.05); }
 .edit-profile .ep-plus:focus-visible, .edit-profile .ep-cube:focus-visible, .edit-profile .ep-remove:focus-visible { outline: 2px solid var(--color-ink, #111); outline-offset: 2px; }
 .edit-profile .ep-remove { position: absolute; right: -2px; top: -2px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 9999px; background: var(--color-surface, #fff); color: var(--color-muted, #555); border: 1px solid var(--color-line-soft, #ddd); font-size: 12px; line-height: 1; cursor: pointer; }
+.edit-profile .ep-rotate { position: absolute; left: -2px; bottom: -2px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9999px; background: var(--color-surface, #fff); color: var(--color-ink, #111); border: 1px solid var(--color-line-soft, #ddd); box-shadow: 0 1px 3px rgb(0 0 0 / .2); cursor: pointer; }
+.edit-profile .ep-rotate:hover { background: var(--color-surface-2, #f4f4f4); }
+.edit-profile .ep-rotate:focus-visible { outline: 2px solid var(--color-ink, #111); outline-offset: 2px; }
 .edit-profile .ep-cube { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 16px; border: 1px solid var(--color-line-soft, #ddd); background: var(--color-surface, #fff); color: var(--color-ink, #111); transition: transform .15s ease; }
 .edit-profile .ep-cube:hover { transform: translateY(-2px); background: var(--color-surface-2, #f5f5f5); }
 
@@ -1728,36 +1731,84 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 /* o invólucro do nome (link no card publicado, span na prévia) não herda o estilo da linha secundária do cabeçalho */
 .fai-card .c-who .c-who-link { font-size: inherit; color: inherit; }
 
-/* ---------- Linha única de interações do RF19 no detalhe: curtir, comentar, compartilhar, remixar | reações | salvar ---------- */
-.c-post:not(.is-compact) { container-type: inline-size; }
-.c-actions .c-sep { flex: none; align-self: center; width: 1px; height: 22px; margin: 0 4px; background: var(--line-soft); }
-.c-act.is-rx[aria-pressed="true"] { color: var(--card-ink, var(--ink)); }
-.c-acts-main { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-.c-acts-main::-webkit-scrollbar { display: none; }
-/* detalhe mais estreito que a linha inteira: menos respiro entre os ícones (alvo mínimo de 24 px, altura de toque mantida) */
-@container (max-width: 480px) {
-  .c-post:not(.is-compact) .c-actions { padding: 2px 2px; }
-  .c-post:not(.is-compact) .c-act { min-width: 30px; padding: 0 4px; gap: 3px; font-size: 13px; }
-  .c-post:not(.is-compact) .c-act-icon { width: 22px; height: 22px; }
-  .c-actions .c-sep { margin: 0 2px; }
-}
-@container (max-width: 360px) {
-  .c-post:not(.is-compact) .c-act { min-width: 26px; padding: 0 1px; gap: 1px; font-size: 12px; }
-  .c-post:not(.is-compact) .c-actions { padding: 2px 0; }
-  .c-actions .c-sep { margin: 0 1px; }
-  .c-post:not(.is-compact) .c-act-icon { width: 20px; height: 20px; }
-}
-/* telas muito estreitas com contagens de milhares: o grupo rola; a borda direita esmaece para indicar que há mais */
-@container (max-width: 300px) {
-  .c-acts-main { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent); }
-}
-/* números das ações na fonte da interface (a classe .tabular da tipografia usaria a monoespaçada, larga demais aqui) */
-.c-act .c-act-n { font-family: inherit; font-variant-numeric: tabular-nums; }
-.c-act-n .n-short { display: none; }
-@container (max-width: 420px) { .c-post:not(.is-compact) .c-act-n .n-long { display: none; } .c-post:not(.is-compact) .c-act-n .n-short { display: inline; } }
+/* ---------- Arte de fundo (RF11): padrão único em look, DNA e peça — um segmented picker com quatro segmentos na
+   horizontal (Cor · Aura & Material · Layout & Estilo · Container) e, dentro de cada um, cada grupo de opções numa
+   faixa horizontal única que rola de lado. Nunca paredes de chips; nada estoura a largura da tela. ---------- */
+.art-editor { display: grid; gap: 14px; min-width: 0; }
+.art-editor > * { min-width: 0; }
+.art-segments > button { flex: 1 1 0; min-width: max-content; }
+.opt-group { display: grid; gap: 6px; min-width: 0; }
+.opt-group > .label { margin: 0; }
+.opt-grid { display: grid; gap: 8px; min-width: 0; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+.opt-grid.is-wide { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.opt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.opt-tile { display: grid; align-content: start; gap: 4px; width: auto; min-width: 0; padding: 4px; border: 2px solid var(--line-soft); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: left; font-size: 12px; line-height: 1.25; cursor: pointer; }
+.opt-grid.is-wide > .opt-tile { grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; }
+.opt-grid.is-wide > .opt-tile > :first-child { grid-row: span 2; }
+.opt-tile.is-skin { min-height: 44px; padding: 8px 10px; align-content: center; }
+.opt-tile:hover { border-color: color-mix(in srgb, var(--mark) 40%, var(--line-soft)); }
+.opt-tile[aria-pressed="true"] { border-color: var(--mark); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 30%, transparent); }
+.opt-tile:focus-visible, .opt-dot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.opt-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; background: var(--surface-2); background-size: cover; background-position: center; object-fit: cover; }
+.opt-name { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.opt-hint { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 11px; color: var(--muted); }
+.opt-dot { width: 34px; height: 34px; padding: 0; border-radius: 999px; border: 2px solid var(--line-soft); cursor: pointer; }
+.opt-dot.is-square { border-radius: 8px; }
+.opt-dot[aria-pressed="true"] { border-color: var(--mark); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 35%, transparent); }
+.opt-grid > .pae-swatch-btn { min-width: 0; }
+.pae-fx-grid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .pae-fx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pae-fx-grid > .pae-fx { grid-column: 1 / -1; } }
+/* a prévia do card nunca passa da coluna dela: a arte fica presa na faixa entre a borda externa e o container */
+.pae-preview { min-width: 0; }
+.pae-preview .fai-card, .pae-expanded .fai-card { max-width: 100%; }
 
-/* Minhas Fotos · filtros em cascata: etiquetas do que já foi escolhido + um único seletor (o próximo nível) */
-.photo-cascade { display: grid; gap: 8px; }
-.photo-trail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.photo-trail .chip { display: inline-flex; align-items: center; gap: 4px; }
-.photo-trail-k { opacity: .78; font-weight: 500; }
+/* ---------- Listas de escolha no visual FashionAI ----------
+   Dropdown (components/ui): a lista aberta usa os tokens (superfície, linha, tinta, marca) em qualquer navegador. */
+.dd { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
+.dd-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 160px; padding-right: .8rem; cursor: pointer; text-align: left; }
+.dd-trigger[aria-expanded="true"] { border-color: var(--ink); }
+.dd-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-prefix { color: var(--muted); }
+.dd-icon { flex: none; color: var(--muted); transition: transform .15s ease; }
+.dd-trigger[aria-expanded="true"] .dd-icon { transform: rotate(180deg); color: var(--ink); }
+.dd-list { position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; min-width: 100%; max-width: min(92vw, 360px); max-height: min(60vh, 320px); overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line-soft); border-radius: 12px; box-shadow: var(--shadow), 0 12px 32px -12px rgb(0 0 0 / .25); }
+.dd-list:focus { outline: none; }
+.dd-list:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dd-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; padding: 8px 10px; border-radius: 8px; font-size: 14px; line-height: 1.3; cursor: pointer; }
+.dd-option.is-active { background: var(--surface-2); }
+.dd-option[aria-selected="true"] { font-weight: 600; color: var(--ink); }
+.dd-option[aria-selected="true"] svg { color: var(--mark); flex: none; }
+:root[data-reduce-motion="true"] .dd-icon { transition: none; }
+.dd.is-block { display: block; width: 100%; }
+.dd.is-block .dd-trigger { min-width: 0; }
+.dd-trigger:disabled { cursor: not-allowed; opacity: .6; }
+.dd-trigger[aria-invalid="true"] { border-color: var(--mark); }
+.dd-option.is-disabled { opacity: .45; cursor: not-allowed; }
+.filter-sort .dd { width: auto; }
+/* celular: os quatro segmentos da Arte de fundo sempre visíveis (o rótulo quebra em duas linhas em vez de sumir) */
+@media (max-width: 520px) {
+  .art-segments { overflow-x: visible; }
+  .art-segments > button { flex: 1 1 0; min-width: 0; padding: 4px 6px; font-size: 12px; line-height: 1.2; white-space: normal; text-align: center; }
+}
+/* skins do card: tiles largos como no editor v19 (4 colunas no desktop, 2 no celular) */
+.opt-grid:has(> .is-skin) { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+@media (max-width: 520px) { .opt-grid:has(> .is-skin) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Avatar 3D — tom do cabelo: amostras redondas (rádios), "A" = o tom medido na foto */
+.hair-tones { display: flex; flex-wrap: wrap; gap: 8px; }
+.hair-tone { width: 30px; height: 30px; border-radius: 9999px; border: 2px solid var(--color-surface, #fff); box-shadow: 0 0 0 1px var(--color-line, #ccc); cursor: pointer; display: grid; place-items: center; }
+.hair-tone.is-auto { color: #fff; font: 600 11px/1 var(--font-sans, system-ui); text-shadow: 0 1px 2px rgb(0 0 0 / .6); }
+.hair-tone[aria-checked="true"] { box-shadow: 0 0 0 2px var(--color-ink, #111); }
+.hair-tone:focus-visible { outline: 2px solid var(--color-accent, #22c55e); outline-offset: 2px; }
+
+/* RF4 · 1-Foto — marca lida: o logo da marca ao lado do texto (o nome nunca depende só da imagem) */
+.brand-read { display: flex; align-items: flex-start; gap: 10px; }
+.brand-read .brand-logo { flex: none; }
+
+/* RF19 — reações (Trend, Elegante, Criativo) na mesma linha de curtir/comentar/compartilhar: mesmo glifo de traço
+   24 px, mesma contagem ao lado, ativo preenchido na cor de destaque; com seis ações contadas, o espaçamento aperta
+   no celular para a linha caber sem quebrar */
+.c-act[class*="is-rx-"][aria-pressed="true"] { color: var(--mark); }
+.c-post.has-reactions .c-act { padding: 0 6px; }
+.c-post > .c-remixes { padding: 0 12px 8px; }
+@media (max-width: 440px) { .c-post.has-reactions .c-act { padding: 0 3px; gap: 3px; min-width: 32px; } }

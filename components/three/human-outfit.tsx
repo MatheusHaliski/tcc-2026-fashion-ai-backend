@@ -6,7 +6,7 @@ import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
-  SPECS, armOutFor, bodyParam, fabricColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
+  SPECS, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
   type GarmentKind, type GarmentSpec,
 } from "@/lib/avatar3d/human/garments";
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
@@ -40,7 +40,8 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   const P = bodyParam(asset, composed);
   const meshes: THREE.SkinnedMesh[] = []; const below: GarmentSpec[] = []; const built: GarmentKind[] = [];
   const wear = (it: OutfitItem) => {
-    const gg = garmentGeometry(asset, composed, human.rest.normals, P, it.spec, below.length ? underLayer(composed, P, below) : null);
+    const under = below.length ? underLayer(composed, P, below) : null;
+    const gg = garmentGeometry(asset, composed, human.rest.normals, P, it.spec, under);
     below.push(it.spec); if (!gg) return;
     const img = images[it.key] ?? null;
     const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
@@ -57,6 +58,20 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     m.castShadow = true; m.frustumCulled = false;
     human.root.add(m); m.bind(human.skeleton, human.body.bindMatrix);
     meshes.push(m); built.push(it.spec.kind);
+    // gola 3D contornando o decote inteiro (frente, lados e nuca), na cor da gola da foto
+    const cb = shoe ? null : collarBand(asset, composed, P, it.spec, under);
+    if (cb) {
+      const bg = new THREE.BufferGeometry();
+      bg.setAttribute("position", new THREE.Float32BufferAttribute(cb.position, 3));
+      bg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(cb.skinIndex, 4));
+      bg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(cb.skinWeight, 4));
+      bg.setIndex(Array.from(cb.index)); bg.computeVertexNormals();
+      const bm = new THREE.MeshPhysicalMaterial({ color: ribColor(img, fabric), roughness: 0.9, sheen: 0.4, sheenRoughness: 0.8, side: THREE.DoubleSide,
+        polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
+      bm.name = `gola-${it.spec.kind}`;
+      const band = new THREE.SkinnedMesh(bg, bm); band.name = `gola-${it.piece.id}`; band.castShadow = true; band.frustumCulled = false;
+      human.root.add(band); band.bind(human.skeleton, human.body.bindMatrix); meshes.push(band);
+    }
   };
   for (const it of items) wear(it);
   // molde que falhou: a zona recebe a peça padrão (sem foto ainda — a cor do tecido cobre)

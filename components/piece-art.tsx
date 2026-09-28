@@ -64,6 +64,8 @@ export function useInView<T extends Element>(): [(el: T | null) => void, boolean
  * Área artística (camada 2): arte do Studio (ou o fundo padrão da família), a composição da família/variação e os efeitos
  * de fundo. `aria-hidden` e `pointer-events: none` no CSS — nada aqui é conteúdo nem controle.
  */
+const CONTAIN = { position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", pointerEvents: "none", zIndex: 0 } as const;
+
 export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null }) {
   const resolved = resolveCardArt(bg);
   // feed leve: no card compacto a arte é estática (sem animação de preset e, no lugar do vídeo, o pôster dele)
@@ -73,7 +75,8 @@ export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, u
   const fx = art.effects;
   const base = family === "seasonal" ? SEASON_BASE[season] : FAMILY_BASE[family];
   return (
-    <div className="pc-art" aria-hidden data-family={family} data-variant={variant}>
+    // contenção inline: mesmo sem o CSS carregado, a arte nunca sai da moldura do card (nunca cobre a tela)
+    <div className="pc-art" aria-hidden data-family={family} data-variant={variant} style={CONTAIN}>
       {user.kind === "none" ? <div className="pc-base" style={{ background: base }} /> : <CardArtLayer art={user} />}
       <FamilyComposition family={family} variant={variant} season={season} pieceHex={pieceHex} hasUserArt={user.kind !== "none"} />
       {fx.texture !== "none" && <span className={`pc-fx-texture is-${fx.texture}`} />}
@@ -91,7 +94,7 @@ export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, u
 export function artSurfaceProps(bg: Record<string, unknown> | null | undefined, art: PieceArt, density: "compact" | "expanded") {
   const fx: ArtEffects = art.effects;
   const cls = ["pc", `pc-${density}`, `em-${art.composition.emphasis}`, fx.rim && "fx-rim", fx.glass && "fx-glass", fx.relief && "fx-relief", density === "expanded" && fx.motion && "fx-motion"].filter(Boolean).join(" ");
-  const style = v({ "--pc-accent": accentOf(bg, art), ...(art.surface.color ? { "--container-bg": art.surface.color } : {}) });
+  const style = { ...v({ "--pc-accent": accentOf(bg, art), ...(art.surface.color ? { "--container-bg": art.surface.color } : {}) }), position: "relative" as const, isolation: "isolate" as const };
   return { className: cls, style, "data-family": art.template.family, "data-variant": art.template.variant, "data-surface": art.surface.style };
 }
 

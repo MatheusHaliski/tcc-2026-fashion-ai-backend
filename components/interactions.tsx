@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
@@ -11,7 +11,8 @@ import { FaiIcon } from "@/components/fai-icon";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
-const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: "trend" | "elegante" | "criativo" }[] = [{ id: "TREND", icon: "trend" }, { id: "ELEGANTE", icon: "elegante" }, { id: "CRIATIVO", icon: "criativo" }];
+/** Reações do detalhe (RF19): desenhadas como curtir/comentar/compartilhar — glifo de traço 24 px + contagem ao lado. */
+const REACTIONS: { id: "TREND" | "ELEGANTE" | "CRIATIVO"; icon: SocialIconName }[] = [{ id: "TREND", icon: "trend" }, { id: "ELEGANTE", icon: "elegant" }, { id: "CRIATIVO", icon: "creative" }];
 
 /** Barra social (RF19) do detalhe fora de um card (ex.: DNA de estilo): a mesma linha de ações, com as reações. */
 export function InteractionBar({ type, id, counters, viewer, ownerId, title }: { type: TargetType; id: string; counters?: Counters; viewer?: ViewerState; onChange?: () => void; remixHref?: string; ownerId?: string; title?: string }) {
@@ -43,45 +44,61 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
 }
 
 /**
- * Glifos das interações do RF19 (traço 1,8 px, 24×24, cor do texto): contorno no estado normal, preenchido quando ativo.
- * As reações seguem o mesmo desenho das ações (preto e branco, sem disco): Trend é a linha em onda que sobe com dois nós
- * e a ponta de seta; Elegante, a gravata-borboleta; Criativo, o carretel com a agulha.
+ * Glifos das ações sociais (traço 1,8 px, 24×24): contorno no estado normal, preenchido quando ativo. As reações seguem o
+ * mesmo desenho e peso de traço (referência do design): Trend = trilha de contas subindo até uma estrela de brilho,
+ * Elegante = gravata-borboleta, Criativo = carretel de linha com agulha. Ativo: a estrela, a gravata e o carretel ficam
+ * sólidos (o carretel com as listras vazadas), como o coração.
  */
-const SOCIAL_ICONS = {
-  heart: (f: boolean) => <path d="M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z" fill={f ? "currentColor" : "none"} />,
-  comment: (f: boolean) => <path d="M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z" fill={f ? "currentColor" : "none"} />,
-  share: () => <path d="M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z" />,
-  bookmark: (f: boolean) => <path d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z" fill={f ? "currentColor" : "none"} />,
-  remix: () => <path d="M17 2.8l3 3-3 3M4 11.2v-.9a4.5 4.5 0 0 1 4.5-4.5H20M7 21.2l-3-3 3-3M20 12.8v.9a4.5 4.5 0 0 1-4.5 4.5H4" />,
-  // Trend (desenho enviado pela pessoa, vetorizado no grid 24): a linha em onda que sobe, dois nós vazados e a ponta
-  // de seta; ativo = nós e ponta preenchidos
-  trend: (f: boolean) => (
-    <>
-      <path d="M1.8 20.2c1.5 0 2.7-1 3.6-2.4M8.4 14.9c.9-1.7 1.9-2.9 3-2.9.5 0 .9.2 1.4.4M16.2 10.7c1.4-1 2.7-2.7 3.8-4.6" />
-      <circle cx="7.2" cy="16.6" r="2.1" fill={f ? "currentColor" : "none"} /><circle cx="14.9" cy="12.3" r="2.1" fill={f ? "currentColor" : "none"} />
-      <path d="M17.7 5.5 22 4.1l-1.7 4.4-.3-2.4" fill={f ? "currentColor" : "none"} />
-    </>
-  ),
-  elegante: (f: boolean) => (
-    <>
-      <path d="M10.3 10.1 4.6 6.7C3.8 6.2 3 6.8 3 7.7v8.6c0 .9.8 1.5 1.6 1l5.7-3.4M13.7 10.1l5.7-3.4c.8-.5 1.6.1 1.6 1v8.6c0 .9-.8 1.5-1.6 1l-5.7-3.4" fill={f ? "currentColor" : "none"} />
-      <rect x="10.3" y="9.6" width="3.4" height="4.8" rx="1.2" fill={f ? "currentColor" : "none"} />
-    </>
-  ),
-  criativo: (f: boolean) => (
-    <>
-      <rect x="3.6" y="3.4" width="10.2" height="2.6" rx="1.1" fill={f ? "currentColor" : "none"} /><rect x="3.6" y="18" width="10.2" height="2.6" rx="1.1" fill={f ? "currentColor" : "none"} />
-      <path d="M5.2 6v12M12.2 6v12" />{f ? <rect x="5.2" y="6" width="7" height="12" fill="currentColor" stroke="none" /> : <path d="M5.2 9.2l7-1.6M5.2 12.4l7-1.6M5.2 15.6l7-1.6" strokeWidth={1.3} />}
-      <path d="M16.3 20.6 20.4 6.2" /><ellipse cx="20.9" cy="4.3" rx=".9" ry="1.6" transform="rotate(16 20.9 4.3)" strokeWidth={1.3} />
-    </>
-  ),
+const SOCIAL_PATHS = {
+  heart: "M12 20.3s-7.3-4.5-9.3-9.2C1.4 8 3.3 4.6 6.7 4.3c2.1-.2 3.9.9 5.3 2.8 1.4-1.9 3.2-3 5.3-2.8 3.4.3 5.3 3.7 4 6.8-2 4.7-9.3 9.2-9.3 9.2z",
+  comment: "M20.5 11.6a8.1 8.1 0 0 1-11.9 7.1L3.5 20l1.4-4.7a8.1 8.1 0 1 1 15.6-3.7z",
+  share: "M21 3 10.2 13.8M21 3l-6.7 18-4.1-7.2L3 9.7 21 3z",
+  bookmark: "M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.6-6.5 4.6v-16a1 1 0 0 1 1-1z",
 } as const;
-export type SocialIconName = keyof typeof SOCIAL_ICONS;
+export type SocialIconName = keyof typeof SOCIAL_PATHS | "trend" | "elegant" | "creative";
+
+/** Trend: trilha curva com contas, subindo até a estrela de quatro pontas. */
+const TREND_STAR = "M18.2 1.8c.4 1.9 1.6 3.2 3.6 3.6-2 .4-3.2 1.7-3.6 3.6-.4-1.9-1.6-3.2-3.6-3.6 2-.4 3.2-1.7 3.6-3.6z";
+const TREND_TRAIL = "M4 19.8c3.4-.9 6.4-2.4 8.8-4.6 1.6-1.5 2.8-3.2 3.7-5";
+const TREND_BEADS: [number, number, number][] = [[4, 19.8, 1.75], [8.2, 18.3, 1.4], [12, 15.9, 1.4], [14.8, 12.9, 1.4]];
+/** Elegante: duas asas e o nó da gravata-borboleta. */
+const BOW_WINGS = "M10 10.1 4.4 6.9a1.3 1.3 0 0 0-2 1.1v8a1.3 1.3 0 0 0 2 1.1l5.6-3.2zM14 10.1l5.6-3.2a1.3 1.3 0 0 1 2 1.1v8a1.3 1.3 0 0 1-2 1.1L14 13.9z";
+const BOW_KNOT = "M10.6 9.3h2.8a.6.6 0 0 1 .6.6v4.2a.6.6 0 0 1-.6.6h-2.8a.6.6 0 0 1-.6-.6V9.9a.6.6 0 0 1 .6-.6z";
+/** Criativo: carretel (abas em cima e embaixo, linha enrolada em diagonal) e a agulha com o buraco. */
+const SPOOL_FLANGES = "M3.8 2.9h9.4a1 1 0 0 1 1 1v.8a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1v-.8a1 1 0 0 1 1-1zM3.8 18.3h9.4a1 1 0 0 1 1 1v.8a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1v-.8a1 1 0 0 1 1-1z";
+const SPOOL_BODY = "M4.9 5.7h7.2v12.6H4.9z";
+const SPOOL_THREAD = "M4.9 9.4l7.2-2.2M4.9 13l7.2-2.2M4.9 16.6l7.2-2.2";
+const NEEDLE = "M16.6 21.1 20.3 5.6M20.3 5.6c-.4-1.4-.2-2.6.5-2.8.7-.2 1.2 1 .9 2.4";
+
 export function SocialIcon({ name, filled, size = 24 }: { name: SocialIconName; filled?: boolean; size?: number }) {
+  const mask = useId().replace(/:/g, "");
+  const common = { width: size, height: size, viewBox: "0 0 24 24", "aria-hidden": true, focusable: "false" as const, className: "c-act-icon",
+    stroke: "currentColor", strokeWidth: 1.8, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+  if (name === "trend") return (
+    <svg {...common} fill="none">
+      <path d={TREND_TRAIL} />
+      {TREND_BEADS.map(([x, y, r]) => <circle key={x} cx={x} cy={y} r={r} fill="currentColor" stroke="none" />)}
+      <path d={TREND_STAR} fill={filled ? "currentColor" : "none"} />
+    </svg>
+  );
+  if (name === "elegant") return (
+    <svg {...common} fill={filled ? "currentColor" : "none"}>
+      <path d={BOW_WINGS} /><path d={BOW_KNOT} />
+    </svg>
+  );
+  if (name === "creative") return (
+    <svg {...common} fill="none">
+      {filled && (
+        <defs><mask id={mask}><rect width="24" height="24" fill="#fff" /><path d={SPOOL_THREAD} stroke="#000" strokeWidth={1.5} /></mask></defs>
+      )}
+      {filled ? <path d={SPOOL_BODY} fill="currentColor" mask={`url(#${mask})`} /> : <><path d="M4.9 5.7v12.6M12.1 5.7v12.6" /><path d={SPOOL_THREAD} strokeWidth={1.5} /></>}
+      <path d={SPOOL_FLANGES} fill={filled ? "currentColor" : "none"} />
+      <path d={NEEDLE} />
+    </svg>
+  );
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false" className="c-act-icon"
-      fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
-      {SOCIAL_ICONS[name](!!filled)}
+    <svg {...common} fill={filled && name !== "share" ? "currentColor" : "none"}>
+      <path d={SOCIAL_PATHS[name]} />
     </svg>
   );
 }
@@ -108,9 +125,9 @@ export function useRemix(type: TargetType, id: string) {
  * Ações do post (RF7.CA11 · RF19) — uma linha só, igual em todo card: curtir, comentar e compartilhar à esquerda, cada
  * ícone com a sua contagem ao lado; salvar à direita. Todos com o mesmo tamanho (ícone 24 px), a mesma área de toque
  * (44 px em tela de toque), nome acessível com a contagem e estado (aria-pressed) — curtido e salvo ficam preenchidos.
- * Não existe linha "N curtidas" separada: cada número aparece uma vez, junto da ação. No detalhe (`reactions`) TODAS as
- * interações do RF19 ficam nesta mesma linha horizontal: curtir, comentar, compartilhar e remixar | Trend, Elegante e
- * Criativo (o nome da reação fica no nome acessível e na dica) | salvar à direita.
+ * Não existe linha "N curtidas" separada: cada número aparece uma vez, junto da ação. Reações (Trend, Elegante,
+ * Criativo) são do detalhe (`reactions`) e ficam NA MESMA LINHA, logo depois de compartilhar, desenhadas igual às
+ * demais (glifo de traço 24 px, contagem ao lado, preenchido quando ativo); o nome vai no aria-label e no title.
  */
 export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview, ownerId }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
   /** compatibilidade: salvar agora está sempre na linha */ withSave?: boolean; with3d?: boolean }) {
@@ -160,22 +177,21 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   return (
     // contagens muito longas (ex.: "12 mi" + "988 mil"): no card estreito o número de comentários sai da linha
     // (continua no nome acessível e no detalhe) para a linha nunca estourar a coluna
-    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
+    <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""} ${reactions ? "has-reactions" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
       <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
         {/* no detalhe, as interações ficam num grupo que, só em tela muito estreita, rola na horizontal (salvar fica fixo) */}
         <div className={reactions ? "c-acts-main" : "contents"}>
         {act("like", "heart", t("interactions.like_n", { count: likes }), like, { pressed: liked, count: likes })}
         {act("comment", "comment", t("interactions.comment_n", { count: commentsN }), () => setComments(true), { count: commentsN, haspopup: true })}
         {act("share", "share", t("interactions.share_n", { count: sharesN }), () => { if (guard()) setShare(true); }, { count: sharesN, haspopup: true })}
-        {canRemix && !preview && act("remix", "remix", t("interactions.remix_n", { count: remixesN }), remix, { count: remixesN, busy: remixing, hideZero: true })}
-        {reactions && !preview && <span className="c-sep" aria-hidden />}
-        {reactions && !preview && REACTIONS.map((r) => act(`rx-${r.id}`, r.icon, t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count: rx[r.id] ?? 0 }),
-          () => react(r.id), { pressed: mine3.includes(r.id), count: rx[r.id] ?? 0, hideZero: true, className: "is-rx" }))}
+        {/* reações no detalhe: na mesma linha, mesmo glifo de traço, mesmo tamanho e a contagem ao lado */}
+        {reactions && REACTIONS.map((r) => act(`rx-${r.id}`, r.icon, t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count: rx[r.id] ?? 0 }), () => react(r.id), { pressed: mine3.includes(r.id), count: rx[r.id] ?? 0 }))}
         {extra}
         </div>
         <span className="grow" />
         {act("save", "bookmark", t("interactions.save"), save, { pressed: saved })}
       </div>
+      {reactions && !preview && (counters?.remixes ?? 0) > 0 && <p className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: counters?.remixes ?? 0 })}</p>}
       {!preview && <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />}
       {!preview && <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />}
     </div>

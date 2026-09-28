@@ -1,3 +1,4 @@
+import { hexToLab, levelOf, rgbToLab } from "./hair-tone";
 import { describe, expect, test } from "vitest";
 import { CANON_POS } from "./canonical-face";
 import { N } from "./geometry";
@@ -118,7 +119,10 @@ describe("cabelo", () => {
     const t = fit2D(px, Array.from({ length: N }, (_, i) => [CANON_POS[i * 3], CANON_POS[i * 3 + 1]] as Pt));
     const h = hairStats(img, hairMask, px, t, CANON_POS[10 * 3 + 1]);
     expect(h.present).toBe(true);
-    rgbOf(h.color!).forEach((v, i) => expect(Math.abs(v - hair[i])).toBeLessThanOrEqual(2));
+    // cor: o tom medido (nível pela luminância em CIELAB) desenhado com a paleta — perto da cor do fio, no mesmo nível
+    expect(h.tone?.tone.level).toBe(levelOf(rgbToLab(...hair)[0]));
+    const [La, aa, ba] = hexToLab(h.color!), [Lb, ab, bb] = rgbToLab(...hair);
+    expect(Math.hypot(La - Lb, aa - ab, ba - bb)).toBeLessThan(12);
     expect(h.top).toBeGreaterThan(CANON_POS[10 * 3 + 1] + 3);        // acima da testa
     expect(h.cutTop).toBe(false);
     const none = hairStats(img, new Float32Array(640 * 800), px, t, CANON_POS[10 * 3 + 1], [198, 150, 110]);

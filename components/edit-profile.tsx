@@ -32,6 +32,11 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
     if (!fl) return; setBusy(true);
     try { const fd = new FormData(); fd.append("file", fl); await api.upload("/api/me/avatar", fd); await refreshMe(); toast.success(t("editProfile.foto_de_perfil_atualizada")); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
+  // foto que ficou deitada: gira 90° no sentido horário a cada toque (nova versão no acervo)
+  async function rotate() {
+    setBusy(true);
+    try { await api.post("/api/me/avatar/rotate?degrees=90"); await refreshMe(); toast.success(t("editProfile.foto_girada")); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
+  }
   async function save() {
     setBusy(true);
     try {
@@ -52,6 +57,7 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
           <span className="block h-24 w-24 overflow-hidden rounded-full bg-surface-2 ring-1 ring-line-soft">{me.user.avatarUrl ? <img src={mediaUrl(me.user.avatarUrl)} alt={t("editProfile.sua_foto_de_perfil")} className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-3xl text-muted">{me.user.displayName?.[0] ?? "?"}</span>}</span>
           {/* foto de perfil: o "+" no círculo abre a escolha do arquivo */}
           <button type="button" onClick={() => file.current?.click()} disabled={busy} className="ep-plus" aria-label={t("editProfile.nova_foto_de_perfil")} title={t("editProfile.nova_foto_de_perfil")}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg></button>
+          {me.user.avatarUrl && <button type="button" className="ep-rotate" disabled={busy} aria-label={t("editProfile.girar_foto")} title={t("editProfile.girar_foto")} onClick={rotate}><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>}
           {me.user.avatarUrl && <button type="button" className="ep-remove" disabled={busy} aria-label={t("common.remover_foto")} title={t("common.remover_foto")} onClick={async () => { try { await api.patch("/api/me/profile", { avatarUrl: "" }); await refreshMe(); toast.success(t("editProfile.foto_removida_o_manequim_volta")); } catch (e) { toast.fromError(e); } }}>✕</button>}
         </div>
         {/* avatar 3D: a caixa isométrica leva ao criador do avatar (RF40) */}

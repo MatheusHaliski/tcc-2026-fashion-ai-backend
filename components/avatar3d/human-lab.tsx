@@ -18,14 +18,15 @@ const OUTFITS: Record<string, Look3dPiece[]> = {
   saia: [P("blusa", "blouse", "/assets_pecas/03_blouse_blusa.png"), P("saia", "skirt", "/assets_pecas/02_Parte_inferior/12_saia.png"), P("salto", "heels", "/assets_pecas/03_Calcados/16_salto_alto.png")],
 };
 
-type View = "front" | "left34" | "profile" | "back" | "face" | "face34";
-const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35 };
+type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside";
+const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90 };
 
 function Cam({ view, H }: { view: View; H: number }) {
   const { camera } = useThree();
   useEffect(() => {
-    const a = (ANGLE[view] * Math.PI) / 180; const face = view.startsWith("face");
-    const ty = face ? H * 0.925 : H * 0.52; const d = face ? 0.8 : H * 2.4;
+    const a = (ANGLE[view] * Math.PI) / 180; const face = view.startsWith("face");                  // face* = rosto, gola e cabelo de perto
+    const neck = view === "faceback" || view === "faceside";   // cabeça + gola
+    const ty = neck ? H * 0.9 : face ? H * 0.925 : H * 0.52; const d = neck ? 1.05 : face ? 0.8 : H * 2.4;
     camera.position.set(Math.sin(a) * d, ty + (face ? 0 : 0.05), Math.cos(a) * d); camera.lookAt(0, ty, 0); camera.updateProjectionMatrix();
   }, [view, H, camera]);
   return null;
@@ -59,7 +60,7 @@ export default function HumanLab() {
       <h1>Corpo humano — lab</h1>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button id="human-sex" onClick={() => setSex(sex === "FEMININO" ? "MASCULINO" : "FEMININO")}>{sex}</button>
-        {(["front", "left34", "profile", "back", "face", "face34"] as View[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
+        {(["front", "left34", "profile", "back", "face", "face34", "faceback", "faceside"] as View[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
         <button onClick={() => setMotion(!motion)}>motion {String(motion)}</button>
         {Object.keys(OUTFITS).map((o) => <button key={o} onClick={() => setOutfit(o)}>{o}</button>)}
         <input id="human-photo" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void run(f); }} />

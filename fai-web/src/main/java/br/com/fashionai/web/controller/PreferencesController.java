@@ -66,6 +66,12 @@ public class PreferencesController {
         return preferences.uploadProfileImage(user, Uploads.image(file), false);
     }
 
+    @PostMapping("/api/me/avatar/rotate")
+    @Operation(summary = "RF3 — Girar a foto de perfil em 90°")
+    public Object rotateAvatar(CurrentUser user, @RequestParam(defaultValue = "90") int degrees) {
+        return preferences.rotateAvatar(user, degrees);
+    }
+
     @PostMapping(value = "/api/me/cover", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "RF3.CA01 — Enviar imagem de capa")
     public Object cover(CurrentUser user, @RequestPart("file") MultipartFile file) {

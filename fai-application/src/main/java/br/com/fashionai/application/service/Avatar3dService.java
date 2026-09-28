@@ -41,10 +41,13 @@ public class Avatar3dService {
     static final int SHAPE_LEN = 468 * 3;
     private static final Pattern HEX = Pattern.compile("^#[0-9a-fA-F]{6}$");
     private static final long MAX_TEXTURE_BYTES = 4L * 1024 * 1024;
+    /** Tons de cabelo da paleta (lib/avatar3d/hair-tone.ts, HAIR_TONES): 0 = o medido na foto, 1–14 = escolhido. */
+    static final int HAIR_TONES = 14;
     /** Ajustes finos: faixas pequenas de propósito (ajuste, não outra pessoa). Iguais a ADJUST_RANGE do cliente. */
     private static final Map<String, double[]> ADJUST = Map.of(
             "headScale", new double[]{0.94, 1.06, 1}, "neck", new double[]{-0.02, 0.02, 0},
-            "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0});
+            "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
+            "hairTone", new double[]{0, HAIR_TONES, 0});
 
     private final UserAvatar3dRepository avatars;
     private final UserRepository users;
@@ -239,6 +242,7 @@ public class Avatar3dService {
         if (h.containsKey("texture") && !HAIR_TEXTURES.contains(h.get("texture"))) h.remove("texture");
         if (h.containsKey("cover") && h.get("cover") != null && !(h.get("cover") instanceof String cv && HEX.matcher(cv).matches())) h.remove("cover");
         if (h.containsKey("outline") && !validOutline(h.get("outline"))) h.remove("outline");
+        if (h.containsKey("tone") && h.get("tone") != null && !validTone(h.get("tone"))) h.remove("tone");
         h.keySet().retainAll(HAIR_KEYS);
         Map<String, Object> out = new LinkedHashMap<>();
         if (m.get("body") instanceof Map<?, ?> body) {
@@ -257,7 +261,17 @@ public class Avatar3dService {
     /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
     static final List<String> HAIR_LENGTHS = List.of("bald", "buzz", "short", "medium", "long");
     static final List<String> HAIR_TEXTURES = List.of("straight", "wavy", "curly", "coily");
-    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline");
+    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone");
+    static final List<String> HAIR_FAMILIES = List.of("natural", "ash", "golden", "copper", "red", "gray", "white");
+
+    /** Tom medido: {level: 1–10, family: uma de HAIR_FAMILIES}, nada mais. */
+    static boolean validTone(Object o) {
+        if (!(o instanceof Map<?, ?> t) || t.size() != 2 || !(t.get("level") instanceof Number n) || !HAIR_FAMILIES.contains(t.get("family"))) {
+            return false;
+        }
+        double d = n.doubleValue();
+        return d == Math.rint(d) && d >= 1 && d <= 10;
+    }
 
     static boolean validOutline(Object o) {
         if (!(o instanceof List<?> l) || l.size() > 32) {
@@ -354,7 +368,7 @@ public class Avatar3dService {
         ADJUST.forEach((k, r) -> {
             Object v = a == null ? null : a.get(k);
             double d = v instanceof Number n && Double.isFinite(n.doubleValue()) ? Math.min(r[1], Math.max(r[0], n.doubleValue())) : r[2];
-            out.put(k, d);
+            out.put(k, "hairTone".equals(k) ? (Object) (int) Math.round(d) : (Object) d);
         });
         return out;
     }

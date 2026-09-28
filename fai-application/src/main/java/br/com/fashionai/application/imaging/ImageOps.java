@@ -79,14 +79,35 @@ public final class ImageOps {
         }
     }
 
-    /** Tag EXIF Orientation (0x0112) do JPEG: 1..8, ou 1 quando não há EXIF, a tag ou o arquivo não é JPEG. */
+    /**
+     * Tag EXIF Orientation (0x0112): 1..8, ou 1 quando não há EXIF ou a tag. Lida no JPEG (APP1 "Exif"), no PNG (chunk
+     * eXIf) e no WebP (chunk EXIF): celular e Mac gravam retrato deitado + tag nos três formatos.
+     */
     public static int exifOrientation(byte[] b) {
-        if (b == null || b.length < 4 || (b[0] & 0xFF) != 0xFF || (b[1] & 0xFF) != 0xD8) {
+        if (b == null || b.length < 12) {
             return 1;
         }
+        int o;
+        if ((b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8) {
+            o = jpegOrientation(b);
+        } else if ((b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G') {
+            o = pngOrientation(b);
+        } else if (b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') {
+            o = webpOrientation(b);
+        } else {
+            o = 0;
+        }
+        return o > 0 ? o : 1;
+    }
+
+    private static int jpegOrientation(byte[] b) {
         int i = 2;
         while (i + 4 <= b.length && (b[i] & 0xFF) == 0xFF) {
             int marker = b[i + 1] & 0xFF;
+            if (marker == 0xFF) {
+                i++;                                            // byte de preenchimento antes do marcador
+                continue;
+            }
             if (marker == 0xDA || marker == 0xD9) {
                 break;                                          // início da imagem comprimida: não há mais cabeçalhos
             }
@@ -103,7 +124,52 @@ public final class ImageOps {
             }
             i += 2 + len;
         }
-        return 1;
+        return 0;
+    }
+
+    /** PNG: chunks (tamanho BE, tipo, dados, CRC) depois da assinatura de 8 bytes; o eXIf traz o TIFF direto. */
+    private static int pngOrientation(byte[] b) {
+        int i = 8;
+        while (i + 12 <= b.length) {
+            long len = ((b[i] & 0xFFL) << 24) | ((b[i + 1] & 0xFFL) << 16) | ((b[i + 2] & 0xFFL) << 8) | (b[i + 3] & 0xFFL);
+            int data = i + 8;
+            if (data + len > b.length) {
+                break;
+            }
+            if (b[i + 4] == 'e' && b[i + 5] == 'X' && b[i + 6] == 'I' && b[i + 7] == 'f') {
+                return tiffAt(b, data, data + (int) len);
+            }
+            if (b[i + 4] == 'I' && b[i + 5] == 'E' && b[i + 6] == 'N' && b[i + 7] == 'D') {
+                break;
+            }
+            i = data + (int) len + 4;
+        }
+        return 0;
+    }
+
+    /** WebP: chunks RIFF (FourCC, tamanho LE, dados com preenchimento par) depois de "RIFF....WEBP". */
+    private static int webpOrientation(byte[] b) {
+        int i = 12;
+        while (i + 8 <= b.length) {
+            long len = (b[i + 4] & 0xFFL) | ((b[i + 5] & 0xFFL) << 8) | ((b[i + 6] & 0xFFL) << 16) | ((b[i + 7] & 0xFFL) << 24);
+            int data = i + 8;
+            if (data + len > b.length) {
+                break;
+            }
+            if (b[i] == 'E' && b[i + 1] == 'X' && b[i + 2] == 'I' && b[i + 3] == 'F') {
+                return tiffAt(b, data, data + (int) len);
+            }
+            i = data + (int) len + (int) (len & 1);
+        }
+        return 0;
+    }
+
+    /** TIFF do EXIF, com ou sem o prefixo "Exif\0\0" (alguns gravadores de PNG/WebP o mantêm). */
+    private static int tiffAt(byte[] b, int start, int end) {
+        if (start + 6 <= end && b[start] == 'E' && b[start + 1] == 'x' && b[start + 2] == 'i' && b[start + 3] == 'f' && b[start + 4] == 0 && b[start + 5] == 0) {
+            start += 6;
+        }
+        return tiffOrientation(b, start, end);
     }
 
     private static int tiffOrientation(byte[] b, int tiff, int end) {

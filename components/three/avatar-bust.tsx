@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { CANON_TRI, CANON_UV, FACE_OVAL } from "@/lib/avatar3d/canonical-face";
 import { N, bustFit, canonicalWindingFlipped, headShell, type HeadShell } from "@/lib/avatar3d/geometry";
 import { clampAdjust, skinWithLight, validateModel, type AvatarAdjust, type AvatarModel } from "@/lib/avatar3d/model";
+import { hairColorFor } from "@/lib/avatar3d/hair-tone";
 import { api } from "@/lib/api/client";
 
 /*
@@ -210,6 +211,7 @@ export function AvatarBust({ avatar, stature, torsoTopY }: { avatar: AvatarRef; 
   }, [model, stature, torsoTopY, adj.headScale, adj.neck, adj.hairVolume]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!model || !built) return null;
   const skin = skinWithLight(model.skin, adj.skinLight); const k = 1 + adj.skinLight * 2.2;
+  const hairColor = hairColorFor(model.hair.color, adj.hairTone);
   const { s, y0, z0, h } = built;
   // a foto já traz luz e sombra: a cena ilumina de leve (difusa 60% + própria 32%) o rosto e a pele do mesmo jeito,
   // senão a sombra da foto somada à da cena escurece o rosto e a costura com o pescoço aparece
@@ -228,8 +230,8 @@ export function AvatarBust({ avatar, stature, torsoTopY }: { avatar: AvatarRef; 
           <mesh position={[side * 0.5, -0.15, 0.15]} scale={[0.1, built.earH * 0.19, 0.72]}><sphereGeometry args={[1, 16, 12]} /><meshStandardMaterial color={new THREE.Color(skin).multiplyScalar(0.42)} emissive={new THREE.Color(skin).multiplyScalar(0.18)} roughness={0.8} /></mesh>
         </group>
       ))}
-      {built.hair.cap && model.hair.color && <mesh geometry={built.hair.cap} castShadow><meshStandardMaterial color={model.hair.color} map={strands()} alphaMap={hairEdge()} transparent alphaTest={0.02} roughness={0.55} /></mesh>}
-      {built.hair.curtain && model.hair.color && <mesh geometry={built.hair.curtain} castShadow><meshStandardMaterial color={model.hair.color} map={strands()} roughness={0.5} side={THREE.DoubleSide} /></mesh>}
+      {built.hair.cap && hairColor && <mesh geometry={built.hair.cap} castShadow><meshStandardMaterial color={hairColor} map={strands()} alphaMap={hairEdge()} transparent alphaTest={0.02} roughness={0.55} /></mesh>}
+      {built.hair.curtain && hairColor && <mesh geometry={built.hair.curtain} castShadow><meshStandardMaterial color={hairColor} map={strands()} roughness={0.5} side={THREE.DoubleSide} /></mesh>}
     </group>
   );
 }
