@@ -4,6 +4,12 @@ Gerado por `scripts/rubricas/gerar_guia.py` a partir de `docs/rubricas/QUARTA_TC
 
 Legenda: ✅ evidência pronta · 🟡 parcial · ⬜ pendente · 🔴 risco de reprovação.
 
+> A avaliação individual dos 41 RFs e 8 RNFs, o score global de maturidade
+> (**8,3/10**) e o plano de contribuição recomendado para Bryan estão em
+> [`ANALISE_RF_RNF_E_BRAYAN.md`](ANALISE_RF_RNF_E_BRAYAN.md). As mesmas tabelas
+> estão nos arquivos textuais `SCORES_RF.csv` e `SCORES_RNF.csv`, que podem ser
+> abertos no Excel sem adicionar arquivos binários ao pull request.
+
 ## 1. Critérios obrigatórios (2,5 pontos — todos ou nenhum)
 
 Se qualquer um faltar, o trabalho não pode ser entregue.
