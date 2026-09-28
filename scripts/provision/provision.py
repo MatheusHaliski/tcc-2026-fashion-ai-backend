@@ -110,16 +110,38 @@ def provision_mysql(check):
 
 
 # ------------------------------------------------------------------------------------------------ Cassandra
+_TEMP_FILES = []
+
+
+def _cleanup_temp_files():
+    """Apaga os arquivos temporários com segredo (bundle do Astra com a chave mTLS, cqlshrc com a senha)."""
+    for path in _TEMP_FILES:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def _secret_temp_file(prefix, suffix, data):
+    """Arquivo temporário só do dono (0600), apagado ao sair do script — nunca fica esquecido em /tmp."""
+    import atexit  # noqa: WPS433
+    import tempfile  # noqa: WPS433
+    fd, path = tempfile.mkstemp(prefix=prefix, suffix=suffix)
+    os.chmod(path, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    if not _TEMP_FILES:
+        atexit.register(_cleanup_temp_files)
+    _TEMP_FILES.append(path)
+    return path
+
+
 def astra_bundle():
-    """Secure Connect Bundle do Astra DB: caminho direto ou o zip em base64 gravado num arquivo temporário."""
+    """Secure Connect Bundle do Astra DB: caminho direto ou o zip em base64 num arquivo temporário (0600, apagado ao sair)."""
     if env("CASSANDRA_SECURE_BUNDLE_PATH"):
         return env("CASSANDRA_SECURE_BUNDLE_PATH")
     if env("CASSANDRA_SECURE_BUNDLE_BASE64"):
-        import tempfile  # noqa: WPS433
-        f = tempfile.NamedTemporaryFile(prefix="scb-", suffix=".zip", delete=False)
-        f.write(base64.b64decode(env("CASSANDRA_SECURE_BUNDLE_BASE64")))
-        f.close()
-        return f.name
+        return _secret_temp_file("scb-", ".zip", base64.b64decode(env("CASSANDRA_SECURE_BUNDLE_BASE64")))
     return None
 
 
@@ -142,7 +164,9 @@ def provision_cassandra(check):
             host = hosts.split(",")[0].strip()
             cmd = ["cqlsh", host, env("CASSANDRA_PORT", "9042")]
             if env("CASSANDRA_USERNAME"):
-                cmd += ["-u", env("CASSANDRA_USERNAME"), "-p", env("CASSANDRA_PASSWORD")]
+                # credenciais num cqlshrc 0600 (apagado ao sair), nunca em -u/-p: a linha de comando aparece no `ps`
+                rc = "[authentication]\nusername = %s\npassword = %s\n" % (env("CASSANDRA_USERNAME"), env("CASSANDRA_PASSWORD"))
+                cmd += ["--cqlshrc", _secret_temp_file("cqlshrc-", ".ini", rc.encode("utf-8"))]
             stmt = "DESCRIBE KEYSPACES;" if check else cql
             proc = subprocess.run(cmd, input=stmt, capture_output=True, text=True, timeout=120)
             return report("Cassandra", OK if proc.returncode == 0 else FAIL, "cqlsh: " + ("schema aplicado" if not check else "conectado") if proc.returncode == 0 else proc.stderr.strip()[-200:])
