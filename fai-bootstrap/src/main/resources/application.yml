@@ -117,6 +117,9 @@ fashionai:
   security:
     auth-rate-limit:
       enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
+    # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
+    edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
+    client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga
   assets:
     public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
   storage:

@@ -36,7 +36,7 @@ public class AuditAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 AuditActions.LOGIN_FALHO,
                 request.getRequestURI(),
                 "NAO_AUTENTICADO",
-                request.getRemoteAddr(),
+                br.com.fashionai.web.support.CorrelationIdFilter.clientIp(request),
                 request.getHeader("User-Agent"),
                 Instant.now(),
                 Optional.ofNullable(request.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString()),

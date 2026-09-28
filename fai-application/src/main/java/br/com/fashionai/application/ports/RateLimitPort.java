@@ -10,6 +10,10 @@ public interface RateLimitPort {
 
     QuotaStatus status(UUID userId, String bucket, int limit, Duration window);
 
+    /** Zera o balde (ex.: falhas de login depois de um login bem-sucedido). */
+    default void reset(UUID userId, String bucket) {
+    }
+
     record QuotaStatus(int limit, long used, Instant resetAt) {
         public boolean exhausted() {
             return used >= limit;

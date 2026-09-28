@@ -36,10 +36,17 @@ public class RedisAdapters {
             public boolean tryAcquire(UUID userId, String bucket, int limit, Duration window) {
                 String key = key(userId, bucket);
                 Long count = redis.opsForValue().increment(key);
-                if (count != null && count == 1L) {
+                // o TTL também é reposto se a chave ficou sem expiração (queda entre o INCR e o EXPIRE): senão o balde
+                // nunca zeraria e a conta/IP ficaria bloqueada para sempre
+                if (count != null && (count == 1L || Long.valueOf(-1L).equals(redis.getExpire(key)))) {
                     redis.expire(key, window);
                 }
                 return count != null && count <= limit;
+            }
+
+            @Override
+            public void reset(UUID userId, String bucket) {
+                redis.delete(key(userId, bucket));
             }
 
             @Override

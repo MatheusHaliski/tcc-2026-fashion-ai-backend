@@ -68,8 +68,8 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
         if (!enabled || checker == null || !(request instanceof MultipartHttpServletRequest multipart)) {
             return true;
         }
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        if (EXEMPT.stream().anyMatch(path::startsWith)) {
+        String path = RequestPaths.normalized(request);
+        if (EXEMPT.stream().anyMatch(e -> path.equals(e) || path.startsWith(e + "/"))) {
             return true;
         }
         for (List<MultipartFile> files : multipart.getMultiFileMap().values()) {
