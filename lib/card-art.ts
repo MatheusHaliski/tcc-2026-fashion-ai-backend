@@ -13,13 +13,20 @@ export type ArtKind = "none" | "color" | "gradient" | "seasonal" | "aura" | "mat
 export interface CardArt {
   kind: ArtKind; base?: string; image?: string; video?: { src: string; poster?: string | null }; material?: string; animation?: string | null;
   season?: string | null; label: string; presetId?: string;
+  /** animação escolhida pela pessoa no segmento Cor (neve, pétalas, folhas, brilho): leve, roda também no card do feed */
+  motion?: "snow" | "petals" | "leaves" | "shimmer" | null;
 }
+const MOTIONS = { SNOW: "snow", PETALS: "petals", LEAVES: "leaves", SHIMMER: "shimmer" } as const;
+/** Animação do segmento Cor gravada na arte ("SNOW", "PETALS"…); "NONE" ou desconhecida = sem animação. */
+export const motionOf = (a: unknown): CardArt["motion"] => (typeof a === "string" && a in MOTIONS ? MOTIONS[a as keyof typeof MOTIONS] : null);
 interface Studio {
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
   container?: { color?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
   /** família de silhueta declarada por quem publica (anatomia Silhueta & Proporção) */
   silhouette?: string | null;
+  /** animação do segmento Cor: NONE, SNOW, PETALS, LEAVES, SHIMMER */
+  animation?: string | null;
 }
 type Idx = {
   presets: Record<string, { name: string; palette: string[]; animation?: string; recommendedMaterials: string[]; variants: string[] }>;
@@ -54,6 +61,18 @@ function gradientCss(g: unknown): string | undefined {
 const media = (u?: string | null) => (!u ? undefined : /^https?:/.test(u) ? encodeURI(u) : u.split("/").map((seg) => encodeURIComponent(decodeURIComponent(seg))).join("/"));
 
 export function resolveCardArt(bg?: Record<string, unknown> | null, opts?: { season?: string | null }): CardArt {
+  const art = resolveLayers(bg, opts);
+  const motion = motionOf(studioOf(bg).animation);
+  if (!motion) return art;
+  // só a animação, sem cor/arte: ela precisa de um palco — um fundo discreto do mesmo clima (neve em azul-gelo…)
+  return art.kind === "none" ? { kind: "color", base: MOTION_BASE[motion], motion, label: tr("common.sem_arte") } : { ...art, motion };
+}
+const MOTION_BASE: Record<NonNullable<CardArt["motion"]>, string> = {
+  snow: "linear-gradient(160deg, #AFC4DC, #7E9BBD)", petals: "linear-gradient(160deg, #FDF2F6, #F6C9DA)",
+  leaves: "linear-gradient(160deg, #F7ECDD, #E0BE92)", shimmer: "linear-gradient(135deg, #F4EBDD, #D8C3A0)",
+};
+
+function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: string | null }): CardArt {
   const s = studioOf(bg);
   // camada base: cor → gradiente → cartela sazonal (sobrescreve o fundo manual)
   let base: string | undefined = s.color ?? undefined;

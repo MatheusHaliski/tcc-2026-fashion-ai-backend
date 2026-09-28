@@ -1790,3 +1790,12 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .c-post.has-reactions .c-act { padding: 0 6px; }
 .c-post > .c-remixes { padding: 0 12px 8px; }
 @media (max-width: 440px) { .c-post.has-reactions .c-act { padding: 0 3px; gap: 3px; min-width: 32px; } }
+
+/* Cor › Animação: neve/pétalas/folhas na faixa de arte (contraste nas duas cores de fundo) e brilho mais visível */
+.season-decor.motion-snow .flake { color: #fff; filter: drop-shadow(0 0 1.5px rgba(40,80,130,.9)); }
+.season-decor.motion-petals .petal, .season-decor.motion-leaves .leaf { filter: drop-shadow(0 0 1px rgba(0,0,0,.25)); }
+.card-art[data-motion="shimmer"]::after { background: linear-gradient(120deg, transparent 38%, rgba(255,255,255,.7) 50%, transparent 62%); background-size: 300% 300%; animation: art-sweep 3.2s ease-in-out infinite; }
+
+/* Escolher arquivo no padrão FAI: botão do sistema + nome do arquivo escolhido (nunca o campo nativo cru) */
+.file-button { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.file-button-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

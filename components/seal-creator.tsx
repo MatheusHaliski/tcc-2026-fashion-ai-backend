@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api } from "@/lib/api/client";
-import { Button, Chip, Field, Input, Select, useToast } from "@/components/ui";
+import { Button, Chip, Field, FileButton, Input, Select, useToast } from "@/components/ui";
 import { DEFAULT_DESIGN, ELEMENTS, GEOMETRY, MATERIALS, PALETTES, PATTERNS, SealMedallion, designFromPalette, validateSealImage, type SealDesign } from "@/components/seal-medallion";
 import { useI18n } from "@/lib/i18n/i18n";
 
@@ -82,7 +82,7 @@ export function SealCreator({ value, onChange, premium }: { value?: SealDesign |
         {mode === "UPLOAD" ? (
           <div className="surface p-3">
             <p className="type-body-sm mb-2">{rich("sealCreator.aceito_apenas_nas_proporcoes_do", { Math: Math.round(GEOMETRY.uploadRatioTolerance * 100), uploadMinPx: GEOMETRY.uploadMinPx, uploadMaxPx: GEOMETRY.uploadMaxPx }, { 0: ($c) => <b>{$c}</b>, 1: ($c) => <b>{$c}</b> })}</p>
-            <input type="file" accept="image/png,image/webp,image/jpeg" className="input" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
+            <FileButton accept="image/png,image/webp,image/jpeg" loading={uploading} onFiles={(fs) => onFile(fs[0])}>{d.uploadUrl ? t("common.trocar") : t("sealCreator.enviar_selo_pronto")}</FileButton>
             {uploading && <p className="type-caption text-muted mt-1">{t("sealCreator.enviando")}</p>}
             {uploadInfo && <p className="type-caption mt-1">{uploadInfo}</p>}
             {!d.uploadUrl && <p className="type-caption text-muted mt-1">{t("sealCreator.sem_arquivo_enviado_o_selo")}</p>}
