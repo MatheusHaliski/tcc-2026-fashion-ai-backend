@@ -28,11 +28,12 @@ function clientIp(req: NextRequest): string | null {
   return /^[0-9a-fA-F:.]{2,45}$/.test(ip) ? ip : null;
 }
 
-async function upstreamHeaders(req: NextRequest): Promise<Record<string, string>> {
+async function upstreamHeaders(req: NextRequest, authorization?: string): Promise<Record<string, string>> {
   const h: Record<string, string> = { Accept: "application/json", "Content-Type": "application/json" };
   for (const name of ["accept-language", "user-agent", "authorization", "x-correlation-id"]) {
     const v = req.headers.get(name); if (v) h[name] = v;
   }
+  if (authorization) h.authorization = authorization;
   const secret = process.env.EDGE_PROXY_SECRET?.trim();
   const ip = clientIp(req);
   if (secret && secret.length >= 32 && ip) {
@@ -74,10 +75,10 @@ function clearSessionCookies(res: NextResponse) {
   res.cookies.set(RT_HINT_COOKIE, "", { path: "/", maxAge: 0 });
 }
 
-async function callApi(req: NextRequest, path: string, body: Json | string | null): Promise<{ status: number; data: Json | null; headers: Headers } | null> {
+async function callApi(req: NextRequest, path: string, body: Json | string | null, authorization?: string): Promise<{ status: number; data: Json | null; headers: Headers } | null> {
   try {
     const r = await fetch(`${API}${path}`, {
-      method: "POST", headers: await upstreamHeaders(req), cache: "no-store",
+      method: "POST", headers: await upstreamHeaders(req, authorization), cache: "no-store",
       body: body === null ? undefined : typeof body === "string" ? body : JSON.stringify(body),
     });
     const text = await r.text();
@@ -146,11 +147,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     return withSession(req, r.status, r.data, r.headers);
   }
 
-  // logout: encerra a sessão na API (pelo sid do access token) e apaga os cookies da sessão
-  const r = await callApi(req, "/api/auth/logout", null);
-  if (!r) return offline();
-  if (r.status === 401 && req.cookies.get(RT_COOKIE)) return reply(401, r.data, r.headers);   // o cliente renova e tenta de novo
-  const res = reply(r.status >= 400 ? r.status : 204, r.status >= 400 ? r.data : null, r.headers);
+  // logout: encerra a sessão na API (pelo sid do access token) e SEMPRE apaga os cookies da sessão neste navegador —
+  // inclusive com a API fora do ar ou com o access token vencido. Sem isso, um recarregar restauraria a sessão "saída"
+  // pelo cookie HttpOnly (grave em aparelho compartilhado).
+  let r = await callApi(req, "/api/auth/logout", null);
+  const refreshToken = req.cookies.get(RT_COOKIE)?.value;
+  if (r?.status === 401 && refreshToken) {
+    // access token vencido: renova com o cookie e encerra a sessão na API com o token novo (a rotação já invalida o antigo)
+    const renewed = await callApi(req, "/api/auth/refresh", { refreshToken });
+    const access = renewed && renewed.status < 300 && typeof renewed.data?.accessToken === "string" ? renewed.data.accessToken : null;
+    if (access) r = await callApi(req, "/api/auth/logout", null, `Bearer ${access}`);
+  }
+  // 401 aqui = a sessão já não vale na API: para quem saiu, o resultado é o mesmo de um logout bem-sucedido
+  const res = !r ? offline() : r.status >= 400 && r.status !== 401 ? reply(r.status, r.data, r.headers) : reply(204, null, r.headers);
   clearSessionCookies(res);
   return res;
 }
