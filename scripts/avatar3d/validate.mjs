@@ -36,7 +36,7 @@ for (const [name, c] of cases) {
   if (c.side1) await page.setInputFiles("#lab-side-a", c.side1);
   if (c.side2) await page.setInputFiles("#lab-side-b", c.side2);
   const sex = /homem|masc|retrato_oficial|mozart|duas/i.test(name) ? "MASCULINO" : "FEMININO";
-  await page.selectOption("#lab-sex", sex);
+  await page.click("#lab-sex"); await page.click(`[role="option"][data-value="${sex}"]`);
   await page.click("#lab-run");
   await page.waitForFunction(() => /built|rejected|error/.test(document.querySelector("#lab-status")?.textContent ?? ""), null, { timeout: 180000 });
   const state = await page.evaluate(() => window.__avatarLab.state());

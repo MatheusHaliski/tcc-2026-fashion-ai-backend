@@ -31,8 +31,9 @@ interface Filters { origin: string; occasion: string; style: string; color: stri
 const NO_FILTER: Filters = { origin: "", occasion: "", style: "", color: "", month: "", days: "" };
 
 /**
- * Minhas Fotos (RF12). Os modos (galeria, linha do tempo, insights de IA, comparação) e os filtros (origem, ocasião,
- * estilo, cor, mês da publicação, período) ficam em segment pickers no cabeçalho da aba — nunca listas empilhadas.
+ * Minhas Fotos (RF12). Os modos (galeria, linha do tempo, insights de IA, comparação) ficam num segment picker; os
+ * filtros (origem → ocasião → estilo → cor → mês da publicação → período) são em cascata: um seletor por vez, e o
+ * próximo só abre quando o anterior recebe um valor — nunca seis seletores empilhados.
  * Ocasião, estilo e cor de cada foto vêm da peça ou do look a que ela pertence; fotos de peças e looks excluídos não
  * ficam aqui (CA13).
  */
@@ -88,17 +89,37 @@ function Photos() {
   const openSubject = (s: Subject) => (s.kind === "PIECE" ? (detail ? detail.openPiece(s.id) : (window.location.href = `/pieces/${s.id}`)) : (detail ? detail.openScheme(s.id) : (window.location.href = `/schemes/${s.id}`)));
   const swatch = (c: string) => tax?.colors?.[c];
 
-  const picker = (key: keyof Filters, lbl: string, entries: [string, string, number | undefined][]) => entries.length > 0 && (
-    <SegmentPicker key={key} label={lbl} value={f[key]} onChange={(v) => set(key, v)} options={[{ id: "", label: `${lbl}: ${t("common.all")}` }, ...entries.map(([id, l, n]) => ({ id, label: l, count: n }))]} />
-  );
+  // Filtros em cascata ("modelo herdado"): só UM seletor aparece — o do primeiro nível ainda sem escolha. Escolher um
+  // valor fixa aquele nível (vira etiqueta removível) e abre o próximo, com as opções que existem nas fotos já
+  // filtradas (a API calcula as facetas sobre o resultado). Nível sem informação (nenhuma opção, ou uma só que cobre
+  // todas as fotos) é pulado; remover uma etiqueta limpa aquele nível e os seguintes.
+  const total = head?.total ?? 0;
+  const levels: { key: keyof Filters; label: string; entries: [string, string, number | undefined][] }[] = facets ? [
+    { key: "origin", label: t("photos.origem"), entries: ORIGINS.filter(([o]) => (head?.counts[o] ?? 0) > 0).map(([o, k]) => [o, t(k), head?.counts[o]]) },
+    { key: "occasion", label: t("common.occasion"), entries: Object.entries(facets.occasion).map(([k, n]) => [k, label(k), n]) },
+    { key: "style", label: t("common.style"), entries: Object.entries(facets.style).map(([k, n]) => [k, label(k), n]) },
+    { key: "color", label: t("common.color"), entries: Object.entries(facets.color).map(([k, n]) => [k, label(k), n]) },
+    { key: "month", label: t("photos.data_da_publicacao"), entries: Object.entries(facets.month).map(([k, n]) => [k, k, n]) },
+    { key: "days", label: t("photos.periodo"), entries: PERIODS.filter(([v]) => v).map(([v, k]) => [v, t(k), undefined]) },
+  ] : [];
+  const informative = (l: (typeof levels)[number]) => l.entries.length > 1 || (l.entries.length === 1 && (l.entries[0][2] ?? 0) < total);
+  const chosen = levels.filter((l) => f[l.key]);
+  const current = levels.find((l) => !f[l.key] && informative(l) && levels.indexOf(l) > Math.max(-1, ...chosen.map((c) => levels.indexOf(c))));
+  const clearFrom = (key: keyof Filters) => { const i = levels.findIndex((l) => l.key === key); setF((o) => { const n = { ...o }; levels.slice(i).forEach((l) => { n[l.key] = ""; }); return n; }); };
+  const valueLabel = (l: (typeof levels)[number]) => l.entries.find(([id]) => id === f[l.key])?.[1] ?? f[l.key];
   const filters = facets && (
-    <div className="mb-3 grid gap-2" aria-label={t("common.filtros")}>
-      {picker("origin", t("photos.origem"), ORIGINS.filter(([o]) => (head?.counts[o] ?? 0) > 0).map(([o, k]) => [o, t(k), head?.counts[o]]))}
-      {picker("occasion", t("common.occasion"), Object.entries(facets.occasion).map(([k, n]) => [k, label(k), n]))}
-      {picker("style", t("common.style"), Object.entries(facets.style).map(([k, n]) => [k, label(k), n]))}
-      {picker("color", t("common.color"), Object.entries(facets.color).map(([k, n]) => [k, label(k), n]))}
-      {picker("month", t("photos.data_da_publicacao"), Object.entries(facets.month).map(([k, n]) => [k, k, n]))}
-      <SegmentPicker label={t("photos.periodo")} value={f.days} onChange={(v) => set("days", v)} options={PERIODS.map(([v, k]) => ({ id: v, label: t(k) }))} />
+    <div className="photo-cascade mb-3" role="group" aria-label={t("common.filtros")}>
+      {chosen.length > 0 && (
+        <ol className="photo-trail" aria-label={t("photos.filtros_escolhidos")}>
+          {chosen.map((l) => (
+            <li key={l.key}><button type="button" className="chip is-active" onClick={() => clearFrom(l.key)} aria-label={t("photos.remover_filtro", { name: l.label, value: valueLabel(l) })}>
+              <span className="photo-trail-k">{l.label}:</span> {valueLabel(l)} <span aria-hidden>×</span></button></li>
+          ))}
+          <li><button type="button" className="btn btn-ghost btn-sm" onClick={() => setF(NO_FILTER)}>{t("photos.limpar_filtros")}</button></li>
+        </ol>
+      )}
+      {current && <SegmentPicker key={current.key} label={current.label} value="" onChange={(v) => set(current.key, v)}
+        options={[{ id: "", label: `${current.label}: ${t("common.all")}` }, ...current.entries.map(([id, l, n]) => ({ id, label: l, count: n }))]} />}
     </div>
   );
   const tile = (p: Photo, opts: { select?: boolean; compare?: boolean }) => {

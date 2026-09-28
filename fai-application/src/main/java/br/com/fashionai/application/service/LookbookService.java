@@ -121,7 +121,7 @@ public class LookbookService {
                 Map.of("id", "daily", "label", Msg.t("lookbook.look_do_dia"), "count", self ? dailyLooks.today(ownerId).isPresent() ? 1 : 0 : 0),
                 Map.of("id", "capsule", "label", Msg.t("lookbook.minha_capsula"), "count", looks.isEmpty() ? 0 : basePieces(looks).size()),
                 Map.of("id", "room", "label", Msg.t("lookbook.meu_guarda_roupa"), "count", all.size())));
-        out.put("emptyCloset", all.isEmpty() ? Map.of("message", Msg.t("lookbook.seu_closet_digital_esta_vazio"), "action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/add-piece")) : null);
+        out.put("emptyCloset", all.isEmpty() ? Map.of("message", Msg.t("lookbook.seu_closet_digital_esta_vazio"), "action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/pieces/new")) : null);
         out.put("panelVersion", owner.getLookDoDiaPanelVersion() == null ? HypeScorePanelVersion.SPOTLIGHT_CLASSICO.name() : owner.getLookDoDiaPanelVersion().name());
         out.put("groupingSuggestionsAvailable", self && all.size() >= GROUPING_MIN_PIECES);
         return out;
@@ -237,8 +237,8 @@ public class LookbookService {
             out.put("panel", hype.panel(dl, withAi));
         } else {
             out.put("empty", Map.of("message", Msg.t("lookbook.nenhum_look_do_dia_marcado"), "actions", List.of(
-                    Map.of("label", Msg.t("lookbook.marcar_um_look_salvo"), "href", "/profile?tab=looks"), Map.of("label", Msg.t("lookbook.usar_o_autopiloto"), "href", "/autopilot"),
-                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/my-wardrobe/room"))));
+                    Map.of("label", Msg.t("lookbook.marcar_um_look_salvo"), "href", "/u/" + u.getUsername() + "?tab=looks"), Map.of("label", Msg.t("lookbook.usar_o_autopiloto"), "href", "/autopilot"),
+                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/mirror"))));
         }
         out.put("history", dailyLooks.history(user));
         out.put("feedbackReminder", dailyLooks.pendingFeedback(user));
@@ -289,7 +289,7 @@ public class LookbookService {
         List<Scheme> looks = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
         Map<String, Object> out = new LinkedHashMap<>();
         if (looks.isEmpty()) {
-            out.put("empty", Map.of("message", Msg.t("lookbook.a_capsula_so_faz_sentido"), "action", Map.of("label", Msg.t("lookbook.criar_meu_primeiro_look"), "href", "/create-my-scheme")));
+            out.put("empty", Map.of("message", Msg.t("lookbook.a_capsula_so_faz_sentido"), "action", Map.of("label", Msg.t("lookbook.criar_meu_primeiro_look"), "href", "/schemes/new")));
             out.put("basePieces", 0);
             out.put("looks", 0);
             out.put("factor", 0);

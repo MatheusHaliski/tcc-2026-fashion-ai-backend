@@ -411,7 +411,11 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean
     const autofocus = el.querySelector<HTMLElement>("[data-autofocus]");
     (autofocus ?? (opts?.initial === "container" ? null : items()[0]) ?? el).focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.stopPropagation(); close.current(); return; }
+      if (e.key === "Escape") {
+        const t = e.target as HTMLElement | null;             // Esc com uma lista ou menu aberto fecha só a lista/menu
+        if (t?.closest?.('[role="menu"], [role="listbox"], [aria-expanded="true"][aria-haspopup]')) return;
+        e.stopPropagation(); close.current(); return;
+      }
       if (e.key !== "Tab") return;
       const list = items(); if (!list.length) { e.preventDefault(); return; }
       const first = list[0], last = list[list.length - 1];

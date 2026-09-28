@@ -743,7 +743,7 @@
       ],
       "glyph": "wardrobe",
       "ai": false,
-      "route": "/my-wardrobe",
+      "route": "/closet",
       "files": {
         "normal": {
           "512": "/icons/fai/nav-02-normal-512.png",
@@ -1261,7 +1261,7 @@
       ],
       "glyph": "room",
       "ai": false,
-      "route": "/my-wardrobe/room",
+      "route": "/room",
       "files": {
         "normal": {
           "512": "/icons/fai/nav-16-normal-512.png",

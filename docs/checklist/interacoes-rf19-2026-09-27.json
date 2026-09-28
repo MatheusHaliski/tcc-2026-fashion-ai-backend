@@ -1,0 +1,104 @@
+{
+  "desktop": {
+    "compact": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Salvar"
+      ],
+      "oneLine": true
+    },
+    "detail": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Remixar: criar a minha versão — 3 remixes",
+        "Reagir com Trend — 42 reações",
+        "Reagir com Elegante — 17 reações",
+        "Reagir com Criativo — 5 reações",
+        "Salvar"
+      ],
+      "tops": 1,
+      "icon": 22,
+      "rowWidth": 443,
+      "scrolls": false,
+      "saveVisible": true,
+      "font": "inter",
+      "pressed": [
+        "Curtir · 128 curtidas",
+        "Reagir com Trend — 42 reações"
+      ]
+    },
+    "errors": []
+  },
+  "celular": {
+    "compact": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Salvar"
+      ],
+      "oneLine": true
+    },
+    "detail": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Remixar: criar a minha versão — 3 remixes",
+        "Reagir com Trend — 42 reações",
+        "Reagir com Elegante — 17 reações",
+        "Reagir com Criativo — 5 reações",
+        "Salvar"
+      ],
+      "tops": 1,
+      "icon": 20,
+      "rowWidth": 316,
+      "scrolls": false,
+      "saveVisible": true,
+      "font": "inter",
+      "pressed": [
+        "Curtir · 128 curtidas",
+        "Reagir com Trend — 42 reações"
+      ]
+    },
+    "errors": []
+  },
+  "estreito": {
+    "compact": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Salvar"
+      ],
+      "oneLine": true
+    },
+    "detail": {
+      "buttons": [
+        "Curtir · 128 curtidas",
+        "Comentar · 14 comentários",
+        "Compartilhar · 6 compartilhamentos",
+        "Remixar: criar a minha versão — 3 remixes",
+        "Reagir com Trend — 42 reações",
+        "Reagir com Elegante — 17 reações",
+        "Reagir com Criativo — 5 reações",
+        "Salvar"
+      ],
+      "tops": 1,
+      "icon": 20,
+      "rowWidth": 246,
+      "scrolls": true,
+      "saveVisible": true,
+      "font": "inter",
+      "pressed": [
+        "Curtir · 128 curtidas",
+        "Reagir com Trend — 42 reações"
+      ]
+    },
+    "errors": []
+  }
+}

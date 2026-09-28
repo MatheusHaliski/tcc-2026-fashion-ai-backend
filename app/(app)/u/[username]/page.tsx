@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { ActionMenu, Avatar, Button, Dialog, EmptyState, ErrorState, Skeleton, useToast } from "@/components/ui";
-import { LookbookTabs } from "@/components/lookbook-tabs";
+import { LookbookTabs, type TabId } from "@/components/lookbook-tabs";
 import { FaiIcon } from "@/components/fai-icon";
 import { ProfileHeader } from "@/components/profile-header";
 import { EditProfileButton } from "@/components/edit-profile";
@@ -46,7 +46,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </>} />
       {!data.contentVisible
         ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
-        : <LookbookTabs ownerId={data.user.id} initialTab={data.self && initialTab === "cupons" ? "coupons" : data.self && initialTab === "dna" ? "dna" : "closet"} />}
+        : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}
         footer={<><Button onClick={() => setConfirmBlock(false)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => { setConfirmBlock(false); block(); }}>{t("lookbook.block")}</Button></>}>
         <p className="type-body">{t("profile.blockBody")}</p>
@@ -62,4 +62,12 @@ function InstitutionalRedirect({ slug }: { slug: string }) {
   const router = useRouter(); const { t } = useI18n();
   useEffect(() => { router.replace(`/brands/${slug}`); }, [router, slug]);
   return <p className="type-body text-muted" role="status">{t("common.loading")}</p>;
+}
+
+/** Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono ("cupons" é o nome antigo de coupons). */
+function profileTab(tab: string | null, self: boolean): TabId {
+  const t = tab === "cupons" ? "coupons" : tab;
+  if (t === "closet" || t === "looks" || t === "groups") return t;
+  if (self && (t === "dna" || t === "saved_looks" || t === "saved_pieces" || t === "daily" || t === "capsule" || t === "coupons")) return t;
+  return "closet";
 }

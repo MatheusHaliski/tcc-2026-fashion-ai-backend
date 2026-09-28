@@ -314,7 +314,7 @@ public class SocialService {
                 s.setExportUrl(w.getImageUrl());
                 out.put("imageUrl", w.getImageUrl());
             }
-            out.put("link", "/" + (type == TargetType.SCHEME ? "look" : type == TargetType.PIECE ? "piece" : "dna") + "/" + id);
+            out.put("link", (type == TargetType.SCHEME ? "/schemes/" : type == TargetType.PIECE ? "/pieces/" : "/dna-schemes/") + id);  // rotas reais do app
         }
         shares.save(s);
         bump(t, "shares", 1);

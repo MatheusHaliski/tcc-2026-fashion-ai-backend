@@ -14,7 +14,7 @@
  "modal-dono-desktop": {
   "buttons": 15,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -50,7 +50,7 @@
  "modal-dono-celular": {
   "buttons": 15,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -73,9 +73,9 @@
   "blocoModelo3d": false
  },
  "modal-visitante-desktop": {
-  "buttons": 14,
+  "buttons": 15,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 8,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -99,9 +99,9 @@
   "blocoModelo3d": false
  },
  "modal-visitante-celular": {
-  "buttons": 14,
+  "buttons": 15,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 8,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -131,7 +131,7 @@
  "estado-foto-vestida-encoberta": {
   "buttons": 13,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -146,7 +146,7 @@
  "estado-3d-processando": {
   "buttons": 12,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -163,7 +163,7 @@
  "estado-3d-falhou": {
   "buttons": 13,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -180,7 +180,7 @@
  "estado-3d-nao-gerado-a-venda": {
   "buttons": 12,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -195,7 +195,7 @@
  "estado-sem-logo-indisponivel": {
   "buttons": 12,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,
@@ -210,7 +210,7 @@
  "estado-calca-sem-looks": {
   "buttons": 12,
   "unnamed": [],
-  "socialButtons": 4,
+  "socialButtons": 7,
   "smallTargets": 0,
   "toggleWithoutState": 0,
   "saveButtons": 1,

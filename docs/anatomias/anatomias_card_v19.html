@@ -62,7 +62,7 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
 <h1>Card da peça em camadas, detalhe e arte do card (RF11)</h1>
 <p class="lead">A v19 substitui a seção C (anatomias da peça) da <a href="anatomias_card_v18.html">v18</a>, que fica como histórico. Looks e DNA continuam na v18.</p>
 <div class="note">
-  <p><span class="tag real">Captura real</span> são imagens do app rodando (Next.js), geradas por <code>scripts/e2e/verify-card-art.mjs</code> e <code>scripts/e2e/verify-cards.mjs</code> com a API simulada e fotos saídas do pipeline de imagem de verdade.</p>
+  <p><span class="tag real">Captura real</span> são imagens do app rodando (Next.js), geradas por <code>scripts/e2e/verify-card-art.mjs</code>, <code>verify-cards.mjs</code>, <code>verify-interactions.mjs</code> e <code>verify-select.mjs</code> com a API simulada e fotos saídas do pipeline de imagem de verdade.</p>
   <p><span class="tag diagrama">Diagrama</span> são ilustrações feitas neste documento para explicar a estrutura. Não são capturas do produto.</p>
   <p>As capturas anexadas ao pedido não estavam disponíveis nesta sessão. As referências de rede social abaixo seguem padrões públicos e conhecidos; nenhuma tela do Instagram foi aberta ou analisada.</p>
 </div>
@@ -77,6 +77,8 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
   <li><a href="#foto">Fotografia de produto e aprovação</a></li>
   <li><a href="#contrato">Contrato visual compartilhado</a></li>
   <li><a href="#estados">Estados</a></li>
+  <li><a href="#interacoes">Linha de interações (RF19)</a></li>
+  <li><a href="#listas">Listas de escolha (Select)</a></li>
 </ol>
 
 <h2 class="sec" id="camadas">1. Camadas, empilhamento e recorte</h2>
@@ -143,7 +145,7 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
 </div>
 
 <h2 class="sec" id="modal">4. Detalhe: dono × visitante</h2>
-<p>Ordem: imagem inteira (toque amplia) → nome e marca (preço só à venda) → <b>uma</b> ação principal com a alternativa como texto-link → uma linha de ações sociais com as contagens → reações → detalhes agrupados → looks com a peça (só se existirem) → opções.</p>
+<p>Ordem: imagem inteira (toque amplia) → nome e marca (preço só à venda) → <b>uma</b> ação principal com a alternativa como texto-link → <b>uma linha só</b> de interações (curtir, comentar, compartilhar, remixar | Trend, Elegante, Criativo; salvar à direita — seção 11) → detalhes agrupados → looks com a peça (só se existirem) → opções.</p>
 <table>
   <tr><th></th><th>Dono</th><th>Visitante</th></tr>
   <tr><td>Ação principal</td><td>Adicionar ao look</td><td>Experimentar (manequim 3D)</td></tr>
@@ -218,8 +220,8 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
   <tr><th>Parte</th><th>Componente</th><th>Regra</th></tr>
   <tr><td>Cabeçalho</td><td><code>CardHeader</code></td><td>avatar 24 px, @usuário (marca: nome), linha secundária opcional; peça, look e DNA</td></tr>
   <tr><td>Imagem</td><td><code>.pc-media</code></td><td>4:5, foto aprovada, fundo próprio</td></tr>
-  <tr><td>Ações</td><td><code>CardActions</code> + <code>SocialIcon</code></td><td>ícones de traço 24 px (20 px na coluna estreita), contagem ao lado em Inter 14/13 px; salvar à direita; estado por forma (contorno → preenchido)</td></tr>
-  <tr><td>Reações</td><td>pílulas <code>.c-reaction</code></td><td>ícone FAI 30 px (variante <code>glyph-lg</code>, o desenho ocupa ~84% do disco), nome em Inter 14 px, contagem em negrito; ativo = fundo e borda</td></tr>
+  <tr><td>Ações</td><td><code>CardActions</code> + <code>SocialIcon</code></td><td>ícones de traço 24 px (20 px na coluna estreita), contagem ao lado em Inter 14/13 px; salvar à direita; estado por forma (contorno → preenchido); no detalhe, tudo numa linha só (seção 11)</td></tr>
+  <tr><td>Reações</td><td><code>CardActions</code> (<code>.is-rx</code>)</td><td>na mesma linha das ações, depois de um separador fino; ícones de traço 24 px no mesmo preto e branco de curtir e comentar (Trend = onda que sobe com dois nós vazados e seta aberta; Elegante = gravata-borboleta; Criativo = carretel com agulha); contagem ao lado só quando &gt; 0; ativo = ícone preenchido; nome e contagem no nome acessível</td></tr>
   <tr><td>Identificação</td><td><code>.pc-id</code></td><td>nome (serifada, 2 linhas), marca ou tipo, preço só à venda</td></tr>
 </table>
 <p>A liberdade do RF11 fica nas camadas 1, 2 e 5 (e na cor da 3); o contrato acima não muda com a arte.</p>
@@ -230,7 +232,8 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
   <tr><td>Mídia dominante com proporção fixa no feed</td><td>foto 4:5 do template da categoria</td></tr>
   <tr><td>Linha única de ações com ícones de traço; salvar isolado à direita</td><td>CardActions</td></tr>
   <tr><td>Contagem junto do ícone, sem linha “N curtidas” separada</td><td>contagem inline, número também no nome acessível</td></tr>
-  <tr><td>Reações como pílulas com ícone, nome e contagem</td><td>Trend, Elegante, Criativo</td></tr>
+  <tr><td>Reações como ícones na mesma linha das ações (sem pílula nem texto), contagem ao lado</td><td>Trend, Elegante, Criativo</td></tr>
+  <tr><td>Lista de escolha em cartão flutuante, opção marcada com ✓</td><td><code>Select</code> (seção 12)</td></tr>
   <tr><td>Detalhe com ação principal única</td><td>Adicionar ao look / Experimentar + alternativa em texto</td></tr>
 </table>
 
@@ -241,6 +244,43 @@ figcaption{font-size:13px;color:var(--muted);margin-top:6px}
   <figure><img src="img/v19/estado-3d-falhou.jpg" alt="Detalhe com modelo 3D que falhou"><figcaption><span class="tag real">Captura real</span> 3D com falha.</figcaption></figure>
   <figure><img src="img/v19/estado-sem-logo-indisponivel.jpg" alt="Detalhe de peça sem logo e indisponível"><figcaption><span class="tag real">Captura real</span> Sem logo, indisponível.</figcaption></figure>
   <figure><img src="img/v19/estado-calca-sem-looks.jpg" alt="Detalhe de calça sem looks"><figcaption><span class="tag real">Captura real</span> Sem looks (a seção não aparece).</figcaption></figure>
+</div>
+<h2 class="sec" id="interacoes">11. Linha de interações (RF19)</h2>
+<p>Medições de <code>scripts/e2e/verify-interactions.mjs</code>. No detalhe, as interações ficam numa linha horizontal só: curtir, comentar, compartilhar e remixar (visitante) com a
+contagem ao lado, um separador fino, Trend, Elegante e Criativo, e salvar isolado à direita. Tudo no mesmo desenho de
+traço preto e branco (traço 1,8; ativo = preenchido): 24 px, 22 px quando a linha tem até 480 px (detalhe no desktop,
+443 px medidos) e 20 px até 360 px (celular). Remixar e as reações sem nenhuma contagem mostram só o ícone. O número vai
+em Inter (14/13/12 px, não na fonte mono de <code>.tabular</code>); até 420 px de linha a contagem usa a forma curta
+(“12 mil”). Medido com 128 curtidas, 14 comentários, 6 compartilhamentos, 3 remixes e 42/17/5 reações: 8 botões no
+mesmo eixo em 1280 e 390 px, sem rolagem; em 320 px (linha de 246 px) as interações rolam na horizontal e salvar
+continua fixo e visível. No card compacto a linha é curtir, comentar, compartilhar e salvar.</p>
+<div class="grid2">
+  <figure><img src="img/v19/linha-detalhe-desktop.jpg" alt="Linha única de interações no detalhe, desktop"><figcaption><span class="tag real">Captura real</span> Detalhe, desktop: curtido e Trend ativos (preenchidos).</figcaption></figure>
+  <figure><img src="img/v19/linha-detalhe-celular.jpg" alt="Linha única de interações no detalhe, celular"><figcaption><span class="tag real">Captura real</span> Detalhe, celular 390 px: cabe sem rolar.</figcaption></figure>
+  <figure><img src="img/v19/linha-detalhe-estreito.jpg" alt="Linha de interações no celular de 320 px"><figcaption><span class="tag real">Captura real</span> 320 px: as interações rolam, salvar fica fixo.</figcaption></figure>
+  <figure><img src="img/v19/linha-compacta-desktop.jpg" alt="Linha de ações do card compacto"><figcaption><span class="tag real">Captura real</span> Card compacto: curtir, comentar, compartilhar, salvar.</figcaption></figure>
+</div>
+
+<h2 class="sec" id="listas">12. Listas de escolha (Select)</h2>
+<p>Medições de <code>scripts/e2e/verify-select.mjs</code>. Nenhuma lista de escolha única usa mais o <code>&lt;select&gt;</code> nativo (que abria com a aparência do sistema). O
+<code>Select</code> do FashionAI tem a mesma API (<code>&lt;option&gt;</code> como filhos; <code>e.target.value</code> é
+o ID canônico, o rótulo traduzido é só texto) e vale para todos os 65 usos: Hype Score · Painel, etapa Dados do
+cadastro de peça, Editar dados, filtros e ordenação, cadastro de conta, configurações e o restante.</p>
+<table>
+  <tr><th>Parte</th><th>Regra</th></tr>
+  <tr><td>Gatilho</td><td>aparência do campo (<code>.input</code>: 40 px, 44 px no toque, raio 6, borda <code>--line-soft</code>); aberto = borda <code>--ink</code> + anel de foco e seta girada; “—” e “Todos” em <code>--muted</code>; <code>w-auto</code> = largura da opção mais longa</td></tr>
+  <tr><td>Lista</td><td>cartão flutuante (raio 14, sombra, borda <code>--line-soft</code>), opções de 40 px (44 no toque) com raio 10; ativa = <code>--surface-2</code>; escolhida = negrito + ✓; desabilitada = 45%; até 320 px de altura com rolagem própria</td></tr>
+  <tr><td>Posição</td><td>por portal, acima de modais e cartões (não é cortada); abre para cima quando falta espaço embaixo; nunca sai da tela</td></tr>
+  <tr><td>Teclado e leitor</td><td>combobox só-de-escolha (WAI-ARIA APG): foco fica no gatilho, opção ativa em <code>aria-activedescendant</code>; setas, Home/End, PageUp/PageDown, digitar o começo do nome, Enter/Espaço escolhem; Esc fecha só a lista (não fecha o modal); Tab fecha; clique fora fecha sem mudar</td></tr>
+  <tr><td>Estados</td><td>carregando (spinner no lugar da seta), desabilitado, erro (<code>aria-invalid</code>, borda crítica); tema claro, escuro e alto contraste por tokens</td></tr>
+</table>
+<div class="grid2">
+  <figure><img src="img/v19/lista-hype-painel-desktop.jpg" alt="Lista da versão do painel do Hype Score aberta no desktop"><figcaption><span class="tag real">Captura real</span> Hype Score · Painel, desktop.</figcaption></figure>
+  <figure><img src="img/v19/lista-hype-painel-celular.jpg" alt="Lista da versão do painel no celular"><figcaption><span class="tag real">Captura real</span> Hype Score · Painel, celular.</figcaption></figure>
+  <figure><img src="img/v19/lista-cadastro-cor-celular.jpg" alt="Lista de cores aberta na etapa Dados do cadastro, celular"><figcaption><span class="tag real">Captura real</span> Adicionar peça › Dados › Cor, celular (opções de 44 px).</figcaption></figure>
+  <figure><img src="img/v19/lista-cadastro-tamanho-desktop.jpg" alt="Lista de tamanhos aberta para cima no fim da tela"><figcaption><span class="tag real">Captura real</span> Tamanho no fim da tela: a lista abre para cima.</figcaption></figure>
+  <figure><img src="img/v19/lista-editar-dados-material.jpg" alt="Lista de materiais aberta em Editar dados, dentro do detalhe"><figcaption><span class="tag real">Captura real</span> Editar dados dentro do detalhe: a lista passa por cima do modal.</figcaption></figure>
+  <figure><img src="img/v19/lista-closet-ordenar.jpg" alt="Lista de ordenação do closet aberta"><figcaption><span class="tag real">Captura real</span> Ordenar no closet (largura da opção mais longa).</figcaption></figure>
 </div>
 </main>
 </body>

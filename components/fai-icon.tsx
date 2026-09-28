@@ -12,7 +12,7 @@ const GLYPHS: Record<string, string> = {
   default: "M4 7h16M4 12h16M4 17h10",
 };
 
-interface Props { id: string; size?: 20 | 24 | 28 | 32 | 48 | 96 | 512; active?: boolean; className?: string; title?: string; decorative?: boolean; variant?: "medal" | "glyph" | "glyph-lg"; }
+interface Props { id: string; size?: 20 | 24 | 28 | 32 | 48 | 96 | 512; active?: boolean; className?: string; title?: string; decorative?: boolean; variant?: "medal" | "glyph"; }
 /**
  * Ícone FAI (77 IDs SOC/NAV/ACT em 4 tamanhos, estados normal/ativo — docs/icones). PNG do /public/icons/fai com
  * fallback SVG. Sem `decorative`, o label do catálogo no idioma atual vira o texto acessível.
@@ -24,11 +24,6 @@ export function FaiIcon({ id, size = 24, active = false, className, title, decor
   const icon = ICONS[id];
   const key = toServerLanguage(locale);
   const label = title ?? icon?.label?.[key] ?? icon?.label?.PT_BR ?? id;
-  if (variant === "glyph-lg" && icon) {
-    // fileiras (reações, ações): o desenho ocupa ~84% do disco, igual em todos os ícones (scripts/assets/fai-glyphs.py)
-    const base = `/icons/fai/glyph-lg/${id.toLowerCase()}`;
-    return <img src={`${base}-32.png`} srcSet={`${base}-64.png 2x`} width={size} height={size} alt={decorative ? "" : label} className={className} decoding="async" draggable={false} />;
-  }
   if (variant === "glyph" && icon) {
     // Variante para tamanhos pequenos: só o disco central com o glifo (scripts/assets/fai-glyphs.py). O estado ativo é
     // indicado pelo contêiner (pílula do menu), não pelo ícone.

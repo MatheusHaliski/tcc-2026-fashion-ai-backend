@@ -36,7 +36,7 @@ function Highlights() {
             {data.evolution?.history?.length ? <Card><h2 className="type-h3 mb-2">{data.evolution.title ?? t("highlights.evolucao")}</h2><div className="flex h-24 items-end gap-1">{data.evolution.history.slice(-24).map((p) => <span key={p.date} title={`${fmtDate(p.date)}: ${p.score}`} className="flex-1 rounded-t bg-thread" style={{ height: `${p.score / 10}%` }} />)}</div></Card> : null}
             <Card><h2 className="type-h3 mb-2">{t("highlights.conquistas")}</h2><div className="flex flex-wrap gap-2">{(data.achievements ?? []).map((a) => <span key={a.code} className={`chip ${a.unlocked ? "active" : ""}`} title={a.unlockedAt ? fmtDate(a.unlockedAt) : t("highlights.bloqueada")}>{a.emoji ?? "🏅"} {a.name ?? a.code}{a.secret && " 🤫"}</span>)}</div></Card>
             {data.suggestedChallenges?.length ? <Card><h2 className="type-h3 mb-2">{t("highlights.desafios_sugeridos")}</h2><div className="flex flex-wrap gap-2">{data.suggestedChallenges.map((c) => <Link key={c.code} href={`/challenges?start=${c.code}`} className="chip">{c.name}</Link>)}</div></Card> : null}
-            <p className="type-caption text-faint">{rich("highlights.calculado_em_album", { date: fmtDate(data.computedAt), txt: t("nav.points") }, { 0: ($c) => <Link className="underline" href="/points">{$c}</Link>, 1: ($c) => <Link className="underline" href="/highlights/album">{$c}</Link> })}</p>
+            <p className="type-caption text-faint">{rich("highlights.calculado_em_album", { date: fmtDate(data.computedAt), txt: t("nav.points") }, { 0: ($c) => <Link className="underline" href="/points">{$c}</Link>, 1: ($c) => <Link className="underline" href="/flair?tab=cartas">{$c}</Link> })}</p>
           </div>
         </div>
       )}

@@ -28,7 +28,9 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
     if (!user) { router.push("/login"); return; }
     try {
       const r = await api.post<{ url?: string; link?: string }>(`/api/interactions/${type}/${id}/shares`, { channel, caption });
-      const url = r.url ?? r.link ?? `${window.location.origin}/${type === "PIECE" ? "pieces" : "schemes"}/${id}`;
+      // a API devolve o caminho no app (/pieces/…, /schemes/…, /dna-schemes/…): o link copiado leva o domínio
+      const path = r.url ?? r.link ?? `/${type === "PIECE" ? "pieces" : type === "DNA_SCHEME" ? "dna-schemes" : "schemes"}/${id}`;
+      const url = path.startsWith("/") ? `${window.location.origin}${path}` : path;
       if (channel === "EXTERNAL") { await navigator.clipboard.writeText(url); toast.success(t("common.copied")); } else toast.success(t("interactions.sharedToFeed"));
       onClose(); onShared?.();
     } catch (e) { toast.fromError(e); }
@@ -101,6 +103,12 @@ export function SocialIcon({ name, filled, size = 24 }: { name: SocialIconName; 
   );
 }
 
+/** Contagem ao lado do ícone; quando a forma curta difere, as duas vão para o DOM e o CSS escolhe pela largura. */
+function Count({ long, short }: { value: number; long: string; short: string }) {
+  if (long === short) return <span className="c-act-n tabular" aria-hidden>{long}</span>;
+  return <span className="c-act-n tabular" aria-hidden><span className="n-long">{long}</span><span className="n-short">{short}</span></span>;
+}
+
 /** Remixar (RF19.CA13): cria a própria versão do look; peça entra como semente de um look novo. */
 export function useRemix(type: TargetType, id: string) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
@@ -121,7 +129,7 @@ export function useRemix(type: TargetType, id: string) {
  * Criativo) são do detalhe (`reactions`) e ficam NA MESMA LINHA, logo depois de compartilhar, desenhadas igual às
  * demais (glifo de traço 24 px, contagem ao lado, preenchido quando ativo); o nome vai no aria-label e no title.
  */
-export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
+export function CardActions({ type, id, counters, viewer, title, compact, extra, reactions, preview, ownerId }: { type: "SCHEME" | "PIECE" | "DNA_SCHEME"; id: string; counters?: Counters; viewer?: ViewerState; ownerId?: string; title?: string; compact?: boolean; extra?: React.ReactNode; reactions?: boolean; preview?: boolean;
   /** compatibilidade: salvar agora está sempre na linha */ withSave?: boolean; with3d?: boolean }) {
   const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const [liked, setLiked] = useState(!!viewer?.liked); const [likes, setLikes] = useState(counters?.likes ?? 0);
@@ -152,12 +160,18 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   const save = () => { const was = saved; optimistic("save", () => setSaved(!was), () => setSaved(was), () => api.post(`${base}/saves`), () => toast.success(was ? t("anatomy.menu.unsaved") : t("anatomy.menu.saved"))); };
   // no card, números grandes sem decimal ("1 mil"), para a linha caber em 2 colunas no celular; no detalhe, "1,2 mil"
   const n = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: compact ? 0 : 1 });
-  const commentsN = counters?.comments ?? 0, sharesN = counters?.shares ?? 0;
-  const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean } = {}) => (
-    <button key={key} type="button" className={`c-act is-${key}`} aria-pressed={opts.pressed} aria-busy={busy[key] || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
+  // forma curta ("12 mil" no lugar de "12,3 mil"): o detalhe estreito troca por ela via CSS para a linha única caber
+  const nShort = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: 0 });
+  const commentsN = counters?.comments ?? 0, sharesN = counters?.shares ?? 0, remixesN = counters?.remixes ?? 0;
+  // remixar (RF19.CA13) entra na linha do detalhe de peça e de look; quem publicou não remixa o próprio post
+  const { remix, busy: remixing } = useRemix(type === "DNA_SCHEME" ? "SCHEME" : type, id);
+  const canRemix = !!reactions && type !== "DNA_SCHEME" && !(user && ownerId && user.id === ownerId);
+  // hideZero: remixar e reações sem nenhuma contagem mostram só o ícone (a linha única cabe no celular)
+  const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean; busy?: boolean; hideZero?: boolean; className?: string } = {}) => (
+    <button key={key} type="button" className={`c-act is-${key} ${opts.className ?? ""}`} aria-pressed={opts.pressed} aria-busy={busy[key] || opts.busy || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
       onClick={preview ? undefined : onClick} disabled={preview} tabIndex={preview ? -1 : undefined}>
       <SocialIcon name={icon} filled={opts.pressed} />
-      {opts.count !== undefined && <span className="c-act-n tabular" aria-hidden>{n(opts.count)}</span>}
+      {opts.count !== undefined && !(opts.hideZero && opts.count === 0) && <Count value={opts.count} long={n(opts.count)} short={nShort(opts.count)} />}
     </button>
   );
   return (
@@ -165,12 +179,15 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
     // (continua no nome acessível e no detalhe) para a linha nunca estourar a coluna
     <div className={`c-post ${compact ? "is-compact" : ""} ${preview ? "is-preview" : ""} ${reactions ? "has-reactions" : ""}`} data-dense={compact && (n(likes) + n(commentsN)).length > 7 ? "" : undefined}>
       <div className="c-actions" role="group" aria-label={t("interactions.interacoes")}>
+        {/* no detalhe, as interações ficam num grupo que, só em tela muito estreita, rola na horizontal (salvar fica fixo) */}
+        <div className={reactions ? "c-acts-main" : "contents"}>
         {act("like", "heart", t("interactions.like_n", { count: likes }), like, { pressed: liked, count: likes })}
         {act("comment", "comment", t("interactions.comment_n", { count: commentsN }), () => setComments(true), { count: commentsN, haspopup: true })}
         {act("share", "share", t("interactions.share_n", { count: sharesN }), () => { if (guard()) setShare(true); }, { count: sharesN, haspopup: true })}
         {/* reações no detalhe: na mesma linha, mesmo glifo de traço, mesmo tamanho e a contagem ao lado */}
         {reactions && REACTIONS.map((r) => act(`rx-${r.id}`, r.icon, t("interactions.reaction_aria", { name: t(`interactions.reaction_nome.${r.id}`), count: rx[r.id] ?? 0 }), () => react(r.id), { pressed: mine3.includes(r.id), count: rx[r.id] ?? 0 }))}
         {extra}
+        </div>
         <span className="grow" />
         {act("save", "bookmark", t("interactions.save"), save, { pressed: saved })}
       </div>
