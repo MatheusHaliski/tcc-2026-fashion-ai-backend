@@ -1,5 +1,6 @@
 package br.com.fashionai.application.moderation;
 
+import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.ImageOps;
 import org.slf4j.Logger;
@@ -56,6 +57,11 @@ public class ImageSafety {
         BufferedImage img;
         try {
             img = ImageOps.decode(bytes);
+        } catch (ApiException ex) {
+            if (ImageOps.TOO_LARGE.equals(ex.code())) {
+                throw ex;                                     // dimensões acima do teto: recusa já aqui, sem decodificar
+            }
+            return new Verdict(Decision.ALLOW, "nenhum", List.of(), Map.of("decodable", false));
         } catch (RuntimeException ex) {
             // imagem ilegível: a validação de formato do próprio fluxo recusa; aqui não há o que avaliar
             return new Verdict(Decision.ALLOW, "nenhum", List.of(), Map.of("decodable", false));

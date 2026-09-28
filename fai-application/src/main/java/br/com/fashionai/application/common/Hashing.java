@@ -33,6 +33,14 @@ public final class Hashing {
         }
     }
 
+    /** Igualdade em tempo constante (hashes de códigos e tokens). */
+    public static boolean constantTimeEquals(String a, String b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(a.getBytes(StandardCharsets.UTF_8), b.getBytes(StandardCharsets.UTF_8));
+    }
+
     public static String emailHash(String email) {
         return sha256(email.trim().toLowerCase(Locale.ROOT));
     }

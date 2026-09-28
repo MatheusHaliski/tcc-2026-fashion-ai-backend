@@ -21,6 +21,8 @@ public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID
 
     Optional<BrandProfile> findBySlug(String slug);
 
+    boolean existsByLogoUrlEndingWithOrActivityProofUrlEndingWith(String logoSuffix, String proofSuffix);
+
     List<BrandProfile> findByApprovalStatus(ApprovalStatus status);
 
     List<BrandProfile> findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);

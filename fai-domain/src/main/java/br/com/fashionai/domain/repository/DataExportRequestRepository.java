@@ -18,4 +18,6 @@ import java.util.UUID;
 /** Repositório Spring Data de DataExportRequest (MySQL — fonte da verdade). */
 public interface DataExportRequestRepository extends JpaRepository<DataExportRequest, UUID> {
     List<DataExportRequest> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<DataExportRequest> findByExpiresAtBeforeAndFileKeyIsNotNull(Instant now);
 }

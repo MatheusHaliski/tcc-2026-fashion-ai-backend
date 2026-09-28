@@ -117,6 +117,7 @@ fashionai:
       aud: ${CF_ACCESS_AUD:}                               # "Application Audience (AUD) Tag" da aplicação no Access
   jwt:
     issuer: ${JWT_ISSUER:fashionai}
+    audience: ${JWT_AUDIENCE:fashionai-api}              # claim aud exigido pela API
     access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
     private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
     public-key-pem: ${JWT_PUBLIC_KEY_PEM:}
@@ -124,6 +125,11 @@ fashionai:
   security:
     auth-rate-limit:
       enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
+    # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
+    edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
+    client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga
+    image-max-pixels: ${IMAGE_MAX_PIXELS:40000000}  # teto de decodificação (bomba de descompressão); também limitado pelo heap
+    image-max-side: ${IMAGE_MAX_SIDE:12000}         # px por lado
   assets:
     public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
   storage:
@@ -161,6 +167,7 @@ fashionai:
     provider: ${EMAIL_PROVIDER:log}                        # log | resend
     resend-api-key: ${RESEND_API_KEY:}
     from: ${RESEND_FROM_EMAIL:nao-responda@fashionai.app}
+    log-bodies: ${EMAIL_LOG_BODIES:false}                  # provider=log: corpo (códigos, links de senha) no log só em dev local
   weather:
     enabled: ${WEATHER_ENABLED:true}                       # Open-Meteo (gratuito, sem chave)
   ai:

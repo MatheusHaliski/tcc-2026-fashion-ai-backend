@@ -19,13 +19,16 @@ import java.util.UUID;
 public class JwtTokenIssuer implements TokenIssuerPort {
     private final JwtEncoder encoder;
     private final String issuer;
+    private final String audience;
     private final Duration ttl;
 
     public JwtTokenIssuer(JwtEncoder encoder,
                           @Value("${fashionai.jwt.issuer:fashionai}") String issuer,
+                          @Value("${fashionai.jwt.audience:fashionai-api}") String audience,
                           @Value("${fashionai.jwt.access-ttl-minutes:15}") long ttlMinutes) {
         this.encoder = encoder;
         this.issuer = issuer;
+        this.audience = audience;
         this.ttl = Duration.ofMinutes(ttlMinutes);
     }
 
@@ -34,6 +37,7 @@ public class JwtTokenIssuer implements TokenIssuerPort {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
+                .audience(java.util.List.of(audience))       // só esta API aceita o token (RFC 8725 §3.9)
                 .subject(user.getId().toString())
                 .issuedAt(now)
                 .expiresAt(now.plus(ttl))

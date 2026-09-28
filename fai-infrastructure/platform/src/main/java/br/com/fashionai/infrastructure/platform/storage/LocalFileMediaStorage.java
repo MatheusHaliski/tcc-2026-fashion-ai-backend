@@ -12,7 +12,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Armazenamento de mídia no sistema de arquivos (padrão em desenvolvimento e na demonstração).
@@ -89,15 +92,64 @@ public class LocalFileMediaStorage implements MediaStoragePort {
         }
     }
 
+    /**
+     * Chave a partir da URL emitida por este storage: a base pública atual, o caminho relativo {@code /media/…} ou uma
+     * URL http(s) cujo caminho começa em {@code /media/} (base antiga, antes de trocar APP_BASE_URL). Antes aceitava
+     * "/media/" em qualquer ponto da URL. Chave que sairia da raiz (.., barra invertida) não é chave.
+     */
     @Override
     public Optional<String> keyOf(String url) {
         if (url == null) {
             return Optional.empty();
         }
+        String key = null;
         if (url.startsWith(publicBase)) {
-            return Optional.of(url.substring(publicBase.length()));
+            key = url.substring(publicBase.length());
+        } else if (url.startsWith("/media/")) {
+            key = url.substring("/media/".length());
+        } else if (url.startsWith("http://") || url.startsWith("https://")) {
+            try {
+                URI uri = URI.create(url);
+                String path = uri.getRawPath();
+                if (path != null && path.startsWith("/media/") && uri.getRawQuery() == null && uri.getRawFragment() == null) {
+                    key = path.substring("/media/".length());
+                }
+            } catch (IllegalArgumentException e) {
+                return Optional.empty();
+            }
         }
-        int i = url.indexOf("/media/");
-        return i >= 0 ? Optional.of(url.substring(i + "/media/".length())) : Optional.empty();
+        if (key == null || key.isBlank() || key.startsWith("/") || key.contains("..") || key.contains("\\")) {
+            return Optional.empty();
+        }
+        return Optional.of(key);
+    }
+
+    @Override
+    public List<String> listOlderThan(String prefix, Instant before, int limit) {
+        Path dir;
+        try {
+            dir = resolve(prefix);
+        } catch (ApiException e) {
+            return List.of();
+        }
+        if (!Files.isDirectory(dir)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.walk(dir)) {
+            return files.filter(Files::isRegularFile)
+                    .filter(f -> {
+                        try {
+                            return Files.getLastModifiedTime(f).toInstant().isBefore(before);
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    })
+                    .limit(limit)
+                    .map(f -> root.relativize(f).toString().replace('\\', '/'))
+                    .toList();
+        } catch (IOException e) {
+            log.warn("Falha ao listar {}: {}", prefix, e.getMessage());
+            return List.of();
+        }
     }
 }

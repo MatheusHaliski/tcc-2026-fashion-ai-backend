@@ -5,9 +5,12 @@ import br.com.fashionai.application.common.ApiException;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageInputStream;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -22,12 +25,76 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
 
 /** Utilitários Java2D compartilhados pelos pipelines RF4 (Flat Lay), RF5/RF11 (card) e RF18 (provador). */
 public final class ImageOps {
     public static final long MAX_UPLOAD_BYTES = 10L * 1024 * 1024;
+    /** Código do erro de imagem com dimensões acima do teto (bomba de descompressão). */
+    public static final String TOO_LARGE = "IMAGEM_GRANDE_DEMAIS";
+    public static final long DEFAULT_MAX_PIXELS = 40_000_000L;
+    public static final int DEFAULT_MAX_SIDE = 12_000;
+    /** Bytes de heap por pixel reservados para um decode (raster de origem + cópia ARGB), com folga. */
+    private static final long HEAP_BYTES_PER_PIXEL = 16;
+
+    private static volatile long maxPixels = DEFAULT_MAX_PIXELS;
+    private static volatile int maxSide = DEFAULT_MAX_SIDE;
 
     private ImageOps() {
+    }
+
+    /** Teto de decodificação (fashionai.security.image-max-pixels / image-max-side), aplicado na subida. */
+    public static void configureLimits(long pixels, int side) {
+        maxPixels = pixels > 0 ? pixels : DEFAULT_MAX_PIXELS;
+        maxSide = side > 0 ? side : DEFAULT_MAX_SIDE;
+    }
+
+    /**
+     * Pixels que um decode pode ter: o teto configurado, limitado também pelo heap da JVM (um decode de 40 MP ocupa
+     * ~280 MB; num contêiner pequeno o teto efetivo cai para que uma única foto nunca estoure a memória).
+     */
+    public static long maxPixels() {
+        return Math.max(1, Math.min(maxPixels, Runtime.getRuntime().maxMemory() / HEAP_BYTES_PER_PIXEL));
+    }
+
+    public static int maxSide() {
+        return maxSide;
+    }
+
+    public record Dimensions(int width, int height) {
+    }
+
+    /** Largura e altura lidas só do cabeçalho (sem decodificar os pixels); vazio se nenhum leitor reconhece o formato. */
+    public static Optional<Dimensions> dimensions(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return Optional.empty();
+        }
+        try (ImageInputStream in = new MemoryCacheImageInputStream(new ByteArrayInputStream(bytes))) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                return Optional.empty();
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(in, true, true);
+                return Optional.of(new Dimensions(reader.getWidth(0), reader.getHeight(0)));
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException | RuntimeException ex) {
+            return Optional.empty();
+        }
+    }
+
+    /** Recusa (400 IMAGEM_GRANDE_DEMAIS) dimensões acima do teto — antes de alocar qualquer pixel. */
+    public static void requireDecodableSize(int width, int height) {
+        long pixels = (long) width * (long) height;
+        if (width <= 0 || height <= 0 || width > maxSide || height > maxSide || pixels > maxPixels()) {
+            throw ApiException.badRequest(TOO_LARGE, Msg.t("imageOps.imagem_grande_demais", maxPixels() / 1_000_000, maxSide),
+                    Map.of("width", width, "height", height, "maxPixels", maxPixels(), "maxSide", maxSide));
+        }
     }
 
     /** RF4.CA01 / RN11: só JPG, PNG e WebP até 10 MB — pelo conteúdo (magic bytes), não pela extensão. */
@@ -68,15 +135,40 @@ public final class ImageOps {
      * girada 90° em todo o app (avatar, rosto 3D, peças, looks).
      */
     public static BufferedImage decode(byte[] bytes) {
-        try {
-            BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-            if (img == null) {
-                throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
-            }
-            return orient(toArgb(img), exifOrientation(bytes));
-        } catch (IOException ex) {
-            throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
+        if (bytes == null || bytes.length == 0) {
+            throw unreadable();
         }
+        // Bomba de descompressão: um PNG/JPEG de poucos KB pode declarar 50000×50000 px. As dimensões vêm do cabeçalho
+        // e são conferidas antes de o leitor alocar o raster (ImageIO.read alocaria direto).
+        try (ImageInputStream in = new MemoryCacheImageInputStream(new ByteArrayInputStream(bytes))) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                throw unreadable();
+            }
+            ImageReader reader = readers.next();
+            BufferedImage img;
+            try {
+                reader.setInput(in, true, true);
+                requireDecodableSize(reader.getWidth(0), reader.getHeight(0));
+                img = reader.read(0, reader.getDefaultReadParam());
+            } finally {
+                reader.dispose();
+            }
+            if (img == null) {
+                throw unreadable();
+            }
+            int orientation = exifOrientation(bytes);
+            // orient() já devolve ARGB: sem a cópia intermediária, o pico de memória cai em um raster inteiro
+            return orientation > 1 ? orient(img, orientation) : toArgb(img);
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (IOException | RuntimeException ex) {
+            throw unreadable();
+        }
+    }
+
+    private static ApiException unreadable() {
+        return ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
     }
 
     /**
