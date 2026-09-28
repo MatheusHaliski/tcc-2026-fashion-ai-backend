@@ -84,7 +84,7 @@ public class SocialController {
 
     @GetMapping("/counters")
     @Operation(summary = "RF8 — Contadores (reações, comentários, salvos, compartilhamentos)")
-    public Map<String, Object> counters(@PathVariable TargetType type, @PathVariable UUID id) {
-        return social.counters(type, id);
+    public Map<String, Object> counters(CurrentUser viewer, @PathVariable TargetType type, @PathVariable UUID id) {
+        return social.counters(viewer, type, id);
     }
 }

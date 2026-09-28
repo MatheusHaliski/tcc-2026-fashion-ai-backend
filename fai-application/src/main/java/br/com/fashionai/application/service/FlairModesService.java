@@ -266,9 +266,13 @@ public class FlairModesService {
                 .filter(l -> !l.cards().isEmpty()).toList();
     }
 
-    /** Looks públicos da comunidade (a "Casa"), sem os do próprio jogador, sorteados por semente. */
+    /**
+     * Looks públicos da comunidade (a "Casa"), sem os do próprio jogador, sorteados por semente. Só looks que um visitante
+     * veria (visibilidade do look × perfil do autor) e de ninguém com bloqueio com o jogador.
+     */
     List<Look> houseLooks(UUID exclude, int n, long seed) {
-        List<Scheme> pub = new ArrayList<>(schemes.findAllPublic(PageRequest.of(0, 120)).stream().filter(s -> !s.getUser().getId().equals(exclude)).toList());
+        List<Scheme> pub = new ArrayList<>(schemes.findAllPublic(PageRequest.of(0, 120)).stream().filter(s -> !s.getUser().getId().equals(exclude))
+                .filter(s -> schemeService.canView(null, s) && !guard.blocked(exclude, s.getUser().getId())).toList());
         java.util.Collections.shuffle(pub, new Random(seed));
         List<Look> out = new ArrayList<>();
         for (Scheme s : pub) {
@@ -284,8 +288,10 @@ public class FlairModesService {
     }
 
     List<Card> houseCards(UUID exclude, int n, long seed) {
+        // findAllPublic já respeita privacidade do perfil, moderação e arquivamento; o bloqueio depende de quem joga
         List<WardrobeItem> pub = new ArrayList<>(pieces.findAllPublic(PageRequest.of(0, 400)).stream()
-                .filter(w -> !w.getUser().getId().equals(exclude) && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
+                .filter(w -> !w.getUser().getId().equals(exclude) && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> !guard.blocked(exclude, w.getUser().getId())).toList());
         java.util.Collections.shuffle(pub, new Random(seed));
         return pub.stream().limit(n).map(flair::card).toList();
     }

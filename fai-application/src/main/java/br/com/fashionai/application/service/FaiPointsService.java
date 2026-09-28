@@ -217,6 +217,7 @@ public class FaiPointsService {
         }
         return catalog.findByActiveTrueOrderByPricePoints().stream()
                 .filter(c -> !"EXPIRADO".equals(WardrobeCreatorService.availability(c, Instant.now())) || mine.containsKey(c.getSku()))
+                .filter(c -> mine.containsKey(c.getSku()) || creator.sellerActive(c))   // criador pendente/suspenso sai da vitrine
                 .map(c -> {
                     Map<String, Object> m = creator.view(c, user.id());
                     m.put("levelOk", lvl.atLeast(Level.valueOf(c.getRequiredLevel())));
@@ -239,9 +240,15 @@ public class FaiPointsService {
                 "finish", Json.map(c.getFinishJson()), "balance", balance(user.id()), "note", Msg.t("faiPoints.previa_descartada_ao_sair_nada"));
     }
 
+    /**
+     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro a linha do comprador (débitos do mesmo
+     * usuário em fila — nada de duas compras gastando o mesmo saldo), depois a do item (edição limitada não passa do
+     * estoque); a ordem fixa usuário → item evita deadlock entre compras.
+     */
     @Transactional
     public Map<String, Object> buy(CurrentUser user, String sku) {
-        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
+        ledger.lockOwner(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        RoomCatalogItem c = catalog.lockBySku(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
         Level lvl = level(user.id());
         if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));

@@ -54,9 +54,9 @@ public class SealController {
     }
 
     @GetMapping("/api/users/{ownerId}/seals")
-    @Operation(summary = "RF20 — Selos de uma marca/celebridade")
-    public List<Map<String, Object>> sealsOf(@PathVariable UUID ownerId) {
-        return seals.sealsOf(ownerId);
+    @Operation(summary = "RF20 — Selos de uma marca/celebridade (visitantes veem só os ativos de emissor aprovado)")
+    public List<Map<String, Object>> sealsOf(CurrentUser viewer, @PathVariable UUID ownerId) {
+        return seals.sealsOf(viewer, ownerId);
     }
 
     @GetMapping("/api/me/seals")

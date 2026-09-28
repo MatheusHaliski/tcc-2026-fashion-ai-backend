@@ -168,6 +168,8 @@ fashionai:
     photoroom-api-key: ${PHOTOROOM_API_KEY:}               # RF4 estúdio (fundo + reiluminação + sombra por IA)
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
+    daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.00}          # teto global de gasto com IA externa por dia UTC (0 = sem teto)
+    user-daily-budget-usd: ${AI_USER_DAILY_BUDGET_USD:0.50} # teto por usuário por dia UTC (0 = sem teto)
   features:
     rf16-3d: ${FEATURE_RF16_3D:true}                       # sem chave de 3D, o gerador local em relevo assume
     rf16-3d-timeout-minutes: ${RF16_3D_TIMEOUT_MINUTES:10}

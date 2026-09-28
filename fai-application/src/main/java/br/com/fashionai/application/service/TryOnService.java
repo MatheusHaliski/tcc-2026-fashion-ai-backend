@@ -59,11 +59,12 @@ public class TryOnService {
     private final AiEngine ai;
     private final br.com.fashionai.application.assets.AssetCatalogService assets;
     private final Avatar3dService avatars3d;
+    private final OwnMedia ownMedia;
 
     public TryOnService(WardrobeItemRepository pieces, UserPreferencesRepository preferences, UserRepository users, SchemeRepository schemes,
                         WardrobeService wardrobe, SchemeService schemeService, TryOnCompositor compositor, MediaService media, AiEngine ai,
                         br.com.fashionai.application.assets.AssetCatalogService assets,
-                        Avatar3dService avatars3d) {
+                        Avatar3dService avatars3d, OwnMedia ownMedia) {
         this.pieces = pieces;
         this.preferences = preferences;
         this.users = users;
@@ -75,6 +76,7 @@ public class TryOnService {
         this.ai = ai;
         this.assets = assets;
         this.avatars3d = avatars3d;
+        this.ownMedia = ownMedia;
     }
 
     /** Bytes da imagem da peça: storage de mídia ou, para a imagem padrão (RF4), o arquivo em /public/assets_pecas. */
@@ -278,6 +280,8 @@ public class TryOnService {
     /** CA04 — composição do provador vira esquema com origem "Provador". */
     @Transactional
     public Map<String, Object> saveAsScheme(CurrentUser user, List<UUID> pieceIds, String title, String tryOnUrl) {
+        // a foto do provador é a que o próprio provador gravou para esta pessoa (users/<id>/tryon/…), nunca outra URL
+        String render = ownMedia.require(user.id(), tryOnUrl, "tryOnUrl", false);
         if (pieceIds == null || pieceIds.isEmpty()) {
             throw ApiException.badRequest("SEM_PECAS", Msg.t("tryOn.nao_ha_pecas_no_manequim"));
         }
@@ -294,9 +298,9 @@ public class TryOnService {
                 null, c.occasions(), c.styles(), null, null, null, null, items, CreationMode.MANUAL, SchemeOrigin.PROVADOR, null, null, Boolean.TRUE,
                 null, null, null, null, Boolean.FALSE, null);
         Views.SchemeView view = (Views.SchemeView) schemeService.create(user, form).get("scheme");
-        if (tryOnUrl != null && !tryOnUrl.isBlank()) {
+        if (render != null) {
             Scheme s = schemes.findById(view.id()).orElseThrow();
-            s.setVirtualTryOnUrl(tryOnUrl);
+            s.setVirtualTryOnUrl(render);
         }
         return Map.of("schemeId", view.id(), "origin", "PROVADOR");
     }

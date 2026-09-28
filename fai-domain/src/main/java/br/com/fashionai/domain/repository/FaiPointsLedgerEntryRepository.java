@@ -22,4 +22,12 @@ public interface FaiPointsLedgerEntryRepository extends JpaRepository<FaiPointsL
     @Query("select coalesce(sum(e.delta), 0) from FaiPointsLedgerEntry e where e.userId = :u") long balance(@Param("u") UUID userId);
 
     @Query("select coalesce(sum(e.delta), 0) from FaiPointsLedgerEntry e where e.userId = :u and e.countsLifetime = true and e.delta > 0") long lifetime(@Param("u") UUID userId);
+
+    /**
+     * Trava a linha do dono do saldo (SELECT … FOR UPDATE em users) até o fim da transação: o saldo é uma soma do
+     * ledger, então sem essa trava duas compras simultâneas leriam o mesmo saldo e as duas debitariam.
+     */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :u")
+    Optional<br.com.fashionai.domain.model.User> lockOwner(@Param("u") UUID userId);
 }

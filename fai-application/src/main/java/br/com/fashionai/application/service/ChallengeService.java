@@ -10,6 +10,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -48,10 +49,12 @@ import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -1279,6 +1282,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 mine.put("window", Map.of("start", ws.toLocalTime().toString(), "end", ws.plusMinutes(30).toLocalTime().toString(),
                         "open", ZonedDateTime.now(FaiPointsService.ZONE).isAfter(ws) && ZonedDateTime.now(FaiPointsService.ZONE).isBefore(ws.plusMinutes(30))));
                 mine.put("photoConsent", Boolean.TRUE.equals(goal.get("photoConsent")));
+                mine.put("photos", mirrorPhotos(i, me));                  // URLs da API, nunca de /media
             }
             if (params.get("piece_ids") != null) {
                 mine.put("pieceIds", params.get("piece_ids"));
@@ -1287,6 +1291,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
         // CA07 — só frações, nunca valores absolutos de peças dos colegas
         List<ChallengeParticipant> active = ps.stream().filter(p -> P_ATIVO.equals(p.getStatus()) || P_CONCLUIU.equals(p.getStatus())).toList();
+        boolean seesTeamPhotos = me != null && t.getCode().equals("REAL_MIRROR") && !"COMUNIDADE".equals(i.getMode()) && active.contains(me);
         if (!"SOLO".equals(i.getMode())) {
             boolean hideAuthors = "DUELO".equals(i.getMode()) && VOTED.contains(t.getCode()) && !CONCLUIDO.equals(i.getState());
             out.put("members", ps.stream().filter(p -> !P_CANCELADO.equals(p.getStatus())).map(p -> {
@@ -1296,6 +1301,10 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 m.put("status", p.getStatus());
                 m.put("team", p.getTeam());
                 m.put("fraction", round2(p.getProgressFraction().doubleValue()));
+                // ETI-05 — foto do colega só com o consentimento dele (e sempre pela API autenticada)
+                if (seesTeamPhotos && !p.getUserId().equals(user.id()) && Boolean.TRUE.equals(Json.map(p.getPersonalGoalJson()).get("photoConsent"))) {
+                    m.put("mirrorPhotos", mirrorPhotos(i, p));
+                }
                 return m;
             }).toList());
             if ("EQUIPE".equals(i.getMode())) {
@@ -1399,8 +1408,14 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         return out;
     }
 
+    /**
+     * Voto às cegas (RF36.CA08): a batalha é votada pela comunidade (03-desafios-e-games §1), então não precisa ser
+     * participante — mas precisa de conta verificada e ativa. Um voto por pessoa em cada batalha, garantido no banco
+     * (uq_ch_vote_voter): dois cliques simultâneos não viram dois votos.
+     */
     @Transactional
     public Map<String, Object> vote(CurrentUser user, UUID id, UUID entrySchemeId) {
+        guard.requireCanCreate(user);
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         if (!ATIVO.equals(i.getState()) || !VOTED.contains(t.getCode())) {
@@ -1411,8 +1426,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (entry.getUserId().equals(user.id())) {
             throw ApiException.badRequest("VOTO_PROPRIO", Msg.t("challenge.voce_nao_pode_votar_no"));
         }
-        boolean already = votes.findByInstanceId(id).stream().anyMatch(v -> v.getVoterUserId().equals(user.id()));
-        if (already) {
+        if (votes.existsByInstanceIdAndVoterUserId(id, user.id())) {
             throw new ApiException(409, "JA_VOTOU", Msg.t("challenge.voce_ja_votou_nesta_batalha"));
         }
         ChallengeVote v = new ChallengeVote();
@@ -1420,7 +1434,11 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         v.setInstanceId(id);
         v.setVoterUserId(user.id());
         v.setEntrySchemeId(entrySchemeId);
-        votes.save(v);
+        try {
+            votes.saveAndFlush(v);
+        } catch (DataIntegrityViolationException race) {
+            throw new ApiException(409, "JA_VOTOU", Msg.t("challenge.voce_ja_votou_nesta_batalha"));
+        }
         return Map.of("voted", true, "note", Msg.t("challenge.marca_preco_e_autor_aparecem"));
     }
 
@@ -1480,8 +1498,13 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     }
 
     // ================================================================== Espelho de Verdade (DET-C08, ETI-05)
+    /**
+     * Foto do dia (ETI-05: privada por padrão). Recodificada em JPEG (sai EXIF/GPS), com nome aleatório e em
+     * {@code restricted/}: o /media só a entrega a admin. Dono, colegas com o consentimento dele e admin a veem por
+     * {@link #mirrorPhoto} (GET /api/challenges/{id}/mirror-photos/{photoId}).
+     */
     @Transactional
-    public Map<String, Object> realMirror(CurrentUser user, UUID id, byte[] bytes, String mime) {
+    public Map<String, Object> realMirror(CurrentUser user, UUID id, byte[] bytes) {
         ChallengeInstance i = instance(id);
         ChallengeTemplate t = template(i.getTemplateCode());
         if (!t.getCode().equals("REAL_MIRROR") || !ATIVO.equals(i.getState())) {
@@ -1497,22 +1520,94 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (bytes == null || bytes.length == 0 || bytes.length > 10 * 1024 * 1024) {
             throw ApiException.badRequest("FOTO_INVALIDA", Msg.t("challenge.envie_uma_foto_de_ate"));
         }
-        String contentType = mime == null ? "image/jpeg" : mime;
-        MediaStoragePort.StoredObject stored = media.put("challenges/" + id + "/" + user.id() + "/" + today() + "." + MediaService.ext(contentType),
-                bytes, contentType);
         User owner = users.findById(user.id()).orElseThrow();
-        var photo = media.register(owner, PhotoOrigin.LOOSE, id, stored, null, null, bytes, null, null, null, ModerationStatus.PENDING,
-                Map.of("challenge", "REAL_MIRROR", "private", true));
+        MirrorUpload upload = storePrivateMirrorPhoto(owner, id, bytes);
+        UUID photoId = upload.photoId();
+        MediaStoragePort.StoredObject stored = upload.stored();
         Map<String, Object> goal = Json.map(me.getPersonalGoalJson());
         @SuppressWarnings("unchecked") Map<String, Object> photos = goal.get("photos") instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : new LinkedHashMap<>();
-        photos.put(today().toString(), Map.of("photoId", photo.getId().toString(), "url", stored.url()));
+        // "url" é a do storage (restricted/, uso interno para ler o arquivo); o cliente só recebe a URL da API
+        photos.put(today().toString(), Map.of("photoId", photoId.toString(), "url", stored.url()));
         goal.put("photos", photos);
         me.setPersonalGoalJson(Json.write(goal));
         participants.save(me);
         record(i, user.id(), "REAL_PHOTO", dayRef(id, today()));
         refresh(i, t);
         return Map.of("recorded", true, "private", !Boolean.TRUE.equals(goal.get("photoConsent")),
+                "photoId", photoId, "url", mirrorPhotoUrl(id, photoId.toString()),
                 "note", Msg.t("challenge.foto_privada_por_padrao_a"));
+    }
+
+    record MirrorUpload(UUID photoId, MediaStoragePort.StoredObject stored) {
+    }
+
+    /**
+     * Grava a foto do Espelho de Verdade: valida pelo conteúdo, recodifica em JPEG (a recodificação descarta EXIF/GPS e
+     * qualquer outro metadado), usa nome aleatório (nada de data/ids adivinháveis) e guarda em {@code restricted/}.
+     */
+    MirrorUpload storePrivateMirrorPhoto(User owner, UUID instanceId, byte[] bytes) {
+        ImageOps.requireAcceptedImage(bytes);
+        BufferedImage img = ImageOps.scaleToFit(ImageOps.decode(bytes), 2048, 2048);
+        byte[] jpeg = ImageOps.jpeg(img, 0.9f);
+        UUID photoId = UUID.randomUUID();
+        MediaStoragePort.StoredObject stored = media.put("restricted/challenges/" + instanceId + "/" + owner.getId() + "/" + photoId + ".jpg",
+                jpeg, "image/jpeg");
+        media.register(owner, PhotoOrigin.LOOSE, instanceId, stored, null, null, jpeg, img.getWidth(), img.getHeight(), null,
+                ModerationStatus.PENDING, Map.of("challenge", "REAL_MIRROR", "private", true, "mirrorPhotoId", photoId.toString()));
+        return new MirrorUpload(photoId, stored);
+    }
+
+    static String mirrorPhotoUrl(UUID instanceId, String photoId) {
+        return "/api/challenges/" + instanceId + "/mirror-photos/" + photoId;
+    }
+
+    /** Fotos do Espelho de Verdade de um participante, por dia, com a URL autenticada da API. */
+    List<Map<String, Object>> mirrorPhotos(ChallengeInstance i, ChallengeParticipant p) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (Json.map(p.getPersonalGoalJson()).get("photos") instanceof Map<?, ?> photos) {
+            Map<String, Object> byDay = new TreeMap<>();
+            photos.forEach((day, v) -> byDay.put(String.valueOf(day), v));
+            byDay.forEach((day, v) -> {
+                if (v instanceof Map<?, ?> m && m.get("photoId") != null) {
+                    String photoId = String.valueOf(m.get("photoId"));
+                    out.add(Map.of("day", day, "photoId", photoId, "url", mirrorPhotoUrl(i.getId(), photoId)));
+                }
+            });
+        }
+        return out;
+    }
+
+    /**
+     * Bytes da foto do Espelho de Verdade (ETI-05): o autor; um colega ativo do mesmo desafio (fora do modo Comunidade)
+     * quando o autor consentiu e não há bloqueio entre os dois; ou admin. Quem não pode recebe 403 auditado.
+     */
+    @Transactional(readOnly = true)
+    public byte[] mirrorPhoto(CurrentUser user, UUID id, UUID photoId) {
+        if (user == null) {
+            throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
+        }
+        ChallengeInstance i = instance(id);
+        for (ChallengeParticipant p : participants.findByInstanceId(id)) {
+            Map<String, Object> goal = Json.map(p.getPersonalGoalJson());
+            if (!(goal.get("photos") instanceof Map<?, ?> photos)) {
+                continue;
+            }
+            for (Object v : photos.values()) {
+                if (!(v instanceof Map<?, ?> m) || !photoId.toString().equals(String.valueOf(m.get("photoId")))) {
+                    continue;
+                }
+                boolean author = p.getUserId().equals(user.id());
+                boolean teammate = !author && !"COMUNIDADE".equals(i.getMode()) && Boolean.TRUE.equals(goal.get("photoConsent"))
+                        && participants.findByInstanceIdAndUserId(id, user.id())
+                        .filter(x -> P_ATIVO.equals(x.getStatus()) || P_CONCLUIU.equals(x.getStatus())).isPresent()
+                        && !guard.blocked(user.id(), p.getUserId());
+                if (!author && !teammate && !user.admin()) {
+                    throw guard.deny(user, "challenge-photo:" + photoId, Msg.t("challenge.esta_pessoa_nao_autorizou_a"));
+                }
+                return media.read(String.valueOf(m.get("url"))).orElseThrow(() -> ApiException.notFound(Msg.t("challenge.foto_do_dia")));
+            }
+        }
+        throw ApiException.notFound(Msg.t("challenge.foto_do_dia"));
     }
 
     /** Em Equipe, a confirmação vem de um colega (§4) — só vê a foto quem tem o consentimento do autor. */

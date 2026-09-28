@@ -59,11 +59,10 @@ public class PhotoService {
     private final AiEngine ai;
     private final Guard guard;
     private final WardrobeService wardrobe;
-    private final FlatLayPipeline flatLay;
     private final SchemeRepository schemes;
 
     public PhotoService(PhotoRepository photos, WardrobeItemRepository pieces, MediaService media, AiEngine ai, Guard guard,
-                        WardrobeService wardrobe, FlatLayPipeline flatLay, SchemeRepository schemes) {
+                        WardrobeService wardrobe, SchemeRepository schemes) {
         this.photos = photos;
         this.schemes = schemes;
         this.pieces = pieces;
@@ -71,7 +70,6 @@ public class PhotoService {
         this.ai = ai;
         this.guard = guard;
         this.wardrobe = wardrobe;
-        this.flatLay = flatLay;
     }
 
     /**
@@ -401,10 +399,13 @@ public class PhotoService {
         return Map.of("replacedPieceImage", false, "photo", Views.photo(edited), "message", Msg.t("photo.copia_editada_salva_em_minhas"));
     }
 
-    /** RF15.CA01/CA04 — remoção de fundo sob demanda para o editor; a falha é informada e as outras ferramentas seguem. */
+    /**
+     * RF15.CA01/CA04 — remoção de fundo sob demanda para o editor; a falha é informada e as outras ferramentas seguem.
+     * Passa pelo motor de IA (cota diária do Flat Lay e teto de gasto): remove.bg é pago por imagem.
+     */
     public Map<String, Object> removeBackground(CurrentUser user, byte[] bytes) {
         guard.requireCanCreate(user);
-        FlatLayPipeline.Result r = flatLay.run(bytes, true);
+        FlatLayPipeline.Result r = wardrobe.governedFlatLay(user.id(), bytes);
         if (!r.backgroundRemoved() || r.processedPng() == null) {
             return Map.of("ok", false, "message", Msg.t("photo.a_remocao_de_fundo_nao"));
         }

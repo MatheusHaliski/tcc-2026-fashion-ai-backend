@@ -16,6 +16,7 @@ import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.Share;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ReactionType;
 import br.com.fashionai.domain.model.enums.ShareChannel;
@@ -93,6 +94,11 @@ public class SocialService {
     record Target(TargetType type, UUID id, User owner, String title, boolean available, Object entity) {
     }
 
+    /**
+     * Resolve o alvo com as mesmas regras de quem abre o conteúdo: visibilidade efetiva (conteúdo × perfil do autor),
+     * bloqueio em qualquer direção (Guard) e, na peça, moderação aprovada. Quem não vê não comenta, não reage, não
+     * compartilha, não remixa e não lê contadores — e o autor não recebe notificação de quem ele bloqueou.
+     */
     Target target(CurrentUser viewer, TargetType type, UUID id) {
         return switch (type) {
             case SCHEME -> {
@@ -102,12 +108,17 @@ public class SocialService {
             }
             case PIECE -> {
                 WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
-                guard.requireView(viewer, w.getUser().getId(), w.getVisibility(), "piece:" + id);
+                boolean privileged = viewer != null && (viewer.id().equals(w.getUser().getId()) || viewer.admin());
+                if (!privileged && w.getModerationStatus() != ModerationStatus.APPROVED) {
+                    throw ApiException.notFound(Msg.t("common.peca"));
+                }
+                guard.requireView(viewer, w.getUser().getId(), WardrobeService.effectiveVisibility(w), "piece:" + id);
                 yield new Target(type, id, w.getUser(), w.getName(), w.isDisponivel(), w);
             }
             case DNA -> {
                 DnaScheme d = dnas.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.dna_de_estilo")));
-                guard.requireView(viewer, d.getUser().getId(), d.getVisibility(), "dna:" + id);
+                guard.requireView(viewer, d.getUser().getId(), SchemeService.moreRestrictive(d.getVisibility(),
+                        d.getUser().getProfileVisibility()), "dna:" + id);
                 yield new Target(type, id, d.getUser(), d.getTitle(), d.isDisponivel(), d);
             }
         };
@@ -370,8 +381,10 @@ public class SocialService {
                 "otherSchemes", candidates.stream().skip(1).map(s -> Map.of("id", s.getId(), "title", s.getTitle())).toList());
     }
 
+    /** Contadores públicos do conteúdo — só para quem pode ver o conteúdo (mesmas regras do {@link #target}). */
     @Transactional(readOnly = true)
-    public Map<String, Object> counters(TargetType type, UUID id) {
+    public Map<String, Object> counters(CurrentUser viewer, TargetType type, UUID id) {
+        target(viewer, type, id);
         Map<String, Object> m = new LinkedHashMap<>();
         for (ReactionType r : ReactionType.values()) {
             m.put(r.name(), reactions.countByTargetTypeAndTargetIdAndReactionType(type, id, r));

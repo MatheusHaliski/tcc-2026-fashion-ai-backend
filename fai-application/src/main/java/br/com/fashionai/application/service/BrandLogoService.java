@@ -12,6 +12,7 @@ import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.BrandLogo;
 import br.com.fashionai.domain.repository.BrandLogoRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,11 @@ import java.util.regex.Pattern;
  *   <li>sem fonte confiável: monograma (iniciais + cor estável) e nova tentativa depois de {@link #RETRY_AFTER}.</li>
  * </ol>
  * O arquivo baixado vai para o storage próprio: a interface nunca depende de hotlink para terceiros.
+ * <p>
+ * Custo: visitante (sem login) só lê o que já está no cache — nunca dispara busca nem grava linha. A busca síncrona
+ * roda em nome de quem pediu (cota por usuário e teto de gasto do motor de IA); o job de pendentes roda como sistema
+ * e cai só no teto global. O logo global de uma marca só muda por resultado que o próprio servidor buscou, pelo admin
+ * ou pela conta de marca aprovada — nunca pela URL que um usuário mandou numa peça.
  */
 @Service
 public class BrandLogoService {
@@ -64,26 +71,39 @@ public class BrandLogoService {
 
     private final BrandLogoRepository logos;
     private final BrandRepository catalog;
+    private final WardrobeItemRepository pieces;
     private final WebFetchPort web;
     private final MediaService media;
+    private final MediaStoragePort storage;
     private final AiEngine ai;
     private final TransactionTemplate tx;
     private final Map<String, Object> locks = new ConcurrentHashMap<>();
 
-    public BrandLogoService(BrandLogoRepository logos, BrandRepository catalog, WebFetchPort web, MediaService media, AiEngine ai,
-                            TransactionTemplate tx) {
+    public BrandLogoService(BrandLogoRepository logos, BrandRepository catalog, WardrobeItemRepository pieces, WebFetchPort web,
+                            MediaService media, MediaStoragePort storage, AiEngine ai, TransactionTemplate tx) {
         this.logos = logos;
         this.catalog = catalog;
+        this.pieces = pieces;
         this.web = web;
         this.media = media;
+        this.storage = storage;
         this.ai = ai;
         this.tx = tx;
     }
 
     // ================================================================== API
 
-    /** Logo de uma marca (procura na internet se ainda não houver um ou se o monograma já venceu). */
-    public Map<String, Object> logo(String rawName, boolean force) {
+    /** Visitante: só o que já está no cache (ou o monograma); nada é buscado nem gravado. */
+    public Map<String, Object> cached(String rawName) {
+        String key = keyOf(rawName);
+        return view(key.isEmpty() ? null : logos.findByNameKey(key).orElse(null), rawName);
+    }
+
+    /**
+     * Logo de uma marca para quem está logado (procura na internet se ainda não houver um ou se o monograma já venceu).
+     * A busca com IA roda em nome de {@code userId}: conta na cota diária e no teto de gasto dele.
+     */
+    public Map<String, Object> logo(UUID userId, String rawName, boolean force) {
         String key = keyOf(rawName);
         if (key.isEmpty()) {
             return view(null, rawName);
@@ -92,33 +112,45 @@ public class BrandLogoService {
         if (!force && cached != null && fresh(cached)) {
             return view(cached, rawName);
         }
-        return view(resolve(key, clean(rawName), force), rawName);
+        return view(resolve(userId, key, clean(rawName), force), rawName);
     }
 
-    /** Vários logos de uma vez (listas, grades, gráficos): até {@code syncBudget} buscas novas; o resto vai para o job. */
-    public Map<String, Map<String, Object>> batch(List<String> names, int syncBudget) {
+    /**
+     * Vários logos de uma vez (listas, grades, gráficos), no máximo {@link #MAX_BATCH} nomes. Visitante ({@code userId}
+     * nulo): só o cache. Logado: até {@code syncBudget} buscas novas em nome dele; o resto entra na fila do job, mas só
+     * marca que existe de verdade no sistema (catálogo ou peça pública) — nome inventado não vira linha pendente.
+     */
+    public Map<String, Map<String, Object>> batch(UUID userId, List<String> names, int syncBudget) {
         Map<String, Map<String, Object>> out = new LinkedHashMap<>();
         Set<String> unique = new LinkedHashSet<>();
         for (String n : names == null ? List.<String>of() : names) {
-            if (n != null && !n.isBlank() && unique.size() < MAX_BATCH) {
+            if (unique.size() >= MAX_BATCH) {
+                break;
+            }
+            if (n != null && !keyOf(n).isEmpty()) {
                 unique.add(clean(n));
             }
         }
         Map<String, BrandLogo> byKey = new LinkedHashMap<>();
         logos.findByNameKeyIn(unique.stream().map(BrandLogoService::keyOf).toList()).forEach(l -> byKey.put(l.getNameKey(), l));
-        int budget = Math.max(0, syncBudget);
+        int budget = userId == null ? 0 : Math.max(0, syncBudget);
         for (String name : unique) {
             String key = keyOf(name);
             BrandLogo l = byKey.get(key);
-            if ((l == null || !fresh(l)) && budget > 0) {
+            if (userId != null && (l == null || !fresh(l)) && budget > 0) {
                 budget--;
-                l = resolve(key, name, false);
-            } else if (l == null) {
+                l = resolve(userId, key, name, false);
+            } else if (userId != null && l == null && knownBrand(key, name)) {
                 l = placeholder(key, name);
             }
             out.put(name, view(l, name));
         }
         return out;
+    }
+
+    /** A marca existe no sistema: está no catálogo ou em alguma peça pública e aprovada. */
+    boolean knownBrand(String key, String name) {
+        return catalogBrand(key).isPresent() || pieces.countPublicByBrandName(name) > 0;
     }
 
     /** Admin envia o logo certo (busca errada ou marca sem presença na internet): vira fonte MANUAL, confiança 1. */
@@ -136,13 +168,18 @@ public class BrandLogoService {
         return view(tx.execute(st -> persist(key, clean(rawName), f)), rawName);
     }
 
+    /** Fontes de catálogo aberto cujo logo o próprio servidor baixou e filtrou no buscador web (RF4). */
+    static final Set<String> TRUSTED_WEB_SOURCES = Set.of("WIKIDATA", "SIMPLE_ICONS");
+
     /**
      * RF4 — logo escolhido no buscador web (já filtrado: fundo branco, letras pretas) passa a ser o logo da marca em todas
-     * as telas. Não sobrescreve logo enviado pela própria marca nem o corrigido pelo admin.
+     * as telas. Não sobrescreve logo enviado pela própria marca nem o corrigido pelo admin. Só vale o arquivo que o
+     * próprio buscador gravou para essa marca a partir de catálogo aberto (Wikidata/Simple Icons): URL enviada pelo
+     * cliente, arquivo de outra marca ou sugestão da IA (manipulável pelo texto da busca) ficam só na peça.
      */
     public void acceptWebLogo(String rawName, String url, String source, String domain, String originUrl) {
         String key = keyOf(rawName);
-        if (key.isEmpty() || url == null) {
+        if (key.isEmpty() || url == null || !serverFetchedLogo(key, url, source)) {
             return;
         }
         tx.executeWithoutResult(st -> {
@@ -153,6 +190,15 @@ public class BrandLogoService {
             BigDecimal conf = "WIKIDATA".equals(source) ? new BigDecimal("0.9500") : "SIMPLE_ICONS".equals(source) ? new BigDecimal("0.8500") : new BigDecimal("0.7000");
             persist(key, clean(rawName), new Found(url, source == null ? "WEB" : source, domain, originUrl, conf, null));
         });
+    }
+
+    /** O arquivo é o que o buscador web gravou para esta marca e esta fonte ({@code brands/logos/web/<marca>-<fonte>.png})? */
+    boolean serverFetchedLogo(String key, String url, String source) {
+        if (source == null || !TRUSTED_WEB_SOURCES.contains(source)) {
+            return false;
+        }
+        String expected = "brands/logos/web/" + key.replace(' ', '-') + "-" + source.toLowerCase(Locale.ROOT).replace('_', '-');
+        return storage.keyOf(url).map(k -> k.equals(expected + ".png") || k.equals(expected + "-faixa.png")).orElse(false);
     }
 
     /** Lista para o admin: o que foi encontrado, de onde e o que ainda é monograma. */
@@ -170,8 +216,9 @@ public class BrandLogoService {
                 placeholder(key, b.getName());
             }
         }
+        // roda como sistema (sem usuário): a etapa de IA cai no teto global de gasto do motor e, estourado, fica local
         for (BrandLogo l : logos.findByStatusAndCheckedAtBeforeOrderByCheckedAt("GENERATED", Instant.now().minus(RETRY_AFTER), PageRequest.of(0, 15))) {
-            resolve(l.getNameKey(), l.getDisplayName(), false);
+            resolve(null, l.getNameKey(), l.getDisplayName(), false);
             done++;
         }
         return done;
@@ -179,7 +226,7 @@ public class BrandLogoService {
 
     // ================================================================== resolução
 
-    BrandLogo resolve(String key, String name, boolean force) {
+    BrandLogo resolve(UUID userId, String key, String name, boolean force) {
         Object lock = locks.computeIfAbsent(key, k -> new Object());
         synchronized (lock) {
             try {
@@ -187,7 +234,7 @@ public class BrandLogoService {
                 if (!force && existing != null && fresh(existing)) {
                     return existing;
                 }
-                Found found = search(key, name);
+                Found found = search(userId, key, name);
                 return tx.execute(s -> persist(key, name, found));
             } finally {
                 locks.remove(key);
@@ -198,7 +245,7 @@ public class BrandLogoService {
     record Found(String url, String source, String domain, String originUrl, BigDecimal confidence, String error) {
     }
 
-    Found search(String key, String name) {
+    Found search(UUID userId, String key, String name) {
         List<String> errors = new ArrayList<>();
         Brand brand = catalogBrand(key).orElse(null);
         String domain = brand == null ? null : domainOf(brand.getWebsite());
@@ -226,7 +273,7 @@ public class BrandLogoService {
             errors.add(wd == null ? Msg.t("brandLogo.wikidata_inacessivel_rede") : Msg.t("brandLogo.wikidata_sem_item_de_moda"));
         }
         // 3) IA com busca na web
-        AiHint hint = aiSearch(name, domain);
+        AiHint hint = aiSearch(userId, name, domain);
         if (hint != null) {
             if (domain == null) {
                 domain = hint.domain();
@@ -360,8 +407,8 @@ public class BrandLogoService {
     record AiHint(String domain, String logoUrl, double confidence) {
     }
 
-    AiHint aiSearch(String name, String knownDomain) {
-        AiOutcome<AiHint> outcome = ai.text(new AiEngine.TextCall<>(null, AiCapability.BRAND_LOGO_FINDER,
+    AiHint aiSearch(UUID userId, String name, String knownDomain) {
+        AiOutcome<AiHint> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.BRAND_LOGO_FINDER,
                 "Você é o Brand Logo Finder do Fashion AI. Use a busca na web para achar o LOGO OFICIAL de uma marca de moda. "
                         + "Prefira, nesta ordem: arquivo no Wikimedia Commons (upload.wikimedia.org, PNG), press kit/brand assets do "
                         + "site oficial, imagem do logo servida pelo domínio oficial. Nunca invente URL: só use URLs vistas nos resultados. "

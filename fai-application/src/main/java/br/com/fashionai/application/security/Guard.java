@@ -19,6 +19,8 @@ import java.util.UUID;
 /**
  * Controle de acesso por recurso (RNF1): o dono manipula; os demais só leem o que a visibilidade permite.
  * Toda negação vira 403 auditado (RF3.CA14 / RF9.CA04 / RNF5). E-mail não confirmado só navega (RF1.CA05).
+ * Bloqueio (em qualquer direção) vale como conteúdo invisível: quem bloqueou ou foi bloqueado não abre nem interage
+ * com o conteúdo do outro, mesmo com o id em mãos.
  */
 @Component
 public class Guard {
@@ -44,6 +46,21 @@ public class Guard {
         if (user.status() == AccountStatus.DELETION_SCHEDULED) {
             throw new ApiException(403, "EXCLUSAO_AGENDADA",
                     Msg.t("guard.sua_conta_esta_com_exclusao"));
+        }
+    }
+
+    /**
+     * Comércio de marca/celebridade (cupons, combinações FLAIR, itens da loja do quarto, selos e promoções): perfil
+     * institucional validado pela administração e conta ativa — perfil aguardando aprovação não vende nem emite.
+     */
+    public void requireApprovedInstitutional(CurrentUser user, String resource, String message) {
+        requireCanCreate(user);
+        if (user.profileType() != ProfileType.MARCA && user.profileType() != ProfileType.CELEBRIDADE) {
+            throw deny(user, resource, message);
+        }
+        requireApprovedProfile(user, user.profileType());
+        if (user.status() != AccountStatus.ACTIVE) {
+            throw deny(user, resource, message);
         }
     }
 
@@ -77,12 +94,27 @@ public class Guard {
         if (viewer != null && (viewer.id().equals(ownerId) || viewer.admin())) {
             return true;
         }
+        if (viewer != null && blocked(viewer.id(), ownerId)) {
+            return false;
+        }
         return switch (visibility == null ? Visibility.PRIVATE : visibility) {
             case PUBLIC -> true;
             case FOLLOWERS -> viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), ownerId)
                     .map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false);
             case PRIVATE -> false;
         };
+    }
+
+    /** Há bloqueio entre os dois, em qualquer direção (a bloqueou b ou b bloqueou a)? */
+    public boolean blocked(UUID a, UUID b) {
+        if (a == null || b == null || a.equals(b)) {
+            return false;
+        }
+        return isBlock(follows.findByFollowerIdAndFollowingId(a, b)) || isBlock(follows.findByFollowerIdAndFollowingId(b, a));
+    }
+
+    private static boolean isBlock(java.util.Optional<br.com.fashionai.domain.model.Follow> f) {
+        return f != null && f.map(x -> x.getStatus() == FollowStatus.BLOQUEADO).orElse(false);
     }
 
     public void requireView(CurrentUser viewer, UUID ownerId, Visibility visibility, String resource) {

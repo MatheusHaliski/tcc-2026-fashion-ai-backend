@@ -386,7 +386,11 @@ public class SchemeService {
         applyForm(s, form);
         if (form.remixedFromId() != null) {
             Scheme src = schemes.findById(form.remixedFromId()).orElseThrow(() -> ApiException.notFound(Msg.t("scheme.esquema_de_origem")));
-            guard.requireView(user, src.getUser().getId(), src.getVisibility(), "scheme:" + src.getId());
+            // mesma regra do remix pela interação: visibilidade efetiva (look × perfil do autor), bloqueio e arquivamento
+            requireView(user, src);
+            if (!src.isDisponivel() && !src.getUser().getId().equals(user.id())) {
+                throw ApiException.conflict("INDISPONIVEL", Msg.t("scheme.o_autor_marcou_este_look"));
+            }
             s.setOriginalScheme(src);
             s.setOrigin(SchemeOrigin.REMIX);
         }
