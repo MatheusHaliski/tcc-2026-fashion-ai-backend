@@ -3602,5 +3602,6 @@
   "pieces.new.marca_retry_fim": "Every crop of the photo has been read. Type or search the brand in the Details step — or send a photo with the logo closer and sharper.",
   "pieces.zona.peca": "whole piece",
   "pieces.zona.logo": "logo area",
-  "pieces.zona.grade": "crop row {r}, column {c}"
+  "pieces.zona.grade": "crop row {r}, column {c}",
+  "ui.file.n_arquivos": "{n} files"
 }

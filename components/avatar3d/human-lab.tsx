@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
+import { FileButton } from "@/components/ui";
 import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { StudioLight, type Look3dPiece } from "@/components/three/common";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
@@ -63,7 +64,7 @@ export default function HumanLab() {
         {(["front", "left34", "profile", "back", "face", "face34", "faceback", "faceside"] as View[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
         <button onClick={() => setMotion(!motion)}>motion {String(motion)}</button>
         {Object.keys(OUTFITS).map((o) => <button key={o} onClick={() => setOutfit(o)}>{o}</button>)}
-        <input id="human-photo" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void run(f); }} />
+        <FileButton id="human-photo" accept="image/*" onFiles={(fs) => { if (fs[0]) void run(fs[0]); }}>Foto</FileButton>
       </div>
       <p id="human-status">{status} · {ready ? "ready" : "loading"}</p>
       <div style={{ display: "flex", gap: 12 }}>

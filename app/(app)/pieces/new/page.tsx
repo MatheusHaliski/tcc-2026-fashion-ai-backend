@@ -181,7 +181,8 @@ function NewPiece() {
   const isStudio = !!draft?.studio && (shown === "studio" || (shown === "detail" && !brandRegion));
   const edge = backdropEdge(backdrops, draft?.studio?.backdrop);
   // sem foto: o asset da categoria (ou o genérico) já ocupa o quadro — é a imagem que a peça terá se ficar sem foto
-  const asset = tax?.defaultImages?.[value.category] ?? tax?.defaultImages?.generic ?? GENERIC_ASSET;
+  // (a subcategoria escolhida na etapa Dados troca o asset: camiseta, camisa, regata… cada uma com a sua imagem)
+  const asset = (value.subcategory && tax?.defaultImagesBySubcategory?.[value.subcategory]) || tax?.defaultImages?.[value.category] || tax?.defaultImages?.generic || GENERIC_ASSET;
   const draftSrc = draft ? mediaUrl(shown === "studio" ? draft.studio?.url : shown === "detail" ? brandRegion ?? draft.studio?.detailUrl : shown === "original" ? draft.originalUrl : (draft.backgroundRemoved || draft.studio?.forced ? draft.flatLayUrl ?? draft.processedUrl : draft.originalUrl)) : preview;
   const imgSrc = draftSrc ?? asset;
   const gallery = draft?.studio ? [{ src: mediaUrl(draft.studio.url)!, alt: t("pieces.new.previa_estudio"), anchor: sangria(draft.studio.framing) }, ...(realLogo && draft.studio.detailUrl ? [{ src: mediaUrl(draft.studio.detailUrl)!, alt: t("pieces.new.previa_detalhe_do_logo"), cover: true }] : [])] : [];

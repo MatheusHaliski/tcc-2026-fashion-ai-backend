@@ -3602,5 +3602,6 @@
   "pieces.new.marca_retry_fim": "Ya se leyeron todos los recortes de la foto. Escribe o busca la marca en el paso Datos — o envía una foto con el logo más cerca y nítido.",
   "pieces.zona.peca": "prenda entera",
   "pieces.zona.logo": "área del logo",
-  "pieces.zona.grade": "recorte fila {r}, columna {c}"
+  "pieces.zona.grade": "recorte fila {r}, columna {c}",
+  "ui.file.n_arquivos": "{n} archivos"
 }

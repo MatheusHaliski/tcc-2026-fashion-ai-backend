@@ -6,15 +6,41 @@ import type { CardArt } from "@/lib/card-art";
 const rnd = (i: number, salt = 1) => { const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453; return x - Math.floor(x); };
 const vars = (o: Record<string, string | number>) => o as unknown as CSSProperties;
 
-/** Palco do card: a arte do Background Studio atrás do container (passe-partout), com a animação CSS do preset. */
+/**
+ * Palco do card: a arte do Background Studio atrás do container (passe-partout), com a animação CSS do preset e, por
+ * cima de tudo, a animação escolhida no segmento Cor (neve, pétalas, folhas caindo; brilho passando) — na faixa entre a
+ * borda do card e o container, nunca sobre a foto ou os textos.
+ */
 export function CardArtLayer({ art }: { art: CardArt }) {
   if (art.kind === "none") return null;
+  const anim = [art.animation ? `anim-${art.animation.toLowerCase()}` : "", art.motion === "shimmer" ? "anim-shimmer" : ""].filter(Boolean).join(" ");
   return (
-    <div className={`card-art ${art.animation ? `anim-${art.animation}` : ""} art-${art.kind}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label}>
+    <div className={`card-art ${anim} art-${art.kind}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label} data-motion={art.motion ?? undefined}>
       {art.image && <img src={art.image} alt="" className="card-art-img" />}
       {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
       {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}
       {art.season && <SeasonDecor season={art.season} />}
+      {art.motion && art.motion !== "shimmer" && <MotionFall kind={art.motion} />}
+    </div>
+  );
+}
+
+/**
+ * Neve, pétalas ou folhas caindo pela faixa de arte (as mesmas peças das cartelas sazonais, sem o cenário). A faixa entre
+ * a borda do card e o container é estreita: as peças são pequenas e 4 em cada 5 caem pelas laterais (a faixa que fica
+ * sempre à vista); as demais atravessam o topo e a base.
+ */
+export function MotionFall({ kind, count = 30 }: { kind: "snow" | "petals" | "leaves"; count?: number }) {
+  const leaves = ["#C2410C", "#B45309", "#9A3412", "#D97706", "#7C2D12"], petals = ["#F9A8D4", "#FBCFE8", "#F472B6", "#EC4899"];
+  const leftOf = (i: number) => { const r = rnd(i, 11); return i % 5 === 4 ? r * 100 : i % 2 ? r * 7 : 93 + r * 7; };
+  return (
+    <div className={`season-decor motion-${kind}`} aria-hidden>
+      {Array.from({ length: count }, (_, i) => (
+        <i key={i} className={`fall ${kind === "snow" ? "flake" : kind === "leaves" ? "leaf" : "petal"}`}
+          style={vars({ left: `calc(${leftOf(i)}% - 4px)`, "--size": `${(kind === "leaves" ? 8 : kind === "snow" ? 8 : 6) + rnd(i, 12) * 5}px`, "--dur": `${4.5 + rnd(i, 13) * 5}s`, "--delay": `${-rnd(i, 14) * 10}s`, "--drift": `${(rnd(i, 15) - 0.5) * 16}px`, opacity: 0.8 + rnd(i, 16) * 0.2 })}>
+          {kind === "snow" ? <Snowflake /> : kind === "leaves" ? <Leaf color={leaves[i % leaves.length]} /> : <Blossom color={petals[i % petals.length]} />}
+        </i>
+      ))}
     </div>
   );
 }

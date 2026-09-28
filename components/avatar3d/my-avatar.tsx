@@ -7,7 +7,7 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Badge, Button, Card, Dialog, ErrorState, PageHeader, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
+import { Badge, Button, Card, Dialog, ErrorState, FileButton, PageHeader, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
 import { useWebGL } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { HumanParts } from "@/components/three/human-avatar";
@@ -183,8 +183,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
               <p className="type-body-sm font-semibold">{source === "upload" ? t("avatar3d.page.foto_escolhida") : t("avatar3d.page.foto_de_perfil")}</p>
               {!file && profileState === "none" && <p className="type-caption text-muted">{t("avatar3d.page.sem_foto_de_perfil")}</p>}
               {!file && profileState === "failed" && <p className="type-caption text-muted">{t("avatar3d.page.foto_de_perfil_indisponivel")}</p>}
-              <label className="type-caption font-semibold" htmlFor="avatar-photo">{file ? t("avatar3d.page.usar_outra_foto") : t("avatar3d.page.enviar_foto")}</label>
-              <input id="avatar-photo" type="file" accept="image/*" className="type-caption" onChange={(e) => pick(e.target.files?.[0] ?? null)} />
+              <FileButton id="avatar-photo" accept="image/*" onFiles={(fs) => pick(fs[0] ?? null)}>{file ? t("avatar3d.page.usar_outra_foto") : t("avatar3d.page.enviar_foto")}</FileButton>
               {photo && !photo.issues.some((x) => x.severity === "block") && <span className="type-caption text-good">✓ {t("avatar3d.page.foto_ok")}</span>}
               {photo?.issues.filter((x) => x.severity === "block").map((x) => <span key={x.code} role="alert" className="type-caption text-critical">✕ {issueText(x)}</span>)}
               {photo?.issues.filter((x) => x.severity === "warn").map((x) => <span key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</span>)}

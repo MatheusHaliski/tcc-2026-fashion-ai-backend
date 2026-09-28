@@ -3602,5 +3602,6 @@
   "pieces.new.marca_retry_fim": "A foto já foi lida em todos os recortes. Digite ou busque a marca na etapa Dados — ou envie uma foto com o logo mais perto e nítido.",
   "pieces.zona.peca": "peça inteira",
   "pieces.zona.logo": "área do logo",
-  "pieces.zona.grade": "recorte linha {r}, coluna {c}"
+  "pieces.zona.grade": "recorte linha {r}, coluna {c}",
+  "ui.file.n_arquivos": "{n} arquivos"
 }
