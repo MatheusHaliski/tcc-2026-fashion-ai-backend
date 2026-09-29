@@ -171,10 +171,12 @@ public class FlatLayPipeline {
         stages.add(new Stage("VALIDACAO_QUALIDADE", "local", ms(t), BigDecimal.ZERO, quality.accepted(), false,
                 String.format(Msg.t("flatLay.nota_2f_limiar_2f"), quality.overall(), QualityMetrics.ACCEPTANCE_THRESHOLD)));
 
-        // 7 — thumbnail
+        // 7 — thumbnail. Recorte reprovado (backgroundRemoved = false): o cadastro guarda a foto original como imagem da
+        // peça, e a miniatura acompanha — feita do recorte, ela saía quase toda branca (o que sobrou foi fundo/borda)
         t = System.nanoTime();
-        BufferedImage thumb = ImageOps.composeCentered(normalized, THUMB, 0.06, Color.WHITE, false);
-        stages.add(new Stage("THUMBNAIL", "local", ms(t), BigDecimal.ZERO, true, false, THUMB + "×" + THUMB));
+        BufferedImage thumb = ImageOps.composeCentered(backgroundRemoved ? normalized : original, THUMB, 0.06, Color.WHITE, false);
+        stages.add(new Stage("THUMBNAIL", "local", ms(t), BigDecimal.ZERO, true, false,
+                THUMB + "×" + THUMB + (backgroundRemoved ? "" : " · " + Msg.t("flatLay.miniatura_da_original"))));
 
         BigDecimal cost = stages.stream().map(Stage::costUsd).reduce(BigDecimal.ZERO, BigDecimal::add);
         boolean anyFallback = fallback || stages.stream().anyMatch(Stage::fallback);
