@@ -1,0 +1,34 @@
+[
+  {
+    "id": "gradientes_a004_living_shapes",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
+    "gif": "/aura/geometry/gradientes/a004_living_shapes/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_14.zip"
+  },
+  {
+    "id": "gradientes_a005_ribbon",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
+    "gif": "/aura/geometry/gradientes/a005_ribbon/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_14.zip"
+  },
+  {
+    "id": "gradientes_a006_quattro",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a006_quattro/imagem.png",
+    "gif": "/aura/geometry/gradientes/a006_quattro/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_14.zip"
+  },
+  {
+    "id": "gradientes_a007_spectrum",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
+    "gif": "/aura/geometry/gradientes/a007_spectrum/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_14.zip"
+  }
+]

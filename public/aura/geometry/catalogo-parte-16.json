@@ -1,0 +1,26 @@
+[
+  {
+    "id": "gradientes_a012_natural",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a012_natural/imagem.png",
+    "gif": "/aura/geometry/gradientes/a012_natural/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_16.zip"
+  },
+  {
+    "id": "gradientes_a013_neona",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a013_neona/imagem.png",
+    "gif": "/aura/geometry/gradientes/a013_neona/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_16.zip"
+  },
+  {
+    "id": "gradientes_a014_spinner",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a014_spinner/imagem.png",
+    "gif": "/aura/geometry/gradientes/a014_spinner/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_16.zip"
+  }
+]
