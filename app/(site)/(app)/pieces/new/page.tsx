@@ -18,6 +18,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { stripPerson, type GarmentPart } from "@/lib/pieces/person-filter";
 import { keepAllowed } from "@/lib/pieces/tags";
+import { MultiPieceUpload } from "@/components/multi-piece-review";
 
 /** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
 interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null; suggestion?: string | null; certainty?: "confirmada" | "possivel" | null }
@@ -261,6 +262,8 @@ function NewPiece() {
                     )}
                     {draft?.studio && <label className="flex items-center gap-2 type-body-sm"><input type="checkbox" checked={value.studio !== false} onChange={(e) => setValue((v) => ({ ...v, studio: e.target.checked }))} />{t("pieces.new.usar_a_foto_de_estudio")}</label>}
                     {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); setBrandRegion(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
+                    {/* várias peças numa foto: a IA acha cada uma e a revisão cadastra todas separadamente (não depende do tipo escolhido) */}
+                    {!draft && <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
                     <details className="more-details" open={!draft}>
                       <summary>{t("pieces.new.como_fotografar")}</summary>
                       <ul className="fai-list pt-2 type-body-sm">{PRINCIPLES.map((k) => <li key={k}>{t(k)}</li>)}</ul>

@@ -1,6 +1,7 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.MultiPieceService;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.web.support.Uploads;
@@ -19,9 +20,11 @@ import java.util.UUID;
 @Tag(name = "RF4/RF7/RF15/RF16 — Peças do guarda-roupa")
 public class WardrobeController {
     private final WardrobeService wardrobe;
+    private final MultiPieceService multiPiece;
 
-    public WardrobeController(WardrobeService wardrobe) {
+    public WardrobeController(WardrobeService wardrobe, MultiPieceService multiPiece) {
         this.wardrobe = wardrobe;
+        this.multiPiece = multiPiece;
     }
 
     @PostMapping(value = "/api/pieces/analysis", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -38,6 +41,22 @@ public class WardrobeController {
     public List<WardrobeService.Draft> analyzeBatch(CurrentUser user, @RequestPart("files") List<MultipartFile> files,
                                                     @RequestParam(value = "category", required = false) String category) {
         return wardrobe.analyzeBatch(user, Uploads.images(files), category);
+    }
+
+    @PostMapping(value = "/api/pieces/analysis/multi", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF4 — Várias peças numa foto: a IA acha cada peça e devolve nome, tipo, cor, material, estilo, "
+            + "ocasião e a caixa da peça (em % da foto). Nada é cadastrado: a pessoa revisa antes")
+    public MultiPieceService.Detection analyzeMulti(CurrentUser user, @RequestPart("file") MultipartFile file) {
+        return multiPiece.detect(user, Uploads.image(file));
+    }
+
+    @PostMapping(value = "/api/pieces/analysis/multi/{draftId}/pieces", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF4 — Rascunho de uma peça da foto com várias peças: o recorte da peça (ou a foto inteira) passa "
+            + "pelo Flat Lay e pela moderação; o draftId devolvido é cadastrado pelo POST /api/pieces")
+    public MultiPieceService.PieceDraft multiPieceDraft(CurrentUser user, @PathVariable UUID draftId,
+                                                        @RequestPart("file") MultipartFile file,
+                                                        @RequestParam(value = "index", required = false) Integer index) {
+        return multiPiece.pieceDraft(user, draftId, index, Uploads.image(file));
     }
 
     @PostMapping("/api/pieces")
