@@ -547,6 +547,13 @@ def build(derived_enabled: bool) -> dict:
     d = Deriver(derived_enabled)
     missing: list[dict] = []
     categories = []
+    public_root = PUBLIC.resolve()
+
+    def public_asset(url: object) -> Path | None:
+        if not isinstance(url, str) or not url.startswith("/"):
+            return None
+        path = (PUBLIC / url.lstrip("/")).resolve()
+        return path if path.is_relative_to(public_root) else None
 
     # ---------------- RF23 — fundos do chrome ----------------
     chrome = []
@@ -650,51 +657,82 @@ def build(derived_enabled: bool) -> dict:
             v = {"id": variant_id, "presetId": "aura_electro", "theme": theme, "code": f"E{idx:02d}",
                  "description": f"Aura Electro · movimento {variant_info.get('movement', 'dinâmico')}",
                  "index": len(variants_flat) + 1, "palette": variant_info.get("colors", [])}
-            static_file = PUBLIC / asset["image"].lstrip("/")
-            animated_file = PUBLIC / asset["gif"].lstrip("/")
-            if static_file.is_file():
+            static_file = public_asset(asset.get("image"))
+            animated_file = public_asset(asset.get("gif"))
+            if static_file and static_file.is_file():
                 v["static"] = {"url": url_of(static_file),
                                "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78) or url_of(static_file),
                                "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80) or url_of(static_file),
                                **d.image_info(static_file)}
             else:
                 v["static"] = None
-                missing.append({"category": "aura_static", "id": variant_id, "expected": asset["image"]})
-            if animated_file.is_file():
+                missing.append({"category": "aura_static", "id": variant_id, "expected": asset.get("image")})
+            if animated_file and animated_file.is_file():
                 v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
                                  "posterUrl": (v.get("static") or {}).get("previewUrl"), **d.image_info(animated_file)}
             else:
                 v["animated"] = None
-                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset["gif"]})
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("gif")})
             preset["variants"].append(v)
             variants_flat.append(v)
 
-    # ---------------- Aura Geometry (PNG + GIF próprio por arte gráfica) ----------------
-    geometry_dir = PUBLIC / "aura" / "geometry" / "grafica"
+    # ---------------- Aura Geometry (PNG + GIF próprio por variante) ----------------
+    geometry_dir = PUBLIC / "aura" / "geometry"
+    geometry_sources = [geometry_dir / "catalogo-completo.json", *sorted(geometry_dir.glob("catalogo-parte-*.json"))]
+    geometry_assets: dict[str, dict] = {}
+    for source in geometry_sources:
+        if not source.is_file():
+            continue
+        data = json.loads(source.read_text(encoding="utf-8"))
+        entries = data.get("assets", []) if isinstance(data, dict) else data
+        if isinstance(entries, list):
+            for asset in entries:
+                if isinstance(asset, dict) and isinstance(asset.get("id"), str):
+                    geometry_assets.setdefault(asset["id"], asset)
     preset = presets.get("aura_geometry")
-    if preset and geometry_dir.is_dir():
-        image_files = sorted(geometry_dir.glob("a*/imagem.png"))
-        for idx, static_file in enumerate(image_files, start=1):
-            asset_code = static_file.parent.name.upper()
-            if not re.fullmatch(r"A\d{3}", asset_code):
+    if preset:
+        for asset_id, asset in sorted(geometry_assets.items()):
+            static_file = public_asset(asset.get("image"))
+            animated_file = public_asset(asset.get("gif"))
+            has_static = static_file is not None and static_file.is_file()
+            has_animated = animated_file is not None and animated_file.is_file()
+            if not (has_static or has_animated):
                 continue
-            variant_id = f"aura_geometry__grafica_{asset_code.lower()}"
-            animated_file = static_file.parent / "animacao_10s.gif"
-            v = {"id": variant_id, "presetId": "aura_geometry", "theme": asset_code, "code": f"G{idx:03d}",
-                 "description": f"Aura Geometry · arte gráfica {asset_code}", "index": len(variants_flat) + 1}
-            v["static"] = {"url": url_of(static_file),
-                           "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78)
-                           or url_of(static_file),
-                           "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80)
-                           or url_of(static_file),
-                           **d.image_info(static_file)}
-            if animated_file.is_file():
+            collection = slug(str(asset.get("collection") or "geometry"))
+            asset_name = asset_id.removeprefix(collection + "_")
+            match = re.fullmatch(r"([ap])(\d{3})(?:_(.+))?", asset_name)
+            if match and collection == "grafica":
+                letter, number, suffix = match.groups()
+                theme = f"{letter}{number}".upper()
+                code = f"G{number}" if letter == "a" else None
+                if suffix:
+                    theme = f"{theme} {suffix.replace('_', ' ')}"
+            elif match:
+                letter, number, suffix = match.groups()
+                theme = (suffix or f"{letter}{number}").replace("_", " ").title()
+                code = f"D{number}" if collection == "gradientes" else f"{letter.upper()}{number}"
+            else:
+                theme, code = asset_name.replace("_", " ").title(), None
+            variant_id = f"aura_geometry__{slug(asset_id)}"
+            v = {"id": variant_id, "presetId": "aura_geometry", "theme": theme, "code": code,
+                 "collection": collection, "partial": bool(asset.get("partial")),
+                 "description": f"Aura Geometry · {collection} {theme}", "index": len(variants_flat) + 1}
+            if has_static:
+                v["static"] = {"url": url_of(static_file),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78)
+                               or url_of(static_file),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80)
+                               or url_of(static_file),
+                               **d.image_info(static_file)}
+            else:
+                v["static"] = None
+                missing.append({"category": "aura_static", "id": variant_id, "expected": asset.get("image")})
+            if has_animated:
                 v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
-                                 "posterUrl": v["static"]["previewUrl"], **d.image_info(animated_file)}
+                                 "posterUrl": (v.get("static") or {}).get("previewUrl"), **d.image_info(animated_file)}
             else:
                 v["animated"] = None
-                missing.append({"category": "aura_animated", "id": variant_id,
-                                "expected": url_of(animated_file)})
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("gif")})
             preset["variants"].append(v)
             variants_flat.append(v)
 
@@ -772,11 +810,7 @@ def build(derived_enabled: bool) -> dict:
     expected_aura_variants = len(AURA_VARIANTS)
     if electro_catalog.is_file():
         expected_aura_variants += len(json.loads(electro_catalog.read_text(encoding="utf-8")).get("assets", []))
-    geometry_catalog = PUBLIC / "aura" / "geometry" / "catalogo-completo.json"
-    if geometry_catalog.is_file():
-        expected_aura_variants += len(json.loads(geometry_catalog.read_text(encoding="utf-8")).get("assets", []))
-    else:
-        expected_aura_variants += len(list((PUBLIC / "aura" / "geometry" / "grafica").glob("a*/imagem.png")))
+    expected_aura_variants += len(geometry_assets)
     for key, (label, expected, fallback) in CATEGORY_META.items():
         if key in ("aura_static", "aura_animated"):
             expected = expected_aura_variants

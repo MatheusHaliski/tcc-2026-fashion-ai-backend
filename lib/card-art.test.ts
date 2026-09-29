@@ -31,4 +31,10 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(art.image).toBe("/aura/geometry/grafica/a001/animacao_10s.gif");
     expect(art.presetId).toBe("aura_geometry");
   });
+  test("Aura Geometry inclui variantes poligonais e gradientes", () => {
+    const polygon = resolveCardArt({ aura: { variantId: "aura_geometry__grafica_p001" } });
+    const gradient = resolveCardArt({ aura: { variantId: "aura_geometry__gradientes_a003_square_diamonds" } });
+    expect(polygon.image).toBe("/aura/geometry/grafica/p001/animacao_10s.gif");
+    expect(gradient.image).toBe("/aura/geometry/gradientes/a003_square_diamonds/animacao_10s.gif");
+  });
 });
