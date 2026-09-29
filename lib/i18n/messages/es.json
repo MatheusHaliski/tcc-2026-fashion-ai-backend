@@ -3675,5 +3675,15 @@
   "multiPiece.confianca": "Confianza de la IA: {pct}%",
   "multiPiece.algumas_falharam": "Algunas prendas no se guardaron. Revisa el motivo en cada una e inténtalo de nuevo — las ya guardadas no se envían otra vez.",
   "multiPiece.recortar_todas": "{count, plural, =0 {Recortar todas} one {Recortar # prenda} other {Recortar las # prendas}}",
-  "multiPiece.todas_recortadas": "Todas las prendas marcadas ya están recortadas."
+  "multiPiece.todas_recortadas": "Todas las prendas marcadas ya están recortadas.",
+  "multiPiece.criar_copia_ia": "Crear copia con IA",
+  "multiPiece.criando_copia_ia": "Creando la copia…",
+  "multiPiece.copia_ia_ajuda": "¿Foto mala? La IA recrea la prenda como foto de producto. La imagen nueva lleva el sello de IA.",
+  "multiPiece.usar_copia_ia": "Usar la copia de la IA",
+  "multiPiece.usar_foto_original": "Usar mi foto",
+  "multiPiece.gerar_outra": "Generar otra copia",
+  "multiPiece.vai_com_ia": "Se guardará con la imagen generada por IA, con el sello.",
+  "multiPiece.selo_ia_curto": "IA",
+  "multiPiece.copia_ia_alt": "Copia de la prenda {n} generada por IA",
+  "pieceCard.gerada_por_ia": "Imagen generada por IA"
 }

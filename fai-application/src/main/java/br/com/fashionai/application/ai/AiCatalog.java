@@ -221,6 +221,15 @@ public final class AiCatalog {
                 local(Msg.k("aiCatalog.multi_piece_local"), 20),
                 Msg.k("aiCatalog.multi_piece_fallback"),
                 30, Msg.k("aiCatalog.multi_piece_status"));        // uma chamada por foto com várias peças
+        put(AiCapability.PIECE_IMAGE_RECREATOR,
+                Msg.k("aiCatalog.recreator_recria_a_foto"),
+                option("gemini-image", Msg.k("aiCatalog.recreator_gemini_servico"), "gemini-2.5-flash-image", CostMode.P, "0.0390",
+                        Msg.k("aiCatalog.recreator_gemini_nota"), 12000, "GOOGLE_AI_API_KEY", Kind.IMAGE_GENERATION),
+                option("replicate", Msg.k("aiCatalog.recreator_replicate_servico"), "black-forest-labs/flux-kontext-pro", CostMode.P, "0.0400",
+                        Msg.k("aiCatalog.recreator_replicate_nota"), 15000, "REPLICATE_API_TOKEN", Kind.IMAGE_GENERATION),
+                local(Msg.k("aiCatalog.recreator_local"), 0),
+                Msg.k("aiCatalog.recreator_fallback"),
+                10, Msg.k("aiCatalog.recreator_status"));          // pago por imagem: 10 por pessoa por dia (Gemini, reserva Replicate)
         put(AiCapability.BRAND_LOGO_FINDER,
                 Msg.k("aiCatalog.procura_na_internet_o_logo"),
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", Msg.k("aiCatalog.ate_3_buscas_na_web"), 15000),

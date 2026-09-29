@@ -32,7 +32,8 @@ public enum AiCapability {
     FLAT_LAY_STANDARDIZER(20, Msg.k("aiCapability.flat_lay_standardizer_pipeline_rf4"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     BRAND_LOGO_FINDER(21, Msg.k("aiCapability.brand_logo_finder_busca_na"), "RF4/RF14/RF26", null, true),
     STUDIO_ENHANCER(22, Msg.k("aiCapability.studio_enhancer_foto_de_estudio"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
-    MULTI_PIECE_DETECTOR(23, Msg.k("aiCapability.multi_piece_detector"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true);
+    MULTI_PIECE_DETECTOR(23, Msg.k("aiCapability.multi_piece_detector"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
+    PIECE_IMAGE_RECREATOR(24, Msg.k("aiCapability.piece_image_recreator"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true);
 
     private final int number;
     private final String officialName;

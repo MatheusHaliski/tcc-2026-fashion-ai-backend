@@ -67,6 +67,16 @@ public final class ImageProviderPorts {
         Optional<ProviderImage> generate(String prompt, String negativePrompt, int width, int height);
     }
 
+    /**
+     * RF4 · cópia da peça por IA: recria a foto de uma peça a partir dela mesma (imagem → imagem). Separada da
+     * {@link ImageGenerationPort} (texto → imagem) de propósito: a arte de fundo não pode cair num editor de foto.
+     */
+    public interface ImageEditPort {
+        boolean available();
+
+        Optional<ProviderImage> edit(byte[] image, String mimeType, String prompt);
+    }
+
     /** RF16 — geração 3D (Meshy). Tema futuro: permanece desabilitado por feature flag. */
     /**
      * RF16 — provedor de imagem → 3D. Assíncrono (Meshy): {@link #submit} devolve o id da tarefa e {@link #poll}

@@ -59,12 +59,21 @@ public class ReplicateImageGenerationAdapter implements ImageGenerationPort {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Optional<ProviderImage> generate(String prompt, String negativePrompt, int width, int height) {
-        long started = System.nanoTime();
         String aspect = width == height ? "1:1" : width > height ? "16:9" : "9:16";
+        Map<String, Object> input = Map.of("prompt", prompt, "aspect_ratio", aspect, "output_format", "png", "num_outputs", 1);
+        return predict(model, input, "0.003");
+    }
+
+    /**
+     * Uma previsão da Replicate do começo ao fim: cria (esperando até 60 s), acompanha pela {@code urls.get} da mesma
+     * origem e baixa a saída com as regras do token descritas na classe. Também usada pela cópia da peça por IA
+     * ({@link ReplicateImageEditAdapter}), com outro modelo e outra entrada.
+     */
+    @SuppressWarnings("unchecked")
+    Optional<ProviderImage> predict(String model, Map<String, Object> input, String cost) {
+        long started = System.nanoTime();
         try {
-            Map<String, Object> input = Map.of("prompt", prompt, "aspect_ratio", aspect, "output_format", "png", "num_outputs", 1);
             Map<String, Object> prediction = ProviderCircuit.run(ID, () -> client.post()
                     .uri("/v1/models/{model}/predictions", model)
                     .header("Authorization", "Bearer " + token)
@@ -97,7 +106,7 @@ public class ReplicateImageGenerationAdapter implements ImageGenerationPort {
             Object output = prediction.get("output");
             String url = output instanceof List<?> l && !l.isEmpty() ? String.valueOf(l.get(0)) : String.valueOf(output);
             byte[] bytes = downloadOutput(url);
-            return Optional.of(ImageHttp.result(bytes, "image/png", ID, "0.003", started, Map.of("model", model, "predictionId", String.valueOf(prediction.get("id")))));
+            return Optional.of(ImageHttp.result(bytes, "image/png", ID, cost, started, Map.of("model", model, "predictionId", String.valueOf(prediction.get("id")))));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return Optional.empty();

@@ -108,6 +108,10 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "is_default_image", nullable = false)
     private boolean defaultImage;
 
+    /** RF4 · a foto da peça foi recriada por IA (a pedido da pessoa): o app mostra o selo "gerada por IA". */
+    @Column(name = "is_ai_generated_image", nullable = false)
+    private boolean aiGeneratedImage;
+
     @Column(name = "image_hash", length = 128)
     private String imageHash;
 
