@@ -43,6 +43,7 @@ function Understood({ look }: { look: SuggestedLook }) {
   );
 }
 
+//Funcao para o copilot funcionar
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
   const { data: ctx } = useApi<Ctx>((signal) => api.get("/api/copilot/context?view=copilot", { signal }), []);
