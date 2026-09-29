@@ -144,7 +144,7 @@ Os estados e CAs foram confrontados com o board em modo somente leitura em 29/09
 1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 12 CAs estão na descrição e HU-RF33 não existe.
 2. **CAs essenciais:** mostrar apenas Looks do Dia elegíveis; Top 100 global/regional/país; filtros combináveis; paginação/lote; fallback acessível sem WebGL.
 3. **Implementação:** `ShowcaseController`/`ShowcaseService`; API de runway. Não foi localizada rota de frontend dedicada pelo nome “runway/showcase”.
-4. **Testes:** 2 passos E2E; não foi localizado teste visual/funcional de fallback.
+4. **Testes:** 8 passos E2E, todos no mesmo endpoint; não foi localizado teste visual/funcional de fallback.
 5. **Lacuna verificável:** cobertura E2E baixa para filtros/Top 100 e ausência de evidência automatizada de interface/fallback.
 6. **Dependências:** Look do Dia, geografia, assets 3D, RF31 e RNF7.
 7. **Bryan:** tarefa priorizada B4.
@@ -196,7 +196,7 @@ Os estados e CAs foram confrontados com o board em modo somente leitura em 29/09
 1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 12 CAs estão na descrição e HU-RF37 não existe.
 2. **CAs essenciais:** regras determinísticas por modo; entrada válida; resultado persistido; recompensa idempotente e limitada; autorização de time; combinação/resgate não duplica.
 3. **Implementação:** `FlairController`, `FlairModesController`, `FlairService`, `FlairModesService` e página `/flair`.
-4. **Testes:** `FlairEngineTest`, `FlairLooksTest`, `FaiPointsGamesTest` e 58 passos E2E.
+4. **Testes:** `FlairEngineTest`, `FlairLooksTest`, `FaiPointsGamesTest` e 67 passos E2E em 55 endpoints.
 5. **Lacuna verificável:** grande superfície de 15 modos sem matriz de regressão modo × regra × recompensa; concorrência do resultado não está comprovada em banco real.
 6. **Dependências:** RF30, RF31, RF38, times, catálogo e antifraude.
 7. **Bryan:** matriz de contrato dos modos e teste integrado de recompensa única.
@@ -209,7 +209,7 @@ Os estados e CAs foram confrontados com o board em modo somente leitura em 29/09
 1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 10 CAs estão na descrição e HU-RF38 não existe.
 2. **CAs essenciais:** direito nasce de fonte elegível; emissão respeita vigência/limite; resgate é único; expirado/usado é recusado; listas separam disponíveis e resgatados.
 3. **Implementação:** `CouponController`, `CouponService`, direitos, promoções/resgates e página `/coupons`; serviço usa transações e eventos após commit.
-4. **Testes:** 10 passos E2E; não foi localizado teste JUnit específico de `CouponService`.
+4. **Testes:** 9 passos E2E em 6 endpoints; não foi localizado teste JUnit específico de `CouponService`.
 5. **Lacuna verificável:** ausência de teste concorrente com restrição do banco para uso duplo, expiração no limite e rollback entre direito e emissão.
 6. **Dependências:** RF25, RF37, relógio, índices únicos, transações e RNF5.
 7. **Bryan:** tarefa priorizada B5.
@@ -288,7 +288,7 @@ Os cinco cards abaixo coincidem com os avanços recomendados na análise complem
 
 ### B4 — `[RF33][FE/QA] entregar Passarela com filtros e fallback sem WebGL`
 
-- **Contexto/problema:** API concentra ranking/filtros, mas não foi localizada rota dedicada nem teste visual/funcional; há somente 2 passos E2E.
+- **Contexto/problema:** API concentra ranking/filtros, mas não foi localizada rota dedicada nem teste visual/funcional; os 8 passos E2E exercitam um único endpoint.
 - **Valor:** a Passarela permanece demonstrável em hardware sem 3D e os rankings podem ser validados pela interface.
 - **Inclui:** rota navegável; Global/Regional/País; filtros essenciais; detecção de WebGL; lista/2.5D equivalente; estados vazio/erro. **Fora:** novo motor 3D.
 - **CAs:** Given WebGL, When abrir, Then lote desfila e filtros atualizam API/UI; Given WebGL bloqueado, Then os mesmos looks e ações aparecem no fallback; Given fixture, Then Top 100 nunca excede 100 e respeita escopo; Given erro, Then retry acessível é exibido.
