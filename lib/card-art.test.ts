@@ -25,4 +25,10 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(art.image).toBe("/aura/electro/01_cyan_pulse/loading_10s.gif");
     expect(art.presetId).toBe("aura_electro");
   });
+  test("Aura Geometry usa o GIF da arte gráfica no card", () => {
+    const art = resolveCardArt({ aura: { variantId: "aura_geometry__grafica_a001" } });
+    expect(art.kind).toBe("aura");
+    expect(art.image).toBe("/aura/geometry/grafica/a001/animacao_10s.gif");
+    expect(art.presetId).toBe("aura_geometry");
+  });
 });

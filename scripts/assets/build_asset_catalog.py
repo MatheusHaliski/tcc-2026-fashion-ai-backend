@@ -88,6 +88,11 @@ AURA_PRESETS = [
      "gradient": {"type": "conic", "angle": 0}, "animation": {"kind": "gif", "durationS": 10},
      "prompt": "electro fashion aura, vibrant neon light trails with transparent center, high-energy color gradients",
      "recommendedMaterials": ["laminado_metalico", "malha_canelada"], "skinFamilyRisk": "high"},
+    {"id": "aura_geometry", "name": "Aura Geometry", "archetype": "Composições geométricas e arte gráfica",
+     "palette": ["#101820", "#f2ece2", "#d72c3f"], "season": "Todo o ano · editorial/gráfico",
+     "gradient": {"type": "linear", "angle": 135}, "animation": {"kind": "gif", "durationS": 10},
+     "prompt": "geometric editorial fashion aura, graphic composition with crisp shapes and a transparent center",
+     "recommendedMaterials": ["laminado_metalico", "tweed_boucle"], "skinFamilyRisk": "high"},
     {"id": "aura_dark_academia", "name": "Ivy Library", "archetype": "Dark academia",
      "palette": ["#1c1917", "#451a03", "#78350f", "#14532d"], "season": "Outono/inverno · editorial intelectual",
      "gradient": {"type": "linear", "angle": 140}, "animation": {"kind": "flicker", "durationS": 5},
@@ -320,8 +325,8 @@ CATEGORY_FOLDERS = {
 CATEGORY_META = {
     "material_static": ("Material (sem GIF)", 12, "asset"),
     "material_animated": ("Material (com GIF)", 12, "asset"),
-    "aura_static": ("Aura (sem GIF)", 30, "asset"),
-    "aura_animated": ("Aura (com GIF)", 30, "css-animation-over-static"),
+    "aura_static": ("Aura (sem GIF)", 47, "asset"),
+    "aura_animated": ("Aura (com GIF)", 47, "css-animation-over-static"),
     "aura_material_static": ("Material com Aura (sem GIF)", 216, "css-blend(aura_static + material_static)"),
     "aura_material_animated": ("Material com Aura (com GIF)", 216, "css-blend(aura_static + material_animated video)"),
     "aura_material_mosaic_animated": ("Material em mosaico com Aura (somente com GIF)", 216, "asset"),
@@ -661,6 +666,35 @@ def build(derived_enabled: bool) -> dict:
             else:
                 v["animated"] = None
                 missing.append({"category": "aura_animated", "id": variant_id, "expected": asset["gif"]})
+            preset["variants"].append(v)
+            variants_flat.append(v)
+
+    # ---------------- Aura Geometry (PNG + GIF próprio por arte gráfica) ----------------
+    geometry_dir = PUBLIC / "aura" / "geometry" / "grafica"
+    preset = presets.get("aura_geometry")
+    if preset and geometry_dir.is_dir():
+        image_files = sorted(geometry_dir.glob("a*/imagem.png"))
+        for idx, static_file in enumerate(image_files, start=1):
+            asset_code = static_file.parent.name.upper()
+            if not re.fullmatch(r"A\d{3}", asset_code):
+                continue
+            variant_id = f"aura_geometry__grafica_{asset_code.lower()}"
+            animated_file = static_file.parent / "animacao_10s.gif"
+            v = {"id": variant_id, "presetId": "aura_geometry", "theme": asset_code, "code": f"G{idx:03d}",
+                 "description": f"Aura Geometry · arte gráfica {asset_code}", "index": len(variants_flat) + 1}
+            v["static"] = {"url": url_of(static_file),
+                           "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78)
+                           or url_of(static_file),
+                           "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80)
+                           or url_of(static_file),
+                           **d.image_info(static_file)}
+            if animated_file.is_file():
+                v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
+                                 "posterUrl": v["static"]["previewUrl"], **d.image_info(animated_file)}
+            else:
+                v["animated"] = None
+                missing.append({"category": "aura_animated", "id": variant_id,
+                                "expected": url_of(animated_file)})
             preset["variants"].append(v)
             variants_flat.append(v)
 
