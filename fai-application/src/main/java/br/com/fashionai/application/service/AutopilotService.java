@@ -308,12 +308,21 @@ public class AutopilotService {
 
     @Transactional
     public Map<String, Object> daily(CurrentUser user, DailyRequest req, Set<UUID> requiredPieceIds) {
+        return daily(user, req, requiredPieceIds, null);
+    }
+
+    /**
+     * weatherBand: faixa de clima dita no pedido ("está frio", "32 graus"); quando presente vale sobre a previsão
+     * resolvida, para o filtro e a pontuação de clima (o Copilot a extrai do texto).
+     */
+    @Transactional
+    public Map<String, Object> daily(CurrentUser user, DailyRequest req, Set<UUID> requiredPieceIds, String weatherBand) {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         long total = pieces.countByUserId(user.id());
         if (eligible.size() < MIN_PIECES) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.o_autopiloto_precisa_de_ao", MIN_PIECES, eligible.size()), Map.of("href", "/pieces/new", "pieces", total));
         }
-        WeatherService.Context ctx = weather.resolve(req.latitude(), req.longitude(), req.city());
+        WeatherService.Context ctx = WeatherService.withBand(weather.resolve(req.latitude(), req.longitude(), req.city()), weatherBand);
         List<String> occasions = req.occasion() == null ? List.of() : req.occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).toList();
         Set<String> exclude = new HashSet<>(req.excludeKeys() == null ? List.of() : req.excludeKeys());
         List<Candidate> ranked = candidates(user.id(), eligible, occasions, req.mood(), ctx, exclude, Map.of(), 30,
