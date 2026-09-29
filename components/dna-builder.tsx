@@ -204,7 +204,11 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
           </div>
         )}
       </div>
-      <aside aria-label={t("common.pre_visualizacao")} className="xl:sticky xl:top-16 xl:self-start"><p className="label">{t("dnaBuilder.card_do_dna_pre_visualizacao")}</p>{preview ? <DnaCard dna={preview} /> : <Skeleton className="h-80" />}</aside>
+      <aside aria-label={t("common.pre_visualizacao")} className="xl:sticky xl:top-16 xl:self-start">
+        <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("dnaBuilder.card_do_dna_pre_visualizacao")}</p>
+          {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout e narrativa ficam */}
+          <Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></div>
+        {preview ? <DnaCard dna={preview} /> : <Skeleton className="h-80" />}</aside>
       {/* os looks DNA criados aqui ficam na sub-aba "Meus looks DNA de estilo" do perfil */}
       {done && <CreationSuccess kind="dna" id={done} edited={!!initial?.id} onDone={() => router.push(user ? `/u/${user.username}?tab=dna` : "/lookbook")} />}
     </div>

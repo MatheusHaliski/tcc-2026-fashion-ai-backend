@@ -1,0 +1,162 @@
+{
+ "grafica/a012": {
+  "inpaint": [
+   [
+    156,
+    18,
+    184,
+    58
+   ]
+  ]
+ },
+ "grafica/a039": {
+  "inpaint": [
+   [
+    156,
+    18,
+    185,
+    58
+   ],
+   [
+    5,
+    195,
+    180,
+    228
+   ]
+  ]
+ },
+ "grafica/a066": {
+  "inpaint": [
+   [
+    156,
+    18,
+    185,
+    58
+   ]
+  ]
+ },
+ "grafica/p005": {
+  "inpaint": [
+   [
+    0,
+    12,
+    32,
+    58
+   ]
+  ]
+ },
+ "grafica/p013": {
+  "inpaint": [
+   [
+    36,
+    16,
+    112,
+    58
+   ]
+  ]
+ },
+ "grafica/p014": {
+  "inpaint": [
+   [
+    2,
+    0,
+    64,
+    20
+   ]
+  ]
+ },
+ "gradientes/a023_reflections": {
+  "inpaint": [
+   [
+    214,
+    358,
+    266,
+    406
+   ]
+  ]
+ },
+ "gradientes/p012_liquid_fragmento": {
+  "inpaint": [
+   [
+    100,
+    10,
+    170,
+    60
+   ],
+   [
+    12,
+    12,
+    75,
+    32
+   ]
+  ]
+ },
+ "gradientes/p015_gradiente_orbital_fragmento": {
+  "inpaint": [
+   [
+    0,
+    8,
+    50,
+    58
+   ]
+  ]
+ },
+ "gradientes/p023_spiral_fragmento": {
+  "inpaint": [
+   [
+    0,
+    8,
+    50,
+    58
+   ]
+  ]
+ },
+ "grafica/a042": {
+  "inpaint": [
+   [
+    2,
+    2,
+    125,
+    30
+   ]
+  ]
+ },
+ "grafica/p029": {
+  "inpaint": [
+   [
+    0,
+    15,
+    28,
+    58
+   ]
+  ]
+ },
+ "grafica/p027": {
+  "inpaint": [
+   [
+    52,
+    5,
+    84,
+    72
+   ],
+   [
+    48,
+    176,
+    96,
+    226
+   ],
+   [
+    86,
+    196,
+    126,
+    226
+   ],
+   [
+    58,
+    128,
+    124,
+    152
+   ]
+  ]
+ }
+}

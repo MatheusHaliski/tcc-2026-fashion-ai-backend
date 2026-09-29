@@ -9,7 +9,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
-export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null } | null; photo?: { url?: string | null } | null; }
+export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 export interface BgCatalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 
@@ -80,22 +80,9 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
 }) {
   const { t, rich } = useI18n(); const toast = useToast(); const cat = useBgCatalog();
   const { data: rec } = useApi<{ direction?: string }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
-  const [prompt, setPrompt] = useState(""); const [busy, setBusy] = useState(false);
   if (disabledNote) return <>{disabledNote}</>;
   const auraPreset = cat?.auraPresets?.find((a) => (a.variants ?? []).some((v) => v.id === value.aura?.variantId) || a.id === value.aura?.variantId);
   const direction = rec?.direction ? cat?.directions?.[rec.direction] : undefined;
-  async function generateArt() {
-    setBusy(true);
-    try {
-      const r = await api.post<{ status: string; url?: string; message?: string }>("/api/backgrounds/art", { prompt, direction: rec?.direction ?? null, passePartout: true });
-      if (r.status === "READY" && r.url) { onChange({ aiArt: { url: r.url }, uploadUrl: null, aura: null, materialId: null, posterUrl: undefined }); toast.success(t("backgroundStudio.arte_gerada")); }
-      else toast.info(r.message ?? t("backgroundStudio.sem_geracao_remota_agora_use"));
-    } catch (e) { toast.fromError(e); } finally { setBusy(false); }
-  }
-  async function upload(file: File) {
-    const fd = new FormData(); fd.append("file", file); fd.append("target", "card");
-    try { const r = await api.upload<{ url: string }>("/api/backgrounds/uploads", fd); onChange({ uploadUrl: r.url, aiArt: null, aura: null, materialId: null, posterUrl: undefined }); toast.success(t("backgroundStudio.imagem_enviada")); } catch (e) { toast.fromError(e); }
-  }
   return (
     <div className="grid gap-3">
       {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
@@ -115,31 +102,33 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       {value.aura && value.materialId && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")} kind="row">
         {(["IMAGEM_UNICA", "MOSAICO"] as const).map((f) => <Chip key={f} active={value.aura?.format === f} onClick={() => onChange({ aura: { ...value.aura!, format: f } })}>{f === "MOSAICO" ? t("backgroundStudio.mosaico_modelagem_11") : t("backgroundStudio.imagem_unica")}</Chip>)}
       </OptionStrip>}
-      <div className="opt-group">
-        <p className="label">{t("backgroundStudio.arte_propria")}</p>
-        <div className="flex min-w-0 flex-wrap gap-2">
-          <Input aria-label={t("backgroundStudio.prompt_da_arte_background_generator")} className="min-w-0 flex-1 basis-48" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("backgroundStudio.ex_atelie_de_alfaiataria_com")} maxLength={300} />
-          <Button variant="primary" onClick={generateArt} loading={busy} disabled={!prompt.trim()}><FaiIcon id="ACT-15" size={24} decorative />{t("backgroundStudio.gerar_fundo_com_ia", { value: cat && !cat.imageGenerationAvailable ? t("backgroundStudio.galeria") : "" })}</Button>
-          <label className="btn cursor-pointer"><FaiIcon id="ACT-16" size={24} decorative />{t("backgroundStudio.enviar_imagem")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} /></label>
-          {(value.aiArt || value.uploadUrl) && <Button onClick={() => onChange({ aiArt: null, uploadUrl: null })}>{t("common.remove")}</Button>}
-        </div>
-        {(value.aiArt?.url || value.uploadUrl) && <img src={value.aiArt?.url ?? value.uploadUrl ?? ""} alt={t("backgroundStudio.fundo_escolhido")} className="h-24 w-auto max-w-full rounded object-cover" />}
-      </div>
     </div>
   );
 }
 
 /** Cor do container (RF11 · "3. Cor do container"): com arte de fundo ele fica sempre visível por cima dela. */
 const BOX_SWATCHES = ["#FFFFFF", "#F7F4EE", "#FBF7EF", "#EEF2F6", "#141414", "#0D1B2A", "#3A2416"];
+/** Cor dos textos do container: por padrão é automática (contraste com a cor do container); aqui a pessoa fixa uma tinta. */
+const INK_SWATCHES = ["#1A1714", "#3F3A36", "#7C2D12", "#1E3A5F", "#14532D", "#F5F2EC", "#FFFFFF", "#F6C343"];
 export function ContainerColor({ value, onChange, skin }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; skin: string }) {
   const { rich, t } = useI18n();
   const current = value.container?.color ?? null;
+  const ink = value.container?.ink ?? null;
+  const setBox = (color: string | null) => onChange({ container: { ...(value.container ?? {}), color } });
+  const setInk = (next: string | null) => onChange({ container: { ...(value.container ?? {}), ink: next } });
   return (
-    <OptionStrip kind="row" title={t("backgroundStudio.cor_do_container")} hint={<p className="type-caption text-muted">{rich("backgroundStudio.com_preset_aura_material_ou", { skin }, { 0: ($c) => <b>{$c}</b> })}</p>}>
-      <Chip active={!current} onClick={() => onChange({ container: { color: null } })}>{t("backgroundStudio.nativa_do_skin")}</Chip>
-      {BOX_SWATCHES.map((c) => <button key={c} type="button" aria-label={t("backgroundStudio.container", { c })} aria-pressed={current === c} className="opt-dot is-square" style={{ background: c }} onClick={() => onChange({ container: { color: c } })} />)}
-      <input type="color" aria-label={t("backgroundStudio.cor_personalizada_do_container")} className="opt-dot is-square" value={current ?? "#ffffff"} onChange={(e) => onChange({ container: { color: e.target.value.toUpperCase() } })} />
-    </OptionStrip>
+    <>
+      <OptionStrip kind="row" title={t("backgroundStudio.cor_do_container")} hint={<p className="type-caption text-muted">{rich("backgroundStudio.com_preset_aura_material_ou", { skin }, { 0: ($c) => <b>{$c}</b> })}</p>}>
+        <Chip active={!current} onClick={() => setBox(null)}>{t("backgroundStudio.nativa_do_skin")}</Chip>
+        {BOX_SWATCHES.map((c) => <button key={c} type="button" aria-label={t("backgroundStudio.container", { c })} aria-pressed={current === c} className="opt-dot is-square" style={{ background: c }} onClick={() => setBox(c)} />)}
+        <input type="color" aria-label={t("backgroundStudio.cor_personalizada_do_container")} className="opt-dot is-square" value={current ?? "#ffffff"} onChange={(e) => setBox(e.target.value.toUpperCase())} />
+      </OptionStrip>
+      <OptionStrip kind="row" title={t("backgroundStudio.cor_dos_textos")} hint={<p className="type-caption text-muted">{t("backgroundStudio.cor_dos_textos_dica")}</p>}>
+        <Chip active={!ink} onClick={() => setInk(null)}>{t("backgroundStudio.automatica_pelo_contraste")}</Chip>
+        {INK_SWATCHES.map((c) => <button key={c} type="button" aria-label={t("backgroundStudio.textos", { c })} aria-pressed={ink === c} className="opt-dot is-square" style={{ background: c }} onClick={() => setInk(c)} />)}
+        <input type="color" aria-label={t("backgroundStudio.cor_personalizada_dos_textos")} className="opt-dot is-square" value={ink ?? "#1a1714"} onChange={(e) => setInk(e.target.value.toUpperCase())} />
+      </OptionStrip>
+    </>
   );
 }
 

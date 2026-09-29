@@ -13,6 +13,9 @@ export type ArtKind = "none" | "color" | "gradient" | "seasonal" | "aura" | "mat
 export interface CardArt {
   kind: ArtKind; base?: string; image?: string; video?: { src: string; poster?: string | null }; material?: string; animation?: string | null;
   season?: string | null; label: string; presetId?: string;
+  /** arte em moldura (centro transparente, ex.: Aura Electro): desenhada como border-image 9-slice, para o feixe
+   *  percorrer as quatro bordas do card em vez de ser recortado por object-fit */
+  frame?: boolean;
   /** animação escolhida pela pessoa no segmento Cor (neve, pétalas, folhas, brilho): leve, roda também no card do feed */
   motion?: "snow" | "petals" | "leaves" | "shimmer" | null;
 }
@@ -22,7 +25,7 @@ export const motionOf = (a: unknown): CardArt["motion"] => (typeof a === "string
 interface Studio {
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
-  container?: { color?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
+  container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
   /** família de silhueta declarada por quem publica (anatomia Silhueta & Proporção) */
   silhouette?: string | null;
   /** animação do segmento Cor: NONE, SNOW, PETALS, LEAVES, SHIMMER */
@@ -38,6 +41,11 @@ type Idx = {
   skins: Record<string, { nativeContainer?: string; family?: string }>;
 };
 export const ART_INDEX = index as unknown as Idx;
+/** Animação da variante gravada como vídeo (MP4/WebM, ex.: Chrome Iridescent e Terracotta Dune com warp fluido). */
+const isVideo = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
+/** Presets cuja arte é uma moldura de centro transparente (os feixes de LED do Aura Electro correm pelo perímetro). */
+const FRAME_PRESETS = new Set(["aura_electro"]);
+const isFrame = (presetId?: string) => (presetId ? FRAME_PRESETS.has(presetId) : false);
 const SEASON_PRESET: Record<string, string> = { WINTER: "frost", SUMMER: "solstice", AUTUMN: "ember", SPRING: "bloom" };
 const NONE: CardArt = { kind: "none", get label() { return tr("common.sem_arte"); } };
 
@@ -99,18 +107,30 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
       const combo = ART_INDEX.combos[`${s.aura!.variantId}|${s.materialId}`];
       if (s.aura?.format === "MOSAICO" && combo?.mosaic) return { ...withPalette, kind: "mosaic", video: { src: media(combo.mosaic.url)!, poster: media(combo.mosaic.poster) }, image: media(combo.mosaic.poster), label: tr("lib.cardArt.aura_mosaico", { name: preset?.name, name2: m.name }) };
       if (combo?.single && s.aura?.format) return { ...withPalette, kind: "aura_material", video: { src: media(combo.single.url)!, poster: media(combo.single.poster) }, image: media(combo.single.poster), label: tr("lib.cardArt.aura_imagem_unica", { name: preset?.name, name2: m.name }) };
-      return { ...withPalette, kind: "aura_material", image: media(v.animated) ?? media(v.card), material: media(m.card), animation: v.animation, label: `AURA ${preset?.name} + ${m.name}` };
+      return { ...withPalette, kind: "aura_material", ...variantMotion(v), material: media(m.card), frame: isFrame(v.presetId), label: `AURA ${preset?.name} + ${m.name}` };
     }
-    return { ...withPalette, kind: "aura", image: media(v.animated) ?? media(v.card), animation: v.animation, label: `AURA ${preset?.name} · ${v.theme ?? ""}` };
+    return { ...withPalette, kind: "aura", ...variantMotion(v), frame: isFrame(v.presetId), label: `AURA ${preset?.name} · ${v.theme ?? ""}` };
   }
   if (m) return { ...art, kind: "material", image: media(m.card), label: tr("lib.cardArt.material", { name: m.name }) };
   return art.kind === "none" ? NONE : art;
+}
+
+/** Como a variante AURA se move no card: vídeo próprio (com a imagem estática de pôster), GIF próprio, ou a imagem
+ *  estática com a animação CSS do preset. */
+function variantMotion(v: Idx["variants"][string]): Pick<CardArt, "image" | "video" | "animation"> {
+  if (isVideo(v.animated)) return { image: media(v.card), video: { src: media(v.animated)!, poster: media(v.card) ?? null }, animation: null };
+  return { image: media(v.animated) ?? media(v.card), animation: v.animation };
 }
 
 /** Cor do container: escolha manual do Studio/esquema, senão a cor nativa do skin (RF11 §3.3). */
 export function containerColorOf(skin?: string | null, manual?: string | null): string {
   if (manual && /^#[0-9A-Fa-f]{6}$/.test(manual)) return manual;
   return ART_INDEX.skins[skin ?? ""]?.nativeContainer ?? CARD_SKINS[skin ?? ""]?.bg ?? "#FFFFFF";
+}
+/** Tinta dos textos do container: a escolhida no Studio (#RRGGBB) ou, sem escolha, a legível sobre a cor do container. */
+export function containerInkOf(boxColor: string, manual?: string | null): string {
+  if (manual && /^#[0-9A-Fa-f]{6}$/.test(manual)) return manual;
+  return inkOn(boxColor);
 }
 /** Tinta legível sobre uma cor de container. */
 export function inkOn(hex: string): string {
