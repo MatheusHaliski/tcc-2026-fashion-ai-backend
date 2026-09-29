@@ -3,6 +3,7 @@ package br.com.fashionai.application.ai;
 import br.com.fashionai.domain.repository.AiInferenceLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ public class AiBudget {
     private final BigDecimal userDaily;
     private final Clock clock;
 
+    @Autowired
     public AiBudget(AiInferenceLogRepository logs,
                     @Value("${fashionai.ai.daily-budget-usd:5.00}") BigDecimal globalDaily,
                     @Value("${fashionai.ai.user-daily-budget-usd:0.50}") BigDecimal userDaily) {
