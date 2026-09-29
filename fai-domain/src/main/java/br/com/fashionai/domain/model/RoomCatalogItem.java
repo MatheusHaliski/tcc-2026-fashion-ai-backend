@@ -104,4 +104,13 @@ public class RoomCatalogItem {
 
     @Column(name = "created_at")
     private java.time.Instant createdAt;
+
+    /**
+     * Concorrência otimista: duas compras (ou compra × edição do criador) sobre a mesma linha não passam as duas com o
+     * mesmo sold_count — edição limitada não vende além do estoque. Wrapper (e não long) porque o id é o SKU atribuído:
+     * versão nula é o que diz ao Spring Data que o item é novo.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
 }

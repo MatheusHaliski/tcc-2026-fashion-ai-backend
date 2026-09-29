@@ -44,9 +44,9 @@ def match(verb, path):
     return hits
 
 OVERRIDES = {  # rotas montadas com template aninhado que o regex não resolve sozinho
-    ('app/(app)/brands/page.tsx', 'GET', '/api/X'): ['GET /api/brands', 'GET /api/celebrities'],
-    ('app/(app)/flair/page.tsx', 'POST', '/api/flair/combinations/X/redeem${c.bestDeck '): ['POST /api/flair/combinations/{id}/redeem'],
-    ('app/(app)/u/[username]/page.tsx', 'GET', '/api/users/${data'): ['GET /api/users/{userId}/connections'],
+    ('app/(site)/(app)/brands/page.tsx', 'GET', '/api/X'): ['GET /api/brands', 'GET /api/celebrities'],
+    ('app/(site)/(app)/flair/page.tsx', 'POST', '/api/flair/combinations/X/redeem${c.bestDeck '): ['POST /api/flair/combinations/{id}/redeem'],
+    ('app/(site)/(app)/u/[username]/page.tsx', 'GET', '/api/users/${data'): ['GET /api/users/{userId}/connections'],
 }
 by_key = {f"{e['verb']} {e['path']}": e for e in inv}
 used = {}

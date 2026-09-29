@@ -95,13 +95,15 @@ public class SealService {
     private final Guard guard;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    private final OwnMedia ownMedia;
 
     public SealService(SealRepository seals, SealBondRepository bonds, PromotionRepository promotions,
                        PromotionRedemptionRepository redemptions, SchemeRepository schemes, SchemeItemRepository schemeItems,
                        BrandProfileRepository brandProfiles, CelebrityProfileRepository celebrityProfiles,
                        UserRepository users, WardrobeItemRepository wardrobeItems, NotificationService notifications, AiEngine ai,
-                       Guard guard, Audit audit, ApplicationEventPublisher events) {
+                       Guard guard, Audit audit, ApplicationEventPublisher events, OwnMedia ownMedia) {
         this.events = events;
+        this.ownMedia = ownMedia;
         this.wardrobeItems = wardrobeItems;
         this.seals = seals;
         this.bonds = bonds;
@@ -160,7 +162,10 @@ public class SealService {
         Map<String, Object> cfg = new LinkedHashMap<>(f.background() == null ? Map.of() : f.background());
         cfg.put("design", design);
         s.setBackgroundConfigJson(Json.write(cfg));
-        s.setIconUrl("UPLOAD".equals(design.get("mode")) ? String.valueOf(design.get("uploadUrl")) : f.iconUrl());
+        // ícone: arquivo enviado pelo próprio emissor (ou do catálogo do sistema) — nunca de outra pessoa, restricted/ ou terceiros
+        s.setIconUrl("UPLOAD".equals(design.get("mode"))
+                ? ownMedia.requireOrUnchanged(owner.getId(), String.valueOf(design.get("uploadUrl")), "design.uploadUrl", false, s.getIconUrl())
+                : ownMedia.requireOrUnchanged(owner.getId(), f.iconUrl(), "iconUrl", true, s.getIconUrl()));
         if (f.availableFrom() != null && f.availableUntil() != null && f.availableUntil().isBefore(f.availableFrom())) {
             throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("common.a_disponibilidade_termina_antes_de"));
         }
@@ -175,9 +180,27 @@ public class SealService {
         s.setPremium(owner.getProfileType() == ProfileType.CELEBRIDADE);
     }
 
+    /** Todos os selos do emissor (aba do próprio dono). */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> sealsOf(UUID ownerId) {
         return seals.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream().map(this::sealView).toList();
+    }
+
+    /**
+     * Selos de um perfil para quem visita: o dono (e o admin) vê todos; os demais só os ativos, e só de perfil emissor
+     * aprovado e com conta ativa.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> sealsOf(CurrentUser viewer, UUID ownerId) {
+        boolean privileged = viewer != null && (viewer.id().equals(ownerId) || viewer.admin());
+        if (privileged) {
+            return sealsOf(ownerId);
+        }
+        if (!users.findById(ownerId).map(FlairService::sellerActive).orElse(false)) {
+            return List.of();
+        }
+        return seals.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream().filter(s -> s.getStatus() == SealStatus.ACTIVE)
+                .map(this::sealView).toList();
     }
 
     /** RNF12 — um selo está disponível quando ativo, dentro da janela e abaixo do teto de emissão. */
@@ -800,10 +823,27 @@ public class SealService {
             return null;
         }
         String v = raw.trim();
-        if (!v.matches("(?i)https?://[^\\s]{3,500}")) {
+        if (httpsOnly(v) == null) {
             throw ApiException.badRequest("LINK_INVALIDO", Msg.t("seal.informe_o_link_da_loja"));
         }
         return v;
+    }
+
+    /** Link externo exibido ao usuário (loja, cupom): só https com host; o resto (http, javascript:, data:…) vira null. */
+    public static String httpsOnly(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String v = raw.trim();
+        if (!v.matches("(?i)https://[^\\s/?#]+[^\\s]{0,500}")) {
+            return null;
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(v);
+            return "https".equalsIgnoreCase(uri.getScheme()) && uri.getHost() != null && uri.getHost().contains(".") ? v : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Card RF38 — promoções que o usuário pode resgatar agora (selo válido, período, estoque e limite por pessoa). */
@@ -815,6 +855,9 @@ public class SealService {
         mine.forEach(b -> owners.add(b.getTargetOwner().getId()));
         List<Promotion> out = new ArrayList<>();
         for (UUID owner : owners) {
+            if (!users.findById(owner).map(FlairService::sellerActive).orElse(false)) {
+                continue;                                  // emissor pendente, suspenso ou excluído não emite cupom
+            }
             List<SealBond> ownerBonds = mine.stream().filter(b -> b.getTargetOwner().getId().equals(owner)).toList();
             for (Promotion p : promotions.findByOwnerUserIdAndStatusOrderByCreatedAtDesc(owner, PromotionStatus.AVAILABLE)) {
                 if (unavailable(p, now) == null && eligibleBond(p, ownerBonds) != null
@@ -897,15 +940,35 @@ public class SealService {
             if (partner.getProfileType() != ProfileType.MARCA) {
                 throw ApiException.badRequest("PARCEIRA_INVALIDA", Msg.t("seal.a_parceira_precisa_ser_uma"));
             }
+            // a marca não vira parceira sem consentir: precisa ter aprovado um vínculo de selo desta celebridade
+            if (!partner.getId().equals(p.getPartnerBrandUserId()) && !partnerConsented(owner.getId(), partner)) {
+                throw new ApiException(409, "PARCERIA_NAO_AUTORIZADA", Msg.t("seal.a_marca_parceira_ainda_nao_aprovou"));
+            }
             p.setPartnerBrandUserId(partner.getId());
         }
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
         p.setStoreUrl(storeUrl(f.storeUrl()));
     }
 
+    /**
+     * Consentimento da marca parceira: ela aprovou (revisão RF21) um vínculo de selo pedido por esta celebridade e o
+     * vínculo segue válido; a marca precisa estar aprovada e ativa.
+     */
+    boolean partnerConsented(UUID celebrityId, User partner) {
+        if (!FlairService.sellerActive(partner)) {
+            return false;
+        }
+        Instant now = Instant.now();
+        return bonds.findByRequestedByIdAndStatusOrderByCreatedAtDesc(celebrityId, SealBondStatus.APPROVED).stream()
+                .anyMatch(b -> b.getTargetOwner().getId().equals(partner.getId()) && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now)));
+    }
+
     /** Promoções do perfil, filtradas pelos selos do solicitante (CA11/CA21). */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> promotionsOf(CurrentUser viewer, UUID ownerId) {
+        if ((viewer == null || !viewer.id().equals(ownerId)) && !users.findById(ownerId).map(FlairService::sellerActive).orElse(false)) {
+            return List.of();                              // emissor pendente/suspenso: nada na vitrine
+        }
         List<SealBond> myBonds = viewer == null ? List.of() : bonds.findByRequestedByIdAndStatusOrderByCreatedAtDesc(viewer.id(),
                 SealBondStatus.APPROVED).stream().filter(b -> b.getTargetOwner().getId().equals(ownerId)).toList();
         boolean owner = viewer != null && viewer.id().equals(ownerId);
@@ -980,6 +1043,9 @@ public class SealService {
         Promotion p = promotions.findById(promotionId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
         Instant now = Instant.now();
         String reason = unavailable(p, now);
+        if (reason == null && !users.findById(p.getOwnerUserId()).map(FlairService::sellerActive).orElse(false)) {
+            reason = Msg.t("seal.promocao_2", Msg.t("seal.indisponivel"));
+        }
         if (reason != null) {
             throw ApiException.conflict("PROMOCAO_INDISPONIVEL", reason);
         }
@@ -1063,11 +1129,7 @@ public class SealService {
 
     // ------------------------------------------------------------------ util
     private void requireIssuer(CurrentUser user) {
-        guard.requireCanCreate(user);
-        if (user.profileType() == ProfileType.PESSOAL) {
-            throw guard.deny(user, "seals", Msg.t("seal.selos_e_promocoes_sao_geridos"));
-        }
-        guard.requireApprovedProfile(user, user.profileType());
+        guard.requireApprovedInstitutional(user, "seals", Msg.t("seal.selos_e_promocoes_sao_geridos"));
     }
 
     private SealBond mine(CurrentUser user, UUID bondId) {

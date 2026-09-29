@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.ImageOps;
@@ -7,12 +10,14 @@ import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAvatar3d;
+import br.com.fashionai.domain.model.enums.AiCallResult;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /** RF40 — consentimento, validação do modelo, textura privada, acesso de terceiros e exclusão. */
 class Avatar3dServiceTest {
@@ -35,6 +43,9 @@ class Avatar3dServiceTest {
     private final Map<String, byte[]> blobs = new LinkedHashMap<>();
     private final List<String> audited = new ArrayList<>();
     private Avatar3dService service;
+    private final List<AiEngine.TextCall<?>> moderations = new ArrayList<>();
+    /** Resposta do moderador remoto; null = sem provedor (fallback local sem veredito). */
+    private String moderatorAnswer = "{\"approved\": true}";
     private User owner;
     private CurrentUser me;
     private CurrentUser other;
@@ -72,7 +83,15 @@ class Avatar3dServiceTest {
             public void delete(String k) { blobs.remove(k); }
             public Optional<String> keyOf(String url) { return Optional.empty(); }
         };
-        service = new Avatar3dService(avatars, users, storage, new Audit(e -> audited.add(e.acao())));
+        AiEngine ai = mock(AiEngine.class);
+        when(ai.text(any())).thenAnswer(inv -> {
+            AiEngine.TextCall<?> call = inv.getArgument(0);
+            moderations.add(call);
+            Object value = moderatorAnswer == null ? call.local().get() : call.parser().apply(moderatorAnswer);
+            return new AiOutcome<>(value, UUID.randomUUID(), AiCallResult.SUCCESS, moderatorAnswer == null, "gemini", "m", 1,
+                    BigDecimal.ZERO, null, null, null);
+        });
+        service = new Avatar3dService(avatars, users, storage, new Audit(e -> audited.add(e.acao())), ai);
     }
 
     @SuppressWarnings("unchecked")
@@ -225,6 +244,37 @@ class Avatar3dServiceTest {
         assertEquals("MASCULINO", model.get("sex"));
         model = (Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, null, "qualquer")).get("model");
         assertEquals("MASCULINO", model.get("sex"));                        // inválido não muda nada
+    }
+
+    @Test
+    void texturaSoApareceParaOutrosDepoisDeAprovadaNaModeracao() {
+        // avatar privado: o rosto não vai para provedor externo nenhum
+        service.save(me, cmd(true, false), texture(512, 512));
+        assertTrue(moderations.isEmpty());
+        assertEquals("PENDING", service.get(me).get("textureModeration"));
+
+        // sem veredito remoto (sem provedor/consentimento/cota): continua pendente e a foto não aparece para os outros
+        moderatorAnswer = null;
+        service.update(me, new Avatar3dService.SettingsCommand(null, true, null));
+        assertEquals(1, moderations.size());
+        assertEquals(AiCapability.CONTENT_MODERATOR, moderations.get(0).capability());
+        assertEquals("PENDING", service.get(me).get("textureModeration"));
+        assertThrows(ApiException.class, () -> service.texture(other, owner.getId()));
+        Map<String, Object> ref = service.forMannequin(owner.getId(), other.id()).orElseThrow();
+        assertEquals(null, ref.get("textureUrl"));                          // forma pública, rosto padrão
+        assertTrue(service.texture(me, owner.getId()).length > 0);          // o dono sempre vê
+
+        // reprovada: nunca sai para os outros
+        moderatorAnswer = "{\"approved\": false, \"reason\": \"x\"}";
+        service.save(me, cmd(true, true), texture(512, 512));
+        assertEquals("REJECTED_POLICY", service.get(me).get("textureModeration"));
+        assertThrows(ApiException.class, () -> service.texture(other, owner.getId()));
+
+        // aprovada: aparece
+        moderatorAnswer = "{\"approved\": true}";
+        service.save(me, cmd(true, true), texture(512, 512));
+        assertEquals("APPROVED", service.get(me).get("textureModeration"));
+        assertTrue(service.texture(other, owner.getId()).length > 0);
     }
 
     @Test

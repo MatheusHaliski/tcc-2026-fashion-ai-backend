@@ -1,0 +1,21 @@
+/* Gate de desenvolvedor: tela neutra, sem marca nem tokens do app (cores próprias, fonte do sistema) */
+.gate-body { margin: 0; background: #F9F9F9; color: #111111; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; }
+.gate-card { width: min(100%, 448px); box-sizing: border-box; display: grid; gap: 20px; padding: 32px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+.gate-kicker { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .18em; color: #8A8A8E; }
+.gate-title { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+.gate-field { display: grid; gap: 10px; }
+.gate-label { font-size: 14px; font-weight: 600; }
+.gate-google { display: grid; grid-template-columns: 18px 1fr 18px; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid #DADCE0; border-radius: 6px; background: #FFFFFF; color: #3C4043; font-size: 14px; text-decoration: none; text-align: center; }
+.gate-google:hover { background: #F8F9FA; }
+.gate-google:focus-visible, .gate-submit:focus-visible, .gate-input:focus-visible { outline: 2px solid #1A73E8; outline-offset: 2px; }
+.gate-google-done { display: flex; align-items: center; gap: 8px; margin: 0; min-height: 40px; padding: 0 12px; border: 1px solid #DADCE0; border-radius: 6px; font-size: 14px; }
+.gate-google-done span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gate-google-done a { color: #1A73E8; font-size: 13px; }
+.gate-input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 0 16px; border: 1px solid #DADCE0; border-radius: 8px; font: inherit; font-size: 14px; }
+.gate-input-dark { background: #3A3A3A; border-color: #3A3A3A; color: #FFFFFF; }
+.gate-input-dark::placeholder { color: #A8A8AD; }
+.gate-input:disabled { opacity: .85; cursor: not-allowed; }
+.gate-submit { min-height: 36px; margin-top: -10px; border: 0; border-radius: 8px; background: #1F1F23; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.gate-submit:disabled { background: #A1A1A8; cursor: not-allowed; }
+.gate-error { margin: -6px 0 0; font-size: 14px; color: #B3261E; }

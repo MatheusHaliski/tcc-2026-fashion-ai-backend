@@ -24,4 +24,12 @@ public interface AiInferenceLogRepository extends JpaRepository<AiInferenceLog, 
     List<AiInferenceLog> findTop300ByOrderByCreatedAtDesc();
 
     List<AiInferenceLog> findByCreatedAtBetween(Instant from, Instant to);
+
+    /** Orçamento global de IA: custo estimado gravado desde o início do dia (UTC). */
+    @Query("select coalesce(sum(l.estimatedCostUsd), 0) from AiInferenceLog l where l.createdAt >= :since")
+    java.math.BigDecimal sumEstimatedCostSince(@Param("since") Instant since);
+
+    /** Orçamento por usuário: mesmo somatório, só das chamadas feitas em nome dele. */
+    @Query("select coalesce(sum(l.estimatedCostUsd), 0) from AiInferenceLog l where l.userId = :userId and l.createdAt >= :since")
+    java.math.BigDecimal sumEstimatedCostByUserSince(@Param("userId") UUID userId, @Param("since") Instant since);
 }

@@ -3,9 +3,12 @@ spring:
   application:
     name: fashion-ai-api
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:fashionai}?useSSL=${MYSQL_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    # TLS pelo sslMode do Connector/J: PREFERRED (padrão) usa TLS sempre que o servidor oferece — e com TLS o
+    # caching_sha2_password autentica sem allowPublicKeyRetrieval. Produção: MYSQL_SSL_MODE=REQUIRED.
+    # MYSQL_USE_SSL (legado) ainda vale: true -> REQUIRED (MysqlSslModeEnvironmentPostProcessor).
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:fashionai}?sslMode=${MYSQL_SSL_MODE:PREFERRED}&allowPublicKeyRetrieval=${MYSQL_ALLOW_PUBLIC_KEY_RETRIEVAL:false}&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${MYSQL_USER:fashionai}
-    password: ${MYSQL_PASSWORD:change-me}
+    password: ${MYSQL_PASSWORD}             # obrigatória, sem valor padrão: sem ela a API não sobe (local: .env do .env.example)
     hikari:
       maximum-pool-size: ${MYSQL_POOL_SIZE:10}
       connection-timeout: 10000
@@ -32,6 +35,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:}      # usuário ACL (infra/railway/redis); vazio = usuário "default" com requirepass
       password: ${REDIS_PASSWORD:}
       ssl:
         enabled: ${REDIS_SSL:false}   # Upstash, Redis Cloud e a maioria dos provedores gerenciados exigem TLS
@@ -103,13 +107,21 @@ fashionai:
     display-name: ${FAI_ADMIN_DISPLAY_NAME:Administração Fashion AI}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
-  # Gate de desenvolvedor (antes do lançamento): cabeçalho X-Dev-Gate assinado pelo /gate do frontend com o mesmo segredo
+  # Gate de desenvolvedor (antes do lançamento): cabeçalho X-Dev-Gate (token curto de API, por pessoa) assinado pelo
+  # /gate do frontend com o mesmo segredo (mínimo de 32 caracteres), ou JWT do Cloudflare Access (mode: cloudflare)
   dev-gate:
     enabled: ${DEV_GATE_ENABLED:false}
+    mode: ${DEV_GATE_MODE:builtin}                         # builtin | cloudflare
     secret: ${DEV_GATE_SECRET:}
     user: ${DEV_GATE_USER:matheushaliskitcc20233}
+    allowed-emails: ${DEV_GATE_ALLOWED_EMAILS:}            # a mesma lista da Vercel: revogação por pessoa também na API
+    accept-legacy: ${DEV_GATE_ACCEPT_LEGACY:true}          # transição: aceita o token antigo (v1); false depois de DEV_GATE_API_TOKEN=v2
+    cloudflare:
+      team-domain: ${CF_ACCESS_TEAM_DOMAIN:}               # ex.: fashionai.cloudflareaccess.com
+      aud: ${CF_ACCESS_AUD:}                               # "Application Audience (AUD) Tag" da aplicação no Access
   jwt:
     issuer: ${JWT_ISSUER:fashionai}
+    audience: ${JWT_AUDIENCE:fashionai-api}              # claim aud exigido pela API
     access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
     private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
     public-key-pem: ${JWT_PUBLIC_KEY_PEM:}
@@ -117,6 +129,11 @@ fashionai:
   security:
     auth-rate-limit:
       enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
+    # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
+    edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
+    client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga
+    image-max-pixels: ${IMAGE_MAX_PIXELS:40000000}  # teto de decodificação (bomba de descompressão); também limitado pelo heap
+    image-max-side: ${IMAGE_MAX_SIDE:12000}         # px por lado
   assets:
     public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
   storage:
@@ -137,8 +154,12 @@ fashionai:
     enabled: ${CASSANDRA_ENABLED:false}
     username: ${CASSANDRA_USERNAME:}                       # vazio = sem autenticação (contêiner na rede privada)
     password: ${CASSANDRA_PASSWORD:}
-    create-keyspace: ${CASSANDRA_CREATE_KEYSPACE:false}    # Cassandra próprio (Railway/Docker): cria o keyspace na subida
-    replication-factor: ${CASSANDRA_REPLICATION_FACTOR:1}
+    create-keyspace: ${CASSANDRA_CREATE_KEYSPACE:false}    # Cassandra próprio sem autenticação: cria o keyspace na subida
+    replication-factor: ${CASSANDRA_REPLICATION_FACTOR:1}  # (endurecido, infra/railway/cassandra: o keyspace já vem criado -> false)
+    ssl:                                                   # TLS cliente -> nó
+      enabled: ${CASSANDRA_SSL:false}
+      ca-cert-pem: ${CASSANDRA_CA_CERT_PEM:}               # certificado do nó/CA em PEM; vazio = truststore da JVM
+      hostname-validation: ${CASSANDRA_SSL_HOSTNAME_VALIDATION:false}   # o driver conecta por IP; a CA fixada já basta
     secure-connect-bundle:                                 # DataStax Astra DB (substitui contact-points/datacenter)
       path: ${CASSANDRA_SECURE_BUNDLE_PATH:}
       base64: ${CASSANDRA_SECURE_BUNDLE_BASE64:}
@@ -146,14 +167,26 @@ fashionai:
     notification-ttl-days: 30
   opensearch:
     enabled: ${OPENSEARCH_ENABLED:false}
-    url: ${OPENSEARCH_URL:http://localhost:9200}
-    username: ${OPENSEARCH_USERNAME:}
+    url: ${OPENSEARCH_URL:http://localhost:9200}           # com o plugin de segurança: https://<host>:9200
+    username: ${OPENSEARCH_USERNAME:}                      # usuário da aplicação (só índices fai-*), nunca o admin
     password: ${OPENSEARCH_PASSWORD:}
+    ca-cert-pem: ${OPENSEARCH_CA_CERT_PEM:}                # CA do cluster (PEM): só certificados dela são aceitos
+    tls-verify-hostname: ${OPENSEARCH_TLS_VERIFY_HOSTNAME:true}
+    tls-insecure: ${OPENSEARCH_TLS_INSECURE:false}         # true aceita qualquer certificado (só rede privada; loga WARN)
     index-prefix: fai-
+  backup:                                                  # backup do MySQL (AdminService -> mysqldump -> storage em restricted/backups/)
+    cron: ${BACKUP_CRON:0 0 3 * * *}                       # diário às 3 h (America/Sao_Paulo); "-" desliga o job agendado
+    retention-count: ${BACKUP_RETENTION_COUNT:14}          # mantém os N backups mais recentes; os antigos saem do storage
+    user: ${MYSQL_BACKUP_USER:${MYSQL_USER:fashionai}}     # usuário só de leitura para o dump (infra/railway/mysql)
+    password: ${MYSQL_BACKUP_PASSWORD:${MYSQL_PASSWORD:}}  # sem senha padrão: vazia, o backup falha com o motivo
+    ssl-mode: ${MYSQL_SSL_MODE:PREFERRED}                  # o mesmo modo TLS da conexão JDBC
+    timeout-minutes: ${BACKUP_TIMEOUT_MINUTES:10}
+    mysqldump-command: ${BACKUP_MYSQLDUMP_COMMAND:mysqldump}
   email:
     provider: ${EMAIL_PROVIDER:log}                        # log | resend
     resend-api-key: ${RESEND_API_KEY:}
     from: ${RESEND_FROM_EMAIL:nao-responda@fashionai.app}
+    log-bodies: ${EMAIL_LOG_BODIES:false}                  # provider=log: corpo (códigos, links de senha) no log só em dev local
   weather:
     enabled: ${WEATHER_ENABLED:true}                       # Open-Meteo (gratuito, sem chave)
   ai:
@@ -169,6 +202,8 @@ fashionai:
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
     google-vision-api-key: ${GOOGLE_VISION_API_KEY:}       # moderação de fotos enviadas (SafeSearch); vazio = segmentação local + revisão humana
+    daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.00}          # teto global de gasto com IA externa por dia UTC (0 = sem teto)
+    user-daily-budget-usd: ${AI_USER_DAILY_BUDGET_USD:0.50} # teto por usuário por dia UTC (0 = sem teto)
   moderation:
     uploads-enabled: ${UPLOAD_MODERATION_ENABLED:true}    # confere nudez nas fotos enviadas antes de gravar (docs/seguranca/moderacao-de-imagens.md)
   features:

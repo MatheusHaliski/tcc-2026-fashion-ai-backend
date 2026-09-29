@@ -126,6 +126,7 @@ public class WardrobeService {
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
     private final PieceReferenceCatalog pieceReferences;
+    private final OwnMedia ownMedia;
     /** OCR local da marca (RF4): lê o logo quando a IA de visão não leu (ou está fora do ar). Opcional nos testes. */
     private br.com.fashionai.application.imaging.BrandReader brandReader;
 
@@ -144,7 +145,7 @@ public class WardrobeService {
                            Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
                            ApplicationEventPublisher events, BrandLogoService brandLogos,
                            br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles,
-                           PieceReferenceCatalog pieceReferences) {
+                           PieceReferenceCatalog pieceReferences, OwnMedia ownMedia) {
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -172,6 +173,7 @@ public class WardrobeService {
         this.brandLogos = brandLogos;
         this.brandProfiles = brandProfiles;
         this.pieceReferences = pieceReferences;
+        this.ownMedia = ownMedia;
     }
 
     // ================================================================== RF4 — análise da foto (rascunho)
@@ -226,28 +228,7 @@ public class WardrobeService {
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         AiOutcome<FlatLayPipeline.Result> pipeline = ai.execute(user.id(), AiCapability.FLAT_LAY_STANDARDIZER,
                 List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null,
-                List.of(new AiEngine.RemoteStep<>() {
-                    @Override
-                    public String provider() {
-                        return "rembg/remove.bg+cloudinary";
-                    }
-
-                    @Override
-                    public String model() {
-                        return "flat-lay-hybrid";
-                    }
-
-                    @Override
-                    public boolean available() {
-                        return flatLay.externalAvailable();
-                    }
-
-                    @Override
-                    public AiEngine.RemoteResult<FlatLayPipeline.Result> call() {
-                        FlatLayPipeline.Result r = flatLay.run(bytes, true);
-                        return new AiEngine.RemoteResult<>(r, r.totalCostUsd(), "qualidade " + r.quality().overall());
-                    }
-                }), () -> flatLay.run(bytes, false));
+                List.of(flatLayStep(bytes)), () -> flatLay.run(bytes, false));
         FlatLayPipeline.Result r = pipeline.value();
 
         // Critérios de aceite (locais, antes de qualquer IA paga): fundo separado, peça inteira, enquadramento,
@@ -1253,6 +1234,41 @@ public class WardrobeService {
     }
 
     /**
+     * Etapa remota do Flat Lay (rembg → remove.bg + Cloudinary) dentro do motor de IA: toda remoção de fundo que pode
+     * cair num provedor pago passa pela cota diária da capacidade, pelo teto de gasto e pelo registro da inferência.
+     */
+    public AiEngine.RemoteStep<FlatLayPipeline.Result> flatLayStep(byte[] bytes) {
+        return new AiEngine.RemoteStep<>() {
+            @Override
+            public String provider() {
+                return "rembg/remove.bg+cloudinary";
+            }
+
+            @Override
+            public String model() {
+                return "flat-lay-hybrid";
+            }
+
+            @Override
+            public boolean available() {
+                return flatLay.externalAvailable();
+            }
+
+            @Override
+            public AiEngine.RemoteResult<FlatLayPipeline.Result> call() {
+                FlatLayPipeline.Result r = flatLay.run(bytes, true);
+                return new AiEngine.RemoteResult<>(r, r.totalCostUsd(), "qualidade " + r.quality().overall());
+            }
+        };
+    }
+
+    /** Remoção de fundo sob demanda pelo motor de IA (cota + teto de gasto); sem provedor ou fora da cota, o recorte é local. */
+    public FlatLayPipeline.Result governedFlatLay(UUID userId, byte[] bytes) {
+        return ai.execute(userId, AiCapability.FLAT_LAY_STANDARDIZER, List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)),
+                null, null, List.of(flatLayStep(bytes)), () -> flatLay.run(bytes, false)).value();
+    }
+
+    /**
      * "Sem marca" é o que a análise escreve no campo quando não acha marca na gola nem no peito: o campo nunca fica em
      * branco na tela, mas a peça é salva sem marca (nada de uma marca fictícia chamada "Sem marca" no card).
      */
@@ -1266,8 +1282,10 @@ public class WardrobeService {
 
     /**
      * RF4 — marca escolhida no buscador web: a peça guarda o logo já filtrado (fundo branco, letras pretas) e a fonte.
-     * Só aceita logo que esteja no storage próprio (a URL vem do próprio buscador, nunca de terceiros). Sem logo da
-     * web, a marca fica como texto livre (monograma) ou ligada à marca cadastrada na plataforma.
+     * Só aceita logo que esteja no storage próprio (a URL vem do próprio buscador, nunca de terceiros) e seja do catálogo
+     * de logos ou um arquivo do próprio dono. O logo vale para esta peça; o logo global da marca só muda se o arquivo for
+     * o que o próprio servidor buscou em catálogo aberto (ver {@link BrandLogoService#acceptWebLogo}). Sem logo da web, a
+     * marca fica como texto livre (monograma) ou ligada à marca cadastrada na plataforma.
      */
     private void brandFromWebSearch(WardrobeItem w, PieceForm f, String previousBrand) {
         if (w.getBrandName() == null) {
@@ -1282,7 +1300,7 @@ public class WardrobeService {
             return;                                   // edição sem mexer na marca: mantém logo e fonte
         }
         String source = f.brandSource() == null ? null : f.brandSource().trim().toUpperCase(Locale.ROOT);
-        if (logo != null && !logo.isEmpty() && media.read(logo).isPresent()) {
+        if (logo != null && !logo.isEmpty() && ownMedia.accepts(w.getUser().getId(), logo, true) && media.read(logo).isPresent()) {
             w.setBrandLogoUrl(logo);
             w.setBrandSource(source != null && WEB_BRAND_SOURCES.contains(source) ? source : "WEB");
             w.setBrandRef(f.brandRef() == null ? null : InputSanitizer.clean(f.brandRef(), 255));
@@ -1356,16 +1374,19 @@ public class WardrobeService {
         WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         boolean owner = viewer != null && viewer.id().equals(w.getUser().getId());
         Map<String, Object> out = new LinkedHashMap<>();
+        // visibilidade (peça, perfil do dono, bloqueio) e moderação antes de qualquer dado — inclusive do retrato arquivado
+        requireVisiblePiece(viewer, w);
         if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED && !owner) {
-            // RF7.CA03 — snapshot do momento da publicação, marcado como "não mais disponível".
+            // RF7.CA03 — snapshot do momento da publicação, marcado como "não mais disponível"; só de um look que quem
+            // pede também consegue ver
             SchemeItem snap = fromSchemeId == null ? null : schemeItems.findBySchemeIdOrderBySortOrder(fromSchemeId).stream()
-                    .filter(si -> si.getWardrobeItem().getId().equals(id)).findFirst().orElse(null);
+                    .filter(si -> si.getWardrobeItem().getId().equals(id) && schemeVisible(viewer, si.getScheme()))
+                    .findFirst().orElse(null);
             out.put("notAvailableAnymore", true);
             out.put("snapshot", snap == null ? Views.snapshot(w) : Json.map(snap.getSnapshotJson()));
             out.put("fromSchemeId", fromSchemeId);
             return out;
         }
-        guard.requireView(viewer, w.getUser().getId(), effectiveVisibility(w), "piece:" + id);
         // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
         // e mexer na entidade gerava conflito de versão (409) num simples GET.
         pieces.touchView(w.getId(), owner ? 0 : 1, Instant.now());
@@ -1376,13 +1397,35 @@ public class WardrobeService {
         List<Map<String, Object>> origins = new ArrayList<>();
         for (SchemeItem si : schemeItems.findByWardrobeItemId(id)) {
             Scheme s = si.getScheme();
-            if (guard.canView(viewer, s.getUser().getId(), s.getVisibility()) && s.getStatus() != SchemeStatus.ARCHIVED) {
+            if (schemeVisible(viewer, s)) {
                 origins.add(Map.of("schemeId", s.getId(), "title", s.getTitle(), "coverImageUrl", String.valueOf(s.getCoverImageUrl())));
             }
         }
         out.put("originSchemes", origins);
         out.put("canEdit", owner);
         return out;
+    }
+
+    /**
+     * L1/L2 — quem não é dono nem admin só alcança peça aprovada na moderação e visível para ele: visibilidade da peça e
+     * do perfil do dono (a mais restritiva) e nenhum bloqueio entre os dois. Peça em moderação ou reprovada responde 404.
+     */
+    void requireVisiblePiece(CurrentUser viewer, WardrobeItem w) {
+        if (viewer != null && (viewer.id().equals(w.getUser().getId()) || viewer.admin())) {
+            return;
+        }
+        if (w.getModerationStatus() != ModerationStatus.APPROVED) {
+            throw ApiException.notFound(Msg.t("common.peca"));
+        }
+        guard.requireView(viewer, w.getUser().getId(), effectiveVisibility(w), "piece:" + w.getId());
+    }
+
+    /** Esquema visível para quem pede: não arquivado e pela visibilidade efetiva (esquema × perfil do autor, bloqueio). */
+    boolean schemeVisible(CurrentUser viewer, Scheme s) {
+        if (s.getStatus() == SchemeStatus.ARCHIVED) {
+            return false;
+        }
+        return guard.canView(viewer, s.getUser().getId(), SchemeService.moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility()));
     }
 
     /** Visibilidade efetiva da peça: a mais restritiva entre a da peça e a do perfil do dono (mesma regra dos esquemas). */
@@ -1535,7 +1578,7 @@ public class WardrobeService {
         WardrobeItem w = owned(user, id);
         byte[] bytes = media.read(w.getOriginalImageUrl() != null ? w.getOriginalImageUrl() : w.getImageUrl())
                 .orElseThrow(() -> new ApiException(422, "SEM_IMAGEM", Msg.t("wardrobe.esta_peca_nao_tem_foto")));
-        FlatLayPipeline.Result r = flatLay.run(bytes, true);
+        FlatLayPipeline.Result r = governedFlatLay(user.id(), bytes);
         if (!r.backgroundRemoved()) {
             return Map.of("ok", false, "message", Msg.t("wardrobe.nao_foi_possivel_remover_o"),
                     "stages", r.stages());
@@ -1562,7 +1605,8 @@ public class WardrobeService {
                 continue;
             }
             WardrobeItem w = pieces.findById(job.getInputResourceId()).orElse(null);
-            if (w == null || !flatLay.externalAvailable()) {
+            // sem provedor, com a IA remota desligada ou com o teto de gasto estourado, o item espera a próxima rodada
+            if (w == null || !flatLay.externalAvailable() || !ai.remoteAllowed(w.getUser().getId(), AiCapability.FLAT_LAY_STANDARDIZER)) {
                 continue;
             }
             job.setStatus(PipelineJobStatus.RUNNING);
@@ -1575,8 +1619,11 @@ public class WardrobeService {
                     job.setErrorCode("SEM_ORIGINAL");
                     continue;
                 }
-                FlatLayPipeline.Result r = flatLay.run(bytes, true);
-                if (r.backgroundRemoved()) {
+                // pelo motor (cota do dono + teto de gasto): sem resposta remota não há recorte novo e o job segue pendente
+                FlatLayPipeline.Result r = ai.execute(w.getUser().getId(), AiCapability.FLAT_LAY_STANDARDIZER,
+                        List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null, List.of(flatLayStep(bytes)),
+                        () -> (FlatLayPipeline.Result) null).value();
+                if (r != null && r.backgroundRemoved()) {
                     String base = "users/" + w.getUser().getId() + "/pieces/" + w.getId() + "/reprocessed";
                     w.setImageUrl(media.put(base + ".png", r.processedPng(), "image/png").url());
                     w.setThumbnailUrl(media.put(base + "-thumb.png", r.thumbnailPng(), "image/png").url());
@@ -2123,7 +2170,11 @@ public class WardrobeService {
     public Views.PieceView addToWardrobe(CurrentUser user, UUID sourceId) {
         guard.requireCanCreate(user);
         WardrobeItem src = pieces.findById(sourceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
-        guard.requireView(user, src.getUser().getId(), src.getVisibility(), "piece:" + sourceId);
+        if (src.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED && !src.getUser().getId().equals(user.id())) {
+            throw ApiException.notFound(Msg.t("common.peca"));
+        }
+        // privacidade do perfil do dono, bloqueio e moderação valem para copiar, não só para ver
+        requireVisiblePiece(user, src);
         if (src.getUser().getId().equals(user.id())) {
             throw ApiException.conflict("JA_E_SUA", Msg.t("wardrobe.esta_peca_ja_esta_no"));
         }

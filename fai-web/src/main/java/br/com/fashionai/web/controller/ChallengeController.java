@@ -7,8 +7,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -138,7 +140,16 @@ public class ChallengeController {
     @PostMapping(value = "/api/challenges/{id}/real-mirror", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "RF36.CA08 — Foto no espelho real como evidência")
     public Map<String, Object> realMirror(CurrentUser user, @PathVariable UUID id, @RequestPart("file") MultipartFile file) {
-        return challenges.realMirror(user, id, Uploads.image(file), Uploads.mime(file));
+        return challenges.realMirror(user, id, Uploads.image(file));
+    }
+
+    @GetMapping("/api/challenges/{id}/mirror-photos/{photoId}")
+    @Operation(summary = "RF36.CA08 / ETI-05 — Foto do Espelho de Verdade: só o autor, colegas com o consentimento dele ou admin")
+    public ResponseEntity<byte[]> mirrorPhoto(CurrentUser user, @PathVariable UUID id, @PathVariable UUID photoId) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .cacheControl(CacheControl.noStore().cachePrivate())            // foto privada: nada de cache compartilhado
+                .body(challenges.mirrorPhoto(user, id, photoId));
     }
 
     public record ConfirmRequest(@NotNull UUID memberId, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day) {

@@ -17,6 +17,9 @@ import java.util.Map;
  * ~US$0,20/imagem em créditos; Cloudinary free tier (25 créditos/mês); Replicate FLUX schnell ~US$0,003/imagem.
  * Custos por chamada são estimativas a partir do tamanho típico do prompt — o custo real sai do uso de
  * tokens devolvido pelo provedor e é gravado em ai_inference_log (RF24.CA16).
+ * <p>
+ * Cotas diárias: capacidades pagas por imagem (estúdio, remoção de fundo, provador, geração de fundo, logo com busca
+ * na web) ficam em até ~30 usos/dia por pessoa; acima disso o teto em dólar ({@link AiBudget}) seria o único freio.
  */
 public final class AiCatalog {
     public static final String CLAUDE_DEFAULT_MODEL = "claude-opus-5";
@@ -64,7 +67,7 @@ public final class AiCatalog {
                 claude(CLAUDE_LIGHT_MODEL, Kind.VISION, "0.0028", Msg.k("aiCatalog.claude_haiku_4_5_com_2"), 2000),
                 local(Msg.k("aiCatalog.heuristica_local_resolucao_cobertura_do"), 60),
                 Msg.k("aiCatalog.nunca_aprova_por_omissao_duvida"),
-                200, Msg.k("aiCatalog.implementado_remoto_heuristica_local"));
+                60, Msg.k("aiCatalog.implementado_remoto_heuristica_local"));      // acompanha o Piece Analyzer (1 moderação por foto)
         put(AiCapability.SCHEME_COMPOSER,
                 Msg.k("aiCatalog.compoe_3_esquemas_a_partir"),
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0500", Msg.k("aiCatalog.n4_12_mil_tokens_acervo"), 8000),
@@ -201,7 +204,7 @@ public final class AiCatalog {
                         Msg.k("aiCatalog.por_imagem_em_creditos_alternativa"), 1500, "REMOVE_BG_API_KEY", Kind.IMAGE_PROCESSING),
                 local(Msg.k("aiCatalog.java2d_flood_fill_de_borda"), 450),
                 Msg.k("aiCatalog.salva_com_a_foto_original"),
-                60, Msg.k("aiCatalog.implementado_rembg_remove_bg_cloudinary"));
+                30, Msg.k("aiCatalog.implementado_rembg_remove_bg_cloudinary"));   // remove.bg (alternativa) é pago por imagem
         put(AiCapability.STUDIO_ENHANCER,
                 Msg.k("aiCatalog.depois_do_flat_lay_leva"),
                 option("photoroom", Msg.k("aiCatalog.photoroom_image_editing_api_fundo"), "photoroom-v2-edit", CostMode.P, "0.1000",
@@ -210,14 +213,21 @@ public final class AiCatalog {
                         Msg.k("aiCatalog.n2_creditos_por_imagem_1"), 2500, "STABILITY_API_KEY", Kind.IMAGE_PROCESSING),
                 local(Msg.k("aiCatalog.java2d_bicubica_progressiva_clarity"), 900),
                 Msg.k("aiCatalog.sem_provedor_o_estudio_local"),
-                200, Msg.k("aiCatalog.implementado_photoroom_stability"));
+                20, Msg.k("aiCatalog.implementado_photoroom_stability"));          // pago por imagem: era 200/dia
+        put(AiCapability.MULTI_PIECE_DETECTOR,
+                Msg.k("aiCatalog.multi_piece_detecta_cada_peca"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.VISION, "0.0300", Msg.k("aiCatalog.multi_piece_claude_nota"), 6000),
+                gemini(Kind.VISION, "0.0020", Msg.k("aiCatalog.multi_piece_gemini_nota"), 3000),
+                local(Msg.k("aiCatalog.multi_piece_local"), 20),
+                Msg.k("aiCatalog.multi_piece_fallback"),
+                30, Msg.k("aiCatalog.multi_piece_status"));        // uma chamada por foto com várias peças
         put(AiCapability.BRAND_LOGO_FINDER,
                 Msg.k("aiCatalog.procura_na_internet_o_logo"),
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", Msg.k("aiCatalog.ate_3_buscas_na_web"), 15000),
                 null,
                 local(Msg.k("aiCatalog.monograma_svg_com_as_iniciais"), 5),
                 Msg.k("aiCatalog.sem_logo_confiavel_a_interface"),
-                200, Msg.k("aiCatalog.implementado_wikidata_claude_com_busca"));
+                20, Msg.k("aiCatalog.implementado_wikidata_claude_com_busca"));    // Claude + busca na web (~US$0,035): era 200/dia
     }
 
     private AiCatalog() {

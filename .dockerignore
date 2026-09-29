@@ -1,3 +1,4 @@
+# Contexto de build do Dockerfile.backend: só o código Java e o /public entram na imagem.
 node_modules
 .next
 **/target
@@ -7,3 +8,24 @@ material_chrome
 *.png
 !public/**/*.png
 .git
+.github
+.claude
+.vercel
+scripts/e2e/work
+# segredos e material de chave nunca entram no contexto do build (nem em camadas intermediárias)
+.env
+.env.*
+!.env.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/*.truststore
+**/secure-connect*.zip
+**/serviceAccount*.json
+**/*secret*.json
+keys/
+backups/
+data/

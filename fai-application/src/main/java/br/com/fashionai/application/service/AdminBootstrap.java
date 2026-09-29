@@ -21,11 +21,15 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Conta administrativa (tipo de perfil ADMIN): criada ou promovida na subida da aplicação a partir das variáveis
- * FAI_ADMIN_EMAIL, FAI_ADMIN_PASSWORD e FAI_ADMIN_USERNAME. Sem as duas primeiras nada acontece — o cadastro público
- * nunca cria ADMIN (IdentityService recusa o tipo), então este é o único caminho para a primeira conta de administração;
- * as seguintes podem ser promovidas no painel (papel ADMIN). A senha só é usada na criação: trocar a variável depois não
- * altera a senha de uma conta existente.
+ * Conta administrativa (tipo de perfil ADMIN): criada na subida da aplicação a partir das variáveis FAI_ADMIN_EMAIL,
+ * FAI_ADMIN_PASSWORD e FAI_ADMIN_USERNAME. Sem as duas primeiras nada acontece — o cadastro público nunca cria ADMIN
+ * (IdentityService recusa o tipo), então este é o único caminho para a primeira conta de administração; as seguintes
+ * podem ser promovidas no painel (papel ADMIN). A senha só é usada na criação: trocar a variável depois não altera a
+ * senha de uma conta existente.
+ * <p>
+ * Uma conta que já existe com esse e-mail NÃO é promovida por padrão: qualquer pessoa pode se cadastrar com o e-mail de
+ * administração antes da primeira subida (sem confirmá-lo). Promover exige FAI_ADMIN_PROMOTE_EXISTING=true e uma conta
+ * com e-mail confirmado e ativa.
  */
 @Component
 public class AdminBootstrap {
@@ -33,19 +37,26 @@ public class AdminBootstrap {
     private final UserRepository users;
     private final UserPreferencesRepository preferences;
     private final PasswordHasherPort hasher;
-    @Value("${fashionai.admin.email:}")
-    private String email;
-    @Value("${fashionai.admin.password:}")
-    private String password;
-    @Value("${fashionai.admin.username:admin}")
-    private String username;
-    @Value("${fashionai.admin.display-name:Administração Fashion AI}")
-    private String displayName;
+    private final String email;
+    private final String password;
+    private final String username;
+    private final String displayName;
+    private final boolean promoteExisting;
 
-    public AdminBootstrap(UserRepository users, UserPreferencesRepository preferences, PasswordHasherPort hasher) {
+    public AdminBootstrap(UserRepository users, UserPreferencesRepository preferences, PasswordHasherPort hasher,
+                          @Value("${fashionai.admin.email:}") String email,
+                          @Value("${fashionai.admin.password:}") String password,
+                          @Value("${fashionai.admin.username:admin}") String username,
+                          @Value("${fashionai.admin.display-name:Administração Fashion AI}") String displayName,
+                          @Value("${fashionai.admin.promote-existing:${FAI_ADMIN_PROMOTE_EXISTING:false}}") boolean promoteExisting) {
         this.users = users;
         this.preferences = preferences;
         this.hasher = hasher;
+        this.email = email;
+        this.password = password;
+        this.username = username;
+        this.displayName = displayName;
+        this.promoteExisting = promoteExisting;
     }
 
     @EventListener(ContextRefreshedEvent.class)
@@ -57,12 +68,7 @@ public class AdminBootstrap {
         String mail = email.trim().toLowerCase(Locale.ROOT);
         Optional<User> existing = users.findByEmailHash(Hashing.emailHash(mail));
         if (existing.isPresent()) {
-            User u = existing.get();
-            if (!"ADMIN".equals(u.getRole())) {
-                u.setRole("ADMIN");
-                users.save(u);
-                log.info("Conta {} promovida a ADMIN (FAI_ADMIN_EMAIL)", u.getUsername());
-            }
+            promote(existing.get());
             return;
         }
         if (password.length() < 12) {
@@ -92,5 +98,24 @@ public class AdminBootstrap {
         prefs.setUser(u);
         preferences.save(prefs);
         log.info("Conta de administração criada: @{} (ADMIN)", handle);
+    }
+
+    private void promote(User u) {
+        if ("ADMIN".equals(u.getRole())) {
+            return;
+        }
+        if (!promoteExisting) {
+            log.warn("Já existe a conta @{} com o e-mail de FAI_ADMIN_EMAIL e ela não é ADMIN: nada foi feito. Para promovê-la, "
+                    + "confirme que a conta é sua e suba com FAI_ADMIN_PROMOTE_EXISTING=true (ou promova pelo painel).", u.getUsername());
+            return;
+        }
+        if (!u.isEmailVerified() || u.getStatus() != AccountStatus.ACTIVE) {
+            log.warn("Conta @{} não promovida a ADMIN: o e-mail precisa estar confirmado e a conta ativa (status {}).",
+                    u.getUsername(), u.getStatus());
+            return;
+        }
+        u.setRole("ADMIN");
+        users.save(u);
+        log.warn("Conta @{} promovida a ADMIN (FAI_ADMIN_EMAIL + FAI_ADMIN_PROMOTE_EXISTING)", u.getUsername());
     }
 }

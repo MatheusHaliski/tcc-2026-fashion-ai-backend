@@ -1,0 +1,139 @@
+# Avaliação profissional dos RFs/RNFs e plano de contribuição do Bryan
+
+> Data-base: 28/09/2026. Esta é uma avaliação de **maturidade das evidências no repositório**, não uma nota oficial da banca.
+
+## Resultado executivo
+
+- **Score dos RFs:** 8.5/10 (peso de 70%).
+- **Score dos RNFs:** 7.9/10 (peso de 30%).
+- **Score global ponderado:** **8.3/10**.
+- O `git shortlog -sne --all` desta fotografia não mostra autoria identificável como Bryan; isso deve ser confirmado com os e-mails/aliases usados por ele antes de concluir ausência de participação.
+- Escala: 0–2 inexistente; 3–4 inicial; 5–6 funcional com lacunas; 7–8 bom; 9 excelente e bem evidenciado; 10 comprovado em produção, com operação e métricas maduras.
+- Método: código + documentação + persistência + teste/E2E + evidência visual/operacional. A quantidade de endpoints, isoladamente, não aumenta a nota.
+
+## Avaliação por RF
+
+| RF | Requisito | Score | O que sustenta a nota | Próximo avanço | Como Bryan pode ajudar |
+|---|---|---:|---|---|---|
+| RF1 | Cadastro de conta e perfis | **8.5** | 11 passos/8 endpoints E2E; perfis Pessoal, Marca e Celebridade. | Consolidar teste de confirmação de e-mail e aprovação institucional. | Testar cadastro por perfil e anexar evidências ao card HU-RF1. |
+| RF2 | Autenticação e sessões | **9.0** | Login, refresh, sessões e auditoria cobertos por 5 endpoints. | Adicionar testes de abuso, expiração e revogação concorrente. | Criar testes de segurança de sessão e documentar os resultados. |
+| RF3 | Conta, privacidade, LGPD e notificações | **8.0** | 22 passos/20 endpoints; consentimentos, exportação e exclusão. | Executar teste formal de prazo de exclusão e portabilidade completa. | Fazer checklist LGPD e QA das telas de consentimento. |
+| RF4 | Adicionar peça e buscar marca | **9.5** | 24 passos/14 endpoints, pipeline de imagem e evidências visuais/banco. | Medir precisão e latência com conjunto de imagens representativo. | Montar massa de teste, registrar falsos positivos e abrir correções. |
+| RF5 | Criar look | **9.0** | 11 passos/6 endpoints e compositor integrado ao acervo. | Reforçar testes de combinações inválidas e concorrência de edição. | Executar roteiro exploratório do builder e registrar bugs reproduzíveis. |
+| RF6 | Perfil Lookbook | **9.0** | 26 passos/24 endpoints, closet e looks salvos. | Adicionar orçamento de desempenho para coleções grandes. | Testar paginação, filtros e estados vazios com grande volume. |
+| RF7 | Detalhe da peça | **8.5** | 9 endpoints com leitura, estados e integração às telas. | Cobrir autorização e consistência após exclusão/edição. | Criar testes de dono versus visitante e evidências de 403/404. |
+| RF8 | Buscar e explorar feed | **8.5** | Feed funcional com 4 endpoints e filtros. | Medir relevância, paginação e tempo de resposta. | Definir casos de busca e medir precisão dos resultados. |
+| RF9 | Editar look e peças | **8.5** | Atualização persistida, auditoria e reindexação testadas. | Cobrir conflito de versões e edição simultânea. | Implementar/testar optimistic locking ou documentar a decisão. |
+| RF10 | Copilot e Look do Dia | **8.5** | 13 endpoints e ciclo de feedback do Look do Dia. | Avaliar qualidade das recomendações com métrica e amostra humana. | Conduzir avaliação cega e publicar a planilha de resultados. |
+| RF11 | Background Studio | **9.0** | 12 endpoints, persistência e arte de peças/looks. | Adicionar regressão visual e limites de upload/renderização. | Criar suíte de snapshots e checklist visual. |
+| RF12 | Minhas Fotos | **8.5** | 9 passos/8 endpoints com tela e persistência. | Cobrir retenção, exclusão e acessibilidade da galeria. | Testar teclado/leitor de tela e ciclo de exclusão. |
+| RF13 | DNA de Estilo | **9.0** | 14 endpoints, versões, IA e auditoria. | Formalizar explicabilidade e estabilidade entre versões. | Comparar resultados com amostra fixa e registrar divergências. |
+| RF14 | Feed de marcas | **8.0** | 4 endpoints com perfis, seguidores e selos. | Ampliar critérios de moderação e estados institucionais. | Validar perfis pendentes/rejeitados e documentar o fluxo. |
+| RF15 | Editor Canvas 2D | **8.0** | 3 endpoints e editor integrado. | Adicionar testes de undo/redo, arquivos grandes e mobile. | Assumir QA exploratório multiplataforma do editor. |
+| RF16 | Geração 3D de peças | **7.5** | Job assíncrono e consulta do resultado implementados. | Provar provedor real, SLA, retry e qualidade do modelo 3D. | Documentar falhas reais, tempos e critérios de aceite visual. |
+| RF17 | Perfil de outros usuários | **8.5** | 11 passos/8 endpoints com privacidade e layouts. | Expandir matriz de visibilidade e bloqueio. | Testar todos os perfis e níveis de privacidade. |
+| RF18 | Provador virtual 2D | **8.5** | 4 endpoints, tela e fallback implementados. | Validar qualidade com diversidade corporal e de roupas. | Organizar teste autorizado, anonimizado e com critérios objetivos. |
+| RF19 | Interações sociais | **8.5** | 9 endpoints; reações, comentários, notificações e pontos. | Cobrir abuso, rate limit, moderação e concorrência. | Criar cenários antifraude e testes de moderação. |
+| RF20 | Vínculo com marca | **8.5** | Fluxo de selo/matcher persistido e integrado. | Demonstrar revisão, recusa e rastreabilidade de ponta a ponta. | Executar o fluxo como marca e anexar capturas ao Trello. |
+| RF21 | Vínculo com celebridade | **8.5** | 6 endpoints e sugestões de selo integradas. | Reforçar consentimento e direito de imagem. | Auditar CAs de consentimento e testar revogação. |
+| RF22 | Feed de celebridades | **8.0** | 3 endpoints e perfil institucional disponível. | Ampliar moderação, busca e evidência visual. | Preparar dados de demonstração e teste do perfil completo. |
+| RF23 | Preferências e internacionalização | **9.5** | Preferências persistidas; catálogos pt-BR/en/es e QA i18n. | Completar teste de acessibilidade com público escolhido. | Conduzir e registrar o teste com usuários. |
+| RF24 | Motor de IA e serviços externos | **8.0** | 7 endpoints, logs de inferência e fallbacks locais. | Validar integrações reais, custo, timeout e circuit breaker em produção. | Criar relatório de chamadas reais e comportamento degradado. |
+| RF25 | Selos e promoções | **9.0** | 13 passos/11 endpoints e catálogo de design. | Cobrir fraude, expiração e autorização de campanhas. | Testar matriz de papéis e casos de cupom inválido. |
+| RF26 | Explorador Global | **8.0** | 3 endpoints e painel por país. | Validar agregações, filtros combinados e desempenho. | Conferir números do painel contra consultas SQL. |
+| RF27 | Meu Quarto 3D | **8.5** | 16 endpoints e cena 3D integrada ao inventário. | Concluir alternância Avatar/manequim e atalho ‘Usar em…’. | Implementar ou testar as tarefas FE pendentes do HU-RF27. |
+| RF28 | Smart Mirror e Vista-me | **8.0** | 14 passos/13 endpoints com estado persistido. | Concluir ‘Usar em…’ e integração do Avatar 3D. | Assumir o CA16, com teste E2E e evidência visual. |
+| RF29 | Inventory Score e destaques | **8.5** | 9 passos/8 endpoints, snapshots e rankings. | Validar fórmula, explicabilidade e recalculo em bordas. | Criar casos de cálculo manual e comparar com a API. |
+| RF30 | FAI Points, níveis e loja | **9.0** | 8 passos/7 endpoints, ledger idempotente e limites. | Fortalecer antifraude e observabilidade econômica. | Testar idempotência, tetos diários e reconciliação do saldo. |
+| RF31 | Estados do acervo | **9.0** | Flags persistidas e refletidas nas telas. | Cobrir consistência em todas as entradas do acervo. | Montar matriz tela × estado e executar regressão. |
+| RF32 | Desafios | **9.0** | 23 passos/20 endpoints e múltiplos modos. | Adicionar carga, desempate e antifraude. | Criar testes de concorrência e fechamento de desafio. |
+| RF33 | Passarela 3D | **7.5** | Ranking e filtros cobertos; principal API concentrada em 1 endpoint. | Ampliar E2E visual, acessibilidade e desempenho WebGL. | Testar Top 100 por região/país e fallback sem WebGL. |
+| RF34 | Eras da celebridade | **8.0** | 9 passos/8 endpoints e showcase institucional. | Aumentar prova visual e governança editorial. | Criar cenário completo de era, publicação e revisão. |
+| RF35 | Coleções da marca | **8.0** | 6 endpoints e mini-loja/showcase. | Cobrir estoque, ordenação e autorização editorial. | Testar coleção ponta a ponta como marca e visitante. |
+| RF36 | Foto com manequim | **8.5** | 8 passos/7 endpoints e integração com look 3D. | Validar qualidade, consentimento e falhas de renderização. | Organizar dataset autorizado e registrar taxa de sucesso. |
+| RF37 | FLAIR | **9.5** | 67 passos/55 endpoints; modos, times, arena, moedas e pontos. | Priorizar carga, antifraude e equilíbrio do jogo. | Ser responsável pela bateria de regressão e economia do FLAIR. |
+| RF38 | Cupons Fashion AI | **8.5** | 9 passos/6 endpoints e área de cupons. | Cobrir expiração, uso duplo e consistência transacional. | Criar testes concorrentes de resgate e casos negativos. |
+| RF39 | Criador e loja de guarda-roupa 3D | **9.0** | 14 passos/8 endpoints, editor, loja e evidências visuais. | Adicionar compatibilidade WebGL/mobile e autorização de criador. | Testar perfis permitidos/proibidos e dispositivos modestos. |
+| RF40 | Meu Avatar 3D | **8.5** | Pipeline local, 45 testes e APIs com consentimento/textura privada. | Concluir uso no Quarto/Espelho e validação com usuários autorizados. | Assumir integração pendente e relatório de qualidade/privacidade. |
+| RF41 | FAI Points em jogos e criações | **8.5** | Ponte idempotente, regras em banco e testes de tetos. | Exibir selo de pontos na Arena/Desafio e ampliar reconciliação. | Implementar os selos pendentes e testar o ledger fim a fim. |
+
+## Avaliação por RNF
+
+| RNF | Requisito | Score | O que sustenta a nota | Próximo avanço | Como Bryan pode ajudar |
+|---|---|---:|---|---|---|
+| RNF1 | Controle de acesso por perfil | **9.0** | Guards no backend, menus/rotas por perfil e testes 403. | Manter matriz RBAC versionada e testes negativos por endpoint. | Criar a matriz papel × endpoint e automatizar casos proibidos. |
+| RNF2 | JWT e recuperação de sessão | **8.5** | Access/refresh tokens, sessões e revogação implementados. | Testar rotação, replay e revogação sob concorrência. | Produzir testes de segurança focados em tokens. |
+| RNF3 | Criptografia de dados sensíveis | **9.0** | Senha com hash e campos sensíveis com AES-GCM. | Documentar gestão/rotação de chaves e threat model. | Escrever runbook de rotação e verificar ausência de segredos em logs. |
+| RNF4 | Backup e recuperação | **4.0** | Persistência estruturada, mas sem evidência forte de restore testado. | Criar backup automatizado, RPO/RTO e teste de restauração. | Liderar exercício de restore e anexar tempos/evidências ao Trello. |
+| RNF5 | Auditoria e logging | **8.5** | audit_log, ai_inference_log e correlationId. | Centralizar logs, alertas e política de retenção/mascaramento. | Montar dashboard/consulta de auditoria e validar dados sensíveis. |
+| RNF6 | Privacidade e LGPD | **8.0** | Consentimentos, exportação, exclusão e proteção de biometria. | Formalizar RIPD, bases legais, retenção e teste do titular. | Executar checklist LGPD e registrar lacunas como cards. |
+| RNF7 | Desempenho e usabilidade | **7.5** | UI responsiva, estados de erro/loading e recursos acessíveis. | Definir SLOs, testes de carga, Lighthouse e teste com público. | Coletar métricas por jornada e abrir melhorias mensuráveis. |
+| RNF8 | Resiliência a APIs externas | **8.5** | Fallback local, retry/circuit breaker e jobs assíncronos. | Realizar game day com indisponibilidade e provar alertas/recuperação. | Desligar provedores em ambiente de teste e documentar o comportamento. |
+
+## Parecer de engenharia de software
+
+### O que está bom
+
+- **Cobertura funcional ampla e rastreável:** RF1–RF39 possuem inventário E2E por CA/endpoint; RF40–RF41 têm implementação e testes documentados.
+- **Arquitetura:** backend modular/hexagonal, separação entre domínio, aplicação, infraestrutura e web, além de integrações por portas/adaptadores.
+- **Persistência e auditabilidade:** Flyway, regras de integridade, ledger idempotente, audit log e log de inferência de IA.
+- **Experiência e resiliência:** estados de carregamento/erro/vazio, fallback de IA, internacionalização e alternativas quando WebGL/serviços externos falham.
+- **Profundidade técnica diferenciada:** 3D, visão computacional, FLAIR, rankings, economia de pontos, dashboards e múltiplos perfis.
+
+### O que deve melhorar
+
+1. **RNF4 é o maior risco:** falta prova reproduzível de backup/restore com RPO/RTO.
+2. **Qualidade não deve depender apenas do E2E:** aumentar testes unitários/de integração, especialmente regras de negócio, autorização e concorrência.
+3. **Observabilidade operacional:** transformar Actuator/logs em dashboards, alertas e SLOs comprovados.
+4. **Segurança e privacidade:** threat model, rotação de chaves, testes de token, RIPD/LGPD e retenção de dados.
+5. **Validação humana:** acessibilidade, usabilidade e qualidade de IA/3D com amostras autorizadas e métricas objetivas.
+6. **Rastreabilidade:** eliminar colisões de numeração entre Trello, Swagger e comentários; manter RF → HU → CA → código → teste → evidência.
+7. **Entrega:** CI/CD por ambientes e IaC ainda não têm o mesmo nível de maturidade do produto.
+
+## Recomendação de commits para Bryan
+
+O objetivo não é criar commits artificiais para alterar estatística. Bryan deve assumir entregas reais, pequenas, revisáveis e ligadas a cards/CAs.
+
+### Ordem recomendada (alto impacto e baixo risco)
+
+1. **RNF4 — backup e restore:** script, runbook, teste de restauração e evidência de RPO/RTO.
+2. **QA dos RF27/RF28/RF40/RF41:** concluir integrações pendentes e seus testes E2E.
+3. **Segurança:** matriz RBAC, testes negativos 401/403, rotação/replay de refresh token.
+4. **Acessibilidade/usabilidade:** teste com participantes, relatório e correções pequenas identificadas.
+5. **DevOps:** workflow de build/teste, publicação de JaCoCo e ambientes claramente separados.
+6. **Documentação de sprint/TDE:** objetivo, planejado × entregue, review, retrospectiva e links de PRs/evidências.
+
+### Padrão para os commits
+
+- Uma entrega coerente por commit; evitar commits gigantes ou apenas cosméticos.
+- Usar a conta pessoal do Bryan e configurar `user.name`/`user.email` com identidade verificável.
+- Mensagens sugeridas: `test(rnf1): cobrir matriz de autorização por perfil`, `docs(rnf4): registrar teste de restauração`, `feat(rf41): exibir pontos na arena`.
+- Cada PR deve citar card, RF/RNF, CA, teste executado e evidência; Matheus revisa e Bryan responde aos comentários.
+- Nunca reescrever autoria de trabalho alheio. Participação se demonstra por análise, implementação, teste, revisão e documentação próprios.
+
+## Trello — atualização da validação em 29/09/2026
+
+O link de convite do board **TCC 2026 (Fashion AI) — Bryan,Matheus** foi fornecido em 28/09/2026. Por segurança, o token de convite não é reproduzido nem persistido no repositório.
+
+A limitação inicial de leitura foi superada: as variáveis de API foram configuradas e a leitura autenticada confirmou o board, 21 listas, 312 cards, membros, labels, descrições, checklists e comentários. A auditoria direta dos RF25–RF39 está em `TRELLO_RF25_RF39_DIFF_PROPOSTO.md`. Os scores desta análise continuam sendo **maturidade das evidências do repositório**, e não status do Trello nem percentual concluído.
+
+O lote de normalização foi autorizado, incluindo Sprint 04 para HU-RF33–RF39 e cinco cards para Bryan. Entretanto, quatro tentativas pararam antes da primeira mutação: a API respondeu `HTTP 403 — Method forbidden` ao `POST` inicial, inclusive com parâmetros enviados no corpo. A quarta tentativa ocorreu após nova atualização do ambiente e outra leitura bem-sucedida do board. O diagnóstico isolado confirmou que o proxy aceita `GET`, recusa `POST`, `PUT` e `DELETE` com a mesma mensagem e que a conexão direta sem proxy não está disponível. O token declara leitura/escrita e a associação está ativa como administradora; portanto, o bloqueio está no caminho de rede, não no lote ou no escopo declarado do token. Nenhum card foi alterado.
+
+Para concluir a sincronização:
+1. **Infraestrutura:** permitir `POST`, `PUT` e `DELETE` destinados a `api.trello.com`, sem registrar query strings, headers ou corpos autenticados.
+2. **Nova fotografia:** executar novamente a leitura e comparar `dateLastActivity`, descrições e checklists antes da escrita.
+3. **Sincronização controlada:** executar `python scripts/rubricas/aplicar_trello_rf25_rf39.py` em dry-run e, se o resultado continuar aderente ao lote autorizado, repetir com `--apply`.
+4. **Pós-condição:** reler todos os alvos, registrar IDs/resultados sem credenciais e não marcar checklist como concluída apenas pela existência de código.
+
+O passo a passo de configuração e o verificador de acesso estão em `docs/rubricas/TRELLO_ACESSO.md` e `scripts/rubricas/verificar_trello.py`.
+
+A conferência de leitura já confrontou RF/HU, CAs, responsável, sprint, status e checklists. Links de PR/evidências ainda devem ser associados somente quando existirem e forem revisados. Até a escrita e a releitura final ocorrerem, o board **não pode ser declarado sincronizado**.
+
+## Fontes internas usadas
+
+- `markdowns/02-rf-reestruturados-e-criterios-aceite.md` — catálogo e matriz RF × RNF.
+- `docs/testes/TABELA_ENDPOINTS_POR_RF.md` — 452 passos e 368 endpoints de RF1–RF39.
+- `docs/novos-rf/README.md` — numeração oficial do Trello e mapa RF25–RF41.
+- `docs/novos-rf/RF40-RF41.md` — situação, testes e pendências dos dois RFs mais recentes.
+- `docs/rubricas/GUIA_RUBRICAS.md` — rubricas, riscos e evidências transversais.
+- `git shortlog -sne --all` — fotografia da autoria dos commits no repositório.

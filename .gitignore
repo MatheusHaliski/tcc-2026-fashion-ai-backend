@@ -8,7 +8,16 @@ target/
 .env.*
 !.env.example
 *.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+secure-connect*.zip
+cqlshrc
 keys/
+!/scripts/keys/
 **/serviceAccount*.json
 **/*firebase*.json
 **/*secret*.json
@@ -33,3 +42,6 @@ __pycache__/
 /public/mediapipe/wasm/
 # modelo de idade/sexo (@vladmandic/face-api) copiado do pacote no build
 /public/mediapipe/face-api/
+
+# worktrees temporárias de agentes (Claude Code)
+.claude/worktrees/

@@ -1,5 +1,7 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.DnaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,6 +74,10 @@ public class DnaController {
     @GetMapping("/api/dna-schemes/builder")
     @Operation(summary = "RF13 — Construtor do Esquema de DNA (mesmas etapas do RF5): esquemas do usuário, anatomias e narrativas")
     public Map<String, Object> builder(CurrentUser user) {
+        if (user == null) {
+            // a rota cai no curinga público de GET /api/dna-schemes/*: sem login é 401, não 500
+            throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
+        }
         return dna.builder(user);
     }
 
