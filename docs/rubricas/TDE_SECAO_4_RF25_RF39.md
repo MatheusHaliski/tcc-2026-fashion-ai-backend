@@ -1,6 +1,8 @@
 # TDE — conteúdo revisável a partir da seção 4
 
-> **Escopo e data-base:** análise local realizada em 28/09/2026 e conferência do Trello realizada em 29/09/2026. As três variáveis `TRELLO_*` estavam presentes, sem exposição de valores, e `python scripts/rubricas/verificar_trello.py` confirmou acesso somente de leitura ao board **TCC 2026 (Fashion AI) - Bryan,Matheus**. Foram consultadas 21 listas, 312 cards, descrições, membros, labels, checklists e os comentários disponíveis. A auditoria e o diff de escrita proposto estão em `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`. **Nenhuma escrita foi realizada no Trello:** as mudanças aguardam confirmação humana.
+> **Escopo e data-base:** análise local realizada em 28/09/2026 e conferência do Trello realizada em 29/09/2026. As três variáveis `TRELLO_*` estavam presentes, sem exposição de valores, e `python scripts/rubricas/verificar_trello.py` confirmou acesso de leitura ao board **TCC 2026 (Fashion AI) - Bryan,Matheus**. Foram consultadas 21 listas, 312 cards, descrições, membros, labels, checklists e os comentários disponíveis. A equipe autorizou o lote documentado em `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`, mas quatro tentativas falharam na primeira escrita com HTTP 403 (`Method forbidden`). Testes sem credenciais confirmaram que o proxy permite GET e bloqueia POST/PUT/DELETE; portanto, nenhuma mutação ocorreu e o lote permanece pendente de liberação no proxy.
+
+> **Fonte complementar:** `docs/rubricas/ANALISE_RF_RNF_E_BRAYAN.md` foi incorporado como avaliação de maturidade das evidências. Suas notas não representam conclusão do backlog nem aprovação da banca. A seleção dos cards usa as lacunas funcionais apontadas no documento, sem converter scores em status ou marcar CAs automaticamente.
 
 ## 4. Relação de atores e governança do trabalho
 
@@ -241,7 +243,9 @@ Antes de editar o backlog, aplicar este diff conceitual a cada HU:
 
 Checklist de qualidade: ator e pré-condição explícitos; uma ação por cenário; saída observável; erro/código quando relevante; persistência verificável; papel permitido/proibido; dado de teste; vínculo RF/HU/CA/teste; ausência de datas, responsáveis e métricas inventadas.
 
-## 8. Cards propostos para Bryan (prévia; não publicados no Trello)
+## 8. Cards autorizados para Bryan (publicação bloqueada por HTTP 403)
+
+Os cinco cards abaixo coincidem com os avanços recomendados na análise complementar para RF29, RF30, RF32, RF33 e RF38. RF27/RF28 também têm integração FE relevante (“Usar em…” e Avatar/manequim), mas permanecem como candidatos de reserva porque o lote autorizado está limitado a cinco cards; qualquer substituição requer novo diff e confirmação.
 
 ### B1 — `[RF29][BE/QA] validar fórmula e explicação do Inventory Score`
 
@@ -304,7 +308,7 @@ Checklist de qualidade: ator e pré-condição explícitos; uma ação por cená
 - **Subtarefas:** DB conferir índices; BE tornar operação atômica e relógio testável; QA integração concorrente/rollback; FE mapear erros para mensagem acionável.
 - **Prováveis arquivos:** `CouponService.java`, `CouponController.java`, entidades/repositórios de cupom, Flyway, `/coupons/page.tsx` e novo teste.
 - **Testes/evidências:** JUnit/integrado, E2E de expirado/usado, consulta final do direito e resgate.
-- **Riscos/dependências:** semântica “emitir” versus “usar” deve ser confirmada no Trello; preservar códigos de cupom em segredo.
+- **Riscos/dependências:** emitir cria o código, validar apenas consulta e usar consome definitivamente; preservar códigos de cupom em segredo.
 - **Pronto/estimativa:** transação/constraint comprovadas, testes e revisão; **8 pontos (M)**.
 - **Commits sugeridos:** `test(rf38): reproduzir resgate concorrente`; `fix(rf38): tornar resgate de cupom transacional`.
 
@@ -324,10 +328,10 @@ Definição de pronto comum: CA aprovado; código e migração revisados; autori
 
 ## 11. Pendências para a equipe e plano de atualização do Trello
 
-1. Revisar `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`, especialmente criação das HU-RF33–RF39 e dos cinco cards de Bryan.
-2. Confirmar com a equipe a regra de desempate do RF32, a semântica de emitir versus usar no RF38, o estado “à venda” do RF31, as métricas do RNF7 e a sprint dos RF novos.
-3. Autorizar ou rejeitar explicitamente o lote de escrita; sem autorização, não executar `POST`, `PUT` ou `DELETE`.
-4. Depois da escrita autorizada, reler os cards alterados, comparar o estado efetivo com o diff e registrar IDs e resultados sem credenciais.
+1. Preservar como registro de decisão o lote autorizado em `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`, especialmente a criação das HU-RF33–RF39 e dos cinco cards de Bryan.
+2. Confirmar com a equipe a regra objetiva de desempate do RF32 (o marcador `[regra]` não é implementável), o estado “à venda” do RF31 e as métricas do RNF7. A semântica do RF38 e Sprint 04 para HU-RF33–RF39 já foram confirmadas.
+3. Liberar no caminho de rede/API os métodos de escrita para `api.trello.com` e repetir o lote já autorizado com `python scripts/rubricas/aplicar_trello_rf25_rf39.py --apply`.
+4. Depois da escrita, reler os cards alterados, comparar o estado efetivo com o diff e registrar IDs e resultados sem credenciais.
 
 ### 11.1 Registro das consultas de leitura
 

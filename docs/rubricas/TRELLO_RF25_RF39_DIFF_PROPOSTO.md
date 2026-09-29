@@ -1,6 +1,17 @@
 # Trello — auditoria RF25–RF39 e diff de escrita proposto
 
-> Leitura realizada em 29/09/2026. Nenhuma escrita foi executada. Chave, token e URLs autenticadas não foram registrados.
+> Leitura realizada em 29/09/2026. O lote foi autorizado pela equipe, porém as quatro tentativas de escrita foram recusadas com HTTP 403 (`Method forbidden`) antes da primeira mutação. Chave, token e URLs autenticadas não foram registrados.
+
+## Resultado da tentativa de aplicação
+
+- A equipe autorizou o lote integral, a label **Sprint 04** em HU-RF33–RF39 e a atribuição dos cinco cards a Bryan.
+- RF28.CA05 foi decidido como entrada manual de peça indisponível com aviso; o critério existente foi preservado.
+- Para RF38, ficou definido que **emitir** cria o código, **validar** apenas consulta e **usar** consome definitivamente; essa semântica está em RF38.CA13 no lote.
+- A regra de desempate de RF32 foi recebida literalmente como `[regra]`. Por não constituir uma regra executável, ela continua marcada como confirmação pendente e não foi inventada.
+- `python scripts/rubricas/aplicar_trello_rf25_rf39.py --apply` releu o board com sucesso, mas recebeu `HTTP 403 — Method forbidden` ao tentar criar a primeira checklist na HU-RF25. A tentativa com parâmetros em corpo `application/x-www-form-urlencoded`, a repetição após incorporar `ANALISE_RF_RNF_E_BRAYAN.md` e a tentativa após a atualização seguinte do ambiente receberam a mesma resposta.
+- O teste isolado, sem credenciais, confirmou `GET` chegando ao host, enquanto `POST`, `PUT` e `DELETE` são recusados pelo proxy com `403 Method forbidden`. Ao ignorar o proxy, a conexão TCP direta com `api.trello.com:443` não é estabelecida. Portanto, a liberação precisa ocorrer no proxy, e não apenas nas variáveis ou permissões do Trello.
+- A consulta segura aos metadados do token informou permissões de leitura e escrita no board, e a associação correspondente está ativa como administradora. Assim, a evidência aponta para bloqueio de método no caminho de rede/API, e não para ausência declarada de escopo no token. Essa é uma inferência; a causa final depende da infraestrutura.
+- Como a falha ocorreu na primeira operação, **nenhum card, checklist, item, label, responsável ou descrição foi alterado**. O lote permanece pendente e pode ser repetido de forma idempotente após a liberação de requisições `POST`, `PUT` e `DELETE` para `api.trello.com`.
 
 ## Consultas e fotografia do board
 
@@ -13,6 +24,16 @@
 - RF25–RF39 não possuem comentários. A leitura do board retornou apenas dois comentários no total, ambos fora deste recorte.
 
 ## Diagnóstico por RF
+
+### Como a análise de maturidade foi incorporada
+
+O documento `ANALISE_RF_RNF_E_BRAYAN.md` foi usado como segunda fonte local. Seus scores medem **maturidade das evidências** e não devem virar porcentagem concluída, prioridade automática ou checklist marcada no Trello. Foram incorporados apenas fatos acionáveis:
+
+- RF27/RF28 possuem integração FE pendente em “Usar em…” e Avatar/manequim; são candidatos de reserva para Bryan caso um dos cinco cards autorizados seja retirado.
+- RF29 pede cálculo manual reproduzível e explicação; RF30 pede idempotência, tetos e reconciliação; RF32 pede concorrência, desempate e fechamento; RF33 pede Top 100 e fallback sem WebGL; RF38 pede corrida, expiração e duplo uso. Esses pontos sustentam os cinco cards autorizados.
+- RF34–RF39 precisam preservar governança editorial, consentimento, antifraude, autorização e compatibilidade, respectivamente, ao converter CAs das descrições em HUs.
+- RNF1, RNF5, RNF7 e RNF8 atravessam os cards: autorização negativa, auditoria sem segredo, desempenho/usabilidade e fallback. RNF4 é o maior risco global identificado, mas ficou fora deste lote por não pertencer ao recorte funcional RF25–RF39.
+- A ausência de autoria identificável de Bryan no `git shortlog` não autoriza reescrever histórico; os cards exigem trabalho próprio, PR revisado, código/teste e evidência.
 
 | RF | Card RF | HU/CA no board | Inconsistência ou lacuna | Ação proposta |
 |---|---|---|---|---|
@@ -34,7 +55,7 @@
 
 ## Operações propostas no Trello
 
-Este é o lote de escrita aguardando confirmação. Não será aplicado parcialmente sem nova conferência.
+Este é o lote de escrita autorizado em 29/09/2026, mas ainda não aplicado devido ao bloqueio HTTP descrito acima. Não será aplicado parcialmente sem nova conferência do estado corrente.
 
 ### 1. Normalizações sem perda de conteúdo
 
@@ -53,14 +74,14 @@ Criar HU-RF33–HU-RF39 no **Product Backlog**, cada uma com:
 - descrição curta, dependências e fonte;
 - checklist **Critérios de Aceite** em Given/When/Then;
 - checklist **Tarefas por área**;
-- label existente **Sprint 04** apenas se a equipe confirmar que essa label significa agrupamento e não compromisso de entrega;
+- label existente **Sprint 04**, conforme confirmação da equipe;
 - nenhum membro atribuído por padrão.
 
 Os CAs atuais não serão apagados até que a nova HU seja criada e relida. Depois, o card RF manterá objetivo, atores, dependências e link para a HU, evitando duas fontes de verdade.
 
 ### 3. Cards funcionais para Bryan
 
-Criar no **Product Backlog**, atribuir a Bryan somente após sua concordância e vincular aos CAs indicados:
+Criar no **Product Backlog**, atribuir a Bryan conforme autorização recebida e vincular aos CAs indicados:
 
 1. `[RF29][BE/QA] validar fórmula e explicação do Inventory Score` — RF29.CA02–CA05 e CA11; 8 pontos.
 2. `[RF30][BE/DB/QA] reconciliar ledger e provar idempotência em concorrência` — RF30.CA01–CA03; 8 pontos.
@@ -69,6 +90,8 @@ Criar no **Product Backlog**, atribuir a Bryan somente após sua concordância e
 5. `[RF38][BE/DB/QA] impedir resgate duplo e cobrir expiração de cupom` — novos CAs de concorrência/expiração; 8 pontos.
 
 O corpo completo dos cinco cards — contexto, valor, escopo, Given/When/Then, subtarefas, arquivos, testes, evidências, riscos, DoD e commits — permanece na seção 8 de `TDE_SECAO_4_RF25_RF39.md` e será copiado sem incluir credenciais ou alegar resultados ainda não obtidos.
+
+RF27/RF28 não foram adicionados como sexto card porque o lote autorizado já atingiu o limite de cinco. Uma eventual substituição deve ser apresentada como novo diff e confirmada antes da escrita; não será feita silenciosamente.
 
 ## Salvaguardas da aplicação
 
@@ -79,10 +102,11 @@ O corpo completo dos cinco cards — contexto, valor, escopo, Given/When/Then, s
 - Registrar IDs dos cards/checklists criados e respostas HTTP, nunca URLs autenticadas.
 - Após a aplicação: executar novamente todas as consultas GET e gerar comparação esperado × efetivo.
 
-## Confirmações necessárias antes da escrita
+## Confirmações recebidas e pendência remanescente
 
-1. Autorizar o lote inteiro ou indicar quais operações numeradas podem ser aplicadas.
-2. Confirmar se HU-RF33–RF39 devem receber a label **Sprint 04** ou ficar sem sprint.
-3. Confirmar se os cinco cards podem ser atribuídos imediatamente a Bryan.
-4. Decidir se RF28.CA05 permite vestir manualmente peça indisponível com aviso ou se RF31 deve bloquear também essa entrada.
-5. Definir o desempate do RF32 e a fronteira exata entre “emitir”, “resgatar/validar” e “usar” no RF38.
+1. **Confirmado:** aplicar o lote inteiro.
+2. **Confirmado:** HU-RF33–RF39 recebem **Sprint 04**.
+3. **Confirmado:** os cinco cards podem ser atribuídos a Bryan.
+4. **Confirmado:** RF28 permite entrada manual de peça indisponível com aviso.
+5. **Confirmado:** no RF38, emitir cria o código, validar consulta e usar consome definitivamente.
+6. **Pendente:** substituir o marcador literal `[regra]` por uma regra objetiva e verificável de desempate no RF32.

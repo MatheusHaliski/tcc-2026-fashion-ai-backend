@@ -111,20 +111,23 @@ O objetivo não é criar commits artificiais para alterar estatística. Bryan de
 - Cada PR deve citar card, RF/RNF, CA, teste executado e evidência; Matheus revisa e Bryan responde aos comentários.
 - Nunca reescrever autoria de trabalho alheio. Participação se demonstra por análise, implementação, teste, revisão e documentação próprios.
 
-## Trello
+## Trello — atualização da validação em 29/09/2026
 
 O link de convite do board **TCC 2026 (Fashion AI) — Bryan,Matheus** foi fornecido em 28/09/2026. Por segurança, o token de convite não é reproduzido nem persistido no repositório.
 
-A tentativa de abrir o convite neste ambiente falhou antes de chegar ao Trello: o proxy de rede retornou `403 Forbidden`; o navegador de pesquisa também não estava autenticado. Além disso, um convite serve para uma pessoa entrar no board e **não substitui credenciais da API**. Por isso, nenhum card foi lido ou alterado e os scores continuam baseados nos artefatos versionados.
+A limitação inicial de leitura foi superada: as variáveis de API foram configuradas e a leitura autenticada confirmou o board, 21 listas, 312 cards, membros, labels, descrições, checklists e comentários. A auditoria direta dos RF25–RF39 está em `TRELLO_RF25_RF39_DIFF_PROPOSTO.md`. Os scores desta análise continuam sendo **maturidade das evidências do repositório**, e não status do Trello nem percentual concluído.
 
-Para concluir a conexão:
-1. **Conferência manual:** Matheus ou Bryan abre o convite em um navegador autenticado, aceita o acesso e envia a URL normal do board (sem `/invite/`).
-2. **Leitura automatizada:** configurar `TRELLO_API_KEY`, `TRELLO_TOKEN` e `TRELLO_BOARD_ID` como segredos do ambiente, com acesso somente ao board necessário e sem gravá-los no git.
-3. **Sincronização controlada:** primeiro comparar listas/cards/checklists em modo `--dry-run`; somente depois, com revisão humana, habilitar comentários ou atualização de checklists.
+O lote de normalização foi autorizado, incluindo Sprint 04 para HU-RF33–RF39 e cinco cards para Bryan. Entretanto, quatro tentativas pararam antes da primeira mutação: a API respondeu `HTTP 403 — Method forbidden` ao `POST` inicial, inclusive com parâmetros enviados no corpo. A quarta tentativa ocorreu após nova atualização do ambiente e outra leitura bem-sucedida do board. O diagnóstico isolado confirmou que o proxy aceita `GET`, recusa `POST`, `PUT` e `DELETE` com a mesma mensagem e que a conexão direta sem proxy não está disponível. O token declara leitura/escrita e a associação está ativa como administradora; portanto, o bloqueio está no caminho de rede, não no lote ou no escopo declarado do token. Nenhum card foi alterado.
+
+Para concluir a sincronização:
+1. **Infraestrutura:** permitir `POST`, `PUT` e `DELETE` destinados a `api.trello.com`, sem registrar query strings, headers ou corpos autenticados.
+2. **Nova fotografia:** executar novamente a leitura e comparar `dateLastActivity`, descrições e checklists antes da escrita.
+3. **Sincronização controlada:** executar `python scripts/rubricas/aplicar_trello_rf25_rf39.py` em dry-run e, se o resultado continuar aderente ao lote autorizado, repetir com `--apply`.
+4. **Pós-condição:** reler todos os alvos, registrar IDs/resultados sem credenciais e não marcar checklist como concluída apenas pela existência de código.
 
 O passo a passo de configuração e o verificador de acesso estão em `docs/rubricas/TRELLO_ACESSO.md` e `scripts/rubricas/verificar_trello.py`.
 
-Com acesso de leitura, a próxima versão da análise deve confrontar diretamente: RF/HU, CAs, responsável, sprint, status, checklist `[BE]/[DB]/[FE]/[INT]/[IA]/[QA]`, links de PR e evidências. Até isso ocorrer, o board **não pode ser declarado sincronizado**.
+A conferência de leitura já confrontou RF/HU, CAs, responsável, sprint, status e checklists. Links de PR/evidências ainda devem ser associados somente quando existirem e forem revisados. Até a escrita e a releitura final ocorrerem, o board **não pode ser declarado sincronizado**.
 
 ## Fontes internas usadas
 
