@@ -211,32 +211,42 @@ export function hairStats(img: Raster, mask: ArrayLike<number>, px: Pt[], toCano
     const c = q.pop()!; const gx = c % W, gy = (c - gx) / W;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = gx + dx, ny = gy + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue; const k = ny * W + nx; if (hair[k] && !reach[k]) { reach[k] = 1; q.push(k); } }
   }
-  const rs: number[] = [], gs: number[] = [], bs: number[] = []; const tops: number[] = [], sides: number[] = [], bottoms: number[] = [];
+  // 1ª passada: cor do cabelo junto da cabeça (near) e de todo o cabelo ligado a ela (all)
   const near: number[][] = [], all: number[][] = [];
+  for (let c = 0; c < W * H; c++) {
+    if (!reach[c]) continue; const gx = c % W, gy = (c - gx) / W; const x = gx * step, y = gy * step, i = y * w + x;
+    if (mask[i] <= 0.75) continue;
+    const [X, Y] = apply2D(toCanon, x, y); const o = i * 4; const col = [data[o], data[o + 1], data[o + 2]];
+    if (Math.abs(X) <= 13) all.push(col);
+    if (Y > foreheadY - 2 && Math.abs(X) < 10) near.push(col);          // cor: o cabelo junto da cabeça
+  }
+  // a região "de cabelo" vazou para o fundo? (cor longe da do cabelo junto à cabeça). Antes o cabelo inteiro era
+  // descartado (e o avatar saía careca); agora só entra na forma o que tem a cor do cabelo da cabeça.
+  const mN = [0, 1, 2].map((k) => median(near.map((c) => c[k])));
+  let leaked = false;
+  if (near.length > 20 && all.length > 50) {
+    const mA = [0, 1, 2].map((k) => median(all.map((c) => c[k])));
+    leaked = Math.hypot(mN[0] - mA[0], mN[1] - mA[1], mN[2] - mA[2]) > 45;
+  }
+  const like = (i: number) => { const o = i * 4; return Math.hypot(data[o] - mN[0], data[o + 1] - mN[1], data[o + 2] - mN[2]) < 60; };
+  // 2ª passada: forma (alto, lados, ponta de baixo, silhueta por altura)
+  const rs: number[] = [], gs: number[] = [], bs: number[] = []; const tops: number[] = [], sides: number[] = [], bottoms: number[] = [];
   let area = 0, cutTop = false; const byLevel: number[][] = HAIR_LEVELS.map(() => []);
   for (let c = 0; c < W * H; c++) {
     if (!reach[c]) continue; const gx = c % W, gy = (c - gx) / W; const x = gx * step, y = gy * step, i = y * w + x; const [X, Y] = apply2D(toCanon, x, y);
+    if (leaked && !like(i)) continue;
     area += step * step;
-    if (mask[i] > 0.75) {
-      const o = i * 4; const c = [data[o], data[o + 1], data[o + 2]]; if (Math.abs(X) <= 13) all.push(c);
-      if (Y > foreheadY - 2 && Math.abs(X) < 10) { near.push(c); rs.push(c[0]); gs.push(c[1]); bs.push(c[2]); }   // cor: o cabelo junto da cabeça
-    }
+    if (mask[i] > 0.75 && Y > foreheadY - 2 && Math.abs(X) < 10) { const o = i * 4; rs.push(data[o]); gs.push(data[o + 1]); bs.push(data[o + 2]); }
     if (Math.abs(X) < 6) tops.push(Y);
     if (Y > -3 && Y < 8) sides.push(Math.abs(X));
     if (Math.abs(X) > 5.5) bottoms.push(Y);
     const lv = Math.round((16 - Y) / 2); if (lv >= 0 && lv < HAIR_LEVELS.length) byLevel[lv].push(Math.abs(X));
     if (y <= Math.max(2, h * 0.015) && Math.abs(X) < 7) cutTop = true;
   }
-  const coverage = faceArea ? area / faceArea : 0; let present = coverage > 0.08 && rs.length > 20;
-  // a região "de cabelo" vazou para o fundo? (cor longe da do cabelo junto à cabeça) → não confiável
-  let leaked = false;
-  if (present && all.length > 50) {
-    const mN = [0, 1, 2].map((k) => median(near.map((c) => c[k]))), mA = [0, 1, 2].map((k) => median(all.map((c) => c[k])));
-    leaked = Math.hypot(mN[0] - mA[0], mN[1] - mA[1], mN[2] - mA[2]) > 45;
-  }
+  const coverage = faceArea ? area / faceArea : 0; const present = coverage > 0.08 && rs.length > 20;
   // sem cabelo acima da testa: careca (pele) ou algo não reconhecido (peruca, chapéu, fundo) — aí não se inventa cabelo
-  let unsure = leaked; if (leaked) present = false;
-  if (!present && !leaked && skin && seedCol.length > 10) {
+  let unsure = false;
+  if (!present && skin && seedCol.length > 10) {
     const m = [median(seedCol.map((c) => c[0])), median(seedCol.map((c) => c[1])), median(seedCol.map((c) => c[2]))];
     const S = skin[0] + skin[1] + skin[2] || 1, T = m[0] + m[1] + m[2] || 1; const ratio = luma(m[0], m[1], m[2]) / (luma(...skin) || 1);
     unsure = Math.hypot(m[0] / T - skin[0] / S, m[1] / T - skin[1] / S) > 0.05 || ratio < 0.6 || ratio > 1.5;

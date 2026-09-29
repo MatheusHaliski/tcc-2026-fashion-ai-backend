@@ -147,9 +147,18 @@ function neutralHead(rx: number, ry: number, rz: number): THREE.BufferGeometry {
   g.computeVertexNormals(); return g;
 }
 
+/**
+ * Sexo do corpo base: o do Avatar 3D (estimado pelo rosto ou escolhido pela pessoa, lib/avatar3d/sex-detect.ts) ou,
+ * sem ele, o do manequim (cadastro).
+ */
+export function mannequinSex(m: Pick<Mannequin3d, "sex" | "avatar">): Sex {
+  const s = m.avatar?.model?.sex ?? m.sex;
+  return s === "MASCULINO" ? "MASCULINO" : "FEMININO";
+}
+
 /** Proporções do corpo deste manequim: as do avatar (medidas/informadas) ou as de referência do sexo. */
 export function bodyParamsOf(m: Mannequin3d): BodyParams {
-  const sex = m.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
+  const sex = mannequinSex(m);
   const saved = validateBody(m.avatar?.model?.body);
   if (saved) return saved.params;
   return { ...DEFAULT_BODY[sex], build: BUILD[m.build ?? "MEDIUM"] ?? 0 };
@@ -189,7 +198,7 @@ export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body
  */
 export function Mannequin({ mannequin, pieces, onClick, body, still = false, onHuman }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; onHuman?: (p: HumanParts) => void }) {
   const reduced = useReducedMotion();
-  const sex: Sex = mannequin.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
+  const sex: Sex = mannequinSex(mannequin);
   const saved = validateBody(mannequin.avatar?.model?.body);
   const params = body ?? bodyParamsOf(mannequin);
   // origem de cada medida: a do corpo salvo; na prévia do editor, o que a pessoa vê é "informado"; sem nada, referência

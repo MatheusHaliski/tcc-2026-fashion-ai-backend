@@ -24,7 +24,7 @@ export default function AvatarLab() {
     try {
       const ps: AnalyzedPhoto[] = [];
       for (let i = 0; i < 3; i++) { const f = files.current[i]; if (f) ps.push(await analyzePhoto(f, i === 0 ? "front" : "side")); }
-      setPhotos(ps); const b = buildAvatar(ps); setBuilt(b);
+      setPhotos(ps); const b = buildAvatar(ps, { profileSex: sex }); setBuilt(b);
       if (b) { const t = new THREE.CanvasTexture(b.atlas); t.colorSpace = THREE.SRGBColorSpace; setTex(t); }
       setMs(Math.round(performance.now() - t0)); setStatus(b ? "built" : "rejected");
     } catch (e) { setStatus("error: " + (e as Error).message); }
@@ -32,7 +32,7 @@ export default function AvatarLab() {
   useEffect(() => {
     (window as unknown as { __avatarLab: unknown }).__avatarLab = {
       setView, setSex, run,
-      state: () => ({ status, ms, photos: photos.map((p) => ({ role: p.role, faces: p.faces, pose: p.fit?.pose, stats: p.stats, occlusion: p.occlusion, px: p.px ? [33, 133, 263, 362, 168, 6, 234, 454, 10, 152].map((i) => p.px![i]) : null, issues: p.issues, blend: { eyeBlinkLeft: p.blend.eyeBlinkLeft, eyeBlinkRight: p.blend.eyeBlinkRight, jawOpen: p.blend.jawOpen } })), set: built?.set, model: built ? { skin: built.model.skin, hair: built.model.hair, metrics: built.model.metrics, views: built.model.views, warnings: built.model.warnings } : null, lightEvened: built?.lightEvened, hairStats: built?.hair ?? null, hairProfile: built?.hairProfile ?? null }),
+      state: () => ({ status, ms, photos: photos.map((p) => ({ role: p.role, faces: p.faces, pose: p.fit?.pose, stats: p.stats, occlusion: p.occlusion, px: p.px ? [33, 133, 263, 362, 168, 6, 234, 454, 10, 152].map((i) => p.px![i]) : null, issues: p.issues, blend: { eyeBlinkLeft: p.blend.eyeBlinkLeft, eyeBlinkRight: p.blend.eyeBlinkRight, jawOpen: p.blend.jawOpen } })), set: built?.set, sexGuess: built?.sexGuess ?? photos[0]?.sex ?? null, model: built ? { sex: built.model.sex, skin: built.model.skin, hair: built.model.hair, metrics: built.model.metrics, views: built.model.views, warnings: built.model.warnings } : null, lightEvened: built?.lightEvened, hairStats: built?.hair ?? null, hairProfile: built?.hairProfile ?? null }),
       atlas: () => built?.atlas.toDataURL("image/jpeg", 0.85) ?? null,
     };
   });
@@ -48,7 +48,7 @@ export default function AvatarLab() {
       <p id="lab-status">{status} {ms ? `${ms} ms` : ""}</p>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <div id="lab-viewer" style={{ width: 480, height: 560, background: "#e9e4dc" }}>
-          {built && tex && <AvatarViewer avatar={{ model: built.model, texture: tex }} sex={sex} view={view} />}
+          {built && tex && <AvatarViewer avatar={{ model: built.model, texture: tex }} sex={built.model.sex ?? sex} view={view} />}
         </div>
         {built && <img id="lab-atlas" alt="atlas" src={built.atlas.toDataURL("image/jpeg", 0.8)} style={{ width: 280, height: 280 }} />}
         <pre style={{ maxWidth: 520, whiteSpace: "pre-wrap", fontSize: 11 }}>{JSON.stringify({ photos: photos.map((p) => ({ role: p.role, faces: p.faces, pose: p.fit?.pose, issues: p.issues })), set: built?.set, skin: built?.model.skin, hair: built?.model.hair }, null, 1)}</pre>

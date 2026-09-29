@@ -36,17 +36,32 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Altura da linha do cabelo em função do ângulo em volta da cabeça (0 = frente, π = nuca). */
+/** Ruído determinístico por ângulo (−1…1): linha do cabelo e pontas irregulares, sem sorteio a cada render. */
+const wobble = (x: number) => Math.sin(x * 23.1) * 0.5 + Math.sin(x * 41.7 + 1.3) * 0.3 + Math.sin(x * 7.3 + 0.4) * 0.2;
+const hash = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+
 function hairline(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boolean): number {
+  return hairlineBase(fr, hair, phi, covered) + (covered ? 0 : wobble(phi) * 0.0035);   // linha viva, não régua
+}
+
+function hairlineBase(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boolean): number {
   const a = Math.abs(phi);
-  const front = covered ? fr.toY(CANON_FOREHEAD + 1.2) : fr.toY(CANON_FOREHEAD + 0.3 - Math.min(1, hair.fringe) * 4.5);
-  const temple = fr.toY(covered ? 5.5 : 4.2);
+  // o ponto 10 do MediaPipe (topo da malha do rosto) fica só ~3 cm acima da sobrancelha; a linha do cabelo de verdade,
+  // ~5–6 cm: nascendo no ponto 10 a testa ficava curta e o cabelo virava "cuia". A franja medida desce a linha até a
+  // sobrancelha (canônico ≈ 5,1)
+  const front = covered ? fr.toY(CANON_FOREHEAD + 1.2) : fr.toY(CANON_FOREHEAD + 2 - Math.min(1, hair.fringe) * 4.8);
+  const temple = fr.toY(covered ? 5.5 : 6.2);
   const long = hair.length === "medium" || hair.length === "long";
   // sobre a orelha: o cabelo desce até onde a foto mostra (médio/longo cobre a orelha toda; curto pode cobrir o alto dela)
   const ear = covered ? fr.toY(3.2) : long ? fr.toY(-2.5) : fr.toY(Math.min(2.9, Math.max(-1.5, hair.bottom ?? 2.9)));
   const nape = covered ? fr.toY(0) : fr.toY(hair.length === "buzz" ? -4 : -6.5);
+  // costeleta à frente da orelha (curto), contorno por cima da orelha e descida até a nuca atrás dela
+  const shortish = !long && !covered;
+  const sideburn = shortish ? fr.toY(1.2) : temple;
   if (a < 0.6) return lerp(front, temple, smooth(0.35, 0.6, a));
-  if (a < 1.35) return lerp(temple, ear, smooth(0.6, 1.25, a));
-  if (a < 2.0) return lerp(ear, nape, smooth(1.5, 2.0, a));
+  if (a < 1.2) return lerp(temple, sideburn, smooth(0.8, 1.15, a));
+  if (a < 1.85) return lerp(sideburn, ear, smooth(1.2, 1.4, a));
+  if (a < 2.35) return lerp(ear, nape, smooth(1.85, 2.35, a));
   return nape;
 }
 
@@ -97,7 +112,12 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
   const tex = typeof document !== "undefined" ? strandTexture(colHex, texture, covered) : null;
   const mat = new THREE.MeshPhysicalMaterial({
     color: "#ffffff", map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide,
-    roughness: covered ? 0.9 : 0.5, sheen: covered ? 0.2 : 0.6, sheenRoughness: 0.4, sheenColor: new THREE.Color(colHex).lerp(new THREE.Color("#ffffff"), 0.35),
+    roughness: covered ? 0.9 : 0.58, sheen: covered ? 0.2 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(colHex).lerp(new THREE.Color("#ffffff"), 0.25),
+    // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
+    anisotropy: covered ? 0 : 0.3,
+    // por cima da roupa: as peças puxam a profundidade (polygonOffset −camada, até −6) e "engoliam" o cabelo longo
+    // caído sobre a camiseta; o cabelo puxa mais
+    polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8,
   });
   mat.name = covered ? "cobertura" : "cabelo";
   return { geometry: g, material: mat, kind: covered ? "cover" : "hair" };
@@ -156,7 +176,13 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
   const armBones = new Set(a.meta.bones.map((b, i) => (/(Arm|ForeArm|Hand)/.test(b.name) ? i : -1)).filter((i) => i >= 0));
   const long = !covered && (hair.length === "medium" || hair.length === "long");
   const coily = texture === "coily";
-  const maxSide = covered ? 0.05 : coily ? 0.09 : 0.045, maxTop = covered ? 0.09 : coily ? 0.1 : 0.05;
+  const curly = texture === "curly";
+  // teto da espessura da calota. Cabelo médio/longo liso fica rente ao crânio nos lados (1–2 cm): a largura que a foto
+  // mostra ao lado do rosto é do cabelo pendurado, e quem a desenha é a cortina — na calota ela virava a "aba" de capacete
+  // volume medido na foto (lib/avatar3d/hair.ts, hairVolume): rente encolhe os tetos, volumoso os alarga
+  const hv = covered ? 1 : Math.min(1.9, Math.max(0.7, hair.volume ?? 1));
+  const maxSide = (covered ? 0.05 : coily ? 0.09 : curly ? 0.045 : long ? 0.02 : 0.016) * (covered ? 1 : hv);   // curto liso: laterais batidas
+  const maxTop = (covered ? 0.09 : coily ? 0.1 : curly ? 0.04 : 0.035) * (covered ? 1 : Math.min(1.6, hv));
   const topCanon = covered ? Math.max(SKULL_TOP + 2, ...HAIR_TOPS(hair.outline)) : Math.max(SKULL_TOP + 0.5, hair.top || SKULL_TOP + 1);
   // volume mínimo de cabelo de verdade (fios têm corpo: nunca "pintado" no crânio). A silhueta da foto só aumenta isso;
   // com o alto da cabeça cortado na foto (hair.cut), a altura medida não vale e fica o mínimo do comprimento.
@@ -189,7 +215,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     const ny = Math.max(0, normals[v * 3 + 1]);
     let t = lerp(tSideAt(y) * (Math.abs(phi) > 2 ? 0.9 : 1), tTop, ny * ny) * vol;
     const frontness = 1 - smooth(0.5, 1.1, Math.abs(phi));
-    t *= lerp(1, smooth(hl, hl + 0.05, y), frontness);                       // testa: rente na linha do cabelo
+    t *= lerp(1, smooth(hl, hl + Math.max(0.05, t * 2.2), y), frontness);    // testa: rente na linha do cabelo, sem aba
     // borda de baixo da calota (acima da orelha, na nuca): o cabelo curto termina rente, sem "aba"
     thick[v] = t * smooth(hl - 0.012, hl + (long ? 0.008 : 0.04), y) + 0.0015;
   }
@@ -199,7 +225,14 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     let i = map.get(v); if (i !== undefined) return i; i = pos.length / 3; map.set(v, i);
     let t = thick[v];
     if (!covered && (texture === "curly" || coily)) t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], coily ? 260 : 150) * (coily ? 0.006 : 0.0035);
-    else if (!covered && t > 0.006) t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], 70) * 0.0022;   // mechas: sem capacete liso
+    else if (!covered && t > 0.006) {
+      // mechas: sulcos que descem do alto da cabeça (a direção do fio), com leve torção — a luz quebra em faixas e a
+      // superfície deixa de ser uma casca lisa; somem no topo (redemoinho) e na borda
+      const ny = Math.max(0, normals[v * 3 + 1]); const y = c.body[v * 3 + 1];
+      const u = phiOf[v] * 15 + Math.sin(y * 55 + phiOf[v] * 2) * 0.7;
+      t += (Math.abs(Math.sin(u)) ** 0.6 - 0.62) * 0.0032 * (1 - ny ** 4) * Math.min(1, t / 0.012);
+      t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], 70) * 0.0015;
+    }
     pos.push(c.body[v * 3] + normals[v * 3] * t, c.body[v * 3 + 1] + normals[v * 3 + 1] * t, c.body[v * 3 + 2] + normals[v * 3 + 2] * t);
     uv.push((phiOf[v] / (2 * Math.PI) + 0.5) * 10, (fr.headTop - c.body[v * 3 + 1]) / 0.25);
     for (let j = 0; j < 4; j++) { const w = a.body.skinWeight[v * 4 + j]; si.push(w ? a.body.skinIndex[v * 4 + j] : 0); sw.push(w / 255); }
@@ -210,46 +243,67 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
   // ---- cortina (médio/longo)
   if (long) {
     const bottomC = Math.min(hair.bottom ?? -12, -4);
-    const yStart = fr.toY(0.5), yBottom = fr.toY(bottomC), shoulderY = fr.chinY - 0.09;
-    const NA = 64, dy = 0.008; const levels = Math.max(2, Math.ceil((yStart - yBottom) / dy));
+    // nasce na altura das têmporas, deitada sobre a calota (sem degrau na lateral), e desce até o comprimento medido
+    const yStart = fr.toY(4.2), yBottom = fr.toY(bottomC), shoulderY = fr.chinY - 0.09;
+    const NA = 72, dy = 0.008; const levels = Math.max(2, Math.ceil((yStart - yBottom + 0.05) / dy));
+    const angOf = (x: number, z: number) => Math.round(((Math.atan2(x, z) + Math.PI) / (2 * Math.PI)) * NA) % NA;
     const rBody = new Float32Array((levels + 1) * NA);
     for (let v = 0; v < nb; v++) {
       if (armBones.has(a.body.skinIndex[v * 4])) continue;
-      const y = c.body[v * 3 + 1]; if (y > yStart + dy || y < yBottom - dy) continue;
+      const y = c.body[v * 3 + 1]; if (y > yStart + dy || y < yBottom - 0.05 - dy) continue;
       const x = c.body[v * 3] - fr.cx, z = c.body[v * 3 + 2] - fr.cz; const r = Math.hypot(x, z);
-      const li = Math.round((yStart - y) / dy); const aj = Math.round(((Math.atan2(x, z) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      const li = Math.round((yStart - y) / dy); const aj = angOf(x, z);
       for (const l of [li - 1, li, li + 1]) if (l >= 0 && l <= levels) { const q = l * NA + aj; rBody[q] = Math.max(rBody[q], r); }
     }
     for (let l = 0; l <= levels; l++) for (let j = 0; j < NA; j++) if (!rBody[l * NA + j]) {
       let best = 0; for (let d = 1; d < NA / 2 && !best; d++) best = Math.max(rBody[l * NA + ((j + d) % NA)], rBody[l * NA + ((j - d + NA) % NA)]);
       rBody[l * NA + j] = best;
     }
-    // raio de partida = o da calota na altura de partida (por ângulo), para a cortina nascer por dentro dela
-    const capR = new Float32Array(NA);
+    // raio da calota por altura e ângulo: a cortina passa por fora dela, colada, onde as duas se encontram
+    const capR = new Float32Array((levels + 1) * NA);
     for (let q = 0; q < pos.length / 3; q++) {
-      if (Math.abs(pos[q * 3 + 1] - yStart) > 0.02) continue;
-      const x = pos[q * 3] - fr.cx, z = pos[q * 3 + 2] - fr.cz; const j = Math.round(((Math.atan2(x, z) + Math.PI) / (2 * Math.PI)) * NA) % NA;
-      capR[j] = Math.max(capR[j], Math.hypot(x, z));
+      const li = Math.round((yStart - pos[q * 3 + 1]) / dy); if (li < 0 || li > levels) continue;
+      const x = pos[q * 3] - fr.cx, z = pos[q * 3 + 2] - fr.cz; const j = angOf(x, z); const k2 = li * NA + j;
+      capR[k2] = Math.max(capR[k2], Math.hypot(x, z));
     }
-    const vid = new Int32Array((levels + 1) * NA).fill(-1);
+    const capAt = (l: number, j: number) => capR[l * NA + j] || capR[l * NA + ((j + 1) % NA)] || capR[l * NA + ((j - 1 + NA) % NA)];
+    // borda da frente: atrás da orelha até o ombro; abaixo dele o cabelo se abre sobre os ombros (transição suave)
+    const edgeAt = (y: number) => lerp(1.9, 1.15, smooth(shoulderY, shoulderY - 0.07, y));
+    // corte em "U": as laterais mais curtas que as costas; pontas irregulares mecha a mecha
+    const bottomAt = (phi: number) => yBottom + (1 - smooth(1.4, Math.PI, Math.abs(phi))) * 0.04 + wobble(phi * 1.9) * 0.012;
+    const weights = (y: number) => {
+      const wH = smooth(fr.chinY - 0.08, fr.chinY + 0.02, y), wS = 1 - smooth(shoulderY - 0.06, shoulderY + 0.02, y);
+      si.push(headB, neckB, spine2, 0); sw.push(wH, Math.max(0, 1 - wH - wS), wS, 0);
+    };
+    // caimento: por fora do corpo com folga para a roupa (mais abaixo do pescoço), sem "prateleira" nos ombros — o fio
+    // não dobra para fora mais rápido que 45° (antecipa o ombro) e, caindo, quase não volta para dentro
+    const need = new Float32Array((levels + 1) * NA);
+    for (let l = 0; l <= levels; l++) { const y = yStart - l * dy; const clr = lerp(0.012, 0.03, smooth(fr.chinY - 0.02, shoulderY + 0.02, y)); for (let j = 0; j < NA; j++) need[l * NA + j] = rBody[l * NA + j] + clr; }
+    for (let j = 0; j < NA; j++) {
+      for (let l = levels - 1; l >= 0; l--) need[l * NA + j] = Math.max(need[l * NA + j], need[(l + 1) * NA + j] - dy);
+      for (let l = 1; l <= levels; l++) need[l * NA + j] = Math.max(need[l * NA + j], need[(l - 1) * NA + j] - dy * 0.12);
+    }
+    const vid = new Int32Array((levels + 1) * NA).fill(-1); const rIn = new Float32Array((levels + 1) * NA);
     for (let l = 0; l <= levels; l++) {
-      const y = yStart - l * dy; const tRow = l / levels;
+      const y = yStart - l * dy; const hang = smooth(yStart, yStart - 0.06, y);      // 0 junto da calota → 1 pendurado
       const W = outlineAt(hair.outline, CANON_FOREHEAD + (y - fr.y10) / k) * k;
       for (let j = 0; j < NA; j++) {
-        const phi = (j / NA) * 2 * Math.PI - Math.PI; const ap = Math.abs(phi);
-        if (ap < (y < shoulderY ? 1.95 : 1.1)) continue;                   // rosto e peito livres; abaixo dos ombros só atrás
-        const sideness = Math.abs(Math.sin(phi));
-        const cap = capR[j] || capR[(j + 1) % NA] || capR[(j - 1 + NA) % NA];
-        let r = Math.max(rBody[l * NA + j] + 0.012 + 0.008 * tRow, W ? lerp(fr.halfW + 0.015, W, sideness) : 0, cap ? cap - 0.004 - 0.02 * tRow : 0);
-        if (texture === "wavy") r += Math.sin((yStart - y) * 90 + j * 0.3) * 0.004;
-        if (texture === "curly" || coily) r += (0.006 + 0.012 * tRow) * vol + bump(Math.cos(phi), y, Math.sin(phi), 40) * 0.006;
-        vid[l * NA + j] = pos.length / 3;
-        pos.push(fr.cx + Math.sin(phi) * r, y, fr.cz + Math.cos(phi) * r);
+        const phi = (j / NA) * 2 * Math.PI - Math.PI; const ap = Math.abs(phi); const edge = edgeAt(y);
+        const bot = bottomAt(phi);
+        if (ap < edge || y < bot - dy) continue;                                   // rosto e peito livres; fim da mecha
+        const sideness = Math.abs(Math.sin(phi)); const cap = capAt(l, j);
+        const tip = smooth(bot + 0.05, bot, y);
+        let r = Math.max(need[l * NA + j] + (0.004 + 0.008 * Math.max(0, hv - 1)) * hang, W ? lerp(fr.halfW + 0.012, W, sideness) * hang : 0, cap ? cap + 0.0015 : 0);
+        r -= 0.006 * tip * (texture === "straight" ? 1 : 0.4);                       // pontas voltam para dentro
+        if (texture === "wavy") r += Math.sin((yStart - y) * 90 + j * 0.3) * 0.004 * hang;
+        if (texture === "curly" || coily) r += (0.006 + 0.012 * (l / levels)) * vol * hang + bump(Math.cos(phi), y, Math.sin(phi), 40) * 0.006;
+        rIn[l * NA + j] = r; vid[l * NA + j] = pos.length / 3;
+        pos.push(fr.cx + Math.sin(phi) * r, Math.max(y, bot), fr.cz + Math.cos(phi) * r);
         uv.push(((phi + Math.PI) / (2 * Math.PI)) * 10, (fr.headTop - y) / 0.25);
-        const wH = smooth(fr.chinY - 0.08, fr.chinY + 0.02, y), wS = 1 - smooth(shoulderY - 0.06, shoulderY + 0.02, y);
-        si.push(headB, neckB, spine2, 0); sw.push(wH, Math.max(0, 1 - wH - wS), wS, 0);
-        const tip = smooth(yBottom + 0.035, yBottom, y); const edge = smooth(y < shoulderY ? 1.95 : 1.1, (y < shoulderY ? 1.95 : 1.1) + 0.15, ap);
-        col.push(1, 1, 1, Math.min(1 - 0.75 * tip, 0.35 + 0.65 * edge));
+        weights(y);
+        const edgeA = smooth(edge, edge + 0.18, ap);
+        const topA = smooth(yStart, yStart - 0.03, y);                              // nasce transparente sobre a calota: sem emenda
+        col.push(1, 1, 1, Math.min(1 - 0.8 * tip, 0.3 + 0.7 * edgeA, 0.25 + 0.75 * topA));
       }
     }
     for (let l = 0; l < levels; l++) for (let j = 0; j < NA; j++) {
@@ -257,6 +311,34 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
       if (p >= 0 && q >= 0 && r >= 0 && s2 >= 0) index.push(p, r, q, q, r, s2);
       else if (p >= 0 && q >= 0 && r >= 0) index.push(p, r, q);
       else if (p >= 0 && q >= 0 && s2 >= 0) index.push(p, s2, q);
+    }
+    // mechas soltas por fora (faixas de 3–5 cm, comprimentos e caimentos diferentes): quebram a silhueta de "caixa" e
+    // dão profundidade — o que se vê de lado e de costas passa a ser cabelo em camadas, não um painel
+    const cards = texture === "straight" || texture === "wavy" ? 70 : 0;          // cacho/crespo: o relevo já quebra a forma
+    for (let n = 0; n < cards; n++) {
+      const h1 = hash(n), h2 = hash(n + 97), h3 = hash(n + 193);
+      const phiC = (n % 2 ? 1 : -1) * (1.95 + (Math.PI - 1.95) * h1);
+      // todas nascem coladas na cortina (sem borda de cima visível) e se soltam aos poucos; muda o comprimento
+      const half = 0.007 + 0.007 * h2; const yTop = yStart - 0.02; const yEnd = bottomAt(phiC) + (h2 - 0.4) * 0.035 - 0.01 * h3;
+      const j = Math.round(((phiC + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      let prev = -1;
+      for (let y = yTop; y > yEnd - 1e-4; y -= dy) {
+        const l = Math.min(levels, Math.max(0, Math.round((yStart - y) / dy))); const base = rIn[l * NA + j];
+        if (!base) { prev = -1; continue; }
+        const along = (yTop - y) / Math.max(0.01, yTop - yEnd); const tip = smooth(0.78, 1, along);
+        const r = base + 0.0015 + (0.001 + 0.004 * h1) * smooth(0.05, 0.35, along);
+        const sway = (texture === "wavy" ? Math.sin((yTop - y) * 80 + n) * 0.006 : Math.sin((yTop - y) * 14 + n) * 0.004) / r;
+        const dphi = (half * (1 - 0.45 * tip)) / r; const i0 = pos.length / 3;
+        for (const s0 of [-1, 1]) {
+          const ph = phiC + sway + s0 * dphi;
+          pos.push(fr.cx + Math.sin(ph) * r, y, fr.cz + Math.cos(ph) * r);
+          uv.push(((ph + Math.PI) / (2 * Math.PI)) * 10 + n * 0.37, (fr.headTop - y) / 0.25);
+          weights(y);
+          col.push(1, 1, 1, (1 - 0.85 * tip) * (0.3 + 0.7 * smooth(0, 0.1, along)));
+        }
+        if (prev >= 0) index.push(prev, i0, prev + 1, prev + 1, i0, i0 + 1);
+        prev = i0;
+      }
     }
   }
   if (index.length < 30) return null;

@@ -123,9 +123,11 @@ export function renderColor(t: HairTone, measured?: [number, number, number] | n
   const mC = Math.hypot(measured[1], measured[2]), rC = Math.hypot(ra, rb);
   if (t.family === "gray" || t.family === "white" || mC < 4) return ref.color;
   const h = Math.atan2(measured[2], measured[1]); const rh = Math.atan2(rb, ra);
-  // matiz: o medido, sem sair de ±25° do da paleta (luz amarela/azul da foto não vira cabelo verde nem roxo)
+  // matiz: o medido, sem sair de ±25° do da paleta (luz amarela/azul da foto não vira cabelo verde nem roxo). Nos
+  // loiros (nível 7+) só ±10°: a luz quente da foto puxava o loiro claro para o pêssego — a cor da pele
   let dh = h - rh; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI;
-  const hh = rh + Math.max(-0.44, Math.min(0.44, dh));
+  const lim = t.level >= 7 && (t.family === "natural" || t.family === "golden" || t.family === "ash") ? 0.17 : 0.44;
+  const hh = rh + Math.max(-lim, Math.min(lim, dh));
   const C = Math.min(40, rC * 0.5 + Math.min(mC, rC * 1.6) * 0.5);
   return labToHex(L, C * Math.cos(hh), C * Math.sin(hh));
 }
