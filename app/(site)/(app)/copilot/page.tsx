@@ -11,10 +11,12 @@ import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useDetailModal } from "@/components/detail-modal";
 import type { PieceView, SchemeView } from "@/lib/api/types";
+import { label } from "@/lib/api/taxonomy";
+import { resolveCardArt } from "@/lib/card-art";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
-interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; description?: string; background?: Record<string, unknown>; }
+interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; }
 interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; backgroundNotice?: Record<string, string>; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
 interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
@@ -24,6 +26,23 @@ type SuggestionSection = "ready" | "new" | "forgotten" | "weather" | "trending";
 
 const lookKey = (look: SuggestedLook) => `${look.title}|${look.pieceIds.join(",")}`;
 
+/** O que o Copilot entendeu do pedido (ocasião, estilo, estação, humor, clima e fundo) — mostrado no card do look. */
+function Understood({ look }: { look: SuggestedLook }) {
+  const { t } = useI18n();
+  const tags = [...(look.occasion ?? []), ...(look.style ?? []), look.season, look.mood].filter((x): x is string => !!x).map((x) => label(x.toLowerCase()));
+  if (look.weather) tags.push(t(`copilot.clima.${look.weather}`));
+  const art = look.background ? resolveCardArt(look.background) : null;
+  const hasArt = !!art && art.kind !== "none";
+  if (!tags.length && !hasArt) return null;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1">
+      <span className="type-caption text-faint">{t("copilot.entendi")}:</span>
+      {[...new Set(tags)].map((tag) => <span key={tag} className="badge">{tag}</span>)}
+      {hasArt && <span className="badge inline-flex items-center gap-1">{art.image && <img src={art.image} alt="" className="h-4 w-4 rounded object-cover" />}{art.label}</span>}
+    </div>
+  );
+}
+
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
   const { data: ctx } = useApi<Ctx>((signal) => api.get("/api/copilot/context?view=copilot", { signal }), []);
@@ -31,7 +50,7 @@ function Copilot() {
   const detail = useDetailModal();
   const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const endRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<SuggestionSection>("ready"); const [savedLooks, setSavedLooks] = useState<SuggestedLook[]>([]); const [activeLook, setActiveLook] = useState<string | null>(null); const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => { if (msgs.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [msgs]);   // sem conversa não rola; com conversa, só o mínimo para a última mensagem aparecer
   const storageKey = ctx?.userId ? `fashionai.copilot.looks.v1.${ctx.userId}` : null;
   const rememberLooks = useCallback((looks: SuggestedLook[]) => {
     if (!looks.length) return;
@@ -87,7 +106,7 @@ function Copilot() {
       {ctx?.limitation && <p className="mb-3 rounded-md bg-chalk-soft p-3 type-body-sm">{ctx.limitation.message} <Link href="/pieces/new" className="underline">{t("closet.addPiece")}</Link></p>}
       {ctx?.weather?.available && <p className="mb-3 type-caption text-muted">{ctx.weather.city} · {ctx.weather.temperatureC}°C · {ctx.weather.description}</p>}
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="surface self-start p-3 lg:sticky lg:top-16" aria-label={t("copilot.sugestao_do_copilot")}>
+      <aside className="surface self-start p-3" aria-label={t("copilot.sugestao_do_copilot")}>
         <h2 className="mb-2 type-h3">{t("copilot.looks_prontos_para_hoje")}</h2>
         <nav className="grid gap-1" aria-label={t("copilot.seus_looks_clique_para_ver")}>
           {visibleLooks.map((look) => <button key={lookKey(look)} type="button" aria-pressed={activeLook === lookKey(look)} className={`truncate rounded px-3 py-2 text-left type-body-sm ${activeLook === lookKey(look) ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`} title={look.title} onClick={() => setActiveLook(lookKey(look))}>{look.title}</button>)}
@@ -112,7 +131,7 @@ function Copilot() {
             <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
               {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}</Link>)}</div> : null}
-              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
+              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
               {m.reply?.backgroundNotice && <p className="mt-2 type-caption text-muted">{Object.values(m.reply.backgroundNotice).join(" ")}</p>}
               {m.reply?.purchases?.length ? <div className="mt-2 rounded border border-line-soft p-2"><p className="label">{t("copilot.sugestoes_de_compra_genericas")}</p><ul className="fai-list type-body-sm">{m.reply.purchases.map((p, j) => <li key={j}>• {p.name}{p.delta != null ? t("copilot.combinacoes", { delta: p.delta }) : ""}{p.reason ? ` · ${p.reason}` : ""}{p.sponsored && <span className="badge ml-1">{t("copilot.patrocinado")}</span>}</li>)}</ul></div> : null}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}

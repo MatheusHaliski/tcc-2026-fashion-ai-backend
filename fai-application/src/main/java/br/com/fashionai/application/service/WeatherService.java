@@ -48,6 +48,21 @@ public class WeatherService {
         return t >= 28 ? "VERAO_LEVE" : t >= 18 ? "MEIA_ESTACAO" : t >= 10 ? "CAMADAS" : "INVERNO_PESADO";
     }
 
+    /** Contexto com a faixa pedida pelo usuário no texto (ex.: "está frio"); sem faixa válida, devolve o contexto como veio. */
+    public static Context withBand(Context ctx, String band) {
+        if (band == null || !Set.of("VERAO_LEVE", "MEIA_ESTACAO", "CAMADAS", "INVERNO_PESADO").contains(band)) {
+            return ctx;
+        }
+        String season = switch (band) {
+            case "VERAO_LEVE" -> "SUMMER";
+            case "MEIA_ESTACAO" -> "SPRING";
+            case "CAMADAS" -> "AUTUMN";
+            default -> "WINTER";
+        };
+        Context base = ctx == null ? Context.none(null) : ctx;
+        return new Context(base.temperatureC(), base.description(), base.city(), band, season, base.note(), true);
+    }
+
     public static String season(double t) {
         return t >= 28 ? "SUMMER" : t >= 18 ? "SPRING" : t >= 10 ? "AUTUMN" : "WINTER";
     }

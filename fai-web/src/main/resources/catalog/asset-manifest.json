@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-09-29T00:19:28+00:00",
+ "generatedAt": "2026-09-29T01:06:32+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -1102,6 +1102,1256 @@
      }
     },
     {
+     "id": "aura_geometry__gradientes_a004_living_shapes",
+     "presetId": "aura_geometry",
+     "theme": "Living Shapes",
+     "code": "D004",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Living Shapes",
+     "index": 36,
+     "static": {
+      "url": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
+      "bytes": 105222,
+      "sha256": "d743d55fbf4aa00dd4b80b586c4d9cf618da3b1cb2d8f3be470c10b80a30532f"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a004_living_shapes/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
+      "bytes": 5849645,
+      "sha256": "fd7f4cfd5edf0fed75fea21eea23f799846e0121c7bd6d6eb0d5ee55e778d8b0"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a005_ribbon",
+     "presetId": "aura_geometry",
+     "theme": "Ribbon",
+     "code": "D005",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Ribbon",
+     "index": 37,
+     "static": {
+      "url": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
+      "bytes": 125668,
+      "sha256": "b496f4e8a02190223e35a8910c06ee9c591233c4b353f86771ae9c8610001f69"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a005_ribbon/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
+      "bytes": 5737633,
+      "sha256": "d4a2cfc7229c7c9ede78b4338e03dbdc17b91709d6b9eee13e10fcdc6f081227"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a006_quattro",
+     "presetId": "aura_geometry",
+     "theme": "Quattro",
+     "code": "D006",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Quattro",
+     "index": 38,
+     "static": {
+      "url": "/aura/geometry/gradientes/a006_quattro/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
+      "bytes": 82915,
+      "sha256": "e459bce35eae3f28dbe11a35c48946136fd3ad6c6ef2481af86a0ee9584486f6"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a006_quattro/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
+      "bytes": 5046122,
+      "sha256": "5f97e74440522ae5c88c9546eeeaf1b7a0ace09d1bbf30a81bae3394cb220fe3"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a007_spectrum",
+     "presetId": "aura_geometry",
+     "theme": "Spectrum",
+     "code": "D007",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Spectrum",
+     "index": 39,
+     "static": {
+      "url": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
+      "bytes": 84627,
+      "sha256": "6437b590d3549b81a3c4cc0f12b4b6a8e520eecdc306b585a7d16be11793d57e"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a007_spectrum/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
+      "bytes": 5421609,
+      "sha256": "cd220420cc271343935cd3b853f1ae7019f2d38bd9c7b875e0c5ba739e3417ed"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a008_metron",
+     "presetId": "aura_geometry",
+     "theme": "Metron",
+     "code": "D008",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Metron",
+     "index": 40,
+     "static": {
+      "url": "/aura/geometry/gradientes/a008_metron/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
+      "bytes": 106664,
+      "sha256": "093d281d6e8f73f9198ba4a9919e5f7e326e3859c30e96ab8a1f916be60d03c4"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a008_metron/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
+      "bytes": 6879894,
+      "sha256": "062308e4f7b42b25d48a2d5a2d16dd9ed1a557231a0dabc006bde419c0c50c9e"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a009_galactic",
+     "presetId": "aura_geometry",
+     "theme": "Galactic",
+     "code": "D009",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Galactic",
+     "index": 41,
+     "static": {
+      "url": "/aura/geometry/gradientes/a009_galactic/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
+      "bytes": 63756,
+      "sha256": "d642a32912786f6fb96fb7a29963ab6e76b81e02d3a4aa0a8f2a5c210b67f7ea"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a009_galactic/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
+      "bytes": 4761218,
+      "sha256": "27507218cdaa4955ebd9e855873f3f85906ba645f9cdbcc7a530912b555bc55d"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a010_yoyos",
+     "presetId": "aura_geometry",
+     "theme": "Yoyos",
+     "code": "D010",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Yoyos",
+     "index": 42,
+     "static": {
+      "url": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
+      "bytes": 96624,
+      "sha256": "665414a5647bc6c3ed4ae214fdf18d30cd059e76b562aae3ca2bbe53fa88780f"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a010_yoyos/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
+      "bytes": 6231752,
+      "sha256": "4de5c0d26ec134320988cd893a6e272e57846af1c8bce6e2610042f4d1958e19"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a011_original",
+     "presetId": "aura_geometry",
+     "theme": "Original",
+     "code": "D011",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Original",
+     "index": 43,
+     "static": {
+      "url": "/aura/geometry/gradientes/a011_original/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
+      "bytes": 94386,
+      "sha256": "bbfe514c36cb8ca5aafbd7511b772982df0b9326fe616672c5760793b9a3d253"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a011_original/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
+      "bytes": 5764826,
+      "sha256": "08a6fcf7e79d3b82e750c3b3cc94d954f152d6fbe4aa8a47ceaf4f0b905de5f4"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a012_natural",
+     "presetId": "aura_geometry",
+     "theme": "Natural",
+     "code": "D012",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Natural",
+     "index": 44,
+     "static": {
+      "url": "/aura/geometry/gradientes/a012_natural/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
+      "bytes": 163868,
+      "sha256": "6458391a387f86684fb41f46e375597db5d0481c820e0d79542fdcea6e9de770"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a012_natural/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
+      "bytes": 7700581,
+      "sha256": "756cd4ba61aea44f957ac5fc5bb4ec3a9ce515d5c70ec2b875a3e4fe6a74bbed"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a013_neona",
+     "presetId": "aura_geometry",
+     "theme": "Neona",
+     "code": "D013",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Neona",
+     "index": 45,
+     "static": {
+      "url": "/aura/geometry/gradientes/a013_neona/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
+      "bytes": 101560,
+      "sha256": "71ba1213505709eae1dec231e29ed6cf8bb3e61be330741c22d6ca519091334f"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a013_neona/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
+      "bytes": 6174285,
+      "sha256": "63bb6e27ce468285f894a197725f1dd914819d49c5b42df7185656820e3d06e4"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a014_spinner",
+     "presetId": "aura_geometry",
+     "theme": "Spinner",
+     "code": "D014",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Spinner",
+     "index": 46,
+     "static": {
+      "url": "/aura/geometry/gradientes/a014_spinner/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
+      "bytes": 111333,
+      "sha256": "2c0a01f9392db26fae5da2ab91dec568eadaca532ab3903f8c69c7248e729ba5"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a014_spinner/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
+      "bytes": 6099269,
+      "sha256": "dc8e2b06ffc3574b4b16dd737b5b3f924495f538ca003722cdbc535ab354f398"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a015_twist",
+     "presetId": "aura_geometry",
+     "theme": "Twist",
+     "code": "D015",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Twist",
+     "index": 47,
+     "static": {
+      "url": "/aura/geometry/gradientes/a015_twist/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
+      "bytes": 117185,
+      "sha256": "2f6d98f4a0c2e97bb66df4b3e323ba1c398a5a587827b9b9154b31c32d68c951"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a015_twist/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
+      "bytes": 5672956,
+      "sha256": "edacdf357fb6ac6c32e868446ff73c8c448edd7a11c69dbd0ae73db33a1f982f"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a016_purple_glow",
+     "presetId": "aura_geometry",
+     "theme": "Purple Glow",
+     "code": "D016",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Purple Glow",
+     "index": 48,
+     "static": {
+      "url": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
+      "bytes": 87117,
+      "sha256": "7de832c5afd91e42cd81e15dcfd554f6f1d93751e33347515fcb241561c2b68f"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a016_purple_glow/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
+      "bytes": 5671711,
+      "sha256": "7e6cae1e04a2fb69ba347f3e0038a2806d153452aa0a69c6ef043d76537417b4"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a017_seashell",
+     "presetId": "aura_geometry",
+     "theme": "Seashell",
+     "code": "D017",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Seashell",
+     "index": 49,
+     "static": {
+      "url": "/aura/geometry/gradientes/a017_seashell/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
+      "bytes": 104036,
+      "sha256": "429fade15ce6877bf9e632ea2b83e11387b965f567d1faa337c1290a9efd02fe"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a017_seashell/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
+      "bytes": 4007598,
+      "sha256": "9cc26a010e3d3201bff40ec97c0879a600b10b31f28a81d13bc8a63fab345c7b"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a018_in_pieces",
+     "presetId": "aura_geometry",
+     "theme": "In Pieces",
+     "code": "D018",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes In Pieces",
+     "index": 50,
+     "static": {
+      "url": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
+      "bytes": 122739,
+      "sha256": "3d47adffad550d4c56947fdefdaeb515cd810fce312673f73370c85383b56b24"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a018_in_pieces/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
+      "bytes": 5054676,
+      "sha256": "43d12e74c00c16d51c1bd5d5a43d3559f428d130ac7c1dfde882f49f05605488"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a019_kompas",
+     "presetId": "aura_geometry",
+     "theme": "Kompas",
+     "code": "D019",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Kompas",
+     "index": 51,
+     "static": {
+      "url": "/aura/geometry/gradientes/a019_kompas/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
+      "bytes": 84926,
+      "sha256": "790db53740ab0647bec7caa2428fe9cab71f3249ffab0202adf90c4fd85e5670"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a019_kompas/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
+      "bytes": 4318571,
+      "sha256": "218c782802b6850048d0fa59abc250daf1b97cdeb4099829c2ab3b9837d4aa4b"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a020_rings",
+     "presetId": "aura_geometry",
+     "theme": "Rings",
+     "code": "D020",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Rings",
+     "index": 52,
+     "static": {
+      "url": "/aura/geometry/gradientes/a020_rings/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
+      "bytes": 164342,
+      "sha256": "00135f9ad930a2fd0f4033ef95754cb798d5c04d63fcbd28445de4f6949e9786"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a020_rings/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
+      "bytes": 6694820,
+      "sha256": "201733c0740371e68c09089468274d7a04a2754c3a6f5e628c0e33e68219c612"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a021_wave",
+     "presetId": "aura_geometry",
+     "theme": "Wave",
+     "code": "D021",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Wave",
+     "index": 53,
+     "static": {
+      "url": "/aura/geometry/gradientes/a021_wave/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
+      "bytes": 147794,
+      "sha256": "8d9c76bb82f64f4ac85fd1fa776de6fa97de291d37c792a79b47032327b596b4"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a021_wave/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
+      "bytes": 7048644,
+      "sha256": "99f9e7e752532d3923f2afc1718f1c6f47efbfec0fd5fe1b9763127a018bc74a"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a022_segment_ii",
+     "presetId": "aura_geometry",
+     "theme": "Segment Ii",
+     "code": "D022",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Segment Ii",
+     "index": 54,
+     "static": {
+      "url": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
+      "bytes": 117658,
+      "sha256": "a9a9574ffa0562a2bc5845f80d05d87e7dc33ce24bedf2b6bb9dd19dcf6d9533"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a022_segment_ii/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
+      "bytes": 5288018,
+      "sha256": "c0b5a2eed649a3e05b761d1d1c9b668c7cdbbfe4abf0a970d49887ea0ff0f805"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a023_reflections",
+     "presetId": "aura_geometry",
+     "theme": "Reflections",
+     "code": "D023",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Reflections",
+     "index": 55,
+     "static": {
+      "url": "/aura/geometry/gradientes/a023_reflections/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
+      "bytes": 295294,
+      "sha256": "6215989764f59e692a3984bb6050c7c5ec6a12c0f5ed78fb26ed123f6f269138"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a023_reflections/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
+      "bytes": 11306431,
+      "sha256": "8f107d6e538053d681a7d550858dc86b95e401f74e8bb176be3532c19beef71f"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a024_fortuna",
+     "presetId": "aura_geometry",
+     "theme": "Fortuna",
+     "code": "D024",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Fortuna",
+     "index": 56,
+     "static": {
+      "url": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
+      "bytes": 134019,
+      "sha256": "a32fc91662cc14cf1d5e2b407c001f95f2ac3c00a9883e82d94225fc93dcf8b1"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a024_fortuna/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
+      "bytes": 7688304,
+      "sha256": "8f5bce8051f175184218425a0878a1c9abf5adcc6e5cba21c6a3181ffc856cbe"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a025_crystal",
+     "presetId": "aura_geometry",
+     "theme": "Crystal",
+     "code": "D025",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Crystal",
+     "index": 57,
+     "static": {
+      "url": "/aura/geometry/gradientes/a025_crystal/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
+      "bytes": 116806,
+      "sha256": "f28ed8027f6b8404f404baefdef4feb54c57d3998c95a9f956b2e0ad516fb9f3"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a025_crystal/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
+      "bytes": 5217886,
+      "sha256": "0d4161f82f602bc4204f7e19eef195b324f5033fda059d8b5a59807f313b9227"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a026_strokes",
+     "presetId": "aura_geometry",
+     "theme": "Strokes",
+     "code": "D026",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Strokes",
+     "index": 58,
+     "static": {
+      "url": "/aura/geometry/gradientes/a026_strokes/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
+      "bytes": 116983,
+      "sha256": "df1c0addc3ce0c7978b8cf4c403fc81e617b6cc33b6fe7416bc6ede408a8d5d9"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a026_strokes/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
+      "bytes": 5758278,
+      "sha256": "1abff08fae40dade1891611be51cb7d959fcef383af1d4e30bea49ac4686baf1"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a027_gradience",
+     "presetId": "aura_geometry",
+     "theme": "Gradience",
+     "code": "D027",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Gradience",
+     "index": 59,
+     "static": {
+      "url": "/aura/geometry/gradientes/a027_gradience/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
+      "bytes": 149943,
+      "sha256": "0188e65ff6b6df9cee03cb4901c4235a5afbbbfb0e456000564e94ad1ab499dc"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a027_gradience/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
+      "bytes": 6152265,
+      "sha256": "4157c6a8b3bf3b965efcd3cf346bb44f7b0e48452e1e38483c5a228478c4f593"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a028_rotations",
+     "presetId": "aura_geometry",
+     "theme": "Rotations",
+     "code": "D028",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Rotations",
+     "index": 60,
+     "static": {
+      "url": "/aura/geometry/gradientes/a028_rotations/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
+      "bytes": 107295,
+      "sha256": "91e2813910f1f862a2daa19468f1aa4c8a4c3acabb69f01cf36cd49b55892044"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a028_rotations/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
+      "bytes": 5766963,
+      "sha256": "5ba8702b669b369f6d84d479cc970771ef1c33564fbfed0b88fe34d27911ccb5"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_a029_cosmic_flower",
+     "presetId": "aura_geometry",
+     "theme": "Cosmic Flower",
+     "code": "D029",
+     "collection": "gradientes",
+     "partial": false,
+     "description": "Aura Geometry · gradientes Cosmic Flower",
+     "index": 61,
+     "static": {
+      "url": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
+      "bytes": 77259,
+      "sha256": "b0acb1526e49a90efb640e18ed9607215f8af271627a0c51b1dfa5bcdb232911"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/a029_cosmic_flower/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
+      "bytes": 4939155,
+      "sha256": "44b3fed812b37742ffe305c4a978da84fbafec063d60b7e527d3924ee31e5ecd"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p001_reversed_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Reversed Fragmento",
+     "code": "D001",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Reversed Fragmento",
+     "index": 62,
+     "static": {
+      "url": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
+      "bytes": 24348,
+      "sha256": "9ae915ea55c9b9640800653dd10c6ad029470a0f7f4c2e637467ac204b4f6e5b"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p001_reversed_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
+      "bytes": 1727359,
+      "sha256": "ce4f179d13de40aad3201f4ade6772de24ffb5b206877f50c8e0370dafa141d8"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p002_sharp_light_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Sharp Light Fragmento",
+     "code": "D002",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Sharp Light Fragmento",
+     "index": 63,
+     "static": {
+      "url": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
+      "bytes": 42239,
+      "sha256": "45f9915a8cc05f5afbec38f5ba1029e1944719362a37ab979461cfc2828bad9a"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p002_sharp_light_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
+      "bytes": 2166568,
+      "sha256": "9b061acbf7fd86c464265af027b747c68b6d69566bae465d94db80da153535cf"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p003_purple_splash_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Purple Splash Fragmento",
+     "code": "D003",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Purple Splash Fragmento",
+     "index": 64,
+     "static": {
+      "url": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
+      "bytes": 96396,
+      "sha256": "829e495a083258b469e6935a3f2071959642bdf7ec720d860c3e13ffdad71720"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p003_purple_splash_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
+      "bytes": 4614528,
+      "sha256": "97f502f93904155dfec9edcf1d0e6a0ce89f59cef9e346f1e48960ae0d120560"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p004_reversed_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Reversed Fragmento",
+     "code": "D004",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Reversed Fragmento",
+     "index": 65,
+     "static": {
+      "url": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
+      "bytes": 52457,
+      "sha256": "faeab8a6726899876f0dc79e36af252cd88adcf6dbb4ba869d4a95ddd9c8bd6d"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p004_reversed_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
+      "bytes": 3666014,
+      "sha256": "beaf12a040ddb10de9b96578ee95b4d1bd0b33334bf7c982f32c0d13c0056c92"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p005_phases_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Phases Fragmento",
+     "code": "D005",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Phases Fragmento",
+     "index": 66,
+     "static": {
+      "url": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
+      "bytes": 68311,
+      "sha256": "9add0c774eca2d9c1009c4d114ffda4659eb2199d2faf1b2b6e8681359d987b0"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p005_phases_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
+      "bytes": 4276754,
+      "sha256": "a35bb651e21d44f15caa44c475f11f42877f285dda5b5ca18d8f76d78997ff3d"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p006_sharp_light_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Sharp Light Fragmento",
+     "code": "D006",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Sharp Light Fragmento",
+     "index": 67,
+     "static": {
+      "url": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
+      "bytes": 99869,
+      "sha256": "cc28800574aeb7cef33d7721a91283a94cb9636d589000b92aacb5a9e882308c"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p006_sharp_light_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
+      "bytes": 4922403,
+      "sha256": "fe2abb02442092152f88ee0235f496d9558c62ab839480e56bc5bd6f908a6e9d"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p007_purple_splash_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Purple Splash Fragmento",
+     "code": "D007",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Purple Splash Fragmento",
+     "index": 68,
+     "static": {
+      "url": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
+      "bytes": 48837,
+      "sha256": "74edd0a8fdfc89bd9dd7a312cc9f258d7d242b7fb55530207f671b5d5bf38de2"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p007_purple_splash_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
+      "bytes": 2255863,
+      "sha256": "ec5661575556a49c54ab2cd52163fff5d4b98e78ae87cf7537b1b04df50b2742"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p008_phases_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Phases Fragmento",
+     "code": "D008",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Phases Fragmento",
+     "index": 69,
+     "static": {
+      "url": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
+      "bytes": 139305,
+      "sha256": "dce7e975b8b33bb26c2d3d7d9182963c04c538f5a790aa6feaab0617c3833386"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p008_phases_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
+      "bytes": 8592199,
+      "sha256": "2dc24b76253abef4d7e152efc62a0e5f402ceb47cdbb7513178c44fc4dc6dbc4"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p009_liquid_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Liquid Fragmento",
+     "code": "D009",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Liquid Fragmento",
+     "index": 70,
+     "static": {
+      "url": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
+      "bytes": 44217,
+      "sha256": "c15b585ad7ce8b512364f5118c388dbb4dde58a7d6d089cf2da456bad7607036"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p009_liquid_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
+      "bytes": 2063848,
+      "sha256": "baf9a1fc13ef8a4495008b42eb60d305b58553e3c266e91e2167739dc965e2bb"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p010_discs_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Discs Fragmento",
+     "code": "D010",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Discs Fragmento",
+     "index": 71,
+     "static": {
+      "url": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
+      "bytes": 42977,
+      "sha256": "881a7c3d7fca0a0626c0db4bc17d87c7d94218cec13cb6bf34ee653a10591495"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p010_discs_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
+      "bytes": 1866274,
+      "sha256": "6518285edf8dd70867e25d077c110ff486d5210013ce1f1d0b837e584a40c1e4"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p011_gradiente_orbital_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Gradiente Orbital Fragmento",
+     "code": "D011",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Gradiente Orbital Fragmento",
+     "index": 72,
+     "static": {
+      "url": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
+      "bytes": 86995,
+      "sha256": "7164718b33a0fcc8388c4ff09b8cb3f5f57619960a18ed8dbe9d2ffb6d03715a"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
+      "bytes": 3174545,
+      "sha256": "e1940b7960be09aaac789c77fdf109ef1e2addafd8248ce1e02288d308e8cd89"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p012_liquid_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Liquid Fragmento",
+     "code": "D012",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Liquid Fragmento",
+     "index": 73,
+     "static": {
+      "url": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
+      "bytes": 104781,
+      "sha256": "a5202101ab565d7d6f6bf365e28cd271835000429bfe2d495053f4b37c3002e4"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p012_liquid_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
+      "bytes": 4584199,
+      "sha256": "389c5ab28ea761d78e1631fff410b5f54055d9f610598ee3dd3079c18881a7a7"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p013_infinity_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Infinity Fragmento",
+     "code": "D013",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Infinity Fragmento",
+     "index": 74,
+     "static": {
+      "url": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
+      "bytes": 95128,
+      "sha256": "55b2f410f97f8234e5fab18d09bcbb45de45152c8dceccf996713605262046b6"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p013_infinity_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
+      "bytes": 3682104,
+      "sha256": "0e16075b4f031516aed5b49ddba58d586e7eac9e54d280b869df3821bfdb9d4e"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p014_discs_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Discs Fragmento",
+     "code": "D014",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Discs Fragmento",
+     "index": 75,
+     "static": {
+      "url": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
+      "bytes": 97051,
+      "sha256": "e07a6e0f872dcc8661896b9fb1d5b2c338d394b57fb2b60556c13aa5212d6e02"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p014_discs_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
+      "bytes": 4381693,
+      "sha256": "0d9d2efad26b74f06824d7439fc062a8fde798739918f2b95542ee2342131fcc"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p015_gradiente_orbital_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Gradiente Orbital Fragmento",
+     "code": "D015",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Gradiente Orbital Fragmento",
+     "index": 76,
+     "static": {
+      "url": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
+      "bytes": 40460,
+      "sha256": "2947472562fc663b0a53e18004c955c8df00b34ceb70f4678bd933dae1cfca1b"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
+      "bytes": 1492126,
+      "sha256": "fb96923a086bc699c15500dc0888800beb626b1698255177373ef2d4e013db98"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p016_infinity_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Infinity Fragmento",
+     "code": "D016",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Infinity Fragmento",
+     "index": 77,
+     "static": {
+      "url": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
+      "bytes": 46044,
+      "sha256": "a5efe842d346436d45250ad36458e52b9ee4abf16c61292b3aa8f26dbd818e9b"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p016_infinity_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
+      "bytes": 1887040,
+      "sha256": "9ae5f50f55dd7f3bbf2d0f821e57cda7e44cd4ec9d9f5e171bb2106ae88fd528"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p017_win_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Win Fragmento",
+     "code": "D017",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Win Fragmento",
+     "index": 78,
+     "static": {
+      "url": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
+      "bytes": 39502,
+      "sha256": "48191f83897974e986b162d70d0bc9d4fd41242bf0d1094830298903da12ca8b"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p017_win_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
+      "bytes": 2124270,
+      "sha256": "6a85d888254e35e12fe7077fd651131f07b53612d7c44de33401cd253d3a18ab"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p018_elliptic_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Elliptic Fragmento",
+     "code": "D018",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Elliptic Fragmento",
+     "index": 79,
+     "static": {
+      "url": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
+      "bytes": 32179,
+      "sha256": "75243b16f8373041ecf8d002d7f31c2e8750d9b324f4b23c9b48783d8b741ad2"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p018_elliptic_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
+      "bytes": 1589152,
+      "sha256": "005b5d17bc7939c4a931f8f787cbfc380bcc572a9abdb37d58ded32ab35e8c1c"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p019_spiral_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Spiral Fragmento",
+     "code": "D019",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Spiral Fragmento",
+     "index": 80,
+     "static": {
+      "url": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
+      "bytes": 77805,
+      "sha256": "ea0605e63decc8ab87c0175173b11c497ed745812b46c6c97028c5d2d2ab6c17"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p019_spiral_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
+      "bytes": 3413641,
+      "sha256": "20cd393de81a142d989428e9ac68c6e7c540bbebd4a2a654ccb20bdebfefed3e"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p020_win_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Win Fragmento",
+     "code": "D020",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Win Fragmento",
+     "index": 81,
+     "static": {
+      "url": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
+      "bytes": 78509,
+      "sha256": "25546b04f07326dc86d3217a8a62799dacc22beff457e3e3977e38ada7b11968"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p020_win_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
+      "bytes": 4189221,
+      "sha256": "1b65ed7676f1a84cc55fd9f7c5e638ebc084ada3f7aded79ee1bcc9b2ef9713c"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p021_segment_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Segment Fragmento",
+     "code": "D021",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Segment Fragmento",
+     "index": 82,
+     "static": {
+      "url": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
+      "bytes": 85189,
+      "sha256": "4d5b743a8c485184c5de826394decdf769de9e5694948c371733376d290db7cd"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p021_segment_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
+      "bytes": 4105107,
+      "sha256": "242240d751a61ebbb1dec8d28de8963888f2454a72bbde64d361932bf621fc87"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p022_elliptic_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Elliptic Fragmento",
+     "code": "D022",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Elliptic Fragmento",
+     "index": 83,
+     "static": {
+      "url": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
+      "bytes": 62029,
+      "sha256": "368198467896fe3a8cbefc45a341dbe0f8949bd41bcffa393a01524c947697b6"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p022_elliptic_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
+      "bytes": 3409425,
+      "sha256": "b31765f83fb7cba1e311dc31bd0c94bea0fc5437a4f9d584c25acee5b4ce86d8"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p023_spiral_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Spiral Fragmento",
+     "code": "D023",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Spiral Fragmento",
+     "index": 84,
+     "static": {
+      "url": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
+      "bytes": 36148,
+      "sha256": "14eed814d7d253fba497a7a49937f82ece6cb1f4299e346bcdbdd70e88655fa2"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p023_spiral_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
+      "bytes": 1394022,
+      "sha256": "fffa7425dd6bccc3cbca8d607084ed8aea5bee49de8c713dd5c4cb3abb557195"
+     }
+    },
+    {
+     "id": "aura_geometry__gradientes_p024_segment_fragmento",
+     "presetId": "aura_geometry",
+     "theme": "Segment Fragmento",
+     "code": "D024",
+     "collection": "gradientes",
+     "partial": true,
+     "description": "Aura Geometry · gradientes Segment Fragmento",
+     "index": 85,
+     "static": {
+      "url": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
+      "previewUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
+      "cardUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
+      "bytes": 33607,
+      "sha256": "89e76a843998678493709f6a0929f557e5732595d2ce6042b0bd4ff5dd1a967f"
+     },
+     "animated": {
+      "url": "/aura/geometry/gradientes/p024_segment_fragmento/animacao_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
+      "bytes": 1795948,
+      "sha256": "1c2cf63137f7e986125e0e273752e8ae1abe1512053a95078fd2b419fa846eae"
+     }
+    },
+    {
      "id": "aura_geometry__grafica_a001",
      "presetId": "aura_geometry",
      "theme": "A001",
@@ -1109,7 +2359,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A001",
-     "index": 36,
+     "index": 86,
      "static": {
       "url": "/aura/geometry/grafica/a001/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a001/imagem.png",
@@ -1134,7 +2384,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A002",
-     "index": 37,
+     "index": 87,
      "static": {
       "url": "/aura/geometry/grafica/a002/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a002/imagem.png",
@@ -1159,7 +2409,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A003",
-     "index": 38,
+     "index": 88,
      "static": {
       "url": "/aura/geometry/grafica/a003/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a003/imagem.png",
@@ -1184,7 +2434,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A004",
-     "index": 39,
+     "index": 89,
      "static": {
       "url": "/aura/geometry/grafica/a004/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a004/imagem.png",
@@ -1209,7 +2459,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A005",
-     "index": 40,
+     "index": 90,
      "static": {
       "url": "/aura/geometry/grafica/a005/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a005/imagem.png",
@@ -1234,7 +2484,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A006",
-     "index": 41,
+     "index": 91,
      "static": {
       "url": "/aura/geometry/grafica/a006/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a006/imagem.png",
@@ -1259,7 +2509,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A007",
-     "index": 42,
+     "index": 92,
      "static": {
       "url": "/aura/geometry/grafica/a007/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a007/imagem.png",
@@ -1284,7 +2534,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A008",
-     "index": 43,
+     "index": 93,
      "static": {
       "url": "/aura/geometry/grafica/a008/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a008/imagem.png",
@@ -1309,7 +2559,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A009",
-     "index": 44,
+     "index": 94,
      "static": {
       "url": "/aura/geometry/grafica/a009/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a009/imagem.png",
@@ -1334,7 +2584,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A010",
-     "index": 45,
+     "index": 95,
      "static": {
       "url": "/aura/geometry/grafica/a010/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a010/imagem.png",
@@ -1359,7 +2609,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A011",
-     "index": 46,
+     "index": 96,
      "static": {
       "url": "/aura/geometry/grafica/a011/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a011/imagem.png",
@@ -1384,7 +2634,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A012",
-     "index": 47,
+     "index": 97,
      "static": {
       "url": "/aura/geometry/grafica/a012/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a012/imagem.png",
@@ -1409,7 +2659,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A013",
-     "index": 48,
+     "index": 98,
      "static": {
       "url": "/aura/geometry/grafica/a013/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a013/imagem.png",
@@ -1434,7 +2684,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A014",
-     "index": 49,
+     "index": 99,
      "static": {
       "url": "/aura/geometry/grafica/a014/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a014/imagem.png",
@@ -1459,7 +2709,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A015",
-     "index": 50,
+     "index": 100,
      "static": {
       "url": "/aura/geometry/grafica/a015/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a015/imagem.png",
@@ -1484,7 +2734,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A016",
-     "index": 51,
+     "index": 101,
      "static": {
       "url": "/aura/geometry/grafica/a016/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a016/imagem.png",
@@ -1509,7 +2759,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A017",
-     "index": 52,
+     "index": 102,
      "static": {
       "url": "/aura/geometry/grafica/a017/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a017/imagem.png",
@@ -1534,7 +2784,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A018",
-     "index": 53,
+     "index": 103,
      "static": {
       "url": "/aura/geometry/grafica/a018/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a018/imagem.png",
@@ -1559,7 +2809,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A019",
-     "index": 54,
+     "index": 104,
      "static": {
       "url": "/aura/geometry/grafica/a019/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a019/imagem.png",
@@ -1584,7 +2834,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A020",
-     "index": 55,
+     "index": 105,
      "static": {
       "url": "/aura/geometry/grafica/a020/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a020/imagem.png",
@@ -1609,7 +2859,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A021",
-     "index": 56,
+     "index": 106,
      "static": {
       "url": "/aura/geometry/grafica/a021/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a021/imagem.png",
@@ -1634,7 +2884,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A022",
-     "index": 57,
+     "index": 107,
      "static": {
       "url": "/aura/geometry/grafica/a022/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a022/imagem.png",
@@ -1659,7 +2909,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A023",
-     "index": 58,
+     "index": 108,
      "static": {
       "url": "/aura/geometry/grafica/a023/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a023/imagem.png",
@@ -1684,7 +2934,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A024",
-     "index": 59,
+     "index": 109,
      "static": {
       "url": "/aura/geometry/grafica/a024/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a024/imagem.png",
@@ -1709,7 +2959,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A025",
-     "index": 60,
+     "index": 110,
      "static": {
       "url": "/aura/geometry/grafica/a025/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a025/imagem.png",
@@ -1734,7 +2984,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A026",
-     "index": 61,
+     "index": 111,
      "static": {
       "url": "/aura/geometry/grafica/a026/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a026/imagem.png",
@@ -1759,7 +3009,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A027",
-     "index": 62,
+     "index": 112,
      "static": {
       "url": "/aura/geometry/grafica/a027/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a027/imagem.png",
@@ -1784,7 +3034,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A028",
-     "index": 63,
+     "index": 113,
      "static": {
       "url": "/aura/geometry/grafica/a028/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a028/imagem.png",
@@ -1809,7 +3059,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A029",
-     "index": 64,
+     "index": 114,
      "static": {
       "url": "/aura/geometry/grafica/a029/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a029/imagem.png",
@@ -1834,7 +3084,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A030",
-     "index": 65,
+     "index": 115,
      "static": {
       "url": "/aura/geometry/grafica/a030/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a030/imagem.png",
@@ -1859,7 +3109,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A031",
-     "index": 66,
+     "index": 116,
      "static": {
       "url": "/aura/geometry/grafica/a031/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a031/imagem.png",
@@ -1884,7 +3134,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A032",
-     "index": 67,
+     "index": 117,
      "static": {
       "url": "/aura/geometry/grafica/a032/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a032/imagem.png",
@@ -1909,7 +3159,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A033",
-     "index": 68,
+     "index": 118,
      "static": {
       "url": "/aura/geometry/grafica/a033/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a033/imagem.png",
@@ -1934,7 +3184,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A034",
-     "index": 69,
+     "index": 119,
      "static": {
       "url": "/aura/geometry/grafica/a034/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a034/imagem.png",
@@ -1959,7 +3209,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A035",
-     "index": 70,
+     "index": 120,
      "static": {
       "url": "/aura/geometry/grafica/a035/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a035/imagem.png",
@@ -1984,7 +3234,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A036",
-     "index": 71,
+     "index": 121,
      "static": {
       "url": "/aura/geometry/grafica/a036/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a036/imagem.png",
@@ -2009,7 +3259,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A037",
-     "index": 72,
+     "index": 122,
      "static": {
       "url": "/aura/geometry/grafica/a037/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a037/imagem.png",
@@ -2034,7 +3284,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A038",
-     "index": 73,
+     "index": 123,
      "static": {
       "url": "/aura/geometry/grafica/a038/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a038/imagem.png",
@@ -2059,7 +3309,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A039",
-     "index": 74,
+     "index": 124,
      "static": {
       "url": "/aura/geometry/grafica/a039/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a039/imagem.png",
@@ -2084,7 +3334,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A040",
-     "index": 75,
+     "index": 125,
      "static": {
       "url": "/aura/geometry/grafica/a040/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a040/imagem.png",
@@ -2109,7 +3359,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A041",
-     "index": 76,
+     "index": 126,
      "static": {
       "url": "/aura/geometry/grafica/a041/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a041/imagem.png",
@@ -2134,7 +3384,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A042",
-     "index": 77,
+     "index": 127,
      "static": {
       "url": "/aura/geometry/grafica/a042/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a042/imagem.png",
@@ -2159,7 +3409,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A043",
-     "index": 78,
+     "index": 128,
      "static": {
       "url": "/aura/geometry/grafica/a043/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a043/imagem.png",
@@ -2184,7 +3434,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A044",
-     "index": 79,
+     "index": 129,
      "static": {
       "url": "/aura/geometry/grafica/a044/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a044/imagem.png",
@@ -2209,7 +3459,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A045",
-     "index": 80,
+     "index": 130,
      "static": {
       "url": "/aura/geometry/grafica/a045/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a045/imagem.png",
@@ -2234,7 +3484,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A046",
-     "index": 81,
+     "index": 131,
      "static": {
       "url": "/aura/geometry/grafica/a046/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a046/imagem.png",
@@ -2259,7 +3509,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A047",
-     "index": 82,
+     "index": 132,
      "static": {
       "url": "/aura/geometry/grafica/a047/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a047/imagem.png",
@@ -2284,7 +3534,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A048",
-     "index": 83,
+     "index": 133,
      "static": {
       "url": "/aura/geometry/grafica/a048/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a048/imagem.png",
@@ -2309,7 +3559,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A049",
-     "index": 84,
+     "index": 134,
      "static": {
       "url": "/aura/geometry/grafica/a049/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a049/imagem.png",
@@ -2334,7 +3584,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A050",
-     "index": 85,
+     "index": 135,
      "static": {
       "url": "/aura/geometry/grafica/a050/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a050/imagem.png",
@@ -2359,7 +3609,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A051",
-     "index": 86,
+     "index": 136,
      "static": {
       "url": "/aura/geometry/grafica/a051/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a051/imagem.png",
@@ -2384,7 +3634,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A052",
-     "index": 87,
+     "index": 137,
      "static": {
       "url": "/aura/geometry/grafica/a052/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a052/imagem.png",
@@ -2409,7 +3659,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A053",
-     "index": 88,
+     "index": 138,
      "static": {
       "url": "/aura/geometry/grafica/a053/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a053/imagem.png",
@@ -2434,7 +3684,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A054",
-     "index": 89,
+     "index": 139,
      "static": {
       "url": "/aura/geometry/grafica/a054/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a054/imagem.png",
@@ -2459,7 +3709,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A055",
-     "index": 90,
+     "index": 140,
      "static": {
       "url": "/aura/geometry/grafica/a055/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a055/imagem.png",
@@ -2484,7 +3734,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A056",
-     "index": 91,
+     "index": 141,
      "static": {
       "url": "/aura/geometry/grafica/a056/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a056/imagem.png",
@@ -2509,7 +3759,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A057",
-     "index": 92,
+     "index": 142,
      "static": {
       "url": "/aura/geometry/grafica/a057/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a057/imagem.png",
@@ -2534,7 +3784,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A058",
-     "index": 93,
+     "index": 143,
      "static": {
       "url": "/aura/geometry/grafica/a058/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a058/imagem.png",
@@ -2559,7 +3809,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A059",
-     "index": 94,
+     "index": 144,
      "static": {
       "url": "/aura/geometry/grafica/a059/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a059/imagem.png",
@@ -2584,7 +3834,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A060",
-     "index": 95,
+     "index": 145,
      "static": {
       "url": "/aura/geometry/grafica/a060/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a060/imagem.png",
@@ -2609,7 +3859,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A061",
-     "index": 96,
+     "index": 146,
      "static": {
       "url": "/aura/geometry/grafica/a061/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a061/imagem.png",
@@ -2634,7 +3884,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A062",
-     "index": 97,
+     "index": 147,
      "static": {
       "url": "/aura/geometry/grafica/a062/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a062/imagem.png",
@@ -2659,7 +3909,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A063",
-     "index": 98,
+     "index": 148,
      "static": {
       "url": "/aura/geometry/grafica/a063/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a063/imagem.png",
@@ -2684,7 +3934,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A064",
-     "index": 99,
+     "index": 149,
      "static": {
       "url": "/aura/geometry/grafica/a064/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a064/imagem.png",
@@ -2709,7 +3959,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A065",
-     "index": 100,
+     "index": 150,
      "static": {
       "url": "/aura/geometry/grafica/a065/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a065/imagem.png",
@@ -2734,7 +3984,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A066",
-     "index": 101,
+     "index": 151,
      "static": {
       "url": "/aura/geometry/grafica/a066/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a066/imagem.png",
@@ -2759,7 +4009,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A067",
-     "index": 102,
+     "index": 152,
      "static": {
       "url": "/aura/geometry/grafica/a067/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a067/imagem.png",
@@ -2784,7 +4034,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A068",
-     "index": 103,
+     "index": 153,
      "static": {
       "url": "/aura/geometry/grafica/a068/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a068/imagem.png",
@@ -2809,7 +4059,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A069",
-     "index": 104,
+     "index": 154,
      "static": {
       "url": "/aura/geometry/grafica/a069/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a069/imagem.png",
@@ -2834,7 +4084,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A070",
-     "index": 105,
+     "index": 155,
      "static": {
       "url": "/aura/geometry/grafica/a070/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a070/imagem.png",
@@ -2859,7 +4109,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A071",
-     "index": 106,
+     "index": 156,
      "static": {
       "url": "/aura/geometry/grafica/a071/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a071/imagem.png",
@@ -2884,7 +4134,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A072",
-     "index": 107,
+     "index": 157,
      "static": {
       "url": "/aura/geometry/grafica/a072/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a072/imagem.png",
@@ -2909,7 +4159,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A073",
-     "index": 108,
+     "index": 158,
      "static": {
       "url": "/aura/geometry/grafica/a073/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a073/imagem.png",
@@ -2934,7 +4184,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A074",
-     "index": 109,
+     "index": 159,
      "static": {
       "url": "/aura/geometry/grafica/a074/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a074/imagem.png",
@@ -2959,7 +4209,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A075",
-     "index": 110,
+     "index": 160,
      "static": {
       "url": "/aura/geometry/grafica/a075/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a075/imagem.png",
@@ -2984,7 +4234,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A076",
-     "index": 111,
+     "index": 161,
      "static": {
       "url": "/aura/geometry/grafica/a076/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a076/imagem.png",
@@ -3009,7 +4259,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A077",
-     "index": 112,
+     "index": 162,
      "static": {
       "url": "/aura/geometry/grafica/a077/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a077/imagem.png",
@@ -3034,7 +4284,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A078",
-     "index": 113,
+     "index": 163,
      "static": {
       "url": "/aura/geometry/grafica/a078/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a078/imagem.png",
@@ -3059,7 +4309,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A079",
-     "index": 114,
+     "index": 164,
      "static": {
       "url": "/aura/geometry/grafica/a079/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a079/imagem.png",
@@ -3084,7 +4334,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A080",
-     "index": 115,
+     "index": 165,
      "static": {
       "url": "/aura/geometry/grafica/a080/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a080/imagem.png",
@@ -3109,7 +4359,7 @@
      "collection": "grafica",
      "partial": false,
      "description": "Aura Geometry · grafica A081",
-     "index": 116,
+     "index": 166,
      "static": {
       "url": "/aura/geometry/grafica/a081/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a081/imagem.png",
@@ -3134,7 +4384,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P001",
-     "index": 117,
+     "index": 167,
      "static": {
       "url": "/aura/geometry/grafica/p001/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p001/imagem.png",
@@ -3159,7 +4409,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P002",
-     "index": 118,
+     "index": 168,
      "static": {
       "url": "/aura/geometry/grafica/p002/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p002/imagem.png",
@@ -3184,7 +4434,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P003",
-     "index": 119,
+     "index": 169,
      "static": {
       "url": "/aura/geometry/grafica/p003/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p003/imagem.png",
@@ -3209,7 +4459,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P004",
-     "index": 120,
+     "index": 170,
      "static": {
       "url": "/aura/geometry/grafica/p004/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p004/imagem.png",
@@ -3234,7 +4484,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P005",
-     "index": 121,
+     "index": 171,
      "static": {
       "url": "/aura/geometry/grafica/p005/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p005/imagem.png",
@@ -3259,7 +4509,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P006",
-     "index": 122,
+     "index": 172,
      "static": {
       "url": "/aura/geometry/grafica/p006/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p006/imagem.png",
@@ -3284,7 +4534,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P007",
-     "index": 123,
+     "index": 173,
      "static": {
       "url": "/aura/geometry/grafica/p007/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p007/imagem.png",
@@ -3309,7 +4559,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P008",
-     "index": 124,
+     "index": 174,
      "static": {
       "url": "/aura/geometry/grafica/p008/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p008/imagem.png",
@@ -3334,7 +4584,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P009",
-     "index": 125,
+     "index": 175,
      "static": {
       "url": "/aura/geometry/grafica/p009/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p009/imagem.png",
@@ -3359,7 +4609,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P010",
-     "index": 126,
+     "index": 176,
      "static": {
       "url": "/aura/geometry/grafica/p010/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p010/imagem.png",
@@ -3384,7 +4634,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P011",
-     "index": 127,
+     "index": 177,
      "static": {
       "url": "/aura/geometry/grafica/p011/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p011/imagem.png",
@@ -3409,7 +4659,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P012",
-     "index": 128,
+     "index": 178,
      "static": {
       "url": "/aura/geometry/grafica/p012/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p012/imagem.png",
@@ -3434,7 +4684,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P013",
-     "index": 129,
+     "index": 179,
      "static": {
       "url": "/aura/geometry/grafica/p013/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p013/imagem.png",
@@ -3459,7 +4709,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P014",
-     "index": 130,
+     "index": 180,
      "static": {
       "url": "/aura/geometry/grafica/p014/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p014/imagem.png",
@@ -3484,7 +4734,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P015",
-     "index": 131,
+     "index": 181,
      "static": {
       "url": "/aura/geometry/grafica/p015/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p015/imagem.png",
@@ -3509,7 +4759,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P016",
-     "index": 132,
+     "index": 182,
      "static": {
       "url": "/aura/geometry/grafica/p016/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p016/imagem.png",
@@ -3534,7 +4784,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P017",
-     "index": 133,
+     "index": 183,
      "static": {
       "url": "/aura/geometry/grafica/p017/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p017/imagem.png",
@@ -3559,7 +4809,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P018",
-     "index": 134,
+     "index": 184,
      "static": {
       "url": "/aura/geometry/grafica/p018/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p018/imagem.png",
@@ -3584,7 +4834,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P019",
-     "index": 135,
+     "index": 185,
      "static": {
       "url": "/aura/geometry/grafica/p019/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p019/imagem.png",
@@ -3609,7 +4859,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P020",
-     "index": 136,
+     "index": 186,
      "static": {
       "url": "/aura/geometry/grafica/p020/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p020/imagem.png",
@@ -3634,7 +4884,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P021",
-     "index": 137,
+     "index": 187,
      "static": {
       "url": "/aura/geometry/grafica/p021/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p021/imagem.png",
@@ -3659,7 +4909,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P022",
-     "index": 138,
+     "index": 188,
      "static": {
       "url": "/aura/geometry/grafica/p022/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p022/imagem.png",
@@ -3684,7 +4934,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P023",
-     "index": 139,
+     "index": 189,
      "static": {
       "url": "/aura/geometry/grafica/p023/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p023/imagem.png",
@@ -3709,7 +4959,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P024",
-     "index": 140,
+     "index": 190,
      "static": {
       "url": "/aura/geometry/grafica/p024/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p024/imagem.png",
@@ -3734,7 +4984,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P025",
-     "index": 141,
+     "index": 191,
      "static": {
       "url": "/aura/geometry/grafica/p025/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p025/imagem.png",
@@ -3759,7 +5009,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P026",
-     "index": 142,
+     "index": 192,
      "static": {
       "url": "/aura/geometry/grafica/p026/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p026/imagem.png",
@@ -3784,7 +5034,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P027",
-     "index": 143,
+     "index": 193,
      "static": {
       "url": "/aura/geometry/grafica/p027/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p027/imagem.png",
@@ -3809,7 +5059,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P028",
-     "index": 144,
+     "index": 194,
      "static": {
       "url": "/aura/geometry/grafica/p028/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p028/imagem.png",
@@ -3834,7 +5084,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P029",
-     "index": 145,
+     "index": 195,
      "static": {
       "url": "/aura/geometry/grafica/p029/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p029/imagem.png",
@@ -3859,7 +5109,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P030",
-     "index": 146,
+     "index": 196,
      "static": {
       "url": "/aura/geometry/grafica/p030/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p030/imagem.png",
@@ -3884,7 +5134,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P031",
-     "index": 147,
+     "index": 197,
      "static": {
       "url": "/aura/geometry/grafica/p031/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p031/imagem.png",
@@ -3909,7 +5159,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P032",
-     "index": 148,
+     "index": 198,
      "static": {
       "url": "/aura/geometry/grafica/p032/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p032/imagem.png",
@@ -3934,7 +5184,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P033",
-     "index": 149,
+     "index": 199,
      "static": {
       "url": "/aura/geometry/grafica/p033/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p033/imagem.png",
@@ -3959,7 +5209,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P034",
-     "index": 150,
+     "index": 200,
      "static": {
       "url": "/aura/geometry/grafica/p034/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p034/imagem.png",
@@ -3984,7 +5234,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P035",
-     "index": 151,
+     "index": 201,
      "static": {
       "url": "/aura/geometry/grafica/p035/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p035/imagem.png",
@@ -4009,7 +5259,7 @@
      "collection": "grafica",
      "partial": true,
      "description": "Aura Geometry · grafica P036",
-     "index": 152,
+     "index": 202,
      "static": {
       "url": "/aura/geometry/grafica/p036/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p036/imagem.png",
@@ -6566,10 +7816,10 @@
     "aura_sem_GIF",
     "aura_no_GIF"
    ],
-   "found": 150,
+   "found": 200,
    "expected": 200,
-   "status": "partial",
-   "renderStrategy": "asset-partial"
+   "status": "complete",
+   "renderStrategy": "asset"
   },
   {
    "key": "aura_animated",
@@ -6578,7 +7828,7 @@
    "acceptedFolderNames": [
     "aura_com_GIF"
    ],
-   "found": 132,
+   "found": 182,
    "expected": 200,
    "status": "partial",
    "renderStrategy": "css-animation-over-static"
@@ -7893,59 +9143,11 @@
    "reason": "não é imagem (ex.: zip de materiais duplicado de material_no_GIF)"
   },
   {
-   "file": "/P16_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
+   "file": "/Aura_Geometry_Public_25MB_Parte_24.zip",
    "reason": "arquivo solto na raiz de /public"
   },
   {
-   "file": "/aura_com_material_mosaico_GIF",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M11 - Terracotta Dune GIF mais Lã Tweed.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/favicon.ico",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M06 - Terracotta Dune GIF mais Malha Canelada.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M03 - Terracotta Dune GIF mais Couro Cognac.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M01 - Terracotta Dune GIF mais Herringbone.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/apple-touch-icon.png",
+   "file": "/Aura_Geometry_Public_25MB_Parte_16.zip",
    "reason": "arquivo solto na raiz de /public"
   },
   {
@@ -7953,7 +9155,139 @@
    "reason": "arquivo solto na raiz de /public"
   },
   {
+   "file": "/Aura_Geometry_Public_25MB_Parte_07.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M06 - Terracotta Dune GIF mais Malha Canelada.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_21.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_10.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Electro_Public.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M03 - Terracotta Dune GIF mais Couro Cognac.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/favicon.ico",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_11.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M11 - Terracotta Dune GIF mais Lã Tweed.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/aura_com_material_mosaico_GIF",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_02.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_05.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_03.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_09.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
    "file": "/P16_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_08.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_01.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_22.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_15.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_06.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_14.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_13.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/apple-touch-icon.png",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M01 - Terracotta Dune GIF mais Herringbone.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_04.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_23.zip",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Geometry_Public_25MB_Parte_12.zip",
    "reason": "arquivo solto na raiz de /public"
   }
  ]

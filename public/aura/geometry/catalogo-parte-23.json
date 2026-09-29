@@ -1,0 +1,66 @@
+[
+  {
+    "id": "gradientes_p012_liquid_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p012_liquid_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p013_infinity_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p013_infinity_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p014_discs_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p014_discs_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p015_gradiente_orbital_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p016_infinity_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p016_infinity_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p017_win_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p017_win_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p018_elliptic_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p018_elliptic_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  },
+  {
+    "id": "gradientes_p019_spiral_fragmento",
+    "collection": "gradientes",
+    "partial": true,
+    "image": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
+    "gif": "/aura/geometry/gradientes/p019_spiral_fragmento/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_23.zip"
+  }
+]

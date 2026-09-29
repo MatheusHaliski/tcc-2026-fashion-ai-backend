@@ -1,0 +1,34 @@
+[
+  {
+    "id": "gradientes_a015_twist",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a015_twist/imagem.png",
+    "gif": "/aura/geometry/gradientes/a015_twist/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_17.zip"
+  },
+  {
+    "id": "gradientes_a016_purple_glow",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
+    "gif": "/aura/geometry/gradientes/a016_purple_glow/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_17.zip"
+  },
+  {
+    "id": "gradientes_a017_seashell",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a017_seashell/imagem.png",
+    "gif": "/aura/geometry/gradientes/a017_seashell/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_17.zip"
+  },
+  {
+    "id": "gradientes_a018_in_pieces",
+    "collection": "gradientes",
+    "partial": false,
+    "image": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
+    "gif": "/aura/geometry/gradientes/a018_in_pieces/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_17.zip"
+  }
+]

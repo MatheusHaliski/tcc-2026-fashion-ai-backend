@@ -155,6 +155,10 @@ public class CopilotService {
         MATERIAL_WORDS.put("couro", Set.of("LEATHER")); MATERIAL_WORDS.put("leather", Set.of("LEATHER")); MATERIAL_WORDS.put("piel", Set.of("LEATHER"));
         MATERIAL_WORDS.put("sintetico", Set.of("SYNTHETIC")); MATERIAL_WORDS.put("synthetic", Set.of("SYNTHETIC")); MATERIAL_WORDS.put("sintetica", Set.of("SYNTHETIC"));
         MATERIAL_WORDS.put("mistura", Set.of("BLEND")); MATERIAL_WORDS.put("blend", Set.of("BLEND"));
+        // vocabulário ampliado (CopilotLexicon): não sobrescreve os termos acima
+        CopilotLexicon.COLOR_PREFIXES.forEach(COLOR_WORDS::putIfAbsent);
+        CopilotLexicon.TYPE_PREFIXES.forEach(TYPE_WORDS::putIfAbsent);
+        CopilotLexicon.PIECE_MATERIALS.forEach(MATERIAL_WORDS::putIfAbsent);
     }
 
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
@@ -301,7 +305,8 @@ public class CopilotService {
     // ================================================================== intenções
     enum Intent { WHERE_IS, FORGOTTEN, DIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL }
 
-    record LookPrompt(List<String> occasions, List<String> styles, String mood, String season) {}
+    /** weather: faixa de clima pedida no texto (VERAO_LEVE, MEIA_ESTACAO, CAMADAS, INVERNO_PESADO) ou null */
+    record LookPrompt(List<String> occasions, List<String> styles, String mood, String season, String weather) {}
 
     static String normalized(String value) {
         return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
@@ -339,12 +344,15 @@ public class CopilotService {
                 occasions.add(value);
             }
         }
+        CopilotLexicon.matches(CopilotLexicon.OCCASIONS, message).stream().filter(Taxonomy.OCCASIONS::contains)
+                .filter(value -> !occasions.contains(value)).forEach(occasions::add);
         List<String> detectedStyles = new ArrayList<>(Taxonomy.STYLES.stream().filter(value -> mentions(message, value.replace('_', ' '))).limit(3).toList());
         Map<String, String> translated = Map.ofEntries(Map.entry("classico", "classic"), Map.entry("minimalista", "minimalist"),
                 Map.entry("moderno", "modern"), Map.entry("elegante", "chic"), Map.entry("urbano", "urban"),
                 Map.entry("romantico", "romantic"), Map.entry("boemio", "boho"), Map.entry("esportivo", "sporty"),
                 Map.entry("luxuoso", "luxury"), Map.entry("futurista", "futuristic"), Map.entry("vintage", "vintage"));
         translated.entrySet().stream().filter(e -> mentions(message, e.getKey())).map(Map.Entry::getValue).forEach(detectedStyles::add);
+        CopilotLexicon.matches(CopilotLexicon.STYLES, message).stream().filter(Taxonomy.STYLES::contains).forEach(detectedStyles::add);
         List<String> styles = detectedStyles.stream().distinct().limit(3).toList();
         String mood = requestedMood;
         if (mood != null && !Set.of("ENERGETIC", "ELEGANT", "COMFORTABLE", "SOPHISTICATED").contains(mood.toUpperCase(Locale.ROOT))) mood = null;
@@ -353,13 +361,17 @@ public class CopilotService {
             else if (List.of("elegante", "elegancia", "chique").stream().anyMatch(term -> mentions(message, term))) mood = "ELEGANT";
             else if (List.of("confortavel", "conforto", "cozy").stream().anyMatch(term -> mentions(message, term))) mood = "COMFORTABLE";
             else if (List.of("sofisticado", "sofisticada", "refinado").stream().anyMatch(term -> mentions(message, term))) mood = "SOPHISTICATED";
+            else mood = CopilotLexicon.first(CopilotLexicon.MOODS, message);
         }
         String season = null;
         if (List.of("inverno", "winter").stream().anyMatch(term -> mentions(message, term))) season = "WINTER";
         else if (List.of("verao", "summer").stream().anyMatch(term -> mentions(message, term))) season = "SUMMER";
         else if (List.of("outono", "autumn", "fall").stream().anyMatch(term -> mentions(message, term))) season = "AUTUMN";
         else if (List.of("primavera", "spring").stream().anyMatch(term -> mentions(message, term))) season = "SPRING";
-        return new LookPrompt(occasions.stream().distinct().limit(3).toList(), styles, mood, season);
+        else season = CopilotLexicon.first(CopilotLexicon.SEASONS, message);
+        String weatherBand = CopilotLexicon.weatherBand(message);
+        if (season == null) season = CopilotLexicon.seasonOfBand(weatherBand);
+        return new LookPrompt(occasions.stream().distinct().limit(3).toList(), styles, mood, season, weatherBand);
     }
 
     static Intent intent(String m) {
@@ -380,7 +392,7 @@ public class CopilotService {
             return Intent.DIAGNOSIS;
         }
         if (t.matches(".*(look|vestir|visto|usar hoje|sugest|montar|combina|roupa para|frio|calor|trabalho|festa|faculdade|academia|fundo|background|aura|material|conjunto).*")
-                || hasPieceConstraints(t)) {
+                || hasPieceConstraints(t) || CopilotLexicon.signalsLook(t)) {
             return Intent.LOOKS;
         }
         return Intent.GENERAL;
@@ -430,7 +442,7 @@ public class CopilotService {
                 || (message != null && message.toLowerCase(Locale.ROOT).contains("lã"));
     }
 
-    private record BackgroundPrompt(Map<String, Object> configuration, Map<String, String> unresolved) {}
+    record BackgroundPrompt(Map<String, Object> configuration, Map<String, String> unresolved) {}
 
     @SuppressWarnings("unchecked")
     static List<Map<String, Object>> catalogEntries(Object entries) {
@@ -452,7 +464,7 @@ public class CopilotService {
         String text = normalized(message);
         Map<String, Object> scheme = new LinkedHashMap<>();
         Map<String, String> unresolved = new LinkedHashMap<>();
-        boolean backgroundRequested = List.of("fundo", "background", "arte de fundo", "aura", "material")
+        boolean backgroundRequested = List.of("fundo", "background", "arte de fundo", "aura", "material", "moldura", "arte do card", "fondo")
                 .stream().anyMatch(term -> mentions(message, term));
         if (!backgroundRequested) return new BackgroundPrompt(null, Map.of());
 
@@ -491,6 +503,19 @@ public class CopilotService {
             }
             if (selectedAura != null) break;
         }
+        String gradientTerm = CopilotLexicon.first(CopilotLexicon.GRADIENTS, message);
+        if (selectedAura == null && (gradientTerm == null || mentions(message, "aura"))) {
+            // vocabulário: "fundo geométrico", "aura elétrica ciano", "fundo floral"… → preset (e variação, se citada)
+            String presetId = CopilotLexicon.first(CopilotLexicon.AURA_PRESETS, message);
+            if (presetId != null) {
+                selectedAura = auraPresets.stream().filter(p -> presetId.equals(p.get("id"))).findFirst().orElse(null);
+                String suffix = selectedAura == null ? null : CopilotLexicon.variantSuffix(presetId, message);
+                if (suffix != null) {
+                    String variantId = presetId + "__" + suffix;
+                    selectedVariant = catalogEntries(selectedAura.get("variants")).stream().filter(v -> variantId.equals(v.get("id"))).findFirst().orElse(null);
+                }
+            }
+        }
         boolean asksAura = mentions(message, "aura") || selectedAura != null;
         if (asksAura && selectedAura == null && (mentions(message, "geometry") || mentions(message, "geometria")
                 || mentions(message, "electro") || mentions(message, "eletro"))) {
@@ -521,6 +546,10 @@ public class CopilotService {
 
         List<Map<String, Object>> materials = catalogEntries(catalog.get("materials"));
         Map<String, Object> selectedMaterial = namedEntry(materials, message, "id", "name");
+        if (selectedMaterial == null && CopilotLexicon.MATERIAL_CUES.stream().anyMatch(cue -> mentions(message, cue))) {
+            String materialId = CopilotLexicon.first(CopilotLexicon.BACKGROUND_MATERIALS, message);
+            selectedMaterial = materialId == null ? null : materials.stream().filter(m -> materialId.equals(m.get("id"))).findFirst().orElse(null);
+        }
         if (selectedMaterial != null && selectedMaterial.get("id") instanceof String id) scheme.put("materialId", id);
         else if (mentions(message, "material")) {
             Map<String, Object> direction = backgroundStudio.recommend(styles, occasions);
@@ -530,12 +559,19 @@ public class CopilotService {
 
         List<Map<String, Object>> gradients = catalogEntries(catalog.get("gradients"));
         Map<String, Object> selectedGradient = namedEntry(gradients, message, "id", "name");
+        if (selectedGradient == null && gradientTerm != null) {
+            selectedGradient = gradients.stream().filter(g -> gradientTerm.equals(g.get("id"))).findFirst().orElse(null);
+        }
         if (selectedGradient != null) {
             scheme.put("gradientPresetId", selectedGradient.get("id"));
             scheme.put("gradient", selectedGradient);
         }
         List<Map<String, Object>> seasonal = catalogEntries(catalog.get("seasonal"));
         Map<String, Object> selectedSeasonal = namedEntry(seasonal, message, "id", "name");
+        if (selectedSeasonal == null && CopilotLexicon.SEASONAL_CUES.stream().anyMatch(cue -> mentions(message, cue))) {
+            String seasonalId = CopilotLexicon.SEASONAL_PRESETS.get(lookPrompt(message, List.of(), null).season());
+            selectedSeasonal = seasonalId == null ? null : seasonal.stream().filter(g -> seasonalId.equals(g.get("id"))).findFirst().orElse(null);
+        }
         if (selectedSeasonal != null) {
             scheme.put("seasonalPresetId", selectedSeasonal.get("id"));
             scheme.put("gradient", selectedSeasonal);
@@ -852,7 +888,7 @@ public class CopilotService {
             exclude.addAll(req.excludeKeys());
         }
         Map<String, Object> result = autopilot.daily(user, new AutopilotService.DailyRequest(occasions, interpreted.mood(), req.city(), req.latitude(), req.longitude(),
-                new ArrayList<>(exclude)), requiredPieceIds);
+                new ArrayList<>(exclude)), requiredPieceIds, interpreted.weather());
         @SuppressWarnings("unchecked") List<Map<String, Object>> suggestions = (List<Map<String, Object>>) result.getOrDefault("suggestions", List.of());
         suggestions.forEach(s -> {
             prev.addLast(String.valueOf(s.get("key")));
@@ -871,6 +907,7 @@ public class CopilotService {
             s.put("style", interpreted.styles());
             s.put("mood", interpreted.mood());
             s.put("season", interpreted.season());
+            s.put("weather", interpreted.weather());
             s.put("background", backgroundRequest.configuration());
             s.put("description", message);
         }
@@ -887,6 +924,7 @@ public class CopilotService {
             card.put("style", interpreted.styles());
             card.put("mood", interpreted.mood());
             card.put("season", interpreted.season());
+            card.put("weather", interpreted.weather());
             card.put("background", backgroundRequest.configuration());
             card.put("description", InputSanitizer.clean(message, 2048));
             return card;
