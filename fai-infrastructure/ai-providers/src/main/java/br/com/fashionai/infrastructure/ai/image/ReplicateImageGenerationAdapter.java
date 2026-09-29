@@ -6,6 +6,7 @@ import br.com.fashionai.infrastructure.ai.ProviderCircuit;
 import br.com.fashionai.infrastructure.platform.Http;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,7 @@ public class ReplicateImageGenerationAdapter implements ImageGenerationPort {
     private final URI apiOrigin;
     private final Duration pollInterval;
 
+    @Autowired
     public ReplicateImageGenerationAdapter(@Value("${fashionai.ai.replicate-api-token:}") String token,
                                            @Value("${fashionai.ai.replicate-image-model:black-forest-labs/flux-schnell}") String model) {
         this(token, model, API, Duration.ofSeconds(2));

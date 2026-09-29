@@ -4,6 +4,7 @@ import br.com.fashionai.application.moderation.ImageSafetyPorts.Likelihoods;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.RemoteClassifierPort;
 import br.com.fashionai.infrastructure.ai.ProviderCircuit;
 import br.com.fashionai.infrastructure.platform.Http;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ public class GoogleVisionSafeSearchAdapter implements RemoteClassifierPort {
     private final RestClient client;
     private final String apiKey;
 
+    @Autowired
     public GoogleVisionSafeSearchAdapter(@Value("${fashionai.ai.google-vision-api-key:}") String apiKey,
                                          @Value("${fashionai.ai.timeout-seconds:30}") int timeoutSeconds) {
         this(apiKey, timeoutSeconds, "https://vision.googleapis.com");
