@@ -214,6 +214,13 @@ public final class AiCatalog {
                 local(Msg.k("aiCatalog.java2d_bicubica_progressiva_clarity"), 900),
                 Msg.k("aiCatalog.sem_provedor_o_estudio_local"),
                 20, Msg.k("aiCatalog.implementado_photoroom_stability"));          // pago por imagem: era 200/dia
+        put(AiCapability.MULTI_PIECE_DETECTOR,
+                Msg.k("aiCatalog.multi_piece_detecta_cada_peca"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.VISION, "0.0300", Msg.k("aiCatalog.multi_piece_claude_nota"), 6000),
+                gemini(Kind.VISION, "0.0020", Msg.k("aiCatalog.multi_piece_gemini_nota"), 3000),
+                local(Msg.k("aiCatalog.multi_piece_local"), 20),
+                Msg.k("aiCatalog.multi_piece_fallback"),
+                30, Msg.k("aiCatalog.multi_piece_status"));        // uma chamada por foto com várias peças
         put(AiCapability.BRAND_LOGO_FINDER,
                 Msg.k("aiCatalog.procura_na_internet_o_logo"),
                 claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0350", Msg.k("aiCatalog.ate_3_buscas_na_web"), 15000),
