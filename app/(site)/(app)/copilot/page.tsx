@@ -31,7 +31,7 @@ function Copilot() {
   const detail = useDetailModal();
   const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const endRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<SuggestionSection>("ready"); const [savedLooks, setSavedLooks] = useState<SuggestedLook[]>([]); const [activeLook, setActiveLook] = useState<string | null>(null); const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => { if (msgs.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [msgs]);   // sem conversa não rola; com conversa, só o mínimo para a última mensagem aparecer
   const storageKey = ctx?.userId ? `fashionai.copilot.looks.v1.${ctx.userId}` : null;
   const rememberLooks = useCallback((looks: SuggestedLook[]) => {
     if (!looks.length) return;
@@ -87,7 +87,7 @@ function Copilot() {
       {ctx?.limitation && <p className="mb-3 rounded-md bg-chalk-soft p-3 type-body-sm">{ctx.limitation.message} <Link href="/pieces/new" className="underline">{t("closet.addPiece")}</Link></p>}
       {ctx?.weather?.available && <p className="mb-3 type-caption text-muted">{ctx.weather.city} · {ctx.weather.temperatureC}°C · {ctx.weather.description}</p>}
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="surface self-start p-3 lg:sticky lg:top-16" aria-label={t("copilot.sugestao_do_copilot")}>
+      <aside className="surface self-start p-3" aria-label={t("copilot.sugestao_do_copilot")}>
         <h2 className="mb-2 type-h3">{t("copilot.looks_prontos_para_hoje")}</h2>
         <nav className="grid gap-1" aria-label={t("copilot.seus_looks_clique_para_ver")}>
           {visibleLooks.map((look) => <button key={lookKey(look)} type="button" aria-pressed={activeLook === lookKey(look)} className={`truncate rounded px-3 py-2 text-left type-body-sm ${activeLook === lookKey(look) ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`} title={look.title} onClick={() => setActiveLook(lookKey(look))}>{look.title}</button>)}
