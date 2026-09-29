@@ -41,7 +41,9 @@ export default function HumanLab() {
   const [sex, setSex] = useState<"FEMININO" | "MASCULINO">("FEMININO");
   const [view, setView] = useState<View>("front"); const [motion, setMotion] = useState(false); const [ready, setReady] = useState(0);
   const [built, setBuilt] = useState<BuiltAvatar | null>(null); const [status, setStatus] = useState("idle"); const [outfit, setOutfit] = useState("none");
-  const H = DEFAULT_BODY[sex].stature;
+  const [cut, setCut] = useState(0);
+  const bodySex = built?.model.sex ?? sex;                  // corpo base estimado pelo rosto (ou o botão, sem foto)
+  const H = DEFAULT_BODY[bodySex].stature;
   const parts = useRef<HumanParts | null>(null);
   async function glb(): Promise<string | null> {
     const p = parts.current; if (!p) return null; const b = await exportAvatarGlb(p.human, p.pose);
@@ -49,11 +51,11 @@ export default function HumanLab() {
   }
   async function run(file: File) {
     setStatus("running"); setBuilt(null); setReady(0);
-    try { const p = await analyzePhoto(file, "front"); const b = buildAvatar([p]); setBuilt(b); setStatus(b ? "built" : "rejected"); }
+    try { const p = await analyzePhoto(file, "front"); const b = buildAvatar([p], { profileSex: sex }); setBuilt(b); setStatus(b ? "built" : "rejected"); }
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
-    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, glb, ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
+    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
   });
   const model = built?.model ?? null;
   return (
@@ -76,7 +78,7 @@ export default function HumanLab() {
             <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.9} />
             <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
-            <HumanAvatar key={sex + (model ? "a" : "")} body={{ sex }} stature={H} skin={model?.skin ?? (sex === "FEMININO" ? "#c99a6e" : "#a97c50")}
+            <HumanAvatar key={bodySex + (model ? "a" : "")} body={{ sex: bodySex }} stature={H} adjust={{ hairCut: cut }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={model?.hair ?? null} motion={motion}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}
               pieces={OUTFITS[outfit] ?? []} />

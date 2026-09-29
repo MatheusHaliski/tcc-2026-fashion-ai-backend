@@ -17,6 +17,9 @@ import { measureTone, type HairTone } from "./hair-tone";
 import { HAIR_LEVELS, apply2D, facePolygon, luma, median, percentile, polygonMask, type HairStats, type Pt, type Raster, type Sim2D } from "./image-stats";
 
 export type HairLength = "bald" | "buzz" | "short" | "medium" | "long";
+/** Volume do cabelo: quanto ele passa do contorno do crânio (rente, normal, volumoso, muito volumoso). */
+export type HairVolume = "flat" | "normal" | "full" | "big";
+export const HAIR_VOLUMES: HairVolume[] = ["flat", "normal", "full", "big"];
 export type HairTexture = "straight" | "wavy" | "curly" | "coily";
 export const HAIR_LENGTHS: HairLength[] = ["bald", "buzz", "short", "medium", "long"];
 export const HAIR_TEXTURES: HairTexture[] = ["straight", "wavy", "curly", "coily"];
@@ -31,8 +34,16 @@ export interface HairProfile {
   flow: number;               // 0–1: continuidade da direção dos fios entre blocos vizinhos (liso ≈ 1)
   volume: number;             // meia-largura do cabelo ÷ meia-largura do rosto
   outline: number[];          // meia-largura (cm) do cabelo — ou da cobertura — em HAIR_LEVELS
+  estimated?: boolean;        // a foto não mostrou o cabelo (nem pele no alto da cabeça): comprimento/cor supostos
+  volumeLevel?: HairVolume;   // volume medido na foto (hairVolume)
+  volumeFactor?: number;      // o mesmo, como fator da geometria (1 = normal; 0,7 rente … 1,9 muito volumoso)
   debug?: unknown;
 }
+
+/** Cabelo suposto quando a foto não mostra nem cabelo nem couro cabeludo: nunca "careca" por falta de evidência. */
+export const HAIR_FALLBACK = { FEMININO: { length: "medium" as HairLength, bottom: -15 }, MASCULINO: { length: "short" as HairLength, bottom: 2.4 } };
+/** Castanho médio (nível 4 da paleta): a cor suposta quando nenhum pixel de cabelo pôde ser medido. */
+export const HAIR_DEFAULT_TONE: HairTone = { level: 4, family: "natural" };
 
 const FACE_HALF = 7.66;       // |x| dos pontos 234/454 no canônico
 const EAR_LOBE_Y = -2.9, SHOULDER_Y = -17;
@@ -117,8 +128,16 @@ function crown(img: Raster, mask: ArrayLike<number>, cls: ClassMaskLike | null, 
   const skinL = luma(...skin); const S = skin[0] + skin[1] + skin[2] || 1;
   let n = 0, nSkin = 0, nHair = 0, nCover = 0, nUpper = 0, nUpperSkin = 0, nUpperCover = 0; const cover: number[][] = [], hairC: number[][] = [], other: number[][] = [];
   const step = Math.max(1, Math.round(Math.sqrt((w * h) / 200000)));
+  // textura (relevo de fios) em ~2,5 mm: fio tem, pele não. Separa cabelo loiro claro (cromaticidade da pele) do couro
+  // cabeludo de quem raspa a cabeça, que os segmentadores às vezes chamam de "cabelo".
+  const d = Math.max(1, Math.round(0.25 / (Math.hypot(toCanon.a, toCanon.b) || 1)));
+  const Lp = (x: number, y: number) => { const o = (Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))) * 4; return luma(data[o], data[o + 1], data[o + 2]); };
+  const tex = (x: number, y: number) => (Math.abs(Lp(x + d, y) - Lp(x - d, y)) + Math.abs(Lp(x, y + d) - Lp(x, y - d))) / 2;
+  const skinTex: number[] = [];
+  const amb: { c: number[]; t: number; upper: boolean }[] = [];              // cor de pele que os segmentadores chamam de cabelo
   for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) {
     const [X, Y] = apply2D(toCanon, x, y);
+    if (Y > foreheadY - 3 && Y < foreheadY - 0.5 && Math.abs(X) < 3 && mask[y * w + x] < 0.3) { skinTex.push(tex(x, y)); continue; }
     const dy = Y - (foreheadY + 0.8); if (dy < 0 || (X / 5.5) ** 2 + (dy / 5) ** 2 > 1) continue;
     const i = y * w + x; const o = i * 4; const c = [data[o], data[o + 1], data[o + 2]];
     const k = clsAt(cls, w, h, x, y); if (k === 0) continue;                   // fundo: fora da cabeça
@@ -129,17 +148,25 @@ function crown(img: Raster, mask: ArrayLike<number>, cls: ClassMaskLike | null, 
     const mx = Math.max(...c), mn = Math.min(...c); const sat = mx ? (mx - mn) / mx : 0;
     const hue = mx === mn ? 0 : mx === c[0] ? (60 * ((c[1] - c[2]) / (mx - mn)) + 360) % 360 : mx === c[1] ? 60 * ((c[2] - c[0]) / (mx - mn)) + 120 : 60 * ((c[0] - c[1]) / (mx - mn)) + 240;
     const unnatural = sat > 0.35 && hue > 70 && hue < 330;                     // verde, azul, roxo: tecido, não cabelo
-    let kind: "skin" | "hair" | "cover" | "other";
+    let kind: "skin" | "hair" | "cover" | "other" | "amb";
     if (k === CLS_OTHER || k === CLS_CLOTHES) kind = "cover";
-    else if (k === CLS_HAIR || (k === -1 && mask[i] > 0.5)) kind = unnatural ? "cover" : skinLike ? "skin" : "hair";     // "cabelo" cor de pele = couro cabeludo
+    // "cabelo" cor de pele: couro cabeludo ou loiro claro — decide a textura, no fim
+    else if (k === CLS_HAIR || (k === -1 && mask[i] > 0.5)) kind = unnatural ? "cover" : skinLike ? (mask[i] < 0.35 ? "skin" : "amb") : "hair";
+    else if ((k === CLS_FACE || k === CLS_BODY) && mask[i] > 0.6 && !unnatural) kind = skinLike ? "amb" : "hair";   // o segmentador de cabelo contra a classe "pele"
     else if (k === CLS_FACE || k === CLS_BODY || (k === -1 && skinLike)) kind = skinLike || dChroma < 0.06 && L < skinL * 1.35 ? "skin" : "cover";   // "pele" branca demais = boné/turbante claro
     else kind = "other";
     if (kind === "cover") { nCover++; if (upper) { cover.push(c); nUpperCover++; } }
     else if (kind === "hair") { nHair++; hairC.push(c); }
     else if (kind === "skin") { nSkin++; if (upper) nUpperSkin++; }
+    else if (kind === "amb") amb.push({ c, t: tex(x, y), upper });
     else other.push(c);
   }
-  return { n, skin: n ? nSkin / n : 0, upperSkin: nUpper ? nUpperSkin / nUpper : 0, hair: n ? nHair / n : 0, cover: n ? nCover / n : 0, upperCover: nUpper ? nUpperCover / nUpper : 0, coverC: cover, hairC, other, skinL };
+  // os ambíguos: com relevo claramente acima do da testa, são fios (loiro claro); lisos como a testa, couro cabeludo
+  const tSkin = skinTex.length > 10 ? median(skinTex) : NaN; const tAmb = amb.length ? median(amb.map((a) => a.t)) : NaN;
+  // sem testa à mostra (franja cobrindo) vale um limiar absoluto: couro cabeludo liso fica abaixo de ~10
+  const ambHair = Number.isFinite(tAmb) && tAmb > (Number.isFinite(tSkin) ? Math.max(1.5, tSkin * 1.6) : 12);
+  for (const a of amb) { if (ambHair) { nHair++; hairC.push(a.c); } else { nSkin++; if (a.upper) nUpperSkin++; } }
+  return { n, skin: n ? nSkin / n : 0, upperSkin: nUpper ? nUpperSkin / nUpper : 0, hair: n ? nHair / n : 0, cover: n ? nCover / n : 0, upperCover: nUpper ? nUpperCover / nUpper : 0, coverC: cover, hairC, other, skinL, tSkin, tAmb, amb: amb.length };
 }
 
 /** Silhueta da cobertura de cabeça (classes acessório/roupa acima da testa), nas mesmas alturas da do cabelo. */
@@ -155,12 +182,38 @@ function coverOutline(img: Raster, cls: ClassMaskLike | null, toCanon: Sim2D, fo
   return by.map((v) => (v.length > 6 ? +percentile(v, 97).toFixed(1) : 0));
 }
 
+// crânio no canônico (cm), calibrado pela silhueta de cabeças raspadas/carecas das fotos de teste: ~7,6 de meia-largura
+// até 2 cm acima da orelha, fechando em elipse até o topo (~14)
+const SKULL_HALF = 7.6, SKULL_TOP_C = 13.5;
+/** Meia-largura do crânio (sem cabelo) numa altura do canônico. */
+export const skullHalf = (y: number) => (y <= 2 ? SKULL_HALF : SKULL_HALF * Math.sqrt(Math.max(0, 1 - ((y - 2) / 12) ** 2)));
+
+/**
+ * Volume do cabelo pela silhueta medida (HAIR_LEVELS) contra o contorno do crânio:
+ *   lados — quanto o cabelo passa da cabeça das têmporas para cima (percentil 75 das alturas 4–12 cm);
+ *   alto  — quanto passa do topo do crânio (não vale com o alto cortado na foto).
+ * O maior dos dois (o alto pesa 0,8: penteado para cima engana menos que para os lados) dá a classe e o fator que a
+ * geometria usa (1 = normal ≈ 2 cm de cabelo em volta da cabeça). Cabelo longo liso cai rente: os lados abaixo da
+ * orelha (cabelo pendurado) não contam — medem o comprimento, não o volume.
+ */
+export function hairVolume(stats: Pick<HairStats, "outline" | "top" | "cutTop" | "present">): { level: HairVolume; factor: number; side: number; top: number } {
+  if (!stats.present) return { level: "normal", factor: 1, side: 0, top: 0 };
+  const ex: number[] = [];
+  HAIR_LEVELS.forEach((y, i) => { const w = stats.outline?.[i] ?? 0; if (w > 0 && y >= 4 && y <= 12) ex.push(w - skullHalf(y)); });
+  const side = ex.length ? Math.max(0, percentile(ex, 75)) : 0;
+  const top = stats.cutTop ? 0 : Math.max(0, stats.top - SKULL_TOP_C);
+  const score = Math.max(side, top * 0.8);
+  const level: HairVolume = score < 1.2 ? "flat" : score < 3 ? "normal" : score < 5 ? "full" : "big";
+  return { level, factor: +Math.min(1.9, Math.max(0.7, 0.55 + score * 0.22)).toFixed(2), side: +side.toFixed(1), top: +top.toFixed(1) };
+}
+
 /**
  * Perfil do cabelo. `stats` é o de hairStats (máscara do segmentador de cabelo), `cls` a máscara de classes da mesma
  * foto (pode faltar), `toCanon` leva pixels ao canônico do rosto.
  */
-export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMaskLike | null, px: Pt[], toCanon: Sim2D, foreheadY: number, skin: [number, number, number], stats: HairStats): HairProfile {
+export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMaskLike | null, px: Pt[], toCanon: Sim2D, foreheadY: number, skin: [number, number, number], stats: HairStats, fallback: HairLength = "short"): HairProfile {
   const cr = crown(img, mask, cls, toCanon, foreheadY, skin);
+  let estimated = false;
   const volume = stats.side ? stats.side / FACE_HALF : 0;
   const med = (cs: number[][]) => [0, 1, 2].map((k) => median(cs.map((c) => c[k])));
   let length: HairLength; let cover: string | null = null; let color = stats.color; let tone: HairTone | null = stats.tone?.tone ?? null;
@@ -187,8 +240,13 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
   } else if (cr.n > 30 && cr.other.length > cr.n * 0.4) {
     const m = med(cr.other);
     if (luma(m[0], m[1], m[2]) < cr.skinL * 0.7) { length = "buzz"; const t = measureTone(cr.other); tone = t?.tone ?? null; color = t?.color ?? toHex(m); } else { length = "bald"; color = null; }
+  } else if (stats.present) {
+    length = "short";
   } else {
-    length = stats.present ? "short" : "bald";
+    // nem cabelo nem pele no alto da cabeça (foto escura, cabeça pequena, cabelo da cor do fundo): cabelo suposto pelo
+    // corpo base, com a cor medida no que a classe "cabelo" viu — ou castanho médio. A pessoa ajusta corte e tom.
+    length = fallback; estimated = true;
+    const m = measureTone(cr.hairC); tone = m?.tone ?? HAIR_DEFAULT_TONE; color = m?.color ?? null;
   }
   const o = stats.present && length !== "buzz" && length !== "bald" ? hairOrientation(img, mask, cls, px, toCanon) : { coherence: NaN, flow: NaN, flows: [] as number[], vertical: NaN };
   let texture: HairTexture = "straight";
@@ -199,8 +257,9 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
   }
   if (volume > 1.9 && (texture === "wavy" || texture === "curly")) texture = texture === "wavy" ? "curly" : "coily";
   if (length === "bald" || length === "buzz") texture = "straight";
-  if (!color) tone = null;
-  return { length, texture, cover, color, tone, coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
+  if (!color && !estimated) tone = null;
+  const vol = hairVolume(stats); const measuredVol = !estimated && !cover && length !== "bald" && length !== "buzz";
+  return { length, texture, cover, color, tone, ...(estimated ? { estimated } : {}), ...(measuredVol ? { volumeLevel: vol.level, volumeFactor: vol.factor } : {}), coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, tSkin: +cr.tSkin.toFixed(2), tAmb: +cr.tAmb.toFixed(2), amb: cr.amb, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
 }
 
 /** Limiares do "fluxo" dos fios (calibrados nas fotos de teste de docs/testes; ver scripts/avatar3d). */

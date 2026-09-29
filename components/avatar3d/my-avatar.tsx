@@ -7,7 +7,7 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Badge, Button, Card, Dialog, ErrorState, FileButton, PageHeader, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, Dialog, ErrorState, FileButton, PageHeader, SegmentPicker, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
 import { useWebGL } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { HumanParts } from "@/components/three/human-avatar";
@@ -15,6 +15,9 @@ import { AVATAR_NOT_DRESSED, downloadBlob, exportAvatarGlb } from "@/lib/avatar3
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, SLIDER_ADJUSTS, clampAdjust, type AvatarAdjust, type AvatarHair, type AvatarModel } from "@/lib/avatar3d/model";
 import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
+import { HAIR_CUTS } from "@/lib/avatar3d/hair-cut";
+import { SEX_CONFIDENT, type SexGuess } from "@/lib/avatar3d/sex-detect";
+import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
 import { BodyEditor } from "@/components/avatar3d/body-editor";
@@ -51,11 +54,13 @@ function AdjustSliders({ value, onChange, hair }: { value: AvatarAdjust; onChang
         return (
           <label key={k} htmlFor={id} className="grid gap-1">
             <span className="flex justify-between type-body-sm"><span>{t(`avatar3d.adjust.${k}`)}</span><span className="type-data">{shown}</span></span>
+            {k === "hairVolume" && hair?.volumeLevel && <span className="type-caption text-muted">{t("avatar3d.hairVolume.detectado", { level: t(`avatar3d.hairVolume.${hair.volumeLevel}`) })}</span>}
             <input id={id} type="range" min={lo} max={hi} step={step} value={value[k]} onChange={(e) => onChange({ ...value, [k]: Number(e.target.value) })} />
           </label>
         );
       })}
-      {hair?.color && !hair.cover && <HairTonePicker value={value.hairTone} onChange={(v) => onChange({ ...value, hairTone: v })} hair={hair} />}
+      {hair && !hair.cover && <HairCutPicker value={value.hairCut} onChange={(v) => onChange({ ...value, hairCut: v })} hair={hair} />}
+      {hair && !hair.cover && (hair.color || value.hairCut > 0) && <HairTonePicker value={value.hairTone} onChange={(v) => onChange({ ...value, hairTone: v })} hair={hair} />}
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...DEFAULT_ADJUST })}>{t("avatar3d.adjust.reset")}</Button>
     </div>
   );
@@ -83,6 +88,43 @@ function HairTonePicker({ value, onChange, hair }: { value: number; onChange: (v
           <button key={h.id} type="button" role="radio" aria-checked={value === h.id} className="hair-tone" style={{ background: h.color }} onClick={() => onChange(h.id)} aria-label={nameOf(h.id)} title={nameOf(h.id)} />
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Corte: o medido na foto ("Da foto", com o nome do corte detectado) ou um dos cortes comuns, masculinos e femininos
+ * (raspado, curto, topete, joãozinho, chanel, médio, longo). Troca só o corte: cor e textura seguem as da foto.
+ */
+function HairCutPicker({ value, onChange, hair }: { value: number; onChange: (v: number) => void; hair: AvatarHair }) {
+  const { t } = useI18n();
+  const measured = hair.present && hair.length ? t(`avatar3d.hairCut.medido.${hair.length}`) : t("avatar3d.hairCut.medido.bald");
+  return (
+    <div className="grid gap-1">
+      <span className="flex justify-between gap-2 type-body-sm"><span id="adj-hairCut">{t("avatar3d.adjust.hairCut")}</span><span className="type-caption text-muted">{value === 0 ? measured : t(`avatar3d.hairCut.${value}`)}</span></span>
+      <div role="radiogroup" aria-labelledby="adj-hairCut" className="flex flex-wrap gap-1.5">
+        <Chip role="radio" aria-checked={value === 0} active={value === 0} onClick={() => onChange(0)}>{t("avatar3d.hairCut.0")}</Chip>
+        {HAIR_CUTS.map((c) => <Chip key={c.id} role="radio" aria-checked={value === c.id} active={value === c.id} onClick={() => onChange(c.id)}>{t(`avatar3d.hairCut.${c.id}`)}</Chip>)}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Corpo base (feminino/masculino): estimado pelo rosto, no aparelho (lib/avatar3d/sex-detect.ts); quando a estimativa
+ * não é segura, vale o do cadastro. A pessoa troca quando quiser — a escolha dela vence as duas.
+ */
+function BodySexPicker({ value, guess, chosen, onChange }: { value: Sex; guess: SexGuess | null; chosen: boolean; onChange: (s: Sex) => void }) {
+  const { t } = useI18n();
+  const hint = chosen ? t("avatar3d.sex.escolhido")
+    : guess && guess.confidence >= SEX_CONFIDENT && guess.sex === value ? t("avatar3d.sex.detectado", { pct: Math.round(guess.confidence * 100) })
+    : guess ? t("avatar3d.sex.cadastro_incerto") : t("avatar3d.sex.cadastro");
+  return (
+    <div className="grid gap-1.5">
+      <span className="type-body-sm" id="avatar-sex">{t("avatar3d.sex.titulo")}</span>
+      <SegmentPicker label={t("avatar3d.sex.titulo")} value={value} onChange={onChange}
+        options={[{ id: "FEMININO" as Sex, label: t("avatar3d.sex.FEMININO") }, { id: "MASCULINO" as Sex, label: t("avatar3d.sex.MASCULINO") }]} />
+      <span className="type-caption text-muted">{hint}</span>
     </div>
   );
 }
@@ -116,6 +158,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   const [view, setView] = useState<AvatarView>("front");
   const [consent, setConsent] = useState(false);
   const [pub, setPub] = useState(initialPublic);
+  const [sexChoice, setSexChoice] = useState<Sex | null>(null);        // null = automático (rosto; senão o cadastro)
   const texture = useMemo(() => {
     if (!built) return null;
     const tex = new THREE.CanvasTexture(built.atlas); tex.colorSpace = THREE.SRGBColorSpace; return tex;
@@ -133,6 +176,11 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     return () => ctl.abort();
   }, [profileUrl]);
 
+  function chooseSex(s: Sex) {
+    setSexChoice(s);
+    if (photo) { const b = buildAvatar([photo], { sex: s, profileSex: sex }); if (b) setBuilt(b); }
+  }
+
   function pick(f: File | null) {
     if (!f) return;
     setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null);
@@ -144,7 +192,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     try {
       const p = await analyzePhoto(file, "front");
       setPhoto(p);
-      const b = buildAvatar([p]);
+      const b = buildAvatar([p], { sex: sexChoice, profileSex: sex });
       setBuilt(b); setFailed(!b); setView("front");
     } catch {
       toast.error(t("avatar3d.page.erro_processar"));
@@ -200,6 +248,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
         {built && (
           <Card>
             <p className="label">{t("avatar3d.page.ajustes")}</p>
+            <div className="mb-3"><BodySexPicker value={built.model.sex ?? sex} guess={built.sexGuess} chosen={!!sexChoice} onChange={chooseSex} /></div>
             <AdjustSliders value={adjust} onChange={setAdjust} hair={built?.model.hair} />
           </Card>
         )}
@@ -207,7 +256,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       <div className="grid content-start gap-3">
         <Card>
           <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={sex} view={view} />
+            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} />
               : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
           </div>
           {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
@@ -247,7 +296,8 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
     try { await api.patch("/api/me/avatar3d", { body: b ?? {} }); toast.success(t("avatar3d.body.salvo")); onChanged(); }
     catch (e) { toast.fromError(e); } finally { setBusy(""); }
   }
-  async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean }) {
+  const bodySex: Sex = saved.model?.sex ?? sex;
+  async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean; sex?: Sex }) {
     setBusy("patch");
     try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
     catch (e) { toast.fromError(e); } finally { setBusy(""); }
@@ -279,13 +329,14 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         </Card>
         <Card>
           <p className="label">{t("avatar3d.page.ajustes")}</p>
+          <div className="mb-3"><BodySexPicker value={bodySex} guess={null} chosen={!!saved.model?.sex} onChange={(v) => { if (v !== bodySex) void patch({ sex: v }); }} /></div>
           <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} />
           <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
         </Card>
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={sex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; }} />}
+          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={bodySex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; }} />}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <ViewButtons view={view} onView={setView} />
@@ -296,7 +347,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         <p className="mt-2 type-caption text-faint">{t("avatar3d.page.onde_aparece")}</p>
       </Card>
       <div className="lg:col-span-2">
-        {saved.model && <BodyEditor sex={sex} initial={body} avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} saving={busy === "body"} onSave={saveBody} />}
+        {saved.model && <BodyEditor sex={bodySex} initial={body} avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} saving={busy === "body"} onSave={saveBody} />}
       </div>
       <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("avatar3d.page.excluir_titulo")}
         footer={<><Button variant="ghost" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy === "delete"} onClick={remove}>{t("avatar3d.page.excluir")}</Button></>}>

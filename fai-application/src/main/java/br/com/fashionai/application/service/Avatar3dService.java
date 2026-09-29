@@ -50,11 +50,13 @@ public class Avatar3dService {
     private static final long MAX_TEXTURE_BYTES = 4L * 1024 * 1024;
     /** Tons de cabelo da paleta (lib/avatar3d/hair-tone.ts, HAIR_TONES): 0 = o medido na foto, 1–14 = escolhido. */
     static final int HAIR_TONES = 14;
+    /** Cortes de cabelo (lib/avatar3d/hair-cut.ts, HAIR_CUTS): 0 = o medido na foto, 1–7 = escolhido. */
+    static final int HAIR_CUTS = 7;
     /** Ajustes finos: faixas pequenas de propósito (ajuste, não outra pessoa). Iguais a ADJUST_RANGE do cliente. */
     private static final Map<String, double[]> ADJUST = Map.of(
             "headScale", new double[]{0.94, 1.06, 1}, "neck", new double[]{-0.02, 0.02, 0},
             "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
-            "hairTone", new double[]{0, HAIR_TONES, 0});
+            "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0});
 
     /** Moderação da textura do rosto (mesma capacidade CONTENT_MODERATOR, com critério de rosto em vez de peça). */
     static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
@@ -81,7 +83,11 @@ public class Avatar3dService {
                               Boolean consent, Boolean publicOnRunway) {
     }
 
-    public record SettingsCommand(Map<String, Object> adjust, Boolean publicOnRunway, Map<String, Object> body) {
+    /** sex: corpo base do avatar (FEMININO/MASCULINO), estimado pelo rosto ou trocado pela pessoa; null = sem mudança. */
+    public record SettingsCommand(Map<String, Object> adjust, Boolean publicOnRunway, Map<String, Object> body, String sex) {
+        public SettingsCommand(Map<String, Object> adjust, Boolean publicOnRunway, Map<String, Object> body) {
+            this(adjust, publicOnRunway, body, null);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -137,6 +143,11 @@ public class Avatar3dService {
             if (a.isPublicOnRunway() && a.getTextureModeration() == ModerationStatus.PENDING) {
                 a.setTextureModeration(moderateTexture(user.id(), storage.get(a.getTextureKey())));
             }
+        }
+        if (cmd != null && ("FEMININO".equals(cmd.sex()) || "MASCULINO".equals(cmd.sex()))) {
+            Map<String, Object> model = new LinkedHashMap<>(Json.map(a.getModelJson()));
+            model.put("sex", cmd.sex());
+            a.setModelJson(Json.write(model));
         }
         if (cmd != null && cmd.body() != null) {
             // corpo: proporções com a origem de cada uma (foto, pessoa, estimativa); vai junto do modelo do rosto
@@ -290,6 +301,9 @@ public class Avatar3dService {
         if (h.containsKey("cover") && h.get("cover") != null && !(h.get("cover") instanceof String cv && HEX.matcher(cv).matches())) h.remove("cover");
         if (h.containsKey("outline") && !validOutline(h.get("outline"))) h.remove("outline");
         if (h.containsKey("tone") && h.get("tone") != null && !validTone(h.get("tone"))) h.remove("tone");
+        // volume medido (fator 0,5–2,5) e a classe dele
+        if (h.containsKey("volume") && !(h.get("volume") instanceof Number vn && Double.isFinite(vn.doubleValue()) && vn.doubleValue() >= 0.5 && vn.doubleValue() <= 2.5)) h.remove("volume");
+        if (h.containsKey("volumeLevel") && !HAIR_VOLUMES.contains(h.get("volumeLevel"))) h.remove("volumeLevel");
         h.keySet().retainAll(HAIR_KEYS);
         Map<String, Object> out = new LinkedHashMap<>();
         if (m.get("body") instanceof Map<?, ?> body) {
@@ -301,6 +315,10 @@ public class Avatar3dService {
                 out.put(k, m.get(k));
             }
         }
+        // corpo base do avatar (estimado pelo rosto no aparelho ou escolhido pela pessoa); valor desconhecido é descartado
+        if ("FEMININO".equals(m.get("sex")) || "MASCULINO".equals(m.get("sex"))) {
+            out.put("sex", m.get("sex"));
+        }
         out.put("hair", h);
         return out;
     }
@@ -308,7 +326,8 @@ public class Avatar3dService {
     /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
     static final List<String> HAIR_LENGTHS = List.of("bald", "buzz", "short", "medium", "long");
     static final List<String> HAIR_TEXTURES = List.of("straight", "wavy", "curly", "coily");
-    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone");
+    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone", "volume", "volumeLevel");
+    static final List<String> HAIR_VOLUMES = List.of("flat", "normal", "full", "big");
     static final List<String> HAIR_FAMILIES = List.of("natural", "ash", "golden", "copper", "red", "gray", "white");
 
     /** Tom medido: {level: 1–10, family: uma de HAIR_FAMILIES}, nada mais. */
@@ -415,7 +434,7 @@ public class Avatar3dService {
         ADJUST.forEach((k, r) -> {
             Object v = a == null ? null : a.get(k);
             double d = v instanceof Number n && Double.isFinite(n.doubleValue()) ? Math.min(r[1], Math.max(r[0], n.doubleValue())) : r[2];
-            out.put(k, "hairTone".equals(k) ? (Object) (int) Math.round(d) : (Object) d);
+            out.put(k, "hairTone".equals(k) || "hairCut".equals(k) ? (Object) (int) Math.round(d) : (Object) d);
         });
         return out;
     }

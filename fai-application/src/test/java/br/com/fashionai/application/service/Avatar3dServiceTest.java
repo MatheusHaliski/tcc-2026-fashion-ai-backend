@@ -232,6 +232,21 @@ class Avatar3dServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void corpoBaseEstimadoPeloRostoFicaNoModeloETrocaDepois() {
+        Map<String, Object> m = new LinkedHashMap<>((Map<String, Object>) cmd(true, false).model());
+        m.put("sex", "FEMININO");
+        assertEquals("FEMININO", Avatar3dService.validateModel(m).get("sex"));
+        m.put("sex", "OUTRO");
+        assertFalse(Avatar3dService.validateModel(m).containsKey("sex"));   // valor desconhecido é descartado
+        service.save(me, cmd(true, false), texture(512, 512));
+        Map<?, ?> model = (Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, null, "MASCULINO")).get("model");
+        assertEquals("MASCULINO", model.get("sex"));
+        model = (Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, null, "qualquer")).get("model");
+        assertEquals("MASCULINO", model.get("sex"));                        // inválido não muda nada
+    }
+
+    @Test
     void texturaSoApareceParaOutrosDepoisDeAprovadaNaModeracao() {
         // avatar privado: o rosto não vai para provedor externo nenhum
         service.save(me, cmd(true, false), texture(512, 512));

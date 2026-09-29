@@ -84,8 +84,8 @@ describe("modelo salvo", () => {
     expect(validateModel(null)).toBeNull();
   });
   test("ajustes ficam nas faixas pequenas; ausentes voltam ao padrão", () => {
-    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0 });
-    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0 });
+    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0, hairCut: 0 });
+    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0 });
     expect(clampAdjust({ hairTone: 7.6 }).hairTone).toBe(8); expect(clampAdjust({ hairTone: 40 }).hairTone).toBe(14);
     expect(clampAdjust(null).headScale).toBe(1);
   });
