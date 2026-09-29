@@ -67,4 +67,13 @@ class MultiPieceDetectionTest {
         assertThat(p.box()).isEqualTo(new MultiPieceService.Box(0, 0, 100, 100));
         assertThat(p.category()).isNull();
     }
+
+    @Test
+    void promptDaCopiaPorIaUsaSoOQueEValidoEMantemAPeca() {
+        String p = MultiPieceService.recreatePrompt("Camiseta \"branca\" lisa", "upper_piece", "white");
+        assertThat(p).contains("Camiseta 'branca' lisa").contains("upper piece").contains("Main color: white")
+                .contains("Keep exactly the same colors").contains("No person");
+        String semDica = MultiPieceService.recreatePrompt(null, "not_a_category", "roxo-inventado");
+        assertThat(semDica).doesNotContain("Type:").doesNotContain("Main color").doesNotContain("The item is");
+    }
 }

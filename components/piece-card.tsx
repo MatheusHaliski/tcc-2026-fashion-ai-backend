@@ -62,8 +62,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
     <>
       {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
-      {(!piece.disponivel || (mine && piece.favorite)) && (
+      {(!piece.disponivel || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
+          {/* foto recriada por IA: o selo aparece para todos, não só para o dono */}
+          {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
           {!piece.disponivel && <span className="pc-flag">{t("common.unavailable")}</span>}
           {mine && piece.favorite && <span className="pc-flag is-fav"><span aria-hidden>★</span><span className="sr-only">{t("pieceCard.favorita")}</span></span>}
         </span>

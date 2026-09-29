@@ -9,7 +9,9 @@ import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.imaging.AiSeal;
 import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalVision;
 import br.com.fashionai.application.ports.MediaStoragePort;
@@ -32,6 +34,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -61,9 +64,11 @@ public class MultiPieceService {
     private final MediaService media;
     private final Guard guard;
     private final WardrobeService wardrobe;
+    private final List<ImageProviderPorts.ImageEditPort> editors;
 
     public MultiPieceService(UserRepository users, PipelineJobRepository jobs, FlatLayPipeline flatLay, AiEngine ai,
-                             MediaService media, Guard guard, WardrobeService wardrobe) {
+                             MediaService media, Guard guard, WardrobeService wardrobe,
+                             List<ImageProviderPorts.ImageEditPort> editors) {
         this.users = users;
         this.jobs = jobs;
         this.flatLay = flatLay;
@@ -71,6 +76,7 @@ public class MultiPieceService {
         this.media = media;
         this.guard = guard;
         this.wardrobe = wardrobe;
+        this.editors = editors;
     }
 
     /** Caixa da peça em porcentagem (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
@@ -88,7 +94,11 @@ public class MultiPieceService {
 
     /** Rascunho de uma peça da foto: o mesmo contrato do {@code POST /api/pieces} (draftId + imagens). */
     public record PieceDraft(UUID draftId, String processedUrl, String flatLayUrl, String thumbnailUrl, String originalUrl,
-                             boolean backgroundRemoved, Map<String, Object> moderation) {
+                             boolean backgroundRemoved, Map<String, Object> moderation, boolean aiGenerated) {
+    }
+
+    /** Cópia da peça recriada por IA: {@code previewUrl} já traz o selo; o cadastro usa {@code aiImageId}. */
+    public record AiImage(UUID aiImageId, String previewUrl, AiOutcome.Explanation explanation, AiOutcome.Quota quota) {
     }
 
     // ================================================================== 1 — detectar
@@ -258,11 +268,41 @@ public class MultiPieceService {
         guard.requireCanCreate(user);
         ImageOps.requireAcceptedImage(bytes);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        PipelineJob parent = ownedParent(user, owner, parentId);
+        return draft(user, owner, parent, index, bytes, false);
+    }
+
+    /**
+     * Rascunho da peça com a cópia recriada por IA no lugar da foto: passa pelo mesmo Flat Lay e pela mesma moderação,
+     * e todas as versões gravadas (original, recorte, flat lay, miniatura) levam o selo de IA; a peça sai com a flag.
+     */
+    @Transactional
+    public PieceDraft aiPieceDraft(CurrentUser user, UUID parentId, UUID aiImageId) {
+        guard.requireCanCreate(user);
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        PipelineJob parent = ownedParent(user, owner, parentId);
+        PipelineJob aiJob = jobs.findById(aiImageId).filter(j -> "AI_PIECE_IMAGE".equals(j.getTargetType()))
+                .filter(j -> j.getUser().getId().equals(owner.getId()))
+                .filter(j -> parentId.toString().equals(Json.map(j.getInputJson()).get("multiPieceDraftId")))
+                .orElseThrow(() -> ApiException.notFound(Msg.t("multiPiece.imagem_ia")));
+        Map<String, Object> in = Json.map(aiJob.getInputJson());
+        Integer index = in.get("index") instanceof Number n && n.intValue() >= 0 ? n.intValue() : null;
+        byte[] raw = media.read(String.valueOf(Json.map(aiJob.getResultJson()).get("rawUrl")))
+                .orElseThrow(() -> ApiException.notFound(Msg.t("multiPiece.imagem_ia")));
+        return draft(user, owner, parent, index, raw, true);
+    }
+
+    private PipelineJob ownedParent(CurrentUser user, User owner, UUID parentId) {
         PipelineJob parent = jobs.findById(parentId).filter(j -> "MULTI_PIECE_DRAFT".equals(j.getTargetType()))
                 .orElseThrow(() -> ApiException.notFound(Msg.t("multiPiece.rascunho")));
         if (!parent.getUser().getId().equals(owner.getId())) {
             throw guard.deny(user, "draft:" + parentId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }
+        return parent;
+    }
+
+    private PieceDraft draft(CurrentUser user, User owner, PipelineJob parent, Integer index, byte[] bytes, boolean aiImage) {
+        UUID parentId = parent.getId();
         Object detected = null;
         if (index != null && Json.map(parent.getResultJson()).get("pieces") instanceof List<?> ps && index >= 0 && index < ps.size()) {
             detected = ps.get(index);
@@ -296,11 +336,18 @@ public class MultiPieceService {
         jobs.save(job);
         String base = "users/" + owner.getId() + "/drafts/" + job.getId() + "/";
         boolean png = r.mimeType().equals("image/png");
-        MediaStoragePort.StoredObject original = media.put(base + "original." + (png ? "png" : "jpg"),
-                png ? ImageOps.png(r.original()) : ImageOps.jpeg(r.original(), 0.95f), png ? "image/png" : "image/jpeg");
-        MediaStoragePort.StoredObject processed = media.put(base + "processed.png", r.processedPng(), "image/png");
-        MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg", r.processedWhiteJpeg(), "image/jpeg");
-        MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png", r.thumbnailPng(), "image/png");
+        // cópia por IA: o selo vai DEPOIS do Flat Lay (a remoção de fundo apagaria um selo gravado antes)
+        String seal = aiImage ? Msg.t("multiPiece.selo_ia") : null;
+        BufferedImage originalImg = aiImage ? AiSeal.stamp(r.original(), seal) : r.original();
+        byte[] originalBytes = png ? ImageOps.png(originalImg) : ImageOps.jpeg(originalImg, 0.95f);
+        MediaStoragePort.StoredObject original = media.put(base + "original." + (png ? "png" : "jpg"), originalBytes,
+                png ? "image/png" : "image/jpeg");
+        MediaStoragePort.StoredObject processed = media.put(base + "processed.png",
+                aiImage ? ImageOps.png(AiSeal.stamp(ImageOps.decode(r.processedPng()), seal)) : r.processedPng(), "image/png");
+        MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg",
+                aiImage ? ImageOps.jpeg(AiSeal.stamp(ImageOps.decode(r.processedWhiteJpeg()), seal), 0.92f) : r.processedWhiteJpeg(), "image/jpeg");
+        MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png",
+                aiImage ? ImageOps.png(AiSeal.stamp(ImageOps.decode(r.thumbnailPng()), seal)) : r.thumbnailPng(), "image/png");
 
         Map<String, Object> quality = new LinkedHashMap<>();
         quality.put("metrics", r.quality().metrics());
@@ -325,8 +372,9 @@ public class MultiPieceService {
         result.put("mime", r.mimeType());
         result.put("width", r.originalWidth());
         result.put("height", r.originalHeight());
-        result.put("bytes", bytes.length);
-        result.put("hash", Hashing.sha256(bytes));
+        result.put("bytes", originalBytes.length);
+        result.put("hash", Hashing.sha256(originalBytes));
+        result.put("aiGenerated", aiImage);
         result.put("backgroundRemoved", r.backgroundRemoved());
         if (r.cutout().warning() != null) {
             result.put("backgroundWarning", r.cutout().warning());
@@ -346,6 +394,105 @@ public class MultiPieceService {
         job.setFallbackUsed(r.fallbackUsed());
         job.setOutputUrl(processed.url());
         job.setFinishedAt(Instant.now());
-        return new PieceDraft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), r.backgroundRemoved(), mod);
+        return new PieceDraft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), r.backgroundRemoved(), mod, aiImage);
+    }
+
+    // ================================================================== 3 — cópia da peça por IA
+
+    /**
+     * A pessoa achou a foto da peça ruim: a IA de imagem recria a peça a partir do recorte (ou da foto inteira) como foto
+     * de produto. Nada muda no acervo ainda — a revisão mostra a prévia (já com o selo) e a pessoa escolhe qual usar.
+     * Sem provedor de imagem, sem consentimento ou com a cota/teto de gasto estourado: 503 IA_INDISPONIVEL com o motivo.
+     *
+     * @param name/category/color o que a pessoa conferiu na revisão: orienta a IA a recriar a peça certa
+     */
+    @Transactional
+    public AiImage recreate(CurrentUser user, UUID parentId, Integer index, byte[] bytes, String name, String category, String color) {
+        guard.requireCanCreate(user);
+        ImageOps.requireAcceptedImage(bytes);
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        PipelineJob parent = ownedParent(user, owner, parentId);
+        byte[] input = ImageOps.jpeg(ImageOps.scaleToFit(ImageOps.decode(bytes), 1024, 1024), 0.92f);
+        String prompt = recreatePrompt(name, category, color);
+
+        List<AiEngine.RemoteStep<ImageProviderPorts.ProviderImage>> steps = new ArrayList<>();
+        for (ImageProviderPorts.ImageEditPort editor : editors) {
+            steps.add(new AiEngine.RemoteStep<>() {
+                @Override
+                public String provider() {
+                    return editor.getClass().getSimpleName().replace("Adapter", "").toLowerCase(Locale.ROOT);
+                }
+
+                @Override
+                public String model() {
+                    return "image-edit";
+                }
+
+                @Override
+                public boolean available() {
+                    return editor.available();
+                }
+
+                @Override
+                public AiEngine.RemoteResult<ImageProviderPorts.ProviderImage> call() {
+                    ImageProviderPorts.ProviderImage img = editor.edit(input, "image/jpeg", prompt)
+                            .orElseThrow(() -> new IllegalStateException("provedor não devolveu imagem"));
+                    return new AiEngine.RemoteResult<>(img, img.costUsd(), img.provider());
+                }
+            });
+        }
+        AiOutcome<ImageProviderPorts.ProviderImage> outcome = ai.execute(user.id(), AiCapability.PIECE_IMAGE_RECREATOR,
+                List.of(Msg.t("multiPiece.foto_para_ia")), null, null, steps, () -> null);
+        ImageProviderPorts.ProviderImage generated = outcome.value();
+        if (generated == null) {
+            String why = outcome.userMessage() == null ? Msg.t("multiPiece.ia_indisponivel") : outcome.userMessage();
+            throw new ApiException(503, "IA_INDISPONIVEL", why, Map.of("capability", AiCapability.PIECE_IMAGE_RECREATOR.name()));
+        }
+
+        BufferedImage img = ImageOps.decode(generated.bytes());
+        PipelineJob job = new PipelineJob();
+        job.setUser(owner);
+        job.setType(PipelineJobType.FLAT_LAY_STANDARDIZATION);
+        job.setStatus(PipelineJobStatus.COMPLETED);
+        job.setTargetType("AI_PIECE_IMAGE");
+        job.setProvider(outcome.provider());
+        job.setInputJson(Json.write(Map.of("multiPieceDraftId", parent.getId().toString(), "index", index == null ? -1 : index)));
+        job.setQueuedAt(Instant.now());
+        job.setStartedAt(Instant.now());
+        jobs.save(job);
+        String base = "users/" + owner.getId() + "/drafts/" + parent.getId() + "/ai-" + job.getId();
+        // a original da IA fica sem selo (o Flat Lay do cadastro parte dela e o selo entra depois); a prévia já leva o selo
+        MediaStoragePort.StoredObject raw = media.put(base + ".png", ImageOps.png(img), "image/png");
+        MediaStoragePort.StoredObject preview = media.put(base + "-preview.jpg",
+                ImageOps.jpeg(AiSeal.stamp(ImageOps.scaleToFit(img, 768, 768), Msg.t("multiPiece.selo_ia")), 0.9f), "image/jpeg");
+        job.setResultJson(Json.write(Map.of("rawUrl", raw.url(), "rawKey", raw.key(), "previewUrl", preview.url(),
+                "inferenceId", String.valueOf(outcome.inferenceId()))));
+        job.setTotalCostUsd(outcome.costUsd());
+        job.setOutputUrl(preview.url());
+        job.setFinishedAt(Instant.now());
+        return new AiImage(job.getId(), preview.url(), outcome.explanation(), outcome.quota());
+    }
+
+    /**
+     * Instrução da recriação (em inglês: o modelo de imagem segue melhor). A peça tem de continuar a MESMA — cores,
+     * estampa, logos, detalhes —, só a foto melhora; nada de pessoa, texto ou objetos novos.
+     */
+    static String recreatePrompt(String name, String category, String color) {
+        StringBuilder hint = new StringBuilder();
+        String n = name == null ? null : InputSanitizer.clean(name, 80);
+        if (n != null && !n.isBlank()) {
+            hint.append(" The item is: \"").append(n.replace("\"", "'")).append("\".");
+        }
+        if (category != null && Taxonomy.isValidCategory(category)) {
+            hint.append(" Type: ").append(category.replace('_', ' ')).append('.');
+        }
+        if (color != null && Taxonomy.COLORS.containsKey(color)) {
+            hint.append(" Main color: ").append(color.replace('_', ' ')).append('.');
+        }
+        return "Recreate the single clothing item from this photo as a clean, realistic e-commerce product photo." + hint
+                + " Show only that one item, complete and uncut, front view, as a flat lay or on an invisible mannequin,"
+                + " centered on a plain white studio background with soft, even lighting."
+                + " Keep exactly the same colors, fabric texture, pattern, prints, logos, buttons, stitching and proportions;"
+                + " do not add, remove or invent details. No person, no body parts, no text, no other objects.";
     }
 }

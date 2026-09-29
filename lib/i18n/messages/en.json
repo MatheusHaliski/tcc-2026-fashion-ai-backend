@@ -3675,5 +3675,15 @@
   "multiPiece.confianca": "AI confidence: {pct}%",
   "multiPiece.algumas_falharam": "Some pieces weren't saved. Check the reason on each one and try again — the ones already saved won't be sent again.",
   "multiPiece.recortar_todas": "{count, plural, =0 {Crop all} one {Crop # piece} other {Crop all # pieces}}",
-  "multiPiece.todas_recortadas": "All selected pieces are already cropped."
+  "multiPiece.todas_recortadas": "All selected pieces are already cropped.",
+  "multiPiece.criar_copia_ia": "Create an AI copy",
+  "multiPiece.criando_copia_ia": "Creating the copy…",
+  "multiPiece.copia_ia_ajuda": "Bad photo? The AI recreates the piece as a product photo. The new image carries the AI seal.",
+  "multiPiece.usar_copia_ia": "Use the AI copy",
+  "multiPiece.usar_foto_original": "Use my photo",
+  "multiPiece.gerar_outra": "Generate another copy",
+  "multiPiece.vai_com_ia": "It will be saved with the AI-generated image, with the seal.",
+  "multiPiece.selo_ia_curto": "AI",
+  "multiPiece.copia_ia_alt": "AI-generated copy of piece {n}",
+  "pieceCard.gerada_por_ia": "AI-generated image"
 }

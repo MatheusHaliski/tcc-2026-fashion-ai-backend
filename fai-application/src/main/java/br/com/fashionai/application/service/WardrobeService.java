@@ -1022,6 +1022,7 @@ public class WardrobeService {
                 w.setStudioDetailUrl(st.get("detailUrl") == null ? null : String.valueOf(st.get("detailUrl")));
             }
             w.setDefaultImage(false);
+            w.setAiGeneratedImage(Boolean.TRUE.equals(r.get("aiGenerated")));
             w.setImageHash((String) r.get("hash"));
             w.setImageMimetype((String) r.get("mime"));
             w.setImageFileSize(r.get("bytes") instanceof Number n ? n.longValue() : null);
@@ -1557,6 +1558,10 @@ public class WardrobeService {
         w.setImageUrl(stored.url());
         w.setThumbnailUrl(thumb.url());
         w.setDefaultImage(false);
+        // foto nova enviada pela pessoa tira o selo de IA; edição de uma foto existente (editedFromPhotoId) o mantém
+        if (editedFromPhotoId == null) {
+            w.setAiGeneratedImage(false);
+        }
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
         // a foto de estúdio acompanha a imagem nova (recorte com transparência) ou sai (foto opaca não vai ao estúdio)
         Map<String, Object> editedMeta = new LinkedHashMap<>(Json.map(w.getFlatLayMetadataJson()));

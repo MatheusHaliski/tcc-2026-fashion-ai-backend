@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ApiError, api } from "@/lib/api/client";
+import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAction } from "@/lib/hooks/use-api";
@@ -20,6 +20,8 @@ interface Row {
   /** posição na detecção; -1 = foto inteira que a pessoa adicionou (sem pré-preenchimento no servidor) */
   index: number; box: MultiBox; confidence: number; include: boolean; value: PieceFormValue;
   thumb?: string; crop?: File; status: "idle" | "saving" | "saved" | "error"; error?: string; errors?: Record<string, string>;
+  /** cópia da peça recriada por IA (a prévia já vem com o selo); useAi = salvar com ela no lugar da foto */
+  ai?: { id: string; url: string }; useAi?: boolean; aiBusy?: boolean; aiError?: string;
 }
 
 const FULL: MultiBox = { x: 0, y: 0, width: 100, height: 100 };
@@ -134,6 +136,25 @@ export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: 
     } catch { update(r.index, { error: t("piece.err_upload") }); }
   }
 
+  /**
+   * Cópia por IA: parte do recorte da peça (sem recorte, recorta pela caixa só para a IA — a foto inteira tem várias
+   * peças) e manda o que a pessoa já conferiu (nome, tipo, cor) para a IA recriar a peça certa.
+   */
+  async function makeAi(r: Row) {
+    update(r.index, { aiBusy: true, aiError: undefined });
+    try {
+      const source = r.crop ?? (r.index >= 0 ? new File([await cropBox(file, r.box)], `peca-${r.index + 1}.jpg`, { type: "image/jpeg" }) : file);
+      const fd = new FormData(); fd.append("file", source, source.name);
+      const qs = new URLSearchParams({ name: r.value.name, category: r.value.category, color: r.value.color });
+      if (r.index >= 0) qs.set("index", String(r.index));
+      const img = await api.upload<{ aiImageId: string; previewUrl: string }>(`/api/pieces/analysis/multi/${detection.draftId}/ai-image?${qs}`, fd);
+      update(r.index, { ai: { id: img.aiImageId, url: mediaUrl(img.previewUrl) ?? img.previewUrl }, useAi: true, aiBusy: false });
+    } catch (e) {
+      const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
+      update(r.index, { aiBusy: false, aiError: err.status === 0 ? t("piece.err_rede") : err.message });
+    }
+  }
+
   // peças marcadas que ainda não foram recortadas nem salvas (a foto inteira adicionada à mão não tem o que recortar)
   const uncropped = rows.filter((r) => r.index >= 0 && r.include && !r.crop && r.status !== "saved");
   const [cropping, setCropping] = useState(false);
@@ -159,9 +180,15 @@ export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: 
     for (const [i, r] of queue.entries()) {
       setProgress({ n: i + 1, total: queue.length }); update(r.index, { status: "saving", error: undefined });
       try {
-        const fd = new FormData(); fd.append("file", r.crop ?? file, r.crop?.name ?? file.name);
-        const q = r.index >= 0 ? `?index=${r.index}` : "";
-        const draft = await api.upload<{ draftId: string }>(`/api/pieces/analysis/multi/${detection.draftId}/pieces${q}`, fd);
+        let draft: { draftId: string };
+        if (r.useAi && r.ai) {
+          // a cópia por IA já está no servidor: o rascunho parte dela e grava o selo em todas as versões
+          draft = await api.post<{ draftId: string }>(`/api/pieces/analysis/multi/${detection.draftId}/ai-images/${r.ai.id}/piece`);
+        } else {
+          const fd = new FormData(); fd.append("file", r.crop ?? file, r.crop?.name ?? file.name);
+          const q = r.index >= 0 ? `?index=${r.index}` : "";
+          draft = await api.upload<{ draftId: string }>(`/api/pieces/analysis/multi/${detection.draftId}/pieces${q}`, fd);
+        }
         await api.post<PieceView>("/api/pieces", toPayload({ ...r.value, draftId: draft.draftId, useDefaultImage: false }));
         update(r.index, { status: "saved" }); saved++;
       } catch (e) {
@@ -214,7 +241,8 @@ export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: 
           {rows.map((r, i) => (
             <PieceRow key={r.index} id={`multi-piece-${r.index}`} n={i + 1} row={r} tax={tax} active={active === r.index} disabled={saving}
               onInclude={(include) => update(r.index, { include })} onChange={(v) => setValue(r.index, v)}
-              onCrop={() => crop(r)} onUncrop={() => update(r.index, { crop: undefined })} />
+              onCrop={() => crop(r)} onUncrop={() => update(r.index, { crop: undefined })}
+              onMakeAi={() => makeAi(r)} onUseAi={(useAi) => update(r.index, { useAi })} />
           ))}
           {problem && <p role="alert" className="error-text">{problem}</p>}
         </div>
@@ -223,9 +251,10 @@ export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: 
   );
 }
 
-function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onCrop, onUncrop }: {
+function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onCrop, onUncrop, onMakeAi, onUseAi }: {
   id: string; n: number; row: Row; tax: Taxonomy | null; active: boolean; disabled: boolean;
   onInclude: (v: boolean) => void; onChange: (v: PieceFormValue) => void; onCrop: () => void; onUncrop: () => void;
+  onMakeAi: () => void; onUseAi: (v: boolean) => void;
 }) {
   const { t } = useI18n(); const v = row.value; const err = row.errors ?? {};
   const set = <K extends keyof PieceFormValue>(k: K, x: PieceFormValue[K]) => onChange({ ...v, [k]: x });
@@ -234,19 +263,36 @@ function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onCr
   const saved = row.status === "saved"; const locked = disabled || saved;
   const fid = (f: string) => `${id}-${f}`;
   return (
-    <section id={id} aria-label={t("multiPiece.peca_n", { n })} className={cn("grid gap-3 rounded-md border p-3 sm:grid-cols-[112px_1fr]", active ? "border-ink" : "border-line-soft", !row.include && "opacity-60")}>
+    <section id={id} aria-label={t("multiPiece.peca_n", { n })} className={cn("grid gap-3 rounded-md border p-3 sm:grid-cols-[148px_1fr]", active ? "border-ink" : "border-line-soft", !row.include && "opacity-60")}>
       <div className="grid content-start gap-2">
         <label className="flex items-center gap-2 font-medium">
           <input type="checkbox" checked={row.include} disabled={locked} onChange={(e) => onInclude(e.target.checked)} />
           {t("multiPiece.peca_n", { n })}
         </label>
-        <div className="flex aspect-square items-center justify-center overflow-hidden rounded border border-line-soft bg-surface-2">
-          {row.thumb && <img src={row.thumb} alt={t("multiPiece.miniatura", { n })} className="h-full w-full object-contain" />}
+        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded border border-line-soft bg-surface-2">
+          {row.useAi && row.ai
+            ? <img src={row.ai.url} alt={t("multiPiece.copia_ia_alt", { n })} className="h-full w-full object-contain" />
+            : row.thumb && <img src={row.thumb} alt={t("multiPiece.miniatura", { n })} className="h-full w-full object-contain" />}
+          {row.useAi && row.ai && <span className="badge absolute left-1 top-1" title={t("pieceCard.gerada_por_ia")}>{t("multiPiece.selo_ia_curto")}</span>}
         </div>
         {row.confidence > 0 && <p className="type-caption text-muted">{t("multiPiece.confianca", { pct: Math.round(row.confidence * 100) })}</p>}
         {row.index >= 0 && !saved && (row.crop
           ? <><p className="type-caption">{t("multiPiece.recortada")}</p><Button size="sm" variant="ghost" onClick={onUncrop} disabled={locked}>{t("multiPiece.desfazer_recorte")}</Button></>
           : <><Button size="sm" onClick={onCrop} disabled={locked || !row.include}>{t("multiPiece.recortar")}</Button><p className="type-caption text-muted">{t("multiPiece.sem_recorte")}</p></>)}
+        {!saved && (row.ai ? (
+          <div className="grid gap-1.5 border-t border-line-soft pt-2">
+            {row.useAi
+              ? <><p className="type-caption">{t("multiPiece.vai_com_ia")}</p><Button size="sm" variant="ghost" onClick={() => onUseAi(false)} disabled={locked}>{t("multiPiece.usar_foto_original")}</Button></>
+              : <Button size="sm" onClick={() => onUseAi(true)} disabled={locked || !row.include}>{t("multiPiece.usar_copia_ia")}</Button>}
+            <Button size="sm" variant="ghost" onClick={onMakeAi} loading={row.aiBusy} disabled={locked || !row.include}>{row.aiBusy ? t("multiPiece.criando_copia_ia") : t("multiPiece.gerar_outra")}</Button>
+          </div>
+        ) : (
+          <div className="grid gap-1.5 border-t border-line-soft pt-2">
+            <Button size="sm" onClick={onMakeAi} loading={row.aiBusy} disabled={locked || !row.include}>{row.aiBusy ? t("multiPiece.criando_copia_ia") : t("multiPiece.criar_copia_ia")}</Button>
+            <p className="type-caption text-muted">{t("multiPiece.copia_ia_ajuda")}</p>
+          </div>
+        ))}
+        {row.aiError && <p role="alert" className="error-text">{row.aiError}</p>}
       </div>
       <fieldset disabled={locked || !row.include} className="grid min-w-0 gap-x-3 sm:grid-cols-2">
         <Field label={t("common.nome")} id={fid("name")} required error={err.name} className="sm:col-span-2"><Input id={fid("name")} value={v.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
