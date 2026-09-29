@@ -1,6 +1,6 @@
 # TDE — conteúdo revisável a partir da seção 4
 
-> **Escopo e data-base:** análise realizada em 28/09/2026 sobre os artefatos versionados. As três variáveis `TRELLO_*` estavam presentes, sem exposição de valores. Após a equipe informar que o acesso à internet havia sido corrigido, a verificação foi repetida: pelo proxy, `python scripts/rubricas/verificar_trello.py` continuou falhando com `Tunnel connection failed: 403 Forbidden`; sem as variáveis de proxy, a conexão falhou com `[Errno 101] Network is unreachable`. Uma terceira confirmação com `curl` obteve `CONNECT tunnel failed, response 403`. Portanto, o bloqueio ocorre antes de uma resposta da API do Trello, nenhum dado do board foi lido e **nenhuma escrita foi realizada no Trello**. Estado, responsáveis, listas, labels, comentários e CAs do board permanecem como **CONFIRMAÇÃO HUMANA PENDENTE**.
+> **Escopo e data-base:** análise local realizada em 28/09/2026 e conferência do Trello realizada em 29/09/2026. As três variáveis `TRELLO_*` estavam presentes, sem exposição de valores, e `python scripts/rubricas/verificar_trello.py` confirmou acesso somente de leitura ao board **TCC 2026 (Fashion AI) - Bryan,Matheus**. Foram consultadas 21 listas, 312 cards, descrições, membros, labels, checklists e os comentários disponíveis. A auditoria e o diff de escrita proposto estão em `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`. **Nenhuma escrita foi realizada no Trello:** as mudanças aguardam confirmação humana.
 
 ## 4. Relação de atores e governança do trabalho
 
@@ -31,11 +31,11 @@ Os pontos são uma estimativa relativa por complexidade, risco e incerteza, não
 
 ## 6. Auditoria dos RF25–RF39
 
-Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a leitura. Os CAs listados são a consolidação **local** proposta; devem ser comparados com o card antes de qualquer edição.
+Os estados e CAs foram confrontados com o board em modo somente leitura em 29/09/2026. Todos os cards RF25–RF39 estão abertos na lista **Requisitos Funcionais**, sem membro atribuído. HU-RF25–RF32 estão abertas no **Product Backlog**; HU-RF33–RF39 não foram localizadas. O detalhamento por card e as alterações propostas constam no diff de Trello versionado.
 
 ### RF25 — Selos de marca/celebridade e promoções
 
-1. **Trello:** não validado; confirmar lista, status, responsável, labels, checklists e comentários.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 03, sem responsável, checklist ou comentário; 9 CAs estão na descrição, enquanto HU-RF25 está vazia no Product Backlog.
 2. **CAs essenciais:** perfil institucional autorizado cria/edita selo; janela invertida é recusada; selo público só aparece quando aprovado e vigente; promoção respeita período e limite por usuário.
 3. **Implementação:** `SealController`, `SealService`, `SealDesignService`, persistência de selo/promoção e telas de selos/promoções.
 4. **Testes:** `SealDesignsTest`, `SealDesignServiceTest` e 13 passos E2E no RF25.
@@ -48,7 +48,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF26 — Explorador Global
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; HU-RF26 está aberta no Product Backlog com quatro CAs em rascunho na descrição.
 2. **CAs essenciais:** painel agrega por país; filtros de país retornam somente entidades elegíveis; estados vazio/erro são compreensíveis; números coincidem com a fonte persistida.
 3. **Implementação:** `ExplorerService`, endpoints `/api/explorer/*` e `app/(site)/(app)/explorer/page.tsx`.
 4. **Testes:** 3 passos E2E; não foi localizado teste unitário específico de agregação.
@@ -61,7 +61,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF27 — Meu Quarto 3D
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 12 CAs e 7 tarefas incompletas, e o RF duplica o CA12.
 2. **CAs essenciais:** posições são persistidas; mover/renomear reflete nas visões; excedentes não bloqueiam cadastro; sem WebGL há modo 2.5D equivalente; “Mostrar no quarto” focaliza a peça.
 3. **Implementação:** `RoomController`, `RoomService` e página `/room`, que já detecta WebGL e informa o fallback.
 4. **Testes:** `RoomAddressTest`, `WardrobeCatalogTest` e 16 passos E2E.
@@ -74,7 +74,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF28 — Smart Mirror e Vista-me
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 16 CAs e 8 tarefas incompletas, e o RF duplica o CA16.
 2. **CAs essenciais:** vestir/substituir por slot; sugerir apenas peças elegíveis; rejeitar IDs não elegíveis; fallback local quando IA falha; salvar/levar composição ao RF5 e registrar Look do Dia sem duplicação.
 3. **Implementação:** `MirrorController`, `MirrorService` e página `/mirror`; o serviço valida disponibilidade e oferece fallback local.
 4. **Testes:** 14 passos E2E; não foi localizado teste de componente para o atalho contextual “Usar em…”.
@@ -87,7 +87,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF29 — Inventory Score, destaques e rankings
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 11 CAs e 6 tarefas incompletas.
 2. **CAs essenciais:** menos de 10 peças não gera nota; sete dimensões explicáveis; pesos renormalizados sem DNA; score limitado a 0–1000; ranking exige opt-in e cidade exige k-anonimato.
 3. **Implementação:** `InventoryScoreService`, `HighlightsController` e página `/highlights`, com snapshots, explicações e rankings.
 4. **Testes:** `ScoreBandsTest`, `WardrobeAnalysisTest` e 9 passos E2E; não foi encontrado teste unitário abrangente da fórmula completa.
@@ -100,7 +100,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF30 — FAI Points, níveis e loja
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 8 CAs e 5 tarefas incompletas.
 2. **CAs essenciais:** evento idempotente; teto diário não bloqueia ação; compra debita saldo sem reduzir pontos vitalícios; nível libera função; compra concorrente não produz saldo/estoque negativo.
 3. **Implementação:** `FaiPointsService`, ledger, travas de comprador/item, `HighlightsController` e página `/points`.
 4. **Testes:** `FaiPointsGamesTest`, `FaiPointsShopTest` e 8 passos E2E cobrem idempotência, tetos e serialização em unidade.
@@ -113,7 +113,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF31 — Estados do acervo
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 7 CAs e 5 tarefas incompletas, incluindo um CA de apresentação visual que deve ser tarefa FE.
 2. **CAs essenciais:** favorita, disponível, indisponível e à venda persistem; fluxos automáticos excluem indisponíveis; tentativa manual informa restrição; todas as telas exibem o mesmo estado.
 3. **Implementação:** `WardrobeService`, filtros em `MirrorService`, cards/modal do frontend e log de disponibilidade.
 4. **Testes:** `WardrobeStateFilterTest` e 5 passos E2E.
@@ -126,7 +126,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF32 — Desafios
 
-1. **Trello:** não validado.
+1. **Trello:** card RF e HU abertos, label Sprint 04 e sem responsável/comentário; a HU contém 17 CAs e 7 tarefas incompletas.
 2. **CAs essenciais:** elegibilidade/convite; limite de ativos; entrada válida; um voto por eleitor; consentimento de foto; encerramento determinístico; recompensa única.
 3. **Implementação:** `ChallengeController`, `ChallengeService`, persistência de instâncias/participantes/eventos/votos e telas `/challenges`.
 4. **Testes:** `ChallengeSecurityTest` e 23 passos E2E cobrem privacidade e voto duplicado convertido em conflito.
@@ -139,7 +139,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF33 — Passarela 3D
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 12 CAs estão na descrição e HU-RF33 não existe.
 2. **CAs essenciais:** mostrar apenas Looks do Dia elegíveis; Top 100 global/regional/país; filtros combináveis; paginação/lote; fallback acessível sem WebGL.
 3. **Implementação:** `ShowcaseController`/`ShowcaseService`; API de runway. Não foi localizada rota de frontend dedicada pelo nome “runway/showcase”.
 4. **Testes:** 2 passos E2E; não foi localizado teste visual/funcional de fallback.
@@ -152,7 +152,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF34 — Eras da celebridade
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 8 CAs estão na descrição e HU-RF34 não existe.
 2. **CAs essenciais:** celebridade autorizada cria/ordena/publica era; visitante busca e vê itens publicados; conteúdo não publicado não vaza; My Stage degrada sem WebGL.
 3. **Implementação:** `ShowcaseService`/controller institucional e especificação `RF33-RF35.md`.
 4. **Testes:** 9 passos E2E; não foi localizado teste unitário dedicado à governança editorial.
@@ -165,7 +165,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF35 — Coleções da marca
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 7 CAs estão na descrição e HU-RF35 não existe.
 2. **CAs essenciais:** marca autorizada cria/ordena/publica coleção; visitante filtra itens disponíveis; estoque e retirada são refletidos; mini loja tem fallback.
 3. **Implementação:** `ShowcaseService`/controller e especificação `RF33-RF35.md`.
 4. **Testes:** 6 passos E2E; não foi localizado teste unitário dedicado a estoque/ordenação editorial.
@@ -178,7 +178,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF36 — Foto com manequim
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 8 CAs estão na descrição e HU-RF36 não existe.
 2. **CAs essenciais:** consentimento explícito; peça/look válido; job expõe processamento/sucesso/falha; resultado e original seguem autorização; retry não duplica cobrança/artefato.
 3. **Implementação:** endpoints de showcase/mannequim, pipeline de imagem e componentes de foto/manequim.
 4. **Testes:** testes de imagem/try-on e 8 passos E2E; não foi localizado teste dedicado ao ciclo de falha do job deste RF.
@@ -191,7 +191,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF37 — FLAIR
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 12 CAs estão na descrição e HU-RF37 não existe.
 2. **CAs essenciais:** regras determinísticas por modo; entrada válida; resultado persistido; recompensa idempotente e limitada; autorização de time; combinação/resgate não duplica.
 3. **Implementação:** `FlairController`, `FlairModesController`, `FlairService`, `FlairModesService` e página `/flair`.
 4. **Testes:** `FlairEngineTest`, `FlairLooksTest`, `FaiPointsGamesTest` e 58 passos E2E.
@@ -204,7 +204,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF38 — Cupons Fashion AI
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 10 CAs estão na descrição e HU-RF38 não existe.
 2. **CAs essenciais:** direito nasce de fonte elegível; emissão respeita vigência/limite; resgate é único; expirado/usado é recusado; listas separam disponíveis e resgatados.
 3. **Implementação:** `CouponController`, `CouponService`, direitos, promoções/resgates e página `/coupons`; serviço usa transações e eventos após commit.
 4. **Testes:** 10 passos E2E; não foi localizado teste JUnit específico de `CouponService`.
@@ -217,7 +217,7 @@ Em todos os itens, o campo “Trello” está pendente porque a rede bloqueou a 
 
 ### RF39 — Criador e loja de guarda-roupa 3D
 
-1. **Trello:** não validado.
+1. **Trello:** card aberto em Requisitos Funcionais, label Sprint 04 e sem responsável/checklist/comentário; 12 CAs estão na descrição e HU-RF39 não existe.
 2. **CAs essenciais:** apenas marca/celebridade elegível cria; componente/guarda-roupa persiste; edição respeita autoria; item com vendas é retirado da loja sem sumir de compradores; compra respeita nível/estoque/limite.
 3. **Implementação:** `RoomCreatorController`, `WardrobeCreatorService`, catálogo/estoque e evidências em `docs/novos-rf/telas-rf39/`.
 4. **Testes:** `WardrobeCatalogTest`, `FaiPointsShopTest` e 14 passos E2E.
@@ -324,21 +324,22 @@ Definição de pronto comum: CA aprovado; código e migração revisados; autori
 
 ## 11. Pendências para a equipe e plano de atualização do Trello
 
-1. Restaurar acesso de leitura e executar novamente `python scripts/rubricas/verificar_trello.py`.
-2. Consultar, nesta ordem: board; listas; cards RF25–RF39; descrição; membros; labels; checklists; comentários e ações pertinentes. Não incluir chave/token em URL registrada ou log.
-3. Produzir diff por card: texto atual → CAs mantidos/mesclados/movidos/removidos → CAs propostos → estimativa → dependências.
-4. Confirmar com a equipe numeração, desempate do RF32, semântica de cupom do RF38, estado “à venda” do RF31, métricas RNF7 e responsáveis.
-5. Solicitar autorização humana antes de qualquer `POST`, `PUT` ou `DELETE` na API. Nesta execução houve somente a tentativa de verificação de leitura; **nenhuma escrita ocorreu**.
+1. Revisar `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md`, especialmente criação das HU-RF33–RF39 e dos cinco cards de Bryan.
+2. Confirmar com a equipe a regra de desempate do RF32, a semântica de emitir versus usar no RF38, o estado “à venda” do RF31, as métricas do RNF7 e a sprint dos RF novos.
+3. Autorizar ou rejeitar explicitamente o lote de escrita; sem autorização, não executar `POST`, `PUT` ou `DELETE`.
+4. Depois da escrita autorizada, reler os cards alterados, comparar o estado efetivo com o diff e registrar IDs e resultados sem credenciais.
 
 ### 11.1 Registro das consultas de leitura
 
 | Consulta | Resultado | Escrita |
 |---|---|---|
-| `GET /1/boards/{boardId}?fields=name,url,closed` por `verificar_trello.py` | túnel do proxy recusado com HTTP 403 antes de alcançar o Trello | não |
-| Mesma consulta com proxies removidos do processo | rede direta indisponível (`Errno 101`) | não |
-| Mesma consulta com `curl --get` e parâmetros codificados | `CONNECT tunnel failed, response 403` | não |
+| `GET /1/boards/{boardId}?fields=name,url,closed` por `verificar_trello.py` | board aberto e leitura confirmada | não |
+| `GET /1/boards/{boardId}/lists` | 21 listas lidas | não |
+| `GET /1/boards/{boardId}/cards` com membros e checklists | 312 cards lidos | não |
+| `GET /1/boards/{boardId}/actions?filter=commentCard` | comentários disponíveis consultados | não |
+| `GET /1/boards/{boardId}/members` | membros do board consultados; Bryan localizado | não |
 
-As URLs completas não são registradas porque contêm chave e token como parâmetros. O diagnóstico não autoriza substituir leitura por escrita nem afirmar que o board está sincronizado.
+As URLs completas não são registradas porque contêm chave e token como parâmetros. A leitura não autoriza automaticamente escrita; o board só será declarado sincronizado após aprovação, aplicação e releitura do diff.
 
 ## 12. Fontes internas
 
@@ -347,3 +348,4 @@ As URLs completas não são registradas porque contêm chave e token como parâm
 - `docs/novos-rf/RF33-RF35.md`, `RF36-RF39.md` e `RF39_Criar_Guarda_Roupa_3D.md` — requisitos novos.
 - `docs/testes/TABELA_ENDPOINTS_POR_RF.md` e `scripts/e2e/suite_2.py`/`suite_3.py` — inventário de testes de API.
 - Controllers, serviços, repositórios, migrations e páginas citados em cada análise.
+- `docs/rubricas/TRELLO_RF25_RF39_DIFF_PROPOSTO.md` — auditoria efetiva do board e lote de escrita aguardando aprovação.
