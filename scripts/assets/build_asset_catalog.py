@@ -325,8 +325,8 @@ CATEGORY_FOLDERS = {
 CATEGORY_META = {
     "material_static": ("Material (sem GIF)", 12, "asset"),
     "material_animated": ("Material (com GIF)", 12, "asset"),
-    "aura_static": ("Aura (sem GIF)", 47, "asset"),
-    "aura_animated": ("Aura (com GIF)", 47, "css-animation-over-static"),
+    "aura_static": ("Aura (sem GIF)", 18, "asset"),
+    "aura_animated": ("Aura (com GIF)", 18, "css-animation-over-static"),
     "aura_material_static": ("Material com Aura (sem GIF)", 216, "css-blend(aura_static + material_static)"),
     "aura_material_animated": ("Material com Aura (com GIF)", 216, "css-blend(aura_static + material_animated video)"),
     "aura_material_mosaic_animated": ("Material em mosaico com Aura (somente com GIF)", 216, "asset"),
@@ -769,7 +769,17 @@ def build(derived_enabled: bool) -> dict:
         "aura_material_animated": len(combos["animated"]),
         "aura_material_mosaic_animated": len(combos["mosaic"]),
     }
+    expected_aura_variants = len(AURA_VARIANTS)
+    if electro_catalog.is_file():
+        expected_aura_variants += len(json.loads(electro_catalog.read_text(encoding="utf-8")).get("assets", []))
+    geometry_catalog = PUBLIC / "aura" / "geometry" / "catalogo-completo.json"
+    if geometry_catalog.is_file():
+        expected_aura_variants += len(json.loads(geometry_catalog.read_text(encoding="utf-8")).get("assets", []))
+    else:
+        expected_aura_variants += len(list((PUBLIC / "aura" / "geometry" / "grafica").glob("a*/imagem.png")))
     for key, (label, expected, fallback) in CATEGORY_META.items():
+        if key in ("aura_static", "aura_animated"):
+            expected = expected_aura_variants
         folder = find_folder(key)
         n = counts[key]
         status = "complete" if n >= expected else ("partial" if n > 0 else "missing")
