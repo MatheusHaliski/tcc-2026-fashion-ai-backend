@@ -912,7 +912,7 @@ public class CopilotService {
             s.put("description", message);
         }
         Map<String, Object> out = new LinkedHashMap<>(result);
-        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : Msg.t("copilot.separei_looks_com_pecas_do", suggestions.size(), (occasions.isEmpty() ? "" : " para " + String.join("/", occasions))));
+        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : lookSummary(suggestions.size(), occasions));
         if (!backgroundRequest.unresolved().isEmpty()) out.put("backgroundNotice", backgroundRequest.unresolved());
         List<Map<String, Object>> lookCards = suggestions.stream().map(s -> {
             Map<String, Object> card = new LinkedHashMap<>();
@@ -981,14 +981,18 @@ public class CopilotService {
         String localText = Msg.t("copilot.posso_ajudar_a_montar_looks", String.join(" · ", promptsFor(view)));
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
                 "Você é o Copilot do Fashion AI. Responda em " + Msg.languageName() + ", em até 4 frases. Use SOMENTE as peças listadas (refs p1..pn) e cite cada peça como [[pN]]. "
-                        + "Nunca cite marca ou produto para compra. Nunca invente peças. Se precisar de algo fora do acervo, diga de forma genérica (categoria, cor, ocasião).",
+                        + "Nunca cite marca ou produto para compra. Nunca invente peças. Se precisar de algo fora do acervo, diga de forma genérica (categoria, cor, ocasião). "
+                        + "Responda só com o texto da resposta, em prosa corrida: sem JSON, sem blocos de código.",
                 "Contexto (resumo): " + Json.write(summary) + "\nVisão atual: " + view + "\nPeças disponíveis via ferramenta buscar_pecas (categoria, subcategoria, cor, material, tamanho, estilo, ocasião, estado, preço, uso, favoritas, tags e notas): " + Json.write(tool)
                         + "\nPergunta: " + message, List.of(), 500, List.of(Msg.t("copilot.resumo_compacto_contagens_dna_camada"), Msg.t("copilot.pecas_retornadas_por_buscar_pecas")),
                 text -> text == null || text.isBlank() ? null : text, () -> localText, null));
-        String raw = outcome.value() == null ? localText : outcome.value();
+        Answer answer = plainAnswer(outcome.value() == null ? localText : outcome.value());
+        String raw = answer.text();
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
         List<Map<String, Object>> chips = new ArrayList<>();
         Set<UUID> cited = new LinkedHashSet<>();
+        // peças citadas só na lista "pecas" de uma resposta em JSON também viram chips
+        answer.refs().stream().map(refs::get).filter(Objects::nonNull).forEach(w -> cited.add(w.getId()));
         Matcher m = REF.matcher(raw);
         StringBuilder sb = new StringBuilder();
         List<String> discarded = new ArrayList<>();
@@ -1018,6 +1022,52 @@ public class CopilotService {
         out.put("message", outcome.userMessage());
         out.put("tools", List.of("buscar_pecas", "ler_dna_estilo", "ler_inventory_score"));
         return out;
+    }
+
+    /** Texto da resposta do Copilot e as refs de peça (p1..pn) que vieram fora do texto. */
+    record Answer(String text, List<String> refs) {
+    }
+
+    /** Campos em que a IA costuma pôr o texto quando responde em JSON apesar do pedido de prosa. */
+    private static final List<String> ANSWER_FIELDS = List.of("resposta", "answer", "respuesta", "texto", "text", "response", "message");
+
+    /**
+     * A IA às vezes devolve {@code {"resposta": "...", "pecas": ["p1"]}} (às vezes dentro de ```json) em vez de prosa:
+     * sem desembrulhar, a tela mostrava chaves e aspas. Texto comum passa como veio.
+     */
+    static Answer plainAnswer(String text) {
+        if (text == null) {
+            return new Answer("", List.of());
+        }
+        String t = text.trim();
+        if (t.startsWith("```")) {
+            t = t.replaceFirst("^```[a-zA-Z]*\\s*", "").replaceFirst("\\s*```$", "").trim();
+        }
+        if (!t.startsWith("{")) {
+            return new Answer(text.trim(), List.of());
+        }
+        Map<String, Object> m = WardrobeService.extractJson(t);
+        String body = ANSWER_FIELDS.stream().map(m::get).filter(v -> v instanceof String s && !s.isBlank())
+                .map(String::valueOf).findFirst().orElse(null);
+        if (body == null) {
+            return new Answer(text.trim(), List.of());
+        }
+        List<String> refs = new ArrayList<>();
+        for (String key : List.of("pecas", "peças", "pieces", "prendas", "refs")) {
+            if (m.get(key) instanceof List<?> l) {
+                l.stream().map(String::valueOf).filter(r -> r.matches("p\\d+")).forEach(refs::add);
+            }
+        }
+        return new Answer(body.trim(), refs);
+    }
+
+    /** "Separei 2 looks … para trabalho/festa": ocasiões pelo rótulo da taxonomia, a frase inteira no idioma da pessoa. */
+    static String lookSummary(int count, List<String> occasions) {
+        if (occasions == null || occasions.isEmpty()) {
+            return Msg.t("copilot.separei_looks_com_pecas_do", count, "");
+        }
+        String labels = String.join("/", occasions.stream().map(o -> WardrobeService.label(o).toLowerCase(Msg.locale())).toList());
+        return Msg.t("copilot.separei_looks_para", count, labels);
     }
 
     /** Resumo compacto (§3.2): contagens, DNA Camada 1 (Camada 2 só com consentimento — CA16), Inventory Score. */
