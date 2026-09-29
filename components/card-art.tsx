@@ -16,7 +16,8 @@ export function CardArtLayer({ art }: { art: CardArt }) {
   const anim = [art.animation ? `anim-${art.animation.toLowerCase()}` : "", art.motion === "shimmer" ? "anim-shimmer" : ""].filter(Boolean).join(" ");
   return (
     <div className={`card-art ${anim} art-${art.kind}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label} data-motion={art.motion ?? undefined}>
-      {art.image && <img src={art.image} alt="" className="card-art-img" />}
+      {art.image && art.frame && <div className="card-art-frame" style={{ borderImageSource: `url("${art.image}")` }} />}
+      {art.image && !art.frame && <img src={art.image} alt="" className="card-art-img" />}
       {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
       {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}
       {art.season && <SeasonDecor season={art.season} />}

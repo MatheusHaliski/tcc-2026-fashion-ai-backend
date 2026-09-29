@@ -7,7 +7,7 @@ import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { containerColorOf, inkOn, resolveCardArt, studioOf } from "@/lib/card-art";
+import { containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
 import { ActionMenu, Button, Dialog, useToast } from "@/components/ui";
 import { useRouter } from "next/navigation";
@@ -132,7 +132,10 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
   const manualBox = !!(scheme.containerColor ?? studio.container?.color);
   const boxTone = hasArt && manualBox ? surfaceToneStyle(boxColor) : undefined;
-  const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(manualBox ? { "--card-ink": inkOn(boxColor) } : {}) } as React.CSSProperties) : undefined;
+  // tinta dos textos: a escolhida no Studio vale sempre; sem escolha, só o container manual sobre arte muda a tinta (contraste)
+  const manualInk = studio.container?.ink ?? null;
+  const inkVars = manualInk ? { "--card-ink": containerInkOf(boxColor, manualInk) } : hasArt && manualBox ? { "--card-ink": containerInkOf(boxColor) } : {};
+  const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...inkVars } as React.CSSProperties) : undefined;
   const vis = scheme.visibility === "PRIVATE" ? t("common.private") : scheme.visibility === "FOLLOWERS" ? t("common.followers") : t("common.public");
   const detailPieces = toAnatomyPieces(scheme);
 

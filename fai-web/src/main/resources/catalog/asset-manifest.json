@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-09-29T01:06:32+00:00",
+ "generatedAt": "2026-09-29T18:58:19+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -302,11 +302,12 @@
       "bytes": 1977765,
       "sha256": "fd6e8723831cd221695ff940f5e40107ef0020d0f21f2d8a7b69bfd2137ad891"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__dunas_douradas.mp4",
+      "posterUrl": null,
+      "bytes": 699651,
+      "sha256": "4b37ee5ded76dcd522e9176b421a68e1d43c11f0cda47dd57f01127a2cd0050e",
+      "mime": "video/mp4"
      }
     },
     {
@@ -323,11 +324,12 @@
       "bytes": 1559379,
       "sha256": "a80f64dc466d0743036af810f0d2eff8c55a17f3d6b2ba8f72ccb7c7a3e3272e"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__deserto.mp4",
+      "posterUrl": null,
+      "bytes": 436109,
+      "sha256": "f1c9dc28fd7f4babcd71f88e6d733e331c5e00aea52e961dea1c0aafa88ed9a2",
+      "mime": "video/mp4"
      }
     },
     {
@@ -344,11 +346,12 @@
       "bytes": 1377741,
       "sha256": "30eb97b2c80da6cd4fbcfbd5ee9b2890f41180006ef64dbfe6a2b8089454ced8"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__crepusculo.mp4",
+      "posterUrl": null,
+      "bytes": 286789,
+      "sha256": "2a0a656ca33ff49566f8adfa576e2b490e93700e9da65b833aa93dc3cdc244d4",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -463,11 +466,12 @@
       "bytes": 1896851,
       "sha256": "c44c969464f3d65dd40f04948e90057f8d32cba6d117ae91cf22c0e7b5f80bc9"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "hue",
-      "durationS": 10
+     "animated": {
+      "url": "/aura_com_GIF/aura_avantgarde_cromo__cromo_lilas.mp4",
+      "posterUrl": null,
+      "bytes": 609419,
+      "sha256": "39cece259fbc57dbb9fd88b16f051648ec6c1f96887c9e91cf59f0db30412d91",
+      "mime": "video/mp4"
      }
     },
     {
@@ -484,11 +488,12 @@
       "bytes": 2164236,
       "sha256": "23607377ee2901c8f49884e3f26262baa60d4713d63737024bc7b5198ef5c366"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "hue",
-      "durationS": 10
+     "animated": {
+      "url": "/aura_com_GIF/aura_avantgarde_cromo__fluxo_de_luz.mp4",
+      "posterUrl": null,
+      "bytes": 857923,
+      "sha256": "14cbd8d224f588e2661092d03371200c36fc44c883b70f6e171b0b4de0eb8c1a",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -1039,16 +1044,16 @@
       "url": "/aura/geometry/gradientes/a001_coins/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a001_coins/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a001_coins/imagem.png",
-      "bytes": 139053,
-      "sha256": "af028581380694b7ad28a185c1fbf449b3096af138cf859e0e5a10a469ffa9b7"
+      "bytes": 146549,
+      "sha256": "3201a20e5b04d62d5b32b0f45d05b1f357fd7577cb5a7ed2cc911742ef8b50ea"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a001_coins/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a001_coins/imagem.png",
-      "bytes": 8797421,
-      "sha256": "bce634f6366fbc01b77dbb189f2938ac4d65bc970c59ac2033a28fe4eba2b403"
+      "bytes": 7875732,
+      "sha256": "0bc50cc9b2b90ec15255978bddb1eed4f4ff41994aeca87e7f0e1bedf991e5e3"
      }
     },
     {
@@ -1064,16 +1069,16 @@
       "url": "/aura/geometry/gradientes/a002_orbits/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a002_orbits/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a002_orbits/imagem.png",
-      "bytes": 141514,
-      "sha256": "e09a7753b501ced14d37c70e14e38bee18954b980cef64e00fda2124fa42cfb0"
+      "bytes": 155883,
+      "sha256": "e29b2d940c4036a0b22c04d1e97274be3aa8e01cfeda791977a175ae614c73aa"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a002_orbits/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a002_orbits/imagem.png",
-      "bytes": 6892568,
-      "sha256": "66c022b7a01c7b4fd3f934abbd3e713f9c6cfb1058515298d7aaabab43363335"
+      "bytes": 3615272,
+      "sha256": "85a29905a3b9a9ca07759ffd2db4b7e229b59b19d00b70e973537489478dd05f"
      }
     },
     {
@@ -1089,16 +1094,16 @@
       "url": "/aura/geometry/gradientes/a003_square_diamonds/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a003_square_diamonds/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a003_square_diamonds/imagem.png",
-      "bytes": 137899,
-      "sha256": "cff36a2d84905506b5e07e609bbe68ccb860a3b108d033a08c20dd3e0a02ded9"
+      "bytes": 153580,
+      "sha256": "cfe3a02319f4013b6541bf01cd8d4f3a1db3af5578438d994ec74ae92cb023e6"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a003_square_diamonds/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a003_square_diamonds/imagem.png",
-      "bytes": 6431811,
-      "sha256": "8e2fd3faab32834973d30721fd947ca122c61155a6d8bde3e15d31586d639185"
+      "bytes": 4792274,
+      "sha256": "0295153df064180b7a481c956aba406e1a2ce4310f99336b22239492fa1ce42c"
      }
     },
     {
@@ -1114,16 +1119,16 @@
       "url": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
-      "bytes": 105222,
-      "sha256": "d743d55fbf4aa00dd4b80b586c4d9cf618da3b1cb2d8f3be470c10b80a30532f"
+      "bytes": 107800,
+      "sha256": "67681ced73ecbe47059a34cd20922307b17e3d8f0bf38be673e8bb2f0b9939d5"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a004_living_shapes/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a004_living_shapes/imagem.png",
-      "bytes": 5849645,
-      "sha256": "fd7f4cfd5edf0fed75fea21eea23f799846e0121c7bd6d6eb0d5ee55e778d8b0"
+      "bytes": 3476035,
+      "sha256": "7e3e525f68ee65f841c78d7f0a1984e0299cc24c92c0ff7429236cebb6787b67"
      }
     },
     {
@@ -1139,16 +1144,16 @@
       "url": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
-      "bytes": 125668,
-      "sha256": "b496f4e8a02190223e35a8910c06ee9c591233c4b353f86771ae9c8610001f69"
+      "bytes": 139235,
+      "sha256": "bd9d8443ccb19ccad6892f5ecfa6d72af0d822574efdf9afcc3fdf2be8a4a6bc"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a005_ribbon/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a005_ribbon/imagem.png",
-      "bytes": 5737633,
-      "sha256": "d4a2cfc7229c7c9ede78b4338e03dbdc17b91709d6b9eee13e10fcdc6f081227"
+      "bytes": 3576910,
+      "sha256": "fcf631107b40dc707be6ccf092dccd50ae419152a5dafa6a5c8dbe81d553ff0a"
      }
     },
     {
@@ -1164,16 +1169,16 @@
       "url": "/aura/geometry/gradientes/a006_quattro/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
-      "bytes": 82915,
-      "sha256": "e459bce35eae3f28dbe11a35c48946136fd3ad6c6ef2481af86a0ee9584486f6"
+      "bytes": 87679,
+      "sha256": "b95188f5d8b48d3f0f65c2978437543916c94926c1575d65626e1f89cbda7ec2"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a006_quattro/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a006_quattro/imagem.png",
-      "bytes": 5046122,
-      "sha256": "5f97e74440522ae5c88c9546eeeaf1b7a0ace09d1bbf30a81bae3394cb220fe3"
+      "bytes": 2645585,
+      "sha256": "7eae5392553e56a89e1ea3b8a8cdc9c8093687fd12edc82d4c682ac6b166b8b6"
      }
     },
     {
@@ -1189,16 +1194,16 @@
       "url": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
-      "bytes": 84627,
-      "sha256": "6437b590d3549b81a3c4cc0f12b4b6a8e520eecdc306b585a7d16be11793d57e"
+      "bytes": 92555,
+      "sha256": "79dfb0cfae02f122aed8c12e5b8e277bf99c686a0027c1c1419d94888f0c7eba"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a007_spectrum/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a007_spectrum/imagem.png",
-      "bytes": 5421609,
-      "sha256": "cd220420cc271343935cd3b853f1ae7019f2d38bd9c7b875e0c5ba739e3417ed"
+      "bytes": 2677912,
+      "sha256": "58aa916a669c9f00a6d5b1e281579b9110cf6551310dc3301fcb0762b373044c"
      }
     },
     {
@@ -1214,16 +1219,16 @@
       "url": "/aura/geometry/gradientes/a008_metron/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
-      "bytes": 106664,
-      "sha256": "093d281d6e8f73f9198ba4a9919e5f7e326e3859c30e96ab8a1f916be60d03c4"
+      "bytes": 116945,
+      "sha256": "cd550d36652d9d558bb2ec46e36dde4d9f5530deb7403c6e0b76bb0a442d6832"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a008_metron/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a008_metron/imagem.png",
-      "bytes": 6879894,
-      "sha256": "062308e4f7b42b25d48a2d5a2d16dd9ed1a557231a0dabc006bde419c0c50c9e"
+      "bytes": 5678589,
+      "sha256": "9ddf4c251966118e5147caa173165dd415d063aa6ce95b0c8bb1090a4b05e59a"
      }
     },
     {
@@ -1239,16 +1244,16 @@
       "url": "/aura/geometry/gradientes/a009_galactic/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
-      "bytes": 63756,
-      "sha256": "d642a32912786f6fb96fb7a29963ab6e76b81e02d3a4aa0a8f2a5c210b67f7ea"
+      "bytes": 68438,
+      "sha256": "0a2c8dbcf51ff4636222121f8b32bb8474aa910b91021af3a174c72b5c3741e1"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a009_galactic/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a009_galactic/imagem.png",
-      "bytes": 4761218,
-      "sha256": "27507218cdaa4955ebd9e855873f3f85906ba645f9cdbcc7a530912b555bc55d"
+      "bytes": 2387960,
+      "sha256": "828ef9ede24b3bb765eddd1161f081f529dcf189d1eca9176e2be7daf363618a"
      }
     },
     {
@@ -1264,16 +1269,16 @@
       "url": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
-      "bytes": 96624,
-      "sha256": "665414a5647bc6c3ed4ae214fdf18d30cd059e76b562aae3ca2bbe53fa88780f"
+      "bytes": 104112,
+      "sha256": "6ed794c7fab7e24e57432e99ed0af644578d145887de3cef65917638f74608ff"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a010_yoyos/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a010_yoyos/imagem.png",
-      "bytes": 6231752,
-      "sha256": "4de5c0d26ec134320988cd893a6e272e57846af1c8bce6e2610042f4d1958e19"
+      "bytes": 3211316,
+      "sha256": "e8813fe77c8ce783a627dd94b9f451bd7130613ac341685ba3a4f766d1c8be64"
      }
     },
     {
@@ -1289,16 +1294,16 @@
       "url": "/aura/geometry/gradientes/a011_original/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
-      "bytes": 94386,
-      "sha256": "bbfe514c36cb8ca5aafbd7511b772982df0b9326fe616672c5760793b9a3d253"
+      "bytes": 100785,
+      "sha256": "c259ac6220385d74874ef4d025e87dd1cd2ca60a4d06f2f87cbf1bd8d66082f6"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a011_original/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a011_original/imagem.png",
-      "bytes": 5764826,
-      "sha256": "08a6fcf7e79d3b82e750c3b3cc94d954f152d6fbe4aa8a47ceaf4f0b905de5f4"
+      "bytes": 4478452,
+      "sha256": "decd3e82e312a308c461244ca3ace4d2ea2b6cb6a90f324cf701d2ad9884870b"
      }
     },
     {
@@ -1314,16 +1319,16 @@
       "url": "/aura/geometry/gradientes/a012_natural/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
-      "bytes": 163868,
-      "sha256": "6458391a387f86684fb41f46e375597db5d0481c820e0d79542fdcea6e9de770"
+      "bytes": 178961,
+      "sha256": "1960f8f75f5b242973110978dfa149b192034ce678cef7c4a723013df690c0c4"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a012_natural/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a012_natural/imagem.png",
-      "bytes": 7700581,
-      "sha256": "756cd4ba61aea44f957ac5fc5bb4ec3a9ce515d5c70ec2b875a3e4fe6a74bbed"
+      "bytes": 4941163,
+      "sha256": "dbb096899dad15609c9441894723c8c65fd8783d042fd9de773917008d82fffb"
      }
     },
     {
@@ -1339,16 +1344,16 @@
       "url": "/aura/geometry/gradientes/a013_neona/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
-      "bytes": 101560,
-      "sha256": "71ba1213505709eae1dec231e29ed6cf8bb3e61be330741c22d6ca519091334f"
+      "bytes": 110166,
+      "sha256": "f23314414179d9aae715786f4c4a5400fb808b117bad0df504aa381d08c70f77"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a013_neona/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a013_neona/imagem.png",
-      "bytes": 6174285,
-      "sha256": "63bb6e27ce468285f894a197725f1dd914819d49c5b42df7185656820e3d06e4"
+      "bytes": 4058743,
+      "sha256": "8b2d55f7d707557bbdde28010cedb90f0cd965f79b1bd68e158608decbd06a6d"
      }
     },
     {
@@ -1364,16 +1369,16 @@
       "url": "/aura/geometry/gradientes/a014_spinner/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
-      "bytes": 111333,
-      "sha256": "2c0a01f9392db26fae5da2ab91dec568eadaca532ab3903f8c69c7248e729ba5"
+      "bytes": 119486,
+      "sha256": "9067ae2fa22e6fb9cc7ab25e96d40db3b893d3ec75892e311468399924c98bf4"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a014_spinner/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a014_spinner/imagem.png",
-      "bytes": 6099269,
-      "sha256": "dc8e2b06ffc3574b4b16dd737b5b3f924495f538ca003722cdbc535ab354f398"
+      "bytes": 4929971,
+      "sha256": "5ec13c0b969f945f70fb45c49f573b76a876232e9610754587961588c32b1f9a"
      }
     },
     {
@@ -1389,16 +1394,16 @@
       "url": "/aura/geometry/gradientes/a015_twist/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
-      "bytes": 117185,
-      "sha256": "2f6d98f4a0c2e97bb66df4b3e323ba1c398a5a587827b9b9154b31c32d68c951"
+      "bytes": 126957,
+      "sha256": "6191f7322e331b588f51e3c7df22a011a4803935d0f65bd7bc8c9dd1adcf9145"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a015_twist/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a015_twist/imagem.png",
-      "bytes": 5672956,
-      "sha256": "edacdf357fb6ac6c32e868446ff73c8c448edd7a11c69dbd0ae73db33a1f982f"
+      "bytes": 5330617,
+      "sha256": "ee143b1a50ce4bb8f9c8277817285402144081c5264cf3e13daffa7352334b8b"
      }
     },
     {
@@ -1414,16 +1419,16 @@
       "url": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
-      "bytes": 87117,
-      "sha256": "7de832c5afd91e42cd81e15dcfd554f6f1d93751e33347515fcb241561c2b68f"
+      "bytes": 92672,
+      "sha256": "b59d290712817aec965f3ecde57fa4cb2d40102493eadf91632b803699ff47a6"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a016_purple_glow/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a016_purple_glow/imagem.png",
-      "bytes": 5671711,
-      "sha256": "7e6cae1e04a2fb69ba347f3e0038a2806d153452aa0a69c6ef043d76537417b4"
+      "bytes": 4181355,
+      "sha256": "0f856fd71df98843e93cacf0583708dc4ca39cb6036e3b57f9d1eaed0c3b7562"
      }
     },
     {
@@ -1439,16 +1444,16 @@
       "url": "/aura/geometry/gradientes/a017_seashell/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
-      "bytes": 104036,
-      "sha256": "429fade15ce6877bf9e632ea2b83e11387b965f567d1faa337c1290a9efd02fe"
+      "bytes": 111536,
+      "sha256": "ace7f0396e4afbff68d92aa76cc2119bac28b4d8c9fa2773010685f87eec2530"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a017_seashell/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a017_seashell/imagem.png",
-      "bytes": 4007598,
-      "sha256": "9cc26a010e3d3201bff40ec97c0879a600b10b31f28a81d13bc8a63fab345c7b"
+      "bytes": 2961695,
+      "sha256": "84509a491be5c786a7f84262fa3820b8c9fb8cdd97be62b0d8c3561c229e2757"
      }
     },
     {
@@ -1464,16 +1469,16 @@
       "url": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
-      "bytes": 122739,
-      "sha256": "3d47adffad550d4c56947fdefdaeb515cd810fce312673f73370c85383b56b24"
+      "bytes": 138012,
+      "sha256": "2d018cb9d1dc86551b106a2764f480d3ec8474a391a89da6772075d1b7f30c5b"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a018_in_pieces/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a018_in_pieces/imagem.png",
-      "bytes": 5054676,
-      "sha256": "43d12e74c00c16d51c1bd5d5a43d3559f428d130ac7c1dfde882f49f05605488"
+      "bytes": 4081835,
+      "sha256": "170d112881502b174b6994abe6d91f5e4c77e78707c2301012fa59cc7b5ff188"
      }
     },
     {
@@ -1489,16 +1494,16 @@
       "url": "/aura/geometry/gradientes/a019_kompas/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
-      "bytes": 84926,
-      "sha256": "790db53740ab0647bec7caa2428fe9cab71f3249ffab0202adf90c4fd85e5670"
+      "bytes": 91626,
+      "sha256": "164765cb4af00eef20376aa884c1be73d6d6c1fc093f617af61c60497d7673ab"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a019_kompas/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a019_kompas/imagem.png",
-      "bytes": 4318571,
-      "sha256": "218c782802b6850048d0fa59abc250daf1b97cdeb4099829c2ab3b9837d4aa4b"
+      "bytes": 3520434,
+      "sha256": "9d4d0838f60cb75e31cdfbad283f78f3453decdea97c820c26aa3ab30222f554"
      }
     },
     {
@@ -1514,16 +1519,16 @@
       "url": "/aura/geometry/gradientes/a020_rings/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
-      "bytes": 164342,
-      "sha256": "00135f9ad930a2fd0f4033ef95754cb798d5c04d63fcbd28445de4f6949e9786"
+      "bytes": 175808,
+      "sha256": "9c83401d0cc03b6ea0788f03204ae200a602d56413f534476fbcdcd6cd9d8cf2"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a020_rings/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a020_rings/imagem.png",
-      "bytes": 6694820,
-      "sha256": "201733c0740371e68c09089468274d7a04a2754c3a6f5e628c0e33e68219c612"
+      "bytes": 5639391,
+      "sha256": "1bc89c4453afc6aba9deafe6d75a9f7dc0f90d82df4603df880035b7767e781f"
      }
     },
     {
@@ -1539,16 +1544,16 @@
       "url": "/aura/geometry/gradientes/a021_wave/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
-      "bytes": 147794,
-      "sha256": "8d9c76bb82f64f4ac85fd1fa776de6fa97de291d37c792a79b47032327b596b4"
+      "bytes": 159629,
+      "sha256": "6faffae866482d04e1d3132afd58f20c11d0216ff88d44fc5937f89f0fbe2810"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a021_wave/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a021_wave/imagem.png",
-      "bytes": 7048644,
-      "sha256": "99f9e7e752532d3923f2afc1718f1c6f47efbfec0fd5fe1b9763127a018bc74a"
+      "bytes": 5655010,
+      "sha256": "df04cc36b9d6e599a2de0adbf12f8266f45ec5514226280c7898bbf48609be81"
      }
     },
     {
@@ -1564,16 +1569,16 @@
       "url": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
-      "bytes": 117658,
-      "sha256": "a9a9574ffa0562a2bc5845f80d05d87e7dc33ce24bedf2b6bb9dd19dcf6d9533"
+      "bytes": 128396,
+      "sha256": "e5d932dc908648b43907f4d770233a82e1404b9466f8b0481cb272fae7766c2b"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a022_segment_ii/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a022_segment_ii/imagem.png",
-      "bytes": 5288018,
-      "sha256": "c0b5a2eed649a3e05b761d1d1c9b668c7cdbbfe4abf0a970d49887ea0ff0f805"
+      "bytes": 3571854,
+      "sha256": "c6041fc0c3ab4ea7c65df13f7b15d507257533d467d45035ea1682553c72ad28"
      }
     },
     {
@@ -1589,16 +1594,16 @@
       "url": "/aura/geometry/gradientes/a023_reflections/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
-      "bytes": 295294,
-      "sha256": "6215989764f59e692a3984bb6050c7c5ec6a12c0f5ed78fb26ed123f6f269138"
+      "bytes": 309646,
+      "sha256": "969799530625165037c1fb7b6b50ee93964197daab7b4b3f845c82d0978d9e4f"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a023_reflections/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a023_reflections/imagem.png",
-      "bytes": 11306431,
-      "sha256": "8f107d6e538053d681a7d550858dc86b95e401f74e8bb176be3532c19beef71f"
+      "bytes": 10698322,
+      "sha256": "361c7fcd2a446bc177717fdde5f7ab543e51540babf7027d05c24327f24eb35d"
      }
     },
     {
@@ -1614,16 +1619,16 @@
       "url": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
-      "bytes": 134019,
-      "sha256": "a32fc91662cc14cf1d5e2b407c001f95f2ac3c00a9883e82d94225fc93dcf8b1"
+      "bytes": 141284,
+      "sha256": "a9fb232798b873075adb3db3212fdb645af551e94e81256118e54612d0444f79"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a024_fortuna/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a024_fortuna/imagem.png",
-      "bytes": 7688304,
-      "sha256": "8f5bce8051f175184218425a0878a1c9abf5adcc6e5cba21c6a3181ffc856cbe"
+      "bytes": 8025918,
+      "sha256": "3272b62632fb34253db8685c6eb25992f1deb8eee9ec8ff7d77eb46bf902f7de"
      }
     },
     {
@@ -1639,16 +1644,16 @@
       "url": "/aura/geometry/gradientes/a025_crystal/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
-      "bytes": 116806,
-      "sha256": "f28ed8027f6b8404f404baefdef4feb54c57d3998c95a9f956b2e0ad516fb9f3"
+      "bytes": 127518,
+      "sha256": "79d3eff63b1fccdc3b952099d77ec4ef865a75198aa8b1510f3b36bbbb937016"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a025_crystal/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a025_crystal/imagem.png",
-      "bytes": 5217886,
-      "sha256": "0d4161f82f602bc4204f7e19eef195b324f5033fda059d8b5a59807f313b9227"
+      "bytes": 4661773,
+      "sha256": "4038a09c567f8deb7415f672e9b922db5fcd8a08b3a3377c0fd3e65b2d7e6cb7"
      }
     },
     {
@@ -1664,16 +1669,16 @@
       "url": "/aura/geometry/gradientes/a026_strokes/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
-      "bytes": 116983,
-      "sha256": "df1c0addc3ce0c7978b8cf4c403fc81e617b6cc33b6fe7416bc6ede408a8d5d9"
+      "bytes": 128781,
+      "sha256": "c837664e0d5485dc88496825c25938f137b3619381159883f538f87da2aec95d"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a026_strokes/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a026_strokes/imagem.png",
-      "bytes": 5758278,
-      "sha256": "1abff08fae40dade1891611be51cb7d959fcef383af1d4e30bea49ac4686baf1"
+      "bytes": 4503039,
+      "sha256": "060669fbc853acc61ddb8267ac79c991eb4988a6d800f88d992df6b3bf849253"
      }
     },
     {
@@ -1689,16 +1694,16 @@
       "url": "/aura/geometry/gradientes/a027_gradience/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
-      "bytes": 149943,
-      "sha256": "0188e65ff6b6df9cee03cb4901c4235a5afbbbfb0e456000564e94ad1ab499dc"
+      "bytes": 163470,
+      "sha256": "ace6075e73883aa7e4c3416987bd282bff591f3c861bd1ac964fdc4e7460cfc2"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a027_gradience/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a027_gradience/imagem.png",
-      "bytes": 6152265,
-      "sha256": "4157c6a8b3bf3b965efcd3cf346bb44f7b0e48452e1e38483c5a228478c4f593"
+      "bytes": 4917749,
+      "sha256": "ab3e5a36a7a1bb33a3d520972b91178dc632a5de44b17e74aef071aed9c5c4db"
      }
     },
     {
@@ -1714,16 +1719,16 @@
       "url": "/aura/geometry/gradientes/a028_rotations/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
-      "bytes": 107295,
-      "sha256": "91e2813910f1f862a2daa19468f1aa4c8a4c3acabb69f01cf36cd49b55892044"
+      "bytes": 115376,
+      "sha256": "b633f8d52806e692e039344d7948723a12860c22c770addd068577bb751674ea"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a028_rotations/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a028_rotations/imagem.png",
-      "bytes": 5766963,
-      "sha256": "5ba8702b669b369f6d84d479cc970771ef1c33564fbfed0b88fe34d27911ccb5"
+      "bytes": 3732558,
+      "sha256": "2cb4d15777585c09cd0002feccf14910b4f2f983d2a89c5f4bc73e15e5dcaa54"
      }
     },
     {
@@ -1739,16 +1744,16 @@
       "url": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
-      "bytes": 77259,
-      "sha256": "b0acb1526e49a90efb640e18ed9607215f8af271627a0c51b1dfa5bcdb232911"
+      "bytes": 82835,
+      "sha256": "a8c236e41d9c1518b122016fc5bfb4a1b82071722ee7740cf5e13da2e4a8fbff"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/a029_cosmic_flower/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/a029_cosmic_flower/imagem.png",
-      "bytes": 4939155,
-      "sha256": "44b3fed812b37742ffe305c4a978da84fbafec063d60b7e527d3924ee31e5ecd"
+      "bytes": 2926617,
+      "sha256": "a261ad0d2e30711c71472096beeaa08085920c955b69d61633f63599a38de2aa"
      }
     },
     {
@@ -1764,16 +1769,16 @@
       "url": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
-      "bytes": 24348,
-      "sha256": "9ae915ea55c9b9640800653dd10c6ad029470a0f7f4c2e637467ac204b4f6e5b"
+      "bytes": 24385,
+      "sha256": "859bc950b2487821f18130bc2347b68df4dbf6491f4cdc759f1f0934845eb979"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p001_reversed_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p001_reversed_fragmento/imagem.png",
-      "bytes": 1727359,
-      "sha256": "ce4f179d13de40aad3201f4ade6772de24ffb5b206877f50c8e0370dafa141d8"
+      "bytes": 1470138,
+      "sha256": "c39ac8bd574cc880e3a7917fb41e526f504c79d076ad20ec8e1a656c9615710b"
      }
     },
     {
@@ -1789,16 +1794,16 @@
       "url": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
-      "bytes": 42239,
-      "sha256": "45f9915a8cc05f5afbec38f5ba1029e1944719362a37ab979461cfc2828bad9a"
+      "bytes": 46898,
+      "sha256": "6175b9fdb4009916be2eee1ba6ed1472d5bb9972524de106832017bfbbd9fde4"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p002_sharp_light_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p002_sharp_light_fragmento/imagem.png",
-      "bytes": 2166568,
-      "sha256": "9b061acbf7fd86c464265af027b747c68b6d69566bae465d94db80da153535cf"
+      "bytes": 1063608,
+      "sha256": "6e4782ef98d6091e8a771deef8edc71aa02ad266f36aa2107ac017ccee61ef97"
      }
     },
     {
@@ -1814,16 +1819,16 @@
       "url": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
-      "bytes": 96396,
-      "sha256": "829e495a083258b469e6935a3f2071959642bdf7ec720d860c3e13ffdad71720"
+      "bytes": 108082,
+      "sha256": "1dc418cb24afc61b0b1227916ce52adbfc74d811836a6c12d199199cfaba1109"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p003_purple_splash_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p003_purple_splash_fragmento/imagem.png",
-      "bytes": 4614528,
-      "sha256": "97f502f93904155dfec9edcf1d0e6a0ce89f59cef9e346f1e48960ae0d120560"
+      "bytes": 2870171,
+      "sha256": "b63afdef30b0e786e779fb5d1f29d937a0bb6992f3cc31a67ebcfd8d5153a548"
      }
     },
     {
@@ -1839,16 +1844,16 @@
       "url": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
-      "bytes": 52457,
-      "sha256": "faeab8a6726899876f0dc79e36af252cd88adcf6dbb4ba869d4a95ddd9c8bd6d"
+      "bytes": 53902,
+      "sha256": "d95bcdd2670f4e9ba75cb9b22512f3d30c2a1618df3d403950eef7f071bc7762"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p004_reversed_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p004_reversed_fragmento/imagem.png",
-      "bytes": 3666014,
-      "sha256": "beaf12a040ddb10de9b96578ee95b4d1bd0b33334bf7c982f32c0d13c0056c92"
+      "bytes": 2777022,
+      "sha256": "596260448c00aabc515214095131d569cc9a8e83adf9726cd251e18e1faa8195"
      }
     },
     {
@@ -1864,16 +1869,16 @@
       "url": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
-      "bytes": 68311,
-      "sha256": "9add0c774eca2d9c1009c4d114ffda4659eb2199d2faf1b2b6e8681359d987b0"
+      "bytes": 77388,
+      "sha256": "4d326ecb4080235901c7c4af4d129aab4a4393e1c59fa61a9fd6f6c95824a6c5"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p005_phases_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p005_phases_fragmento/imagem.png",
-      "bytes": 4276754,
-      "sha256": "a35bb651e21d44f15caa44c475f11f42877f285dda5b5ca18d8f76d78997ff3d"
+      "bytes": 2850383,
+      "sha256": "8a3c457750213d967ed9648f7bbb82fe67624fa7031b394854e34fbcf7e0393b"
      }
     },
     {
@@ -1889,16 +1894,16 @@
       "url": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
-      "bytes": 99869,
-      "sha256": "cc28800574aeb7cef33d7721a91283a94cb9636d589000b92aacb5a9e882308c"
+      "bytes": 110250,
+      "sha256": "a0cee83e76a4691bcb81a39f52fe50a4186d02786e667af7b0965e5841eeeb2b"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p006_sharp_light_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p006_sharp_light_fragmento/imagem.png",
-      "bytes": 4922403,
-      "sha256": "fe2abb02442092152f88ee0235f496d9558c62ab839480e56bc5bd6f908a6e9d"
+      "bytes": 2301599,
+      "sha256": "bae6c548f87812a1661c356fcfe699c9da8966112c78dec660c09b5f59c4459c"
      }
     },
     {
@@ -1914,16 +1919,16 @@
       "url": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
-      "bytes": 48837,
-      "sha256": "74edd0a8fdfc89bd9dd7a312cc9f258d7d242b7fb55530207f671b5d5bf38de2"
+      "bytes": 53143,
+      "sha256": "318ded6949cb9489c4a37bc4bfdd6e6f9f7151cb1e4902901b730df1c241c5b5"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p007_purple_splash_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p007_purple_splash_fragmento/imagem.png",
-      "bytes": 2255863,
-      "sha256": "ec5661575556a49c54ab2cd52163fff5d4b98e78ae87cf7537b1b04df50b2742"
+      "bytes": 1225937,
+      "sha256": "a8689174d6c825c6d696e6dec0dc99ded434afc0382edd6be8ba5fb763cb8012"
      }
     },
     {
@@ -1939,16 +1944,16 @@
       "url": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
-      "bytes": 139305,
-      "sha256": "dce7e975b8b33bb26c2d3d7d9182963c04c538f5a790aa6feaab0617c3833386"
+      "bytes": 148272,
+      "sha256": "a942fb5108db67cbc6b4e7c99c74f7a29355074a052146e9a6a241b289b39718"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p008_phases_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p008_phases_fragmento/imagem.png",
-      "bytes": 8592199,
-      "sha256": "2dc24b76253abef4d7e152efc62a0e5f402ceb47cdbb7513178c44fc4dc6dbc4"
+      "bytes": 6010945,
+      "sha256": "ca36e636bc64d78fff98f718a93671c68825b512ffa44b25e85fca863321e520"
      }
     },
     {
@@ -1964,16 +1969,16 @@
       "url": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
-      "bytes": 44217,
-      "sha256": "c15b585ad7ce8b512364f5118c388dbb4dde58a7d6d089cf2da456bad7607036"
+      "bytes": 46573,
+      "sha256": "7c9bff3fab3048460e5692ee065b4771f0140c4da1eabe4e1e539287e32f51ab"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p009_liquid_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p009_liquid_fragmento/imagem.png",
-      "bytes": 2063848,
-      "sha256": "baf9a1fc13ef8a4495008b42eb60d305b58553e3c266e91e2167739dc965e2bb"
+      "bytes": 1963653,
+      "sha256": "bcdd60c5e7e71874dc47da3c4f395c63c10673300ef3b7f48e99e7ddde1cb887"
      }
     },
     {
@@ -1989,16 +1994,16 @@
       "url": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
-      "bytes": 42977,
-      "sha256": "881a7c3d7fca0a0626c0db4bc17d87c7d94218cec13cb6bf34ee653a10591495"
+      "bytes": 45202,
+      "sha256": "83e6558eb156965c103738f69a0194ba0c9f69de4602edce84ab5fb4c2899d30"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p010_discs_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p010_discs_fragmento/imagem.png",
-      "bytes": 1866274,
-      "sha256": "6518285edf8dd70867e25d077c110ff486d5210013ce1f1d0b837e584a40c1e4"
+      "bytes": 2003921,
+      "sha256": "e3d35a1f57812812ddddf966238b1eed16018bd00031e1e9d205fe441f08968e"
      }
     },
     {
@@ -2014,16 +2019,16 @@
       "url": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
-      "bytes": 86995,
-      "sha256": "7164718b33a0fcc8388c4ff09b8cb3f5f57619960a18ed8dbe9d2ffb6d03715a"
+      "bytes": 96602,
+      "sha256": "f409335da3e643278f36b0f808f84633e4530c89c5203f1145a8cd75714151ab"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p011_gradiente_orbital_fragmento/imagem.png",
-      "bytes": 3174545,
-      "sha256": "e1940b7960be09aaac789c77fdf109ef1e2addafd8248ce1e02288d308e8cd89"
+      "bytes": 2888452,
+      "sha256": "a6fda9b65bd635a6cc379962be71ba55580865fc6bf78df747dbd1f6fd0b11fb"
      }
     },
     {
@@ -2039,16 +2044,16 @@
       "url": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
-      "bytes": 104781,
-      "sha256": "a5202101ab565d7d6f6bf365e28cd271835000429bfe2d495053f4b37c3002e4"
+      "bytes": 111906,
+      "sha256": "3d2b3dbce0f76b63e635b2fc491950906dcb637184903d978e4f8d4b8bd43132"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p012_liquid_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p012_liquid_fragmento/imagem.png",
-      "bytes": 4584199,
-      "sha256": "389c5ab28ea761d78e1631fff410b5f54055d9f610598ee3dd3079c18881a7a7"
+      "bytes": 4247812,
+      "sha256": "34a254aa5fddef376b011debeb92bc4ed731d4fb0d40ba96af7cd55274b3562c"
      }
     },
     {
@@ -2064,16 +2069,16 @@
       "url": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
-      "bytes": 95128,
-      "sha256": "55b2f410f97f8234e5fab18d09bcbb45de45152c8dceccf996713605262046b6"
+      "bytes": 106695,
+      "sha256": "549ab9cd9a1d3d9bb94b0fa06da2743074d321cc8a7515783bcf5c385903243e"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p013_infinity_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p013_infinity_fragmento/imagem.png",
-      "bytes": 3682104,
-      "sha256": "0e16075b4f031516aed5b49ddba58d586e7eac9e54d280b869df3821bfdb9d4e"
+      "bytes": 3148642,
+      "sha256": "c5244ab222a1aecd8fb59c4f5f326b099974427029f495d42545877f05604d6b"
      }
     },
     {
@@ -2089,16 +2094,16 @@
       "url": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
-      "bytes": 97051,
-      "sha256": "e07a6e0f872dcc8661896b9fb1d5b2c338d394b57fb2b60556c13aa5212d6e02"
+      "bytes": 103632,
+      "sha256": "50d6a4697def8146ee4c96edbb5afbe467e58414812f666648c039e350c9607a"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p014_discs_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p014_discs_fragmento/imagem.png",
-      "bytes": 4381693,
-      "sha256": "0d9d2efad26b74f06824d7439fc062a8fde798739918f2b95542ee2342131fcc"
+      "bytes": 4466001,
+      "sha256": "323cc3cb3b84edac0fd5021e7a7e9d299671bfccca83820bd35eb7f7f4f14721"
      }
     },
     {
@@ -2114,16 +2119,16 @@
       "url": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
-      "bytes": 40460,
-      "sha256": "2947472562fc663b0a53e18004c955c8df00b34ceb70f4678bd933dae1cfca1b"
+      "bytes": 41330,
+      "sha256": "27051dbff16e46c76dfd7060466e3d799ef9438a46e3a8aabf49eee983aea202"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p015_gradiente_orbital_fragmento/imagem.png",
-      "bytes": 1492126,
-      "sha256": "fb96923a086bc699c15500dc0888800beb626b1698255177373ef2d4e013db98"
+      "bytes": 1267543,
+      "sha256": "0f8b7a3eed0867026e614ea2f04ff0f0f74fe9b815bf489c16e99b4e971ebb5c"
      }
     },
     {
@@ -2139,16 +2144,16 @@
       "url": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
-      "bytes": 46044,
-      "sha256": "a5efe842d346436d45250ad36458e52b9ee4abf16c61292b3aa8f26dbd818e9b"
+      "bytes": 46420,
+      "sha256": "d10c7335b24a1beea11f716bf22537c17055acae85e513edd84772cbcbb600ac"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p016_infinity_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p016_infinity_fragmento/imagem.png",
-      "bytes": 1887040,
-      "sha256": "9ae5f50f55dd7f3bbf2d0f821e57cda7e44cd4ec9d9f5e171bb2106ae88fd528"
+      "bytes": 1423202,
+      "sha256": "6b8cbce42bc7a7db91be47839511882b5ccff2460611476ddbe83bab2ec5a703"
      }
     },
     {
@@ -2164,16 +2169,16 @@
       "url": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
-      "bytes": 39502,
-      "sha256": "48191f83897974e986b162d70d0bc9d4fd41242bf0d1094830298903da12ca8b"
+      "bytes": 43475,
+      "sha256": "ac06b0ef5200c0edf31819f6611fd79e94697249ef2b1007a9ef21a8cb39496b"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p017_win_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p017_win_fragmento/imagem.png",
-      "bytes": 2124270,
-      "sha256": "6a85d888254e35e12fe7077fd651131f07b53612d7c44de33401cd253d3a18ab"
+      "bytes": 1243962,
+      "sha256": "96acc6300241b9f9885103a276813725470fbc7083480aa76c71503bf449d203"
      }
     },
     {
@@ -2189,16 +2194,16 @@
       "url": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
-      "bytes": 32179,
-      "sha256": "75243b16f8373041ecf8d002d7f31c2e8750d9b324f4b23c9b48783d8b741ad2"
+      "bytes": 34031,
+      "sha256": "5e13faad0b7cb98bfc10fdd99b53f8d3db683d39cb9819c2f5b8b804c4ea4367"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p018_elliptic_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p018_elliptic_fragmento/imagem.png",
-      "bytes": 1589152,
-      "sha256": "005b5d17bc7939c4a931f8f787cbfc380bcc572a9abdb37d58ded32ab35e8c1c"
+      "bytes": 1339020,
+      "sha256": "483cfb3e18bdc610bb060eeded3193742d62eb6cb43c3cd5c6785f5a984118dd"
      }
     },
     {
@@ -2214,16 +2219,16 @@
       "url": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
-      "bytes": 77805,
-      "sha256": "ea0605e63decc8ab87c0175173b11c497ed745812b46c6c97028c5d2d2ab6c17"
+      "bytes": 83383,
+      "sha256": "bdfe2723990d07d719bb632ae22009ccd28e8ec3e1543a184f72cc12cde207b0"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p019_spiral_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p019_spiral_fragmento/imagem.png",
-      "bytes": 3413641,
-      "sha256": "20cd393de81a142d989428e9ac68c6e7c540bbebd4a2a654ccb20bdebfefed3e"
+      "bytes": 2782930,
+      "sha256": "a20cdf1e6542913d43c806d620043f4341315163aff824033486a76a927cd29d"
      }
     },
     {
@@ -2239,16 +2244,16 @@
       "url": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
-      "bytes": 78509,
-      "sha256": "25546b04f07326dc86d3217a8a62799dacc22beff457e3e3977e38ada7b11968"
+      "bytes": 77946,
+      "sha256": "3cbd2f8509306c4f787b75a354853cd83e9724fc8f458d7032d429b391876d0a"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p020_win_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p020_win_fragmento/imagem.png",
-      "bytes": 4189221,
-      "sha256": "1b65ed7676f1a84cc55fd9f7c5e638ebc084ada3f7aded79ee1bcc9b2ef9713c"
+      "bytes": 2437886,
+      "sha256": "270dcb2094ab5fa4e2b16b9065ba60b3ae414e2a5b00865fefd8f149bf900695"
      }
     },
     {
@@ -2264,16 +2269,16 @@
       "url": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
-      "bytes": 85189,
-      "sha256": "4d5b743a8c485184c5de826394decdf769de9e5694948c371733376d290db7cd"
+      "bytes": 94952,
+      "sha256": "78b026e916bfa0ddc912caebb750fd41f0fcb527adf7e22eb9bbf500a2bcff19"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p021_segment_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p021_segment_fragmento/imagem.png",
-      "bytes": 4105107,
-      "sha256": "242240d751a61ebbb1dec8d28de8963888f2454a72bbde64d361932bf621fc87"
+      "bytes": 2818808,
+      "sha256": "d47cad41033c30f572c2cb0437e132ced26706662bbda9c3f320039b769ff7d9"
      }
     },
     {
@@ -2289,16 +2294,16 @@
       "url": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
-      "bytes": 62029,
-      "sha256": "368198467896fe3a8cbefc45a341dbe0f8949bd41bcffa393a01524c947697b6"
+      "bytes": 60560,
+      "sha256": "86b13f01a886dc00b3ffa3c248355b8d2bb6b9a6b90b23aac2fbdc62a839b2c2"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p022_elliptic_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p022_elliptic_fragmento/imagem.png",
-      "bytes": 3409425,
-      "sha256": "b31765f83fb7cba1e311dc31bd0c94bea0fc5437a4f9d584c25acee5b4ce86d8"
+      "bytes": 2854793,
+      "sha256": "7cde6a4157fbfdb3101b8d7de4981882c04217c9bfe5268d177a8b9376573cc2"
      }
     },
     {
@@ -2314,16 +2319,16 @@
       "url": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
-      "bytes": 36148,
-      "sha256": "14eed814d7d253fba497a7a49937f82ece6cb1f4299e346bcdbdd70e88655fa2"
+      "bytes": 36304,
+      "sha256": "964b84377bac1a7236e005b2e4a7b8d1b494a6046aafbc992342fe7a99a46e29"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p023_spiral_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p023_spiral_fragmento/imagem.png",
-      "bytes": 1394022,
-      "sha256": "fffa7425dd6bccc3cbca8d607084ed8aea5bee49de8c713dd5c4cb3abb557195"
+      "bytes": 1196519,
+      "sha256": "96f9e94fbf6a505ce062eeaef3cc90d952d2b38a3a8a5a983a4c404ff711cd1f"
      }
     },
     {
@@ -2339,16 +2344,16 @@
       "url": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
       "previewUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
       "cardUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
-      "bytes": 33607,
-      "sha256": "89e76a843998678493709f6a0929f557e5732595d2ce6042b0bd4ff5dd1a967f"
+      "bytes": 32157,
+      "sha256": "02401cb1f2b6d2e5004fdc1b3c397999ba597ee7963be16f34ebc8c17a5ae368"
      },
      "animated": {
       "url": "/aura/geometry/gradientes/p024_segment_fragmento/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/gradientes/p024_segment_fragmento/imagem.png",
-      "bytes": 1795948,
-      "sha256": "1c2cf63137f7e986125e0e273752e8ae1abe1512053a95078fd2b419fa846eae"
+      "bytes": 1084246,
+      "sha256": "4b23276143bbccd7f3c94ac78194e5add68ddd4fe3dd4505fb216222af1bd0b2"
      }
     },
     {
@@ -2364,16 +2369,16 @@
       "url": "/aura/geometry/grafica/a001/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a001/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a001/imagem.png",
-      "bytes": 58432,
-      "sha256": "8076b3c24b86756dab5e5f040810bd616e66cd78ae6ca8c377d7c66ae8bd32ec"
+      "bytes": 64341,
+      "sha256": "13f47c2c3a42c2b69623efefd8f31b36c2ff45a31d9322abcb1ad98cfb21fae3"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a001/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a001/imagem.png",
-      "bytes": 2283299,
-      "sha256": "b90d1317c36ce477e1e14d4a3b49747b8f2114bc91adbc4570c7afbd18591347"
+      "bytes": 2372086,
+      "sha256": "d33753091a313d756acf25cd083a1abdeb631c08c3591a0bbe4c64c76e83cfa0"
      }
     },
     {
@@ -2389,16 +2394,16 @@
       "url": "/aura/geometry/grafica/a002/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a002/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a002/imagem.png",
-      "bytes": 28026,
-      "sha256": "6e6126ce69e6d4b82be7d78cacfae4325f148294a5a48e2f1d09b3e478ceba45"
+      "bytes": 29589,
+      "sha256": "ae726585d6e045c6760e548def0873d64e46b1e85f44377302c464b0a5946b0d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a002/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a002/imagem.png",
-      "bytes": 1692875,
-      "sha256": "ae40efc8d475623ca2eb33b9764a6f7540e793be020faa5480127c0144e405eb"
+      "bytes": 1045397,
+      "sha256": "3f7fb1bece5c3bb3064946c24d5b2a56c32df972381855db15985ddf276bb3ff"
      }
     },
     {
@@ -2414,16 +2419,16 @@
       "url": "/aura/geometry/grafica/a003/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a003/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a003/imagem.png",
-      "bytes": 50167,
-      "sha256": "f292751f9dbf6f248ae2ab28e6cc0bac17203962fe6d797215487915abbf02f7"
+      "bytes": 55188,
+      "sha256": "c0dcbc1ef0bd8c04b7952adb5b25f5b6b9974fe27e90e50adf13bcb609c962d7"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a003/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a003/imagem.png",
-      "bytes": 2732158,
-      "sha256": "08f162fb82d3f82ddb00854b387124826ba56418410367f166f060ed9ed1be44"
+      "bytes": 1946471,
+      "sha256": "6724c4b0d8b493e0f2cc759ce44845720f879b7f508995de0e769ce84c75c45b"
      }
     },
     {
@@ -2439,16 +2444,16 @@
       "url": "/aura/geometry/grafica/a004/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a004/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a004/imagem.png",
-      "bytes": 71317,
-      "sha256": "02872a9dced4faa7e140a63d64bc93a680a1e608f8df88857003d73f9c6789f6"
+      "bytes": 80464,
+      "sha256": "d651b3f0eba56c0ccd1d51645b46b89bee403b3bf83724aecf19fa7041cb05e5"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a004/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a004/imagem.png",
-      "bytes": 3128038,
-      "sha256": "9b306afead755ac96ac935324fe779150b1983b5cab34a2afc9ec4281361ea77"
+      "bytes": 2639265,
+      "sha256": "d1dc7c9bbbae94132825c719b98dba2191cc074bffd11e3eadcf47131ba5dcbe"
      }
     },
     {
@@ -2464,16 +2469,16 @@
       "url": "/aura/geometry/grafica/a005/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a005/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a005/imagem.png",
-      "bytes": 79722,
-      "sha256": "33b8c4b368d0ac3df0943ed8a2ce4c77fef6411efa0c949e98417c6ebfca6c83"
+      "bytes": 89042,
+      "sha256": "5c9c3820806a45c1441ba60da6ce895678f00a88e57d18056f06672cb4d81ebe"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a005/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a005/imagem.png",
-      "bytes": 3490850,
-      "sha256": "5c3dc3da0b9623d86ad425f62c0cbf5ce7a90ca407826ff1bb8ecb5cf7aa2a29"
+      "bytes": 3645213,
+      "sha256": "883890504bbb22c485912b96a92d10949fc43962792b9a951c798f37c609bcf9"
      }
     },
     {
@@ -2489,16 +2494,16 @@
       "url": "/aura/geometry/grafica/a006/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a006/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a006/imagem.png",
-      "bytes": 21798,
-      "sha256": "fe0577331524bcd77885a06a423bbd8fb977de9aebfc4e25ce83555b4e4b7e3d"
+      "bytes": 22393,
+      "sha256": "cdc8f15884d86ccc8993421caa6cca026618f2a0a6a5705e44e0f12771c67a01"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a006/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a006/imagem.png",
-      "bytes": 1382411,
-      "sha256": "fd06e974e5a50fbf54d57971017e624d01d500b457c3b02cdb15c863774fcb8e"
+      "bytes": 429038,
+      "sha256": "481c517eef0b7a41f0e1f0f89ff54fb8faf39ae398d846e207b79350513fe620"
      }
     },
     {
@@ -2514,16 +2519,16 @@
       "url": "/aura/geometry/grafica/a007/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a007/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a007/imagem.png",
-      "bytes": 81114,
-      "sha256": "4e63afd10ab2edb8179cc34e854d1824bc701e08cd2444d631a7f34a5cf30a44"
+      "bytes": 82857,
+      "sha256": "33e3903300f8ed7de237c210e560d05e5a896e84e3e827793d3a8d1b257afc45"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a007/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a007/imagem.png",
-      "bytes": 3289919,
-      "sha256": "55d3a2a0de8a083f91b724228692f291f90a0891ea15cc2158156f632a1e9d4d"
+      "bytes": 2997163,
+      "sha256": "751f16e553371064ce8a58c06c74024a76acb99f4edbafb388dad788ffbf984d"
      }
     },
     {
@@ -2539,16 +2544,16 @@
       "url": "/aura/geometry/grafica/a008/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a008/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a008/imagem.png",
-      "bytes": 69413,
-      "sha256": "b05e6ee542810ad40ba507523f2cfbb8841129be7c049ed28ff21941a50c5ecd"
+      "bytes": 78505,
+      "sha256": "6356f63063a8cb4ef37f1e40336e24f840e01e2740bd09920aa0192a2ca8135f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a008/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a008/imagem.png",
-      "bytes": 2943099,
-      "sha256": "0fabf414a2feea12bad2ab6bcc149804a4b4354ccf597d70b91bbfe084751f53"
+      "bytes": 2213708,
+      "sha256": "6510b523636aa87d063d30e6d22506eeb1dc126ed040dae4230ce8240dfe6f62"
      }
     },
     {
@@ -2564,16 +2569,16 @@
       "url": "/aura/geometry/grafica/a009/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a009/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a009/imagem.png",
-      "bytes": 54457,
-      "sha256": "e49a2e70f077b5e28a7dfb3536ac9ce90ff39ce6b872010459784993b49a0efa"
+      "bytes": 59487,
+      "sha256": "0dd3dce6b24ea3a53f02550baadc7a3f7da40ee953f69a21503c64b126b1e891"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a009/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a009/imagem.png",
-      "bytes": 2117109,
-      "sha256": "08e5bdbec06205da7f5c4ad4753058f97f1ac126e49c3b65bc016f53426239bc"
+      "bytes": 1893282,
+      "sha256": "6a8336a7c0baac3268297142da2323c3984356a0bd0a0510108efec494c8e4de"
      }
     },
     {
@@ -2589,16 +2594,16 @@
       "url": "/aura/geometry/grafica/a010/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a010/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a010/imagem.png",
-      "bytes": 58162,
-      "sha256": "fa5097918434054142d689745853f32eb68765dca3c87c98ca69fddfc673f304"
+      "bytes": 65589,
+      "sha256": "969c8215d2ae2aaf8e4d75dc9c3843ff5c47e05eb9feecc60709692643225cdc"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a010/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a010/imagem.png",
-      "bytes": 2509244,
-      "sha256": "e547eb389d55b27185e1e827fe57a3f197ec7546bdcf252fdd3c09434f04a097"
+      "bytes": 2082542,
+      "sha256": "f6ec76a6860fc863755a499c25a51cf558051f50254efa75d88d340be4205073"
      }
     },
     {
@@ -2614,16 +2619,16 @@
       "url": "/aura/geometry/grafica/a011/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a011/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a011/imagem.png",
-      "bytes": 16972,
-      "sha256": "97b241e279f1c9493ff7e6b41c8aa3cfa039040903a0a59fa60872e38bc200f0"
+      "bytes": 17690,
+      "sha256": "c66fb86b4a804e7c61e31bf5897a551a7e048caf7d42a8049b111904195ed9d6"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a011/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a011/imagem.png",
-      "bytes": 2102587,
-      "sha256": "974d170f1e98942f3b18c10fadc4cffead0a28e4ddf24cece70f55e7816370ef"
+      "bytes": 1305835,
+      "sha256": "060b67af757ae4f25d76f4789f7517d36536301156d86d7570aef8bb1cc8f159"
      }
     },
     {
@@ -2639,16 +2644,16 @@
       "url": "/aura/geometry/grafica/a012/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a012/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a012/imagem.png",
-      "bytes": 108780,
-      "sha256": "3121787d37d157d19762b5661bc12fc7431a8aa595c12532173d5d6f21393eb8"
+      "bytes": 120048,
+      "sha256": "9fcfcfc3d8de260a92414da9685b7d270c85ce7453b00c696b5a08d8cdb26d17"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a012/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a012/imagem.png",
-      "bytes": 4490001,
-      "sha256": "03b0e5f4ca3e8f02d79d74da6df810a397e26faffb4955e65920913dde25415e"
+      "bytes": 3557849,
+      "sha256": "d70b06a83a9c6509133a7af61da1b825e1ac57e1f14483fc1041e06d6905eb61"
      }
     },
     {
@@ -2664,16 +2669,16 @@
       "url": "/aura/geometry/grafica/a013/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a013/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a013/imagem.png",
-      "bytes": 69232,
-      "sha256": "63eac7858171d1b80eb6c7832d940d7b0f536c03c6f2e6252d0b4db4081a69f5"
+      "bytes": 76576,
+      "sha256": "6bed099e59f7ca486d6dab7478d2f4dff7ebac41473d91c0537b30743aa6d243"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a013/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a013/imagem.png",
-      "bytes": 2732604,
-      "sha256": "0899fbc74eada0ff8d89ad346500dc7e4aae907c445f55cbd2c634236199a7f6"
+      "bytes": 2090971,
+      "sha256": "3344e76c186d1b61d02c19177aa22fed7e40f4826b362ee26e93307add7b64db"
      }
     },
     {
@@ -2689,16 +2694,16 @@
       "url": "/aura/geometry/grafica/a014/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a014/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a014/imagem.png",
-      "bytes": 67952,
-      "sha256": "41dbd35acbeaadec029c9643f67bc43a65bcffad249316bebaa2a42b25f22a56"
+      "bytes": 75777,
+      "sha256": "f590812b560551a0f4bfbeeeb10d7a1f12fba35b72456e5e32de957a774608cc"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a014/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a014/imagem.png",
-      "bytes": 3939377,
-      "sha256": "ddc33fc7eca804f51057a7c6d27b539cca0319b9eb9b6fafe5be503b8d8f71db"
+      "bytes": 2836495,
+      "sha256": "431e9caf5ba61d9fcdaee0ca779c408421b1023fe625208243226ed0b29f9098"
      }
     },
     {
@@ -2714,16 +2719,16 @@
       "url": "/aura/geometry/grafica/a015/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a015/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a015/imagem.png",
-      "bytes": 34104,
-      "sha256": "51913eaf666084b6a73d963d331a696c05a5cd90ee7a196a47bf7eae78ade6fa"
+      "bytes": 37024,
+      "sha256": "3e8b3cbdb923034b54a803d3e4139c6634064508e575238f4d18eca29615fdfa"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a015/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a015/imagem.png",
-      "bytes": 2367292,
-      "sha256": "8335d431cd5114dd51a754f04f8146504e1ef304ee2bb9f178f7b7eafa8a25f0"
+      "bytes": 1194145,
+      "sha256": "0a621030782f1dc827c39aeb449836052c90857157ad3a4ead61a191c8bccbd0"
      }
     },
     {
@@ -2739,16 +2744,16 @@
       "url": "/aura/geometry/grafica/a016/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a016/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a016/imagem.png",
-      "bytes": 64620,
-      "sha256": "1801ddf5cf0db100ae5160fcab20f5dcfe4e0f2d6835660a6a91c00979af06b6"
+      "bytes": 58519,
+      "sha256": "f0c657608c73037fc77c811b203d90d6c5932d3e7b4aa208b7f04dfd6f6e5398"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a016/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a016/imagem.png",
-      "bytes": 2701024,
-      "sha256": "39e47fa1884f346b64aa57009330b6f4ac9bd8fd6824e68d85deabd692af5300"
+      "bytes": 1731756,
+      "sha256": "9051687a6488548888079f34c4e7b88dbbe8b61b76db6655ccc3b3e2bd75ebe3"
      }
     },
     {
@@ -2764,16 +2769,16 @@
       "url": "/aura/geometry/grafica/a017/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a017/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a017/imagem.png",
-      "bytes": 66985,
-      "sha256": "da9790873f97a9098b8b83a827891e28001e6b76617be133622ea6f8c59c7e90"
+      "bytes": 74209,
+      "sha256": "ca0c5c36f9228778242e488e345a13d8143cdac0db92eb92f172284204fc38e0"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a017/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a017/imagem.png",
-      "bytes": 2907911,
-      "sha256": "8e14abe51f60b835164d56a5f9578a349d60e440ef8913f67eebd6fb9068f558"
+      "bytes": 2242599,
+      "sha256": "b9a3b922653e9df7de722f6675b5d9928fe7fe6ed01722f332489ca2bc79a3ce"
      }
     },
     {
@@ -2789,16 +2794,16 @@
       "url": "/aura/geometry/grafica/a018/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a018/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a018/imagem.png",
-      "bytes": 85043,
-      "sha256": "a888072adc1c11abdb7116dbdf9f362ce25bd52893c65136c59ba36b4c5cc977"
+      "bytes": 93417,
+      "sha256": "787c5a168f68af490d9bf2d373bb0cad3538f6e5a2a143ff1c3a874cefafd61b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a018/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a018/imagem.png",
-      "bytes": 4202381,
-      "sha256": "f995881888cd7270128f158da4b6b66cf243b7af15bdc0602179cf2b99872523"
+      "bytes": 4323397,
+      "sha256": "88a9f29cd5b7d9d0df550ede580d04c0f6ebdec807fc80563c011c9507d18af3"
      }
     },
     {
@@ -2814,16 +2819,16 @@
       "url": "/aura/geometry/grafica/a019/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a019/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a019/imagem.png",
-      "bytes": 72163,
-      "sha256": "3b7cec03c93ea7acf9e58902fa7f70ee8f85b98b5d1ff9b7103d93fcd9c1da35"
+      "bytes": 79844,
+      "sha256": "62d1851eb1c53e44fd4e5ceaea19ad81abc156f24e78df69eff2f51b5b8cdb6f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a019/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a019/imagem.png",
-      "bytes": 2776094,
-      "sha256": "5163672498ae1e433ee1e13c0fc9f033854ef7144d5ca42d78b68d9e32402021"
+      "bytes": 2539982,
+      "sha256": "cec998746594e2e1a9f4751a1b62653397d4c0221a260dcaecf735856e934b1e"
      }
     },
     {
@@ -2839,16 +2844,16 @@
       "url": "/aura/geometry/grafica/a020/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a020/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a020/imagem.png",
-      "bytes": 40795,
-      "sha256": "df7089f52d468acde9edff7412615174cd80c23ab225b29398ae72c6789c8ea3"
+      "bytes": 43990,
+      "sha256": "6acc806b3efadb69cf2967926335530b608188ee8369f028e1c8223a34b15a60"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a020/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a020/imagem.png",
-      "bytes": 2248475,
-      "sha256": "045a87d417a80e0632611cab4a9c42e8747214918661183cb382c9ff6e60d203"
+      "bytes": 1174684,
+      "sha256": "48e348f4761c3e14ed045c7251f8a75494c3cb69323e031b2a2b8376095885cf"
      }
     },
     {
@@ -2864,16 +2869,16 @@
       "url": "/aura/geometry/grafica/a021/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a021/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a021/imagem.png",
-      "bytes": 59511,
-      "sha256": "0ca9523259548b8f341cf63d959ec06c1ffcf565e3a1c8d8af6056ff23a2b7c4"
+      "bytes": 64274,
+      "sha256": "bfd97b7e328e31b5cf132a7c0f174009ec02119f5f1c5649ec9cfe44a93cacf8"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a021/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a021/imagem.png",
-      "bytes": 2359496,
-      "sha256": "2919d95eb30ebce0835a71ababb9e1f97e773ce4543971bc804f54831ac45d35"
+      "bytes": 1932375,
+      "sha256": "8814efaa50df563fb2d06829103c4a8e7e452113c45c6621639e3056c8ee0110"
      }
     },
     {
@@ -2889,16 +2894,16 @@
       "url": "/aura/geometry/grafica/a022/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a022/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a022/imagem.png",
-      "bytes": 46526,
-      "sha256": "4e92da1b9152b968d6def7433ccf180f86781adeaddcdb45b900bb3a3c9cfce4"
+      "bytes": 51896,
+      "sha256": "2a09390bbc726c68133e142a247b7609c6dec47a6f34a02906bc3199788eaaff"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a022/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a022/imagem.png",
-      "bytes": 2830768,
-      "sha256": "1bdef0212d89215b4c857dd7df5f4214505c5f3482d16bd99f4d945128fc337d"
+      "bytes": 1516520,
+      "sha256": "5e219a9cf4799cf97cb1e03e4eb8567cd1359430f2cea435c48d421ccb7f4c96"
      }
     },
     {
@@ -2914,16 +2919,16 @@
       "url": "/aura/geometry/grafica/a023/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a023/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a023/imagem.png",
-      "bytes": 56950,
-      "sha256": "baf9931edbd83f9ebc60b7aa8b5828e3a8a906af80af82a880482db41261c985"
+      "bytes": 63206,
+      "sha256": "0ced8feab8169511754d44568a18031871374bc2e24d0fec5b65e315c4d153cd"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a023/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a023/imagem.png",
-      "bytes": 2680091,
-      "sha256": "5c8ebff67a34b801f23c60638033ba4941a1cabd4b7803d5e51d328e6316dd4d"
+      "bytes": 2052865,
+      "sha256": "7264b18e3096b4bb5f212d8b92d0fcb4e11cf90fa5ef53836d225154595c73a0"
      }
     },
     {
@@ -2939,16 +2944,16 @@
       "url": "/aura/geometry/grafica/a024/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a024/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a024/imagem.png",
-      "bytes": 66666,
-      "sha256": "22a632ef7a196cd3ce7926efcf5d36ef5e19c960fac120ace9d4d39f2aae8c97"
+      "bytes": 74388,
+      "sha256": "032b19a68bf5ef31c54eef4a5589a915a7c69d08e12091ef697f1bb6b8350362"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a024/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a024/imagem.png",
-      "bytes": 2888658,
-      "sha256": "2cef3c55d4732d28202cce62e1cbfe21edee559e6ece3839519077e79ffb7596"
+      "bytes": 2133376,
+      "sha256": "5a861077f273e5eb47d0458987e2b04bc41adeb4fccf2212e899075a3c296a98"
      }
     },
     {
@@ -2964,16 +2969,16 @@
       "url": "/aura/geometry/grafica/a025/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a025/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a025/imagem.png",
-      "bytes": 52099,
-      "sha256": "c28d8c97fff65b3ea9a6d1f4c4ae2e1619cdbf4b4b51ecbc0dd2220599935d83"
+      "bytes": 56707,
+      "sha256": "a6b2748ab535c733939ea99470ce8a029e1257a800f2fa1f269825be5dfd3ed2"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a025/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a025/imagem.png",
-      "bytes": 2838763,
-      "sha256": "e599ecf96a452f42b35e556e97dafefce07a2a4c14eed61a7eccc4298a26412b"
+      "bytes": 2501128,
+      "sha256": "2feecae34ed568b1ade9522c51a36fd8a52562f810a7414b09ec549ca972bfef"
      }
     },
     {
@@ -2989,16 +2994,16 @@
       "url": "/aura/geometry/grafica/a026/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a026/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a026/imagem.png",
-      "bytes": 71617,
-      "sha256": "bf39305fc5c19fdc91b9f7c04578c14cbcb39bab7d16daa4baa5916a66a72e7b"
+      "bytes": 78457,
+      "sha256": "84f4747ffda038caa7e6ee4139410340769767559b045df33230cb811836bd54"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a026/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a026/imagem.png",
-      "bytes": 3688850,
-      "sha256": "c4fae3d2b1b78996b95b2dc2685b8bcbd14648ad342c5a978d325a841a67a34f"
+      "bytes": 2442061,
+      "sha256": "62002f7ec7a36f39a43cc7eb613a3a2d3b509d90a238c493ebb447231c508a77"
      }
     },
     {
@@ -3014,16 +3019,16 @@
       "url": "/aura/geometry/grafica/a027/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a027/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a027/imagem.png",
-      "bytes": 52971,
-      "sha256": "5ef87e0c0f362340a0cb4b598eabe94f9d682aa20bc631a3790c1b3228ffdb89"
+      "bytes": 56847,
+      "sha256": "47ddd7847ed7f3804dbc0965eed69c360ae5cfeb0edbd65a8eebeafdc2c775aa"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a027/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a027/imagem.png",
-      "bytes": 3240363,
-      "sha256": "41229180f32d8fdb63bea003e4b1b8f13e5d97b7ae42242f00256d91d595c949"
+      "bytes": 2720651,
+      "sha256": "178dddd97a41dda8664f1836ccba4fcb254c4c46b5ec0014c4e2815b61db7c8e"
      }
     },
     {
@@ -3039,16 +3044,16 @@
       "url": "/aura/geometry/grafica/a028/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a028/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a028/imagem.png",
-      "bytes": 83489,
-      "sha256": "5fd9e2ff684dafb773ed7ac4f5d222f36f5766d34f88e06f79a862dfe0b4ae90"
+      "bytes": 94713,
+      "sha256": "cf21df690c07cb451fc971734551a9ac28d1900a6094b728fda7c031bd067967"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a028/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a028/imagem.png",
-      "bytes": 3355412,
-      "sha256": "438f057019aa0d860f5fab4bb1165d41ffc9ab71fb20f547d5aa9fea87571479"
+      "bytes": 3146308,
+      "sha256": "6dfefe9a64585f4ae9e7e589425f0e6207f48a75b57e35c1a9b93489d8b0242d"
      }
     },
     {
@@ -3064,16 +3069,16 @@
       "url": "/aura/geometry/grafica/a029/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a029/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a029/imagem.png",
-      "bytes": 61082,
-      "sha256": "ab5aa4cd848569cd40c7aa765604ba5977f0674bbc4f760b4aec6cf45c5b2104"
+      "bytes": 66591,
+      "sha256": "8c989f2a74a7180df8471fb07e3561fa1d1702be6166bf3ab12adee93474a647"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a029/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a029/imagem.png",
-      "bytes": 2907479,
-      "sha256": "4371609226bf6d85761105558ed5e4d90c1def1e231bca3496c09a8857826b2b"
+      "bytes": 1940368,
+      "sha256": "09377969ca2cfa1692d60ce063da961650999d520c09033ffc9ecaa7badd8da0"
      }
     },
     {
@@ -3089,16 +3094,16 @@
       "url": "/aura/geometry/grafica/a030/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a030/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a030/imagem.png",
-      "bytes": 15416,
-      "sha256": "cd94e030b3244d6d6b11eb09b4ba346969ae880d7a088e8d13eeb16a64275776"
+      "bytes": 15609,
+      "sha256": "e57889989837322f3ffd5b37e4d156e85c14c5975996aaf6a4f4dca1317da07d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a030/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a030/imagem.png",
-      "bytes": 1750441,
-      "sha256": "e691c28a293f45a47abb1cbddbacbd904328d1a7138cbc47a4cb9f9d92ea9cc2"
+      "bytes": 922560,
+      "sha256": "42b3bd5bfcb1e0f16618b81c711f11e589034843aae219c82c354cf64497d89e"
      }
     },
     {
@@ -3114,16 +3119,16 @@
       "url": "/aura/geometry/grafica/a031/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a031/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a031/imagem.png",
-      "bytes": 31637,
-      "sha256": "f3e8b242c586bb4aa10ac1bf779280798ca475c786c8a3f3dbb2d4dd7aaf08fc"
+      "bytes": 33213,
+      "sha256": "ac44d91493c149ba07606dee8b4bedb73cc8184dcb4c9e7d07fd3e580bcc1351"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a031/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a031/imagem.png",
-      "bytes": 2198577,
-      "sha256": "b68847da21ff2ca5839db80251c07d3b6edd1d6a8ba76206725fcdca01acc09d"
+      "bytes": 1306634,
+      "sha256": "a22213d183c5ac4ebbb56a8cfcc5843ef60ccf3a1e7c2446b3ce46fa04c58754"
      }
     },
     {
@@ -3139,16 +3144,16 @@
       "url": "/aura/geometry/grafica/a032/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a032/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a032/imagem.png",
-      "bytes": 72519,
-      "sha256": "2d549a56d11aba4a2f4398fe426e97a1bb2b8e26a0bb89ffe5d7dc901179ed33"
+      "bytes": 75279,
+      "sha256": "f4d4bba3b1b9c1f3d0e20e9b43de5e3ab9f870c6dbecc2a3c86cfa286862ede2"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a032/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a032/imagem.png",
-      "bytes": 3622137,
-      "sha256": "60f9b53c7f3ec9ea178f0b156ace223d75514eb4e748835d82e30bd267e7663a"
+      "bytes": 2765186,
+      "sha256": "2b902ac9ecf32b04eaccc28d93feea88237f609b6cc2d6ba91237a60a951aab5"
      }
     },
     {
@@ -3164,16 +3169,16 @@
       "url": "/aura/geometry/grafica/a033/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a033/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a033/imagem.png",
-      "bytes": 82159,
-      "sha256": "e39178ed4bbfa523ff4a4d421150f468636ffff56bdb762b5ee71f8e2e8cc0c0"
+      "bytes": 91050,
+      "sha256": "6977e4c8758a89eb7c65f30ac34fe660758beddb3741508cf15cad4c3717e25f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a033/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a033/imagem.png",
-      "bytes": 3367284,
-      "sha256": "596c99fe4c2ad6019a407715bc1dbab2b1f93da429046ba6bd211b0bf1ae178d"
+      "bytes": 2635662,
+      "sha256": "dd41fb51e1d34d264edadf4e486321324ffb66c144ed65d28285b24f61113573"
      }
     },
     {
@@ -3189,16 +3194,16 @@
       "url": "/aura/geometry/grafica/a034/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a034/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a034/imagem.png",
-      "bytes": 69001,
-      "sha256": "e2eabb25c94736fa885bbdbb1e3571294a57b680edd6840995c25d6b14c29261"
+      "bytes": 66443,
+      "sha256": "af80467fc6d0169d4a1c7b93c281e4e503e64ffa638a515d4338cae26bdf0ea1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a034/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a034/imagem.png",
-      "bytes": 2983431,
-      "sha256": "fef146845cc5380b1b8d68439f0227dcd9721eb74c6ff3f2e2f81adfcd667167"
+      "bytes": 2411410,
+      "sha256": "d967c855f6e6862aa32a92c3e95e333fd55906a6a0c7f1e156f20f490fd953e8"
      }
     },
     {
@@ -3214,16 +3219,16 @@
       "url": "/aura/geometry/grafica/a035/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a035/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a035/imagem.png",
-      "bytes": 43760,
-      "sha256": "7ae4c18a0398e58c2639fa6decb8a7ca77ec52b927ce4cfd85d98ae3444c5e07"
+      "bytes": 46531,
+      "sha256": "f4b8041d461be796f99ab4d7e6674677e4f83b7055800690109f58e0f56fa3e1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a035/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a035/imagem.png",
-      "bytes": 2513119,
-      "sha256": "998afe38d2df23b3d4a943b1858bc39198e7ce704d36e8bd1e3e9bb59e98d628"
+      "bytes": 1240686,
+      "sha256": "f81498eb904fbc41806169f36591872f302d20d4bd0fa0ece8074721f4ea5bb8"
      }
     },
     {
@@ -3239,16 +3244,16 @@
       "url": "/aura/geometry/grafica/a036/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a036/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a036/imagem.png",
-      "bytes": 59627,
-      "sha256": "12226e4ba6f1bd0b00ccbc018c772082493ca57f9b74cbb60764e779975a751e"
+      "bytes": 65989,
+      "sha256": "e72673917616896c37dec221f0d9c497780284f72ff355c303f890bbf2c944a0"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a036/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a036/imagem.png",
-      "bytes": 2723259,
-      "sha256": "ed5a0e04e8976f53c73530cd2c6afe79c60663d57f7a718bab682cec34f39257"
+      "bytes": 1950567,
+      "sha256": "854c597088a6d9c766138ef834537b200bf74c46e015f63440482fe08815237c"
      }
     },
     {
@@ -3264,16 +3269,16 @@
       "url": "/aura/geometry/grafica/a037/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a037/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a037/imagem.png",
-      "bytes": 52504,
-      "sha256": "e9328d0fc1869bc62a275c46752da35b6e5ac288d0c0292329c07bd556fc4829"
+      "bytes": 57284,
+      "sha256": "9cdb1d49206cee1158bb22e0d148778850b818beb51c2d9647bc7c0dcbcba024"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a037/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a037/imagem.png",
-      "bytes": 2802131,
-      "sha256": "16b601db32842aba58efd249f983dd8e613287ae54052e7f16b7505fcc12f59e"
+      "bytes": 1844233,
+      "sha256": "3f4b1e19cf11bf72ff2ecdc95adf0f37a42e22dbe745387fafe0180430f16230"
      }
     },
     {
@@ -3289,16 +3294,16 @@
       "url": "/aura/geometry/grafica/a038/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a038/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a038/imagem.png",
-      "bytes": 62856,
-      "sha256": "30e7a65c2668cfea4283965ccb9d39ec19d4ba1e64b407ce61d500a740cf69c5"
+      "bytes": 66274,
+      "sha256": "a31f61b00947e4b41d1beed8c81aa2efb89f0d953fafa30f7450fefb6072622a"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a038/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a038/imagem.png",
-      "bytes": 3092603,
-      "sha256": "7bdd7bbab5ddaeaccd39a2231fdf16f58141dfd94cd61afecbd0bac5b780eccb"
+      "bytes": 1776138,
+      "sha256": "813165a4a060c9bec70d0c4b32fe44a93cde4986ffd41600fa98856030a0fb0a"
      }
     },
     {
@@ -3314,16 +3319,16 @@
       "url": "/aura/geometry/grafica/a039/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a039/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a039/imagem.png",
-      "bytes": 59921,
-      "sha256": "4eb74a00fa20c20e1733dbdc6c355037040bdc14d353089b71b424e6d7d80ad1"
+      "bytes": 61390,
+      "sha256": "40b98e6a326b4cffe7f1977784846694c2413b124cbba65ff2493db1afd89eac"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a039/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a039/imagem.png",
-      "bytes": 2786971,
-      "sha256": "21a599b61e9d0a5068660caf83df4caadd2224ced46ba08a1e5025e9983317ce"
+      "bytes": 1492868,
+      "sha256": "242f722e79a44c677a793edf96198e5a56c58ec9130cbb130ca3e7e2bc356f1c"
      }
     },
     {
@@ -3339,16 +3344,16 @@
       "url": "/aura/geometry/grafica/a040/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a040/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a040/imagem.png",
-      "bytes": 52076,
-      "sha256": "bdec412a0e4b84ed22580696fdb07532fbd7402ff7058a147ec3f74fb1f4300a"
+      "bytes": 57937,
+      "sha256": "910e50abc429abc6a1ff94ef0fdc49bfbeb680112f5fc134724fe6ee67fbc6bf"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a040/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a040/imagem.png",
-      "bytes": 2526468,
-      "sha256": "e4b04f867849bb5e7b68c03517f64a00262785e8f5294b87dd5f166f8a8c7bd1"
+      "bytes": 2032461,
+      "sha256": "aca94d456027ee2e8f904ca6a7c94f56e9ad167f788e99eeb9e10fadf0f12c6b"
      }
     },
     {
@@ -3364,16 +3369,16 @@
       "url": "/aura/geometry/grafica/a041/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a041/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a041/imagem.png",
-      "bytes": 36671,
-      "sha256": "841c395ad77e8cda151643c3fb178a46ae269e5626fd4356f59e61f3794158a5"
+      "bytes": 38185,
+      "sha256": "afe862d9255f41624e3bc3758ea5834663c8502781ef2dca8e0323de266f9cc1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a041/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a041/imagem.png",
-      "bytes": 2610395,
-      "sha256": "c82fede4e3e8e9b8270ecfd25a63e61de49b9050d8b2391d8fba8caa35585637"
+      "bytes": 1084281,
+      "sha256": "605945afce5701b0411a6c99c2d4394321b598003c81831483abf8dc3d3fa280"
      }
     },
     {
@@ -3389,16 +3394,16 @@
       "url": "/aura/geometry/grafica/a042/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a042/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a042/imagem.png",
-      "bytes": 46641,
-      "sha256": "453fb4f5c2f6f94176aa7a077be4cd0584d5ab11256947ab2a9d03e215ac4d5e"
+      "bytes": 46088,
+      "sha256": "236d7f692ba63bf45b0687e782d45d7b7eca7c201715a177cb66906cfa05d689"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a042/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a042/imagem.png",
-      "bytes": 3188426,
-      "sha256": "7d612cc1a4c345cd9732f32894024187d3b0e971c2d9061b5994cc1728cb09fa"
+      "bytes": 2490128,
+      "sha256": "edc59e5a57356cbf23ad63c62e15fe79f88e4c90c6e64a9acbfef249aeaae04d"
      }
     },
     {
@@ -3414,16 +3419,16 @@
       "url": "/aura/geometry/grafica/a043/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a043/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a043/imagem.png",
-      "bytes": 85338,
-      "sha256": "d4a0828911e7bac6d9f7c9198e4e42f163d801634a3eb0a46547a79e52c7a494"
+      "bytes": 81728,
+      "sha256": "ab27210a197997cf92dca298af0d2988599976e2047338c8812c6cf80b11c728"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a043/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a043/imagem.png",
-      "bytes": 3818996,
-      "sha256": "4594a4b1c1596523759da409cd23964f1a65270251078efa66ee6748073bcf9c"
+      "bytes": 3116452,
+      "sha256": "651e0ab6ba40ba1d500fbe58977b944c15fd4ea31af7885a5d29b5c62fa6c97f"
      }
     },
     {
@@ -3439,16 +3444,16 @@
       "url": "/aura/geometry/grafica/a044/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a044/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a044/imagem.png",
-      "bytes": 57951,
-      "sha256": "dea594d80825057f51c7c7c5838a59b4baee76de50616dc3eccc1592e81869d7"
+      "bytes": 63533,
+      "sha256": "5134c2db4499c1f4435a0498ddef47596be5fe2b2a425696b5693c34e5d68d2d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a044/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a044/imagem.png",
-      "bytes": 2408337,
-      "sha256": "c05cc985f842f81a2e6db678b947b233508070eac2dd7a6c3dba2753f0a033e0"
+      "bytes": 2591373,
+      "sha256": "af2bce9ec7c9e8d8d6442a5cf44a8aa18a685399c4d7107c26aaab6585d5aa84"
      }
     },
     {
@@ -3464,16 +3469,16 @@
       "url": "/aura/geometry/grafica/a045/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a045/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a045/imagem.png",
-      "bytes": 48366,
-      "sha256": "ef961005547a841800c5fac937ed9f96d274d36da2aa1b24d7861f1437575d79"
+      "bytes": 53494,
+      "sha256": "a314febcddf2be4fd7ddbb79c6ed606cce789082bbc0b44aae7abb365f6edda6"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a045/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a045/imagem.png",
-      "bytes": 2748725,
-      "sha256": "c999a8d26eef2fe3e2441352b78ae7c2aea78ec7a12f3b0e8208f72da320c789"
+      "bytes": 1511617,
+      "sha256": "baaff5cf5f9373550f0250782f3c4d03d64c499044f996f8945d013ded6d38c5"
      }
     },
     {
@@ -3489,16 +3494,16 @@
       "url": "/aura/geometry/grafica/a046/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a046/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a046/imagem.png",
-      "bytes": 113080,
-      "sha256": "3c2975d22dcbb291ee435fbc5c7a756f37073e10dc6e02397f4870d402c882ac"
+      "bytes": 123885,
+      "sha256": "47dfa4c9304df6c43c9c058dfddb9ad22dacb23a9303cdaa2d0702e6ccd2429d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a046/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a046/imagem.png",
-      "bytes": 4731188,
-      "sha256": "4509e6ff282837038ec342b5e94d449eea90a9bc1644d431533829029f8b999f"
+      "bytes": 4307670,
+      "sha256": "25389fac5ee49e7d8597ee89bd5054b7c804c1528f39b8795fcd270da34b4818"
      }
     },
     {
@@ -3514,16 +3519,16 @@
       "url": "/aura/geometry/grafica/a047/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a047/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a047/imagem.png",
-      "bytes": 29699,
-      "sha256": "d9cb0b190c0197a6ef268bd0af0e433ccc0289295c99cae55dd231a15724c8ec"
+      "bytes": 32010,
+      "sha256": "9cabf57c10c112dbcdd9d92a3cb1e0a4888406456ee854d41cb9986abda73404"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a047/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a047/imagem.png",
-      "bytes": 2040065,
-      "sha256": "31fa3a4bdd1e0a03ecf741cabd095e875819be1ee9fde0998368c9edbb91aba7"
+      "bytes": 926755,
+      "sha256": "5debf7924117d1471f187ce0e86b88ab38b7706b0e7f5d09a4c292cf0ecc1de9"
      }
     },
     {
@@ -3539,16 +3544,16 @@
       "url": "/aura/geometry/grafica/a048/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a048/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a048/imagem.png",
-      "bytes": 41381,
-      "sha256": "b05cd7b66a3e30d1dcef249e652bd92829c706a51ac9a8d9be4359cebe309887"
+      "bytes": 37319,
+      "sha256": "4f8abd4b6e4f91c7b5c88fd33d3d79484da050c6761ce092ebcd7e1c43784943"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a048/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a048/imagem.png",
-      "bytes": 2395810,
-      "sha256": "19994f955d31c2eeb3b4337162f6c4c3d95f931ebf2cbac19e107f7951154867"
+      "bytes": 955534,
+      "sha256": "d23be4da9f545c2cf6bfb34b5ce9fe8d29189df609add18a16eb51ecba2d798a"
      }
     },
     {
@@ -3564,16 +3569,16 @@
       "url": "/aura/geometry/grafica/a049/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a049/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a049/imagem.png",
-      "bytes": 73318,
-      "sha256": "c9c58f8ce4ab13468880ed09be402515400677c5e29cc4033682b8758133cb2a"
+      "bytes": 81537,
+      "sha256": "e242263873156d9ff5443d191b6eeffe300328b117b9997e1799ce170a27e05f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a049/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a049/imagem.png",
-      "bytes": 3188928,
-      "sha256": "43ab883c25ea2aab4a2953a7a1730bd0c8fe67de38aff22868d013bf46db3d9a"
+      "bytes": 2315504,
+      "sha256": "e9eca3960e0b00fefcd725f7c366355d8f3438934aea8043e36d3197e596dd40"
      }
     },
     {
@@ -3589,16 +3594,16 @@
       "url": "/aura/geometry/grafica/a050/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a050/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a050/imagem.png",
-      "bytes": 74039,
-      "sha256": "e963637f4b8c74407594a2f31a11c287c7a0ee7c768bc4690196e97e7faa877f"
+      "bytes": 82538,
+      "sha256": "a5452b02009cfd0513033c9bc4133a9bce28abcd18bd78939328dea8663be06c"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a050/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a050/imagem.png",
-      "bytes": 3561464,
-      "sha256": "01c7a101100160fb4961ebb495981ac35134a67cf990459cd27dfa87a84b6d5b"
+      "bytes": 2997948,
+      "sha256": "603d785095cf63557c2c6b89c9dba4d61745f8df7cc6bf79e70ea3682b8d0644"
      }
     },
     {
@@ -3614,16 +3619,16 @@
       "url": "/aura/geometry/grafica/a051/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a051/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a051/imagem.png",
-      "bytes": 67199,
-      "sha256": "3bff27dc0c16638f5fd0c29ee5c459b249eb0d3e8517ccd4c8afa8abdc019924"
+      "bytes": 76284,
+      "sha256": "c74172e8277ab2a546de301e7d90583a07d82a5f2e677aa6b579e7e16361abba"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a051/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a051/imagem.png",
-      "bytes": 2445555,
-      "sha256": "e66aeb2fa5d6a2019d39f9ddddbfb798a09c60a70a125040cc9c75df6cb36c49"
+      "bytes": 2388151,
+      "sha256": "8136e4b06b07025e60551ebdc928a05832a15e854887e8f3aa106b20210ddb51"
      }
     },
     {
@@ -3639,16 +3644,16 @@
       "url": "/aura/geometry/grafica/a052/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a052/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a052/imagem.png",
-      "bytes": 44233,
-      "sha256": "fcf2c7305e533dc168618d05fa0edac6a12bf637207e0dbf1648ed794d49717e"
+      "bytes": 47204,
+      "sha256": "9f8aea17bb9f7a4287da184c59afcfe556a804d65c7f7476def305e36c0b05ce"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a052/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a052/imagem.png",
-      "bytes": 2360900,
-      "sha256": "cdbb5fa23a19f3e5118dfb9956d5ab2db472b54aad52fdd926805f0761264447"
+      "bytes": 1040550,
+      "sha256": "04066bccf45d30f1bd9c641ce9453ae5547934a33c24b96ebadfe236f4155cff"
      }
     },
     {
@@ -3664,16 +3669,16 @@
       "url": "/aura/geometry/grafica/a053/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a053/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a053/imagem.png",
-      "bytes": 50020,
-      "sha256": "58c966eef44e77cfa2caa4377c87cb1a9115fea30831272544b15af6aea72a9c"
+      "bytes": 54529,
+      "sha256": "ba59e37c74cdfaa73778710647bd1e4ab846bf53c3b8feac2b0c9b0f41e8f21e"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a053/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a053/imagem.png",
-      "bytes": 1919887,
-      "sha256": "8887a3e8d3f2439811cbefe4bb03695dc186dacb98132d9262586cde5e4392cf"
+      "bytes": 1660129,
+      "sha256": "acdbf3fc6dccab2d988696b96ef58a937b70c1e15726f996b834f2916a9aaf05"
      }
     },
     {
@@ -3689,16 +3694,16 @@
       "url": "/aura/geometry/grafica/a054/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a054/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a054/imagem.png",
-      "bytes": 71650,
-      "sha256": "7e427c8c3c45fd7a2df0b7a338954d27c0c05c82748dd603221cf25ec6940ea4"
+      "bytes": 76923,
+      "sha256": "d423acde9f0d151cbffad1f2cc74488864271314f558822120c3c0a230b13590"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a054/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a054/imagem.png",
-      "bytes": 3035982,
-      "sha256": "bf41c9937c889e6164717bbdbe05d61e5ef8f9821a7c053445e57c4bdbd603ff"
+      "bytes": 2383855,
+      "sha256": "7faec6ca892287420a6744262dbc9f4e858acd1417b18e9e015d6326bf2b26cd"
      }
     },
     {
@@ -3714,16 +3719,16 @@
       "url": "/aura/geometry/grafica/a055/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a055/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a055/imagem.png",
-      "bytes": 58820,
-      "sha256": "62b998b239aa5bbe02c7ac1c58841a55fabbffa091f22340721dbd6cbb1e0918"
+      "bytes": 65437,
+      "sha256": "57b4439f6405f0a1927be781604077b954f1e4aba08d410540664117223c54d4"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a055/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a055/imagem.png",
-      "bytes": 2638726,
-      "sha256": "c2a59941b39c3f5710ae63a55202b4736bc53d25e5fc13a0c7d18f36e3643bbb"
+      "bytes": 1991622,
+      "sha256": "935e9c4047d9a4702a128fb0e36f147aae9fddfd0401b078c63a72205dc9c2e1"
      }
     },
     {
@@ -3739,16 +3744,16 @@
       "url": "/aura/geometry/grafica/a056/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a056/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a056/imagem.png",
-      "bytes": 50319,
-      "sha256": "36fd8e3b67452369e0d3f5c23f21a50806b860a1bed0a664328a248c3c8cb363"
+      "bytes": 55718,
+      "sha256": "9f720077912f52114a4cc5f6f5695573e886449e56bc44a11b6baeec4145c9b6"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a056/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a056/imagem.png",
-      "bytes": 2430626,
-      "sha256": "2e97533e7353e4eb1519bdc1dcbac9235ae1d76b0405b805048cc86bc871e752"
+      "bytes": 1796378,
+      "sha256": "94f990e10b40bfb5152261a94fa4b9295872fcfc5df00afa35bb3b762eae53c1"
      }
     },
     {
@@ -3764,16 +3769,16 @@
       "url": "/aura/geometry/grafica/a057/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a057/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a057/imagem.png",
-      "bytes": 41325,
-      "sha256": "50debb7be4b7be53ccaef5dde2aa4996436f611c5ad5a3beab47a3ee6ead1b3d"
+      "bytes": 45204,
+      "sha256": "1755fa5438ffc583033840320f5d9c528a3f9104f42805a2bc96c58ce3c9d8bc"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a057/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a057/imagem.png",
-      "bytes": 2308420,
-      "sha256": "ef60dc3a3b390803ed0ee4118427e2645a8879dd920ca074b5c8648329e4786d"
+      "bytes": 1365907,
+      "sha256": "aba536518debfe1fddd584799f0c5d7d4e74c8260767d95565765083e0b233fb"
      }
     },
     {
@@ -3789,16 +3794,16 @@
       "url": "/aura/geometry/grafica/a058/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a058/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a058/imagem.png",
-      "bytes": 49138,
-      "sha256": "6586963ada3106a23f9d16cbd1470020ffd6fce455abbd71c21ee0a5e5d3ed3e"
+      "bytes": 53782,
+      "sha256": "12e80c8dfd0f080b9db01dbfa298feb9f2d2e0bc5e4fd689dba0845be7b35727"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a058/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a058/imagem.png",
-      "bytes": 2585936,
-      "sha256": "6b8974b4e954d75984bcd58367bcfd81b076bebbf860d9c594fea763a5fabec5"
+      "bytes": 1408409,
+      "sha256": "d1bbe743d2e032520db4a188ddb3aedb2fd216d8651ada98a58d14499210b016"
      }
     },
     {
@@ -3814,16 +3819,16 @@
       "url": "/aura/geometry/grafica/a059/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a059/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a059/imagem.png",
-      "bytes": 37558,
-      "sha256": "9be24541d2308c08e358813577e2b54efb0719b436cbf3e00b13bfeef7e4beb0"
+      "bytes": 40432,
+      "sha256": "c46decce7430b512c08bb5c7637b45e7ea4afcf36b53c294dd619bb817de05fa"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a059/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a059/imagem.png",
-      "bytes": 2154069,
-      "sha256": "9e2941012ae930c46ed63e585c75332dd6f7e506484c34966e6fdb3715dc2b45"
+      "bytes": 1415573,
+      "sha256": "f2b76b15c84a8c0783f6778d2b6e7319776c5a4a224b8abc91462359df2f1e71"
      }
     },
     {
@@ -3839,16 +3844,16 @@
       "url": "/aura/geometry/grafica/a060/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a060/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a060/imagem.png",
-      "bytes": 69091,
-      "sha256": "94fe808cd524258766975f8c7623ce704700d7ffc2cc72e94c2a76bd8b9bd764"
+      "bytes": 78118,
+      "sha256": "588083bd0404ce56820b1515802246a95398413024fe1f0f0441e2df901d1f36"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a060/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a060/imagem.png",
-      "bytes": 2830481,
-      "sha256": "4419c71257393382d9bdf12dedf96f5bc3735c35416c803fba0e06ce82e90748"
+      "bytes": 3379075,
+      "sha256": "f6a8ae565dd28fd61511e4f5eb0952df1afb718e7cf275a6cba34ea6f5cb9920"
      }
     },
     {
@@ -3864,16 +3869,16 @@
       "url": "/aura/geometry/grafica/a061/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a061/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a061/imagem.png",
-      "bytes": 50319,
-      "sha256": "7d7f05a97bd9eab45a6125443930a27b05cad95e35a7c083dcc5d1d057030a50"
+      "bytes": 30115,
+      "sha256": "faefefca6a00215efeb0e4181e76cee0033689188c271da5318f3efc71d6468b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a061/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a061/imagem.png",
-      "bytes": 2697769,
-      "sha256": "222f8a68762b31ff3b12c38435cc27f9b3dab76173a2223f4bc50751041bc7c6"
+      "bytes": 2094132,
+      "sha256": "565f988c78d9c10cc4933a3483f8e8cadddcd25168e8bc818385541f71f8f136"
      }
     },
     {
@@ -3889,16 +3894,16 @@
       "url": "/aura/geometry/grafica/a062/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a062/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a062/imagem.png",
-      "bytes": 71552,
-      "sha256": "078c8f6fcea9c50ce5cd8aa78210dc76723bd58a8da1502e6c2ac80c2f51c964"
+      "bytes": 80745,
+      "sha256": "d557fa752349877f700b741b8f94f90debf3157ae9c80eefe08034bf4bb5b45d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a062/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a062/imagem.png",
-      "bytes": 2984491,
-      "sha256": "aac03738e53043952bc057f91f49f1b2cfff819ca5a2563e4ec9b2b400bbbb3a"
+      "bytes": 2194904,
+      "sha256": "93574513504628923f532ca2524d11a837d28493176034185dad4bcea71b5cb2"
      }
     },
     {
@@ -3914,16 +3919,16 @@
       "url": "/aura/geometry/grafica/a063/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a063/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a063/imagem.png",
-      "bytes": 40952,
-      "sha256": "38396539d0fe368754d3aa8ea29eb1c5cb888b5a0fa03c33f640293ba65d7d91"
+      "bytes": 43616,
+      "sha256": "86eb074c3e51caa9efccac1630f27a94b6e9ef54b654ce5693597fbed935ca40"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a063/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a063/imagem.png",
-      "bytes": 2587290,
-      "sha256": "e8f12bd0ccacc7895304c3875ae730d0d24f283e967a0559216c0c3c38ec77c7"
+      "bytes": 1364966,
+      "sha256": "933f2f1aacf218f31c170922ec09d91eb0e23aebfb96088ec2d1f69f1fa63a7b"
      }
     },
     {
@@ -3939,16 +3944,16 @@
       "url": "/aura/geometry/grafica/a064/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a064/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a064/imagem.png",
-      "bytes": 49576,
-      "sha256": "fe32557f0305ce4a6680b65adbb610f7b1f9937048278599a11a29516b960d31"
+      "bytes": 52345,
+      "sha256": "427e45a1281dd975a985f72fd51d8df4a8fd7ffa1a38b70becd30d253ea1bb7f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a064/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a064/imagem.png",
-      "bytes": 2990600,
-      "sha256": "8b9ee95ddb13e43c09b72a2b1cc6864658f4014fbd86d552cf4c8892215bf455"
+      "bytes": 1617054,
+      "sha256": "85cd9804bd828ca2cda252191434c7c69ddd82764c5c56b616a7b8c84dc11b94"
      }
     },
     {
@@ -3964,16 +3969,16 @@
       "url": "/aura/geometry/grafica/a065/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a065/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a065/imagem.png",
-      "bytes": 53262,
-      "sha256": "4148029bee136f3491cfcf2a534bb98a34446f6106a42f5a01a9cc877514b657"
+      "bytes": 58757,
+      "sha256": "997841da1135c3e5a8c6de1460ed0d3b2bb69db720423fdff76612f98a610a46"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a065/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a065/imagem.png",
-      "bytes": 2745527,
-      "sha256": "9149f0cdc0ae4efc749d928e90b7a72e7dc34e057704bcddc7c30fa84eaaa45f"
+      "bytes": 2230762,
+      "sha256": "d00387443444310041ec8e40c981dc00ae4014b6a865d9b1610292bbd693479c"
      }
     },
     {
@@ -3989,16 +3994,16 @@
       "url": "/aura/geometry/grafica/a066/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a066/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a066/imagem.png",
-      "bytes": 58206,
-      "sha256": "3e6bc5a987331738f309a17f73d8ddceb0bcb8ca854c44484afb785f6b482e35"
+      "bytes": 63277,
+      "sha256": "ea7bfa8cfc181239e0efe942cd11338a32d2d1873474d8ff1e1d9dc296ceafe5"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a066/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a066/imagem.png",
-      "bytes": 2476506,
-      "sha256": "e1e1a6ec027785cede1901afeb86d85df2c09accb59d40d22bce5f1a39f887bb"
+      "bytes": 2033397,
+      "sha256": "2b866358b75ec6fa531581a4cebd178dbb2158405c7859037fb7e80980d17f95"
      }
     },
     {
@@ -4014,16 +4019,16 @@
       "url": "/aura/geometry/grafica/a067/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a067/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a067/imagem.png",
-      "bytes": 78215,
-      "sha256": "446078d039925c627d8ac7888b3149869afaa855f8d021aff48943db83573003"
+      "bytes": 88784,
+      "sha256": "f8f827cade17bf5bd96cb41035ce8b113d729729d64aa1469bf6d25a4de1b49d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a067/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a067/imagem.png",
-      "bytes": 3181945,
-      "sha256": "8042859ce09b4665be8adf464d4087e71ef30a9113325286491a6c80f3347b7d"
+      "bytes": 2609895,
+      "sha256": "a33d02f4363de2f3bbdd80d76e2cc20fb02efde79e001acdbd77ea5eeb85b889"
      }
     },
     {
@@ -4039,16 +4044,16 @@
       "url": "/aura/geometry/grafica/a068/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a068/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a068/imagem.png",
-      "bytes": 31657,
-      "sha256": "12581ff0ccff783e908bd05318adc3e1c74911b9b30ea7691734fed71a85fa13"
+      "bytes": 33945,
+      "sha256": "d26a909def58480032b102421879e94bb68d3c50840cbdaa8007f6c64de016a0"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a068/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a068/imagem.png",
-      "bytes": 1816582,
-      "sha256": "a63f59795abd5d2e4da49a187302afa8452529f99893db31d5528c191e2cf02f"
+      "bytes": 1178330,
+      "sha256": "007f0340c92b5da4963636b657d736204a0848ddb036de3688f13d563bc256d4"
      }
     },
     {
@@ -4064,16 +4069,16 @@
       "url": "/aura/geometry/grafica/a069/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a069/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a069/imagem.png",
-      "bytes": 33415,
-      "sha256": "bb2a2db4819edaaa87b73e3921fa6f96ee050f83367b5be0828777f43e91a856"
+      "bytes": 34614,
+      "sha256": "30f59fa8d0a755a6e1d8fcdec8f7c67283285d2fe3b5574b82b027ab5f2d5e0f"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a069/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a069/imagem.png",
-      "bytes": 2497552,
-      "sha256": "27c42b0b5ee19e414dc6de39399f75210b47bce1ed2d6c20845938e98e604892"
+      "bytes": 1042773,
+      "sha256": "1b5b1020c6609687cacc01f197c42bb7ccb9f970b83ca935f2b85f1ceef5fd7e"
      }
     },
     {
@@ -4089,16 +4094,16 @@
       "url": "/aura/geometry/grafica/a070/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a070/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a070/imagem.png",
-      "bytes": 55235,
-      "sha256": "0cf90f85e6139778c47f536fcc5f5de85ac63c00efb633d39eb7b72f94caad0e"
+      "bytes": 53427,
+      "sha256": "44267dca22cefef3fed427f1e8bbb48020b8c8f704d06f083da3323a9c4aac2b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a070/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a070/imagem.png",
-      "bytes": 2736255,
-      "sha256": "81958b9fb4b8c9d0d933cf4b660c9cac964869cb251a0bbc66ef1a5d262bbaec"
+      "bytes": 2046287,
+      "sha256": "08695db096c50407d9a507e4583b256c50ef28207b2899719328ec3e6490dbfc"
      }
     },
     {
@@ -4114,16 +4119,16 @@
       "url": "/aura/geometry/grafica/a071/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a071/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a071/imagem.png",
-      "bytes": 46454,
-      "sha256": "90eca22c3fe5959661bc8170d79c48ffed7a4bd493076465aff32f3facf9fbc0"
+      "bytes": 50171,
+      "sha256": "bf796656d7783a3554e727f435d2fbcc0a8f1781d196bb95f6bb6869b6ad52dd"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a071/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a071/imagem.png",
-      "bytes": 2693794,
-      "sha256": "501bda8c74445634fcb67cbda1f61ac11e08d6e06d0391363285dcf8599a5662"
+      "bytes": 2035494,
+      "sha256": "e4f2547d68fe45fae44bcdac1bafdce8d3648de19779bd4e3428a89959c354fc"
      }
     },
     {
@@ -4139,16 +4144,16 @@
       "url": "/aura/geometry/grafica/a072/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a072/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a072/imagem.png",
-      "bytes": 72679,
-      "sha256": "6ed3a27ae1f8d1dd2f93b50c4b98427213f26abc72c06b3837d4286511db073d"
+      "bytes": 78409,
+      "sha256": "c1e8aca973570607df047b526d69dc6dbe5c88329569c931647bb8b6167f3416"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a072/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a072/imagem.png",
-      "bytes": 2886477,
-      "sha256": "041b05209d796e69cba928e47c9896848d7c522d20dc621f7e7c40f912808db1"
+      "bytes": 2981743,
+      "sha256": "929bc162fe5e2aae4fcb5ebaba7879d28ed5f5e0642ee67f19d7d4bf6cce903c"
      }
     },
     {
@@ -4164,16 +4169,16 @@
       "url": "/aura/geometry/grafica/a073/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a073/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a073/imagem.png",
-      "bytes": 36824,
-      "sha256": "387b77695e8a0a7988062104dea8c9e82d164f584b567a464b616ca6b08ba95e"
+      "bytes": 39745,
+      "sha256": "6d637ff738ba7db5a07436958b00edd28ca206aac3fa5c55403777901d00c89c"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a073/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a073/imagem.png",
-      "bytes": 2443136,
-      "sha256": "f5b60ef1fa4e4a40a34a59ccddadef90106d8a10c59f00e8171c773ee092fd15"
+      "bytes": 1170798,
+      "sha256": "e25c599abc05fe74b1456a95097fdf951fbe8b68248bab756feffc635797fc4c"
      }
     },
     {
@@ -4189,16 +4194,16 @@
       "url": "/aura/geometry/grafica/a074/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a074/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a074/imagem.png",
-      "bytes": 40615,
-      "sha256": "8d44a87226d81f73ba9c9fd628fc85ed4edba0f2f67e04ceb6671ad9e68f2a0c"
+      "bytes": 44835,
+      "sha256": "e31dedf333e00a8f3250f9e0f390cfa728eb92c47f5532b45923fa9ab550f6d4"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a074/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a074/imagem.png",
-      "bytes": 2451185,
-      "sha256": "d770ee8344c1c1551b62e0340c0defe7aa24442af8f8e0cebb89e6a41c28251c"
+      "bytes": 1451158,
+      "sha256": "b988a03a9d12921669ddfed1dbce6b9cd84d0836c22fa3c942cf79f4d29b1636"
      }
     },
     {
@@ -4214,16 +4219,16 @@
       "url": "/aura/geometry/grafica/a075/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a075/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a075/imagem.png",
-      "bytes": 69459,
-      "sha256": "f2ecc8ef550a6b5f67b5b21d54f70e4ef4a8f482fde4d233b4c8c34550d2cb25"
+      "bytes": 76898,
+      "sha256": "fc821eae93121a2789c9f0fdd9bcd16a03f946d0d1714ab6eee132a835e93ea5"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a075/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a075/imagem.png",
-      "bytes": 3035450,
-      "sha256": "6d8a83ca0e53311c6b4c3a56c2a1a55178a02438cd037b00fd4e2adb84dc1e4c"
+      "bytes": 2480601,
+      "sha256": "099b19f86e24f41d5a5c540f01d336090ea4b8ae2268d255f371bacfdb67e36e"
      }
     },
     {
@@ -4239,16 +4244,16 @@
       "url": "/aura/geometry/grafica/a076/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a076/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a076/imagem.png",
-      "bytes": 35571,
-      "sha256": "96821a10a6206ea5b23d4c8bbd1af4f7744e36d2a3a13410414285c22de7b65b"
+      "bytes": 39104,
+      "sha256": "3c89ee26b7042a8fc7aa3c0051f6f42ed16b7a1fb41c59ed400560779317da8d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a076/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a076/imagem.png",
-      "bytes": 2147178,
-      "sha256": "c353a42960afa3f2b9dc66a8bcfbdec827b717f358b8b8f8513b03bc5da108d2"
+      "bytes": 1354013,
+      "sha256": "85c6556ec76a146d877d5aeaf9b00129778adca6f4fb9b24c763b04ff0314429"
      }
     },
     {
@@ -4264,16 +4269,16 @@
       "url": "/aura/geometry/grafica/a077/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a077/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a077/imagem.png",
-      "bytes": 61091,
-      "sha256": "ed860f1f56bf86d10f27ba9ddc87036a03c6e57e518f7aca9952f2382e401ab2"
+      "bytes": 67622,
+      "sha256": "52d6bad5788dd7edd71c52a43bc63152e815cabb31d7cb419f348699b55a145a"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a077/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a077/imagem.png",
-      "bytes": 2996332,
-      "sha256": "297ebee4aee3f0a99492aadd6470f70cd66e1ab2ff93479140029642ff0366c5"
+      "bytes": 1884682,
+      "sha256": "7f2c67a161190c253a277e6f8d3b7db15f1197b5f723fcb8420ce149aa38d689"
      }
     },
     {
@@ -4289,16 +4294,16 @@
       "url": "/aura/geometry/grafica/a078/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a078/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a078/imagem.png",
-      "bytes": 28850,
-      "sha256": "b13bb0cddbed8f8ceb948d1bdbd28de6ac681d9a7dcb7342e39092ce8eed9ba4"
+      "bytes": 31128,
+      "sha256": "fe152fbf11c927407afc74e80350ec6e7c9f855f74bf180290d5518aff47c81c"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a078/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a078/imagem.png",
-      "bytes": 1722514,
-      "sha256": "640b289f38f3901b7c73f88d9ecfc6e28468ffea162892b2ff13190788ef9d02"
+      "bytes": 1057678,
+      "sha256": "b4c18ef3a5859c0a8af1295aa96bc897e4ed701778de22e127bdd37dae7db307"
      }
     },
     {
@@ -4314,16 +4319,16 @@
       "url": "/aura/geometry/grafica/a079/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a079/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a079/imagem.png",
-      "bytes": 54216,
-      "sha256": "4455191af10465ed290ae7e302e4650a312a83cb1db29b009731b21dc677ae84"
+      "bytes": 60292,
+      "sha256": "4cd472cc17651e85d1af1e733914b1b4579798545cbd31fe01e79b244c325ec2"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a079/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a079/imagem.png",
-      "bytes": 2732330,
-      "sha256": "447bf0244e866f9833c7130631616093303daf68e565beaee4ec7b4ae4e531a1"
+      "bytes": 1640660,
+      "sha256": "836b3507de5bd05d011fb4b30b3003255e0e3f8dd1ec634acb3e2f15642a9f5b"
      }
     },
     {
@@ -4339,16 +4344,16 @@
       "url": "/aura/geometry/grafica/a080/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a080/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a080/imagem.png",
-      "bytes": 21469,
-      "sha256": "94c7478ae75a759dfecbda54d74d68c1ac84e25f8dd162f845427259ee538ab6"
+      "bytes": 20260,
+      "sha256": "d28e25c94aa84639fe346a2dbc3abb80b0f6cb1ebd4a35bef62221f9e77c9e62"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a080/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a080/imagem.png",
-      "bytes": 1862203,
-      "sha256": "e810205a1ec4e11c80c1fe98e5b716f4c8cc9ebc4ac6e15c1d99d63d8a8d6651"
+      "bytes": 1230229,
+      "sha256": "32a48ad45b33f15f4c94be88612a0c5a2b30ccc856da4cfce759a8ffadeeae35"
      }
     },
     {
@@ -4364,16 +4369,16 @@
       "url": "/aura/geometry/grafica/a081/imagem.png",
       "previewUrl": "/aura/geometry/grafica/a081/imagem.png",
       "cardUrl": "/aura/geometry/grafica/a081/imagem.png",
-      "bytes": 41267,
-      "sha256": "98218262e8a75a97a56f351a6244e12274d467c712cb1037f16c8e2b942540c4"
+      "bytes": 44889,
+      "sha256": "386c39ff3432695d10ad55e2f16575bd8f9a48b444f4165341e4f931b7c3b4f2"
      },
      "animated": {
       "url": "/aura/geometry/grafica/a081/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/a081/imagem.png",
-      "bytes": 2818151,
-      "sha256": "6d20343d2d7cf9badfebe3d05bed98b474998ba85954964b60d9cd238fedb8e3"
+      "bytes": 2726815,
+      "sha256": "3852d2e1148a7894b8888102b4b85244d3efa48337e374a2c23d4397d593dcf3"
      }
     },
     {
@@ -4389,16 +4394,16 @@
       "url": "/aura/geometry/grafica/p001/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p001/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p001/imagem.png",
-      "bytes": 39058,
-      "sha256": "0149ff289477d38bcee73e1d7c6d69e431cf3d3b66bde6b0de730e0d36a5fba5"
+      "bytes": 40888,
+      "sha256": "a453a1291cb25ae3c9a5c07ea3e83c4bd47521d857470ab608e4409e9df1b21c"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p001/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p001/imagem.png",
-      "bytes": 2055525,
-      "sha256": "bc27217d05075f88a22565999c9726d1d0601aa5ccfd052335f52b66e94db7ff"
+      "bytes": 2125463,
+      "sha256": "26dd7097952fcf241c94c69e5ff4f37e359be788e2c191619bcc2172db13e008"
      }
     },
     {
@@ -4414,16 +4419,16 @@
       "url": "/aura/geometry/grafica/p002/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p002/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p002/imagem.png",
-      "bytes": 28788,
-      "sha256": "55811ce8d7af16a2d5cfb386f4a11616ef1411b29b5c257e8a5ed0943610f186"
+      "bytes": 31412,
+      "sha256": "5a395773ad5945fefeda6a1e8f58b91ef0b405243f294e26eb9cfb4d8a4e7cc4"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p002/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p002/imagem.png",
-      "bytes": 1663725,
-      "sha256": "00b1c60396f2608864c7c309eca4666601ebbd59756229035ebe3ce9d367e3fe"
+      "bytes": 1098123,
+      "sha256": "d09824b13e95ad1c80436d8da9b396edf7d0406b004560df595402d9ac0bcd77"
      }
     },
     {
@@ -4439,16 +4444,16 @@
       "url": "/aura/geometry/grafica/p003/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p003/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p003/imagem.png",
-      "bytes": 30007,
-      "sha256": "5ba2de5257b948547787e04c1bba2ff72f691d16521406b74246aa519349e1aa"
+      "bytes": 30920,
+      "sha256": "3e51e5ae6eb57f40fde34244d1dd81692f6b1ae8f3fecc67862ee09d5a8b8fd6"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p003/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p003/imagem.png",
-      "bytes": 1715864,
-      "sha256": "89c8c42904421d11abe52f59dd7af0c995d39c73dee3586e04d69a999800f08a"
+      "bytes": 1504418,
+      "sha256": "f390c7d97ca62d2dd3b4bf429e0cbd4fed7c32891a59b7505dcb2670fc3fa9e3"
      }
     },
     {
@@ -4464,16 +4469,16 @@
       "url": "/aura/geometry/grafica/p004/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p004/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p004/imagem.png",
-      "bytes": 15795,
-      "sha256": "b4e54432d8858f9cfb50b2d70d0ef22045df78a78a5aa0ecd809d6b9353d3d57"
+      "bytes": 16235,
+      "sha256": "aa59581efa42235a45f07dc3a67ffb44d609205fc624d3c4d96784e911f75d42"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p004/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p004/imagem.png",
-      "bytes": 962484,
-      "sha256": "53820b8da4626874247e8e5c98553e8c38536d145bfea907a6f2361e6c824199"
+      "bytes": 1061141,
+      "sha256": "73c0737ffa1f603cc21ffce939a51169f552decf36217f323c65a0a519303eb6"
      }
     },
     {
@@ -4489,16 +4494,16 @@
       "url": "/aura/geometry/grafica/p005/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p005/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p005/imagem.png",
-      "bytes": 19931,
-      "sha256": "8b97d7de22fe3ccd24aeb0faf9e4768e6ad1d54e8c201abea7f8525942fafa5a"
+      "bytes": 21257,
+      "sha256": "12a8e955a3c0123a5f5774d12f0370d89e38fae6d59a464ca3d9a59c07c2d2d8"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p005/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p005/imagem.png",
-      "bytes": 884872,
-      "sha256": "b780e4b0501bcbb33ea423f5b13d783536d93e3414e973c9499c33988c74160e"
+      "bytes": 696799,
+      "sha256": "339c6602e97ba458467ae412e57d02c99ee9c2b4c4938c4b9f70668b509ae730"
      }
     },
     {
@@ -4514,16 +4519,16 @@
       "url": "/aura/geometry/grafica/p006/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p006/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p006/imagem.png",
-      "bytes": 14910,
-      "sha256": "c41b5eed84f9f1fde399b748c6e2debed966c25d6edb28b1ed9fbdb6a6b82b0a"
+      "bytes": 16131,
+      "sha256": "d53e262099e17f130b085d4f35507193d7fa79c5bf1c51195340ec87c6045a0b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p006/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p006/imagem.png",
-      "bytes": 844205,
-      "sha256": "2f07a9b1a2c6832623118cb6df552774473487bd670df368515bd7607ea0b1d4"
+      "bytes": 592370,
+      "sha256": "2f5e7b8b617781a27e96cd3a2fa99e9b26f812958bccdbaee0a6d06425e507a2"
      }
     },
     {
@@ -4539,16 +4544,16 @@
       "url": "/aura/geometry/grafica/p007/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p007/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p007/imagem.png",
-      "bytes": 19421,
-      "sha256": "998688b2ccb06b61d3e1999cfbbc534a18096e897004209bacf7e13284fb7028"
+      "bytes": 21328,
+      "sha256": "2bc9251a05565ba808e3b838e20e042b1f0f9d04f7dd1fe9498d9dc228dd556d"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p007/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p007/imagem.png",
-      "bytes": 1012011,
-      "sha256": "657642e507fde6c7cdaa1154ff452e70e66ad2db1742e97ffb9f75e788e69e27"
+      "bytes": 974289,
+      "sha256": "f92cb37bbb5e8437a2d8b5e06014238bbc02ac35f1970c8d7b18f03a0d883f6b"
      }
     },
     {
@@ -4564,16 +4569,16 @@
       "url": "/aura/geometry/grafica/p008/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p008/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p008/imagem.png",
-      "bytes": 14840,
-      "sha256": "3fefbf7ea070d08fec3526696cf871b16f07ba268bd971d6e1cf630ad12873ce"
+      "bytes": 16240,
+      "sha256": "21122d095a4f08e2b97a57b2998f0237bf071a0c309381c817d5cede91d07688"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p008/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p008/imagem.png",
-      "bytes": 796867,
-      "sha256": "9a34e262988c42be9807dec0b75da50ceef5b80d9866f3ac2a9c972d14bd3283"
+      "bytes": 847765,
+      "sha256": "41f53a8924198dd87fb9576ef2234c28c78422048b89261f48570ca722afadad"
      }
     },
     {
@@ -4589,16 +4594,16 @@
       "url": "/aura/geometry/grafica/p009/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p009/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p009/imagem.png",
-      "bytes": 15660,
-      "sha256": "651df42606ae1abc5dc40b0e133df79cfc232def13bbb1fcfd87143bc059962a"
+      "bytes": 12531,
+      "sha256": "c2d92905dcb3db152a1cb1bf6af287cc678cc1edcab7d7fec6c21859beee7318"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p009/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p009/imagem.png",
-      "bytes": 860877,
-      "sha256": "1d456d630464385bed755fcbf7f4b119b91906998a89a3e9fc892b90c56043eb"
+      "bytes": 378381,
+      "sha256": "0d74a1b1c86cfb4eef71be711cb96dff23cd0504e19f8f88ea5f990a2e3a673b"
      }
     },
     {
@@ -4614,16 +4619,16 @@
       "url": "/aura/geometry/grafica/p010/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p010/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p010/imagem.png",
-      "bytes": 32477,
-      "sha256": "e2f236b875d0625baf6269bc9ce93d18cd6eae310b9444e7a9365dae4e8a4899"
+      "bytes": 35445,
+      "sha256": "ef2876202b97e94b524d243c96eda2d73df38fc898484bf13b69a755803e0ae2"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p010/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p010/imagem.png",
-      "bytes": 1545600,
-      "sha256": "3675ea2d5d4a289e83af88ab3e47bfc5f082ac7ba4bebc3c60cdbf5fd24f42c6"
+      "bytes": 1196057,
+      "sha256": "a755ae1e40d1b1a694aec4870a84a17f04e2febe95277e3cb156a3b3ee6e11e2"
      }
     },
     {
@@ -4639,16 +4644,16 @@
       "url": "/aura/geometry/grafica/p011/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p011/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p011/imagem.png",
-      "bytes": 41980,
-      "sha256": "13eb708a0bc96994fddfdf24d049dcb5d70838d22e3edad2a628e3f05edd42a1"
+      "bytes": 45829,
+      "sha256": "a9f7d12d742cbda6e742b5ebc402e000af063f5bfd984bd73e1dddcf14ea91e8"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p011/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p011/imagem.png",
-      "bytes": 2143359,
-      "sha256": "c00135a77edbf0ebc71819906762a2be9544b888fa677fdb6d75bad907f35c09"
+      "bytes": 2146932,
+      "sha256": "92f2f1ee2e2c44022cf9d265c082de5333aed2c849acbbde6b0ae33b790c5eaf"
      }
     },
     {
@@ -4664,16 +4669,16 @@
       "url": "/aura/geometry/grafica/p012/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p012/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p012/imagem.png",
-      "bytes": 38528,
-      "sha256": "abf95edb7bcab5875a23593b7203a0c855561b1302e9dc4942152e9f35368d8a"
+      "bytes": 30637,
+      "sha256": "941d15a863efcc785c0b25e1f786526c2236cc6d46dfcab8abdaf7d25c8c2a4a"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p012/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p012/imagem.png",
-      "bytes": 1787328,
-      "sha256": "57568d28bdd2d7b53789bd6ebb46f6dbf85718811d4ad8e65ec9e4f4ee36b3ed"
+      "bytes": 856491,
+      "sha256": "8a59a253b968544c9ba72aa8d977bb1e403ad9f727667d496e11b2e064e07a9d"
      }
     },
     {
@@ -4689,16 +4694,16 @@
       "url": "/aura/geometry/grafica/p013/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p013/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p013/imagem.png",
-      "bytes": 30584,
-      "sha256": "e525a818e353a09318c9fe220b270b93bd9ea4e3b361d9e58cc9de8691883cdd"
+      "bytes": 31472,
+      "sha256": "641b701ac77abd377a9be288f110bbfb706ee274b3cc4d1d9d1e8e6830d63d12"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p013/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p013/imagem.png",
-      "bytes": 1620177,
-      "sha256": "52ffb854fac1d614087573d4cffa38140a566594de7a0b9e3b864762b2c22a2e"
+      "bytes": 1178307,
+      "sha256": "2e4c6fb7219b95f0cfd704fe023cbcb5c1b89ada7635c4b4d22ea75fc1d12bbf"
      }
     },
     {
@@ -4714,16 +4719,16 @@
       "url": "/aura/geometry/grafica/p014/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p014/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p014/imagem.png",
-      "bytes": 29906,
-      "sha256": "e838aa4bdbf16588ddbe63153add8adace20237029d536eca009e1e021adbc2f"
+      "bytes": 29964,
+      "sha256": "d77f4934642060675d82d1e10c59c9057c56b0d991e0b276674fe53de3c61597"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p014/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p014/imagem.png",
-      "bytes": 1594685,
-      "sha256": "5ca5e710813a822c52efff9905df59a94c499ddfda412af451213fbd3109f7c6"
+      "bytes": 974819,
+      "sha256": "459d51afe1f0408d73a3ffdf0bf23e2aefea790c8ba03acab56a457d0a15d664"
      }
     },
     {
@@ -4739,16 +4744,16 @@
       "url": "/aura/geometry/grafica/p015/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p015/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p015/imagem.png",
-      "bytes": 63041,
-      "sha256": "5d6f09942abb0696641ceb962871eefea6cae6f20f7a2d24151dd7c33aa21a7e"
+      "bytes": 68027,
+      "sha256": "31940ddeb0dbff7835dc6f14809a6fa7a51e00113587142198f84a73a9cc72db"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p015/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p015/imagem.png",
-      "bytes": 2286718,
-      "sha256": "47cbda90a3f9eadc698777d3c7d917f07055970a33406982b2e9af992a6bc71e"
+      "bytes": 2502936,
+      "sha256": "af29401d5549034cd3beb209d608fa7bf0f7acc39178e134a466434a39fc186c"
      }
     },
     {
@@ -4764,16 +4769,16 @@
       "url": "/aura/geometry/grafica/p016/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p016/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p016/imagem.png",
-      "bytes": 13968,
-      "sha256": "87610db74be258ac4aae7765bc9734a2c1509cf306481a99b00b349ee795fecf"
+      "bytes": 15042,
+      "sha256": "66b884085e9a2d1af472fdf0dd91c7678cb2b27bca6bee9c0106429e5c1a397b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p016/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p016/imagem.png",
-      "bytes": 705174,
-      "sha256": "f8a3cee7c56c0b4e151d78394bf66e98a8cf5279d9c38e9d17edb0d07cd62ff0"
+      "bytes": 630759,
+      "sha256": "eca35b731e61d371173a2e728b0433c7ab05974e3511c2452cb8cbaac2cc2062"
      }
     },
     {
@@ -4789,16 +4794,16 @@
       "url": "/aura/geometry/grafica/p017/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p017/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p017/imagem.png",
-      "bytes": 22139,
-      "sha256": "4c9e0f4a2b21599e3dfbb3e1347475a75464fae3c97bc46d2c567563aef85f25"
+      "bytes": 23851,
+      "sha256": "47577d1ea6fada773a02a618530e2e5a7d7e05e3b7a84d6865e267cba97979e9"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p017/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p017/imagem.png",
-      "bytes": 1096478,
-      "sha256": "255c7147b643cf8ff3f3b52bf9b41fd545e1ce267c44a65ad7a2f29140e8de78"
+      "bytes": 1078391,
+      "sha256": "279c1be057096ba09bd5c4013177e10cc4dd80bb9e7ddc8dfc764b2606a24b31"
      }
     },
     {
@@ -4814,16 +4819,16 @@
       "url": "/aura/geometry/grafica/p018/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p018/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p018/imagem.png",
-      "bytes": 12466,
-      "sha256": "666d001e80863ce30a2b83964ddaeb6856e0e5cd1492376c65674b9a9deeede6"
+      "bytes": 13020,
+      "sha256": "1d435f93e3b59b69a01c6cfe61e1752c8bc85a76987bf3d889b5447881485e0b"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p018/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p018/imagem.png",
-      "bytes": 730665,
-      "sha256": "c6ba54fbe6c09c5db8c40aaf067eb28f546b3eecdfc63ef6c967b80cd4823fd7"
+      "bytes": 444600,
+      "sha256": "ac71048339ec1f4e655a6346de81b13550912b157a75755431a5ca930aa15319"
      }
     },
     {
@@ -4839,16 +4844,16 @@
       "url": "/aura/geometry/grafica/p019/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p019/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p019/imagem.png",
-      "bytes": 7915,
-      "sha256": "bff1e3a9e4bb1b6eb42637ed5f405c225202d8613e754de96d2f982a2c88ea3b"
+      "bytes": 7284,
+      "sha256": "d79f7c271bed282ec658b71346eb70c0cc9c080c72c86b1217034549ef00078e"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p019/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p019/imagem.png",
-      "bytes": 703276,
-      "sha256": "9ad6f8ad9e6a85d392b3e731de4c30d28946ad06c3a0d09ff49dc3fd68868e4a"
+      "bytes": 449503,
+      "sha256": "0105408b4005a30d9d98806c36e08583fbb830cc323d83fb8beade89269d0cb2"
      }
     },
     {
@@ -4864,16 +4869,16 @@
       "url": "/aura/geometry/grafica/p020/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p020/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p020/imagem.png",
-      "bytes": 29173,
-      "sha256": "9d882bbef643968f794397e69d7e0dfeede1a86d021d671a358632f99eee0b89"
+      "bytes": 30852,
+      "sha256": "73a157ebd44cfd733863ccc847b084a16e4bc64c59d0734ba81f57627051f4b1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p020/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p020/imagem.png",
-      "bytes": 1094679,
-      "sha256": "b48074a89f7b6371a41d0a9be6300257a736251bd79f9592dad2c4cb44dcbe24"
+      "bytes": 986600,
+      "sha256": "9bfb7d920fd064743a6d41718f128288337950647cbb0c68bf12b6639d5e5154"
      }
     },
     {
@@ -4889,16 +4894,16 @@
       "url": "/aura/geometry/grafica/p021/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p021/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p021/imagem.png",
-      "bytes": 16869,
-      "sha256": "0bb9379ca0d56744a26b7b9a3d71fb59c3736006e8f86bd8571ff102e66b9fe6"
+      "bytes": 17231,
+      "sha256": "312c065d735eb7ddd9e821298e49d0be81bcd5dcad482caa681a9296c90a3cb1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p021/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p021/imagem.png",
-      "bytes": 785551,
-      "sha256": "5241ffebe6d3b6cce06136300ab18f4bf44b3c9afc6c0d0bf73e4b4ec6b31f25"
+      "bytes": 542137,
+      "sha256": "cf03d10579f9da3329cea3d53c0f1acd34f5f00240790f88491dbebd348839b6"
      }
     },
     {
@@ -4914,16 +4919,16 @@
       "url": "/aura/geometry/grafica/p022/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p022/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p022/imagem.png",
-      "bytes": 42194,
-      "sha256": "628c0fa9ef15ec41837bbe91771626e42747839dcf53ea21a26bf6d3c2a7b220"
+      "bytes": 47476,
+      "sha256": "3c723cd453e372627ec8b45b942a6ef66a7b7958093dfb563860e866444c0943"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p022/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p022/imagem.png",
-      "bytes": 2245443,
-      "sha256": "e8bab6d68a7cd4d3e3af1258b4e13a95f6f4bdfbde7b8f5857d9616503333514"
+      "bytes": 2244703,
+      "sha256": "cda23176cab2fa0ae3e5642ea0aaa85a80d0f77447bf1597027a3fe074bbbc01"
      }
     },
     {
@@ -4939,16 +4944,16 @@
       "url": "/aura/geometry/grafica/p023/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p023/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p023/imagem.png",
-      "bytes": 16090,
-      "sha256": "beb98c3f21c652f2ba451a6ef4992efb8828ed4e00826278e750fe1ef19aceb2"
+      "bytes": 15680,
+      "sha256": "84e3b1cdd732a2ae222271e5790ea6c798e1f7332e1478cf368fb806811057b6"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p023/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p023/imagem.png",
-      "bytes": 1261232,
-      "sha256": "62ff85eab0eb44f8ea087a0fd0df2aa1b07288a418bee97166d0c43143c11237"
+      "bytes": 819265,
+      "sha256": "f28b6186c87f383da08a23391f942ad863f615509e8cf44a50fcb8c9b83a1093"
      }
     },
     {
@@ -4964,16 +4969,16 @@
       "url": "/aura/geometry/grafica/p024/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p024/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p024/imagem.png",
-      "bytes": 43201,
-      "sha256": "6d27053fd2ff86dd96bb7f50f5641d631185a658353f8fe470968501b5cabe26"
+      "bytes": 34891,
+      "sha256": "54ad548202719e280d88ef2358e9b1e74a85af2413685d3ae6083185e4af4d07"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p024/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p024/imagem.png",
-      "bytes": 1681199,
-      "sha256": "d8814f84bac531c9e091e5296ea1879fa14cd70eccc04ac9d23417e4832b635d"
+      "bytes": 937701,
+      "sha256": "224a5c7b2013bb35b205d22463be193c00b79bf494f978e00b8f7519b556029c"
      }
     },
     {
@@ -4989,16 +4994,16 @@
       "url": "/aura/geometry/grafica/p025/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p025/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p025/imagem.png",
-      "bytes": 50170,
-      "sha256": "4b1333648978d9ad8e369839180532b0ce0e0366d6ff3539a02aa25b32f0c981"
+      "bytes": 53777,
+      "sha256": "03cebacd25d8cfdc3a3547e024393f47f7243424cf32afcda1cd00033694a008"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p025/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p025/imagem.png",
-      "bytes": 1895497,
-      "sha256": "3a9dea6ee5bf0c8260eb467337b62fc685762b6debe868f8c4fb37ac6799d591"
+      "bytes": 1572133,
+      "sha256": "a0493eb273d96498397441f9e18368edfde9e63e4db4f26a67f9c624bfd5a5d5"
      }
     },
     {
@@ -5014,16 +5019,16 @@
       "url": "/aura/geometry/grafica/p026/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p026/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p026/imagem.png",
-      "bytes": 38409,
-      "sha256": "46424aecb37c2d7f947f35f5a3fac9c6314c253ab6ccd2ffcbe6f40bc7c82e9b"
+      "bytes": 41863,
+      "sha256": "575e556ad0351711a2ec3a299c151f938a98393202006822ed2317a032a788ae"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p026/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p026/imagem.png",
-      "bytes": 1868634,
-      "sha256": "41a962ced01165d22b55968f463a47af2f15d3d11d1b31fa52782c9b83fefc99"
+      "bytes": 1758408,
+      "sha256": "2bf45726b7a6789b6d7e6a252c71907334f5cef7c5f5cefcc9b68c416c1d4662"
      }
     },
     {
@@ -5039,16 +5044,16 @@
       "url": "/aura/geometry/grafica/p027/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p027/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p027/imagem.png",
-      "bytes": 51807,
-      "sha256": "37319e457786f97e003d76f59edff1556560e9a57da083d4c5a5d310b3b8808f"
+      "bytes": 52768,
+      "sha256": "49aa183fe5ce628205332b1cf6a6ed98b92270927729a257b6af6973d6bba1e4"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p027/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p027/imagem.png",
-      "bytes": 2308741,
-      "sha256": "fd4ab3780fc7b49fd3fb0564affc971d1edf32303cd309d715e47d8b4293be7f"
+      "bytes": 1516497,
+      "sha256": "3d492da4258dcc921ae1232cfe4d6c5ea86544136df3b8732facb85d47c343b7"
      }
     },
     {
@@ -5064,16 +5069,16 @@
       "url": "/aura/geometry/grafica/p028/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p028/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p028/imagem.png",
-      "bytes": 18059,
-      "sha256": "9cf77b83eaf471272b3e463e730a74559c60197e68a1de73c39fe221297c93ac"
+      "bytes": 19706,
+      "sha256": "c0ff432e2bea8cfe2a1cc0efb40b212bac10a24904f647f0bc3f4fdc3c55326a"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p028/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p028/imagem.png",
-      "bytes": 859774,
-      "sha256": "ee1cc5f2d457d227ce081df76c513c646d08a476db2a3840e90cfef9e55da60b"
+      "bytes": 593512,
+      "sha256": "2f7e788ef60de034d12d7b905433721dee036fb2e146b4d9ec93adee42f014e1"
      }
     },
     {
@@ -5089,16 +5094,16 @@
       "url": "/aura/geometry/grafica/p029/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p029/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p029/imagem.png",
-      "bytes": 21841,
-      "sha256": "0df64ff4e3f58f867bd0e652881e7c81497a392f3b7de8aff53e1514954cc429"
+      "bytes": 23152,
+      "sha256": "97d78cbdbbd32b00ceb675322ef0c47578bd9bb42533bdb3e227806a87e1f9ca"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p029/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p029/imagem.png",
-      "bytes": 991330,
-      "sha256": "035739520e3322e884916ac78be5d4fac50eced675d5484dd2a2798dd3bf7de5"
+      "bytes": 806432,
+      "sha256": "98205b936a97101e62e2dbf4a9e1c5dc28f88fa1b0130df6ec0854ffa44948a1"
      }
     },
     {
@@ -5114,16 +5119,16 @@
       "url": "/aura/geometry/grafica/p030/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p030/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p030/imagem.png",
-      "bytes": 15432,
-      "sha256": "1a01e4f0bde8581c91576d6c54fe107d0ef5840b8f5a0c928f3450520ef47eb7"
+      "bytes": 16733,
+      "sha256": "c616cf0243c3c2e0b6df2bf17a34803ebb7896a481876f7613e8d68c5cd8564c"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p030/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p030/imagem.png",
-      "bytes": 913669,
-      "sha256": "6ccf4fea8dba5de83368741b2a6301cc9373234ac0948809064d12a9ffdf7a87"
+      "bytes": 881704,
+      "sha256": "f1ee32934f26afdbd7ad0b912b9c7afabb83dbe7144478079b3526008eb0bb9b"
      }
     },
     {
@@ -5139,16 +5144,16 @@
       "url": "/aura/geometry/grafica/p031/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p031/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p031/imagem.png",
-      "bytes": 19550,
-      "sha256": "3405cb5bd4a6c92a539b85e469ca018443ecdfcf504a6fa1dcce6466a3012164"
+      "bytes": 21335,
+      "sha256": "767f3980dcc0dfc5ed5d79c2447ee88d1456a625107aa77fff54ab989e6eecb7"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p031/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p031/imagem.png",
-      "bytes": 1007406,
-      "sha256": "5efd2eb4f0369a69711866cfafba6a1dcd9240f949fda92ebd22505727bb0da3"
+      "bytes": 727097,
+      "sha256": "ece62e8e96610019f227104232038dccc28fa91f397271397513fd0f18dc33ce"
      }
     },
     {
@@ -5164,16 +5169,16 @@
       "url": "/aura/geometry/grafica/p032/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p032/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p032/imagem.png",
-      "bytes": 19224,
-      "sha256": "522ae6be617a0194a6c686962b6bc5341f68ea6913cf10554f4057aec5c4a8b2"
+      "bytes": 20702,
+      "sha256": "446f5807fc3c81f86ca204bbdd422f8c78d47dcc75e59cc7a7b3c967c019de7e"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p032/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p032/imagem.png",
-      "bytes": 987183,
-      "sha256": "d5bcc30819cf5997627f5d42eb8a7fb4bdd2089332e76681ab3e084f7f1110a2"
+      "bytes": 605111,
+      "sha256": "f12e0a33f14af7bb5cbe991468b434b23467b4830f2c22fa9469691e713888f7"
      }
     },
     {
@@ -5189,16 +5194,16 @@
       "url": "/aura/geometry/grafica/p033/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p033/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p033/imagem.png",
-      "bytes": 22999,
-      "sha256": "0f6fa45e7b8b86fc7b39cfb8407b9efa1891ebe1a13a2ba077461d186e2f8518"
+      "bytes": 21814,
+      "sha256": "69457666cc19060e54966599dd7fbe41b17ebe8dbdd19abed3cd7b6f08a7ba30"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p033/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p033/imagem.png",
-      "bytes": 1017213,
-      "sha256": "e572e33ec51f13bbd0bb610a9918d9fc09628e8000632721de2f1a8cb141a412"
+      "bytes": 806351,
+      "sha256": "e344cd677d0d5ba93f33e61c3ca36e9ee02e3816274a32c45d94af19d06f9bf3"
      }
     },
     {
@@ -5214,16 +5219,16 @@
       "url": "/aura/geometry/grafica/p034/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p034/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p034/imagem.png",
-      "bytes": 51876,
-      "sha256": "22c5bcb3fc71a6bd86f9a8a0cfdfb02d2d2d28a76c0a199323c39edaef0b9c27"
+      "bytes": 58313,
+      "sha256": "4006f6e81a4f064d7a40e8c0af2c7348bbf8f890209b222ee26f85c173b6abc1"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p034/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p034/imagem.png",
-      "bytes": 1947983,
-      "sha256": "f4ebf7b3bb9944ff96cfce7f6c2ee7c4bd35cc0bd80edcfa6729641718a17a1e"
+      "bytes": 1853784,
+      "sha256": "ef73a395b3d8a69d9a8815ebea185cbe9092ca6b51357d90d6c6b54093d2db62"
      }
     },
     {
@@ -5239,16 +5244,16 @@
       "url": "/aura/geometry/grafica/p035/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p035/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p035/imagem.png",
-      "bytes": 44644,
-      "sha256": "9b17a339d7e3c7f069aa2a904d8292a9b3921bcc9c84d147767f1119495311a3"
+      "bytes": 37973,
+      "sha256": "7693764e587db39023f474116892e554c4a4b987630d1e84aac19b29e8a3de30"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p035/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p035/imagem.png",
-      "bytes": 2073876,
-      "sha256": "526740261d6fa1a96ef56749638f61ee89780c95b0ddd0e1ba1166405ea9b499"
+      "bytes": 1520718,
+      "sha256": "723b62cb0445c437276448528e00af731ab4c8ab3c4656c50a848776fc6e16f0"
      }
     },
     {
@@ -5264,16 +5269,16 @@
       "url": "/aura/geometry/grafica/p036/imagem.png",
       "previewUrl": "/aura/geometry/grafica/p036/imagem.png",
       "cardUrl": "/aura/geometry/grafica/p036/imagem.png",
-      "bytes": 43061,
-      "sha256": "0b152984421ae3f15437e19784bd769a09b59210a308703fe80d449040d1dad4"
+      "bytes": 47311,
+      "sha256": "e940f18179a47ba08214849f9be1bb81a0735274dc98f462c9ae330d38a41119"
      },
      "animated": {
       "url": "/aura/geometry/grafica/p036/animacao_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/geometry/grafica/p036/imagem.png",
-      "bytes": 1832959,
-      "sha256": "b4a788e4592053b90fd3f595424584876340abc7e9131aeaa25490a067484b99"
+      "bytes": 1299397,
+      "sha256": "9a4582fb762e95a92dbce6eba161f4c679000c55e456aaeeab4d52932d84f449"
      }
     }
    ]
@@ -7824,11 +7829,11 @@
   {
    "key": "aura_animated",
    "label": "Aura (com GIF)",
-   "folder": null,
+   "folder": "/aura_com_GIF",
    "acceptedFolderNames": [
     "aura_com_GIF"
    ],
-   "found": 182,
+   "found": 187,
    "expected": 200,
    "status": "partial",
    "renderStrategy": "css-animation-over-static"
@@ -9029,11 +9034,6 @@
   },
   {
    "category": "aura_animated",
-   "id": "aura_boemio_terracota__dunas_douradas",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__dunas_douradas.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
    "id": "aura_streetwear_neon__circuitos",
    "expected": "/aura_com_GIF/aura_streetwear_neon__circuitos.mp4 (ou .gif/.webm)"
   },
@@ -9046,11 +9046,6 @@
    "category": "aura_animated",
    "id": "aura_natural_organico__floresta",
    "expected": "/aura_com_GIF/aura_natural_organico__floresta.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_boemio_terracota__deserto",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__deserto.mp4 (ou .gif/.webm)"
   },
   {
    "category": "aura_static",
@@ -9074,11 +9069,6 @@
   },
   {
    "category": "aura_animated",
-   "id": "aura_avantgarde_cromo__cromo_lilas",
-   "expected": "/aura_com_GIF/aura_avantgarde_cromo__cromo_lilas.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
    "id": "aura_streetwear_neon__diagonais",
    "expected": "/aura_com_GIF/aura_streetwear_neon__diagonais.mp4 (ou .gif/.webm)"
   },
@@ -9096,16 +9086,6 @@
    "category": "aura_animated",
    "id": "aura_natural_organico__interiores",
    "expected": "/aura_com_GIF/aura_natural_organico__interiores.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_boemio_terracota__crepusculo",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__crepusculo.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_avantgarde_cromo__fluxo_de_luz",
-   "expected": "/aura_com_GIF/aura_avantgarde_cromo__fluxo_de_luz.mp4 (ou .gif/.webm)"
   },
   {
    "category": "aura_animated",
