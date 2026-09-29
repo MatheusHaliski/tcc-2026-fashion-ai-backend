@@ -68,3 +68,15 @@ corretas, mas o ambiente ainda não consegue alcançar `api.trello.com`.
 - Comece com leitura e `--dry-run`; habilite escrita apenas após revisar o diff.
 - Revogue e gere outro token se ele for exibido em terminal compartilhado, chat,
   log, commit ou pull request.
+
+## Ambiente em nuvem do Claude Code (29/09/2026)
+
+Estado verificado: `TRELLO_API_KEY`, `TRELLO_TOKEN` e `TRELLO_BOARD_ID` ausentes, e a política de rede do ambiente
+recusa a conexão com `api.trello.com` (até o `GET`). Duas vias:
+
+1. **Conector do Trello** (recomendado): reconectar em https://claude.ai/customize/connectors e abrir uma nova
+   sessão. A escrita passa pelo conector, sem depender da rede ou das variáveis do ambiente.
+2. **Scripts**: nas configurações do ambiente, incluir `api.trello.com` nos domínios permitidos (*Network access*) e
+   cadastrar as três variáveis como segredos; depois `verificar_trello.py` e os scripts de lote em simulação.
+
+Lotes pendentes: `TRELLO_RF25_RF39_DIFF_PROPOSTO.md` (autorizado) e `TRELLO_RF40_LOTE_PROPOSTO.md` (a revisar).
