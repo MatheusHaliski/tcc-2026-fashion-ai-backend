@@ -1,0 +1,66 @@
+[
+  {
+    "id": "grafica_a034",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a034/imagem.png",
+    "gif": "/aura/geometry/grafica/a034/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a035",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a035/imagem.png",
+    "gif": "/aura/geometry/grafica/a035/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a036",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a036/imagem.png",
+    "gif": "/aura/geometry/grafica/a036/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a037",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a037/imagem.png",
+    "gif": "/aura/geometry/grafica/a037/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a038",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a038/imagem.png",
+    "gif": "/aura/geometry/grafica/a038/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a039",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a039/imagem.png",
+    "gif": "/aura/geometry/grafica/a039/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a040",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a040/imagem.png",
+    "gif": "/aura/geometry/grafica/a040/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  },
+  {
+    "id": "grafica_a041",
+    "collection": "grafica",
+    "partial": false,
+    "image": "/aura/geometry/grafica/a041/imagem.png",
+    "gif": "/aura/geometry/grafica/a041/animacao_10s.gif",
+    "part": "Aura_Geometry_Public_25MB_Parte_05.zip"
+  }
+]
