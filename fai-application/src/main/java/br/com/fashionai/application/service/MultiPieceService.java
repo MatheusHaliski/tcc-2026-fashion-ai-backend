@@ -1,0 +1,351 @@
+package br.com.fashionai.application.service;
+
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.AiRequest;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Hashing;
+import br.com.fashionai.application.common.InputSanitizer;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.domain.model.PipelineJob;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.model.enums.PipelineJobStatus;
+import br.com.fashionai.domain.model.enums.PipelineJobType;
+import br.com.fashionai.domain.repository.PipelineJobRepository;
+import br.com.fashionai.domain.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * RF4 · Várias peças numa foto. Duas etapas, para a pessoa revisar entre elas:
+ * <ol>
+ *   <li>{@link #detect}: a IA de visão acha cada peça da foto (roupa, calçado, acessório) e devolve, por peça, nome,
+ *       tipo, cor, material, estilo, ocasião e a caixa onde ela aparece (em % da foto). Nada vai ao acervo.</li>
+ *   <li>{@link #pieceDraft}: para cada peça confirmada, o recorte (ou a foto inteira, quando a pessoa não recortou)
+ *       vira um rascunho igual ao da análise de uma peça — Flat Lay, moderação e os mesmos campos em
+ *       {@code resultJson} — e o cadastro segue pelo {@code POST /api/pieces} de sempre.</li>
+ * </ol>
+ * Os critérios de aceite da foto de uma peça (peça inteira, uma peça por foto, câmera a 90°) não se aplicam aqui: a foto
+ * tem várias peças por definição e o recorte sai de uma foto vestida.
+ */
+@Service
+public class MultiPieceService {
+    /** Teto de peças por foto: acima disso a revisão fica ilegível e a caixa de cada peça, pequena demais. */
+    static final int MAX_PIECES = 12;
+    /** Lado menor mínimo de uma caixa (% da foto): menos que isso é ruído da detecção, não uma peça. */
+    static final double MIN_BOX_PCT = 3.0;
+
+    private final UserRepository users;
+    private final PipelineJobRepository jobs;
+    private final FlatLayPipeline flatLay;
+    private final AiEngine ai;
+    private final MediaService media;
+    private final Guard guard;
+    private final WardrobeService wardrobe;
+
+    public MultiPieceService(UserRepository users, PipelineJobRepository jobs, FlatLayPipeline flatLay, AiEngine ai,
+                             MediaService media, Guard guard, WardrobeService wardrobe) {
+        this.users = users;
+        this.jobs = jobs;
+        this.flatLay = flatLay;
+        this.ai = ai;
+        this.media = media;
+        this.guard = guard;
+        this.wardrobe = wardrobe;
+    }
+
+    /** Caixa da peça em porcentagem (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
+    public record Box(double x, double y, double width, double height) {
+    }
+
+    public record DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
+                                String sex, List<String> style, List<String> occasion, Box box, double confidence) {
+    }
+
+    /** @param source "ia" quando a visão remota respondeu; "local" = sem IA, uma peça cobrindo a foto inteira */
+    public record Detection(UUID draftId, String originalUrl, int width, int height, List<DetectedPiece> pieces,
+                            String source, String aiMessage, AiOutcome.Explanation explanation, AiOutcome.Quota quota) {
+    }
+
+    /** Rascunho de uma peça da foto: o mesmo contrato do {@code POST /api/pieces} (draftId + imagens). */
+    public record PieceDraft(UUID draftId, String processedUrl, String flatLayUrl, String thumbnailUrl, String originalUrl,
+                             boolean backgroundRemoved, Map<String, Object> moderation) {
+    }
+
+    // ================================================================== 1 — detectar
+
+    @Transactional
+    public Detection detect(CurrentUser user, byte[] bytes) {
+        guard.requireCanCreate(user);
+        String mime = ImageOps.requireAcceptedImage(bytes);
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        BufferedImage photo = ImageOps.decode(bytes);
+
+        List<DetectedPiece> local = List.of(localPiece());
+        AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.MULTI_PIECE_DETECTOR,
+                DETECTOR_SYSTEM, detectorPrompt(),
+                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
+                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
+        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
+        String source = pieces == local ? "local" : "ia";
+
+        PipelineJob job = new PipelineJob();
+        job.setUser(owner);
+        job.setType(PipelineJobType.FLAT_LAY_STANDARDIZATION);
+        job.setStatus(PipelineJobStatus.COMPLETED);
+        job.setTargetType("MULTI_PIECE_DRAFT");
+        job.setProvider(outcome.provider());
+        job.setQueuedAt(Instant.now());
+        job.setStartedAt(Instant.now());
+        jobs.save(job);
+        boolean png = "image/png".equals(mime);
+        MediaStoragePort.StoredObject original = media.put("users/" + owner.getId() + "/drafts/" + job.getId() + "/original."
+                + (png ? "png" : "jpg"), png ? ImageOps.png(photo) : ImageOps.jpeg(photo, 0.95f), png ? "image/png" : "image/jpeg");
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("originalUrl", original.url());
+        result.put("originalKey", original.key());
+        result.put("width", photo.getWidth());
+        result.put("height", photo.getHeight());
+        result.put("source", source);
+        result.put("pieces", pieces);
+        result.put("aiInferences", List.of(outcome.inferenceId()));
+        job.setResultJson(Json.write(result));
+        job.setTotalCostUsd(outcome.costUsd());
+        job.setFallbackUsed(outcome.fallbackUsed());
+        job.setOutputUrl(original.url());
+        job.setFinishedAt(Instant.now());
+        return new Detection(job.getId(), original.url(), photo.getWidth(), photo.getHeight(), pieces, source,
+                outcome.userMessage(), outcome.explanation(), outcome.quota());
+    }
+
+    /** Sem IA de visão: uma peça cobrindo a foto inteira, sem campos — a pessoa preenche e recorta na revisão. */
+    static DetectedPiece localPiece() {
+        return new DetectedPiece(0, null, null, null, null, null, null, List.of(), List.of(), new Box(0, 0, 100, 100), 0);
+    }
+
+    static final String DETECTOR_SYSTEM = """
+            Você é o Multi-Piece Detector do Fashion AI. Você recebe UMA foto que pode ter várias peças (roupas, calçados e
+            acessórios) — vestidas por alguém, penduradas ou dispostas numa superfície. Identifique CADA peça visível
+            separadamente e responda SOMENTE com JSON:
+            {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+                         "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
+                         "subcategory": código da lista de subtipos do tipo,
+                         "color": código da paleta (a cor principal da peça), "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+                         "sex": um de [MASCULINO, FEMININO, UNISSEX],
+                         "style": até 2 códigos da lista de estilos, "occasion": até 2 códigos da lista de ocasiões,
+                         "box": {"x": borda esquerda, "y": borda de cima, "width": largura, "height": altura} em PORCENTAGEM
+                                (0–100) da largura e da altura da foto inteira, justa na peça, com pouca folga,
+                         "confidence": 0-1}]}
+            Regras:
+            - Um par de calçados é UMA peça (a caixa cobre os dois pés).
+            - Não separe partes da mesma peça nem repita a mesma peça.
+            - A caixa cobre só a peça: nada de rosto, cabelo ou cenário além do necessário.
+            - Peça quase toda escondida ou cortada pela borda (menos de ~30% visível) fica de fora.
+            - No máximo 12 peças, das maiores para as menores.
+            Nunca descreva pessoas. Sem nenhuma peça na foto, devolva {"pieces": []}.""";
+
+    /** Vocabulário permitido (a taxonomia v3.7): o que vier fora dele é descartado no parser. */
+    static String detectorPrompt() {
+        return "Subtipos por tipo: " + Taxonomy.SUBCATEGORIES + ".\n"
+                + "Ocasiões: " + String.join(", ", Taxonomy.OCCASIONS) + ".\n"
+                + "Estilos: " + String.join(", ", Taxonomy.STYLES) + ".\n"
+                + "Cores (códigos): " + String.join(", ", Taxonomy.COLORS.keySet()) + ".\n"
+                + "Identifique todas as peças da foto e responda só com o JSON.";
+    }
+
+    /**
+     * Resposta da IA → peças validadas pela taxonomia (nada fora do vocabulário entra) com a caixa presa dentro da foto.
+     * JSON ilegível → null (o motor trata como falha do provedor e tenta o próximo); lista vazia é resposta válida.
+     */
+    static List<DetectedPiece> parseDetections(String text) {
+        Map<String, Object> m = WardrobeService.extractJson(text);
+        if (!(m.get("pieces") instanceof List<?> list)) {
+            return null;
+        }
+        List<DetectedPiece> out = new ArrayList<>();
+        for (Object o : list) {
+            if (out.size() >= MAX_PIECES) {
+                break;
+            }
+            if (!(o instanceof Map<?, ?> p)) {
+                continue;
+            }
+            Box box = box(p.get("box"));
+            if (box == null) {
+                continue;
+            }
+            String sub = WardrobeService.str(p.get("subcategory"));
+            String category = WardrobeService.str(p.get("category"));
+            if (sub != null && Taxonomy.categoryOf(sub) != null) {
+                category = Taxonomy.categoryOf(sub);
+            } else {
+                sub = null;
+                if (!Taxonomy.isValidCategory(category)) {
+                    category = null;
+                }
+            }
+            String name = WardrobeService.str(p.get("name"));
+            double conf = p.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0.5;
+            out.add(new DetectedPiece(out.size(),
+                    name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),
+                    category, sub,
+                    WardrobeService.oneOf(WardrobeService.str(p.get("color")), Taxonomy.COLORS.keySet()),
+                    WardrobeService.oneOf(WardrobeService.str(p.get("material")), Taxonomy.MATERIALS),
+                    WardrobeService.oneOf(WardrobeService.str(p.get("sex")), Taxonomy.SEXES),
+                    Taxonomy.keepAllowed(WardrobeService.strings(p.get("style")), Taxonomy.STYLES, Taxonomy.MAX_PIECE_TAGS),
+                    Taxonomy.keepAllowed(WardrobeService.strings(p.get("occasion")), Taxonomy.allowedOccasions(category), Taxonomy.MAX_PIECE_TAGS),
+                    box, Math.round(conf * 100) / 100.0));
+        }
+        return out;
+    }
+
+    /** Caixa em % presa dentro da foto; sem os quatro números, ou menor que {@link #MIN_BOX_PCT}, a peça é descartada. */
+    static Box box(Object o) {
+        if (!(o instanceof Map<?, ?> b) || !(b.get("x") instanceof Number x) || !(b.get("y") instanceof Number y)
+                || !(b.get("width") instanceof Number w) || !(b.get("height") instanceof Number h)) {
+            return null;
+        }
+        double x0 = clamp(x.doubleValue());
+        double y0 = clamp(y.doubleValue());
+        double x1 = clamp(x.doubleValue() + w.doubleValue());
+        double y1 = clamp(y.doubleValue() + h.doubleValue());
+        if (x1 - x0 < MIN_BOX_PCT || y1 - y0 < MIN_BOX_PCT) {
+            return null;
+        }
+        return new Box(round1(x0), round1(y0), round1(x1 - x0), round1(y1 - y0));
+    }
+
+    private static double clamp(double v) {
+        return Math.max(0, Math.min(100, v));
+    }
+
+    private static double round1(double v) {
+        return Math.round(v * 10) / 10.0;
+    }
+
+    // ================================================================== 2 — rascunho de cada peça
+
+    /**
+     * Uma peça confirmada na revisão vira um rascunho de peça: Flat Lay (remoção de fundo), moderação da imagem e os
+     * mesmos campos que {@code WardrobeService.create} lê do rascunho da análise de uma peça.
+     *
+     * @param parentId rascunho da detecção ({@link #detect}); a peça herda dele a detecção como "detected" (RF34 §5)
+     * @param index    posição da peça na detecção (null = peça que a pessoa não achou na lista)
+     * @param bytes    o recorte da peça, ou a foto inteira quando a pessoa não recortou
+     */
+    @Transactional
+    public PieceDraft pieceDraft(CurrentUser user, UUID parentId, Integer index, byte[] bytes) {
+        guard.requireCanCreate(user);
+        ImageOps.requireAcceptedImage(bytes);
+        User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        PipelineJob parent = jobs.findById(parentId).filter(j -> "MULTI_PIECE_DRAFT".equals(j.getTargetType()))
+                .orElseThrow(() -> ApiException.notFound(Msg.t("multiPiece.rascunho")));
+        if (!parent.getUser().getId().equals(owner.getId())) {
+            throw guard.deny(user, "draft:" + parentId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
+        }
+        Object detected = null;
+        if (index != null && Json.map(parent.getResultJson()).get("pieces") instanceof List<?> ps && index >= 0 && index < ps.size()) {
+            detected = ps.get(index);
+        }
+
+        AiOutcome<FlatLayPipeline.Result> pipeline = ai.execute(user.id(), AiCapability.FLAT_LAY_STANDARDIZER,
+                List.of(Msg.t("wardrobe.foto_enviada_kb", bytes.length / 1024)), null, null,
+                List.of(wardrobe.flatLayStep(bytes)), () -> flatLay.run(bytes, false));
+        FlatLayPipeline.Result r = pipeline.value();
+
+        // Moderação (#2) da imagem que vai para o acervo — nunca aprova por omissão.
+        LocalVision.ModerationVerdict localVerdict = LocalVision.moderate(r.original(), r.cutout());
+        AiOutcome<LocalVision.ModerationVerdict> moderation = ai.text(new AiEngine.TextCall<>(user.id(),
+                AiCapability.CONTENT_MODERATOR, WardrobeService.MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
+                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(r.original(), 768, 768), 0.85f), "image/jpeg")),
+                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), wardrobe::parseModeration, () -> localVerdict, null));
+        LocalVision.ModerationVerdict verdict = moderation.value();
+        if (verdict.status() == ModerationStatus.REJECTED_POLICY) {
+            throw ApiException.badRequest("CONTEUDO_BLOQUEADO", Msg.t("wardrobe.a_foto_viola_a_politica"));
+        }
+
+        PipelineJob job = new PipelineJob();
+        job.setUser(owner);
+        job.setType(PipelineJobType.FLAT_LAY_STANDARDIZATION);
+        job.setStatus(PipelineJobStatus.COMPLETED);
+        job.setTargetType("PIECE_DRAFT");
+        job.setProvider(pipeline.provider());
+        job.setInputJson(Json.write(Map.of("multiPieceDraftId", parentId.toString(), "index", index == null ? -1 : index)));
+        job.setQueuedAt(Instant.now());
+        job.setStartedAt(Instant.now());
+        jobs.save(job);
+        String base = "users/" + owner.getId() + "/drafts/" + job.getId() + "/";
+        boolean png = r.mimeType().equals("image/png");
+        MediaStoragePort.StoredObject original = media.put(base + "original." + (png ? "png" : "jpg"),
+                png ? ImageOps.png(r.original()) : ImageOps.jpeg(r.original(), 0.95f), png ? "image/png" : "image/jpeg");
+        MediaStoragePort.StoredObject processed = media.put(base + "processed.png", r.processedPng(), "image/png");
+        MediaStoragePort.StoredObject white = media.put(base + "flatlay.jpg", r.processedWhiteJpeg(), "image/jpeg");
+        MediaStoragePort.StoredObject thumb = media.put(base + "thumb.png", r.thumbnailPng(), "image/png");
+
+        Map<String, Object> quality = new LinkedHashMap<>();
+        quality.put("metrics", r.quality().metrics());
+        quality.put("overall", r.quality().overall());
+        quality.put("accepted", r.quality().accepted());
+        quality.put("threshold", br.com.fashionai.application.imaging.QualityMetrics.ACCEPTANCE_THRESHOLD);
+        quality.put("issues", r.quality().issues());
+        quality.put("recommendations", r.quality().recommendations());
+        Map<String, Object> mod = new LinkedHashMap<>();
+        mod.put("status", verdict.status().name());
+        mod.put("confidence", verdict.confidence());
+        mod.put("reasons", verdict.reasons());
+        mod.put("humanReview", verdict.needsHumanReview());
+        mod.put("provider", moderation.provider());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("processedUrl", processed.url());
+        result.put("flatLayUrl", white.url());
+        result.put("thumbnailUrl", thumb.url());
+        result.put("originalUrl", original.url());
+        result.put("originalKey", original.key());
+        result.put("mime", r.mimeType());
+        result.put("width", r.originalWidth());
+        result.put("height", r.originalHeight());
+        result.put("bytes", bytes.length);
+        result.put("hash", Hashing.sha256(bytes));
+        result.put("backgroundRemoved", r.backgroundRemoved());
+        if (r.cutout().warning() != null) {
+            result.put("backgroundWarning", r.cutout().warning());
+        }
+        result.put("flatLayMetadata", r.metadata());
+        result.put("quality", quality);
+        result.put("moderation", mod);
+        if (detected != null) {
+            result.put("prefill", detected);
+        }
+        result.put("aiInferences", List.of(pipeline.inferenceId(), moderation.inferenceId()));
+        job.setResultJson(Json.write(result));
+        job.setStagesJson(Json.write(r.stages()));
+        job.setQualityScore(BigDecimal.valueOf(r.quality().overall()));
+        job.setTotalCostUsd(r.totalCostUsd().add(moderation.costUsd()));
+        job.setTotalTimeMs((int) r.totalMs());
+        job.setFallbackUsed(r.fallbackUsed());
+        job.setOutputUrl(processed.url());
+        job.setFinishedAt(Instant.now());
+        return new PieceDraft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), r.backgroundRemoved(), mod);
+    }
+}
