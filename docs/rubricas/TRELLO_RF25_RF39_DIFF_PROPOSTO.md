@@ -96,10 +96,12 @@ RF27/RF28 não foram adicionados como sexto card porque o lote autorizado já at
 ## Salvaguardas da aplicação
 
 - Antes da escrita: reler os cards-alvo e confirmar que `dateLastActivity`/conteúdo não mudou desde esta auditoria.
+  O script lista a última atividade de cada card-alvo e aceita `--nao-alterado-desde <ISO8601>` para abortar antes da primeira escrita se algum card mudou.
 - Não excluir checklist/card; primeiro criar/mover e reler, depois remover somente duplicata confirmada.
 - Não marcar CA/tarefa como concluído com base apenas na presença de código ou endpoint.
 - Não atribuir Bryan sem concordância explícita da equipe/Bryan.
 - Registrar IDs dos cards/checklists criados e respostas HTTP, nunca URLs autenticadas.
+  O script imprime cada escrita com método, caminho, status HTTP e ID criado; os cards de Bryan não recebem label, pois Sprint 04 foi autorizada só para HU-RF33–RF39.
 - Após a aplicação: executar novamente todas as consultas GET e gerar comparação esperado × efetivo.
 
 ## Confirmações recebidas e pendência remanescente

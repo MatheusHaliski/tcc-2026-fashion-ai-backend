@@ -74,6 +74,9 @@ class Trello:
     def __init__(self, apply: bool):
         self.apply = apply
         self.auth = {"key": os.environ["TRELLO_API_KEY"], "token": os.environ["TRELLO_TOKEN"]}
+        # Registro das escritas: método, caminho (só IDs, nunca credenciais),
+        # status HTTP e ID retornado, para a comparação esperado × efetivo.
+        self.log: list[tuple[str, str, int, str]] = []
 
     def call(self, method: str, path: str, **params):
         if method != "GET" and not self.apply:
@@ -95,7 +98,12 @@ class Trello:
         try:
             with urlopen(request, timeout=30) as response:
                 raw = response.read()
-                return json.loads(raw) if raw else {}
+                body = json.loads(raw) if raw else {}
+                if method != "GET":
+                    created = body.get("id", "") if isinstance(body, dict) else ""
+                    self.log.append((method, path, response.status, created))
+                    print(f"OK {method} {path} -> HTTP {response.status}" + (f" id={created}" if created else ""))
+                return body
         except HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace").strip()
             if error.code == 403 and detail == "Method forbidden":
@@ -155,6 +163,11 @@ def bryan_bodies() -> dict[str, str]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true", help="executa as escritas aprovadas")
+    parser.add_argument(
+        "--nao-alterado-desde",
+        metavar="ISO8601",
+        help="aborta se algum card-alvo teve atividade depois deste instante (ex.: 2026-09-29T00:00:00Z)",
+    )
     args = parser.parse_args()
     missing = [name for name in REQUIRED if not os.environ.get(name)]
     if missing:
@@ -168,6 +181,17 @@ def main() -> None:
     product = next(item for item in lists if item["name"] == "Product Backlog")
     sprint4 = next(item for item in labels if item["name"] == "Sprint 04")
     bryan = next(item for item in members if item.get("username") == "bryanstrey1")
+
+    # Salvaguarda: mostrar a última atividade dos cards-alvo e, se pedido,
+    # abortar antes de qualquer escrita quando algum mudou desde a auditoria.
+    targets = [card for card in cards if re.match(r"(HU-)?RF(2[5-9]|3[0-9])[- ]", card["name"])]
+    print("Última atividade dos cards-alvo:")
+    for card in sorted(targets, key=lambda item: item["name"]):
+        print(f"  {card['dateLastActivity']}  {card['name'][:70]}")
+    if args.nao_alterado_desde:
+        changed = [card["name"][:70] for card in targets if card["dateLastActivity"] > args.nao_alterado_desde]
+        if changed:
+            raise SystemExit("Cards alterados desde a auditoria; reavalie o diff antes de aplicar:\n  " + "\n  ".join(changed))
 
     # RF25: checklist canônica na HU; descrição do RF vira ponteiro.
     rf25, hu25 = card_by_prefix(cards, "RF25-"), card_by_prefix(cards, "HU-RF25")
@@ -218,17 +242,17 @@ def main() -> None:
         cas = criteria(rf["desc"], number) + EXTRA_CA.get(number, [])
         ensure_items(api, ensure_checklist(api, hu, "Critérios de Aceite"), cas)
         ensure_items(api, ensure_checklist(api, hu, "Tarefas por área"), TASKS[number])
-        if api.apply:
-            api.call("PUT", f"/cards/{rf['id']}", desc=strip_ca_block(rf["desc"]) + f"\n\n📋 Critérios canônicos: HU-RF{number}, checklist Critérios de Aceite.")
+        api.call("PUT", f"/cards/{rf['id']}", desc=strip_ca_block(rf["desc"]) + f"\n\n📋 Critérios canônicos: HU-RF{number}, checklist Critérios de Aceite.")
 
-    # Cards funcionais aprovados e atribuídos a Bryan.
+    # Cards funcionais aprovados e atribuídos a Bryan. O lote autorizou a
+    # label Sprint 04 apenas para HU-RF33–RF39; estes cards ficam sem label.
     for title, body in bryan_bodies().items():
         existing = next((card for card in cards if card["name"] == title), None)
         if existing:
             card = existing
         else:
             card = api.call("POST", "/cards", idList=product["id"], name=title, desc=body,
-                            idLabels=sprint4["id"], idMembers=bryan["id"])
+                            idMembers=bryan["id"])
         if api.apply and bryan["id"] not in card.get("idMembers", []):
             api.call("POST", f"/cards/{card['id']}/idMembers", value=bryan["id"])
 
@@ -241,6 +265,9 @@ def main() -> None:
             card = next(card for card in after if card["name"] == title)
             assert bryan["id"] in card.get("idMembers", [])
         print("Releitura validada: HU-RF33–RF39 e cinco cards atribuídos a Bryan.")
+        print(f"Escritas registradas: {len(api.log)}")
+        for method, path, status, created in api.log:
+            print(f"  {method} {path} HTTP {status}" + (f" id={created}" if created else ""))
 
 
 if __name__ == "__main__":
