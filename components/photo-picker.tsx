@@ -1,7 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
-import { Button, useToast } from "@/components/ui";
+import { Button, useNotice } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 
 export type PreUploadKind = "avatar" | "logo" | "official-photo" | "identity" | "activity-proof";
@@ -15,18 +15,18 @@ export function PhotoPicker({ kind, value, onChange, label, hint, round = false,
   kind: PreUploadKind; value: string | null; onChange: (url: string | null) => void; label: string; hint?: string; round?: boolean; error?: string;
 }) {
   const { t } = useI18n();
-  const id = useId(); const input = useRef<HTMLInputElement>(null); const toast = useToast();
+  const id = useId(); const input = useRef<HTMLInputElement>(null); const notice = useNotice();
   const [busy, setBusy] = useState(false); const [local, setLocal] = useState<string | null>(null);
   const privateDoc = kind === "identity" || kind === "activity-proof";
   async function pick(file?: File) {
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { toast.error(t("photoPicker.a_imagem_deve_ter_ate")); return; }
+    if (file.size > 8 * 1024 * 1024) { notice.error(t("photoPicker.a_imagem_deve_ter_ate")); return; }
     setBusy(true); setLocal(URL.createObjectURL(file));
     try {
       const form = new FormData(); form.append("file", file);
       const r = await api.post<{ url: string }>(`/api/auth/uploads?kind=${kind}`, form, { anonymous: true });
       onChange(r.url);
-    } catch (e) { setLocal(null); onChange(null); toast.fromError(e); } finally { setBusy(false); }
+    } catch (e) { setLocal(null); onChange(null); notice.fromError(e); } finally { setBusy(false); }
   }
   // documento privado: o navegador mostra a prévia local (a URL do servidor não é pública)
   const preview = privateDoc ? local : mediaUrl(value) ?? local;

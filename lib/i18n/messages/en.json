@@ -3685,5 +3685,13 @@
   "multiPiece.vai_com_ia": "It will be saved with the AI-generated image, with the seal.",
   "multiPiece.selo_ia_curto": "AI",
   "multiPiece.copia_ia_alt": "AI-generated copy of piece {n}",
-  "pieceCard.gerada_por_ia": "AI-generated image"
+  "pieceCard.gerada_por_ia": "AI-generated image",
+  "notice.titulo_info": "Notice",
+  "notice.titulo_sucesso": "All set",
+  "notice.titulo_atencao": "Attention",
+  "notice.titulo_erro": "We couldn't complete that",
+  "notice.entendi": "Got it",
+  "notice.codigo_de_suporte": "Support code: {id}",
+  "auth.recoverPassword": "Recover password",
+  "register.revise_os_campos": "Please review the highlighted fields."
 }
