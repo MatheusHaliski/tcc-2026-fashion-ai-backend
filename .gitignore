@@ -45,3 +45,6 @@ __pycache__/
 
 # worktrees temporárias de agentes (Claude Code)
 .claude/worktrees/
+
+# relatório de cobertura do frontend (npm run test:coverage)
+/coverage/
