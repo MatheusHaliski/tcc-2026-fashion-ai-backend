@@ -441,7 +441,7 @@ export function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, on
 }
 
 /* ---------- Dialog ---------- */
-export function Dialog({ open, onClose, title, children, footer, size }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
+export function Dialog({ open, onClose, title, children, footer, size, role = "dialog" }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl"; role?: "dialog" | "alertdialog" }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -449,7 +449,7 @@ export function Dialog({ open, onClose, title, children, footer, size }: { open:
   if (!open) return null;
   return (
     <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog ${size ? `dialog-${size}` : ""}`}>
+      <div ref={ref} role={role} aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog ${size ? `dialog-${size}` : ""}`}>
         <div className="dialog-head">
           <h2 id={titleId} className="type-h2">{title}</h2>
           <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}><UiIcon name="close" /></button>
@@ -517,6 +517,83 @@ export function ActionMenu({ items, label, className, trigger, align = "end", di
       )}
     </div>
   );
+}
+
+/* ---------- Avisos em modal (padrão FashionAI) ---------- */
+export type NoticeKind = "info" | "success" | "warning" | "error";
+export interface NoticeOptions {
+  /** Título do modal; sem ele vale o título padrão do tipo (Aviso, Tudo certo, Atenção, Não foi possível concluir). */
+  title?: string;
+  /** Itens listados abaixo da mensagem (ex.: os campos a corrigir). */
+  details?: string[];
+  /** Ação secundária ao lado do "Entendi" (ex.: "Recuperar senha"). */
+  action?: { label: string; href?: string; onSelect?: () => void };
+  /** Executa quando o modal fecha (por qualquer caminho: botão, Esc ou clique fora). */
+  onClose?: () => void;
+}
+interface NoticeItem extends NoticeOptions { id: number; kind: NoticeKind; text: string; }
+const NoticeCtx = createContext<{ push: (kind: NoticeKind, text: string, opts?: NoticeOptions) => void } | null>(null);
+const NOTICE_ICON: Record<NoticeKind, "info" | "check" | "alert" | "error"> = { info: "info", success: "check", warning: "alert", error: "error" };
+
+/**
+ * Toda mensagem de aviso das telas de conta (RF1/RF2/RF3) e de Configurações (RF23) aparece neste modal, um por vez:
+ * o que chegar enquanto um está aberto entra na fila. O foco vai para o botão "Entendi" e volta ao controle de origem.
+ */
+export function NoticeProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  const [queue, setQueue] = useState<NoticeItem[]>([]);
+  const push = useCallback((kind: NoticeKind, text: string, opts?: NoticeOptions) => {
+    if (!text) return;
+    setQueue((q) => q.some((n) => n.kind === kind && n.text === text) ? q : [...q, { id: Date.now() + Math.random(), kind, text, ...opts }]);
+  }, []);
+  const value = useMemo(() => ({ push }), [push]);
+  const current = queue[0];
+  const close = useCallback(() => { setQueue((q) => q.slice(1)); current?.onClose?.(); }, [current]);
+  const titles: Record<NoticeKind, string> = { info: t("notice.titulo_info"), success: t("notice.titulo_sucesso"), warning: t("notice.titulo_atencao"), error: t("notice.titulo_erro") };
+  return (
+    <NoticeCtx.Provider value={value}>
+      {children}
+      <Dialog open={!!current} onClose={close} role={current?.kind === "error" || current?.kind === "warning" ? "alertdialog" : "dialog"} title={current ? (current.title ?? titles[current.kind]) : ""}
+        footer={current && <>
+          {current.action && (current.action.href
+            ? <a className="btn" href={current.action.href} onClick={() => close()}>{current.action.label}</a>
+            : <Button onClick={() => { current.action?.onSelect?.(); close(); }}>{current.action.label}</Button>)}
+          <Button variant="primary" data-autofocus onClick={close}>{t("notice.entendi")}</Button>
+        </>}>
+        {current && (
+          <div className={cn("notice", `notice-${current.kind}`)}>
+            <span className="notice-icon" aria-hidden><UiIcon name={NOTICE_ICON[current.kind]} size={22} /></span>
+            <div className="notice-body">
+              <p className="type-body">{current.text}</p>
+              {current.details && current.details.length > 0 && <ul className="notice-list type-body-sm">{current.details.map((d) => <li key={d}>{d}</li>)}</ul>}
+            </div>
+          </div>
+        )}
+      </Dialog>
+    </NoticeCtx.Provider>
+  );
+}
+export function useNotice() {
+  const ctx = useContext(NoticeCtx);
+  if (!ctx) throw new Error("useNotice fora do NoticeProvider");
+  const push = ctx.push;
+  return {
+    info: (text: string, o?: NoticeOptions) => push("info", text, o), success: (text: string, o?: NoticeOptions) => push("success", text, o),
+    warning: (text: string, o?: NoticeOptions) => push("warning", text, o), error: (text: string, o?: NoticeOptions) => push("error", text, o),
+    /** Mostra a mensagem tratada do backend (ApiError) — com os campos a corrigir e o código de suporte — ou uma genérica. */
+    fromError: (e: unknown, fallback = tr("ui.index.algo_deu_errado_tente_de"), o?: NoticeOptions) => {
+      if (!(e instanceof ApiError)) { push("error", fallback, o); return; }
+      if (e.code === "IMAGEM_EM_REVISAO") { push("info", e.message, o); return; }   // foto retida pela moderação: não é erro de quem enviou
+      const fields = Object.values(e.fields).filter((v): v is string => typeof v === "string" && v !== e.message);
+      const support = e.correlationId ? [tr("notice.codigo_de_suporte", { id: e.correlationId.slice(0, 8) })] : [];
+      push("error", e.message, { ...o, details: [...fields, ...(o?.details ?? []), ...support] });
+    },
+  };
+}
+/** Abre o modal de erro sempre que um novo ApiError chega (ex.: o `error` de useAction). */
+export function useNoticeOnError(error: ApiError | null | undefined, opts?: (e: ApiError) => NoticeOptions | undefined) {
+  const notice = useNotice(); const o = useRef(opts); o.current = opts;
+  useEffect(() => { if (error) notice.fromError(error, undefined, o.current?.(error)); }, [error]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /* ---------- Toasts ---------- */

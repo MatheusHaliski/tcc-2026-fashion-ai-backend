@@ -7,7 +7,7 @@ import type { Session } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAction } from "@/lib/hooks/use-api";
-import { Button, Chip, Field, Input, Select, Textarea, useToast } from "@/components/ui";
+import { Button, Chip, Field, Input, Select, Textarea, useNotice, useNoticeOnError } from "@/components/ui";
 import { AuthCard } from "@/components/auth-form";
 import { MannequinSexPicker, PhotoPicker } from "@/components/photo-picker";
 
@@ -15,7 +15,7 @@ type ProfileType = "PESSOAL" | "MARCA" | "CELEBRIDADE";
 const COUNTRIES = ["BR", "PT", "US", "AR", "ES", "IT", "FR", "GB", "MX", "CL"];
 
 export default function RegisterPage() {
-  const { t } = useI18n(); const { signIn } = useAuth(); const router = useRouter(); const toast = useToast();
+  const { t } = useI18n(); const { signIn } = useAuth(); const router = useRouter(); const notice = useNotice();
   const [profileType, setProfileType] = useState<ProfileType>("PESSOAL");
   const [f, setF] = useState({ fullName: "", username: "", email: "", password: "", confirmPassword: "", birthDate: "", country: "BR", acceptTerms: false });
   const [brand, setBrand] = useState({ razaoSocial: "", cnpj: "", nomeFantasia: "", fashionCategory: "", storeUrl: "", commercialContact: "", officialHashtag: "" });
@@ -51,14 +51,15 @@ export default function RegisterPage() {
     const l: Record<string, string> = {};
     if (!/^[A-Za-z0-9._]{3,30}$/.test(f.username)) l.username = f.username ? t("register.usernameInvalid") : t("register.usernameRequired");
     setLocal(l);
-    if (Object.keys(l).length) { document.getElementById(Object.keys(l)[0])?.focus(); return; }
+    if (Object.keys(l).length) { notice.warning(t("register.revise_os_campos"), { details: Object.values(l) }); document.getElementById(Object.keys(l)[0])?.focus(); return; }
     const s = await run();
     if (!s) return;
     signIn(s);
-    s.warnings?.forEach((w) => toast.info(w));
-    toast.success(t("auth.verifyTitle"));
+    s.warnings?.forEach((w) => notice.warning(w));
+    notice.success(t("auth.verifyTitle"));
     router.push("/verify-email");
   }
+  useNoticeOnError(error);   // RF1 — erro do servidor (inclusive os campos a corrigir) no modal padrão
   const err = { ...local, ...(error?.fields ?? {}) };
   return (
     <AuthCard title={t("auth.registerTitle")} lead={t("auth.registerLead")}
@@ -113,8 +114,6 @@ export default function RegisterPage() {
           </fieldset>
         )}
         <label className="mb-3 flex items-start gap-2 type-body-sm"><input type="checkbox" checked={f.acceptTerms} onChange={set("acceptTerms")} required /> {t("auth.acceptTerms")}</label>
-        {err.acceptTerms && <p className="error-text mb-2" role="alert">{err.acceptTerms}</p>}
-        {error && Object.keys(err).length === 0 && <p role="alert" className="error-text mb-3">{error.message}</p>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>{t("nav.register")}</Button>
       </form>
     </AuthCard>

@@ -3685,5 +3685,13 @@
   "multiPiece.vai_com_ia": "Se guardará con la imagen generada por IA, con el sello.",
   "multiPiece.selo_ia_curto": "IA",
   "multiPiece.copia_ia_alt": "Copia de la prenda {n} generada por IA",
-  "pieceCard.gerada_por_ia": "Imagen generada por IA"
+  "pieceCard.gerada_por_ia": "Imagen generada por IA",
+  "notice.titulo_info": "Aviso",
+  "notice.titulo_sucesso": "Todo listo",
+  "notice.titulo_atencao": "Atención",
+  "notice.titulo_erro": "No se pudo completar",
+  "notice.entendi": "Entendido",
+  "notice.codigo_de_suporte": "Código de soporte: {id}",
+  "auth.recoverPassword": "Recuperar contraseña",
+  "register.revise_os_campos": "Revisa los campos resaltados."
 }
