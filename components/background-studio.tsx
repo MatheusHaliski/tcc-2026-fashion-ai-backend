@@ -116,6 +116,10 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           {v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}<span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       <OptionStrip title={t("backgroundStudio.material_camada")}>
+        <button type="button" aria-pressed={!value.materialId} className="opt-tile" onClick={() => onChange({ materialId: null })}>
+          <span className="opt-thumb" />
+          <span className="opt-name">{t("backgroundStudio.imagem_sem_material")}</span>
+        </button>
         {(cat?.materials ?? []).map((m) => <button key={m.id} type="button" aria-pressed={value.materialId === m.id} className="opt-tile" title={m.finish} onClick={() => onChange({ materialId: value.materialId === m.id ? null : m.id })}>
           {m.static?.previewUrl ? <img src={m.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}<span className="opt-name">{m.name}{auraPreset?.recommendedMaterials?.includes(m.id) && " ★"}</span></button>)}
       </OptionStrip>
