@@ -266,7 +266,10 @@ export function PageHeader({ title, lead, actions, kicker }: { title: string; le
   );
 }
 export function Tabs<T extends string>({ tabs, value, onChange, className, label }: { tabs: { id: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void; className?: string; label?: string }) {
-  // Abas roláveis: sombra na borda indica que há mais abas; setas do teclado trocam de aba (padrão ARIA de tablist).
+  // Seletor de abas rolável: pílulas (a ativa preenchida), setas nas bordas quando há abas escondidas, roda do mouse
+  // rola na horizontal, barra de rolagem fina e visível, aba ativa centralizada; setas do teclado trocam de aba
+  // (padrão ARIA de tablist).
+  const { t: tt } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: false, end: false });
   useEffect(() => {
@@ -275,9 +278,23 @@ export function Tabs<T extends string>({ tabs, value, onChange, className, label
     measure();
     el.addEventListener("scroll", measure, { passive: true });
     const ro = new ResizeObserver(measure); ro.observe(el);
-    return () => { el.removeEventListener("scroll", measure); ro.disconnect(); };
+    // roda vertical do mouse rola as abas na horizontal; no fim da faixa, a página volta a rolar normalmente
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || el.scrollWidth <= el.clientWidth) return;
+      const atStart = el.scrollLeft <= 0, atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+      if ((e.deltaY < 0 && atStart) || (e.deltaY > 0 && atEnd)) return;
+      e.preventDefault(); el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => { el.removeEventListener("scroll", measure); el.removeEventListener("wheel", onWheel); ro.disconnect(); };
   }, [tabs.length]);
-  useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }); }, [value]);
+  useEffect(() => {
+    // centraliza a aba ativa só dentro da faixa (scrollIntoView também rolaria a página)
+    const el = ref.current; const tab = el?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!el || !tab) return;
+    el.scrollTo?.({ left: tab.offsetLeft - (el.clientWidth - tab.offsetWidth) / 2 });
+  }, [value]);
+  const page = (dir: 1 | -1) => { const el = ref.current; if (el) el.scrollBy?.({ left: dir * Math.max(160, el.clientWidth * 0.7), behavior: "smooth" }); };
   const onKey = (e: ReactKeyboardEvent) => {
     const i = tabs.findIndex((x) => x.id === value);
     const next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -2;
@@ -288,14 +305,16 @@ export function Tabs<T extends string>({ tabs, value, onChange, className, label
     requestAnimationFrame(() => ref.current?.querySelector<HTMLElement>(`[data-tab="${n.id}"]`)?.focus());
   };
   return (
-    <div className={cn("tabs-wrap mb-4", edge.start && "fade-start", edge.end && "fade-end", className)}>
+    <div className={cn("tabs-wrap mb-4", edge.start && "fade-start", edge.end && "fade-end", (edge.start || edge.end) && "is-overflowing", className)}>
+      {edge.start && <button type="button" className="tabs-arrow is-start" tabIndex={-1} aria-label={tt("ui.tabs.anteriores")} onClick={() => page(-1)}><UiIcon name="chevronLeft" size={18} /></button>}
       <div ref={ref} role="tablist" aria-label={label} className="tabs" onKeyDown={onKey}>
         {tabs.map((t) => (
           <button key={t.id} data-tab={t.id} role="tab" type="button" aria-selected={value === t.id} tabIndex={value === t.id ? 0 : -1} className="tab" onClick={() => onChange(t.id)}>
-            {t.label}{t.count !== undefined && <span className="ml-1.5 tabular text-muted">{t.count}</span>}
+            {t.label}{t.count !== undefined && <span className="tab-count tabular">{t.count}</span>}
           </button>
         ))}
       </div>
+      {edge.end && <button type="button" className="tabs-arrow is-end" tabIndex={-1} aria-label={tt("ui.tabs.proximas")} onClick={() => page(1)}><UiIcon name="chevronRight" size={18} /></button>}
     </div>
   );
 }

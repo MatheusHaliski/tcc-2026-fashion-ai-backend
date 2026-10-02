@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 // os rótulos usam o i18n do app (JSX): no teste basta a chave
 vi.mock("@/lib/i18n/i18n", () => ({ tr: (k: string) => k }));
-import { ART_INDEX, containerInkOf, motionOf, resolveCardArt } from "./card-art";
+import { ART_INDEX, FRAME_BAND_VARS, auraVariantId, bundledAuraPresets, containerInkOf, motionOf, resolveCardArt } from "./card-art";
 
 describe("arte do card — animação do segmento Cor", () => {
   test("a animação escolhida entra na arte (antes era ignorada e nada se movia na prévia)", () => {
@@ -55,5 +55,32 @@ describe("arte do card — animação do segmento Cor", () => {
     }
     expect(ART_INDEX.presets.aura_geometry.variants).toHaveLength(6);
     expect(ART_INDEX.presets.aura_splash.variants).toHaveLength(6);
+  });
+  test("id antigo de Aura Geometry (coleção de 120 trocada pelos vídeos) desenha uma das 6 variantes novas, sempre a mesma", () => {
+    const legacy = "aura_geometry__gradientes_a001_coins";
+    const mapped = auraVariantId(legacy);
+    expect(ART_INDEX.presets.aura_geometry.variants).toContain(mapped);
+    expect(auraVariantId(legacy)).toBe(mapped);
+    // mesmo cálculo do backend (String.hashCode em Java) → "aura_geometry__geometry_05"
+    expect(mapped).toBe("aura_geometry__geometry_05");
+    const art = resolveCardArt({ aura: { variantId: legacy } });
+    expect(art.kind).toBe("aura"); expect(art.video?.src).toMatch(/\/aura\/geometry\/geometry_0\d\/animacao\.mp4$/);
+    expect(auraVariantId("aura_geometry__geometry_02")).toBe("aura_geometry__geometry_02");
+    expect(auraVariantId("preset_que_nao_existe__x")).toBeUndefined();
+  });
+  test("o seletor lista os presets do índice deste build: Geometry e Splash com 6 variantes e miniatura de cada uma", () => {
+    const presets = bundledAuraPresets();
+    for (const id of ["aura_geometry", "aura_splash", "aura_electro"]) {
+      const p = presets.find((a) => a.id === id)!;
+      expect(p.variants.length).toBeGreaterThanOrEqual(6);
+      for (const v of p.variants) expect(v.static?.previewUrl).toMatch(/^\/aura\/(geometry|splash|electro)\/[\w-]+\/imagem\.png$/);
+    }
+    expect(presets.flatMap((a) => a.variants).some((v) => v.id.includes("gradientes_"))).toBe(false);
+  });
+  test("moldura do Aura Electro: border-width sem porcentagem (inválida → 3 px) e 3× a faixa padrão", () => {
+    expect(resolveCardArt({ aura: { variantId: "aura_electro__01_cyan_pulse" } }).frame).toBe(true);
+    expect(FRAME_BAND_VARS["--aura-frame"]).not.toContain("%");
+    expect(FRAME_BAND_VARS["--aura-frame"]).toContain("cqw");
+    expect(FRAME_BAND_VARS["--aura-band"]).toBe("clamp(42px, 22.5%, 90px)");
   });
 });

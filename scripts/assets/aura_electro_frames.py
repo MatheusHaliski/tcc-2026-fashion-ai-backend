@@ -2,8 +2,10 @@
 """
 Fashion AI — Aura Electro: 12 molduras de LED com movimento perimetral próprio.
 
-Cada variante é um anel de LEDs (540×720, centro transparente, anel de 56 px) que o card desenha como
-border-image 9-slice (.card-art-frame, slice 66): o feixe sai de um ponto, percorre as quatro bordas e volta.
+Cada variante é um anel de LEDs (360×480, centro transparente, anel de 108 px = 30 % da largura, 9 fileiras de LEDs
+que preenchem a faixa inteira, sem margem transparente) que o card desenha como border-image 9-slice
+(.card-art-frame, slice 108): o feixe sai de um ponto, percorre as quatro bordas e volta. A faixa é 3× mais espessa
+que a versão anterior (anel de 56 px em 540, ~10 % da largura).
 Os 12 GIFs não são a mesma animação recolorida — cada um muda ao menos três atributos (quantidade de cabeças,
 sentido, velocidade, ritmo, cauda, iluminação, origem):
 
@@ -32,8 +34,8 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 ELECTRO = ROOT / "public" / "aura" / "electro"
-W, H, RING, INSET = 540, 720, 56, 6
-CELL, DOT = 8, 6          # grade de LEDs: célula de 8 px, led de 6 px
+W, H, RING, INSET = 360, 480, 108, 0
+CELL, DOT = 12, 10        # grade de LEDs: célula de 12 px, led de 10 px (9 fileiras no anel)
 FRAMES, DELAY = 100, 100  # 10 s a 10 fps
 TAU = 2 * np.pi
 
@@ -169,9 +171,12 @@ def main():
         d = ELECTRO / vid
         d.mkdir(exist_ok=True)
         save_gif(frames, d / "loading_10s.gif")
-        Image.fromarray(frames[12]).save(d / "imagem.png", optimize=True)
+        # pôster/miniatura: o quadro com mais LEDs acesos (o quadro 12 deixava o tile do seletor quase apagado)
+        poster = max(frames, key=lambda fr: int(fr[..., :3].astype(np.uint32).sum()))
+        Image.fromarray(poster).save(d / "imagem.png", optimize=True)
         print(f"[{i}/{len(variants)}] {vid} → loading_10s.gif ({(d / 'loading_10s.gif').stat().st_size // 1024} KB)", flush=True)
-    cat["ring_px"] = RING; cat["inset_px"] = INSET; cat["safe_content_box"] = [INSET + RING + 4, INSET + RING + 4, W - INSET - RING - 4, H - INSET - RING - 4]
+    cat["ring_px"] = RING; cat["inset_px"] = INSET; cat["size_px"] = [W, H]
+    cat["safe_content_box"] = [INSET + RING, INSET + RING, W - INSET - RING, H - INSET - RING]
     cat["movements"] = __doc__.split("origem):")[1].split("Uso:")[0].strip()
     (ELECTRO / "catalogo.json").write_text(json.dumps(cat, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

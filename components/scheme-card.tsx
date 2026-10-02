@@ -7,7 +7,7 @@ import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
+import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
 import { ActionMenu, Button, Dialog, useToast } from "@/components/ui";
 import { useRouter } from "next/navigation";
@@ -216,7 +216,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const manualInk = studio.container?.ink ?? null;
   const inkVars = manualInk ? { "--card-ink": containerInkOf(boxColor, manualInk) } : hasArt && manualBox ? { "--card-ink": containerInkOf(boxColor) } : {};
   // arte em moldura (Aura Electro): a faixa do passe-partout dobra para o feixe de LED ficar espesso e legível
-  const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...(art?.frame ? { "--aura-band": "clamp(28px, 14%, 56px)" } : {}), ...inkVars } as React.CSSProperties) : undefined;
+  const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...(art?.frame ? FRAME_BAND_VARS : {}), ...inkVars } as React.CSSProperties) : undefined;
   const vis = scheme.visibility === "PRIVATE" ? t("common.private") : scheme.visibility === "FOLLOWERS" ? t("common.followers") : t("common.public");
   const detailPieces = toAnatomyPieces(scheme);
 
