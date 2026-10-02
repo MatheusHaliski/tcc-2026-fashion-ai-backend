@@ -214,23 +214,29 @@ SEASONAL_PRESETS = [
 # Skins de card (presets recomendados do RF11). Tokens visuais por skin; prompts, thumbHint e status vêm dos
 # markdowns de /public/presets_recomendados (fonte: skinRegistry.ts + mockup "Quatro Conceitos").
 CARD_SKINS = [
+    # Famílias cromáticas (análise sazonal de cor, Caderno "Redesign do Sistema de Cards de Moda"): cada skin ocupa um
+    # ponto distinto de temperatura × luminosidade × croma, para a grade de skins não repetir o branco editorial.
+    # claras · neutro quente (default), marfim (Editorial Spread), blush (primavera clara), aço (verão suave),
+    #          lilás (frio claro), damasco (vivo), kraft (outono quente), sálvia (verde dessaturado)
     {"id": "atelier", "name": "Atelier", "family": "fine", "nativeContainer": "#FFFFFF", "font": "Inter",
      "tokens": {"bg": "#FFFFFF", "ink": "#1A1714", "accent": "#1A1714", "border": "#E7E2DA", "radius": 14, "titleWeight": 500}},
-    {"id": "spread", "name": "Spread", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Fraunces",
-     "tokens": {"bg": "#F7F4EE", "ink": "#111111", "accent": "#B4442C", "border": "#D9D1C4", "radius": 6, "titleWeight": 800}},
-    {"id": "index", "name": "Índice", "family": "fine", "nativeContainer": "#FFFFFF", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#FBFAF6", "ink": "#23201C", "accent": "#5B6B7A", "border": "#23201C", "radius": 4, "titleWeight": 600}},
-    {"id": "trading", "name": "Trading", "family": "framed", "nativeContainer": "#F2F2F2", "font": "Inter",
-     "tokens": {"bg": "#F2F2F2", "ink": "#16161A", "accent": "#7C5FC0", "border": "#9A9AA3", "radius": 18, "titleWeight": 800}},
-    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFF4EC", "font": "Inter",
-     "tokens": {"bg": "#FFF4EC", "ink": "#1A0F08", "accent": "#FF6A1A", "border": "#FF6A1A", "radius": 20, "titleWeight": 900}},
-    {"id": "stub", "name": "Stub", "family": "framed", "nativeContainer": "#FBF7EF", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#FBF7EF", "ink": "#2A241C", "accent": "#A0522D", "border": "#2A241C", "radius": 2, "titleWeight": 700}},
-    {"id": "specimen", "name": "Specimen", "family": "framed", "nativeContainer": "#F4F7F2", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#F4F7F2", "ink": "#1F2A22", "accent": "#3D7A5A", "border": "#9FB3A5", "radius": 6, "titleWeight": 600}},
-    {"id": "editorial_ivory", "name": "Editorial Ivory Paper", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Georgia",
-     "tokens": {"bg": "#F7F4EE", "ink": "#1A1410", "accent": "#C4956A", "border": "#D4CEC4", "badgeBg": "#F0EDE8",
+    {"id": "spread", "name": "Spread Blush", "family": "fine", "nativeContainer": "#F5E4DE", "font": "Fraunces",
+     "tokens": {"bg": "#F5E4DE", "ink": "#2B1A17", "accent": "#B4442C", "border": "#DDBFB6", "radius": 6, "titleWeight": 800}},
+    {"id": "index", "name": "Índice Aço", "family": "fine", "nativeContainer": "#E2E7ED", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#E2E7ED", "ink": "#1E2733", "accent": "#4A6B8A", "border": "#1E2733", "radius": 4, "titleWeight": 600}},
+    {"id": "trading", "name": "Trading Lilás", "family": "framed", "nativeContainer": "#EAE3F6", "font": "Inter",
+     "tokens": {"bg": "#EAE3F6", "ink": "#16161A", "accent": "#7C5FC0", "border": "#B9A9DE", "radius": 18, "titleWeight": 800}},
+    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFE9D6", "font": "Inter",
+     "tokens": {"bg": "#FFE9D6", "ink": "#1A0F08", "accent": "#FF6A1A", "border": "#FF6A1A", "radius": 20, "titleWeight": 900}},
+    {"id": "stub", "name": "Stub Kraft", "family": "framed", "nativeContainer": "#E6D3B3", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#E6D3B3", "ink": "#2A241C", "accent": "#A0522D", "border": "#2A241C", "radius": 2, "titleWeight": 700}},
+    {"id": "specimen", "name": "Specimen Sálvia", "family": "framed", "nativeContainer": "#DCE8DB", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#DCE8DB", "ink": "#1F2A22", "accent": "#3D7A5A", "border": "#8FA896", "radius": 6, "titleWeight": 600}},
+    {"id": "editorial_ivory", "name": "Editorial Ivory Paper", "family": "fine", "nativeContainer": "#F3EEE3", "font": "Georgia",
+     "tokens": {"bg": "#F3EEE3", "ink": "#1A1410", "accent": "#B5883A", "border": "#D4CEC4", "badgeBg": "#EBE5D8",
                 "radius": 3, "titleWeight": 400, "pieceStripe": "side-3px", "glass": False}},
+    # escuras · preto editorial (Show Notes), terracota (Atelier), navy + rose gold (Luxury Glass),
+    #           violeta meia-noite (inverno profundo), verde floresta (dark academia), oxblood (outono profundo)
     {"id": "show_notes", "name": "Show Notes", "family": "framed", "nativeContainer": "#0A0A0A", "font": "Inter",
      "tokens": {"bg": "#0A0A0A", "ink": "#F5F5F5", "accent": "#F5F5F5", "border": "rgba(255,255,255,0.18)", "radius": 3,
                 "titleWeight": 900, "watermarkOpacity": 0.028, "pieceStripe": "top-2px", "badges": "outline"}},
@@ -240,6 +246,12 @@ CARD_SKINS = [
     {"id": "luxury_glass_warm", "name": "Luxury Glass Quente", "family": "framed", "nativeContainer": "#0D1B2A", "font": "Inter",
      "tokens": {"bg": "rgba(13,27,42,0.97)", "ink": "#EDE6F5", "accent": "#C4956A", "accent2": "#7C5FC0",
                 "border": "rgba(196,149,106,0.22)", "radius": 16, "titleWeight": 200, "hairline": ["#C4956A", "#7C5FC0"]}},
+    {"id": "midnight_violet", "name": "Midnight Violet", "family": "framed", "nativeContainer": "#1C1B2E", "font": "Inter",
+     "tokens": {"bg": "#1C1B2E", "ink": "#ECE8F6", "accent": "#9B72CF", "border": "rgba(155,114,207,0.32)", "radius": 12, "titleWeight": 300}},
+    {"id": "forest_archive", "name": "Forest Archive", "family": "framed", "nativeContainer": "#16302A", "font": "Georgia",
+     "tokens": {"bg": "#16302A", "ink": "#E8F0EA", "accent": "#8FBF9F", "border": "rgba(143,191,159,0.28)", "radius": 6, "titleWeight": 600}},
+    {"id": "oxblood", "name": "Oxblood", "family": "framed", "nativeContainer": "#4A1F24", "font": "Fraunces",
+     "tokens": {"bg": "#4A1F24", "ink": "#F4E6E3", "accent": "#D08A7A", "border": "rgba(244,230,227,0.25)", "radius": 4, "titleWeight": 500}},
 ]
 PRESET_DOC_BY_SKIN = {"atelier": "01_atelier.md", "spread": "02_spread.md", "index": "03_index.md", "trading": "04_trading.md",
                       "fai_max": "05_fai_max.md", "stub": "06_stub.md", "specimen": "07_specimen.md",
@@ -447,7 +459,7 @@ def build_skins() -> dict:
     skins = []
     for base in CARD_SKINS:
         skin = dict(base)
-        doc = folder / PRESET_DOC_BY_SKIN[base["id"]]
+        doc = folder / PRESET_DOC_BY_SKIN.get(base["id"], f"{base['id']}.md")
         text = doc.read_text(encoding="utf-8") if doc.is_file() else ""
         title = re.search(r"^# Preset — (.+)$", text, re.M)
         skin["doc"] = url_of(doc) if doc.is_file() else None

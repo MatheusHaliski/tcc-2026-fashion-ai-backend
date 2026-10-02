@@ -141,6 +141,21 @@ class CopilotLexiconTest {
     }
 
     @Test
+    void vocabularyHasAtLeastFiveHundredKeywords() {
+        // Criar Look · "Gerar com IA": a orientação livre reconhece o vocabulário inteiro do Copilot
+        assertThat(CopilotLexicon.keywords().size()).isGreaterThanOrEqualTo(500);
+    }
+
+    @Test
+    void orientationOfTheLookBuilderReadsBackgroundWithoutTheWordFundo() {
+        CopilotService service = serviceWithCatalog();
+        Map<String, Object> o = service.orientation("Chrome Iridescent para um jantar de inverno, elegante", List.of(), List.of());
+        assertThat(((Map<?, ?>) o.get("background")).get("aura")).asString().contains("aura_avantgarde_cromo");
+        assertThat(o.get("season")).isEqualTo("WINTER");
+        assertThat(service.orientation("   ", List.of(), List.of())).isEmpty();
+    }
+
+    @Test
     void picksAuraPresetAndVariantFromPlainWords() {
         CopilotService service = serviceWithCatalog();
         Map<String, Object> electro = scheme(service.backgroundPrompt("Look de festa com aura elétrica ciano", List.of(), List.of()));

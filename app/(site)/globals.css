@@ -654,7 +654,7 @@ h1, h2, h3, h4 { margin: 0; }
 /* arte em moldura (Aura Electro): o GIF 540×720 vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
    sobre a faixa da arte, então o feixe sai de um ponto, percorre as quatro bordas e volta ao mesmo ponto, em qualquer
    proporção de card (antes, object-fit: cover cortava as laterais e só as bordas superior e inferior apareciam) */
-.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-band, 20px) + 6px) var(--aura-band, 20px) var(--aura-band, 20px); border-image-slice: 49; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
+.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-band, 20px) + 6px) var(--aura-band, 20px) var(--aura-band, 20px); border-image-slice: 66; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
 /* material sozinho aparece inteiro; sobre uma arte AURA entra em overlay forte (antes: soft-light a 42%, quase invisível) */
 .card-art-material.is-solo { mix-blend-mode: normal; opacity: 1; }
 .card-art-material.is-overlay { mix-blend-mode: overlay; opacity: .72; }

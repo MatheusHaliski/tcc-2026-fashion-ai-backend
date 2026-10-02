@@ -18,6 +18,7 @@ import { CreationSuccess } from "@/components/expanded-card";
 import Link from "next/link";
 
 interface Builder { totalPieces: number; eligiblePieces: number; hiddenPieces?: number; source?: string; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
+interface Orientation { background?: { color?: string | null; gradientPresetId?: string; seasonalPresetId?: string; aura?: { variantId: string }; materialId?: string; cardSkin?: string; animation?: string } | null; occasions?: string[]; styles?: string[]; season?: string | null; mood?: string | null; weather?: string | null }
 interface Composition { title: string; items: { wardrobeItemId: string; slot: string }[]; occasions?: string[]; styles?: string[]; why?: string; reason?: string; }
 // mesmos valores do enum SchemeSlot do backend (um valor diferente faria o POST falhar com JSON_INVALIDO)
 const OUTER_SUBCATEGORIES = new Set(["jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono", "vest"]);
@@ -95,7 +96,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const [bg, setBg] = useState<BgConfig>(() => { const st = studioOf(initial?.background) as BgConfig; const { photo: _p, ...rest } = st; void _p; return rest; });
   // foto do conjunto (como um post): o sistema só a verifica (formato e políticas da FAI Network) — nunca edita a foto do look
   const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null })); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier"); const [anatomy, setAnatomy] = useState(initial?.layoutAnatomy ?? "LISTA_VERTICAL"); const [pieceAnatomy, setPieceAnatomy] = useState<string>(((initial?.background as { pieces?: { anatomy?: string } })?.pieces?.anatomy) ?? "PECA_AMPLIADO");
-  const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null); const [step, setStep] = useState(0);
+  const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null); const [step, setStep] = useState(0);
   const [artNote, setArtNote] = useState<string | null>(null); const [done, setDone] = useState<string | null>(null);
   const [seals, setSeals] = useState<SealSearch>({ loading: false, list: [] }); const [sealPick, setSealPick] = useState<string[]>([]); const [sealConsent, setSealConsent] = useState(false);
   const all = useMemo(() => Object.values(b?.lists ?? {}).flat(), [b]);
@@ -146,9 +147,33 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
       setArtNote(generated ? t("schemeBuilder.arte_gerada_ia") : t("schemeBuilder.arte_recomendada", { name: rec.label ?? "" }));
     } catch { setArtNote(null); }
   }
+  /** O que a orientação livre pediu, lida pelo backend com o vocabulário do Copilot (800+ termos): vira arte de fundo, ocasião, estilo, estação e humor. */
+  function applyOrientation(o?: Orientation | null) {
+    if (!o) { setOrientationNote(null); return; }
+    const parts: string[] = [];
+    if (o.background && Object.keys(o.background).length) {
+      const b = o.background;
+      setBg((prev) => ({ ...prev, ...(b.color ? { color: b.color } : {}), ...(b.gradientPresetId ? { gradientPresetId: b.gradientPresetId, color: null } : {}), ...(b.seasonalPresetId ? { seasonalPresetId: b.seasonalPresetId } : {}),
+        ...(b.aura ? { aura: { variantId: b.aura.variantId, format: prev.aura?.format }, aiArt: null, uploadUrl: null } : {}), ...(b.materialId ? { materialId: b.materialId } : {}), ...(b.animation ? { animation: b.animation } : {}) }));
+      if (b.cardSkin) setSkin(b.cardSkin);
+      parts.push(t("schemeBuilder.orientacao_fundo"));
+    }
+    if (o.occasions?.length || o.styles?.length || o.season || o.mood) {
+      setForm((f) => ({ ...f, ...(o.occasions?.length ? { occasion: o.occasions.slice(0, 3) } : {}), ...(o.styles?.length ? { style: o.styles.slice(0, 3) } : {}), ...(o.season ? { season: o.season } : {}), ...(o.mood ? { mood: o.mood } : {}) }));
+      if (o.occasions?.length) parts.push(o.occasions.map(label).join(", "));
+      if (o.styles?.length) parts.push(o.styles.map(label).join(", "));
+      if (o.season) parts.push(label(o.season.toLowerCase()));
+      if (o.mood) parts.push(label(o.mood.toLowerCase()));
+    }
+    setOrientationNote(parts.length ? t("schemeBuilder.orientacao_entendi", { value: parts.join(" · ") }) : null);
+  }
   async function compose() {
     setBusy(true); setComps(null);
-    try { const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null }); setComps(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null)); }
+    try {
+      const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string; orientation?: Orientation | null }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null });
+      setComps(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null));
+      applyOrientation(r.orientation);
+    }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function doPreview() { setBusy(true); try { const blob = await api.post<Blob>("/api/schemes/preview", payload(), { headers: { Accept: "image/png" } }); setPreview(URL.createObjectURL(blob)); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
@@ -190,6 +215,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
                 <SchemeTags k="style" form={form} setForm={setForm} tax={tax} />
                 <Field label={t("common.orientacao_opcional")} id="prompt" hint={t("schemeBuilder.pode_citar_materiais_cores_estampas")}><Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("schemeBuilder.ex_algo_leve_em_linho")} maxLength={500} /></Field>
                 <Button variant="primary" onClick={compose} loading={busy}><FaiIcon id="ACT-09" size={24} decorative />{t("scheme.generate")}</Button>
+                {orientationNote && <p className="type-caption text-chalk-ink">{orientationNote}</p>}
                 {aiMsg && <p className="type-caption text-muted">{aiMsg}</p>}
                 {comps && <div className="grid gap-2 sm:grid-cols-3">{comps.map((c, i) => (
                   <AiCompositionCard key={i} title={c.title} why={c.why ?? c.reason} slotLabel={(slot) => SLOT_LABEL[slot] ?? slot} onApply={() => applyComposition(c)}

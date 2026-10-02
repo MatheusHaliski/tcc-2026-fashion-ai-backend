@@ -135,22 +135,22 @@ final class CopilotLexicon {
                 "sol de rachar", "humido e quente");
 
         // ---------------------------------------------------------------- AURA
-        aura("aura_electro", "eletrico", "eletrica", "eletro", "electro", "electric", "led", "raio", "raios", "voltagem", "energia eletrica", "pulso",
+        aura("aura_electro", "eletrico", "aura electro", "eletrica", "eletro", "electro", "electric", "led", "raio", "raios", "voltagem", "energia eletrica", "pulso",
                 "choque", "eletronica", "techno", "efeito de luz", "luzes");
-        aura("aura_geometry", "geometrico", "geometrica", "geometria", "geometric", "formas geometricas", "poligono", "poligonos", "poligonal",
+        aura("aura_geometry", "geometrico", "aura geometry", "geometry", "geometrica", "geometria", "geometric", "formas geometricas", "poligono", "poligonos", "poligonal",
                 "triangulos", "arte grafica", "poster", "bauhaus", "abstrato", "abstrata", "geometrico gradiente");
-        aura("aura_splash", "splash", "respingo", "respingos", "mancha de tinta", "manchas de tinta", "tinta", "pigmento", "explosao de cor",
+        aura("aura_splash", "splash", "aura splash", "respingo", "respingos", "mancha de tinta", "manchas de tinta", "tinta", "pigmento", "explosao de cor",
                 "paint splash", "ink", "salpico", "salpicos", "aquarela");
-        aura("aura_alfaiataria", "alfaiataria", "quiet luxury", "luxo silencioso", "tailored steel", "cabide", "cabides", "aco escovado");
-        aura("aura_editorial_mono", "editorial", "marfim", "ivory", "monocromatico", "monocromatica", "estudio fotografico", "revista");
-        aura("aura_romantico_petala", "petala", "petalas", "floral", "flores", "rosas", "romantico", "romantica", "brilho suave");
-        aura("aura_boemio_terracota", "terracota", "duna", "dunas", "deserto", "boho", "boemio", "boemia", "por do sol", "crepusculo");
-        aura("aura_streetwear_neon", "neon", "concreto", "streetwear", "circuito", "circuitos", "grafite urbano", "diagonais neon");
-        aura("aura_avantgarde_cromo", "cromo", "cromado", "cromada", "iridescente", "holografico", "holografica", "avant garde", "prisma", "fluxo de luz");
-        aura("aura_esportivo_performance", "performance", "esportivo", "athleisure", "feixes", "velocidade", "pulso esportivo");
-        aura("aura_glam_noite", "glam", "glamour", "tapete vermelho", "red carpet", "holofote", "spotlight", "palco", "noite de gala", "tecidos flutuando");
-        aura("aura_dark_academia", "dark academia", "academia sombria", "livros", "ivy", "estante", "biblioteca antiga");
-        aura("aura_natural_organico", "natural", "organico", "organica", "sustentavel", "floresta", "linho cru", "raw linen", "eco", "gotas", "plantas");
+        aura("aura_alfaiataria", "alfaiataria", "tailored", "quiet luxury", "luxo silencioso", "tailored steel", "cabide", "cabides", "aco escovado");
+        aura("aura_editorial_mono", "editorial", "editorial ivory", "marfim", "ivory", "monocromatico", "monocromatica", "estudio fotografico", "revista");
+        aura("aura_romantico_petala", "petala", "petal bloom", "bloom", "petalas", "floral", "flores", "rosas", "romantico", "romantica", "brilho suave");
+        aura("aura_boemio_terracota", "terracota", "terracotta", "terracotta dune", "duna", "dunas", "deserto", "boho", "boemio", "boemia", "por do sol", "crepusculo");
+        aura("aura_streetwear_neon", "neon", "concrete neon", "concreto", "streetwear", "circuito", "circuitos", "grafite urbano", "diagonais neon");
+        aura("aura_avantgarde_cromo", "cromo", "chrome", "chrome iridescent", "iridescent", "cromado", "cromada", "iridescente", "holografico", "holografica", "avant garde", "prisma", "fluxo de luz");
+        aura("aura_esportivo_performance", "performance", "performance pulse", "esportivo", "athleisure", "feixes", "velocidade", "pulso esportivo");
+        aura("aura_glam_noite", "glam", "midnight spotlight", "midnight", "glamour", "tapete vermelho", "red carpet", "holofote", "spotlight", "palco", "noite de gala", "tecidos flutuando");
+        aura("aura_dark_academia", "dark academia", "ivy library", "academia sombria", "livros", "ivy", "estante", "biblioteca antiga");
+        aura("aura_natural_organico", "natural", "raw linen", "organico", "organica", "sustentavel", "floresta", "linho cru", "raw linen", "eco", "gotas", "plantas");
 
         variants("aura_electro", "ciano", "01_cyan_pulse", "cyan", "01_cyan_pulse", "turquesa", "01_cyan_pulse",
                 "violeta", "02_violet_voltage", "roxo", "02_violet_voltage", "magenta", "03_magenta_rush", "pink", "03_magenta_rush", "rosa", "03_magenta_rush",
