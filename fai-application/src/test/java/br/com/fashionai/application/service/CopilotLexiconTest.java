@@ -141,13 +141,31 @@ class CopilotLexiconTest {
     }
 
     @Test
+    void vocabularyHasAtLeastFiveHundredKeywords() {
+        // Criar Look · "Gerar com IA": a orientação livre reconhece o vocabulário inteiro do Copilot
+        assertThat(CopilotLexicon.keywords().size()).isGreaterThanOrEqualTo(500);
+    }
+
+    @Test
+    void orientationOfTheLookBuilderReadsBackgroundWithoutTheWordFundo() {
+        CopilotService service = serviceWithCatalog();
+        Map<String, Object> o = service.orientation("Chrome Iridescent para um jantar de inverno, elegante", List.of(), List.of());
+        assertThat(((Map<?, ?>) o.get("background")).get("aura")).asString().contains("aura_avantgarde_cromo");
+        assertThat(o.get("season")).isEqualTo("WINTER");
+        assertThat(service.orientation("   ", List.of(), List.of())).isEmpty();
+    }
+
+    @Test
     void picksAuraPresetAndVariantFromPlainWords() {
         CopilotService service = serviceWithCatalog();
         Map<String, Object> electro = scheme(service.backgroundPrompt("Look de festa com aura elétrica ciano", List.of(), List.of()));
         assertThat(electro.get("aura")).isEqualTo(Map.of("variantId", "aura_electro__01_cyan_pulse"));
 
-        Map<String, Object> geometry = scheme(service.backgroundPrompt("Quero um fundo geométrico com anéis", List.of(), List.of()));
-        assertThat(geometry.get("aura")).isEqualTo(Map.of("variantId", "aura_geometry__gradientes_a020_rings"));
+        Map<String, Object> geometry = scheme(service.backgroundPrompt("Quero um fundo geométrico, geometria 3", List.of(), List.of()));
+        assertThat(geometry.get("aura")).isEqualTo(Map.of("variantId", "aura_geometry__geometry_03"));
+
+        Map<String, Object> splash = scheme(service.backgroundPrompt("aura com respingos de tinta", List.of(), List.of()));
+        assertThat(((Map<?, ?>) splash.get("aura")).get("variantId")).asString().startsWith("aura_splash__");
 
         Map<String, Object> floral = scheme(service.backgroundPrompt("fundo floral para um date", List.of(), List.of()));
         assertThat(((Map<?, ?>) floral.get("aura")).get("variantId")).asString().startsWith("aura_romantico_petala__");

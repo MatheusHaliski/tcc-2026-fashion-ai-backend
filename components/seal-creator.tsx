@@ -1,4 +1,6 @@
 "use client";
+import type React from "react";
+import { rangeFill } from "@/lib/range-fill";
 import { useState } from "react";
 import { api } from "@/lib/api/client";
 import { Button, Chip, Field, FileButton, Input, Select, useToast } from "@/components/ui";
@@ -105,7 +107,7 @@ export function SealCreator({ value, onChange, premium }: { value?: SealDesign |
               <MaterialColor part="field" label={t("sealCreator.campo")} />
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <Field label={t("sealCreator.cor_das_linhas")} id="lc"><input id="lc" type="color" className="input h-9 w-full p-1" value={d.field?.lineColor ?? "#F6E8CF"} onChange={(e) => setPart("field", { lineColor: e.target.value.toUpperCase() })} /></Field>
-                <Field label={t("sealCreator.densidade", { value: d.field?.density ?? 2 })} id="dens"><input id="dens" type="range" min={1} max={3} step={1} className="w-full" value={d.field?.density ?? 2} onChange={(e) => setPart("field", { density: Number(e.target.value) })} /></Field>
+                <Field label={t("sealCreator.densidade", { value: d.field?.density ?? 2 })} id="dens"><input id="dens" type="range" min={1} max={3} step={1} className="w-full" value={d.field?.density ?? 2} style={rangeFill(d.field?.density ?? 2, 1, 3) as React.CSSProperties} onChange={(e) => setPart("field", { density: Number(e.target.value) })} /></Field>
               </div>
               <p className="label mt-2 mb-1">{t("sealCreator.cores_dos_nos_pontos")}</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -116,12 +118,12 @@ export function SealCreator({ value, onChange, premium }: { value?: SealDesign |
             <section>
               <p className="label mb-1">{t("sealCreator.n3_disco_central")}</p>
               <MaterialColor part="center" label={t("sealCreator.disco")} />
-              <Field label={t("sealCreator.raio_do_disco_do_raio", { Math: Math.round((d.center?.radius ?? GEOMETRY.centerDisc) * 100) })} id="crad"><input id="crad" type="range" min={0.3} max={0.6} step={0.01} className="w-full" value={d.center?.radius ?? GEOMETRY.centerDisc} onChange={(e) => setPart("center", { radius: Number(e.target.value) })} /></Field>
+              <Field label={t("sealCreator.raio_do_disco_do_raio", { Math: Math.round((d.center?.radius ?? GEOMETRY.centerDisc) * 100) })} id="crad"><input id="crad" type="range" min={0.3} max={0.6} step={0.01} className="w-full" value={d.center?.radius ?? GEOMETRY.centerDisc} style={rangeFill(d.center?.radius ?? GEOMETRY.centerDisc, 0.3, 0.6) as React.CSSProperties} onChange={(e) => setPart("center", { radius: Number(e.target.value) })} /></Field>
             </section>
             <section>
               <p className="label mb-1">{t("sealCreator.n4_borda_bisel")}</p>
               <MaterialColor part="border" label={t("sealCreator.borda")} />
-              <Field label={t("sealCreator.largura_do_raio", { Math: Math.round((d.border?.width ?? GEOMETRY.bezel) * 100) })} id="bw"><input id="bw" type="range" min={0.03} max={0.12} step={0.005} className="w-full" value={d.border?.width ?? GEOMETRY.bezel} onChange={(e) => setPart("border", { width: Number(e.target.value) })} /></Field>
+              <Field label={t("sealCreator.largura_do_raio", { Math: Math.round((d.border?.width ?? GEOMETRY.bezel) * 100) })} id="bw"><input id="bw" type="range" min={0.03} max={0.12} step={0.005} className="w-full" value={d.border?.width ?? GEOMETRY.bezel} style={rangeFill(d.border?.width ?? GEOMETRY.bezel, 0.03, 0.12) as React.CSSProperties} onChange={(e) => setPart("border", { width: Number(e.target.value) })} /></Field>
             </section>
           </div>
         )}

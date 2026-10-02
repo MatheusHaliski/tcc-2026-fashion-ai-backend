@@ -1,4 +1,6 @@
 "use client";
+import type React from "react";
+import { rangeFill } from "@/lib/range-fill";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
@@ -84,7 +86,7 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
     return (
       <label key={k} htmlFor={id} className="grid gap-1">
         <span className="flex items-center justify-between gap-2 type-body-sm"><span>{t(`avatar3d.body.param.${k}`)}</span><span className="flex items-center gap-2"><Badge className={`src-${src}`}>{t(`avatar3d.body.fonte.${src}`)}</Badge><span className="type-data">{cm(k)}</span></span></span>
-        <input id={id} type="range" min={lo} max={hi} step={step} value={valueOf(k)} onChange={(e) => setModel((m) => setParam(m, k, Number(e.target.value)))} />
+        <input id={id} type="range" min={lo} max={hi} step={step} value={valueOf(k)} style={rangeFill(valueOf(k), lo, hi) as React.CSSProperties} onChange={(e) => setModel((m) => setParam(m, k, Number(e.target.value)))} />
       </label>
     );
   };
