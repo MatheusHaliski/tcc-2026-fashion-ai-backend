@@ -575,6 +575,8 @@
   "backgroundStudio.container": "container {c}",
   "backgroundStudio.cor_do_container": "Container color",
   "backgroundStudio.cor_personalizada_do_container": "custom container color",
+  "backgroundStudio.desfazer": "Undo",
+  "backgroundStudio.desfazer_dica": "Returns the card art to its previous state",
   "backgroundStudio.limpar_arte": "Clear art",
   "backgroundStudio.limpar_arte_dica": "Removes color, gradient, palette, AURA, material, animation and container color from the card",
   "backgroundStudio.cor_dos_textos": "Text color",

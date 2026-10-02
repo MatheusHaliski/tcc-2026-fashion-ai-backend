@@ -8,6 +8,7 @@ import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Spinner, Switch, Textarea, useToast } from "@/components/ui";
 import { SchemeTags } from "@/components/scheme-tags";
 import { AiCompositionCard } from "@/components/ai-compositions";
+import { useUndo } from "@/lib/hooks/use-undo";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -94,6 +95,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const [selected, setSelected] = useState<{ id: string; slot: string }[]>(initial ? initial.items.map((i) => ({ id: i.wardrobeItemId, slot: i.slot })) : []);
   const [form, setForm] = useState({ title: initial?.title ?? "", description: initial?.description ?? "", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? "", mood: initial?.mood ?? "", visibility: initial?.visibility ?? "PRIVATE", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(", ") });
   const [bg, setBg] = useState<BgConfig>(() => { const st = studioOf(initial?.background) as BgConfig; const { photo: _p, ...rest } = st; void _p; return rest; });
+  const artUndo = useUndo(bg, setBg); // "Desfazer" acima do preview: volta a arte ao estado anterior
   // foto do conjunto (como um post): o sistema só a verifica (formato e políticas da FAI Network) — nunca edita a foto do look
   const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null })); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier"); const [anatomy, setAnatomy] = useState(initial?.layoutAnatomy ?? "LISTA_VERTICAL"); const [pieceAnatomy, setPieceAnatomy] = useState<string>(((initial?.background as { pieces?: { anatomy?: string } })?.pieces?.anatomy) ?? "PECA_AMPLIADO");
   const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null); const [step, setStep] = useState(0);
@@ -282,7 +284,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
       <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
         <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("scheme.card")}</p>
           {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout, skin e peças ficam */}
-          <Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></div>
+          <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
         <SchemeCard scheme={draft} href="#" /></aside>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
