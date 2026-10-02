@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-10-02T16:02:43+00:00",
+ "generatedAt": "2026-10-02T16:53:12+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -687,16 +687,16 @@
       "url": "/aura/electro/01_cyan_pulse/imagem.png",
       "previewUrl": "/aura/electro/01_cyan_pulse/imagem.png",
       "cardUrl": "/aura/electro/01_cyan_pulse/imagem.png",
-      "bytes": 6716,
-      "sha256": "5d3dc4dadb9e39ea4207ee3e0de1e4f75df9025abcc09111344e10519d48fff8"
+      "bytes": 3851,
+      "sha256": "20dd4fd6ce1524a678b8d9f343fdf7fd2ccf956a0f305e789296d3512ab6e33f"
      },
      "animated": {
       "url": "/aura/electro/01_cyan_pulse/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/01_cyan_pulse/imagem.png",
-      "bytes": 1636521,
-      "sha256": "8b3e36a65901a6a0a264f7feb825b75d12051369fa106bdd712645fc7a0b4abb"
+      "bytes": 1660729,
+      "sha256": "00fcce418fa99b03f6e509ba0e8b8356388fc662783a55c0715c977be177634b"
      }
     },
     {
@@ -715,16 +715,16 @@
       "url": "/aura/electro/02_violet_voltage/imagem.png",
       "previewUrl": "/aura/electro/02_violet_voltage/imagem.png",
       "cardUrl": "/aura/electro/02_violet_voltage/imagem.png",
-      "bytes": 7940,
-      "sha256": "efa4d44610cabb921505b0f319a0bf1971086c83d6c6f9e1e3961e9a1f705ff6"
+      "bytes": 4901,
+      "sha256": "d1ac5d3fb784189ed35b3c8b53af53b9030a455058e1447c22fd426604eb79e1"
      },
      "animated": {
       "url": "/aura/electro/02_violet_voltage/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/02_violet_voltage/imagem.png",
-      "bytes": 1655766,
-      "sha256": "dc41cb1debcce6d95b7fddc04cfee24291d1391751b334658502112e7ae12cdb"
+      "bytes": 1743851,
+      "sha256": "bc8966324c7a4d4d0e6060adb6f1dd36b6080c8f6fe77bea5a5fe3c52db52d72"
      }
     },
     {
@@ -743,16 +743,16 @@
       "url": "/aura/electro/03_magenta_rush/imagem.png",
       "previewUrl": "/aura/electro/03_magenta_rush/imagem.png",
       "cardUrl": "/aura/electro/03_magenta_rush/imagem.png",
-      "bytes": 8679,
-      "sha256": "84536178f9357547f0d5225d56d9cf2b7d618e106db5a3d6b45b19883862d2b6"
+      "bytes": 4061,
+      "sha256": "8f3befc89d3937b80106d9174dfe72507bca99082505d9c36ff30557cdb4e676"
      },
      "animated": {
       "url": "/aura/electro/03_magenta_rush/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/03_magenta_rush/imagem.png",
-      "bytes": 1789505,
-      "sha256": "f85fa8a056174049d8afc558ba7b03ce9773cb197975ef49d7fe1c496e14e6c5"
+      "bytes": 1747182,
+      "sha256": "54c1855f304bf968f1a1789f04d6df2f40e91b0e985011dfcfaeac3f99f1eae0"
      }
     },
     {
@@ -771,16 +771,16 @@
       "url": "/aura/electro/04_lime_circuit/imagem.png",
       "previewUrl": "/aura/electro/04_lime_circuit/imagem.png",
       "cardUrl": "/aura/electro/04_lime_circuit/imagem.png",
-      "bytes": 3292,
-      "sha256": "13238cd5474bb93c3fee29035f04871e7a3a49f0d4355c0f79fcf24073dc798c"
+      "bytes": 2247,
+      "sha256": "0f61c98432dd08911b86507733074308771318b032abb0fed16290fe69bb0180"
      },
      "animated": {
       "url": "/aura/electro/04_lime_circuit/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/04_lime_circuit/imagem.png",
-      "bytes": 285732,
-      "sha256": "ae5a048ab07d3e6f176c180fc549c093613c9f3c305c94e6a2e255279c701852"
+      "bytes": 292098,
+      "sha256": "5be61d25974cffe52ca0d8196ec98532a2048d803730625a6e52f9d79f3ab04d"
      }
     },
     {
@@ -799,16 +799,16 @@
       "url": "/aura/electro/05_solar_flow/imagem.png",
       "previewUrl": "/aura/electro/05_solar_flow/imagem.png",
       "cardUrl": "/aura/electro/05_solar_flow/imagem.png",
-      "bytes": 7293,
-      "sha256": "5d43ebb4196f2b9a87a3bcabed3f7c1e15cce3900d7b3d0d51997000faecd0f5"
+      "bytes": 5620,
+      "sha256": "cc49e688d7f762adb8a303dbf64b82d05522a7bb23121174954415013fc33c04"
      },
      "animated": {
       "url": "/aura/electro/05_solar_flow/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/05_solar_flow/imagem.png",
-      "bytes": 1799318,
-      "sha256": "2d81f231bb372f04f6b0565e8d32e2981542e98e8962ad529b362f732be49470"
+      "bytes": 1776770,
+      "sha256": "bdf2c1cad549e93dc35cb50b9a1f95a321f0ec5ebd30d004fe4f81dcab4bea4d"
      }
     },
     {
@@ -827,16 +827,16 @@
       "url": "/aura/electro/06_gold_charge/imagem.png",
       "previewUrl": "/aura/electro/06_gold_charge/imagem.png",
       "cardUrl": "/aura/electro/06_gold_charge/imagem.png",
-      "bytes": 4424,
-      "sha256": "c49aa117b495a3aa541af8369071fc19bb0c0b5ad8b9f2c06facbe8c3b0edf07"
+      "bytes": 4244,
+      "sha256": "37d847445d8d1bed1cd1317477ae030aaec4ca0710ab2793614771d187bbccc9"
      },
      "animated": {
       "url": "/aura/electro/06_gold_charge/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/06_gold_charge/imagem.png",
-      "bytes": 1410726,
-      "sha256": "bc54498fe34d1518961a8e635a88ee28da27d0d7a15f1c020d58c8bcff6511ed"
+      "bytes": 1459221,
+      "sha256": "4b66e02d3fbaed1cd413b90a6f73c2eb20846f6bce2f5a957f8fe18d66908364"
      }
     },
     {
@@ -855,16 +855,16 @@
       "url": "/aura/electro/07_brasil_current/imagem.png",
       "previewUrl": "/aura/electro/07_brasil_current/imagem.png",
       "cardUrl": "/aura/electro/07_brasil_current/imagem.png",
-      "bytes": 5573,
-      "sha256": "dc00cf2b321e9bd890d92cdbab8dc1e3560b95a3ccb66883b28791af40c41d19"
+      "bytes": 3316,
+      "sha256": "07d28d31dc0cc1fb0e8d12562c041241af5b7ab0e1e6c9ea22d808e4da9c5e09"
      },
      "animated": {
       "url": "/aura/electro/07_brasil_current/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/07_brasil_current/imagem.png",
-      "bytes": 1678877,
-      "sha256": "bd180ce75a9f23af4a1cc944386c9f324a0190b369fc402042a72cd01021576a"
+      "bytes": 1765860,
+      "sha256": "32fe0058c70248e3c03d0f12dd6eb446ddeb542c262abb55fdee60ffda2f385c"
      }
     },
     {
@@ -884,16 +884,16 @@
       "url": "/aura/electro/08_aurora_boreal/imagem.png",
       "previewUrl": "/aura/electro/08_aurora_boreal/imagem.png",
       "cardUrl": "/aura/electro/08_aurora_boreal/imagem.png",
-      "bytes": 18810,
-      "sha256": "bf5372d78bb3a9f1b7b25fc433e930fe9517c41dc8efb68d0f545240ae9c6f6f"
+      "bytes": 10712,
+      "sha256": "8322380dbc0ab287736d6e69ae3e4fdf1d59a9b5f03af9eddfc3cccc8269cead"
      },
      "animated": {
       "url": "/aura/electro/08_aurora_boreal/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/08_aurora_boreal/imagem.png",
-      "bytes": 2487778,
-      "sha256": "ba4a9d9e02c80cf9361635d8cb3b762c41707092a16a88f1da51ffc9b3a8e688"
+      "bytes": 2329001,
+      "sha256": "20f86c67e5c4f353ff85b1cc1ca3b993bd323f8e2fae03fec1d39b07d3361f3f"
      }
     },
     {
@@ -915,16 +915,16 @@
       "url": "/aura/electro/09_rainbow_spectrum/imagem.png",
       "previewUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
       "cardUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
-      "bytes": 21165,
-      "sha256": "363d9e51482de737c3fe97d5ae2651ba1a03028b5a10369efd1f29cd925cf9ad"
+      "bytes": 10881,
+      "sha256": "15439772bb5167674f812153be8478439f8366dbe7264cdde9e6b24ff52fa40f"
      },
      "animated": {
       "url": "/aura/electro/09_rainbow_spectrum/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
-      "bytes": 2508418,
-      "sha256": "5ab10bbbc6b60d6775ad73e14cf2083e3fad3135b321d744ecf3d84753c56b11"
+      "bytes": 2320087,
+      "sha256": "3d44af21224e7e0a34fa1f5f4e19377a9890a8ce10b81f90d4b7d57bf0593120"
      }
     },
     {
@@ -943,16 +943,16 @@
       "url": "/aura/electro/10_ice_chrome/imagem.png",
       "previewUrl": "/aura/electro/10_ice_chrome/imagem.png",
       "cardUrl": "/aura/electro/10_ice_chrome/imagem.png",
-      "bytes": 4867,
-      "sha256": "f45dbaf136ada0186c8f60319a3e7487413ea29d6a9df3589c3a689298b3c5f6"
+      "bytes": 3740,
+      "sha256": "2b34a9b4a17e075152a86cef62930e664aa60ae67b9f55e145c8d234a8233338"
      },
      "animated": {
       "url": "/aura/electro/10_ice_chrome/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/10_ice_chrome/imagem.png",
-      "bytes": 1765152,
-      "sha256": "003f85ebb62b61acfebc654048236dfe6e180f31696e1bd050fad0e0843de456"
+      "bytes": 1683018,
+      "sha256": "1dcf966e710cf3e843dcd322839734dd61bbe82a91930dc88e5c88e941091307"
      }
     },
     {
@@ -971,16 +971,16 @@
       "url": "/aura/electro/11_red_reactor/imagem.png",
       "previewUrl": "/aura/electro/11_red_reactor/imagem.png",
       "cardUrl": "/aura/electro/11_red_reactor/imagem.png",
-      "bytes": 4889,
-      "sha256": "89de7c0ff35c8def406e2ec45a63d8648175c948d5929504a9f247b3de715adb"
+      "bytes": 2370,
+      "sha256": "4680a43a8f555019041c9d6863377df7c654477b0953fe6ad7062fc8afaa6998"
      },
      "animated": {
       "url": "/aura/electro/11_red_reactor/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/11_red_reactor/imagem.png",
-      "bytes": 1253471,
-      "sha256": "23a3432fa2384feac976e2b402305ed60c5655965328587f3d0dd4448836aad7"
+      "bytes": 1318357,
+      "sha256": "3062b6213f8a07189b3822ec271e06fc4ca87d297ab5668c83beb51b5174f9cd"
      }
     },
     {
@@ -1000,16 +1000,16 @@
       "url": "/aura/electro/12_fashion_signal/imagem.png",
       "previewUrl": "/aura/electro/12_fashion_signal/imagem.png",
       "cardUrl": "/aura/electro/12_fashion_signal/imagem.png",
-      "bytes": 12477,
-      "sha256": "7c744d4fc927f6f1c5519f5560fcd0191692e52880d47c1c04c5f563f0f9f34e"
+      "bytes": 7417,
+      "sha256": "f648e34d04efd9cc58859f4602ab2e7bdaf7aef520d657cd55083631c964a4bd"
      },
      "animated": {
       "url": "/aura/electro/12_fashion_signal/loading_10s.gif",
       "mime": "image/gif",
       "durationS": 10,
       "posterUrl": "/aura/electro/12_fashion_signal/imagem.png",
-      "bytes": 2134777,
-      "sha256": "4e831cf4d2185714a805a4f36a8c39f197ab33da22f9da22796894db9512122e"
+      "bytes": 2087290,
+      "sha256": "1383d15fd93526e55b2cf704a0ad949643a56df2911b885d5850cc7ff0dec84d"
      }
     }
    ]
@@ -1218,8 +1218,8 @@
       "url": "/aura/splash/splash_01/imagem.png",
       "previewUrl": "/aura/splash/splash_01/imagem.png",
       "cardUrl": "/aura/splash/splash_01/imagem.png",
-      "bytes": 40270,
-      "sha256": "5217be376995e996b610aecc584258fc1dedbb11a5ee4137649167d73e9de271"
+      "bytes": 290104,
+      "sha256": "2c6df52f21bdbb29e345ce8c2d675bd5e2e277ead3999b8c53cb64d88b2ce469"
      },
      "animated": {
       "url": "/aura/splash/splash_01/animacao.mp4",
@@ -1241,8 +1241,8 @@
       "url": "/aura/splash/splash_02/imagem.png",
       "previewUrl": "/aura/splash/splash_02/imagem.png",
       "cardUrl": "/aura/splash/splash_02/imagem.png",
-      "bytes": 111301,
-      "sha256": "f2d623ea29a9ad00d2a5f1c22913d9605078304abc5f7bacaa19e5676d3a594e"
+      "bytes": 715714,
+      "sha256": "5fc9886aa00b6f6e8a32d8cabaf467018a6c5f7ba8854fbc66d69fed3ed23c64"
      },
      "animated": {
       "url": "/aura/splash/splash_02/animacao.mp4",
@@ -1264,8 +1264,8 @@
       "url": "/aura/splash/splash_03/imagem.png",
       "previewUrl": "/aura/splash/splash_03/imagem.png",
       "cardUrl": "/aura/splash/splash_03/imagem.png",
-      "bytes": 60715,
-      "sha256": "2fcf3aa5056e9152911e01815da26f5429fa58e75eafd88d72615f404777b8fb"
+      "bytes": 282686,
+      "sha256": "d3dfc2c6223f87dd9de758bc9d7ee45bc080547808e0424d8e3aa1ac5bc414aa"
      },
      "animated": {
       "url": "/aura/splash/splash_03/animacao.mp4",
@@ -1287,8 +1287,8 @@
       "url": "/aura/splash/splash_04/imagem.png",
       "previewUrl": "/aura/splash/splash_04/imagem.png",
       "cardUrl": "/aura/splash/splash_04/imagem.png",
-      "bytes": 52062,
-      "sha256": "0ccb25d49ea19914261a8571b81516b2e3ae96686183942923725181af7a6af9"
+      "bytes": 315276,
+      "sha256": "241df9a0431eab2e8bb454315a27f83af3f5ef98301281801a382c1ad0dd0789"
      },
      "animated": {
       "url": "/aura/splash/splash_04/animacao.mp4",
@@ -1310,8 +1310,8 @@
       "url": "/aura/splash/splash_05/imagem.png",
       "previewUrl": "/aura/splash/splash_05/imagem.png",
       "cardUrl": "/aura/splash/splash_05/imagem.png",
-      "bytes": 120002,
-      "sha256": "2b5d03ed092b863342a670128798423c76eeff6e436c84d995a5cb3e4e8dd373"
+      "bytes": 321013,
+      "sha256": "41a02302d8e7087676d53f65a997e0774ec0178465e9aa4a9bb86a007b9e7f68"
      },
      "animated": {
       "url": "/aura/splash/splash_05/animacao.mp4",
@@ -1333,8 +1333,8 @@
       "url": "/aura/splash/splash_06/imagem.png",
       "previewUrl": "/aura/splash/splash_06/imagem.png",
       "cardUrl": "/aura/splash/splash_06/imagem.png",
-      "bytes": 112964,
-      "sha256": "703ded485b47cacb0ca2dbc83d95af16e8dd2c3caae9383cbb7f2f4fdcd13348"
+      "bytes": 188587,
+      "sha256": "74899bd4954407670c73d4de82f6fdb94e98731f954e65b0c1dc4e7444c7962b"
      },
      "animated": {
       "url": "/aura/splash/splash_06/animacao.mp4",

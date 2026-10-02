@@ -60,8 +60,8 @@
 :root[data-density="compact"] { --radius: 6px; }
 /* RF23 — todo conteúdo navegável pelo menu fica num container (branco por padrão; cor configurável em Configurações → Aparência) */
 .page-container { background: var(--content-bg, var(--surface)); border: 1px solid var(--line-soft); border-radius: 18px; box-shadow: var(--shadow); padding: clamp(12px, 2.2vw, 28px); min-height: calc(100vh - 7rem); color: var(--ink); }
-:root[data-content-tone="light"] .page-container { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #6B6F66; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
-:root[data-content-tone="dark"] .page-container { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
+:root[data-content-tone="light"] :is(.page-container, .app-header) { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #6B6F66; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
+:root[data-content-tone="dark"] :is(.page-container, .app-header) { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
 .page-container .page-container { border: 0; box-shadow: none; padding: 0; min-height: 0; }
 /* nada estoura a largura do conteúdo: itens de grade podem encolher, palavras longas quebram e tabelas rolam dentro do card */
 .page-container { min-width: 0; overflow-wrap: break-word; }
@@ -181,16 +181,31 @@ h1, h2, h3, h4 { margin: 0; }
 .chip.is-blocked { opacity: .5; border-style: dashed; }
 .tag-fix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: .5rem .75rem; border-radius: var(--radius-sm); border: 1.5px solid var(--status-critical); background: color-mix(in srgb, var(--status-critical) 8%, var(--surface)); font-size: var(--text-body-sm); }
 .tag-fix > span { flex: 1 1 16rem; }
+/* Seletor de abas (perfil, looks, admin…): pílulas roláveis, a ativa preenchida; quando há abas escondidas aparecem
+   setas nas bordas e uma barra de rolagem fina e visível (antes ficava oculta e só um degradê indicava a rolagem) */
 .tabs-wrap { position: relative; }
-.tabs { display: flex; gap: .25rem; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
-.tabs::-webkit-scrollbar { display: none; }
-/* sombra nas bordas quando há abas escondidas: o usuário vê que pode rolar */
-.tabs-wrap::before, .tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 2px; width: 28px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
-.tabs-wrap::before { left: 0; background: linear-gradient(90deg, var(--content-bg, var(--surface)), transparent); }
-.tabs-wrap::after { right: 0; background: linear-gradient(270deg, var(--content-bg, var(--surface)), transparent); }
+.tabs { position: relative; display: flex; gap: .35rem; padding: 4px 2px 8px; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scroll-behavior: smooth; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 42%, transparent) color-mix(in srgb, var(--ink) 8%, transparent); }
+.tabs::-webkit-scrollbar { height: 6px; }
+.tabs::-webkit-scrollbar-track { background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 999px; }
+.tabs::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 42%, transparent); border-radius: 999px; }
+.tabs::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ink) 65%, transparent); }
+.tabs-wrap.is-overflowing .tabs { scroll-padding-inline: 44px; }
+/* degradê nas bordas quando há abas escondidas, por baixo das setas */
+.tabs-wrap::before, .tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 16px; width: 56px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
+.tabs-wrap::before { left: 0; background: linear-gradient(90deg, var(--content-bg, var(--surface)) 45%, transparent); }
+.tabs-wrap::after { right: 0; background: linear-gradient(270deg, var(--content-bg, var(--surface)) 45%, transparent); }
 .tabs-wrap.fade-start::before, .tabs-wrap.fade-end::after { opacity: 1; }
-.tab { min-height: var(--control-md); padding: .55rem .9rem; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.tabs-arrow { position: absolute; top: 4px; z-index: 2; width: 34px; height: var(--control-md); display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1.5px solid var(--line-soft);
+  background: var(--content-bg, var(--surface)); color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.14); cursor: pointer; }
+.tabs-arrow:hover { background: var(--surface-2); }
+.tabs-arrow.is-start { left: 0; }
+.tabs-arrow.is-end { right: 0; }
+.tab { display: inline-flex; align-items: center; gap: .4rem; flex: none; min-height: var(--control-md); padding: .45rem .95rem; border: 1.5px solid transparent; border-radius: 999px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; background: none; transition: background-color .12s, color .12s; }
+.tab:hover { color: var(--ink); background: var(--surface-2); }
+.tab[aria-selected="true"] { color: var(--surface); background: var(--ink); }
+.tab-count { min-width: 1.4em; padding: 0 .4em; border-radius: 999px; font-size: .85em; line-height: 1.5; text-align: center; background: color-mix(in srgb, currentColor 14%, transparent); }
+:root[data-theme="contrast"] .tab[aria-selected="true"] { outline: 2px solid var(--line); outline-offset: 1px; }
 .skeleton { background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm); }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .toast { background: var(--ink); color: var(--surface); padding: .7rem 1rem; border-radius: var(--radius); box-shadow: var(--shadow); font-size: var(--text-body); max-width: 420px; }
@@ -649,12 +664,12 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card.has-art .hero-lateral-row .c-photo { border-radius: var(--r-in) 0 0 var(--r-in); }
 .fai-card.has-art .piece2 { border-radius: var(--r-in); }
 .fai-card.has-art .c-row:last-child { border-bottom: none; }
-.card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; }
+.card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; container-type: inline-size; }
 .card-art-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-/* arte em moldura (Aura Electro): o GIF 540×720 vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
+/* arte em moldura (Aura Electro): o GIF 360×480 (anel de 108 px, LEDs na faixa inteira) vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
    sobre a faixa da arte, então o feixe sai de um ponto, percorre as quatro bordas e volta ao mesmo ponto, em qualquer
    proporção de card (antes, object-fit: cover cortava as laterais e só as bordas superior e inferior apareciam) */
-.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-band, 20px) + 6px) var(--aura-band, 20px) var(--aura-band, 20px); border-image-slice: 66; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
+.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-frame, 20px) + 6px) var(--aura-frame, 20px) var(--aura-frame, 20px); border-image-slice: 108; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
 /* material sozinho aparece inteiro; sobre uma arte AURA entra em overlay forte (antes: soft-light a 42%, quase invisível) */
 .card-art-material.is-solo { mix-blend-mode: normal; opacity: 1; }
 .card-art-material.is-overlay { mix-blend-mode: overlay; opacity: .72; }
@@ -933,6 +948,8 @@ button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var
 :root[data-theme="contrast"] .side-nav-box { border: 2px solid #000; }
 /* ---------- Shell: cabeçalho fixo (altura reservada = sem salto de layout), menu em grupos, gaveta e barra inferior ---------- */
 .app-header { position: sticky; top: 0; z-index: var(--z-header); height: var(--header-h); border-bottom: 1px solid var(--line-soft); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: saturate(1.4) blur(10px); }
+/* RF23: a cor escolhida para os containers de conteúdo pinta também a barra do topo (tokens de texto/ícone acima) */
+:root:is([data-content-tone="light"], [data-content-tone="dark"]) .app-header { background: color-mix(in srgb, var(--content-bg) 94%, transparent); color: var(--ink); }
 .app-header-inner { display: flex; align-items: center; gap: 8px; height: 100%; max-width: 1400px; margin: 0 auto; padding: 0 12px; }
 @media (min-width: 640px) { .app-header-inner { padding: 0 20px; gap: 12px; } }
 .brand-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--control-md); flex: none; }

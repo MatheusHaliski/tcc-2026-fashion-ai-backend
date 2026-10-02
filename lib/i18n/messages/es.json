@@ -3571,6 +3571,8 @@
   "u.username.perfil_institucional_abrir_pagina_da": "Perfil institucional. <0>Abrir la página de la marca/celebridad →</0>",
   "ui.index.algo_deu_errado_tente_de": "Algo salió mal. Inténtalo de nuevo.",
   "ui.index.paginacao": "paginación",
+  "ui.tabs.anteriores": "Pestañas anteriores",
+  "ui.tabs.proximas": "Siguientes pestañas",
   "ui.multi.dica": "Elige hasta {max}; toca de nuevo para quitar.",
   "ui.multi.limite": "Selecciona hasta {max}. Toca una opción marcada para quitarla y elegir otra.",
   "ui.multi.remover": "Quitar “{v}”",

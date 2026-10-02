@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label } from "@/lib/api/taxonomy";
@@ -7,6 +7,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { Button, Chip, Input, SegmentPicker, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
+import { auraVariantId, bundledAuraPresets } from "@/lib/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
 export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
@@ -42,7 +43,15 @@ export function OptionStrip({ title, hint, children, kind = "grid" }: { title: s
 }
 
 export function useBgCatalog() {
-  return useApi<BgCatalog>((signal) => api.get("/api/backgrounds/catalog", { signal, anonymous: true }), []).data;
+  const data = useApi<BgCatalog>((signal) => api.get("/api/backgrounds/catalog", { signal, anonymous: true }), []).data;
+  // Presets AURA vêm do índice deste build (bate com os arquivos de /public); da API só aproveitamos a descrição de
+  // cada variante. Assim uma API com manifesto antigo não lista variantes sem arquivo (miniatura quebrada).
+  return useMemo(() => {
+    if (!data) return data;
+    const remote = new Map((data.auraPresets ?? []).flatMap((a) => (a.variants ?? []).map((v) => [v.id, v] as const)));
+    const auraPresets = bundledAuraPresets().map((a) => ({ ...a, variants: a.variants.map((v) => ({ ...v, description: remote.get(v.id)?.description })) }));
+    return { ...data, auraPresets };
+  }, [data]);
 }
 
 const gradientCss = (g: { stops: string[]; type?: string; angle?: number }) =>
@@ -81,7 +90,8 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
   const { t, rich } = useI18n(); const toast = useToast(); const cat = useBgCatalog();
   const { data: rec } = useApi<{ direction?: string }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
   if (disabledNote) return <>{disabledNote}</>;
-  const auraPreset = cat?.auraPresets?.find((a) => (a.variants ?? []).some((v) => v.id === value.aura?.variantId) || a.id === value.aura?.variantId);
+  const currentVariant = auraVariantId(value.aura?.variantId);
+  const auraPreset = cat?.auraPresets?.find((a) => (a.variants ?? []).some((v) => v.id === currentVariant) || a.id === value.aura?.variantId);
   const direction = rec?.direction ? cat?.directions?.[rec.direction] : undefined;
   return (
     <div className="grid gap-3">
@@ -92,7 +102,7 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           <span className="opt-name">{a.name}</span></button>)}
       </OptionStrip>
       {auraPreset && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
-        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={value.aura?.variantId === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ aura: { variantId: v.id, format: value.aura?.format } })}>
+        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ aura: { variantId: v.id, format: value.aura?.format } })}>
           {v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}<span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       <OptionStrip title={t("backgroundStudio.material_camada")}>
