@@ -666,6 +666,20 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card.has-art .c-row:last-child { border-bottom: none; }
 .card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; container-type: inline-size; }
 .card-art-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card-art.art-aura-splash > img.card-art-img:not(.card-art-material),
+.card-art.art-aura-splash > video.card-art-img { mix-blend-mode: screen; filter: brightness(1.14) saturate(1.3) contrast(1.06); transform: scale(1.1); }
+.aura-splash-spread { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .78; mix-blend-mode: screen; pointer-events: none; }
+.aura-splash-spread .goo-flow { transform-box: fill-box; transform-origin: center; }
+.aura-splash-spread .goo-flow-pink { animation: splash-spread-pink 7.2s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-gold { animation: splash-spread-gold 8.4s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-cyan { animation: splash-spread-cyan 6.6s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow circle { fill: #fff; opacity: .8; }
+.aura-splash-spread .goo-highlight { fill: none; stroke: #fff; stroke-width: .75; stroke-linecap: round; opacity: .72; }
+.aura-splash-spread .goo-drops { fill: #fff; opacity: .72; animation: splash-drops 5.5s ease-in-out infinite alternate; }
+@keyframes splash-spread-pink { from { transform: translate(-2%, 1%) scale(.92, .92) rotate(-2deg); } to { transform: translate(2%, -2%) scale(1.06, 1.08) rotate(2deg); } }
+@keyframes splash-spread-gold { from { transform: translate(2%, 1%) scale(.94, .9) rotate(2deg); } to { transform: translate(-2%, -2%) scale(1.05, 1.12) rotate(-2deg); } }
+@keyframes splash-spread-cyan { from { transform: translate(1%, -2%) scale(1.02, .92) rotate(1deg); } to { transform: translate(-2%, 2%) scale(.94, 1.08) rotate(-2deg); } }
+@keyframes splash-drops { from { transform: translateY(1%) scale(.9); } to { transform: translateY(-2%) scale(1.08); } }
 /* arte em moldura (Aura Electro): o GIF 360×480 (anel de 108 px, LEDs na faixa inteira) vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
    sobre a faixa da arte, então o feixe sai de um ponto, percorre as quatro bordas e volta ao mesmo ponto, em qualquer
    proporção de card (antes, object-fit: cover cortava as laterais e só as bordas superior e inferior apareciam) */
