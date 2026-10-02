@@ -56,6 +56,22 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(ART_INDEX.presets.aura_geometry.variants).toHaveLength(6);
     expect(ART_INDEX.presets.aura_splash.variants).toHaveLength(6);
   });
+  test("Concrete Neon P12 usa os vídeos combinados correspondentes aos 12 materiais", () => {
+    const materials = [
+      "la_fria_alfaiataria", "cetim_liquido", "couro_nappa", "veludo_profundo", "linho_natural", "malha_canelada",
+      "nylon_ripstop", "organza_translucida", "brocado_jacquard", "denim_selvagem", "tweed_boucle", "laminado_metalico",
+    ];
+    materials.forEach((materialId, index) => {
+      const code = `P12_M${String(index + 1).padStart(2, "0")}`;
+      const art = resolveCardArt({
+        aura: { variantId: "aura_streetwear_neon__diagonais", format: "MOSAICO" },
+        materialId,
+      });
+      expect(art.kind).toBe("mosaic");
+      expect(art.video?.src).toBe(`/aura_com_material_mosaico_com_GIF/${code}.mp4`);
+      expect(art.video?.poster).toBe(`/_derived/aura_material_mosaic_animated/${code}_poster.jpg`);
+    });
+  });
   test("id antigo de Aura Geometry (coleção de 120 trocada pelos vídeos) desenha uma das 6 variantes novas, sempre a mesma", () => {
     const legacy = "aura_geometry__gradientes_a001_coins";
     const mapped = auraVariantId(legacy);
