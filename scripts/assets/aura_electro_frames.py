@@ -52,11 +52,11 @@ def perimeter_coords():
     R = RING
     inner = (x0 + R, y0 + R, x1 - R, y1 - R)
     lt, lv = inner[2] - inner[0], inner[3] - inner[1]      # trechos retos (topo/base e lados)
-    la = (np.pi / 2) * (R / 2)                             # arco da linha central em cada canto
+    la = R                                                 # trecho de cada canto (frente mitrada a 45°)
     per = 2 * (lt + lv) + 4 * la
     cx0 = (x0 + x1) / 2
-    # Nos cantos o feixe gira em torno do vértice interno do anel: as frentes do feixe são raios a partir dele,
-    # então a largura (borda externa - borda interna) fica preenchida de ponta a ponta durante toda a curva.
+    # Nos cantos a frente do feixe é mitrada (diagonal de 45°): s depende de u - v (distâncias ao vértice interno),
+    # então cada passo do feixe acende degraus de quadrados idênticos da grade, sem cunhas nem células deformadas.
     for cy in range(y0, y1, CELL):
         for cx in range(x0, x1, CELL):
             mx, my = cx + CELL / 2, cy + CELL / 2
@@ -66,13 +66,13 @@ def perimeter_coords():
             left, right = mx < inner[0], mx > inner[2]
             up, down = my < inner[1], my > inner[3]
             if up and right:
-                s = lt / 2 + (2 / np.pi) * la * np.arctan2(mx - inner[2], inner[1] - my)
+                s = lt / 2 + la * ((mx - inner[2]) - (inner[1] - my) + R) / (2 * R)
             elif down and right:
-                s = lt / 2 + la + lv + (2 / np.pi) * la * np.arctan2(my - inner[3], mx - inner[2])
+                s = lt / 2 + la + lv + la * ((my - inner[3]) - (mx - inner[2]) + R) / (2 * R)
             elif down and left:
-                s = lt / 2 + 2 * la + lv + lt + (2 / np.pi) * la * np.arctan2(inner[0] - mx, my - inner[3])
+                s = lt / 2 + 2 * la + lv + lt + la * ((inner[0] - mx) - (my - inner[3]) + R) / (2 * R)
             elif up and left:
-                s = lt / 2 + 3 * la + lv + lt + lv + (2 / np.pi) * la * np.arctan2(inner[1] - my, inner[0] - mx)
+                s = lt / 2 + 3 * la + lv + lt + lv + la * ((inner[1] - my) - (inner[0] - mx) + R) / (2 * R)
             elif up:
                 s = (mx - cx0) % per
             elif right:
