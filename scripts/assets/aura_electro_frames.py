@@ -49,20 +49,38 @@ def perimeter_coords():
     e r (0 = borda interna, 1 = borda externa)."""
     cells = []
     x0, y0, x1, y1 = INSET, INSET, W - INSET, H - INSET
-    inner = (x0 + RING, y0 + RING, x1 - RING, y1 - RING)
-    per = 2 * ((x1 - x0) + (y1 - y0))
-    top = x1 - x0; right = y1 - y0
+    R = RING
+    inner = (x0 + R, y0 + R, x1 - R, y1 - R)
+    lt, lv = inner[2] - inner[0], inner[3] - inner[1]      # trechos retos (topo/base e lados)
+    la = (np.pi / 2) * (R / 2)                             # arco da linha central em cada canto
+    per = 2 * (lt + lv) + 4 * la
+    cx0 = (x0 + x1) / 2
+    # Nos cantos o feixe gira em torno do vértice interno do anel: as frentes do feixe são raios a partir dele,
+    # então a largura (borda externa - borda interna) fica preenchida de ponta a ponta durante toda a curva.
     for cy in range(y0, y1, CELL):
         for cx in range(x0, x1, CELL):
             mx, my = cx + CELL / 2, cy + CELL / 2
             if inner[0] <= mx <= inner[2] and inner[1] <= my <= inner[3]:
                 continue
             dl, dt, dr, db = mx - x0, my - y0, x1 - mx, y1 - my
-            side = int(np.argmin([dt, dr, db, dl]))
-            if side == 0: s = (mx - (x0 + x1) / 2) % per
-            elif side == 1: s = top / 2 + (my - y0)
-            elif side == 2: s = top / 2 + right + (x1 - mx)
-            else: s = top / 2 + right + top + (y1 - my)
+            left, right = mx < inner[0], mx > inner[2]
+            up, down = my < inner[1], my > inner[3]
+            if up and right:
+                s = lt / 2 + (2 / np.pi) * la * np.arctan2(mx - inner[2], inner[1] - my)
+            elif down and right:
+                s = lt / 2 + la + lv + (2 / np.pi) * la * np.arctan2(my - inner[3], mx - inner[2])
+            elif down and left:
+                s = lt / 2 + 2 * la + lv + lt + (2 / np.pi) * la * np.arctan2(inner[0] - mx, my - inner[3])
+            elif up and left:
+                s = lt / 2 + 3 * la + lv + lt + lv + (2 / np.pi) * la * np.arctan2(inner[1] - my, inner[0] - mx)
+            elif up:
+                s = (mx - cx0) % per
+            elif right:
+                s = lt / 2 + la + (my - inner[1])
+            elif down:
+                s = lt / 2 + 2 * la + lv + (inner[2] - mx)
+            else:
+                s = lt / 2 + 3 * la + lv + lt + (inner[3] - my)
             r = 1 - min(dl, dt, dr, db) / RING
             cells.append((cx, cy, (s % per) / per, float(np.clip(r, 0, 1))))
     return cells
