@@ -1075,6 +1075,94 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .brick-replay { grid-column: 1 / -1; justify-self: end; min-height: 32px; background: #F2CD37; color: #1B2A34; font-family: var(--font-data); font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); text-transform: uppercase; }
 .brick-replay:hover { filter: brightness(1.05); }
 
+/* ---------- Seção C · layout das peças no card do look (Background Studio → Layout & Estilo, "versão por modelo") ----------
+   a anatomia do card (seção A) decide onde as peças ficam; data-piece-anatomy decide como cada peça aparece. Peça ampliada
+   (padrão) segue nas linhas .piece2; os demais modelos usam .lp-block/.lp (PieceLayout, components/scheme-card.tsx). */
+.fai-card .lp-block { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 10px; border-top: 1px solid var(--line-soft); min-width: 0; }
+.fai-card .lp { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fai-card .lp.is-action { cursor: pointer; }
+.fai-card .lp.is-action:hover { filter: brightness(.96); }
+.fai-card .lp-thumb { position: relative; display: block; flex: none; width: 36px; height: 36px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.fai-card .lp-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+.fai-card .lp-seal { position: absolute; top: 2px; right: 2px; z-index: 2; display: flex; }
+.fai-card .lp .seal-slot { width: auto; height: auto; }
+.fai-card .lp .seal-medallion:not(.has-design) { width: 20px; height: 20px; border-width: 1.5px; font-size: 8px; }
+.fai-card .lp-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fai-card :is(.lp-name, .lp-meta, .lp-head, .lp-cpu) { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.fai-card .lp-name b { min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fai-card .lp-meta > span { min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fai-card .lp-price { flex: none; font-size: 12px; font-weight: 500; white-space: nowrap; }
+/* C1 Passarela: faixa escura de desfile com tapete vermelho na base — fotos maiores lado a lado, nome e preço sob a foto */
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block { flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: center; gap: 10px 8px; padding: 12px 10px 16px; border-top: 0; background: radial-gradient(ellipse at 50% 0, #2c2836, #0b0a0f 75%); color: #fff; box-shadow: inset 0 -4px 0 #c1121f; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp { flex: 0 1 84px; min-width: 60px; flex-direction: column; align-items: stretch; gap: 3px; text-align: center; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-thumb { width: 100%; height: auto; aspect-ratio: 3 / 4; background: #fff; box-shadow: 0 6px 10px rgba(0,0,0,.55); }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-name { justify-content: center; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-name b { font-size: 12px; color: #fff; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-price { font-family: var(--font-data); font-size: 11px; color: rgba(255,255,255,.72); }
+/* C2 Etiqueta: cada peça vira uma etiqueta de papel — furo com cordão, borda tracejada, marca no cabeçalho, preço em destaque */
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block { gap: 8px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp { padding: 7px 10px 7px 26px; background: #EBDDBF; color: #2b2217; border: 1.5px dashed rgba(43,34,23,.45); border-radius: 4px 9px 9px 4px; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-hole { position: absolute; left: 8px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--container-bg, var(--card-bg, var(--surface))); box-shadow: inset 0 0 0 1.5px rgba(43,34,23,.55); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-hole::before { content: ""; position: absolute; right: 6px; top: 50%; width: 14px; border-top: 1px solid #6b5a41; transform: rotate(-20deg); transform-origin: right center; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-thumb { width: 38px; height: 38px; background: #fff; border-radius: 2px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-head > span { min-width: 0; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-meta > span { color: rgba(43,34,23,.75); font-family: var(--font-data); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-price { align-self: stretch; display: flex; align-items: center; padding-left: 10px; border-left: 1.5px dashed rgba(43,34,23,.35); font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+/* C3 Raio-X: painel de scanner — pinos numerados ligados por um fio, fotos em cinza com contraste, material e cor */
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block { gap: 0; padding: 6px 12px 8px; border-top: 0; background: linear-gradient(rgba(94,242,255,.07) 1px, transparent 1px) 0 0 / 100% 12px, linear-gradient(90deg, rgba(94,242,255,.07) 1px, transparent 1px) 0 0 / 12px 100%, #06131f; color: #bff6ff; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block::before { content: ""; position: absolute; left: 22px; top: 16px; bottom: 16px; border-left: 1px solid rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp { gap: 10px; padding: 5px 0; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp + .lp { border-top: 1px solid rgba(94,242,255,.15); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-pin { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #5ef2ff; color: #06131f; font-style: normal; font-family: var(--font-data); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px #06131f, 0 0 8px rgba(94,242,255,.6); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-pin::after { content: ""; position: absolute; left: 100%; top: 50%; width: 10px; border-top: 1px solid rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-thumb { background: #dfe9ea; box-shadow: 0 0 0 1px rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-thumb img { filter: grayscale(1) contrast(1.35); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-name b { color: #e8fdff; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-meta > span { color: #9fe3ee; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-price { font-family: var(--font-data); color: #bff6ff; }
+/* C4 Bento: blocos quadrados de foto em duas colunas (com número ímpar de peças a primeira ocupa a linha toda), legenda sobre a foto */
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp { display: block; aspect-ratio: 1; border-radius: var(--r-in, 4px); background: var(--surface-2); overflow: hidden; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp:first-child:nth-last-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-thumb { position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; background: none; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-thumb img { padding: 8px 8px 34px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 8px 6px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.74)); color: #fff; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-name b { font-size: 12px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-meta > span { font-size: 11px; color: rgba(255,255,255,.85); }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-price { display: none; }
+/* C5 Espectro: faixa com a cor de cada peça (proporção estimada por área) e linhas com a cor dominante como barra à esquerda */
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band { display: flex; height: 12px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band i { flex: 1 1 0; min-width: 6px; background: var(--line-soft); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band i + i { box-shadow: -1px 0 0 rgba(255,255,255,.7); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp { padding: 5px 10px 5px 14px; border-radius: var(--r-in, 4px); background: color-mix(in srgb, var(--lp, var(--line-soft)) 12%, transparent); box-shadow: inset 6px 0 0 var(--lp, var(--line-soft)); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-thumb { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lp, var(--line-soft)); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-meta > span { font-family: var(--font-data); }
+/* C6 Custo por uso (só quem é dono do look): preço em destaque e, sob o nome, o valor por uso (preço ÷ usos, mínimo 1 uso) */
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp { padding: 6px 10px; border: 1px solid var(--line-soft); border-radius: var(--r-in, 4px); }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-thumb { width: 30px; height: 30px; }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-cpu b { font-family: var(--font-data); font-size: 11px; font-weight: 700; line-height: 1.6; padding: 0 7px; border-radius: 999px; background: var(--thread-soft); color: var(--thread-ink); white-space: nowrap; }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-price { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+/* C7 Blocos (LEGO): as peças viram blocos na cor da peça sobre a placa-base; o selo entra como placa redonda 1×1 */
+.scheme-container[data-piece-anatomy="LEGO"] .lp-block { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; border-top: 0; background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp.brick-piece { display: block; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp-stud { position: absolute; top: -6px; right: -6px; z-index: 2; display: flex; padding: 2px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3fa864, #237841 70%); box-shadow: inset 0 -2px 0 rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.3); }
+/* lista lateral (ao lado da foto): o mesmo modelo em versão compacta — foto menor, sem preço nem atributos */
+.fai-card .lp-block.is-side { justify-content: center; align-content: center; gap: 4px; padding: 6px; border-top: 0; }
+.fai-card :where(.lp-block.is-side) .lp-thumb { width: 28px; height: 28px; }
+.fai-card :where(.lp-block.is-side) :is(.lp-price, .lp-meta > span) { display: none; }
+.fai-card :where(.lp-block.is-side) .lp-name b { font-size: 12px; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block.is-side { gap: 6px; padding: 8px 6px 12px; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block.is-side .lp { flex-basis: 50px; min-width: 44px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp { flex-wrap: wrap; gap: 1px 6px; padding: 5px 6px 5px 22px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp-thumb { display: none; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp-price { display: block; flex-basis: 100%; padding: 0; border: 0; font-size: 12px; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block.is-side::before { left: 16px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block.is-side .lp-thumb img { padding: 4px 4px 18px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block.is-side .lp-txt { padding: 10px 4px 3px; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp-block.is-side { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+/* sobre arte (passe-partout): as faixas com fundo próprio seguem o raio interno do container */
+.fai-card.has-art .scheme-container:is([data-piece-anatomy="PASSARELA"], [data-piece-anatomy="RAIO_X"], [data-piece-anatomy="LEGO"]) .lp-block { border-radius: var(--r-in); }
+
 /* Vitrines 3D: Passarela, My Stage, mini lojas */
 .showcase-3d { position: relative; overflow: hidden; border-radius: var(--radius); border: 1.5px solid var(--line-soft); background: #0b0e16; }
 .showcase-3d-loading { display: grid; place-items: center; height: 100%; color: #c9d4ff; font-size: 13px; background: #0b0e16; }
@@ -1811,3 +1899,32 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 /* Escolher arquivo no padrão FAI: botão do sistema + nome do arquivo escolhido (nunca o campo nativo cru) */
 .file-button { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .file-button-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Minha Cápsula & Versatilidade (RF6 · anatomia da prancha DNA B4 aplicada ao guarda-roupa inteiro) ---------- */
+.capsule-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.capsule-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
+.capsule-stat { flex: 1 1 180px; display: grid; justify-items: center; padding: 16px 18px; border-radius: 8px; background: var(--dna-soft, color-mix(in srgb, var(--mark) 10%, var(--surface))); text-align: center; }
+.capsule-stat .num { font-family: var(--font-editorial); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--dna, var(--mark)); }
+.capsule-stat .lbl { margin-top: 2px; font-family: var(--font-data); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.capsule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.capsule-piece { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1.4px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.capsule-piece:hover { box-shadow: var(--shadow); }
+.capsule-ph { display: block; height: 96px; background: linear-gradient(155deg, color-mix(in srgb, var(--dna, var(--mark)) 18%, var(--surface-2)), color-mix(in srgb, var(--dna, var(--mark)) 40%, var(--surface-2))); }
+.capsule-ph img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.capsule-cat { position: absolute; top: 8px; left: 8px; padding: 2px 7px; border-radius: 99px; background: rgba(255,255,255,.88); color: #3a2c53; font-family: var(--font-data); font-size: 8px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.capsule-badge { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border: 2px solid var(--surface); border-radius: 99px; background: var(--dna, var(--mark)); color: #fff; font-family: var(--font-data); font-size: 10.5px; font-weight: 700; }
+.capsule-body { display: grid; gap: 1px; padding: 9px 10px 11px; }
+.capsule-name { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.capsule-brand { font-family: var(--font-data); font-size: 9px; color: var(--faint, var(--muted)); }
+
+/* ---------- Seletor de porcentagem (token FashionAI): o mesmo range em todas as abas — Arte da peça (Aura, Luz), Criador de selos,
+   Editor de foto, Avatar 3D. Trilho fino na cor da linha, preenchimento até o valor na cor da marca (--pct, 0–100) e polegar redondo. ---------- */
+input[type="range"]:not(.before-after-range) { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; padding: 0; background: transparent; cursor: pointer; --pct: 50%; }
+input[type="range"]:not(.before-after-range)::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: linear-gradient(90deg, var(--mark) 0 var(--pct), var(--line-soft) var(--pct) 100%); }
+input[type="range"]:not(.before-after-range)::-moz-range-track { height: 4px; border-radius: 999px; background: var(--line-soft); }
+input[type="range"]:not(.before-after-range)::-moz-range-progress { height: 4px; border-radius: 999px; background: var(--mark); }
+input[type="range"]:not(.before-after-range)::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; border: 2px solid var(--surface); background: var(--mark); box-shadow: 0 0 0 1.5px var(--mark), 0 2px 6px rgba(0,0,0,.25); }
+input[type="range"]:not(.before-after-range)::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface); background: var(--mark); box-shadow: 0 0 0 1.5px var(--mark), 0 2px 6px rgba(0,0,0,.25); }
+input[type="range"]:not(.before-after-range):focus-visible { outline: none; }
+input[type="range"]:not(.before-after-range):focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mark) 35%, transparent); }
+input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: not-allowed; }

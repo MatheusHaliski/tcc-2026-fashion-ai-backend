@@ -7,6 +7,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Spinner, Switch, Textarea, useToast } from "@/components/ui";
 import { SchemeTags } from "@/components/scheme-tags";
+import { AiCompositionCard } from "@/components/ai-compositions";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
@@ -171,7 +172,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("scheme.insufficient")} hint={b.message} action={<Link href={b.action?.href === "/add-piece" ? "/pieces/new" : b.action?.href ?? "/pieces/new"} className="btn btn-primary">{b.action?.label ?? t("closet.addPiece")}</Link>} />;
-  const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo } as Record<string, unknown> };
+  // prévia ao vivo: leva também o layout das peças (seção C), senão o card não reage à escolha no Background Studio
+  const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo, pieces: { anatomy: pieceAnatomy } } as Record<string, unknown> };
   const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), t("builder.step.appearance"), t("builder.step.review")];
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
@@ -190,9 +192,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
                 <Button variant="primary" onClick={compose} loading={busy}><FaiIcon id="ACT-09" size={24} decorative />{t("scheme.generate")}</Button>
                 {aiMsg && <p className="type-caption text-muted">{aiMsg}</p>}
                 {comps && <div className="grid gap-2 sm:grid-cols-3">{comps.map((c, i) => (
-                  <button key={i} type="button" className="surface p-3 text-left hover:bg-surface-2" onClick={() => applyComposition(c)}>
-                    <p className="type-h3">{c.title}</p><div className="mt-1 grid gap-1">{onePerType(c.items.map((it) => ({ ...it, id: it.wardrobeItemId })), (id) => byId.get(id)).map((it) => <span key={it.wardrobeItemId} className="list-row type-caption">{byId.get(it.wardrobeItemId)?.name ?? it.slot}</span>)}</div>{(c.why ?? c.reason) && <p className="mt-1 type-caption">{c.why ?? c.reason}</p>}
-                  </button>))}</div>}
+                  <AiCompositionCard key={i} title={c.title} why={c.why ?? c.reason} slotLabel={(slot) => SLOT_LABEL[slot] ?? slot} onApply={() => applyComposition(c)}
+                    items={onePerType(c.items.map((it) => ({ ...it, id: it.wardrobeItemId })), (id) => byId.get(id)).map((it) => ({ wardrobeItemId: it.wardrobeItemId, slot: it.slot, piece: byId.get(it.wardrobeItemId) ?? null }))} />))}</div>}
               </div>
             )}
             <div className="mt-4 flex justify-end"><Button variant="primary" onClick={() => go(1)}>{t("common.next")}</Button></div>
@@ -224,7 +225,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <Field label={t("common.season")} id="season"><Select id="season" value={form.season ?? ""} onChange={(e) => setForm({ ...form, season: e.target.value })}><option value="">—</option>{["SPRING", "SUMMER", "AUTUMN", "WINTER"].map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
             <Field label={t("common.mood")} id="mood"><Select id="mood" value={form.mood ?? ""} onChange={(e) => setForm({ ...form, mood: e.target.value })}><option value="">—</option>{MOODS.map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
-            <Field label={t("common.tags_virgula")} id="tags"><Input id="tags" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} /></Field>
+
             <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions search={seals} picked={sealPick} onToggle={(id) => setSealPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} consent={sealConsent} onConsent={setSealConsent} /></Field>
             <Field label={t("schemeBuilder.foto_do_look_opcional_como")} className="sm:col-span-2" hint={t("schemeBuilder.foto_so_verificada")}>
               <div className="flex flex-wrap items-start gap-3">
@@ -252,7 +253,11 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           </div>
         )}
       </div>
-      <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><SchemeCard scheme={draft} href="#" /></aside>
+      <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
+        <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("scheme.card")}</p>
+          {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout, skin e peças ficam */}
+          <Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></div>
+        <SchemeCard scheme={draft} href="#" /></aside>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );

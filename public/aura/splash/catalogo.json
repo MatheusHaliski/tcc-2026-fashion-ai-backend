@@ -1,0 +1,54 @@
+{
+ "name": "Aura Splash",
+ "credits": "Vídeos fornecidos pelo time (public/Aura Splash); transcodificados para 540 px, H.264 faststart.",
+ "assets": [
+  {
+   "id": "splash_01",
+   "video": "/aura/splash/splash_01/animacao.mp4",
+   "image": "/aura/splash/splash_01/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "splash_02",
+   "video": "/aura/splash/splash_02/animacao.mp4",
+   "image": "/aura/splash/splash_02/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "splash_03",
+   "video": "/aura/splash/splash_03/animacao.mp4",
+   "image": "/aura/splash/splash_03/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "splash_04",
+   "video": "/aura/splash/splash_04/animacao.mp4",
+   "image": "/aura/splash/splash_04/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "splash_05",
+   "video": "/aura/splash/splash_05/animacao.mp4",
+   "image": "/aura/splash/splash_05/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "splash_06",
+   "video": "/aura/splash/splash_06/animacao.mp4",
+   "image": "/aura/splash/splash_06/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  }
+ ]
+}

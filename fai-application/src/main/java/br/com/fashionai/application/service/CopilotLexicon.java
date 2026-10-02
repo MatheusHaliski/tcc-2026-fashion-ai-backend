@@ -139,6 +139,8 @@ final class CopilotLexicon {
                 "choque", "eletronica", "techno", "efeito de luz", "luzes");
         aura("aura_geometry", "geometrico", "geometrica", "geometria", "geometric", "formas geometricas", "poligono", "poligonos", "poligonal",
                 "triangulos", "arte grafica", "poster", "bauhaus", "abstrato", "abstrata", "geometrico gradiente");
+        aura("aura_splash", "splash", "respingo", "respingos", "mancha de tinta", "manchas de tinta", "tinta", "pigmento", "explosao de cor",
+                "paint splash", "ink", "salpico", "salpicos", "aquarela");
         aura("aura_alfaiataria", "alfaiataria", "quiet luxury", "luxo silencioso", "tailored steel", "cabide", "cabides", "aco escovado");
         aura("aura_editorial_mono", "editorial", "marfim", "ivory", "monocromatico", "monocromatica", "estudio fotografico", "revista");
         aura("aura_romantico_petala", "petala", "petalas", "floral", "flores", "rosas", "romantico", "romantica", "brilho suave");
@@ -157,11 +159,12 @@ final class CopilotLexicon {
                 "aurora", "08_aurora_boreal", "arco iris", "09_rainbow_spectrum", "rainbow", "09_rainbow_spectrum", "colorido", "09_rainbow_spectrum",
                 "gelo", "10_ice_chrome", "prateado", "10_ice_chrome", "vermelho", "11_red_reactor", "reator", "11_red_reactor",
                 "sinal", "12_fashion_signal", "fashion", "12_fashion_signal");
-        variants("aura_geometry", "moedas", "gradientes_a001_coins", "orbitas", "gradientes_a002_orbits", "losangos", "gradientes_a003_square_diamonds",
-                "diamantes", "gradientes_a003_square_diamonds", "torcao", "gradientes_a015_twist", "brilho roxo", "gradientes_a016_purple_glow",
-                "concha", "gradientes_a017_seashell", "pedacos", "gradientes_a018_in_pieces", "bussola", "gradientes_a019_kompas",
-                "aneis", "gradientes_a020_rings", "onda", "gradientes_a021_wave", "ondas", "gradientes_a021_wave",
-                "fragmento", "gradientes_p024_segment_fragmento", "gradiente", "gradientes_a001_coins", "arte grafica", "grafica_a001");
+        variants("aura_geometry", "geometria um", "geometry_01", "geometria 1", "geometry_01", "geometria dois", "geometry_02", "geometria 2", "geometry_02",
+                "geometria tres", "geometry_03", "geometria 3", "geometry_03", "geometria quatro", "geometry_04", "geometria 4", "geometry_04",
+                "geometria cinco", "geometry_05", "geometria 5", "geometry_05", "geometria seis", "geometry_06", "geometria 6", "geometry_06");
+        variants("aura_splash", "splash um", "splash_01", "splash 1", "splash_01", "splash dois", "splash_02", "splash 2", "splash_02",
+                "splash tres", "splash_03", "splash 3", "splash_03", "splash quatro", "splash_04", "splash 4", "splash_04",
+                "splash cinco", "splash_05", "splash 5", "splash_05", "splash seis", "splash_06", "splash 6", "splash_06");
 
         // ---------------------------------------------------------------- materiais de fundo (Background Studio)
         material("la_fria_alfaiataria", "la fria", "worsted", "la de alfaiataria", "tecido de terno");

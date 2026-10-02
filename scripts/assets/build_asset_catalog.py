@@ -88,11 +88,16 @@ AURA_PRESETS = [
      "gradient": {"type": "conic", "angle": 0}, "animation": {"kind": "gif", "durationS": 10},
      "prompt": "electro fashion aura, vibrant neon light trails with transparent center, high-energy color gradients",
      "recommendedMaterials": ["laminado_metalico", "malha_canelada"], "skinFamilyRisk": "high"},
-    {"id": "aura_geometry", "name": "Aura Geometry", "archetype": "Composições geométricas e arte gráfica",
+    {"id": "aura_geometry", "name": "Aura Geometry", "archetype": "Composições geométricas em movimento",
      "palette": ["#101820", "#f2ece2", "#d72c3f"], "season": "Todo o ano · editorial/gráfico",
-     "gradient": {"type": "linear", "angle": 135}, "animation": {"kind": "gif", "durationS": 10},
-     "prompt": "geometric editorial fashion aura, graphic composition with crisp shapes and a transparent center",
+     "gradient": {"type": "linear", "angle": 135}, "animation": {"kind": "video", "durationS": 8},
+     "prompt": "geometric editorial fashion aura, graphic composition with crisp shapes in motion",
      "recommendedMaterials": ["laminado_metalico", "tweed_boucle"], "skinFamilyRisk": "high"},
+    {"id": "aura_splash", "name": "Aura Splash", "archetype": "Respingos e manchas de cor em movimento",
+     "palette": ["#0b0b0f", "#ff2d7a", "#ffd23f", "#2ec4ff"], "season": "Todo o ano · festa/criativo",
+     "gradient": {"type": "radial", "angle": 0}, "animation": {"kind": "video", "durationS": 8},
+     "prompt": "paint splash fashion aura, vivid ink and pigment bursts in motion over a dark stage",
+     "recommendedMaterials": ["cetim_liquido", "laminado_metalico"], "skinFamilyRisk": "high"},
     {"id": "aura_dark_academia", "name": "Ivy Library", "archetype": "Dark academia",
      "palette": ["#1c1917", "#451a03", "#78350f", "#14532d"], "season": "Outono/inverno · editorial intelectual",
      "gradient": {"type": "linear", "angle": 140}, "animation": {"kind": "flicker", "durationS": 5},
@@ -677,62 +682,39 @@ def build(derived_enabled: bool) -> dict:
             variants_flat.append(v)
 
     # ---------------- Aura Geometry (PNG + GIF próprio por variante) ----------------
-    geometry_dir = PUBLIC / "aura" / "geometry"
-    geometry_sources = [geometry_dir / "catalogo-completo.json", *sorted(geometry_dir.glob("catalogo-parte-*.json"))]
-    geometry_assets: dict[str, dict] = {}
-    for source in geometry_sources:
-        if not source.is_file():
+    # ---------------- Aura Geometry e Aura Splash (vídeo + pôster por variante) ----------------
+    # /public/aura/<colecao>/catalogo.json lista {id, video, image}; o card desenha o MP4 como <video> (lib/card-art.ts)
+    video_catalogs = {"aura_geometry": PUBLIC / "aura" / "geometry" / "catalogo.json", "aura_splash": PUBLIC / "aura" / "splash" / "catalogo.json"}
+    video_variant_total = 0
+    for preset_id, catalog_file in video_catalogs.items():
+        preset = presets.get(preset_id)
+        if not (preset and catalog_file.is_file()):
             continue
-        data = json.loads(source.read_text(encoding="utf-8"))
-        entries = data.get("assets", []) if isinstance(data, dict) else data
-        if isinstance(entries, list):
-            for asset in entries:
-                if isinstance(asset, dict) and isinstance(asset.get("id"), str):
-                    geometry_assets.setdefault(asset["id"], asset)
-    preset = presets.get("aura_geometry")
-    if preset:
-        for asset_id, asset in sorted(geometry_assets.items()):
-            static_file = public_asset(asset.get("image"))
-            animated_file = public_asset(asset.get("gif"))
-            has_static = static_file is not None and static_file.is_file()
-            has_animated = animated_file is not None and animated_file.is_file()
-            if not (has_static or has_animated):
+        data = json.loads(catalog_file.read_text(encoding="utf-8"))
+        for idx, asset in enumerate(data.get("assets", []), start=1):
+            if not (isinstance(asset, dict) and isinstance(asset.get("id"), str)):
                 continue
-            collection = slug(str(asset.get("collection") or "geometry"))
-            asset_name = asset_id.removeprefix(collection + "_")
-            match = re.fullmatch(r"([ap])(\d{3})(?:_(.+))?", asset_name)
-            if match and collection == "grafica":
-                letter, number, suffix = match.groups()
-                theme = f"{letter}{number}".upper()
-                code = f"G{number}" if letter == "a" else None
-                if suffix:
-                    theme = f"{theme} {suffix.replace('_', ' ')}"
-            elif match:
-                letter, number, suffix = match.groups()
-                theme = (suffix or f"{letter}{number}").replace("_", " ").title()
-                code = f"D{number}" if collection == "gradientes" else f"{letter.upper()}{number}"
-            else:
-                theme, code = asset_name.replace("_", " ").title(), None
-            variant_id = f"aura_geometry__{slug(asset_id)}"
-            v = {"id": variant_id, "presetId": "aura_geometry", "theme": theme, "code": code,
-                 "collection": collection, "partial": bool(asset.get("partial")),
-                 "description": f"Aura Geometry · {collection} {theme}", "index": len(variants_flat) + 1}
-            if has_static:
+            video_variant_total += 1
+            variant_id = f"{preset_id}__{slug(asset['id'])}"
+            theme = f"{preset['name'].split()[-1]} {idx:02d}"
+            v = {"id": variant_id, "presetId": preset_id, "theme": theme, "code": f"{preset['name'].split()[-1][0]}{idx:02d}",
+                 "description": f"{preset['name']} · vídeo {idx:02d}", "index": len(variants_flat) + 1}
+            static_file = public_asset(asset.get("image"))
+            animated_file = public_asset(asset.get("video"))
+            if static_file and static_file.is_file():
                 v["static"] = {"url": url_of(static_file),
-                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78)
-                               or url_of(static_file),
-                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80)
-                               or url_of(static_file),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78) or url_of(static_file),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80) or url_of(static_file),
                                **d.image_info(static_file)}
             else:
                 v["static"] = None
                 missing.append({"category": "aura_static", "id": variant_id, "expected": asset.get("image")})
-            if has_animated:
-                v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
-                                 "posterUrl": (v.get("static") or {}).get("previewUrl"), **d.image_info(animated_file)}
+            if animated_file and animated_file.is_file():
+                v["animated"] = {"url": url_of(animated_file), "posterUrl": (v.get("static") or {}).get("previewUrl"),
+                                 "durationS": preset["animation"]["durationS"], **d.video_info(animated_file)}
             else:
                 v["animated"] = None
-                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("gif")})
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("video")})
             preset["variants"].append(v)
             variants_flat.append(v)
 
@@ -810,7 +792,7 @@ def build(derived_enabled: bool) -> dict:
     expected_aura_variants = len(AURA_VARIANTS)
     if electro_catalog.is_file():
         expected_aura_variants += len(json.loads(electro_catalog.read_text(encoding="utf-8")).get("assets", []))
-    expected_aura_variants += len(geometry_assets)
+    expected_aura_variants += video_variant_total
     for key, (label, expected, fallback) in CATEGORY_META.items():
         if key in ("aura_static", "aura_animated"):
             expected = expected_aura_variants
