@@ -29,7 +29,9 @@ next-env.d.ts
 .vercel
 *.tsbuildinfo
 .env.local
-data/
+# mídia local (fashionai.storage.local-dir) fica fora do git; o seed do catálogo (data/catalog) entra
+data/*
+!data/catalog/
 backups/
 
 # teste ponta a ponta: saídas locais (ctx, resultados, mídia, fotos)
