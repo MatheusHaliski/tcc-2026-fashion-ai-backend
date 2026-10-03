@@ -94,3 +94,25 @@ Também foi conferido o que precisa ser recusado: login padrão `cassandra/cassa
 OpenSearch, `fai_app` fora do seu escopo (DROP, CREATE KEYSPACE, `system_auth`, `mysql.user`, CREATE USER,
 FLUSHALL, KEYS, CONFIG, índices fora de `fai-*`, API de segurança, configurações do cluster), texto puro com TLS
 obrigatório e escrita pelo usuário de backup.
+
+## Estado em produção (projeto `fashion-ai-tcc-2026`, ambiente `production`)
+
+| Passo | Quando (UTC) | Resultado |
+|---|---|---|
+| 1. Redis: ACL `fashionai` | 2026-10-03 12:56 | `fai-start: usuário ACL fashionai ativo`. A API ainda não usa Redis em produção (perfil `redis` inativo); o usuário fica pronto. |
+| 1. MySQL: `fai_app` / `fai_backup` | 2026-10-03 12:57 | usuários conferidos, sem `[ERROR]`. O redeploy trouxe a imagem atual do `mysql:9`: **9.4.0 → 9.7.2** (corrige o alerta CVE-2026-21964 que o Railway já tinha armado). |
+| 3. API → `fai_app` (TLS obrigatório) + credenciais do Cassandra | 2026-10-03 22:46 | deploy SUCCESS; Flyway validou 28 migrações como `fai_app`. A API não usa mais `root`. |
+| 4. Cassandra: autenticação + TLS opcional | 2026-10-03 22:53 | `fai-start: pronto` — `fai_admin` criado, papel `cassandra` desativado, `fai_app` só em `fashionai_feed`. |
+| 6. API → Cassandra com TLS (CA fixada) | 2026-10-03 22:55 | em andamento |
+| 5. OpenSearch: plugin de segurança | 2026-10-03 22:56 | em andamento |
+
+### Lições desta aplicação
+
+- **IP do Cassandra muda a cada deploy** e o driver resolvia o nome só na subida da API: depois de reiniciar o
+  Cassandra, a API ficou tentando o IP antigo até ser reimplantada. Corrigido no código (contact points por nome,
+  `CASSANDRA_RESOLVE_CONTACT_POINTS=false`); até esse código chegar à produção, **reimplante a API depois de
+  reiniciar o Cassandra**.
+- O Cassandra deste contêiner leva ~3–4 min para abrir o CQL (replay do commit log com 512 MB de heap); o
+  bootstrap espera até ~10 min.
+- Redeploy de serviço com `image: mysql:9` puxa a versão mais nova da série 9 (upgrade in-place do dicionário de
+  dados). Para controlar quando isso acontece, fixe a tag (ex.: `mysql:9.7`).
