@@ -1,0 +1,616 @@
+[
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Force 1 '07",
+  "model_name": "Air Force 1 '07",
+  "color": "white",
+  "color_name": "White/White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Air Force",
+  "aliases": [
+   "AF1",
+   "Air Force One",
+   "Air Force 1"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/White",
+    "code": "CW2288-111"
+   },
+   {
+    "color": "black",
+    "color_name": "Black/Black",
+    "code": "CW2288-001"
+   },
+   {
+    "color": "white",
+    "color_name": "White/Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Air Force 1 Mid '07",
+  "model_name": "Air Force 1 Mid '07",
+  "color": "white",
+  "color_name": "White/White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Air Force",
+  "aliases": [
+   "AF1 Mid"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black/Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Force 1 Shadow",
+  "model_name": "Air Force 1 Shadow",
+  "color": "white",
+  "color_name": "White/White",
+  "material": "LEATHER",
+  "gender": "FEMININO",
+  "collection": "Air Force",
+  "aliases": [
+   "AF1 Shadow"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/White"
+   },
+   {
+    "color": "pink",
+    "color_name": "Pink/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Dunk Low Retro",
+  "model_name": "Dunk Low Retro",
+  "color": "white",
+  "color_name": "White/Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Dunk",
+  "aliases": [
+   "Dunk Low",
+   "Panda"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Black",
+    "code": "DD1391-100"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey Fog"
+   },
+   {
+    "color": "green",
+    "color_name": "Green/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Dunk High Retro",
+  "model_name": "Dunk High Retro",
+  "color": "white",
+  "color_name": "White/Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Dunk",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Max 90",
+  "model_name": "Air Max 90",
+  "color": "white",
+  "color_name": "White/Grey",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Air Max",
+  "aliases": [
+   "AM90"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Grey"
+   },
+   {
+    "color": "black",
+    "color_name": "Black/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Max 97",
+  "model_name": "Air Max 97",
+  "color": "silver",
+  "color_name": "Silver Bullet",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Air Max",
+  "aliases": [
+   "AM97"
+  ],
+  "variants": [
+   {
+    "color": "silver",
+    "color_name": "Silver Bullet"
+   },
+   {
+    "color": "black",
+    "color_name": "Black/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Max 1",
+  "model_name": "Air Max 1",
+  "color": "white",
+  "color_name": "White/University Red",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Air Max",
+  "aliases": [
+   "AM1"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/University Red"
+   },
+   {
+    "color": "white",
+    "color_name": "White/Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Air Max Plus",
+  "model_name": "Air Max Plus",
+  "color": "black",
+  "color_name": "Black/Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Air Max",
+  "aliases": [
+   "TN",
+   "Air Max Plus TN"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black/Black"
+   },
+   {
+    "color": "blue",
+    "color_name": "Hyper Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "running_shoes",
+  "product_name": "Pegasus 41",
+  "model_name": "Pegasus 41",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Pegasus",
+  "aliases": [
+   "Air Zoom Pegasus 41"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "blue",
+    "color_name": "Blue/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "running_shoes",
+  "product_name": "Vomero 18",
+  "model_name": "Vomero 18",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Vomero",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "running_shoes",
+  "product_name": "Revolution 7",
+  "model_name": "Revolution 7",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Blazer Mid '77 Vintage",
+  "model_name": "Blazer Mid '77 Vintage",
+  "color": "white",
+  "color_name": "White/Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Blazer",
+  "aliases": [
+   "Blazer Mid"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "casual_sneakers",
+  "product_name": "Cortez",
+  "model_name": "Cortez",
+  "color": "white",
+  "color_name": "White/Varsity Red",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Varsity Red"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "skate_shoes",
+  "product_name": "SB Dunk Low Pro",
+  "model_name": "SB Dunk Low Pro",
+  "color": "black",
+  "color_name": "Black/White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Dunk",
+  "aliases": [
+   "SB Dunk"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black/White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "training_shoes",
+  "product_name": "Metcon 9",
+  "model_name": "Metcon 9",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "flip_flops",
+  "product_name": "Victori One",
+  "model_name": "Victori One",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "hoodie",
+  "product_name": "Sportswear Club Fleece Hoodie",
+  "model_name": "Club Fleece",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "Club",
+  "aliases": [
+   "Club Fleece Hoodie"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "sweatpants",
+  "product_name": "Sportswear Club Fleece Joggers",
+  "model_name": "Club Fleece",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "Club",
+  "aliases": [
+   "Club Fleece Joggers"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "t_shirt",
+  "product_name": "Sportswear Club T-Shirt",
+  "model_name": "Club",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Club",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "t_shirt",
+  "product_name": "Dri-FIT Legend T-Shirt",
+  "model_name": "Dri-FIT Legend",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "collection": "Dri-FIT",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "windbreaker",
+  "product_name": "Sportswear Windrunner Jacket",
+  "model_name": "Windrunner",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Windrunner",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "shorts",
+  "product_name": "Dri-FIT Challenger Shorts",
+  "model_name": "Challenger",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "leggings",
+  "product_name": "One High-Waisted Leggings",
+  "model_name": "One",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "cap",
+  "product_name": "Club Unstructured Cap",
+  "model_name": "Club Cap",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Nike",
+  "subcategory": "backpack",
+  "product_name": "Heritage Backpack",
+  "model_name": "Heritage",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

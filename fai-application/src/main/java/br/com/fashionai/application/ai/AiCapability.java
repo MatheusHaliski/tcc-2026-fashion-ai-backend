@@ -33,7 +33,9 @@ public enum AiCapability {
     BRAND_LOGO_FINDER(21, Msg.k("aiCapability.brand_logo_finder_busca_na"), "RF4/RF14/RF26", null, true),
     STUDIO_ENHANCER(22, Msg.k("aiCapability.studio_enhancer_foto_de_estudio"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     MULTI_PIECE_DETECTOR(23, Msg.k("aiCapability.multi_piece_detector"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
-    PIECE_IMAGE_RECREATOR(24, Msg.k("aiCapability.piece_image_recreator"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true);
+    PIECE_IMAGE_RECREATOR(24, Msg.k("aiCapability.piece_image_recreator"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
+    /** RF47 · busca do produto nas fontes oficiais da marca quando ele ainda não está no catálogo (só texto público). */
+    CATALOG_DISCOVERY(25, Msg.k("aiCapability.catalog_discovery"), "RF47", null, true);
 
     private final int number;
     private final String officialName;

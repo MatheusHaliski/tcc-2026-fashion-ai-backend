@@ -1,0 +1,42 @@
+{
+ "nike": [
+  "Nike Sportswear",
+  "Nike SB",
+  "Nike ACG",
+  "NSW"
+ ],
+ "adidas": [
+  "Adidas Originals",
+  "Adidas Performance",
+  "adidas"
+ ],
+ "lacoste": [
+  "Lacoste Sport",
+  "Lacoste L!VE"
+ ],
+ "levis": [
+  "Levis",
+  "Levi Strauss",
+  "Levi Strauss & Co"
+ ],
+ "puma": [
+  "PUMA"
+ ],
+ "new-balance": [
+  "NB"
+ ],
+ "vans": [
+  "Vans Off The Wall"
+ ],
+ "converse": [
+  "Chuck Taylor",
+  "Converse All Star"
+ ],
+ "uniqlo": [
+  "Uniqlo U"
+ ],
+ "zara": [
+  "Zara Man",
+  "Zara Woman"
+ ]
+}

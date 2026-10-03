@@ -1,0 +1,365 @@
+[
+ {
+  "brand": "Zara",
+  "subcategory": "t_shirt",
+  "product_name": "Camiseta Básica Slim Fit",
+  "model_name": "Basic Slim Fit",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Basic Tee"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "shirt",
+  "product_name": "Camisa de Linho",
+  "model_name": "Linen Shirt",
+  "color": "white",
+  "color_name": "White",
+  "material": "BLEND",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "shirt",
+  "product_name": "Camisa Oxford",
+  "model_name": "Oxford Shirt",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "light_blue",
+    "color_name": "Light Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "blazer",
+  "product_name": "Blazer Estruturado",
+  "model_name": "Structured Blazer",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "blazer",
+  "product_name": "Blazer de Alfaiataria Slim",
+  "model_name": "Tailored Blazer",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "BLEND",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "coat",
+  "product_name": "Trench Coat Clássico",
+  "model_name": "Trench Coat",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "jacket",
+  "product_name": "Jaqueta de Couro Efeito Lavado",
+  "model_name": "Faux Leather Jacket",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "aliases": [
+   "Jaqueta Biker"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "jeans",
+  "product_name": "Jeans TRF Wide Leg Cintura Alta",
+  "model_name": "TRF Wide Leg",
+  "color": "light_blue",
+  "color_name": "Light Blue",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "TRF",
+  "aliases": [
+   "Wide Leg"
+  ],
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Blue"
+   },
+   {
+    "color": "denim",
+    "color_name": "Mid Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "jeans",
+  "product_name": "Jeans Straight Fit",
+  "model_name": "Straight Fit",
+  "color": "denim",
+  "color_name": "Blue",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "tailored_pants",
+  "product_name": "Calça Wide Leg de Alfaiataria",
+  "model_name": "Wide Leg Trousers",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "skirt",
+  "product_name": "Saia Midi Plissada",
+  "model_name": "Pleated Midi Skirt",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "dress",
+  "product_name": "Vestido Midi de Cetim",
+  "model_name": "Satin Midi Dress",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "green",
+    "color_name": "Green"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "dress",
+  "product_name": "Vestido Curto de Linho",
+  "model_name": "Linen Mini Dress",
+  "color": "white",
+  "color_name": "White",
+  "material": "BLEND",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "sweater",
+  "product_name": "Suéter de Tricô Básico",
+  "model_name": "Basic Knit Sweater",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "ankle_boots",
+  "product_name": "Bota Chelsea de Couro",
+  "model_name": "Leather Chelsea Boot",
+  "color": "black",
+  "color_name": "Black",
+  "material": "LEATHER",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Chelsea"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "heels",
+  "product_name": "Sandália de Salto Fino",
+  "model_name": "Stiletto Sandal",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "loafers",
+  "product_name": "Mocassim de Couro",
+  "model_name": "Leather Loafer",
+  "color": "black",
+  "color_name": "Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Zara",
+  "subcategory": "tote_bag",
+  "product_name": "Bolsa Shopper",
+  "model_name": "Shopper Bag",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

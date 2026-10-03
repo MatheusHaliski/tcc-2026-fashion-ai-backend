@@ -96,6 +96,8 @@ public class AccountService {
                 Msg.k("account.nao_utilizado_pelo_fashion_ai"), Msg.k("account.consentimento_especifico_e_destacado"), Msg.k("account.art_11_i")});
         PURPOSES.put(ConsentPurpose.LOCATION_HISTORY, new String[]{Msg.k("account.localizacao_para_clima"),
                 Msg.k("account.usar_sua_localizacao_aproximada_para"), "Consentimento", Msg.k("account.art_7_i")});
+        PURPOSES.put(ConsentPurpose.AI_MODEL_TRAINING, new String[]{Msg.k("account.treino_dos_modelos_de_visao"),
+                Msg.k("account.usar_fotos_e_correcoes_das_pecas"), "Consentimento", Msg.k("account.art_7_i")});
     }
 
     private final UserRepository users;

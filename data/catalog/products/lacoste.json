@@ -1,0 +1,378 @@
+[
+ {
+  "brand": "Lacoste",
+  "subcategory": "polo_shirt",
+  "product_name": "Polo Original L.12.12",
+  "model_name": "L.12.12",
+  "color": "green",
+  "color_name": "Green",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "L.12.12",
+  "aliases": [
+   "L1212",
+   "Polo Original",
+   "Classic Fit Polo"
+  ],
+  "variants": [
+   {
+    "color": "green",
+    "color_name": "Green"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   },
+   {
+    "color": "light_blue",
+    "color_name": "Light Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "polo_shirt",
+  "product_name": "Polo L.12.12 Slim Fit",
+  "model_name": "L.12.12 Slim Fit",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "L.12.12",
+  "aliases": [
+   "Slim Fit Polo"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "polo_shirt",
+  "product_name": "Polo Paris Regular Fit em Piquet Stretch",
+  "model_name": "Polo Paris",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "Paris",
+  "aliases": [
+   "Paris Polo"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "polo_shirt",
+  "product_name": "Polo Feminina Slim Fit em Piquet Stretch",
+  "model_name": "Polo Slim Feminina",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "pink",
+    "color_name": "Pink"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "t_shirt",
+  "product_name": "Camiseta Crew Neck em Jersey de Algodão",
+  "model_name": "Crew Neck Tee",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Camiseta Lacoste"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "sweatshirt",
+  "product_name": "Moletom Crew Neck em Fleece",
+  "model_name": "Crew Neck Sweatshirt",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "cardigan",
+  "product_name": "Cardigan em Lã",
+  "model_name": "Cardigan",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "WOOL",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "windbreaker",
+  "product_name": "Jaqueta Corta-Vento Sport",
+  "model_name": "Sport Windbreaker",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Sport",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "chino_pants",
+  "product_name": "Calça Chino Slim Fit",
+  "model_name": "Slim Fit Chino",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "casual_sneakers",
+  "product_name": "Tênis Carnaby Pro",
+  "model_name": "Carnaby Pro",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Carnaby",
+  "aliases": [
+   "Carnaby"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "casual_sneakers",
+  "product_name": "Tênis L001",
+  "model_name": "L001",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "casual_sneakers",
+  "product_name": "Tênis Powercourt",
+  "model_name": "Powercourt",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "cap",
+  "product_name": "Boné Sport em Sarja",
+  "model_name": "Sport Cap",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "tote_bag",
+  "product_name": "Bolsa Tote L.12.12 Concept",
+  "model_name": "L.12.12 Concept Tote",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "collection": "L.12.12",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "belt",
+  "product_name": "Cinto de Couro com Fivela Gravada",
+  "model_name": "Engraved Buckle Belt",
+  "color": "black",
+  "color_name": "Black",
+  "material": "LEATHER",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Lacoste",
+  "subcategory": "watch",
+  "product_name": "Relógio 12.12",
+  "model_name": "12.12 Watch",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "12.12",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]
