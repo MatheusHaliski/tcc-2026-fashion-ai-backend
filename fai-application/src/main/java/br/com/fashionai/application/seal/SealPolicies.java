@@ -459,7 +459,7 @@ public final class SealPolicies {
     }
 
     @SuppressWarnings("unchecked")
-    static Map<String, Object> map(Map<String, Object> parent, String key) {
+    public static Map<String, Object> map(Map<String, Object> parent, String key) {
         Object v = parent.get(key);
         if (v instanceof Map<?, ?> m) {
             return (Map<String, Object>) m;

@@ -1945,3 +1945,20 @@ input[type="range"]:not(.before-after-range)::-moz-range-thumb { width: 18px; he
 input[type="range"]:not(.before-after-range):focus-visible { outline: none; }
 input[type="range"]:not(.before-after-range):focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mark) 35%, transparent); }
 input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: not-allowed; }
+/* RF25 — formatos do selo: FOLHA (selo postal picotado) e FASHION_AI (anel com o nome em volta do medalhão) */
+.seal-stamp { --r: 4px; display: inline-grid; place-items: center; flex: none; padding: calc(var(--r) * 1.5); background: #F6E8CF;
+  -webkit-mask: radial-gradient(var(--r) at var(--r) var(--r), #0000 97%, #000) calc(-1 * var(--r)) calc(-1 * var(--r)) / calc(var(--r) * 2.6) calc(var(--r) * 2.6) round, linear-gradient(#000 0 0) content-box;
+  mask: radial-gradient(var(--r) at var(--r) var(--r), #0000 97%, #000) calc(-1 * var(--r)) calc(-1 * var(--r)) / calc(var(--r) * 2.6) calc(var(--r) * 2.6) round, linear-gradient(#000 0 0) content-box;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.18)); }
+.seal-stamp-inner { display: grid; place-items: center; width: 100%; height: 100%; background: #2B2622; outline: 1.5px solid #F58220; outline-offset: -4px; }
+.seal-fai { position: relative; display: inline-grid; place-items: center; flex: none; }
+.seal-fai > svg { position: absolute; inset: 0; }
+.seal-fai-core { position: relative; display: grid; place-items: center; }
+.seal-format-tile { display: grid; gap: 6px; justify-items: center; padding: 10px; border-radius: 12px; border: 1.5px solid var(--line-soft); background: var(--surface); cursor: pointer; }
+.seal-format-tile[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
+.seal-format-tile img { width: 96px; height: 96px; object-fit: contain; }
+.seal-mode-tile { display: grid; gap: 4px; text-align: left; padding: 14px; border-radius: 12px; border: 1.5px solid var(--line-soft); background: var(--surface); cursor: pointer; }
+.seal-mode-tile[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
+.seal-copilot { display: grid; gap: 10px; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line-soft); background: var(--surface-2); }
+.seal-copilot-bubble { padding: 8px 12px; border-radius: 12px; background: var(--surface); max-width: 90%; }
+.seal-copilot-bubble.is-user { justify-self: end; background: var(--ink); color: var(--surface); }

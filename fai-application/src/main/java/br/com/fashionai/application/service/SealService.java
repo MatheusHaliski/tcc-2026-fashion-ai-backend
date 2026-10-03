@@ -43,6 +43,9 @@ import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.PromotionRedemptionRepository;
 import br.com.fashionai.domain.repository.PromotionRepository;
+import br.com.fashionai.domain.model.enums.SealFormat;
+import br.com.fashionai.application.seal.SealPolicies;
+import br.com.fashionai.application.seal.SealPolicyInterpreter;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
@@ -123,7 +126,53 @@ public class SealService {
     // ================================================================== RF25 — selos do perfil emissor
     public record SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
                            Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status,
-                           Map<String, Object> design) {
+                           Map<String, Object> design, Map<String, Object> policy, String format) {
+        /** Compatível com quem ainda envia o formulário antigo (sem política nem formato). */
+        public SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
+                        Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status, Map<String, Object> design) {
+            this(name, tier, policyText, iconUrl, background, availableFrom, availableUntil, usageLimit, status, design, null, null);
+        }
+    }
+
+    /** Tipo de emissor da política (doc 06 §4): celebridade ou marca. */
+    private static String issuerType(User owner) {
+        return owner.getProfileType() == ProfileType.CELEBRIDADE ? "celebrity" : "brand";
+    }
+
+    /** Promoção do PRÓPRIO emissor para a regra RF20.CA11 (id de outra pessoa = não encontrada). */
+    private java.util.function.Function<String, SealPolicies.PromotionInfo> promotionLookup(UUID ownerId) {
+        return id -> {
+            try {
+                return promotions.findById(UUID.fromString(id)).filter(pm -> ownerId.equals(pm.getOwnerUserId()))
+                        .map(pm -> new SealPolicies.PromotionInfo(String.valueOf(pm.getId()), pm.getTitle(), pm.getTotalQuota(), pm.getStartsAt(), pm.getExpiresAt()))
+                        .orElse(null);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        };
+    }
+
+    /**
+     * RF25 — janela "Definir selo" (modo Com IA): interpreta a mensagem {@code #createsealpolicy …} sobre a política
+     * atual e devolve a política ajustada com status, avisos e bloqueios (nada é gravado).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> draftPolicy(CurrentUser user, String prompt, Map<String, Object> current) {
+        requireIssuer(user);
+        User owner = users.findById(user.id()).orElseThrow();
+        String issuer = issuerType(owner);
+        SealPolicyInterpreter.Result r = SealPolicyInterpreter.interpret(prompt, current, issuer);
+        Map<String, Object> policy = r.policy();
+        policy.put("issuer_id", String.valueOf(owner.getId()));
+        SealPolicies.Evaluation ev = SealPolicies.enforce(policy, issuer, promotionLookup(owner.getId()), null, null, false);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("policy", policy);
+        out.put("status", ev.status());
+        out.put("understood", r.understood());
+        out.put("warnings", ev.warnings().stream().map(SealPolicies.Issue::toMap).toList());
+        out.put("blocking", ev.blocking().stream().map(SealPolicies.Issue::toMap).toList());
+        out.put("text", String.valueOf(policy.get("rationale")));
+        return out;
     }
 
     @Transactional
@@ -152,6 +201,35 @@ public class SealService {
         s.setName(InputSanitizer.required("name", f.name(), 2, 160));
         s.setTier(f.tier() == null ? SealTier.LOOK : f.tier());
         s.setPolicyText(InputSanitizer.clean(f.policyText(), 2048));
+        if (f.format() != null) {
+            try {
+                s.setFormat(SealFormat.valueOf(f.format().trim().toUpperCase(java.util.Locale.ROOT)));
+            } catch (IllegalArgumentException e) {
+                throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("sealDesigns.formato_desconhecido"));
+            }
+        }
+        // RF25 — política do selo (objeto SealPolicy, não texto): limpa, aplica as regras duras e só grava se válida.
+        if (f.policy() != null) {
+            String issuer = issuerType(owner);
+            Map<String, Object> policy = SealPolicies.normalize(f.policy(), issuer);
+            policy.put("issuer_id", String.valueOf(owner.getId()));
+            SealPolicies.Evaluation ev = SealPolicies.enforce(policy, issuer, promotionLookup(owner.getId()), null, null, false);
+            if (!ev.blocking().isEmpty()) {
+                throw ApiException.badRequest("POLITICA_DO_SELO_INVALIDA", ev.blocking().get(0).message(),
+                        Map.of("blocking", ev.blocking().stream().map(SealPolicies.Issue::toMap).toList(),
+                                "warnings", ev.warnings().stream().map(SealPolicies.Issue::toMap).toList()));
+            }
+            s.setPolicyJson(Json.write(policy));
+            s.setTier(SealTier.valueOf(String.valueOf(policy.get("tier"))));
+            s.setPolicyText(InputSanitizer.clean(SealPolicies.summary(policy), 2048));
+            Object total = SealPolicies.map(policy, "quota").get("total");
+            if (total instanceof Number n && n.intValue() > 0 && f.usageLimit() == null) {
+                s.setUsageLimit(n.intValue());
+            }
+            if (f.format() == null) {
+                s.setFormat(SealFormat.valueOf(String.valueOf(SealPolicies.map(policy, "aesthetics").get("format"))));
+            }
+        }
         // RF25 — desenho do medalhão (validado contra o catálogo) guardado junto da arte de fundo do selo.
         Map<String, Object> design = SealDesigns.normalize(f.design());
         if (design == null) {
@@ -174,7 +252,9 @@ public class SealService {
         if (f.usageLimit() != null && f.usageLimit() < 1) {
             throw ApiException.badRequest("LIMITE_INVALIDO", Msg.t("seal.o_limite_de_emissao_precisa"));
         }
-        s.setUsageLimit(f.usageLimit());
+        if (f.usageLimit() != null || f.policy() == null) {
+            s.setUsageLimit(f.usageLimit());
+        }
         s.setStatus(f.status() == null ? SealStatus.ACTIVE : f.status());
         // RF21.CA20 — selo de celebridade é Premium (vítreo/holográfico); de marca é têxtil/dourado.
         s.setPremium(owner.getProfileType() == ProfileType.CELEBRIDADE);
@@ -237,6 +317,8 @@ public class SealService {
         m.put("kind", s.isPremium() ? "PREMIUM_SEAL" : "BRAND_SEAL");
         m.put("visualFamily", s.isPremium() ? "vitreo-holografico" : "textil-dourado");
         m.put("policyText", s.getPolicyText());
+        m.put("policy", s.getPolicyJson() == null ? null : Json.map(s.getPolicyJson()));
+        m.put("format", s.getFormat());
         m.put("iconUrl", s.getIconUrl());
         Map<String, Object> cfg = Json.map(s.getBackgroundConfigJson());
         Object design = cfg.remove("design");

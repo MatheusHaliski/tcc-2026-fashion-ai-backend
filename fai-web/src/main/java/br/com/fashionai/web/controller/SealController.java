@@ -40,6 +40,15 @@ public class SealController {
         return designs.upload(user, Uploads.image(file));
     }
 
+    public record PolicyDraftRequest(String prompt, Map<String, Object> policy) {
+    }
+
+    @PostMapping("/api/seals/policy/draft")
+    @Operation(summary = "RF25 — Copilot \"Definir selo\": interpreta #createsealpolicy e devolve a política com avisos e bloqueios (não grava)")
+    public Map<String, Object> draftPolicy(CurrentUser user, @RequestBody PolicyDraftRequest req) {
+        return seals.draftPolicy(user, req.prompt(), req.policy());
+    }
+
     @PostMapping("/api/seals")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF20 — Marca/celebridade cria um selo")

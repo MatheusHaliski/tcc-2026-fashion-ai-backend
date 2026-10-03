@@ -11,6 +11,7 @@ Documentos de planejamento para a migração do Fashion AI para um repositório 
 | 04 | [`04-telas-artefatos-e-pranchas.md`](04-telas-artefatos-e-pranchas.md) | **6 e 7** | Ficha das 20 pranchas · assets do Firefly · especificação dos 10 artefatos de interface |
 | 05 | [`05-diagramas-atividade.md`](05-diagramas-atividade.md) | **8** | 14 diagramas de atividade em Mermaid, com os CAs anotados nos fluxos |
 | 06 | [`06-copilot-definir-selo-prompts.md`](06-copilot-definir-selo-prompts.md) | **7** (complemento) | Editor de selo sem campos textuais · Copilot "Definir selo" · 20 padrões de prompt `#createsealpolicy` · objeto `SealPolicy` · catálogo de materiais e molduras (`insumos/selos/`) |
+| 06A | [`artefatos/06-copilot-definir-selo-prompts.md` §6A](artefatos/06-copilot-definir-selo-prompts.md) | **7** (complemento) | **RF25 · Criar Selo** em janela segmentada como o criador de looks: Modo (manual ou com IA → Copilot `#createsealpolicy`) · Detalhes (política) · Aparência (selo circular, selo folha, Fashion AI) · Revisar & Salvar |
 | — | [`insumos/`](insumos/README.md) | pré-requisito | LGPD, vinte pranchas e as três aulas **recebidas**; falta só a UML parte 3 |
 
 ## Decisões que o time precisa fechar antes de aplicar

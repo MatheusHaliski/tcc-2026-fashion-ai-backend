@@ -282,3 +282,40 @@ export function validateSealImage(file: File): Promise<{ ok: boolean; message?: 
     img.src = url;
   });
 }
+
+// ------------------------------------------------------------------ RF25 — formato do selo
+export type SealFormat = "CIRCULAR" | "FOLHA" | "FASHION_AI";
+export const SEAL_FORMATS: { id: SealFormat; thumb: string }[] = [
+  { id: "CIRCULAR", thumb: "/seals/formats/circular.webp" },
+  { id: "FOLHA", thumb: "/seals/formats/folha.webp" },
+  { id: "FASHION_AI", thumb: "/seals/formats/fashion_ai.webp" },
+];
+
+/**
+ * O selo no formato escolhido: CIRCULAR é o medalhão; FOLHA é o selo postal (papel picotado nas bordas, como as folhas
+ * de selos de referência); FASHION_AI é o emblema com o anel "FASHION AI" em volta do medalhão.
+ */
+export function SealFormatPreview({ format, design, size = 44, premium, title, className }: { format?: string | null; design?: SealDesign | null; size?: number; premium?: boolean; title?: string; className?: string }) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  if (format === "FOLHA") {
+    return (
+      <span className={`seal-stamp ${className ?? ""}`} style={{ width: Math.round(size * 0.8), height: size, ["--r" as string]: `${Math.max(2, Math.round(size / 26))}px` }} title={title}>
+        <span className="seal-stamp-inner"><SealMedallion design={design} size={Math.round(size * 0.56)} premium={premium} /></span>
+      </span>
+    );
+  }
+  if (format === "FASHION_AI") {
+    const r = 50 - 5.5;
+    return (
+      <span className={`seal-fai ${className ?? ""}`} style={{ width: size, height: size }} title={title}>
+        <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden>
+          <circle cx="50" cy="50" r="49" fill="#2B2622" />
+          <defs><path id={`fai-ring-${uid}`} d={`M50,50 m-${r},0 a${r},${r} 0 1,1 ${r * 2},0 a${r},${r} 0 1,1 -${r * 2},0`} /></defs>
+          <text fill="#F58220" fontSize="7.2" fontWeight="700" letterSpacing="2.2"><textPath href={`#fai-ring-${uid}`}>FASHION AI · FASHION AI · FASHION AI ·</textPath></text>
+        </svg>
+        <span className="seal-fai-core"><SealMedallion design={design} size={Math.round(size * 0.76)} premium={premium} /></span>
+      </span>
+    );
+  }
+  return <SealMedallion design={design} size={size} premium={premium} title={title} className={className} />;
+}

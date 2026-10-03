@@ -195,6 +195,19 @@ a sobrescrita gera uma nova versão da política, nunca edita o texto do transcr
 
 ---
 
+## 6A. RF25 — Criar Selo em janela segmentada (adicionado ao plano)
+
+O criador de selos segue o mesmo padrão do criador de looks (RF5/RF13): uma janela com etapas (`Stepper`), sem campos de texto livre para a regra.
+
+| Sub-aba | O que a pessoa faz | Implementação |
+|---|---|---|
+| **Modo** | Escolhe **Manual** ou **Com IA**. Com IA abre o Copilot "Definir selo" já com a tag `#createsealpolicy` e atalhos para P01, P05, P09, P13, P15 e P17. Cada mensagem ajusta a política atual. | `components/seal-wizard.tsx` (`SealCopilot`) → `POST /api/seals/policy/draft` → `SealPolicyInterpreter` + `SealPolicies.enforce` |
+| **Detalhes** | Define a política do selo por seletores: nome (propostas do Copilot), nível PEÇA/LOOK/PERFIL, peças mínimas, confiança, revisão, validade, teto, cota por usuário, promoção destravada e janela de disponibilidade. | `SealPolicy` (§4); regras duras do §5 avaliadas no servidor |
+| **Aparência** | Escolhe a arte do selo: **selo circular**, **selo folha** (selo postal picotado) ou **Fashion AI**, e o desenho do medalhão. | `SealFormatPreview` + `SealCreator`; miniaturas em `public/seals/formats/`; referências `selos_folha.zip`, `seloscirculares-parte*.zip`, `selos_FashionAI.zip` |
+| **Revisar & Salvar** | Vê a prévia, o resumo e os avisos/bloqueios com o CA citado; salva o selo. | `POST/PUT /api/seals` com `policy` e `format`; bloqueio → 400 `POLITICA_DO_SELO_INVALIDA` |
+
+Persistência: `seals.policy_json` e `seals.format` (migração `V29__selo_politica_perfil.sql`). O tier **PERFIL** é o nível acima do selo de look: concedido a um perfil inteiro, com revisão manual e teto obrigatórios.
+
 ## 7. Onde isso encosta no resto do projeto
 
 - **Artefato #11** (`artefatos/11-perfil-institucional-rf14-rf22.html`): aba "Cadastrar novo selo" redesenhada sem campos textuais + as duas telas da janela do Copilot.

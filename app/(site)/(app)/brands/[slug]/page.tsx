@@ -9,8 +9,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Tabs, Textarea, useToast } from "@/components/ui";
 import { SchemeCard, toSealBadges } from "@/components/scheme-card";
-import { SealCreator } from "@/components/seal-creator";
-import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { SealWizard, blankPolicy, type SealPolicy, type SealWizardValue } from "@/components/seal-wizard";
+import { DEFAULT_DESIGN, SealFormatPreview, type SealDesign, type SealFormat } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
 import { BrandCouponsTab, BRAND_PROMO_TYPES, CELEB_PROMO_TYPES } from "@/components/coupons/brand-coupons-tab";
@@ -21,7 +21,7 @@ import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
 import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
 import { RoomStore } from "@/components/room3d/room-store";
 
-interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; }
+interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; format?: string | null; policy?: Record<string, unknown> | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
 interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 const TIERS = ["LOOK", "PECA", "PERFIL"];
@@ -43,8 +43,10 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   // Esquemas e peças sempre em abas separadas (RF14/RF22): cada aba carrega um único tipo de conteúdo.
   const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
   const badges = toSealBadges;
-  const emptySeal = { open: false, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign };
-  const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: string; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign }>(emptySeal);
+  const emptySeal = (): { open: boolean } & SealWizardValue => ({ open: false, name: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign, format: "CIRCULAR", policy: blankPolicy(false) });
+  const [sealForm, setSealForm] = useState<{ open: boolean } & SealWizardValue>(emptySeal());
+  const [sealKey, setSealKey] = useState(0);
+  const [savingSeal, setSavingSeal] = useState(false);
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} page notFound={{ title: t("brands.noOfficialTitle", { name: decodeURIComponent(slug) }), hint: t("brands.noOfficialHint"), action: <Link href={`/search?tab=PECAS&q=${encodeURIComponent(decodeURIComponent(slug))}`} className="btn btn-primary">{t("brands.seePieces")}</Link> }} />;
   if (loading || !data) return <Skeleton className="h-64" />;
@@ -56,8 +58,14 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
-    const body = { name: sealForm.name, tier: sealForm.tier, policyText: sealForm.policyText, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design };
-    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); } catch (e) { toast.fromError(e); }
+    const body = { name: sealForm.name, tier: sealForm.policy.tier ?? "LOOK", status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design, policy: sealForm.policy, format: sealForm.format };
+    setSavingSeal(true);
+    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); } catch (e) { toast.fromError(e); } finally { setSavingSeal(false); }
+  }
+  function openSeal(s?: Seal) {
+    setSealKey((k) => k + 1);
+    if (!s) { setSealForm({ ...emptySeal(), policy: blankPolicy(isCeleb), open: true }); return; }
+    setSealForm({ open: true, id: s.id, name: s.name, status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN, format: (s.format as SealFormat) ?? "CIRCULAR", policy: (s.policy as SealPolicy) ?? { ...blankPolicy(isCeleb), tier: s.tier } });
   }
   async function savePromo() {
     const body = { type: promoForm.type, title: promoForm.title, description: promoForm.description, rules: promoForm.rules, discountPercent: promoForm.discountPercent ? Number(promoForm.discountPercent) : null };
@@ -92,13 +100,13 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       {tab === "SELOS" && (
         <>
           <p className="type-body text-muted mb-3">{admin ? t("brands.slug.so_o_dono_deste_perfil") : t("brands.slug.selos_concedidos_por_este_perfil")}</p>
-          {admin && <Button className="mb-3" variant="primary" onClick={() => setSealForm({ ...emptySeal, open: true })}><FaiIcon id={isCeleb ? "ACT-27" : "ACT-26"} size={24} decorative />{t("brands.slug.novo_selo")}</Button>}
+          {admin && <Button className="mb-3" variant="primary" onClick={() => openSeal()}><FaiIcon id={isCeleb ? "ACT-27" : "ACT-26"} size={24} decorative />{t("brands.slug.novo_selo")}</Button>}
           {seals.loading ? <SkeletonGrid n={3} h="h-32" /> : (seals.data ?? []).length === 0 ? <EmptyState title={t("brands.slug.nenhum_selo_ainda")} /> : <div className="grid-cards">{(seals.data ?? []).map((s) => (
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
-              <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
+              <div className="flex items-start gap-3"><SealFormatPreview format={s.format} design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
               <p className="mt-2 type-data text-faint tabular">{t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? `/${s.usageLimit}` : "" })}{(s.availableFrom || s.availableUntil) && <>{t("brands.slug.valido", { value: s.availableFrom ? t("brands.slug.de", { date: fmtDate(s.availableFrom) }) : "", value2: s.availableUntil ? t("common.ate", { date: fmtDate(s.availableUntil) }) : "" })}</>}</p>
-              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier, policyText: s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
+              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => openSeal(s)}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
             </Card>))}</div>}
         </>
       )}
@@ -112,13 +120,8 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       )}
       {tab === "REVISAO" && admin && <ReviewQueue />}
       {tab === "METRICAS" && admin && <IssuerMetrics />}
-      <Dialog open={sealForm.open} onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")} footer={<Button variant="primary" onClick={saveSeal} disabled={sealForm.name.trim().length < 2}>{t("common.save")}</Button>}>
-        <Field label={t("common.nome")} id="sname" required><Input id="sname" value={sealForm.name} onChange={(e) => setSealForm({ ...sealForm, name: e.target.value })} /></Field>
-        <div className="mb-3"><p className="label mb-1">{t("brands.slug.desenho_do_selo_proporcoes_do")}</p><SealCreator value={sealForm.design} onChange={(dd) => setSealForm({ ...sealForm, design: dd })} premium={isCeleb} /></div>
-        <Field label={t("brands.slug.nivel")} id="stier"><Select id="stier" value={sealForm.tier} onChange={(e) => setSealForm({ ...sealForm, tier: e.target.value })}>{TIERS.map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
-        <Field label={t("brands.slug.politica_criterios_promocionais_a_ia")} id="spolicy"><Textarea id="spolicy" value={sealForm.policyText} onChange={(e) => setSealForm({ ...sealForm, policyText: e.target.value })} maxLength={2000} /></Field>
-        <div className="grid grid-cols-2 gap-3"><Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label={t("common.expira_em")} id="suntil" hint={t("common.vazio_sem_expiracao")}><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>
-        <Field label={t("brands.slug.limite_de_emissoes")} id="slimit"><Input id="slimit" type="number" min={1} value={sealForm.usageLimit} onChange={(e) => setSealForm({ ...sealForm, usageLimit: e.target.value })} /></Field>
+      <Dialog open={sealForm.open} size="xl" onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")}>
+        <SealWizard key={sealKey} value={sealForm} onChange={(v) => setSealForm({ ...v, open: true })} onSave={saveSeal} saving={savingSeal} premium={isCeleb} promotions={(promos.data ?? []).map((pr) => ({ id: pr.id, title: pr.title, type: pr.type }))} />
       </Dialog>
       <Dialog open={promoForm.open} onClose={() => setPromoForm({ ...promoForm, open: false })} title={promoForm.id ? t("brands.slug.editar_promocao") : t("brands.slug.nova_promocao")} footer={<Button variant="primary" onClick={savePromo} disabled={!promoForm.title.trim()}>{t("common.save")}</Button>}>
         <Field label={t("common.tipo")} id="ptype"><Select id="ptype" value={promoForm.type} onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value })}>{(isCeleb ? CELEB_PROMO_TYPES : BRAND_PROMO_TYPES).map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
