@@ -1,0 +1,25 @@
+@startuml SEG_MaquinaDeEstados_Acesso
+title Fashion AI — Máquina de estados: acesso de um navegador (gate + sessão)
+!include _estilo.iuml
+[*] --> SemGate
+state SemGate : qualquer página → /gate\n/bff/* → 403
+SemGate --> IdentidadeConferida : Google/usuário ok\n(e na lista permitida)
+SemGate --> GateLiberado : JWT Cloudflare Access válido\n(modo cloudflare)
+IdentidadeConferida --> SemGate : PIN errado\n(cookie do Google apagado)
+IdentidadeConferida --> GateLiberado : PIN ok → fai_gate (gp, 12 h)\n+ fai_gate_a (ga, 1 h)
+
+state GateLiberado {
+  state "Token de API (fai_gate_a)" as TA {
+    [*] --> ApiLiberada
+    ApiLiberada --> ApiVencida : ga vence (1 h)
+    ApiVencida --> ApiLiberada : middleware renova (< 20 min)\nou /gate/renew após 403
+  }
+  state "Sessão no app (independente do token de API)" as SS {
+    [*] --> Anonimo
+    Anonimo --> Autenticado : login pelo BFF\n(fai_rt HttpOnly + access em memória)
+    Autenticado --> Autenticado : refresh (rotação da família)
+    Autenticado --> Anonimo : logout (cookies apagados mesmo offline)\nou refresh recusado
+  }
+}
+GateLiberado --> SemGate : gp vence (12 h) · identidade revogada\n· segredo trocado
+@enduml
