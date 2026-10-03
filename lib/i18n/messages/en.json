@@ -3789,5 +3789,9 @@
   "issuerReview.decisao.PENDENTE": "In review",
   "issuerReview.motivo": "Reason: {v}",
   "issuerReview.abrir_metricas": "Open issuer metrics",
-  "issuerReview.revisar_cadastro": "Review registration data"
+  "issuerReview.revisar_cadastro": "Review registration data",
+  "mirror.reflexo_aria": "Mirror: reflection of your 3D Avatar wearing the look",
+  "mirror.sem_avatar": "You are seeing the reference mannequin.",
+  "mirror.criar_avatar": "Create your 3D Avatar to see yourself in the mirror",
+  "mirror.no_espelho": "Pieces in the mirror"
 }

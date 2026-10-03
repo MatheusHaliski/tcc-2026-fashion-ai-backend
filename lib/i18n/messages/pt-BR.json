@@ -3789,5 +3789,9 @@
   "issuerReview.decisao.PENDENTE": "Em análise",
   "issuerReview.motivo": "Motivo: {v}",
   "issuerReview.abrir_metricas": "Abrir métricas do emissor",
-  "issuerReview.revisar_cadastro": "Revisar dados do cadastro"
+  "issuerReview.revisar_cadastro": "Revisar dados do cadastro",
+  "mirror.reflexo_aria": "Espelho: reflexo do seu Avatar 3D com o look",
+  "mirror.sem_avatar": "Você está vendo o manequim de referência.",
+  "mirror.criar_avatar": "Crie seu Avatar 3D para se ver no espelho",
+  "mirror.no_espelho": "Peças no espelho"
 }
