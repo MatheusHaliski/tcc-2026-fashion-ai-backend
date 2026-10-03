@@ -7,9 +7,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { fromServerLanguage } from "@/lib/i18n/state";
 import { CHROME_BACKGROUNDS, CONTAINER_PRESETS, chromeTile, useTheme } from "@/lib/theme/theme";
 import { useApi } from "@/lib/hooks/use-api";
-import { CARD_SKINS } from "@/lib/skins";
 import { RequireAuth } from "@/components/app-shell";
-import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
+import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice } from "@/components/ui";
 import { setDevRefs, useDevRefs } from "@/lib/dev-refs";
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
@@ -19,7 +18,7 @@ interface Prefs { theme: string; language: string; density: string; fontScale: n
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
-  const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const toast = useToast(); const devRefs = useDevRefs();
+  const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice(); const devRefs = useDevRefs();
   const [tab, setTab] = useState<Tab>("account");
   const server = useApi<Prefs>((signal) => api.get("/api/me/preferences", { signal }), []);
   const consents = useApi<Consent[]>((signal) => api.get("/api/me/consents", { signal }), [], { enabled: tab === "privacy" });
@@ -32,9 +31,9 @@ function Settings() {
   // sincroniza tema/idioma locais com a preferência salva no servidor (RF23.CA02: last-write-wins)
   useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
   async function savePrefs(patch: Partial<Prefs>) {
-    try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); toast.success(t("settings.saved")); } catch (e) { toast.fromError(e); }
+    try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); } catch (e) { notice.fromError(e); }
   }
-  const call = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); await refreshMe(); } catch (e) { toast.fromError(e); } };
+  const call = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) notice.success(ok); await refreshMe(); } catch (e) { notice.fromError(e); } };
   if (!me) return <Skeleton className="h-96" />;
   return (
     <>
@@ -92,8 +91,6 @@ function Settings() {
             <p className="type-caption text-muted mb-2">{t("settings.todo_o_conteudo_das_paginas")}</p>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">{CONTAINER_PRESETS.map((c) => { const on = (theme.contentContainerColor ?? "#FFFFFF").toUpperCase() === c.hex; return <button key={c.hex} type="button" aria-pressed={on} title={c.label} aria-label={c.label} onClick={() => { const v = c.hex === "#FFFFFF" ? null : c.hex; updateTheme({ contentContainerColor: v }); savePrefs({ contentContainerColor: v ?? "" }); }} className={`h-12 rounded-lg border-2 ${on ? "border-mark ring-2 ring-mark/40" : "border-line-soft"}`} style={{ background: c.hex }} />; })}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2"><label className="type-body-sm flex items-center gap-2">{t("settings.outra_cor")}{" "}<input type="color" aria-label={t("settings.cor_personalizada_dos_containers")} className="h-9 w-14 rounded border border-line-soft" value={theme.contentContainerColor ?? "#FFFFFF"} onChange={(e) => updateTheme({ contentContainerColor: e.target.value.toUpperCase() })} onBlur={(e) => savePrefs({ contentContainerColor: e.target.value.toUpperCase() })} /></label><Button size="sm" onClick={() => { updateTheme({ contentContainerColor: null }); savePrefs({ contentContainerColor: "" }); }}>{t("settings.padrao_branco")}</Button></div>
-            <h2 className="type-h3 mt-5 mb-2">{t("settings.skin_padrao_dos_cards")}</h2>
-            <Select aria-label={t("settings.skin")} value={(server.data?.defaultCardSkin as string) ?? "atelier"} onChange={(e) => savePrefs({ defaultCardSkin: e.target.value })}>{Object.keys(CARD_SKINS).map((s) => <option key={s} value={s}>{s}</option>)}</Select>
           </Card>
         </div>
       )}
@@ -107,7 +104,7 @@ function Settings() {
           <Card>
             <h2 className="type-h3 mb-3">{t("settings.lgpd_rf24", { txt: t("settings.consents") })}</h2>
             {consents.loading && <Skeleton className="h-32" />}
-            <ul className="fai-list">{(consents.data ?? []).map((c) => <li key={c.purpose}><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); } catch (e) { toast.fromError(e); } }} label={c.label ?? c.purpose.replace(/_/g, " ").toLowerCase()} />{c.description && <p className="type-caption text-muted -mt-1 pb-2">{c.description}</p>}</li>)}</ul>
+            <ul className="fai-list">{(consents.data ?? []).map((c) => <li key={c.purpose}><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); } catch (e) { notice.fromError(e); } }} label={c.label ?? c.purpose.replace(/_/g, " ").toLowerCase()} />{c.description && <p className="type-caption text-muted -mt-1 pb-2">{c.description}</p>}</li>)}</ul>
           </Card>
         </div>
       )}

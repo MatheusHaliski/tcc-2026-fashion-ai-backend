@@ -40,6 +40,11 @@ __pycache__/
 
 # WASM do MediaPipe copiado do pacote no build (scripts/avatar3d/copy-mediapipe.mjs)
 /public/mediapipe/wasm/
+# modelo de idade/sexo (@vladmandic/face-api) copiado do pacote no build
+/public/mediapipe/face-api/
 
 # worktrees temporárias de agentes (Claude Code)
 .claude/worktrees/
+
+# relatório de cobertura do frontend (npm run test:coverage)
+/coverage/

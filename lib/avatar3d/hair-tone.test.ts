@@ -69,3 +69,13 @@ describe("tom do cabelo (RF40)", () => {
 
   test("poucos pixels: sem medida", () => { expect(measureTone(photo("#333333", 10))).toBeNull(); });
 });
+
+describe("loiro claro não vira cor de pele", () => {
+  test("luz quente (matiz pêssego) mantém o loiro dentro de ±10° do matiz da paleta", () => {
+    const peach: [number, number, number] = [78, 12, 20];                 // loiro claro fotografado sob luz amarela
+    const out = hexToLab(renderColor({ level: 9, family: "natural" }, peach));
+    const ref = hexToLab("#d8bc8c");
+    const h = (l: [number, number, number]) => (Math.atan2(l[2], l[1]) * 180) / Math.PI;
+    expect(Math.abs(h(out) - h(ref))).toBeLessThanOrEqual(10.5);
+  });
+});

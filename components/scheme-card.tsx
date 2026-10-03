@@ -7,12 +7,12 @@ import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { containerColorOf, inkOn, resolveCardArt, studioOf } from "@/lib/card-art";
+import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer } from "@/components/card-art";
 import { ActionMenu, Button, Dialog, useToast } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { FaiIcon } from "@/components/fai-icon";
-import { AnatomyBody, CompactSignature, effectiveAnatomy, hasOwnArt, sealPlacement, toAnatomyPieces } from "@/components/scheme-anatomies";
+import { AnatomyBody, CompactSignature, areaShares, costPerUse, effectiveAnatomy, effectivePieceAnatomy, hasOwnArt, pieceSealPlacement, sealPlacement, toAnatomyPieces, type AnatomyPiece, type PieceAnatomyId } from "@/components/scheme-anatomies";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { CardActions, useRemix } from "@/components/interactions";
 import { Generate3DDialog } from "@/components/generate-3d";
@@ -95,6 +95,83 @@ function PostMenu({ scheme, remixInRow }: { scheme: SchemeView; remixInRow?: boo
   );
 }
 
+/** No card ampliado a peça inteira é o alvo do toque: abre a peça ampliada (RF7.CA01/CA03). */
+function pieceAction(id: string, onPiece?: (pieceId: string) => void) {
+  if (!onPiece) return {};
+  return {
+    role: "button" as const, tabIndex: 0,
+    onClick: (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); onPiece(id); },
+    onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPiece(id); } },
+  };
+}
+
+/**
+ * Peças do look no layout de peça escolhido no Background Studio (seção C · versão por modelo). A anatomia do card
+ * (seção A) decide onde as peças ficam — abaixo do título ou ao lado da foto (`side`, lista lateral); esta decide como
+ * cada peça aparece. O selo da peça segue PIECE_SEAL_PLACEMENT: COVER_CORNER sobre a foto, HEADER no cabeçalho da
+ * etiqueta ou do valor de uso, TITLE_ROW depois do nome, META_BLOCK depois dos atributos e STUDS numa placa redonda.
+ * A Peça ampliada (padrão) continua nas linhas .piece2 do próprio card.
+ */
+function PieceLayout({ anatomy, pieces, side, sealsOf, onPiece }: { anatomy: PieceAnatomyId; pieces: AnatomyPiece[]; side?: boolean; sealsOf: (id?: string) => SealBadge[]; onPiece?: (pieceId: string) => void }) {
+  const { t, fmtMoney } = useI18n();
+  const zone = pieceSealPlacement(anatomy).zone;
+  const headerSeal = zone === "HEADER" && (anatomy === "ETIQUETA" || anatomy === "CUSTO_POR_USO");
+  const thumbSeal = zone === "COVER_CORNER" || (zone === "HEADER" && !headerSeal);
+  const money = (v?: number | null) => fmtMoney(v, "BRL");
+  const size = (p: AnatomyPiece) => (p.size ? p.size.replace(/^(br|shoe)_/i, "").toUpperCase() : null);
+  const colorName = (p: AnatomyPiece) => (p.color ? label(p.color) : null);
+  const hex = (p: AnatomyPiece) => (p.colorHex?.startsWith("#") ? p.colorHex : undefined);
+  const shares = anatomy === "ESPECTRO" ? areaShares(pieces) : [];
+  const metaOf = (p: AnatomyPiece): string | null => {
+    const uses = p.wearCount ?? 0;
+    switch (anatomy) {
+      case "ETIQUETA": return [size(p) ? `${t("anatomy.tag.size")} ${size(p)}` : null, colorName(p)].filter(Boolean).join(" · ") || label(p.slot.toLowerCase());
+      case "RAIO_X": return [p.material ? label(p.material.toLowerCase()) : null, colorName(p)].filter(Boolean).join(" · ") || label(p.slot.toLowerCase());
+      case "BENTO": return [p.brand, p.price != null ? money(p.price) : null].filter(Boolean).join(" · ") || "—";
+      case "ESPECTRO": return [colorName(p), hex(p)?.toUpperCase()].filter(Boolean).join(" · ") || "—";
+      case "CUSTO_POR_USO": return p.price == null ? t("anatomy.noPrice") : uses > 0 ? t("anatomy.cpu.division", { money: money(p.price), count: uses }) : t("anatomy.cpu.notUsed");
+      default: return null; // Passarela: só nome e preço sob a foto
+    }
+  };
+  return (
+    <div className={`lp-block ${side ? "is-side" : ""}`}>
+      {anatomy === "ESPECTRO" && !side && pieces.length > 0 && (
+        <span className="lp-band" role="img" aria-label={t("anatomy.spectrum.aria", { list: pieces.map((p, i) => `${colorName(p) ?? "—"} ≈ ${shares[i]}%`).join(", ") })}>
+          {pieces.map((p, i) => <i key={`${p.id}-${i}`} style={{ background: hex(p), flexGrow: shares[i] || 1 }} />)}
+        </span>
+      )}
+      {pieces.map((p, i) => {
+        const own = sealsOf(p.id);
+        const seal = own.length > 0 ? <SealSlot inline px={20} seals={own} /> : null;
+        const key = `${p.id}-${i}`;
+        if (anatomy === "LEGO") return (
+          <div key={key} className={`lp brick-piece ${onPiece ? "is-action" : ""}`} style={{ ["--brick" as string]: brickColor(p.colorHex) }} {...pieceAction(p.id, onPiece)}>
+            <span className="brick-photo">{p.img && <img src={p.img} alt="" loading="lazy" />}</span>
+            <span className="brick-label">{p.name}</span>
+            {seal && <span className="lp-stud">{seal}</span>}
+          </div>
+        );
+        const meta = metaOf(p);
+        const cpu = anatomy === "CUSTO_POR_USO" ? costPerUse(p.price, p.wearCount) : null;
+        return (
+          <div key={key} className={`lp ${onPiece ? "is-action" : ""}`} style={anatomy === "ESPECTRO" && hex(p) ? { ["--lp" as string]: hex(p) } : undefined} {...pieceAction(p.id, onPiece)}>
+            {anatomy === "ETIQUETA" && <span className="lp-hole" aria-hidden />}
+            {anatomy === "RAIO_X" && <i className="lp-pin" aria-hidden>{i + 1}</i>}
+            <span className="lp-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}{thumbSeal && seal && <span className="lp-seal">{seal}</span>}</span>
+            <span className="lp-txt">
+              {anatomy === "ETIQUETA" && <span className="lp-head"><span>{(p.brand ?? t("anatomy.noBrand")).toUpperCase()}</span>{headerSeal && seal}</span>}
+              <span className="lp-name"><b>{p.name}</b>{zone === "TITLE_ROW" && seal}</span>
+              {anatomy === "CUSTO_POR_USO" && <span className="lp-cpu">{cpu != null && <b className="tabular">{t("anatomy.cpu.perUse", { value: money(cpu) })}</b>}{headerSeal && seal}</span>}
+              {(meta != null || zone === "META_BLOCK") && <span className="lp-meta">{meta != null && <span>{meta}</span>}{zone === "META_BLOCK" && seal}</span>}
+            </span>
+            <span className="lp-price tabular">{money(p.price)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Card do look (anatomias v18, docs/anatomias/anatomias_card_v18.html): cabeçalho do post → container do esquema
  * (foto/arte da anatomia, título, preço, peças, metadados) → ações do post. O título é o link do card e cobre o container
@@ -112,6 +189,9 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   // ampliado: cada peça da lista abre a peça ampliada, com "voltar" para este look (RF7.CA01/CA03)
   const pieceClick = onPiece ?? (expanded && detail && !preview ? (pid: string) => detail.openPiece(pid, scheme.id) : undefined);
   const anatomy = effectiveAnatomy(scheme);
+  // layout das peças (seção C · versão por modelo), gravado em background.pieces.anatomy; o padrão usa as linhas .piece2
+  const pieceAnatomy = effectivePieceAnatomy(scheme);
+  const pieceLayout = pieceAnatomy !== "PECA_AMPLIADO";
   const l = layout ?? (anatomy === "GRADE_PECAS" ? "grade" : anatomy === "HERO_LISTA" ? "lateral" : "lista");
   const ownArt = hasOwnArt(anatomy);
   const items = scheme.items ?? [];
@@ -132,7 +212,11 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
   const manualBox = !!(scheme.containerColor ?? studio.container?.color);
   const boxTone = hasArt && manualBox ? surfaceToneStyle(boxColor) : undefined;
-  const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(manualBox ? { "--card-ink": inkOn(boxColor) } : {}) } as React.CSSProperties) : undefined;
+  // tinta dos textos: a escolhida no Studio vale sempre; sem escolha, só o container manual sobre arte muda a tinta (contraste)
+  const manualInk = studio.container?.ink ?? null;
+  const inkVars = manualInk ? { "--card-ink": containerInkOf(boxColor, manualInk) } : hasArt && manualBox ? { "--card-ink": containerInkOf(boxColor) } : {};
+  // arte em moldura (Aura Electro): a faixa do passe-partout dobra para o feixe de LED ficar espesso e legível
+  const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...(art?.frame ? FRAME_BAND_VARS : {}), ...inkVars } as React.CSSProperties) : undefined;
   const vis = scheme.visibility === "PRIVATE" ? t("common.private") : scheme.visibility === "FOLLOWERS" ? t("common.followers") : t("common.public");
   const detailPieces = toAnatomyPieces(scheme);
 
@@ -162,7 +246,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <div className="scheme-stage">
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
-          <div className="scheme-container is-compact" data-anatomy={anatomy} style={boxTone}>
+          <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>
             <div className="c-compact">
               {photo("c-thumb")}
               <div className="c-ctext">
@@ -174,21 +258,23 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             <CompactSignature scheme={scheme} pieces={detailPieces} />
           </div>
         ) : (
-          <div className="scheme-container" data-anatomy={anatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
+          <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
             {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
             ) : l === "lateral" && !expanded ? (
               <div className="hero-lateral-row">
                 {photo()}
-                <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>
+                {pieceLayout ? <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 4)} side sealsOf={pieceSeals} /> : <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>}
               </div>
             ) : photo()}
             {titleBlock}
-            {!ownArt && !expanded && l === "grade" && <div className="grid-pieces">
+            {!ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
+            {!ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
               {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtMoney(p.price, "BRL") : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
             </div>}
-            {((!ownArt && l === "lista") || expanded) && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
+            {((!ownArt && l === "lista") || expanded) && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, expanded || preview ? detailPieces.length : 4)} sealsOf={pieceSeals} onPiece={pieceClick} />}
+            {((!ownArt && l === "lista") || expanded) && !pieceLayout && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${pieceClick ? "is-action" : ""}`} role={pieceClick ? "button" : undefined} tabIndex={pieceClick ? 0 : undefined}
                 onClick={pieceClick ? (e) => { e.preventDefault(); e.stopPropagation(); pieceClick(p.id); } : undefined} onKeyDown={pieceClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pieceClick(p.id); } } : undefined}>
                 <span className="p-thumb">{p.img ? <img src={p.img} alt="" loading="lazy" /> : null}</span>

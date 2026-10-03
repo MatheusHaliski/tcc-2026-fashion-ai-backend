@@ -8,6 +8,7 @@ import { buildHuman, type Human } from "@/lib/avatar3d/human/three-human";
 import { applyIdle, applyRestPose, type PoseState } from "@/lib/avatar3d/human/pose";
 import { buildHair } from "@/lib/avatar3d/human/hair-geometry";
 import { hairColorFor } from "@/lib/avatar3d/hair-tone";
+import { hairWithCut } from "@/lib/avatar3d/hair-cut";
 import { EYE_TEXTURE, bakeSkin } from "@/lib/avatar3d/human/skin-bake";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
@@ -67,7 +68,7 @@ export interface HumanAvatarProps {
   children?: (p: HumanParts) => React.ReactNode;   // extras em cena (a roupa já vem do próprio HumanAvatar)
   fallback?: React.ReactNode;
   debugHair?: boolean;
-  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number } | null;   // ajustes finos do Avatar 3D
+  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number; hairCut?: number } | null;   // ajustes finos do Avatar 3D
 }
 
 function imageOf(src: Img): HTMLCanvasElement {
@@ -93,11 +94,12 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     const head = h.bone("Head"); head.scale.setScalar(adjust?.headScale ?? 1); head.position.y += adjust?.neck ?? 0;
     return { h, st, c, asset };
   }, [asset, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1, adjust?.hairTone ?? 0]);
+  const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1, adjust?.hairTone ?? 0, adjust?.hairCut ?? 0]);
   const hairMesh = useMemo(() => {
     if (!built || !hair) return null;
-    // tom do cabelo: o escolhido pela pessoa (ajuste fino) ou o medido na foto
-    const hb = buildHair(built.asset, built.c, built.h.rest.normals, { ...hair, color: hairColorFor(hair.color, adjust?.hairTone) }, adjust?.hairVolume ?? 1); if (!hb) return null;
+    // corte e tom do cabelo: os escolhidos pela pessoa (ajuste fino) ou os medidos na foto
+    const cut = hairWithCut(hair, adjust?.hairCut);
+    const hb = buildHair(built.asset, built.c, built.h.rest.normals, { ...cut, color: hairColorFor(cut.color, adjust?.hairTone) }, adjust?.hairVolume ?? 1); if (!hb) return null;
     const m = new THREE.SkinnedMesh(hb.geometry, hb.material); m.name = hb.kind === "cover" ? "cobertura" : "cabelo"; m.castShadow = true;
     built.h.root.add(m); m.bind(built.h.skeleton);
     return m;

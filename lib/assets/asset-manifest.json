@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-09-23T17:01:33+00:00",
+ "generatedAt": "2026-10-02T16:53:12+00:00",
  "source": "scripts/assets/build_asset_catalog.py",
  "chromeBackgrounds": [
   {
@@ -14,9 +14,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_claro_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_claro_preview.webp",
    "bytes": 2402336,
-   "sha256": "dc1943534e80086d8470234a5ee7dd4a4d1abdc9acf4ff6bcba4bc0cfb2bdb68",
-   "width": 1254,
-   "height": 1254
+   "sha256": "dc1943534e80086d8470234a5ee7dd4a4d1abdc9acf4ff6bcba4bc0cfb2bdb68"
   },
   {
    "id": "rf23_bg_selos_fai_noturno",
@@ -29,9 +27,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_noturno_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_noturno_preview.webp",
    "bytes": 3693570,
-   "sha256": "2bf5635991fbe2d852c62cad15242ec4cbfcfeb23c4c3d507985d99fb7104e79",
-   "width": 1254,
-   "height": 1254
+   "sha256": "2bf5635991fbe2d852c62cad15242ec4cbfcfeb23c4c3d507985d99fb7104e79"
   },
   {
    "id": "rf23_bg_icones_moda_noite",
@@ -44,9 +40,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_noite_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_noite_preview.webp",
    "bytes": 3311060,
-   "sha256": "cdefffe4b5d42623136c533eac7390a0f1a716e92271bb191282798e370bd559",
-   "width": 1452,
-   "height": 1083
+   "sha256": "cdefffe4b5d42623136c533eac7390a0f1a716e92271bb191282798e370bd559"
   },
   {
    "id": "rf23_bg_selos_fai_coloridos",
@@ -59,9 +53,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_coloridos_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_selos_fai_coloridos_preview.webp",
    "bytes": 2913368,
-   "sha256": "8de1d00997257e11ea9344b9344d6387b4384dab885a6488bba218477fcc3d2b",
-   "width": 1254,
-   "height": 1254
+   "sha256": "8de1d00997257e11ea9344b9344d6387b4384dab885a6488bba218477fcc3d2b"
   },
   {
    "id": "rf23_bg_icones_holografico",
@@ -74,9 +66,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_icones_holografico_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_icones_holografico_preview.webp",
    "bytes": 2585571,
-   "sha256": "5f7b09379785a0ee034f560f1e21e389e7d75e297c5c60108e40b17f1bdab1e9",
-   "width": 1254,
-   "height": 1254
+   "sha256": "5f7b09379785a0ee034f560f1e21e389e7d75e297c5c60108e40b17f1bdab1e9"
   },
   {
    "id": "rf23_bg_icones_moda_pastel",
@@ -89,9 +79,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_pastel_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_pastel_preview.webp",
    "bytes": 10095544,
-   "sha256": "61f3a607fee6f8ecbdff59900c6bd27801c698909e124f54a09edab88fa328ca",
-   "width": 2560,
-   "height": 2560
+   "sha256": "61f3a607fee6f8ecbdff59900c6bd27801c698909e124f54a09edab88fa328ca"
   },
   {
    "id": "rf23_bg_icones_moda_kraft",
@@ -104,9 +92,7 @@
    "tileUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_kraft_tile.webp",
    "previewUrl": "/_derived/bg_chrome/rf23_bg_icones_moda_kraft_preview.webp",
    "bytes": 10603256,
-   "sha256": "011607b1467612185390f80eed5606decb600d14b7ccee56437ea61f6b1416dc",
-   "width": 2560,
-   "height": 2560
+   "sha256": "011607b1467612185390f80eed5606decb600d14b7ccee56437ea61f6b1416dc"
   }
  ],
  "auraPresets": [
@@ -147,15 +133,14 @@
       "previewUrl": "/_derived/aura/aura_alfaiataria__cabides_preview.webp",
       "cardUrl": "/_derived/aura/aura_alfaiataria__cabides_card.webp",
       "bytes": 2268394,
-      "sha256": "648738b08a504e1642c3769251b43f03c829802633e62f4db9c1b7b9c1d6198e",
-      "width": 898,
-      "height": 1202
+      "sha256": "648738b08a504e1642c3769251b43f03c829802633e62f4db9c1b7b9c1d6198e"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "sweep",
-      "durationS": 8
+     "animated": {
+      "url": "/aura_com_GIF/aura_alfaiataria__cabides.mp4",
+      "posterUrl": null,
+      "bytes": 506807,
+      "sha256": "57c5f4a8c9911e861cf9f7b6c3804661f21e7072340f0729f8228386f2f994cc",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -197,15 +182,14 @@
       "previewUrl": "/_derived/aura/aura_editorial_mono__estudio_preview.webp",
       "cardUrl": "/_derived/aura/aura_editorial_mono__estudio_card.webp",
       "bytes": 1914030,
-      "sha256": "d7c342503c531407683d3d6ca272b9e4a3a2dc5c7e92dab769d82e826a0611ae",
-      "width": 898,
-      "height": 1202
+      "sha256": "d7c342503c531407683d3d6ca272b9e4a3a2dc5c7e92dab769d82e826a0611ae"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "breathe",
-      "durationS": 6
+     "animated": {
+      "url": "/aura_com_GIF/aura_editorial_mono__estudio.mp4",
+      "posterUrl": null,
+      "bytes": 263113,
+      "sha256": "b0c9d6bbeaecfeadef943ac7712759a886f1421e0d3a0ca60c3163703944f315",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -248,15 +232,14 @@
       "previewUrl": "/_derived/aura/aura_romantico_petala__petalas_preview.webp",
       "cardUrl": "/_derived/aura/aura_romantico_petala__petalas_card.webp",
       "bytes": 1678375,
-      "sha256": "e90d3e6f43c44933d61f55da505c0ea09a63acffd38a1c92167c2904261f6637",
-      "width": 898,
-      "height": 1202
+      "sha256": "e90d3e6f43c44933d61f55da505c0ea09a63acffd38a1c92167c2904261f6637"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "particles",
-      "durationS": 9
+     "animated": {
+      "url": "/aura_com_GIF/aura_romantico_petala__petalas.mp4",
+      "posterUrl": null,
+      "bytes": 144969,
+      "sha256": "48734ee60ea67f50336a9343c33d20eb2524f1fedc700cc26ffb2a7fa6f06c0c",
+      "mime": "video/mp4"
      }
     },
     {
@@ -271,15 +254,14 @@
       "previewUrl": "/_derived/aura/aura_romantico_petala__brilho_suave_preview.webp",
       "cardUrl": "/_derived/aura/aura_romantico_petala__brilho_suave_card.webp",
       "bytes": 1579960,
-      "sha256": "3ffb52068ca52fc18fd27cce027c9543f50bd5e999bb51bb40318eb97ac217ba",
-      "width": 898,
-      "height": 1202
+      "sha256": "3ffb52068ca52fc18fd27cce027c9543f50bd5e999bb51bb40318eb97ac217ba"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "particles",
-      "durationS": 9
+     "animated": {
+      "url": "/aura_com_GIF/aura_romantico_petala__brilho_suave.mp4",
+      "posterUrl": null,
+      "bytes": 216032,
+      "sha256": "3d12d790edcc53e07f86b9adc58e9b16c076ff335c56a44574d6dd1bef2486a4",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -322,15 +304,14 @@
       "previewUrl": "/_derived/aura/aura_boemio_terracota__dunas_douradas_preview.webp",
       "cardUrl": "/_derived/aura/aura_boemio_terracota__dunas_douradas_card.webp",
       "bytes": 1977765,
-      "sha256": "fd6e8723831cd221695ff940f5e40107ef0020d0f21f2d8a7b69bfd2137ad891",
-      "width": 898,
-      "height": 1202
+      "sha256": "fd6e8723831cd221695ff940f5e40107ef0020d0f21f2d8a7b69bfd2137ad891"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__dunas_douradas.mp4",
+      "posterUrl": null,
+      "bytes": 412873,
+      "sha256": "b95b2103800da4125005f8faacd4076e75eeeedd5de6955e978d0f2313e161e8",
+      "mime": "video/mp4"
      }
     },
     {
@@ -345,15 +326,14 @@
       "previewUrl": "/_derived/aura/aura_boemio_terracota__deserto_preview.webp",
       "cardUrl": "/_derived/aura/aura_boemio_terracota__deserto_card.webp",
       "bytes": 1559379,
-      "sha256": "a80f64dc466d0743036af810f0d2eff8c55a17f3d6b2ba8f72ccb7c7a3e3272e",
-      "width": 876,
-      "height": 1173
+      "sha256": "a80f64dc466d0743036af810f0d2eff8c55a17f3d6b2ba8f72ccb7c7a3e3272e"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__deserto.mp4",
+      "posterUrl": null,
+      "bytes": 301282,
+      "sha256": "98021e4504d0baf45cf8f6a596d2cb92a39f78d72e45d6d9c34d0e1f37aeb817",
+      "mime": "video/mp4"
      }
     },
     {
@@ -368,15 +348,14 @@
       "previewUrl": "/_derived/aura/aura_boemio_terracota__crepusculo_preview.webp",
       "cardUrl": "/_derived/aura/aura_boemio_terracota__crepusculo_card.webp",
       "bytes": 1377741,
-      "sha256": "30eb97b2c80da6cd4fbcfbd5ee9b2890f41180006ef64dbfe6a2b8089454ced8",
-      "width": 876,
-      "height": 1173
+      "sha256": "30eb97b2c80da6cd4fbcfbd5ee9b2890f41180006ef64dbfe6a2b8089454ced8"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "drift",
-      "durationS": 12
+     "animated": {
+      "url": "/aura_com_GIF/aura_boemio_terracota__crepusculo.mp4",
+      "posterUrl": null,
+      "bytes": 138979,
+      "sha256": "e58f802e031a298ce7cda56a79fab9c54e838738079de6471b316c597642d00c",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -419,15 +398,14 @@
       "previewUrl": "/_derived/aura/aura_streetwear_neon__circuitos_preview.webp",
       "cardUrl": "/_derived/aura/aura_streetwear_neon__circuitos_card.webp",
       "bytes": 2224674,
-      "sha256": "dd10aeea9e542cc45c35cbf8226566676de1295bbb300e5dade1867b8c860f22",
-      "width": 898,
-      "height": 1202
+      "sha256": "dd10aeea9e542cc45c35cbf8226566676de1295bbb300e5dade1867b8c860f22"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "scanline",
-      "durationS": 2.5
+     "animated": {
+      "url": "/aura_com_GIF/aura_streetwear_neon__circuitos.mp4",
+      "posterUrl": null,
+      "bytes": 701578,
+      "sha256": "08e88e8f1a301fb506da519aa934508f0e67796b84bc2de4e79c030798a29869",
+      "mime": "video/mp4"
      }
     },
     {
@@ -442,15 +420,14 @@
       "previewUrl": "/_derived/aura/aura_streetwear_neon__diagonais_preview.webp",
       "cardUrl": "/_derived/aura/aura_streetwear_neon__diagonais_card.webp",
       "bytes": 2507263,
-      "sha256": "bd12b5c21567e691e359a68992254d3c9f080b26d48f7feb0a996ad8ffe14ab3",
-      "width": 898,
-      "height": 1202
+      "sha256": "bd12b5c21567e691e359a68992254d3c9f080b26d48f7feb0a996ad8ffe14ab3"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "scanline",
-      "durationS": 2.5
+     "animated": {
+      "url": "/aura_com_GIF/aura_streetwear_neon__diagonais.mp4",
+      "posterUrl": null,
+      "bytes": 615616,
+      "sha256": "7de67ebd39e1f302fd3cc61e66e6620647da05d3c34473adfb900aa6d1d12136",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -493,15 +470,14 @@
       "previewUrl": "/_derived/aura/aura_avantgarde_cromo__cromo_lilas_preview.webp",
       "cardUrl": "/_derived/aura/aura_avantgarde_cromo__cromo_lilas_card.webp",
       "bytes": 1896851,
-      "sha256": "c44c969464f3d65dd40f04948e90057f8d32cba6d117ae91cf22c0e7b5f80bc9",
-      "width": 898,
-      "height": 1202
+      "sha256": "c44c969464f3d65dd40f04948e90057f8d32cba6d117ae91cf22c0e7b5f80bc9"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "hue",
-      "durationS": 10
+     "animated": {
+      "url": "/aura_com_GIF/aura_avantgarde_cromo__cromo_lilas.mp4",
+      "posterUrl": null,
+      "bytes": 356012,
+      "sha256": "882336688c129a03181e41bff1359715ca18652503cd91d195bd2fe7fc028458",
+      "mime": "video/mp4"
      }
     },
     {
@@ -516,15 +492,14 @@
       "previewUrl": "/_derived/aura/aura_avantgarde_cromo__fluxo_de_luz_preview.webp",
       "cardUrl": "/_derived/aura/aura_avantgarde_cromo__fluxo_de_luz_card.webp",
       "bytes": 2164236,
-      "sha256": "23607377ee2901c8f49884e3f26262baa60d4713d63737024bc7b5198ef5c366",
-      "width": 898,
-      "height": 1202
+      "sha256": "23607377ee2901c8f49884e3f26262baa60d4713d63737024bc7b5198ef5c366"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "hue",
-      "durationS": 10
+     "animated": {
+      "url": "/aura_com_GIF/aura_avantgarde_cromo__fluxo_de_luz.mp4",
+      "posterUrl": null,
+      "bytes": 350568,
+      "sha256": "66d828476e8f10eaaedb3b841298fd656e64f5cb830b6ee18927bbf145754f3b",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -566,15 +541,14 @@
       "previewUrl": "/_derived/aura/aura_esportivo_performance__feixes_preview.webp",
       "cardUrl": "/_derived/aura/aura_esportivo_performance__feixes_card.webp",
       "bytes": 2273430,
-      "sha256": "ece43857c093f62f790139e0010608294bc2522b41e3bcda1e16f7f9c771cc18",
-      "width": 898,
-      "height": 1202
+      "sha256": "ece43857c093f62f790139e0010608294bc2522b41e3bcda1e16f7f9c771cc18"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "diagonal",
-      "durationS": 3
+     "animated": {
+      "url": "/aura_com_GIF/aura_esportivo_performance__feixes.mp4",
+      "posterUrl": null,
+      "bytes": 491844,
+      "sha256": "c1c29f71a271c9e63e024d8c23daeb25d2be8eff41810532656d79bb478af23a",
+      "mime": "video/mp4"
      }
     },
     {
@@ -589,15 +563,14 @@
       "previewUrl": "/_derived/aura/aura_esportivo_performance__diagonais_preview.webp",
       "cardUrl": "/_derived/aura/aura_esportivo_performance__diagonais_card.webp",
       "bytes": 2252079,
-      "sha256": "32547cdd6e9950509416d4ee540c4d0e0926b4443178dd38bfb4fcfd9368867d",
-      "width": 898,
-      "height": 1202
+      "sha256": "32547cdd6e9950509416d4ee540c4d0e0926b4443178dd38bfb4fcfd9368867d"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "diagonal",
-      "durationS": 3
+     "animated": {
+      "url": "/aura_com_GIF/aura_esportivo_performance__diagonais.mp4",
+      "posterUrl": null,
+      "bytes": 522774,
+      "sha256": "2eef237bc0c465c4c0668575ed025ad8e8159417877c58af3bb170934c056c93",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -638,8 +611,7 @@
      "static": null,
      "staticFallback": {
       "strategy": "poster-do-video-PxM",
-      "note": "sem arquivo em /aura_sem_GIF; usa o pôster do asset imagem única P10_M01",
-      "posterUrl": "/_derived/aura_material_animated/P10_M01_poster.jpg"
+      "note": "sem arquivo em /aura_sem_GIF; usa o pôster do asset imagem única P10_M01"
      },
      "animated": null,
      "animatedFallback": {
@@ -660,15 +632,717 @@
       "previewUrl": "/_derived/aura/aura_glam_noite__palco_preview.webp",
       "cardUrl": "/_derived/aura/aura_glam_noite__palco_card.webp",
       "bytes": 1940529,
-      "sha256": "617a80c498d0a43924ffdeb68f5d3bf8631da11f489387b6e64acea0eddfcd3e",
-      "width": 898,
-      "height": 1202
+      "sha256": "617a80c498d0a43924ffdeb68f5d3bf8631da11f489387b6e64acea0eddfcd3e"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "shimmer",
-      "durationS": 5
+     "animated": {
+      "url": "/aura_com_GIF/aura_glam_noite__palco.mp4",
+      "posterUrl": null,
+      "bytes": 452172,
+      "sha256": "7d598034a39b3e7f41bdce5d18bcb78b984ddb439985f012a1b1ce7ca5db3bcb",
+      "mime": "video/mp4"
+     }
+    }
+   ]
+  },
+  {
+   "id": "aura_electro",
+   "name": "Aura Electro",
+   "archetype": "Efeitos de luz e cor eletro",
+   "palette": [
+    "#087bff",
+    "#00e5ff",
+    "#ac53ff",
+    "#ff39d5"
+   ],
+   "season": "Todo o ano · editorial/urbano",
+   "gradient": {
+    "type": "conic",
+    "angle": 0
+   },
+   "animation": {
+    "kind": "gif",
+    "durationS": 10
+   },
+   "prompt": "electro fashion aura, vibrant neon light trails with transparent center, high-energy color gradients",
+   "recommendedMaterials": [
+    "laminado_metalico",
+    "malha_canelada"
+   ],
+   "skinFamilyRisk": "high",
+   "negativePrompt": "avoid gamified badge icons, avoid game UI elements, avoid achievement/level-up graphics, avoid text overlays",
+   "variants": [
+    {
+     "id": "aura_electro__01_cyan_pulse",
+     "presetId": "aura_electro",
+     "theme": "cyan pulse",
+     "code": "E01",
+     "description": "Aura Electro · movimento pulse",
+     "index": 21,
+     "palette": [
+      "#087bff",
+      "#00e5ff",
+      "#a5ffff"
+     ],
+     "static": {
+      "url": "/aura/electro/01_cyan_pulse/imagem.png",
+      "previewUrl": "/aura/electro/01_cyan_pulse/imagem.png",
+      "cardUrl": "/aura/electro/01_cyan_pulse/imagem.png",
+      "bytes": 3851,
+      "sha256": "20dd4fd6ce1524a678b8d9f343fdf7fd2ccf956a0f305e789296d3512ab6e33f"
+     },
+     "animated": {
+      "url": "/aura/electro/01_cyan_pulse/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/01_cyan_pulse/imagem.png",
+      "bytes": 1660729,
+      "sha256": "00fcce418fa99b03f6e509ba0e8b8356388fc662783a55c0715c977be177634b"
+     }
+    },
+    {
+     "id": "aura_electro__02_violet_voltage",
+     "presetId": "aura_electro",
+     "theme": "violet voltage",
+     "code": "E02",
+     "description": "Aura Electro · movimento duplo",
+     "index": 22,
+     "palette": [
+      "#592bff",
+      "#ac53ff",
+      "#f0b5ff"
+     ],
+     "static": {
+      "url": "/aura/electro/02_violet_voltage/imagem.png",
+      "previewUrl": "/aura/electro/02_violet_voltage/imagem.png",
+      "cardUrl": "/aura/electro/02_violet_voltage/imagem.png",
+      "bytes": 4901,
+      "sha256": "d1ac5d3fb784189ed35b3c8b53af53b9030a455058e1447c22fd426604eb79e1"
+     },
+     "animated": {
+      "url": "/aura/electro/02_violet_voltage/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/02_violet_voltage/imagem.png",
+      "bytes": 1743851,
+      "sha256": "bc8966324c7a4d4d0e6060adb6f1dd36b6080c8f6fe77bea5a5fe3c52db52d72"
+     }
+    },
+    {
+     "id": "aura_electro__03_magenta_rush",
+     "presetId": "aura_electro",
+     "theme": "magenta rush",
+     "code": "E03",
+     "description": "Aura Electro · movimento opostos",
+     "index": 23,
+     "palette": [
+      "#ff1468",
+      "#ff39d5",
+      "#a53dff"
+     ],
+     "static": {
+      "url": "/aura/electro/03_magenta_rush/imagem.png",
+      "previewUrl": "/aura/electro/03_magenta_rush/imagem.png",
+      "cardUrl": "/aura/electro/03_magenta_rush/imagem.png",
+      "bytes": 4061,
+      "sha256": "8f3befc89d3937b80106d9174dfe72507bca99082505d9c36ff30557cdb4e676"
+     },
+     "animated": {
+      "url": "/aura/electro/03_magenta_rush/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/03_magenta_rush/imagem.png",
+      "bytes": 1747182,
+      "sha256": "54c1855f304bf968f1a1789f04d6df2f40e91b0e985011dfcfaeac3f99f1eae0"
+     }
+    },
+    {
+     "id": "aura_electro__04_lime_circuit",
+     "presetId": "aura_electro",
+     "theme": "lime circuit",
+     "code": "E04",
+     "description": "Aura Electro · movimento pulse",
+     "index": 24,
+     "palette": [
+      "#02a967",
+      "#8bff2e",
+      "#ebffad"
+     ],
+     "static": {
+      "url": "/aura/electro/04_lime_circuit/imagem.png",
+      "previewUrl": "/aura/electro/04_lime_circuit/imagem.png",
+      "cardUrl": "/aura/electro/04_lime_circuit/imagem.png",
+      "bytes": 2247,
+      "sha256": "0f61c98432dd08911b86507733074308771318b032abb0fed16290fe69bb0180"
+     },
+     "animated": {
+      "url": "/aura/electro/04_lime_circuit/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/04_lime_circuit/imagem.png",
+      "bytes": 292098,
+      "sha256": "5be61d25974cffe52ca0d8196ec98532a2048d803730625a6e52f9d79f3ab04d"
+     }
+    },
+    {
+     "id": "aura_electro__05_solar_flow",
+     "presetId": "aura_electro",
+     "theme": "solar flow",
+     "code": "E05",
+     "description": "Aura Electro · movimento duplo",
+     "index": 25,
+     "palette": [
+      "#ff391b",
+      "#ff9800",
+      "#ffe98b"
+     ],
+     "static": {
+      "url": "/aura/electro/05_solar_flow/imagem.png",
+      "previewUrl": "/aura/electro/05_solar_flow/imagem.png",
+      "cardUrl": "/aura/electro/05_solar_flow/imagem.png",
+      "bytes": 5620,
+      "sha256": "cc49e688d7f762adb8a303dbf64b82d05522a7bb23121174954415013fc33c04"
+     },
+     "animated": {
+      "url": "/aura/electro/05_solar_flow/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/05_solar_flow/imagem.png",
+      "bytes": 1776770,
+      "sha256": "bdf2c1cad549e93dc35cb50b9a1f95a321f0ec5ebd30d004fe4f81dcab4bea4d"
+     }
+    },
+    {
+     "id": "aura_electro__06_gold_charge",
+     "presetId": "aura_electro",
+     "theme": "gold charge",
+     "code": "E06",
+     "description": "Aura Electro · movimento pulse",
+     "index": 26,
+     "palette": [
+      "#936020",
+      "#e5ac43",
+      "#fff0b6"
+     ],
+     "static": {
+      "url": "/aura/electro/06_gold_charge/imagem.png",
+      "previewUrl": "/aura/electro/06_gold_charge/imagem.png",
+      "cardUrl": "/aura/electro/06_gold_charge/imagem.png",
+      "bytes": 4244,
+      "sha256": "37d847445d8d1bed1cd1317477ae030aaec4ca0710ab2793614771d187bbccc9"
+     },
+     "animated": {
+      "url": "/aura/electro/06_gold_charge/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/06_gold_charge/imagem.png",
+      "bytes": 1459221,
+      "sha256": "4b66e02d3fbaed1cd413b90a6f73c2eb20846f6bce2f5a957f8fe18d66908364"
+     }
+    },
+    {
+     "id": "aura_electro__07_brasil_current",
+     "presetId": "aura_electro",
+     "theme": "brasil current",
+     "code": "E07",
+     "description": "Aura Electro · movimento opostos",
+     "index": 27,
+     "palette": [
+      "#00a66e",
+      "#75e834",
+      "#ffe449"
+     ],
+     "static": {
+      "url": "/aura/electro/07_brasil_current/imagem.png",
+      "previewUrl": "/aura/electro/07_brasil_current/imagem.png",
+      "cardUrl": "/aura/electro/07_brasil_current/imagem.png",
+      "bytes": 3316,
+      "sha256": "07d28d31dc0cc1fb0e8d12562c041241af5b7ab0e1e6c9ea22d808e4da9c5e09"
+     },
+     "animated": {
+      "url": "/aura/electro/07_brasil_current/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/07_brasil_current/imagem.png",
+      "bytes": 1765860,
+      "sha256": "32fe0058c70248e3c03d0f12dd6eb446ddeb542c262abb55fdee60ffda2f385c"
+     }
+    },
+    {
+     "id": "aura_electro__08_aurora_boreal",
+     "presetId": "aura_electro",
+     "theme": "aurora boreal",
+     "code": "E08",
+     "description": "Aura Electro · movimento duplo",
+     "index": 28,
+     "palette": [
+      "#04dab3",
+      "#308aff",
+      "#ab45ef",
+      "#fc7ecc"
+     ],
+     "static": {
+      "url": "/aura/electro/08_aurora_boreal/imagem.png",
+      "previewUrl": "/aura/electro/08_aurora_boreal/imagem.png",
+      "cardUrl": "/aura/electro/08_aurora_boreal/imagem.png",
+      "bytes": 10712,
+      "sha256": "8322380dbc0ab287736d6e69ae3e4fdf1d59a9b5f03af9eddfc3cccc8269cead"
+     },
+     "animated": {
+      "url": "/aura/electro/08_aurora_boreal/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/08_aurora_boreal/imagem.png",
+      "bytes": 2329001,
+      "sha256": "20f86c67e5c4f353ff85b1cc1ca3b993bd323f8e2fae03fec1d39b07d3361f3f"
+     }
+    },
+    {
+     "id": "aura_electro__09_rainbow_spectrum",
+     "presetId": "aura_electro",
+     "theme": "rainbow spectrum",
+     "code": "E09",
+     "description": "Aura Electro · movimento opostos",
+     "index": 29,
+     "palette": [
+      "#ff2b45",
+      "#ffae20",
+      "#b8ee21",
+      "#14e5cc",
+      "#3d78ff",
+      "#b62fff"
+     ],
+     "static": {
+      "url": "/aura/electro/09_rainbow_spectrum/imagem.png",
+      "previewUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
+      "cardUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
+      "bytes": 10881,
+      "sha256": "15439772bb5167674f812153be8478439f8366dbe7264cdde9e6b24ff52fa40f"
+     },
+     "animated": {
+      "url": "/aura/electro/09_rainbow_spectrum/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/09_rainbow_spectrum/imagem.png",
+      "bytes": 2320087,
+      "sha256": "3d44af21224e7e0a34fa1f5f4e19377a9890a8ce10b81f90d4b7d57bf0593120"
+     }
+    },
+    {
+     "id": "aura_electro__10_ice_chrome",
+     "presetId": "aura_electro",
+     "theme": "ice chrome",
+     "code": "E10",
+     "description": "Aura Electro · movimento duplo",
+     "index": 30,
+     "palette": [
+      "#6385b6",
+      "#c1e9ff",
+      "#ffffff"
+     ],
+     "static": {
+      "url": "/aura/electro/10_ice_chrome/imagem.png",
+      "previewUrl": "/aura/electro/10_ice_chrome/imagem.png",
+      "cardUrl": "/aura/electro/10_ice_chrome/imagem.png",
+      "bytes": 3740,
+      "sha256": "2b34a9b4a17e075152a86cef62930e664aa60ae67b9f55e145c8d234a8233338"
+     },
+     "animated": {
+      "url": "/aura/electro/10_ice_chrome/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/10_ice_chrome/imagem.png",
+      "bytes": 1683018,
+      "sha256": "1dcf966e710cf3e843dcd322839734dd61bbe82a91930dc88e5c88e941091307"
+     }
+    },
+    {
+     "id": "aura_electro__11_red_reactor",
+     "presetId": "aura_electro",
+     "theme": "red reactor",
+     "code": "E11",
+     "description": "Aura Electro · movimento pulse",
+     "index": 31,
+     "palette": [
+      "#82092c",
+      "#ff2845",
+      "#ff9c74"
+     ],
+     "static": {
+      "url": "/aura/electro/11_red_reactor/imagem.png",
+      "previewUrl": "/aura/electro/11_red_reactor/imagem.png",
+      "cardUrl": "/aura/electro/11_red_reactor/imagem.png",
+      "bytes": 2370,
+      "sha256": "4680a43a8f555019041c9d6863377df7c654477b0953fe6ad7062fc8afaa6998"
+     },
+     "animated": {
+      "url": "/aura/electro/11_red_reactor/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/11_red_reactor/imagem.png",
+      "bytes": 1318357,
+      "sha256": "3062b6213f8a07189b3822ec271e06fc4ca87d297ab5668c83beb51b5174f9cd"
+     }
+    },
+    {
+     "id": "aura_electro__12_fashion_signal",
+     "presetId": "aura_electro",
+     "theme": "fashion signal",
+     "code": "E12",
+     "description": "Aura Electro · movimento opostos",
+     "index": 32,
+     "palette": [
+      "#04c485",
+      "#a9ec51",
+      "#ff9b26",
+      "#ff493d"
+     ],
+     "static": {
+      "url": "/aura/electro/12_fashion_signal/imagem.png",
+      "previewUrl": "/aura/electro/12_fashion_signal/imagem.png",
+      "cardUrl": "/aura/electro/12_fashion_signal/imagem.png",
+      "bytes": 7417,
+      "sha256": "f648e34d04efd9cc58859f4602ab2e7bdaf7aef520d657cd55083631c964a4bd"
+     },
+     "animated": {
+      "url": "/aura/electro/12_fashion_signal/loading_10s.gif",
+      "mime": "image/gif",
+      "durationS": 10,
+      "posterUrl": "/aura/electro/12_fashion_signal/imagem.png",
+      "bytes": 2087290,
+      "sha256": "1383d15fd93526e55b2cf704a0ad949643a56df2911b885d5850cc7ff0dec84d"
+     }
+    }
+   ]
+  },
+  {
+   "id": "aura_geometry",
+   "name": "Aura Geometry",
+   "archetype": "Composições geométricas em movimento",
+   "palette": [
+    "#101820",
+    "#f2ece2",
+    "#d72c3f"
+   ],
+   "season": "Todo o ano · editorial/gráfico",
+   "gradient": {
+    "type": "linear",
+    "angle": 135
+   },
+   "animation": {
+    "kind": "video",
+    "durationS": 8
+   },
+   "prompt": "geometric editorial fashion aura, graphic composition with crisp shapes in motion",
+   "recommendedMaterials": [
+    "laminado_metalico",
+    "tweed_boucle"
+   ],
+   "skinFamilyRisk": "high",
+   "negativePrompt": "avoid gamified badge icons, avoid game UI elements, avoid achievement/level-up graphics, avoid text overlays",
+   "variants": [
+    {
+     "id": "aura_geometry__geometry_01",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 01",
+     "code": "G01",
+     "description": "Aura Geometry · vídeo 01",
+     "index": 33,
+     "static": {
+      "url": "/aura/geometry/geometry_01/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_01/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_01/imagem.png",
+      "bytes": 389257,
+      "sha256": "652eba7af795263a1f050c95518307ee5ac7dd60936a65ec681fa3c5b666f132"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_01/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_01/imagem.png",
+      "durationS": 8,
+      "bytes": 741118,
+      "sha256": "79327454b1f3943cf4ab1160d7b55da4ccf3f8fd81024bfcd3dbf8daa6c751bc",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_geometry__geometry_02",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 02",
+     "code": "G02",
+     "description": "Aura Geometry · vídeo 02",
+     "index": 34,
+     "static": {
+      "url": "/aura/geometry/geometry_02/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_02/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_02/imagem.png",
+      "bytes": 167394,
+      "sha256": "2ceb7ebbb28c8a53ee013831a4608a13e6580b742a9eac4f29122139dec08e1d"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_02/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_02/imagem.png",
+      "durationS": 8,
+      "bytes": 385365,
+      "sha256": "75cb4902b1011620f0a3f55fe98bfbb8873ccfb3e222eb797290484f42ef20a5",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_geometry__geometry_03",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 03",
+     "code": "G03",
+     "description": "Aura Geometry · vídeo 03",
+     "index": 35,
+     "static": {
+      "url": "/aura/geometry/geometry_03/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_03/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_03/imagem.png",
+      "bytes": 121923,
+      "sha256": "a15309978390861d3622e9d8f94b6a60beb1b9ec40ba16eee455b207af3ad0bd"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_03/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_03/imagem.png",
+      "durationS": 8,
+      "bytes": 161303,
+      "sha256": "c82965bcb0f76d7539ac2a2ca1825bb0036632e43aa1500b4861840df18aeae6",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_geometry__geometry_04",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 04",
+     "code": "G04",
+     "description": "Aura Geometry · vídeo 04",
+     "index": 36,
+     "static": {
+      "url": "/aura/geometry/geometry_04/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_04/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_04/imagem.png",
+      "bytes": 205093,
+      "sha256": "7c614fb948c89034f6762fd387f82dd7c54f17d3773977e11dfbf4548c88c1fa"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_04/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_04/imagem.png",
+      "durationS": 8,
+      "bytes": 558476,
+      "sha256": "a42f2764df985ce15a35fde3782062e37824b78defc9b5588c1a55b77f616a03",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_geometry__geometry_05",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 05",
+     "code": "G05",
+     "description": "Aura Geometry · vídeo 05",
+     "index": 37,
+     "static": {
+      "url": "/aura/geometry/geometry_05/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_05/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_05/imagem.png",
+      "bytes": 233125,
+      "sha256": "17ce480e7015441e073a476063413fb42d0def3f7c86557d9f5b7bab307a6667"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_05/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_05/imagem.png",
+      "durationS": 8,
+      "bytes": 372663,
+      "sha256": "dc6be4545d76832a8d5f9576ab83f0d97276e66a65620b1e5fdc1d224e44c570",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_geometry__geometry_06",
+     "presetId": "aura_geometry",
+     "theme": "Geometry 06",
+     "code": "G06",
+     "description": "Aura Geometry · vídeo 06",
+     "index": 38,
+     "static": {
+      "url": "/aura/geometry/geometry_06/imagem.png",
+      "previewUrl": "/aura/geometry/geometry_06/imagem.png",
+      "cardUrl": "/aura/geometry/geometry_06/imagem.png",
+      "bytes": 139905,
+      "sha256": "f3f09aab6c7dbe281ae23d91e80bf185294c59f8fae82cbfa7c7be6cd91fc7c9"
+     },
+     "animated": {
+      "url": "/aura/geometry/geometry_06/animacao.mp4",
+      "posterUrl": "/aura/geometry/geometry_06/imagem.png",
+      "durationS": 8,
+      "bytes": 239981,
+      "sha256": "4a6dffca3129bb2ef64d817738516e90eeec0ba350014ee0c9e44d8ad43c8cda",
+      "mime": "video/mp4"
+     }
+    }
+   ]
+  },
+  {
+   "id": "aura_splash",
+   "name": "Aura Splash",
+   "archetype": "Respingos e manchas de cor em movimento",
+   "palette": [
+    "#0b0b0f",
+    "#ff2d7a",
+    "#ffd23f",
+    "#2ec4ff"
+   ],
+   "season": "Todo o ano · festa/criativo",
+   "gradient": {
+    "type": "radial",
+    "angle": 0
+   },
+   "animation": {
+    "kind": "video",
+    "durationS": 8
+   },
+   "prompt": "paint splash fashion aura, vivid ink and pigment bursts in motion over a dark stage",
+   "recommendedMaterials": [
+    "cetim_liquido",
+    "laminado_metalico"
+   ],
+   "skinFamilyRisk": "high",
+   "negativePrompt": "avoid gamified badge icons, avoid game UI elements, avoid achievement/level-up graphics, avoid text overlays",
+   "variants": [
+    {
+     "id": "aura_splash__splash_01",
+     "presetId": "aura_splash",
+     "theme": "Splash 01",
+     "code": "S01",
+     "description": "Aura Splash · vídeo 01",
+     "index": 39,
+     "static": {
+      "url": "/aura/splash/splash_01/imagem.png",
+      "previewUrl": "/aura/splash/splash_01/imagem.png",
+      "cardUrl": "/aura/splash/splash_01/imagem.png",
+      "bytes": 290104,
+      "sha256": "2c6df52f21bdbb29e345ce8c2d675bd5e2e277ead3999b8c53cb64d88b2ce469"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_01/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_01/imagem.png",
+      "durationS": 8,
+      "bytes": 1082955,
+      "sha256": "95e517000a03285ec8a6ceb1f1717643380feea443497afa6cf0c11ef00b9567",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_splash__splash_02",
+     "presetId": "aura_splash",
+     "theme": "Splash 02",
+     "code": "S02",
+     "description": "Aura Splash · vídeo 02",
+     "index": 40,
+     "static": {
+      "url": "/aura/splash/splash_02/imagem.png",
+      "previewUrl": "/aura/splash/splash_02/imagem.png",
+      "cardUrl": "/aura/splash/splash_02/imagem.png",
+      "bytes": 715714,
+      "sha256": "5fc9886aa00b6f6e8a32d8cabaf467018a6c5f7ba8854fbc66d69fed3ed23c64"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_02/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_02/imagem.png",
+      "durationS": 8,
+      "bytes": 1588987,
+      "sha256": "5ed7ec5d3baeeaed9fb98503fdeb02b1324a267b0348af01e11aa2a95053ce2f",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_splash__splash_03",
+     "presetId": "aura_splash",
+     "theme": "Splash 03",
+     "code": "S03",
+     "description": "Aura Splash · vídeo 03",
+     "index": 41,
+     "static": {
+      "url": "/aura/splash/splash_03/imagem.png",
+      "previewUrl": "/aura/splash/splash_03/imagem.png",
+      "cardUrl": "/aura/splash/splash_03/imagem.png",
+      "bytes": 282686,
+      "sha256": "d3dfc2c6223f87dd9de758bc9d7ee45bc080547808e0424d8e3aa1ac5bc414aa"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_03/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_03/imagem.png",
+      "durationS": 8,
+      "bytes": 944244,
+      "sha256": "34b38379c8b6caf0cd224cf9ac4a7625cc30985c442016ccd6ceab34f3cb1e59",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_splash__splash_04",
+     "presetId": "aura_splash",
+     "theme": "Splash 04",
+     "code": "S04",
+     "description": "Aura Splash · vídeo 04",
+     "index": 42,
+     "static": {
+      "url": "/aura/splash/splash_04/imagem.png",
+      "previewUrl": "/aura/splash/splash_04/imagem.png",
+      "cardUrl": "/aura/splash/splash_04/imagem.png",
+      "bytes": 315276,
+      "sha256": "241df9a0431eab2e8bb454315a27f83af3f5ef98301281801a382c1ad0dd0789"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_04/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_04/imagem.png",
+      "durationS": 8,
+      "bytes": 1115976,
+      "sha256": "b69290cac136b26e6044731a075c739210b0966ec1484eaae0387825425537b0",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_splash__splash_05",
+     "presetId": "aura_splash",
+     "theme": "Splash 05",
+     "code": "S05",
+     "description": "Aura Splash · vídeo 05",
+     "index": 43,
+     "static": {
+      "url": "/aura/splash/splash_05/imagem.png",
+      "previewUrl": "/aura/splash/splash_05/imagem.png",
+      "cardUrl": "/aura/splash/splash_05/imagem.png",
+      "bytes": 321013,
+      "sha256": "41a02302d8e7087676d53f65a997e0774ec0178465e9aa4a9bb86a007b9e7f68"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_05/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_05/imagem.png",
+      "durationS": 8,
+      "bytes": 1309589,
+      "sha256": "e0fa46eada8cebe3554018a7874b207091734a533990b627c43ffea4332fd754",
+      "mime": "video/mp4"
+     }
+    },
+    {
+     "id": "aura_splash__splash_06",
+     "presetId": "aura_splash",
+     "theme": "Splash 06",
+     "code": "S06",
+     "description": "Aura Splash · vídeo 06",
+     "index": 44,
+     "static": {
+      "url": "/aura/splash/splash_06/imagem.png",
+      "previewUrl": "/aura/splash/splash_06/imagem.png",
+      "cardUrl": "/aura/splash/splash_06/imagem.png",
+      "bytes": 188587,
+      "sha256": "74899bd4954407670c73d4de82f6fdb94e98731f954e65b0c1dc4e7444c7962b"
+     },
+     "animated": {
+      "url": "/aura/splash/splash_06/animacao.mp4",
+      "posterUrl": "/aura/splash/splash_06/imagem.png",
+      "durationS": 8,
+      "bytes": 499516,
+      "sha256": "f3035972ee0f97b83de8c7ef0a3dfb42fd03392cd5066de3e77691ec66ecbe08",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -712,15 +1386,14 @@
       "previewUrl": "/_derived/aura/aura_dark_academia__escritorio_preview.webp",
       "cardUrl": "/_derived/aura/aura_dark_academia__escritorio_card.webp",
       "bytes": 2120822,
-      "sha256": "f6607d2bf3626adafcd15e5c2e55691fcb80eade872ac1f74073aa2a2a48a648",
-      "width": 898,
-      "height": 1202
+      "sha256": "f6607d2bf3626adafcd15e5c2e55691fcb80eade872ac1f74073aa2a2a48a648"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "flicker",
-      "durationS": 5
+     "animated": {
+      "url": "/aura_com_GIF/aura_dark_academia__escritorio.mp4",
+      "posterUrl": null,
+      "bytes": 418508,
+      "sha256": "50cfdf6405f86ce01af105939e8b436c4bd01ebcdc3b981b028fefcc93fce93c",
+      "mime": "video/mp4"
      }
     },
     {
@@ -735,15 +1408,14 @@
       "previewUrl": "/_derived/aura/aura_dark_academia__biblioteca_preview.webp",
       "cardUrl": "/_derived/aura/aura_dark_academia__biblioteca_card.webp",
       "bytes": 2268947,
-      "sha256": "9487501533c03a7878744975930ec3097459746723a79d912e741bf8d4fd99c2",
-      "width": 867,
-      "height": 1186
+      "sha256": "9487501533c03a7878744975930ec3097459746723a79d912e741bf8d4fd99c2"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "flicker",
-      "durationS": 5
+     "animated": {
+      "url": "/aura_com_GIF/aura_dark_academia__biblioteca.mp4",
+      "posterUrl": null,
+      "bytes": 567829,
+      "sha256": "1751a7fd095ecd62deba4ab44d96a945a32675d877983e86d015c9881272f8ca",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -785,15 +1457,14 @@
       "previewUrl": "/_derived/aura/aura_natural_organico__floresta_preview.webp",
       "cardUrl": "/_derived/aura/aura_natural_organico__floresta_card.webp",
       "bytes": 2061263,
-      "sha256": "1ed567355e7394088a10a4ca1d429ed2f4df7668fab3c9246830eaf23332e976",
-      "width": 876,
-      "height": 1173
+      "sha256": "1ed567355e7394088a10a4ca1d429ed2f4df7668fab3c9246830eaf23332e976"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "breathe",
-      "durationS": 8
+     "animated": {
+      "url": "/aura_com_GIF/aura_natural_organico__floresta.mp4",
+      "posterUrl": null,
+      "bytes": 403099,
+      "sha256": "ffec34164429ab877b039404ba106a5163077f1ccc15eb39edd03c376b25433a",
+      "mime": "video/mp4"
      }
     },
     {
@@ -806,8 +1477,7 @@
      "static": null,
      "staticFallback": {
       "strategy": "poster-do-video-PxM",
-      "note": "sem arquivo em /aura_sem_GIF; usa o pôster do asset imagem única P09_M01",
-      "posterUrl": "/_derived/aura_material_animated/P09_M01_poster.jpg"
+      "note": "sem arquivo em /aura_sem_GIF; usa o pôster do asset imagem única P09_M01"
      },
      "animated": null,
      "animatedFallback": {
@@ -828,15 +1498,14 @@
       "previewUrl": "/_derived/aura/aura_natural_organico__interiores_preview.webp",
       "cardUrl": "/_derived/aura/aura_natural_organico__interiores_card.webp",
       "bytes": 1956373,
-      "sha256": "9104968dc8d734513b9806c9a888076416e52fd76300de1d82055e93782d9730",
-      "width": 875,
-      "height": 1173
+      "sha256": "9104968dc8d734513b9806c9a888076416e52fd76300de1d82055e93782d9730"
      },
-     "animated": null,
-     "animatedFallback": {
-      "strategy": "css-animation-over-static",
-      "animation": "breathe",
-      "durationS": 8
+     "animated": {
+      "url": "/aura_com_GIF/aura_natural_organico__interiores.mp4",
+      "posterUrl": null,
+      "bytes": 560043,
+      "sha256": "f47fa02f461d8327c2169dd8c78a58aaba51e6ca734055d0df0e063f4a9b1e79",
+      "mime": "video/mp4"
      }
     }
    ]
@@ -864,9 +1533,7 @@
     "previewUrl": "/_derived/material/la_fria_alfaiataria_preview.webp",
     "cardUrl": "/_derived/material/la_fria_alfaiataria_card.webp",
     "bytes": 1184899,
-    "sha256": "7a408c364a1776e5f56ff7dd59fd78efcf30caf7db905335a33be774e2033437",
-    "width": 1334,
-    "height": 1924
+    "sha256": "7a408c364a1776e5f56ff7dd59fd78efcf30caf7db905335a33be774e2033437"
    },
    "animated": {
     "url": "/material_com_GIF/parte3/la_fria_alfaiataria/la_fria_alfaiataria.mp4",
@@ -900,9 +1567,7 @@
     "previewUrl": "/_derived/material/cetim_liquido_preview.webp",
     "cardUrl": "/_derived/material/cetim_liquido_card.webp",
     "bytes": 882283,
-    "sha256": "81a246d1c534051efabc1ec64fad26c326d6230d5726f50b1ba74f6f83823f90",
-    "width": 1289,
-    "height": 1927
+    "sha256": "81a246d1c534051efabc1ec64fad26c326d6230d5726f50b1ba74f6f83823f90"
    },
    "animated": {
     "url": "/material_com_GIF/parte3/cetim_liquido/cetim_liquido.mp4",
@@ -936,9 +1601,7 @@
     "previewUrl": "/_derived/material/couro_nappa_preview.webp",
     "cardUrl": "/_derived/material/couro_nappa_card.webp",
     "bytes": 1391403,
-    "sha256": "3b6a947214904524e12fae7428a56301261846f4c774018a33dc95ec6f9bb165",
-    "width": 1312,
-    "height": 1924
+    "sha256": "3b6a947214904524e12fae7428a56301261846f4c774018a33dc95ec6f9bb165"
    },
    "animated": {
     "url": "/material_com_GIF/parte3/couro_nappa/couro_nappa.mp4",
@@ -969,9 +1632,7 @@
     "previewUrl": "/_derived/material/veludo_profundo_preview.webp",
     "cardUrl": "/_derived/material/veludo_profundo_card.webp",
     "bytes": 618326,
-    "sha256": "d0aa32f8230239eba4a8f87f01d0997f61662fecfee79dc45105a52554075e27",
-    "width": 1309,
-    "height": 1930
+    "sha256": "d0aa32f8230239eba4a8f87f01d0997f61662fecfee79dc45105a52554075e27"
    },
    "animated": {
     "url": "/material_com_GIF/parte3/veludo_profundo/veludo_profundo.mp4",
@@ -1002,9 +1663,7 @@
     "previewUrl": "/_derived/material/linho_natural_preview.webp",
     "cardUrl": "/_derived/material/linho_natural_card.webp",
     "bytes": 875658,
-    "sha256": "8274b7d12cc6db431e3891a928352d9526ca02c551cfc39f5c11d180bf919221",
-    "width": 1313,
-    "height": 1925
+    "sha256": "8274b7d12cc6db431e3891a928352d9526ca02c551cfc39f5c11d180bf919221"
    },
    "animated": {
     "url": "/material_com_GIF/parte2/linho_natural/linho_natural.mp4",
@@ -1035,9 +1694,7 @@
     "previewUrl": "/_derived/material/malha_canelada_preview.webp",
     "cardUrl": "/_derived/material/malha_canelada_card.webp",
     "bytes": 896925,
-    "sha256": "b721c31ffa7b5c376fe64da26a888456a4937669922916f15d0582524d7a4a2e",
-    "width": 1323,
-    "height": 1929
+    "sha256": "b721c31ffa7b5c376fe64da26a888456a4937669922916f15d0582524d7a4a2e"
    },
    "animated": {
     "url": "/material_com_GIF/parte2/malha_canelada/malha_canelada.mp4",
@@ -1073,9 +1730,7 @@
     "previewUrl": "/_derived/material/nylon_ripstop_preview.webp",
     "cardUrl": "/_derived/material/nylon_ripstop_card.webp",
     "bytes": 903669,
-    "sha256": "2f1637baeb1c9f783ae615e41fd0078fa0b6860a60872b984156fa298a7207ec",
-    "width": 1298,
-    "height": 1926
+    "sha256": "2f1637baeb1c9f783ae615e41fd0078fa0b6860a60872b984156fa298a7207ec"
    },
    "animated": {
     "url": "/material_com_GIF/parte1/acolchoado_azul_marinho/acolchoado_azul_marinho.mp4",
@@ -1109,9 +1764,7 @@
     "previewUrl": "/_derived/material/organza_translucida_preview.webp",
     "cardUrl": "/_derived/material/organza_translucida_card.webp",
     "bytes": 928670,
-    "sha256": "c82dc6d09ffe0500315a1fc6307d428b9181607a2e1e2db3c2046ad5af4dfdad",
-    "width": 1330,
-    "height": 1924
+    "sha256": "c82dc6d09ffe0500315a1fc6307d428b9181607a2e1e2db3c2046ad5af4dfdad"
    },
    "animated": {
     "url": "/material_com_GIF/parte2/organza_translucida/organza_translucida.mp4",
@@ -1148,9 +1801,7 @@
     "previewUrl": "/_derived/material/brocado_jacquard_preview.webp",
     "cardUrl": "/_derived/material/brocado_jacquard_card.webp",
     "bytes": 1403286,
-    "sha256": "cef11e3857515da9f54d9a993105bca666086efd0d1c23d9b3f49eb94a85453b",
-    "width": 1244,
-    "height": 1925
+    "sha256": "cef11e3857515da9f54d9a993105bca666086efd0d1c23d9b3f49eb94a85453b"
    },
    "animated": {
     "url": "/material_com_GIF/parte1/brocado_floral/brocado_floral.mp4",
@@ -1181,9 +1832,7 @@
     "previewUrl": "/_derived/material/denim_selvagem_preview.webp",
     "cardUrl": "/_derived/material/denim_selvagem_card.webp",
     "bytes": 1170159,
-    "sha256": "9d9c776800d4084c1d6499e324546599c691e1814705d483a8a13bc299809e0c",
-    "width": 1319,
-    "height": 1927
+    "sha256": "9d9c776800d4084c1d6499e324546599c691e1814705d483a8a13bc299809e0c"
    },
    "animated": {
     "url": "/material_com_GIF/parte1/denim_selvagem/denim_selvagem.mp4",
@@ -1214,9 +1863,7 @@
     "previewUrl": "/_derived/material/tweed_boucle_preview.webp",
     "cardUrl": "/_derived/material/tweed_boucle_card.webp",
     "bytes": 1262989,
-    "sha256": "2c0bb6ab52fe4dc92c2a3ab3eacfb0b576129aedd5aede3661612bd072d66c9a",
-    "width": 1226,
-    "height": 1924
+    "sha256": "2c0bb6ab52fe4dc92c2a3ab3eacfb0b576129aedd5aede3661612bd072d66c9a"
    },
    "animated": {
     "url": "/material_com_GIF/parte2/tweed_boucle/tweed_boucle.mp4",
@@ -1247,9 +1894,7 @@
     "previewUrl": "/_derived/material/laminado_metalico_preview.webp",
     "cardUrl": "/_derived/material/laminado_metalico_card.webp",
     "bytes": 1317605,
-    "sha256": "e461881fe6928018549be846654dda95ed3360a8e7a963daa2032b2deea41099",
-    "width": 1345,
-    "height": 1927
+    "sha256": "e461881fe6928018549be846654dda95ed3360a8e7a963daa2032b2deea41099"
    },
    "animated": {
     "url": "/material_com_GIF/parte1/laminado_metalico/laminado_metalico.mp4",
@@ -1262,3032 +1907,7 @@
  ],
  "auraMaterialCombos": {
   "static": [],
-  "animated": [
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P01_M01 - Tailored Steel GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M01",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P01_M02 - Tailored Steel GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M02",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P01_M03 - Tailored Steel GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M03",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P01_M04 - Tailored Steel GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M04",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P01_M05 - Tailored Steel GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M05",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P01_M06 - Tailored Steel GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M06",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P01_M07 - Tailored Steel GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M07",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P01_M08 - Tailored Steel GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M08",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P01_M09 - Tailored Steel GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M09",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P01_M10 - Tailored Steel GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M10",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P01_M11 - Tailored Steel GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M11",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_alfaiataria__cabides",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P01_M12 - Tailored Steel GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P01_M12",
-    "label": {
-     "aura": "Tailored Steel",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P01_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P02_M01 - Editorial Ivory GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M01",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P02_M02 - Editorial Ivory GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M02",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P02_M03 - Editorial Ivory GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M03",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P02_M04 - Editorial Ivory GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M04",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P02_M05 - Editorial Ivory GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M05",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P02_M06 - Editorial Ivory GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M06",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P02_M07 - Editorial Ivory GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M07",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P02_M08 - Editorial Ivory GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M08",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P02_M09 - Editorial Ivory GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M09",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P02_M10 - Editorial Ivory GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M10",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P02_M11 - Editorial Ivory GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M11",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_editorial_mono__estudio",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P02_M12 - Editorial Ivory GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P02_M12",
-    "label": {
-     "aura": "Editorial Ivory",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P02_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P03_M01 - Petal Bloom GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M01",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P03_M02 - Petal Bloom GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M02",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P03_M03 - Petal Bloom GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M03",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P03_M04 - Petal Bloom GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M04",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P03_M05 - Petal Bloom GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M05",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P03_M06 - Petal Bloom GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M06",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P03_M07 - Petal Bloom GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M07",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P03_M08 - Petal Bloom GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M08",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P03_M09 - Petal Bloom GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M09",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P03_M10 - Petal Bloom GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M10",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P03_M11 - Petal Bloom GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M11",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_romantico_petala__petalas",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P03_M12 - Petal Bloom GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P03_M12",
-    "label": {
-     "aura": "Petal Bloom",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P03_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P04_M01 - Terracotta Dune GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M01",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P04_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M02",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P04_M03 - Terracotta Dune GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M03",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P04_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M04",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P04_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M05",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P04_M06 - Terracotta Dune GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M06",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P04_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M07",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P04_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M08",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P04_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M09",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P04_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M10",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P04_M11 - Terracotta Dune GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M11",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__dunas_douradas",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P04_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P04_M12",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P04_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P05_M01 - Concrete Neon GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M01",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P05_M02 - Concrete Neon GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M02",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P05_M03 - Concrete Neon GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M03",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P05_M04 - Concrete Neon GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M04",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P05_M05 - Concrete Neon GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M05",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P05_M06 - Concrete Neon GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M06",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P05_M07 - Concrete Neon GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M07",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P05_M08 - Concrete Neon GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M08",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P05_M09 - Concrete Neon GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M09",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P05_M10 - Concrete Neon GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M10",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P05_M11 - Concrete Neon GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M11",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__circuitos",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P05_M12 - Concrete Neon GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P05_M12",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P05_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P06_M01 - Performance Pulse GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M01",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P06_M02 - Performance Pulse GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M02",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P06_M03 - Performance Pulse GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M03",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P06_M04 - Performance Pulse GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M04",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P06_M05 - Performance Pulse GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M05",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P06_M06 - Performance Pulse GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M06",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P06_M07 - Performance Pulse GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M07",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P06_M08 - Performance Pulse GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M08",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P06_M09 - Performance Pulse GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M09",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P06_M10 - Performance Pulse GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M10",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P06_M11 - Performance Pulse GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M11",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_esportivo_performance__feixes",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P06_M12 - Performance Pulse GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P06_M12",
-    "label": {
-     "aura": "Performance Pulse",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P06_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P07_M01 - Raw Linen GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M01",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P07_M02 - Raw Linen GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M02",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P07_M03 - Raw Linen GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M03",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P07_M04 - Raw Linen GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M04",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P07_M05 - Raw Linen GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M05",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P07_M06 - Raw Linen GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M06",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P07_M07 - Raw Linen GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M07",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P07_M08 - Raw Linen GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M08",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P07_M09 - Raw Linen GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M09",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P07_M10 - Raw Linen GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M10",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P07_M11 - Raw Linen GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M11",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__floresta",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P07_M12 - Raw Linen GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P07_M12",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P07_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P08_M01 - Terracotta Dune GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M01",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P08_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M02",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P08_M03 - Terracotta Dune GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M03",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P08_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M04",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P08_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M05",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P08_M06 - Terracotta Dune GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M06",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P08_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M07",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P08_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M08",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P08_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M09",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P08_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M10",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P08_M11 - Terracotta Dune GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M11",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__deserto",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P08_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P08_M12",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P08_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P09_M01 - Raw Linen GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M01",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P09_M02 - Raw Linen GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M02",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P09_M03 - Raw Linen GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M03",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P09_M04 - Raw Linen GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M04",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P09_M05 - Raw Linen GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M05",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P09_M06 - Raw Linen GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M06",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P09_M07 - Raw Linen GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M07",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P09_M08 - Raw Linen GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M08",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P09_M09 - Raw Linen GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M09",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P09_M10 - Raw Linen GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M10",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P09_M11 - Raw Linen GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M11",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__gotas",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P09_M12 - Raw Linen GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P09_M12",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P09_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P10_M01 - Midnight Spotlight GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M01",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P10_M02 - Midnight Spotlight GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M02",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P10_M03 - Midnight Spotlight GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M03",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P10_M04 - Midnight Spotlight GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M04",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P10_M05 - Midnight Spotlight GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M05",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P10_M06 - Midnight Spotlight GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M06",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P10_M07 - Midnight Spotlight GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M07",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P10_M08 - Midnight Spotlight GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M08",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P10_M09 - Midnight Spotlight GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M09",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P10_M10 - Midnight Spotlight GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M10",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P10_M11 - Midnight Spotlight GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M11",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__tecidos_flutuando",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P10_M12 - Midnight Spotlight GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P10_M12",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P10_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P11_M01 - Chrome Iridescent GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M01",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P11_M02 - Chrome Iridescent GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M02",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P11_M03 - Chrome Iridescent GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M03",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P11_M04 - Chrome Iridescent GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M04",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P11_M05 - Chrome Iridescent GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M05",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P11_M06 - Chrome Iridescent GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M06",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P11_M07 - Chrome Iridescent GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M07",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P11_M08 - Chrome Iridescent GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M08",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P11_M09 - Chrome Iridescent GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M09",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P11_M10 - Chrome Iridescent GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M10",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P11_M11 - Chrome Iridescent GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M11",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__cromo_lilas",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P11_M12 - Chrome Iridescent GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P11_M12",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P11_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P12_M01 - Concrete Neon GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M01",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P12_M02 - Concrete Neon GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M02",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P12_M03 - Concrete Neon GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M03",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P12_M04 - Concrete Neon GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M04",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P12_M05 - Concrete Neon GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M05",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P12_M06 - Concrete Neon GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M06",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P12_M07 - Concrete Neon GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M07",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P12_M08 - Concrete Neon GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M08",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P12_M09 - Concrete Neon GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M09",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P12_M10 - Concrete Neon GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M10",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P12_M11 - Concrete Neon GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M11",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_streetwear_neon__diagonais",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P12_M12 - Concrete Neon GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P12_M12",
-    "label": {
-     "aura": "Concrete Neon",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P12_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P13_M01 - Midnight Spotlight GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M01",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P13_M02 - Midnight Spotlight GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M02",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P13_M03 - Midnight Spotlight GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M03",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P13_M04 - Midnight Spotlight GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M04",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P13_M05 - Midnight Spotlight GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M05",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P13_M06 - Midnight Spotlight GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M06",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P13_M07 - Midnight Spotlight GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M07",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P13_M08 - Midnight Spotlight GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M08",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P13_M09 - Midnight Spotlight GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M09",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P13_M10 - Midnight Spotlight GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M10",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P13_M11 - Midnight Spotlight GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M11",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_glam_noite__palco",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P13_M12 - Midnight Spotlight GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P13_M12",
-    "label": {
-     "aura": "Midnight Spotlight",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P13_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P14_M01 - Ivy Library GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M01",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P14_M02 - Ivy Library GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M02",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P14_M03 - Ivy Library GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M03",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P14_M04 - Ivy Library GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M04",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P14_M05 - Ivy Library GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M05",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P14_M06 - Ivy Library GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M06",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P14_M07 - Ivy Library GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M07",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P14_M08 - Ivy Library GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M08",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P14_M09 - Ivy Library GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M09",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P14_M10 - Ivy Library GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M10",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P14_M11 - Ivy Library GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M11",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__escritorio",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P14_M12 - Ivy Library GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P14_M12",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P14_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P15_M01 - Raw Linen GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M01",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P15_M02 - Raw Linen GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M02",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P15_M03 - Raw Linen GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M03",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P15_M04 - Raw Linen GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M04",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P15_M05 - Raw Linen GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M05",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P15_M06 - Raw Linen GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M06",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P15_M07 - Raw Linen GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M07",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P15_M08 - Raw Linen GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M08",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P15_M09 - Raw Linen GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M09",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P15_M10 - Raw Linen GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M10",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P15_M11 - Raw Linen GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M11",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_natural_organico__interiores",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P15_M12 - Raw Linen GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P15_M12",
-    "label": {
-     "aura": "Raw Linen",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P15_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P16_M01 - Terracotta Dune GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M01",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P16_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M02",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P16_M03 - Terracotta Dune GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M03",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P16_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M04",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P16_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M05",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P16_M06 - Terracotta Dune GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M06",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P16_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M07",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P16_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M08",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P16_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M09",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P16_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M10",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P16_M11 - Terracotta Dune GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M11",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_boemio_terracota__crepusculo",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P16_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P16_M12",
-    "label": {
-     "aura": "Terracotta Dune",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P16_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P17_M01 - Chrome Iridescent GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M01",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P17_M02 - Chrome Iridescent GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M02",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P17_M03 - Chrome Iridescent GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M03",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P17_M04 - Chrome Iridescent GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M04",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P17_M05 - Chrome Iridescent GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M05",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P17_M06 - Chrome Iridescent GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M06",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P17_M07 - Chrome Iridescent GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M07",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P17_M08 - Chrome Iridescent GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M08",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P17_M09 - Chrome Iridescent GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M09",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P17_M10 - Chrome Iridescent GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M10",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P17_M11 - Chrome Iridescent GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M11",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_avantgarde_cromo__fluxo_de_luz",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P17_M12 - Chrome Iridescent GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P17_M12",
-    "label": {
-     "aura": "Chrome Iridescent",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P17_M12_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "la_fria_alfaiataria",
-    "url": "/aura_com_material_com_GIF/P18_M01 - Ivy Library GIF mais Herringbone.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M01",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Herringbone"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M01_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "cetim_liquido",
-    "url": "/aura_com_material_com_GIF/P18_M02 - Ivy Library GIF mais Seda Cetim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M02",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Seda Cetim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M02_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "couro_nappa",
-    "url": "/aura_com_material_com_GIF/P18_M03 - Ivy Library GIF mais Couro Cognac.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M03",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Couro Cognac"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M03_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "veludo_profundo",
-    "url": "/aura_com_material_com_GIF/P18_M04 - Ivy Library GIF mais Veludo Esmeralda.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M04",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Veludo Esmeralda"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M04_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "linho_natural",
-    "url": "/aura_com_material_com_GIF/P18_M05 - Ivy Library GIF mais Burlap-Linho.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M05",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Burlap-Linho"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M05_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "malha_canelada",
-    "url": "/aura_com_material_com_GIF/P18_M06 - Ivy Library GIF mais Malha Canelada.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M06",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Malha Canelada"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M06_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "nylon_ripstop",
-    "url": "/aura_com_material_com_GIF/P18_M07 - Ivy Library GIF mais Nylon Ripstop.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M07",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Nylon Ripstop"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M07_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "organza_translucida",
-    "url": "/aura_com_material_com_GIF/P18_M08 - Ivy Library GIF mais Organza Chiffon.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M08",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Organza Chiffon"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M08_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "brocado_jacquard",
-    "url": "/aura_com_material_com_GIF/P18_M09 - Ivy Library GIF mais Brocado Jacquard.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M09",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Brocado Jacquard"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M09_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "denim_selvagem",
-    "url": "/aura_com_material_com_GIF/P18_M10 - Ivy Library GIF mais Índigo Denim.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M10",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Índigo Denim"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M10_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "tweed_boucle",
-    "url": "/aura_com_material_com_GIF/P18_M11 - Ivy Library GIF mais Lã Tweed.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M11",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Lã Tweed"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M11_poster.jpg",
-    "mime": "video/mp4"
-   },
-   {
-    "auraVariantId": "aura_dark_academia__biblioteca",
-    "materialId": "laminado_metalico",
-    "url": "/aura_com_material_com_GIF/P18_M12 - Ivy Library GIF mais Laminado Metálico.mp4",
-    "format": "IMAGEM_UNICA",
-    "code": "P18_M12",
-    "label": {
-     "aura": "Ivy Library",
-     "material": "Laminado Metálico"
-    },
-    "labelConflict": false,
-    "posterUrl": "/_derived/aura_material_animated/P18_M12_poster.jpg",
-    "mime": "video/mp4"
-   }
-  ],
+  "animated": [],
   "mosaic": [
    {
     "auraVariantId": "aura_alfaiataria__cabides",
@@ -6269,22 +3889,22 @@
     "aura_sem_GIF",
     "aura_no_GIF"
    ],
-   "found": 18,
-   "expected": 18,
+   "found": 42,
+   "expected": 42,
    "status": "complete",
    "renderStrategy": "asset"
   },
   {
    "key": "aura_animated",
    "label": "Aura (com GIF)",
-   "folder": null,
+   "folder": "/aura_com_GIF",
    "acceptedFolderNames": [
     "aura_com_GIF"
    ],
-   "found": 0,
-   "expected": 18,
-   "status": "missing",
-   "renderStrategy": "css-animation-over-static"
+   "found": 42,
+   "expected": 42,
+   "status": "complete",
+   "renderStrategy": "asset"
   },
   {
    "key": "aura_material_static",
@@ -6306,10 +3926,10 @@
    "acceptedFolderNames": [
     "aura_com_material_com_GIF"
    ],
-   "found": 216,
+   "found": 0,
    "expected": 216,
-   "status": "complete",
-   "renderStrategy": "asset"
+   "status": "missing",
+   "renderStrategy": "css-blend(aura_static + material_animated video)"
   },
   {
    "key": "aura_material_mosaic_animated",
@@ -6504,15 +4124,15 @@
   },
   {
    "id": "spread",
-   "name": "Spread",
+   "name": "Spread Blush",
    "family": "fine",
-   "nativeContainer": "#F7F4EE",
+   "nativeContainer": "#F5E4DE",
    "font": "Fraunces",
    "tokens": {
-    "bg": "#F7F4EE",
-    "ink": "#111111",
+    "bg": "#F5E4DE",
+    "ink": "#2B1A17",
     "accent": "#B4442C",
-    "border": "#D9D1C4",
+    "border": "#DDBFB6",
     "radius": 6,
     "titleWeight": 800
    },
@@ -6539,15 +4159,15 @@
   },
   {
    "id": "index",
-   "name": "Índice",
+   "name": "Índice Aço",
    "family": "fine",
-   "nativeContainer": "#FFFFFF",
+   "nativeContainer": "#E2E7ED",
    "font": "IBM Plex Mono",
    "tokens": {
-    "bg": "#FBFAF6",
-    "ink": "#23201C",
-    "accent": "#5B6B7A",
-    "border": "#23201C",
+    "bg": "#E2E7ED",
+    "ink": "#1E2733",
+    "accent": "#4A6B8A",
+    "border": "#1E2733",
     "radius": 4,
     "titleWeight": 600
    },
@@ -6574,15 +4194,15 @@
   },
   {
    "id": "trading",
-   "name": "Trading",
+   "name": "Trading Lilás",
    "family": "framed",
-   "nativeContainer": "#F2F2F2",
+   "nativeContainer": "#EAE3F6",
    "font": "Inter",
    "tokens": {
-    "bg": "#F2F2F2",
+    "bg": "#EAE3F6",
     "ink": "#16161A",
     "accent": "#7C5FC0",
-    "border": "#9A9AA3",
+    "border": "#B9A9DE",
     "radius": 18,
     "titleWeight": 800
    },
@@ -6611,10 +4231,10 @@
    "id": "fai_max",
    "name": "FAI Max",
    "family": "framed",
-   "nativeContainer": "#FFF4EC",
+   "nativeContainer": "#FFE9D6",
    "font": "Inter",
    "tokens": {
-    "bg": "#FFF4EC",
+    "bg": "#FFE9D6",
     "ink": "#1A0F08",
     "accent": "#FF6A1A",
     "border": "#FF6A1A",
@@ -6644,12 +4264,12 @@
   },
   {
    "id": "stub",
-   "name": "Stub",
+   "name": "Stub Kraft",
    "family": "framed",
-   "nativeContainer": "#FBF7EF",
+   "nativeContainer": "#E6D3B3",
    "font": "IBM Plex Mono",
    "tokens": {
-    "bg": "#FBF7EF",
+    "bg": "#E6D3B3",
     "ink": "#2A241C",
     "accent": "#A0522D",
     "border": "#2A241C",
@@ -6679,15 +4299,15 @@
   },
   {
    "id": "specimen",
-   "name": "Specimen",
+   "name": "Specimen Sálvia",
    "family": "framed",
-   "nativeContainer": "#F4F7F2",
+   "nativeContainer": "#DCE8DB",
    "font": "IBM Plex Mono",
    "tokens": {
-    "bg": "#F4F7F2",
+    "bg": "#DCE8DB",
     "ink": "#1F2A22",
     "accent": "#3D7A5A",
-    "border": "#9FB3A5",
+    "border": "#8FA896",
     "radius": 6,
     "titleWeight": 600
    },
@@ -6716,14 +4336,14 @@
    "id": "editorial_ivory",
    "name": "Editorial Ivory Paper",
    "family": "fine",
-   "nativeContainer": "#F7F4EE",
+   "nativeContainer": "#F3EEE3",
    "font": "Georgia",
    "tokens": {
-    "bg": "#F7F4EE",
+    "bg": "#F3EEE3",
     "ink": "#1A1410",
-    "accent": "#C4956A",
+    "accent": "#B5883A",
     "border": "#D4CEC4",
-    "badgeBg": "#F0EDE8",
+    "badgeBg": "#EBE5D8",
     "radius": 3,
     "titleWeight": 400,
     "pieceStripe": "side-3px",
@@ -6857,6 +4477,111 @@
    "thumbnailPrompt": {
     "scheme": "warm luxury glass mockup, deep near-opaque navy glass background, thin rose-gold-to-violet gradient hairline accent along the top edge, soft violet ambient glow surrounding the frame paired with a deeper grounding shadow, gradient product cards blending navy, violet, and rose-gold tones with a warm golden glow on hover, refined uppercase wide-tracked light-weight typography, opulent evening editorial mood, full outfit editorial framing, complete look composition with multiple garment pieces styled together, head-to-toe styling context, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography",
     "piece": "warm luxury glass mockup, deep near-opaque navy glass background, thin rose-gold-to-violet gradient hairline accent along the top edge, soft violet ambient glow surrounding the frame paired with a deeper grounding shadow, gradient product cards blending navy, violet, and rose-gold tones with a warm golden glow on hover, refined uppercase wide-tracked light-weight typography, opulent evening editorial mood, single garment product framing, one clothing item centered as hero subject, isolated product-shot styling, tall vertical card mockup format, narrow portrait aspect ratio approximately 0.39:1 (220:566), generous vertical space for a hero photo area plus stacked info rows below, mockup canvas 220x566, design asset oriented output, premium fashion/editorial background utility, clear text-safe area, controlled visual density, clean negative space for outfit presentation and typography"
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
+  },
+  {
+   "id": "midnight_violet",
+   "name": "Midnight Violet",
+   "family": "framed",
+   "nativeContainer": "#1C1B2E",
+   "font": "Inter",
+   "tokens": {
+    "bg": "#1C1B2E",
+    "ink": "#ECE8F6",
+    "accent": "#9B72CF",
+    "border": "rgba(155,114,207,0.32)",
+    "radius": 12,
+    "titleWeight": 300
+   },
+   "doc": null,
+   "displayName": "Midnight Violet",
+   "component": null,
+   "thumbHint": null,
+   "status": "implemented",
+   "styleFragment": null,
+   "thumbnailPrompt": {
+    "scheme": null,
+    "piece": null
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
+  },
+  {
+   "id": "forest_archive",
+   "name": "Forest Archive",
+   "family": "framed",
+   "nativeContainer": "#16302A",
+   "font": "Georgia",
+   "tokens": {
+    "bg": "#16302A",
+    "ink": "#E8F0EA",
+    "accent": "#8FBF9F",
+    "border": "rgba(143,191,159,0.28)",
+    "radius": 6,
+    "titleWeight": 600
+   },
+   "doc": null,
+   "displayName": "Forest Archive",
+   "component": null,
+   "thumbHint": null,
+   "status": "implemented",
+   "styleFragment": null,
+   "thumbnailPrompt": {
+    "scheme": null,
+    "piece": null
+   },
+   "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
+   "thumbnail": null,
+   "thumbnailSpec": {
+    "aspect": "220:566",
+    "ratio": 0.389,
+    "variant": "Lista vertical — Ampliado",
+    "generation": "gerar em retrato (~0,67:1) e recortar ao centro para 0,39:1",
+    "fallback": "live-css-miniature"
+   },
+   "namingNote": null
+  },
+  {
+   "id": "oxblood",
+   "name": "Oxblood",
+   "family": "framed",
+   "nativeContainer": "#4A1F24",
+   "font": "Fraunces",
+   "tokens": {
+    "bg": "#4A1F24",
+    "ink": "#F4E6E3",
+    "accent": "#D08A7A",
+    "border": "rgba(244,230,227,0.25)",
+    "radius": 4,
+    "titleWeight": 500
+   },
+   "doc": null,
+   "displayName": "Oxblood",
+   "component": null,
+   "thumbHint": null,
+   "status": "implemented",
+   "styleFragment": null,
+   "thumbnailPrompt": {
+    "scheme": null,
+    "piece": null
    },
    "negativePrompt": "avoid faces, avoid people, avoid clutter, avoid chaotic scenery, avoid fantasy character focus, avoid unreadable typography collisions, avoid rendering small legible UI text or numbers, avoid literal price tags with readable digits, avoid stock photo watermark",
    "thumbnail": null,
@@ -7466,46 +5191,6 @@
  "pCodeConflicts": [],
  "missing": [
   {
-   "category": "aura_animated",
-   "id": "aura_alfaiataria__cabides",
-   "expected": "/aura_com_GIF/aura_alfaiataria__cabides.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_editorial_mono__estudio",
-   "expected": "/aura_com_GIF/aura_editorial_mono__estudio.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_romantico_petala__petalas",
-   "expected": "/aura_com_GIF/aura_romantico_petala__petalas.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_boemio_terracota__dunas_douradas",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__dunas_douradas.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_streetwear_neon__circuitos",
-   "expected": "/aura_com_GIF/aura_streetwear_neon__circuitos.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_esportivo_performance__feixes",
-   "expected": "/aura_com_GIF/aura_esportivo_performance__feixes.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_natural_organico__floresta",
-   "expected": "/aura_com_GIF/aura_natural_organico__floresta.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_boemio_terracota__deserto",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__deserto.mp4 (ou .gif/.webm)"
-  },
-  {
    "category": "aura_static",
    "id": "aura_natural_organico__gotas",
    "expected": "/aura_sem_GIF/aura_natural_organico__gotas.png"
@@ -7526,59 +5211,16 @@
    "expected": "/aura_com_GIF/aura_glam_noite__tecidos_flutuando.mp4 (ou .gif/.webm)"
   },
   {
-   "category": "aura_animated",
-   "id": "aura_avantgarde_cromo__cromo_lilas",
-   "expected": "/aura_com_GIF/aura_avantgarde_cromo__cromo_lilas.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_streetwear_neon__diagonais",
-   "expected": "/aura_com_GIF/aura_streetwear_neon__diagonais.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_glam_noite__palco",
-   "expected": "/aura_com_GIF/aura_glam_noite__palco.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_dark_academia__escritorio",
-   "expected": "/aura_com_GIF/aura_dark_academia__escritorio.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_natural_organico__interiores",
-   "expected": "/aura_com_GIF/aura_natural_organico__interiores.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_boemio_terracota__crepusculo",
-   "expected": "/aura_com_GIF/aura_boemio_terracota__crepusculo.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_avantgarde_cromo__fluxo_de_luz",
-   "expected": "/aura_com_GIF/aura_avantgarde_cromo__fluxo_de_luz.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_dark_academia__biblioteca",
-   "expected": "/aura_com_GIF/aura_dark_academia__biblioteca.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_esportivo_performance__diagonais",
-   "expected": "/aura_com_GIF/aura_esportivo_performance__diagonais.mp4 (ou .gif/.webm)"
-  },
-  {
-   "category": "aura_animated",
-   "id": "aura_romantico_petala__brilho_suave",
-   "expected": "/aura_com_GIF/aura_romantico_petala__brilho_suave.mp4 (ou .gif/.webm)"
-  },
-  {
    "category": "aura_material_static",
    "id": "*",
    "expected": "/aura_com_material_sem_GIF/P##_M##.(png|mp4) ou /aura_com_material_sem_GIF/<aura_variante>/<aura>_mais_<material>.(png|mp4)",
+   "found": 0,
+   "total": 216
+  },
+  {
+   "category": "aura_material_animated",
+   "id": "*",
+   "expected": "/aura_com_material_com_GIF/P##_M##.(png|mp4) ou /aura_com_material_com_GIF/<aura_variante>/<aura>_mais_<material>.(png|mp4)",
    "found": 0,
    "total": 216
   }
@@ -7589,19 +5231,7 @@
    "reason": "não é imagem (ex.: zip de materiais duplicado de material_no_GIF)"
   },
   {
-   "file": "/P16_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/aura_com_material_mosaico_GIF",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
+   "file": "/favicon.png",
    "reason": "arquivo solto na raiz de /public"
   },
   {
@@ -7609,11 +5239,15 @@
    "reason": "arquivo solto na raiz de /public"
   },
   {
-   "file": "/P16_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
+   "file": "/P16_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
    "reason": "arquivo solto na raiz de /public"
   },
   {
-   "file": "/P16_M01 - Terracotta Dune GIF mais Herringbone.mp4",
+   "file": "/P16_M04 - Terracotta Dune GIF mais Veludo Esmeralda.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/Aura_Electro_Public.zip",
    "reason": "arquivo solto na raiz de /public"
   },
   {
@@ -7621,15 +5255,7 @@
    "reason": "arquivo solto na raiz de /public"
   },
   {
-   "file": "/P16_M05 - Terracotta Dune GIF mais Burlap-Linho.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
-   "reason": "arquivo solto na raiz de /public"
-  },
-  {
-   "file": "/P16_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
+   "file": "/favicon.ico",
    "reason": "arquivo solto na raiz de /public"
   },
   {
@@ -7637,7 +5263,39 @@
    "reason": "arquivo solto na raiz de /public"
   },
   {
+   "file": "/aura_com_material_mosaico_GIF",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
    "file": "/P16_M10 - Terracotta Dune GIF mais Índigo Denim.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M12 - Terracotta Dune GIF mais Laminado Metálico.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M02 - Terracotta Dune GIF mais Seda Cetim.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M07 - Terracotta Dune GIF mais Nylon Ripstop.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M08 - Terracotta Dune GIF mais Organza Chiffon.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/apple-touch-icon.png",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M01 - Terracotta Dune GIF mais Herringbone.mp4",
+   "reason": "arquivo solto na raiz de /public"
+  },
+  {
+   "file": "/P16_M09 - Terracotta Dune GIF mais Brocado Jacquard.mp4",
    "reason": "arquivo solto na raiz de /public"
   }
  ]

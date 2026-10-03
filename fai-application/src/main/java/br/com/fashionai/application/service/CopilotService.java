@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ public class CopilotService {
     static final Pattern REF = Pattern.compile("\\[\\[(p\\d+)]]");
     static final Map<String, Set<String>> COLOR_WORDS = new LinkedHashMap<>();
     static final Map<String, Set<String>> TYPE_WORDS = new LinkedHashMap<>();
+    static final Map<String, Set<String>> MATERIAL_WORDS = new LinkedHashMap<>();
 
     static {
         COLOR_WORDS.put("branc", Set.of("white", "off_white", "ivory", "cream"));
@@ -146,6 +148,17 @@ public class CopilotService {
         TYPE_WORDS.put("belt", Set.of("belt")); TYPE_WORDS.put("cinturón", Set.of("belt")); TYPE_WORDS.put("cinturon", Set.of("belt"));
         TYPE_WORDS.put("glasses", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("gafas", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("necklace", Set.of("necklace")); TYPE_WORDS.put("collar", Set.of("necklace"));
         TYPE_WORDS.put("watch", Set.of("watch")); TYPE_WORDS.put("reloj", Set.of("watch"));
+        MATERIAL_WORDS.put("algodao", Set.of("COTTON")); MATERIAL_WORDS.put("cotton", Set.of("COTTON"));
+        MATERIAL_WORDS.put("poliester", Set.of("POLYESTER")); MATERIAL_WORDS.put("polyester", Set.of("POLYESTER"));
+        MATERIAL_WORDS.put("lana", Set.of("WOOL")); MATERIAL_WORDS.put("wool", Set.of("WOOL"));
+        MATERIAL_WORDS.put("seda", Set.of("SILK")); MATERIAL_WORDS.put("silk", Set.of("SILK"));
+        MATERIAL_WORDS.put("couro", Set.of("LEATHER")); MATERIAL_WORDS.put("leather", Set.of("LEATHER")); MATERIAL_WORDS.put("piel", Set.of("LEATHER"));
+        MATERIAL_WORDS.put("sintetico", Set.of("SYNTHETIC")); MATERIAL_WORDS.put("synthetic", Set.of("SYNTHETIC")); MATERIAL_WORDS.put("sintetica", Set.of("SYNTHETIC"));
+        MATERIAL_WORDS.put("mistura", Set.of("BLEND")); MATERIAL_WORDS.put("blend", Set.of("BLEND"));
+        // vocabulário ampliado (CopilotLexicon): não sobrescreve os termos acima
+        CopilotLexicon.COLOR_PREFIXES.forEach(COLOR_WORDS::putIfAbsent);
+        CopilotLexicon.TYPE_PREFIXES.forEach(TYPE_WORDS::putIfAbsent);
+        CopilotLexicon.PIECE_MATERIALS.forEach(MATERIAL_WORDS::putIfAbsent);
     }
 
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
@@ -169,13 +182,16 @@ public class CopilotService {
     private final AiEngine ai;
     private final Audit audit;
     private final SchemeService schemeService;
+    private final BackgroundStudioService backgroundStudio;
     private final Map<UUID, Deque<String>> shown = new ConcurrentHashMap<>();
 
     public CopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                           DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, RoomService room,
                           MirrorService mirror, InventoryScoreService inventory, ChallengeService challenges, AutopilotService autopilot,
-                          DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService) {
+                          DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService,
+                          BackgroundStudioService backgroundStudio) {
         this.schemeService = schemeService;
+        this.backgroundStudio = backgroundStudio;
         this.wardrobe = wardrobe;
         this.pieces = pieces;
         this.schemes = schemes;
@@ -208,6 +224,7 @@ public class CopilotService {
     public Map<String, Object> context(CurrentUser user, String view, List<UUID> selection, String city, Double lat, Double lon) {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
+        out.put("userId", user.id());
         out.put("view", view == null ? "COPILOT" : view.toUpperCase(Locale.ROOT));
         out.put("pieces", pieces.countByUserId(user.id()));
         out.put("available", eligible.size());
@@ -288,6 +305,75 @@ public class CopilotService {
     // ================================================================== intenções
     enum Intent { WHERE_IS, FORGOTTEN, DIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL }
 
+    /** weather: faixa de clima pedida no texto (VERAO_LEVE, MEIA_ESTACAO, CAMADAS, INVERNO_PESADO) ou null */
+    record LookPrompt(List<String> occasions, List<String> styles, String mood, String season, String weather) {}
+
+    static String normalized(String value) {
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " ").trim();
+    }
+
+    static boolean mentions(String text, String phrase) {
+        String value = normalized(text);
+        String target = normalized(phrase).trim();
+        return !target.isEmpty() && (" " + value.replaceAll("[^a-z0-9]+", " ") + " ").contains(" " + target + " ");
+    }
+
+    static boolean startsWithWord(String text, String prefix) {
+        String wanted = normalized(prefix);
+        if (wanted.contains(" ")) return mentions(text, wanted);
+        return java.util.Arrays.stream(normalized(text).split("\\s+")).anyMatch(word -> word.startsWith(wanted));
+    }
+
+    static LookPrompt lookPrompt(String message, List<String> requestedOccasions, String requestedMood) {
+        List<String> occasions = new ArrayList<>(requestedOccasions == null ? List.of() : requestedOccasions.stream()
+                .filter(Taxonomy.OCCASIONS::contains).distinct().limit(3).toList());
+        Map<String, List<String>> occasionTerms = Map.ofEntries(
+                Map.entry("casual", List.of("casual", "informal", "dia a dia")), Map.entry("work", List.of("work", "trabalho", "escritorio")),
+                Map.entry("business", List.of("business", "executivo", "corporativo")), Map.entry("formal", List.of("formal")),
+                Map.entry("party", List.of("party", "festa")), Map.entry("night_out", List.of("night out", "noite")),
+                Map.entry("date", List.of("date", "encontro", "romantico")), Map.entry("wedding", List.of("wedding", "casamento")),
+                Map.entry("ceremony", List.of("ceremony", "cerimonia")), Map.entry("sport", List.of("sport", "esporte")),
+                Map.entry("gym", List.of("gym", "academia")), Map.entry("travel", List.of("travel", "viagem")),
+                Map.entry("beach", List.of("beach", "praia")), Map.entry("vacation", List.of("vacation", "ferias")),
+                Map.entry("school", List.of("school", "escola")), Map.entry("university", List.of("university", "faculdade")),
+                Map.entry("social", List.of("social", "social")), Map.entry("home", List.of("home", "casa")),
+                Map.entry("outdoor", List.of("outdoor", "ar livre")), Map.entry("festival", List.of("festival")));
+        for (String value : Taxonomy.OCCASIONS) {
+            if (!occasions.contains(value) && occasionTerms.getOrDefault(value, List.of(value.replace('_', ' '))).stream().anyMatch(term -> mentions(message, term))) {
+                occasions.add(value);
+            }
+        }
+        CopilotLexicon.matches(CopilotLexicon.OCCASIONS, message).stream().filter(Taxonomy.OCCASIONS::contains)
+                .filter(value -> !occasions.contains(value)).forEach(occasions::add);
+        List<String> detectedStyles = new ArrayList<>(Taxonomy.STYLES.stream().filter(value -> mentions(message, value.replace('_', ' '))).limit(3).toList());
+        Map<String, String> translated = Map.ofEntries(Map.entry("classico", "classic"), Map.entry("minimalista", "minimalist"),
+                Map.entry("moderno", "modern"), Map.entry("elegante", "chic"), Map.entry("urbano", "urban"),
+                Map.entry("romantico", "romantic"), Map.entry("boemio", "boho"), Map.entry("esportivo", "sporty"),
+                Map.entry("luxuoso", "luxury"), Map.entry("futurista", "futuristic"), Map.entry("vintage", "vintage"));
+        translated.entrySet().stream().filter(e -> mentions(message, e.getKey())).map(Map.Entry::getValue).forEach(detectedStyles::add);
+        CopilotLexicon.matches(CopilotLexicon.STYLES, message).stream().filter(Taxonomy.STYLES::contains).forEach(detectedStyles::add);
+        List<String> styles = detectedStyles.stream().distinct().limit(3).toList();
+        String mood = requestedMood;
+        if (mood != null && !Set.of("ENERGETIC", "ELEGANT", "COMFORTABLE", "SOPHISTICATED").contains(mood.toUpperCase(Locale.ROOT))) mood = null;
+        if (mood == null) {
+            if (List.of("energetico", "energetica", "vibrante", "animado").stream().anyMatch(term -> mentions(message, term))) mood = "ENERGETIC";
+            else if (List.of("elegante", "elegancia", "chique").stream().anyMatch(term -> mentions(message, term))) mood = "ELEGANT";
+            else if (List.of("confortavel", "conforto", "cozy").stream().anyMatch(term -> mentions(message, term))) mood = "COMFORTABLE";
+            else if (List.of("sofisticado", "sofisticada", "refinado").stream().anyMatch(term -> mentions(message, term))) mood = "SOPHISTICATED";
+            else mood = CopilotLexicon.first(CopilotLexicon.MOODS, message);
+        }
+        String season = null;
+        if (List.of("inverno", "winter").stream().anyMatch(term -> mentions(message, term))) season = "WINTER";
+        else if (List.of("verao", "summer").stream().anyMatch(term -> mentions(message, term))) season = "SUMMER";
+        else if (List.of("outono", "autumn", "fall").stream().anyMatch(term -> mentions(message, term))) season = "AUTUMN";
+        else if (List.of("primavera", "spring").stream().anyMatch(term -> mentions(message, term))) season = "SPRING";
+        else season = CopilotLexicon.first(CopilotLexicon.SEASONS, message);
+        String weatherBand = CopilotLexicon.weatherBand(message);
+        if (season == null) season = CopilotLexicon.seasonOfBand(weatherBand);
+        return new LookPrompt(occasions.stream().distinct().limit(3).toList(), styles, mood, season, weatherBand);
+    }
+
     static Intent intent(String m) {
         String t = m == null ? "" : m.toLowerCase(Locale.ROOT);
         if (t.matches(".*(onde est|onde fica|cadê|cade |onde guardei|onde deixei|where is|where are|where's|where did i|dónde est|donde est|dónde guard|donde guard).*")) {
@@ -305,7 +391,8 @@ public class CopilotService {
         if (t.matches(".*(comprar|o que falta|falta no meu|diagnóstic|diagnostic|lacuna|buy|what's missing|what is missing|missing from my|gap|qué falta|que falta|falta en mi|diagnóstico|brecha).*")) {
             return Intent.DIAGNOSIS;
         }
-        if (t.matches(".*(look|vestir|visto|usar hoje|sugest|montar|combina|roupa para|frio|calor|trabalho|festa|faculdade|academia).*")) {
+        if (t.matches(".*(look|vestir|visto|usar hoje|sugest|montar|combina|roupa para|frio|calor|trabalho|festa|faculdade|academia|fundo|background|aura|material|conjunto).*")
+                || hasPieceConstraints(t) || CopilotLexicon.signalsLook(t)) {
             return Intent.LOOKS;
         }
         return Intent.GENERAL;
@@ -313,34 +400,225 @@ public class CopilotService {
 
     /** Ferramenta buscar_pecas(filtros) — só o próprio acervo; indisponíveis marcadas. */
     List<WardrobeItem> searchPieces(UUID userId, String text) {
-        String t = text == null ? "" : text.toLowerCase(Locale.ROOT);
+        return searchPieces(userId, text, false);
+    }
+
+    List<WardrobeItem> searchPieces(UUID userId, String text, boolean availableOnly) {
+        String original = text == null ? "" : text.toLowerCase(Locale.ROOT);
+        String t = normalized(text);
         Set<String> colors = new HashSet<>();
         COLOR_WORDS.forEach((k, v) -> {
-            if (t.contains(k)) {
+            if (startsWithWord(t, k)) {
                 colors.addAll(v);
             }
         });
         Set<String> subs = new HashSet<>();
         TYPE_WORDS.forEach((k, v) -> {
-            if (t.contains(k)) {
+            if (startsWithWord(t, k)) {
                 subs.addAll(v);
             }
         });
+        Set<String> materials = new HashSet<>();
+        MATERIAL_WORDS.forEach((k, v) -> {
+            if (mentions(text, k)) materials.addAll(v);
+        });
+        if (original.contains("lã")) materials.add("WOOL");
         if (subs.contains("jeans") && subs.size() > 1) {
             colors.remove("denim");
         }
         return pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> !availableOnly || (w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE))
                 .filter(w -> colors.isEmpty() || colors.contains(w.getColor()))
                 .filter(w -> subs.isEmpty() || subs.contains(w.getSubcategory()))
-                .filter(w -> !(colors.isEmpty() && subs.isEmpty()) || nameMatch(w, t))
+                .filter(w -> materials.isEmpty() || materials.contains(w.getMaterial()))
+                .filter(w -> !(colors.isEmpty() && subs.isEmpty() && materials.isEmpty()) || nameMatch(w, t))
                 .limit(8).toList();
+    }
+
+    static boolean hasPieceConstraints(String message) {
+        return COLOR_WORDS.keySet().stream().anyMatch(k -> startsWithWord(message, k))
+                || TYPE_WORDS.keySet().stream().anyMatch(k -> startsWithWord(message, k))
+                || MATERIAL_WORDS.keySet().stream().anyMatch(k -> mentions(message, k))
+                || (message != null && message.toLowerCase(Locale.ROOT).contains("lã"));
+    }
+
+    record BackgroundPrompt(Map<String, Object> configuration, Map<String, String> unresolved) {}
+
+    @SuppressWarnings("unchecked")
+    static List<Map<String, Object>> catalogEntries(Object entries) {
+        if (!(entries instanceof List<?> list)) return List.of();
+        return list.stream().filter(Map.class::isInstance).map(x -> (Map<String, Object>) x).toList();
+    }
+
+    static Map<String, Object> namedEntry(List<Map<String, Object>> entries, String text, String... fields) {
+        for (Map<String, Object> entry : entries) {
+            for (String field : fields) {
+                Object value = entry.get(field);
+                if (value instanceof String s && s.length() > 2 && mentions(text, s.replace('_', ' '))) return entry;
+            }
+        }
+        return null;
+    }
+
+    BackgroundPrompt backgroundPrompt(String message, List<String> styles, List<String> occasions) {
+        return backgroundPrompt(message, styles, occasions, true);
+    }
+
+    /**
+     * Orientação livre do Criar Look ("Gerar com IA"): o mesmo vocabulário do Copilot (CopilotLexicon, 800+ termos
+     * PT/EN/ES de ocasião, estilo, humor, estação, clima, cores, tipos e materiais de peça, presets e variações AURA,
+     * materiais de fundo, gradientes e cartela sazonal) lido sem exigir a palavra "fundo": o que a pessoa citar vira
+     * arte de background, ocasião, estilo, estação e humor do look gerado.
+     */
+    public Map<String, Object> orientation(String text, List<String> styles, List<String> occasions) {
+        if (text == null || text.isBlank()) return Map.of();
+        Map<String, Object> out = new LinkedHashMap<>();
+        BackgroundPrompt bg = backgroundPrompt(text, styles, occasions, false);
+        if (bg.configuration() != null && bg.configuration().get("scheme") instanceof Map<?, ?> scheme && !scheme.isEmpty()) {
+            out.put("background", scheme);
+        }
+        if (!bg.unresolved().isEmpty()) out.put("unresolved", bg.unresolved());
+        LookPrompt look = lookPrompt(text, occasions, null);
+        if (!look.occasions().isEmpty()) out.put("occasions", look.occasions());
+        if (!look.styles().isEmpty()) out.put("styles", look.styles());
+        if (look.season() != null) out.put("season", look.season());
+        if (look.mood() != null) out.put("mood", look.mood());
+        if (look.weather() != null) out.put("weather", look.weather());
+        return out;
+    }
+
+    BackgroundPrompt backgroundPrompt(String message, List<String> styles, List<String> occasions, boolean requireCue) {
+        String text = normalized(message);
+        Map<String, Object> scheme = new LinkedHashMap<>();
+        Map<String, String> unresolved = new LinkedHashMap<>();
+        boolean backgroundRequested = !requireCue || List.of("fundo", "background", "arte de fundo", "aura", "material", "moldura", "arte do card", "fondo")
+                .stream().anyMatch(term -> mentions(message, term));
+        if (!backgroundRequested) return new BackgroundPrompt(null, Map.of());
+
+        Matcher hex = Pattern.compile("#[0-9a-fA-F]{6}(?![0-9a-fA-F])").matcher(message);
+        if (hex.find() && (mentions(message, "fundo") || mentions(message, "background") || mentions(message, "container"))) {
+            String color = hex.group().toUpperCase(Locale.ROOT);
+            if (mentions(message, "container")) scheme.put("container", Map.of("color", color));
+            else scheme.put("color", color);
+        } else if (mentions(message, "fundo") || mentions(message, "background")) {
+            for (Map.Entry<String, Set<String>> term : COLOR_WORDS.entrySet()) {
+                if (!startsWithWord(message, term.getKey())) continue;
+                String colorId = term.getValue().stream().filter(Taxonomy.COLORS::containsKey).findFirst().orElse(null);
+                if (colorId != null) {
+                    scheme.put("color", Taxonomy.COLORS.get(colorId));
+                    break;
+                }
+            }
+        }
+
+        Map<String, Object> catalog = backgroundStudio.catalog();
+        List<Map<String, Object>> auraPresets = catalogEntries(catalog.get("auraPresets"));
+        Map<String, Object> selectedAura = null;
+        Map<String, Object> selectedVariant = null;
+        for (Map<String, Object> preset : auraPresets) {
+            if (mentions(message, String.valueOf(preset.get("name"))) || mentions(message, String.valueOf(preset.get("id")).replace('_', ' '))) {
+                selectedAura = preset;
+                break;
+            }
+            for (Map<String, Object> variant : catalogEntries(preset.get("variants"))) {
+                if (mentions(message, String.valueOf(variant.get("theme"))) || mentions(message, String.valueOf(variant.get("code"))
+                        .replace('_', ' ')) || mentions(message, String.valueOf(variant.get("id")).replace('_', ' '))) {
+                    selectedAura = preset;
+                    selectedVariant = variant;
+                    break;
+                }
+            }
+            if (selectedAura != null) break;
+        }
+        String gradientTerm = CopilotLexicon.first(CopilotLexicon.GRADIENTS, message);
+        if (selectedAura == null && (gradientTerm == null || mentions(message, "aura"))) {
+            // vocabulário: "fundo geométrico", "aura elétrica ciano", "fundo floral"… → preset (e variação, se citada)
+            String presetId = CopilotLexicon.first(CopilotLexicon.AURA_PRESETS, message);
+            if (presetId != null) {
+                selectedAura = auraPresets.stream().filter(p -> presetId.equals(p.get("id"))).findFirst().orElse(null);
+                String suffix = selectedAura == null ? null : CopilotLexicon.variantSuffix(presetId, message);
+                if (suffix != null) {
+                    String variantId = presetId + "__" + suffix;
+                    selectedVariant = catalogEntries(selectedAura.get("variants")).stream().filter(v -> variantId.equals(v.get("id"))).findFirst().orElse(null);
+                }
+            }
+        }
+        boolean asksAura = mentions(message, "aura") || selectedAura != null;
+        if (asksAura && selectedAura == null && (mentions(message, "geometry") || mentions(message, "geometria")
+                || mentions(message, "electro") || mentions(message, "eletro"))) {
+            unresolved.put("aura", Msg.t("backgroundStudio.preset_aura_desconhecido", "Aura solicitada"));
+        } else if (asksAura && selectedAura == null) {
+            Map<String, Object> direction = backgroundStudio.recommend(styles, occasions);
+            Object recommendedAura = direction.get("aura");
+            if (recommendedAura instanceof String id) {
+                scheme.put("aura", Map.of("variantId", id));
+                if (direction.get("skin") instanceof String skin) scheme.put("cardSkin", skin);
+                if (direction.get("material") instanceof String material && mentions(message, "material")) scheme.put("materialId", material);
+            } else {
+                unresolved.put("aura", Msg.t("backgroundStudio.preset_aura_desconhecido", "Aura solicitada"));
+            }
+        }
+        if (selectedAura != null) {
+            if (selectedVariant == null) {
+                List<Map<String, Object>> variants = catalogEntries(selectedAura.get("variants"));
+                selectedVariant = variants.isEmpty() ? null : variants.get(0);
+            }
+            if (selectedVariant != null && selectedVariant.get("id") instanceof String id) {
+                Map<String, Object> aura = new LinkedHashMap<>();
+                aura.put("variantId", id);
+                if (mentions(message, "gif") || mentions(message, "animado") || mentions(message, "dinamico")) aura.put("animated", true);
+                scheme.put("aura", aura);
+            }
+        }
+
+        List<Map<String, Object>> materials = catalogEntries(catalog.get("materials"));
+        Map<String, Object> selectedMaterial = namedEntry(materials, message, "id", "name");
+        if (selectedMaterial == null && CopilotLexicon.MATERIAL_CUES.stream().anyMatch(cue -> mentions(message, cue))) {
+            String materialId = CopilotLexicon.first(CopilotLexicon.BACKGROUND_MATERIALS, message);
+            selectedMaterial = materialId == null ? null : materials.stream().filter(m -> materialId.equals(m.get("id"))).findFirst().orElse(null);
+        }
+        if (selectedMaterial != null && selectedMaterial.get("id") instanceof String id) scheme.put("materialId", id);
+        else if (mentions(message, "material")) {
+            Map<String, Object> direction = backgroundStudio.recommend(styles, occasions);
+            if (direction.get("material") instanceof String id) scheme.put("materialId", id);
+            else unresolved.put("material", Msg.t("backgroundStudio.material_desconhecido", "material solicitado"));
+        }
+
+        List<Map<String, Object>> gradients = catalogEntries(catalog.get("gradients"));
+        Map<String, Object> selectedGradient = namedEntry(gradients, message, "id", "name");
+        if (selectedGradient == null && gradientTerm != null) {
+            selectedGradient = gradients.stream().filter(g -> gradientTerm.equals(g.get("id"))).findFirst().orElse(null);
+        }
+        if (selectedGradient != null) {
+            scheme.put("gradientPresetId", selectedGradient.get("id"));
+            scheme.put("gradient", selectedGradient);
+        }
+        List<Map<String, Object>> seasonal = catalogEntries(catalog.get("seasonal"));
+        Map<String, Object> selectedSeasonal = namedEntry(seasonal, message, "id", "name");
+        if (selectedSeasonal == null && CopilotLexicon.SEASONAL_CUES.stream().anyMatch(cue -> mentions(message, cue))) {
+            String seasonalId = CopilotLexicon.SEASONAL_PRESETS.get(lookPrompt(message, List.of(), null).season());
+            selectedSeasonal = seasonalId == null ? null : seasonal.stream().filter(g -> seasonalId.equals(g.get("id"))).findFirst().orElse(null);
+        }
+        if (selectedSeasonal != null) {
+            scheme.put("seasonalPresetId", selectedSeasonal.get("id"));
+            scheme.put("gradient", selectedSeasonal);
+        }
+        if (scheme.get("aura") instanceof Map<?, ?> aura && scheme.containsKey("materialId")
+                && (mentions(message, "gif") || mentions(message, "animado") || mentions(message, "dinamico"))) {
+            ((Map<String, Object>) aura).put("format", "IMAGEM_UNICA");
+        }
+        if (scheme.isEmpty()) return new BackgroundPrompt(null, unresolved);
+        Map<String, Object> configuration = new LinkedHashMap<>();
+        configuration.put("scheme", scheme);
+        configuration.put("pieces", Map.of("anatomy", "PECA_AMPLIADO"));
+        return new BackgroundPrompt(configuration, unresolved);
     }
 
     static boolean nameMatch(WardrobeItem w, String t) {
         if (w.getName() == null) {
             return false;
         }
-        for (String tok : w.getName().toLowerCase(Locale.ROOT).split("\\s+")) {
+        for (String tok : normalized(w.getName()).split("\\s+")) {
             if (tok.length() > 3 && t.contains(tok)) {
                 return true;
             }
@@ -613,17 +891,31 @@ public class CopilotService {
         if (wardrobe.eligible(user.id()).size() < MIN_PIECES) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("copilot.o_copilot_precisa_de_ao_2"), Map.of("href", "/pieces/new"));
         }
-        List<String> occasions = new ArrayList<>(req.occasion() == null ? List.of() : req.occasion());
+        LookPrompt interpreted = lookPrompt(message, req.occasion(), req.mood());
+        List<String> occasions = new ArrayList<>(interpreted.occasions());
         if (occasions.isEmpty()) {
-            MirrorService.localInterpretation(message, List.of()).occasion().forEach(occasions::add);
+            MirrorService.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
         }
+        Set<UUID> requiredPieceIds = Set.of();
+        if (hasPieceConstraints(message)) {
+            requiredPieceIds = searchPieces(user.id(), message, true).stream().map(WardrobeItem::getId).collect(Collectors.toSet());
+            if (requiredPieceIds.isEmpty()) {
+                Map<String, Object> noMatch = new LinkedHashMap<>();
+                noMatch.put("text", Msg.t("copilot.nao_encontrei_essa_peca_no"));
+                noMatch.put("looks", List.of());
+                noMatch.put("suggestions", List.of());
+                noMatch.put("requestedFilters", Map.of("message", InputSanitizer.clean(message, 200)));
+                return noMatch;
+            }
+        }
+        BackgroundPrompt backgroundRequest = backgroundPrompt(message, interpreted.styles(), occasions);
         Deque<String> prev = shown.computeIfAbsent(user.id(), k -> new ArrayDeque<>());
         Set<String> exclude = new HashSet<>(prev);
         if (req.excludeKeys() != null) {
             exclude.addAll(req.excludeKeys());
         }
-        Map<String, Object> result = autopilot.daily(user, new AutopilotService.DailyRequest(occasions, req.mood(), req.city(), req.latitude(), req.longitude(),
-                new ArrayList<>(exclude)));
+        Map<String, Object> result = autopilot.daily(user, new AutopilotService.DailyRequest(occasions, interpreted.mood(), req.city(), req.latitude(), req.longitude(),
+                new ArrayList<>(exclude)), requiredPieceIds, interpreted.weather());
         @SuppressWarnings("unchecked") List<Map<String, Object>> suggestions = (List<Map<String, Object>>) result.getOrDefault("suggestions", List.of());
         suggestions.forEach(s -> {
             prev.addLast(String.valueOf(s.get("key")));
@@ -638,17 +930,44 @@ public class CopilotService {
             s.put("chips", look.stream().map(w -> chip(w, where)).toList());
             s.put("actions", List.of(Map.of("type", "ACCEPT_DAILY_LOOK", "label", Msg.t("copilot.usar_como_look_do_dia")), Map.of("type", "MOUNT_MIRROR", "pieceIds", ids),
                     Map.of("type", "OPEN_CREATE_LOOK", "draft", draft(look, "copilot", message))));
+            s.put("occasion", occasions);
+            s.put("style", interpreted.styles());
+            s.put("mood", interpreted.mood());
+            s.put("season", interpreted.season());
+            s.put("weather", interpreted.weather());
+            s.put("background", backgroundRequest.configuration());
+            s.put("description", message);
         }
         Map<String, Object> out = new LinkedHashMap<>(result);
-        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : Msg.t("copilot.separei_looks_com_pecas_do", suggestions.size(), (occasions.isEmpty() ? "" : " para " + String.join("/", occasions))));
+        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : lookSummary(suggestions.size(), occasions));
+        if (!backgroundRequest.unresolved().isEmpty()) out.put("backgroundNotice", backgroundRequest.unresolved());
+        List<Map<String, Object>> lookCards = suggestions.stream().map(s -> {
+            Map<String, Object> card = new LinkedHashMap<>();
+            card.put("title", s.get("title"));
+            card.put("pieceIds", s.get("pieceIds"));
+            card.put("pieces", s.getOrDefault("chips", List.of()));
+            card.put("why", s.get("rationale"));
+            card.put("occasion", occasions);
+            card.put("style", interpreted.styles());
+            card.put("mood", interpreted.mood());
+            card.put("season", interpreted.season());
+            card.put("weather", interpreted.weather());
+            card.put("background", backgroundRequest.configuration());
+            card.put("description", InputSanitizer.clean(message, 2048));
+            return card;
+        }).toList();
+        out.put("looks", lookCards);
+        if (hasPieceConstraints(message)) out.put("requestedFilters", Map.of("pieceIds", requiredPieceIds));
         out.put("tools", List.of("buscar_pecas", "listar_looks", "montar_no_espelho", "abrir_criar_look"));
         return out;
     }
 
     /** CA06 — aceitar sugestão: esquema com origem Copilot + Look do Dia. */
     @Transactional
-    public Map<String, Object> accept(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion) {
-        Scheme s = autopilot.createScheme(user, pieceIds, title == null ? Msg.t("copilot.look_do_dia_copilot") : title, occasion, SchemeOrigin.COPILOT);
+    public Map<String, Object> accept(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion, List<String> style,
+                                      String mood, String season, String description, Map<String, Object> background) {
+        Scheme s = autopilot.createScheme(user, pieceIds, title == null ? Msg.t("copilot.look_do_dia_copilot") : title,
+                occasion, SchemeOrigin.COPILOT, style, mood, season, description, background);
         DailyLook dl = dailyLookService.register(user, s, DailyLookSource.COPILOT, LocalDate.now(FaiPointsService.ZONE));
         return Map.of("schemeId", s.getId(), "origin", "COPILOT", "dailyLook", dailyLookService.view(dl));
     }
@@ -666,21 +985,41 @@ public class CopilotService {
         for (WardrobeItem w : relevant) {
             String ref = "p" + i++;
             refs.put(ref, w);
-            tool.add(Map.of("ref", ref, "name", String.valueOf(w.getName()), "subcategory", String.valueOf(w.getSubcategory()), "color", String.valueOf(w.getColor()),
-                    "available", w.isDisponivel()));
+            Map<String, Object> fields = new LinkedHashMap<>();
+            fields.put("ref", ref);
+            fields.put("name", String.valueOf(w.getName()));
+            fields.put("category", String.valueOf(w.getCategory()));
+            fields.put("subcategory", String.valueOf(w.getSubcategory()));
+            fields.put("color", String.valueOf(w.getColor()));
+            fields.put("material", String.valueOf(w.getMaterial()));
+            fields.put("size", String.valueOf(w.getSizeLabel()));
+            fields.put("style", Json.csv(w.getStyleTags()));
+            fields.put("occasion", Json.csv(w.getOccasionTags()));
+            fields.put("condition", w.getCondition() == null ? "" : w.getCondition().name());
+            fields.put("available", w.isDisponivel());
+            fields.put("favorite", w.isFavorite());
+            fields.put("forSale", w.isForSale());
+            fields.put("wearCount", w.getWearCount());
+            fields.put("tags", Json.csv(w.getTags()));
+            fields.put("notes", InputSanitizer.clean(w.getNotes(), 160));
+            tool.add(fields);
         }
         Map<String, Object> summary = compactSummary(user);
         String localText = Msg.t("copilot.posso_ajudar_a_montar_looks", String.join(" · ", promptsFor(view)));
         AiOutcome<String> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
                 "Você é o Copilot do Fashion AI. Responda em " + Msg.languageName() + ", em até 4 frases. Use SOMENTE as peças listadas (refs p1..pn) e cite cada peça como [[pN]]. "
-                        + "Nunca cite marca ou produto para compra. Nunca invente peças. Se precisar de algo fora do acervo, diga de forma genérica (categoria, cor, ocasião).",
-                "Contexto (resumo): " + Json.write(summary) + "\nVisão atual: " + view + "\nPeças disponíveis via ferramenta buscar_pecas: " + Json.write(tool)
+                        + "Nunca cite marca ou produto para compra. Nunca invente peças. Se precisar de algo fora do acervo, diga de forma genérica (categoria, cor, ocasião). "
+                        + "Responda só com o texto da resposta, em prosa corrida: sem JSON, sem blocos de código.",
+                "Contexto (resumo): " + Json.write(summary) + "\nVisão atual: " + view + "\nPeças disponíveis via ferramenta buscar_pecas (categoria, subcategoria, cor, material, tamanho, estilo, ocasião, estado, preço, uso, favoritas, tags e notas): " + Json.write(tool)
                         + "\nPergunta: " + message, List.of(), 500, List.of(Msg.t("copilot.resumo_compacto_contagens_dna_camada"), Msg.t("copilot.pecas_retornadas_por_buscar_pecas")),
                 text -> text == null || text.isBlank() ? null : text, () -> localText, null));
-        String raw = outcome.value() == null ? localText : outcome.value();
+        Answer answer = plainAnswer(outcome.value() == null ? localText : outcome.value());
+        String raw = answer.text();
         Map<UUID, RoomService.Location> where = room.locateAll(user.id());
         List<Map<String, Object>> chips = new ArrayList<>();
         Set<UUID> cited = new LinkedHashSet<>();
+        // peças citadas só na lista "pecas" de uma resposta em JSON também viram chips
+        answer.refs().stream().map(refs::get).filter(Objects::nonNull).forEach(w -> cited.add(w.getId()));
         Matcher m = REF.matcher(raw);
         StringBuilder sb = new StringBuilder();
         List<String> discarded = new ArrayList<>();
@@ -710,6 +1049,52 @@ public class CopilotService {
         out.put("message", outcome.userMessage());
         out.put("tools", List.of("buscar_pecas", "ler_dna_estilo", "ler_inventory_score"));
         return out;
+    }
+
+    /** Texto da resposta do Copilot e as refs de peça (p1..pn) que vieram fora do texto. */
+    record Answer(String text, List<String> refs) {
+    }
+
+    /** Campos em que a IA costuma pôr o texto quando responde em JSON apesar do pedido de prosa. */
+    private static final List<String> ANSWER_FIELDS = List.of("resposta", "answer", "respuesta", "texto", "text", "response", "message");
+
+    /**
+     * A IA às vezes devolve {@code {"resposta": "...", "pecas": ["p1"]}} (às vezes dentro de ```json) em vez de prosa:
+     * sem desembrulhar, a tela mostrava chaves e aspas. Texto comum passa como veio.
+     */
+    static Answer plainAnswer(String text) {
+        if (text == null) {
+            return new Answer("", List.of());
+        }
+        String t = text.trim();
+        if (t.startsWith("```")) {
+            t = t.replaceFirst("^```[a-zA-Z]*\\s*", "").replaceFirst("\\s*```$", "").trim();
+        }
+        if (!t.startsWith("{")) {
+            return new Answer(text.trim(), List.of());
+        }
+        Map<String, Object> m = WardrobeService.extractJson(t);
+        String body = ANSWER_FIELDS.stream().map(m::get).filter(v -> v instanceof String s && !s.isBlank())
+                .map(String::valueOf).findFirst().orElse(null);
+        if (body == null) {
+            return new Answer(text.trim(), List.of());
+        }
+        List<String> refs = new ArrayList<>();
+        for (String key : List.of("pecas", "peças", "pieces", "prendas", "refs")) {
+            if (m.get(key) instanceof List<?> l) {
+                l.stream().map(String::valueOf).filter(r -> r.matches("p\\d+")).forEach(refs::add);
+            }
+        }
+        return new Answer(body.trim(), refs);
+    }
+
+    /** "Separei 2 looks … para trabalho/festa": ocasiões pelo rótulo da taxonomia, a frase inteira no idioma da pessoa. */
+    static String lookSummary(int count, List<String> occasions) {
+        if (occasions == null || occasions.isEmpty()) {
+            return Msg.t("copilot.separei_looks_com_pecas_do", count, "");
+        }
+        String labels = String.join("/", occasions.stream().map(o -> WardrobeService.label(o).toLowerCase(Msg.locale())).toList());
+        return Msg.t("copilot.separei_looks_para", count, labels);
     }
 
     /** Resumo compacto (§3.2): contagens, DNA Camada 1 (Camada 2 só com consentimento — CA16), Inventory Score. */

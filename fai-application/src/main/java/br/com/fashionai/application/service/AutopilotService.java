@@ -24,7 +24,9 @@ import br.com.fashionai.domain.model.WeekPlanDay;
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.DailyLookSource;
 import br.com.fashionai.domain.model.enums.MannequinSex;
+import br.com.fashionai.domain.model.enums.Mood;
 import br.com.fashionai.domain.model.enums.ProfileType;
+import br.com.fashionai.domain.model.enums.Season;
 import br.com.fashionai.domain.model.enums.SchemeOrigin;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -150,6 +152,11 @@ public class AutopilotService {
 
     List<Candidate> candidates(UUID userId, List<WardrobeItem> eligible, List<String> occasions, String mood, WeatherService.Context ctx,
                                Set<String> exclude, Map<UUID, Integer> alreadyUsed, int limit) {
+        return candidates(userId, eligible, occasions, mood, ctx, exclude, alreadyUsed, limit, Set.of());
+    }
+
+    List<Candidate> candidates(UUID userId, List<WardrobeItem> eligible, List<String> occasions, String mood, WeatherService.Context ctx,
+                               Set<String> exclude, Map<UUID, Integer> alreadyUsed, int limit, Set<UUID> requiredPieceIds) {
         List<WardrobeItem> usable = eligible.stream().filter(w -> ctx == null || !ctx.available() || !WeatherService.unsuitable(w.getSubcategory(), ctx.band())).toList();
         if (usable.size() < 2) {
             usable = eligible;
@@ -161,6 +168,9 @@ public class AutopilotService {
             Map<UUID, WardrobeItem> byId = usable.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w, (a, b) -> a));
             List<WardrobeItem> look = c.items().stream().map(p -> byId.get(p.wardrobeItemId())).filter(Objects::nonNull).toList();
             if (look.size() < 2) {
+                continue;
+            }
+            if (requiredPieceIds != null && !look.stream().map(WardrobeItem::getId).collect(Collectors.toSet()).containsAll(requiredPieceIds)) {
                 continue;
             }
             String key = SchemeService.combinationKey(look.stream().map(WardrobeItem::getId).toList());
@@ -293,15 +303,30 @@ public class AutopilotService {
     // ================================================================== HU17 — Autopiloto diário
     @Transactional
     public Map<String, Object> daily(CurrentUser user, DailyRequest req) {
+        return daily(user, req, Set.of());
+    }
+
+    @Transactional
+    public Map<String, Object> daily(CurrentUser user, DailyRequest req, Set<UUID> requiredPieceIds) {
+        return daily(user, req, requiredPieceIds, null);
+    }
+
+    /**
+     * weatherBand: faixa de clima dita no pedido ("está frio", "32 graus"); quando presente vale sobre a previsão
+     * resolvida, para o filtro e a pontuação de clima (o Copilot a extrai do texto).
+     */
+    @Transactional
+    public Map<String, Object> daily(CurrentUser user, DailyRequest req, Set<UUID> requiredPieceIds, String weatherBand) {
         List<WardrobeItem> eligible = wardrobe.eligible(user.id());
         long total = pieces.countByUserId(user.id());
         if (eligible.size() < MIN_PIECES) {
             throw new ApiException(422, "ACERVO_INSUFICIENTE", Msg.t("autopilot.o_autopiloto_precisa_de_ao", MIN_PIECES, eligible.size()), Map.of("href", "/pieces/new", "pieces", total));
         }
-        WeatherService.Context ctx = weather.resolve(req.latitude(), req.longitude(), req.city());
+        WeatherService.Context ctx = WeatherService.withBand(weather.resolve(req.latitude(), req.longitude(), req.city()), weatherBand);
         List<String> occasions = req.occasion() == null ? List.of() : req.occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).toList();
         Set<String> exclude = new HashSet<>(req.excludeKeys() == null ? List.of() : req.excludeKeys());
-        List<Candidate> ranked = candidates(user.id(), eligible, occasions, req.mood(), ctx, exclude, Map.of(), 30);
+        List<Candidate> ranked = candidates(user.id(), eligible, occasions, req.mood(), ctx, exclude, Map.of(), 30,
+                requiredPieceIds == null ? Set.of() : requiredPieceIds);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("weather", WeatherService.view(ctx));
         if (ranked.isEmpty()) {
@@ -337,6 +362,11 @@ public class AutopilotService {
     }
 
     Scheme createScheme(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion, SchemeOrigin origin) {
+        return createScheme(user, pieceIds, title, occasion, origin, null, null, null, null, null);
+    }
+
+    Scheme createScheme(CurrentUser user, List<UUID> pieceIds, String title, List<String> occasion, SchemeOrigin origin,
+                        List<String> style, String mood, String season, String description, Map<String, Object> background) {
         if (pieceIds == null || pieceIds.size() < 2) {
             throw ApiException.badRequest("SEM_PECAS", Msg.t("autopilot.selecione_um_look_com_ao"));
         }
@@ -345,11 +375,13 @@ public class AutopilotService {
             guard.requireOwner(user, w.getUser().getId(), "piece:" + w.getId());
             own.put(w.getId(), w);
         }
-        String key = SchemeService.combinationKey(pieceIds);
-        for (Scheme existing : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
-            List<UUID> ids = schemeItems.findBySchemeIdOrderBySortOrder(existing.getId()).stream().map(si -> si.getWardrobeItem().getId()).toList();
-            if (ids.size() == pieceIds.size() && SchemeService.combinationKey(ids).equals(key)) {
-                return existing;
+        if (style == null && mood == null && season == null && description == null && background == null) {
+            String key = SchemeService.combinationKey(pieceIds);
+            for (Scheme existing : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
+                List<UUID> ids = schemeItems.findBySchemeIdOrderBySortOrder(existing.getId()).stream().map(si -> si.getWardrobeItem().getId()).toList();
+                if (ids.size() == pieceIds.size() && SchemeService.combinationKey(ids).equals(key)) {
+                    return existing;
+                }
             }
         }
         List<SchemeService.ItemForm> items = new ArrayList<>();
@@ -364,10 +396,20 @@ public class AutopilotService {
         }
         List<WardrobeItem> look = pieceIds.stream().map(own::get).toList();
         LocalSchemeComposer.Composition c = LocalSchemeComposer.toComposition(look, occasion == null ? List.of() : occasion, List.of(), null, 0);
-        SchemeService.SchemeForm form = new SchemeService.SchemeForm(InputSanitizer.clean(title, 120), null, c.occasions(), c.styles(), null, null, null,
-                null, items, CreationMode.AI_ASSISTED, origin, null, null, Boolean.TRUE, null, null, null, null, Boolean.FALSE, null);
+        List<String> validStyles = style == null || style.isEmpty() ? c.styles() : style.stream().filter(Taxonomy.STYLES::contains).distinct().limit(3).toList();
+        Season seasonValue = enumValue(Season.class, season);
+        Mood moodValue = enumValue(Mood.class, mood);
+        SchemeService.SchemeForm form = new SchemeService.SchemeForm(InputSanitizer.clean(title, 120),
+                description == null ? null : InputSanitizer.clean(description, 2048), c.occasions(), validStyles, seasonValue, moodValue, null,
+                null, items, CreationMode.AI_ASSISTED, origin, null, background, background == null, null, null, null, null, Boolean.FALSE, null);
         Views.SchemeView view = (Views.SchemeView) schemeService.create(user, form).get("scheme");
         return schemes.findById(view.id()).orElseThrow();
+    }
+
+    private static <E extends Enum<E>> E enumValue(Class<E> type, String value) {
+        if (value == null) return null;
+        try { return Enum.valueOf(type, value.toUpperCase(java.util.Locale.ROOT)); }
+        catch (IllegalArgumentException ex) { return null; }
     }
 
     // ================================================================== HU18 — Semana Planejada

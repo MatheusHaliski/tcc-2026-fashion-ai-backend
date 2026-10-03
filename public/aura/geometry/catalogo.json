@@ -1,0 +1,54 @@
+{
+ "name": "Aura Geometry",
+ "credits": "Vídeos fornecidos pelo time (public/Aura Geometry); transcodificados para 540 px, H.264 faststart.",
+ "assets": [
+  {
+   "id": "geometry_01",
+   "video": "/aura/geometry/geometry_01/animacao.mp4",
+   "image": "/aura/geometry/geometry_01/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 121
+  },
+  {
+   "id": "geometry_02",
+   "video": "/aura/geometry/geometry_02/animacao.mp4",
+   "image": "/aura/geometry/geometry_02/imagem.png",
+   "width": 540,
+   "height": 306,
+   "frames": 199
+  },
+  {
+   "id": "geometry_03",
+   "video": "/aura/geometry/geometry_03/animacao.mp4",
+   "image": "/aura/geometry/geometry_03/imagem.png",
+   "width": 540,
+   "height": 304,
+   "frames": 121
+  },
+  {
+   "id": "geometry_04",
+   "video": "/aura/geometry/geometry_04/animacao.mp4",
+   "image": "/aura/geometry/geometry_04/imagem.png",
+   "width": 540,
+   "height": 304,
+   "frames": 192
+  },
+  {
+   "id": "geometry_05",
+   "video": "/aura/geometry/geometry_05/animacao.mp4",
+   "image": "/aura/geometry/geometry_05/imagem.png",
+   "width": 540,
+   "height": 960,
+   "frames": 192
+  },
+  {
+   "id": "geometry_06",
+   "video": "/aura/geometry/geometry_06/animacao.mp4",
+   "image": "/aura/geometry/geometry_06/imagem.png",
+   "width": 540,
+   "height": 304,
+   "frames": 121
+  }
+ ]
+}

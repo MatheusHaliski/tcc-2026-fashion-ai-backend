@@ -175,7 +175,18 @@ public class SchemeService {
 
     public record ComposeResult(List<LocalSchemeComposer.Composition> compositions, String message,
                                 AiOutcome.Explanation explanation, UUID inferenceId, AiOutcome.Quota quota,
-                                boolean fallbackUsed, String provider) {
+                                boolean fallbackUsed, String provider,
+                                /** o que a orientação livre pediu (CopilotService.orientation): background, ocasiões, estilos, estação, humor */
+                                Map<String, Object> orientation) {
+        public ComposeResult(List<LocalSchemeComposer.Composition> compositions, String message, AiOutcome.Explanation explanation,
+                             UUID inferenceId, AiOutcome.Quota quota, boolean fallbackUsed, String provider) {
+            this(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider, null);
+        }
+
+        public ComposeResult withOrientation(Map<String, Object> orientation) {
+            return new ComposeResult(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider,
+                    orientation == null || orientation.isEmpty() ? null : orientation);
+        }
     }
 
     public ComposeResult compose(CurrentUser user, ComposeRequest req, AiCapability capability) {
@@ -251,7 +262,8 @@ public class SchemeService {
                 Sintetize ocasião e estilo (máx. 3 cada, nunca concatene as tags das peças). No rationale, cite os
                 atributos que pesaram (ex.: "linho cru + terracota, sem estampa, clima quente"). Responda SOMENTE com JSON:
                 {"compositions":[{"title":string,"refs":["p1",...],"occasion":[...],"style":[...],"mood":one of
-                [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"rationale":"até 2 frases"}]}""";
+                [ENERGETIC,ELEGANT,COMFORTABLE,SOPHISTICATED],"rationale":"até 2 frases"}]}"""
+                + "\nEscreva title e rationale em " + Msg.languageName() + "; refs, occasion, style e mood seguem os códigos acima.";
         String prompt = Msg.t("scheme.acervo_ocasiao_estilo_humor_estacao", Json.write(catalog), (photoRefs.isEmpty() ? "" : "\nFotos anexadas, na ordem, das peças: " + photoRefs), (profile.isEmpty() ? "" : "\nPerfil do usuário: " + Json.write(profile)), req.occasion(), req.style(), req.mood(), req.season(), (req.prompt() == null ? "" : InputSanitizer.clean(req.prompt(), 500)), (exclude.isEmpty() ? "" : "\nNÃO repita estas combinações (refs ordenadas): " + exclude));
         List<String> inputs = new ArrayList<>(List.of(Msg.t("scheme.pecas_do_acervo_com_todos", (eligible.size())),
                 Msg.t("scheme.ocasiao_estilo_humor_estacao_pedidos"), Msg.t("common.orientacoes_livres")));
@@ -628,7 +640,7 @@ public class SchemeService {
     // ================================================================== leitura
     @Transactional
     public Map<String, Object> get(CurrentUser viewer, UUID id) {
-        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         requireView(viewer, s);
         boolean owner = viewer != null && viewer.id().equals(s.getUser().getId());
         if (!owner) {
@@ -653,7 +665,7 @@ public class SchemeService {
     public void requireView(CurrentUser viewer, Scheme s) {
         Visibility effective = moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility());
         if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))) {
-            throw ApiException.notFound("Esquema");
+            throw ApiException.notFound(Msg.t("entity.esquema"));
         }
         guard.requireView(viewer, s.getUser().getId(), effective, "scheme:" + s.getId());
     }
@@ -771,7 +783,8 @@ public class SchemeService {
                 Campos editáveis: title, description, occasion (máx 3 códigos), style (máx 3 códigos), season
                 (SPRING/SUMMER/AUTUMN/WINTER), mood (ENERGETIC/ELEGANT/COMFORTABLE/SOPHISTICATED), visibility
                 (PRIVATE/FOLLOWERS/PUBLIC). Responda SOMENTE com JSON:
-                {"changes":[{"field":string,"proposed":valor,"reason":"1 frase"}]}""";
+                {"changes":[{"field":string,"proposed":valor,"reason":"1 frase"}]}"""
+                + "\nEscreva title, description e reason em " + Msg.languageName() + "; field, occasion, style, season, mood e visibility seguem os códigos acima.";
         AiOutcome<List<LocalAdvisors.FieldChange>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.EDIT_ASSISTANT,
                 system, Msg.t("scheme.esquema_atual_instrucao", Json.write(current), InputSanitizer.clean(instruction, 500)),
                 List.of(), 900, List.of(Msg.t("scheme.campos_atuais_do_esquema"), "instrução em linguagem natural"),
@@ -873,7 +886,7 @@ public class SchemeService {
     @Transactional
     public Map<String, Object> remix(CurrentUser user, UUID sourceId) {
         guard.requireCanCreate(user);
-        Scheme src = schemes.findById(sourceId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme src = schemes.findById(sourceId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         requireView(user, src);
         if (!src.isDisponivel()) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("scheme.o_autor_marcou_este_look"));
@@ -930,7 +943,7 @@ public class SchemeService {
     // ================================================================== render do card (RF5 preview / RF19.CA09)
     @Transactional(readOnly = true)
     public byte[] renderCard(CurrentUser viewer, UUID id, boolean expanded) {
-        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         requireView(viewer, s);
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
         return renderer.render(card(s, items, expanded));
@@ -1015,7 +1028,7 @@ public class SchemeService {
     }
 
     public Scheme owned(CurrentUser user, UUID id) {
-        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + id);
         return s;
     }

@@ -7,7 +7,7 @@ import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { brickColor, containerColorOf, inkOn as inkOnBox, resolveCardArt, studioOf } from "@/lib/card-art";
+import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { CardActions } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
@@ -102,7 +102,10 @@ export function DnaCard({ dna, href, expanded, extra }: { dna: DnaView; href?: s
   const art = narrative === "CARTELA_SAZONAL" || narrative === "LEGO" ? null : resolveCardArt(dna.background);
   const hasArt = !!art && art.kind !== "none";
   const boxColor = containerColorOf(skin, studio.container?.color);
-  const stageVars = hasArt ? ({ "--container-bg": boxColor, ...(studio.container?.color ? { "--card-ink": inkOnBox(boxColor) } : {}) } as CSSProperties) : undefined;
+  const manualInk = studio.container?.ink ?? null;
+  const inkVars = manualInk ? { "--card-ink": containerInkOf(boxColor, manualInk) } : hasArt && studio.container?.color ? { "--card-ink": containerInkOf(boxColor) } : {};
+  // arte em moldura (Aura Electro): a faixa do passe-partout dobra para o feixe de LED ficar espesso e legível
+  const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...(art?.frame ? FRAME_BAND_VARS : {}), ...inkVars } as CSSProperties) : undefined;
   const cells = dna.cells;
   const occasion = (dna.occasion ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const style = (dna.style ?? "").split(",").map((s) => s.trim()).filter(Boolean);

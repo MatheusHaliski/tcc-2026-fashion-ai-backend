@@ -1,4 +1,5 @@
 "use client";
+import { useUndo } from "@/lib/hooks/use-undo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -64,7 +65,9 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   const [cells, setCells] = useState<Cell[]>(initial ? initial.cells.map((c) => ({ schemeId: c.schemeId, eraLabel: c.eraLabel ?? "", milestone: c.milestone })) : []);
   const [form, setForm] = useState({ title: initial?.title ?? "", occasion: split(initial?.occasion), style: split(initial?.style), target: initial?.targetElement ?? "DNA_COMPLETO", season: initial?.seasonalTheme ?? "", visibility: initial?.visibility ?? "PRIVATE" });
   const [layout, setLayout] = useState(initial?.cardLayout ?? "AMPLIADO"); const [narrative, setNarrative] = useState<string | null>(initial ? initial.narrativeType ?? null : "TIMELINE");
-  const [bg, setBg] = useState<BgConfig>((initial?.background as BgConfig) ?? {}); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier");
+  const [bg, setBg] = useState<BgConfig>((initial?.background as BgConfig) ?? {});
+  const artUndo = useUndo(bg, setBg); // "Desfazer" acima do preview
+  const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier");
   const [prompt, setPrompt] = useState(""); const [aiReq, setAiReq] = useState({ occasion: [] as string[], style: [] as string[], narrative: "", season: "" });
   const [proposals, setProposals] = useState<Proposal[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<DnaView | null>(null); const [done, setDone] = useState<string | null>(null);
@@ -204,7 +207,11 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
           </div>
         )}
       </div>
-      <aside aria-label={t("common.pre_visualizacao")} className="xl:sticky xl:top-16 xl:self-start"><p className="label">{t("dnaBuilder.card_do_dna_pre_visualizacao")}</p>{preview ? <DnaCard dna={preview} /> : <Skeleton className="h-80" />}</aside>
+      <aside aria-label={t("common.pre_visualizacao")} className="xl:sticky xl:top-16 xl:self-start">
+        <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("dnaBuilder.card_do_dna_pre_visualizacao")}</p>
+          {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout e narrativa ficam */}
+          <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
+        {preview ? <DnaCard dna={preview} /> : <Skeleton className="h-80" />}</aside>
       {/* os looks DNA criados aqui ficam na sub-aba "Meus looks DNA de estilo" do perfil */}
       {done && <CreationSuccess kind="dna" id={done} edited={!!initial?.id} onDone={() => router.push(user ? `/u/${user.username}?tab=dna` : "/lookbook")} />}
     </div>

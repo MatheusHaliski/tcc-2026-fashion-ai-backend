@@ -83,6 +83,21 @@ AURA_PRESETS = [
      "gradient": {"type": "radial", "angle": 0}, "animation": {"kind": "shimmer", "durationS": 5},
      "prompt": "evening glam red-carpet fashion background, dark monochrome palette with warm bronze-gold jewel-tone spotlight accent, radial stage-spotlight glow, dramatic high-contrast luxury lighting",
      "recommendedMaterials": ["cetim_liquido", "veludo_profundo"], "skinFamilyRisk": "medium"},
+    {"id": "aura_electro", "name": "Aura Electro", "archetype": "Efeitos de luz e cor eletro",
+     "palette": ["#087bff", "#00e5ff", "#ac53ff", "#ff39d5"], "season": "Todo o ano · editorial/urbano",
+     "gradient": {"type": "conic", "angle": 0}, "animation": {"kind": "gif", "durationS": 10},
+     "prompt": "electro fashion aura, vibrant neon light trails with transparent center, high-energy color gradients",
+     "recommendedMaterials": ["laminado_metalico", "malha_canelada"], "skinFamilyRisk": "high"},
+    {"id": "aura_geometry", "name": "Aura Geometry", "archetype": "Composições geométricas em movimento",
+     "palette": ["#101820", "#f2ece2", "#d72c3f"], "season": "Todo o ano · editorial/gráfico",
+     "gradient": {"type": "linear", "angle": 135}, "animation": {"kind": "video", "durationS": 8},
+     "prompt": "geometric editorial fashion aura, graphic composition with crisp shapes in motion",
+     "recommendedMaterials": ["laminado_metalico", "tweed_boucle"], "skinFamilyRisk": "high"},
+    {"id": "aura_splash", "name": "Aura Splash", "archetype": "Respingos e manchas de cor em movimento",
+     "palette": ["#0b0b0f", "#ff2d7a", "#ffd23f", "#2ec4ff"], "season": "Todo o ano · festa/criativo",
+     "gradient": {"type": "radial", "angle": 0}, "animation": {"kind": "video", "durationS": 8},
+     "prompt": "paint splash fashion aura, vivid ink and pigment bursts in motion over a dark stage",
+     "recommendedMaterials": ["cetim_liquido", "laminado_metalico"], "skinFamilyRisk": "high"},
     {"id": "aura_dark_academia", "name": "Ivy Library", "archetype": "Dark academia",
      "palette": ["#1c1917", "#451a03", "#78350f", "#14532d"], "season": "Outono/inverno · editorial intelectual",
      "gradient": {"type": "linear", "angle": 140}, "animation": {"kind": "flicker", "durationS": 5},
@@ -199,23 +214,29 @@ SEASONAL_PRESETS = [
 # Skins de card (presets recomendados do RF11). Tokens visuais por skin; prompts, thumbHint e status vêm dos
 # markdowns de /public/presets_recomendados (fonte: skinRegistry.ts + mockup "Quatro Conceitos").
 CARD_SKINS = [
+    # Famílias cromáticas (análise sazonal de cor, Caderno "Redesign do Sistema de Cards de Moda"): cada skin ocupa um
+    # ponto distinto de temperatura × luminosidade × croma, para a grade de skins não repetir o branco editorial.
+    # claras · neutro quente (default), marfim (Editorial Spread), blush (primavera clara), aço (verão suave),
+    #          lilás (frio claro), damasco (vivo), kraft (outono quente), sálvia (verde dessaturado)
     {"id": "atelier", "name": "Atelier", "family": "fine", "nativeContainer": "#FFFFFF", "font": "Inter",
      "tokens": {"bg": "#FFFFFF", "ink": "#1A1714", "accent": "#1A1714", "border": "#E7E2DA", "radius": 14, "titleWeight": 500}},
-    {"id": "spread", "name": "Spread", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Fraunces",
-     "tokens": {"bg": "#F7F4EE", "ink": "#111111", "accent": "#B4442C", "border": "#D9D1C4", "radius": 6, "titleWeight": 800}},
-    {"id": "index", "name": "Índice", "family": "fine", "nativeContainer": "#FFFFFF", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#FBFAF6", "ink": "#23201C", "accent": "#5B6B7A", "border": "#23201C", "radius": 4, "titleWeight": 600}},
-    {"id": "trading", "name": "Trading", "family": "framed", "nativeContainer": "#F2F2F2", "font": "Inter",
-     "tokens": {"bg": "#F2F2F2", "ink": "#16161A", "accent": "#7C5FC0", "border": "#9A9AA3", "radius": 18, "titleWeight": 800}},
-    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFF4EC", "font": "Inter",
-     "tokens": {"bg": "#FFF4EC", "ink": "#1A0F08", "accent": "#FF6A1A", "border": "#FF6A1A", "radius": 20, "titleWeight": 900}},
-    {"id": "stub", "name": "Stub", "family": "framed", "nativeContainer": "#FBF7EF", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#FBF7EF", "ink": "#2A241C", "accent": "#A0522D", "border": "#2A241C", "radius": 2, "titleWeight": 700}},
-    {"id": "specimen", "name": "Specimen", "family": "framed", "nativeContainer": "#F4F7F2", "font": "IBM Plex Mono",
-     "tokens": {"bg": "#F4F7F2", "ink": "#1F2A22", "accent": "#3D7A5A", "border": "#9FB3A5", "radius": 6, "titleWeight": 600}},
-    {"id": "editorial_ivory", "name": "Editorial Ivory Paper", "family": "fine", "nativeContainer": "#F7F4EE", "font": "Georgia",
-     "tokens": {"bg": "#F7F4EE", "ink": "#1A1410", "accent": "#C4956A", "border": "#D4CEC4", "badgeBg": "#F0EDE8",
+    {"id": "spread", "name": "Spread Blush", "family": "fine", "nativeContainer": "#F5E4DE", "font": "Fraunces",
+     "tokens": {"bg": "#F5E4DE", "ink": "#2B1A17", "accent": "#B4442C", "border": "#DDBFB6", "radius": 6, "titleWeight": 800}},
+    {"id": "index", "name": "Índice Aço", "family": "fine", "nativeContainer": "#E2E7ED", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#E2E7ED", "ink": "#1E2733", "accent": "#4A6B8A", "border": "#1E2733", "radius": 4, "titleWeight": 600}},
+    {"id": "trading", "name": "Trading Lilás", "family": "framed", "nativeContainer": "#EAE3F6", "font": "Inter",
+     "tokens": {"bg": "#EAE3F6", "ink": "#16161A", "accent": "#7C5FC0", "border": "#B9A9DE", "radius": 18, "titleWeight": 800}},
+    {"id": "fai_max", "name": "FAI Max", "family": "framed", "nativeContainer": "#FFE9D6", "font": "Inter",
+     "tokens": {"bg": "#FFE9D6", "ink": "#1A0F08", "accent": "#FF6A1A", "border": "#FF6A1A", "radius": 20, "titleWeight": 900}},
+    {"id": "stub", "name": "Stub Kraft", "family": "framed", "nativeContainer": "#E6D3B3", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#E6D3B3", "ink": "#2A241C", "accent": "#A0522D", "border": "#2A241C", "radius": 2, "titleWeight": 700}},
+    {"id": "specimen", "name": "Specimen Sálvia", "family": "framed", "nativeContainer": "#DCE8DB", "font": "IBM Plex Mono",
+     "tokens": {"bg": "#DCE8DB", "ink": "#1F2A22", "accent": "#3D7A5A", "border": "#8FA896", "radius": 6, "titleWeight": 600}},
+    {"id": "editorial_ivory", "name": "Editorial Ivory Paper", "family": "fine", "nativeContainer": "#F3EEE3", "font": "Georgia",
+     "tokens": {"bg": "#F3EEE3", "ink": "#1A1410", "accent": "#B5883A", "border": "#D4CEC4", "badgeBg": "#EBE5D8",
                 "radius": 3, "titleWeight": 400, "pieceStripe": "side-3px", "glass": False}},
+    # escuras · preto editorial (Show Notes), terracota (Atelier), navy + rose gold (Luxury Glass),
+    #           violeta meia-noite (inverno profundo), verde floresta (dark academia), oxblood (outono profundo)
     {"id": "show_notes", "name": "Show Notes", "family": "framed", "nativeContainer": "#0A0A0A", "font": "Inter",
      "tokens": {"bg": "#0A0A0A", "ink": "#F5F5F5", "accent": "#F5F5F5", "border": "rgba(255,255,255,0.18)", "radius": 3,
                 "titleWeight": 900, "watermarkOpacity": 0.028, "pieceStripe": "top-2px", "badges": "outline"}},
@@ -225,6 +246,12 @@ CARD_SKINS = [
     {"id": "luxury_glass_warm", "name": "Luxury Glass Quente", "family": "framed", "nativeContainer": "#0D1B2A", "font": "Inter",
      "tokens": {"bg": "rgba(13,27,42,0.97)", "ink": "#EDE6F5", "accent": "#C4956A", "accent2": "#7C5FC0",
                 "border": "rgba(196,149,106,0.22)", "radius": 16, "titleWeight": 200, "hairline": ["#C4956A", "#7C5FC0"]}},
+    {"id": "midnight_violet", "name": "Midnight Violet", "family": "framed", "nativeContainer": "#1C1B2E", "font": "Inter",
+     "tokens": {"bg": "#1C1B2E", "ink": "#ECE8F6", "accent": "#9B72CF", "border": "rgba(155,114,207,0.32)", "radius": 12, "titleWeight": 300}},
+    {"id": "forest_archive", "name": "Forest Archive", "family": "framed", "nativeContainer": "#16302A", "font": "Georgia",
+     "tokens": {"bg": "#16302A", "ink": "#E8F0EA", "accent": "#8FBF9F", "border": "rgba(143,191,159,0.28)", "radius": 6, "titleWeight": 600}},
+    {"id": "oxblood", "name": "Oxblood", "family": "framed", "nativeContainer": "#4A1F24", "font": "Fraunces",
+     "tokens": {"bg": "#4A1F24", "ink": "#F4E6E3", "accent": "#D08A7A", "border": "rgba(244,230,227,0.25)", "radius": 4, "titleWeight": 500}},
 ]
 PRESET_DOC_BY_SKIN = {"atelier": "01_atelier.md", "spread": "02_spread.md", "index": "03_index.md", "trading": "04_trading.md",
                       "fai_max": "05_fai_max.md", "stub": "06_stub.md", "specimen": "07_specimen.md",
@@ -432,7 +459,7 @@ def build_skins() -> dict:
     skins = []
     for base in CARD_SKINS:
         skin = dict(base)
-        doc = folder / PRESET_DOC_BY_SKIN[base["id"]]
+        doc = folder / PRESET_DOC_BY_SKIN.get(base["id"], f"{base['id']}.md")
         text = doc.read_text(encoding="utf-8") if doc.is_file() else ""
         title = re.search(r"^# Preset — (.+)$", text, re.M)
         skin["doc"] = url_of(doc) if doc.is_file() else None
@@ -537,6 +564,13 @@ def build(derived_enabled: bool) -> dict:
     d = Deriver(derived_enabled)
     missing: list[dict] = []
     categories = []
+    public_root = PUBLIC.resolve()
+
+    def public_asset(url: object) -> Path | None:
+        if not isinstance(url, str) or not url.startswith("/"):
+            return None
+        path = (PUBLIC / url.lstrip("/")).resolve()
+        return path if path.is_relative_to(public_root) else None
 
     # ---------------- RF23 — fundos do chrome ----------------
     chrome = []
@@ -626,6 +660,76 @@ def build(derived_enabled: bool) -> dict:
         preset["variants"].append(v)
         variants_flat.append(v)
 
+    # ---------------- Aura Electro (PNG + GIF próprio por variante) ----------------
+    electro_catalog = PUBLIC / "aura" / "electro" / "catalogo.json"
+    if electro_catalog.is_file() and "aura_electro" in presets:
+        electro = json.loads(electro_catalog.read_text(encoding="utf-8"))
+        preset = presets["aura_electro"]
+        asset_by_id = {item["id"]: item for item in electro.get("assets", [])}
+        variant_by_id = {slug(item["name"]): item for item in electro.get("variants", [])}
+        for idx, (asset_id, asset) in enumerate(sorted(asset_by_id.items()), start=1):
+            variant_info = variant_by_id.get(asset_id, {})
+            variant_id = f"aura_electro__{asset_id}"
+            theme = re.sub(r"^\d+_", "", asset_id).replace("_", " ")
+            v = {"id": variant_id, "presetId": "aura_electro", "theme": theme, "code": f"E{idx:02d}",
+                 "description": f"Aura Electro · movimento {variant_info.get('movement', 'dinâmico')}",
+                 "index": len(variants_flat) + 1, "palette": variant_info.get("colors", [])}
+            static_file = public_asset(asset.get("image"))
+            animated_file = public_asset(asset.get("gif"))
+            if static_file and static_file.is_file():
+                v["static"] = {"url": url_of(static_file),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78) or url_of(static_file),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80) or url_of(static_file),
+                               **d.image_info(static_file)}
+            else:
+                v["static"] = None
+                missing.append({"category": "aura_static", "id": variant_id, "expected": asset.get("image")})
+            if animated_file and animated_file.is_file():
+                v["animated"] = {"url": url_of(animated_file), "mime": "image/gif", "durationS": 10,
+                                 "posterUrl": (v.get("static") or {}).get("previewUrl"), **d.image_info(animated_file)}
+            else:
+                v["animated"] = None
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("gif")})
+            preset["variants"].append(v)
+            variants_flat.append(v)
+
+    # ---------------- Aura Geometry (PNG + GIF próprio por variante) ----------------
+    # ---------------- Aura Geometry e Aura Splash (vídeo + pôster por variante) ----------------
+    # /public/aura/<colecao>/catalogo.json lista {id, video, image}; o card desenha o MP4 como <video> (lib/card-art.ts)
+    video_catalogs = {"aura_geometry": PUBLIC / "aura" / "geometry" / "catalogo.json", "aura_splash": PUBLIC / "aura" / "splash" / "catalogo.json"}
+    video_variant_total = 0
+    for preset_id, catalog_file in video_catalogs.items():
+        preset = presets.get(preset_id)
+        if not (preset and catalog_file.is_file()):
+            continue
+        data = json.loads(catalog_file.read_text(encoding="utf-8"))
+        for idx, asset in enumerate(data.get("assets", []), start=1):
+            if not (isinstance(asset, dict) and isinstance(asset.get("id"), str)):
+                continue
+            video_variant_total += 1
+            variant_id = f"{preset_id}__{slug(asset['id'])}"
+            theme = f"{preset['name'].split()[-1]} {idx:02d}"
+            v = {"id": variant_id, "presetId": preset_id, "theme": theme, "code": f"{preset['name'].split()[-1][0]}{idx:02d}",
+                 "description": f"{preset['name']} · vídeo {idx:02d}", "index": len(variants_flat) + 1}
+            static_file = public_asset(asset.get("image"))
+            animated_file = public_asset(asset.get("video"))
+            if static_file and static_file.is_file():
+                v["static"] = {"url": url_of(static_file),
+                               "previewUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_preview.webp", 360, 78) or url_of(static_file),
+                               "cardUrl": d.image(static_file, DERIVED / "aura" / f"{variant_id}_card.webp", 900, 80) or url_of(static_file),
+                               **d.image_info(static_file)}
+            else:
+                v["static"] = None
+                missing.append({"category": "aura_static", "id": variant_id, "expected": asset.get("image")})
+            if animated_file and animated_file.is_file():
+                v["animated"] = {"url": url_of(animated_file), "posterUrl": (v.get("static") or {}).get("previewUrl"),
+                                 "durationS": preset["animation"]["durationS"], **d.video_info(animated_file)}
+            else:
+                v["animated"] = None
+                missing.append({"category": "aura_animated", "id": variant_id, "expected": asset.get("video")})
+            preset["variants"].append(v)
+            variants_flat.append(v)
+
     # ---------------- Combinações aura × material ----------------
     def combo_items(key: str, exts: set[str]) -> list[dict]:
         folder = find_folder(key)
@@ -697,7 +801,13 @@ def build(derived_enabled: bool) -> dict:
         "aura_material_animated": len(combos["animated"]),
         "aura_material_mosaic_animated": len(combos["mosaic"]),
     }
+    expected_aura_variants = len(AURA_VARIANTS)
+    if electro_catalog.is_file():
+        expected_aura_variants += len(json.loads(electro_catalog.read_text(encoding="utf-8")).get("assets", []))
+    expected_aura_variants += video_variant_total
     for key, (label, expected, fallback) in CATEGORY_META.items():
+        if key in ("aura_static", "aura_animated"):
+            expected = expected_aura_variants
         folder = find_folder(key)
         n = counts[key]
         status = "complete" if n >= expected else ("partial" if n > 0 else "missing")

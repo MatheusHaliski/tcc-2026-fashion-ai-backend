@@ -195,7 +195,9 @@ fashionai:
     timeout-seconds: ${AI_REQUEST_TIMEOUT_SECONDS:30}
     anthropic-api-key: ${ANTHROPIC_API_KEY:}
     google-ai-api-key: ${GOOGLE_AI_API_KEY:}
+    gemini-image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}   # RF4 · cópia da peça por IA (imagem → imagem)
     replicate-api-token: ${REPLICATE_API_TOKEN:${REPLICATE_API_KEY:}}
+    replicate-edit-model: ${REPLICATE_EDIT_MODEL:black-forest-labs/flux-kontext-pro}   # RF4 · reserva da cópia da peça por IA
     fashn-api-key: ${FASHN_API_KEY:}
     meshy-api-key: ${MESHY_API_KEY:}
     stability-api-key: ${STABILITY_API_KEY:}               # RF16 (Stable Fast 3D) e RF4 estúdio (upscale)

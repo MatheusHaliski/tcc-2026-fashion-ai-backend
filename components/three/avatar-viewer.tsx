@@ -33,6 +33,7 @@ export default function AvatarViewer({ avatar, sex, build, skinTone, view = "fro
   onHuman?: (p: HumanParts) => void;                 // o corpo pronto (esqueleto, malhas): exportação GLB
 }) {
   const { t } = useI18n();
+  sex = avatar?.model?.sex ?? sex;                   // corpo base do avatar (estimado pelo rosto ou escolhido) vence o cadastro
   // enquadramento pelo próprio corpo (a cabeça fica onde o corpo medido/informado a põe)
   const params = body ?? bodyParamsOf({ sex, build, avatar });
   const spec = buildSpec(params); const H = spec.stature;

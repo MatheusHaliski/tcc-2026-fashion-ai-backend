@@ -1,0 +1,201 @@
+{
+  "name": "Aura Electro",
+  "size": [
+    540,
+    720
+  ],
+  "duration_ms": 10000,
+  "loop": "infinite",
+  "fps": 10,
+  "transparent_center": true,
+  "safe_content_box": [
+    108,
+    108,
+    252,
+    372
+  ],
+  "variants": [
+    {
+      "name": "01_Cyan_Pulse",
+      "colors": [
+        "#087bff",
+        "#00e5ff",
+        "#a5ffff"
+      ],
+      "movement": "pulse"
+    },
+    {
+      "name": "02_Violet_Voltage",
+      "colors": [
+        "#592bff",
+        "#ac53ff",
+        "#f0b5ff"
+      ],
+      "movement": "duplo"
+    },
+    {
+      "name": "03_Magenta_Rush",
+      "colors": [
+        "#ff1468",
+        "#ff39d5",
+        "#a53dff"
+      ],
+      "movement": "opostos"
+    },
+    {
+      "name": "04_Lime_Circuit",
+      "colors": [
+        "#02a967",
+        "#8bff2e",
+        "#ebffad"
+      ],
+      "movement": "pulse"
+    },
+    {
+      "name": "05_Solar_Flow",
+      "colors": [
+        "#ff391b",
+        "#ff9800",
+        "#ffe98b"
+      ],
+      "movement": "duplo"
+    },
+    {
+      "name": "06_Gold_Charge",
+      "colors": [
+        "#936020",
+        "#e5ac43",
+        "#fff0b6"
+      ],
+      "movement": "pulse"
+    },
+    {
+      "name": "07_Brasil_Current",
+      "colors": [
+        "#00a66e",
+        "#75e834",
+        "#ffe449"
+      ],
+      "movement": "opostos"
+    },
+    {
+      "name": "08_Aurora_Boreal",
+      "colors": [
+        "#04dab3",
+        "#308aff",
+        "#ab45ef",
+        "#fc7ecc"
+      ],
+      "movement": "duplo"
+    },
+    {
+      "name": "09_Rainbow_Spectrum",
+      "colors": [
+        "#ff2b45",
+        "#ffae20",
+        "#b8ee21",
+        "#14e5cc",
+        "#3d78ff",
+        "#b62fff"
+      ],
+      "movement": "opostos"
+    },
+    {
+      "name": "10_Ice_Chrome",
+      "colors": [
+        "#6385b6",
+        "#c1e9ff",
+        "#ffffff"
+      ],
+      "movement": "duplo"
+    },
+    {
+      "name": "11_Red_Reactor",
+      "colors": [
+        "#82092c",
+        "#ff2845",
+        "#ff9c74"
+      ],
+      "movement": "pulse"
+    },
+    {
+      "name": "12_Fashion_Signal",
+      "colors": [
+        "#04c485",
+        "#a9ec51",
+        "#ff9b26",
+        "#ff493d"
+      ],
+      "movement": "opostos"
+    }
+  ],
+  "assets": [
+    {
+      "id": "10_ice_chrome",
+      "image": "/aura/electro/10_ice_chrome/imagem.png",
+      "gif": "/aura/electro/10_ice_chrome/loading_10s.gif"
+    },
+    {
+      "id": "08_aurora_boreal",
+      "image": "/aura/electro/08_aurora_boreal/imagem.png",
+      "gif": "/aura/electro/08_aurora_boreal/loading_10s.gif"
+    },
+    {
+      "id": "02_violet_voltage",
+      "image": "/aura/electro/02_violet_voltage/imagem.png",
+      "gif": "/aura/electro/02_violet_voltage/loading_10s.gif"
+    },
+    {
+      "id": "04_lime_circuit",
+      "image": "/aura/electro/04_lime_circuit/imagem.png",
+      "gif": "/aura/electro/04_lime_circuit/loading_10s.gif"
+    },
+    {
+      "id": "12_fashion_signal",
+      "image": "/aura/electro/12_fashion_signal/imagem.png",
+      "gif": "/aura/electro/12_fashion_signal/loading_10s.gif"
+    },
+    {
+      "id": "07_brasil_current",
+      "image": "/aura/electro/07_brasil_current/imagem.png",
+      "gif": "/aura/electro/07_brasil_current/loading_10s.gif"
+    },
+    {
+      "id": "01_cyan_pulse",
+      "image": "/aura/electro/01_cyan_pulse/imagem.png",
+      "gif": "/aura/electro/01_cyan_pulse/loading_10s.gif"
+    },
+    {
+      "id": "09_rainbow_spectrum",
+      "image": "/aura/electro/09_rainbow_spectrum/imagem.png",
+      "gif": "/aura/electro/09_rainbow_spectrum/loading_10s.gif"
+    },
+    {
+      "id": "05_solar_flow",
+      "image": "/aura/electro/05_solar_flow/imagem.png",
+      "gif": "/aura/electro/05_solar_flow/loading_10s.gif"
+    },
+    {
+      "id": "11_red_reactor",
+      "image": "/aura/electro/11_red_reactor/imagem.png",
+      "gif": "/aura/electro/11_red_reactor/loading_10s.gif"
+    },
+    {
+      "id": "03_magenta_rush",
+      "image": "/aura/electro/03_magenta_rush/imagem.png",
+      "gif": "/aura/electro/03_magenta_rush/loading_10s.gif"
+    },
+    {
+      "id": "06_gold_charge",
+      "image": "/aura/electro/06_gold_charge/imagem.png",
+      "gif": "/aura/electro/06_gold_charge/loading_10s.gif"
+    }
+  ],
+  "ring_px": 108,
+  "inset_px": 0,
+  "movements": "01 cyan pulse       1 cometa horário, cauda longa, origem no topo\n  02 violet voltage   2 cabeças opostas (180°) horárias, caudas curtas, rápido\n  03 magenta rush     2 cometas em sentidos contrários que se cruzam\n  04 lime circuit     24 segmentos acendendo em sequência (circuito), ritmo staccato\n  05 solar flow       2 cabeças anti-horárias com clarões pulsando\n  06 gold charge      barra de carga: enche do centro da base até 100 % e esvazia\n  07 brasil current   verde horário e amarelo anti-horário, cores distintas\n  08 aurora boreal    anel inteiro com 4 cores fluindo + 2 cabeças brilhantes\n  09 rainbow spectrum espectro girando no anel inteiro + faíscas em sentido contrário\n  10 ice chrome       tracejado marchando (loading de quadrados) em dois grupos, respiração branca\n  11 red reactor      batimento cardíaco (duas pulsações + pausa) no anel inteiro + cabeça lenta\n  12 fashion signal   4 cabeças coloridas, duas horárias e duas anti-horárias, com blips de sinal",
+  "size_px": [
+    360,
+    480
+  ]
+}

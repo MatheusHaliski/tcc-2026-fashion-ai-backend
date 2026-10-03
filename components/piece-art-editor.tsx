@@ -1,4 +1,5 @@
 "use client";
+import { rangeFill } from "@/lib/range-fill";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PieceView } from "@/lib/api/types";
 import { api, type ApiError } from "@/lib/api/client";
@@ -174,7 +175,7 @@ function Range({ label, value, max, onChange }: { label: string; value: number; 
   return (
     <label className="grid gap-1 type-body-sm">
       <span>{label} · {Math.round((value / max) * 100)}%</span>
-      <input type="range" min={0} max={max} step={0.05} value={Math.min(value, max)} onChange={(e) => onChange(Number(e.target.value))} />
+      <input type="range" min={0} max={max} step={0.05} value={Math.min(value, max)} style={rangeFill(Math.min(value, max), 0, max) as React.CSSProperties} onChange={(e) => onChange(Number(e.target.value))} />
     </label>
   );
 }

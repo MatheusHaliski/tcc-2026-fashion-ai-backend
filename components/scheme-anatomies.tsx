@@ -84,6 +84,8 @@ export const PIECE_ANATOMIES: { id: string; label: string }[] = [
   { id: "PECA_AMPLIADO", get label() { return tr("schemeAnatomies.peca_ampliada"); } }, { id: "PASSARELA", get label() { return tr("feed.runway"); } }, { id: "ETIQUETA", get label() { return tr("schemeAnatomies.etiqueta"); } }, { id: "RAIO_X", label: "Raio-X" },
   { id: "BENTO", get label() { return tr("schemeAnatomies.bento"); } }, { id: "ESPECTRO", get label() { return tr("schemeAnatomies.espectro"); } }, { id: "CUSTO_POR_USO", get label() { return tr("schemeAnatomies.custo_por_uso"); } }, { id: "LEGO", label: "LEGO" },
 ];
+/** Anatomia de peça (seção C) gravada no look e a que o card mostra — lógica pura em lib/piece-anatomy (testada no vitest). */
+export { costPerUse, effectivePieceAnatomy, pieceAnatomyOf, type PieceAnatomyId } from "@/lib/piece-anatomy";
 export const hasOwnArt = (anatomy?: string | null) => !!SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.ownArt;
 
 /** Famílias de silhueta que a pessoa pode declarar no look (v18, prancha 07). Espelha BackgroundStudioService.SILHOUETTES. */

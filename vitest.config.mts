@@ -1,8 +1,24 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
-// Testes unitários do frontend (lógica pura: geometria do avatar 3D, qualidade da foto). `npm test`.
+// Testes do frontend: lógica pura (`*.test.ts`, ambiente node) e componentes (`*.test.tsx`, com
+// `// @vitest-environment jsdom` no topo do arquivo). `npm test`; cobertura com `npm run test:coverage`.
 export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL(".", import.meta.url)) } },
-  test: { include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**", "fai-*/**", ".claude/**"], environment: "node" },
+  // JSX com o runtime automático do React (sem `import React` em cada componente), como o Next compila
+  oxc: { jsx: { runtime: "automatic" } },
+  test: {
+    include: ["**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", ".next/**", "fai-*/**", ".claude/**"],
+    environment: "node",
+    setupFiles: ["./test-utils/setup.ts"],
+    coverage: {
+      provider: "v8",
+      // o frontend inteiro entra na conta, inclusive arquivos que nenhum teste carrega (contam como 0%)
+      include: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "middleware.ts"],
+      exclude: ["**/*.test.{ts,tsx}", "**/*.d.ts", "lib/i18n/messages/**"],
+      reporter: ["text-summary", "html", "json-summary"],
+      reportsDirectory: "coverage",
+    },
+  },
 });
