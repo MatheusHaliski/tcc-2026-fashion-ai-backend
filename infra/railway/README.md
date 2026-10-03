@@ -103,8 +103,13 @@ obrigatório e escrita pelo usuário de backup.
 | 1. MySQL: `fai_app` / `fai_backup` | 2026-10-03 12:57 | usuários conferidos, sem `[ERROR]`. O redeploy trouxe a imagem atual do `mysql:9`: **9.4.0 → 9.7.2** (corrige o alerta CVE-2026-21964 que o Railway já tinha armado). |
 | 3. API → `fai_app` (TLS obrigatório) + credenciais do Cassandra | 2026-10-03 22:46 | deploy SUCCESS; Flyway validou 28 migrações como `fai_app`. A API não usa mais `root`. |
 | 4. Cassandra: autenticação + TLS opcional | 2026-10-03 22:53 | `fai-start: pronto` — `fai_admin` criado, papel `cassandra` desativado, `fai_app` só em `fashionai_feed`. |
-| 6. API → Cassandra com TLS (CA fixada) | 2026-10-03 22:55 | em andamento |
-| 5. OpenSearch: plugin de segurança | 2026-10-03 22:56 | em andamento |
+| 6. API → Cassandra com TLS (CA fixada) | 2026-10-03 22:57 | API conectou com TLS + `fai_app` (sem o aviso "did not send an authentication challenge"). |
+| 5. OpenSearch: plugin de segurança | 2026-10-03 22:56 | `fai-start: pronto` — TLS no HTTP e no transporte (CA própria), só `admin` no `internal_users.yml`, `fai_app` só em `fai-*`, auditoria no log. |
+| 7. Cassandra: TLS obrigatório | 2026-10-03 23:05 | `listening for CQL clients (encrypted)`; texto puro recusado. |
+| 6. API → OpenSearch `https` + `fai_app` + CA | 2026-10-03 23:05 | deploy SUCCESS; reconectou o Cassandra no IP novo com TLS. Sem falhas no log da API nem na auditoria do OpenSearch. |
+
+Tudo aplicado. Pendências só do painel: apagar o serviço `tmp-probe-secret` (sobra de um teste; a exclusão pela API do
+Railway expira) e, quando quiser usar Redis na API, ligar o perfil `redis` (o usuário ACL já existe).
 
 ### Lições desta aplicação
 
