@@ -1,6 +1,9 @@
 package br.com.fashionai.infrastructure.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.api.core.ssl.ProgrammaticSslEngineFactory;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -145,5 +148,14 @@ class CassandraCloudConfigTest {
     void pemInvalidoFalhaNaSubida() {
         assertThatThrownBy(() -> config.cassandraConnection("", "", "", "", true, "nao-e-pem", false))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("CASSANDRA_CA_CERT_PEM");
+    }
+
+    @Test
+    void contactPointsFicamPorNomeParaSobreviverATrocaDeIpDoContainer() {
+        ProgrammaticDriverConfigLoaderBuilder builder = DriverConfigLoader.programmaticBuilder();
+        new CassandraCloudConfig().cassandraContactPointResolution(false).customize(builder);
+        try (DriverConfigLoader loader = builder.build()) {
+            assertThat(loader.getInitialConfig().getDefaultProfile().getBoolean(DefaultDriverOption.RESOLVE_CONTACT_POINTS)).isFalse();
+        }
     }
 }

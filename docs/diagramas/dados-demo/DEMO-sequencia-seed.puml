@@ -1,0 +1,31 @@
+@startuml DEMO_Sequencia_Seed
+title Fashion AI — Sequência: seed idempotente do ambiente demo (PROPOSTA)
+!include ../seguranca/_estilo.iuml
+autonumber
+actor "Dev/QA" as Dev
+participant "scripts/demo/\nseed_demo_environment.py" as CLI
+participant "DemoAdminController\n(ADMIN · trava de ambiente)" as CTL
+participant "DemoDataService" as SVC
+participant "DemoFixtures\n(classpath:demo/fixtures/*.json)" as FX
+database "MySQL" as DB
+participant "Feed (Cassandra)\n+ Busca (OpenSearch)" as PROJ
+
+Dev -> CLI : --profile=frontend
+CLI -> CTL : POST /api/admin/demo/seed?profile=frontend
+CTL -> SVC : seed(profile)
+SVC -> FX : carrega personas (fixture_key) com Random(2026)
+group @Transactional (rollback total em erro)
+  loop ordem fixa: marcas demo → contas → perfis → peças → looks\n→ publicação → follows → reações → comentários → salvos → notificações
+    SVC -> DB : findByFixtureKey(key)
+    alt existe
+      SVC -> DB : atualiza para o estado da fixture  [UPDATED]/[FOUND]
+    else não existe
+      SVC -> DB : cria (e-mail @example.test cifrado,\nArgon2 de FASHIONAI_DEMO_PASSWORD,\naccount_origin = DEMO)  [CREATED]
+    end
+  end
+end
+SVC -> PROJ : depois do commit: projeta feed e indexa busca (idempotente)
+SVC --> CTL : relatório ([FOUND]/[UPDATED]/[CREATED]/[SKIP] por tipo)
+CTL --> CLI : 200 + relatório
+CLI --> Dev : imprime o log
+@enduml

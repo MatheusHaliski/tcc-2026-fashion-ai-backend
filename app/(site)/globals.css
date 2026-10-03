@@ -1959,3 +1959,27 @@ input[type="range"]:not(.before-after-range)::-moz-range-thumb { width: 18px; he
 input[type="range"]:not(.before-after-range):focus-visible { outline: none; }
 input[type="range"]:not(.before-after-range):focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mark) 35%, transparent); }
 input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: not-allowed; }
+
+/* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
+.review-pill { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; background: var(--surface-2); color: var(--ink-2, inherit); }
+.review-pill.is-pending { background: #FFF3D6; color: #7A5200; }
+.review-pill.is-ok { background: var(--thread-soft); color: var(--thread); }
+.review-pill.is-bad { background: var(--mark-soft); color: var(--mark); }
+.review-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.review-steps > li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; position: relative; }
+.review-steps > li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: -12px; width: 2px; background: var(--line, rgba(0,0,0,.12)); }
+.review-dot { display: inline-flex; width: 28px; height: 28px; border-radius: 999px; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--ink-3, #666); }
+.review-steps > li.is-done .review-dot { background: var(--thread); color: #fff; }
+.review-steps > li.is-current .review-dot { background: #F2B705; color: #1d1d1b; box-shadow: 0 0 0 4px rgba(242,183,5,.25); }
+.review-steps > li.is-bad .review-dot { background: var(--mark); color: #fff; }
+:root[data-theme="dark"] .review-pill.is-pending { background: #3A2E10; color: #F5C451; }
+
+
+/* RF28 — Vista-me: espelho de corpo inteiro com o reflexo do Avatar 3D */
+.mirror-frame { position: relative; padding: 14px; border-radius: 180px 180px 22px 22px; background: linear-gradient(145deg, #E9D9B4 0%, #B8975A 38%, #F3E6C4 52%, #9C7A3E 78%, #D9C08A 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 18px 40px -18px rgba(40,30,10,.55); }
+.mirror-glass { position: relative; height: clamp(420px, 62vh, 620px); overflow: hidden; border-radius: 168px 168px 12px 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), inset 0 0 40px rgba(0,0,0,.12); }
+.mirror-glass canvas { display: block; }
+.mirror-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.22) 42%, rgba(255,255,255,0) 55%), linear-gradient(115deg, rgba(255,255,255,0) 62%, rgba(255,255,255,.12) 66%, rgba(255,255,255,0) 72%); mix-blend-mode: screen; }
+.mirror-empty { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(280px, 86%); padding: 12px 14px; text-align: center; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 6px 20px -10px rgba(0,0,0,.4); }
+.mirror-note { margin-top: 10px; text-align: center; font-size: 13px; color: #3b2f17; }
+@media (max-width: 480px) { .mirror-frame { padding: 10px; border-radius: 140px 140px 18px 18px; } .mirror-glass { border-radius: 130px 130px 10px 10px; } }

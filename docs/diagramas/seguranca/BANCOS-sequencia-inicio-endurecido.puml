@@ -1,0 +1,33 @@
+@startuml BANCOS_Sequencia_Inicio_Endurecido
+title Fashion AI — Sequência: início endurecido de um banco no Railway (exemplo: Cassandra)
+!include _estilo.iuml
+autonumber
+participant "Railway\n(deploy do serviço)" as RW
+participant "Comando de início\n(start-command.sh)" as CMD
+participant "start.sh\n(FAI_START_SCRIPT)" as SH
+participant "Cassandra\n(docker-entrypoint)" as C
+participant "bootstrap\n(segundo plano · cqlsh TLS)" as BS
+participant "API" as API
+
+RW -> CMD : inicia o contêiner (variáveis do serviço)
+CMD -> CMD : SHA-256(FAI_START_SCRIPT) = hash versionado?
+alt hash diferente
+  CMD -> C : sobe como antes do endurecimento\n+ "fai-start: ERRO ... difere"
+else hash confere
+  CMD -> SH : exec (FAI_START_SCRIPT sai do ambiente)
+  SH -> SH : valida senhas (≥ 24, [A-Za-z0-9_])
+  SH -> SH : CA + certificado do nó no volume (só na 1ª vez)\nimprime o certificado da CA (público)
+  SH -> SH : cassandra.yaml: PasswordAuthenticator,\nCassandraAuthorizer, client_encryption_options
+  SH -> SH : senhas → variáveis do shell; unset do ambiente
+  SH -> C : inicia (PID acompanhado; SIGTERM repassado)
+  SH -> BS : inicia
+  loop até o CQL responder (≤ 10 min)
+    BS -> C : login fai_admin (ou cassandra/cassandra na 1ª vez)
+  end
+  BS -> C : cria fai_admin (1ª vez) · desativa "cassandra"
+  BS -> C : keyspace · papel fai_app · GRANT SELECT/MODIFY/CREATE/ALTER
+  BS -> C : fai_app autentica com a senha atual? senão ALTER (rotação)
+  BS -> RW : log "fai-start: pronto ..."
+end
+API -> C : reconecta (driver) com fai_app (+ TLS, com a CA fixada)
+@enduml

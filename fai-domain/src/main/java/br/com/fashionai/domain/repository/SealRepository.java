@@ -22,4 +22,7 @@ public interface SealRepository extends JpaRepository<Seal, UUID> {
     List<Seal> findByOwnerIdAndStatusOrderByCreatedAtDesc(UUID ownerId, SealStatus status);
 
     List<Seal> findByIdIn(Collection<UUID> ids);
+
+    /** Selos ativos de todos os emissores: avaliação das políticas padronizadas (RF25) nos criadores de peça e look. */
+    List<Seal> findByStatus(SealStatus status);
 }

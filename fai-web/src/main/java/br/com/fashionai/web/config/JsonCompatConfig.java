@@ -2,6 +2,7 @@ package br.com.fashionai.web.config;
 
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.Mood;
+import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.Season;
 import br.com.fashionai.domain.model.enums.Visibility;
 import com.fasterxml.jackson.core.JsonParser;
@@ -32,6 +33,7 @@ public class JsonCompatConfig {
         m.addDeserializer(Mood.class, new MoodDeserializer());
         m.addDeserializer(Season.class, new BlankAsNullDeserializer<>(Season.class));
         m.addDeserializer(Visibility.class, new BlankAsNullDeserializer<>(Visibility.class));
+        m.addDeserializer(SealTier.class, new SealTierDeserializer());
         return m;
     }
 
@@ -56,6 +58,29 @@ public class JsonCompatConfig {
                 @SuppressWarnings("unchecked") E weird = (E) ctx.handleWeirdStringValue(type, raw, "valor fora do enum " + type.getSimpleName());
                 return weird;
             }
+        }
+    }
+
+    /**
+     * O criador de selos (RF25) oferecia o nível "PERFIL", que não existe ({@link SealTier} é PECA ou LOOK): salvar dava
+     * "JSON inválido". O selo de perfil vale para looks; "PIECE" é apelido de PECA.
+     */
+    static final class SealTierDeserializer extends StdDeserializer<SealTier> {
+        SealTierDeserializer() {
+            super(SealTier.class);
+        }
+
+        @Override
+        public SealTier deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+            String raw = p.getValueAsString();
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+            return switch (raw.trim().toUpperCase(Locale.ROOT)) {
+                case "PECA", "PEÇA", "PIECE" -> SealTier.PECA;
+                case "LOOK", "PERFIL", "PROFILE", "ESQUEMA", "SCHEME" -> SealTier.LOOK;
+                default -> (SealTier) ctx.handleWeirdStringValue(SealTier.class, raw, "valores aceitos: PECA, LOOK");
+            };
         }
     }
 

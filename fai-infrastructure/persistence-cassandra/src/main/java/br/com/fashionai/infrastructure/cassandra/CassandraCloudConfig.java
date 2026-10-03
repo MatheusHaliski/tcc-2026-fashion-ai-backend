@@ -1,10 +1,12 @@
 package br.com.fashionai.infrastructure.cassandra;
 
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.ssl.ProgrammaticSslEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cassandra.CqlSessionBuilderCustomizer;
+import org.springframework.boot.autoconfigure.cassandra.DriverConfigLoaderBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +37,9 @@ import java.util.Collection;
  *   <li>DataStax Astra DB pelo Secure Connect Bundle, que já traz endereços, datacenter e TLS: arquivo
  *       (CASSANDRA_SECURE_BUNDLE_PATH) ou o zip em base64 (CASSANDRA_SECURE_BUNDLE_BASE64), para hosts sem arquivos.
  *       No Astra: CASSANDRA_USERNAME=token e CASSANDRA_PASSWORD=AstraCS:...</li>
+ *   <li>contact points por NOME, não pelo IP resolvido na subida (CASSANDRA_RESOLVE_CONTACT_POINTS=false, padrão):
+ *       no Railway o contêiner do Cassandra muda de IP a cada deploy, e o driver ficava preso no IP antigo até a API
+ *       reiniciar; assim ele resolve cassandra.railway.internal de novo a cada reconexão.</li>
  * </ul>
  */
 @Configuration
@@ -73,6 +78,12 @@ public class CassandraCloudConfig {
                 builder.withAuthCredentials(username, password);
             }
         };
+    }
+
+    @Bean
+    DriverConfigLoaderBuilderCustomizer cassandraContactPointResolution(
+            @Value("${fashionai.cassandra.resolve-contact-points:false}") boolean resolve) {
+        return builder -> builder.withBoolean(DefaultDriverOption.RESOLVE_CONTACT_POINTS, resolve);
     }
 
     /** Contexto TLS que confia só nos certificados do PEM (aceita "\n" literal); PEM vazio = truststore da JVM. */

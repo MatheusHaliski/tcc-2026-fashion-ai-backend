@@ -1,0 +1,29 @@
+@startuml SEG_MaquinaDeEstados_Conta
+title Fashion AI — Máquina de estados: conta (AccountStatus) e origem (account_origin, proposta V30)
+!include _estilo.iuml
+[*] --> PENDING_EMAIL_VERIFICATION : cadastro
+PENDING_EMAIL_VERIFICATION --> ACTIVE : código de e-mail ok\n(perfil pessoal)
+PENDING_EMAIL_VERIFICATION --> PENDING_VALIDATION : código ok\n(marca/celebridade)
+PENDING_VALIDATION --> ACTIVE : aprovação do admin
+ACTIVE --> SUSPENDED : admin suspende
+SUSPENDED --> ACTIVE : admin reativa
+ACTIVE --> DELETION_SCHEDULED : pessoa pede exclusão\n(prazo de arrependimento)
+DELETION_SCHEDULED --> ACTIVE : cancela no prazo
+DELETION_SCHEDULED --> DELETED : job diário: anonimiza (LGPD)\nnome/e-mail trocados, fotos e avatar 3D apagados
+DELETED --> [*]
+
+note right of DELETED
+  Conta real NUNCA sofre DELETE:
+  a linha fica, anonimizada.
+  DELETE FROM users (com as cascatas
+  da V29) é só do reset do universo
+  demo: account_origin IN (TEST_SEED, DEMO).
+end note
+
+state "Origem (imutável depois da criação)" as Origem {
+  state REAL
+  state TEST_SEED : contas e2e_* (V22)
+  state DEMO : fixtures do pipeline demo
+  state SYSTEM
+}
+@enduml
