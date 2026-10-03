@@ -28,7 +28,7 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <springdoc.version>2.6.0</springdoc.version>
-        <testcontainers.version>1.20.3</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <aws-sdk.version>2.29.6</aws-sdk.version>
         <anthropic-java.version>2.34.0</anthropic-java.version>
         <onnxruntime.version>1.20.0</onnxruntime.version>
