@@ -254,6 +254,14 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "studio_detail_url", length = 1024)
     private String studioDetailUrl;
 
+    /** RF4 · asset canônico frontal (determinístico, sem geração) — o fiel para busca, provador e dataset. */
+    @Column(name = "canonical_image_url", length = 1024)
+    private String canonicalImageUrl;
+
+    /** RF4 · sessão de captura adaptativa que originou a peça (fotos originais, canônicos e identificação). */
+    @Column(name = "capture_session_id", length = 36)
+    private java.util.UUID captureSessionId;
+
     @Column(name = "model3d_generated_at")
     private Instant model3dGeneratedAt;
 
