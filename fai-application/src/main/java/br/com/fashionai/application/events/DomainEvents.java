@@ -15,6 +15,10 @@ public final class DomainEvents {
     public record PieceCreated(UUID userId, UUID pieceId, boolean readyForCatalog) {
     }
 
+    /** RF4 · peça criada a partir de uma sessão de captura adaptativa (o rascunho principal precisa ser o da sessão). */
+    public record PieceCapturedFromSession(UUID userId, UUID pieceId, UUID sessionId, UUID draftId) {
+    }
+
     public record PieceUpdated(UUID userId, UUID pieceId, int completeness) {
     }
 

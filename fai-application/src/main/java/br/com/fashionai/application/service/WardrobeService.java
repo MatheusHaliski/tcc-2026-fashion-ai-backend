@@ -219,6 +219,38 @@ public class WardrobeService {
      */
     @Transactional(noRollbackFor = PhotoRejectedException.class)
     public Draft analyze(CurrentUser user, byte[] bytes, String category) {
+        return analyzeInternal(user, bytes, category, false).draft();
+    }
+
+    /**
+     * RF4 · Captura adaptativa: a mesma análise, devolvendo também o que a visão computacional precisa (recorte em alta,
+     * logo, OCR, critérios) para landmarks, ensemble, quality gate e asset canônico.
+     *
+     * @param lenient "orientar, não recusar": critérios de foto reprovados voltam em {@link CaptureAnalysis#failedChecks()}
+     *                e o rascunho é criado mesmo assim; só conteúdo fora da política continua recusado (422)
+     */
+    @Transactional(noRollbackFor = PhotoRejectedException.class)
+    public CaptureAnalysis analyzeForCapture(CurrentUser user, byte[] bytes, String category, boolean lenient) {
+        return analyzeInternal(user, bytes, category, lenient);
+    }
+
+    /**
+     * Resultado completo da análise para a sessão de captura.
+     *
+     * @param studioSource  peça endireitada e recortada em alta resolução (fonte do canônico e das zonas)
+     * @param logoBox       caixa do logo relativa a {@code studioSource} (x0, y0, x1, y1 em 0–1) ou null
+     * @param failedChecks  critérios de foto reprovados (só no modo lenient)
+     * @param allChecks     todos os critérios avaliados (aprovados e reprovados)
+     */
+    public record CaptureAnalysis(Draft draft, java.awt.image.BufferedImage studioSource, Set<String> truncated,
+                                  double[] logoBox, String logoSource, LocalVision.PieceGuess guess,
+                                  br.com.fashionai.application.imaging.BrandReader.Found ocr,
+                                  List<PhotoAcceptance.Check> failedChecks, List<PhotoAcceptance.Check> allChecks,
+                                  double rotationDeg, double backgroundConfidence, int originalWidth, int originalHeight,
+                                  boolean aiRan) {
+    }
+
+    private CaptureAnalysis analyzeInternal(CurrentUser user, byte[] bytes, String category, boolean lenient) {
         guard.requireCanCreate(user);
         ImageOps.requireAcceptedImage(bytes);
         String chosen = category == null || category.isBlank() ? null : category.trim();
@@ -235,7 +267,7 @@ public class WardrobeService {
         // alinhamento, câmera a 90° (simetria), uma peça por foto, nitidez e luz
         PhotoAcceptance.Report acceptance = PhotoAcceptance.evaluate(chosen, r.originalWidth(), r.originalHeight(), r.cutout(),
                 r.truncated(), r.quality());
-        if (!acceptance.accepted()) {
+        if (!acceptance.accepted() && !lenient) {
             throw rejection(acceptance.checks());
         }
         ImageOps.Cutout cutout = r.cutout();
@@ -297,7 +329,9 @@ public class WardrobeService {
             checks.add(new PhotoAcceptance.Check("conteudo", false, verdict.confidence(), 0.85,
                     verdict.status() == ModerationStatus.REJECTED_POLICY ? Msg.t("wardrobe.a_foto_viola_a_politica") : Msg.t("photoAcceptance.nao_roupa")));
         }
-        if (checks.stream().anyMatch(c -> !c.ok())) {
+        List<PhotoAcceptance.Check> failed = checks.stream().filter(c -> !c.ok()).toList();
+        // modo lenient: só conteúdo (política / não é roupa) continua recusado; o resto vira orientação
+        if (!failed.isEmpty() && (!lenient || failed.stream().anyMatch(c -> "conteudo".equals(c.id())))) {
             throw rejection(checks);
         }
 
@@ -368,7 +402,7 @@ public class WardrobeService {
         quality.put("threshold", br.com.fashionai.application.imaging.QualityMetrics.ACCEPTANCE_THRESHOLD);
         quality.put("issues", r.quality().issues());
         quality.put("recommendations", r.quality().recommendations());
-        quality.put("acceptance", new PhotoAcceptance.Report(true, checks).toMap());
+        quality.put("acceptance", new PhotoAcceptance.Report(failed.isEmpty(), checks).toMap());
         Map<String, Object> mod = new LinkedHashMap<>();
         mod.put("status", verdict.status().name());
         mod.put("confidence", verdict.confidence());
@@ -411,9 +445,12 @@ public class WardrobeService {
         job.setOutputUrl(processed.url());
         job.setFinishedAt(Instant.now());
         String message = analysis.userMessage() != null ? analysis.userMessage() : pipeline.userMessage();
-        return new Draft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), prefill, quality, mod,
+        Draft draftOut = new Draft(job.getId(), processed.url(), white.url(), thumb.url(), original.url(), prefill, quality, mod,
                 r.stages(), job.getTotalCostUsd(), r.totalMs(), r.backgroundRemoved(), !r.backgroundRemoved(),
                 analysis.explanation(), message, analysis.quota(), studioInfo, r.cutout().warning(), null);
+        double rotation = r.metadata().get("perspective_correction_degrees") instanceof Number n ? n.doubleValue() : 0;
+        return new CaptureAnalysis(draftOut, r.studioSource(), r.truncated(), logoRel, logoSource, guess, ocr, failed,
+                List.copyOf(checks), rotation, r.cutout().confidence(), r.originalWidth(), r.originalHeight(), aiRan);
     }
 
     /** Recusa com a primeira orientação como mensagem principal e todos os critérios no detalhe. */
@@ -605,6 +642,9 @@ public class WardrobeService {
         return analyzeBatch(user, files, null);
     }
 
+    // P12: transacional — a auto-invocação de analyze() não passa pelo proxy, e sem transação os campos gravados
+    // depois de jobs.save(job) (resultJson, estágios, custo) se perdiam com open-in-view desligado
+    @Transactional(noRollbackFor = PhotoRejectedException.class)
     public List<Draft> analyzeBatch(CurrentUser user, List<byte[]> files, String category) {
         if (files == null || files.isEmpty()) {
             throw ApiException.badRequest("SEM_FOTOS", Msg.t("wardrobe.envie_ao_menos_uma_foto"));
@@ -957,11 +997,24 @@ public class WardrobeService {
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background) {
+                            Map<String, Object> background, UUID captureSessionId) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
+        }
+
+        /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, null);
         }
     }
 
@@ -1086,6 +1139,11 @@ public class WardrobeService {
                 "defaultImage", w.isDefaultImage()));
         // RF32.CA02 (endereço automático), RF35 (pontos), RF34 (histórico de disponibilidade)
         events.publishEvent(new DomainEvents.PieceCreated(owner.getId(), w.getId(), InventoryScoreService.catalogReady(w)));
+        if (form.captureSessionId() != null && form.draftId() != null) {
+            // RF4 · captura adaptativa: liga fotos, canônicos e identificação à peça e registra correções (depois do commit)
+            w.setCaptureSessionId(form.captureSessionId());
+            events.publishEvent(new DomainEvents.PieceCapturedFromSession(owner.getId(), w.getId(), form.captureSessionId(), form.draftId()));
+        }
         return Views.piece(w, viewerState(user, w), Map.of());
     }
 

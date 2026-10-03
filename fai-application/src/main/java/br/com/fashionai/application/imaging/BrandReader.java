@@ -96,6 +96,23 @@ public class BrandReader {
         return Optional.ofNullable(possible);
     }
 
+    /**
+     * RF4 · OCR estratégico: todas as linhas lidas numa foto de texto (etiqueta, língua do tênis, verso do relógio,
+     * haste dos óculos), para o parser de composição, tamanho e códigos. Vazio sem leitor local.
+     */
+    public List<TextReaderPort.Line> readAll(BufferedImage image) {
+        TextReaderPort reader = readers.getIfAvailable();
+        if (reader == null || !reader.available()) {
+            return List.of();
+        }
+        return reader.read(image);
+    }
+
+    /** Marca do catálogo num texto qualquer (OCR de etiqueta, resposta da IA). */
+    public Optional<String> brandIn(String text) {
+        return text == null || text.isBlank() ? Optional.empty() : match(text);
+    }
+
     /** Caixa do texto (relativa ao recorte) → relativa à peça. */
     static double[] toPiece(double[] zone, double[] inCrop) {
         if (inCrop == null) {
