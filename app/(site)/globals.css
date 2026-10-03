@@ -1959,3 +1959,17 @@ input[type="range"]:not(.before-after-range)::-moz-range-thumb { width: 18px; he
 input[type="range"]:not(.before-after-range):focus-visible { outline: none; }
 input[type="range"]:not(.before-after-range):focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mark) 35%, transparent); }
 input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: not-allowed; }
+
+/* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
+.review-pill { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; background: var(--surface-2); color: var(--ink-2, inherit); }
+.review-pill.is-pending { background: #FFF3D6; color: #7A5200; }
+.review-pill.is-ok { background: var(--thread-soft); color: var(--thread); }
+.review-pill.is-bad { background: var(--mark-soft); color: var(--mark); }
+.review-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.review-steps > li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; position: relative; }
+.review-steps > li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: -12px; width: 2px; background: var(--line, rgba(0,0,0,.12)); }
+.review-dot { display: inline-flex; width: 28px; height: 28px; border-radius: 999px; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--ink-3, #666); }
+.review-steps > li.is-done .review-dot { background: var(--thread); color: #fff; }
+.review-steps > li.is-current .review-dot { background: #F2B705; color: #1d1d1b; box-shadow: 0 0 0 4px rgba(242,183,5,.25); }
+.review-steps > li.is-bad .review-dot { background: var(--mark); color: #fff; }
+:root[data-theme="dark"] .review-pill.is-pending { background: #3A2E10; color: #F5C451; }
