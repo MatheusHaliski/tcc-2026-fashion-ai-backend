@@ -15,7 +15,7 @@ COPY fai-bootstrap fai-bootstrap
 RUN mvn -q -DskipTests package
 
 # Ubuntu 24.04 (noble) fixo: o nome do pacote do cliente MySQL não muda entre builds (a tag 21-jre muda de Ubuntu sozinha)
-FROM eclipse-temurin:21-jre-noble
+FROM eclipse-temurin:24-jre-noble
 # Cliente MySQL da Oracle empacotado pelo Ubuntu (mysql-client 8.0.x, com atualizações de segurança da Canonical):
 # o mysqldump do backup diário (AdminService -> MysqlDumpBackupAdapter). Conecta em MySQL 8.4 LTS e 9.x, entende
 # --ssl-mode e caching_sha2_password. Só o pacote, sem recomendados, e sem as listas do apt na imagem final.
