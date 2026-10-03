@@ -66,6 +66,13 @@ describe("abas do perfil (Lookbook)", () => {
 
 describe("adicionar peça (RF4)", () => {
   const photo = () => new File([new Uint8Array([1, 2, 3])], "camiseta.jpg", { type: "image/jpeg" });
+  /** RF47: a página abre no catálogo; "Usar minha foto" leva ao fluxo da foto, que começa pelo guia "Como fotografar". */
+  async function enterPhotoFlow(category: RegExp = /Parte de cima/) {
+    fireEvent.click(await screen.findByRole("button", { name: /Usar minha foto/ }));
+    fireEvent.click(await screen.findByRole("radio", { name: category }));
+    fireEvent.click(await screen.findByRole("button", { name: "Entendi, adicionar foto" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  }
   const DRAFT = {
     draftId: "d1", processedUrl: "/media/d1.png", flatLayUrl: "/media/d1-flat.jpg", thumbnailUrl: "/media/d1-t.png", originalUrl: "/media/d1-o.jpg", backgroundRemoved: true,
     prefill: { name: "Camiseta branca lisa", category: "upper_piece", subcategory: "t_shirt", color: "white", material: "COTTON", sex: "UNISSEX", occasion: ["casual"], style: ["basic"], size: "m", price: 50,
@@ -83,8 +90,7 @@ describe("adicionar peça (RF4)", () => {
       "GET /api/studio/backdrops": [],
     });
     const { container } = renderApp(<NewPiecePage />);
-    await waitFor(() => expect(screen.getAllByRole("group").length).toBeGreaterThan(0));
-    fireEvent.click(screen.getAllByRole("button").find((b) => /cima|superior/i.test(b.textContent ?? ""))!);
+    await enterPhotoFlow();
     const input = container.querySelector("input[type=file]") as HTMLInputElement;
     fireEvent.change(input, { target: { files: [photo()] } });
     await waitFor(() => expect(calls.some((c) => c.path === "/api/pieces/analysis")).toBe(true), { timeout: 4000 });
@@ -109,10 +115,24 @@ describe("adicionar peça (RF4)", () => {
       "POST /api/pieces/analysis": new Response(JSON.stringify({ status: 422, code: "FOTO_RECUSADA", message: "Refaça", details: { checks: [{ id: "inteira", ok: false, message: "A peça saiu cortada" }] } }), { status: 422, headers: { "content-type": "application/json" } }),
     });
     const { container } = renderApp(<NewPiecePage />);
-    await waitFor(() => expect(screen.getAllByRole("group").length).toBeGreaterThan(0));
-    fireEvent.click(screen.getAllByRole("button").find((b) => /cima|superior/i.test(b.textContent ?? ""))!);
+    await enterPhotoFlow();
     fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo()] } });
     await waitFor(() => expect(screen.getByText("A peça saiu cortada")).toBeTruthy(), { timeout: 4000 });
+  });
+
+  it("foto de outra categoria: avisa e oferece usar a categoria detectada, sem trocar em silêncio", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:foto");
+    const { calls } = loggedAs(ME, {
+      "GET /api/taxonomy": TAXONOMY,
+      "POST /api/pieces/analysis": new Response(JSON.stringify({ status: 422, code: "FOTO_RECUSADA", message: "Refaça", details: { detectedCategory: "shoes_piece", failed: ["formato"], checks: [{ id: "formato", ok: false, message: "A foto parece de um calçado" }] } }), { status: 422, headers: { "content-type": "application/json" } }),
+    });
+    const { container } = renderApp(<NewPiecePage />);
+    await enterPhotoFlow();
+    fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo()] } });
+    expect(await screen.findByText(/Esta foto parece ser de calçados/i, {}, { timeout: 4000 })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Usar Calçados/ }));
+    await waitFor(() => expect(calls.filter((c) => c.path === "/api/pieces/analysis").length).toBe(2), { timeout: 4000 });
+    expect(calls.filter((c) => c.path === "/api/pieces/analysis").length).toBe(2);
   });
 
   it("várias fotos de uma vez viram lote e são salvas juntas", async () => {
@@ -123,8 +143,7 @@ describe("adicionar peça (RF4)", () => {
       "POST /api/pieces/batch": [PIECE],
     });
     const { container } = renderApp(<NewPiecePage />);
-    await waitFor(() => expect(screen.getAllByRole("group").length).toBeGreaterThan(0));
-    fireEvent.click(screen.getAllByRole("button").find((b) => /cima|superior/i.test(b.textContent ?? ""))!);
+    await enterPhotoFlow();
     fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo(), photo()] } });
     const go = await waitFor(() => screen.getAllByRole("button").find((b) => /Salvar/.test(b.textContent ?? ""))!);
     fireEvent.click(go);

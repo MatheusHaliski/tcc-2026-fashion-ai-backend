@@ -1,6 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
@@ -9,7 +10,7 @@ import { useAction } from "@/lib/hooks/use-api";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
-import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
@@ -19,6 +20,13 @@ import { BackdropChips, StudioLightbox, backdropCenter, backdropEdge, sangria, u
 import { stripPerson, type GarmentPart } from "@/lib/pieces/person-filter";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { MultiPieceUpload } from "@/components/multi-piece-review";
+import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
+import { ConfirmPieceDialog } from "@/components/catalog/confirm-piece-dialog";
+import { CaptureGuideDialog } from "@/components/capture/capture-guide-dialog";
+import { GarmentGlyph } from "@/components/capture/garment-glyphs";
+import { CATEGORY_CARDS, guideFor, type CaptureCategory } from "@/lib/capture/capture-guides";
+import { useCaptureTutorialPrefs } from "@/lib/capture/tutorial-prefs";
+import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 
 /** Onde a análise procurou a marca (zonas da peça), onde achou e quem achou (IA lendo o nome ou só o detector de logo). */
 interface BrandSearch { zones?: string[]; brand?: string | null; foundIn?: string | null; logoSource?: string | null; evidence?: string | null; suggestion?: string | null; certainty?: "confirmada" | "possivel" | null }
@@ -29,8 +37,9 @@ interface PhotoCheck { id: string; ok: boolean; message?: string }
 interface Draft { draftId: string; processedUrl?: string; flatLayUrl?: string; thumbnailUrl?: string; originalUrl?: string; prefill?: { name?: string; category?: string; subcategory?: string; color?: string; material?: string; brand?: string; sex?: string; occasion?: string[]; style?: string[]; seals?: string[]; size?: string; price?: number | null; overall?: number; confidence?: Record<string, number>; manualFillRequired?: boolean; warning?: string; logo?: Record<string, unknown> | null; subcategoryCandidates?: { code: string; score: number }[]; brandSearch?: BrandSearch | null }; aiMessage?: string; backgroundRemoved?: boolean; totalMs?: number; explanation?: { provider?: string; why?: string }; studio?: StudioInfo | null; backgroundWarning?: string | null; rejection?: { message?: string; checks?: PhotoCheck[] } | null; }
 /** Orientações dos critérios reprovados (422 FOTO_RECUSADA → details.checks). */
 const failedTips = (checks: unknown): string[] => (Array.isArray(checks) ? (checks as PhotoCheck[]) : []).filter((c) => !c.ok && c.message).map((c) => c.message!);
-/** Princípios de fotografia da peça — os mesmos critérios que o backend aplica. */
-const PRINCIPLES = ["pieces.new.principio_inteira", "pieces.new.principio_90", "pieces.new.principio_fundo", "pieces.new.principio_uma", "pieces.new.principio_luz", "pieces.new.principio_marca"];
+/** Da taxonomia: a categoria que a análise viu na foto, quando difere da escolhida (422 → details.detectedCategory). */
+const detectedCategoryOf = (details: unknown): string | null => (details && typeof details === "object" && typeof (details as { detectedCategory?: unknown }).detectedCategory === "string") ? (details as { detectedCategory: string }).detectedCategory : null;
+type Mode = "choose" | "catalog" | "photo";
 type Preview = "studio" | "detail" | "flat" | "original";
 const PREVIEW_LABEL: Record<Preview, string> = { get studio() { return tr("common.estudio"); }, get detail() { return tr("common.detalhe_do_logo"); }, get flat() { return tr("pieces.new.flat_lay"); }, get original() { return tr("common.original"); } };
 /** Etapas do criador de peça (RF4): foto → dados → mais detalhes → arte de fundo → revisar e salvar. */
@@ -39,16 +48,68 @@ const STEPS: Step[] = ["photo", "data", "more", "art", "review"];
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
 
 /**
- * Adicionar peça (RF4) em etapas por segment picker. A foto é a primeira etapa: antes de qualquer upload, o quadro já
- * mostra a imagem-asset da categoria (o mesmo asset que a peça usa quando fica sem foto). Ao enviar, o pipeline exclui
- * corpos humanos da foto (no navegador) e o estúdio padroniza fundo, luz e enquadramento; nada dessa medição aparece na
- * tela. A arte de fundo é a penúltima etapa (aura, material, skin — como no Criar Look) e "Revisar e salvar" fecha.
+ * RF47 · Adicionar peça é catalog-first: a pessoa diz aproximadamente qual é a peça (categoria, tipo, marca, nome) e o
+ * FashionAI encontra o produto no catálogo global com a foto oficial; a própria foto é o caminho secundário (fallback
+ * para peças vintage, artesanais, sem marca ou fora de catálogo). ?mode=catalog|photo, ?brand=, ?category= pré-selecionam.
  */
 function NewPiece() {
+  const { t } = useI18n(); const params = useSearchParams(); const { user } = useAuth();
+  const wanted = params.get("mode");
+  const [mode, setMode] = useState<Mode>(wanted === "catalog" || wanted === "photo" ? wanted : "choose");
+  const [photoCtx, setPhotoCtx] = useState<Partial<CatalogSearchContext>>({ category: params.get("category") ?? undefined, brand: params.get("brand") ?? undefined });
+  const [picked, setPicked] = useState<{ product: CatalogProduct; variant: CatalogVariant | null } | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  if (mode === "photo") return <PhotoFlow initial={photoCtx} onCatalog={() => setMode("catalog")} />;
+  return (
+    <>
+      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={mode === "catalog" ? t("catalog.lead_busca") : t("catalog.lead_landing")} />
+      {mode === "choose" && (
+        <div className="mode-cards" role="group" aria-label={t("catalog.como_quer_adicionar")}>
+          <button type="button" className="mode-card is-primary" onClick={() => setMode("catalog")}>
+            <span className="mode-card-art" aria-hidden><GarmentGlyph id="sneaker_side" size={72} animated={false} numbered={false} /></span>
+            <span className="mode-card-body"><span className="badge badge-thread">{t("catalog.recomendado")}</span><span className="mode-card-title">{t("catalog.buscar_no_catalogo")}</span><span className="mode-card-desc">{t("catalog.buscar_no_catalogo_desc")}</span></span>
+          </button>
+          <button type="button" className="mode-card" onClick={() => setMode("photo")}>
+            <span className="mode-card-art" aria-hidden><FaiIcon id="ACT-07" size={48} decorative /></span>
+            <span className="mode-card-body"><span className="mode-card-title">{t("catalog.usar_minha_foto")}</span><span className="mode-card-desc">{t("catalog.usar_minha_foto_desc")}</span></span>
+          </button>
+        </div>
+      )}
+      {mode === "catalog" && (
+        <Card>
+          <CatalogSearch initial={photoCtx} onPick={(product, variant) => setPicked({ product, variant })}
+            onUsePhoto={(ctx) => { setPhotoCtx(ctx); setMode("photo"); }} />
+        </Card>
+      )}
+      <ConfirmPieceDialog product={picked?.product ?? null} variant={picked?.variant ?? null} open={!!picked && !done} onClose={() => setPicked(null)}
+        onCreated={(piece) => { setDone(piece.id); }} />
+      <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link>{mode !== "choose" && <> · <button type="button" className="underline" onClick={() => setMode("choose")}>{t("catalog.outro_jeito_de_adicionar")}</button></>}</p>
+      {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
+    </>
+  );
+}
+
+/**
+ * Cadastro pela própria foto (RF4/RF45, fallback do catálogo) em etapas por segment picker: antes de qualquer upload, o
+ * modal "Como fotografar sua peça" orienta a captura da categoria escolhida (regiões que a IA analisa, 90°, luz); a
+ * análise valida a foto e, se ela parecer de outra categoria, oferece "Usar <categoria>" em vez de trocar em silêncio.
+ * O pipeline exclui corpos humanos (no navegador) e o estúdio padroniza fundo, luz e enquadramento.
+ */
+function PhotoFlow({ initial, onCatalog }: { initial: Partial<CatalogSearchContext>; onCatalog: () => void }) {
   const { t } = useI18n(); const toast = useToast(); const tax = useTaxonomy(); const { user } = useAuth(); const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("photo");
   const [draft, setDraft] = useState<Draft | null>(null); const [preview, setPreview] = useState<string | null>(null);
-  const [value, setValue] = useState<PieceFormValue>({ ...EMPTY_PIECE, useDefaultImage: true });
+  const [value, setValue] = useState<PieceFormValue>({ ...EMPTY_PIECE, useDefaultImage: true, category: initial.category ?? "", subcategory: initial.subcategory ?? "", brandName: initial.brand ?? "" });
+  // guia de fotografia: abre ao entrar (na categoria, se ainda não há uma; direto na orientação, se há) salvo "não mostrar novamente"
+  const prefs = useCaptureTutorialPrefs();
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guideShown = useRef(false);
+  useEffect(() => {
+    if (guideShown.current || !prefs.loaded) return;
+    guideShown.current = true;
+    const g = guideFor(initial.category, initial.subcategory);
+    if (!g || !prefs.isHidden(g.id)) setGuideOpen(true);
+  }, [prefs.loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   const [batch, setBatch] = useState<{ file: File; draft?: Draft }[]>([]);
   const [mode, setMode] = useState<Preview>("studio"); const [studioBusy, setStudioBusy] = useState(false); const [personNote, setPersonNote] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
@@ -106,11 +167,12 @@ function NewPiece() {
     setAnalyzed(true); setFieldErrors({}); setSaveProblem(null);
   }
   /** Tipo da peça (primeira escolha da etapa Foto). Com foto já enviada, a análise é refeita com o novo tipo. */
-  function chooseCategory(category: string) {
-    if (category === value.category) return;
-    setValue((v) => ({ ...v, category, subcategory: "", occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
+  function chooseCategory(category: string, subcategory = "") {
+    if (category === value.category && (!subcategory || subcategory === value.subcategory)) return;
+    setValue((v) => ({ ...v, category, subcategory, occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
     if (lastFile.current && (draft || analyze.error)) { toast.info(t("pieces.new.reanalisando")); runAnalysis(lastFile.current, category); }
   }
+  const detected = analyze.error?.code === "FOTO_RECUSADA" ? detectedCategoryOf(analyze.error.details) : null;
   /** RF4 · Estúdio: refaz a foto de produto do rascunho com outro fundo; force = usar o recorte marcado como incerto. */
   async function studio(backdrop: string, force = false) {
     if (!draft) return;
@@ -204,7 +266,9 @@ function NewPiece() {
     : undefined;
   return (
     <>
-      <PageHeader title={t("closet.addPiece")} kicker="RF4" lead={t("pieces.new.lead_etapas")} />
+      <PageHeader title={t("closet.addPiece")} kicker="RF4" lead={t("pieces.new.lead_etapas")} actions={<Button size="sm" variant="ghost" onClick={onCatalog}>{t("catalog.voltar_ao_catalogo")}</Button>} />
+      <CaptureGuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} category={value.category || null} subcategory={value.subcategory || null} prefs={prefs}
+        onCategory={(c, sub) => chooseCategory(c, sub ?? "")} onConfirm={() => { setGuideOpen(false); setTimeout(() => fileRef.current?.click(), 0); }} />
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
@@ -221,8 +285,8 @@ function NewPiece() {
                 <>
                 <div className="mb-3">
                   <p className="label" id="piece-type-label">{t("pieces.new.tipo_da_peca")}<span aria-hidden className="text-critical"> *</span></p>
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="piece-type-label">{PIECE_CATEGORIES.map((c) => <Chip key={c} active={value.category === c} onClick={() => chooseCategory(c)}>{CATEGORY_LABEL[c] ?? label(c)}</Chip>)}</div>
-                  <p className="help">{t("pieces.new.escolha_o_tipo")}</p>
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="piece-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
+                  <p className="help">{t("pieces.new.escolha_o_tipo")} <button type="button" className="underline" onClick={() => setGuideOpen(true)}>{t("pieces.guide.how_to_take_a_good_photo")}</button></p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,320px)_1fr]">
                   <div className="grid content-start gap-2">
@@ -244,7 +308,15 @@ function NewPiece() {
                         <p className="mt-1 text-muted">{t("editImage.falta_acao")}</p>
                       </div>
                     ) : null}
-                    {analyze.error && (analyze.error.code === "FOTO_RECUSADA" ? (
+                    {analyze.error && (analyze.error.code === "FOTO_RECUSADA" && detected && detected !== value.category ? (
+                      <div role="alert" className="rounded-md border border-line-soft bg-surface-2 p-2 type-body-sm">
+                        <p className="font-medium">{t("pieces.new.parece_outra_categoria", { categoria: (CATEGORY_LABEL[detected] ?? label(detected)).toLowerCase() })}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button size="sm" variant="primary" onClick={() => chooseCategory(detected as CaptureCategory)}>{t("pieces.new.usar_categoria", { categoria: CATEGORY_LABEL[detected] ?? label(detected) })}</Button>
+                          <Button size="sm" onClick={() => fileRef.current?.click()}>{t("pieces.new.escolher_outra_foto")}</Button>
+                        </div>
+                      </div>
+                    ) : analyze.error.code === "FOTO_RECUSADA" ? (
                       <div role="alert" className="rounded-md border border-critical p-2 type-body-sm">
                         <p className="font-medium text-critical">{t("pieces.new.foto_recusada")}</p>
                         <p className="mt-1">{t("pieces.new.refaca_a_foto")}</p>
@@ -264,10 +336,7 @@ function NewPiece() {
                     {draft && <Button size="sm" variant="ghost" onClick={() => { setDraft(null); setPreview(null); setPersonNote(null); setBrandRegion(null); lastFile.current = null; setValue((v) => ({ ...v, draftId: null, useDefaultImage: true, studio: undefined })); }}>{t("pieces.new.trocar_por_asset")}</Button>}
                     {/* várias peças numa foto: a IA acha cada uma e a revisão cadastra todas separadamente (não depende do tipo escolhido) */}
                     {!draft && <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
-                    <details className="more-details" open={!draft}>
-                      <summary>{t("pieces.new.como_fotografar")}</summary>
-                      <ul className="fai-list pt-2 type-body-sm">{PRINCIPLES.map((k) => <li key={k}>{t(k)}</li>)}</ul>
-                    </details>
+                    <p className="type-caption text-muted">{t("pieces.new.fallback_nota")} <button type="button" className="underline" onClick={onCatalog}>{t("catalog.buscar_no_catalogo")}</button></p>
                   </div>
                 </div>
                 </>
@@ -373,4 +442,4 @@ function zoneName(t: (k: string, v?: Record<string, unknown>) => string, z?: str
   return s === key ? z : s;
 }
 
-export default function NewPiecePage() { return <RequireAuth><NewPiece /></RequireAuth>; }
+export default function NewPiecePage() { return <RequireAuth><Suspense fallback={null}><NewPiece /></Suspense></RequireAuth>; }
