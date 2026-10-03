@@ -297,7 +297,7 @@ public class FlairModesService {
     }
 
     User opponentUser(CurrentUser user, String opponent) {
-        User u = users.findByUsernameIgnoreCase(opponent.trim().replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound("Oponente"));
+        User u = users.findByUsernameIgnoreCase(opponent.trim().replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound(Msg.t("entity.oponente")));
         if (u.getId().equals(user.id())) {
             throw ApiException.badRequest("OPONENTE_INVALIDO", Msg.t("common.escolha_outra_pessoa_ou_a"));
         }
@@ -1061,9 +1061,9 @@ public class FlairModesService {
     }
 
     FlairMatch ownDraft(CurrentUser user, UUID id, String mode) {
-        FlairMatch m = matches.findById(id).orElseThrow(() -> ApiException.notFound("Partida"));
+        FlairMatch m = matches.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.partida")));
         if (!mode.equals(m.getMode()) || !m.getCreatedByUser().getId().equals(user.id())) {
-            throw ApiException.notFound("Partida");
+            throw ApiException.notFound(Msg.t("entity.partida"));
         }
         return m;
     }

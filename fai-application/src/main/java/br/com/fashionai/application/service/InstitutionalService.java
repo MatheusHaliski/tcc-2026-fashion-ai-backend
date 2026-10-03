@@ -209,9 +209,9 @@ public class InstitutionalService {
         boolean brand = u.getProfileType() == ProfileType.MARCA;
         Map<String, Object> header = new LinkedHashMap<>();
         if (brand) {
-            BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Marca"));
+            BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.marca")));
             if (b.getApprovalStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
-                throw ApiException.notFound("Marca"); // RF1.CA06 — pendente_validação não tem tela pública
+                throw ApiException.notFound(Msg.t("entity.marca")); // RF1.CA06 — pendente_validação não tem tela pública
             }
             header.putAll(brandCard(b));
             header.put("bio", b.getBio());
@@ -220,9 +220,9 @@ public class InstitutionalService {
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.COLLECTION).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", !b.isRequiresSealReview());
         } else {
-            CelebrityProfile c = celebrities.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Celebridade"));
+            CelebrityProfile c = celebrities.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.celebridade")));
             if (c.getVerificationStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
-                throw ApiException.notFound("Celebridade");
+                throw ApiException.notFound(Msg.t("entity.celebridade"));
             }
             header.putAll(celebrityCard(c));
             header.put("bio", c.getBio());
@@ -394,7 +394,7 @@ public class InstitutionalService {
     @Transactional(readOnly = true)
     public Map<String, Object> store(String slugOrId) {
         User u = institutionalUser(slugOrId);
-        BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Marca"));
+        BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.marca")));
         if (b.getStoreUrl() == null || b.getStoreUrl().isBlank()) {
             throw new ApiException(404, "LOJA_INDISPONIVEL", Msg.t("institutional.esta_marca_ainda_nao_cadastrou"));
         }

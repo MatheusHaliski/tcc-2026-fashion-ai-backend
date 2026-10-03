@@ -91,7 +91,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public static final int TOP_CAPACITY = 8;
     public static final int BASE_CAPACITY = 12;
     public static final int SHOE_RACK_CAPACITY = 24;
-    public static final List<String> DEFAULT_DRAWER_LABELS = List.of("Jeans", "Academia", "Praia", Msg.k("room.acessorios"), Msg.k("room.intimas"), "Favoritas");
+    public static final List<String> DEFAULT_DRAWER_LABELS = List.of("Jeans", Msg.k("room.academia"), Msg.k("room.praia"), Msg.k("room.acessorios"), Msg.k("room.intimas"), Msg.k("room.favoritas"));
+    /** Categorias padrão de gaveta (código → texto adiado do rótulo); "jeans" é igual em todos os idiomas. */
+    static final Map<String, String> DRAWER_KINDS = Map.of("jeans", "Jeans", "academia", Msg.k("room.academia"), "praia", Msg.k("room.praia"),
+            "acessorios", Msg.k("room.acessorios"), "intimas", Msg.k("room.intimas"), "favoritas", Msg.k("room.favoritas"));
     static final Set<String> OUTERWEAR = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono");
     static final Set<String> KNITWEAR = Set.of("sweater", "sweatshirt", "hoodie", "vest");
     static final Set<String> DENIM = Set.of("jeans", "denim_shorts");
@@ -99,11 +102,11 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     static final Set<String> BAGS = Set.of("handbag", "crossbody_bag", "tote_bag", "clutch", "backpack");
     static final Set<String> JEWELRY = Set.of("necklace", "bracelet", "earrings", "ring", "watch");
     static final Set<String> INTIMATES = Set.of("socks");
-    static final Map<String, String> SUBCATEGORY_PT = Map.ofEntries(Map.entry("skirt", "Saias"), Map.entry("shorts", "Shorts"),
-            Map.entry("bermuda_shorts", "Bermudas"), Map.entry("tailored_pants", "Alfaiataria"), Map.entry("chino_pants", "Chinos"),
-            Map.entry("cargo_pants", "Cargo"), Map.entry("casual_pants", "Calças casuais"), Map.entry("culottes", "Pantacourts"),
-            Map.entry("skort", "Short-saias"), Map.entry("belt", "Cintos"), Map.entry("scarf", "Lenços"), Map.entry("cap", Msg.k("room.bones")),
-            Map.entry("hat", "Chapéus"), Map.entry("sunglasses", Msg.k("room.oculos")), Map.entry("t_shirt", "Camisetas"));
+    static final Map<String, String> SUBCATEGORY_LABELS = Map.ofEntries(Map.entry("skirt", Msg.k("room.saias")), Map.entry("shorts", Msg.k("room.shorts")),
+            Map.entry("bermuda_shorts", Msg.k("room.bermudas")), Map.entry("tailored_pants", Msg.k("room.alfaiataria")), Map.entry("chino_pants", Msg.k("room.chinos")),
+            Map.entry("cargo_pants", Msg.k("room.cargo")), Map.entry("casual_pants", Msg.k("room.calcas_casuais")), Map.entry("culottes", Msg.k("room.pantacourts")),
+            Map.entry("skort", Msg.k("room.short_saias")), Map.entry("belt", Msg.k("room.cintos")), Map.entry("scarf", Msg.k("room.lencos")), Map.entry("cap", Msg.k("room.bones")),
+            Map.entry("hat", Msg.k("room.chapeus")), Map.entry("sunglasses", Msg.k("room.oculos")), Map.entry("t_shirt", Msg.k("room.camisetas")));
 
     /** Decorações de desafios ativos (RF36 §5) — implementado pelo ChallengeService, sem acoplar o quarto. */
     public interface DecorationsProvider {
@@ -177,47 +180,81 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return m;
     }
 
+    /** Rótulo padrão do módulo como texto adiado (resolvido no idioma de quem lê); null = módulo sem rótulo padrão. */
+    static String defaultModuleLabel(String id) {
+        int c = id.indexOf(':');
+        String zone = c < 0 ? id : id.substring(0, c);
+        String n = c < 0 ? "" : id.substring(c + 1);
+        return switch (zone) {
+            case "door" -> Msg.k("roomAddress.porta", n);
+            case "drawer" -> Msg.k("roomAddress.gaveta", n);
+            case "top" -> Msg.k("roomAddress.maleiro");
+            case "base" -> Msg.k("room.base");
+            case "handles" -> Msg.k("room.puxadores");
+            case "light" -> Msg.k("room.iluminacao");
+            case "rug" -> Msg.k("room.tapete");
+            case "hangers" -> Msg.k("room.cabides");
+            case "logo" -> Msg.k("room.logo_das_portas");
+            case "mirror" -> Msg.k("room.espelho");
+            case "shoe" -> Msg.k("room.sapateira");
+            case "bags" -> Msg.k("common.vitrine_de_bolsas");
+            case "jewelry" -> Msg.k("room.porta_joias");
+            case "island" -> Msg.k("room.ilha_central_bancada_de_looks");
+            case "season" -> Msg.k("common.maleiro_de_estacao");
+            case "signature" -> Msg.k("room.closet_de_assinatura");
+            case "monogram" -> Msg.k("room.monograma");
+            default -> null;
+        };
+    }
+
+    /** Rótulo do módulo para exibir: layouts antigos guardaram o texto padrão já traduzido (pt-BR ou o idioma de quem criou) — vira texto adiado; rótulo personalizado fica como está. */
+    static Object moduleLabel(Map<String, Object> module) {
+        Object stored = module.get("label");
+        String deferred = defaultModuleLabel(String.valueOf(module.get("id")));
+        return deferred != null && (stored == null || Msg.matchesAnyLocale(deferred, String.valueOf(stored))) ? deferred : stored;
+    }
+
     /** RF35 §5.3 — módulos do móvel por nível. O FAI Origem (Estreia) é propositalmente simples. */
     static List<Map<String, Object>> defaultModules(FaiPointsService.Level level) {
         Map<String, Object> white = Map.of("color", "#F4F2EF", "texture", "fosco", "roughness", 0.8);
         List<Map<String, Object>> mods = new ArrayList<>();
         for (int d = 1; d <= 4; d++) {
-            mods.add(module("door:" + d, "DOOR", "PRT-AB60", 60, HANGERS_PER_DOOR, "Porta " + d, "FAI-PRT-AB60-WHT-FOS", white));
+            mods.add(module("door:" + d, "DOOR", "PRT-AB60", 60, HANGERS_PER_DOOR, defaultModuleLabel("door:" + d), "FAI-PRT-AB60-WHT-FOS", white));
         }
         for (int n = 1; n <= 24; n++) {
-            mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
+            mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, defaultModuleLabel("drawer:" + n), null, white));
         }
-        mods.add(module("top", "TOP", null, 0, TOP_CAPACITY, "Maleiro", null, null));
-        mods.add(module("base", "BASE", null, 0, BASE_CAPACITY, "Base", null, null));
-        mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
-        mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, Msg.t("room.iluminacao"), null, Map.of("kelvin", 4000, "guided", false)));
-        mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
-        mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
-        mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
+        mods.add(module("top", "TOP", null, 0, TOP_CAPACITY, defaultModuleLabel("top"), null, null));
+        mods.add(module("base", "BASE", null, 0, BASE_CAPACITY, defaultModuleLabel("base"), null, null));
+        mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, defaultModuleLabel("handles"), null, Map.of("color", "#F4F2EF", "texture", "cava")));
+        mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, defaultModuleLabel("light"), null, Map.of("kelvin", 4000, "guided", false)));
+        mods.add(module("rug", "RUG", "TAP-RND", 0, 0, defaultModuleLabel("rug"), null, null));
+        mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, defaultModuleLabel("hangers"), null, Map.of("color", "#6B5A4A", "texture", "madeira")));
+        mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, defaultModuleLabel("logo"), null, null));
         // Smart Mirror (RF28) — módulo trocável na loja do quarto (retangular, arco, oval, camarim com luzes)
-        mods.add(module("mirror", "MIRROR", "ESP-RET", 0, 0, Msg.t("room.espelho"), null,
+        mods.add(module("mirror", "MIRROR", "ESP-RET", 0, 0, defaultModuleLabel("mirror"), null,
                 Map.of("color", "#6B4A2F", "texture", "madeira", "material", "MADEIRA", "roughness", 0.6, "metalness", 0.0)));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
-                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, "Porta " + d, null, white));
+                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, defaultModuleLabel("door:" + d), null, white));
             }
             for (int n = 25; n <= 36; n++) {
-                mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
+                mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, defaultModuleLabel("drawer:" + n), null, white));
             }
         }
         if (level.atLeast(FaiPointsService.Level.CLOSET)) {
-            mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, "Sapateira", null, white));
-            mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, Msg.t("common.vitrine_de_bolsas"), null, null));
-            mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, "Porta-joias", null, null));
+            mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, defaultModuleLabel("shoe"), null, white));
+            mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, defaultModuleLabel("bags"), null, null));
+            mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, defaultModuleLabel("jewelry"), null, null));
         }
         if (level.atLeast(FaiPointsService.Level.ATELIER)) {
-            mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, Msg.t("room.ilha_central_bancada_de_looks"), null, null));
+            mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, defaultModuleLabel("island"), null, null));
         }
         if (level.atLeast(FaiPointsService.Level.PENTHOUSE)) {
-            mods.add(module("season", "SEASON_STORAGE", null, 0, 60, Msg.t("common.maleiro_de_estacao"), null, null));
+            mods.add(module("season", "SEASON_STORAGE", null, 0, 60, defaultModuleLabel("season"), null, null));
         }
         if (level.atLeast(FaiPointsService.Level.MAISON)) {
-            mods.add(module("signature", "SIGNATURE", null, 0, 0, Msg.t("room.closet_de_assinatura"), null, null));
+            mods.add(module("signature", "SIGNATURE", null, 0, 0, defaultModuleLabel("signature"), null, null));
         }
         return mods;
     }
@@ -277,11 +314,13 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     Map<String, String> labels(RoomLayout layout) {
         Map<String, Object> root = Json.map(layout.getDrawerLabelsJson());
         Object v = root.get("labels");
+        Map<String, String> sources = labelSources(layout);
         Map<String, String> out = new TreeMap<>((a, b) -> Integer.compare(Integer.parseInt(a), Integer.parseInt(b)));
         if (v instanceof Map<?, ?> m) {
             m.forEach((k, val) -> {
                 if (val != null && !String.valueOf(val).isBlank()) {
-                    out.put(String.valueOf(k), String.valueOf(val));
+                    String kind = "DEFAULT".equals(sources.getOrDefault(String.valueOf(k), "DEFAULT")) ? drawerKind(String.valueOf(val)) : null;
+                    out.put(String.valueOf(k), kind == null ? String.valueOf(val) : DRAWER_KINDS.get(kind));   // rótulo padrão guardado em pt-BR volta no idioma de quem lê
                 }
             });
         }
@@ -413,7 +452,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         RoomLayout l = layout(user.id());
         List<Map<String, Object>> mods = modules(l).stream().filter(m -> !"monogram".equals(m.get("id"))).collect(Collectors.toCollection(ArrayList::new));
         if (!clean.isEmpty()) {
-            Map<String, Object> m = module("monogram", "MONOGRAM", null, 0, 0, "Monograma", null, null);
+            Map<String, Object> m = module("monogram", "MONOGRAM", null, 0, 0, defaultModuleLabel("monogram"), null, null);
             m.put("initials", clean);
             mods.add(m);
         }
@@ -442,16 +481,31 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         String cat = nz(w.getCategory());
         String sub = nz(w.getSubcategory());
         if (cat.equals("accessory_piece")) {
-            return INTIMATES.contains(sub) ? Msg.t("room.intimas") : Msg.t("room.acessorios");
+            return DRAWER_KINDS.get(INTIMATES.contains(sub) ? "intimas" : "acessorios");
         }
         if (DENIM.contains(sub)) {
-            return "Jeans";
+            return DRAWER_KINDS.get("jeans");
         }
         if (GYM.contains(sub) || occHas(w, "sport", "gym")) {
-            return "Academia";
+            return DRAWER_KINDS.get("academia");
         }
         if (occHas(w, "beach")) {
-            return "Praia";
+            return DRAWER_KINDS.get("praia");
+        }
+        return null;
+    }
+
+    /** Categoria padrão da gaveta (jeans, academia, praia, acessorios, intimas, favoritas) pelo rótulo — em qualquer idioma ou como texto adiado; null = rótulo livre. */
+    static String drawerKind(String label) {
+        if (label == null || label.isBlank()) {
+            return null;
+        }
+        for (Map.Entry<String, String> e : DRAWER_KINDS.entrySet()) {
+            for (Locale l : Msg.SUPPORTED) {
+                if (Msg.resolve(l, e.getValue()).equalsIgnoreCase(Msg.resolve(l, label.trim()))) {
+                    return e.getKey();
+                }
+            }
         }
         return null;
     }
@@ -470,12 +524,13 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 if (label == null) {
                     yield true;
                 }
-                yield switch (label.toLowerCase(Locale.ROOT)) {
+                String kind = drawerKind(label);
+                yield kind == null || switch (kind) {
                     case "jeans" -> DENIM.contains(sub);
                     case "academia" -> GYM.contains(sub) || occHas(w, "sport", "gym");
                     case "praia" -> occHas(w, "beach");
-                    case "acessórios", "acessorios" -> cat.equals("accessory_piece");
-                    case "íntimas", "intimas" -> INTIMATES.contains(sub);
+                    case "acessorios" -> cat.equals("accessory_piece");
+                    case "intimas" -> INTIMATES.contains(sub);
                     case "favoritas" -> w.isFavorite();
                     default -> true;
                 };
@@ -531,19 +586,24 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         });
     }
 
+    /** Mesma categoria de gaveta? Pela categoria padrão (qualquer idioma) e, sem ela, pelo texto. */
+    static boolean sameDrawer(String a, String b) {
+        String ka = drawerKind(a);
+        return ka != null ? ka.equals(drawerKind(b)) : Msg.resolve(a).equalsIgnoreCase(Msg.resolve(b));
+    }
+
     private Optional<RoomAddress> freeDrawer(RoomLayout layout, Map<String, String> labels, Occupancy occ, String preferred,
                                              boolean allowSpecial) {
         List<Map<String, Object>> drawers = modules(layout).stream().filter(m -> "DRAWER".equals(m.get("slotType"))).toList();
-        Set<String> special = DEFAULT_DRAWER_LABELS.stream().map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
         // 1) gaveta com a categoria preferida; 2) gaveta sem rótulo; 3) qualquer gaveta que não seja de categoria especial
         for (int pass = 0; pass < 3; pass++) {
             for (Map<String, Object> m : drawers) {
                 String idx = String.valueOf(m.get("id")).substring("drawer:".length());
                 String label = labels.get(idx);
                 boolean ok = switch (pass) {
-                    case 0 -> preferred != null && label != null && label.equalsIgnoreCase(preferred);
+                    case 0 -> preferred != null && label != null && sameDrawer(label, preferred);
                     case 1 -> label == null;
-                    default -> allowSpecial || label == null || !special.contains(label.toLowerCase(Locale.ROOT));
+                    default -> allowSpecial || label == null || drawerKind(label) == null;   // gaveta de categoria padrão só recebe o que combina com ela
                 };
                 if (ok && occ.drawerCount().getOrDefault(idx, 0) < capacity(m)) {
                     return Optional.of(RoomAddress.of("drawer", Integer.parseInt(idx)));
@@ -909,15 +969,17 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         for (Map<String, Object> m : modules(layout)) {
             String id = String.valueOf(m.get("id"));
             Map<String, Object> view = new LinkedHashMap<>(m);
+            Object moduleLabel = moduleLabel(m);
+            view.put("label", moduleLabel);
             List<Map<String, Object>> content = byModule.getOrDefault(id, List.of());
             String slot = String.valueOf(m.get("slotType"));
             if (slot.equals("DRAWER")) {
                 String idx = id.substring("drawer:".length());
                 String label = labels.get(idx);
-                view.put("label", label == null ? "Gaveta " + idx : label);
+                view.put("label", label == null ? defaultModuleLabel(id) : label);
                 view.put("category", label);
                 view.put("labelSource", labelSources(layout).getOrDefault(idx, label == null ? null : "DEFAULT"));
-                view.put("accessibleLabel", "Gaveta " + idx + (label == null ? "" : ", " + label) + ", " + content.size()
+                view.put("accessibleLabel", defaultModuleLabel(id) + (label == null ? "" : ", " + label) + ", " + content.size()
                         + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
                 view.put("empty", content.isEmpty());
                 view.put("emptyCharm", content.isEmpty() ? Map.of("props", List.of("sache_lavanda", "meia_sem_par"),
@@ -931,7 +993,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     hangers.add(Map.of("k", k, "address", hangerAddr, "pieceId", piece == null ? "" : String.valueOf(piece.get("id"))));
                 }
                 view.put("hangers", hangers);
-                view.put("accessibleLabel", Msg.t("room.pecas_2", (m.get("label")), content.size()));
+                view.put("accessibleLabel", Msg.t("room.pecas_2", moduleLabel, content.size()));
             } else if (slot.equals("TOP")) {
                 List<Scheme> boxes = owner ? schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED)
                         : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED).stream()
@@ -942,7 +1004,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 view.put("totalLooks", boxes.size());
                 view.put("accessibleLabel", Msg.t("room.maleiro_caixas_de_look", boxes.size()));
             } else {
-                view.put("accessibleLabel", m.get("label") + ", " + content.size() + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
+                view.put("accessibleLabel", moduleLabel + ", " + content.size() + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
             }
             view.put("pieces", content);
             view.put("count", content.size());
@@ -1088,7 +1150,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public Map<String, String> renameDrawer(CurrentUser user, int drawer, String label) {
         RoomLayout layout = layout(user.id());
-        module(layout, "drawer:" + drawer).orElseThrow(() -> ApiException.notFound("Gaveta"));
+        module(layout, "drawer:" + drawer).orElseThrow(() -> ApiException.notFound(Msg.t("entity.gaveta")));
         Map<String, String> labels = labels(layout);
         Map<String, String> sources = labelSources(layout);
         String clean = InputSanitizer.clean(label == null ? "" : label, 24);
@@ -1165,7 +1227,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         for (WardrobeItem w : content) {
             String pref = preferredDrawerLabel(w);
             if (pref == null) {
-                pref = SUBCATEGORY_PT.getOrDefault(nz(w.getSubcategory()), titleCase(nz(w.getSubcategory()).replace('_', ' ')));
+                pref = SUBCATEGORY_LABELS.getOrDefault(nz(w.getSubcategory()), Msg.has("taxonomy." + nz(w.getSubcategory())) ? Msg.k("taxonomy." + nz(w.getSubcategory())) : titleCase(nz(w.getSubcategory()).replace('_', ' ')));
             }
             votes.merge(pref, 1L, Long::sum);
         }
@@ -1287,7 +1349,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     if (clean.isBlank()) {
                         current.remove(k);
                         sources.remove(k);
-                    } else if (!clean.equals(current.get(k))) {
+                    } else if (!clean.equals(Msg.resolve(current.get(k)))) {
                         current.put(k, clean);
                         sources.put(k, "AI");
                     }
@@ -1409,7 +1471,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         List<Map<String, Object>> looks = new ArrayList<>();
         for (UUID id : schemeIds) {
-            Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+            Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
             guard.requireOwner(user, s.getUser().getId(), "scheme:" + id);
             List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
             Map<String, Object> m = new LinkedHashMap<>();

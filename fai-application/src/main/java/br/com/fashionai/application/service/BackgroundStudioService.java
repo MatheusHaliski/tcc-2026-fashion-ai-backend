@@ -547,7 +547,7 @@ public class BackgroundStudioService {
     @Transactional
     public Map<String, Object> saveScheme(CurrentUser user, UUID schemeId, Map<String, Object> config, boolean applyDirection) {
         guard.requireCanCreate(user);
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + schemeId);
         applyToScheme(s, config, applyDirection);
         @SuppressWarnings("unchecked")
@@ -561,7 +561,7 @@ public class BackgroundStudioService {
     /** RF11.CA05 — remover o fundo aplicado volta ao padrão sem perder os demais dados. */
     @Transactional
     public Map<String, Object> resetScheme(CurrentUser user, UUID schemeId) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + schemeId);
         s.setBackgroundColor("#F4F2EF");
         s.setBackgroundGradient(null);

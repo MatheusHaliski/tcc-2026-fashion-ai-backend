@@ -64,15 +64,15 @@ public class WardrobeCreatorService {
             new Block("HANDLE", "PUX-CAV", 0, Msg.k("wardrobeCreator.puxador_cava"), 50, "STUDIO", List.of("METAL", "FOSCO", "OURO", "PRATA", "BRONZE", "COBRE")),
             new Block("HANDLE", "PUX-BAR", 0, Msg.k("wardrobeCreator.puxador_barra"), 70, "STUDIO", List.of("METAL", "ACRILICO", "OURO", "PRATA", "BRONZE", "COBRE", "ACO")),
             new Block("HANDLE", "PUX-CRO", 0, Msg.k("wardrobeCreator.puxador_de_couro"), 80, "STUDIO", List.of("COURO")),
-            new Block("TOP", "MAL-STD", 240, "Maleiro", 90, "ESTREIA", List.of("FOSCO", "LACA", "MADEIRA", "CONCRETO", "RATTAN")),
+            new Block("TOP", "MAL-STD", 240, Msg.k("roomAddress.maleiro"), 90, "ESTREIA", List.of("FOSCO", "LACA", "MADEIRA", "CONCRETO", "RATTAN")),
             new Block("BASE", "BAS-STD", 240, Msg.k("wardrobeCreator.base_rodape"), 80, "ESTREIA", List.of("FOSCO", "MADEIRA", "METAL", "MARMORE", "GRANITO", "CONCRETO", "OURO", "BRONZE")),
-            new Block("HANGER", "CAB-STD", 0, "Cabides", 40, "ESTREIA", List.of("MADEIRA", "VELUDO", "METAL", "ACRILICO", "OURO", "PRATA")),
+            new Block("HANGER", "CAB-STD", 0, Msg.k("room.cabides"), 40, "ESTREIA", List.of("MADEIRA", "VELUDO", "METAL", "ACRILICO", "OURO", "PRATA")),
             new Block("LOGO", "LOG-PLC", 0, Msg.k("wardrobeCreator.placa_de_logo_monograma"), 70, "STUDIO", List.of("METAL", "ACRILICO", "MADEIRA", "OURO", "PRATA", "BRONZE", "COBRE", "VIDRO")),
             new Block("LIGHT", "LUZ-LED", 0, Msg.k("wardrobeCreator.iluminacao_led"), 110, "STUDIO", List.of("LED")),
             new Block("RUG", "TAP-RND", 0, Msg.k("wardrobeCreator.tapete_redondo"), 60, "ESTREIA", List.of("LA", "LINHO", "RATTAN")),
-            new Block("SHOE_RACK", "SAP-MOD90", 90, "Sapateira", 240, "CLOSET", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
+            new Block("SHOE_RACK", "SAP-MOD90", 90, Msg.k("room.sapateira"), 240, "CLOSET", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
             new Block("BAG_DISPLAY", "VIT-BOL", 60, Msg.k("common.vitrine_de_bolsas"), 300, "CLOSET", List.of("VIDRO", "ESPELHO", "MADEIRA", "OURO")),
-            new Block("JEWELRY", "JOI-POR", 30, "Porta-joias", 260, "CLOSET", List.of("VELUDO", "COURO", "MADEIRA", "OURO", "PRATA", "VIDRO")),
+            new Block("JEWELRY", "JOI-POR", 30, Msg.k("room.porta_joias"), 260, "CLOSET", List.of("VELUDO", "COURO", "MADEIRA", "OURO", "PRATA", "VIDRO")),
             new Block("ISLAND", "ILH-BAN", 120, Msg.k("wardrobeCreator.ilha_central"), 600, "ATELIER", List.of("MARMORE", "GRANITO", "MADEIRA", "LACA", "VIDRO", "CONCRETO")),
             // Smart Mirror (RF28) como item modular: o formato vem do molde; o material e a cor são da moldura
             new Block("MIRROR", "ESP-RET", 0, Msg.k("wardrobeCreator.espelho_retangular"), 90, "ESTREIA", List.of("FOSCO", "LACA", "MADEIRA", "METAL", "RATTAN")),
@@ -98,26 +98,26 @@ public class WardrobeCreatorService {
             COLORS.put(x[0], x[1]);
         }
         List<String> base = List.of("Branco", "Off-white", "Areia", "Grafite", "Preto", "Navy", "Verde-oliva", "Terracota", "Rosa-blush", Msg.k("wardrobeCreator.bordo"));
-        material("FOSCO", "Fosco", 0.8, 0.02, 1.0, "ESTREIA", base);
-        material("LACA", "Laca", 0.25, 0.05, 1.4, "STUDIO", base);
-        material("MADEIRA", "Madeira", 0.6, 0, 1.5, "STUDIO", List.of("Carvalho", "Nogueira", Msg.k("wardrobeCreator.freijo")));
+        material("FOSCO", Msg.k("wardrobeCreator.material_fosco"), 0.8, 0.02, 1.0, "ESTREIA", base);
+        material("LACA", Msg.k("wardrobeCreator.material_laca"), 0.25, 0.05, 1.4, "STUDIO", base);
+        material("MADEIRA", Msg.k("wardrobeCreator.material_madeira"), 0.6, 0, 1.5, "STUDIO", List.of("Carvalho", "Nogueira", Msg.k("wardrobeCreator.freijo")));
         material("MARMORE", Msg.k("wardrobeCreator.marmore"), 0.2, 0, 2.2, "LOFT", List.of("Carrara", Msg.k("wardrobeCreator.nero_marquina"), Msg.k("wardrobeCreator.rosa_portugal")));
-        material("VIDRO", "Vidro", 0.05, 0, 1.8, "LOFT", List.of("Transparente", Msg.k("wardrobeCreator.fume"), Msg.k("wardrobeCreator.vidro_verde"), Msg.k("wardrobeCreator.vidro_ambar")));
-        material("METAL", "Metal", 0.3, 0.85, 1.3, "STUDIO", List.of("Dourado", "Prata", "Bronze", "Preto"));
-        material("COURO", "Couro", 0.55, 0, 1.9, "CLOSET", List.of("Caramelo", "Cognac", "Preto"));
-        material("VELUDO", "Veludo", 0.95, 0, 1.7, "CLOSET", List.of("Esmeralda", "Vinho", "Azul-noite"));
-        material("LINHO", "Linho", 0.9, 0, 1.2, "STUDIO", List.of("Off-white", "Areia", "Terracota", "Verde-oliva"));
+        material("VIDRO", Msg.k("wardrobeCreator.material_vidro"), 0.05, 0, 1.8, "LOFT", List.of("Transparente", Msg.k("wardrobeCreator.fume"), Msg.k("wardrobeCreator.vidro_verde"), Msg.k("wardrobeCreator.vidro_ambar")));
+        material("METAL", Msg.k("wardrobeCreator.material_metal"), 0.3, 0.85, 1.3, "STUDIO", List.of("Dourado", "Prata", "Bronze", "Preto"));
+        material("COURO", Msg.k("wardrobeCreator.material_couro"), 0.55, 0, 1.9, "CLOSET", List.of("Caramelo", "Cognac", "Preto"));
+        material("VELUDO", Msg.k("wardrobeCreator.material_veludo"), 0.95, 0, 1.7, "CLOSET", List.of("Esmeralda", "Vinho", "Azul-noite"));
+        material("LINHO", Msg.k("wardrobeCreator.material_linho"), 0.9, 0, 1.2, "STUDIO", List.of("Off-white", "Areia", "Terracota", "Verde-oliva"));
         material("ACRILICO", Msg.k("wardrobeCreator.acrilico"), 0.15, 0, 1.1, "STUDIO", List.of("Transparente", Msg.k("wardrobeCreator.fume"), "Rosa-blush"));
         material("LA", Msg.k("wardrobeCreator.la"), 1.0, 0, 1.0, "ESTREIA", List.of("Off-white", "Areia", "Terracota", "Verde-oliva", "Grafite"));
         material("LED", "LED", 0.5, 0, 1.0, "STUDIO", List.of(Msg.k("wardrobeCreator.quente_2700_k"), Msg.k("wardrobeCreator.neutra_4000_k"), Msg.k("wardrobeCreator.fria_6000_k")));
-        material("GRANITO", "Granito", 0.25, 0, 2.0, "LOFT", List.of(Msg.k("wardrobeCreator.sao_gabriel"), Msg.k("wardrobeCreator.branco_itaunas"), Msg.k("wardrobeCreator.verde_ubatuba"), Msg.k("wardrobeCreator.vermelho_brasilia")));
-        material("OURO", "Ouro", 0.22, 1.0, 3.0, "PENTHOUSE", List.of(Msg.k("wardrobeCreator.ouro_amarelo"), Msg.k("wardrobeCreator.ouro_rose"), Msg.k("wardrobeCreator.ouro_branco")));
-        material("PRATA", "Prata", 0.2, 1.0, 2.4, "CLOSET", List.of(Msg.k("wardrobeCreator.prata_polida"), Msg.k("wardrobeCreator.prata_envelhecida")));
-        material("BRONZE", "Bronze", 0.35, 0.95, 2.0, "CLOSET", List.of(Msg.k("wardrobeCreator.bronze_antigo"), Msg.k("wardrobeCreator.bronze_escovado")));
-        material("COBRE", "Cobre", 0.3, 0.95, 1.9, "CLOSET", List.of("Cobre", Msg.k("wardrobeCreator.cobre_oxidado")));
-        material("ESPELHO", "Espelho", 0.02, 1.0, 2.1, "LOFT", List.of(Msg.k("wardrobeCreator.espelho_prata"), Msg.k("wardrobeCreator.espelho_bronze")));
-        material("CONCRETO", "Concreto", 0.95, 0, 1.3, "STUDIO", List.of(Msg.k("wardrobeCreator.concreto_claro"), Msg.k("wardrobeCreator.concreto_escuro")));
-        material("RATTAN", "Rattan", 0.85, 0, 1.4, "STUDIO", List.of(Msg.k("wardrobeCreator.rattan_natural"), Msg.k("wardrobeCreator.rattan_escuro")));
+        material("GRANITO", Msg.k("wardrobeCreator.material_granito"), 0.25, 0, 2.0, "LOFT", List.of(Msg.k("wardrobeCreator.sao_gabriel"), Msg.k("wardrobeCreator.branco_itaunas"), Msg.k("wardrobeCreator.verde_ubatuba"), Msg.k("wardrobeCreator.vermelho_brasilia")));
+        material("OURO", Msg.k("wardrobeCreator.material_ouro"), 0.22, 1.0, 3.0, "PENTHOUSE", List.of(Msg.k("wardrobeCreator.ouro_amarelo"), Msg.k("wardrobeCreator.ouro_rose"), Msg.k("wardrobeCreator.ouro_branco")));
+        material("PRATA", Msg.k("wardrobeCreator.material_prata"), 0.2, 1.0, 2.4, "CLOSET", List.of(Msg.k("wardrobeCreator.prata_polida"), Msg.k("wardrobeCreator.prata_envelhecida")));
+        material("BRONZE", Msg.k("wardrobeCreator.material_bronze"), 0.35, 0.95, 2.0, "CLOSET", List.of(Msg.k("wardrobeCreator.bronze_antigo"), Msg.k("wardrobeCreator.bronze_escovado")));
+        material("COBRE", Msg.k("wardrobeCreator.material_cobre"), 0.3, 0.95, 1.9, "CLOSET", List.of("Cobre", Msg.k("wardrobeCreator.cobre_oxidado")));
+        material("ESPELHO", Msg.k("wardrobeCreator.material_espelho"), 0.02, 1.0, 2.1, "LOFT", List.of(Msg.k("wardrobeCreator.espelho_prata"), Msg.k("wardrobeCreator.espelho_bronze")));
+        material("CONCRETO", Msg.k("wardrobeCreator.material_concreto"), 0.95, 0, 1.3, "STUDIO", List.of(Msg.k("wardrobeCreator.concreto_claro"), Msg.k("wardrobeCreator.concreto_escuro")));
+        material("RATTAN", Msg.k("wardrobeCreator.material_rattan"), 0.85, 0, 1.4, "STUDIO", List.of(Msg.k("wardrobeCreator.rattan_natural"), Msg.k("wardrobeCreator.rattan_escuro")));
         material("ACO", Msg.k("wardrobeCreator.aco_escovado"), 0.4, 0.9, 1.6, "LOFT", List.of(Msg.k("wardrobeCreator.aco_escovado"), Msg.k("wardrobeCreator.aco_grafite")));
         // exclusivo da edição limitada de fábrica (não aparece no criador de marcas)
         material("HOLOGRAFICO", Msg.k("common.holografico"), 0.1, 0.6, 3.0, "PENTHOUSE", List.of(Msg.k("wardrobeCreator.holografico_lilas")));
@@ -162,18 +162,38 @@ public class WardrobeCreatorService {
         return n.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
     }
 
+    /** Nome da cor para exibir: as cores de fábrica têm o nome em pt-BR como identidade (SKU) e ganham texto adiado quando há tradução. */
+    static String colorLabel(String name) {
+        if (name == null) {
+            return null;
+        }
+        String key = "wardrobeCreator.cor_" + slug(name).toLowerCase(Locale.ROOT);
+        return Msg.has(key) ? Msg.k(key) : name;
+    }
+
+    /** Itens de fábrica guardaram o nome pronto no idioma de quem os criou: recompõe de bloco, material e cor no idioma de quem lê. */
+    static String factoryName(RoomCatalogItem c) {
+        Block b = BLOCKS.stream().filter(x -> x.moldId().equals(c.getMoldId())).findFirst().orElse(null);
+        Material m = c.getMaterial() == null ? null : MATERIALS.get(c.getMaterial());
+        if (c.getCreatorUserId() != null || !"COMPONENT".equals(c.getKind()) || b == null || m == null || c.getColorName() == null) {
+            return c.getName();
+        }
+        return b.label() + " — " + m.label() + " " + colorLabel(c.getColorName());
+    }
+
     /** Acabamento (finish) salvo no módulo do quarto quando o item é aplicado. */
     static Map<String, Object> finish(String material, String colorName, String hex, String logoUrl, String artUrl, String label, UUID sealId, String creator) {
         Material m = MATERIALS.getOrDefault(material, MATERIALS.get("FOSCO"));
         Map<String, Object> f = new LinkedHashMap<>();
         f.put("color", hex);
         f.put("colorName", colorName);
-        f.put("texture", m.label().toLowerCase(Locale.ROOT));
+        f.put("texture", Msg.resolve(Msg.PT_BR, m.label()).toLowerCase(Locale.ROOT));   // código estável (pt-BR), não o rótulo do idioma de quem lê
         f.put("material", m.code());
         f.put("roughness", m.roughness());
         f.put("metalness", m.metalness());
         if ("LED".equals(m.code())) {
-            f.put("kelvin", colorName != null && colorName.startsWith("Quente") ? 2700 : colorName != null && colorName.startsWith("Fria") ? 6000 : 4000);
+            String warmth = colorName == null ? "" : Msg.resolve(Msg.PT_BR, colorName);
+            f.put("kelvin", warmth.startsWith("Quente") ? 2700 : warmth.startsWith("Fria") ? 6000 : 4000);
             f.put("guided", true);
         }
         if (logoUrl != null) {
@@ -217,7 +237,7 @@ public class WardrobeCreatorService {
                     }
                     RoomCatalogItem c = new RoomCatalogItem();
                     c.setSku(sku);
-                    c.setName(b.label() + " — " + m.label() + " " + color);
+                    c.setName(b.label() + " — " + m.label() + " " + colorLabel(color));
                     c.setMoldId(b.moldId());
                     c.setSlotType(b.slotType());
                     c.setWidthCm(b.widthCm());
@@ -293,8 +313,12 @@ public class WardrobeCreatorService {
         User u = creator(user);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("blocks", BLOCKS);
-        out.put("materials", MATERIALS.values());
-        out.put("colors", COLORS);
+        // o cliente usa o nome da cor como identidade (lista do material ↔ mapa de cores): os dois saem no idioma de quem lê, iguais entre si
+        out.put("materials", MATERIALS.values().stream().map(m -> new Material(m.code(), m.label(), m.roughness(), m.metalness(), m.priceFactor(), m.minLevel(),
+                m.colors().stream().map(n -> Msg.resolve(colorLabel(n))).toList())).toList());
+        Map<String, String> colors = new LinkedHashMap<>();
+        COLORS.forEach((n, hex) -> colors.put(Msg.resolve(colorLabel(n)), hex));
+        out.put("colors", colors);
         out.put("levels", LEVELS);
         out.put("identity", identity(u));
         out.put("seals", seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealStatus.ACTIVE).stream()
@@ -325,7 +349,7 @@ public class WardrobeCreatorService {
             c.setCreatorUserId(u.getId());
             c.setCreatedAt(Instant.now());
         } else {
-            c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound("Item"));
+            c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("entity.item")));
             if (!u.getId().equals(c.getCreatorUserId())) {
                 throw guard.deny(user, "room-creator:" + sku, Msg.t("wardrobeCreator.item_de_outra_marca"));
             }
@@ -339,7 +363,7 @@ public class WardrobeCreatorService {
         c.setArtUrl(url(f.artUrl()));
         UUID sealId = null;
         if (f.sealId() != null) {
-            Seal s = seals.findById(f.sealId()).orElseThrow(() -> ApiException.notFound("Selo"));
+            Seal s = seals.findById(f.sealId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.selo")));
             if (!s.getOwner().getId().equals(u.getId())) {
                 throw guard.deny(user, "seal:" + f.sealId(), Msg.t("wardrobeCreator.selo_de_outro_perfil"));
             }
@@ -412,7 +436,7 @@ public class WardrobeCreatorService {
     @Transactional
     public void delete(CurrentUser user, String sku) {
         User u = creator(user);
-        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound("Item"));
+        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("entity.item")));
         if (!u.getId().equals(c.getCreatorUserId())) {
             throw guard.deny(user, "room-creator:" + sku, Msg.t("wardrobeCreator.item_de_outra_marca"));
         }
@@ -507,7 +531,7 @@ public class WardrobeCreatorService {
     public Map<String, Object> view(RoomCatalogItem c, UUID buyer) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("sku", c.getSku());
-        m.put("name", c.getName());
+        m.put("name", factoryName(c));
         m.put("kind", c.getKind());
         m.put("description", c.getDescription());
         m.put("moldId", c.getMoldId());
@@ -516,7 +540,7 @@ public class WardrobeCreatorService {
         m.put("widthCm", c.getWidthCm());
         m.put("material", c.getMaterial());
         m.put("materialLabel", c.getMaterial() == null ? null : MATERIALS.containsKey(c.getMaterial()) ? MATERIALS.get(c.getMaterial()).label() : c.getMaterial());
-        m.put("colorName", c.getColorName());
+        m.put("colorName", colorLabel(c.getColorName()));
         m.put("finish", Json.map(c.getFinishJson()));
         m.put("bundle", c.getBundleJson() == null ? List.of() : Json.list(c.getBundleJson()));
         m.put("rarity", c.getRarity());
@@ -554,7 +578,7 @@ public class WardrobeCreatorService {
     static Material material(Block b, String code) {
         String c = code == null ? b.materials().get(0) : code.toUpperCase(Locale.ROOT);
         if (!b.materials().contains(c)) {
-            throw ApiException.badRequest("MATERIAL_INVALIDO", b.label() + " aceita: " + b.materials());
+            throw ApiException.badRequest("MATERIAL_INVALIDO", Msg.t("wardrobeCreator.aceita", b.label(), b.materials()));
         }
         return MATERIALS.get(c);
     }

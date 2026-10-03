@@ -113,10 +113,10 @@ public class ShowcaseService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> look3d(CurrentUser viewer, UUID schemeId) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))
                 || !schemeService.canView(viewer, s)) {
-            throw ApiException.notFound("Esquema");
+            throw ApiException.notFound(Msg.t("entity.esquema"));
         }
         return look(s, viewer);
     }
@@ -337,7 +337,7 @@ public class ShowcaseService {
     @Transactional
     public Map<String, Object> groupingCover(CurrentUser user, UUID id, byte[] bytes) {
         guard.requireCanCreate(user);
-        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
         guard.requireOwner(user, g.getOwner().getId(), "grouping:" + id);
         br.com.fashionai.application.imaging.ImageOps.requireAcceptedImage(bytes);
         java.awt.image.BufferedImage img = br.com.fashionai.application.imaging.ImageOps.scaleToFit(
@@ -776,7 +776,7 @@ public class ShowcaseService {
         User u = owner(slug, Kind.ERAS);
         List<Scheme> ss = visibleSchemes(viewer, u);
         Scheme chosen = schemeId == null ? ss.stream().max(Comparator.comparing((Scheme s) -> hype(s.getHypeScore()))).orElse(null)
-                : ss.stream().filter(s -> s.getId().equals(schemeId)).findFirst().orElseThrow(() -> ApiException.notFound("Esquema"));
+                : ss.stream().filter(s -> s.getId().equals(schemeId)).findFirst().orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         String photo = celebrities.findByOwnerId(u.getId()).map(c -> c.getAvatarUrl()).filter(Objects::nonNull).orElse(u.getAvatarUrl());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("celebrity", Views.user(u));

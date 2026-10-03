@@ -1,6 +1,7 @@
 package br.com.fashionai.infrastructure.platform.storage;
 
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class LocalFileMediaStorage implements MediaStoragePort {
         String clean = objectKey.replace('\\', '/').replaceAll("^/+", "");
         Path p = root.resolve(clean).normalize();
         if (!p.startsWith(root) || clean.isBlank()) {
-            throw ApiException.badRequest("CHAVE_INVALIDA", "Chave de mídia inválida.");
+            throw ApiException.badRequest("CHAVE_INVALIDA", Msg.t("localFileMediaStorage.chave_de_midia_invalida"));
         }
         return p;
     }
@@ -68,7 +69,7 @@ public class LocalFileMediaStorage implements MediaStoragePort {
             Files.createDirectories(p.getParent());
             Files.write(p, content);
         } catch (IOException e) {
-            throw new ApiException(500, "ARMAZENAMENTO", "Não foi possível salvar o arquivo agora. Tente de novo.");
+            throw new ApiException(500, "ARMAZENAMENTO", Msg.t("localFileMediaStorage.nao_foi_possivel_salvar"));
         }
         return new StoredObject(objectKey, publicUrl(objectKey).toString(), content.length, contentType);
     }

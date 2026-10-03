@@ -109,7 +109,7 @@ public class UploadQuarantine {
     public byte[] image(ModerationQueueItem q) {
         Object key = meta(q).get("key");
         if (!(key instanceof String k) || !k.startsWith("restricted/moderation/")) {
-            throw ApiException.notFound("Arquivo");
+            throw ApiException.notFound(Msg.t("entity.arquivo"));
         }
         return storage.get(k);
     }

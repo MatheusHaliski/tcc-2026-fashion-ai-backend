@@ -289,7 +289,7 @@ public class FaiPointsService {
 
     @Transactional
     public Map<String, Object> apply(CurrentUser user, UUID inventoryId, String moduleId) {
-        RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound("Item"));
+        RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.item")));
         if (!item.getUserId().equals(user.id())) {
             throw ApiException.forbidden(Msg.t("faiPoints.item_de_outro_usuario"));
         }

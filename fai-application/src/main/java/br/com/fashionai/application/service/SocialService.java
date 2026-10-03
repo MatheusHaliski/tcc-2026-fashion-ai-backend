@@ -102,7 +102,7 @@ public class SocialService {
     Target target(CurrentUser viewer, TargetType type, UUID id) {
         return switch (type) {
             case SCHEME -> {
-                Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
+                Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
                 schemeService.requireView(viewer, s);
                 yield new Target(type, id, s.getUser(), s.getTitle(), s.isDisponivel(), s);
             }
@@ -190,8 +190,8 @@ public class SocialService {
             active = true;
             notifications.notify(t.owner().getId(), user.id(), reaction == ReactionType.LIKE ? NotificationType.NEW_LIKE
                             : NotificationType.NEW_REACTION, type.name(), id,
-                    "@" + user.username() + (reaction == ReactionType.LIKE ? " curtiu " : " reagiu (" + label(reaction) + ") a ")
-                            + "\"" + t.title() + "\"", null, Map.of("reaction", reaction.name()));
+                    reaction == ReactionType.LIKE ? Msg.k("social.curtiu", user.username(), t.title())
+                            : Msg.k("social.reagiu", user.username(), label(reaction), t.title()), null, Map.of("reaction", reaction.name()));
             if (reaction == ReactionType.LIKE) {
                 // RF35 §5.2 — curtida recebida (+1, 50/dia no total; interação consigo mesmo não pontua)
                 events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "LIKE", id));
@@ -205,12 +205,12 @@ public class SocialService {
     }
 
     static String label(ReactionType r) {
-        return switch (r) {
-            case LIKE -> "curtida";
-            case TREND -> "trend";
-            case ELEGANTE -> "elegante";
-            case CRIATIVO -> "criativo";
-        };
+        return Msg.k(switch (r) {   // texto adiado: a notificação é lida no idioma de quem a recebe
+            case LIKE -> "social.reacao_curtida";
+            case TREND -> "social.reacao_trend";
+            case ELEGANTE -> "social.reacao_elegante";
+            case CRIATIVO -> "social.reacao_criativo";
+        });
     }
 
     // ------------------------------------------------------------------ CA04–CA06 comentários
@@ -330,7 +330,7 @@ public class SocialService {
         shares.save(s);
         bump(t, "shares", 1);
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REACTION, type.name(), id,
-                "@" + user.username() + " compartilhou \"" + t.title() + "\"", null, Map.of("channel", channel.name()));
+                Msg.k("social.compartilhou", user.username(), t.title()), null, Map.of("channel", channel.name()));
         out.put("shareId", s.getId());
         out.put("channel", channel);
         out.put("shares", shares.countByTargetTypeAndTargetId(type, id));

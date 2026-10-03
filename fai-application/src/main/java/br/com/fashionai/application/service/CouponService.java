@@ -234,7 +234,7 @@ public class CouponService {
     }
 
     private CouponRight ownRight(CurrentUser user, UUID id) {
-        CouponRight r = rights.findById(id).orElseThrow(() -> ApiException.notFound("Cupom"));
+        CouponRight r = rights.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.cupom")));
         guard.requireOwner(user, r.getUser().getId(), "coupon-right:" + id);
         return r;
     }
@@ -333,9 +333,9 @@ public class CouponService {
             flair.validateCode(user, code);
             return couponView(flairRedemptions.findByCode(code).orElseThrow());
         }
-        PromotionRedemption r = promotionRedemptions.findByCode(code).orElseThrow(() -> ApiException.notFound("Cupom"));
+        PromotionRedemption r = promotionRedemptions.findByCode(code).orElseThrow(() -> ApiException.notFound(Msg.t("entity.cupom")));
         if (!me.getId().equals(r.getIssuerUserId()) && !me.getId().equals(r.getPartnerBrandUserId())) {
-            throw ApiException.notFound("Cupom");
+            throw ApiException.notFound(Msg.t("entity.cupom"));
         }
         if (r.getStatus() == RedemptionStatus.USED) {
             throw ApiException.conflict("CUPOM_USADO", Msg.t("coupon.cupom_ja_usado"));

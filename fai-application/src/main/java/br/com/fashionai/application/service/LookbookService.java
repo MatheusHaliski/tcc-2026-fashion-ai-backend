@@ -101,7 +101,7 @@ public class LookbookService {
     // ================================================================== visão geral (CA01/CA08)
     @Transactional
     public Map<String, Object> overview(CurrentUser viewer, UUID ownerId) {
-        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         boolean self = viewer != null && viewer.id().equals(ownerId);
         boolean canSee = self || guard.canView(viewer, ownerId, owner.getProfileVisibility());
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(ownerId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
@@ -207,7 +207,7 @@ public class LookbookService {
     /** RF6.CA12 — favoritar look próprio ou salvo; refletido em todas as telas que exibem o card. */
     @Transactional
     public Map<String, Object> favorite(CurrentUser user, UUID schemeId, boolean favorite) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         if (s.getUser().getId().equals(user.id())) {
             return schemeService.toggles(user, schemeId, favorite, null);
         }
@@ -366,7 +366,7 @@ public class LookbookService {
 
     @Transactional
     public void discardGroup(CurrentUser user, UUID groupId) {
-        AcervoGroup g = acervoGroups.findById(groupId).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+        AcervoGroup g = acervoGroups.findById(groupId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
         guard.requireOwner(user, g.getUser().getId(), "acervo-group:" + groupId);
         acervoGroups.delete(g);
     }
@@ -433,7 +433,7 @@ public class LookbookService {
 
     @Transactional
     public Map<String, Object> updateGrouping(CurrentUser user, UUID id, GroupingForm f) {
-        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
         guard.requireOwner(user, g.getOwner().getId(), "grouping:" + id);
         if (f.label() != null) {
             g.setLabel(InputSanitizer.required("label", f.label(), 2, 80));
@@ -455,7 +455,7 @@ public class LookbookService {
 
     @Transactional
     public void deleteGrouping(CurrentUser user, UUID id) {
-        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
         guard.requireOwner(user, g.getOwner().getId(), "grouping:" + id);
         for (Scheme s : schemes.findByUserIdOrderByCreatedAtDesc(user.id())) {
             if (id.equals(s.getGroupingId())) {
@@ -473,7 +473,7 @@ public class LookbookService {
     @Transactional
     public Map<String, Object> assignToGrouping(CurrentUser user, UUID groupingId, List<UUID> schemeIds, List<UUID> pieceIds) {
         if (groupingId != null) {
-            SchemeGrouping g = groupings.findById(groupingId).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+            SchemeGrouping g = groupings.findById(groupingId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
             guard.requireOwner(user, g.getOwner().getId(), "grouping:" + groupingId);
         }
         int n = 0;
@@ -492,7 +492,7 @@ public class LookbookService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> groupingsOf(CurrentUser viewer, UUID ownerId) {
-        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         boolean self = viewer != null && viewer.id().equals(ownerId);
         // mesma regra do perfil: perfil privado/restrito (ou bloqueio) não expõe nem os nomes dos agrupamentos
         if (!self && !guard.canView(viewer, ownerId, owner.getProfileVisibility())) {
@@ -530,7 +530,7 @@ public class LookbookService {
     /** Esquemas visíveis de um agrupamento (eras/fases/temporadas do RF22, coleções do RF14). */
     @Transactional(readOnly = true)
     public List<Views.SchemeView> groupingSchemes(CurrentUser viewer, UUID groupingId) {
-        SchemeGrouping g = groupings.findById(groupingId).orElseThrow(() -> ApiException.notFound("Agrupamento"));
+        SchemeGrouping g = groupings.findById(groupingId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.agrupamento")));
         UUID ownerId = g.getOwner().getId();
         return schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED).stream()
                 .filter(s -> groupingId.equals(s.getGroupingId()))

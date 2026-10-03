@@ -26,7 +26,7 @@ public final class Msg {
     /** Marcador de texto adiado: {@code §i18n:chave\u001Farg1\u001Farg2§} — resolvido na serialização JSON (I18nJsonModule) no idioma de quem lê. */
     public static final String MARK = "§i18n:";
     private static final char SEP = '\u001F';
-    private static final Pattern MARK_RE = Pattern.compile("§i18n:([A-Za-z0-9_.\\-]+)((?:\u001F[^§]*)*)§");
+    private static final Pattern MARK_RE = Pattern.compile("§i18n:([A-Za-z0-9_.\\-]+)((?:\u001F[^§]*)*)§(?!i18n:)");   // o § final nunca é o início de um marcador-argumento: o mais interno resolve primeiro
     private static final ResourceBundle.Control NO_FALLBACK = ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES);
 
     private Msg() {
@@ -82,7 +82,7 @@ public final class Msg {
      */
     public static String k(String key, Object... args) {
         StringBuilder sb = new StringBuilder(MARK).append(key);
-        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : String.valueOf(a).replace(SEP, ' '));   // um marcador pode ser argumento de outro
+        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : hasMark(String.valueOf(a)) ? String.valueOf(a) : String.valueOf(a).replace(SEP, ' '));   // um marcador pode ser argumento de outro
         return sb.append('§').toString();
     }
 

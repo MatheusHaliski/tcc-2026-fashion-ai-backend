@@ -1,5 +1,6 @@
 package br.com.fashionai.domain.model;
 
+import br.com.fashionai.domain.model.enums.SealFormat;
 import br.com.fashionai.domain.model.enums.SealStatus;
 import br.com.fashionai.domain.model.enums.SealTier;
 import jakarta.persistence.Column;
@@ -38,6 +39,11 @@ public class Seal extends VersionedAuditableEntity {
     @Column(nullable = false, length = 10)
     private SealTier tier = SealTier.LOOK;
 
+    /** Formato (silhueta) do selo: CIRCULAR, FOLHA ou FASHION_AI. Também vai no desenho (design.format) e na política (aesthetics.format). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 12)
+    private SealFormat format = SealFormat.CIRCULAR;
+
     @Column(name = "policy_text", length = 2048)
     private String policyText;
 
@@ -53,6 +59,13 @@ public class Seal extends VersionedAuditableEntity {
 
     @Column(name = "background_config_json", columnDefinition = "json")
     private String backgroundConfigJson;
+
+    /**
+     * RF20.CA24–CA30 — política do selo (SealPolicy) devolvida pelo Copilot "Definir selo" e validada no servidor
+     * (elegibilidade, revisão, validade, teto, promoção, estética). É esse objeto, e não texto, que o formulário grava.
+     */
+    @Column(name = "policy_json", columnDefinition = "json")
+    private String policyJson;
 
     @Column(name = "available_from")
     private Instant availableFrom;

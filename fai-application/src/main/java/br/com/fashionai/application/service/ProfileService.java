@@ -68,7 +68,7 @@ public class ProfileService {
             u = users.findByUsernameIgnoreCase(idOrUsername.startsWith("@") ? idOrUsername.substring(1) : idOrUsername);
         }
         return u.filter(x -> x.getStatus() != AccountStatus.DELETED && x.getStatus() != AccountStatus.DELETION_SCHEDULED)
-                .orElseThrow(() -> ApiException.notFound("Perfil"));
+                .orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
     }
 
     FollowStatus relation(UUID viewer, UUID target) {
@@ -80,7 +80,7 @@ public class ProfileService {
         User u = resolve(idOrUsername);
         boolean self = viewer != null && viewer.id().equals(u.getId());
         if (!self && viewer != null && relation(u.getId(), viewer.id()) == FollowStatus.BLOQUEADO) {
-            throw ApiException.notFound("Perfil");
+            throw ApiException.notFound(Msg.t("entity.perfil"));
         }
         FollowStatus rel = self || viewer == null ? null : relation(viewer.id(), u.getId());
         boolean canSee = self || guard.canView(viewer, u.getId(), u.getProfileVisibility());
@@ -127,9 +127,9 @@ public class ProfileService {
         if (viewer.id().equals(targetId)) {
             throw ApiException.badRequest("SEGUIR_A_SI", Msg.t("profile.voce_nao_pode_seguir_a"));
         }
-        User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         if (relation(targetId, viewer.id()) == FollowStatus.BLOQUEADO) {
-            throw ApiException.notFound("Perfil");
+            throw ApiException.notFound(Msg.t("entity.perfil"));
         }
         Follow f = follows.findByFollowerIdAndFollowingId(viewer.id(), targetId).orElseGet(() -> {
             Follow n = new Follow();
@@ -171,7 +171,7 @@ public class ProfileService {
 
     @Transactional
     public Map<String, Object> respond(CurrentUser user, UUID followId, boolean accept) {
-        Follow f = follows.findById(followId).orElseThrow(() -> ApiException.notFound("Pedido"));
+        Follow f = follows.findById(followId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.pedido")));
         guard.requireOwner(user, f.getFollowing().getId(), "follow:" + followId);
         if (f.getStatus() != FollowStatus.PENDENTE) {
             throw new ApiException(409, "PEDIDO_RESPONDIDO", Msg.t("profile.este_pedido_ja_foi_respondido"));
@@ -190,7 +190,7 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> connections(CurrentUser viewer, UUID userId) {
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         if (!viewer.id().equals(userId) && !guard.canView(viewer, userId, u.getProfileVisibility())) {
             throw guard.deny(viewer, "connections:" + userId, Msg.t("profile.as_conexoes_deste_perfil_nao"));
         }
@@ -204,7 +204,7 @@ public class ProfileService {
         if (user.id().equals(targetId)) {
             throw ApiException.badRequest("BLOQUEIO_INVALIDO", Msg.t("profile.voce_nao_pode_bloquear_a"));
         }
-        User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User target = users.findById(targetId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         follows.findByFollowerIdAndFollowingId(targetId, user.id()).ifPresent(follows::delete);
         Optional<Follow> mine = follows.findByFollowerIdAndFollowingId(user.id(), targetId);
         if (block) {

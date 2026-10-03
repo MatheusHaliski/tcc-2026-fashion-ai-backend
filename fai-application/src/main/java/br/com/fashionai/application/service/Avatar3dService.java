@@ -62,7 +62,7 @@ public class Avatar3dService {
     static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
             + "rosto de um avatar 3D, gerada a partir de uma foto da própria pessoa. Aprove quando for um rosto humano comum. "
             + "Recuse nudez ou conteúdo sexual, violência ou sangue, símbolos de ódio, texto ou gestos ofensivos, ou imagem que "
-            + "não seja um rosto. Responda só JSON: {\"approved\": true|false, \"reason\": \"motivo curto\"}.";
+            + "não seja um rosto. Responda só JSON: {\"approved\": true|false, \"reason\": \"motivo curto em {idioma}\"}.";
 
     private final UserAvatar3dRepository avatars;
     private final UserRepository users;
@@ -207,7 +207,7 @@ public class Avatar3dService {
      */
     ModerationStatus moderateTexture(UUID userId, byte[] jpeg) {
         byte[] small = ImageOps.jpeg(ImageOps.scaleToFit(ImageOps.decode(jpeg), 512, 512), 0.85f);
-        AiOutcome<Boolean> out = ai.text(new AiEngine.TextCall<>(userId, AiCapability.CONTENT_MODERATOR, TEXTURE_MODERATION_SYSTEM,
+        AiOutcome<Boolean> out = ai.text(new AiEngine.TextCall<>(userId, AiCapability.CONTENT_MODERATOR, TEXTURE_MODERATION_SYSTEM.replace("{idioma}", Msg.languageName()),
                 Msg.t("wardrobe.classifique_a_imagem_anexada"), List.of(new AiRequest.AiImage(small, "image/jpeg")), 200,
                 List.of(Msg.t("avatar3d.textura_do_rosto_reduzida")), Avatar3dService::parseVerdict, () -> null, null));
         Boolean approved = out == null ? null : out.value();

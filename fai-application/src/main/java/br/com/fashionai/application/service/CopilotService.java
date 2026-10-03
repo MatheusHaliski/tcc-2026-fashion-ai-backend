@@ -880,7 +880,7 @@ public class CopilotService {
         out.put("purchaseSuggestions", enabled ? purchases.stream().limit(3).toList() : List.of());
         out.put("purchaseSuggestionsEnabled", enabled);
         out.put("purchaseRules", List.of(Msg.t("copilot.reuso_antes_de_compra"), Msg.t("copilot.combinacoes_visivel"), Msg.t("copilot.sem_marca_ou_produto"), Msg.t("copilot.patrocinio_so_em_bloco_separado"), Msg.t("copilot.opt_out_em_preferencias")));
-        out.put("sponsored", Map.of("label", "Patrocinado", "items", List.of(), "note", Msg.t("copilot.conteudo_de_marca_nunca_entra")));
+        out.put("sponsored", Map.of("label", Msg.t("copilot.patrocinado"), "items", List.of(), "note", Msg.t("copilot.conteudo_de_marca_nunca_entra")));
         out.put("text", String.join(" ", findings) + (purchases.isEmpty() || !enabled ? "" : Msg.t("copilot.depois_de_reaproveitar_o_que", purchases.get(0).get("subcategory"), purchases.get(0).get("color"), purchases.get(0).get("gainText"))));
         out.put("tools", List.of("buscar_pecas", "historico_uso", "ler_inventory_score"));
         return out;
@@ -939,7 +939,7 @@ public class CopilotService {
             s.put("description", message);
         }
         Map<String, Object> out = new LinkedHashMap<>(result);
-        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", "Sem combinações novas.")) : lookSummary(suggestions.size(), occasions));
+        out.put("text", suggestions.isEmpty() ? String.valueOf(result.getOrDefault("message", Msg.t("copilot.sem_combinacoes_novas"))) : lookSummary(suggestions.size(), occasions));
         if (!backgroundRequest.unresolved().isEmpty()) out.put("backgroundNotice", backgroundRequest.unresolved());
         List<Map<String, Object>> lookCards = suggestions.stream().map(s -> {
             Map<String, Object> card = new LinkedHashMap<>();

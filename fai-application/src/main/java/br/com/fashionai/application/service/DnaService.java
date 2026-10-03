@@ -214,9 +214,9 @@ public class DnaService {
     }
 
     static Map<String, Object> lifeFormSpec() {
-        return Map.of("places", Map.of("label", "Lugares", "max", 3, "examples", Msg.t("dna.cidade_natal_lugar_favorito_destino")),
-                "people", Map.of("label", "Pessoas", "max", 3, "examples", Msg.t("dna.nomes_ou_apelidos_sem_foto")),
-                "animals", Map.of("label", "Animais", "max", 2, "examples", Msg.t("dna.nome_e_especie_do_pet")),
+        return Map.of("places", Map.of("label", Msg.t("dna.lugares"), "max", 3, "examples", Msg.t("dna.cidade_natal_lugar_favorito_destino")),
+                "people", Map.of("label", Msg.t("dna.pessoas"), "max", 3, "examples", Msg.t("dna.nomes_ou_apelidos_sem_foto")),
+                "animals", Map.of("label", Msg.t("dna.animais"), "max", 2, "examples", Msg.t("dna.nome_e_especie_do_pet")),
                 "objects", Map.of("label", Msg.t("dna.objetos_itens"), "max", 4, "examples", Msg.t("dna.instrumento_livro_bebida_hobby_esporte")),
                 "maxChars", 30, "encrypted", true);
     }
@@ -498,7 +498,7 @@ public class DnaService {
         g.setFont(new Font("Serif", Font.BOLD, 72));
         g.drawString(Msg.resolve(Msg.t("common.dna_de_estilo")), 110, 200);
         g.setFont(new Font("SansSerif", Font.PLAIN, 34));
-        g.drawString(Msg.resolve(ARCHETYPE_LABEL.get(d.getArchetype()) + " · silhueta " + d.getSilhouette() + " · ousadia " + d.getBoldnessIndex()), 110, 260);
+        g.drawString(Msg.resolve(Msg.t("dna.card_arquetipo_silhueta_ousadia", ARCHETYPE_LABEL.get(d.getArchetype()), d.getSilhouette(), d.getBoldnessIndex())), 110, 260);
         int x = 110;
         for (String p : palette) {
             g.setColor(color(p));
@@ -521,10 +521,10 @@ public class DnaService {
                 continue; // RN07 — campo privado nunca aparece na imagem
             }
             String label = switch (k) {
-                case "places" -> "Lugares";
-                case "people" -> "Pessoas";
-                case "animals" -> "Animais";
-                default -> "Objetos";
+                case "places" -> Msg.t("dna.lugares");
+                case "people" -> Msg.t("dna.pessoas");
+                case "animals" -> Msg.t("dna.animais");
+                default -> Msg.t("dna.objetos");
             };
             g.drawString(Msg.resolve(label + ": " + l.stream().map(String::valueOf).collect(Collectors.joining(" · "))), 110, y);
             y += 50;
@@ -697,7 +697,7 @@ public class DnaService {
             if (!seen.add(c.schemeId())) {
                 throw ApiException.badRequest("ESQUEMA_REPETIDO", Msg.t("dna.cada_esquema_entra_uma_vez"));
             }
-            Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound("Esquema"));
+            Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
             guard.requireOwner(user, s.getUser().getId(), "scheme:" + s.getId());
             DnaSchemeItem it = new DnaSchemeItem();
             it.setDnaScheme(d);
@@ -879,7 +879,7 @@ public class DnaService {
             if (refs.size() == slots.length || c.schemeId() == null || !seen.add(c.schemeId())) {
                 continue;
             }
-            Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound("Esquema"));
+            Scheme s = schemes.findById(c.schemeId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
             guard.requireOwner(user, s.getUser().getId(), "scheme:" + s.getId());
             refs.add(new CellRef(slots[refs.size()], s, c.eraLabel() == null ? null : InputSanitizer.clean(c.eraLabel(), 120), Boolean.TRUE.equals(c.milestone())));
         }
@@ -947,7 +947,8 @@ public class DnaService {
                 Proponha até 3 DNAs diferentes entre si. Responda SOMENTE com JSON:
                 {"compositions":[{"title":string,"narrativeType":string|null,"cardLayout":string,"refs":["s1",...],
                 "eraLabels":{"s1":"2024 · primeiro emprego"},"milestone":"s2"|null,"seasonalTheme":string|null,
-                "occasion":[...],"style":[...],"rationale":"até 2 frases"}]}""";
+                "occasion":[...],"style":[...],"rationale":"até 2 frases"}]}"""
+                + "\nEscreva title, rationale e eraLabels em " + Msg.languageName() + "; narrativeType, cardLayout, refs, occasion e style seguem os códigos acima.";
         String prompt = Msg.t("dna.esquemas_dna_sintetizado_ocasiao_estilo", Json.write(catalog), Json.write(Map.of("archetype", String.valueOf(dna.getArchetype()), "palette", Json.csv(dna.getColorPalette()),
                 "styles", Json.csv(dna.getStyleKeywords()), "silhouette", String.valueOf(dna.getSilhouette()))), r.occasion(), r.style(), r.narrativeType(), r.season(), (r.prompt() == null ? "" : InputSanitizer.clean(r.prompt(), 500)));
         List<String> inputs = List.of(Msg.t("dna.esquemas_de_vestimenta_seus_pecas", (own.size())),

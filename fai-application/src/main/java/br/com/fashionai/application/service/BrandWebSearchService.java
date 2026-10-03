@@ -14,6 +14,7 @@ import br.com.fashionai.application.ports.WebFetchPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Buscador de marcas na internet do formulário de peça (RF4). Não existe catálogo de marcas pré-cadastrado: cada busca
@@ -105,7 +107,8 @@ public class BrandWebSearchService {
         if (q.length() < 2 || q.length() > 60) {
             throw ApiException.badRequest("BUSCA_INVALIDA", Msg.t("brandWebSearch.digite_de_2_a_60"));
         }
-        String key = BrandLogoService.keyOf(q) + (allowAi ? "|ia" : "");
+        Locale locale = Msg.locale();   // o pool não herda o idioma da requisição (thread-local): cada tarefa assíncrona o recebe
+        String key = BrandLogoService.keyOf(q) + (allowAi ? "|ia" : "") + "|" + locale.toLanguageTag();   // o cache guarda textos já no idioma de quem buscou
         Cached c = queries.get(key);
         if (c != null && c.at().isAfter(Instant.now().minus(QUERY_TTL))) {
             Map<String, Object> out = new LinkedHashMap<>(c.body());
@@ -115,12 +118,12 @@ public class BrandWebSearchService {
         long t0 = System.nanoTime();
         List<Map<String, Object>> sources = new ArrayList<>();
         List<Hit> hits = new ArrayList<>();
-        CompletableFuture<List<Hit>> wd = CompletableFuture.supplyAsync(() -> wikidata(q), pool);
-        CompletableFuture<List<Hit>> si = CompletableFuture.supplyAsync(() -> simpleIcons(q), pool);
+        CompletableFuture<List<Hit>> wd = async(locale, () -> wikidata(q));
+        CompletableFuture<List<Hit>> si = async(locale, () -> simpleIcons(q));
         hits.addAll(collect(wd, "WIKIDATA", "Wikidata (Wikimedia)", sources));
         hits.addAll(collect(si, "SIMPLE_ICONS", Msg.t("brandWebSearch.simple_icons_github"), sources));
         if (allowAi && q.length() >= 3 && hits.stream().filter(h -> h.match() <= 1).count() < 2) {
-            hits.addAll(collect(CompletableFuture.supplyAsync(() -> aiSearch(userId, q), pool), "IA_BUSCA_WEB", Msg.t("brandWebSearch.ia_com_busca_na_web"), sources));
+            hits.addAll(collect(async(locale, () -> aiSearch(userId, q)), "IA_BUSCA_WEB", Msg.t("brandWebSearch.ia_com_busca_na_web"), sources));
         } else {
             sources.add(Map.of("source", "IA_BUSCA_WEB", "label", Msg.t("brandWebSearch.ia_com_busca_na_web"), "status", "NAO_USADA",
                     "note", allowAi ? Msg.t("brandWebSearch.as_outras_fontes_ja_trouxeram") : Msg.t("brandWebSearch.ia_remota_desligada_nas_preferencias")));
@@ -130,7 +133,7 @@ public class BrandWebSearchService {
         for (int i = 0; i < merged.size(); i++) {
             Hit h = merged.get(i);
             boolean withLogo = i < MAX_LOGOS_PER_SEARCH;
-            jobs.add(CompletableFuture.supplyAsync(() -> view(h, withLogo ? logoOf(h) : null), pool));
+            jobs.add(async(locale, () -> view(h, withLogo ? logoOf(h) : null)));
         }
         List<Map<String, Object>> results = new ArrayList<>();
         int rejected = 0;
@@ -160,6 +163,18 @@ public class BrandWebSearchService {
             queries.put(key, new Cached(out, Instant.now()));
         }
         return out;
+    }
+
+    /** Roda a tarefa no pool com o idioma da requisição (Msg.t e Msg.languageName leem do LocaleContextHolder, que é por thread). */
+    private <T> CompletableFuture<T> async(Locale locale, Supplier<T> task) {
+        return CompletableFuture.supplyAsync(() -> {
+            LocaleContextHolder.setLocale(locale);
+            try {
+                return task.get();
+            } finally {
+                LocaleContextHolder.resetLocaleContext();
+            }
+        }, pool);
     }
 
     /** O usuário escolheu um resultado: o logo filtrado passa a valer para essa marca em todas as telas. */

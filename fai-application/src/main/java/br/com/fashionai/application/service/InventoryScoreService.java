@@ -100,16 +100,16 @@ public class InventoryScoreService {
         WEIGHTS.put("I", 0.10);
         NAMES.put("C", Msg.k("common.catalogacao"));
         NAMES.put("U", Msg.k("common.utilizacao"));
-        NAMES.put("V", "Versatilidade");
-        NAMES.put("R", "Descoberta");
-        NAMES.put("D", "Diversidade");
+        NAMES.put("V", Msg.k("common.versatilidade"));
+        NAMES.put("R", Msg.k("common.descoberta"));
+        NAMES.put("D", Msg.k("common.diversidade"));
         NAMES.put("O", Msg.k("common.organizacao"));
-        NAMES.put("I", "Identidade");
-        OCCASION_GROUPS.put("faculdade/trabalho", List.of("university", "school", "work", "business"));
-        OCCASION_GROUPS.put("casual", List.of("casual", "home", "travel", "outdoor", "vacation"));
-        OCCASION_GROUPS.put("social", List.of("social", "formal", "wedding", "ceremony", "date"));
-        OCCASION_GROUPS.put("esporte", List.of("sport", "gym"));
-        OCCASION_GROUPS.put("festa", List.of("party", "night_out", "festival"));
+        NAMES.put("I", Msg.k("common.identidade"));
+        OCCASION_GROUPS.put(Msg.k("inventoryScore.faculdade_trabalho"), List.of("university", "school", "work", "business"));
+        OCCASION_GROUPS.put(Msg.k("inventoryScore.casual"), List.of("casual", "home", "travel", "outdoor", "vacation"));
+        OCCASION_GROUPS.put(Msg.k("inventoryScore.social"), List.of("social", "formal", "wedding", "ceremony", "date"));
+        OCCASION_GROUPS.put(Msg.k("inventoryScore.esporte"), List.of("sport", "gym"));
+        OCCASION_GROUPS.put(Msg.k("inventoryScore.festa"), List.of("party", "night_out", "festival"));
     }
 
     public static String band(int score) {
@@ -126,7 +126,7 @@ public class InventoryScoreService {
     private record Cached(Result result, Instant at) {
     }
 
-    private final Map<UUID, Cached> cache = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Cached>> cache = new ConcurrentHashMap<>();   // por usuário e idioma: o resultado já traz textos no idioma de quem pediu
 
     private final WardrobeItemRepository pieces;
     private final SchemeRepository schemes;
@@ -443,12 +443,13 @@ public class InventoryScoreService {
 
     @Transactional
     public Result compute(UUID userId, boolean useCache) {
-        Cached c = cache.get(userId);
+        String lang = Msg.locale().toLanguageTag();
+        Cached c = cache.getOrDefault(userId, Map.of()).get(lang);
         if (useCache && c != null && c.at().plus(CACHE_TTL).isAfter(Instant.now())) {
             return c.result();
         }
         Result r = computeNow(userId);
-        cache.put(userId, new Cached(r, Instant.now()));
+        cache.computeIfAbsent(userId, k -> new ConcurrentHashMap<>()).put(lang, new Cached(r, Instant.now()));
         return r;
     }
 
@@ -520,10 +521,10 @@ public class InventoryScoreService {
         double cob = combos.coverage().values().stream().mapToDouble(b -> b ? 1 : 0).sum() / OCCASION_GROUPS.size();
         int dVal = (int) Math.round(100 * (0.25 * hCat + 0.25 * hCol + 0.25 * hSty + 0.25 * cob));
         dims.put("D", dVal);
-        String weakestAttr = hCat <= hCol && hCat <= hSty ? "categorias" : hCol <= hSty ? Msg.t("inventoryScore.familias_de_cor") : "estilos";
+        String weakestAttr = hCat <= hCol && hCat <= hSty ? Msg.t("inventoryScore.categorias") : hCol <= hSty ? Msg.t("inventoryScore.familias_de_cor") : Msg.t("inventoryScore.estilos");
         List<String> uncovered = combos.coverage().entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).toList();
         explain.add(new Dimension("D", NAMES.get("D"), dVal, WEIGHTS.get("D"), Msg.t("inventoryScore.variedade_util_das_pecas_disponiveis", pct(hCat), pct(hCol), pct(hSty), pct(cob)), List.of(Map.of("name", Msg.t("inventoryScore.atributo_menos_variado"), "value", weakestAttr, "hint", Msg.t("inventoryScore.cadastre_estilos_cores_diferentes")),
-                Map.of("name", Msg.t("inventoryScore.ocasioes_sem_combinacao_completa"), "value", uncovered.isEmpty() ? "nenhuma" : String.join(", ", uncovered),
+                Map.of("name", Msg.t("inventoryScore.ocasioes_sem_combinacao_completa"), "value", uncovered.isEmpty() ? Msg.t("inventoryScore.nenhuma") : String.join(", ", uncovered),
                         "hint", Msg.t("inventoryScore.falta_peca_superior_inferior_ou")))));
 
         // ---- U (população de exposição)

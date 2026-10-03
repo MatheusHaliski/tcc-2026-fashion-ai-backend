@@ -141,7 +141,7 @@ public class SealService {
     @Transactional
     public Map<String, Object> updateSeal(CurrentUser user, UUID sealId, SealForm form) {
         requireIssuer(user);
-        Seal s = seals.findById(sealId).orElseThrow(() -> ApiException.notFound("Selo"));
+        Seal s = seals.findById(sealId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.selo")));
         guard.requireOwner(user, s.getOwner().getId(), "seal:" + sealId);
         applySeal(s, form, s.getOwner());
         audit.log(user, AuditActions.SELO_EDITADO, "seal:" + s.getId(), Map.of("op", "update"));
@@ -309,7 +309,7 @@ public class SealService {
     /** Executa a análise das peças e grava até 3 sugestões (status SUGGESTED). Não bloqueia o salvamento. */
     @Transactional
     public Map<String, Object> suggest(CurrentUser user, UUID schemeId) {
-        Scheme scheme = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme scheme = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + schemeId);
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
         List<String> unregistered = new ArrayList<>();
@@ -537,9 +537,9 @@ public class SealService {
     @Transactional
     public Map<String, Object> linkManually(CurrentUser user, UUID schemeId, UUID targetOwnerId, Boolean imageRightsConsent) {
         guard.requireCanCreate(user);
-        Scheme scheme = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme scheme = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + schemeId);
-        User target = users.findById(targetOwnerId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        User target = users.findById(targetOwnerId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.perfil")));
         if (target.getProfileType() == ProfileType.PESSOAL) {
             throw ApiException.badRequest("PERFIL_INVALIDO", Msg.t("seal.so_marcas_e_celebridades_cadastradas"));
         }
@@ -667,7 +667,7 @@ public class SealService {
         }
         scheme.setSealIdsJson(Json.write(ids));
         notifications.notify(b.getRequestedBy().getId(), b.getTargetOwner().getId(), NotificationType.SEAL_GRANTED, "SEAL_BOND",
-                b.getId(), (seal.isPremium() ? Msg.k("seal.selo_premium_2") : Msg.k("seal.selo_de_marca")) + " emitido!",
+                b.getId(), Msg.k(seal.isPremium() ? "seal.selo_premium_emitido" : "seal.selo_de_marca_emitido"),
                 Msg.k("seal.seu_look_recebeu_o_selo", scheme.getTitle(), seal.getName()), null);
         logBond(null, b, "EMITIDO");
         // o selo pode liberar promoções da marca/celebridade: direitos a cupom + notificação (card RF38)
@@ -725,7 +725,7 @@ public class SealService {
                 b.getScheme().setRevalidationPending(false);
             }
             notifications.notify(b.getRequestedBy().getId(), user.id(), NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND", b.getId(),
-                    Msg.k("seal.vinculo_2", (revalidation ? "revogado" : Msg.k("seal.nao_aprovado"))), "Motivo: " + b.getReviewNote(), null);
+                    Msg.k("seal.vinculo_2", Msg.k(revalidation ? "seal.revogado" : "seal.nao_aprovado")), Msg.k("common.motivo", InputSanitizer.clean(b.getReviewNote(), 400)), null);
             logBond(user, b, revalidation ? "REVOGADO" : "REJEITADO");
         }
         return bondView(b);
@@ -916,7 +916,7 @@ public class SealService {
         }
         p.setDiscountPercent(f.discountPercent());
         if (f.sealId() != null) {
-            Seal seal = seals.findById(f.sealId()).orElseThrow(() -> ApiException.notFound("Selo"));
+            Seal seal = seals.findById(f.sealId()).orElseThrow(() -> ApiException.notFound(Msg.t("entity.selo")));
             guard.requireOwner(user, seal.getOwner().getId(), "seal:" + f.sealId());
             if (seal.getStatus() != SealStatus.ACTIVE) {
                 // RNF12 — promoções só se aplicam a selos ativos.

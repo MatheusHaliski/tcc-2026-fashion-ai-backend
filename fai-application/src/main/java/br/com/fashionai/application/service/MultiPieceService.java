@@ -112,7 +112,7 @@ public class MultiPieceService {
 
         List<DetectedPiece> local = List.of(localPiece());
         AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.MULTI_PIECE_DETECTOR,
-                DETECTOR_SYSTEM, detectorPrompt(),
+                DETECTOR_SYSTEM.replace("{idioma}", Msg.languageName()), detectorPrompt(),
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
                 2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
         List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
@@ -157,7 +157,7 @@ public class MultiPieceService {
             Você é o Multi-Piece Detector do Fashion AI. Você recebe UMA foto que pode ter várias peças (roupas, calçados e
             acessórios) — vestidas por alguém, penduradas ou dispostas numa superfície. Identifique CADA peça visível
             separadamente e responda SOMENTE com JSON:
-            {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+            {"pieces": [{"name": nome curto da peça em {idioma}, traduzindo o exemplo (ex.: "Camiseta branca lisa"),
                          "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
                          "subcategory": código da lista de subtipos do tipo,
                          "color": código da paleta (a cor principal da peça), "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],

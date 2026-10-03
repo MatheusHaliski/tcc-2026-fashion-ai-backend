@@ -20,9 +20,35 @@ import java.util.regex.Pattern;
  */
 public final class SealDesigns {
     /** Proporções medidas no logo (frações do raio): bisel 6 %, campo até 94 %, disco central 45 %, elemento 36 %. */
-    public static final Map<String, Object> GEOMETRY = Map.of(
-            "bezel", 0.06, "fieldOuter", 0.94, "centerDisc", 0.45, "element", 0.36,
-            "uploadRatioTolerance", 0.03, "uploadMinPx", 256, "uploadMaxPx", 4096, "uploadOutputPx", 512);
+    public static final Map<String, Object> GEOMETRY = Map.ofEntries(
+            Map.entry("bezel", 0.06), Map.entry("fieldOuter", 0.94), Map.entry("centerDisc", 0.45), Map.entry("element", 0.36),
+            Map.entry("uploadRatioTolerance", 0.03), Map.entry("uploadMinPx", 256), Map.entry("uploadMaxPx", 4096), Map.entry("uploadOutputPx", 512),
+            // estampa privada no campo do selo (validação mais leve que a do selo inteiro): quadrada, 256–2048 px, saída 1024 px
+            Map.entry("patternMinPx", 256), Map.entry("patternMaxPx", 2048), Map.entry("patternOutputPx", 1024),
+            // formatos FOLHA e FASHION_AI: folha 240 × 300 (4:5) — scripts/selos/gen.py; o selo enviado pronto nesses formatos
+            // respeita a mesma proporção e é salvo em 480 × 600 (o CIRCULAR segue 1:1, circular, 512 × 512)
+            Map.entry("sheetWidth", 240), Map.entry("sheetHeight", 300), Map.entry("uploadSheetOutputWidth", 480),
+            Map.entry("uploadSheetOutputHeight", 600));
+
+    /**
+     * Catálogo do editor "Cadastrar novo selo" (RF20.CA24, docs/novo-projeto/insumos/selos/): os mesmos ids de
+     * scripts/selos/gen_mat.py (materiais), gen.py (molduras) e do doc 06 §4 (centro e denominação). Minúsculos, como
+     * no objeto SealPolicy ({@code aesthetics.*}) — o desenho guarda em {@code design.style} exatamente o que a política diz.
+     */
+    /**
+     * Formato (silhueta) do selo — escolha de primeira classe do editor e do Copilot ({@code aesthetics.format}):
+     * CIRCULAR = medalhão do logo FashionAI; FOLHA = silhueta de folha; FASHION_AI = folha perfurada 4:5 com o emblema
+     * (geometria dos SVGs de docs/novo-projeto/insumos/selos/fashion-ai/). O mesmo enum vive em {@code SealFormat}.
+     */
+    public static final List<String> FORMATS = List.of("CIRCULAR", "FOLHA", "FASHION_AI");
+    public static final List<String> STYLE_MATERIALS = List.of("plastico", "metal", "madeira", "vidro", "marmore", "tecido",
+            "couro", "ceramica", "neon", "concreto", "ouro", "holo");
+    public static final List<String> STYLE_FRAMES = List.of("malha", "hachura", "listras", "chevron", "xadrez", "losango",
+            "perolas", "raios", "ondas", "estrelas");
+    public static final List<String> STYLE_CENTERS = List.of("logo_url", "camisa_3d", "sacola_fai", "vazio");
+    public static final List<String> STYLE_DENOMINATIONS = List.of("year", "edition", "serial");
+    /** RF21.CA20 — Selo Premium (celebridade) só aceita material vítreo. */
+    public static final List<String> PREMIUM_MATERIALS = List.of("vidro", "holo");
 
     public static final List<Map<String, String>> ELEMENTS = List.of(
             item("BAG", Msg.k("sealDesigns.sacola_fai")), item("HANGER", "Cabide"), item("STAR", "Estrela"), item("DIAMOND", "Diamante"),
@@ -71,6 +97,14 @@ public final class SealDesigns {
         m.put("patterns", PATTERNS);
         m.put("materials", MATERIALS);
         m.put("palettes", PALETTES);
+        Map<String, Object> style = new LinkedHashMap<>();
+        style.put("formats", FORMATS);
+        style.put("materials", STYLE_MATERIALS);
+        style.put("premiumMaterials", PREMIUM_MATERIALS);
+        style.put("frames", STYLE_FRAMES);
+        style.put("centers", STYLE_CENTERS);
+        style.put("denominations", STYLE_DENOMINATIONS);
+        m.put("style", style);
         m.put("uploadRule", Msg.t("sealDesigns.imagem_quadrada_1_1_tolerancia"));
         return m;
     }
@@ -86,7 +120,7 @@ public final class SealDesigns {
         field.put("density", 2);
         part(d, "center").put("material", premium ? "VIDRO" : "FOSCO");
         Map<String, Object> element = part(d, "element");
-        element.put("id", tier == SealTier.PECA ? "HANGER" : "BAG");
+        element.put("id", tier == SealTier.PECA ? "HANGER" : tier == SealTier.PERFIL ? "LAUREL" : "BAG");
         element.put("material", premium ? "DOURADO" : "FOSCO");
         element.put("text", "FAI");
         return d;
@@ -186,6 +220,37 @@ public final class SealDesigns {
             }
         }
         out.put("uploadUrl", uploadUrl);
+
+        // RF20.CA24 — formato e estilo do catálogo (selects do editor). O validador do selo enviado pronto depende do formato.
+        String format = upper(raw.get("format"), "CIRCULAR");
+        if (!FORMATS.contains(format)) {
+            errors.put("format", Msg.t("sealDesigns.formato_desconhecido"));
+            format = "CIRCULAR";
+        }
+        out.put("format", format);
+        Map<String, Object> style = section(raw, "style");
+        if (!style.isEmpty()) {
+            Map<String, Object> st = new LinkedHashMap<>();
+            st.put("material", pick(style.get("material"), STYLE_MATERIALS, "plastico", "style.material", errors));
+            st.put("frame", pick(style.get("frame"), STYLE_FRAMES, "malha", "style.frame", errors));
+            st.put("center", pick(style.get("center"), STYLE_CENTERS, "logo_url", "style.center", errors));
+            st.put("denomination", pick(style.get("denomination"), STYLE_DENOMINATIONS, "year", "style.denomination", errors));
+            st.put("number", (int) clamp(number(style.get("number"), 1), 1, 9999));
+            out.put("style", st);
+        }
+        // Estampa privada do emissor aplicada como textura do CAMPO (o centro segue com o logotipo/emblema).
+        Map<String, Object> printed = section(raw, "fieldPattern");
+        Object patternUrl = printed.get("url");
+        if (patternUrl != null && !String.valueOf(patternUrl).isBlank()) {
+            String url = String.valueOf(patternUrl).trim();
+            if (!(url.startsWith("/media/") || url.startsWith("http://") || url.startsWith("https://"))) {
+                errors.put("fieldPattern.url", Msg.t("sealDesigns.url_de_upload_invalida"));
+            }
+            Map<String, Object> fp = new LinkedHashMap<>();
+            fp.put("url", url);
+            fp.put("scale", (int) clamp(number(printed.get("scale"), 1), 1, 3));
+            out.put("fieldPattern", fp);
+        }
         if (!errors.isEmpty()) {
             throw ApiException.badRequest("SELO_DESIGN_INVALIDO", Msg.t("sealDesigns.revise_o_desenho_do_selo"), Map.of("fields", errors));
         }
@@ -269,6 +334,19 @@ public final class SealDesigns {
             return dflt;
         }
         return m;
+    }
+
+    private static String lower(Object v, String dflt) {
+        return v == null || String.valueOf(v).isBlank() ? dflt : String.valueOf(v).trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String pick(Object v, List<String> allowed, String dflt, String field, Map<String, String> errors) {
+        String id = lower(v, dflt);
+        if (!allowed.contains(id)) {
+            errors.put(field, Msg.t("sealDesigns.item_fora_do_catalogo"));
+            return dflt;
+        }
+        return id;
     }
 
     private static String color(Object v, String dflt, String field, Map<String, String> errors) {

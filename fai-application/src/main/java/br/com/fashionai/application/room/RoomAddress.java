@@ -55,17 +55,17 @@ public record RoomAddress(String zone, int index, int sub) {
     /** Rótulo exibido ("Porta 2", "Gaveta 4 · Jeans", "Sapateira · posição 4"). */
     public String label(Map<String, String> drawerLabels) {
         return switch (zone) {
-            case "door" -> "Porta " + index;
+            case "door" -> Msg.t("roomAddress.porta", index);
             case "drawer" -> {
                 String l = drawerLabels == null ? null : drawerLabels.get(String.valueOf(index));
-                yield "Gaveta " + index + (l == null || l.isBlank() ? "" : " · " + l);
+                yield Msg.t("roomAddress.gaveta", index) + (l == null || l.isBlank() ? "" : " · " + l);
             }
-            case "top" -> "Maleiro";
+            case "top" -> Msg.t("roomAddress.maleiro");
             case "base" -> Msg.t("roomAddress.base_posicao", index);
             case "shoe" -> Msg.t("roomAddress.sapateira_posicao", index);
             case "bags" -> Msg.t("roomAddress.vitrine_de_bolsas_posicao", index);
             case "jewelry" -> Msg.t("roomAddress.porta_joias_posicao", index);
-            case "chair" -> "Cadeira";
+            case "chair" -> Msg.t("roomAddress.cadeira");
             case "season" -> Msg.t("common.maleiro_de_estacao");
             default -> toString();
         };

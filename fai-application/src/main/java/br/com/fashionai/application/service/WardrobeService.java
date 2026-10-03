@@ -267,7 +267,7 @@ public class WardrobeService {
             images.add(new AiRequest.AiImage(ImageOps.jpeg(BrandRegions.crop(piece, z), 0.92f), "image/jpeg"));
         }
         AiOutcome<LocalVision.PieceGuess> analysis = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.PIECE_ANALYZER,
-                ANALYZER_SYSTEM, analyzerPrompt(chosen, sheet == null ? List.of() : refs.sheetLegend(chosen), zones, ranking),
+                ANALYZER_SYSTEM.replace("{idioma}", Msg.languageName()), analyzerPrompt(chosen, sheet == null ? List.of() : refs.sheetLegend(chosen), zones, ranking),
                 images, 1200, List.of(Msg.t("wardrobe.foto_padronizada_da_peca"), Msg.t("wardrobe.vocabulario_da_taxonomia_v3_7")),
                 text -> parseAnalysis(text, chosen), () -> localGuess, null));
         LocalVision.PieceGuess guess = analysis.value();
@@ -501,7 +501,7 @@ public class WardrobeService {
      */
     @Transactional
     public Map<String, Object> retryBrand(CurrentUser user, UUID draftId, int grid) {
-        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
+        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.rascunho")));
         if (!draft.getUser().getId().equals(user.id())) {
             throw guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }
@@ -639,7 +639,7 @@ public class WardrobeService {
               Leia logotipos, bordados, estampas e etiquetas. Só informe a marca se conseguir ler o nome ou reconhecer o
               logotipo com segurança; nunca invente.
             JSON:
-            {"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+            {"name": nome curto da peça em {idioma}, traduzindo o exemplo (ex.: "Camiseta branca lisa"),
              "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
              "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
              "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
@@ -2070,7 +2070,7 @@ public class WardrobeService {
      */
     @Transactional
     public Map<String, Object> studioDraft(CurrentUser user, UUID draftId, String backdrop, boolean force) {
-        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
+        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.rascunho")));
         if (!draft.getUser().getId().equals(user.id())) {
             throw guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }

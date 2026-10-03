@@ -106,8 +106,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             P_CANCELADO = "CANCELADO";
     static final Set<String> VOTED = Set.of("RUNWAY_BATTLE", "GRWM");
     static final Set<String> SINGLE_SHOT = Set.of("RUNWAY_BATTLE", "GRWM", "DAILY_CHALLENGE");
-    static final Map<String, String> DIM_NAMES = Map.of("C", Msg.k("common.catalogacao"), "D", "Diversidade", "U", Msg.k("common.utilizacao"), "V", "Versatilidade",
-            "O", Msg.k("common.organizacao"), "R", "Descoberta", "I", "Identidade");
+    static final Map<String, String> DIM_NAMES = Map.of("C", Msg.k("common.catalogacao"), "D", Msg.k("common.diversidade"), "U", Msg.k("common.utilizacao"), "V", Msg.k("common.versatilidade"),
+            "O", Msg.k("common.organizacao"), "R", Msg.k("common.descoberta"), "I", Msg.k("common.identidade"));
     /** Tema semanal da Batalha na Passarela (rodízio pela semana ISO). */
     static final List<String> RUNWAY_THEMES = List.of(Msg.k("challenge.monocromatico_total"), Msg.k("challenge.anos_2000_com_o_que"), Msg.k("challenge.old_money_do_dia_a"),
             Msg.k("challenge.festival_de_verao"), Msg.k("challenge.escritorio_criativo"), Msg.k("challenge.noite_de_gala_sem_comprar"), Msg.k("challenge.gorpcore_urbano"), Msg.k("challenge.quiet_luxury"), Msg.k("challenge.uma_peca_herdada"));
@@ -209,11 +209,11 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     }
 
     ChallengeTemplate template(String code) {
-        return templates.findById(code).filter(ChallengeTemplate::isActive).orElseThrow(() -> ApiException.notFound("Desafio"));
+        return templates.findById(code).filter(ChallengeTemplate::isActive).orElseThrow(() -> ApiException.notFound(Msg.t("entity.desafio")));
     }
 
     ChallengeInstance instance(UUID id) {
-        return instances.findById(id).orElseThrow(() -> ApiException.notFound("Desafio"));
+        return instances.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.desafio")));
     }
 
     // ================================================================== catálogo (CA01/CA02, anatomia do card §2.1)
@@ -296,7 +296,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeTemplate t = template(req.code());
         String mode = req.mode() == null ? "SOLO" : req.mode().toUpperCase(Locale.ROOT);
         if (!Json.strings(t.getModesAllowedJson()).contains(mode)) {
-            throw ApiException.badRequest("MODO_INDISPONIVEL", Msg.t("challenge.o_desafio_nao_aceita_o", tplName(t), mode));
+            throw ApiException.badRequest("MODO_INDISPONIVEL", Msg.t("challenge.o_desafio_nao_aceita_o", tplName(t), modeName(mode)));
         }
         if (mode.equals("COMUNIDADE")) {
             return joinCommunity(user, t, req.photoConsent());
@@ -346,7 +346,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
         List<UUID> list = invitees == null ? List.of() : invitees.stream().filter(u -> !u.equals(user.id())).distinct().toList();
         if (list.isEmpty()) {
-            throw ApiException.badRequest("SEM_CONVIDADOS", Msg.t("challenge.convide_ao_menos_1_pessoa", i.getMode().toLowerCase(Locale.ROOT)));
+            throw ApiException.badRequest("SEM_CONVIDADOS", Msg.t("challenge.convide_ao_menos_1_pessoa", modeName(i.getMode())));
         }
         if (list.size() + 1 > t.getMaxParticipants()) {
             throw ApiException.badRequest("PARTICIPANTES_DEMAIS", Msg.t("challenge.este_desafio_aceita_ate_participantes", t.getMaxParticipants()));
@@ -369,9 +369,15 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             participants.save(p);
             notifications.notify(invitee, user.id(), NotificationType.CHALLENGE_INVITE, "CHALLENGE", i.getId(),
                     Msg.k("challenge.convidou_voce_para", user.username(), tpl.getName()),
-                    tpl.getRuleText() + " · modo " + i.getMode().toLowerCase(Locale.ROOT) + ". O convite vale por 48 h.",
+                    Msg.k("challenge.regra_modo_convite", tplRule(tpl), Msg.k("challenge.modo_" + i.getMode().toLowerCase(Locale.ROOT))),
                     Map.of("challengeId", i.getId().toString(), "code", tpl.getCode()));
         }
+    }
+
+    /** Nome do modo (SOLO, EQUIPE, DUELO, COMUNIDADE) no idioma de quem lê; modo desconhecido volta como veio. */
+    static String modeName(String mode) {
+        String key = "challenge.modo_" + mode.toLowerCase(Locale.ROOT);
+        return Msg.has(key) ? Msg.t(key) : mode;
     }
 
     static String teamOf(Map<String, String> teams, UUID userId, String mode) {
@@ -561,7 +567,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     public Map<String, Object> accept(CurrentUser user, UUID id, Boolean photoConsent) {
         ChallengeInstance i = instance(id);
         ChallengeParticipant p = participants.findByInstanceIdAndUserId(id, user.id())
-                .filter(x -> P_CONVIDADO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound("Convite"));
+                .filter(x -> P_CONVIDADO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound(Msg.t("entity.convite")));
         if (!AGUARDANDO.equals(i.getState()) || i.getAcceptDeadline() == null || i.getAcceptDeadline().isBefore(Instant.now())) {
             throw new ApiException(409, "CONVITE_EXPIRADO", Msg.t("challenge.o_prazo_de_aceite_48"));
         }
@@ -578,7 +584,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     @Transactional
     public Map<String, Object> decline(CurrentUser user, UUID id) {
         ChallengeParticipant p = participants.findByInstanceIdAndUserId(id, user.id())
-                .filter(x -> P_CONVIDADO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound("Convite"));
+                .filter(x -> P_CONVIDADO.equals(x.getStatus())).orElseThrow(() -> ApiException.notFound(Msg.t("entity.convite")));
         p.setStatus(P_RECUSOU);
         participants.save(p);
         ChallengeInstance i = instance(id);
@@ -1374,7 +1380,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (!ATIVO.equals(i.getState())) {
             throw new ApiException(409, "ESTADO_INVALIDO", Msg.t("challenge.o_desafio_nao_esta_ativo"));
         }
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + schemeId);
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
         if (items.size() < 2 || items.stream().anyMatch(si -> !si.getWardrobeItem().getUser().getId().equals(user.id()))) {
@@ -1623,7 +1629,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         if (memberId.equals(user.id())) {
             throw ApiException.badRequest("AUTOCONFIRMACAO", Msg.t("challenge.a_confirmacao_precisa_vir_de"));
         }
-        ChallengeParticipant member = participants.findByInstanceIdAndUserId(id, memberId).orElseThrow(() -> ApiException.notFound("Participante"));
+        ChallengeParticipant member = participants.findByInstanceIdAndUserId(id, memberId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.participante")));
         if (!Boolean.TRUE.equals(Json.map(member.getPersonalGoalJson()).get("photoConsent"))) {
             throw guard.deny(user, "challenge-photo:" + memberId, Msg.t("challenge.esta_pessoa_nao_autorizou_a"));
         }
@@ -1718,7 +1724,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         ChallengeTemplate t = new ChallengeTemplate();
         t.setCode(("COM_" + UUID.randomUUID().toString().replace("-", "")).substring(0, 16).toUpperCase(Locale.ROOT));
         t.setName(name);
-        t.setRuleText(describe(clean) + " por " + duration + " dia(s)");
+        t.setRuleText(Msg.t("challenge.regra_duracao", describe(clean), duration));
         t.setRuleBlocksJson(Json.write(clean));
         t.setModesAllowedJson(Json.write(modes.isEmpty() ? List.of("SOLO") : modes));
         t.setDurationDays(duration);
@@ -1738,13 +1744,13 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
 
     static String describe(List<Map<String, Object>> blocks) {
         return blocks.stream().map(b -> {
-            String q = "all".equals(b.get("quantifier")) ? Msg.t("challenge.so_pecas") : Msg.t("challenge.uma_peca");
+            String q = ("all".equals(b.get("quantifier")) ? Msg.t("challenge.so_pecas") : Msg.t("challenge.uma_peca")).trim();
             Object v = b.get("value");
             return switch (String.valueOf(b.get("type"))) {
-                case "color_family" -> q + "da cor " + v;
-                case "category" -> q + "da categoria " + v;
-                case "origin" -> q + "com origem " + String.valueOf(v).toLowerCase(Locale.ROOT).replace("|", " ou ");
-                case "state" -> q + ("forgotten".equals(v) ? "esquecida" : "favorite".equals(v) ? "favorita" : Msg.t("challenge.disponivel"));
+                case "color_family" -> Msg.t("challenge.regra_cor", q, v);
+                case "category" -> Msg.t("challenge.regra_categoria", q, v);
+                case "origin" -> Msg.t("challenge.regra_origem", q, String.valueOf(v).toLowerCase(Locale.ROOT).replace("|", " " + Msg.t("challenge.ou") + " "));
+                case "state" -> Msg.t("challenge.regra_estado", q, "forgotten".equals(v) ? Msg.t("challenge.estado_esquecida") : "favorite".equals(v) ? Msg.t("challenge.estado_favorita") : Msg.t("challenge.disponivel"));
                 case "unused_days" -> Msg.t("challenge.uma_peca_sem_uso_ha", v);
                 case "slot" -> Msg.t("challenge.uma_peca_no_slot", v);
                 case "monochrome" -> Msg.t("challenge.look_monocromatico_2");
@@ -1760,7 +1766,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     @Transactional
     public Map<String, Object> promote(CurrentUser admin, String code) {
         guard.requireAdmin(admin);
-        ChallengeTemplate t = templates.findById(code).orElseThrow(() -> ApiException.notFound("Desafio"));
+        ChallengeTemplate t = templates.findById(code).orElseThrow(() -> ApiException.notFound(Msg.t("entity.desafio")));
         t.setOrigin("OFFICIAL");
         templates.save(t);
         return Map.of("code", code, "origin", "OFFICIAL", "author", String.valueOf(t.getAuthorUserId()));

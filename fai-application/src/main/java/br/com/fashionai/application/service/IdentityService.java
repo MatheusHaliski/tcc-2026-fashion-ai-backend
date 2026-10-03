@@ -711,7 +711,7 @@ public class IdentityService {
         audit.log(u.getId().toString(), AuditActions.LOGIN_SUCESSO, "auth", "SUCESSO", ip, userAgent, Map.of("newDevice", newDevice));
         if (newDevice && u.getLastLoginAt() != null) {
             notifications.notify(u.getId(), null, NotificationType.NEW_LOGIN_DEVICE, "SESSION", null,
-                    Msg.k("identity.novo_acesso_a_sua_conta"), Msg.k("identity.login_em_se_nao_foi", (userAgent == null ? "dispositivo desconhecido" : shortAgent(userAgent))), Map.of("ip", ip == null ? "" : ip));
+                    Msg.k("identity.novo_acesso_a_sua_conta"), Msg.k("identity.login_em_se_nao_foi", (userAgent == null ? Msg.k("identity.dispositivo_desconhecido") : shortAgent(userAgent))), Map.of("ip", ip == null ? "" : ip));
         }
         return openSession(u, cmd.rememberMe(), ip, userAgent, cmd.deviceName());
     }
@@ -998,10 +998,10 @@ public class IdentityService {
 
     private static String shortAgent(String ua) {
         if (ua == null) {
-            return "Dispositivo";
+            return Msg.k("identity.dispositivo");
         }
         String browser = ua.contains("Edg") ? "Edge" : ua.contains("Chrome") ? "Chrome" : ua.contains("Firefox") ? "Firefox"
-                : ua.contains("Safari") ? "Safari" : "Navegador";
+                : ua.contains("Safari") ? "Safari" : Msg.k("identity.navegador");
         String os = ua.contains("Android") ? "Android" : ua.contains("iPhone") || ua.contains("iPad") ? "iOS"
                 : ua.contains("Windows") ? "Windows" : ua.contains("Mac") ? "macOS" : ua.contains("Linux") ? "Linux" : "";
         return (browser + " " + os).trim();

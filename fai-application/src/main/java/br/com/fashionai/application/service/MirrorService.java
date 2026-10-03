@@ -473,7 +473,7 @@ public class MirrorService {
                 "subcategory", String.valueOf(w.getSubcategory()), "color", String.valueOf(w.getColor()), "style", Json.csv(w.getStyleTags()))).toList();
         AiOutcome<List<Map<String, Object>>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.SCHEME_COMPOSER,
                 "Você é o Smart Mirror do Fashion AI. Escolha até 3 alternativas para o slot pedido, SOMENTE entre as candidatas (refs c1, c2...), "
-                        + "que combinem com as peças já no espelho. Responda SOMENTE com JSON {\"alternatives\":[{\"ref\":\"c1\",\"why\":\"1 frase\"}]}.",
+                        + "que combinem com as peças já no espelho. Responda SOMENTE com JSON {\"alternatives\":[{\"ref\":\"c1\",\"why\":\"1 frase\"}]}, com o why em " + Msg.languageName() + ".",
                 "Slot: " + slot + "\nNo espelho: " + Json.write(ctx) + "\nCandidatas: " + Json.write(catalog),
                 List.of(), 500, List.of(Msg.t("mirror.pecas_ja_no_espelho_e")),
                 text -> {
@@ -656,7 +656,7 @@ public class MirrorService {
         AiOutcome<List<WardrobeItem>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.SCHEME_COMPOSER,
                 "Você é o Vista-me do Smart Mirror do Fashion AI. Monte UM look completo usando SOMENTE as peças do acervo (refs). "
                         + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Toda peça marcada anchor=true DEVE "
-                        + "entrar. Nunca invente peças. Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}.",
+                        + "entrar. Nunca invente peças. Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}, com title e rationale em " + Msg.languageName() + ".",
                 Msg.t("mirror.pedido_interpretado_acervo_elegivel", Json.write(Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "constraints", it.constraints(),
                         "season", String.valueOf(it.season()))), Json.write(catalog), (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList()), (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown)),
                 List.of(), 700, List.of("acervo elegível (metadados, sem fotos)", "pedido interpretado", Msg.t("mirror.combinacoes_ja_mostradas_na_sessao")),
@@ -874,7 +874,7 @@ public class MirrorService {
         }
         AiOutcome<Map<String, Object>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.STYLE_ADVISOR,
                 "Regra de Coco Chanel: antes de sair, tire uma coisa. Entre as peças removíveis (refs), escolha UMA para tirar e diga por quê em 1 frase "
-                        + "curta (ex.: 'o colar compete com a estampa'). Responda SOMENTE com JSON {\"remove_ref\":\"r1\",\"why\":\"...\"}.",
+                        + "curta em " + Msg.languageName() + " (ex.: 'o colar compete com a estampa'). Responda SOMENTE com JSON {\"remove_ref\":\"r1\",\"why\":\"...\"}.",
                 "Look: " + look.stream().map(w -> w.getName() + " (" + w.getSubcategory() + ", " + w.getColor() + ")").toList() + "\nRemovíveis: " + Json.write(cands),
                 List.of(), 200, List.of(Msg.t("mirror.pecas_do_look_no_espelho")),
                 text -> {

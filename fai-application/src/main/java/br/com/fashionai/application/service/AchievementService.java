@@ -88,7 +88,7 @@ public class AchievementService {
         achievements.save(a);
         points.award(userId, "ACHIEVEMENT", "ACHIEVEMENT", code, d.points());
         notifications.notify(userId, null, NotificationType.ACHIEVEMENT_UNLOCKED, "ACHIEVEMENT", null,
-                d.emoji() + " Conquista: " + d.name(), Msg.k("achievement.fai_pts", (d.condition()), d.points()), Map.of("code", code, "secret", d.secret()));
+                d.emoji() + " " + Msg.k("achievement.conquista", d.name()), Msg.k("achievement.fai_pts", (d.condition()), d.points()), Map.of("code", code, "secret", d.secret()));
         events.publishEvent(new DomainEvents.AchievementGranted(userId, code, d.secret()));
         return true;
     }

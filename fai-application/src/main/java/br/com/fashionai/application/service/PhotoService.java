@@ -200,7 +200,7 @@ public class PhotoService {
     }
 
     Photo owned(CurrentUser user, UUID id) {
-        Photo p = photos.findById(id).filter(x -> x.getDeletedAt() == null).orElseThrow(() -> ApiException.notFound("Foto"));
+        Photo p = photos.findById(id).filter(x -> x.getDeletedAt() == null).orElseThrow(() -> ApiException.notFound(Msg.t("entity.foto")));
         guard.requireOwner(user, p.getUser().getId(), "photo:" + id);
         return p;
     }
@@ -236,7 +236,7 @@ public class PhotoService {
         long linked = list.stream().filter(p -> linkedActivePiece(p).isPresent()).count();
         if (!confirmed) {
             return Map.of("requiresConfirmation", true, "count", list.size(), "linkedToPieces", linked,
-                    "message", "Excluir " + list.size() + " foto(s)?" + (linked > 0 ? Msg.t("photo.sao_imagens_de_pecas_ativas", linked) : ""));
+                    "message", Msg.t("photo.excluir_fotos", list.size()) + (linked > 0 ? Msg.t("photo.sao_imagens_de_pecas_ativas", linked) : ""));
         }
         for (Photo p : list) {
             linkedActivePiece(p).ifPresent(wardrobe::useDefaultImageAfterPhotoDeletion);

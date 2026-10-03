@@ -126,16 +126,16 @@ public class AdminService {
     @Transactional
     public Map<String, Object> decide(CurrentUser admin, UUID userId, boolean approve, String notes) {
         guard.requireAdmin(admin);
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
+        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.conta")));
         String clean = notes == null ? null : InputSanitizer.clean(notes, 500);
         if (u.getProfileType() == ProfileType.MARCA) {
-            BrandProfile b = brands.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Marca"));
+            BrandProfile b = brands.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.marca")));
             b.setApprovalStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
             b.setApprovedBy(admin.id());
             b.setApprovedAt(Instant.now());
             b.setVerificationNotes(clean);
         } else if (u.getProfileType() == ProfileType.CELEBRIDADE) {
-            CelebrityProfile c = celebrities.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Celebridade"));
+            CelebrityProfile c = celebrities.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.celebridade")));
             c.setVerificationStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
             c.setApprovedBy(admin.id());
             c.setApprovedAt(Instant.now());
@@ -150,7 +150,7 @@ public class AdminService {
         }
         users.save(u);
         notifications.notify(userId, admin.id(), NotificationType.ACCOUNT_APPROVAL, "USER", userId, approve ? Msg.k("admin.perfil_validado") : Msg.k("admin.cadastro_nao_aprovado"),
-                approve ? Msg.k("admin.seu_perfil_ja_aparece_no") : "Motivo: " + (clean == null ? Msg.k("admin.documentacao_insuficiente") : clean), Map.of());
+                approve ? Msg.k("admin.seu_perfil_ja_aparece_no") : Msg.k("common.motivo", clean == null ? Msg.k("admin.documentacao_insuficiente") : InputSanitizer.clean(clean, 400)), Map.of());
         audit.log(admin, approve ? "PERFIL_APROVADO" : "PERFIL_RECUSADO", "user:" + userId, Map.of("profileType", u.getProfileType().name()));
         return Map.of("userId", userId, "approved", approve);
     }
@@ -227,7 +227,7 @@ public class AdminService {
         if (admin.id().equals(userId)) {
             throw ApiException.badRequest("AUTO_SUSPENSAO", Msg.t("admin.voce_nao_pode_suspender_a"));
         }
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
+        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.conta")));
         u.setStatus(suspend ? AccountStatus.SUSPENDED : AccountStatus.ACTIVE);
         users.save(u);
         int revoked = suspend ? identity.revokeOtherSessions(userId, null) : 0;
@@ -241,7 +241,7 @@ public class AdminService {
         if (!List.of("USER", "ADMIN").contains(role)) {
             throw ApiException.badRequest("PAPEL_INVALIDO", Msg.t("admin.papeis_user_ou_admin"));
         }
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
+        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.conta")));
         u.setRole(role);
         users.save(u);
         audit.log(admin, "PAPEL_ALTERADO", "user:" + userId, Map.of("role", role));

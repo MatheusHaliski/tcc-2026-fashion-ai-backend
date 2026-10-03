@@ -207,9 +207,9 @@ public class FlairService {
 
     @Transactional(readOnly = true)
     public Deck deckOf(CurrentUser viewer, UUID schemeId) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         if (!schemeService.canView(viewer, s)) {
-            throw ApiException.notFound("Esquema");
+            throw ApiException.notFound(Msg.t("entity.esquema"));
         }
         return deck(s);
     }
@@ -348,7 +348,7 @@ public class FlairService {
 
     @Transactional
     public Map<String, Object> claimQuest(CurrentUser user, String code) {
-        Map<String, Object> q = quests(user).stream().filter(x -> x.get("code").equals(code)).findFirst().orElseThrow(() -> ApiException.notFound("Quest"));
+        Map<String, Object> q = quests(user).stream().filter(x -> x.get("code").equals(code)).findFirst().orElseThrow(() -> ApiException.notFound(Msg.t("entity.quest")));
         if (!Boolean.TRUE.equals(q.get("done"))) {
             throw new ApiException(409, "QUEST_INCOMPLETA", Msg.t("flair.esta_quest_ainda_nao_foi"));
         }
@@ -400,7 +400,7 @@ public class FlairService {
         if (house) {
             b = houseDeck();
         } else {
-            rival = users.findByUsernameIgnoreCase(opponent.replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound("Oponente"));
+            rival = users.findByUsernameIgnoreCase(opponent.replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound(Msg.t("entity.oponente")));
             if (rival.getId().equals(user.id())) {
                 throw ApiException.badRequest("DUELO_CONSIGO", Msg.t("common.escolha_outra_pessoa_ou_a"));
             }
@@ -597,7 +597,7 @@ public class FlairService {
     @Transactional
     public Map<String, Object> joinTeam(CurrentUser user, String code) {
         guard.requireCanCreate(user);
-        FlairTeam t = teams.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Equipe"));
+        FlairTeam t = teams.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound(Msg.t("entity.equipe")));
         if (members.findByUserId(user.id()).isPresent()) {
             throw ApiException.conflict("JA_EM_EQUIPE", Msg.t("flair.voce_ja_esta_numa_equipe"));
         }
@@ -1028,9 +1028,9 @@ public class FlairService {
     @Transactional
     public Map<String, Object> validateCode(CurrentUser user, String code) {
         User brand = brandOwner(user);
-        FlairRedemption r = redemptions.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Cupom"));
+        FlairRedemption r = redemptions.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound(Msg.t("entity.cupom")));
         if (!r.getCombination().getBrand().getId().equals(brand.getId())) {
-            throw ApiException.notFound("Cupom");
+            throw ApiException.notFound(Msg.t("entity.cupom"));
         }
         if ("USADO".equals(r.getStatus())) {
             throw ApiException.conflict("CUPOM_USADO", Msg.t("flair.cupom_ja_usado_em", r.getUsedAt()));

@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.service.MediaService;
@@ -47,13 +48,13 @@ public class MediaProxyController {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         String key = URLDecoder.decode(path.substring(PREFIX.length()), StandardCharsets.UTF_8);
         if (key.isBlank() || key.startsWith("/") || key.contains("..") || key.contains("\\")) {
-            throw ApiException.notFound("Arquivo");
+            throw ApiException.notFound(Msg.t("entity.arquivo"));
         }
         boolean restricted = key.startsWith("restricted/");
         if (!serveAll && !restricted || key.matches("^users/[^/]+/exports/.*") || key.startsWith("backups/")) {
             // bucket público serve o resto; exportações LGPD antigas só pelo endpoint autenticado do dono; dumps antigos
             // do banco (antes de restricted/backups/) nunca saem por aqui
-            throw ApiException.notFound("Arquivo");
+            throw ApiException.notFound(Msg.t("entity.arquivo"));
         }
         return ResponseEntity.ok()
                 .contentType(MediaTypeFactory.getMediaType(key).orElse(MediaType.APPLICATION_OCTET_STREAM))
