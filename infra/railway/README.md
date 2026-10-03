@@ -34,11 +34,11 @@ Todos os scripts:
 
    (`"..."` = o mesmo alfabeto alfanumérico da primeira linha.) Mais `FAI_START_SCRIPT` = conteúdo do `start.sh`.
 
-2. **Comando de início** do serviço (Settings → Deploy → Custom Start Command), igual para os quatro:
-
-   ```sh
-   /bin/sh -c 'printf %s "$FAI_START_SCRIPT" > /tmp/fai-start.sh && exec /bin/sh /tmp/fai-start.sh'
-   ```
+2. **Comando de início** do serviço (Settings → Deploy → Custom Start Command): a saída de
+   `infra/railway/start-command.sh <redis|mysql|cassandra|opensearch>`. Ele só roda `FAI_START_SCRIPT` se o SHA-256
+   bater com o `start.sh` desta pasta (o valor da variável é o arquivo **sem** a quebra de linha final); se não bater
+   — variável colada errada ou script desatualizado —, o banco sobe exatamente como antes do endurecimento e o log
+   mostra `fai-start: ERRO: FAI_START_SCRIPT difere...`. Mudou um `start.sh`? Atualize a variável **e** o comando.
 
 3. **Variáveis da API** (serviço `api`), por referência — o valor nunca é copiado:
 
