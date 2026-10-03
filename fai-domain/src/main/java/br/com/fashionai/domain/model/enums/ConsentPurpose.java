@@ -9,5 +9,7 @@ public enum ConsentPurpose {
     PARTNER_SHARING,
     BODY_MEASUREMENTS,
     FACIAL_RECOGNITION,
-    LOCATION_HISTORY
+    LOCATION_HISTORY,
+    /** RF4 · uso das fotos e correções das peças para treinar e avaliar os modelos de visão (opt-in, revogável). */
+    AI_MODEL_TRAINING
 }
