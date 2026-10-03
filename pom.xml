@@ -24,7 +24,7 @@
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.3.5</spring-boot.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <springdoc.version>2.6.0</springdoc.version>
