@@ -25,7 +25,7 @@ export const EN_LABELS: Record<string, string> = {
   // materials
   cotton: "Cotton", polyester: "Polyester", wool: "Wool", silk: "Silk", leather: "Leather", synthetic: "Synthetic", blend: "Blend", linen: "Linen",
   // subcategories
-  ankle_boots: "Ankle boots", backpack: "Backpack", basketball_shoes: "Basketball shoes", beanie: "Beanie", belt: "Belt", bermuda_shorts: "Bermuda shorts",
+  ankle_boots: "Ankle boots", backpack: "Backpack", wallet: "Wallet", basketball_shoes: "Basketball shoes", beanie: "Beanie", belt: "Belt", bermuda_shorts: "Bermuda shorts",
   blazer: "Blazer", blouse: "Blouse", bodysuit: "Bodysuit", bow_tie: "Bow tie", bracelet: "Bracelet", cap: "Cap", cardigan: "Cardigan",
   cargo_pants: "Cargo pants", casual_pants: "Casual pants", casual_sneakers: "Casual sneakers", chino_pants: "Chinos", clutch: "Clutch", coat: "Coat",
   combat_boots: "Combat boots", crop_top: "Crop top", crossbody_bag: "Crossbody bag", culottes: "Culottes", denim_shorts: "Denim shorts", derby_shoes: "Derby shoes",

@@ -262,6 +262,22 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "capture_session_id", length = 36)
     private java.util.UUID captureSessionId;
 
+    /** RF47 · produto global do catálogo que esta peça pessoal possui (referência, sem cópia de foto nem metadados). */
+    @Column(name = "catalog_product_id", length = 36)
+    private java.util.UUID catalogProductId;
+
+    @Column(name = "catalog_variant_id", length = 36)
+    private java.util.UUID catalogVariantId;
+
+    /** RF47 · origem da imagem principal: CATALOG (foto oficial), USER_PHOTO ou DEFAULT. */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "image_origin", length = 20)
+    private br.com.fashionai.domain.model.enums.ImageOrigin imageOrigin;
+
+    /** RF47 · foto da própria pessoa (a peça real), separada da foto oficial do produto. */
+    @Column(name = "user_image_url", length = 1024)
+    private String userImageUrl;
+
     @Column(name = "model3d_generated_at")
     private Instant model3dGeneratedAt;
 

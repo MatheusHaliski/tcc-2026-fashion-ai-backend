@@ -1020,6 +1020,22 @@ public class WardrobeService {
 
     @Transactional
     public Views.PieceView create(CurrentUser user, PieceForm form) {
+        return createInternal(user, form, null);
+    }
+
+    /**
+     * RF47 · produto escolhido no catálogo global: a peça pessoal referencia o produto (sem copiar foto nem metadados)
+     * e usa a foto oficial (proveniência no catálogo) como imagem principal até a pessoa adicionar a própria foto.
+     */
+    public record CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+    }
+
+    @Transactional
+    public Views.PieceView createFromCatalog(CurrentUser user, PieceForm form, CatalogPick pick) {
+        return createInternal(user, form, Objects.requireNonNull(pick));
+    }
+
+    private Views.PieceView createInternal(CurrentUser user, PieceForm form, CatalogPick pick) {
         guard.requireCanCreate(user);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         validate(form);
@@ -1040,10 +1056,24 @@ public class WardrobeService {
         w.setUser(owner);
         apply(w, form, true);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
-        if (draft == null && !form.useDefaultImage()) {
+        if (draft == null && !form.useDefaultImage() && pick == null) {
             throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
         }
-        if (draft == null) {
+        if (draft == null && pick != null) {
+            w.setCatalogProductId(pick.productId());
+            w.setCatalogVariantId(pick.variantId());
+            boolean hasImage = pick.imageUrl() != null && !pick.imageUrl().isBlank();
+            String url = hasImage ? pick.imageUrl() : assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
+            w.setImageUrl(url);
+            w.setThumbnailUrl(url);
+            w.setOriginalImageUrl(null);
+            w.setDefaultImage(!hasImage);
+            w.setImageOrigin(hasImage ? br.com.fashionai.domain.model.enums.ImageOrigin.CATALOG
+                    : br.com.fashionai.domain.model.enums.ImageOrigin.DEFAULT);
+            w.setModerationStatus(ModerationStatus.APPROVED);
+            w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
+            pieces.save(w);
+        } else if (draft == null) {
             // imagem padrão da peça (/public/assets_pecas) quando o usuário deixa a foto vazia.
             String url = assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
             w.setImageUrl(url);

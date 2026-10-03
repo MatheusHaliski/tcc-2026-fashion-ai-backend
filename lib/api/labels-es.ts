@@ -25,7 +25,7 @@ export const ES_LABELS: Record<string, string> = {
   // materiales
   cotton: "Algodón", polyester: "Poliéster", wool: "Lana", silk: "Seda", leather: "Cuero", synthetic: "Sintético", blend: "Mezcla", linen: "Lino",
   // subcategorías
-  ankle_boots: "Botines", backpack: "Mochila", basketball_shoes: "Zapatillas de baloncesto", beanie: "Gorro", belt: "Cinturón", bermuda_shorts: "Bermudas",
+  ankle_boots: "Botines", backpack: "Mochila", wallet: "Cartera", basketball_shoes: "Zapatillas de baloncesto", beanie: "Gorro", belt: "Cinturón", bermuda_shorts: "Bermudas",
   blazer: "Blazer", blouse: "Blusa", bodysuit: "Body", bow_tie: "Pajarita", bracelet: "Pulsera", cap: "Gorra", cardigan: "Cárdigan",
   cargo_pants: "Pantalón cargo", casual_pants: "Pantalón casual", casual_sneakers: "Zapatillas casuales", chino_pants: "Pantalón chino", clutch: "Clutch", coat: "Abrigo",
   combat_boots: "Botas militares", crop_top: "Crop top", crossbody_bag: "Bolso bandolera", culottes: "Pantalón culotte", denim_shorts: "Shorts vaqueros", derby_shoes: "Zapatos derby",

@@ -54,7 +54,7 @@ public final class Taxonomy {
                 "long_boots", "combat_boots", "sandals", "flip_flops", "heels", "flats", "espadrilles"));
         SUBCATEGORIES.put("accessory_piece", List.of("handbag", "crossbody_bag", "tote_bag", "clutch", "backpack", "belt",
                 "cap", "hat", "beanie", "scarf", "tie", "bow_tie", "sunglasses", "eyeglasses", "necklace", "bracelet",
-                "earrings", "ring", "watch", "gloves", "socks", "hair_accessory"));
+                "earrings", "ring", "watch", "wallet", "gloves", "socks", "hair_accessory"));
         SUBCATEGORIES.put("full_body_piece", List.of("dress", "jumpsuit", "romper", "matching_set", "overalls"));
 
         WEARSTYLE_GROUPS.put("casual", List.of("casual", "home", "school", "university", "travel", "outdoor", "vacation"));
