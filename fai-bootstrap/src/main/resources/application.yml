@@ -156,6 +156,7 @@ fashionai:
     password: ${CASSANDRA_PASSWORD:}
     create-keyspace: ${CASSANDRA_CREATE_KEYSPACE:false}    # Cassandra próprio sem autenticação: cria o keyspace na subida
     replication-factor: ${CASSANDRA_REPLICATION_FACTOR:1}  # (endurecido, infra/railway/cassandra: o keyspace já vem criado -> false)
+    resolve-contact-points: ${CASSANDRA_RESOLVE_CONTACT_POINTS:false}   # false: resolve o nome a cada reconexão (IP muda a cada deploy)
     ssl:                                                   # TLS cliente -> nó
       enabled: ${CASSANDRA_SSL:false}
       ca-cert-pem: ${CASSANDRA_CA_CERT_PEM:}               # certificado do nó/CA em PEM; vazio = truststore da JVM
