@@ -1,0 +1,314 @@
+[
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "530",
+  "model_name": "530",
+  "color": "white",
+  "color_name": "White/Silver",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "MR530"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Silver"
+   },
+   {
+    "color": "white",
+    "color_name": "White/Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "550",
+  "model_name": "550",
+  "color": "white",
+  "color_name": "White/Green",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "aliases": [
+   "BB550"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White/Green"
+   },
+   {
+    "color": "white",
+    "color_name": "White/Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "574",
+  "model_name": "574",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "ML574"
+  ],
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "327",
+  "model_name": "327",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "9060",
+  "model_name": "9060",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "U9060"
+  ],
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "beige",
+    "color_name": "Sea Salt"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "2002R",
+  "model_name": "2002R",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "M2002R"
+  ],
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "1906R",
+  "model_name": "1906R",
+  "color": "silver",
+  "color_name": "Silver Metallic",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "M1906R"
+  ],
+  "variants": [
+   {
+    "color": "silver",
+    "color_name": "Silver Metallic"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "990v6 Made in USA",
+  "model_name": "990v6",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Made in USA",
+  "aliases": [
+   "990"
+  ],
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "casual_sneakers",
+  "product_name": "480",
+  "model_name": "480",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "aliases": [
+   "BB480"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "running_shoes",
+  "product_name": "Fresh Foam X 1080v14",
+  "model_name": "1080v14",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Fresh Foam",
+  "aliases": [
+   "1080"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "running_shoes",
+  "product_name": "FuelCell Rebel v4",
+  "model_name": "Rebel v4",
+  "color": "white",
+  "color_name": "White",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "FuelCell",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "t_shirt",
+  "product_name": "Essentials Logo T-Shirt",
+  "model_name": "Essentials Logo",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "hoodie",
+  "product_name": "Sport Essentials Hoodie",
+  "model_name": "Sport Essentials Hoodie",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "New Balance",
+  "subcategory": "cap",
+  "product_name": "Classic NB Curved Brim Cap",
+  "model_name": "Classic Cap",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

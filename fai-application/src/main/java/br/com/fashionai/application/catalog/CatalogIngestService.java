@@ -124,7 +124,7 @@ public class CatalogIngestService {
         String canonical = CatalogNormalizer.canonicalUrl(in.officialProductUrl());
         String domain = CatalogNormalizer.domain(in.officialProductUrl());
         CatalogSourceType sourceType = sourceType(in.sourceType(), brand.getId(), domain);
-        String dedup = norm.dedupKey(brand.getSlug(), in.gtin(), in.ean(), in.upc(), in.sku(), in.productCode(), canonical,
+        String dedup = norm.dedupKey(brand.getSlug(), subcategory, in.gtin(), in.ean(), in.upc(), in.sku(), in.productCode(), canonical,
                 in.modelName(), in.colorName() != null ? in.colorName() : color, in.productName(), color);
 
         Optional<CatalogProduct> existing = findExisting(in, canonical, dedup);
@@ -133,6 +133,12 @@ public class CatalogIngestService {
         if (existing.isPresent()) {
             p = existing.get();
             outcome = Outcome.UPDATED;
+            if (!dedup.equals(p.getDedupKey()) && notBlank(in.modelName()) && in.modelName().trim().equalsIgnoreCase(p.getModelName())
+                    && (color != null || notBlank(in.colorName()))) {
+                // nova cor do mesmo modelo → variante; o produto guarda a cor/código da primeira variante
+                upsertVariant(p, new VariantInput(color, in.colorName(), in.productCode(), in.sku(), in.gtin()));
+                return new Result(p, Outcome.UPDATED, warnings);
+            }
             if (status == CatalogIngestionStatus.DISCOVERED && p.getIngestionStatus() != CatalogIngestionStatus.DISCOVERED) {
                 outcome = Outcome.DUPLICATE; // já está no catálogo: a busca externa não sobrescreve dados curados
                 return new Result(p, outcome, warnings);
@@ -223,7 +229,23 @@ public class CatalogIngestService {
             Optional<CatalogProduct> f = products.findFirstByCanonicalUrl(canonical);
             if (f.isPresent()) return f;
         }
-        return products.findByDedupKey(dedup);
+        for (String code : new String[]{in.gtin(), in.sku(), in.productCode()}) {
+            if (notBlank(code)) {
+                Optional<CatalogProduct> f = variants.findFirstByGtinOrSkuOrVariantCode(code.trim(), code.trim(), code.trim())
+                        .flatMap(v -> products.findById(v.getProductId()));
+                if (f.isPresent()) return f;
+            }
+        }
+        Optional<CatalogProduct> byKey = products.findByDedupKey(dedup);
+        if (byKey.isPresent() || !notBlank(in.modelName())) {
+            return byKey;
+        }
+        // mesmo modelo com outra cor: é variante do produto existente (o chamador adiciona a variante)
+        return products.findFirstByBrandIdAndSubcategoryAndModelNameIgnoreCase(brandIdOf(in), norm.subcategory(in.subcategory()).orElse(""), in.modelName().trim());
+    }
+
+    private UUID brandIdOf(ProductInput in) {
+        return resolveBrand(in.brand(), false).map(Brand::getId).orElse(null);
     }
 
     private void upsertVariant(CatalogProduct p, VariantInput v) {

@@ -40,14 +40,17 @@ class CatalogNormalizerTest {
 
     @Test
     void dedupPeloIdentificadorMaisForte() {
-        assertThat(n.dedupKey("nike", "0195238321123", null, null, "CW2288-111", null, null, null, null, "x", null))
+        assertThat(n.dedupKey("nike", "casual_sneakers", "0195238321123", null, null, "CW2288-111", null, null, null, null, "x", null))
                 .isEqualTo("gtin:0195238321123");
-        assertThat(n.dedupKey("nike", null, null, null, "cw2288-111", null, null, null, null, "x", null)).isEqualTo("sku:nike:CW2288111");
-        assertThat(n.dedupKey("nike", null, null, null, null, null, "https://www.nike.com/t/af1/CW2288-111?x=1", null, null, "x", null))
+        assertThat(n.dedupKey("nike", "casual_sneakers", null, null, null, "cw2288-111", null, null, null, null, "x", null)).isEqualTo("sku:nike:CW2288111");
+        assertThat(n.dedupKey("nike", "casual_sneakers", null, null, null, null, null, "https://www.nike.com/t/af1/CW2288-111?x=1", null, null, "x", null))
                 .isEqualTo("url:nike.com/t/af1/CW2288-111");
-        String a = n.dedupKey("nike", null, null, null, null, null, null, "Air Force 1 '07", "White", "x", "white");
-        String b = n.dedupKey("nike", null, null, null, null, null, null, "air force 1 07", "white", "y", "white");
+        String a = n.dedupKey("nike", "casual_sneakers", null, null, null, null, null, null, "Air Force 1 '07", "White", "x", "white");
+        String b = n.dedupKey("nike", "casual_sneakers", null, null, null, null, null, null, "air force 1 07", "white", "y", "white");
         assertThat(a).isEqualTo(b);
+        String hoodie = n.dedupKey("nike", "hoodie", null, null, null, null, null, null, "Club Fleece", "Black", "x", "black");
+        String joggers = n.dedupKey("nike", "sweatpants", null, null, null, null, null, null, "Club Fleece", "Black", "x", "black");
+        assertThat(hoodie).isNotEqualTo(joggers);
     }
 
     @Test

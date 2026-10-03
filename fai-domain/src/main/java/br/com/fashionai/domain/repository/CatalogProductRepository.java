@@ -17,6 +17,8 @@ import java.util.UUID;
 public interface CatalogProductRepository extends JpaRepository<CatalogProduct, UUID> {
     Optional<CatalogProduct> findByDedupKey(String dedupKey);
 
+    Optional<CatalogProduct> findFirstByBrandIdAndSubcategoryAndModelNameIgnoreCase(UUID brandId, String subcategory, String modelName);
+
     Optional<CatalogProduct> findFirstByGtin(String gtin);
 
     Optional<CatalogProduct> findFirstByEan(String ean);

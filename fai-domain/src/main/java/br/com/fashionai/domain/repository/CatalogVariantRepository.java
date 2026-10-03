@@ -17,5 +17,9 @@ import java.util.UUID;
 public interface CatalogVariantRepository extends JpaRepository<CatalogVariant, UUID> {
     List<CatalogVariant> findByProductIdOrderByVariantKey(UUID productId);
 
+    List<CatalogVariant> findByProductIdIn(Collection<UUID> productIds);
+
+    Optional<CatalogVariant> findFirstByGtinOrSkuOrVariantCode(String gtin, String sku, String variantCode);
+
     Optional<CatalogVariant> findByProductIdAndVariantKey(UUID productId, String variantKey);
 }

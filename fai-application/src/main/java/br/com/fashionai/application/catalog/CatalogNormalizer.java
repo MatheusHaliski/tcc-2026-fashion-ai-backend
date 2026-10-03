@@ -179,7 +179,7 @@ public final class CatalogNormalizer {
      * Chave de deduplicação pelo identificador mais forte disponível. Nunca só o nome quando há código; o título entra
      * só como último recurso (marca + título normalizado + cor).
      */
-    public String dedupKey(String brandSlug, String gtin, String ean, String upc, String sku, String productCode,
+    public String dedupKey(String brandSlug, String subcategory, String gtin, String ean, String upc, String sku, String productCode,
                            String canonicalUrl, String modelName, String variant, String title, String color) {
         if (notBlank(gtin)) {
             return "gtin:" + digits(gtin);
@@ -201,9 +201,10 @@ public final class CatalogNormalizer {
         }
         String c = color == null ? "" : color;
         if (notBlank(modelName)) {
-            return "model:" + brandSlug + ":" + key(modelName).replace(' ', '-') + ":" + key(variant == null ? c : variant).replace(' ', '-');
+            // o mesmo nome de linha existe em tipos diferentes ("Club Fleece" moletom × calça): a subcategoria separa
+            return "model:" + brandSlug + ":" + subcategory + ":" + key(modelName).replace(' ', '-') + ":" + key(variant == null ? c : variant).replace(' ', '-');
         }
-        return "title:" + brandSlug + ":" + normalizedTitle(title).replace(' ', '-') + ":" + key(c).replace(' ', '-');
+        return "title:" + brandSlug + ":" + subcategory + ":" + normalizedTitle(title).replace(' ', '-') + ":" + key(c).replace(' ', '-');
     }
 
     /** URL canônica: sem esquema, "www.", query, fragmento e barra final; domínio minúsculo. */

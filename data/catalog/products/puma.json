@@ -1,0 +1,313 @@
+[
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Suede Classic XXI",
+  "model_name": "Suede Classic",
+  "color": "black",
+  "color_name": "Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Suede",
+  "aliases": [
+   "Puma Suede"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Palermo",
+  "model_name": "Palermo",
+  "color": "green",
+  "color_name": "Green",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Palermo",
+  "variants": [
+   {
+    "color": "green",
+    "color_name": "Green"
+   },
+   {
+    "color": "blue",
+    "color_name": "Blue"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Speedcat OG",
+  "model_name": "Speedcat",
+  "color": "red",
+  "color_name": "Red",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Speedcat",
+  "aliases": [
+   "Speedcat"
+  ],
+  "variants": [
+   {
+    "color": "red",
+    "color_name": "Red"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Club II Era",
+  "model_name": "Club II",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Caven 2.0",
+  "model_name": "Caven 2.0",
+  "color": "white",
+  "color_name": "White",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "casual_sneakers",
+  "product_name": "Smash v2",
+  "model_name": "Smash",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "running_shoes",
+  "product_name": "Deviate Nitro 3",
+  "model_name": "Deviate Nitro 3",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Nitro",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "running_shoes",
+  "product_name": "Velocity Nitro 3",
+  "model_name": "Velocity Nitro 3",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Nitro",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "t_shirt",
+  "product_name": "Essentials Logo T-Shirt",
+  "model_name": "Essentials Logo",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Essentials",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "hoodie",
+  "product_name": "Essentials Big Logo Hoodie",
+  "model_name": "Essentials Hoodie",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "Essentials",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "sweatpants",
+  "product_name": "Essentials Logo Pants",
+  "model_name": "Essentials Pants",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "Essentials",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "jacket",
+  "product_name": "T7 Track Jacket",
+  "model_name": "T7 Track",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "collection": "T7",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "leggings",
+  "product_name": "Essentials Leggings",
+  "model_name": "Essentials Leggings",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "collection": "Essentials",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "flip_flops",
+  "product_name": "Leadcat 2.0 Slides",
+  "model_name": "Leadcat",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Puma",
+  "subcategory": "backpack",
+  "product_name": "Phase Backpack",
+  "model_name": "Phase",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

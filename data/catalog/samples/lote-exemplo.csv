@@ -1,0 +1,9 @@
+brand,category,subcategory,product_name,model_name,product_code,sku,gtin,ean,upc,color,color_name,collection,material,gender,official_product_url,primary_image_url,source_domain,source_type,aliases
+Nike,SHOES_PIECE,tenis,Air Force 1 '07,Air Force 1 '07,,,,,,branco,White/White,Air Force,couro,unissex,,,,MANUAL_ADMIN,AF1|Air Force One
+NIKE,SHOES_PIECE,sneaker,Nike AF1 '07 White,Air Force 1 '07,,,,,,white,White/White,,,,,,,MANUAL_ADMIN,
+Lacoste,UPPER_PIECE,polo,Polo Original L.12.12,L.12.12,,,,,,verde,Green,L.12.12,algodão,masculino,,,,MANUAL_ADMIN,
+Levis,LOWER_PIECE,calca jeans,501 Original,501,,,,,,preto,Black,501,algodao,masculino,,,,MANUAL_ADMIN,
+Nike,UPPER_PIECE,cueca,Produto fora da taxonomia,,,,,,,,,,,,,,,MANUAL_ADMIN,
+Nike,SHOES_PIECE,tenis,Imagem do Pinterest,Teste,,,,,,,,,,,https://www.pinterest.com/pin/1,,,MANUAL_ADMIN,
+Adidas,SHOES_PIECE,tenis,Samba OG,Samba OG,,,4060512345678,,,white,Cloud White/Core Black,Originals,couro,unissex,,,,MANUAL_ADMIN,
+Adidas,SHOES_PIECE,tenis,Samba OG (mesmo GTIN com outro título),Samba,,,4060512345678,,,white,White,,,,,,,MANUAL_ADMIN,

@@ -1,0 +1,287 @@
+[
+ {
+  "brand": "Vans",
+  "subcategory": "skate_shoes",
+  "product_name": "Old Skool",
+  "model_name": "Old Skool",
+  "color": "black",
+  "color_name": "Black/White",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Classics",
+  "aliases": [
+   "Old Skool Jazz Stripe"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black/White",
+    "code": "VN000D3HY28"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy/White"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "skate_shoes",
+  "product_name": "Authentic",
+  "model_name": "Authentic",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Classics",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "skate_shoes",
+  "product_name": "Era",
+  "model_name": "Era",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Classics",
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "skate_shoes",
+  "product_name": "Classic Slip-On",
+  "model_name": "Slip-On",
+  "color": "black",
+  "color_name": "Checkerboard",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Classics",
+  "aliases": [
+   "Slip On Checkerboard"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Checkerboard"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Sk8-Hi",
+  "model_name": "Sk8-Hi",
+  "color": "black",
+  "color_name": "Black/White",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Classics",
+  "aliases": [
+   "Sk8 Hi"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black/White"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "casual_sneakers",
+  "product_name": "Knu Skool",
+  "model_name": "Knu Skool",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "casual_sneakers",
+  "product_name": "Ultrarange EXO",
+  "model_name": "Ultrarange",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "skate_shoes",
+  "product_name": "Skate Half Cab",
+  "model_name": "Half Cab",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Skate",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "t_shirt",
+  "product_name": "Classic Logo T-Shirt",
+  "model_name": "Classic Logo Tee",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "hoodie",
+  "product_name": "Classic Pullover Hoodie",
+  "model_name": "Classic Hoodie",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "cap",
+  "product_name": "Classic Patch Snapback",
+  "model_name": "Classic Patch",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "backpack",
+  "product_name": "Old Skool Backpack",
+  "model_name": "Old Skool Backpack",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Vans",
+  "subcategory": "beanie",
+  "product_name": "Core Basics Beanie",
+  "model_name": "Core Basics",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

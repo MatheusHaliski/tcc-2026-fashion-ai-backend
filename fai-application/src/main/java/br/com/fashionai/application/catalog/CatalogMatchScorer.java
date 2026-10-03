@@ -22,7 +22,12 @@ public final class CatalogMatchScorer {
 
     /** O que o scorer precisa saber do produto (montado pelo serviço). */
     public record Candidate(String brandSlug, String category, String subcategory, String productName, String modelName,
-                            String color, String colorName, String collection, List<String> aliases, List<String> codes) {
+                            String color, String colorName, String collection, List<String> aliases, List<String> codes,
+                            List<String> variantColors) {
+        public Candidate(String brandSlug, String category, String subcategory, String productName, String modelName,
+                         String color, String colorName, String collection, List<String> aliases, List<String> codes) {
+            this(brandSlug, category, subcategory, productName, modelName, color, colorName, collection, aliases, codes, List.of());
+        }
     }
 
     public record Score(double total, double brandMatch, double categoryMatch, double subcategoryMatch,
@@ -76,7 +81,8 @@ public final class CatalogMatchScorer {
         }
         if (q.color() != null) {
             String pc = p.color() != null ? p.color() : norm.color(p.colorName()).orElse(null);
-            color = q.color().equals(pc) ? 1 : sameFamily(q.color(), pc) ? 0.5 : 0;
+            boolean variant = p.variantColors() != null && p.variantColors().contains(q.color());
+            color = q.color().equals(pc) || variant ? 1 : sameFamily(q.color(), pc) ? 0.5 : 0;
             sum += W_COLOR * color;
             weights += W_COLOR;
         }

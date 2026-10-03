@@ -176,15 +176,27 @@ public class CatalogService {
                 .collect(Collectors.groupingBy(CatalogProductAlias::getProductId, Collectors.mapping(CatalogProductAlias::getAlias, Collectors.toList())));
         Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
                 .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
+        Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
+                .collect(Collectors.groupingBy(CatalogVariant::getProductId));
         Map<UUID, Brand> brandById = new HashMap<>();
         List<Map<String, Object>> out = new ArrayList<>();
         for (CatalogProduct p : pool) {
             Brand b = brandById.computeIfAbsent(p.getBrandId(), id -> brands.findById(id).orElse(null));
-            CatalogMatchScorer.Score s = scorer.score(res.intent(), candidate(p, b, aliases.getOrDefault(p.getId(), List.of())), null);
+            List<CatalogVariant> vs = variantsBy.getOrDefault(p.getId(), List.of());
+            CatalogMatchScorer.Score s = scorer.score(res.intent(), candidate(p, b, aliases.getOrDefault(p.getId(), List.of()), vs), null);
             if (s.total() < MIN_SCORE) {
                 continue;
             }
             Map<String, Object> m = card(p, b, primary.get(p.getId()));
+            m.put("variants", vs.stream().map(this::variantMap).toList());
+            // a variante da cor pedida ("501 preto" → variante Black) vem pré-selecionada
+            String wanted = res.intent().color();
+            vs.stream().filter(v -> wanted != null && wanted.equals(v.getColor())).findFirst().ifPresent(v -> {
+                m.put("selectedVariant", variantMap(v));
+                m.put("colorName", v.getColorName());
+                m.put("color", v.getColor());
+                m.put("colorHex", Taxonomy.hex(v.getColor()));
+            });
             m.put("matchScore", s.toMap());
             m.put("matchPercent", (int) Math.round(s.total() * 100));
             out.add(m);
@@ -194,13 +206,22 @@ public class CatalogService {
         return out.size() > limit ? out.subList(0, limit) : out;
     }
 
-    static CatalogMatchScorer.Candidate candidate(CatalogProduct p, Brand b, List<String> aliases) {
+    static CatalogMatchScorer.Candidate candidate(CatalogProduct p, Brand b, List<String> aliases, List<CatalogVariant> vs) {
         List<String> codes = new ArrayList<>();
         codes.add(p.getProductCode());
         codes.add(p.getSku());
         codes.add(p.getGtin());
+        List<String> all = new ArrayList<>(aliases);
+        for (CatalogVariant v : vs) {
+            codes.add(v.getVariantCode());
+            codes.add(v.getSku());
+            if (v.getColorName() != null) {
+                all.add(v.getColorName());
+            }
+        }
         return new CatalogMatchScorer.Candidate(b == null ? null : b.getSlug(), p.getCategory(), p.getSubcategory(), p.getProductName(),
-                p.getModelName(), p.getColor(), p.getColorName(), p.getCollection(), aliases, codes);
+                p.getModelName(), p.getColor(), p.getColorName(), p.getCollection(), all, codes,
+                vs.stream().map(CatalogVariant::getColor).filter(java.util.Objects::nonNull).toList());
     }
 
     Map<String, Object> card(CatalogProduct p, Brand b, CatalogImage img) {
