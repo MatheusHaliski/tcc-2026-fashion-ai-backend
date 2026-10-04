@@ -2,15 +2,32 @@
 import { useId } from "react";
 import { mediaUrl } from "@/lib/api/client";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { FOLHA_DEFAULT_CORE, FOLHA_RATIO, circularTemplate, faiTemplate, folhaTemplate, kindOfTemplate, type FolhaSlot, type FolhaSlotKey, type SealKind } from "@/lib/seals/templates";
 
 /**
  * RF25 — medalhão do selo. Segue as proporções do logo FashionAI (medidas no PNG oficial, frações do raio):
  * bisel 6 %, campo com o "elemento entre a borda e o centro" até 94 %, disco central 45 %, elemento central 36 %.
  * O JSON do desenho é o mesmo validado pelo backend (SealDesigns.normalize); aqui ele vira SVG determinístico
  * (sem Math.random — o mesmo desenho renderiza igual no servidor e no cliente).
+ *
+ * Três tipos (`kind`, lib/seals/templates.ts): CIRCULAR (gerado, enviado ou modelo de anel com núcleo editável), FOLHA
+ * (folha picotada 4:5 em camadas: todos os textos e o emblema central editáveis) e FASHIONAI (medalhão padrão pronto).
+ * Desenhos antigos, sem `kind`, são circulares.
  */
+/** Núcleo do selo (centro do circular, emblema da folha): elemento/emblema da arte, imagem enviada ou texto. */
+export type SealCoreMode = "ELEMENT" | "IMAGE" | "TEXT";
+export interface SealCore { mode?: SealCoreMode; imageUrl?: string | null; text?: string | null; textColor?: string | null; zoom?: number }
 export interface SealDesign {
-  mode?: "GENERATED" | "UPLOAD";
+  kind?: SealKind;
+  mode?: "GENERATED" | "UPLOAD" | "TEMPLATE";
+  /** Modelo do tipo escolhido: "circular/07", "folha/mat-04", "fai/03" (só com mode TEMPLATE). */
+  template?: string | null;
+  /** Folha: título (vazio = nome do selo), legenda e os demais textos da folha (série, subtítulo, rótulo, ano, emblema). */
+  label?: string | null;
+  caption?: string | null;
+  texts?: Partial<Record<Exclude<FolhaSlotKey, "title" | "caption">, string | null>>;
+  /** Núcleo editável (circular de modelo/gerado e emblema da folha). */
+  core?: SealCore | null;
   palette?: string | null;
   border?: { material?: string; color?: string; width?: number };
   field?: { pattern?: string; material?: string; color?: string; lineColor?: string; nodeColors?: string[]; density?: number; seed?: number };
@@ -55,10 +72,16 @@ export function designFromPalette(id: string, base?: SealDesign): SealDesign {
     field: { pattern: base?.field?.pattern ?? "MALHA", material: base?.field?.material ?? "FOSCO", color: p.field, lineColor: p.line, nodeColors: p.nodes, density: base?.field?.density ?? 2, seed: base?.field?.seed ?? 1 },
     center: { material: base?.center?.material ?? "FOSCO", color: p.center, radius: base?.center?.radius ?? GEOMETRY.centerDisc },
     element: { id: base?.element?.id ?? "BAG", material: base?.element?.material ?? "FOSCO", color: p.element, text: base?.element?.text ?? "FAI" },
+    core: base?.core ?? null,                                   // trocar a paleta não apaga o núcleo do emissor
     uploadUrl: null,
   };
 }
 export const DEFAULT_DESIGN: SealDesign = designFromPalette("FAI");
+
+/** Tipo do desenho (desenhos antigos não têm `kind`: valem como circulares). */
+export function sealKind(d?: SealDesign | null): SealKind {
+  return d?.kind ?? kindOfTemplate(d?.template) ?? "CIRCULAR";
+}
 
 // ------------------------------------------------------------------ cor e aleatoriedade determinística
 function hexToRgb(hex: string): [number, number, number] { const h = (hex ?? "#000000").replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
@@ -212,19 +235,153 @@ function Element({ id, color, text, fill }: { id: string; color: string; text: s
   }
 }
 
+/** Elemento central (com material) numa caixa de raio `elemR` centrada na origem do SVG. */
+function ElementLayer({ uid, element, elemR }: { uid: string; element: NonNullable<SealDesign["element"]>; elemR: number }) {
+  const elemMaterial = element.material ?? "FOSCO";
+  const elemFill = METAL[elemMaterial] || elemMaterial === "BRILHO" ? `url(#${uid}-element-g)` : (element.color ?? "#2B2622");
+  return (
+    <>
+      <defs>
+        {METAL[elemMaterial] && <linearGradient id={`${uid}-element-g`} x1="0" y1="0" x2="1" y2="1">{METAL[elemMaterial].map((c, i) => <stop key={i} offset={`${(i / (METAL[elemMaterial].length - 1)) * 100}%`} stopColor={c} />)}</linearGradient>}
+        {elemMaterial === "BRILHO" && <linearGradient id={`${uid}-element-g`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={lighten(element.color ?? "#2B2622", 0.45)} /><stop offset="100%" stopColor={element.color ?? "#2B2622"} /></linearGradient>}
+        {elemMaterial === "NEON" && <filter id={`${uid}-element-f`} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>}
+      </defs>
+      <g transform={`translate(${-elemR} ${-elemR}) scale(${(elemR * 2) / 100})`} opacity={elemMaterial === "VIDRO" ? 0.75 : 1} filter={elemMaterial === "NEON" ? `url(#${uid}-element-f)` : undefined}>
+        <Element id={element.id ?? "BAG"} color={element.color ?? "#2B2622"} text={element.text || "FAI"} fill={elemFill} />
+      </g>
+    </>
+  );
+}
+
+/** Largura aproximada de um texto (unidades do SVG) para decidir quando comprimir em vez de cortar. */
+function textWidth(text: string, size: number, ls: number) { return text.length * (size * 0.6 + ls); }
+/** Largura máxima de cada texto da folha (a moldura tem 184 de miolo; o rótulo e a legenda dividem a base com o ano). */
+const SLOT_MAX: Record<FolhaSlotKey, number> = { title: 184, series: 196, subtitle: 184, style: 128, caption: 150, year: 0, emblem: 0 };
+
+function FolhaText({ slot, value, maxW }: { slot: FolhaSlot; value: string; maxW: number }) {
+  const fit = maxW > 0 && textWidth(value, slot.size, slot.ls) > maxW;
+  return (
+    <text x={slot.x} y={slot.y} transform={`matrix(${slot.m.join(" ")})`} textAnchor={slot.anchor as "start" | "middle" | "end"} fontSize={slot.size} fontWeight={slot.weight} fontFamily={slot.family}
+      fontStyle={slot.italic ? "italic" : undefined} letterSpacing={slot.ls || undefined} fill={slot.fill} opacity={slot.opacity === 1 ? undefined : slot.opacity}
+      {...(fit ? { textLength: maxW, lengthAdjust: "spacingAndGlyphs" } : {})}>{value}</text>
+  );
+}
+
+/** Texto centralizado numa caixa, em até duas linhas, com o maior corpo que cabe. */
+function BoxText({ text, x, y, w, h, color, family = "var(--font-display, Georgia, serif)" }: { text: string; x: number; y: number; w: number; h: number; color: string; family?: string }) {
+  const words = text.trim().split(/\s+/);
+  let lines = [text.trim()];
+  if (text.length > 9 && words.length > 1) {
+    let best = 0, bestDiff = Infinity;
+    for (let i = 1; i < words.length; i++) { const d = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length); if (d < bestDiff) { bestDiff = d; best = i; } }
+    lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+  }
+  const longest = Math.max(...lines.map((l) => l.length), 1);
+  const size = Math.min(h / (lines.length * 1.15), (w * 0.96) / (longest * 0.56));
+  const cy = y + h / 2 - ((lines.length - 1) * size * 1.1) / 2;
+  return <g fill={color} fontFamily={family} fontWeight="800" textAnchor="middle">{lines.map((l, i) => <text key={i} x={x + w / 2} y={cy + i * size * 1.1} dominantBaseline="central" fontSize={size}>{l}</text>)}</g>;
+}
+
+/**
+ * Folha picotada em camadas: arte sem textos → emblema (ou a imagem/texto do emissor no lugar) → textos da folha, cada
+ * um na posição e na tipografia da arte original, com o valor do selo (vazio = texto padrão do modelo; título vazio =
+ * nome do selo).
+ */
+function FolhaSeal({ d, size, title, className }: { d: SealDesign; size: number; title?: string; className: string }) {
+  const { t } = useI18n();
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const tpl = folhaTemplate(d.template) ?? folhaTemplate("folha/fai-01")!;
+  const w = Math.round(size * FOLHA_RATIO);
+  const core = d.core ?? {};
+  const mode = core.mode ?? "ELEMENT";
+  const box = tpl.emblem ?? FOLHA_DEFAULT_CORE;
+  const z = Math.max(1, Math.min(3, core.zoom ?? 1));
+  const value = (k: FolhaSlotKey): string => {
+    const own = k === "title" ? d.label : k === "caption" ? d.caption : d.texts?.[k];
+    if (own != null && own.trim() !== "") return k === "title" || k === "series" || k === "style" ? own.trim().toUpperCase() : own.trim();
+    return k === "title" ? "FASHION AI" : (tpl.slots[k]?.text ?? "");
+  };
+  return (
+    <span className={`${className} is-folha`} style={{ width: w, height: size }} title={title}>
+      <svg viewBox="0 0 240 300" width={w} height={size} role="img" aria-label={title ?? t("sealMedallion.selo")} style={{ display: "block" }}>
+        <defs><clipPath id={`${uid}-core`}><rect x={box.x} y={box.y} width={box.w} height={box.h} rx="6" /></clipPath></defs>
+        <image href={tpl.src} x="0" y="0" width="240" height="300" preserveAspectRatio="none" />
+        {mode === "ELEMENT" && tpl.emblem && <image href={tpl.emblem.src} x={tpl.emblem.x} y={tpl.emblem.y} width={tpl.emblem.w} height={tpl.emblem.h} preserveAspectRatio="none" />}
+        {mode === "IMAGE" && core.imageUrl && (
+          <g clipPath={`url(#${uid}-core)`}>
+            <image href={mediaUrl(core.imageUrl)} x={box.x + (box.w - box.w * z) / 2} y={box.y + (box.h - box.h * z) / 2} width={box.w * z} height={box.h * z} preserveAspectRatio="xMidYMid meet" />
+          </g>
+        )}
+        {mode !== "ELEMENT" && core.text?.trim() && <BoxText text={core.text} x={box.x} y={mode === "IMAGE" ? box.y + box.h * 0.72 : box.y} w={box.w} h={mode === "IMAGE" ? box.h * 0.28 : box.h} color={core.textColor ?? tpl.ink} />}
+        {(Object.keys(tpl.slots) as FolhaSlotKey[]).map((k) => {
+          if (k === "emblem" && mode !== "ELEMENT") return null;               // o texto do emblema acompanha o emblema
+          const slot = tpl.slots[k]!; const v = value(k);
+          if (!v) return null;
+          return <FolhaText key={k} slot={slot} value={v} maxW={SLOT_MAX[k] || (slot.w ? slot.w * 1.35 : 0)} />;
+        })}
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * Núcleo do selo circular, centrado na origem, no disco de raio `discR`: o elemento (com material), uma imagem enviada
+ * (recortada no disco, com zoom e texto opcional embaixo) ou um texto livre em até duas linhas.
+ */
+function CoreLayer({ uid, d, discR, elemR }: { uid: string; d: SealDesign; discR: number; elemR: number }) {
+  const core = d.core ?? {};
+  const mode = core.mode ?? "ELEMENT";
+  const element = d.element ?? {};
+  if (mode === "IMAGE" && core.imageUrl) {
+    const z = Math.max(1, Math.min(3, core.zoom ?? 1)); const r = discR * z;
+    return (
+      <>
+        <defs><clipPath id={`${uid}-core`}><circle r={discR} /></clipPath></defs>
+        <g clipPath={`url(#${uid}-core)`}>
+          <image href={mediaUrl(core.imageUrl)} x={-r} y={-r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
+          {core.text?.trim() && <><rect x={-discR} y={discR * 0.42} width={discR * 2} height={discR * 0.6} fill="#000" opacity=".38" /><BoxText text={core.text} x={-discR * 0.8} y={discR * 0.44} w={discR * 1.6} h={discR * 0.42} color={core.textColor ?? "#FFFFFF"} /></>}
+        </g>
+      </>
+    );
+  }
+  if (mode === "TEXT" && core.text?.trim()) {
+    const side = discR * 1.5;
+    return <BoxText text={core.text} x={-side / 2} y={-side / 2} w={side} h={side} color={core.textColor ?? element.color ?? "#2B2622"} />;
+  }
+  return <ElementLayer uid={uid} element={element} elemR={elemR} />;
+}
+
 export function SealMedallion({ design, size = 44, premium, title, className }: { design?: SealDesign | null; size?: number; premium?: boolean; title?: string; className?: string }) {
   const { t } = useI18n();
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const d = design ?? DEFAULT_DESIGN;
+  const kind = sealKind(d);
+  const wrapClass = `seal-medallion has-design ${premium ? "premium" : ""} ${className ?? ""}`;
+  if (kind === "FOLHA") return <FolhaSeal d={d} size={size} title={title} className={wrapClass} />;
+  if (kind === "FASHIONAI") {
+    const tpl = faiTemplate(d.template) ?? faiTemplate("fai/01")!;
+    return <span className={wrapClass} style={{ width: size, height: size }} title={title}><img src={tpl.src} alt={title ?? t("sealMedallion.selo")} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></span>;
+  }
+  const ring = d.mode === "TEMPLATE" ? circularTemplate(d.template) : undefined;
+  if (ring) {
+    // anel pronto + núcleo do criador (elemento, imagem ou texto) no disco liso do modelo (elemento = 80 % do disco)
+    const element = d.element ?? {};
+    return (
+      <span className={wrapClass} style={{ width: size, height: size }} title={title}>
+        <svg viewBox="-100 -100 200 200" width={size} height={size} role="img" aria-label={title ?? t("sealMedallion.selo")} style={{ display: "block", overflow: "visible" }}>
+          <image href={ring.src} x="-100" y="-100" width="200" height="200" />
+          <circle r="99.2" fill="none" stroke="#000" strokeOpacity=".28" strokeWidth="1.6" />
+          <CoreLayer uid={uid} d={{ ...d, element }} discR={100 * ring.center} elemR={100 * ring.center * 0.8} />
+        </svg>
+      </span>
+    );
+  }
   const R = 100;
   const bw = Math.max(0.03, Math.min(0.12, d.border?.width ?? GEOMETRY.bezel));
   const fieldR = R * (1 - bw);
   const centerR = R * Math.max(0.3, Math.min(0.6, d.center?.radius ?? GEOMETRY.centerDisc));
   const elemR = R * GEOMETRY.element * (centerR / (R * GEOMETRY.centerDisc));
-  const border = d.border ?? {}; const field = d.field ?? {}; const center = d.center ?? {}; const element = d.element ?? {};
-  const elemMaterial = element.material ?? "FOSCO";
-  const elemFill = METAL[elemMaterial] || elemMaterial === "BRILHO" ? `url(#${uid}-element-g)` : (element.color ?? "#2B2622");
-  const wrapClass = `seal-medallion has-design ${premium ? "premium" : ""} ${className ?? ""}`;
+  const border = d.border ?? {}; const field = d.field ?? {}; const center = d.center ?? {};
 
   if (d.mode === "UPLOAD" && d.uploadUrl) {
     return <span className={wrapClass} style={{ width: size, height: size }} title={title}><img src={mediaUrl(d.uploadUrl)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /></span>;
@@ -251,15 +408,8 @@ export function SealMedallion({ design, size = 44, premium, title, className }: 
         <circle r={centerR + 1.5} fill={darken(center.color ?? "#F6E8CF", 0.35)} opacity=".35" />
         <circle r={centerR} fill={center.color ?? "#F6E8CF"} />
         <Material material={center.material ?? "FOSCO"} color={center.color ?? "#F6E8CF"} clipId={`${uid}-cc`} uid={uid} part="center" />
-        {/* 4. elemento central */}
-        <defs>
-          {METAL[elemMaterial] && <linearGradient id={`${uid}-element-g`} x1="0" y1="0" x2="1" y2="1">{METAL[elemMaterial].map((c, i) => <stop key={i} offset={`${(i / (METAL[elemMaterial].length - 1)) * 100}%`} stopColor={c} />)}</linearGradient>}
-          {elemMaterial === "BRILHO" && <linearGradient id={`${uid}-element-g`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={lighten(element.color ?? "#2B2622", 0.45)} /><stop offset="100%" stopColor={element.color ?? "#2B2622"} /></linearGradient>}
-          {elemMaterial === "NEON" && <filter id={`${uid}-element-f`} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>}
-        </defs>
-        <g transform={`translate(${-elemR} ${-elemR}) scale(${(elemR * 2) / 100})`} opacity={elemMaterial === "VIDRO" ? 0.75 : 1} filter={elemMaterial === "NEON" ? `url(#${uid}-element-f)` : undefined}>
-          <Element id={element.id ?? "BAG"} color={element.color ?? "#2B2622"} text={element.text || "FAI"} fill={elemFill} />
-        </g>
+        {/* 4. núcleo: elemento central, imagem enviada ou texto */}
+        <CoreLayer uid={uid} d={d} discR={centerR} elemR={elemR} />
       </svg>
     </span>
   );
