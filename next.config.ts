@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // Os assets de /public (chrome, auras, peças padrão, ícones) são servidos como estáticos; o backend serve /media.
   images: { unoptimized: true },
   poweredByHeader: false,
+  // Next 16 gera AGENTS.md/CLAUDE.md na raiz a cada `next dev`; o projeto não versiona esses arquivos gerados
+  agentRules: false,
   // OWASP A05 — cabeçalhos em todas as respostas (a CSP com nonce vem do middleware.ts, por requisição)
   async headers() {
     const gate = (process.env.DEV_GATE_ENABLED ?? "true").toLowerCase() !== "false";

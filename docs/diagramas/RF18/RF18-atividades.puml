@@ -1,5 +1,5 @@
 @startuml RF18_Atividades
-title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,72 +25,61 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a tela /try-on;
+:Abre /try-on (Provador virtual);
 |Frontend (try-on/page.tsx)|
-:GET /api/try-on;
-|Backend (TryOnService)|
-:resolve(): manequim = Avatar 3D da pessoa;\nsem avatar, sexo do cadastro (RF1)\nou UserPreferences.mannequinSex;
-note right
-  CA01 — a escolha masc/fem fica salva em
-  user_preferences.mannequin_sex e volta na próxima sessão
-end note
-if (Acervo tem peça não arquivada?) then (não)
-  #FFE3E3:422 ACERVO_VAZIO (href /pieces/new);
-  stop
-else (sim)
-endif
-:Filtra o catálogo: só peças com\nWardrobeItem.sex compatível com o manequim (CA08);
-:Agrupa por lugar pela categoria gravada:\nupper_piece · lower_piece · shoes_piece · accessory_piece;
-:Peça com categoria fora da taxonomia\nentra em "needsReview" (não chuta lugar);
-|Frontend (try-on/page.tsx)|
-:Mostra avatar/manequim, 4 lugares,\nguarda-roupa por lugar e tom de pele/porte;
-|Pessoa|
-:Ajusta tom de pele / porte (CA06);
-|Frontend (try-on/page.tsx)|
-:PUT /api/try-on/preferences;
-|Backend (TryOnService)|
-if (skinTone em MannequinGeometry.SKIN_TONES?) then (não)
-  #FFE3E3:400 TOM_INVALIDO;
-else (sim)
-  :Grava mannequin_sex / skin_tone / build (RF23);
-endif
-|Pessoa|
-:Toca na peça para vestir;
-|Frontend (try-on/page.tsx)|
-if (Lugar já ocupado?) then (sim)
-  :Substitui a peça do mesmo lugar\ne avisa a troca (CA03);
+fork
+  :GET /api/try-on\n(identidade do Avatar 3D + guarda-roupa por lugar);
+fork again
+  :GET /api/catalog/stores\n(lojas em destaque);
+end fork
+if (Link da prova? (?provar=c.<produto>.<variante>,w.<peça>)) then (sim)
+  :GET /api/catalog/products/{id} para cada peça de loja;
+  :Veste as peças do link;
+elseif (Prova da sessão?) then (sim)
+  :Restaura as peças (sessionStorage);
 else (não)
-  :Veste no lugar vazio (CA02);
+  :Provador vazio · ambiente neutro FashionAI;
 endif
-:Guarda a composição na sessão do navegador;
+note right
+  Guarda-roupa vazio NÃO bloqueia:
+  o provador prova peças das lojas (RF47).
+end note
 |Pessoa|
-if (Ação?) then (Gerar imagem)
-  |Frontend (try-on/page.tsx)|
-  :POST /api/try-on/renders {pieceIds};
-  |Backend (TryOnService)|
-  if (Toda peça com sex compatível?) then (não)
-    #FFE3E3:400 SEXO_INCOMPATIVEL — bloqueia (CA08);
-    stop
-  else (sim)
+repeat
+  if (De onde provar?) then (Lojas)
+    :Toca numa loja em destaque e/ou\nfiltra o tipo (cima, baixo, calçados…);
+    |Frontend (try-on/page.tsx)|
+    :CatalogSearch em modo navegação\nGET /api/catalog/search (só a marca já lista);
+    |Pessoa|
+    :Toca "Provar" num produto;
+  else (Meu guarda-roupa)
+    :Toca numa peça própria para combinar;
   endif
-  :resolveLayers(): última peça da mesma\ncamada/âncora substitui; peça inteira\nremove TOP e BOTTOM ("replaced");
-  if (Peça sem fundo removido?) then (sim)
-    :ImageOps.removeBackgroundLocal\n+ aviso de sobreposição aproximada (CA05);
+  |Frontend (try-on/page.tsx)|
+  :wearItem(): a peça toma o lugar dela\n(cima, baixo, calçado, acessório);
+  note right: peça inteira (FULL_BODY) cobre a parte de baixo
+  :resolveEnvironment(): marca da última peça = destaque;\noutras marcas vestidas = painéis laterais;
+  if (Marca fixada ou modo neutro?) then (sim)
+    :Mantém o ambiente escolhido;
   else (não)
+    :Troca o ambiente 3D (cores animadas,\npainel entra com escala suave);
   endif
-  :AiEngine.execute(TRY_ON):\nFASHN → fallback TryOnCompositor local;
-  note right: ver RF24 (motor de IA)\nconsentimento AI_EXTERNAL_PHOTO_PROCESSING
-  :Grava PNG em users/{id}/tryon/ e Photo (origin TRY_ON);
-  |Frontend (try-on/page.tsx)|
-  :Exibe imagem, warnings e "replaced";
-elseif (Limpar) then
-  :Esvazia os 4 lugares só na sessão;\nguarda-roupa não muda (CA07);
-elseif (Salvar como esquema (API legada)) then
-  |Frontend (try-on/page.tsx)|
-  :POST /api/try-on/schemes;
-  note right: a tela atual não oferece o botão;\nendpoint mantido (CA04)
-  |Backend (TryOnService)|
-  :SchemeService.create(origin PROVADOR)\n+ virtualTryOnUrl (RF5);
-endif
+  :FittingRoomScene: Avatar 3D + faixa do logo, letreiro,\nparedes/piso no estilo da loja, cortina, espelho, arara;
+  |Pessoa|
+  if (Quer algo mais?) then (trocar a cor)
+    :Escolhe outra variante da peça vestida;
+  elseif (já tenho esta peça) then
+    |Frontend (try-on/page.tsx)|
+    :POST /api/pieces/from-catalog\n(peça entra no guarda-roupa por referência);
+  elseif (ver na loja) then
+    :Abre o domínio oficial registrado no produto;
+  elseif (foto / link / salvar) then
+    :PNG do palco · link ?provar= · prova salva (navegador);
+  else (só provar)
+  endif
+repeat while (Continua provando?) is (sim)
+-> não;
+|Pessoa|
+:Limpar (opcional): peças saem do provador,\no guarda-roupa não muda;
 stop
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF18_Classes
-title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — tipos do provador (frontend) e entidades JPA usadas
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,123 +10,109 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
-
+package "lib/tryon/fitting-room.ts" {
+  class FittingItem {
+    +key: string
+    +source: "catalog" | "wardrobe"
+    +slot: FittingSlot
+    +wear: Wear
+    +name: string
+    +brand: FittingBrand
+    +imageUrl, colorHex, colorName
+    +productId, variantId, pieceId
+    +officialUrl, sourceDomain
+    +addedAt: number
+  }
+  class FittingBrand {
+    +name: string
+    +slug: string
+    +logoUrl: string
+  }
+  class BrandEnvironment {
+    +key, name, logoUrl
+    +style: RoomStyle
+    +motif: WallMotif
+    +wall, floor, accent, ink
+    +curated: boolean
+  }
+  class ResolvedEnvironment {
+    +kind: neutral | brand | multibrand
+    +featured: BrandEnvironment
+    +others: BrandEnvironment[0..3]
+    +brands: BrandEnvironment[]
+  }
+  class "funções" as F <<module>> {
+    +wearItem(items, item)
+    +visibleItems(items)
+    +resolveEnvironment(items, mode)
+    +environmentFor(brand)
+    +encodeTryOn(items) / decodeTryOn(raw)
+  }
+  enum FittingSlot {
+    upper_piece
+    lower_piece
+    shoes_piece
+    accessory_piece
+  }
+  enum Wear {
+    TOP
+    OUTERWEAR
+    BOTTOM
+    FULL_BODY
+    SHOES
+    ACCESSORY
+  }
+  enum RoomStyle {
+    arena
+    heritage
+    gallery
+    street
+    boutique
+    atelier
+  }
+  enum LightMode {
+    store
+    daylight
+    night
+  }
+}
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +sex: MannequinSex
-  +profileType: ProfileType
+  class CatalogProduct {
+    +brandId: UUID
+    +category, subcategory
+    +productName, color, colorName
+    +officialProductUrl, sourceDomain
+    +description, designJson
+  }
+  class CatalogVariant {
+    +productId: UUID
+    +color, colorName, variantCode
+  }
+  class WardrobeItem {
+    +category, subcategory, brandName
+    +catalogProductId: UUID
+    +catalogVariantId: UUID
+    +imageOrigin: ImageOrigin
+  }
+  class UserAvatar3d
+  class Brand {
+    +name, slug, logoUrl
+  }
 }
-class UserPreferences {
-  +user: User
-  +mannequinSex: MannequinSex
-  +mannequinSkinTone: String
-  +mannequinBuild: BodyBuild
-  +mannequinFaceJson: String
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +imageUrl: String
-  +defaultImage: boolean
-  +photoProcessingStatus: PhotoProcessingStatus
-  +availabilityStatus: AvailabilityStatus
-}
-class Photo {
-  +owner: User
-  +origin: PhotoOrigin
-  +url: String
-  +moderationStatus: ModerationStatus
-}
-class Scheme {
-  +user: User
-  +title: String
-  +origin: SchemeOrigin
-  +virtualTryOnUrl: String
-  +renderingStatus: RenderStatus
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +tryOnLayer: TryOnLayer
-  +sortOrder: int
-  +zIndex: int
-}
-class UserConsent {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-}
-}
-package "fai-domain · enums" {
-enum MannequinSex {
-  MASCULINO
-  FEMININO
-}
-enum BodyBuild {
-  SLIM
-  MEDIUM
-  ATHLETIC
-  CURVY
-  PLUS
-}
-enum TryOnLayer {
-  BASE
-  INTERMEDIATE
-  OUTER
-  ACCESSORY
-}
-enum RenderStatus {
-  PENDING
-  RENDERING
-  ENHANCING
-  COMPOSITING
-  CACHED
-  COMPLETED
-  FAILED
-}
-enum SchemeOrigin {
-  CRIAR_LOOK
-  PROVADOR
-  REMIX
-  COPILOT
-  ..
-}
-}
-package "fai-application · service" {
-class TryOnService {
-  +state(user, sex): Map
-  +savePreferences(user, sex, skinTone, build): Map
-  +render(user, sex, pieceIds): Map
-  +saveAsScheme(user, pieceIds, title, tryOnUrl): Map
-  {static} resolveLayers(ordered): Map
-  {static} slotOf(w): String
-}
-class TryOnCompositor {
-  +externalAvailable(): boolean
-  +render(body, skinHex, garments, allowExternal): Result
-}
-}
-UserPreferences "1" --> "1" User
-WardrobeItem "*" --> "1" User
-Photo "*" --> "1" User
-Scheme "*" --> "1" User
-SchemeItem "*" --> "1" Scheme
-SchemeItem "*" --> "1" WardrobeItem
-UserConsent "*" --> "1" User
-UserPreferences ..> MannequinSex
-UserPreferences ..> BodyBuild
-SchemeItem ..> TryOnLayer
-Scheme ..> SchemeOrigin
-Scheme ..> RenderStatus
-TryOnService ..> TryOnCompositor
-TryOnService ..> UserPreferences
-TryOnService ..> WardrobeItem
-TryOnService ..> Photo
-note bottom of UserConsent : ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING\nexigido pelo AiCapability.TRY_ON (ver RF24)
+FittingItem --> FittingSlot
+FittingItem --> Wear
+FittingItem --> FittingBrand
+ResolvedEnvironment --> "1..*" BrandEnvironment
+BrandEnvironment --> RoomStyle
+F ..> FittingItem
+F ..> ResolvedEnvironment
+FittingItem ..> CatalogProduct : source = catalog
+FittingItem ..> WardrobeItem : source = wardrobe
+CatalogVariant "*" --> "1" CatalogProduct
+CatalogProduct "*" --> "1" Brand
+WardrobeItem ..> CatalogProduct : por referência (Já tenho)
+note bottom of BrandEnvironment
+  10 marcas do seed com tema escolhido à mão;
+  as demais: tema estável derivado do nome
+end note
 @enduml
