@@ -4533,5 +4533,6 @@
   "sealWizard.texto.caption": "Caption",
   "sealWizard.texto.year": "Year (round badge)",
   "sealWizard.texto.emblem": "Emblem text",
-  "sealWizard.texto_dica": "Empty = template text · up to {n} characters"
+  "sealWizard.texto_dica": "Empty = template text · up to {n} characters",
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>The card's real season</0> — choosing the Seasonal palette overrides the manual background art (Background Studio steps 2–3)."
 }
