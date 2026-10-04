@@ -26,10 +26,16 @@ set -a; . ./.env; set +a
 export DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)   # chave AES para campos sensíveis
 
 # 3) build + run (Flyway cria o schema V1..V6 na primeira subida)
-mvn -DskipTests package
-java -jar fai-bootstrap/target/fai-bootstrap-0.1.0-SNAPSHOT.jar
-# ou, sem gerar o jar: mvn -pl fai-bootstrap -am spring-boot:run
+mvn -DskipTests package            # rode na raiz do repositório (onde está o pom.xml)
+ls fai-bootstrap/target/fai-bootstrap-*.jar   # o jar só existe se o build terminar com BUILD SUCCESS
+java -jar fai-bootstrap/target/fai-bootstrap-*.jar
+# alternativa sem java -jar: mvn -pl fai-bootstrap -am spring-boot:run
 ```
+
+> **`Error: Unable to access jarfile fai-bootstrap/target/...jar`**: o jar não foi gerado. Causas comuns:
+> (1) o `mvn package` falhou ou não foi executado (leia o erro acima do `BUILD FAILURE`; `java -version` e
+> `mvn -v` precisam mostrar JDK 21 ou superior); (2) o comando `java -jar` foi executado fora da raiz do
+> repositório (o caminho é relativo); (3) o `mvn` foi rodado dentro de um submódulo em vez da raiz.
 
 Depois: `curl http://localhost:8080/actuator/health` → `{"status":"UP"}` e abra o Swagger em
 `http://localhost:8080/swagger-ui.html`. Sem chaves de IA, e-mails saem no console (`EMAIL_PROVIDER=log`) e cada
