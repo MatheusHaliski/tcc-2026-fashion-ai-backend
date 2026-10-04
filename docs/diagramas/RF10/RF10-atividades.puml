@@ -1,0 +1,77 @@
+@startuml RF10_Atividades
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba "Copilot" (copilot);
+|Frontend (Next.js)|
+:GET /api/copilot/context?view=copilot\nGET /api/copilot/suggestions?city=&lat=&lon=;
+|Backend (CopilotService)|
+:WeatherService.resolve(lat, lon, city)\n→ faixa de temperatura (band) e estação;
+note right: OpenMeteoAdapter (WeatherPort/GeocodingPort);\nsem clima → Context.none
+:Lista peças elegíveis (WardrobeService.eligible:\ndisponíveis do acervo real);
+:Monta 5 blocos: looks prontos, combinações novas\n(LocalSchemeComposer), peças esquecidas (30+ dias sem uso),\npeças para o clima, looks em alta na rede;
+|Frontend (Next.js)|
+:Renderiza SchemeCard / PieceCard + prompts sugeridos;
+|Pessoa|
+:Escreve um pedido ("look para jantar", "onde está meu tênis"...);
+|Frontend (Next.js)|
+:POST /api/copilot/messages {message, view, selection, city};
+|Backend (CopilotService)|
+if (Mensagem vazia?) then (sim)
+  #FFE3E3:400 MENSAGEM_VAZIA;
+  stop
+endif
+:Roteia a intenção (Intent): WHERE_IS, FORGOTTEN,\nDIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL;
+note right: CopilotLexicon extrai ocasião, estilo, humor,\nestação, cor, tipo, material e faixa de clima do texto
+if (Intenção) then (LOOKS)
+  :Compõe looks com as peças do acervo\n(respeita desafio ativo, se houver);
+elseif (GENERAL)
+  :AiEngine.text(AiCapability.COPILOT) com refs [[pN]]\nsó das peças listadas; fallback texto local;
+  note right: ver RF24 (motor de IA) — nunca cita marca para compra
+else (demais)
+  :Resposta local: localização no quarto (RoomService),\nesquecidas, diagnóstico do acervo;
+endif
+:Responde text + chips de peças + actions + intent;
+|Pessoa|
+if (Aceita um look sugerido?) then (sim)
+  |Frontend (Next.js)|
+  :POST /api/copilot/looks {pieceIds, title, occasion, style, mood, background};
+  |Backend (CopilotService)|
+  :AutopilotService.createScheme(origin = COPILOT)\n+ DailyLookService.register(source = COPILOT);
+  note right: esquema salvo em schemes; Look do Dia em daily_looks (RF6)
+endif
+if (Quer planejar a semana?) then (sim)
+  |Frontend (Next.js)|
+  :POST /api/autopilot/weeks {weekStart, days[], city};
+  |Backend (AutopilotService)|
+  if (Acervo com menos que o mínimo?) then (sim)
+    #FFE3E3:422 ACERVO_INSUFICIENTE;
+    stop
+  endif
+  :Plano anterior ACTIVE → DISCARDED;\nnovo WeekPlan ACTIVE com 7 WeekPlanDay\nsem repetir combinação (combination_key);
+endif
+stop
+@enduml

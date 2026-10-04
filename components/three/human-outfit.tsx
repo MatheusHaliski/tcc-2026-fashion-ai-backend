@@ -6,10 +6,13 @@ import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
-  SPECS, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
+  SPECS, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
   type GarmentKind, type GarmentSpec,
 } from "@/lib/avatar3d/human/garments";
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
+import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
+import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
+import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -38,28 +41,72 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   setArmOut(human, pose, armOutFor(items.map((i) => i.spec)));   // saia rodada e camadas grossas: braço mais aberto
   applyIdle(human, pose, 0, 0);                                    // pose de exibição, sem o movimento, para projetar a foto
   const P = bodyParam(asset, composed);
+  // a roupa nasce do corpo suavizado (sem mamilos, clavícula e músculos desenhados no tecido); o calçado, do pé real
+  const soft = { ...composed, body: smoothBody(asset, composed, 12) };
+  let floorY = Infinity; for (let v = 0; v < P.group.length; v++) if (P.group[v] === 4) floorY = Math.min(floorY, composed.body[v * 3 + 1]);
   const meshes: THREE.SkinnedMesh[] = []; const below: GarmentSpec[] = []; const built: GarmentKind[] = [];
   const wear = (it: OutfitItem) => {
-    const under = below.length ? underLayer(composed, P, below) : null;
-    const gg = garmentGeometry(asset, composed, human.rest.normals, P, it.spec, under);
+    const shoeKind = it.spec.kind === "shoes" || it.spec.kind === "boots";
+    const cc = shoeKind ? composed : soft;
+    const under = below.length ? underLayer(cc, P, below) : null;
+    const gg = garmentGeometry(asset, cc, human.rest.normals, P, it.spec, under);
     below.push(it.spec); if (!gg) return;
+    // caimento: o tecido relaxa (sem o desenho do corpo por baixo) e ganha dobras, punho e barra (garment-relax.ts)
+    relaxGarment(gg, cc, human.rest.normals, P, under); foldGarment(gg, cc, human.rest.normals, P);
     const img = images[it.key] ?? null;
     const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
-    const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null);
+    const sleeveVert = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2;
+    const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null, it.spec.sleeve > 0 ? sleeveVert : undefined);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex);
     const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric);
     if (shoe) {                                                    // cabedal e sola nas cores da foto (cor por vértice)
       const sc = shoeColors(img, it.piece.colorHex); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
       const pos = geo.getAttribute("position"), col = geo.getAttribute("color");
-      for (let i = 0; i < pos.count; i++) { const k = pos.getY(i) < 0.022 ? so : up; col.setXYZ(i, k.r, k.g, k.b); }
+      for (let i = 0; i < pos.count; i++) { const k = pos.getY(i) < floorY + 0.006 ? so : up; col.setXYZ(i, k.r, k.g, k.b); }
+      // sola com espessura, cadarço e colarinho acolchoado (shoes.ts): tênis, não meia
+      for (const part of shoeParts(asset, composed, P, it.spec, sc, shoeStyleOf(it.piece.subcategory))) {
+        const pg = new THREE.BufferGeometry();
+        pg.setAttribute("position", new THREE.Float32BufferAttribute(part.position, 3));
+        pg.setAttribute("color", new THREE.Float32BufferAttribute(part.color, 3));
+        pg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(part.skinIndex, 4));
+        pg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(part.skinWeight, 4));
+        pg.setIndex(Array.from(part.index)); pg.computeVertexNormals();
+        const pm = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: part.name === "sola" ? 0.55 : part.name === "cabedal" ? 0.7 : 0.85, sheen: part.name === "sola" ? 0 : 0.3, side: THREE.DoubleSide,
+          polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
+        pm.name = `calcado-${part.name}`;
+        const pmesh = new THREE.SkinnedMesh(pg, pm); pmesh.name = `${part.name}-${it.piece.id}`; pmesh.castShadow = true; pmesh.frustumCulled = false;
+        human.root.add(pmesh); pmesh.bind(human.skeleton, human.body.bindMatrix); meshes.push(pmesh);
+      }
     }
-    const m = new THREE.SkinnedMesh(geo, garmentMaterial(tex, it.spec)); m.name = `peca-${it.piece.id}`;
-    m.castShadow = true; m.frustumCulled = false;
-    human.root.add(m); m.bind(human.skeleton, human.body.bindMatrix);
-    meshes.push(m); built.push(it.spec.kind);
+    built.push(it.spec.kind);
+    // tênis e sapato: o cabedal é a fôrma modelada (shoes.ts); o molde do pé só serve à bota (cano)
+    if (it.spec.kind !== "shoes") {
+      const m = new THREE.SkinnedMesh(geo, garmentMaterial(tex, it.spec)); m.name = `peca-${it.piece.id}`;
+      m.castShadow = true; m.frustumCulled = false;
+      human.root.add(m); m.bind(human.skeleton, human.body.bindMatrix);
+      meshes.push(m);
+    } else { geo.dispose(); tex.dispose(); }
+    // barra e manga com acabamento 3D (faixa com espessura dando a volta), na cor do acabamento da foto
+    if (!shoe) {
+      const tc = trimColors(img, fabric); const rib = ribColor(img, fabric);
+      for (const tb of garmentTrims(asset, cc, P, gg)) {
+        const tg = new THREE.BufferGeometry();
+        tg.setAttribute("position", new THREE.Float32BufferAttribute(tb.position, 3));
+        tg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(tb.skinIndex, 4));
+        tg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(tb.skinWeight, 4));
+        tg.setIndex(Array.from(tb.index)); tg.computeVertexNormals();
+        const ribbed = it.spec.kind === "hoodie" || it.spec.kind === "sweater";
+        const color = (tb.part === "barra" ? tc.hem : tc.cuff) ?? (ribbed ? rib : `#${new THREE.Color(fabric).multiplyScalar(0.92).getHexString()}`);
+        const tm = new THREE.MeshPhysicalMaterial({ color, roughness: 0.9, sheen: 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
+          polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
+        tm.name = `acabamento-${tb.part}`;
+        const tmesh = new THREE.SkinnedMesh(tg, tm); tmesh.name = `${tb.part}-${it.piece.id}`; tmesh.castShadow = true; tmesh.frustumCulled = false;
+        human.root.add(tmesh); tmesh.bind(human.skeleton, human.body.bindMatrix); meshes.push(tmesh);
+      }
+    }
     // gola 3D contornando o decote inteiro (frente, lados e nuca), na cor da gola da foto
-    const cb = shoe ? null : collarBand(asset, composed, P, it.spec, under);
+    const cb = shoe ? null : collarBand(asset, cc, P, it.spec, under);
     if (cb) {
       const bg = new THREE.BufferGeometry();
       bg.setAttribute("position", new THREE.Float32BufferAttribute(cb.position, 3));
@@ -81,7 +128,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     if (k) wear({ key: p.id, spec: SPECS[k], piece: p });
   }
   // sola do calçado: o corpo sobe o que a sola desce
-  human.root.position.y = built.some((k) => k === "shoes" || k === "boots") ? 0.012 : 0;
+  human.root.position.y = built.some((k) => k === "shoes" || k === "boots") ? SOLE_LIFT - floorY : 0;
   const covered = zonesCovered(built);
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
 }

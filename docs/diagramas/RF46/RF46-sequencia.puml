@@ -1,0 +1,55 @@
+@startuml RF46_Sequencia
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de sequência — endpoints reais (Background Studio / selos) e Creative Engine planejado
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\nbackground-studio.tsx" as FE
+participant "BackgroundController" as C
+participant "BackgroundStudioService" as S
+participant "AiEngine (RF24)" as AI
+participant "ImageGenerationPort\n(ReplicateImageGenerationAdapter;\nAdobe Firefly <<planejado>>)" as P
+participant "MediaService\n(→ MediaStoragePort)" as ST
+participant "FAI Creative Engine\n<<planejado>>" as CE #FAFAFA
+database "MySQL" as DB
+
+U -> FE: prompt + direção + era + alvo
+FE -> C: GET /api/backgrounds/catalog
+C -> S: catalog()
+S -> DB: SELECT asset_presets
+C --> FE: 200 presets AURA/materiais + imageGenerationAvailable
+FE -> C: POST /api/backgrounds/art (ArtRequest)
+C -> S: generateArt(user, req)
+S -> AI: execute(BACKGROUND_GENERATOR, protectedNames, steps)
+loop cada provedor disponível (fallback)
+  AI -> P: generate(prompt, negativePrompt, 896, 1344)
+  P --> AI: ProviderImage(bytes, costUsd, provider)
+end
+alt nenhum provedor respondeu
+  AI --> S: AiOutcome(value=null)
+  S -> DB: SELECT asset_presets (auraPresets)
+  S --> FE: 200 FALLBACK_GALLERY + suggestions
+else imagem gerada
+  AI --> S: AiOutcome(bytes, provider, latencyMs, costUsd)
+  S -> ST: put(users/{id}/backgrounds/{uuid}.png)
+  S -> DB: INSERT photos (register: PhotoOrigin.BACKGROUND_STUDIO, prompt, provider)
+  S --> FE: 200 READY + url
+end
+U -> FE: aplicar ao card
+FE -> C: PUT /api/pieces/{id}/background
+C -> S: savePiece(user, pieceId, cfg)
+S -> DB: UPDATE wardrobe_items.background_config_json (com rev)
+note right of S: a imagem canônica da peça (RF45) não muda:\no card só sobrepõe a peça ao fundo
+opt <<planejado>> — não implementado, conforme Trello
+  FE -> CE: CreativeRequest (tipo BADGE | PROFILE_COVER | FLAIR_CARD…, template)
+  CE -> DB: INSERT pipeline_jobs (PENDING)
+  CE --> FE: 202 jobId (sem HTTP bloqueante)
+  CE -> CE: TemplateResolver + composição com piece_product_front.png (RF45)
+  CE -> DB: CreativeAsset + AssetVersion + provenance; job COMPLETED | REQUIRES_REVIEW
+end
+@enduml

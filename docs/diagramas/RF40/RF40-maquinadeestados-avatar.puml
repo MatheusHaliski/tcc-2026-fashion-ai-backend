@@ -1,0 +1,37 @@
+@startuml RF40_MaquinaDeEstados_Avatar
+!pragma layout smetana
+title RF40 — UserAvatar3d: ciclo do avatar (pipeline no navegador → registro no servidor → moderação da textura)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Sem avatar\n(GET /api/me/avatar3d → exists=false)" as SemAvatar
+state "Fotos em análise\n(analyzePhoto · checkPhoto)" as Analise
+state "Foto recusada\n(Issue block: NO_FACE, BLURRY, TOO_DARK…)" as Recusada
+state "Prévia 3D\n(buildAvatar · ajustes finos)" as Previa
+state "Avatar salvo (user_avatars_3d)" as Salvo {
+  state "textureModeration = PENDING" as Pending
+  state "textureModeration = APPROVED" as Approved
+  state "textureModeration = REJECTED_POLICY" as Rejected
+  [*] --> Pending : POST com publicOnRunway=false\nou sem veredito remoto (RF24)
+  [*] --> Approved : POST com publicOnRunway=true\ne IA aprova
+  [*] --> Rejected : POST com publicOnRunway=true\ne IA reprova
+  Pending --> Approved : PATCH publicOnRunway=true\n→ moderateTexture aprova
+  Pending --> Rejected : PATCH publicOnRunway=true\n→ moderateTexture reprova
+}
+[*] --> SemAvatar
+SemAvatar --> Analise : envia 1 foto de frente (+ até 2 de 3/4)\ne toca Gerar prévia
+Analise --> Recusada : checkPhoto devolve issue "block"
+Recusada --> Analise : troca a foto
+Analise --> Previa : fotos aceitas (avisos "warn" ficam em warnings)
+Previa --> Salvo : consent=true → POST /api/me/avatar3d\n(sem consent: 400 CONSENTIMENTO_OBRIGATORIO)
+Salvo --> Salvo : PATCH /api/me/avatar3d (adjust, body, sex)
+Salvo --> Analise : Refazer com novas fotos\n(nova textura volta a PENDING)
+Salvo --> SemAvatar : DELETE /api/me/avatar3d\nou exclusão da conta (deleteAllFor)
+note right of Approved : outras pessoas veem a textura\n(publicTexture = público + APPROVED)
+note right of Pending : dono vê a textura; outras pessoas\nveem a forma com o rosto padrão
+note bottom of SemAvatar : manequim volta ao rosto padrão / foto de perfil
+@enduml

@@ -27,11 +27,11 @@ skinparam note {
 start
 :Perfil → "Criar guarda-roupa 3D";
 |Sistema (WardrobeCreatorService)|
-if (Perfil MARCA ou CELEBRIDADE?) then (não)
+if (Marca/celebridade aprovada e ativa?\n(guard.requireApprovedInstitutional)) then (não)
   #FFE3E3:403 ACESSO_NEGADO;
   stop
 endif
-:Opções: 13 blocos, 22 materiais com cores,\nníveis, identidade e selos ativos;
+:Opções: 20 blocos, 22 materiais com cores,\nníveis, identidade e selos ativos;
 |Marca/Celebridade|
 if (Componente ou guarda-roupa inteiro?) then (componente)
   :Escolhe um bloco (modelo, material, cor);

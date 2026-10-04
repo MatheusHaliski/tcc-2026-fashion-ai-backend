@@ -1,7 +1,7 @@
 package br.com.fashionai.application.imaging;
 
 import br.com.fashionai.application.ai.local.ColorMath;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;

@@ -1,0 +1,132 @@
+@startuml RF18_Classes
+title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +sex: MannequinSex
+  +profileType: ProfileType
+}
+class UserPreferences {
+  +user: User
+  +mannequinSex: MannequinSex
+  +mannequinSkinTone: String
+  +mannequinBuild: BodyBuild
+  +mannequinFaceJson: String
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +subcategory: String
+  +sex: String
+  +imageUrl: String
+  +defaultImage: boolean
+  +photoProcessingStatus: PhotoProcessingStatus
+  +availabilityStatus: AvailabilityStatus
+}
+class Photo {
+  +owner: User
+  +origin: PhotoOrigin
+  +url: String
+  +moderationStatus: ModerationStatus
+}
+class Scheme {
+  +user: User
+  +title: String
+  +origin: SchemeOrigin
+  +virtualTryOnUrl: String
+  +renderingStatus: RenderStatus
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +tryOnLayer: TryOnLayer
+  +sortOrder: int
+  +zIndex: int
+}
+class UserConsent {
+  +user: User
+  +purpose: ConsentPurpose
+  +granted: boolean
+}
+}
+package "fai-domain · enums" {
+enum MannequinSex {
+  MASCULINO
+  FEMININO
+}
+enum BodyBuild {
+  SLIM
+  MEDIUM
+  ATHLETIC
+  CURVY
+  PLUS
+}
+enum TryOnLayer {
+  BASE
+  INTERMEDIATE
+  OUTER
+  ACCESSORY
+}
+enum RenderStatus {
+  PENDING
+  RENDERING
+  ENHANCING
+  COMPOSITING
+  CACHED
+  COMPLETED
+  FAILED
+}
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  ..
+}
+}
+package "fai-application · service" {
+class TryOnService {
+  +state(user, sex): Map
+  +savePreferences(user, sex, skinTone, build): Map
+  +render(user, sex, pieceIds): Map
+  +saveAsScheme(user, pieceIds, title, tryOnUrl): Map
+  {static} resolveLayers(ordered): Map
+  {static} slotOf(w): String
+}
+class TryOnCompositor {
+  +externalAvailable(): boolean
+  +render(body, skinHex, garments, allowExternal): Result
+}
+}
+UserPreferences "1" --> "1" User
+WardrobeItem "*" --> "1" User
+Photo "*" --> "1" User
+Scheme "*" --> "1" User
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
+UserConsent "*" --> "1" User
+UserPreferences ..> MannequinSex
+UserPreferences ..> BodyBuild
+SchemeItem ..> TryOnLayer
+Scheme ..> SchemeOrigin
+Scheme ..> RenderStatus
+TryOnService ..> TryOnCompositor
+TryOnService ..> UserPreferences
+TryOnService ..> WardrobeItem
+TryOnService ..> Photo
+note bottom of UserConsent : ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING\nexigido pelo AiCapability.TRY_ON (ver RF24)
+@enduml

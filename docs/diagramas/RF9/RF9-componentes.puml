@@ -1,0 +1,71 @@
+@startuml RF9_Componentes
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "schemes/[id]/edit/page.tsx" as FE0
+  component "SchemeBuilder\n(scheme-builder.tsx)" as FE1
+  component "ExpandedCard\n(menu ⋯ · melhorar com IA · diff)" as FE2
+  component "PieceForm · PieceArtEditor" as FE3
+  component "Confirmação ao descartar\nalterações não salvas (CA06)" as FE4 #FFF5F8
+}
+package "fai-web · controllers" {
+  [SchemeController] as SC
+  [WardrobeController] as WC
+}
+package "fai-application · services" {
+  [SchemeService] as SS
+  [WardrobeService] as WS
+  [SealService] as SEAL
+  [BackgroundStudioService] as BG
+  [ProjectionService] as PJ
+  [NotificationService] as NT
+  [Guard + AuditService] as G
+  [AiEngine (RF24)\nAiCapability.EDIT_ASSISTANT\nfallback LocalAdvisors] as AI
+}
+package "fai-infrastructure · adapters" {
+  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · SealBondRepository\nNotificationRepository] as REPOS
+  [MysqlAuditService] as AUD
+  [OpenSearchIndexAdapter] as OS
+}
+database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• seal_bonds\n• notifications\n• audit_log" as DB
+cloud "Provedores de IA\n(ClaudeProvider · GeminiProvider)" as P_ai
+
+FE0 --> SC : GET /api/schemes/{id}
+FE1 --> SC : PUT /api/schemes/{id}
+FE2 --> SC : POST /api/schemes/{id}/improvements\nPOST .../improvements/apply\nPOST /api/schemes/{id}/archive
+FE3 --> WC : PUT /api/pieces/{id}
+FE4 ..> FE1 : <<planejado>>
+SC --> SS : chama
+WC --> WS : chama
+SS --> G : requireOwner (403 auditado)
+WS --> G : requireOwner
+SS --> SEAL : flagRevalidation · revokeForScheme
+SS --> BG : applyToScheme (arte)
+SS --> AI : improve (diff)
+SS --> PJ : publica projeções
+WS --> PJ : publica projeções
+SEAL --> NT : notifica marca
+SS --> REPOS : grava
+WS --> REPOS : grava
+G --> AUD : audita
+PJ --> OS : indexa
+AI --> P_ai : HTTPS
+REPOS --> DB : JPA/Flyway
+AUD --> DB : audit_log
+note bottom of FE4 : não implementado — conforme Trello (CA06)
+@enduml

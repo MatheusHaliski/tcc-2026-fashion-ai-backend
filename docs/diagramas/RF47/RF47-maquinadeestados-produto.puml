@@ -1,0 +1,29 @@
+@startuml RF47_MaquinaDeEstados_Produto
+!pragma layout smetana
+title RF47 — CatalogProduct: ciclo de ingestão no catálogo global (descoberta ≠ persistência)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "DISCOVERED" as Descoberto
+state "VALIDATED" as Validado
+state "PERSISTABLE" as Persistivel
+state "REFERENCE_ONLY" as Referencia
+state "REJECTED" as Recusado
+
+[*] --> Descoberto : POST /api/catalog/discover\nCatalogIngestService.upsert(..., DISCOVERED)
+[*] --> Validado : seed_catalog.py / import_products.py\n(ingest.py, importação curada)
+Descoberto --> Referencia : POST /api/pieces/from-catalog\n(alguém escolheu; owners_count + 1)
+Descoberto --> Validado : importação curada do mesmo dedup_key\n(ingest.py / upsert com status != DISCOVERED)
+Validado --> Persistivel : curadoria confirma direito de uso\n<<planejado>>
+Descoberto --> Recusado : curadoria recusa (fora da política)\n<<planejado>>
+Recusado --> [*]
+
+note right of Descoberto : oculto da busca local até ser escolhido;\nnunca rebaixa um produto já curado (DUPLICATE)
+note right of Referencia : visível na busca: o próximo usuário\nacha o produto localmente
+note bottom of Recusado : addToWardrobe recusa com 400 PRODUTO_RECUSADO.\nNenhum endpoint/script atribui PERSISTABLE ou REJECTED hoje:\nos estados existem no enum e na consulta FULLTEXT\n(VISIBLE = VALIDATED | PERSISTABLE | REFERENCE_ONLY)
+note left of Validado : source_status é um eixo à parte (revalidate_catalog.py):\nACTIVE · UNAVAILABLE · SOURCE_REMOVED · NEEDS_REVALIDATION
+@enduml

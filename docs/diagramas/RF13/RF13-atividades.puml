@@ -1,0 +1,90 @@
+@startuml RF13_Atividades
+title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a página "DNA de Estilo" (/dna);
+|Frontend (DnaBuilder)|
+:GET /api/dna-schemes/builder\n(meus esquemas, anatomias A1–A4, narrativas B1–B12);
+|Backend (DnaService)|
+if (Já existe style_dna sintetizado?) then (não)
+  :ensureDna: cria StyleDna e sintetiza a Camada 1\n(DNA Synthesizer · AiEngine RF24, fallback local);
+  :snapshot "GERACAO" em style_dna_versions;
+else (sim)
+  if (interações desde a síntese >= 10?) then (sim)
+    :Re-sintetiza ("EVOLUCAO") e notifica\nAI_JOB_FINISHED "Sua identidade evoluiu";
+  else (não)
+  endif
+endif
+note right
+  RN: sem pré-requisito de desbloqueio;
+  10 peças e 5 looks "adorei" só deixam
+  a síntese mais precisa (precisionNote)
+end note
+|Pessoa|
+:Escolhe o modo de criação;
+if (Modo IA?) then (sim)
+  |Frontend (DnaBuilder)|
+  :POST /api/dna-schemes/compositions\n(prompt, ocasião, estilo, narrativa, estação);
+  |Backend (DnaService)|
+  :DNA Synthesizer propõe até 3 DNAs\n(2 a 6 esquemas do próprio usuário);
+  |Pessoa|
+  :Escolhe uma proposta;
+else (não)
+  |Pessoa|
+  :Seleciona de 2 a 6 esquemas (células CELL_1..CELL_6),\nrótulo de época e marcos;
+endif
+:Define título, layout do card (AMPLIADO/GRADE/HORIZONTAL/LATERAL),\nnarrativa, visibilidade e fundo (Background Studio, RF11);
+|Frontend (DnaBuilder)|
+:POST /api/dna-schemes/preview (pré-visualização sem salvar);
+|Pessoa|
+if (Confirma?) then (não)
+  stop
+else (sim)
+endif
+|Frontend (DnaBuilder)|
+:POST /api/dna-schemes (ou PUT /api/dna-schemes/{id});
+|Backend (DnaService)|
+:guard.requireCanCreate + stamp(arquétipo, ousadia,\nfrase e paleta copiados do StyleDna);
+:Grava dna_schemes (status DRAFT, creationMode MANUAL/AI_ASSISTED)\ne dna_scheme_items;
+if (publish = true?) then (sim)
+  :status = PUBLISHED, publishedAt = agora;
+else (não)
+endif
+:Atualiza style_dna.latest_dna_scheme_id;
+|Frontend (DnaBuilder)|
+:Exibe o card de identidade de moda\n(anatomia_cards_DNA_v4_1);
+|Pessoa|
+if (Quer compartilhar o card?) then (sim)
+  |Backend (DnaService)|
+  :POST /api/me/dna/share-card → PNG 1080x1350\ncom marca d'água "Fashion AI", válido 30 dias;
+  note right
+    RN07: campos de vida marcados como
+    privados nunca aparecem na imagem
+  end note
+else (não)
+endif
+stop
+@enduml

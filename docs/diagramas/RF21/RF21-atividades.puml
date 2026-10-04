@@ -1,0 +1,84 @@
+@startuml RF21_Atividades
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Usuário|
+start
+:Cria o look em /schemes/new (RF5);
+|Frontend (scheme-builder.tsx)|
+:POST /api/seal-suggestions/preview\n{pieceIds, occasion, style};
+|Backend (SealService)|
+:SealBond Matcher (SEALBOND_MATCHER): Similarity.of(look)\n× styleSignatureJson da celebridade (CA17);
+note right
+  Diferença do RF20: base STYLE_SIGNATURE
+  (estilos, cores, tipos de peça, ocasiões, era),
+  não a marca da peça
+end note
+:Só CelebrityProfile com verificationStatus APROVADO (CA18)\ne sealConsentGranted (CA19);
+:Confiança 0,3 + similaridade; descarta abaixo\nde sealConfidenceThreshold; eraLabel na justificativa;
+|Frontend (scheme-builder.tsx)|
+if (Há celebridade sugerida?) then (não)
+  :Look segue sem vínculo (CA05);
+else (sim)
+  |Usuário|
+  :Marca a celebridade e confirma o\nconsentimento de direito de imagem;
+endif
+:Salva o look — POST /api/schemes;
+|Frontend (scheme-builder.tsx)|
+:POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent};
+|Backend (SealService)|
+if (Celebridade não VERIFICADA?) then (sim)
+  #FFE3E3:400 CELEBRIDADE_NAO_VERIFICADA (CA18);
+  stop
+else (não)
+endif
+:SealBond origin=MANUAL, status=EDITED,\nbasis=STYLE_SIGNATURE;
+if (imageRightsConsent == true?) then (não)
+  #FFE3E3:400 CONSENTIMENTO_IMAGEM (CA19);
+  stop
+else (sim)
+endif
+:route(): Seal ATIVO do tier\n(Seal.premium = true — Selo Premium, CA20);
+if (Selo fora da janela ou usageCount = usageLimit?) then (sim)
+  #FFE3E3:REJECTED "RECUSADO_LIMITE" +\n409 SELO_INDISPONIVEL — teto da campanha (CA23);
+  stop
+else (não)
+endif
+:Celebridade SEMPRE revisa: PENDING_REVIEW\n+ notify(SEAL_BOND_REVIEW) (auto-aprovação bloqueada);
+note right: diferença do RF20: não existe\nauto-aprovação para celebridade
+|Celebridade|
+:brands/[slug] → aba Revisão\nGET /api/seal-bonds/review-queue;
+:POST /api/seal-bonds/{id}/review {approve, reason};
+|Backend (SealService)|
+if (Aprovou?) then (não)
+  :REJECTED + motivo + notify;
+  stop
+else (sim)
+endif
+:issue(): APPROVED, sealCode "PRM-…" (Premium),\nusageCount+1, notify(SEAL_GRANTED "Selo Premium emitido!");
+:AuditLog MUDANCA_ESTADO_VINCULO_SELO (CA16);
+:CouponRightsCheck → promoções da celebridade\n(SHOW, MEET_GREET, PRE_VENDA…) e com marca parceira\n(partnerBrandUserId) — CA21/CA22;
+note right: resgate em POST /api/promotions/{id}/redemptions (RF25/RF38)
+stop
+@enduml
