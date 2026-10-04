@@ -5,6 +5,7 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.util.Set;
  * o endpoint não aceita fixture vinda de fora). Validadas contra a taxonomia ao carregar: fixture inválida falha cedo.
  */
 @Component
+@Lazy   // só carrega quando o pipeline demo é usado: fixture de QA nunca impede a API de subir em produção
 public class DemoFixtures {
     /** Semente fixa: o mesmo seed gera sempre os mesmos dados. */
     public static final long SEED = 2026L;
@@ -71,7 +73,9 @@ public class DemoFixtures {
     private final List<Save> saves;
 
     public DemoFixtures() {
-        ObjectMapper om = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
+        // campo numérico omitido = 0 (ex.: um "save" só de looks não traz "pieces"); o Jackson 3 recusaria por padrão
+        ObjectMapper om = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build();
         JsonNode users = read(om, "users.json");
         this.personas = list(om, users.get("personas"), Persona.class);
         this.followers = users.get("followers");
