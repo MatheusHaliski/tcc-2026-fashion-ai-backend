@@ -16,11 +16,11 @@ A numeração oficial dos requisitos é a do **Trello** (board "TCC 2026 (Fashio
 
 Tipos usados na coluna *Tipo*: **raiz** = agregado próprio, criado de forma independente; **filha** = existe em função de uma raiz (FK/UUID obrigatório); **associativa** = liga duas ou mais entidades (vínculo, voto, item de composição); **log** = append-only ou snapshot materializado.
 
-![Visão geral dos contextos](taxonomia-contextos.png)
+## Taxonomia por contexto delimitado
+
+![Contextos](Taxonomia_Contextos.png)
 
 *Diagrama: [`taxonomia-contextos.puml`](taxonomia-contextos.puml) (PlantUML, layout Smetana).*
-
-## Taxonomia por contexto delimitado
 
 ### 1. Identidade & Conta
 
