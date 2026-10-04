@@ -1,0 +1,79 @@
+@startuml RF3_Componentes
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/settings/page.tsx\n+ edit-profile.tsx\n(Conta · Privacidade · Aparência · Idioma · Seus dados)" as FE0
+  component "(app)/notifications/page.tsx\n(central de notificações)" as FE1
+}
+package "fai-web · controllers" {
+  [MeController\n/api/me · sensitive · email-change/confirm\nprivacy · consents · exports · deletion] as MeController
+  [PreferencesController\n/api/me/preferences · profile · username\navatar · cover] as PreferencesController
+  [AuthController\n/api/auth/password · sessions · logout\npassword-reset] as AuthController
+  [NotificationController\n/api/notifications · read · read-all\npreferences] as NotificationController
+  [AccountController\n/api/rf3/users/{userId}/privacy-probe\n(CA14: @PreAuthorize → 403)] as AccountController
+  [FashionAuthorization\n(canAccessUser)] as Authz
+}
+package "fai-application · services" {
+  [AccountService] as AccountService
+  [PreferencesService] as PreferencesService
+  [IdentityService\n(reauthenticate · sessions · changePassword)] as IdentityService
+  [NotificationService] as NotificationService
+  [AuditService] as AuditPort #FAFAFA
+  [EmailSenderPort] as EmailPort #FAFAFA
+  [MediaStoragePort] as MediaPort #FAFAFA
+}
+package "fai-domain · repositórios JPA" {
+  [UserRepository\nUserPreferencesRepository\nUserConsentRepository\nDataExportRequestRepository\nNotificationRepository\nRefreshTokenRepository\nVerificationCodeRepository] as REPOS
+}
+package "fai-infrastructure · adapters" {
+  [MysqlAuditService] as Audit
+  [ResendEmailSender / LoggingEmailSender] as Resend
+  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+}
+database "MySQL · fashionai_app\n• users\n• user_preferences\n• user_consents\n• data_export_requests\n• notifications\n• refresh_tokens\n• verification_codes\n• audit_log" as DB
+cloud "Resend (e-mail transacional)" as C_mail
+cloud "S3 / storage de mídia\n(restricted/users/{id}/exports)" as C_s3
+
+FE0 --> MeController : sensível · privacidade · LGPD
+FE0 --> PreferencesController : perfil · aparência · idioma
+FE0 --> AuthController : senha · sessões
+FE0 --> NotificationController : preferências por tipo
+FE1 --> NotificationController : inbox · read
+MeController --> AccountService : chama
+PreferencesController --> PreferencesService : chama
+AuthController --> IdentityService : chama
+NotificationController --> NotificationService : chama
+AccountController ..> Authz : @PreAuthorize
+AccountService --> IdentityService : reauthenticate
+AccountService --> NotificationService : DATA_EXPORT_READY
+AccountService ..> EmailPort
+AccountService ..> MediaPort
+AccountService ..> AuditPort
+PreferencesService ..> MediaPort
+AccountService --> REPOS : grava
+PreferencesService --> REPOS : grava
+IdentityService --> REPOS : revoga refresh_tokens
+NotificationService --> REPOS : grava
+EmailPort <.. Resend
+MediaPort <.. S3
+AuditPort <.. Audit
+REPOS --> DB : JPA/Flyway
+Audit --> DB : grava audit_log
+Resend --> C_mail : envia
+S3 --> C_s3 : put/get/delete
+@enduml
