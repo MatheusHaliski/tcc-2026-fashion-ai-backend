@@ -68,7 +68,15 @@ public class CatalogIngestService {
                                String productCode, String sku, String gtin, String ean, String upc, String color,
                                String colorName, String material, String collection, String gender,
                                String officialProductUrl, String sourceType, List<ImageInput> images, List<String> aliases,
-                               List<VariantInput> variants) {
+                               List<VariantInput> variants, String description, Map<String, Object> design) {
+        public ProductInput(String brand, String category, String subcategory, String productName, String modelName,
+                            String productCode, String sku, String gtin, String ean, String upc, String color,
+                            String colorName, String material, String collection, String gender,
+                            String officialProductUrl, String sourceType, List<ImageInput> images, List<String> aliases,
+                            List<VariantInput> variants) {
+            this(brand, category, subcategory, productName, modelName, productCode, sku, gtin, ean, upc, color, colorName, material,
+                    collection, gender, officialProductUrl, sourceType, images, aliases, variants, null, null);
+        }
     }
 
     public record ImageInput(String url, String type) {
@@ -164,6 +172,15 @@ public class CatalogIngestService {
         p.setColorName(blankToNull(in.colorName()));
         p.setMaterial(material);
         p.setCollection(blankToNull(in.collection()));
+        if (notBlank(in.description())) {
+            p.setDescription(in.description().trim());
+        }
+        // design explícito da fonte vence; sem ele, o mesmo intérprete da busca lê nome + descrição + cor (RF47)
+        DesignTraits design = in.design() != null && !in.design().isEmpty() ? DesignTraits.fromMap(in.design(), "CATALOG")
+                : CatalogDesignInterpreter.get().ofProduct(p.getProductName(), p.getDescription(), p.getColorName(), color);
+        if (!design.isEmpty()) {
+            p.setDesignJson(br.com.fashionai.application.common.Json.write(design.toMap()));
+        }
         p.setGender(in.gender() == null ? null : norm.gender(in.gender()).orElse(null));
         p.setOfficialProductUrl(blankToNull(in.officialProductUrl()));
         p.setCanonicalUrl(canonical);
@@ -318,6 +335,7 @@ public class CatalogIngestService {
         add(parts, p.getColorName());
         add(parts, p.getColor());
         add(parts, p.getCollection());
+        add(parts, p.getDescription());
         add(parts, p.getProductCode());
         add(parts, p.getSku());
         add(parts, p.getGtin());
@@ -356,7 +374,13 @@ public class CatalogIngestService {
                 str(m.get("model_name")), str(m.get("product_code")), str(m.get("sku")), str(m.get("gtin")), str(m.get("ean")),
                 str(m.get("upc")), str(m.get("color")), str(m.get("color_name")), str(m.get("material")), str(m.get("collection")),
                 str(m.get("gender")), str(m.get("official_product_url")), str(m.get("source_type")), imgs,
-                m.get("aliases") instanceof List<?> a ? a.stream().map(String::valueOf).toList() : List.of(), List.of());
+                m.get("aliases") instanceof List<?> a ? a.stream().map(String::valueOf).toList() : List.of(), List.of(),
+                str(m.get("description")), m.get("design") instanceof Map<?, ?> d ? castMap(d) : null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> castMap(Map<?, ?> m) {
+        return (Map<String, Object>) m;
     }
 
     private static String str(Object o) {

@@ -5,16 +5,21 @@ import type { PieceView } from "@/lib/api/types";
 export interface CatalogBrandRef { id: string; name: string; slug: string; logoUrl?: string | null }
 export interface CatalogVariant { id: string; key: string; color?: string | null; colorName?: string | null; code?: string | null; sku?: string | null }
 export interface ImageProvenance { sourceType: string; sourceDomain: string; productUrl: string; imageUrl: string; retrievedAt: string; lastVerifiedAt: string; usage: string }
-export interface MatchScore { total: number; brandMatch: number; categoryMatch: number; subcategoryMatch: number; textSimilarity: number; colorMatch: number; visualSimilarity?: number | null }
+/** Características únicas da peça (estampa, logo, lados, cor da peça × da estampa) — lidas do texto ou gravadas no produto. */
+export interface DesignTraits { pattern?: string | null; logoPlacement?: string | null; logoSize?: string | null; sides?: string[]; baseColors?: string[]; printColors?: string[]; anyColors?: string[]; source?: "LOCAL" | "AI" | "CATALOG" }
+/** Uma característica pedida e se o produto a tem ("por que esta?"). */
+export interface MatchReason { facet: "pattern" | "placement" | "size" | "sides" | "baseColor" | "printColor" | "color"; value: string; ok: boolean }
+export interface MatchScore { total: number; brandMatch: number; categoryMatch: number; subcategoryMatch: number; textSimilarity: number; colorMatch: number; visualSimilarity?: number | null; designMatch?: number | null; reasons?: MatchReason[] }
 export interface CatalogProduct {
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
+  description?: string | null; design?: DesignTraits | null;
   productCode?: string | null; sku?: string | null; imageUrl?: string | null; imageSource?: ImageProvenance | null;
   source: { type: string; domain: string; productUrl: string; status: string; lastVerifiedAt: string }; ingestionStatus: string; ownersCount: number;
   matchScore?: MatchScore; matchPercent?: number; variants?: CatalogVariant[]; selectedVariant?: CatalogVariant | null;
   images?: { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance }[]; aliases?: string[];
 }
-export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null }
+export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null; design?: DesignTraits | null }
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }
 export interface DiscoverResponse { results: CatalogProduct[]; status: "FOUND" | "NOT_FOUND" | "BRAND_UNKNOWN" | "NO_OFFICIAL_SOURCE"; message?: string; rejected?: number }
 export interface SearchParams { category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }

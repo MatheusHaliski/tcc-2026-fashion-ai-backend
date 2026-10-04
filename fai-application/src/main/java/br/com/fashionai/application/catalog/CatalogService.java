@@ -71,6 +71,7 @@ public class CatalogService {
     private final WardrobeService wardrobe;
     private final UserPreferencesRepository preferences;
     private final UserRepository users;
+    private CatalogTextInterpreter textInterpreter;
     private final CatalogNormalizer norm = CatalogNormalizer.get();
     private final CatalogMatchScorer scorer = new CatalogMatchScorer(norm);
 
@@ -92,15 +93,28 @@ public class CatalogService {
         this.users = users;
     }
 
+    /** Leitor das características únicas da peça no texto (com IA, RF24); sem ele, só a leitura local. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setTextInterpreter(CatalogTextInterpreter textInterpreter) {
+        this.textInterpreter = textInterpreter;
+    }
+
     /** Campos do formulário de busca (qualquer combinação de 2–3 já basta). */
     public record SearchRequest(String category, String subcategory, String brand, String query, String color, Integer limit) {
     }
 
     /** Intenção normalizada + marca resolvida (null = marca desconhecida no catálogo). */
-    record Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand) {
+    record Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand, boolean subcategoryFromText) {
+        Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand) {
+            this(intent, brand, rawBrand, false);
+        }
     }
 
     Resolved resolve(SearchRequest r) {
+        return resolve(null, r);
+    }
+
+    Resolved resolve(UUID userId, SearchRequest r) {
         Brand brand = null;
         if (r.brand() != null && !r.brand().isBlank()) {
             brand = ingest.resolveBrand(r.brand(), false).orElse(null);
@@ -110,8 +124,14 @@ public class CatalogService {
         String color = r.color() == null ? null : norm.color(r.color()).orElse(null);
         List<String> keywords = new ArrayList<>();
         Set<String> brandWords = brand == null ? Set.of() : new LinkedHashSet<>(norm.tokens(brand.getName()));
+        // características únicas da peça no texto ("logo CK em toda a superfície, cinza e preto" × "toda azul, um logo branco")
+        DesignTraits design = r.query() == null || r.query().isBlank() ? DesignTraits.EMPTY
+                : textInterpreter != null ? textInterpreter.interpret(userId, r.query()) : CatalogDesignInterpreter.get().interpret(r.query());
+        if (color == null && !design.isEmpty()) {
+            color = !design.baseColors().isEmpty() ? design.baseColors().get(0) : !design.anyColors().isEmpty() ? design.anyColors().get(0) : null;
+        }
         for (String t : norm.tokens(r.query())) {
-            if (brandWords.contains(t)) {
+            if (brandWords.contains(t) || design.consumed().contains(t)) {
                 continue;
             }
             if (color == null && norm.color(t).isPresent()) {
@@ -134,27 +154,35 @@ public class CatalogService {
             }
             keywords.add(t);
         }
-        return new Resolved(new CatalogMatchScorer.Intent(brand == null ? null : brand.getSlug(), cat, sub, keywords, color), brand, r.brand());
+        boolean subFromText = sub != null && (r.subcategory() == null || r.subcategory().isBlank());
+        return new Resolved(new CatalogMatchScorer.Intent(brand == null ? null : brand.getSlug(), cat, sub, keywords, color, design), brand, r.brand(), subFromText);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> search(SearchRequest r) {
-        Resolved res = resolve(r);
+        return search(null, r);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> search(UUID userId, SearchRequest r) {
+        Resolved res = resolve(userId, r);
         CatalogMatchScorer.Intent q = res.intent();
         int limit = r.limit() == null ? 24 : Math.max(1, Math.min(48, r.limit()));
-        if (q.brandSlug() == null && q.subcategory() == null && q.category() == null && q.keywords().isEmpty()) {
+        if (q.brandSlug() == null && q.subcategory() == null && q.category() == null && q.keywords().isEmpty() && q.design().isEmpty()) {
             return Map.of("intent", intentMap(res), "results", List.of(), "total", 0, "enoughInput", false);
         }
         String brandId = res.brand() == null ? null : res.brand().getId().toString();
         String terms = q.keywords().isEmpty() ? null : String.join(" ", q.keywords());
         Map<UUID, CatalogProduct> pool = new LinkedHashMap<>();
+        // subtipo deduzido do texto ("camisa") só pontua, não filtra: no Brasil "camisa" também é camiseta
+        String subFilter = res.subcategoryFromText() ? null : q.subcategory();
         try {
-            products.candidates(brandId, q.category(), q.subcategory(), terms).forEach(p -> pool.put(p.getId(), p));
+            products.candidates(brandId, q.category(), subFilter, terms).forEach(p -> pool.put(p.getId(), p));
         } catch (RuntimeException ex) {
             // índice FULLTEXT indisponível (banco de teste): segue só com os filtros estruturados
         }
         if (pool.size() < 8) {
-            products.candidates(brandId, q.category(), q.subcategory(), null).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            products.candidates(brandId, q.category(), subFilter, null).forEach(p -> pool.putIfAbsent(p.getId(), p));
         }
         List<Map<String, Object>> ranked = rank(res, new ArrayList<>(pool.values()), limit);
         Map<String, Object> out = new LinkedHashMap<>();
@@ -221,7 +249,18 @@ public class CatalogService {
         }
         return new CatalogMatchScorer.Candidate(b == null ? null : b.getSlug(), p.getCategory(), p.getSubcategory(), p.getProductName(),
                 p.getModelName(), p.getColor(), p.getColorName(), p.getCollection(), all, codes,
-                vs.stream().map(CatalogVariant::getColor).filter(java.util.Objects::nonNull).toList());
+                vs.stream().map(CatalogVariant::getColor).filter(java.util.Objects::nonNull).toList(), designOf(p), p.getDescription());
+    }
+
+    /** Design gravado no produto; sem ele, lido do nome + descrição + cor pelo mesmo intérprete da busca. */
+    static DesignTraits designOf(CatalogProduct p) {
+        if (p.getDesignJson() != null && !p.getDesignJson().isBlank()) {
+            DesignTraits d = DesignTraits.fromMap(br.com.fashionai.application.common.Json.map(p.getDesignJson()), "CATALOG");
+            if (!d.isEmpty()) {
+                return d;
+            }
+        }
+        return CatalogDesignInterpreter.get().ofProduct(p.getProductName(), p.getDescription(), p.getColorName(), p.getColor());
     }
 
     Map<String, Object> card(CatalogProduct p, Brand b, CatalogImage img) {
@@ -238,6 +277,9 @@ public class CatalogService {
         m.put("colorHex", p.getColor() == null ? null : Taxonomy.hex(p.getColor()));
         m.put("material", p.getMaterial());
         m.put("collection", p.getCollection());
+        m.put("description", p.getDescription());
+        DesignTraits design = designOf(p);
+        m.put("design", design.isEmpty() ? null : design.toMap());
         m.put("gender", p.getGender());
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
@@ -259,6 +301,7 @@ public class CatalogService {
         m.put("subcategory", r.intent().subcategory());
         m.put("keywords", r.intent().keywords());
         m.put("color", r.intent().color());
+        m.put("design", r.intent().design().isEmpty() ? null : r.intent().design().toMap());
         return m;
     }
 
@@ -338,7 +381,7 @@ public class CatalogService {
      */
     @Transactional
     public Map<String, Object> discover(CurrentUser user, SearchRequest r) {
-        Resolved res = resolve(r);
+        Resolved res = resolve(user.id(), r);
         if (res.brand() == null) {
             return Map.of("results", List.of(), "status", "BRAND_UNKNOWN", "message", Msg.t("catalog.marca_sem_fonte_oficial"));
         }

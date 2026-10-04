@@ -38,6 +38,8 @@ public final class CatalogNormalizer {
     private final Map<String, List<String>> taxonomy = new LinkedHashMap<>();
     private final String version;
 
+    private final JsonNode design;
+
     CatalogNormalizer(JsonNode root) {
         version = root.path("version").asText("0");
         root.path("taxonomy").path("subcategories").fields().forEachRemaining(e -> {
@@ -59,6 +61,12 @@ public final class CatalogNormalizer {
         load(root.path("genderSynonyms"), genders);
         load(root.path("brandAliases"), brandAliases);
         root.path("stopwords").forEach(n -> stopwords.add(key(n.asText())));
+        design = root.path("design");
+    }
+
+    /** Vocabulário das características únicas da peça (estampa, logo, lados, papéis de cor) — ver CatalogDesignInterpreter. */
+    public JsonNode design() {
+        return design;
     }
 
     private static void load(JsonNode node, Map<String, String> into) {
@@ -120,6 +128,11 @@ public final class CatalogNormalizer {
 
     public String categoryOf(String subcategory) {
         return subcategoryCategory.get(subcategory);
+    }
+
+    /** Cor só pela frase exata ("azul marinho" → navy), sem decompor — usada pelo intérprete de design. */
+    public String colorExact(String phrase) {
+        return colors.get(key(phrase));
     }
 
     public Optional<String> color(String raw) {

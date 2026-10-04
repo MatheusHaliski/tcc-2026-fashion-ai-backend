@@ -74,4 +74,42 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     expect(screen.getByText("Ou preencha os dados da peça logo abaixo.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /minha foto|Enviar foto/ })).toBeNull();
   });
+
+  it("lê as características únicas no texto do nome e mostra por que cada camiseta combina", async () => {
+    const shirt = (id: string, name: string, color: string, description: string, reasons: { facet: string; value: string; ok: boolean }[], pct: number) => ({
+      ...PRODUCT, id, brand: { id: "ck", name: "Calvin Klein", slug: "calvin-klein", logoUrl: null }, productName: name, modelName: name, category: "upper_piece", subcategory: "t_shirt",
+      color, colorName: color, description, variants: [], matchPercent: pct, matchScore: { total: pct / 100, brandMatch: 1, categoryMatch: 1, subcategoryMatch: 0.35, textSimilarity: 0, colorMatch: 1, designMatch: pct / 100, reasons },
+    });
+    const { calls } = loggedAs(ME, {
+      "GET /api/taxonomy": { ...TAXONOMY, subcategories: { ...TAXONOMY.subcategories, upper_piece: ["t_shirt", "shirt"] }, colors: { ...TAXONOMY.colors, blue: "#1F4FA0", gray: "#888888" } },
+      "GET /api/catalog/brands": { brands: [] },
+      "GET /api/catalog/suggestions": { suggestions: [] },
+      "GET /api/catalog/search": {
+        intent: { brand: "Calvin Klein", brandKnown: true, category: "upper_piece", subcategory: "shirt", keywords: [], color: "blue",
+          design: { pattern: "SINGLE_LOGO", logoPlacement: "CENTER_CHEST", sides: [], baseColors: ["blue"], printColors: ["white"], anyColors: [], source: "AI" } },
+        results: [
+          shirt("c1", "Camiseta Logo Central", "blue", "Camiseta toda azul com um único logo CK branco no centro do peito.",
+            [{ facet: "pattern", value: "SINGLE_LOGO", ok: true }, { facet: "placement", value: "CENTER_CHEST", ok: true }, { facet: "baseColor", value: "blue", ok: true }, { facet: "printColor", value: "white", ok: true }], 97),
+          shirt("c2", "Camiseta Monogram Allover", "gray", "Camiseta com o monograma CK em toda a superfície, cinza e preto.",
+            [{ facet: "pattern", value: "SINGLE_LOGO", ok: false }, { facet: "baseColor", value: "blue", ok: false }], 52),
+        ], total: 2, enoughInput: true, canSearchOfficial: false },
+    });
+    renderApp(<NewPiecePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Parte superior" }));
+    fireEvent.change(screen.getByLabelText(/De qual marca/), { target: { value: "Calvin Klein" } });
+    fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camisa toda azul com um logo ck branco no centro" } });
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search") && c.path.includes("logo"))).toBe(true), { timeout: 4000 });
+    const understood = (await screen.findByText("Entendemos:", {}, { timeout: 4000 })).parentElement as HTMLElement;
+    expect(within(understood).getByText("Um logo")).toBeTruthy();
+    expect(within(understood).getByText("Logo no centro do peito")).toBeTruthy();
+    expect(within(understood).getByText("Peça azul")).toBeTruthy();
+    expect(within(understood).getByText("Estampa branco")).toBeTruthy();
+    expect(within(understood).getByText("lido pela IA")).toBeTruthy();
+    // o card certo vem primeiro e diz o que bateu; o outro mostra o que não bate
+    const cards = screen.getAllByRole("article");
+    expect(within(cards[0]).getByText("Camiseta Logo Central")).toBeTruthy();
+    expect(within(cards[0]).getByText(/um único logo CK branco/)).toBeTruthy();
+    expect(within(cards[0]).getByText("Logo no centro do peito")).toBeTruthy();
+    expect(within(cards[1]).getAllByText("✗").length).toBe(2);
+  });
 });

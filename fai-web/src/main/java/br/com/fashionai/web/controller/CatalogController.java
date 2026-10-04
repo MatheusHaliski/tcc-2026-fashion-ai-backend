@@ -29,11 +29,12 @@ public class CatalogController {
     }
 
     @GetMapping("/api/catalog/search")
-    @Operation(summary = "RF47 — Busca no catálogo interno (categoria, subcategoria, marca, nome/modelo, cor) com matchScore")
-    public Map<String, Object> search(@RequestParam(required = false) String category, @RequestParam(required = false) String subcategory,
+    @Operation(summary = "RF47 — Busca no catálogo interno (categoria, subcategoria, marca, nome/modelo/descrição, cor) com matchScore e leitura das características únicas da peça")
+    public Map<String, Object> search(CurrentUser user, @RequestParam(required = false) String category, @RequestParam(required = false) String subcategory,
                                       @RequestParam(required = false) String brand, @RequestParam(required = false) String q,
                                       @RequestParam(required = false) String color, @RequestParam(required = false) Integer limit) {
-        return catalog.search(new CatalogService.SearchRequest(category, subcategory, brand, q, color, limit));
+        // o texto do nome é lido também como DESCRIÇÃO da peça (estampa, logo, lados, cores) — com IA quando disponível (RF24)
+        return catalog.search(user == null ? null : user.id(), new CatalogService.SearchRequest(category, subcategory, brand, q, color, limit));
     }
 
     @GetMapping("/api/catalog/suggestions")

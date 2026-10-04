@@ -81,6 +81,32 @@ coleção, códigos, apelidos) e re-ranqueados por `CatalogMatchScorer`: marca 0
 exata 1, prefixo 0,85, Levenshtein 0,7 (prefixo também na última palavra ainda sendo digitada). Abaixo de 0,35 o
 resultado não aparece.
 
+## 5.1 Características únicas da peça lidas do texto
+
+O campo **"Como ela se chama?"** aceita nome, modelo **ou descrição**. O texto é lido como as características únicas da peça,
+o que separa duas peças da mesma marca e do mesmo tipo. Exemplo (Calvin Klein, no seed):
+
+| A pessoa escreve | O FashionAI entende | Primeiro resultado |
+|---|---|---|
+| "camisa com o logo ck estampado em toda a superfície, frente e verso, cinza e preto" | logo em toda a peça · frente e verso · cinza · preto | Camiseta Monogram Allover (cinza/preto) |
+| "camisa toda azul com um único logo ck branco no centro" | um logo · centro do peito · peça azul · estampa branca | Camiseta Logo Central (azul) |
+
+- **Leitura local** (`CatalogDesignInterpreter`): vocabulário em `normalization.json → design` (o mesmo que o Python valida) —
+  estampa (logo em toda a peça/monograma, um logo, listras, xadrez, floral, camuflado, tie-dye, color block, lisa, estampa),
+  posição e tamanho do logo, lados ("frente e verso") e o **papel das cores**: cor logo depois de "logo/estampa" é da
+  estampa; depois de "toda/fundo" ou antes de "com" é da peça; cores ligadas por "e" herdam o papel.
+- **IA** (`CatalogTextInterpreter`, capacidade `CATALOG_TEXT_INTERPRETER`, RF24): refina descrições com 4+ palavras, só com
+  o vocabulário fechado (valor fora dele é descartado); cache por texto; roda fora da transação da busca. Sem IA, vale a
+  leitura local — nada é inventado.
+- **Produto**: `catalog_products.description` e `design_json` (Flyway V31). Sem design gravado, ele é lido do nome +
+  descrição + cor pelo mesmo intérprete.
+- **Ranqueamento**: componente **design** (peso 0,45) no `% compatível`: estampa 0,40 · posição 0,15 · tamanho 0,05 ·
+  lados 0,10 · cores 0,30 (no papel certo; com logo em toda a peça, as cores do produto inteiro). Cada característica volta
+  como motivo (✓/✗) no card.
+- **Tela**: chips "Entendemos: …" abaixo do campo (com "lido pela IA" / "lido do texto") e a descrição + os motivos em cada
+  card de resultado.
+- Subtipo deduzido do texto ("camisa") só pontua, não filtra (no Brasil "camisa" também é camiseta).
+
 ## 6. Modelo de dados (V30 `V30__catalogo_global.sql`)
 
 | Tabela | Papel |
@@ -92,6 +118,7 @@ resultado não aparece.
 | `catalog_variants` | cor/código/SKU/GTIN por variante (`uq (product_id, variant_key)`) |
 | `catalog_images` | imagem com proveniência: URL, hash, domínio, tipo de fonte, `usage_status`, `retrieved_at`, `last_verified_at` |
 | `catalog_ingestion_runs` | relatório de cada execução de ingestão |
+| `catalog_products` (+2, V31) | `description`, `design_json` (características únicas da peça) |
 | `wardrobe_items` (+4 colunas) | `catalog_product_id`, `catalog_variant_id`, `image_origin`, `user_image_url` |
 | `user_preferences` (+1) | `capture_tutorial_json` |
 

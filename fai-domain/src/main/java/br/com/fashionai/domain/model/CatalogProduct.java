@@ -90,6 +90,14 @@ public class CatalogProduct extends VersionedAuditableEntity {
     @Column(name = "dedup_key", nullable = false, length = 255)
     private String dedupKey;
 
+    /** Descrição oficial do produto (de onde sai o design quando a fonte não traz design estruturado). */
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
+
+    /** Características únicas da peça (estampa, logo, lados, cores da peça × da estampa) — ver DesignTraits. */
+    @Column(name = "design_json", columnDefinition = "json")
+    private String designJson;
+
     @Column(name = "search_text", nullable = false, columnDefinition = "text")
     private String searchText;
 
