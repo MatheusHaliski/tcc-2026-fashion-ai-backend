@@ -13,7 +13,7 @@ import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast, Stepper } from "@/components/ui";
 import { SchemeTags } from "@/components/scheme-tags";
 import { SchemeCard } from "@/components/scheme-card";
-import { BackgroundStudio, CLEAR_CARTELA, type BgConfig } from "@/components/background-studio";
+import { BackgroundStudio, CLEAR_CARTELA, useLeaveCartela, type BgConfig } from "@/components/background-studio";
 import { cartelaSeason } from "@/lib/card-art";
 import { DNA_LAYOUTS, DNA_NARRATIVES, DnaCard, SEASON_PRESETS, dnaNarrativeLabel, narrativeHasOwnArt, type DnaView } from "@/components/dna-card";
 import { FaiIcon } from "@/components/fai-icon";
@@ -75,6 +75,9 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   const byId = useMemo(() => new Map((b?.schemes ?? []).map((s) => [s.id, s])), [b]);
   useEffect(() => { if (b?.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
   const effNarrative = form.target === "DNA_COMPLETO" ? narrative : null;
+  // cartela e animação são da narrativa B11: quando ela deixa de valer — outra narrativa, anatomia base, elemento-alvo
+  // que não é o DNA completo, proposta da IA — saem do fundo; senão o card as usaria como arte comum
+  useLeaveCartela(effNarrative === "CARTELA_SAZONAL", () => setBg((b) => ({ ...b, ...CLEAR_CARTELA })));
   const payload = () => ({ title: form.title, cells, cardLayout: layout, targetElement: form.target, narrativeType: effNarrative, occasion: form.occasion.join(","), style: form.style.join(","),
     // B11: a cartela escolhida no modal do Background Studio vale sobre a estação dos dados (o card mostra a mesma)
     seasonalTheme: effNarrative === "CARTELA_SAZONAL" ? cartelaSeason(bg as Record<string, unknown>, form.season || null) ?? "AUTUMN" : form.season || null, visibility: form.visibility, background: { ...bg, skin }, creationMode: mode === "ai" ? "AI" : "MANUAL" });
@@ -116,19 +119,17 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("dnaBuilder.crie_esquemas_de_vestimenta_primeiro")} hint={b.message} action={<Link href="/schemes/new" className="btn btn-primary">{b.action?.label ?? t("common.criar_esquema")}</Link>} />;
   const steps = (b.steps ?? [t("builder.step.mode"), t("builder.step.looks"), t("builder.step.details"), t("builder.step.appearance"), t("builder.step.review")]).map((x) => x.replace(/^\d+\s*·\s*/, ""));
   const ownArt = narrativeHasOwnArt(effNarrative);
-  // cartela e animação são da narrativa B11: escolhidas no modal dela, saem quando a pessoa troca de layout
-  const leaveCartela = () => { if (effNarrative === "CARTELA_SAZONAL") setBg((b) => ({ ...b, ...CLEAR_CARTELA })); };
-  const layoutPanel = ({ openSeasonal }: { openSeasonal: () => void }) => (
+  const layoutPanel = ({ openSeasonal }: { openSeasonal: (enter?: () => void) => void }) => (
     <div className="grid gap-3">
       <div>
         <p className="label">{t("dnaBuilder.secao_a_anatomia_base_do")}</p>
         <p className="type-caption text-muted mb-2">{t("dnaBuilder.como_a_lista_de_esquemas")}</p>
-        <div className="grid gap-1.5 sm:grid-cols-2">{DNA_LAYOUTS.map((a) => <button key={a.id} type="button" aria-pressed={!effNarrative && layout === a.id} onClick={() => { leaveCartela(); setLayout(a.id); setNarrative(null); }} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${!effNarrative && layout === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><LayoutGlyph id={a.id} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.code}</span>{a.label}</span><span className="block type-caption text-muted">{a.hint}</span></span></button>)}</div>
+        <div className="grid gap-1.5 sm:grid-cols-2">{DNA_LAYOUTS.map((a) => <button key={a.id} type="button" aria-pressed={!effNarrative && layout === a.id} onClick={() => { setLayout(a.id); setNarrative(null); }} className={`flex items-start gap-2 rounded-md border-2 p-2 text-left ${!effNarrative && layout === a.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><LayoutGlyph id={a.id} /><span className="min-w-0"><span className="block type-body font-semibold"><span className="badge mr-1">{a.code}</span>{a.label}</span><span className="block type-caption text-muted">{a.hint}</span></span></button>)}</div>
       </div>
       <div>
         <p className="label">{t("dnaBuilder.secao_b_narrativas", { value: form.target !== "DNA_COMPLETO" ? t("dnaBuilder.indisponiveis") : "" })}</p>
         {form.target !== "DNA_COMPLETO" ? <p className="type-caption text-muted">{rich("dnaBuilder.as_narrativas_so_aparecem_quando", undefined, { 0: ($c) => <b>{$c}</b> })}</p> : (
-          <div className="grid gap-1.5 sm:grid-cols-2">{DNA_NARRATIVES.map((nv) => <button key={nv.id} type="button" aria-pressed={effNarrative === nv.id} onClick={() => { if (nv.id === "CARTELA_SAZONAL") openSeasonal(); else leaveCartela(); setNarrative(nv.id); }} className={`rounded-md border-2 p-2 text-left ${effNarrative === nv.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><span className="block type-body font-semibold"><span className="badge mr-1">{nv.code}</span>{nv.label}{nv.ownArt && " ✦"}</span><span className="block type-caption text-muted">{nv.hint}</span></button>)}</div>
+          <div className="grid gap-1.5 sm:grid-cols-2">{DNA_NARRATIVES.map((nv) => <button key={nv.id} type="button" aria-pressed={effNarrative === nv.id} onClick={() => { if (nv.id !== "CARTELA_SAZONAL") setNarrative(nv.id); else openSeasonal(effNarrative === nv.id ? undefined : () => setNarrative(nv.id)); }} className={`rounded-md border-2 p-2 text-left ${effNarrative === nv.id ? "border-mark bg-mark-soft/40" : "border-line-soft"}`}><span className="block type-body font-semibold"><span className="badge mr-1">{nv.code}</span>{nv.label}{nv.ownArt && " ✦"}</span><span className="block type-caption text-muted">{nv.hint}</span></button>)}</div>
         )}
         {effNarrative === "CARTELA_SAZONAL" && <p className="mt-2 type-caption text-muted">{t("dnaBuilder.cartela_no_modal")}</p>}
         {effNarrative === "LEGO" && <p className="mt-2 type-caption text-muted">{t("dnaBuilder.lego_muda_a_forma_nao")}</p>}
