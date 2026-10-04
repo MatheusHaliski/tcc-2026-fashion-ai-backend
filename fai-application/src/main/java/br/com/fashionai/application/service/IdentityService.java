@@ -510,7 +510,12 @@ public class IdentityService {
 
     /** @ reservado (administração, suporte, a própria marca): comparação exata depois da normalização. */
     public static boolean reservedUsername(String normalized) {
-        return normalized != null && RESERVED_USERNAMES.contains(normalized.toLowerCase(Locale.ROOT));
+        if (normalized == null) {
+            return false;
+        }
+        String n = normalized.toLowerCase(Locale.ROOT);
+        // demo_ é das fixtures do Demo/Test Data Pipeline: uma pessoa real com esse prefixo passaria por conta demo
+        return RESERVED_USERNAMES.contains(n) || n.startsWith(br.com.fashionai.domain.model.User.DEMO_PREFIX);
     }
 
     /**

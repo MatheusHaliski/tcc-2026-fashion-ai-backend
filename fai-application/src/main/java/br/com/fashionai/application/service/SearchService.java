@@ -176,7 +176,7 @@ public class SearchService {
 
     /** Conteúdo de conta de teste só aparece para outra conta de teste (a vitrine pública fica limpa). */
     static boolean showcaseAllows(CurrentUser viewer, User owner) {
-        return !owner.isTestAccount() || (viewer != null && viewer.username() != null && viewer.username().startsWith(User.TEST_PREFIX));
+        return !owner.isTestAccount() || (viewer != null && User.isTestUsername(viewer.username()));
     }
 
     boolean visible(CurrentUser viewer, Scheme s, Set<UUID> blocked) {
