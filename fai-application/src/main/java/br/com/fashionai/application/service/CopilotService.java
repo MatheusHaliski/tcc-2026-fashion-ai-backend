@@ -461,10 +461,37 @@ public class CopilotService {
     }
 
     BackgroundPrompt backgroundPrompt(String message, List<String> styles, List<String> occasions) {
+        return backgroundPrompt(message, styles, occasions, true);
+    }
+
+    /**
+     * Orientação livre do Criar Look ("Gerar com IA"): o mesmo vocabulário do Copilot (CopilotLexicon, 800+ termos
+     * PT/EN/ES de ocasião, estilo, humor, estação, clima, cores, tipos e materiais de peça, presets e variações AURA,
+     * materiais de fundo, gradientes e cartela sazonal) lido sem exigir a palavra "fundo": o que a pessoa citar vira
+     * arte de background, ocasião, estilo, estação e humor do look gerado.
+     */
+    public Map<String, Object> orientation(String text, List<String> styles, List<String> occasions) {
+        if (text == null || text.isBlank()) return Map.of();
+        Map<String, Object> out = new LinkedHashMap<>();
+        BackgroundPrompt bg = backgroundPrompt(text, styles, occasions, false);
+        if (bg.configuration() != null && bg.configuration().get("scheme") instanceof Map<?, ?> scheme && !scheme.isEmpty()) {
+            out.put("background", scheme);
+        }
+        if (!bg.unresolved().isEmpty()) out.put("unresolved", bg.unresolved());
+        LookPrompt look = lookPrompt(text, occasions, null);
+        if (!look.occasions().isEmpty()) out.put("occasions", look.occasions());
+        if (!look.styles().isEmpty()) out.put("styles", look.styles());
+        if (look.season() != null) out.put("season", look.season());
+        if (look.mood() != null) out.put("mood", look.mood());
+        if (look.weather() != null) out.put("weather", look.weather());
+        return out;
+    }
+
+    BackgroundPrompt backgroundPrompt(String message, List<String> styles, List<String> occasions, boolean requireCue) {
         String text = normalized(message);
         Map<String, Object> scheme = new LinkedHashMap<>();
         Map<String, String> unresolved = new LinkedHashMap<>();
-        boolean backgroundRequested = List.of("fundo", "background", "arte de fundo", "aura", "material", "moldura", "arte do card", "fondo")
+        boolean backgroundRequested = !requireCue || List.of("fundo", "background", "arte de fundo", "aura", "material", "moldura", "arte do card", "fondo")
                 .stream().anyMatch(term -> mentions(message, term));
         if (!backgroundRequested) return new BackgroundPrompt(null, Map.of());
 

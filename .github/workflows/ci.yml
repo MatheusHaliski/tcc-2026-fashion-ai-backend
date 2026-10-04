@@ -1,0 +1,70 @@
+# CI do FashionAI: nada entra no main (nem vai para o Railway/Vercel) sem build, testes e varredura de segredos.
+# Railway: no serviço "api", Settings → Deploy → "Wait for CI" liga o deploy a este workflow.
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: API (Java 21 · mvn verify)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build e testes
+        run: mvn -B -ntp verify
+
+  frontend:
+    name: Front (typecheck · vitest · build · audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Testes (vitest)
+        run: npm test
+      - name: Build de produção (inclui as checagens de i18n)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Dependências de produção sem vulnerabilidade alta ou crítica
+        run: npm audit --omit=dev --audit-level=high
+
+  secrets:
+    name: Segredos (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (histórico inteiro)
+        env:
+          GITLEAKS_VERSION: 8.21.2
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          ./gitleaks git --redact --no-banner --exit-code 1 .

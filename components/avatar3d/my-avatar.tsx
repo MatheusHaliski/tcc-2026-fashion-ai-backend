@@ -1,4 +1,6 @@
 "use client";
+import type React from "react";
+import { rangeFill } from "@/lib/range-fill";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
@@ -55,7 +57,7 @@ function AdjustSliders({ value, onChange, hair }: { value: AvatarAdjust; onChang
           <label key={k} htmlFor={id} className="grid gap-1">
             <span className="flex justify-between type-body-sm"><span>{t(`avatar3d.adjust.${k}`)}</span><span className="type-data">{shown}</span></span>
             {k === "hairVolume" && hair?.volumeLevel && <span className="type-caption text-muted">{t("avatar3d.hairVolume.detectado", { level: t(`avatar3d.hairVolume.${hair.volumeLevel}`) })}</span>}
-            <input id={id} type="range" min={lo} max={hi} step={step} value={value[k]} onChange={(e) => onChange({ ...value, [k]: Number(e.target.value) })} />
+            <input id={id} type="range" min={lo} max={hi} step={step} value={value[k]} style={rangeFill(value[k], lo, hi) as React.CSSProperties} onChange={(e) => onChange({ ...value, [k]: Number(e.target.value) })} />
           </label>
         );
       })}

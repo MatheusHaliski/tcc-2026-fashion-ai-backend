@@ -88,20 +88,45 @@ public class AssetCatalogService {
     }
 
     public Optional<Map<String, Object>> auraVariant(String variantId) {
+        if (variantId == null) {
+            return Optional.empty();
+        }
         for (Map<String, Object> preset : list("auraPresets")) {
             Object variants = preset.get("variants");
             if (variants instanceof List<?> l) {
                 for (Object o : l) {
-                    if (o instanceof Map<?, ?> v && variantId != null && variantId.equals(v.get("id"))) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> m = new LinkedHashMap<>((Map<String, Object>) v);
-                        m.put("preset", preset);
-                        return Optional.of(m);
+                    if (o instanceof Map<?, ?> v && variantId.equals(v.get("id"))) {
+                        return Optional.of(withPreset(v, preset));
                     }
                 }
             }
         }
-        return Optional.empty();
+        return legacyAuraVariant(variantId);
+    }
+
+    /**
+     * Id de uma coleção substituída (ex.: as 120 variantes "aura_geometry__gradientes_a001_coins" trocadas pelos 6
+     * vídeos de Aura Geometry): o prefixo "preset__" aponta o preset e o hash do id escolhe, de forma estável, uma das
+     * variantes atuais — o mesmo cálculo de auraVariantId em lib/card-art.ts, para card e backend desenharem a mesma
+     * arte e o look antigo continuar salvável.
+     */
+    private Optional<Map<String, Object>> legacyAuraVariant(String variantId) {
+        int sep = variantId.indexOf("__");
+        String presetId = sep > 0 ? variantId.substring(0, sep) : variantId;
+        return auraPreset(presetId).flatMap(preset -> {
+            if (!(preset.get("variants") instanceof List<?> l) || l.isEmpty()) {
+                return Optional.empty();
+            }
+            Object v = l.get((int) (Integer.toUnsignedLong(variantId.hashCode()) % l.size()));
+            return v instanceof Map<?, ?> m ? Optional.of(withPreset(m, preset)) : Optional.empty();
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> withPreset(Map<?, ?> variant, Map<String, Object> preset) {
+        Map<String, Object> m = new LinkedHashMap<>((Map<String, Object>) variant);
+        m.put("preset", preset);
+        return m;
     }
 
     public Optional<Map<String, Object>> auraPreset(String presetId) {

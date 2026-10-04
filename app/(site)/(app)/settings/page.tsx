@@ -7,7 +7,6 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { fromServerLanguage } from "@/lib/i18n/state";
 import { CHROME_BACKGROUNDS, CONTAINER_PRESETS, chromeTile, useTheme } from "@/lib/theme/theme";
 import { useApi } from "@/lib/hooks/use-api";
-import { CARD_SKINS } from "@/lib/skins";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice } from "@/components/ui";
 import { setDevRefs, useDevRefs } from "@/lib/dev-refs";
@@ -92,8 +91,6 @@ function Settings() {
             <p className="type-caption text-muted mb-2">{t("settings.todo_o_conteudo_das_paginas")}</p>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">{CONTAINER_PRESETS.map((c) => { const on = (theme.contentContainerColor ?? "#FFFFFF").toUpperCase() === c.hex; return <button key={c.hex} type="button" aria-pressed={on} title={c.label} aria-label={c.label} onClick={() => { const v = c.hex === "#FFFFFF" ? null : c.hex; updateTheme({ contentContainerColor: v }); savePrefs({ contentContainerColor: v ?? "" }); }} className={`h-12 rounded-lg border-2 ${on ? "border-mark ring-2 ring-mark/40" : "border-line-soft"}`} style={{ background: c.hex }} />; })}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2"><label className="type-body-sm flex items-center gap-2">{t("settings.outra_cor")}{" "}<input type="color" aria-label={t("settings.cor_personalizada_dos_containers")} className="h-9 w-14 rounded border border-line-soft" value={theme.contentContainerColor ?? "#FFFFFF"} onChange={(e) => updateTheme({ contentContainerColor: e.target.value.toUpperCase() })} onBlur={(e) => savePrefs({ contentContainerColor: e.target.value.toUpperCase() })} /></label><Button size="sm" onClick={() => { updateTheme({ contentContainerColor: null }); savePrefs({ contentContainerColor: "" }); }}>{t("settings.padrao_branco")}</Button></div>
-            <h2 className="type-h3 mt-5 mb-2">{t("settings.skin_padrao_dos_cards")}</h2>
-            <Select aria-label={t("settings.skin")} value={(server.data?.defaultCardSkin as string) ?? "atelier"} onChange={(e) => savePrefs({ defaultCardSkin: e.target.value })}>{Object.keys(CARD_SKINS).map((s) => <option key={s} value={s}>{s}</option>)}</Select>
           </Card>
         </div>
       )}

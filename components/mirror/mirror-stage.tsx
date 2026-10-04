@@ -1,0 +1,81 @@
+"use client";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { api, mediaUrl } from "@/lib/api/client";
+import { useApi } from "@/lib/hooks/use-api";
+import { useI18n } from "@/lib/i18n/i18n";
+import { useAuth } from "@/lib/auth/session";
+import { retryImport } from "@/lib/chunk-recovery";
+import { validateBody } from "@/lib/avatar3d/body-spec";
+import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
+import type { Look3dPiece } from "@/components/three/common";
+import { Skeleton } from "@/components/ui";
+
+const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
+
+/**
+ * RF28 — Vista-me: o espelho mostra o REFLEXO do Avatar 3D da pessoa (o mesmo do perfil e do provador), vestindo as peças
+ * do espelho, em pose natural (respiração e apoio do movimento parado). O que falta no corpo vem das peças padrão do
+ * FashionAI (o avatar nunca aparece sem roupa nem descalço). Sem avatar criado, aparece o manequim de referência com o
+ * convite para criar o seu. A imagem não é espelhada horizontalmente: o logo das peças continua legível.
+ */
+export interface MirrorPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; colorHex?: string }
+interface SavedAvatar { exists: boolean; model?: AvatarModel; adjust?: Partial<AvatarAdjust>; textureUrl?: string }
+
+const SLOT3D: Record<string, string> = { outer_layer: "outer_layer", upper: "upper", dress: "dress", lower: "lower", shoes: "shoes", accessory: "accessory" };
+
+export function mirrorPieces(slots: Record<string, MirrorPiece | MirrorPiece[] | null>): Look3dPiece[] {
+  return Object.entries(slots).flatMap(([slot, v]) => (Array.isArray(v) ? v : v ? [v] : []).map((p) => ({
+    id: p.id, name: p.name, slot: SLOT3D[slot] ?? "accessory", category: p.category, subcategory: p.subcategory,
+    imageUrl: p.imageUrl ?? p.thumbnailUrl, colorHex: p.colorHex, model3dUrl: null,
+  } as Look3dPiece)));
+}
+
+/** Tom da luz do espelho (temperatura de cor do quarto). */
+function glassTint(kelvin?: number): string {
+  if (!kelvin) return "#EEEAE2";
+  if (kelvin < 3500) return "#F4E7D2";
+  if (kelvin > 5000) return "#E4ECF3";
+  return "#EEEAE2";
+}
+
+export function MirrorStage({ slots, kelvin, children }: { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; kelvin?: number; children?: React.ReactNode }) {
+  const { t } = useI18n(); const { me } = useAuth();
+  const saved = useApi<SavedAvatar>((signal) => api.get("/api/me/avatar3d", { signal }), []);
+  const sex: "FEMININO" | "MASCULINO" = me?.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
+  const avatar = saved.data?.exists && saved.data.model ? { model: saved.data.model, adjust: saved.data.adjust ?? null, textureUrl: saved.data.textureUrl ?? null } : null;
+  const body = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
+  const tint = glassTint(kelvin);
+  return (
+    <div className="mirror-frame" aria-label={t("mirror.reflexo_aria")}>
+      <div className="mirror-glass" style={{ background: `radial-gradient(120% 90% at 50% 15%, #ffffff 0%, ${tint} 55%, #d9d4ca 100%)` }}>
+        {saved.loading ? <Skeleton className="h-full w-full" /> : (
+          <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={mirrorPieces(slots)} framing="full" controls={false} view="front" background={tint} />
+        )}
+        <span className="mirror-sheen" aria-hidden />
+        {children}
+      </div>
+      {!saved.loading && !avatar && (
+        <p className="mirror-note">{t("mirror.sem_avatar")} <Link href="/avatar" className="underline">{t("mirror.criar_avatar")}</Link></p>
+      )}
+    </div>
+  );
+}
+
+/** Peças vestidas no espelho, como etiquetas: tocar tira a peça. */
+export function MirrorWornStrip({ worn, onRemove }: { worn: { slot: string; p: MirrorPiece }[]; onRemove: (p: MirrorPiece) => void }) {
+  const { t } = useI18n();
+  if (!worn.length) return null;
+  return (
+    <ul className="flex flex-wrap gap-2" aria-label={t("mirror.no_espelho")}>
+      {worn.map((w) => (
+        <li key={w.p.id}>
+          <button type="button" className="chip gap-2 pr-2" onClick={() => onRemove(w.p)} title={t("mirror.clique_para_tirar", { name: w.p.name })}>
+            <img src={mediaUrl(w.p.thumbnailUrl ?? w.p.imageUrl)} alt="" className="h-7 w-7 rounded object-contain" />
+            <span className="max-w-[9rem] truncate">{w.p.name}</span><span aria-hidden>×</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}

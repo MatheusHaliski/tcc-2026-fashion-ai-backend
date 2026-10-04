@@ -1,4 +1,6 @@
 "use client";
+import type React from "react";
+import { rangeFill } from "@/lib/range-fill";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { Button, Dialog, Spinner, useToast } from "@/components/ui";
@@ -127,7 +129,7 @@ export function PhotoEditor({ photoId, pieceId, imageUrl, title, onClose, onSave
             {cropping && <div className="flex gap-2"><Button size="sm" variant="primary" onClick={applyCrop} disabled={!sel || sel.w < 0.03}>{t("photoEditor.aplicar_recorte")}</Button><Button size="sm" onClick={() => { setCropping(false); setSel(null); }}>{t("common.cancel")}</Button></div>}
             {(["brightness", "contrast"] as const).map((k) => (
               <label key={k} className="grid gap-1"><span className="label">{k === "brightness" ? t("common.brilho") : t("common.contraste")} · {cur?.[k] ?? 100}%</span>
-                <input type="range" min={40} max={180} value={cur?.[k] ?? 100} disabled={!cur}
+                <input type="range" min={40} max={180} value={cur?.[k] ?? 100} disabled={!cur} style={rangeFill(cur?.[k] ?? 100, 40, 180) as React.CSSProperties}
                   onChange={(e) => setDraft((d) => ({ ...d, [k]: Number(e.target.value) }))}
                   onPointerUp={() => draft[k] !== undefined && push({}, k === "brightness" ? t("common.brilho") : t("common.contraste"))}
                   onKeyUp={() => draft[k] !== undefined && push({}, k === "brightness" ? t("common.brilho") : t("common.contraste"))} />

@@ -14,15 +14,43 @@ const vars = (o: Record<string, string | number>) => o as unknown as CSSProperti
 export function CardArtLayer({ art }: { art: CardArt }) {
   if (art.kind === "none") return null;
   const anim = [art.animation ? `anim-${art.animation.toLowerCase()}` : "", art.motion === "shimmer" ? "anim-shimmer" : ""].filter(Boolean).join(" ");
+  const splash = art.presetId === "aura_splash";
   return (
-    <div className={`card-art ${anim} art-${art.kind}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label} data-motion={art.motion ?? undefined}>
+    <div className={`card-art ${anim} art-${art.kind}${splash ? " art-aura-splash" : ""}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label} data-motion={art.motion ?? undefined}>
       {art.image && art.frame && <div className="card-art-frame" style={{ borderImageSource: `url("${art.image}")` }} />}
       {art.image && !art.frame && <img src={art.image} alt="" className="card-art-img" />}
       {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
+      {splash && <SplashSpread />}
       {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}
       {art.season && <SeasonDecor season={art.season} />}
       {art.motion && art.motion !== "shimmer" && <MotionFall kind={art.motion} />}
     </div>
+  );
+}
+
+function SplashSpread() {
+  return (
+    <svg className="aura-splash-spread" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+      <g className="goo-flow goo-flow-pink">
+        <path fill="#FF2D7A" d="M-8 54 C5 46 10 37 22 43 C30 47 32 57 42 54 C53 50 56 37 67 40 C79 43 82 53 92 47 L108 42 L106 57 C95 64 85 69 76 63 C65 56 61 66 50 69 C38 73 31 62 23 61 C13 60 4 69 -8 72Z" />
+        <path className="goo-highlight" d="M-2 56 C10 50 14 42 22 47 C29 51 33 60 42 58 C52 55 57 43 67 44 C77 45 83 57 93 52" />
+        <circle cx="17" cy="36" r="1.8" /><circle cx="81" cy="39" r="1.3" />
+      </g>
+      <g className="goo-flow goo-flow-gold">
+        <path fill="#FFD23F" d="M8 82 C18 76 18 65 29 64 C40 63 45 72 54 69 C67 65 70 54 81 58 C91 62 95 75 105 73 L108 87 C96 91 86 83 79 78 C70 73 65 84 55 87 C42 91 35 80 28 79 C20 78 17 88 7 92Z" />
+        <path className="goo-highlight" d="M17 81 C24 76 24 69 30 69 C38 68 44 77 53 75 C64 73 71 61 80 64 C87 66 91 76 98 78" />
+        <circle cx="36" cy="59" r="1.2" /><circle cx="91" cy="55" r="1.7" />
+      </g>
+      <g className="goo-flow goo-flow-cyan">
+        <path fill="#2EC4FF" d="M-7 24 C5 31 13 28 18 20 C23 12 29 9 36 14 C43 20 40 29 47 32 C54 35 63 27 70 29 C78 32 79 39 88 38 L106 32 L105 43 C92 49 83 45 75 41 C66 36 58 44 48 42 C35 40 35 27 29 24 C23 21 20 34 11 37 C4 40 -2 35 -8 33Z" />
+        <path className="goo-highlight" d="M-1 28 C8 33 15 32 20 24 C25 17 29 14 34 19 C39 24 37 32 47 36 C56 40 63 32 70 34 C77 36 82 43 91 42" />
+        <circle cx="57" cy="22" r="1.4" /><circle cx="96" cy="26" r="1.1" />
+      </g>
+      <g className="goo-drops">
+        <circle cx="11" cy="45" r="1.4" /><circle cx="31" cy="34" r="1" /><circle cx="61" cy="57" r="1.2" />
+        <circle cx="73" cy="19" r="1.5" /><circle cx="88" cy="67" r="1" /><circle cx="44" cy="83" r="1.3" />
+      </g>
+    </svg>
   );
 }
 
@@ -134,4 +162,3 @@ function SeasonOnce({ season, count }: { season: string; count: number }) {
 export function Spotlights({ beams }: { beams: { x: number; h: number; light?: number }[] }) {
   return (<div className="runway-spots" aria-hidden>{beams.map((b, i) => <span key={i} className="spot" style={vars({ left: `${b.x}%`, height: `${b.h}%`, width: `${40 + 60 * (b.light ?? 0.5)}px`, marginLeft: `${-(20 + 30 * (b.light ?? 0.5))}px`, "--light": (b.light ?? 0.5).toFixed(2), "--i": i })} />)}</div>);
 }
-

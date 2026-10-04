@@ -163,14 +163,35 @@ function DailyTab() {
   );
 }
 
+/**
+ * Minha Cápsula & Versatilidade (RF6): a anatomia da prancha DNA "Cápsula & versatilidade" (B4) aplicada ao guarda-roupa
+ * inteiro. Barra de estatísticas (peças-base · looks · fator), filtro por categoria e grade de peças-base ordenada por
+ * uso, cada card com o chip de categoria e o badge ×N (em quantos looks a peça aparece).
+ */
 function CapsuleTab() {
   const { t } = useI18n();
   const [category, setCategory] = useState("");
   const { data, loading } = useApi<{ empty?: { message: string }; basePieces: number; looks: number; factor: number; filters?: string[]; cards?: { piece?: PieceView; looks?: number; usage?: number; [k: string]: unknown }[]; note?: string }>((signal) => api.get(`/api/me/capsule${qs({ category })}`, { signal }), [category]);
   if (loading || !data) return <Skeleton className="h-48" />;
-  if (data.empty) return <EmptyState title={data.empty.message} />;
-  return (<><div className="mb-3 flex flex-wrap items-center gap-2"><span className="hero-number text-3xl">{data.factor}×</span><span className="type-body text-muted">{t("lookbookTabs.looks_com_pecas_base", { looks: data.looks, basePieces: data.basePieces })}</span><span className="ml-auto flex flex-wrap gap-1">{(data.filters ?? []).map((f) => <Chip key={f} active={(f === "Tudo" ? "" : f) === category} onClick={() => setCategory(f === "Tudo" ? "" : f)}>{f === "Tudo" ? f : label(f)}</Chip>)}</span></div>
-    <div className="grid-cards">{(data.cards ?? []).map((c, i) => c.piece ? <PieceCard key={i} piece={c.piece} extra={<span className="caption tabular">{t("lookbookTabs.looks_nesta_capsula", { value: c.looks ?? c.usage ?? 0 })}</span>} /> : null)}</div>{data.note && <p className="mt-3 type-caption text-faint">{data.note}</p>}</>);
+  if (data.empty) return <EmptyState title={data.empty.message} action={<Link href="/schemes/new" className="btn btn-primary">{t("lookbookTabs.criar_primeiro_look")}</Link>} />;
+  const cards = [...(data.cards ?? [])].filter((c) => c.piece).sort((a, b) => (b.looks ?? b.usage ?? 0) - (a.looks ?? a.usage ?? 0));
+  const catOf = (p: PieceView) => label(p.category);
+  return (<>
+    <div className="capsule-chips">{(data.filters ?? []).map((f) => <Chip key={f} active={(f === "Tudo" ? "" : f) === category} onClick={() => setCategory(f === "Tudo" ? "" : f)}>{f === "Tudo" ? t("common.all") : label(f)}</Chip>)}</div>
+    <div className="capsule-stats">
+      <div className="capsule-stat"><span className="num tabular">{data.basePieces}</span><span className="lbl">{t("lookbookTabs.pecas_base")}</span></div>
+      <div className="capsule-stat"><span className="num tabular">{data.looks}</span><span className="lbl">{t("lookbookTabs.looks_no_guarda_roupa")}</span></div>
+      <div className="capsule-stat"><span className="num tabular">{Number(data.factor).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span><span className="lbl">{t("lookbookTabs.fator_de_versatilidade")}</span></div>
+    </div>
+    <div className="capsule-grid">{cards.map((c, i) => { const p = c.piece!; const n = c.looks ?? c.usage ?? 0; return (
+      <Link key={p.id ?? i} href={`/pieces/${p.id}`} className="capsule-piece" aria-label={`${p.name} · ${t("lookbookTabs.looks_nesta_capsula", { value: n })}`}>
+        <span className="capsule-ph">{(p.thumbnailUrl || p.imageUrl) && <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" loading="lazy" />}</span>
+        <span className="capsule-cat">{catOf(p)}</span>
+        <span className="capsule-badge tabular">×{n}</span>
+        <span className="capsule-body"><span className="capsule-name">{p.name}</span><span className="capsule-brand">{(p.brandName ?? "").toUpperCase()}</span></span>
+      </Link>); })}</div>
+    {data.note && <p className="mt-3 type-caption text-faint">{data.note}</p>}
+  </>);
 }
 
 function GroupsTab({ ownerId, self, suggestions }: { ownerId: string; self: boolean; suggestions: boolean }) {
