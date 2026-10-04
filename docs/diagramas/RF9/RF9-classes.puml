@@ -1,0 +1,140 @@
+@startuml RF9_Classes
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileVisibility: Visibility
+}
+class Scheme {
+  +user: User
+  +title: String
+  +description: String
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +backgroundColor: String
+  +backgroundGradient: String
+  +backgroundArtUrl: String
+  +studioConfigJson: String
+  +revalidationPending: boolean
+  +publishedAt: Instant
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +sortOrder: int
+  +zIndex: int
+  +snapshotJson: String
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +subcategory: String
+  +color: String
+  +material: String
+  +brandName: String
+  +styleTags: String
+  +occasionTags: String
+  +visibility: Visibility
+  +backgroundConfigJson: String
+}
+class SealBond {
+  +scheme: Scheme
+  +targetOwner: User
+  +status: SealBondStatus
+  +requiresReview: boolean
+}
+class Notification {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +resourceType: String
+  +resourceId: UUID
+}
+class AuditLog {
+  +actorId: String
+  +action: String
+  +resource: String
+}
+}
+package "fai-domain · enums" {
+enum SchemeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+}
+package "fai-application · service" {
+class SchemeService {
+  +get(viewer, id)
+  +update(user, id, SchemeForm)
+  +improve(user, id, instruction)
+  +applyDiff(user, id, accepted)
+  +archive(user, id)
+  +owned(user, id)
+}
+class WardrobeService {
+  +update(user, id, PieceForm)
+  +owned(user, id)
+}
+class SealService {
+  +flagRevalidation(Scheme)
+  +revokeForScheme(schemeId, reason)
+}
+}
+Scheme "*" --> "1" User : user
+Scheme --> SchemeStatus
+Scheme --> Visibility
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> Visibility
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
+Notification "*" --> "1" User : recipient
+SchemeService ..> Scheme
+SchemeService ..> SchemeItem : replaceItems
+SchemeService ..> SealService : CA05
+SchemeService ..> AuditLog : EDICAO_ESQUEMA / ACESSO_NEGADO_403
+WardrobeService ..> WardrobeItem : CA07
+SealService ..> SealBond
+SealService ..> Notification : SEAL_BOND_REVIEW
+note top of Scheme : tabela schemes
+note top of SchemeItem : tabela scheme_items\n(CA02: remover daqui não remove a peça)
+note top of WardrobeItem : tabela wardrobe_items
+note top of SealBond : tabela seal_bonds
+note top of AuditLog : tabela audit_log
+@enduml

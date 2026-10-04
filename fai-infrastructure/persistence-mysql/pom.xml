@@ -32,11 +32,16 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
         <dependency>
+            <!-- Boot 4: a autoconfiguração do Flyway saiu do spring-boot-autoconfigure; sem este starter as migrations não rodam -->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>

@@ -1,0 +1,121 @@
+@startuml RF11_Classes
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class Scheme {
+  +backgroundColor: String = "#F4F2EF"
+  +backgroundGradient: String
+  +backgroundArtUrl: String
+  +backgroundVideoUrl: String
+  +backgroundAnimationType: BackgroundAnimation
+  +studioConfigJson: String
+  +cardSkin: String = "atelier"
+  +containerOrigin: ContainerOrigin
+  +containerMandatory: boolean
+  +containerColor: String
+  +recommendedDirection: String
+}
+class WardrobeItem {
+  +backgroundConfigJson: String
+  .. {rev, template, composition, surface, effects} ..
+}
+class AssetPreset {
+  +id: String
+  +kind: AssetKind
+  +label: String
+  +presetGroup: String
+  +staticUrl: String
+  +animatedUrl: String
+  +posterUrl: String
+  +paletteJson: String
+  +metadataJson: String
+  +status: String
+  +rfTags: String
+  +syncedAt: Instant
+}
+class Photo {
+  +user: User
+  +origin: PhotoOrigin
+  +storageKey: String
+  +publicUrl: String
+  +width: Integer
+  +height: Integer
+}
+}
+package "fai-domain · enums" {
+enum ContainerOrigin {
+  INDEFINIDA
+  MANUAL
+  AUTO
+}
+enum BackgroundAnimation {
+  NONE
+  SNOW
+  PETALS
+  LEAVES
+  SHIMMER
+}
+enum AssetKind {
+  CHROME_BACKGROUND
+  AURA_PRESET
+  AURA_VARIANT
+  MATERIAL
+  AURA_MATERIAL_STATIC
+  AURA_MATERIAL_ANIMATED
+  AURA_MATERIAL_MOSAIC
+  GRADIENT_AURA
+  SEASONAL
+  CARD_SKIN
+}
+}
+package "fai-application · service" {
+class BackgroundStudioService {
+  +catalog(): Map
+  +combination(aura, material, animated, mosaic): Map
+  +recommend(styles, occasions): Map
+  +generateArt(user, ArtRequest): Map
+  +upload(user, bytes, target): Map
+  +applyToScheme(scheme, config, applyDirection)
+  +saveScheme(user, schemeId, config, applyDirection): Map
+  +resetScheme(user, schemeId): Map
+  +savePiece(user, pieceId, cfg): Map
+  +rendererBackground(scheme): Background
+}
+class ArtRequest <<record>> {
+  +prompt: String
+  +direction: String
+  +celebrityId: UUID
+  +era: String
+  +passePartout: boolean
+  +target: String
+}
+enum AiCapability {
+  BACKGROUND_GENERATOR
+  .. outras capacidades (RF24) ..
+}
+}
+Scheme --> ContainerOrigin
+Scheme --> BackgroundAnimation
+AssetPreset --> AssetKind
+BackgroundStudioService ..> Scheme : applyToScheme / reset
+BackgroundStudioService ..> WardrobeItem : savePiece (rev)
+BackgroundStudioService ..> AssetPreset : via AssetCatalogService
+BackgroundStudioService ..> Photo : registra BACKGROUND_STUDIO
+BackgroundStudioService ..> ArtRequest
+BackgroundStudioService ..> AiCapability : BACKGROUND_GENERATOR
+note top of Scheme : tabela schemes (só os campos do RF11)
+note top of WardrobeItem : tabela wardrobe_items
+note top of AssetPreset : tabela asset_presets
+note bottom of Photo : tabela photos (Minhas Fotos — RF12)
+note bottom of ArtRequest : direction ∈ EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES (DIRECTIONS)
+@enduml

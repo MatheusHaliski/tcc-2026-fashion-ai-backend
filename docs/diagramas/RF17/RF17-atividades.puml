@@ -1,0 +1,95 @@
+@startuml RF17_Atividades
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Toca em @username (feed, busca,\ncomentário, seguidores);
+|Frontend|
+:Abre u/[username];
+:GET /api/profiles/{idOrUsername};
+|Backend|
+:ProfileService.profile → resolve(id ou @username);
+if (conta existe e não está DELETED /\nDELETION_SCHEDULED?) then (sim)
+  if (dono do perfil bloqueou quem visita?) then (sim)
+    :404 Perfil;
+    stop
+  else (não)
+  endif
+else (não)
+  :404 Perfil;
+  stop
+endif
+:relation = Follow do visitante (NENHUMA, PENDENTE, ACEITO, BLOQUEADO);
+:counters: seguidores, seguindo, peças, esquemas (RF19);
+if (perfil institucional (marca/celebridade)?) then (sim)
+  |Frontend|
+  :Redireciona para brands/[slug] (RF14/RF22);
+  stop
+else (não)
+endif
+|Backend|
+if (Guard.canView(profileVisibility)\nPUBLIC, ou FOLLOWERS com Follow ACEITO?) then (sim)
+  :Devolve esquemas publicados e peças\n(cada item pela visibilidade mais restritiva);
+  |Frontend|
+  :ProfileHeader + abas Closet / Looks / Agrupamentos;
+  :Closet: GET /api/users/{ownerId}/closet\n(filtros categoria, estado...);
+else (não)
+  :contentVisible = false + convite "SEGUIR";
+  |Frontend|
+  :Mostra cabeçalho e contadores,\nsem conteúdo (perfil privado);
+endif
+|Pessoa|
+if (Ação?) then (seguir)
+  |Frontend|
+  :POST /api/users/{targetId}/followers;
+  |Backend|
+  if (privateAccount e visibilidade não PUBLIC\ne perfil PESSOAL?) then (sim)
+    :Follow PENDENTE + notificação FOLLOW_REQUEST;
+    note right
+      O dono aceita ou recusa por
+      POST /api/follow-requests/{followId}
+      (aceito → FOLLOW_ACCEPTED)
+    end note
+  else (não)
+    :Follow ACEITO + notificação NEW_FOLLOWER;
+  endif
+elseif (deixar de seguir / cancelar pedido) then (sim)
+  |Frontend|
+  :DELETE /api/users/{targetId}/followers/me;
+  |Backend|
+  :Remove o Follow (sem notificação);
+elseif (bloquear) then (sim)
+  |Frontend|
+  :PUT /api/users/{targetId}/block {blocked};
+  |Backend|
+  :Desfaz vínculos e grava Follow BLOQUEADO;
+else (ver seguidores)
+  |Frontend|
+  :GET /api/users/{userId}/connections;
+endif
+|Frontend|
+:Recarrega o perfil com a nova relação;
+stop
+@enduml

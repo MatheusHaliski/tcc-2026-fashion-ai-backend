@@ -1,0 +1,102 @@
+@startuml RF11_Atividades
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Chega à etapa 4 do Criar Look (RF5)\nou abre "Editar arte do card" no detalhe (dono);
+|Frontend (scheme-builder · background-studio)|
+:GET /api/backgrounds/catalog (auras, materiais,\ngradientes, mosaicos, skins);
+:GET /api/backgrounds/recommendations?styles=&occasions=\n(direção recomendada);
+note right
+  Os três modos COEXISTEM e nada grava sozinho:
+  tudo fica no rascunho do modal até "salvar"
+end note
+fork
+  |Pessoa|
+  :4.1 Modo 1 · Cor & Gradiente\n(cor sólida, gradiente, cartela sazonal, AURA × material);
+  |Frontend (scheme-builder · background-studio)|
+  :GET /api/backgrounds/combination?aura=&material=\n&animated=&mosaic=;
+fork again
+  |Pessoa|
+  :4.1 Modo 2 · Arte com AI: descreve o cenário\ne escolhe a direção (EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES);
+  |Backend (BackgroundController · BackgroundStudioService)|
+  :POST /api/backgrounds/art {prompt, direction, celebrityId, era, passePartout, target};
+  if (Prompt vazio?) then (sim)
+    #FFE3E3:400 PROMPT_VAZIO;
+    detach
+  endif
+  :AiEngine.execute(BACKGROUND_GENERATOR) com nomes\nde celebridades protegidos;
+  if (Prompt cita pessoa real / rosto / corpo?) then (sim)
+    #FFE3E3:422 PROMPT_REJEITADO antes do envio;\nai_inference_log PROMPT_REJECTED\n(CelebrityPromptValidator — HU-RF6.CA19 / RF24.CA16);
+    detach
+  endif
+  if (Provedor de imagem respondeu?) then (sim)
+    :Recorta 900 × 2160 (esquema) ou 900 × 2080 (peça),\ngrava users/{id}/backgrounds/*.png e registra\nPhoto origem BACKGROUND_STUDIO → status READY;
+  else (não / sem cota)
+    :status FALLBACK_GALLERY com sugestões\nde presets AURA coerentes com o prompt;
+  endif
+fork again
+  |Pessoa|
+  :4.2 Modo 3 · Background das peças\n(fundo de cada card de peça);
+  |Frontend (scheme-builder · background-studio)|
+  :Opcional: POST /api/backgrounds/uploads?target=card|PIECE\n(imagem própria validada e recortada);
+end fork
+|Frontend (scheme-builder · background-studio)|
+:Pré-visualiza o card: POST /api/schemes/preview (PNG);
+|Pessoa|
+if (Decisão no modal?) then (cancelar)
+  :Fecha sem gravar (0 pedidos);
+  stop
+elseif (restaurar padrão)
+  |Backend (BackgroundController · BackgroundStudioService)|
+  :DELETE /api/schemes/{id}/background → fundo #F4F2EF,\nsem gradiente/arte, NONE (CA05);
+  stop
+else (salvar)
+endif
+|Backend (BackgroundController · BackgroundStudioService)|
+if (Esquema ou peça?) then (esquema)
+  :Etapa 5 do RF5: POST/PUT /api/schemes com form.background\n(ou PUT /api/schemes/{id}/background);
+  :applyToScheme valida presets, skin, anatomia, cor hex;
+  if (Direção recomendada aplicada?) then (sim)
+    :cardSkin da direção; containerOrigin AUTO e containerMandatory = true;
+  elseif (cor de container manual em container travado?)
+    #FFE3E3:409 CONTAINER_TRAVADO;
+    stop
+  else (manual)
+    :containerOrigin MANUAL (ou INDEFINIDA se limpou);
+  endif
+  :Grava studioConfigJson + config.pieces em cada peça;
+else (peça)
+  :PUT /api/pieces/{id}/background com baseRev;
+  if (baseRev diferente da revisão atual?) then (sim)
+    #FFE3E3:409 ARTE_ALTERADA (outra janela aplicou antes);
+    stop
+  endif
+  :Grava backgroundConfigJson com rev + 1;
+endif
+|Frontend (scheme-builder · background-studio)|
+:Card renderizado com a nova arte\n(GET /api/schemes/{id}/card.png);
+stop
+@enduml

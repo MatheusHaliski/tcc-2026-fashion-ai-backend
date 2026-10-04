@@ -1,0 +1,162 @@
+@startuml RF6_Classes
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +profileVisibility: Visibility
+  +lookDoDiaPanelVersion: HypeScorePanelVersion
+}
+class SavedItem {
+  +user: User
+  +targetType: TargetType
+  +targetId: UUID
+  +savedAt: Instant
+  +favorite: boolean
+}
+class DailyLook {
+  +user: User
+  +scheme: Scheme
+  +materializedFrom: DailyLook
+  +lookDate: LocalDate
+  +source: DailyLookSource
+  +feedback: DailyLookFeedback
+  +feedbackAt: Instant
+}
+class HypeScoreMetric {
+  +dailyLook: DailyLook
+  +scheme: Scheme
+  +user: User
+  +scoreDate: LocalDate
+  +likesCount: long
+  +commentsCount: long
+  +engagementNorm: BigDecimal
+  +trendNorm: BigDecimal
+  +hypeScore: BigDecimal
+  +band: HypeScoreBand
+  +trendsetterSeal: boolean
+  +aiSuggestion: String
+}
+class AcervoGroup {
+  +user: User
+  +entityType: HypeEntityType
+  +label: String
+  +memberIdsJson: String
+  +centroidJson: String
+  +memberCount: int
+  +computedAt: Instant
+}
+class SchemeGrouping {
+  +owner: User
+  +type: GroupingType
+  +label: String
+  +description: String
+  +coverUrl: String
+  +atmospherePrompt: String
+  +periodFrom: Integer
+  +periodTo: Integer
+  +accentColor: String
+}
+class Scheme {
+  +title: String
+  +status: SchemeStatus
+  +visibility: Visibility
+  +lookDoDia: boolean
+  +lookDoDiaCount: int
+  +groupingId: UUID
+}
+}
+package "fai-domain · enums" {
+enum TargetType {
+  PIECE
+  SCHEME
+  DNA
+}
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+}
+enum DailyLookFeedback {
+  ADOREI
+  NAO_USEI
+  NAO_GOSTEI
+}
+enum HypeScoreBand {
+  DESPRETENSIOSO
+  EM_CONSTRUCAO
+  NOTADO
+  COM_ESTILO
+  MUITO_ESTILOSO
+  ARRASANDO_NO_LOOK
+}
+enum GroupingType {
+  COLLECTION
+  PROMOTION
+  SIGNATURE_SERIES
+  EVOLUTION
+  STYLE_LINE
+  ERA
+  PHASE
+  SEASON
+  TOUR
+}
+}
+package "fai-application · service" {
+class LookbookService {
+  +overview(viewer, ownerId): Map
+  +savedLooks(user, occasion, page, size): Page
+  +savedPieces(user, category, page, size): Page
+  +favorite(user, schemeId, favorite): Map
+  +removeSaved(user, schemeId): Map
+  +dailyLookTab(user, withAi): Map
+  +markDailyLook(user, schemeId): Map
+  +capsule(user, category): Map
+  +suggestGroups(user, type): Map
+  +createGrouping(user, GroupingForm): Map
+  +assignToGrouping(user, id, schemeIds, pieceIds): Map
+}
+class DailyLookService {
+  +register(user, scheme, source, date): DailyLook
+  +today(userId): Optional<DailyLook>
+  +feedback(user, date, feedback): Map
+  +history(user): List
+}
+class HypeScoreService {
+  +panel(dailyLook, withAi): Map
+  +scoreScheme(scheme): Score
+  +hypeGroups(type): List
+}
+}
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "0..1" DailyLook : materializedFrom
+HypeScoreMetric "1" --> "1" DailyLook : dailyLook
+HypeScoreMetric "*" --> "1" Scheme : scheme
+Scheme ..> SchemeGrouping : groupingId (0..1)
+SavedItem --> TargetType
+DailyLook --> DailyLookSource
+DailyLook --> DailyLookFeedback
+HypeScoreMetric --> HypeScoreBand
+SchemeGrouping --> GroupingType
+LookbookService ..> SavedItem : lê/remove
+LookbookService ..> AcervoGroup : sugere (IA)
+LookbookService ..> SchemeGrouping : cria/edita
+LookbookService ..> DailyLookService
+DailyLookService ..> DailyLook : grava
+HypeScoreService ..> HypeScoreMetric : grava
+note top of SavedItem : tabela saved_items\n(único: user_id + target_type + target_id)
+note top of DailyLook : tabela daily_looks\n(único: user_id + look_date)
+note top of HypeScoreMetric : tabela hype_score_metrics
+note top of AcervoGroup : tabela acervo_groups
+note top of SchemeGrouping : tabela scheme_groupings
+note bottom of User : todas as entidades acima têm\n"*" --> "1" User (dono)
+@enduml

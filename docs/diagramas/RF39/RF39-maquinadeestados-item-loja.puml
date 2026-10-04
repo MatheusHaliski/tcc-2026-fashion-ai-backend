@@ -11,7 +11,7 @@ skinparam state {
 [*] --> EM_BREVE : criado com availableFrom futuro
 [*] --> DISPONIVEL : criado sem janela
 EM_BREVE --> DISPONIVEL : chega availableFrom
-DISPONIVEL --> ESGOTADO : sold_count = stock
+DISPONIVEL --> ESGOTADO : soldCount >= stockLimit
 DISPONIVEL --> EXPIRADO : passa availableUntil
 DISPONIVEL --> INATIVO : marca desativa /\nexclui com vendas
 INATIVO --> DISPONIVEL : marca reativa

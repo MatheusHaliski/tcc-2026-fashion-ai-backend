@@ -1,0 +1,27 @@
+@startuml RF17_MaquinaDeEstados_Follow
+!pragma layout smetana
+title RF17 — Follow: vínculo entre visitante e perfil (seguir, pedido, bloqueio)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "sem vínculo\n(relation = NENHUMA)" as Nenhuma
+state "PENDENTE" as Pendente
+state "ACEITO" as Aceito
+state "BLOQUEADO" as Bloqueado
+[*] --> Nenhuma
+Nenhuma --> Pendente : POST /api/users/{targetId}/followers\n(privateAccount, não PUBLIC, PESSOAL)
+Nenhuma --> Aceito : POST /api/users/{targetId}/followers\n(perfil público ou institucional)
+Pendente --> Aceito : POST /api/follow-requests/{followId}\n{accept: true}
+Pendente --> Nenhuma : recusa (DELETE da linha) ou\nDELETE /api/users/{targetId}/followers/me
+Aceito --> Nenhuma : DELETE /api/users/{targetId}/followers/me
+Nenhuma --> Bloqueado : PUT /api/users/{targetId}/block {blocked: true}
+Pendente --> Bloqueado : PUT .../block {blocked: true}
+Aceito --> Bloqueado : PUT .../block {blocked: true}
+Bloqueado --> Nenhuma : PUT .../block {blocked: false}
+note right of Aceito : só aqui o visitante vê o conteúdo\nde perfis FOLLOWERS (Guard.canView);\nconta em seguidores/seguindo
+note right of Bloqueado : quem foi bloqueado recebe 404\nno perfil e não pode seguir
+@enduml

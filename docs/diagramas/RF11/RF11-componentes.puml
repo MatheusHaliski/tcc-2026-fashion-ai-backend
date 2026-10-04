@@ -1,0 +1,73 @@
+@startuml RF11_Componentes
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "scheme-builder.tsx\n(etapa 4 do Criar Look — RF5)" as FE0
+  component "background-studio.tsx\n(modos 1 · 2 · 3, rascunho do modal)" as FE1
+  component "piece-art-editor.tsx\n(Editar arte do card da peça)" as FE2
+  component "scheme-anatomies.tsx\n(anatomias v19 · seção 7)" as FE3
+}
+package "fai-web · controllers" {
+  [BackgroundController\n/api/backgrounds/catalog · combination\nrecommendations · art · uploads\n/api/schemes/{id}/background · /api/pieces/{id}/background] as BackgroundController
+  [SchemeController\nPOST/PUT /api/schemes · /api/schemes/preview\n/api/schemes/{id}/card.png] as SchemeController
+}
+package "fai-application · services" {
+  [BackgroundStudioService] as BackgroundStudioService
+  [SchemeService] as SchemeService
+  [AssetCatalogService] as AssetCatalogService
+  [AiEngine (RF24)\nBACKGROUND_GENERATOR\nCelebrityPromptValidator] as AiEngine
+  [MediaService] as MediaService
+  [SchemeCardRenderer] as Renderer
+  [ImageGenerationPort] as ImgPort #FAFAFA
+  [MediaStoragePort] as MediaPort #FAFAFA
+}
+package "fai-domain · repositórios JPA" {
+  [AssetPresetRepository\nSchemeRepository\nWardrobeItemRepository\nCelebrityProfileRepository\nPhotoRepository · AiInferenceLogRepository] as REPOS
+}
+package "fai-infrastructure · adapters" {
+  [ReplicateImageGenerationAdapter] as Replicate
+  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+}
+database "MySQL · fashionai_app\n• asset_presets\n• schemes (background*, studioConfigJson)\n• wardrobe_items (backgroundConfigJson)\n• photos\n• ai_inference_log" as DB
+cloud "Replicate (geração de imagem)" as C_rep
+cloud "S3 / storage de mídia\n(users/{id}/backgrounds)" as C_s3
+
+FE0 --> FE1 : abre o modal
+FE1 --> BackgroundController : catálogo · combinação · arte · upload
+FE0 --> SchemeController : preview · salvar (form.background)
+FE2 --> BackgroundController : PUT /api/pieces/{id}/background
+FE3 ..> FE1 : anatomias / skins
+BackgroundController --> BackgroundStudioService : chama
+SchemeController --> SchemeService : chama
+SchemeService --> BackgroundStudioService : applyToScheme
+SchemeController --> Renderer : card.png · preview
+Renderer ..> BackgroundStudioService : rendererBackground
+BackgroundStudioService --> AssetCatalogService : presets · skins · direções
+BackgroundStudioService --> AiEngine : execute(BACKGROUND_GENERATOR)
+BackgroundStudioService --> MediaService : put · register(BACKGROUND_STUDIO)
+AiEngine ..> ImgPort
+MediaService ..> MediaPort
+AssetCatalogService --> REPOS : lê asset_presets
+BackgroundStudioService --> REPOS : grava
+AiEngine --> REPOS : registra inferência
+ImgPort <.. Replicate
+MediaPort <.. S3
+REPOS --> DB : JPA/Flyway
+Replicate --> C_rep : gera
+S3 --> C_s3 : put/get
+@enduml

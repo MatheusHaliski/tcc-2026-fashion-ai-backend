@@ -2,8 +2,9 @@ package br.com.fashionai.web.config;
 
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.Mood;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,7 +19,7 @@ class JsonCompatConfigTest {
     record MoodForm(Mood mood) {
     }
 
-    private final ObjectMapper json = new ObjectMapper().registerModule(new JsonCompatConfig().jsonCompatModule());
+    private final ObjectMapper json = JsonMapper.builder().addModule(new JsonCompatConfig().jsonCompatModule()).build();
 
     private CreationMode read(String v) throws Exception {
         return json.readValue("{\"creationMode\":" + v + "}", Form.class).creationMode();

@@ -13,7 +13,20 @@ import java.util.Map;
  */
 public class PhotoRejectedException extends ApiException {
     public PhotoRejectedException(String message, List<PhotoAcceptance.Check> checks) {
-        super(422, "FOTO_RECUSADA", message, details(checks));
+        this(message, checks, null);
+    }
+
+    /** @param detectedCategory categoria que a análise viu na foto quando difere da escolhida (RF47: "Usar Calçados") */
+    public PhotoRejectedException(String message, List<PhotoAcceptance.Check> checks, String detectedCategory) {
+        super(422, "FOTO_RECUSADA", message, details(checks, detectedCategory));
+    }
+
+    private static Map<String, Object> details(List<PhotoAcceptance.Check> checks, String detectedCategory) {
+        Map<String, Object> d = details(checks);
+        if (detectedCategory != null) {
+            d.put("detectedCategory", detectedCategory);
+        }
+        return d;
     }
 
     private static Map<String, Object> details(List<PhotoAcceptance.Check> checks) {

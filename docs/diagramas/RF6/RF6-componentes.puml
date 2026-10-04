@@ -1,0 +1,62 @@
+@startuml RF6_Componentes
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/lookbook/page.tsx\n(redireciona para /u/{username})" as FE0
+  component "(app)/u/[username]/page.tsx\n+ lookbook-tabs.tsx\n(closet · looks · salvos · look do dia · cápsula)" as FE1
+  component "(app)/closet/page.tsx\n+ piece-card.tsx · filter-bar.tsx" as FE2
+}
+package "fai-web · controllers" {
+  [LookbookController\n/api/users/{ownerId}/lookbook · /api/me/saved-looks\nsaved-pieces · daily-look(-tab) · daily-looks\nhype-groups · /api/groupings] as LookbookController
+  [SocialController\n/api/interactions/{type}/{id}/saves\nsaves/favorite] as SocialController
+  [WardrobeController\n/api/me/closet · /api/users/{ownerId}/closet] as WardrobeController
+}
+package "fai-application · services" {
+  [LookbookService] as LookbookService
+  [DailyLookService] as DailyLookService
+  [HypeScoreService] as HypeScoreService
+  [SocialService] as SocialService
+  [WardrobeService] as WardrobeService
+  [Guard\n(canView — visibilidade)] as Guard
+  [AiEngine (RF24)\nACERVO_GROUPING · CelebrityPromptValidator] as AiEngine
+}
+package "fai-domain · repositórios JPA" {
+  [SavedItemRepository\nDailyLookRepository\nHypeScoreMetricRepository\nAcervoGroupRepository\nSchemeGroupingRepository\nHypeGroupRepository\nSchemeRepository · WardrobeItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• saved_items\n• daily_looks\n• hype_score_metrics\n• acervo_groups\n• scheme_groupings\n• hype_groups\n• schemes · wardrobe_items" as DB
+
+FE0 --> FE1 : router.replace
+FE1 --> LookbookController : lookbook · salvos · look do dia · agrupamentos
+FE1 --> SocialController : salvar/favoritar peça
+FE1 --> WardrobeController : closet do dono
+FE2 --> WardrobeController : GET /api/me/closet
+LookbookController --> LookbookService : chama
+LookbookController --> DailyLookService : history · feedback
+LookbookController --> HypeScoreService : describe · hypeGroups
+SocialController --> SocialService : toggleSave · favoriteSaved
+WardrobeController --> WardrobeService : chama
+LookbookService --> DailyLookService : today · register
+LookbookService --> HypeScoreService : panel · cluster
+LookbookService --> AiEngine : local(ACERVO_GROUPING)
+LookbookService ..> Guard
+LookbookService --> REPOS : lê/grava
+DailyLookService --> REPOS : grava daily_looks
+HypeScoreService --> REPOS : grava hype_score_metrics
+SocialService --> REPOS : grava saved_items
+REPOS --> DB : JPA/Flyway
+@enduml

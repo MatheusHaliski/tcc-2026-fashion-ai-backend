@@ -1,0 +1,47 @@
+@startuml RF12_MaquinaDeEstados_ItemLote
+!pragma layout smetana
+title RF12 — Item do lote (Draft + PipelineJob.status): de cada foto enviada até a peça cadastrada
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Enviado\n(foto no lote, até 12)" as Env
+state "Recusado\n(Draft.rejection)" as Rec
+state "Rascunho analisado\nPipelineJob COMPLETED\n(PIECE_DRAFT · MULTI_PIECE_DRAFT)" as Rasc
+state "Cadastrado\n(wardrobe_items + photos WARDROBE_ITEM)" as Cad
+state "Reprocessamento do fundo" as Rep {
+  state "PENDING" as Pend
+  state "RUNNING" as Run
+  state "COMPLETED" as Ok
+  state "FAILED" as Fail
+}
+
+[*] --> Env : POST /api/pieces/analysis/batch\nou /analysis/multi/{draftId}/pieces
+Env --> Rec : critérios de aceite da foto (422 FOTO_RECUSADA\nvira rejection no lote) · CONTEUDO_BLOQUEADO
+Env --> Rasc : analyze / pieceDraft ok\n(Flat Lay, subtipo, marca, moderação)
+Rasc --> Rasc : revisão na tela (MultiPieceReview)\ncópia por IA: .../ai-images/{aiImageId}/piece
+Rasc --> Cad : POST /api/pieces/batch\nou POST /api/pieces
+Rasc --> [*] : descartado na revisão (nada gravado no acervo)
+Rec --> [*] : a pessoa reenvia outra foto
+Cad --> Pend : fundo não removido no cadastro\n(PipelineJob PIECE_REPROCESS — RF4.CA06)
+Cad --> [*] : fundo removido
+Pend --> Run : job reprocessPending\n(provedor e cota disponíveis)
+Run --> Ok : fundo removido; notificação AI_JOB_FINISHED
+Run --> Pend : sem recorte e attempts < 3
+Run --> Fail : attempts ≥ 3 ou SEM_ORIGINAL
+Ok --> [*]
+Fail --> [*]
+
+note right of Rec
+  As demais fotos do lote seguem;
+  a recusada volta com code e message
+end note
+note left of Rasc
+  RENDERING, ENHANCING, COMPOSITING e CANCELLED
+  existem no enum PipelineJobStatus mas não são
+  usados neste fluxo
+end note
+@enduml

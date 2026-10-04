@@ -100,3 +100,14 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(FRAME_BAND_VARS["--aura-band"]).toBe("clamp(42px, 22.5%, 90px)");
   });
 });
+
+describe("arte do card — Aura em vídeo com plano B", () => {
+  test("variante em vídeo leva a animação CSS do preset para quando o navegador recusar o autoplay", () => {
+    const art = resolveCardArt({ aura: { variantId: "aura_alfaiataria__cabides" } });
+    expect(art.video?.src).toMatch(/\.mp4$/);
+    expect(art.animation).toBeNull();                       // tocando, o vídeo é a animação
+    expect(art.still).toBe(ART_INDEX.variants.aura_alfaiataria__cabides.animation);
+    // Geometry/Splash não têm animação CSS própria: o componente usa um movimento genérico
+    expect(resolveCardArt({ aura: { variantId: "aura_geometry__geometry_01" } }).still).toBeNull();
+  });
+});

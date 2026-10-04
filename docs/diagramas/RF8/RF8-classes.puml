@@ -1,0 +1,157 @@
+@startuml RF8_Classes
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+  +profileVisibility: Visibility
+  +status: AccountStatus
+}
+class Scheme {
+  +user: User
+  +title: String
+  +description: String
+  +style: String
+  +occasion: String
+  +visibility: Visibility
+  +status: SchemeStatus
+  +communityIndexed: boolean
+  +coverImageUrl: String
+  +hypeScore: BigDecimal
+  +likeCount: long
+  +commentCount: long
+  +saveCount: long
+  +viewCount: long
+  +publishedAt: Instant
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +sortOrder: int
+  +snapshotJson: String
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +color: String
+  +brandName: String
+  +styleTags: String
+  +occasionTags: String
+  +imageUrl: String
+  +visibility: Visibility
+  +moderationStatus: ModerationStatus
+  +hypeScore: BigDecimal
+  +likesCount: long
+}
+class Follow {
+  +follower: User
+  +following: User
+  +status: FollowStatus
+  +respondedAt: Instant
+}
+class StyleDna {
+  +user: User
+  +styleKeywords: String
+}
+class Reaction {
+  +actor: User
+  +targetType: TargetType
+  +targetId: UUID
+  +reactionType: ReactionType
+}
+class Comment {
+  +author: User
+  +targetType: TargetType
+  +targetId: UUID
+  +parentCommentId: UUID
+  +content: String
+  +active: boolean
+}
+}
+package "fai-domain · enums" {
+enum SchemeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum FollowStatus {
+  PENDENTE
+  ACEITO
+  BLOQUEADO
+}
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED_POLICY
+  REJECTED_NOT_CLOTHING
+}
+enum TargetType {
+  PIECE
+  SCHEME
+  DNA
+}
+}
+package "fai-application · service" {
+class SearchService {
+  +TABS: List<String>
+  +search(viewer, term, tab, Filters, size, cursor)
+  +communityFeed(viewer, cursor, size, Filters)
+  +runway(viewer, cursor, size)
+  +publicPieces(viewer, Filters, cursor, size)
+}
+class SocialService {
+  +react(user, TargetType, id, ReactionType)
+  +comments(viewer, TargetType, id)
+  +toggleSave(user, TargetType, id)
+  +share(user, TargetType, id, ShareChannel, caption)
+  +counters(viewer, TargetType, id)
+}
+}
+Scheme "*" --> "1" User : user
+Scheme --> SchemeStatus
+Scheme --> Visibility
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> Visibility
+WardrobeItem --> ModerationStatus
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
+Follow --> FollowStatus
+StyleDna "1" --> "1" User : user
+Reaction "*" --> "1" User : actor
+Reaction --> TargetType
+Comment "*" --> "1" User : author
+Comment --> TargetType
+SearchService ..> Scheme
+SearchService ..> WardrobeItem
+SearchService ..> Follow : bloqueados / seguindo
+SearchService ..> StyleDna : afinidade
+SocialService ..> Reaction
+SocialService ..> Comment
+note top of Scheme : tabela schemes
+note top of WardrobeItem : tabela wardrobe_items
+note top of Follow : tabela follows
+note top of StyleDna : tabela style_dna
+note top of Reaction : tabela reactions
+note top of Comment : tabela comments
+@enduml

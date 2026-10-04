@@ -22,7 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -71,8 +71,8 @@ public class SecurityConfig {
                         .addHeaderWriter(new StaticHeadersWriter("Cross-Origin-Opener-Policy", "same-origin"))
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
                                 new NegatedRequestMatcher(new OrRequestMatcher(
-                                        new AntPathRequestMatcher("/swagger-ui/**"), new AntPathRequestMatcher("/swagger-ui.html"),
-                                        new AntPathRequestMatcher("/v3/api-docs/**"), new AntPathRequestMatcher("/media/**"))),
+                                        PathPatternRequestMatcher.pathPattern("/swagger-ui/**"), PathPatternRequestMatcher.pathPattern("/swagger-ui.html"),
+                                        PathPatternRequestMatcher.pathPattern("/v3/api-docs/**"), PathPatternRequestMatcher.pathPattern("/media/**"))),
                                 new StaticHeadersWriter("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"))))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)

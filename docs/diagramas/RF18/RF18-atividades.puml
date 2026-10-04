@@ -1,0 +1,85 @@
+@startuml RF18_Atividades
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /try-on (Provador virtual);
+|Frontend (try-on/page.tsx)|
+fork
+  :GET /api/try-on\n(identidade do Avatar 3D + guarda-roupa por lugar);
+fork again
+  :GET /api/catalog/stores\n(lojas em destaque);
+end fork
+if (Link da prova? (?provar=c.<produto>.<variante>,w.<peça>)) then (sim)
+  :GET /api/catalog/products/{id} para cada peça de loja;
+  :Veste as peças do link;
+elseif (Prova da sessão?) then (sim)
+  :Restaura as peças (sessionStorage);
+else (não)
+  :Provador vazio · ambiente neutro FashionAI;
+endif
+note right
+  Guarda-roupa vazio NÃO bloqueia:
+  o provador prova peças das lojas (RF47).
+end note
+|Pessoa|
+repeat
+  if (De onde provar?) then (Lojas)
+    :Toca numa loja em destaque e/ou\nfiltra o tipo (cima, baixo, calçados…);
+    |Frontend (try-on/page.tsx)|
+    :CatalogSearch em modo navegação\nGET /api/catalog/search (só a marca já lista);
+    |Pessoa|
+    :Toca "Provar" num produto;
+  else (Meu guarda-roupa)
+    :Toca numa peça própria para combinar;
+  endif
+  |Frontend (try-on/page.tsx)|
+  :wearItem(): a peça toma o lugar dela\n(cima, baixo, calçado, acessório);
+  note right: peça inteira (FULL_BODY) cobre a parte de baixo
+  :resolveEnvironment(): marca da última peça = destaque;\noutras marcas vestidas = painéis laterais;
+  if (Marca fixada ou modo neutro?) then (sim)
+    :Mantém o ambiente escolhido;
+  else (não)
+    :Troca o ambiente 3D (cores animadas,\npainel entra com escala suave);
+  endif
+  :FittingRoomScene: Avatar 3D + faixa do logo, letreiro,\nparedes/piso no estilo da loja, cortina, espelho, arara;
+  |Pessoa|
+  if (Quer algo mais?) then (trocar a cor)
+    :Escolhe outra variante da peça vestida;
+  elseif (já tenho esta peça) then
+    |Frontend (try-on/page.tsx)|
+    :POST /api/pieces/from-catalog\n(peça entra no guarda-roupa por referência);
+  elseif (ver na loja) then
+    :Abre o domínio oficial registrado no produto;
+  elseif (foto / link / salvar) then
+    :PNG do palco · link ?provar= · prova salva (navegador);
+  else (só provar)
+  endif
+repeat while (Continua provando?) is (sim)
+-> não;
+|Pessoa|
+:Limpar (opcional): peças saem do provador,\no guarda-roupa não muda;
+stop
+@enduml

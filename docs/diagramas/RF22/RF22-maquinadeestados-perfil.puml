@@ -1,0 +1,29 @@
+@startuml RF22_MaquinaDeEstados_Perfil
+!pragma layout smetana
+title RF22 — CelebrityProfile: verificationStatus (ApprovalStatus) e visibilidade no feed de Celebridades
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Pendente : cadastro como CELEBRIDADE (RF1)\nIdentityService cria CelebrityProfile
+state "PENDENTE" as Pendente
+state "APROVADO" as Aprovado {
+  [*] --> Listada
+  state "Listada no feed\nGET /api/celebrities" as Listada
+  state "Perfil público\n/brands/[slug] — status «Verificada»" as Publica
+  Listada --> Publica : toque no card
+  Publica --> Publica : PATCH /api/me/celebrity-profile\n(dona edita bio, capa, assinatura de estilo)
+}
+state "RECUSADO" as Recusado
+state "SUSPENSO <<planejado>>" as Suspenso #FFF5F8
+Pendente --> Aprovado : POST /api/admin/approvals/{userId}\n{approve:true} (RF1.CA08)
+Pendente --> Recusado : POST /api/admin/approvals/{userId}\n{approve:false, notes}
+Aprovado --> Suspenso : sem transição no código
+Suspenso --> Aprovado : sem transição no código
+note right of Pendente : fora do feed e sem tela pública:\nGET /api/institutional/{slug} → 404\npara visitantes (só dona e admin veem)
+note right of Aprovado : só aqui a celebridade pode receber\nvínculos de selo (RF21.CA18) e aparecer\nordenada por AFINIDADE ou RECENTES
+note bottom of Suspenso : valor existe no enum ApprovalStatus —\nnão implementado — conforme Trello\n(sem uso em AdminService/InstitutionalService)
+@enduml
