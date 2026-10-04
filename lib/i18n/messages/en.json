@@ -4217,6 +4217,7 @@
   "issuerReview.status_titulo": "Verification status",
   "issuerReview.campo_nome_civil": "Legal name (as on the document)",
   "issuerReview.campo_nome_civil_dica": "It is checked against the identity document. It is not shown on the profile.",
+  "issuerReview.nome_civil_obrigatorio": "Enter your civil name as it appears on the document.",
   "adminApprovals.aguardando_email": "waiting for e-mail confirmation",
   "backgroundStudio.cartela_modal_dica": "The palette sets the season the Seasonal palette layout shows; the animation falls over the art. Nothing changes on the card until you apply.",
   "backgroundStudio.cartela_sem_estacao": "The look has no season yet: pick a palette above (or fill in the season in step 3) for the card to use this layout.",

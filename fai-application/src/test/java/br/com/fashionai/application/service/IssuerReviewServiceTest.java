@@ -294,16 +294,21 @@ class IssuerReviewServiceTest {
         assertEquals("https://cdn/restricted/users/x/documents/activity-proof-1.jpg", b.getActivityProofUrl());
     }
 
-    @Test
-    void celebridadeCorrigeONomeCivilNoReenvio() {
-        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+    private CelebrityProfile celebrity(User owner, ApprovalStatus status) {
         CelebrityProfile c = new CelebrityProfile();
         c.setOwner(owner);
         c.setStageName("MC Lume");
         c.setSlug("mc-lume");
-        c.setVerificationStatus(ApprovalStatus.AJUSTES);
+        c.setVerificationStatus(status);
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
         when(celebrities.findByOwnerId(owner.getId())).thenReturn(Optional.of(c));
+        return c;
+    }
+
+    @Test
+    void celebridadeCorrigeONomeCivilNoReenvio() {
+        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+        CelebrityProfile c = celebrity(owner, ApprovalStatus.AJUSTES);
         Map<String, IssuerVerificationPolicy.Auto> auto = new java.util.HashMap<>();
         policy.checks(owner, c).forEach(ch -> auto.put(ch.code(), ch.auto()));
         assertEquals(IssuerVerificationPolicy.Auto.FALHA, auto.get("NOME_CONFERE"));   // sem nome civil, nunca aprovável
@@ -313,6 +318,36 @@ class IssuerReviewServiceTest {
         assertEquals("Maria Clara Lume", c.getRealName());
         policy.checks(owner, c).forEach(ch -> auto.put(ch.code(), ch.auto()));
         assertEquals(IssuerVerificationPolicy.Auto.ANALISTA, auto.get("NOME_CONFERE"));
+    }
+
+    @Test
+    void celebridadeSemNomeCivilNaoReenviaComOCampoVazio() {
+        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+        CelebrityProfile c = celebrity(owner, ApprovalStatus.AJUSTES);
+        c.setReviewAttempts(1);
+
+        for (String blank : new String[]{null, "   ", "<b></b>"}) {
+            ApiException e = assertThrows(ApiException.class, () -> service("").resubmit(me(owner),
+                    new ResubmitCommand(null, "https://instagram.com/mclume", null, null, null, null, blank)));
+            assertEquals("FORMULARIO_INVALIDO", e.code());
+            assertTrue(e.details().containsKey("realName"), String.valueOf(blank));
+        }
+        // nada aplicado: nem status, nem tentativa, nem o link enviado junto
+        assertEquals(ApprovalStatus.AJUSTES, c.getVerificationStatus());
+        assertEquals(1, c.getReviewAttempts());
+        assertNull(c.getVerificationUrl());
+    }
+
+    @Test
+    void celebridadeComNomeCivilGravadoReenviaSemRepetirONome() {
+        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+        CelebrityProfile c = celebrity(owner, ApprovalStatus.AJUSTES);
+        c.setRealName("Maria Clara Lume");
+
+        service("").resubmit(me(owner), new ResubmitCommand(null, null, null, null, null, null, null));
+
+        assertEquals(ApprovalStatus.PENDENTE, c.getVerificationStatus());
+        assertEquals("Maria Clara Lume", c.getRealName());
     }
 
     @Test

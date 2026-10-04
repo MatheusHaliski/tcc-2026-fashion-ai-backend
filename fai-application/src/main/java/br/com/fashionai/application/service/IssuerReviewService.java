@@ -321,6 +321,12 @@ public class IssuerReviewService {
         if (present(link) && !IssuerVerificationPolicy.webUrl(link)) {
             errors.put(celebrity ? "verificationUrl" : "storeUrl", Msg.t("issuerReview.link_invalido"));
         }
+        // nome civil (NOME_CONFERE, obrigatório): o efetivo é o enviado ou o já gravado; sem ele o reenvio só consumiria uma
+        // tentativa e voltaria à fila sem poder ser aprovado
+        String realName = celebrity && c.realName() != null && !c.realName().isEmpty() ? InputSanitizer.clean(c.realName(), 160) : null;
+        if (celebrity && !present(realName != null ? realName : ((CelebrityProfile) p).getRealName())) {
+            errors.put("realName", Msg.t("identity.nome_civil_e_obrigatorio"));
+        }
         byte[] documentBytes = null;
         if (present(c.documentUrl())) {
             documentBytes = MediaService.ownedMedia(storage, null, c.documentUrl(), Set.of(MediaService.MediaScope.PENDING_RESTRICTED))
@@ -352,8 +358,8 @@ public class IssuerReviewService {
             if (present(c.representationContact())) {
                 cp.setRepresentationContact(InputSanitizer.clean(c.representationContact(), 160));
             }
-            if (present(c.realName())) {
-                cp.setRealName(InputSanitizer.clean(c.realName(), 160));
+            if (realName != null) {
+                cp.setRealName(realName);
             }
             if (document != null) {
                 cp.setIdentityProofUrl(document);
