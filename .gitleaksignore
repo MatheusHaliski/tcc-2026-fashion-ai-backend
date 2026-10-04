@@ -5,3 +5,5 @@
 d7f283e708d9bbc57d4caf4a4e10c813916d8a6b:fai-web/src/test/java/br/com/fashionai/web/support/DevGateFilterTest.java:generic-api-key:13
 d7f283e708d9bbc57d4caf4a4e10c813916d8a6b:lib/gate/token.test.ts:generic-api-key:5
 6eb8170796c3c32579089f1881940a0ff827f331:lib/i18n/state.ts:generic-api-key:13
+# Nome de fixture do Demo/Test Data Pipeline ("fixtureKey": "CELEBRITY_EMPTY_01"), não é credencial.
+625b291f97dbd01fce2f8c562f8bde6ffd987d72:fai-application/src/main/resources/demo/fixtures/users.json:generic-api-key:132
