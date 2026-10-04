@@ -1,0 +1,63 @@
+@startuml RF19_Componentes
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "components/interactions.tsx\nCardActions · InteractionBar\nShareDialog · Comments · useRemix" as FE0
+  component "components/scheme-card.tsx (PostMenu)\ncomponents/piece-card.tsx" as FE1
+  component "feed/page.tsx · schemes/[id]\npieces/[id] · lookbook (Looks Salvos)" as FE2
+  component "Botão \"Retornar\" <<planejado>>" as FE3 #FFF5F8
+}
+package "fai-web · controllers" {
+  [SocialController\n/api/interactions/{type}/{id}/\nreactions · comments · saves\nsaves/favorite · shares · remixes · counters] as SC
+  [CommentController\nDELETE /api/comments/{id}\nPOST /api/pieces/{id}/return-to-origin] as CC
+  [SchemeController\nPOST /api/schemes/{id}/remix] as SCH
+}
+package "fai-application · services" {
+  [SocialService] as S
+  [SchemeService\nremix() · renderCard()] as SS
+  [NotificationService (RNF10)] as N
+  [Guard\n(visibilidade, bloqueio)] as G
+  [WardrobeEventListeners\nInteractionReceived → FaiPoints (RF35)] as EV
+  [HypeScoreService\n(lê contadores — RF26)] as H
+}
+package "fai-infrastructure · adapters" {
+  [InMemoryCounterStore\n(CounterStorePort)] as CT
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort — PNG exportado)] as ST
+  [Repositórios JPA (fai-domain · repository)\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• reactions\n• comments\n• saved_items\n• shares\n• notifications\n• schemes · scheme_items\n• wardrobe_items" as DB
+
+FE0 --> SC : chama HTTPS/JSON
+FE0 --> CC : DELETE comentário
+FE1 --> FE0 : usa
+FE2 --> FE1 : renderiza cards
+FE3 ..> CC : return-to-origin\n(não implementado — conforme Trello)
+SC --> S : chama
+CC --> S : chama
+SCH --> SS : chama
+S --> G : requireCanCreate / deny
+S --> SS : remix · renderCard
+S --> N : notify(NEW_LIKE, NEW_REACTION,\nNEW_COMMENT, NEW_REMIX)
+S --> CT : increment / read
+S --> ST : grava PNG (EXTERNAL)
+S --> EV : publica InteractionReceived
+S --> REPOS : lê/grava
+N --> REPOS : grava notifications
+H --> REPOS : lê contadores
+REPOS --> DB : JPA/Flyway
+@enduml

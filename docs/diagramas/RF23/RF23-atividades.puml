@@ -1,0 +1,101 @@
+@startuml RF23_Atividades
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /settings (abas Conta, Aparência,\nPrivacidade, Seus dados, Sessões);
+|Frontend (settings/page.tsx)|
+:GET /api/me/preferences;
+:Aplica tema, densidade, fonte, contraste,\nreduceMotion e fundo do chrome (ThemeProvider);
+note right
+  CA08 — tema e fundo mudam só o chrome do app
+  (--chrome-bg, data-theme, data-density).
+  A arte das peças e dos esquemas e dos cards
+  (RF11) não é tocada.
+end note
+|Pessoa|
+if (Qual aba?) then (Conta)
+  :Edita nome de exibição, bio, país,\navatar e capa (EditProfileForm);
+  |Frontend (settings/page.tsx)|
+  :PATCH /api/me/profile;
+  |Backend (PreferencesService)|
+  :updateProfile — salva SEM reautenticação (CA03);
+  note right : Dados sensíveis (e-mail, senha,\n2FA) ficam no RF3 — PATCH /api/me/sensitive\npede reautenticação.
+  |Pessoa|
+  if (Trocou o @?) then (sim)
+    |Frontend (settings/page.tsx)|
+    :PUT /api/me/username;
+    |Backend (PreferencesService)|
+    if (@ livre e não reservado?) then (sim)
+      :Grava username e audita ALTERACAO_PERFIL;
+    else (não)
+      #FFE3E3:400 USERNAME_EM_USO com suggestions (CA04);
+    endif
+  else (não)
+  endif
+elseif (Aparência / Idioma) then
+  :Escolhe tema, idioma, densidade, fonte (80–160),\nalto contraste, reduzir animações, fundo do chrome;
+  |Frontend (settings/page.tsx)|
+  :Aplica na hora (ThemeProvider / I18nProvider)\ne guarda em localStorage;
+  :PUT /api/me/preferences {…, clientUpdatedAt};
+  |Backend (PreferencesService)|
+  if (clientUpdatedAt mais antigo que o salvo?) then (sim)
+    :Ignora e devolve o estado atual\n(last-write-wins, CA02);
+  else (não)
+    if (fontScale, chromeBackgroundId, cor e skin válidos?) then (sim)
+      :Grava user_preferences e audita\nALTERACAO_PREFERENCIAS;
+    else (não)
+      #FFE3E3:400 FONTE_INVALIDA / FUNDO_INVALIDO / COR_INVALIDA;
+    endif
+  endif
+  |Frontend (settings/page.tsx)|
+  :Idioma: catálogos lib/i18n/messages/{pt-BR,en,es}.json\ne Accept-Language em toda chamada;
+  |Backend (PreferencesService)|
+  :RequestLocaleFilter lê Accept-Language;\nMsg.t resolve messages*.properties\ne devolve Content-Language;
+elseif (Privacidade) then
+  |Frontend (settings/page.tsx)|
+  :GET /api/me/consents;
+  |Pessoa|
+  :Define visibilidade padrão e\nconsentimentos por finalidade;
+  |Frontend (settings/page.tsx)|
+  :PUT /api/me/privacy · PUT /api/me/consents/{purpose};
+  |Backend (AccountService)|
+  :Grava user_consents (granted, grantedAt/revokedAt)\ne registra em audit_log;
+  note right : ver RF24 (motor de IA) — finalidades\nAI_RECOMMENDATION, AI_EXTERNAL_PHOTO_PROCESSING…
+else (Seus dados)
+  |Frontend (settings/page.tsx)|
+  :GET /api/me/exports;
+  |Pessoa|
+  :Pede exportação (ou agenda exclusão da conta);
+  |Frontend (settings/page.tsx)|
+  :POST /api/me/exports;
+  |Backend (AccountService)|
+  :Cria data_export_requests (PROCESSING),\nmonta JSON no idioma preferido,\ngrava em restricted/… e marca READY;
+  :Notifica DATA_EXPORT_READY; expira em 7 dias\n(purgeExpiredExports → EXPIRED);
+  |Pessoa|
+  :Baixa GET /api/me/exports/{id}/file;
+endif
+stop
+@enduml

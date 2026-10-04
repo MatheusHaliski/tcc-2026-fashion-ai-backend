@@ -1,0 +1,68 @@
+@startuml RF5_Componentes
+title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "schemes/new — Criar Look" as FE0
+  component "SchemeBuilder\n(components/scheme-builder.tsx)" as FE1
+  component "SchemeCard + scheme-anatomies" as FE2
+}
+package "fai-web · controllers" {
+  [SchemeController] as SchemeController
+  [BackgroundController\n(RF11)] as BackgroundController
+}
+package "fai-application · services" {
+  [SchemeService] as SchemeService
+  [WardrobeService\n(eligible: só peças disponíveis)] as WardrobeService
+  [BackgroundStudioService\n(RF11)] as BackgroundStudioService
+  [SealService\n(RF20/RF21)] as SealService
+  [SchemeCardRenderer\n(imaging)] as Renderer
+  [LocalSchemeComposer\n(fallback local)] as LocalComposer
+  [AiEngine (RF24)] as AiEngine #FAFAFA
+}
+package "fai-domain · repository (JPA)" {
+  [SchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserRepository\nStyleDnaRepository] as REPOS
+}
+database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• users\n• style_dna" as DB
+cloud "Provedores de IA\n(fai-infrastructure · ai-providers)" as P_ai
+component "Storage de mídia\n(MediaService / storage-s3)" as P_storage
+[Eventos de domínio\nSchemeSaved (AFTER_COMMIT)\n→ FAI Points (RF30), Inventory Score (RF29)] as P_events
+
+FE0 --> FE1 : renderiza
+FE1 --> SchemeController : GET /api/schemes/builder\nPOST /api/schemes/compositions\nPOST /api/schemes/preview\nPOST /api/schemes
+FE1 --> BackgroundController : GET /api/backgrounds/recommendations\nPOST /api/backgrounds/art
+FE2 --> SchemeController : GET /api/schemes/{id}/card.png
+SchemeController --> SchemeService : chama
+BackgroundController --> BackgroundStudioService : chama
+SchemeService --> WardrobeService : lê peças elegíveis (CA01/CA07b)
+SchemeService --> BackgroundStudioService : aplica arte (etapa 4)
+SchemeService --> SealService : suggestSealsAfterSave (RF20)
+SchemeService --> Renderer : renderiza card/preview
+SchemeService --> AiEngine : compor 3 looks (CA04)
+SchemeService --> LocalComposer : fallback sem IA
+SchemeService --> REPOS : grava schemes + scheme_items
+SchemeService --> P_storage : foto do look (POST /api/schemes/photos)
+SchemeService --> P_events : publica SchemeSaved
+AiEngine ..> P_ai : chama
+REPOS --> DB : JPA/Flyway
+
+note bottom of SchemeService
+  CA02: eligible < 2 → status INSUFICIENTE e ação /pieces/new (RF4)
+  CA06: items vazio → 400 SEM_PECAS
+  CA05: publish=true → status PUBLISHED e feed (RF8), ver /publication
+end note
+@enduml

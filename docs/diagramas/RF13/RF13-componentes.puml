@@ -1,0 +1,61 @@
+@startuml RF13_Componentes
+title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "dna/page.tsx\n(DNA de Estilo)" as FE0
+  component "dna-schemes/new · [id] · [id]/edit" as FE1
+  component "components/dna-builder.tsx" as FE2
+  component "components/dna-card.tsx" as FE3
+}
+package "fai-web · controllers" {
+  [DnaController] as DnaController
+}
+package "fai-application · services" {
+  [DnaService] as DnaService
+  [SchemeService] as SchemeService
+  [MediaService] as MediaService
+  [NotificationService] as NotificationService
+  [AiEngine (RF24)] as AiEngine
+  [LocalDnaSynthesizer\n(ai/local)] as LocalDna
+}
+package "fai-infrastructure · adapters" {
+  [StyleDnaRepository\nStyleDnaVersionRepository\nDnaSchemeRepository\nDnaSchemeItemRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · DailyLookRepository\nUserRepository] as REPOS
+  [MediaStoragePort\n(LocalFileMediaStorage / S3MediaStorageAdapter)] as STORAGE
+  [AiProviderPort\n(provedores remotos de texto)] as AIPROV
+}
+database "MySQL\n• style_dna\n• style_dna_versions\n• dna_schemes\n• dna_scheme_items\n• schemes · scheme_items\n• wardrobe_items · daily_looks\n• notifications" as DB
+cloud "Provedores de IA externos\n(texto · DNA Synthesizer)" as EXT
+
+FE0 --> FE2 : renderiza
+FE1 --> FE2 : renderiza
+FE2 --> FE3 : exibe card
+FE2 --> DnaController : chama (HTTPS/JSON)
+DnaController --> DnaService : chama
+DnaService --> SchemeService : lê visões dos esquemas
+DnaService --> AiEngine : local/text (DNA_SYNTHESIZER)
+AiEngine --> LocalDna : fallback local
+AiEngine --> AIPROV : chama
+AIPROV --> EXT : HTTPS
+DnaService --> MediaService : grava card PNG
+MediaService --> STORAGE : put
+DnaService --> NotificationService : publica AI_JOB_FINISHED
+DnaService --> REPOS : lê / grava
+REPOS --> DB : JPA/Flyway
+note bottom of AiEngine : ver RF24 (motor de IA transversal)
+note bottom of FE2 : fundo do card: Background Studio, ver RF11
+@enduml

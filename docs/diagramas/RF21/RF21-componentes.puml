@@ -1,0 +1,62 @@
+@startuml RF21_Componentes
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "schemes/new/page.tsx\ncomponents/scheme-builder.tsx\n(sugestões + consentimento de imagem\npara kind CELEBRITY)" as FE0
+  component "brands/[slug]/page.tsx (celebridade)\nabas Selos · Promoções · Revisão · Métricas" as FE1
+  component "components/seal-medallion.tsx\n(premium = vítreo/holográfico)\ncomponents/scheme-card.tsx (SealBadges)" as FE2
+  component "Aba \"Meus Selos\" (GET /api/me/seals)\n<<planejado>>" as FE3 #FFF5F8
+}
+package "fai-web · controllers" {
+  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{id}/accept|refuse|review|revoke\nGET /api/seal-bonds/review-queue\nPOST /api/promotions/{id}/redemptions] as C
+  [SchemeController\nPOST /api/schemes] as SCH
+}
+package "fai-application · services" {
+  [SealService] as S
+  [SchemeService (RF5)] as SS
+  [AiEngine\nAiCapability.SEALBOND_MATCHER\n(Similarity — assinatura de estilo)] as AI
+  [NotificationService\nSEAL_BOND_REVIEW · SEAL_GRANTED] as N
+  [Audit\nAuditActions.MUDANCA_ESTADO_VINCULO_SELO] as A
+  [CouponService (RF38)\nCouponRightsCheck AFTER_COMMIT] as CS
+  [InstitutionalService (RF22)\nperfil verificado da celebridade] as INST
+}
+package "fai-infrastructure · adapters" {
+  [MysqlAuditService\n(audit_log)] as MA
+  [Repositórios JPA (fai-domain · repository)\nSealBondRepository · SealRepository\nCelebrityProfileRepository · SchemeRepository\nSchemeItemRepository · PromotionRepository\nPromotionRedemptionRepository · NotificationRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• seal_bonds\n• seals (premium)\n• celebrity_profiles\n• schemes · scheme_items\n• promotions · promotion_redemptions\n• notifications\n• audit_log" as DB
+
+FE0 --> C : preview / seal-bonds
+FE0 --> SCH : cria o look
+FE1 --> C : review-queue / review / revoke
+FE2 --> FE1 : usa
+FE3 ..> C : não implementado — conforme Trello
+C --> S : chama
+SCH --> SS : chama
+SS --> S : revokeForScheme / flagRevalidation
+S --> AI : local(SEALBOND_MATCHER)
+S --> N : notify
+S --> A : log
+S --> CS : publica CouponRightsCheck
+S --> REPOS : lê/grava
+INST --> REPOS : lê celebrity_profiles
+A --> MA : grava
+MA --> DB : JDBC
+REPOS --> DB : JPA/Flyway
+note bottom of S : diferenças do RF20: só celebridade APROVADA com\nsealConsentGranted; imageRightsConsent obrigatório;\nsempre PENDING_REVIEW; sealCode PRM-…
+@enduml

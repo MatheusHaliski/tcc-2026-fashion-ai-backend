@@ -1,0 +1,38 @@
+@startuml RF27_MaquinaDeEstados_PecaNoQuarto
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+title RF27 — Peça no Meu Quarto: representação pelo estado do acervo (RoomService.statesOf)
+[*] --> Guardada : peça cadastrada (RF4) recebe endereço\n(door:n/hanger:k, drawer:n, shoe:n…)
+state "Guardada no móvel\n(sem marcador)" as Guardada
+state "ESQUECIDA\n(poeira)" as Esquecida
+state "INDISPONIVEL\n(cesto)" as Indisponivel
+state "FAVORITA\n(cabide especial)" as Favorita
+state "ICONE\n(vitrine)" as Icone
+state "LOOK_DO_DIA\n(na cadeira / em uso)" as LookDoDia
+state "FORA_DE_ESTACAO\n(maleiro de estação)" as ForaEstacao
+state "A_VENDA\n(arara de venda)" as AVenda
+Guardada --> Esquecida : sem uso há mais que a janela\n(RoomService.forgotten)
+Esquecida --> Guardada : POST /api/pieces/{id}/diary\nou entra num Look do Dia
+Guardada --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false} (RF31)
+Esquecida --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false}
+Indisponivel --> Guardada : PATCH /api/pieces/{id}/flags {disponivel:true}
+Guardada --> Favorita : PATCH /api/pieces/{id}/flags {favorite:true}
+Favorita --> Guardada : PATCH /api/pieces/{id}/flags {favorite:false}
+Guardada --> Icone : StyleDna.iconPieceName = nome da peça (RF13)
+Icone --> Guardada : DNA muda a Peça Ícone
+Guardada --> LookDoDia : POST /api/me/mirror/use ou\nPOST /api/me/daily-look (RF28)
+LookDoDia --> Guardada : vira o dia (lookDate)
+Guardada --> ForaEstacao : POST /api/me/room/season-storage\n(nível PENTHOUSE)
+ForaEstacao --> Guardada : POST /api/me/room/season-storage (retirar)
+Guardada --> AVenda : PATCH /api/pieces/{id}/flags {forSale:true}
+AVenda --> Guardada : PATCH /api/pieces/{id}/flags {forSale:false}
+Guardada --> Guardada : PUT /api/pieces/{id}/room-address\n(mover de endereço) · POST /api/me/room/organization
+note right of Indisponivel : INDISPONIVEL tem precedência sobre ESQUECIDA;\nFAVORITA, ICONE, A_VENDA e LOOK_DO_DIA são\nmarcadores cumulativos (Set<String> states)
+note bottom of Guardada : esquemas salvos aparecem como caixas no maleiro\n(lookBoxes) — ver RF5; Grade continua a visão padrão
+@enduml

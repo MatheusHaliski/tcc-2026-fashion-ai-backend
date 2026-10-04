@@ -1,0 +1,150 @@
+@startuml RF10_Classes
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +subcategory: String
+  +color: String
+  +material: String
+  +styleTags: String
+  +occasionTags: String
+  +disponivel: boolean
+  +availabilityStatus: AvailabilityStatus
+  +wearCount: int
+  +lastWornDate: LocalDate
+}
+class Scheme {
+  +user: User
+  +title: String
+  +occasion: String
+  +style: String
+  +origin: SchemeOrigin
+  +status: SchemeStatus
+  +favorite: boolean
+  +lookDoDiaCount: int
+  +hypeScore: BigDecimal
+}
+class WeekPlan {
+  +user: User
+  +weekStart: LocalDate
+  +status: WeekPlanStatus
+  +gapsJson: String
+}
+class WeekPlanDay {
+  +weekPlan: WeekPlan
+  +dayDate: LocalDate
+  +eventLabel: String
+  +occasion: String
+  +scheme: Scheme
+  +pieceIdsJson: String
+  +combinationKey: String
+  +rationale: String
+  +editedManually: boolean
+}
+class DailyLook {
+  +user: User
+  +scheme: Scheme
+  +source: DailyLookSource
+  +weekPlanDayId: UUID
+}
+class PieceUsageDiaryEntry {
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +usedOn: LocalDate
+  +occasion: String
+  +source: String
+  +schemeId: UUID
+}
+}
+package "fai-domain · enums" {
+enum WeekPlanStatus {
+  ACTIVE
+  DISCARDED
+  COMPLETED
+}
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  DNA_DUPLICATE
+  SMART_MIRROR
+  VISTA_ME
+  AUTOPILOTO
+}
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+}
+package "fai-application · service" {
+class CopilotService {
+  +context(user, view, selection, city, lat, lon)
+  +suggestions(user, city, lat, lon)
+  +ask(user, AskRequest)
+  +accept(user, pieceIds, title, occasion, style, mood, season, description, background)
+}
+class CopilotLexicon {
+  {static} +matches(vocab, message)
+  {static} +first(vocab, message)
+  {static} +weatherBand(message)
+  {static} +seasonOfBand(band)
+}
+class WeatherService {
+  +resolve(lat, lon, city): Context
+  {static} +band(t)
+  {static} +season(t)
+  {static} +unsuitable(subcategory, band)
+}
+class AutopilotService {
+  +daily(user, DailyRequest)
+  +planWeek(user, WeekRequest)
+  +currentWeek(user)
+  +editDay(user, dayId, pieceIds)
+  +useDay(user, dayId)
+  +discardWeek(user)
+}
+}
+WardrobeItem "*" --> "1" User : user
+Scheme "*" --> "1" User : user
+Scheme --> SchemeOrigin
+WeekPlan "*" --> "1" User : user
+WeekPlan --> WeekPlanStatus
+WeekPlanDay "*" --> "1" WeekPlan : weekPlan
+WeekPlanDay "*" --> "0..1" Scheme : scheme
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook --> DailyLookSource
+PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
+CopilotService ..> CopilotLexicon
+CopilotService ..> WeatherService
+CopilotService ..> AutopilotService : createScheme (COPILOT)
+CopilotService ..> WardrobeItem : eligible / forgotten
+AutopilotService ..> WeekPlan
+AutopilotService ..> WeekPlanDay
+AutopilotService ..> DailyLook
+note top of WeekPlan : tabela week_plans
+note top of WeekPlanDay : tabela week_plan_days
+note top of DailyLook : tabela daily_looks
+note top of PieceUsageDiaryEntry : tabela piece_usage_diary\n(gravada por WardrobeEventListeners; base de "peças esquecidas")
+note top of WardrobeItem : tabela wardrobe_items
+@enduml

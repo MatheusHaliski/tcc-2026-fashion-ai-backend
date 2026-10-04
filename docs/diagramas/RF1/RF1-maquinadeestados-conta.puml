@@ -1,0 +1,48 @@
+@startuml RF1_MaquinaDeEstados_Conta
+!pragma layout smetana
+title RF1 — Conta (User.status · AccountStatus): do cadastro à ativação, suspensão e exclusão
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "PENDING_EMAIL_VERIFICATION" as PendEmail
+state "PENDING_VALIDATION" as PendVal
+state "ACTIVE" as Ativa
+state "SUSPENDED" as Susp
+state "DELETION_SCHEDULED" as DelSched
+state "DELETED" as Del
+
+[*] --> PendEmail : POST /api/auth/register\n(sessão aberta com warnings)
+PendEmail --> Ativa : POST /api/auth/email-verification\n(PESSOAL, ou perfil já APROVADO)
+PendEmail --> PendVal : POST /api/auth/email-verification\n(MARCA/CELEBRIDADE com ApprovalStatus PENDENTE)
+PendVal --> Ativa : POST /api/admin/approvals/{userId}\napprove = true (CA07/CA10)
+PendVal --> PendVal : POST /api/admin/approvals/{userId}\napprove = false → perfil RECUSADO,\nnotificação com o motivo
+Ativa --> Susp : PUT /api/admin/users/{userId}/status\nsuspend = true
+Susp --> Ativa : PUT /api/admin/users/{userId}/status\nsuspend = false
+Ativa --> DelSched : POST /api/me/deletion (RF3.CA13)\ndeletionScheduledFor = +30 dias
+DelSched --> Ativa : DELETE /api/me/deletion\n(volta ao estado anterior)
+DelSched --> Del : job purgeScheduledDeletions\n(anonimização irreversível)
+Del --> [*]
+
+note right of PendEmail
+  CA05 — acesso limitado: Guard.requireCanCreate
+  responde 403 EMAIL_NAO_CONFIRMADO; só navega e vê.
+  Reenvio do código: POST /api/auth/email-verification/resend
+end note
+note right of PendVal
+  Sessão emite o aviso "seu perfil aguarda a validação".
+  Marca e celebridade não vendem nem emitem selos
+  (Guard.requireApprovedInstitutional)
+end note
+note left of Susp
+  Login e refresh respondem
+  403 CONTA_INDISPONIVEL / 401
+end note
+note bottom of Del
+  username → deleted_xxxx, e-mail → fashionai.invalid,
+  peças ARCHIVED, looks ARCHIVED, sessões revogadas
+end note
+@enduml

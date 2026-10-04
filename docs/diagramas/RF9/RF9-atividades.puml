@@ -1,0 +1,89 @@
+@startuml RF9_Atividades
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre o esquema (menu ⋯ → Editar);
+|Frontend (Next.js)|
+:GET /api/schemes/{id};
+|Backend (SchemeService)|
+if (É o autor? (canEdit)) then (não)
+  :Botão "Editar" não aparece (CA04);
+  |Pessoa|
+  stop
+else (sim)
+endif
+|Frontend (Next.js)|
+:schemes/[id]/edit → SchemeBuilder(initial)\ncarrega nome, ocasião, descrição, visibilidade,\narte e lista de peças atuais (CA01);
+|Pessoa|
+:Altera campos, remove/adiciona peças,\nmuda visibilidade ou arte de fundo;
+if (Pediu "melhorar com IA"?) then (sim)
+  |Frontend (Next.js)|
+  :POST /api/schemes/{id}/improvements {instruction};
+  |Backend (SchemeService)|
+  :Edit Assistant (AiCapability.EDIT_ASSISTANT)\npropõe diff por campo; fallback LocalAdvisors;
+  note right: ver RF24 (motor de IA) — RF30.CA10
+  |Pessoa|
+  :Aceita ou recusa item a item;
+  |Frontend (Next.js)|
+  :POST /api/schemes/{id}/improvements/apply {campo: valor};
+  |Backend (SchemeService)|
+  :validChange por campo; grava só o aceito;\naudita EDICAO_ESQUEMA (aiDiffFields);
+endif
+|Pessoa|
+:Salvar;
+|Frontend (Next.js)|
+:PUT /api/schemes/{id} (SchemeForm);
+|Backend (SchemeService)|
+:Guard.requireOwner — não-autor recebe\n403 e audit_log ACESSO_NEGADO_403 (CA04);
+:applyForm + replaceItems (scheme_items);
+if (Ficou sem peças?) then (sim)
+  #FFE3E3:400 SEM_PECAS;
+  stop
+endif
+note right
+  CA02: remover peça do esquema apaga só o
+  scheme_item — a WardrobeItem continua no Closet
+  CA03: updatedAt registrado (AuditableEntity)
+end note
+if (Peças mudaram e status = PUBLISHED?) then (sim)
+  :SealService.flagRevalidation: vínculo APPROVED →\nrevalidationPending = true e notifica a marca\n(SEAL_BOND_REVIEW) (CA05);
+endif
+if (Virou PRIVATE?) then (sim)
+  :revokeForScheme (RF20.CA14);
+endif
+:projections.scheme + audit EDICAO_ESQUEMA\n+ evento SchemeSaved;
+|Frontend (Next.js)|
+:Mostra esquema atualizado e aviso\n"revalidação pendente" quando houver;
+|Pessoa|
+if (Edita uma peça do esquema?) then (sim)
+  |Frontend (Next.js)|
+  :PUT /api/pieces/{id} (PieceForm);
+  |Backend (WardrobeService)|
+  :owned + validate + apply; projections.piece;\naudit EDICAO_PECA; evento PieceUpdated;
+  note right: CA07 — a peça muda no acervo e em todos\nos esquemas dali em diante; esquemas publicados\nguardam snapshot_json da publicação (RF7.CA03)
+endif
+stop
+@enduml
