@@ -37,12 +37,23 @@ describe("Central do emissor", () => {
     const body = calls.find((c) => c.path === "/api/me/issuer-review/resubmit")!.body as Record<string, unknown>;
     expect(body).toMatchObject({ storeUrl: "https://lume.com", message: "Novo comprovante" });
   });
+
+  it("celebridade corrige o nome civil no reenvio", async () => {
+    const celeb: IssuerReview = { ...REVIEW, profileType: "CELEBRIDADE", reasons: ["DADOS_INCOMPLETOS"],
+      editable: { verificationUrl: "https://instagram.com/lume", representationContact: null, realName: "", hasDocument: true, documentKind: "identity" } };
+    const { calls } = loggedAs(undefined, { "GET /api/me/issuer-review": celeb, "POST /api/me/issuer-review/resubmit": { ...celeb, status: "PENDENTE", attempts: 2 } });
+    renderApp(<Central />);
+    fireEvent.change(await screen.findByLabelText(/Nome civil/), { target: { value: "Maria Lume" } });
+    fireEvent.click(screen.getByRole("button", { name: /Reenviar para análise/ }));
+    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/me/issuer-review/resubmit")).toBe(true));
+    expect(calls.find((c) => c.path === "/api/me/issuer-review/resubmit")!.body).toMatchObject({ realName: "Maria Lume", verificationUrl: "https://instagram.com/lume" });
+  });
 });
 
 const DOSSIER: Dossier = {
   user: { id: "b1", username: "atelier_lume", displayName: "Atelier Lume", profileType: "MARCA", verified: false, privateAccount: true, country: "BR" } as Dossier["user"],
   kind: "MARCA", name: "Atelier Lume", slug: "atelier-lume", status: "PENDENTE", email: "contato@atelierlume.com.br", emailVerified: true,
-  createdAt: "2026-10-01T12:00:00Z", submittedAt: "2026-10-01T12:00:00Z", attempts: 1, lastReasons: [], verificationCode: "FAI-1A2B3C",
+  createdAt: "2026-10-01T12:00:00Z", submittedAt: "2026-10-01T12:00:00Z", reviewableSince: "2026-10-01T12:00:00Z", attempts: 1, lastReasons: [], verificationCode: "FAI-1A2B3C",
   checks: [{ code: "EMAIL_CONFIRMADO", mandatory: true, auto: "OK" }, { code: "CNPJ_ATIVO", mandatory: true, auto: "ANALISTA" }, { code: "PERFIL_COMPLETO", mandatory: false, auto: "FALHA" }],
   data: { razaoSocial: "Atelier Lume Ltda", cnpj: "11.222.333/0001-81", storeUrl: "https://atelierlume.com.br" }, documents: [{ kind: "activity-proof", available: true }],
 };
@@ -63,6 +74,14 @@ describe("fila de verificação (admin)", () => {
     fireEvent.click(reject);
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/admin/approvals/b1")).toBe(true));
     expect(calls.find((c) => c.path === "/api/admin/approvals/b1")!.body).toMatchObject({ decision: "RECUSAR", reasons: ["DOCUMENTO_ILEGIVEL"] });
+  });
+
+  it("o prazo só corre depois do e-mail confirmado", async () => {
+    loggedAs(undefined, {});
+    const unconfirmed: Dossier = { ...DOSSIER, emailVerified: false, reviewableSince: null };
+    renderApp(<AdminApprovals queue={{ ...QUEUE, pending: [unconfirmed] }} onChanged={() => undefined} />);
+    expect(await screen.findByText("aguardando o e-mail ser confirmado")).toBeTruthy();
+    expect(screen.queryByText(/na fila há|entrou na fila hoje|atrasado/i)).toBeNull();
   });
 
   it("conta só dias úteis no prazo", () => {

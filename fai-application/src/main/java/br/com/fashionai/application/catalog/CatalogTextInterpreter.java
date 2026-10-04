@@ -4,7 +4,7 @@ import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.common.Json;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -116,7 +116,7 @@ public class CatalogTextInterpreter {
 
     private static Set<String> names(JsonNode node) {
         Set<String> out = new LinkedHashSet<>();
-        node.fieldNames().forEachRemaining(out::add);
+        out.addAll(node.propertyNames());
         return out;
     }
 

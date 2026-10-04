@@ -284,6 +284,10 @@ public class IdentityService {
             if (c == null || blank(c.stageName())) {
                 errors.put("celebrity.stageName", Msg.t("identity.nome_artistico_e_obrigatorio"));
             }
+            if (c == null || blank(c.realName())) {
+                // critério obrigatório da verificação (NOME_CONFERE): sem ele o perfil nunca poderia ser aprovado
+                errors.put("celebrity.realName", Msg.t("identity.nome_civil_e_obrigatorio"));
+            }
             if (c == null || blank(c.identityProofUrl())) {
                 errors.put("celebrity.identityProofUrl", Msg.t("identity.envie_o_documento_de_identificacao"));
             }
@@ -589,6 +593,9 @@ public class IdentityService {
         u.setEmailVerified(true);
         boolean needsApproval = u.getProfileType() != ProfileType.PESSOAL && !approved(u);
         u.setStatus(needsApproval ? AccountStatus.PENDING_VALIDATION : AccountStatus.ACTIVE);
+        if (needsApproval && issuerReview != null) {
+            issuerReview.emailConfirmed(u);          // o prazo da primeira análise começa aqui (política de verificação §5)
+        }
         audit.log(current, AuditActions.EMAIL_CONFIRMADO, "user:" + u.getId(), Map.of());
         return Views.user(u);
     }

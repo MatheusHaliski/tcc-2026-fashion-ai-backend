@@ -131,8 +131,9 @@ Toda decisão negativa traz **pelo menos um motivo padronizado** e pode trazer u
 
 ## 7. Reenvio e contestação
 
-- Com *Ajustes solicitados* ou *Recusado*, a pessoa corrige pela **Central do emissor** (links, contato, novo
-  documento e uma mensagem ao analista) e reenvia. O pedido volta para a fila e os administradores são avisados de novo.
+- Com *Ajustes solicitados* ou *Recusado*, a pessoa corrige pela **Central do emissor** (links, contato, nome civil
+  no caso de celebridade, novo documento e uma mensagem ao analista) e reenvia. O pedido só é aceito se todos os
+  campos forem válidos; nada é gravado de um reenvio inválido. O pedido volta para a fila e os administradores são avisados de novo.
 - Cada perfil tem **até 5 envios** (o cadastro conta como o primeiro). Esgotado o limite, só a administração reabre o
   pedido, por contato direto.
 - A pessoa pode contestar uma recusa respondendo ao e-mail da decisão; a contestação é analisada por outro
@@ -172,6 +173,8 @@ Toda decisão negativa traz **pelo menos um motivo padronizado** e pode trazer u
 | Aprovação bloqueada sem e-mail confirmado, com obrigatório em aberto ou do próprio perfil | `AdminService.decide` |
 | Recusa e pedido de ajustes exigem ao menos um motivo padronizado | `AdminService.decide` |
 | Limite de 5 envios; reenvio só com *Ajustes solicitados* ou *Recusado* | `IssuerReviewService.resubmit` |
+| Prazo da primeira análise contado da confirmação do e-mail; dos reenvios, da data do reenvio | `IssuerReviewService.emailConfirmed` |
+| Nome civil obrigatório no cadastro de celebridade e corrigível no reenvio | `IdentityService`, `IssuerReviewService.resubmit` |
 | Documentos só para ADMIN, com auditoria a cada abertura | `GET /api/admin/approvals/{id}/documents/{tipo}` |
 | Checklist, motivos e envios gravados no perfil e na auditoria | migração `V31__politica_verificacao_emissor.sql` |
 
