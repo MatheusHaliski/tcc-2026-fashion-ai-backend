@@ -175,7 +175,7 @@ class StructuredDataTest(unittest.TestCase):
 
     def test_subtipo_desconhecido_nao_e_chutado(self):
         warnings = []
-        item = to_catalog_item({"node": {"name": "Vale-presente", "brand": "Nike"}, "variants": []}, "https://nike.com/p/gift",
+        item = to_catalog_item({"node": {"name": "Garrafa Térmica 1L", "brand": "Nike"}, "variants": []}, "https://nike.com/p/gift",
                                "Nike", "nike.com", "OFFICIAL_BRAND", N, warnings)
         self.assertIsNone(item)
         self.assertIn("nunca chutado", warnings[0])
@@ -201,6 +201,16 @@ class StructuredDataTest(unittest.TestCase):
         self.assertEqual(infer_subcategory(N, "Calça Levi's XX Chino Cargo Taper Verde"), "cargo_pants")
         self.assertEqual(infer_subcategory(N, "Calça Jeans Levi's 514 Straight"), N.subcategory("calça jeans"))
         self.assertIsNone(infer_subcategory(N, "Nike Academy Shoe Bag (11L)"))
+
+    def test_tipo_so_pelo_nome_e_fora_do_acervo(self):
+        def item(name, **extra):
+            return to_catalog_item({"node": {"name": name, "brand": "Everlane", **extra}, "variants": []}, "https://www.everlane.com/p/x",
+                                   "Everlane", "everlane.com", "OFFICIAL_BRAND", N, [])
+        self.assertIsNone(item("The City Boot | Cream", description="Wear it with your favorite sweater."))
+        self.assertIsNone(item("The Cotton Tank Bra | Black"))
+        self.assertIsNone(item("Tripack Cano Alto Fbox"))
+        self.assertEqual(item("Kit 3 Pares de Meias Cano Alto")["subcategory"], "socks")
+        self.assertEqual(item("UA Matchplay", category="Men's Golf Shorts")["subcategory"], "shorts")
 
     def test_marca_sem_pontuacao(self):
         item = to_catalog_item({"node": {"name": "Camiseta Logo", "brand": "Levis"}, "variants": []}, "https://www.levi.com.br/x/p",

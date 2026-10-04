@@ -271,7 +271,10 @@
    "sweatshirt",
    "moletom",
    "crewneck",
-   "blusa de moletom"
+   "blusa de moletom",
+   "quarter zip",
+   "half zip",
+   "1/4 zip"
   ],
   "hoodie": [
    "hoodie",
@@ -296,7 +299,9 @@
    "jaqueta",
    "jaquetas",
    "bomber",
-   "trucker jacket"
+   "trucker jacket",
+   "track jacket",
+   "track top"
   ],
   "coat": [
    "coat",
@@ -338,7 +343,8 @@
    "pants",
    "calcas",
    "calças",
-   "trousers"
+   "trousers",
+   "pant"
   ],
   "chino_pants": [
    "chino",
@@ -404,7 +410,8 @@
    "tênis",
    "tenis casual",
    "tênis casual",
-   "trainers"
+   "trainers",
+   "trainer"
   ],
   "running_shoes": [
    "running",
@@ -513,7 +520,8 @@
   "crossbody_bag": [
    "crossbody",
    "bolsa transversal",
-   "bolsa tiracolo"
+   "bolsa tiracolo",
+   "sling bag"
   ],
   "tote_bag": [
    "tote",

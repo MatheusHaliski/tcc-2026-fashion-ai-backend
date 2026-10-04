@@ -273,6 +273,22 @@ def infer_subcategory(n: Normalizer, *texts: Optional[str]) -> Optional[str]:
     return None
 
 
+UNSUPPORTED = ("bra", "bras", "sports bra", "sutia", "underwear", "cueca", "cuecas", "calcinha", "calcinhas", "boxer", "boxers",
+               "brief", "briefs", "lingerie", "thong", "tanga", "gift card", "vale presente", "cartao presente")
+_PACK = re.compile(r"\b(tripack|tri pack|\d+\s?pack|pack\s?\d+|kit\s?(com\s)?\d+|\d+\s?pares|multipack)\b")
+
+
+def unsupported_reason(name: Optional[str]) -> Optional[str]:
+    """Peças fora da taxonomia do acervo (roupa íntima, vale-presente): ficam de fora em vez de virar outro tipo."""
+    k = " " + key(name) + " "
+    hit = next((u for u in UNSUPPORTED if f" {u} " in k), None)
+    return f"tipo fora do acervo ({hit})" if hit else None
+
+
+def is_pack(name: Optional[str]) -> bool:
+    return bool(_PACK.search(key(name)))
+
+
 def brand_cdn_ok(image_url: str, official: str) -> bool:
     """Imagem do próprio domínio oficial ou de um CDN cujo nome contém o rótulo da marca (static.nike.com)."""
     d = domain(image_url) or ""
@@ -309,7 +325,16 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
         # aqui só aceitamos a marca da própria fonte (um domínio = uma marca), para nunca atribuir errado
         warnings.append(f"{page_url}: marca da página ({page_brand}) difere da fonte ({brand}) — ignorado")
         return None
-    sub = infer_subcategory(n, name, _text(node.get("category")), _text(node.get("description")))
+    unsupported = unsupported_reason(name)
+    if unsupported:
+        warnings.append(f"{page_url}: \"{name}\" — {unsupported} — ignorado")
+        return None
+    # o tipo vem do NOME; a categoria da página só entra se o nome não disser. A descrição nunca decide o tipo
+    # ("The City Boot", descrito como "combina com o seu sweater", não vira suéter)
+    sub = infer_subcategory(n, name) or infer_subcategory(n, _text(node.get("category")))
+    if sub and is_pack(name) and sub != "socks":
+        warnings.append(f"{page_url}: kit/pacote sem tipo claro em \"{name}\" — ignorado")
+        return None
     if not sub:
         warnings.append(f"{page_url}: subtipo não reconhecido em \"{name}\" — ignorado (nunca chutado)")
         return None
