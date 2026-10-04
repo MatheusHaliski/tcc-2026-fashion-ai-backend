@@ -110,6 +110,16 @@ function gradientCss(g: unknown): string | undefined {
 /** Caminho público seguro: cada segmento codificado (os nomes dos vídeos têm espaços e "+"). */
 const media = (u?: string | null) => (!u ? undefined : /^https?:/.test(u) ? encodeURI(u) : u.split("/").map((seg) => encodeURIComponent(decodeURIComponent(seg))).join("/"));
 
+/**
+ * Estação que o layout Cartela sazonal mostra. A cartela (Frost, Solstice, Ember, Bloom) é escolhida no modal do próprio
+ * layout e vale sobre a estação do card; com a cartela automática ligada, ou sem cartela escolhida, vale a estação dos dados.
+ */
+export function cartelaSeason(bg?: Record<string, unknown> | null, season?: string | null): string | null {
+  const s = studioOf(bg);
+  const picked = s.seasonalPresetId ? ART_INDEX.seasonal[s.seasonalPresetId]?.season : undefined;
+  return (s.seasonalAuto && season) || picked || season || null;
+}
+
 export function resolveCardArt(bg?: Record<string, unknown> | null, opts?: { season?: string | null }): CardArt {
   const art = resolveLayers(bg, opts);
   const motion = motionOf(studioOf(bg).animation);

@@ -1,0 +1,76 @@
+@startuml RF8_Atividades
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba "Buscar" (search) ou "Feed" (feed);
+if (Digitou um termo?) then (sim)
+  :Escolhe a aba: LOOKS, PECAS, PESSOAS,\nMARCAS ou CELEBRIDADES;
+  :Aplica chips de filtro\n(estilo, ocasião, cor, marca, categoria);
+  |Frontend (Next.js)|
+  :GET /api/search?q=&tab=&cursor=;
+else (não)
+  |Frontend (Next.js)|
+  :GET /api/feed (comunidade) ou\nGET /api/runway (quem eu sigo);
+endif
+|Backend (SearchService)|
+if (Aba válida?) then (não)
+  #FFE3E3:400 ABA_INVALIDA;
+  stop
+endif
+:Monta lista de bloqueios (Follow BLOQUEADO\nnos dois sentidos) e estilos do meu StyleDna;
+:Lê candidatos públicos:\nSchemeRepository.findPublicFeed /\nWardrobeItemRepository;
+:Filtra por visibilidade efetiva\n(moreRestrictive(esquema, perfil) + Guard.canView);
+note right
+  RN: esquema ARCHIVED só aparece para o dono;
+  peça só com ModerationStatus APPROVED;
+  dono com AccountStatus ACTIVE;
+  bloqueados nunca aparecem (RF17)
+end note
+:Aplica os filtros (SearchService.matches);
+:Ordena por relevância =\n0,5·recência + 0,3·hype + 0,2·afinidade (DNA);
+note right: afinidade = Affinity AI (AiCapability.AFFINITY,\nmotor local — ver RF24)
+if (Houve resultado?) then (não)
+  :Monta "empty": termos alternativos +\nlooks em alta (trending);
+endif
+:Responde results + nextCursor + chips + engine (mysql|opensearch);
+|Frontend (Next.js)|
+:Renderiza SchemeCard / PieceCard / Avatar;
+:InfiniteSentinel pede a próxima página pelo cursor;
+|Pessoa|
+:Abre um card de outra pessoa;
+|Frontend (Next.js)|
+:GET /api/schemes/{id} ou GET /api/pieces/{id}\n+ GET /api/interactions/{type}/{id}/counters;
+|Backend (SearchService)|
+:SchemeService.requireView — 403 auditado\nse a visibilidade não permitir;
+:Incrementa viewCount quando não é o dono;
+|Pessoa|
+if (Interage?) then (sim)
+  |Frontend (Next.js)|
+  :POST /api/interactions/{type}/{id}/reactions | comments | saves | shares;
+  note right: SocialController (RF8/RF17/RF19)
+endif
+stop
+@enduml

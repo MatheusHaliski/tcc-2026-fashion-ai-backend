@@ -1,0 +1,73 @@
+@startuml RF47_Sequencia
+title RF47 — Acervo & Busca Catalogada\nDiagrama de sequência — endpoints reais (busca local → busca oficial → adicionar por referência)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\npieces/new\n(catalog-search.tsx)" as FE
+participant "CatalogController" as C
+participant "WardrobeController" as WC
+participant "CatalogService" as S
+participant "CatalogMatchScorer\nCatalogNormalizer" as M
+participant "OfficialCatalogDiscovery" as D
+participant "AiEngine (RF24)\nCATALOG_DISCOVERY" as AI
+participant "CatalogIngestService" as I
+participant "WardrobeService" as W
+database "MySQL" as DB
+
+U -> FE: tipo da peça → subtipo → marca
+FE -> C: GET /api/catalog/brands?q=lev
+C -> S: brandSuggestions(q)
+S -> DB: SELECT brands + brand_aliases
+C --> FE: 200 {brands} ("Levis" → Levi's)
+U -> FE: digita "501 preto"
+FE -> C: GET /api/catalog/search?category&subcategory&brand&q&color
+C -> S: search(SearchRequest)
+S -> M: resolve intenção (slug, cor, tokens)
+S -> DB: candidates(brandId, category, subcategory, terms)\nMATCH(search_text) AGAINST (BOOLEAN MODE)
+S -> M: score(Intent, Candidate) — descarta < MIN_SCORE 0,35
+C --> FE: 200 {results, matchScore, canSearchOfficial}\n(cards "% compatível")
+alt nada encontrado e canSearchOfficial
+  U -> FE: "Pesquisar em lojas oficiais"
+  FE -> C: POST /api/catalog/discover (SearchRequest)
+  C -> S: discover(user, r)
+  S -> DB: SELECT catalog_sources (brand, active)
+  S -> D: discover(userId, brand, subcategoria, query, domínios)
+  D -> AI: text(CATALOG_DISCOVERY, só domínios oficiais)
+  AI --> D: JSON products[] (máx. 8)
+  D --> S: List<Found> (imageAllowed só no domínio oficial)
+  loop cada Found
+    S -> I: upsert(ProductInput, DISCOVERED, createBrand=false)
+    I -> DB: INSERT catalog_products (dedup_key único)\ncatalog_images REFERENCE_ONLY | PERSISTED
+  end
+  C --> FE: 200 {results, status FOUND | NOT_FOUND, rejected}
+end
+U -> FE: "É esta" (produto + variante) → formulário preenchido
+U -> FE: Dados → Mais detalhes → Arte de fundo → Revisar e salvar
+alt sem produto escolhido
+  FE -> WC: POST /api/pieces (useDefaultImage = true)
+  WC -> W: create(user, form)
+  W -> DB: INSERT wardrobe_items (ilustração da categoria)
+  WC --> FE: 201 PieceView
+else com produto do catálogo
+  FE -> C: POST /api/pieces/from-catalog (AddRequest)
+  C -> S: addToWardrobe(user, a)
+  alt ingestionStatus = REJECTED
+    S --> FE: 400 PRODUTO_RECUSADO
+  else
+    S -> DB: UPDATE catalog_products\n(DISCOVERED → REFERENCE_ONLY, owners_count + 1)
+    S -> W: createFromCatalog(user, PieceForm, CatalogPick)
+    W -> DB: INSERT wardrobe_items (catalog_product_id, catalog_variant_id,\nimage_origin CATALOG = foto oficial | DEFAULT = ilustração da categoria)
+    C --> FE: 201 PieceView
+  end
+end
+note over FE, C
+  O criador de peça não tem envio de foto: imagem = foto oficial ou ilustração da categoria.
+  GET/PUT /api/me/capture-tutorial continuam no backend, mas SEM USO no frontend.
+end note
+@enduml

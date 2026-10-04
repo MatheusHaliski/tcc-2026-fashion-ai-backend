@@ -1,0 +1,112 @@
+@startuml RF43_Atividades
+title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a tela Autopiloto (autopilot);
+:Informa ocasião (até 2), humor e cidade;
+note right
+  O card do Trello (RF43) não tem descrição:
+  o fluxo segue o código. No código e na API
+  o recurso aparece como RF10 (numeração antiga).
+end note
+|Frontend (autopilot/page.tsx)|
+:POST /api/autopilot/daily
+{occasion, mood, city, excludeKeys};
+|Backend (AutopilotService)|
+:wardrobe.eligible(userId)
+peças disponíveis da pessoa;
+if (eligible >= MIN_PIECES (3)?) then (não)
+  #FFE3E3:422 ACERVO_INSUFICIENTE
+  (href /pieces/new);
+  stop
+endif
+|Bancos-serviços|
+:WeatherService.resolve(lat, lon, city)
+Open-Meteo, cache 30 min;
+:Faixa de clima: VERAO_LEVE, MEIA_ESTACAO,
+CAMADAS ou INVERNO_PESADO;
+|Backend (AutopilotService)|
+:Filtra peças inadequadas ao clima
+(WeatherService.unsuitable);
+:LocalSchemeComposer.compose → candidatas;
+:Pontua: ocasião, clima, preferências
+(PreferenceModel) e diversidade;
+note right
+  score = W_OCCASION*ocasiao + W_CLIMATE*clima
+  + W_PREFERENCE*preferencias + W_DIVERSITY*diversidade;
+  chaves em excludeKeys são descartadas
+  ("Outras opções" nunca repete).
+end note
+if (há candidatas?) then (não)
+  :suggestions = [] + mensagem;
+  |Frontend (autopilot/page.tsx)|
+  :EmptyState → "Adicionar peça";
+  stop
+endif
+|Bancos-serviços|
+:AiEngine.text(COPILOT) escolhe 3 entre
+as 10 melhores e justifica (ver RF24);
+if (IA respondeu JSON válido?) then (não)
+  |Backend (AutopilotService)|
+  :Fallback local: 3 primeiras
+  com localRationale (fallbackUsed=true);
+endif
+|Backend (AutopilotService)|
+:suggestionView: peças, critérios, score,
+rationale e layout no manequim;
+|Frontend (autopilot/page.tsx)|
+:Mostra até 3 looks com clima e explicação;
+|Pessoa|
+if (Gostou de algum look?) then (não)
+  :"Outras opções";
+  |Frontend (autopilot/page.tsx)|
+  :POST /api/autopilot/daily
+  com excludeKeys acumuladas;
+  stop
+else (sim)
+  :"Usar hoje";
+endif
+|Frontend (autopilot/page.tsx)|
+:POST /api/autopilot/daily/confirmation
+{pieceIds, title, occasion, mood};
+|Backend (AutopilotService)|
+:createScheme: reaproveita esquema igual
+ou cria Scheme (origin AUTOPILOTO,
+creationMode AI_ASSISTED);
+:DailyLookService.register
+(source AUTOPILOTO, hoje);
+|Bancos-serviços|
+:INSERT schemes, scheme_items, daily_looks;
+|Frontend (autopilot/page.tsx)|
+:201 → redireciona para /schemes/{id};
+note right
+  Aba "Semana": POST /api/autopilot/weeks monta
+  7 dias sem repetir combinação (WeekPlan ACTIVE),
+  PUT /days/{id} troca peças, POST /days/{id}/use
+  registra o Look do Dia, DELETE /weeks/current descarta.
+end note
+stop
+@enduml

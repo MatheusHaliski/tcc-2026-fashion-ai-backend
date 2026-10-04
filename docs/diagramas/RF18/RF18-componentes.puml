@@ -1,0 +1,63 @@
+@startuml RF18_Componentes
+title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "try-on/page.tsx\n(4 lugares, limpar, gerar imagem)" as FE0
+  component "components/three/avatar-viewer\n(AvatarViewer — palco 3D)" as FE1
+  component "lib/avatar3d (body-spec,\ndefault-outfit)" as FE2
+}
+package "fai-web · controllers" {
+  [TryOnController\nGET /api/try-on\nPUT /api/try-on/preferences\nPOST /api/try-on/renders\nPOST /api/try-on/schemes] as C
+}
+package "fai-application · services" {
+  [TryOnService] as S
+  [TryOnCompositor\n(imaging)] as CP
+  [MannequinGeometry\nLocalSchemeComposer.slotOf] as GEO
+  [AiEngine\nAiCapability.TRY_ON ·\nTRY_ON_POLISH ·\nCATEGORY_FALLBACK_COMPOSITOR] as AI
+  [Avatar3dService] as AV
+  [MediaService] as M
+  [SchemeService (RF5)] as SS
+  [WardrobeService] as W
+}
+package "fai-infrastructure · adapters" {
+  [FashnTryOnAdapter\n(TryOnProviderPort)] as FASHN
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort)] as ST
+  [Repositórios JPA (fai-domain · repository)\nUserPreferencesRepository\nWardrobeItemRepository\nUserRepository · SchemeRepository\nUserConsentRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• user_preferences\n• wardrobe_items\n• photos\n• schemes · scheme_items\n• user_consents\n• ai_inference_logs" as DB
+cloud "FASHN.ai\n(try-on remoto)" as EXT
+
+FE0 --> C : chama HTTPS/JSON
+FE0 --> FE1 : veste peças no avatar
+FE1 --> FE2 : usa
+C --> S : chama
+S --> GEO : resolve lugar/camada
+S --> AV : lê avatar (manequim)
+S --> W : owned(peça)
+S --> AI : execute(TRY_ON)
+AI --> CP : render(allowExternal)
+CP --> FASHN : tryOn()
+FASHN --> EXT : HTTPS
+S --> M : grava PNG + Photo
+M --> ST : put()
+S --> SS : create(origin PROVADOR)
+S --> REPOS : lê/grava
+AI --> REPOS : lê consentimento / grava inferência
+REPOS --> DB : JPA/Flyway
+note bottom of AI : ver RF24 (motor de IA) —\nsem consentimento degrada para o compositor local
+@enduml

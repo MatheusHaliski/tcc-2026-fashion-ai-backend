@@ -1,0 +1,71 @@
+@startuml RF14_Componentes
+title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "brands/page.tsx\n(feed Marcas · Celebridades)" as FE0
+  component "brands/[slug]/page.tsx\n(perfil institucional)" as FE1
+  component "components/brand-logo.tsx" as FE2
+  component "showcase-tabs (Coleções/Eras)\nflair · room3d (abas)" as FE3
+}
+package "fai-web · controllers" {
+  [ProfileController] as ProfileController
+  [BrandLogoController] as BrandLogoController
+  [LookbookController] as LookbookController
+  [FlairController] as FlairController
+}
+package "fai-application · services" {
+  [InstitutionalService] as InstitutionalService
+  [ProfileService] as ProfileService
+  [BrandLogoService] as BrandLogoService
+  [BrandWebSearchService] as BrandWebSearchService
+  [LookbookService] as LookbookService
+  [AiEngine (RF24)] as AiEngine
+}
+package "fai-infrastructure · adapters" {
+  [BrandProfileRepository\nBrandRepository · BrandLogoRepository\nCelebrityProfileRepository\nStyleDnaRepository · FollowRepository\nSealRepository · SealBondRepository\nSchemeGroupingRepository · UserRepository] as REPOS
+  [WebFetchPort\n(JdkWebFetchAdapter)] as WEB
+  [MediaStoragePort] as STORAGE
+}
+database "MySQL\n• brand_profiles\n• brands\n• brand_logos\n• celebrity_profiles\n• style_dna\n• follows · seals · seal_bonds\n• scheme_groupings · users" as DB
+cloud "Wikidata · Simple Icons (GitHub)\n· IA com busca na web" as EXT
+
+FE0 --> ProfileController : GET /api/brands · /api/celebrities
+FE1 --> ProfileController : GET /api/institutional/{slug}[/tabs/{tab}]
+FE1 --> LookbookController : GET /api/users/{ownerId}/groupings
+FE1 --> FlairController : aba Combinações FLAIR
+FE0 --> FE2 : exibe logo
+FE2 --> BrandLogoController : GET /api/brand-logos[/batch]
+FE1 --> FE3 : abas
+ProfileController --> InstitutionalService : chama
+ProfileController --> ProfileService : seguir (RF17)
+BrandLogoController --> BrandLogoService : chama
+BrandLogoController --> BrandWebSearchService : /api/brand-search
+BrandLogoService --> BrandWebSearchService : busca na primeira vez
+BrandWebSearchService --> WEB : lê
+WEB --> EXT : HTTPS
+BrandWebSearchService --> AiEngine : IA com busca web
+InstitutionalService --> AiEngine : local(AFFINITY)
+InstitutionalService --> REPOS : lê
+BrandLogoService --> REPOS : grava brand_logos
+BrandLogoService --> STORAGE : grava logo filtrado
+LookbookController --> LookbookService : chama
+LookbookService --> REPOS : lê
+REPOS --> DB : JPA/Flyway
+note bottom of InstitutionalService : aprovação da marca: AdminService (RF1.CA08)\nselos e promoções das abas: ver RF25
+note bottom of BrandWebSearchService : ver RF4 (docs/novos-rf/RF4_Buscador_Web_Marcas.md)
+@enduml
