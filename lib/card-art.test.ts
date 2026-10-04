@@ -100,3 +100,16 @@ describe("arte do card — animação do segmento Cor", () => {
     expect(FRAME_BAND_VARS["--aura-band"]).toBe("clamp(42px, 22.5%, 90px)");
   });
 });
+
+describe("layout Cartela sazonal — estação mostrada", () => {
+  test("a cartela escolhida no modal vale sobre a estação do look; automática ou sem cartela, vale a do look", async () => {
+    const { cartelaSeason } = await import("./card-art");
+    expect(cartelaSeason({ seasonalPresetId: "frost" }, "SUMMER")).toBe("WINTER");
+    expect(cartelaSeason({ seasonalPresetId: "frost", seasonalAuto: true }, "SUMMER")).toBe("SUMMER");
+    expect(cartelaSeason({}, "AUTUMN")).toBe("AUTUMN");
+    expect(cartelaSeason({ seasonalPresetId: "bloom" }, null)).toBe("SPRING");
+    expect(cartelaSeason(null, null)).toBeNull();
+    // config salvo ({ scheme: {...} }) também vale
+    expect(cartelaSeason({ scheme: { seasonalPresetId: "ember" } }, null)).toBe("AUTUMN");
+  });
+});

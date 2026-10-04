@@ -1289,7 +1289,6 @@
   "dnaBuilder.esquemas_de_vestimenta_seus_rf5": "Tus looks: {totalSchemes} disponibles. Elige de 2 a 6: toca la tarjeta para ver los detalles y “Añadir al ADN” para incluirla. Las marcas de cada look vienen de sus prendas. <0>Crear nuevo look</0>",
   "dnaBuilder.estacao_cartela_sazonal": "Estación (Paleta estacional)",
   "dnaBuilder.estacao_opcional": "Estación (opcional)",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estación real de la tarjeta</0> — elegir la Paleta estacional sobrescribe el arte de fondo manual (etapas 2–3 del Background Studio).",
   "dnaBuilder.ex_minha_evolucao_do_trabalho": "ej.: mi evolución del trabajo a la noche, en tonos tierra y cuero",
   "dnaBuilder.gerar_propostas_de_dna": "Generar propuestas de ADN",
   "dnaBuilder.indisponiveis": "(no disponibles)",
@@ -3793,5 +3792,11 @@
   "mirror.reflexo_aria": "Espejo: reflejo de tu Avatar 3D con el look",
   "mirror.sem_avatar": "Estás viendo el maniquí de referencia.",
   "mirror.criar_avatar": "Crea tu Avatar 3D para verte en el espejo",
-  "mirror.no_espelho": "Prendas en el espejo"
+  "mirror.no_espelho": "Prendas en el espejo",
+  "backgroundStudio.cartela_modal_dica": "La paleta define la estación que muestra el layout Paleta estacional; la animación cae sobre el arte. Nada cambia en la tarjeta hasta que apliques.",
+  "backgroundStudio.cartela_sem_estacao": "El look aún no tiene estación: elige una paleta arriba (o completa la estación en el paso 3) para que la tarjeta use este layout.",
+  "backgroundStudio.escolher_cartela_e_animacao": "Elegir paleta y animación",
+  "backgroundStudio.cartela_pela_estacao": "por la estación de los datos",
+  "backgroundStudio.aplicar_cartela": "Aplicar",
+  "dnaBuilder.cartela_no_modal": "La paleta y la animación de este layout se eligen en el diálogo que se abre al hacer clic en Paleta estacional. Sin paleta, vale la estación de los datos."
 }

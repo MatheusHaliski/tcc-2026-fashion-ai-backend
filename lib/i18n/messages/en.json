@@ -1289,7 +1289,6 @@
   "dnaBuilder.esquemas_de_vestimenta_seus_rf5": "Your looks: {totalSchemes} available. Pick 2 to 6: tap a card to see details and “Add to DNA” to include it. Each look's brands come from its pieces. <0>Create new look</0>",
   "dnaBuilder.estacao_cartela_sazonal": "Season (Seasonal palette)",
   "dnaBuilder.estacao_opcional": "Season (optional)",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>The card's real season</0> — choosing the Seasonal palette overrides the manual background art (Background Studio steps 2–3).",
   "dnaBuilder.ex_minha_evolucao_do_trabalho": "e.g.: my evolution from work to night, in earthy tones and leather",
   "dnaBuilder.gerar_propostas_de_dna": "Generate DNA proposals",
   "dnaBuilder.indisponiveis": "(unavailable)",
@@ -3793,5 +3792,11 @@
   "mirror.reflexo_aria": "Mirror: reflection of your 3D Avatar wearing the look",
   "mirror.sem_avatar": "You are seeing the reference mannequin.",
   "mirror.criar_avatar": "Create your 3D Avatar to see yourself in the mirror",
-  "mirror.no_espelho": "Pieces in the mirror"
+  "mirror.no_espelho": "Pieces in the mirror",
+  "backgroundStudio.cartela_modal_dica": "The palette sets the season the Seasonal palette layout shows; the animation falls over the art. Nothing changes on the card until you apply.",
+  "backgroundStudio.cartela_sem_estacao": "The look has no season yet: pick a palette above (or fill in the season in step 3) for the card to use this layout.",
+  "backgroundStudio.escolher_cartela_e_animacao": "Choose palette and animation",
+  "backgroundStudio.cartela_pela_estacao": "by the season in the details",
+  "backgroundStudio.aplicar_cartela": "Apply",
+  "dnaBuilder.cartela_no_modal": "This layout's palette and animation are chosen in the dialog that opens when you click Seasonal palette. With no palette, the season in the details is used."
 }

@@ -1289,7 +1289,6 @@
   "dnaBuilder.esquemas_de_vestimenta_seus_rf5": "Seus looks: {totalSchemes} disponíveis. Escolha de 2 a 6: toque no card para ver os detalhes e em “Adicionar ao DNA” para incluir. As marcas de cada look vêm das peças. <0>Criar novo look</0>",
   "dnaBuilder.estacao_cartela_sazonal": "Estação (Cartela sazonal)",
   "dnaBuilder.estacao_opcional": "Estação (opcional)",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estação real do card</0> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio).",
   "dnaBuilder.ex_minha_evolucao_do_trabalho": "ex.: minha evolução do trabalho para a noite, em tons terrosos e couro",
   "dnaBuilder.gerar_propostas_de_dna": "Gerar propostas de DNA",
   "dnaBuilder.indisponiveis": "(indisponíveis)",
@@ -3793,5 +3792,11 @@
   "mirror.reflexo_aria": "Espelho: reflexo do seu Avatar 3D com o look",
   "mirror.sem_avatar": "Você está vendo o manequim de referência.",
   "mirror.criar_avatar": "Crie seu Avatar 3D para se ver no espelho",
-  "mirror.no_espelho": "Peças no espelho"
+  "mirror.no_espelho": "Peças no espelho",
+  "backgroundStudio.cartela_modal_dica": "A cartela define a estação que o layout Cartela sazonal mostra; a animação cai por cima da arte. Nada muda no card até você aplicar.",
+  "backgroundStudio.cartela_sem_estacao": "O look ainda não tem estação: escolha uma cartela acima (ou preencha a estação na etapa 3) para o card usar este layout.",
+  "backgroundStudio.escolher_cartela_e_animacao": "Escolher cartela e animação",
+  "backgroundStudio.cartela_pela_estacao": "pela estação dos dados",
+  "backgroundStudio.aplicar_cartela": "Aplicar",
+  "dnaBuilder.cartela_no_modal": "A cartela e a animação deste layout são escolhidas no modal que abre ao clicar em Cartela sazonal. Sem cartela, vale a estação dos dados."
 }
