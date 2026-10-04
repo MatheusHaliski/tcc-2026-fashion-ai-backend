@@ -2,6 +2,8 @@
 
 > Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em 2026-10-04. As contagens são calculadas; o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.
 
+Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28, RF34→RF29, RF35→RF30, RF36→RF32, RF4 da captura V29→RF45; tabela em [`docs/novos-rf/README.md`](../novos-rf/README.md)). Visão complementar, por contexto delimitado, com migração de origem e enum de ciclo de vida de cada entidade: [`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md). Esta aqui traz contagens, campos, relações JPA, enums com valores e as entidades embutidas em JSON.
+
 ## Resumo
 
 | Medida | Valor |
@@ -38,7 +40,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **BrandProfile** | `brand_profiles` | versionada | 24 | owner → User | Perfil empresarial de marca (RF1.CA06-CA07, RF14, RF20). Aprovação depende de administrador; CNPJ e contato comercial ficam cifrados (RNF3). #requiresSealReview é o CA07 do RF20. |
 | **CelebrityProfile** | `celebrity_profiles` | versionada | 23 | owner → User | Perfil de celebridade (RF1.CA09-CA10, RF21, RF22). Só celebridades verificadas entram no pool de sugestão de vínculo (RF21.CA18). A assinatura de estilo (CA17) guarda paleta/arquétipo/estilos — atmosfera, nunca retrato (… |
 
-### Guarda-roupa e peças  ·  RF4, RF6, RF7, RF9, RF32–RF34  ·  12 entidades
+### Guarda-roupa e peças  ·  RF4, RF6, RF7, RF9, RF28, RF29, RF31, RF45  ·  12 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -72,7 +74,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **KbProductLine** | `kb_product_lines` | versionada | 4 | — | RF4 · Base de conhecimento: linha de produto de uma marca. |
 | **KbProductModel** | `kb_product_models` | versionada | 8 | — | RF4 · Base de conhecimento: modelo de produto (tokens de OCR e padrão de código). |
 
-### Esquemas (looks), DNA e planejamento  ·  RF5–RF7, RF11, RF13, RF28, HU18–HU20  ·  14 entidades
+### Esquemas (looks), DNA e planejamento  ·  RF5–RF7, RF11, RF13, RF28 (Vista-me), HU18–HU20  ·  14 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -113,7 +115,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **Notification** | `notifications` | versionada | 12 | recipient → User, actor → User | RNF10 — notificação in-app (sino do topbar). Fonte de verdade no MySQL; a projeção de entrega em escala (inbox por destinatário, TTL de 90 dias — RF3.CA37) vive no Cassandra. |
 | **Photo** | `photos` | versionada | 19 | user → User | RF12 "Minhas Fotos" — metadados de cada fotografia do acervo (binário no S3/MinIO). Guarda origem, hash, dimensões, qualidade (alimenta o Photo Curator AI), momento-chave e última visualização. |
 
-### Gamificação (FAI Points, desafios, rankings)  ·  RF34–RF36  ·  12 entidades
+### Gamificação (FAI Points, desafios, rankings)  ·  RF29, RF30, RF32, RF41  ·  12 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -130,7 +132,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **RankingPosition** | `ranking_positions` | — | 8 | — | RF34 §6 — posição materializada por segmento (fatia superior inclusiva). |
 | **InventoryScoreSnapshot** | `inventory_score_snapshots` | — | 9 | — | RF34 §7 — snapshot diário/mensal do Inventory Score (evolução, Rising Wardrobe, conquistas). |
 
-### FLAIR (jogo de cartas)  ·  FLAIR  ·  11 entidades
+### FLAIR (jogo de cartas)  ·  RF37  ·  11 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -146,7 +148,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **FlairTerritory** | `flair_territories` | versionada | 6 | owner → User | FLAIR — território do Fashion Monopoly (distritos e boutiques) e do Conquest (regiões de estilo). |
 | **FlairTrophy** | `flair_trophies` | versionada | 5 | user → User | FLAIR — troféu exibido no perfil (FLAIR Runway Winner, campeão da liga, território conquistado…). |
 
-### Quarto 3D e avatar  ·  RF27, RF32, RF35, RF40  ·  5 entidades
+### Quarto 3D e avatar  ·  RF27, RF30, RF39, RF40  ·  5 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -156,7 +158,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **RoomStorageEntry** | `room_storage_map` | auditável | 4 | — | RF32 §1.1 — endereço estável de cada peça no quarto (door:{n}/hanger:{n}, drawer:{n}, top:{n}, base:{n}, shoe:{n}, chair, basket). |
 | **UserAvatar3d** | `user_avatars_3d` | versionada | 10 | user → User | RF40 — Meu Avatar 3D: o rosto/busto da própria pessoa (forma em pose neutra + pele + cabelo medidos na foto), confirmado por ela. A textura do rosto (atlas) é biométrica: fica em chave privada do storage e só sai pela AP… |
 
-### IA, visão computacional e pipelines  ·  RF4, RF11, RF16, RF18, RF24  ·  10 entidades
+### IA, visão computacional e pipelines  ·  RF4, RF11, RF16, RF18, RF24, RF45  ·  10 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|

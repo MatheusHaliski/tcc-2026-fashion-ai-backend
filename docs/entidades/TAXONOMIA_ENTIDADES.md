@@ -14,6 +14,8 @@
 
 A numeração oficial dos requisitos é a do **Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*). Parte do código e dos `@Operation` do Swagger usa a numeração anterior; a tabela de colisões está em [`docs/novos-rf/README.md`](../novos-rf/README.md). Conversões aplicadas neste documento: código RF32 → Trello **RF27** (Meu Quarto), código RF33 do `MirrorController` → **RF28** (Smart Mirror), código RF34 → **RF29** (Inventory Score), código RF35 → **RF30** (FAI Points), código RF36 → **RF32** (Desafios), código RF4 das classes de V29 → **RF45** (captura adaptativa). RF47 ("Acervo & Busca Catalogada") ainda não tem card no Trello; o número vem do código (`CatalogController`).
 
+Veja também: [`docs/taxonomia/taxonomia-de-entidades.md`](../taxonomia/taxonomia-de-entidades.md) (gerada por `scripts/docs/taxonomia_entidades.py`: contagens, campos, relações JPA, valores dos enums e entidades embutidas em JSON) e [`docs/anatomia/anatomia-de-esquemas.md`](../anatomia/anatomia-de-esquemas.md) (anatomia do esquema/look).
+
 Tipos usados na coluna *Tipo*: **raiz** = agregado próprio, criado de forma independente; **filha** = existe em função de uma raiz (FK/UUID obrigatório); **associativa** = liga duas ou mais entidades (vínculo, voto, item de composição); **log** = append-only ou snapshot materializado.
 
 ## Taxonomia por contexto delimitado

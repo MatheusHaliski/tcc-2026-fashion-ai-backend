@@ -27,30 +27,30 @@ AREAS = [
      ["User", "UserPreferences", "UserConsent", "VerificationCode", "RefreshToken", "DataExportRequest"]),
     ("Perfis emissores (marca e celebridade)", "RF1.CA06–CA10, RF14, RF20–RF22",
      ["BrandProfile", "CelebrityProfile"]),
-    ("Guarda-roupa e peças", "RF4, RF6, RF7, RF9, RF32–RF34",
+    ("Guarda-roupa e peças", "RF4, RF6, RF7, RF9, RF28, RF29, RF31, RF45",
      ["WardrobeItem", "PieceImage", "PieceUsageDiaryEntry", "WardrobeAvailabilityChange", "CaptureSession",
       "CaptureRequest", "QualityScore", "AiReviewItem", "GarmentLandmark", "GarmentEmbedding", "ItemEmbedding",
       "BrandPrediction"]),
     ("Marcas e catálogo global", "RF4, RF47",
      ["Brand", "BrandAlias", "BrandLogo", "CatalogSource", "CatalogProduct", "CatalogProductAlias", "CatalogVariant",
       "CatalogImage", "CatalogIngestionRun", "KbBrandSignature", "KbProductLine", "KbProductModel"]),
-    ("Esquemas (looks), DNA e planejamento", "RF5–RF7, RF11, RF13, RF28, HU18–HU20",
+    ("Esquemas (looks), DNA e planejamento", "RF5–RF7, RF11, RF13, RF28 (Vista-me), HU18–HU20",
      ["Scheme", "SchemeItem", "SchemeGrouping", "DnaScheme", "DnaSchemeItem", "StyleDna", "StyleDnaVersion",
       "DailyLook", "HypeScoreMetric", "WeekPlan", "WeekPlanDay", "AcervoGroup", "HypeGroup", "MirrorState"]),
     ("Selos, promoções e cupons", "RF20, RF21, RF25, RF38",
      ["Seal", "SealBond", "Promotion", "PromotionRedemption", "CouponRight"]),
     ("Social e notificações", "RF8, RF12, RF19, RNF10",
      ["Follow", "Comment", "Reaction", "Share", "SavedItem", "Notification", "Photo"]),
-    ("Gamificação (FAI Points, desafios, rankings)", "RF34–RF36",
+    ("Gamificação (FAI Points, desafios, rankings)", "RF29, RF30, RF32, RF41",
      ["FaiPointsLedgerEntry", "FaiPointsRule", "ChallengeTemplate", "ChallengeInstance", "ChallengeParticipant",
       "ChallengeEvent", "ChallengeNote", "ChallengeVote", "UserAchievement", "RankingOptIn", "RankingPosition",
       "InventoryScoreSnapshot"]),
-    ("FLAIR (jogo de cartas)", "FLAIR",
+    ("FLAIR (jogo de cartas)", "RF37",
      ["FlairProfile", "FlairCoinEntry", "FlairCombination", "FlairMatch", "FlairMatchEntry", "FlairModeState",
       "FlairRedemption", "FlairTeam", "FlairTeamMember", "FlairTerritory", "FlairTrophy"]),
-    ("Quarto 3D e avatar", "RF27, RF32, RF35, RF40",
+    ("Quarto 3D e avatar", "RF27, RF30, RF39, RF40",
      ["RoomCatalogItem", "RoomInventoryItem", "RoomLayout", "RoomStorageEntry", "UserAvatar3d"]),
-    ("IA, visão computacional e pipelines", "RF4, RF11, RF16, RF18, RF24",
+    ("IA, visão computacional e pipelines", "RF4, RF11, RF16, RF18, RF24, RF45",
      ["AiInferenceLog", "ModelInference", "ModelRegistryEntry", "DatasetSource", "TrainingCandidate", "PipelineJob",
       "ProcessingJobLog", "RenderJobLog", "MetricSnapshot", "AssetPreset"]),
     ("Moderação, auditoria e operação", "RN11, RNF4, RNF5",
@@ -138,6 +138,12 @@ def main():
     L.append("")
     L.append(f"> Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em {today}. As contagens são calculadas; "
              "o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.")
+    L.append("")
+    L.append("Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28, RF34→RF29, RF35→RF30, RF36→RF32, "
+             "RF4 da captura V29→RF45; tabela em [`docs/novos-rf/README.md`](../novos-rf/README.md)). Visão complementar, "
+             "por contexto delimitado, com migração de origem e enum de ciclo de vida de cada entidade: "
+             "[`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md). Esta aqui traz contagens, "
+             "campos, relações JPA, enums com valores e as entidades embutidas em JSON.")
     L.append("")
     L.append("## Resumo")
     L.append("")
