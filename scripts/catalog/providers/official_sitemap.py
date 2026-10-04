@@ -69,6 +69,11 @@ class Site:
 
     def load_robots(self):
         status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
+        if status in (0, 404) and not self.domain.startswith("www."):
+            alt = f"https://www.{self.domain}"                    # muitos sites só respondem no www.
+            s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
+            if s2 not in (0, 404):
+                self.base, status, body = alt, s2, b2
         if status in (401, 403):
             raise StopDomain(f"{self.domain}: robots.txt respondeu {status} — sem permissão para coletar")
         if status == 0:
@@ -122,12 +127,35 @@ def looks_like_product(url: str, patterns: Iterable[str] = PRODUCT_HINTS) -> boo
     return any(p in u for p in patterns)
 
 
+PRODUCT_SITEMAP_HINTS = ("product", "produto", "pdp", "prod", "item", "sku", "catalog")
+SKIP_SITEMAP_HINTS = ("help", "ajuda", "article", "blog", "news", "locator", "store-", "stores", "lojas", "landing",
+                      "editorial", "journal", "story", "stories", "video", "image", "press", "career", "faq", "bfcm")
+LOCALE_HINTS = ("pt-br", "pt_br", "/br/", "-br.", "_br.", "en-us", "en_us", "/us/", "-us.", "_us.")
+
+
+def _sitemap_rank(url: str, extra: tuple) -> int:
+    """Ordem de leitura: sitemap de produto do Brasil/EUA primeiro; ajuda, blog, lojas físicas etc. por último."""
+    u = url.lower().replace("sitemap", "")                       # "s-item-ap" não é sitemap de item
+    rank = 0
+    if any(p in u for p in (*extra, *PRODUCT_SITEMAP_HINTS)):
+        rank -= 10
+    if any(p in u for p in LOCALE_HINTS):
+        rank -= 3
+    if any(p in u for p in SKIP_SITEMAP_HINTS):
+        rank += 20
+    return rank
+
+
 def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, sitemap_patterns: Iterable[str] = (),
-                 max_sitemaps: int = 200) -> Iterator[str]:
-    """URLs de produto a partir dos sitemaps do robots.txt (índices aninhados e .xml.gz), na ordem em que aparecem."""
-    queue, seen, read = list(site.sitemaps), set(), 0
+                 max_sitemaps: int = 60) -> Iterator[str]:
+    """URLs de produto a partir dos sitemaps do robots.txt (índices aninhados e .xml.gz). Sitemaps de produto (e do
+    Brasil/EUA) são lidos antes; sitemaps de ajuda, blog e lojas físicas ficam de fora. Num sitemap de produto, toda URL
+    do domínio conta como produto; nos demais, só as que parecem página de produto."""
+    extra = tuple(p.lower() for p in sitemap_patterns)
+    queue, seen, read = [u for u in site.sitemaps if _sitemap_rank(u, extra) < 20], set(), 0
     product_patterns = tuple(product_patterns)
     while queue and read < max_sitemaps:
+        queue.sort(key=lambda u: _sitemap_rank(u, extra))
         sm = queue.pop(0)
         if sm in seen:
             continue
@@ -138,12 +166,12 @@ def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, si
         if root is None:
             continue
         if root.tag.endswith("sitemapindex"):
-            children = _locs(root, "sitemap")
-            preferred = [c for c in children if any(p in c.lower() for p in (*sitemap_patterns, "product", "produto"))]
-            queue.extend(preferred or children)
+            queue.extend(c for c in _locs(root, "sitemap") if c not in seen and _sitemap_rank(c, extra) < 20)
         else:
+            product_map = _sitemap_rank(sm, extra) <= -10
             for url in _locs(root, "url"):
-                if looks_like_product(url, product_patterns) and same_site(domain(url), site.domain) and not blocked(url):
+                if (product_map or looks_like_product(url, product_patterns)) and same_site(domain(url), site.domain) \
+                        and not blocked(url):
                     yield url
 
 
@@ -215,15 +243,33 @@ def structured_product(page: bytes) -> Optional[dict]:
 
 # ───────────────────────── produto do catálogo
 
+MODIFIERS = ("short sleeve", "short sleeved", "long sleeve", "long sleeved", "manga curta", "manga longa", "manga corta",
+             "shoe bag", "for shoes", "shoe care", "sock liner", "boot cut", "bootcut", "shirt dress", "tee dress")
+ENGLISH_HINTS = {"men", "mens", "women", "womens", "kids", "boys", "girls", "unisex", "with", "the", "and", "for", "s"}
+
+
 def infer_subcategory(n: Normalizer, *texts: Optional[str]) -> Optional[str]:
-    """Subtipo pela taxonomia, lendo nome/categoria da página (trigramas → bigramas → palavras). Sem acerto: None."""
+    """Subtipo pela taxonomia, lendo nome/categoria da página. Modificadores ("short sleeve", "manga curta") não contam.
+    Em inglês o núcleo do nome vem no fim ("...Short-Sleeve Top" = top); em português/espanhol, no começo ("Camiseta
+    ..."). Frases maiores vencem as menores na mesma posição. Sem acerto: None (nunca chutado)."""
     for t in texts:
-        words = key(t).split()
+        k = " " + key(t) + " "
+        for m in MODIFIERS:
+            k = k.replace(" " + m + " ", " · ")
+        words = k.split()
+        hits = []                                                 # (início, fim, subtipo)
         for size in (3, 2, 1):
             for i in range(len(words) - size + 1):
-                sub = n.subcategory(" ".join(words[i:i + size]))
-                if sub:
-                    return sub
+                gram = words[i:i + size]
+                if "·" in gram:
+                    continue
+                sub = n.subcategory(" ".join(gram))
+                if sub and not any(h[0] <= i and i + size <= h[1] for h in hits):
+                    hits.append((i, i + size, sub))
+        if hits:
+            english = len(ENGLISH_HINTS & set(words)) > 0
+            hits.sort(key=lambda h: h[0])
+            return hits[-1][2] if english else hits[0][2]
     return None
 
 
@@ -237,6 +283,19 @@ def brand_cdn_ok(image_url: str, official: str) -> bool:
     return label in d.split(".")
 
 
+def _squash(s: Optional[str]) -> str:
+    return re.sub(r"[^a-z0-9]", "", key(s))
+
+
+def same_brand(n: Normalizer, page_brand: str, brand: str) -> bool:
+    """"Levis" = "Levi's" = "LEVI’S®"; apelidos cadastrados (CK → Calvin Klein) também valem."""
+    a, b = _squash(page_brand), _squash(brand)
+    if a and b and (a in b or b in a):
+        return True
+    sa, sb = n.brand_slug(page_brand), n.brand_slug(brand)
+    return bool(sa and sb and sa == sb)
+
+
 def to_catalog_item(found: dict, page_url: str, brand: str, official: str, source_type: str, n: Normalizer,
                     warnings: list) -> Optional[dict]:
     node = found["node"]
@@ -245,7 +304,7 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
         warnings.append(f"{page_url}: sem nome de produto")
         return None
     page_brand = _text(node.get("brand"))
-    if page_brand and key(page_brand) not in key(brand) and key(brand) not in key(page_brand):
+    if page_brand and not same_brand(n, page_brand, brand):
         # site oficial de multimarcas autorizadas: a marca da página vence se for outra marca conhecida?
         # aqui só aceitamos a marca da própria fonte (um domínio = uma marca), para nunca atribuir errado
         warnings.append(f"{page_url}: marca da página ({page_brand}) difere da fonte ({brand}) — ignorado")

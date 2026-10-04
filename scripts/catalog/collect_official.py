@@ -24,8 +24,11 @@ import argparse
 import json
 import socket
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -42,10 +45,19 @@ ALLOWED_SOURCES = ("OFFICIAL_BRAND", "OFFICIAL_STORE", "AUTHORIZED_RETAILER")
 MAX_BODY = 25 * 1024 * 1024
 
 
+def ascii_url(url: str) -> str:
+    """IRI → URI: sitemaps trazem caminhos com acento (ex.: /camiseta-básica); o HTTP só aceita ASCII."""
+    parts = urllib.parse.urlsplit(url)
+    host = parts.hostname.encode("idna").decode("ascii") if parts.hostname else ""
+    netloc = host + (f":{parts.port}" if parts.port else "")
+    quote = lambda s: urllib.parse.quote(s, safe="/%:@!$&'()*+,;=-._~?")
+    return urllib.parse.urlunsplit((parts.scheme, netloc, quote(parts.path), quote(parts.query), ""))
+
+
 def make_fetch(user_agent: str, timeout: float = 20, retries: int = 2, sleep=time.sleep):
     """fetch(url) -> (status, corpo, content-type). Redirecionamento para fora do domínio pedido vira status 0."""
     def fetch(url: str) -> tuple[int, bytes, str]:
-        req = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept-Encoding": "identity",
+        req = urllib.request.Request(ascii_url(url), headers={"User-Agent": user_agent, "Accept-Encoding": "identity",
                                                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.5"})
         for attempt in range(retries + 1):
             try:
@@ -84,52 +96,40 @@ def load_lines(path: Path) -> set[str]:
     return set(path.read_text(encoding="utf-8").split()) if path.exists() else set()
 
 
-def run(args, fetch=None, brands=None, log=print) -> dict:
-    n = Normalizer()
-    brands = brands if brands is not None else json.loads(BRANDS.read_text(encoding="utf-8"))
-    only = {x.strip().lower() for x in args.brands.split(",")} if args.brands else None
-    sources = official_sources(brands, only)
-    if not sources:
-        log("[ERROR] nenhuma fonte oficial encontrada para as marcas pedidas")
-        return {"brands": 0, "accepted": 0}
+def collect_brand(brand: dict, srcs: list[dict], args, fetch, n: Normalizer, log, total: dict, lock: threading.Lock):
+    """Uma marca: os domínios oficiais dela em sequência (um site de cada vez), gravando no <marca>.jsonl."""
+    bslug = slug(brand["name"])
     out_dir = Path(args.out)
-    state_dir = out_dir / ".state"
-    if not args.dry_run:
-        state_dir.mkdir(parents=True, exist_ok=True)
-    fetch = fetch or make_fetch(args.user_agent, timeout=args.timeout)
-    polite = Politeness(min_interval=args.min_interval)
-    total = {"brands": 0, "domains": 0, "pages": 0, "accepted": 0, "invalid": 0, "stopped": []}
-    per_brand: dict[str, int] = {}
-    for brand, src in sources:
-        bslug = slug(brand["name"])
-        remaining = args.max_per_brand - per_brand.get(bslug, 0)
+    jsonl, visited_file = out_dir / f"{bslug}.jsonl", out_dir / ".state" / f"{bslug}.visited"
+    if args.fresh and not args.dry_run:
+        for f in (jsonl, visited_file):
+            f.unlink(missing_ok=True)
+    visited = load_lines(visited_file)
+    seen_urls = {json.loads(l).get("official_product_url") for l in jsonl.read_text(encoding="utf-8").splitlines() if l.strip()} \
+        if jsonl.exists() else set()
+    cfg = brand.get("collector") or {}
+    polite = Politeness(min_interval=args.min_interval)      # domínios de marcas diferentes rodam em paralelo
+    written = 0
+    for src in srcs:
+        remaining = args.max_per_brand - written
         if remaining <= 0:
-            continue
-        jsonl, visited_file = out_dir / f"{bslug}.jsonl", state_dir / f"{bslug}.visited"
-        if args.fresh and not args.dry_run:
-            for f in (jsonl, visited_file):
-                f.unlink(missing_ok=True)
-        visited = load_lines(visited_file)
-        seen_urls = {json.loads(l).get("official_product_url") for l in jsonl.read_text(encoding="utf-8").splitlines() if l.strip()} \
-            if jsonl.exists() else set()
+            break
         before = set(visited)
-        cfg = brand.get("collector") or {}
         warnings: list[str] = []
-        written = 0
         fh = None                                                 # aberto só no 1º produto (sem arquivo vazio)
 
         def on_item(item: dict):
-            nonlocal written
+            nonlocal written, fh
             try:
                 normalize_product(item, n)                        # o que vai para o JSONL já passa na importação
             except ValidationError as e:
                 warnings.append(f"{item.get('official_product_url')}: {e}")
-                total["invalid"] += 1
+                with lock:
+                    total["invalid"] += 1
                 return
             if item.get("official_product_url") in seen_urls:
                 return
             seen_urls.add(item.get("official_product_url"))
-            nonlocal fh
             written += 1
             if not args.dry_run:
                 if fh is None:
@@ -137,7 +137,9 @@ def run(args, fetch=None, brands=None, log=print) -> dict:
                 fh.write(json.dumps(item, ensure_ascii=False) + "\n")
                 fh.flush()
             if args.verbose:
-                log(f"  + {item['product_name']} ({item['subcategory']})")
+                log(f"  + [{brand['name']}] {item['product_name']} ({item['subcategory']})")
+            elif written % args.progress_every == 0:
+                log(f"  … {brand['name']}: {written} produtos")
 
         log(f"→ {brand['name']} · {src['domain']} ({src['source_type']}) · até {remaining} produtos")
         site = Site(src["domain"], fetch, polite, args.user_agent)
@@ -154,23 +156,52 @@ def run(args, fetch=None, brands=None, log=print) -> dict:
                 if new:
                     with visited_file.open("a", encoding="utf-8") as vf:
                         vf.write("\n".join(sorted(new)) + "\n")
-        per_brand[bslug] = per_brand.get(bslug, 0) + written
-        total["domains"] += 1
-        total["pages"] += rep["pages"]
+        with lock:
+            total["domains"] += 1
+            total["pages"] += rep["pages"]
+            if rep["stopped"]:
+                total["stopped"].append(rep["stopped"])
+        lines = [f"  [{brand['name']} · {src['domain']}] {rep['pages']} páginas · {rep['accepted']} produtos · "
+                 f"{rep['skipped']} descartadas · {rep['blocked_by_robots']} bloqueadas pelo robots.txt · "
+                 f"{site.requests} requisições" + (f" · PAROU: {rep['stopped']}" if rep["stopped"] else "")]
+        lines += [f"  [WARN] {w}" for w in warnings[: (len(warnings) if args.verbose else 3)]]
+        if not args.verbose and len(warnings) > 3:
+            lines.append(f"  [WARN] … mais {len(warnings) - 3} avisos em {src['domain']} (use --verbose)")
+        log("\n".join(lines))
+    with lock:
         total["accepted"] += written
-        if rep["stopped"]:
-            total["stopped"].append(rep["stopped"])
-        log(f"  {rep['pages']} páginas · {written} produtos novos · {rep['skipped']} descartadas · "
-            f"{rep['blocked_by_robots']} bloqueadas pelo robots.txt · {site.requests} requisições"
-            + (f" · PAROU: {rep['stopped']}" if rep["stopped"] else ""))
-        for w in warnings[: (len(warnings) if args.verbose else 5)]:
-            log(f"  [WARN] {w}")
-        if not args.verbose and len(warnings) > 5:
-            log(f"  [WARN] … mais {len(warnings) - 5} avisos (use --verbose)")
-    total["brands"] = len(per_brand)
-    log(f"Resumo: {total['brands']} marcas · {total['domains']} domínios · {total['pages']} páginas · "
-        f"{total['accepted']} produtos novos · {total['invalid']} inválidos · {len(total['stopped'])} domínios pararam"
-        + ("  [DRY-RUN: nada gravado]" if args.dry_run else f" · saída em {out_dir}"))
+        if written:
+            total["brands_with_products"] += 1
+    return written
+
+
+def run(args, fetch=None, brands=None, log=print) -> dict:
+    n = Normalizer()
+    brands = brands if brands is not None else json.loads(BRANDS.read_text(encoding="utf-8"))
+    only = {x.strip().lower() for x in args.brands.split(",")} if args.brands else None
+    grouped: dict[str, tuple[dict, list[dict]]] = {}
+    for brand, src in official_sources(brands, only):
+        grouped.setdefault(brand["name"], (brand, []))[1].append(src)
+    if not grouped:
+        log("[ERROR] nenhuma fonte oficial encontrada para as marcas pedidas")
+        return {"brands": 0, "accepted": 0}
+    if not args.dry_run:
+        (Path(args.out) / ".state").mkdir(parents=True, exist_ok=True)
+    fetch = fetch or make_fetch(args.user_agent, timeout=args.timeout)
+    total = {"brands": len(grouped), "brands_with_products": 0, "domains": 0, "pages": 0, "accepted": 0, "invalid": 0, "stopped": []}
+    lock = threading.Lock()
+    safe_log = lambda msg: (lock.acquire(), log(msg), lock.release())
+    workers = max(1, min(args.workers, len(grouped)))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(collect_brand, b, srcs, args, fetch, n, safe_log, total, lock) for b, srcs in grouped.values()]
+        for f in futures:
+            try:
+                f.result()
+            except Exception as e:                                # uma marca com erro não derruba as outras
+                safe_log(f"[ERROR] {type(e).__name__}: {e}")
+    log(f"Resumo: {total['brands']} marcas ({total['brands_with_products']} com produtos) · {total['domains']} domínios · "
+        f"{total['pages']} páginas · {total['accepted']} produtos novos · {total['invalid']} inválidos · "
+        f"{len(total['stopped'])} domínios pararam" + ("  [DRY-RUN: nada gravado]" if args.dry_run else f" · saída em {args.out}"))
     return total
 
 
@@ -182,6 +213,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--timeout", type=float, default=20, help="timeout de cada requisição (s)")
     ap.add_argument("--user-agent", default=DEFAULT_UA, help="User-Agent identificável (o robots.txt é lido para ele)")
     ap.add_argument("--out", default=str(OUT), help="pasta de saída (um <marca>.jsonl por marca)")
+    ap.add_argument("--workers", type=int, default=12, help="marcas coletadas em paralelo (cada site segue com 1 requisição por vez)")
+    ap.add_argument("--progress-every", type=int, default=50, help="linha de progresso a cada N produtos por marca")
     ap.add_argument("--fresh", action="store_true", help="apaga o JSONL e o estado da marca antes de coletar")
     ap.add_argument("--dry-run", action="store_true", help="coleta e valida, mas não grava arquivos")
     ap.add_argument("--verbose", action="store_true", help="lista cada produto aceito e todos os avisos")

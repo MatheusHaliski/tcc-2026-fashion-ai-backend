@@ -68,14 +68,19 @@ class SitemapTest(unittest.TestCase):
         return site, web, slept
 
     def test_indice_aninhado_e_gz(self):
-        gz = gzip.compress(urlset("https://www.nike.com.br/p/a", "https://www.nike.com.br/institucional"))
-        site, _, _ = self.site({
-            "https://www.nike.com.br/sitemap_index.xml": (200, index("https://www.nike.com.br/sitemap-products-1.xml.gz",
-                                                                     "https://www.nike.com.br/sitemap-blog.xml"), XML),
-            "https://www.nike.com.br/sitemap-products-1.xml.gz": (200, gz, "application/gzip"),
+        gz = gzip.compress(urlset("https://www.nike.com.br/tenis-air-max-90", "https://outra.com/x"))
+        site, web, _ = self.site({
+            "https://www.nike.com.br/sitemap_index.xml": (200, index("https://www.nike.com.br/sitemap-blog.xml",
+                                                                     "https://www.nike.com.br/sitemap-pdp-pt-br-1.xml.gz",
+                                                                     "https://www.nike.com.br/sitemap-paginas.xml"), XML),
+            "https://www.nike.com.br/sitemap-pdp-pt-br-1.xml.gz": (200, gz, "application/gzip"),
+            "https://www.nike.com.br/sitemap-paginas.xml": (200, urlset("https://www.nike.com.br/institucional",
+                                                                        "https://www.nike.com.br/p/b"), XML),
         })
         site.load_robots()
-        self.assertEqual(list(product_urls(site)), ["https://www.nike.com.br/p/a"])   # só o sitemap de produto; só URL de produto
+        # sitemap de produto primeiro (toda URL do domínio conta); no sitemap genérico só URL com cara de produto
+        self.assertEqual(list(product_urls(site)), ["https://www.nike.com.br/tenis-air-max-90", "https://www.nike.com.br/p/b"])
+        self.assertNotIn("https://www.nike.com.br/sitemap-blog.xml", web.calls)              # blog nem é baixado
 
     def test_sem_sitemap_no_robots_usa_sitemap_xml(self):
         site, _, _ = self.site({"https://nike.com.br/sitemap.xml": (200, urlset("https://nike.com.br/p/x"), XML)}, robots="User-agent: *\n")
@@ -188,6 +193,26 @@ class StructuredDataTest(unittest.TestCase):
         self.assertNotIn("gtin", item)
         self.assertEqual(item["official_product_url"], "https://www.nike.com.br/p/nk-1")
 
+    def test_nucleo_do_nome_e_modificadores(self):
+        self.assertNotEqual(infer_subcategory(N, "Nike Academy+ Men's Dri-FIT Soccer Short-Sleeve Top"), "shorts")
+        self.assertEqual(infer_subcategory(N, "Nike Academy Men's Nike Dri-FIT Soccer Shorts"), "shorts")
+        self.assertEqual(infer_subcategory(N, "Plush Women's Therma-FIT Shawl Jacket"), "jacket")
+        self.assertEqual(infer_subcategory(N, "Camiseta Levi's Perfect Graphic Tee"), "t_shirt")
+        self.assertEqual(infer_subcategory(N, "Calça Levi's XX Chino Cargo Taper Verde"), "cargo_pants")
+        self.assertEqual(infer_subcategory(N, "Calça Jeans Levi's 514 Straight"), N.subcategory("calça jeans"))
+        self.assertIsNone(infer_subcategory(N, "Nike Academy Shoe Bag (11L)"))
+
+    def test_marca_sem_pontuacao(self):
+        item = to_catalog_item({"node": {"name": "Camiseta Logo", "brand": "Levis"}, "variants": []}, "https://www.levi.com.br/x/p",
+                               "Levi's", "levi.com.br", "OFFICIAL_STORE", N, [])
+        self.assertIsNotNone(item)
+
+    def test_robots_no_www(self):
+        web = FakeWeb({"https://www.loja.com.br/robots.txt": (200, b"Sitemap: https://www.loja.com.br/sm.xml", "text/plain")})
+        site = Site("loja.com.br", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.sitemaps, ["https://www.loja.com.br/sm.xml"])
+
     def test_inferencia_e_cdn(self):
         self.assertEqual(infer_subcategory(N, "Blusa Manga Curta Padronagem Aop"), N.subcategory("blusa"))
         self.assertEqual(infer_subcategory(N, "New York Tennis Off White"), N.subcategory("tennis"))
@@ -203,8 +228,13 @@ class CliTest(unittest.TestCase):
 
     def args(self, out, **kw):
         base = dict(brands="nike", max_per_brand=10, min_interval=0, timeout=5, user_agent="t", out=out, fresh=False,
-                    dry_run=False, verbose=False)
+                    dry_run=False, verbose=False, workers=2, progress_every=50)
         return SimpleNamespace(**{**base, **kw})
+
+    def test_url_com_acento_vira_ascii(self):
+        self.assertEqual(collect_official.ascii_url("https://www.loja.com.br/camiseta-básica?cor=azul marinho"),
+                         "https://www.loja.com.br/camiseta-b%C3%A1sica?cor=azul%20marinho")
+        self.assertEqual(collect_official.ascii_url("https://www.loja.com/p/a%20b"), "https://www.loja.com/p/a%20b")
 
     def test_so_fontes_oficiais(self):
         srcs = collect_official.official_sources(self.BRANDS, None)

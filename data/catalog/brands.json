@@ -165,5 +165,1098 @@
         "country": "BR"
       }
     ]
+  },
+  {
+    "name": "Gap",
+    "country": "US",
+    "website": "https://www.gap.com",
+    "sources": [
+      {
+        "domain": "gap.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Banana Republic",
+    "country": "US",
+    "website": "https://www.bananarepublic.com",
+    "sources": [
+      {
+        "domain": "bananarepublic.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Ralph Lauren",
+    "country": "US",
+    "website": "https://www.ralphlauren.com",
+    "sources": [
+      {
+        "domain": "ralphlauren.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Under Armour",
+    "country": "US",
+    "website": "https://www.underarmour.com",
+    "sources": [
+      {
+        "domain": "underarmour.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "underarmour.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Patagonia",
+    "country": "US",
+    "website": "https://www.patagonia.com",
+    "sources": [
+      {
+        "domain": "patagonia.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Reebok",
+    "country": "US",
+    "website": "https://www.reebok.com",
+    "sources": [
+      {
+        "domain": "reebok.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "ASICS",
+    "country": "JP",
+    "website": "https://www.asics.com",
+    "sources": [
+      {
+        "domain": "asics.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "JP"
+      },
+      {
+        "domain": "asics.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Fila",
+    "country": "IT",
+    "website": "https://www.fila.com",
+    "sources": [
+      {
+        "domain": "fila.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      },
+      {
+        "domain": "fila.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Champion",
+    "country": "US",
+    "website": "https://www.champion.com",
+    "sources": [
+      {
+        "domain": "champion.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Carhartt WIP",
+    "country": "DE",
+    "website": "https://www.carhartt-wip.com",
+    "sources": [
+      {
+        "domain": "carhartt-wip.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DE"
+      }
+    ]
+  },
+  {
+    "name": "Dickies",
+    "country": "US",
+    "website": "https://www.dickies.com",
+    "sources": [
+      {
+        "domain": "dickies.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Diesel",
+    "country": "IT",
+    "website": "https://www.diesel.com",
+    "sources": [
+      {
+        "domain": "diesel.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Guess",
+    "country": "US",
+    "website": "https://www.guess.com",
+    "sources": [
+      {
+        "domain": "guess.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Abercrombie & Fitch",
+    "country": "US",
+    "website": "https://www.abercrombie.com",
+    "sources": [
+      {
+        "domain": "abercrombie.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Hollister",
+    "country": "US",
+    "website": "https://www.hollisterco.com",
+    "sources": [
+      {
+        "domain": "hollisterco.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "American Eagle",
+    "country": "US",
+    "website": "https://www.ae.com",
+    "sources": [
+      {
+        "domain": "ae.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Everlane",
+    "country": "US",
+    "website": "https://www.everlane.com",
+    "sources": [
+      {
+        "domain": "everlane.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Gymshark",
+    "country": "GB",
+    "website": "https://www.gymshark.com",
+    "sources": [
+      {
+        "domain": "gymshark.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Supreme",
+    "country": "US",
+    "website": "https://www.supreme.com",
+    "sources": [
+      {
+        "domain": "supreme.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Stüssy",
+    "country": "US",
+    "website": "https://www.stussy.com",
+    "sources": [
+      {
+        "domain": "stussy.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Balenciaga",
+    "country": "FR",
+    "website": "https://www.balenciaga.com",
+    "sources": [
+      {
+        "domain": "balenciaga.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "FR"
+      }
+    ]
+  },
+  {
+    "name": "Louis Vuitton",
+    "country": "FR",
+    "website": "https://www.louisvuitton.com",
+    "sources": [
+      {
+        "domain": "louisvuitton.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "FR"
+      }
+    ]
+  },
+  {
+    "name": "Burberry",
+    "country": "GB",
+    "website": "https://www.burberry.com",
+    "sources": [
+      {
+        "domain": "burberry.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Armani",
+    "country": "IT",
+    "website": "https://www.armani.com",
+    "sources": [
+      {
+        "domain": "armani.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Dolce & Gabbana",
+    "country": "IT",
+    "website": "https://www.dolcegabbana.com",
+    "sources": [
+      {
+        "domain": "dolcegabbana.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Fred Perry",
+    "country": "GB",
+    "website": "https://www.fredperry.com",
+    "sources": [
+      {
+        "domain": "fredperry.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Dr. Martens",
+    "country": "GB",
+    "website": "https://www.drmartens.com",
+    "sources": [
+      {
+        "domain": "drmartens.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Skechers",
+    "country": "US",
+    "website": "https://www.skechers.com",
+    "sources": [
+      {
+        "domain": "skechers.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Crocs",
+    "country": "US",
+    "website": "https://www.crocs.com",
+    "sources": [
+      {
+        "domain": "crocs.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "crocs.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Birkenstock",
+    "country": "DE",
+    "website": "https://www.birkenstock.com",
+    "sources": [
+      {
+        "domain": "birkenstock.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DE"
+      }
+    ]
+  },
+  {
+    "name": "Salomon",
+    "country": "FR",
+    "website": "https://www.salomon.com",
+    "sources": [
+      {
+        "domain": "salomon.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "FR"
+      }
+    ]
+  },
+  {
+    "name": "Hoka",
+    "country": "US",
+    "website": "https://www.hoka.com",
+    "sources": [
+      {
+        "domain": "hoka.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Mizuno",
+    "country": "JP",
+    "website": "https://www.mizuno.com",
+    "sources": [
+      {
+        "domain": "mizuno.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "JP"
+      },
+      {
+        "domain": "mizuno.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Napapijri",
+    "country": "IT",
+    "website": "https://www.napapijri.com",
+    "sources": [
+      {
+        "domain": "napapijri.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Superdry",
+    "country": "GB",
+    "website": "https://www.superdry.com",
+    "sources": [
+      {
+        "domain": "superdry.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Benetton",
+    "country": "IT",
+    "website": "https://www.benetton.com",
+    "sources": [
+      {
+        "domain": "benetton.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Desigual",
+    "country": "ES",
+    "website": "https://www.desigual.com",
+    "sources": [
+      {
+        "domain": "desigual.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "ES"
+      }
+    ]
+  },
+  {
+    "name": "Michael Kors",
+    "country": "US",
+    "website": "https://www.michaelkors.com",
+    "sources": [
+      {
+        "domain": "michaelkors.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Coach",
+    "country": "US",
+    "website": "https://www.coach.com",
+    "sources": [
+      {
+        "domain": "coach.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Ellesse",
+    "country": "IT",
+    "website": "https://www.ellesse.com",
+    "sources": [
+      {
+        "domain": "ellesse.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Quiksilver",
+    "country": "US",
+    "website": "https://www.quiksilver.com",
+    "sources": [
+      {
+        "domain": "quiksilver.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Billabong",
+    "country": "AU",
+    "website": "https://www.billabong.com",
+    "sources": [
+      {
+        "domain": "billabong.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "AU"
+      }
+    ]
+  },
+  {
+    "name": "Rip Curl",
+    "country": "AU",
+    "website": "https://www.ripcurl.com",
+    "sources": [
+      {
+        "domain": "ripcurl.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "AU"
+      }
+    ]
+  },
+  {
+    "name": "Alexander McQueen",
+    "country": "GB",
+    "website": "https://www.alexandermcqueen.com",
+    "sources": [
+      {
+        "domain": "alexandermcqueen.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Valentino",
+    "country": "IT",
+    "website": "https://www.valentino.com",
+    "sources": [
+      {
+        "domain": "valentino.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Saint Laurent",
+    "country": "FR",
+    "website": "https://www.ysl.com",
+    "sources": [
+      {
+        "domain": "ysl.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "FR"
+      }
+    ]
+  },
+  {
+    "name": "Bottega Veneta",
+    "country": "IT",
+    "website": "https://www.bottegaveneta.com",
+    "sources": [
+      {
+        "domain": "bottegaveneta.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "IT"
+      }
+    ]
+  },
+  {
+    "name": "Kate Spade",
+    "country": "US",
+    "website": "https://www.katespade.com",
+    "sources": [
+      {
+        "domain": "katespade.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "J.Crew",
+    "country": "US",
+    "website": "https://www.jcrew.com",
+    "sources": [
+      {
+        "domain": "jcrew.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Brooks Brothers",
+    "country": "US",
+    "website": "https://www.brooksbrothers.com",
+    "sources": [
+      {
+        "domain": "brooksbrothers.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "G-Star RAW",
+    "country": "NL",
+    "website": "https://www.g-star.com",
+    "sources": [
+      {
+        "domain": "g-star.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "NL"
+      }
+    ]
+  },
+  {
+    "name": "Scotch & Soda",
+    "country": "NL",
+    "website": "https://www.scotch-soda.com",
+    "sources": [
+      {
+        "domain": "scotch-soda.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "NL"
+      }
+    ]
+  },
+  {
+    "name": "Ted Baker",
+    "country": "GB",
+    "website": "https://www.tedbaker.com",
+    "sources": [
+      {
+        "domain": "tedbaker.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "AllSaints",
+    "country": "GB",
+    "website": "https://www.allsaints.com",
+    "sources": [
+      {
+        "domain": "allsaints.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Reiss",
+    "country": "GB",
+    "website": "https://www.reiss.com",
+    "sources": [
+      {
+        "domain": "reiss.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "GB"
+      }
+    ]
+  },
+  {
+    "name": "Jack & Jones",
+    "country": "DK",
+    "website": "https://www.jackjones.com",
+    "sources": [
+      {
+        "domain": "jackjones.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DK"
+      }
+    ]
+  },
+  {
+    "name": "Vero Moda",
+    "country": "DK",
+    "website": "https://www.veromoda.com",
+    "sources": [
+      {
+        "domain": "veromoda.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DK"
+      }
+    ]
+  },
+  {
+    "name": "Reserva",
+    "country": "BR",
+    "website": "https://www.usereserva.com",
+    "sources": [
+      {
+        "domain": "usereserva.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Farm Rio",
+    "country": "BR",
+    "website": "https://www.farmrio.com.br",
+    "sources": [
+      {
+        "domain": "farmrio.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Animale",
+    "country": "BR",
+    "website": "https://www.animale.com.br",
+    "sources": [
+      {
+        "domain": "animale.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Hering",
+    "country": "BR",
+    "website": "https://www.hering.com.br",
+    "sources": [
+      {
+        "domain": "hering.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Renner",
+    "country": "BR",
+    "website": "https://www.lojasrenner.com.br",
+    "sources": [
+      {
+        "domain": "lojasrenner.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "C&A",
+    "country": "BR",
+    "website": "https://www.cea.com.br",
+    "sources": [
+      {
+        "domain": "cea.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Ellus",
+    "country": "BR",
+    "website": "https://www.ellus.com",
+    "sources": [
+      {
+        "domain": "ellus.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Aramis",
+    "country": "BR",
+    "website": "https://www.aramis.com.br",
+    "sources": [
+      {
+        "domain": "aramis.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Richards",
+    "country": "BR",
+    "website": "https://www.richards.com.br",
+    "sources": [
+      {
+        "domain": "richards.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "John John",
+    "country": "BR",
+    "website": "https://www.johnjohndenim.com.br",
+    "sources": [
+      {
+        "domain": "johnjohndenim.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Dudalina",
+    "country": "BR",
+    "website": "https://www.dudalina.com.br",
+    "sources": [
+      {
+        "domain": "dudalina.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Lez a Lez",
+    "country": "BR",
+    "website": "https://www.lezalez.com",
+    "sources": [
+      {
+        "domain": "lezalez.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Shoulder",
+    "country": "BR",
+    "website": "https://www.shoulder.com.br",
+    "sources": [
+      {
+        "domain": "shoulder.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Arezzo",
+    "country": "BR",
+    "website": "https://www.arezzo.com.br",
+    "sources": [
+      {
+        "domain": "arezzo.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Schutz",
+    "country": "BR",
+    "website": "https://www.schutz.com.br",
+    "sources": [
+      {
+        "domain": "schutz.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Havaianas",
+    "country": "BR",
+    "website": "https://www.havaianas.com.br",
+    "sources": [
+      {
+        "domain": "havaianas.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Cantão",
+    "country": "BR",
+    "website": "https://www.cantao.com.br",
+    "sources": [
+      {
+        "domain": "cantao.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Insider",
+    "country": "BR",
+    "website": "https://www.insiderstore.com.br",
+    "sources": [
+      {
+        "domain": "insiderstore.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Youcom",
+    "country": "BR",
+    "website": "https://www.youcom.com.br",
+    "sources": [
+      {
+        "domain": "youcom.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Malwee",
+    "country": "BR",
+    "website": "https://www.malwee.com.br",
+    "sources": [
+      {
+        "domain": "malwee.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Lupo",
+    "country": "BR",
+    "website": "https://www.lupo.com.br",
+    "sources": [
+      {
+        "domain": "lupo.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Olympikus",
+    "country": "BR",
+    "website": "https://www.olympikus.com.br",
+    "sources": [
+      {
+        "domain": "olympikus.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Track & Field",
+    "country": "BR",
+    "website": "https://www.tf.com.br",
+    "sources": [
+      {
+        "domain": "tf.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Baw Clothing",
+    "country": "BR",
+    "website": "https://www.bawclothing.com.br",
+    "sources": [
+      {
+        "domain": "bawclothing.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Hope",
+    "country": "BR",
+    "website": "https://www.hope.com.br",
+    "sources": [
+      {
+        "domain": "hope.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Le Lis",
+    "country": "BR",
+    "website": "https://www.lelis.com.br",
+    "sources": [
+      {
+        "domain": "lelis.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Maria Filó",
+    "country": "BR",
+    "website": "https://www.mariafilo.com.br",
+    "sources": [
+      {
+        "domain": "mariafilo.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Amaro",
+    "country": "BR",
+    "website": "https://www.amaro.com",
+    "sources": [
+      {
+        "domain": "amaro.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Aéropostale",
+    "country": "US",
+    "website": "https://www.aeropostale.com",
+    "sources": [
+      {
+        "domain": "aeropostale.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "name": "Cariuma",
+    "country": "BR",
+    "website": "https://www.cariuma.com",
+    "sources": [
+      {
+        "domain": "cariuma.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Highstil",
+    "country": "BR",
+    "website": "https://www.highstil.com.br",
+    "sources": [
+      {
+        "domain": "highstil.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Sergio K",
+    "country": "BR",
+    "website": "https://www.sergiok.com.br",
+    "sources": [
+      {
+        "domain": "sergiok.com.br",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "BR"
+      }
+    ]
   }
 ]
