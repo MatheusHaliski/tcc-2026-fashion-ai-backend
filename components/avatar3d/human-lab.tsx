@@ -17,18 +17,22 @@ const OUTFITS: Record<string, Look3dPiece[]> = {
   vestido: [P("vestido", "dress", "/assets_pecas/05_Corpo_inteiro/01_vestido.png"), P("sapatilha", "flats", "/assets_pecas/03_Calcados/17_sapatilha.png")],
   shorts: [P("regata", "tank_top", "/assets_pecas/04_tank_top_regata.png"), P("shorts", "shorts", "/assets_pecas/02_Parte_inferior/13_shorts.png"), P("tenis", "sneakers", "/assets_pecas/03_Calcados/02_tenis_corrida.png")],
   saia: [P("blusa", "blouse", "/assets_pecas/03_blouse_blusa.png"), P("saia", "skirt", "/assets_pecas/02_Parte_inferior/12_saia.png"), P("salto", "heels", "/assets_pecas/03_Calcados/16_salto_alto.png")],
+  moletom: [P("moletom", "hoodie", "/assets_pecas/10_hoodie_moletom_com_capuz.png"), P("jeans", "jeans", "/assets_pecas/02_Parte_inferior/01_jeans.png"), P("tenis", "sneakers", "/assets_pecas/03_Calcados/01_tenis_casual.png")],
+  descalco: [P("tee", "t_shirt", "/assets_pecas/01_camiseta_referencia.png"), P("jeans", "jeans", "/assets_pecas/02_Parte_inferior/01_jeans.png")],
 };
 
-type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside";
-const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90 };
+type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside" | "feet" | "feet34" | "torso" | "torso34" | "torsoback";
+const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90, feet: 0, feet34: -40, torso: 0, torso34: -35, torsoback: 180 };
 
 function Cam({ view, H }: { view: View; H: number }) {
-  const { camera } = useThree();
+  const { camera, scene } = useThree();
+  useEffect(() => { (window as unknown as { __labScene: THREE.Scene }).__labScene = scene; }, [scene]);   // capturas: inspecionar materiais
   useEffect(() => {
     const a = (ANGLE[view] * Math.PI) / 180; const face = view.startsWith("face");                  // face* = rosto, gola e cabelo de perto
     const neck = view === "faceback" || view === "faceside";   // cabeça + gola
-    const ty = neck ? H * 0.9 : face ? H * 0.925 : H * 0.52; const d = neck ? 1.05 : face ? 0.8 : H * 2.4;
-    camera.position.set(Math.sin(a) * d, ty + (face ? 0 : 0.05), Math.cos(a) * d); camera.lookAt(0, ty, 0); camera.updateProjectionMatrix();
+    const feet = view.startsWith("feet"), torso = view.startsWith("torso");   // calçado e tecido de perto
+    const ty = feet ? 0.07 : torso ? H * 0.68 : neck ? H * 0.9 : face ? H * 0.925 : H * 0.52; const d = feet ? 0.75 : torso ? 1.5 : neck ? 1.05 : face ? 0.8 : H * 2.4;
+    camera.position.set(Math.sin(a) * d, ty + (face || feet || torso ? (feet ? 0.25 : 0) : 0.05), Math.cos(a) * d); camera.lookAt(0, ty, 0); camera.updateProjectionMatrix();
   }, [view, H, camera]);
   return null;
 }

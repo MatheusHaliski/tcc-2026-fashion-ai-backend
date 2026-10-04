@@ -1,0 +1,88 @@
+@startuml RF15_Atividades
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a foto de uma peça já cadastrada (RF4):\nem "Minhas Fotos" (/photos) ou no card expandido da peça;
+:Toca em "Editar" → abre o Editor Canvas 2D (PhotoEditor);
+|Frontend (photo-editor.tsx)|
+if (Veio de "Minhas Fotos"?) then (sim)
+  :GET /api/photos/{id}/file (original, só o dono);
+else (não)
+  :Baixa originalImageUrl / imageUrl da peça;
+endif
+:Desenha o passo inicial no <canvas>\n(histórico: fonte, giro, recorte, brilho, contraste);
+|Pessoa|
+repeat
+  :Escolhe uma ferramenta;
+  if (Ferramenta) then (recortar)
+    |Frontend (photo-editor.tsx)|
+    :Arrasta a área (>= 3% da largura) e aplica o recorte;
+  elseif (girar 90°)
+    :Gira o canvas e o recorte acumulado;
+  elseif (brilho / contraste)
+    :Aplica filtro CSS 2D e registra o passo;
+  else (remover fundo)
+    :POST /api/photos/background-removal (PNG atual);
+    |Backend (PhotoService)|
+    :guard.requireCanCreate → wardrobe.governedFlatLay\n(AiEngine FLAT_LAY_STANDARDIZER: cota diária e teto de gasto);
+    if (Fundo removido?) then (sim)
+      :Devolve PNG base64 + provedor (remove.bg / local);
+    else (não)
+      :ok=false — mensagem; demais ferramentas seguem (CA04);
+    endif
+    note right: ver RF4 (FlatLayPipeline) e RF24 (motor de IA)
+  endif
+  |Frontend (photo-editor.tsx)|
+  :Empilha o passo (desfazer/refazer, Ctrl+Z / Ctrl+Shift+Z);
+  |Pessoa|
+repeat while (Continua editando?) is (sim)
+->não;
+if (Fechar com edições pendentes?) then (sim)
+  :Confirma descarte (CA05);
+  stop
+else (não)
+endif
+:Toca em "Salvar";
+|Frontend (photo-editor.tsx)|
+:canvas.toBlob("image/png");
+if (Foto de "Minhas Fotos" (photoId)?) then (sim)
+  :POST /api/photos/{id}/edits (multipart file);
+  |Backend (PhotoService)|
+  if (Foto é a imagem de uma peça ativa do dono?) then (sim)
+    :WardrobeService.replaceImage: nova imagem + thumb,\nregistra Photo EDITOR, mantém o selo de IA;
+  else (não)
+    :Grava cópia editada (Photo origin=EDITOR,\neditedFromPhotoId, ModerationStatus APPROVED);
+  endif
+  note right: CA02 — a original é preservada em "Minhas Fotos"
+else (não)
+  :PUT /api/pieces/{pieceId}/image (multipart file);
+  |Backend (WardrobeService)|
+  :replaceImage: substitui imageUrl/thumbnailUrl da peça,\nphotoProcessingStatus = COMPLETED;
+endif
+|Frontend (photo-editor.tsx)|
+:Mensagem de sucesso e recarrega a galeria / o card;
+stop
+@enduml

@@ -126,8 +126,4 @@ public class UserPreferences extends VersionedAuditableEntity {
     /** Foto com meu manequim — enquadramento do rosto na cabeça 3D: {offsetX, offsetY, scale}. */
     @Column(name = "mannequin_face_json", columnDefinition = "json")
     private String mannequinFaceJson;
-
-    /** RF47 · "Não mostrar novamente" do tutorial de fotografia, por guia: {"upper_piece":{"hidden":true},…}. */
-    @Column(name = "capture_tutorial_json", columnDefinition = "json")
-    private String captureTutorialJson;
 }

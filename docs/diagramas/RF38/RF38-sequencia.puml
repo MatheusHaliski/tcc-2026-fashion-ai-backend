@@ -24,14 +24,21 @@ N -> DB: INSERT notifications
 U -> FE: notificação → "Sim, resgatar"
 FE -> C: POST /api/me/coupon-rights/{id}/redeem
 C -> S: redeem(user, id)
-S -> DB: INSERT promotion_redemptions / flair_redemptions\nUPDATE coupon_rights (RESGATADO)
+alt status != PENDENTE
+  S --> FE: 409 DIREITO_DECIDIDO
+end
+S -> SRC: SealService.redeem / FlairService.redeem
+SRC -> DB: INSERT promotion_redemptions / flair_redemptions
+S -> DB: UPDATE coupon_rights (RESGATADO, couponRef)
 S --> FE: cupom (código, desconto, validade, storeUrl)
 U -> FE: Meus cupons resgatados
 FE -> C: GET /api/me/coupons
+C -> S: mine(user) → scan + pending + coupons
 U -> FE: toca no cupom → abre storeUrl (nova aba)
 L -> FE: Meus cupons promocionais
 FE -> C: GET /api/me/coupons/admin
 L -> FE: valida código no caixa
 FE -> C: POST /api/me/coupons/validate
-S -> DB: UPDATE status = USED
+C -> S: validate(user, code)
+S -> DB: UPDATE promotion_redemptions.status = USED\n(código FLR-… → FlairService.validateCode)
 @enduml

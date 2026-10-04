@@ -1,0 +1,109 @@
+@startuml RF3_Sequencia
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "Frontend\n(app)/settings · notifications" as FE
+participant "MeController" as MC
+participant "AuthController" as AUC
+participant "NotificationController" as NC
+participant "AccountService" as AS
+participant "IdentityService" as IS
+participant "NotificationService" as NS
+participant "MediaStoragePort\n(S3 / local)" as ST
+participant "EmailSenderPort\n(Resend)" as EM
+database "MySQL" as DB
+
+P -> FE: abre /settings
+FE -> MC: GET /api/me
+MC -> AS: me(user)
+AS -> DB: users · user_preferences
+MC --> FE: 200 {profile, profileVisibility, deletionScheduledFor, ...}
+== Dado sensível (CA01–CA02) ==
+FE -> MC: PATCH /api/me/sensitive {password, email, phone, birthDate, twoFactorEnabled}
+MC -> AS: updateSensitive(user, SensitiveUpdate)
+AS -> IS: reauthenticate(userId, password)
+alt troca de e-mail
+  AS -> DB: existsByEmailHash · INSERT verification_codes (EMAIL_CHANGE, 2 h)
+  AS -> EM: send(novo e-mail, código) · send(e-mail antigo, aviso)
+end
+AS -> DB: audit_log ALTERACAO_DADO_PESSOAL_SENSIVEL
+MC --> FE: 200 {changed, emailChangePending}
+FE -> MC: POST /api/me/email-change/confirm {code}
+MC -> AS: confirmEmailChange(user, code)
+MC --> FE: 200 UserCard | 400 CODIGO_INVALIDO | 409 EMAIL_EM_USO
+== Sessões e senha (CA07–CA11) ==
+FE -> AUC: GET /api/auth/sessions
+AUC -> IS: sessions(user, sid)
+AUC --> FE: 200 [sessões com current]
+FE -> AUC: DELETE /api/auth/sessions/{sessionId}
+AUC -> IS: revokeSession(user, sessionId)
+AUC --> FE: 204
+FE -> AUC: PUT /api/auth/password {currentPassword, newPassword, confirmPassword}
+AUC -> IS: changePassword(user, sid, ...)
+AUC --> FE: 200 {revokedSessions}
+== Privacidade e consentimentos (CA12, CA19–CA23) ==
+FE -> MC: PUT /api/me/privacy {visibility}
+MC -> AS: updatePrivacy(user, visibility)
+AS -> DB: users.profileVisibility · privateAccount · audit ALTERACAO_PERFIL
+MC --> FE: 200 {profileVisibility, privateAccount, defaultSchemeVisibility}
+FE -> MC: PUT /api/me/consents/{purpose} {granted}
+MC -> AS: setConsent(user, purpose, granted)
+alt FACIAL_RECOGNITION com granted = true
+  AS --> FE: 400 FINALIDADE_NAO_UTILIZADA
+else
+  AS -> DB: UPSERT user_consents (legalBasis, policyVersion, grantedAt | revokedAt)
+  AS -> DB: audit CONSENTIMENTO_CONCEDIDO | CONSENTIMENTO_REVOGADO
+  MC --> FE: 200 [consentimentos com lgpdArticle]
+end
+== Notificações (CA15–CA18) ==
+FE -> NC: GET /api/notifications
+NC -> NS: inbox(user)
+NC --> FE: 200 {unread, items}
+FE -> NC: POST /api/notifications/read {ids}
+NC -> NS: markRead(user, ids)
+FE -> NC: PUT /api/notifications/preferences {changes, master}
+NC -> NS: updatePreferences(user, changes, master)
+alt tipo com optOutAllowed = false desligado
+  NS --> FE: 400 TIPO_OBRIGATORIO
+else
+  NS -> DB: user_preferences.notificationPrefsJson · notificationPushMaster
+  NC --> FE: 200 [preferências por tipo]
+end
+== Seus dados: exportação e exclusão (CA04–CA05, CA24) ==
+FE -> MC: POST /api/me/exports
+MC -> AS: requestExport(user)
+AS -> DB: INSERT data_export_requests (PROCESSING)
+AS -> ST: put(restricted/users/{id}/exports/{exportId}.json)
+AS -> DB: status READY · readyAt · expiresAt (+7 dias)
+AS -> NS: notify(DATA_EXPORT_READY)
+MC --> FE: 202 {id, status, readyAt, expiresAt, bytes}
+FE -> MC: GET /api/me/exports/{exportId}/file
+MC -> AS: downloadExport(user, exportId)
+alt de outro usuário
+  AS --> FE: 403
+else expirada
+  AS --> FE: 410 EXPORTACAO_EXPIRADA
+else
+  AS -> ST: get(fileKey)
+  MC --> FE: 200 fashionai-dados-{id}.zip
+end
+P -> FE: confirma exclusão com a senha
+FE -> MC: POST /api/me/deletion {password}
+MC -> AS: requestDeletion(user, password)
+AS -> IS: reauthenticate
+AS -> DB: users.status = DELETION_SCHEDULED · deletionScheduledFor = +30 dias
+AS -> EM: send("Exclusão de conta agendada")
+MC --> FE: 200 {status, deletionScheduledFor}
+opt arrependimento dentro da carência
+  FE -> MC: DELETE /api/me/deletion
+  MC -> AS: cancelDeletion(user)
+  MC --> FE: 200 {status}
+end
+@enduml

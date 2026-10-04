@@ -1,0 +1,106 @@
+@startuml RF19_Atividades
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Vê o card de um esquema ou peça\n(feed, /schemes/[id], /pieces/[id]);
+|Frontend (CardActions)|
+:GET /api/interactions/{type}/{id}/counters;
+|Backend (SocialService)|
+:target(): visibilidade efetiva, bloqueio (Guard)\ne moderação da peça — quem não vê não interage;
+note right: TargetType SCHEME · PIECE · DNA\n(CA10 — peça com contadores próprios)
+|Pessoa|
+if (Interação?) then (reagir)
+  |Frontend (CardActions)|
+  :POST .../reactions {reaction: LIKE|TREND|ELEGANTE|CRIATIVO};
+  |Backend (SocialService)|
+  if (Já existe a mesma reação do ator?) then (sim)
+    :Remove — nunca há curtida dupla (CA02);
+  else (não)
+    :Grava Reaction e bump("likes") se LIKE (CA01/CA03);
+    :notify(NEW_LIKE | NEW_REACTION) + InteractionReceived;
+  endif
+elseif (comentar) then
+  |Frontend (CardActions)|
+  :POST .../comments {content, parentId};
+  |Backend (SocialService)|
+  if (Vazio, > 500 chars ou ofensivo?) then (sim)
+    #FFE3E3:400 COMENTARIO_VAZIO / COMENTARIO_LONGO /\nCONTEUDO_BLOQUEADO (CA06);
+    stop
+  else (não)
+    :Grava Comment (active=true), bump("comments");
+    :notify(NEW_COMMENT) (CA04);
+  endif
+elseif (excluir comentário) then
+  |Frontend (CardActions)|
+  :DELETE /api/comments/{commentId};
+  |Backend (SocialService)|
+  if (Autor do comentário ou dono do conteúdo?) then (não)
+    #FFE3E3:403 negado e auditado (CA05);
+    stop
+  else (sim)
+    :Comment.active=false, bump("comments", -1);
+  endif
+elseif (salvar) then
+  |Frontend (CardActions)|
+  :POST .../saves;
+  |Backend (SocialService)|
+  :toggleSave: cria/remove SavedItem\nnos Looks Salvos (CA07);
+elseif (compartilhar) then
+  |Frontend (CardActions)|
+  :POST .../shares {channel: FEED|EXTERNAL, caption};
+  |Backend (SocialService)|
+  if (Conteúdo marcado indisponível?) then (sim)
+    #FFE3E3:409 INDISPONIVEL;
+    stop
+  else (não)
+  endif
+  if (channel == EXTERNAL?) then (sim)
+    :renderCard() → PNG em shares/{user}/…\n+ link /schemes|/pieces/{id} (CA09);
+  else (FEED)
+    :Share no feed interno (CA08);
+  endif
+  :bump("shares") + notify;
+elseif (remixar) then
+  |Frontend (useRemix)|
+  :POST .../remixes;
+  |Backend (SocialService)|
+  if (type == SCHEME?) then (sim)
+    :SchemeService.remix(): prefill com itens\nmapeados por similaridade, origin=REMIX,\nremixedFromId=origem (CA13);
+  else (PIECE)
+    :bump("remixes") + notify(NEW_REMIX);\nnext=/create-look?seedPiece=;
+  endif
+elseif (retornar) then
+  |Frontend (CardActions)|
+  :POST /api/pieces/{pieceId}/return-to-origin?fromScheme=;
+  note right: botão "Retornar" na tela —\nnão implementado — conforme Trello
+  |Backend (SocialService)|
+  :returnToOrigin(): esquema de ORIGEM mais antigo\nvisível que usa a peça (CA14);
+endif
+|Backend (NotificationService)|
+:notify(): grava Notification;\ndelivered = tipo habilitado pelo autor (CA11/CA12);
+note right: tipo desativado contabiliza mas não entrega
+stop
+@enduml

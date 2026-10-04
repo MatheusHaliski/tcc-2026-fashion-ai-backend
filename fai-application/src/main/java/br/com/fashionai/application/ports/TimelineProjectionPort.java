@@ -17,4 +17,8 @@ public interface TimelineProjectionPort {
     List<UUID> readTimeline(UUID userId, int limit);
 
     boolean enabled();
+
+    /** Apaga a timeline inteira do usuário (reset das contas de teste); sem Cassandra não há o que apagar. */
+    default void purgeUser(UUID userId) {
+    }
 }

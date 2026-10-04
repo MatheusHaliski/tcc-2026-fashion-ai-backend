@@ -1,0 +1,32 @@
+@startuml RF29_MaquinaDeEstados_InventoryScore
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+title RF29 — FAI Inventory Score: elegibilidade, faixas e participação nos rankings (InventoryScoreService)
+[*] --> Inelegivel : usuário com < 10 peças (MIN_PIECES)
+state "Inelegível\n(eligible = false — 'faltam N peças')" as Inelegivel
+state "Elegível\n(score 0–1000, snapshot DAY/MONTH)" as Elegivel {
+  state "EM_MONTAGEM / ORGANIZADO" as Baixa
+  state "VERSATIL (500–649)\nBEM_CURADO (650–799)" as Media
+  state "CLOSET_INTELIGENTE (800–899)\nSIGNATURE / MAISON CLOSET" as Alta
+  Baixa --> Media : recálculo sobe a nota
+  Media --> Alta : recálculo sobe a nota
+  Alta --> Media : recálculo desce (rubrica absoluta)
+  Media --> Baixa : recálculo desce
+}
+state "Fora dos rankings\n(ranking_opt_ins.optedIn = false)" as ForaRanking
+state "Nos rankings\n(ranking_positions: GLOBAL, PAIS, CIDADE, FAIXA,\nESTILO, SUSTENTAVEL, VERSATEIS, RISING)" as NoRanking
+Inelegivel --> Elegivel : 10ª peça cadastrada (RF4)\n→ GET /api/me/highlights calcula
+Elegivel --> Inelegivel : peças arquivadas abaixo de 10
+Elegivel --> ForaRanking : padrão (sem opt-in)
+ForaRanking --> NoRanking : PUT /api/me/rankings/opt-in {optedIn:true, shareCity?}
+NoRanking --> ForaRanking : PUT /api/me/rankings/opt-in {optedIn:false}
+NoRanking --> NoRanking : GET /api/me/rankings\n(CIDADE só com ≥ 50 pessoas — k-anonimato)
+note right of Elegivel : fator de confiança satura em 20 peças;\nIdentidade omitida sem DNA de Estilo (RF13);\nconquistas (user_achievements) concedidas no recálculo
+note bottom of Inelegivel : sem nota parcial; mostra progresso\n{missing, target}
+@enduml

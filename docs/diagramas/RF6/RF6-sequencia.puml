@@ -1,0 +1,82 @@
+@startuml RF6_Sequencia
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "Frontend\n/lookbook → /u/[username]\n(lookbook-tabs)" as FE
+participant "LookbookController" as LC
+participant "SocialController" as SC
+participant "LookbookService" as LS
+participant "DailyLookService" as DS
+participant "HypeScoreService" as HS
+participant "AiEngine (RF24)" as AI
+database "MySQL" as DB
+
+P -> FE: abre /lookbook
+FE -> FE: router.replace(/u/{username}?tab=)
+FE -> LC: GET /api/users/{ownerId}/lookbook
+LC -> LS: overview(viewer, ownerId)
+LS -> DB: wardrobe_items · schemes (sem ARCHIVED) · saved_items (contagens)
+LS -> DS: today(ownerId)
+LC --> FE: 200 {owner, self, visible, tabs[], emptyCloset, panelVersion}
+== Looks Salvos e Peças salvas ==
+FE -> LC: GET /api/me/saved-looks?occasion=&page=&size=
+LC -> LS: savedLooks(user, occasion, page, size)
+LS -> DB: saved_items (targetType SCHEME)
+LC --> FE: 200 Page
+FE -> LC: PUT /api/me/saved-looks/{schemeId}/favorite {favorite}
+LC -> LS: favorite(user, schemeId, favorite)
+FE -> LC: DELETE /api/me/saved-looks/{schemeId}
+LC -> LS: removeSaved(user, schemeId)
+FE -> SC: POST /api/interactions/PIECE/{id}/saves
+SC --> FE: 200 {saved} (toggleSave)
+== Look do Dia ==
+FE -> LC: GET /api/me/daily-look-tab?withAi=
+LC -> LS: dailyLookTab(user, withAi)
+LS -> DS: today(userId)
+alt sem registro hoje, mas há look anterior não arquivado
+  DS -> DB: INSERT daily_looks (cópia, materializedFrom)
+end
+opt há Look do Dia
+  LS -> HS: panel(dailyLook, withAi)
+  HS -> DB: UPSERT hype_score_metrics (hypeScore, band, trendsetterSeal)
+end
+LC --> FE: 200 {today, scheme, panel, history, feedbackReminder}
+opt marcar um esquema
+  FE -> LC: POST /api/me/daily-look {schemeId}
+  LC -> LS: markDailyLook(user, schemeId)
+  LS -> DS: register(user, scheme, MANUAL, hoje)
+  alt peça indisponível
+    DS --> FE: 409 PECA_INDISPONIVEL
+  else
+    DS -> DB: UPSERT daily_looks · schemes.lookDoDiaCount · wardrobe_items.lastWornDate
+    LC --> FE: 200 DailyLook
+  end
+end
+FE -> LC: PUT /api/me/daily-looks/{date}/feedback {feedback}
+LC -> DS: feedback(user, date, ADOREI | NAO_USEI | NAO_GOSTEI)
+LC --> FE: 200
+== Agrupamentos ==
+FE -> LC: POST /api/me/hype-groups/suggestions?type=SCHEME
+LC -> LS: suggestGroups(user, type)
+alt acervo abaixo do mínimo
+  LS --> FE: 422 ACERVO_PEQUENO {pieces, missing}
+else
+  LS -> AI: local(userId, ACERVO_GROUPING, ..., HypeScoreService.cluster)
+  LS -> DB: DELETE + INSERT acervo_groups
+  LC --> FE: 200 {groups, explanation, note}
+end
+FE -> LC: POST /api/groupings {type, label, coverUrl, atmospherePrompt, periodFrom, periodTo}
+LC -> LS: createGrouping(user, GroupingForm)
+LS -> DB: INSERT scheme_groupings
+LC --> FE: 201
+FE -> LC: POST /api/groupings/{id}/items {schemeIds, pieceIds}
+LC -> LS: assignToGrouping(user, id, schemeIds, pieceIds)
+LC --> FE: 200
+@enduml

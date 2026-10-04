@@ -1,0 +1,553 @@
+{
+ "_comment": "Catálogo das peças demo: imagens estáticas do front (/_derived/pecas_thumb), nada vai para o bucket.",
+ "pieces": [
+  {
+   "category": "upper_piece",
+   "subcategory": "t_shirt",
+   "label": "Camiseta",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_01_camiseta_referencia-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "shirt",
+   "label": "Camisa",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_02_shirt_camisa-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "blouse",
+   "label": "Blusa",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_03_blouse_blusa-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "tank_top",
+   "label": "Regata",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_04_tank_top_regata-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "crop_top",
+   "label": "Cropped",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_05_crop_top_cropped-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "polo_shirt",
+   "label": "Camisa polo",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_06_polo_shirt_camisa_polo-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "bodysuit",
+   "label": "Body",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_07_bodysuit_body-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "sweater",
+   "label": "Suéter",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_08_sweater_sueter-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "sweatshirt",
+   "label": "Moletom",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_09_sweatshirt_moletom_sem_capuz-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "hoodie",
+   "label": "Moletom com capuz",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_10_hoodie_moletom_com_capuz-640.webp",
+   "slot": "TOP"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "cardigan",
+   "label": "Cardigã",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_11_cardigan-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "vest",
+   "label": "Colete",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_12_vest_colete-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "blazer",
+   "label": "Blazer",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_13_blazer-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "jacket",
+   "label": "Jaqueta",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_14_jacket_jaqueta-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "coat",
+   "label": "Casaco",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_15_coat_casaco-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "parka",
+   "label": "Parka",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_16_parka-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "windbreaker",
+   "label": "Corta-vento",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_17_windbreaker_corta_vento-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "upper_piece",
+   "subcategory": "kimono",
+   "label": "Quimono",
+   "imageUrl": "/_derived/pecas_thumb/01_parte_superior_18_kimono_quimono-640.webp",
+   "slot": "OUTERWEAR"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "jeans",
+   "label": "Calça jeans",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_01_jeans-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "casual_pants",
+   "label": "Calça casual",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_02_calca_casual-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "tailored_pants",
+   "label": "Calça de alfaiataria",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_03_calca_alfaiataria-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "cargo_pants",
+   "label": "Calça cargo",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_04_calca_cargo-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "chino_pants",
+   "label": "Calça chino",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_05_calca_chino-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "sweatpants",
+   "label": "Calça de moletom",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_06_calca_moletom-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "jogger_pants",
+   "label": "Calça jogger",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_07_calca_jogger-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "leggings",
+   "label": "Legging",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_08_legging-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "culottes",
+   "label": "Pantacourt",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_09_pantacourt-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "bermuda_shorts",
+   "label": "Bermuda",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_10_bermuda-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "denim_shorts",
+   "label": "Short jeans",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_11_shorts_jeans-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "skirt",
+   "label": "Saia",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_12_saia-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "shorts",
+   "label": "Short",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_13_shorts-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "lower_piece",
+   "subcategory": "skort",
+   "label": "Short-saia",
+   "imageUrl": "/_derived/pecas_thumb/02_parte_inferior_14_short_saia-640.webp",
+   "slot": "BOTTOM"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "casual_sneakers",
+   "label": "Tênis casual",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_01_tenis_casual-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "running_shoes",
+   "label": "Tênis de corrida",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_02_tenis_corrida-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "training_shoes",
+   "label": "Tênis de treino",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_03_tenis_treino-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "skate_shoes",
+   "label": "Tênis de skate",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_04_tenis_skate-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "loafers",
+   "label": "Loafer",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_05_loafer-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "high_top_sneakers",
+   "label": "Tênis cano alto",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_06_tenis_cano_alto-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "basketball_shoes",
+   "label": "Tênis de basquete",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_07_tenis_basquete-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "moccasins",
+   "label": "Mocassim",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_08_mocassim-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "oxford_shoes",
+   "label": "Oxford",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_09_oxford-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "derby_shoes",
+   "label": "Derby",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_10_derby-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "ankle_boots",
+   "label": "Bota cano curto",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_11_bota_cano_curto-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "long_boots",
+   "label": "Bota cano longo",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_12_bota_cano_longo-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "sandals",
+   "label": "Sandália",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_13_sandalia-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "combat_boots",
+   "label": "Coturno",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_14_coturno-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "flip_flops",
+   "label": "Chinelo",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_15_chinelo-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "heels",
+   "label": "Salto alto",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_16_salto_alto-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "flats",
+   "label": "Sapatilha",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_17_sapatilha-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "shoes_piece",
+   "subcategory": "espadrilles",
+   "label": "Alpargata",
+   "imageUrl": "/_derived/pecas_thumb/03_calcados_18_alpargata-640.webp",
+   "slot": "SHOES"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "crossbody_bag",
+   "label": "Bolsa transversal",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_01_bolsa_transversal-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "handbag",
+   "label": "Bolsa de mão",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_02_bolsa_mao-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "clutch",
+   "label": "Clutch",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_03_clutch-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "tote_bag",
+   "label": "Bolsa tote",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_04_tote-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "backpack",
+   "label": "Mochila",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_05_mochila-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "belt",
+   "label": "Cinto",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_06_cinto-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "cap",
+   "label": "Boné",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_07_bone-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "hat",
+   "label": "Chapéu",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_08_chapeu-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "beanie",
+   "label": "Gorro",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_09_gorro-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "scarf",
+   "label": "Cachecol",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_10_cachecol-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "tie",
+   "label": "Gravata",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_11_gravata-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "bow_tie",
+   "label": "Gravata borboleta",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_12_gravata_borboleta-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "sunglasses",
+   "label": "Óculos de sol",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_13_oculos_sol-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "eyeglasses",
+   "label": "Óculos de grau",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_14_oculos_grau-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "necklace",
+   "label": "Colar",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_15_colar-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "bracelet",
+   "label": "Pulseira",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_16_pulseira-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "earrings",
+   "label": "Brincos",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_17_brincos-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "ring",
+   "label": "Anel",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_18_anel-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "watch",
+   "label": "Relógio",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_19_relogio-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "gloves",
+   "label": "Luvas",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_20_luvas-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "socks",
+   "label": "Meias",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_21_meias-640.webp",
+   "slot": "ACCESSORY"
+  },
+  {
+   "category": "accessory_piece",
+   "subcategory": "hair_accessory",
+   "label": "Acessório de cabelo",
+   "imageUrl": "/_derived/pecas_thumb/04_acessorios_22_acessorio_cabelo-640.webp",
+   "slot": "ACCESSORY"
+  }
+ ],
+ "colors": [
+  "black",
+  "white",
+  "off_white",
+  "navy",
+  "blue",
+  "light_blue",
+  "gray",
+  "charcoal",
+  "beige",
+  "camel",
+  "brown",
+  "olive",
+  "burgundy",
+  "red",
+  "pink",
+  "lilac",
+  "forest_green",
+  "mustard",
+  "denim",
+  "cream"
+ ],
+ "materials": [
+  "COTTON",
+  "POLYESTER",
+  "WOOL",
+  "SILK",
+  "LEATHER",
+  "SYNTHETIC",
+  "BLEND"
+ ],
+ "sizes": [
+  "xs",
+  "s",
+  "m",
+  "l",
+  "xl",
+  "br_38",
+  "br_40",
+  "br_42",
+  "one_size"
+ ],
+ "priceMin": 49.9,
+ "priceMax": 899.9
+}

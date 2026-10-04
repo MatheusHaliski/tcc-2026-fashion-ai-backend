@@ -1,0 +1,62 @@
+@startuml RF18_Sequencia
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\ntry-on/page.tsx" as FE
+participant "Motor de ambiente\nlib/tryon/fitting-room.ts" as ENV
+participant "FittingRoomScene\n(three.js)" as SC
+participant "TryOnController" as TC
+participant "TryOnService" as TS
+participant "CatalogController" as CC
+participant "CatalogService" as CS
+participant "WardrobeService" as WS
+database "MySQL" as DB
+U -> FE: abre /try-on
+FE -> TC: GET /api/try-on
+TC -> TS: state(user, sex)
+TS -> DB: user_preferences, user_avatar3d, wardrobe_items
+TS --> FE: 200 {mannequin, sex, avatar, pieces por lugar}
+note right of TS: sem peças no guarda-roupa: lista vazia (não bloqueia)
+FE -> CC: GET /api/catalog/stores
+CC -> CS: catalogBrands()
+CS -> DB: brands, catalog_products (contagem, categorias)
+CS --> FE: 200 {stores[]}
+U -> FE: toca na loja "Nike" + "Calçados"
+FE -> CC: GET /api/catalog/search?brand=Nike&category=shoes_piece
+CC -> CS: search(userId, SearchRequest)
+CS -> DB: candidates (FULLTEXT ngram) + variantes + imagens
+CS --> FE: 200 {intent, results[] com % compatível}
+U -> FE: "Provar" (Air Force 1, variante preta)
+FE -> ENV: wearItem(items, item) → resolveEnvironment(items, mode)
+ENV --> FE: {kind: brand, featured: Nike, others: []}
+FE -> SC: pieces (prévia projetada) + environment + luz + vista
+SC --> U: provador Nike (faixa, letreiro, quadra laranja)
+U -> FE: prova também o jeans Levi's
+FE -> ENV: resolveEnvironment()
+ENV --> FE: {kind: multibrand, featured: Levi's, others: [Nike]}
+FE -> SC: troca animada do ambiente (respeita reduzir movimento)
+opt Já tenho esta peça
+  U -> FE: "Já tenho esta peça"
+  FE -> CC: POST /api/pieces/from-catalog {productId, variantId}
+  CC -> CS: addToWardrobe(user, AddRequest)
+  CS -> WS: createFromCatalog(user, form, pick)
+  WS -> DB: INSERT wardrobe_items (catalog_product_id, image_origin)
+  CS --> FE: 201 PieceView
+end
+opt Link da prova
+  U -> FE: "Copiar link da prova"
+  FE -> FE: encodeTryOn(items) → /try-on?provar=c.p1.v2,w.w9
+  note over FE: quem abre o link: decodeTryOn() + GET /api/catalog/products/{id}
+end
+opt Foto e provas salvas
+  FE -> SC: canvas.toDataURL() → PNG
+  FE -> FE: localStorage fai.tryon.saved (até 8)
+end
+@enduml

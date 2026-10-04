@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label } from "@/lib/api/taxonomy";
@@ -7,7 +7,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { Button, Chip, Dialog, Input, SegmentPicker, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
-import { auraVariantId, bundledAuraPresets } from "@/lib/card-art";
+import { ART_INDEX, auraVariantId, bundledAuraPresets } from "@/lib/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
 export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
@@ -57,34 +57,79 @@ export function useBgCatalog() {
 const gradientCss = (g: { stops: string[]; type?: string; angle?: number }) =>
   `${g.type === "radial" ? "radial-gradient(circle" : `linear-gradient(${g.angle ?? 135}deg`}, ${g.stops.join(",")})`;
 
-/** Opções derivadas da Cartela sazonal: cartela, estação automática e animação (abrem ao escolher o layout Cartela sazonal). */
-export function SeasonalOptions({ value, onChange, season }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; season?: string | null }) {
+/** Campos que pertencem ao layout Cartela sazonal: escolhidos no modal dele e limpos quando o layout sai. */
+// animação "NONE" (e não null): é o valor que desliga a animação gravada no esquema também em APIs anteriores
+export const CLEAR_CARTELA: Partial<BgConfig> = { seasonalPresetId: null, seasonalAuto: false, animation: "NONE" };
+
+/**
+ * Quando o layout Cartela sazonal deixa de valer — por qualquer caminho, não só pelos botões de layout (no DNA: outra
+ * narrativa, anatomia base, elemento-alvo que não é o DNA completo, proposta da IA) — limpa o que era dele.
+ */
+export function useLeaveCartela(active: boolean, clear: () => void) {
+  const was = useRef(active);
+  const clearRef = useRef(clear); clearRef.current = clear;
+  useEffect(() => { if (was.current && !active) clearRef.current(); was.current = active; }, [active]);
+}
+
+/**
+ * Cartela sazonal, cartela automática e animação. No segmento Cor da peça elas são arte de fundo (a cartela vira o
+ * gradiente); com {@code forLayout} são as opções do layout Cartela sazonal (look e DNA): a cartela define a estação que o
+ * layout mostra e um novo clique na cartela escolhida a desmarca (volta a valer a estação dos dados).
+ */
+export function SeasonalOptions({ value, onChange, season, forLayout }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; season?: string | null; forLayout?: boolean }) {
   const { t } = useI18n(); const cat = useBgCatalog();
+  const pick = (g: { id: string; stops: string[] }) => forLayout
+    ? onChange({ seasonalPresetId: value.seasonalPresetId === g.id ? null : g.id })
+    : onChange({ seasonalPresetId: g.id, gradientPresetId: null, gradient: `linear-gradient(135deg, ${g.stops.join(",")})` });
   return (
     <div className="grid gap-3">
       <OptionStrip title={t("common.cartela_sazonal")}>
-        {(cat?.seasonal ?? []).map((g) => <button key={g.id} type="button" aria-pressed={value.seasonalPresetId === g.id} className="opt-tile" onClick={() => onChange({ seasonalPresetId: g.id, gradientPresetId: null, gradient: `linear-gradient(135deg, ${g.stops.join(",")})` })}><span className="opt-thumb" style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} /><span className="opt-name">{g.name} · {label(g.season.toLowerCase())}</span></button>)}
+        {(cat?.seasonal ?? []).map((g) => <button key={g.id} type="button" aria-pressed={value.seasonalPresetId === g.id} className="opt-tile" onClick={() => pick(g)}><span className="opt-thumb" style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} /><span className="opt-name">{g.name} · {label(g.season.toLowerCase())}</span></button>)}
       </OptionStrip>
       {season !== undefined && (season ? <Switch checked={!!value.seasonalAuto} onChange={(v) => onChange({ seasonalAuto: v })} label={t("backgroundStudio.cartela_sazonal_automatica_usa_a")} hint={value.seasonalAuto ? t("anatomy.studio.seasonOn") : t("anatomy.studio.seasonOff", { season: label(season.toLowerCase()) })} />
-        : <p className="type-caption text-muted">{t("anatomy.studio.seasonNeeded")}</p>)}
+        : <p className="type-caption text-muted">{t(forLayout ? "backgroundStudio.cartela_sem_estacao" : "anatomy.studio.seasonNeeded")}</p>)}
       <OptionStrip title={t("backgroundStudio.animacao_2")} kind="row">
-        <Chip active={!value.animation || value.animation === "NONE"} onClick={() => onChange({ animation: null })}>{t("backgroundStudio.sem_animacao")}</Chip>
+        <Chip active={!value.animation || value.animation === "NONE"} onClick={() => onChange({ animation: "NONE" })}>{t("backgroundStudio.sem_animacao")}</Chip>
         {(cat?.animations ?? []).filter((a) => a !== "NONE").map((a) => <Chip key={a} active={value.animation === a} onClick={() => onChange({ animation: a })}>{t(`backgroundStudio.anim.${a}`)}</Chip>)}
       </OptionStrip>
     </div>
   );
 }
 
-/** Segmento "Cor": cor lisa, gradientes AURA, cartela sazonal e animação. */
-export function ColorPanel({ value, onChange, season, hideSeasonal }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void; season?: string | null; hideSeasonal?: boolean }) {
+/**
+ * Modal de escolha do layout Cartela sazonal (abre ao clicar nele em Layout & Estilo): cartela, cartela automática e
+ * animação num rascunho — nada muda no card até Aplicar; Cancelar descarta.
+ */
+export function SeasonalDialog({ open, onClose, value, onApply, season }: { open: boolean; onClose: () => void; value: BgConfig; onApply: (p: Partial<BgConfig>) => void; season?: string | null }) {
+  return open ? <SeasonalDraft onClose={onClose} value={value} onApply={onApply} season={season} /> : null;
+}
+function SeasonalDraft({ onClose, value, onApply, season }: { onClose: () => void; value: BgConfig; onApply: (p: Partial<BgConfig>) => void; season?: string | null }) {
+  const { t } = useI18n();
+  const [draft, setDraft] = useState<Partial<BgConfig>>(() => ({ seasonalPresetId: value.seasonalPresetId ?? null, seasonalAuto: !!value.seasonalAuto, animation: value.animation ?? null }));
+  return (
+    <Dialog open onClose={onClose} title={t("common.cartela_sazonal")}
+      footer={<><Button onClick={onClose}>{t("common.cancel")}</Button><Button variant="primary" onClick={() => { onApply(draft); onClose(); }}>{t("backgroundStudio.aplicar_cartela")}</Button></>}>
+      <p className="mb-3 type-caption text-muted">{t("backgroundStudio.cartela_modal_dica")}</p>
+      <SeasonalOptions value={{ ...value, ...draft }} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} season={season} forLayout />
+    </Dialog>
+  );
+}
+
+/** Segmento "Cor": cor lisa e gradientes AURA (e, na peça, cartela sazonal e animação; no look e no DNA elas são do layout Cartela sazonal). */
+export function ColorPanel({ value, onChange, season, hideSeasonal, keepCartela }: {
+  value: BgConfig; onChange: (p: Partial<BgConfig>) => void; season?: string | null; hideSeasonal?: boolean;
+  /** layout Cartela sazonal ativo: a cartela é dele, então escolher cor ou gradiente não a apaga */
+  keepCartela?: boolean;
+}) {
   const { t } = useI18n(); const cat = useBgCatalog();
+  const noCartela = keepCartela ? {} : { seasonalPresetId: null };
   return (
     <div className="grid gap-3">
       <OptionStrip title={t("common.color")} kind="row">
-        {(cat?.colors ?? []).map((c) => <button key={c} type="button" aria-label={c} aria-pressed={value.color === c && !value.gradient} className="opt-dot" style={{ background: c }} onClick={() => onChange({ color: c, gradient: null, gradientPresetId: null, seasonalPresetId: null })} />)}
+        {(cat?.colors ?? []).map((c) => <button key={c} type="button" aria-label={c} aria-pressed={value.color === c && !value.gradient} className="opt-dot" style={{ background: c }} onClick={() => onChange({ color: c, gradient: null, gradientPresetId: null, ...noCartela })} />)}
       </OptionStrip>
       <OptionStrip title={t("backgroundStudio.gradientes_aura")}>
-        {(cat?.gradients ?? []).map((g) => <button key={g.id} type="button" aria-pressed={value.gradientPresetId === g.id} className="opt-tile" title={g.name} onClick={() => onChange({ gradientPresetId: g.id, seasonalPresetId: null, gradient: gradientCss(g) })}><span className="opt-thumb" style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} /><span className="opt-name">{g.name}</span></button>)}
+        {(cat?.gradients ?? []).map((g) => <button key={g.id} type="button" aria-pressed={value.gradientPresetId === g.id} className="opt-tile" title={g.name} onClick={() => onChange({ gradientPresetId: g.id, ...noCartela, gradient: gradientCss(g) })}><span className="opt-thumb" style={{ backgroundImage: `linear-gradient(135deg, ${g.stops.join(",")})` }} /><span className="opt-name">{g.name}</span></button>)}
       </OptionStrip>
       {!hideSeasonal && <SeasonalOptions value={value} onChange={onChange} season={season} />}
     </div>
@@ -179,37 +224,52 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   value: BgConfig; onChange: (v: BgConfig) => void; skin: string; onSkin: (s: string) => void; anatomy: string; onAnatomy: (a: string) => void; pieceAnatomy?: string; onPieceAnatomy?: (a: string) => void; styles?: string[]; occasions?: string[];
   /** estação do look: a Cartela sazonal e a arte sazonal automática só existem com ela preenchida */
   season?: string | null;
-  /** RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar dos layouts do card. */
-  layoutPanel?: ReactNode; ownArt?: boolean; ownArtLabel?: string;
+  /**
+   * RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar dos layouts do card. Como
+   * função, recebe {@code openSeasonal} para abrir o modal da Cartela sazonal ao clicar na narrativa B11; {@code enter}
+   * (selecionar a narrativa) só roda se a pessoa Aplicar — Cancelar não muda o layout.
+   */
+  layoutPanel?: ReactNode | ((ctx: { openSeasonal: (enter?: () => void) => void }) => ReactNode); ownArt?: boolean; ownArtLabel?: string;
 }) {
   const { t, rich } = useI18n();
   const { data: rec } = useApi<{ skins?: { id: string }[]; recommended?: string[] }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
   const [seg, setSeg] = useState<ArtSegment>("cor");
-  const [seasonalOpen, setSeasonalOpen] = useState(false);
+  // modal da Cartela sazonal aberto; enter/patch = o que só vale ao Aplicar (entrar no layout e o que isso limpa)
+  const [seasonal, setSeasonal] = useState<{ enter?: () => void; patch?: Partial<BgConfig> } | null>(null);
   const set = (p: Partial<BgConfig>) => onChange({ ...value, ...p });
   const special = ownArt ?? hasOwnArt(anatomy);
   function chooseAnatomy(a: string) {
-    onAnatomy(a);
     // seções B/C: a arte do layout sobrepõe aura, material e arte própria
-    if (hasOwnArt(a)) set({ aura: null, materialId: null, aiArt: null, uploadUrl: null, posterUrl: undefined });
+    const patch: Partial<BgConfig> = hasOwnArt(a) ? { aura: null, materialId: null, aiArt: null, uploadUrl: null, posterUrl: undefined } : {};
+    // Cartela sazonal: o layout só muda ao Aplicar o modal (Cancelar deixa tudo como estava)
+    if (a === "CARTELA_SAZONAL") { setSeasonal(anatomy === a ? {} : { enter: () => onAnatomy(a), patch }); return; }
+    onAnatomy(a);
+    // a cartela e a animação são do layout Cartela sazonal: escolhidas no modal dele, saem junto com ele
+    if (anatomy === "CARTELA_SAZONAL") Object.assign(patch, CLEAR_CARTELA);
+    if (Object.keys(patch).length) set(patch);
   }
+  function applySeasonal(draft: Partial<BgConfig>) {
+    seasonal?.enter?.();
+    set({ ...(seasonal?.patch ?? {}), ...draft });
+  }
+  const cartela = value.seasonalAuto && season ? t("backgroundStudio.cartela_pela_estacao") : (value.seasonalPresetId && ART_INDEX.seasonal[value.seasonalPresetId]?.name) || t("backgroundStudio.cartela_pela_estacao");
+  const animation = value.animation && value.animation !== "NONE" ? t(`backgroundStudio.anim.${value.animation}`) : t("backgroundStudio.sem_animacao");
   const recommendedSkins = new Set([...(rec?.recommended ?? []), ...((rec?.skins ?? []).map((s) => s.id))]);
   const disabledNote = special ? <p className="rounded-md bg-chalk-soft p-2 type-body-sm">{ownArtLabel ? <>{rich("backgroundStudio.narrativa", { ownArtLabel }, { 0: ($c) => <b>{$c}</b> })}</> : <>{t("scheme.anatomy")}{" "}<b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b></>}{" "}{t("backgroundStudio.traz_arte_propria_presets_aura")}</p> : undefined;
   return (
     <div className="art-editor surface p-3">
       <ArtSegments value={seg} onChange={setSeg} />
-      {seg === "cor" && <ColorPanel value={value} onChange={set} season={season ?? null} hideSeasonal />}
+      {seg === "cor" && <ColorPanel value={value} onChange={set} season={season ?? null} hideSeasonal keepCartela={anatomy === "CARTELA_SAZONAL"} />}
       {seg === "aura" && <AuraMaterialPanel value={value} onChange={set} onSkin={onSkin} styles={styles} occasions={occasions} disabledNote={disabledNote} />}
       {seg === "layout" && (
         <div className="grid gap-3">
-          {layoutPanel ?? <>
+          {(typeof layoutPanel === "function" ? layoutPanel({ openSeasonal: (enter) => setSeasonal({ enter }) }) : layoutPanel) ?? <>
             <OptionStrip kind="wide" title={t("backgroundStudio.layout_do_esquema_anatomia_do")} hint={<p className="type-caption text-muted">{t("backgroundStudio.secao_a_layouts_base_secao")}</p>}>
               {SCHEME_ANATOMIES.map((a) => {
-                const blocked = false;
-                return <button key={a.id} type="button" aria-pressed={anatomy === a.id} aria-disabled={blocked || undefined} onClick={() => { chooseAnatomy(a.id); if (a.id === "CARTELA_SAZONAL") setSeasonalOpen(true); }} className={`opt-tile is-wide ${blocked ? "opacity-60" : ""}`}>
+                return <button key={a.id} type="button" aria-pressed={anatomy === a.id} aria-haspopup={a.id === "CARTELA_SAZONAL" ? "dialog" : undefined} onClick={() => chooseAnatomy(a.id)} className="opt-tile is-wide">
                   <SealZoneDiagram zone={SEAL_PLACEMENT[a.id]?.zone ?? "TITLE_ROW"} pieceRows={SEAL_PLACEMENT[a.id]?.pieceRows} />
                   <span className="opt-name"><span className="badge mr-1">{a.section}</span>{a.label}{a.ownArt && " ✦"}</span>
-                  <span className="opt-hint">{blocked ? t("anatomy.studio.seasonNeeded") : a.id === "CUSTO_POR_USO" ? `${a.hint} · ${t("anatomy.studio.ownerOnly")}` : a.hint}</span>
+                  <span className="opt-hint">{a.id === "CUSTO_POR_USO" ? `${a.hint} · ${t("anatomy.studio.ownerOnly")}` : a.hint}</span>
                 </button>;
               })}
             </OptionStrip>
@@ -223,12 +283,16 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
               {PIECE_ANATOMIES.map((a) => <Chip key={a.id} active={(pieceAnatomy ?? "PECA_AMPLIADO") === a.id} onClick={() => onPieceAnatomy(a.id)} title={PIECE_SEAL_PLACEMENT[a.id]?.description}>{a.label}</Chip>)}
             </OptionStrip>}
           </>}
+          {anatomy === "CARTELA_SAZONAL" && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-line-soft p-2">
+              <span className="min-w-0 flex-1 type-body-sm"><b>{t("common.cartela_sazonal")}:</b> {cartela} · {animation}</span>
+              <Button size="sm" aria-haspopup="dialog" onClick={() => setSeasonal({})}>{t("backgroundStudio.escolher_cartela_e_animacao")}</Button>
+            </div>
+          )}
           <SkinPicker skin={skin} onSkin={onSkin} recommended={recommendedSkins} />
         </div>
       )}
-      <Dialog open={seasonalOpen} onClose={() => setSeasonalOpen(false)} title={t("common.cartela_sazonal")} footer={<Button onClick={() => setSeasonalOpen(false)}>{t("common.fechar")}</Button>}>
-        <SeasonalOptions value={value} onChange={set} season={season ?? null} />
-      </Dialog>
+      <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={value} onApply={applySeasonal} season={season} />
       {seg === "container" && <ContainerColor value={value} onChange={set} skin={skin} />}
     </div>
   );

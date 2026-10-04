@@ -18,6 +18,8 @@ export interface CardArt {
   frame?: boolean;
   /** animação escolhida pela pessoa no segmento Cor (neve, pétalas, folhas, brilho): leve, roda também no card do feed */
   motion?: "snow" | "petals" | "leaves" | "shimmer" | null;
+  /** animação CSS do preset para quando o navegador não deixa o vídeo tocar (o pôster nunca fica parado) */
+  still?: string | null;
 }
 const MOTIONS = { SNOW: "snow", PETALS: "petals", LEAVES: "leaves", SHIMMER: "shimmer" } as const;
 /** Animação do segmento Cor gravada na arte ("SNOW", "PETALS"…); "NONE" ou desconhecida = sem animação. */
@@ -108,6 +110,16 @@ function gradientCss(g: unknown): string | undefined {
 /** Caminho público seguro: cada segmento codificado (os nomes dos vídeos têm espaços e "+"). */
 const media = (u?: string | null) => (!u ? undefined : /^https?:/.test(u) ? encodeURI(u) : u.split("/").map((seg) => encodeURIComponent(decodeURIComponent(seg))).join("/"));
 
+/**
+ * Estação que o layout Cartela sazonal mostra. A cartela (Frost, Solstice, Ember, Bloom) é escolhida no modal do próprio
+ * layout e vale sobre a estação do card; com a cartela automática ligada, ou sem cartela escolhida, vale a estação dos dados.
+ */
+export function cartelaSeason(bg?: Record<string, unknown> | null, season?: string | null): string | null {
+  const s = studioOf(bg);
+  const picked = s.seasonalPresetId ? ART_INDEX.seasonal[s.seasonalPresetId]?.season : undefined;
+  return (s.seasonalAuto && season) || picked || season || null;
+}
+
 export function resolveCardArt(bg?: Record<string, unknown> | null, opts?: { season?: string | null }): CardArt {
   const art = resolveLayers(bg, opts);
   const motion = motionOf(studioOf(bg).animation);
@@ -158,8 +170,8 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
 
 /** Como a variante AURA se move no card: vídeo próprio (com a imagem estática de pôster), GIF próprio, ou a imagem
  *  estática com a animação CSS do preset. */
-function variantMotion(v: Idx["variants"][string]): Pick<CardArt, "image" | "video" | "animation"> {
-  if (isVideo(v.animated)) return { image: media(v.card), video: { src: media(v.animated)!, poster: media(v.card) ?? null }, animation: null };
+function variantMotion(v: Idx["variants"][string]): Pick<CardArt, "image" | "video" | "animation" | "still"> {
+  if (isVideo(v.animated)) return { image: media(v.card), video: { src: media(v.animated)!, poster: media(v.card) ?? null }, animation: null, still: v.animation && v.animation !== "video" ? v.animation : null };
   return { image: media(v.animated) ?? media(v.card), animation: v.animation };
 }
 

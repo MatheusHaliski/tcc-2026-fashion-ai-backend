@@ -1,5 +1,7 @@
 # Fashion AI - Entidades, RF e Bancos
 
+> **Versão atual (04/10/2026):** a taxonomia das entidades gerada do código (99 entidades por contexto delimitado, RF na numeração do Trello) está em [`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md). Este arquivo fica como registro histórico.
+
 > **Atualizado em 24/09/2026 (etapa 12):** a versão atual, gerada do código e do teste ponta a ponta e com RF1–RF39 na numeração do Trello, está em `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` (resumo em `docs/planilhas/ETAPA12_IA_E_ENTIDADES_POR_RF.md`). Este arquivo fica como registro do desenho inicial.
 
 Status: esqueleto inicial implementado no backend Java.

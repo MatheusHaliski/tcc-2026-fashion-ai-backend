@@ -1,42 +1,111 @@
 {
- "nike": [
-  "Nike Sportswear",
-  "Nike SB",
-  "Nike ACG",
-  "NSW"
- ],
- "adidas": [
-  "Adidas Originals",
-  "Adidas Performance",
-  "adidas"
- ],
- "lacoste": [
-  "Lacoste Sport",
-  "Lacoste L!VE"
- ],
- "levis": [
-  "Levis",
-  "Levi Strauss",
-  "Levi Strauss & Co"
- ],
- "puma": [
-  "PUMA"
- ],
- "new-balance": [
-  "NB"
- ],
- "vans": [
-  "Vans Off The Wall"
- ],
- "converse": [
-  "Chuck Taylor",
-  "Converse All Star"
- ],
- "uniqlo": [
-  "Uniqlo U"
- ],
- "zara": [
-  "Zara Man",
-  "Zara Woman"
- ]
+  "nike": [
+    "Nike Sportswear",
+    "Nike SB",
+    "Nike ACG",
+    "NSW"
+  ],
+  "adidas": [
+    "Adidas Originals",
+    "Adidas Performance",
+    "adidas"
+  ],
+  "lacoste": [
+    "Lacoste Sport",
+    "Lacoste L!VE"
+  ],
+  "levis": [
+    "Levis",
+    "Levi Strauss",
+    "Levi Strauss & Co"
+  ],
+  "puma": [
+    "PUMA"
+  ],
+  "new-balance": [
+    "NB"
+  ],
+  "vans": [
+    "Vans Off The Wall"
+  ],
+  "converse": [
+    "Chuck Taylor",
+    "Converse All Star"
+  ],
+  "uniqlo": [
+    "Uniqlo U"
+  ],
+  "zara": [
+    "Zara Man",
+    "Zara Woman"
+  ],
+  "calvin-klein": [
+    "CK",
+    "Calvin Klein Jeans",
+    "Calvin"
+  ],
+  "abercrombie-fitch": [
+    "A&F",
+    "Abercrombie"
+  ],
+  "american-eagle": [
+    "American Eagle Outfitters"
+  ],
+  "under-armour": [
+    "UA",
+    "Under Armor"
+  ],
+  "ralph-lauren": [
+    "Lauren Ralph Lauren",
+    "Polo Ralph Lauren"
+  ],
+  "g-star-raw": [
+    "G-Star",
+    "GStar"
+  ],
+  "dr-martens": [
+    "Doc Martens",
+    "Dr Martens"
+  ],
+  "stussy": [
+    "Stussy"
+  ],
+  "saint-laurent": [
+    "YSL",
+    "Yves Saint Laurent"
+  ],
+  "louis-vuitton": [
+    "LV"
+  ],
+  "dolce-gabbana": [
+    "D&G",
+    "Dolce Gabbana"
+  ],
+  "jack-jones": [
+    "Jack and Jones"
+  ],
+  "carhartt-wip": [
+    "Carhartt Work In Progress"
+  ],
+  "farm-rio": [
+    "Farm"
+  ],
+  "john-john": [
+    "John John Denim"
+  ],
+  "c-a": [
+    "C e A",
+    "CEA"
+  ],
+  "track-field": [
+    "Track and Field"
+  ],
+  "jcrew": [
+    "JCrew",
+    "J Crew"
+  ],
+  "aeropostale": [
+    "Aeropostale",
+    "Aero"
+  ]
 }

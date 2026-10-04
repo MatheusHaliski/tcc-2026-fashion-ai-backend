@@ -1,0 +1,40 @@
+@startuml RF7_MaquinaDeEstados_Disponibilidade
+!pragma layout smetana
+title RF7 — WardrobeItem.availabilityStatus (AvailabilityStatus): disponibilidade da peça vista no detalhe
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "AVAILABLE" as Disp
+state "UNAVAILABLE" as Indisp
+state "ARCHIVED" as Arq
+
+[*] --> Disp : POST /api/pieces (RF4)\nvalor padrão
+Disp --> Indisp : PATCH /api/pieces/{id}/flags\n{disponivel: false}
+Indisp --> Disp : PATCH /api/pieces/{id}/flags\n{disponivel: true}
+Disp --> Arq : DELETE /api/pieces/{id}\n(snapshot gravado nos scheme_items)
+Indisp --> Arq : DELETE /api/pieces/{id}
+Disp --> Arq : purgeScheduledDeletions\n(exclusão da conta — RF3)
+Indisp --> Arq : purgeScheduledDeletions
+Arq --> [*]
+
+note right of Disp
+  Cada troca AVAILABLE ⇄ UNAVAILABLE publica
+  DomainEvents.AvailabilityChanged e grava uma linha
+  em wardrobe_availability_log (WardrobeEventListeners)
+end note
+note right of Indisp
+  Não vira Look do Dia (409 PECA_INDISPONIVEL — RF6);
+  return-to-origin para visitante: 409 INDISPONIVEL
+end note
+note left of Arq
+  Exclusão lógica: disponivel = false, visibility PRIVATE,
+  fotos retiradas de Minhas Fotos (RF12).
+  Visitante que abre o detalhe recebe o snapshot
+  com notAvailableAnymore = true (CA03).
+  Não há endpoint para desarquivar.
+end note
+@enduml

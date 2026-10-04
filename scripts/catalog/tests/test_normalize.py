@@ -67,3 +67,26 @@ class NormalizeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DesignTest(unittest.TestCase):
+    """RF47 · design da peça só com o vocabulário compartilhado (normalization.json → design)."""
+
+    def setUp(self):
+        self.n = Normalizer()
+
+    def test_design_valido_e_normalizado(self):
+        p = normalize_product({"brand": "Calvin Klein", "subcategory": "t_shirt", "product_name": "Camiseta Monogram Allover",
+                               "description": "Monograma CK  em toda a superfície.",
+                               "design": {"pattern": "allover_logo", "logoPlacement": "ALLOVER", "sides": ["front", "back"],
+                                          "baseColors": ["cinza"], "printColors": ["preto"]}}, self.n)
+        self.assertEqual(p.description, "Monograma CK em toda a superfície.")
+        self.assertEqual(p.design, {"pattern": "ALLOVER_LOGO", "logoPlacement": "ALLOVER", "sides": ["FRONT", "BACK"],
+                                    "baseColors": ["gray"], "printColors": ["black"]})
+
+    def test_fora_do_vocabulario_vira_aviso(self):
+        p = normalize_product({"brand": "X", "subcategory": "t_shirt", "product_name": "Y",
+                               "design": {"pattern": "GALAXY", "baseColors": ["azul", "furta-cor"]}}, self.n)
+        self.assertEqual(p.design, {"baseColors": ["blue"]})
+        self.assertTrue(any("GALAXY" in w for w in p.warnings))
+        self.assertTrue(any("furta-cor" in w for w in p.warnings))

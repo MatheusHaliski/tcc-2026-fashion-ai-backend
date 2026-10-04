@@ -23,7 +23,11 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF39 | Criar guarda-roupa 3D + loja do guarda-roupa | RF39 | [RF39_Criar_Guarda_Roupa_3D.md](RF39_Criar_Guarda_Roupa_3D.md) | `docs/diagramas/RF39/` |
 | RF40 | Meu Avatar 3D (busto fiel à foto, usado no manequim) | RF40 | [RF40-RF41.md](RF40-RF41.md) | — |
 | RF41 | FAI Points em todos os jogos e criações | RF41 | [RF40-RF41.md](RF40-RF41.md) | — |
-| RF48 *(proposta; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF48_FashionAI_Lens.md](RF48_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
+| RF45 | Imagens canônicas de peças (validação, segmentação, captura adaptativa) | RF4 (V29, `vision/`) | [RF04_ADAPTIVE_GARMENT_CAPTURE.md](../visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md) | `docs/diagramas/RF45/` |
+| RF46 | FAI Creative Engine e serviços Adobe | — (parcial: Background Studio, selos) | cartão Trello | `docs/diagramas/RF46/` |
+| RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
+| RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
+| RF48 *(proposta concorrente; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF48_FashionAI_Lens.md](RF48_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
 
 ## Mudanças em RF antigos (2026-09-24)
 
@@ -31,6 +35,12 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 |---|---|---|---|
 | RF4 | Campo marca = buscador web de marcas (Wikidata, Simple Icons no GitHub, IA com busca na web), sem catálogo pré-cadastrado; logo filtrado (fundo branco, letras pretas nítidas) no slot | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF4/` (v3) |
 | RF5 / RF13 | Sem campo de marca no esquema/DNA: a marca de cada slot vem da peça inserida (somente leitura) | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF5/` (v4) |
+
+## Mudanças em RF antigos (2026-10-04)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF18 | Provador virtual de lojas: prova peças de várias marcas do catálogo (RF47) no Avatar 3D, combinando com o guarda-roupa; ambiente 3D muda conforme a marca (faixa do logo, letreiro, paredes, piso, luz); provas salvas, foto, link, troca de cor, "Já tenho esta peça" | [RF18_Provador_Virtual_Lojas.md](RF18_Provador_Virtual_Lojas.md) |
 
 ## Mudanças em RF antigos (2026-09-26)
 

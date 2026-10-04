@@ -1,0 +1,94 @@
+@startuml RF42_Atividades
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+note right
+  Card do Trello sem descrição:
+  fluxo tirado do título e do código
+end note
+if (Por onde marca?) then (look salvo)
+  :Abre um esquema seu (ExpandedCard)\n→ "Look do dia";
+  |Frontend|
+  :POST /api/me/daily-look {schemeId};
+  |Backend|
+  :LookbookService.markDailyLook\n(SchemeService.owned: só o dono);
+elseif (ao criar o esquema) then (sim)
+  |Frontend|
+  :POST /api/schemes com lookDoDia = true;
+  |Backend|
+  :SchemeService registra depois de salvar\n(recusa vira aviso, não erro);
+else (Autopiloto / Copilot / Vista-me)
+  |Backend|
+  :AutopilotService / CopilotService / MirrorService\nregistram com source correspondente;
+endif
+|Backend|
+:DailyLookService.register(user, scheme, source, hoje);
+if (todas as peças disponíveis\n(isDisponivel e AVAILABLE)?) then (sim)
+  if (já existe DailyLook do usuário na data?) then (sim)
+    :Substitui o esquema e a origem\n(uq_daily_looks_user_date);
+  else (não)
+    :Cria DailyLook (look_date = hoje);
+    :scheme.lookDoDiaCount + 1;
+  endif
+  :scheme.lookDoDia = true;
+  :peças: lookDoDiaCount + 1 e lastWornDate = hoje;
+  :Publica DomainEvents.DailyLookRegistered;
+  |Bancos-serviços|
+  :WardrobeEventListeners (AFTER_COMMIT):\ndiário de uso e wearCount + 1;
+  note right
+    origem VISTA_ME pontua
+    VISTA_ME_DAILY_LOOK (RF41);
+    AchievementService.onDailyLook
+    avalia conquistas
+  end note
+  |Frontend|
+  :Toast "Look do dia" e recarrega o card;
+else (não)
+  :409 PECA_INDISPONIVEL com os nomes das peças;
+  |Frontend|
+  :Mostra o motivo;
+  stop
+endif
+|Pessoa|
+:Abre lookbook → aba Look do Dia (u/[username]?tab=daily);
+|Frontend|
+:GET /api/me/daily-look-tab;
+|Backend|
+if (há DailyLook hoje?) then (sim)
+  :Devolve look, painel de Hype Score e histórico;
+else (não)
+  if (há look anterior não arquivado?) then (sim)
+    :today() materializa uma cópia\n(materializedFrom) na virada do dia;
+  else (não)
+    :Estado vazio: marcar look salvo,\nAutopiloto ou Vista-me;
+  endif
+endif
+|Pessoa|
+:Avalia o look (ADOREI / NAO_USEI / NAO_GOSTEI);
+|Frontend|
+:PUT /api/me/daily-looks/{date}/feedback;
+stop
+@enduml

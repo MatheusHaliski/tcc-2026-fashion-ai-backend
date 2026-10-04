@@ -1,0 +1,137 @@
+@startuml RF15_Classes
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  .. +outros campos ..
+}
+class Photo {
+  +user: User
+  +origin: PhotoOrigin
+  +sourceEntityId: UUID
+  +storageKey: String
+  +publicUrl: String
+  +originalUrl: String
+  +thumbnailUrl: String
+  +contentHash: String
+  +mimeType: String
+  +width: Integer
+  +height: Integer
+  +bytesSize: Long
+  +qualityScore: BigDecimal
+  +moderationStatus: ModerationStatus
+  +keyMoment: boolean
+  +editedFromPhotoId: UUID
+  +metadataJson: String
+  +deletedAt: Instant
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +imageUrl: String
+  +originalImageUrl: String
+  +thumbnailUrl: String
+  +defaultImage: boolean
+  +aiGeneratedImage: boolean
+  +visibility: Visibility
+  +photoProcessingStatus: PhotoProcessingStatus
+  +availabilityStatus: AvailabilityStatus
+  .. +outros campos (RF4/RF7) ..
+}
+class PieceImage {
+  +sessionId: UUID
+  +pieceId: UUID
+  +userId: UUID
+  +imageType: PieceImageType
+  +viewType: CaptureView
+  +storageKey: String
+  +url: String
+  +width: int
+  +height: int
+  +qualityScore: Integer
+  +derivedFromId: UUID
+  +processingStatus: PieceImageStatus
+  +superseded: boolean
+}
+}
+package "fai-domain · enums" {
+enum PhotoOrigin {
+  WARDROBE_ITEM
+  SCHEME
+  TRY_ON
+  STYLE_DNA
+  PROFILE
+  BACKGROUND_STUDIO
+  LOOSE
+  EDITOR
+}
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED_POLICY
+  REJECTED_NOT_CLOTHING
+}
+enum PhotoProcessingStatus {
+  NEW
+  MODERATING
+  PROCESSING
+  COMPLETED
+  NEEDS_REUPLOAD
+  FAILED
+}
+enum PieceImageType {
+  ORIGINAL
+  CANONICAL
+  DETAIL
+  LOGO_DETAIL
+  TEXTURE_DETAIL
+  SEGMENTATION_MASK
+}
+}
+package "fai-application · service" {
+class PhotoService {
+  +saveEdit(user, id, bytes): Map
+  +removeBackground(user, bytes): Map
+  +delete(user, id, confirmed): Map
+  +list(user, origin, page, size): Map
+}
+class WardrobeService {
+  +replaceImage(user, id, bytes, editedFromPhotoId): PieceView
+  +governedFlatLay(userId, bytes): FlatLayPipeline.Result
+  +addToWardrobe(user, sourceId): PieceView
+}
+class MediaService {
+  +put(key, bytes, mime): StoredObject
+  +register(owner, origin, sourceEntityId, stored, originalUrl, thumbUrl, ...): Photo
+}
+}
+Photo "*" --> "1" User : user
+Photo --> PhotoOrigin
+Photo --> ModerationStatus
+Photo ..> Photo : editedFromPhotoId
+Photo ..> WardrobeItem : sourceEntityId
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> PhotoProcessingStatus
+PieceImage ..> WardrobeItem : pieceId
+PieceImage --> PieceImageType
+PhotoService ..> Photo
+PhotoService ..> WardrobeService
+WardrobeService ..> WardrobeItem
+WardrobeService ..> MediaService
+MediaService ..> Photo : register
+note top of Photo : tabela photos\nedição do canvas: origin = EDITOR
+note top of WardrobeItem : tabela wardrobe_items — ver RF4/RF7
+note top of PieceImage : tabela piece_images (captura adaptativa, RF4)
+@enduml

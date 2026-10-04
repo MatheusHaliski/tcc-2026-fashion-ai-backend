@@ -5,10 +5,10 @@
 > rua, numa vitrine, num post ou dentro do próprio app. O Lens reconhece as peças, lê o estilo e liga cada peça ao
 > guarda-roupa, aos looks, ao DNA de estilo, ao Hype e ao Copilot. Comprar é a última opção, não a primeira.
 
-**Numeração.** A numeração oficial é a do Trello e um RF novo recebe o próximo número livre
-(`markdowns/02-rf-reestruturados-e-criterios-aceite.md` §1). No repositório, o número mais alto em uso é o **RF47**
-(Acervo & Busca Catalogada, `CatalogController`). O RF45 só aparece num comentário, e RF42–RF44 e RF46 não estão
-documentados. Este documento usa **RF48** como proposta: confirme no board antes de criar o card HU-RF48.
+**Numeração.** A numeração oficial é a do Trello (`markdowns/02-rf-reestruturados-e-criterios-aceite.md` §1).
+Há duas propostas diferentes para RF48 no repositório — esta FashionAI Lens e o resgate/doação de FAI Points
+([documento](RF48_FAI_Points_Resgate_e_Doacoes.md)); confirme no board qual requisito deve usar esse número antes de
+criar o card HU-RF48.
 
 Contexto: este RF faz parte da refatoração por domínios descrita em
 [`docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md`](../hype/01-AUDITORIA_E_PROPOSTA_IA.md) e usa o HypeScore v2

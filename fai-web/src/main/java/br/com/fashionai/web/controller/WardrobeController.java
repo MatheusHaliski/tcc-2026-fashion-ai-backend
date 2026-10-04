@@ -27,15 +27,6 @@ public class WardrobeController {
         this.multiPiece = multiPiece;
     }
 
-    @PostMapping(value = "/api/pieces/analysis", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF4.CA02–CA04 — Analisar foto: critérios de aceite, remoção de fundo, flat lay, subtipo por "
-            + "similaridade dentro do tipo escolhido (category), marca nas zonas da peça e pré-preenchimento por IA. "
-            + "Foto fora dos critérios → 422 FOTO_RECUSADA com details.checks")
-    public WardrobeService.Draft analyze(CurrentUser user, @RequestPart("file") MultipartFile file,
-                                         @RequestParam(value = "category", required = false) String category) {
-        return wardrobe.analyze(user, Uploads.image(file), category);
-    }
-
     @PostMapping(value = "/api/pieces/analysis/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "RF4.CA11 — Analisar várias fotos de uma vez (até 10)")
     public List<WardrobeService.Draft> analyzeBatch(CurrentUser user, @RequestPart("files") List<MultipartFile> files,

@@ -320,12 +320,18 @@ public class WardrobeService {
         String categoryLabel = Msg.t("taxonomy." + (chosen != null ? chosen : guess.category() == null ? "upper_piece" : guess.category()));
         String detectedLabel = seen.detectedCategory() == null ? null : Msg.t("taxonomy." + seen.detectedCategory());
         double categoryConfidence = guess.confidence() == null ? 0 : guess.confidence().getOrDefault("category", 0.0);
+        // categoria que a foto parece ter, quando difere da escolhida: a tela oferece "Usar <categoria detectada>"
+        String detectedCode = seen.detectedCategory() != null && Taxonomy.isValidCategory(seen.detectedCategory())
+                && !seen.detectedCategory().equals(chosen) ? seen.detectedCategory() : null;
         if (chosen != null) {
             // sem referências carregadas (ambiente sem /public) a silhueta não tem com o que comparar: não reprova por ela
             Map<String, Double> bestBy = refs.isEmpty() ? Map.of() : refs.bestByCategory(shape);
             Map.Entry<String, Double> other = bestBy.entrySet().stream().filter(e -> !e.getKey().equals(chosen))
                     .max(Map.Entry.comparingByValue()).orElse(null);
             double bestLocal = bestBy.getOrDefault(chosen, 1.0);
+            if (detectedCode == null && other != null && other.getValue() - bestLocal >= PhotoAcceptance.LOCAL_OTHER_MARGIN) {
+                detectedCode = other.getKey();
+            }
             String seenLabel = detectedLabel != null ? detectedLabel : other == null ? null : Msg.t("taxonomy." + other.getKey());
             checks.add(PhotoAcceptance.shapeCheck(categoryLabel, aiRan ? seen.matchesCategory() : null, categoryConfidence, seenLabel,
                     bestLocal, other == null ? 0 : other.getValue()));
@@ -341,7 +347,7 @@ public class WardrobeService {
         List<PhotoAcceptance.Check> failed = checks.stream().filter(c -> !c.ok()).toList();
         // modo lenient: só conteúdo (política / não é roupa) continua recusado; o resto vira orientação
         if (!failed.isEmpty() && (!lenient || failed.stream().anyMatch(c -> "conteudo".equals(c.id())))) {
-            throw rejection(checks);
+            throw rejection(checks, failed.stream().anyMatch(c -> "formato".equals(c.id())) ? detectedCode : null);
         }
 
         // Marca: logo apontado pela IA na imagem 1 (0–1000) → caixa relativa à peça; sem IA, o detector local diz onde está
@@ -464,8 +470,12 @@ public class WardrobeService {
 
     /** Recusa com a primeira orientação como mensagem principal e todos os critérios no detalhe. */
     static PhotoRejectedException rejection(List<PhotoAcceptance.Check> checks) {
+        return rejection(checks, null);
+    }
+
+    static PhotoRejectedException rejection(List<PhotoAcceptance.Check> checks, String detectedCategory) {
         String first = checks.stream().filter(c -> !c.ok()).map(PhotoAcceptance.Check::message).findFirst().orElse("");
-        return new PhotoRejectedException(Msg.t("photoAcceptance.recusada", first), checks);
+        return new PhotoRejectedException(Msg.t("photoAcceptance.recusada", first), checks, detectedCategory);
     }
 
     /**

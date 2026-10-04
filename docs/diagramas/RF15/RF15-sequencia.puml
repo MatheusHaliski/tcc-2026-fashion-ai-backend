@@ -1,0 +1,74 @@
+@startuml RF15_Sequencia
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+participant "Frontend\n/photos · expanded-card\nPhotoEditor (canvas 2D)" as FE
+participant "PhotoController" as PC
+participant "PhotoService" as PS
+participant "WardrobeController" as WC
+participant "WardrobeService" as WS
+participant "AiEngine (RF24)\nFlatLayPipeline" as AI
+participant "MediaService\n(MediaStoragePort)" as M
+database "MySQL" as DB
+U -> FE: abre a foto da peça e toca em "Editar"
+alt veio de "Minhas Fotos" (photoId)
+  FE -> PC: GET /api/photos/{id}/file
+  PC -> PS: download (só o dono, sem marca d'água)
+  PS --> FE: 200 image/* (original)
+else veio do card da peça (pieceId)
+  FE -> FE: fetch(originalImageUrl ?? imageUrl)
+end
+FE -> FE: desenha no <canvas> (passo "original")
+loop ferramentas do editor
+  U -> FE: recortar / girar 90 / brilho / contraste
+  FE -> FE: push(step) → histórico (desfazer/refazer)
+end
+opt remover fundo (CA01/CA04)
+  U -> FE: "Remover fundo"
+  FE -> PC: POST /api/photos/background-removal (file)
+  PC -> PS: removeBackground(user, bytes)
+  PS -> WS: governedFlatLay(userId, bytes)
+  WS -> AI: execute(FLAT_LAY_STANDARDIZER) · remove.bg → fallback local
+  AI --> WS: Result(backgroundRemoved, processedPng, stages)
+  alt fundo removido
+    PS --> FE: 200 {ok:true, png (base64), provider}
+    FE -> FE: push(step "Remover fundo")
+  else falhou
+    PS --> FE: 200 {ok:false, message}
+    FE -> FE: aviso; demais ferramentas seguem
+  end
+end
+U -> FE: "Salvar"
+FE -> FE: canvas.toBlob("image/png")
+alt photoId (Minhas Fotos)
+  FE -> PC: POST /api/photos/{id}/edits (multipart file)
+  PC -> PS: saveEdit(user, id, bytes)
+  PS -> DB: SELECT photos (owned) + wardrobe_items (sourceEntityId)
+  alt foto é a imagem de uma peça ativa do dono
+    PS -> WS: replaceImage(user, pieceId, bytes, editedFromPhotoId=id)
+    WS -> M: put(edit.png) + put(edit-thumb.png)
+    WS -> M: register(Photo EDITOR, APPROVED)
+    WS -> DB: UPDATE wardrobe_items (image_url, thumbnail_url, COMPLETED)
+    PS --> FE: 200 {replacedPieceImage:true, piece, message}
+  else foto solta / de esquema
+    PS -> M: put(edit.png) + put(edit-thumb.png)
+    PS -> M: register(Photo EDITOR, editedFromPhotoId, APPROVED)
+    M -> DB: INSERT photos
+    PS --> FE: 200 {replacedPieceImage:false, photo, message}
+  end
+else pieceId (card da peça)
+  FE -> WC: PUT /api/pieces/{id}/image (multipart file)
+  WC -> WS: replaceImage(user, id, bytes, null)
+  WS -> M: put(edit.png) + put(edit-thumb.png)
+  WS -> DB: UPDATE wardrobe_items + INSERT photos (EDITOR)
+  WS --> FE: 200 PieceView
+end
+note over FE, DB : CA02 — a foto original é preservada (original_url / edited_from_photo_id)
+@enduml

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RF4 — prova da detecção de marca: envia cada caso de scripts/marcas/gerar-casos.py para a análise real da peça
-(POST /api/pieces/analysis) de um backend local e, quando a marca não sai confirmada, para a nova busca em
+(POST /api/pieces/analysis/batch, uma foto por vez) de um backend local e, quando a marca não sai confirmada, para a nova busca em
 sub-retângulos (POST /api/pieces/analysis/{id}/brand?grid=3, 4, 5). Grava resultados.json e a planilha .xlsx.
 
 Uso: python3 scripts/marcas/testar-deteccao.py <pasta-dos-casos> <token-de-acesso> [saida.xlsx] [http://localhost:8080]
@@ -21,7 +21,7 @@ def call(method, path, fields=None, file=None):
         b = uuid.uuid4().hex; parts = []
         for k, v in (fields or {}).items():
             parts.append(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
-        parts.append(f'--{b}\r\nContent-Disposition: form-data; name="file"; filename="{os.path.basename(file)}"\r\nContent-Type: image/jpeg\r\n\r\n'.encode()
+        parts.append(f'--{b}\r\nContent-Disposition: form-data; name="files"; filename="{os.path.basename(file)}"\r\nContent-Type: image/jpeg\r\n\r\n'.encode()
                      + open(file, "rb").read() + b"\r\n")
         parts.append(f"--{b}--\r\n".encode()); data = b"".join(parts)
         headers["Content-Type"] = f"multipart/form-data; boundary={b}"
@@ -29,7 +29,11 @@ def call(method, path, fields=None, file=None):
     t0 = time.time()
     try:
         with urllib.request.urlopen(req, timeout=300) as r:
-            return json.loads(r.read() or b"{}"), time.time() - t0
+            d = json.loads(r.read() or b"{}")
+            if isinstance(d, list):                               # lote de uma foto: o rascunho (ou a recusa) é o 1º item
+                d = d[0] if d else {}
+                d = {**d, **(d.get("rejection") or {})}
+            return d, time.time() - t0
     except urllib.error.HTTPError as e:
         return json.loads(e.read() or b"{}"), time.time() - t0
 
@@ -42,7 +46,7 @@ NO_BRAND = {"semmarca", "nobrand", "sinmarca"}
 cases = json.load(open(os.path.join(DIR, "casos.json")))
 rows = []
 for c in cases:
-    d, dt = call("POST", "/api/pieces/analysis", {"category": c["category"]}, os.path.join(DIR, c["file"]))
+    d, dt = call("POST", "/api/pieces/analysis/batch", {"category": c["category"]}, os.path.join(DIR, c["file"]))
     p = d.get("prefill") or {}; bs = p.get("brandSearch") or {}
     # "Sem marca" é o texto que a análise põe no campo quando não acha marca (o campo nunca fica vazio): não é marca
     found = p.get("brand") or bs.get("brand")
@@ -128,7 +132,7 @@ lines = [
     ("Marca fora do catálogo tratada como 'possível' (pede confirmação)", "OK" if all(r["ok"] for r in rows if r["expected"] and "fora do catálogo" in r["expected"]) else "FALHOU"),
     ("Tempo da análise (mediana / máximo)", f"{t_an[len(t_an) // 2]:.1f} s / {t_an[-1]:.1f} s"),
     ("", ""),
-    ("Como foi testado", "Cada foto passou pela análise real da peça no backend (POST /api/pieces/analysis), com a IA remota desligada: "
+    ("Como foi testado", "Cada foto passou pela análise real da peça no backend (POST /api/pieces/analysis/batch), com a IA remota desligada: "
      "a marca veio do leitor de texto do próprio servidor (OCR PP-OCRv4 em ONNX) casado com o catálogo de marcas. Quando a marca "
      "não saiu confirmada, o teste chamou a nova busca em sub-retângulos (grade 3×3, 4×4, 5×5)."),
     ("Estados", "Confirmada = texto lido é uma marca do catálogo (igual, a uma letra, ou sem a primeira/última letra); "

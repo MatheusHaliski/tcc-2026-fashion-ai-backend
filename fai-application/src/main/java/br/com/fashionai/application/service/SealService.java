@@ -14,6 +14,7 @@ import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.seal.SealDesigns;
+import br.com.fashionai.application.seal.SealDrafts;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
@@ -138,6 +139,24 @@ public class SealService {
         return sealView(s);
     }
 
+    /**
+     * RF25 — modo "Com IA" do criador: sugere nome, nível, política padronizada (cor/marca/tags) e arte (tipo e modelo)
+     * a partir do perfil emissor e das peças que ele cadastrou. Nada é salvo: o emissor revisa e salva no último passo.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> draft(CurrentUser user, SealTier tier) {
+        requireIssuer(user);
+        User owner = users.findById(user.id()).orElseThrow();
+        boolean celebrity = owner.getProfileType() == ProfileType.CELEBRIDADE;
+        String name = celebrity
+                ? celebrityProfiles.findByOwnerId(owner.getId()).map(cp -> cp.getStageName()).orElse(owner.getDisplayName())
+                : brandProfiles.findByOwnerId(owner.getId()).map(bp -> bp.getBrandName()).orElse(owner.getDisplayName());
+        List<WardrobeItem> pieces = wardrobeItems.findByUserIdOrderByCreatedAtDesc(owner.getId());
+        Map<String, Object> out = SealDrafts.suggest(name, celebrity, tier, pieces.size() > 300 ? pieces.subList(0, 300) : pieces);
+        audit.log(user, AuditActions.SELO_EDITADO, "seal:draft", Map.of("op", "draft", "pieces", pieces.size()));
+        return out;
+    }
+
     @Transactional
     public Map<String, Object> updateSeal(CurrentUser user, UUID sealId, SealForm form) {
         requireIssuer(user);
@@ -163,6 +182,13 @@ public class SealService {
             Object existing = Json.map(s.getBackgroundConfigJson()).get("design");
             design = existing instanceof Map<?, ?> em ? SealDesigns.normalize(castMap(em))
                     : SealDesigns.defaultDesign(owner.getProfileType() == ProfileType.CELEBRIDADE, s.getTier());
+        }
+        // imagem do núcleo/emblema: só arquivo enviado pelo próprio emissor (nunca de outra pessoa ou de terceiros)
+        if (design.get("core") instanceof Map<?, ?> core && core.get("imageUrl") != null) {
+            ownMedia.require(owner.getId(), String.valueOf(core.get("imageUrl")), "design.core.imageUrl", false);
+        }
+        if ("FOLHA".equals(design.get("kind")) && design.get("label") == null) {
+            design.put("label", SealDesigns.labelFrom(s.getName()));            // o título da folha é o nome do selo
         }
         Map<String, Object> cfg = new LinkedHashMap<>(f.background() == null ? Map.of() : f.background());
         cfg.put("design", design);

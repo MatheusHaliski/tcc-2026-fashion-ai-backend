@@ -1,0 +1,77 @@
+@startuml RF22_Atividades
+title RF22 — Visualizar a aba "Celebridades" — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Celebridade|
+start
+:Cadastra-se como CELEBRIDADE (RF1):\nnome artístico, documento, foto oficial;
+|Backend (IdentityService)|
+:Cria CelebrityProfile\nverificationStatus = PENDENTE;
+|Administrador|
+:GET /api/admin/approvals →\nPOST /api/admin/approvals/{userId} {approve} (RF1.CA08);
+note right: dependência RF28/RF1 — a celebridade\nprecisa estar cadastrada e verificada
+|Backend (AdminService)|
+if (Aprovado?) then (sim)
+  :verificationStatus = APROVADO;
+else (não)
+  :verificationStatus = RECUSADO\n(sem tela pública);
+  stop
+endif
+|Pessoa|
+:Abre /brands e toca na aba "Celebridades";
+|Frontend (brands/page.tsx)|
+:GET /api/celebrities?term=&order=;
+|Backend (InstitutionalService)|
+:celebrityFeed(): só perfis APROVADOS,\nfiltro por nome artístico;
+if (Visitante com DNA de estilo (RF13)\ne order != RECENTES?) then (sim)
+  :Ordena por AFINIDADE (RF24.CA06):\nJaccard(estilos do DNA × estilos do acervo);
+else (não)
+  :Ordena por RECENTES;
+endif
+:celebrityCard(): stageName, avatarUrl, coverUrl,\nbonds APPROVED, followers ACEITO,\nstyleSignature, material VITREO_HOLOGRAFICO;
+|Frontend (brands/page.tsx)|
+:Renderiza o feed de cards com Avatar,\náreas, seguidores, selos e afinidade;
+|Pessoa|
+:Toca em um perfil → /brands/[slug];
+|Frontend (brands/[slug]/page.tsx)|
+:GET /api/institutional/{slug}\n+ GET /api/users/{ownerId}/seals · /promotions;
+|Backend (InstitutionalService)|
+if (Perfil não APROVADO e visitante não é dona/admin?) then (sim)
+  #FFE3E3:404 Celebridade;
+  stop
+else (não)
+endif
+:Header: status "Verificada", autoApproval=false\n(todo vínculo com celebridade exige revisão — RF21);
+|Frontend (brands/[slug]/page.tsx)|
+:Abas: Eras · Esquemas em destaque · Peças em destaque ·\nLooks consagrados · Catálogo · Selos · Promoções · FLAIR;
+|Pessoa|
+if (Ação?) then (seguir)
+  :POST /api/users/{targetId}/followers (RF17);
+elseif (Eras) then
+  :GET /api/institutional/{slug}/showcase/eras\n(SchemeGrouping type ERA);
+elseif (Dona edita o perfil) then
+  :PATCH /api/me/celebrity-profile;
+endif
+stop
+@enduml

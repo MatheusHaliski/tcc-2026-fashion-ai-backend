@@ -29,8 +29,17 @@ spring:
       max-request-size: 80MB
   jackson:
     time-zone: UTC
-    serialization:
-      write-dates-as-timestamps: false
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false   # Jackson 3 (Boot 4): DateTimeFeature; datas sempre em ISO-8601
+    deserialization:
+      # Jackson 3 passou a recusar null em campo primitivo (400 "JSON inválido"); o front manda null em checkbox e
+      # número não preenchidos, e no Jackson 2 isso virava false/0. Contrato fixado no JsonContractTest (fai-bootstrap).
+      fail-on-null-for-primitives: false
+      fail-on-unknown-properties: false    # cliente antigo/novo com campo a mais não quebra (era o padrão do Boot 3)
+  web:
+    error:
+      include-stacktrace: never            # Boot 4: era server.error.include-stacktrace
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -48,18 +57,18 @@ spring:
     # usuário/senha ficam em fashionai.cassandra: aqui, vazios, o Spring Boot recusaria Cassandra sem autenticação
   autoconfigure:
     # Cassandra só é ligado pelo perfil "cassandra"; sem ele o driver nem tenta conectar.
+    # Nomes do Spring Boot 4 (módulos spring-boot-cassandra / spring-boot-data-cassandra). Atenção: excluir uma classe que
+    # não existe é ignorado em silêncio — o AutoConfigurationExclusionsTest (fai-bootstrap) confere cada nome.
     exclude:
-      - org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration
+      - org.springframework.boot.cassandra.autoconfigure.CassandraAutoConfiguration
+      - org.springframework.boot.data.cassandra.autoconfigure.DataCassandraAutoConfiguration
+      - org.springframework.boot.data.cassandra.autoconfigure.DataCassandraRepositoriesAutoConfiguration
+      - org.springframework.boot.data.cassandra.autoconfigure.DataCassandraReactiveAutoConfiguration
+      - org.springframework.boot.data.cassandra.autoconfigure.DataCassandraReactiveRepositoriesAutoConfiguration
 
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework   # atrás de proxy/CDN (Railway, Render, Vercel)
-  error:
-    include-stacktrace: never
 
 management:
   endpoints:
@@ -105,6 +114,9 @@ fashionai:
     password: ${FAI_ADMIN_PASSWORD:}                         # só na criação; mínimo 12 caracteres
     username: ${FAI_ADMIN_USERNAME:admin}
     display-name: ${FAI_ADMIN_DISPLAY_NAME:Administração Fashion AI}
+  issuer-review:                                           # verificação de marca/celebridade (docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md)
+    # e-mails avisados de cada pedido, além das contas com papel ADMIN (que também recebem a notificação no app)
+    notify-emails: ${ISSUER_REVIEW_NOTIFY_EMAILS:${FAI_ADMIN_EMAIL:}}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   # Gate de desenvolvedor (antes do lançamento): cabeçalho X-Dev-Gate (token curto de API, por pessoa) assinado pelo
@@ -129,6 +141,10 @@ fashionai:
   security:
     auth-rate-limit:
       enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
+    # Teto de hashes Argon2 simultâneos (login, cadastro, troca/redefinição de senha): 0 = automático (1 por núcleo,
+    # no máximo metade do pool do MySQL). Excedente espera AUTH_HASH_WAIT_MS e recebe 503 + Retry-After.
+    auth-hash-concurrency: ${AUTH_HASH_CONCURRENCY:0}
+    auth-hash-wait-ms: ${AUTH_HASH_WAIT_MS:2000}
     # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
     edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
     client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga

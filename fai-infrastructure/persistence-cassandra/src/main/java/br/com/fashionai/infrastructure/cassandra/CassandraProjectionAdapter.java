@@ -23,7 +23,8 @@ import java.util.UUID;
 /**
  * Projeções append-only no Cassandra (ligadas com {@code fashionai.cassandra.enabled=true}):
  * timeline por usuário (fan-out na publicação, partição = seguidor, ordenada por data) e notificações,
- * ambas com TTL de tabela (expiração automática — não há DELETE em massa).
+ * ambas com TTL de tabela (expiração automática — não há DELETE em massa). A única remoção é a partição inteira de uma
+ * conta de teste no reset do Demo/Test Data Pipeline ({@link #purgeUser}).
  */
 @Component
 @ConditionalOnProperty(name = "fashionai.cassandra.enabled", havingValue = "true")
@@ -33,6 +34,8 @@ public class CassandraProjectionAdapter implements TimelineProjectionPort, Notif
     private final PreparedStatement insertTimeline;
     private final PreparedStatement readTimeline;
     private final PreparedStatement insertNotification;
+    private final PreparedStatement deleteTimeline;
+    private final PreparedStatement deleteNotifications;
 
     public CassandraProjectionAdapter(CqlSession session,
                                       @Value("${fashionai.cassandra.timeline-ttl-days:90}") int timelineTtlDays,
@@ -47,6 +50,8 @@ public class CassandraProjectionAdapter implements TimelineProjectionPort, Notif
         this.insertTimeline = session.prepare("INSERT INTO timeline_by_user (user_id, published_at, scheme_id, author_id) VALUES (?, ?, ?, ?)");
         this.readTimeline = session.prepare("SELECT scheme_id FROM timeline_by_user WHERE user_id = ? LIMIT ?");
         this.insertNotification = session.prepare("INSERT INTO notifications_by_user (user_id, created_at, notification_id) VALUES (?, ?, ?)");
+        this.deleteTimeline = session.prepare("DELETE FROM timeline_by_user WHERE user_id = ?");
+        this.deleteNotifications = session.prepare("DELETE FROM notifications_by_user WHERE user_id = ?");
         log.info("Projeções Cassandra prontas (timeline TTL {} dias, notificações TTL {} dias)", timelineTtlDays, notificationTtlDays);
     }
 
@@ -87,5 +92,12 @@ public class CassandraProjectionAdapter implements TimelineProjectionPort, Notif
     @Override
     public void appendNotification(UUID recipientUserId, UUID notificationId) {
         session.execute(insertNotification.bind(recipientUserId, Instant.now(), notificationId));
+    }
+
+    /** Uma chamada atende às duas portas: apaga a timeline e a caixa de notificações da conta (partições inteiras). */
+    @Override
+    public void purgeUser(UUID userId) {
+        session.execute(deleteTimeline.bind(userId));
+        session.execute(deleteNotifications.bind(userId));
     }
 }

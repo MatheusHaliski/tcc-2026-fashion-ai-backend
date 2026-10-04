@@ -76,11 +76,13 @@ def run(C):
 
     # ---------------- RF4 peças (usuário e2e)
     step('RF4', 'CA01', 'taxonomia (categorias, cores, ocasiões)', 'GET', '/api/taxonomy', ctx=C)
+    # a rota de uma foto (POST /api/pieces/analysis) saiu com o criador sem foto (RF47): a análise segue pelo lote
+    BATCH = lambda b: {'files': ('foto.jpg', b, 'image/jpeg')}
     step('RF4', 'CA02', 'analisar foto (critérios de aceite, remoção de fundo, subtipo por semelhança, marca, pré-preenchimento)', 'POST',
-         '/api/pieces/analysis', files=JPG(PIECE), fields={'category': 'upper_piece'}, who=U, ctx=C,
-         save=lambda c, b: c.__setitem__('draft_id', b.get('draftId') or b.get('id')))
-    step('RF4', 'CA02', 'foto recusada: pessoa com a roupa cortada pela borda (422 FOTO_RECUSADA)', 'POST', '/api/pieces/analysis',
-         files=JPG(IMG), fields={'category': 'upper_piece'}, who=U, ctx=C, expect=(422,))
+         '/api/pieces/analysis/batch', files=BATCH(PIECE), fields={'category': 'upper_piece'}, who=U, ctx=C,
+         save=lambda c, b: c.__setitem__('draft_id', (b[0] if isinstance(b, list) and b else {}).get('draftId')))
+    step('RF4', 'CA02', 'foto recusada: pessoa com a roupa cortada pela borda (rascunho volta com rejection FOTO_RECUSADA)', 'POST',
+         '/api/pieces/analysis/batch', files=BATCH(IMG), fields={'category': 'upper_piece'}, who=U, ctx=C)
     # RF4 · buscador web de marcas (sem catálogo local): nome + logo filtrado (fundo branco, letras pretas)
     def keep_brand(key):
         def f(c, b):

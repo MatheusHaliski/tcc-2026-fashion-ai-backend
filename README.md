@@ -2,12 +2,12 @@
 
 API REST do **Fashion AI**, rede social de moda com guarda-roupa digital, composição de looks por IA, DNA de Estilo,
 Hype Score, selos de marcas/celebridades, Meu Quarto, Smart Mirror, Inventory Score, FAI Points e desafios.
-Este repositório contém o backend Java (Spring Boot 3.3, Java 21) e os assets/documentação do projeto.
+Este repositório contém o backend Java (Spring Boot 4.1, Java 21) e os assets/documentação do projeto.
 O frontend Next.js consome esta API.
 
 | Item | Valor |
 |---|---|
-| Stack | Java 21 · Spring Boot 3.3.5 · Spring Security (JWT RS256 próprio) · Spring Data JPA · Flyway · MySQL 8 |
+| Stack | Java 21 (imagem Docker na JVM 25 LTS) · Spring Boot 4.1 (Spring Framework 7, Hibernate 7, Jackson 3) · Spring Security 7 (JWT RS256 próprio) · Spring Data JPA · Flyway · MySQL 8.4/9.x |
 | Opcionais | Redis (cotas/contadores), Cassandra (timeline/notificações com TTL), OpenSearch (busca), S3/MinIO (mídia) |
 | IA | Claude (SDK oficial), Gemini, Replicate (FLUX), FASHN (try-on), Meshy (3D), remove.bg/rembg — com fallback local para cada capacidade |
 | Documentação da API | `http://localhost:8080/swagger-ui.html` (OpenAPI 3 em `/v3/api-docs`) |

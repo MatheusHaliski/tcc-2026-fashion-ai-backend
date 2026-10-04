@@ -26,4 +26,7 @@ public interface CelebrityProfileRepository extends JpaRepository<CelebrityProfi
     List<CelebrityProfile> findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus status);
 
     List<CelebrityProfile> findTop100ByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus status);
+
+    /** Política de verificação: já existe outro perfil oficial (aprovado) com este nome artístico? */
+    boolean existsByStageNameIgnoreCaseAndVerificationStatusAndOwner_IdNot(String stageName, ApprovalStatus status, UUID ownerId);
 }
