@@ -893,6 +893,10 @@ button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var
 .dna-season::after { content: none; }
 /* animação "Brilho" escolhida no modal da Cartela sazonal: o mesmo brilho que passa pela arte do card */
 .season-hero.motion-shimmer::after, .dna-season.motion-shimmer::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.38) 50%, transparent 60%); background-size: 300% 300%; animation: art-sweep 5s ease-in-out infinite; }
+/* movimento reduzido (preferência do app ou do sistema): o brilho fica parado — depois da regra acima, que é mais
+   específica que os seletores genéricos de redução de movimento */
+:root[data-reduce-motion="true"] :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; } }
 
 /* ---------- RF26 · globo interativo do Explorador Global ---------- */
 .globe { display: flex; flex-direction: column; align-items: center; user-select: none; }
@@ -2000,23 +2004,37 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .catalog-pick-art img { width: 100%; height: 100%; object-fit: contain; }
 @media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }
 
-/* RF18 · Provador virtual de lojas: palco 3D com o ambiente da marca, lugares do corpo, lojas em destaque e provas salvas */
-.fitting-stage { position: relative; height: clamp(460px, 68vh, 760px); background: var(--surface-2); border-top: 3px solid var(--fitting-accent, var(--mark)); transition: border-color .4s; }
-.fitting-slots { display: grid; gap: 8px; }
-.fitting-slot { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); }
-.fitting-slot.is-filled { border-color: color-mix(in oklab, var(--thread) 40%, var(--line-soft)); }
-.fitting-slot-body { display: flex; align-items: flex-start; gap: 10px; }
-.fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
-.fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
-.fitting-slot-thumb.is-small { width: 34px; height: 34px; border: 2px solid var(--surface); }
-.fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-.fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
-.fitting-store:hover { border-color: var(--line); }
-.fitting-store.is-active { border-color: var(--thread); background: var(--thread-soft); }
-.fitting-store:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.fitting-store-name { font-weight: 600; font-size: 13px; line-height: 1.2; }
-.fitting-saved { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 10px; }
-@media (max-width: 640px) { .fitting-stage { height: 62vh; } .fitting-saved { flex-wrap: wrap; } }
+/* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
+.review-pill { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; background: var(--surface-2); color: var(--ink-2, inherit); }
+.review-pill.is-pending { background: #FFF3D6; color: #7A5200; }
+.review-pill.is-ok { background: var(--thread-soft); color: var(--thread); }
+.review-pill.is-bad { background: var(--mark-soft); color: var(--mark); }
+.review-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.review-steps > li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; position: relative; }
+.review-steps > li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: -12px; width: 2px; background: var(--line, rgba(0,0,0,.12)); }
+.review-dot { display: inline-flex; width: 28px; height: 28px; border-radius: 999px; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--ink-3, #666); }
+.review-steps > li.is-done .review-dot { background: var(--thread); color: #fff; }
+.review-steps > li.is-current .review-dot { background: #F2B705; color: #1d1d1b; box-shadow: 0 0 0 4px rgba(242,183,5,.25); }
+.review-steps > li.is-bad .review-dot { background: var(--mark); color: #fff; }
+:root[data-theme="dark"] .review-pill.is-pending { background: #3A2E10; color: #F5C451; }
+/* Central do emissor e fila de verificação (política de verificação de marcas e celebridades) */
+.issuer-center { display: grid; gap: 16px; }
+@media (min-width: 1024px) { .issuer-center { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+.issuer-code { font-family: var(--font-data); font-size: 20px; font-weight: 700; letter-spacing: .08em; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); user-select: all; }
+.issuer-feedback { border-left: 4px solid #F2B705; }
+.policy-checks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.policy-check { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.policy-mark { display: inline-flex; width: 22px; height: 22px; border-radius: 999px; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.policy-check.is-ok .policy-mark { background: var(--thread); color: #fff; }
+.policy-check.is-bad .policy-mark { background: var(--mark); color: #fff; }
+.policy-check.is-warn .policy-mark { background: #F2B705; color: #1d1d1b; }
+.policy-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--surface-2); color: var(--muted); vertical-align: middle; }
+.policy-tag.is-required { background: var(--mark-soft); color: var(--mark-ink, var(--mark)); }
+.policy-check.is-ok .policy-state { color: var(--thread-ink, var(--thread)); }
+.policy-check.is-bad .policy-state { color: var(--mark-ink, var(--mark)); }
+.dossier-fields { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 4px 12px; margin: 4px 0 0; font-size: 14px; }
+.dossier-fields dt { color: var(--muted); }
+.dossier-fields dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
 /* RF47 · leitura das características únicas da peça (texto → estampa, logo, cores) e o "por que esta?" do card */
 .design-understood { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }

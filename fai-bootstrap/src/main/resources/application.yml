@@ -114,6 +114,9 @@ fashionai:
     password: ${FAI_ADMIN_PASSWORD:}                         # só na criação; mínimo 12 caracteres
     username: ${FAI_ADMIN_USERNAME:admin}
     display-name: ${FAI_ADMIN_DISPLAY_NAME:Administração Fashion AI}
+  issuer-review:                                           # verificação de marca/celebridade (docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md)
+    # e-mails avisados de cada pedido, além das contas com papel ADMIN (que também recebem a notificação no app)
+    notify-emails: ${ISSUER_REVIEW_NOTIFY_EMAILS:${FAI_ADMIN_EMAIL:}}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   # Gate de desenvolvedor (antes do lançamento): cabeçalho X-Dev-Gate (token curto de API, por pessoa) assinado pelo
@@ -138,6 +141,10 @@ fashionai:
   security:
     auth-rate-limit:
       enabled: ${AUTH_RATE_LIMIT_ENABLED:true}     # limite por IP em login, cadastro e redefinição de senha
+    # Teto de hashes Argon2 simultâneos (login, cadastro, troca/redefinição de senha): 0 = automático (1 por núcleo,
+    # no máximo metade do pool do MySQL). Excedente espera AUTH_HASH_WAIT_MS e recebe 503 + Retry-After.
+    auth-hash-concurrency: ${AUTH_HASH_CONCURRENCY:0}
+    auth-hash-wait-ms: ${AUTH_HASH_WAIT_MS:2000}
     # IP do cliente (ClientIpResolver): 1) X-Fai-Client-Ip assinado pelo BFF com este segredo; 2) cabeçalho da borda; 3) conexão
     edge-proxy-secret: ${EDGE_PROXY_SECRET:}       # vazio = ignora o cabeçalho assinado do BFF Next.js
     client-ip-header: ${CLIENT_IP_HEADER:X-Real-IP} # Railway sobrescreve X-Real-IP com o IP real; vazio desliga

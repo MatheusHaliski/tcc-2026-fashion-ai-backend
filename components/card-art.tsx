@@ -67,7 +67,8 @@ export function ArtVideo({ src, poster, onStuck }: { src: string; poster?: strin
     // perto da tela (300 px): o arquivo entra; longe: sai, liberando rede e decodificador (o feed acumula páginas)
     const nearIO = new IntersectionObserver(([e]) => {
       const near = e.isIntersecting;
-      if (near && !v.getAttribute("src")) { v.src = src; tryPlay(); }
+      // compara com o arquivo pedido: trocar de Aura com o card perto da tela tem de trocar o vídeo, não só o pôster
+      if (near && v.getAttribute("src") !== src) { v.src = src; tryPlay(); }
       else if (!near && v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
     }, { rootMargin: "300px 0px" });
     // visível: toca; fora da tela: pausa (fica pronto para voltar sem baixar de novo)
@@ -79,6 +80,9 @@ export function ArtVideo({ src, poster, onStuck }: { src: string; poster?: strin
     v.addEventListener("canplay", tryPlay);
     return () => {
       nearIO.disconnect(); seenIO.disconnect(); dropRetry();
+      // trocou o arquivo (ou desmontou): solta o anterior e o aviso de bloqueio dele
+      if (v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
+      stuckRef.current?.(false);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("pageshow", tryPlay);
       v.removeEventListener("canplay", tryPlay);
