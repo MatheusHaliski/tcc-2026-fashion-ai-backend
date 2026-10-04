@@ -18,17 +18,13 @@ import { CardActions, useRemix } from "@/components/interactions";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { useDetailModal } from "@/components/detail-modal";
 import { CardHeader } from "@/components/card-header";
+import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
+import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeViewState } from "@/lib/hype/model";
+import { useHypeSummary } from "@/lib/hype/use-hype";
 
-/** Escala da popularidade (Hype): sem vermelho — nota baixa não é erro, é look novo ou pouco visto. */
-export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)";
-/** Faixa qualitativa do Hype mostrada nos cards (o número exato fica no detalhe, com a explicação). */
-export const hypeBand = (h?: number | null): "hot" | "rising" | null => (h ?? 0) >= 70 ? "hot" : (h ?? 0) >= 40 ? "rising" : null;
-export function HypeBadge({ score }: { score?: number | null }) {
-  const { t } = useI18n();
-  const band = hypeBand(score);
-  if (!band) return null;
-  return <span className={`hype-chip is-${band}`} title={t("hype.explain")}>{band === "hot" ? t("hype.hot") : t("hype.rising")}</span>;
-}
 
 export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK"; }
 /** Converte o "badge" que a API devolve nos vínculos aprovados (tier, owner, premium, name, iconUrl, design) em SealBadge. */
@@ -178,11 +174,16 @@ function PieceLayout({ anatomy, pieces, side, sealsOf, onPiece }: { anatomy: Pie
  * inteiro (área de clique estendida); botões internos ficam por cima. `compact` usa miniatura, título, preço e a
  * assinatura da anatomia. Em pré-visualização (href "#") e no detalhe expandido as ações ficam de fora.
  */
-export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra, footer, headerExtra }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode;
+export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra, footer, headerExtra, flip = true }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode;
   /** ampliado (RF7.CA11): botões do dono, sempre DENTRO do card, depois das ações do post */ footer?: ReactNode;
-  /** ampliado no modal: voltar/fechar no próprio cabeçalho do card (borda do card = borda do modal) */ headerExtra?: ReactNode }) {
+  /** ampliado no modal: voltar/fechar no próprio cabeçalho do card (borda do card = borda do modal) */ headerExtra?: ReactNode;
+  /** verso com o Hype (↻) nas grades e no feed; desligado na prévia e no card ampliado (lá a análise abre direto) */ flip?: boolean }) {
   const detail = useDetailModal();
   const preview = href === "#";
+  const flippable = flip && !preview && !expanded;
+  const hype = useHypeSummary("SCHEME", scheme.id, !preview);
+  const hypeState = hypeViewState(hype.summary, hype);
+  const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || preview || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
   const { t, fmtMoney, relative } = useI18n();
@@ -225,7 +226,9 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
     <p className="c-priceline">
       {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={badges} />}
       <span className="c-total tabular">{total != null ? fmtMoney(total, "BRL") : t("anatomy.noPrice")}</span>
-      <HypeBadge score={scheme.hypeScore} />
+      {!preview && <HypeBadge state={hypeState} summary={hype.summary} className="c-hype" />}
+      {flippable && <CardFlipButton side="front" className="c-flip" />}
+      {expanded && !preview && <button type="button" className="btn btn-ghost btn-sm c-hype-more" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
     </p>
   );
   const titleBlock = (
@@ -239,7 +242,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
-  return (
+  const card = (
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
@@ -291,6 +294,15 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       {!preview && <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact} reactions={expanded} />}
       {footer && <div className="c-owner">{footer}</div>}
       {extra && <div className="c-extra">{extra}</div>}
+      {analysis && <HypeAnalyticsDrawer type="SCHEME" id={scheme.id} name={scheme.title} open={analysis} onClose={() => setAnalysis(false)} />}
     </article>
+  );
+  if (!flippable) return card;
+  // frente = o post (identidade + moda + social); verso = HYPE ANALYTICS do look
+  return (
+    <FashionCard name={scheme.title}>
+      <FashionCardFront>{card}</FashionCardFront>
+      <FashionCardBack><HypeCardBack type="SCHEME" id={scheme.id} name={scheme.title} /></FashionCardBack>
+    </FashionCard>
   );
 }

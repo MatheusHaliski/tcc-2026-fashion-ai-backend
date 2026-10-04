@@ -1,0 +1,108 @@
+@startuml RF1_Examinador_Classes
+title RF1.CA07/CA09 — Verificação do emissor e Central do emissor: classes\nDiagrama de classes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+enum ApprovalStatus {
+  PENDENTE
+  AJUSTES
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+class User <<Entity users>> {
+  id : UUID
+  username, displayName, email
+  profileType : ProfileType
+  status : AccountStatus
+  emailVerified, verified : boolean
+}
+interface ReviewableProfile {
+  reviewStatus() : ApprovalStatus
+  reviewAttempts : int
+  reviewSubmittedAt : Instant
+  reviewReasons : csv
+  reviewChecklist : json
+  reviewOwnerMessage : String
+  approvedBy, approvedAt, verificationNotes
+  publicName() : String
+}
+class BrandProfile <<Entity brand_profiles>> {
+  brandName, slug, logoUrl
+  cnpj (cifrado), storeUrl, commercialContact
+  activityProofUrl (restricted/)
+  documentVerified : boolean
+}
+class CelebrityProfile <<Entity celebrity_profiles>> {
+  stageName, slug, realName
+  verificationUrl, representationContact
+  identityProofUrl (restricted/)
+  sealConsentGranted, requiresSealReview
+}
+class IssuerVerificationPolicy {
+  VERSION = "1.0"
+  MAX_SUBMISSIONS = 5
+  SLA_BUSINESS_DAYS = 3
+  RESUBMIT_SLA_BUSINESS_DAYS = 2
+  BRAND, CELEBRITY : List<Criterion>
+  REASONS : List<String>
+  +checks(User, ReviewableProfile) : List<Check>
+  +verificationCode(userId) : String
+  +validCnpj(String) : boolean
+  +webUrl(String) : boolean
+}
+class Criterion <<record>> {
+  code : String
+  mandatory : boolean
+}
+class Check <<record>> {
+  code : String
+  mandatory : boolean
+  auto : OK | FALHA | ANALISTA
+  detail : String
+}
+class IssuerReviewService {
+  +submitted(userId)
+  ~notifyAdmins(userId)
+  +emailConfirmed(User)
+  +status(CurrentUser) : Map
+  +resubmit(CurrentUser, ResubmitCommand) : Map
+  +queue(admin) : Map
+  +document(admin, userId, kind) : byte[]
+  +decide(admin, userId, DecisionCommand) : Map
+}
+class ResubmitCommand <<record>> {
+  message, storeUrl, commercialContact
+  verificationUrl, representationContact
+  documentUrl, realName
+}
+class DecisionCommand <<record>> {
+  decision : APROVAR | AJUSTES | RECUSAR
+  reasons : List<String>
+  notes : String
+  checklist : Map<String, Boolean>
+}
+User "1" -- "0..1" BrandProfile
+User "1" -- "0..1" CelebrityProfile
+BrandProfile ..|> ReviewableProfile
+CelebrityProfile ..|> ReviewableProfile
+ReviewableProfile ..> ApprovalStatus
+User ..> ProfileType
+IssuerVerificationPolicy *-- Criterion
+IssuerVerificationPolicy ..> Check : checks()
+IssuerReviewService --> IssuerVerificationPolicy
+IssuerReviewService ..> ReviewableProfile
+IssuerReviewService ..> ResubmitCommand
+IssuerReviewService ..> DecisionCommand
+@enduml

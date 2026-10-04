@@ -27,7 +27,11 @@ public class LookbookController {
     private final DailyLookService dailyLooks;
     private final HypeScoreService hype;
 
-    public LookbookController(LookbookService lookbook, DailyLookService dailyLooks, HypeScoreService hype) {
+    private final br.com.fashionai.application.hype.HypeScoreConfig hypeV2;
+
+    public LookbookController(LookbookService lookbook, DailyLookService dailyLooks, HypeScoreService hype,
+                              br.com.fashionai.application.hype.HypeScoreConfig hypeV2) {
+        this.hypeV2 = hypeV2;
         this.lookbook = lookbook;
         this.dailyLooks = dailyLooks;
         this.hype = hype;
@@ -189,9 +193,11 @@ public class LookbookController {
     }
 
     @GetMapping("/api/hype/method")
-    @Operation(summary = "RF6 — Como o Hype Score é calculado (fórmulas, pesos e faixas)")
+    @Operation(summary = "RF6 — Como o Hype Score é calculado (v1 do Look do Dia + configuração ativa do HypeScore v2)")
     public Map<String, Object> hypeMethod() {
-        return hype.describe();
+        Map<String, Object> out = new java.util.LinkedHashMap<>(hype.describe());
+        out.put("v2", hypeV2.describe());
+        return out;
     }
 
     @GetMapping("/api/hype/groups")
