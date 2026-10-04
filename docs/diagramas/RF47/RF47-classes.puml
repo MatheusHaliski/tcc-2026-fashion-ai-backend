@@ -46,6 +46,8 @@ class CatalogProduct {
   +ingestionStatus: CatalogIngestionStatus
   +dedupKey: String
   +searchText: String
+  +description: String
+  +designJson: String (JSON)
   +ownersCount: int
   +firstSeenAt / lastVerifiedAt: Instant
 }
@@ -141,6 +143,28 @@ class CatalogService {
   +addToWardrobe(CurrentUser, AddRequest): PieceView
   +catalogBrands(): List<Map>
 }
+class DesignTraits <<record>> {
+  +pattern: String
+  +logoPlacement: String
+  +logoSize: String
+  +sides: Set<String>
+  +baseColors: List<String>
+  +printColors: List<String>
+  +anyColors: List<String>
+  +consumed: Set<String>
+  +source: LOCAL | AI | CATALOG
+}
+class CatalogDesignInterpreter {
+  +interpret(String): DesignTraits
+  +ofProduct(name, description, colorName, color): DesignTraits
+}
+class CatalogTextInterpreter {
+  +interpret(UUID, String): DesignTraits
+}
+class CatalogMatchScorer {
+  +score(Intent, Candidate, Double): Score
+  ~design(DesignTraits, Candidate, List<Reason>): double
+}
 class CatalogIngestService {
   +resolveBrand(String, boolean): Optional<Brand>
   +upsert(ProductInput, CatalogIngestionStatus, boolean): Result
@@ -158,6 +182,13 @@ WardrobeItem "*" ..> "0..1" CatalogVariant : catalogVariantId
 CatalogProduct --> CatalogIngestionStatus
 CatalogProduct --> CatalogSourceStatus
 CatalogSource --> CatalogSourceType
+CatalogService --> CatalogTextInterpreter : interpreta o texto
+CatalogTextInterpreter --> CatalogDesignInterpreter : leitura local
+CatalogTextInterpreter ..> DesignTraits
+CatalogService --> CatalogMatchScorer : ranqueia
+CatalogMatchScorer ..> DesignTraits : intenção × produto
+CatalogIngestService ..> CatalogDesignInterpreter : design da descrição
+CatalogProduct ..> DesignTraits : designJson
 CatalogImage --> CatalogImageType
 CatalogImage --> CatalogImageUsage
 WardrobeItem --> ImageOrigin

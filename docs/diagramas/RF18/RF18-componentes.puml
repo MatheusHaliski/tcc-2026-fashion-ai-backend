@@ -1,5 +1,5 @@
 @startuml RF18_Componentes
-title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de componentes — gerado do código (telas → controllers → serviços → repositórios)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -15,49 +15,40 @@ skinparam database {
   BorderColor #4A4852
 }
 left to right direction
-
 package "Frontend (Next.js)" {
-  component "try-on/page.tsx\n(4 lugares, limpar, gerar imagem)" as FE0
-  component "components/three/avatar-viewer\n(AvatarViewer — palco 3D)" as FE1
-  component "lib/avatar3d (body-spec,\ndefault-outfit)" as FE2
+  component "try-on/page.tsx\n(Provador virtual)" as P
+  component "components/catalog/catalog-search.tsx\n(modo navegação, botão Provar)" as CSF
+  component "components/three/fitting-room-scene.tsx\n(loja 3D + Avatar)" as SCN
+  component "components/three/mannequin.tsx\n(prévia projetada)" as MAN
+  component "lib/tryon/fitting-room.ts\n(wearItem, resolveEnvironment,\nenvironmentFor, encode/decodeTryOn)" as ENV
 }
 package "fai-web · controllers" {
-  [TryOnController\nGET /api/try-on\nPUT /api/try-on/preferences\nPOST /api/try-on/renders\nPOST /api/try-on/schemes] as C
+  component "TryOnController\nGET /api/try-on" as TC
+  component "CatalogController\nGET /api/catalog/stores\nGET /api/catalog/search\nGET /api/catalog/products/{id}\nPOST /api/pieces/from-catalog" as CC
 }
 package "fai-application · services" {
-  [TryOnService] as S
-  [TryOnCompositor\n(imaging)] as CP
-  [MannequinGeometry\nLocalSchemeComposer.slotOf] as GEO
-  [AiEngine\nAiCapability.TRY_ON ·\nTRY_ON_POLISH ·\nCATEGORY_FALLBACK_COMPOSITOR] as AI
-  [Avatar3dService] as AV
-  [MediaService] as M
-  [SchemeService (RF5)] as SS
-  [WardrobeService] as W
+  component "TryOnService" as TS
+  component "CatalogService" as CS
+  component "WardrobeService\n(createFromCatalog)" as WS
 }
 package "fai-infrastructure · adapters" {
-  [FashnTryOnAdapter\n(TryOnProviderPort)] as FASHN
-  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort)] as ST
-  [Repositórios JPA (fai-domain · repository)\nUserPreferencesRepository\nWardrobeItemRepository\nUserRepository · SchemeRepository\nUserConsentRepository] as REPOS
+  component "Repositórios JPA\n(UserPreferences, UserAvatar3d,\nWardrobeItem, Brand, CatalogProduct,\nCatalogVariant, CatalogImage)" as REP
 }
-database "MySQL · fashionai_app\n• user_preferences\n• wardrobe_items\n• photos\n• schemes · scheme_items\n• user_consents\n• ai_inference_logs" as DB
-cloud "FASHN.ai\n(try-on remoto)" as EXT
-
-FE0 --> C : chama HTTPS/JSON
-FE0 --> FE1 : veste peças no avatar
-FE1 --> FE2 : usa
-C --> S : chama
-S --> GEO : resolve lugar/camada
-S --> AV : lê avatar (manequim)
-S --> W : owned(peça)
-S --> AI : execute(TRY_ON)
-AI --> CP : render(allowExternal)
-CP --> FASHN : tryOn()
-FASHN --> EXT : HTTPS
-S --> M : grava PNG + Photo
-M --> ST : put()
-S --> SS : create(origin PROVADOR)
-S --> REPOS : lê/grava
-AI --> REPOS : lê consentimento / grava inferência
-REPOS --> DB : JPA/Flyway
-note bottom of AI : ver RF24 (motor de IA) —\nsem consentimento degrada para o compositor local
+database "MySQL\n• user_preferences\n• user_avatar3d\n• wardrobe_items\n• brands\n• catalog_products\n• catalog_variants\n• catalog_images" as DB
+component "Navegador\nsessionStorage fai.tryon.fitting\nlocalStorage fai.tryon.saved" as BR
+P --> CSF : usa
+P --> ENV : decide o ambiente
+P --> SCN : environment + pieces
+SCN --> MAN : veste o Avatar
+P --> TC : chama
+P --> CC : chama
+CSF --> CC : busca
+TC --> TS : chama
+CC --> CS : chama
+CS --> WS : cria por referência
+TS --> REP : lê
+CS --> REP : lê/grava
+WS --> REP : grava
+REP --> DB : SQL
+P --> BR : prova da sessão e provas salvas
 @enduml

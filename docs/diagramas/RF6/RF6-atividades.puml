@@ -1,0 +1,106 @@
+@startuml RF6_Atividades
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /lookbook (ou /u/{username});
+|Frontend (u/[username] · lookbook-tabs)|
+:/lookbook redireciona para /u/{seu usuário}?tab=...;
+:GET /api/users/{ownerId}/lookbook;
+|Backend (LookbookController · LookbookService)|
+:overview(viewer, ownerId): carrega peças (sem ARCHIVED)\ne esquemas (sem ARCHIVED);
+if (Visitante é o dono?) then (não)
+  :Filtra por guard.canView (visibilidade da peça/esquema\ne do perfil); só esquemas PUBLISHED;
+  note right: abas de salvos e Look do Dia ficam com contagem 0 para visitante
+else (sim)
+endif
+:Monta as abas: closet · looks · saved_looks · saved_pieces\n· daily · capsule · room (peças e esquemas nunca na mesma aba);
+|Frontend (u/[username] · lookbook-tabs)|
+if (Closet vazio?) then (sim)
+  :Estado vazio com ação "Adicionar nova peça" → /pieces/new;
+  stop
+endif
+|Pessoa|
+if (Qual aba?) then (Closet Digital)
+  |Frontend (u/[username] · lookbook-tabs)|
+  :GET /api/users/{ownerId}/closet (filtros, busca, ordenação);
+  note right: clicar num item abre o detalhe — ver RF7
+elseif (Looks Salvos / Peças salvas)
+  |Frontend (u/[username] · lookbook-tabs)|
+  :GET /api/me/saved-looks?occasion= · GET /api/me/saved-pieces?category=;
+  |Pessoa|
+  if (Ação no salvo?) then (favoritar)
+    |Backend (LookbookController · LookbookService)|
+    :PUT /api/me/saved-looks/{schemeId}/favorite\n(peça: PUT /api/interactions/PIECE/{id}/saves/favorite);
+  else (remover)
+    |Backend (LookbookController · LookbookService)|
+    :DELETE /api/me/saved-looks/{schemeId}\n(peça: POST /api/interactions/PIECE/{id}/saves alterna);
+  endif
+elseif (Look do Dia)
+  |Backend (LookbookController · LookbookService)|
+  :GET /api/me/daily-look-tab?withAi=;
+  :DailyLookService.today: sem registro de hoje,\nmaterializa cópia do último (materializedFrom);
+  if (Há Look do Dia?) then (sim)
+    :HypeScoreService.panel → grava hype_score_metrics\n(engajamento, tendência, faixa HypeScoreBand);
+    |Pessoa|
+    :Avalia: ADOREI / NAO_USEI / NAO_GOSTEI;
+    |Backend (LookbookController · LookbookService)|
+    :PUT /api/me/daily-looks/{date}/feedback;
+  else (não)
+    :Estado vazio: marcar look salvo, Autopiloto ou Vista-me;
+    |Pessoa|
+    :Escolhe um esquema e marca;
+    |Backend (LookbookController · LookbookService)|
+    :POST /api/me/daily-look → DailyLookService.register (MANUAL);
+    if (Alguma peça indisponível?) then (sim)
+      #FFE3E3:409 PECA_INDISPONIVEL;
+      stop
+    endif
+  endif
+else (Agrupamentos)
+  |Backend (LookbookController · LookbookService)|
+  if (Sugestão por IA ou manual?) then (IA)
+    :POST /api/me/hype-groups/suggestions?type=PIECE|SCHEME;
+    if (Acervo pequeno?) then (sim)
+      #FFE3E3:422 ACERVO_PEQUENO;
+      stop
+    endif
+    :AiEngine.local(ACERVO_GROUPING) — cluster por estilo,\nocasião, cores e marcas → grava acervo_groups;
+    note right: sugestões sempre descartáveis (DELETE /api/me/hype-groups/{id}) — RF24.CA05
+  else (manual)
+    :POST /api/groupings {type, label, coverUrl, atmospherePrompt, período};
+    :POST /api/groupings/{id}/items {schemeIds, pieceIds};
+    note right
+      GroupingType permitido depende do perfil
+      (MARCA, CELEBRIDADE ou PESSOAL);
+      era de celebridade = ATMOSFERA, nunca RETRATO
+      (CelebrityPromptValidator — HU-RF6.CA19)
+    end note
+  endif
+endif
+|Frontend (u/[username] · lookbook-tabs)|
+:Atualiza a aba;
+stop
+@enduml

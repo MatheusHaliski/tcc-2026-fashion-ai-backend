@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RF47 · Ingestão incremental de produtos por JSON (lista de objetos) ou CSV.
+"""RF47 · Ingestão incremental de produtos por JSON (lista de objetos), JSONL (um por linha) ou CSV.
 
     python scripts/catalog/import_products.py ./data/catalog/products/nike.json [--dry-run] [--verbose]
     python scripts/catalog/import_products.py ./lote.csv --batch-size 200 [--no-create-brands]
@@ -28,6 +28,11 @@ def read_items(path: Path) -> Iterator[tuple[str, dict]]:
         with path.open(newline="", encoding="utf-8-sig") as fh:
             for i, row in enumerate(csv.DictReader(fh), 2):
                 yield f"{path.name}:{i}", {k.strip(): (v.strip() if isinstance(v, str) else v) for k, v in row.items() if k}
+    elif path.suffix.lower() == ".jsonl":
+        with path.open(encoding="utf-8") as fh:                   # saída do collect_official.py: um produto por linha
+            for i, line in enumerate(fh, 1):
+                if line.strip():
+                    yield f"{path.name}:{i}", json.loads(line)
     else:
         data = json.loads(path.read_text(encoding="utf-8"))
         items = data if isinstance(data, list) else data.get("products", [])
@@ -37,7 +42,7 @@ def read_items(path: Path) -> Iterator[tuple[str, dict]]:
 
 def main(argv=None) -> int:
     ap = parser("Importa produtos (JSON/CSV) no catálogo FashionAI")
-    ap.add_argument("files", nargs="+", help="arquivos .json ou .csv")
+    ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl ou .csv")
     ap.add_argument("--batch-size", type=int, default=100, help="itens entre linhas de progresso")
     ap.add_argument("--no-create-brands", action="store_true", help="recusa itens de marcas que ainda não existem")
     ap.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")

@@ -1,152 +1,169 @@
 [
- {
-  "name": "Nike",
-  "country": "US",
-  "website": "https://www.nike.com",
-  "sources": [
-   {
-    "domain": "nike.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "US"
-   },
-   {
-    "domain": "nike.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Adidas",
-  "country": "DE",
-  "website": "https://www.adidas.com",
-  "sources": [
-   {
-    "domain": "adidas.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "DE"
-   },
-   {
-    "domain": "adidas.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Lacoste",
-  "country": "FR",
-  "website": "https://www.lacoste.com",
-  "sources": [
-   {
-    "domain": "lacoste.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "FR"
-   }
-  ]
- },
- {
-  "name": "Levi's",
-  "country": "US",
-  "website": "https://www.levi.com",
-  "sources": [
-   {
-    "domain": "levi.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "US"
-   },
-   {
-    "domain": "levi.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Puma",
-  "country": "DE",
-  "website": "https://www.puma.com",
-  "sources": [
-   {
-    "domain": "puma.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "DE"
-   }
-  ]
- },
- {
-  "name": "New Balance",
-  "country": "US",
-  "website": "https://www.newbalance.com",
-  "sources": [
-   {
-    "domain": "newbalance.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "US"
-   },
-   {
-    "domain": "newbalance.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Vans",
-  "country": "US",
-  "website": "https://www.vans.com",
-  "sources": [
-   {
-    "domain": "vans.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "US"
-   },
-   {
-    "domain": "vans.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Converse",
-  "country": "US",
-  "website": "https://www.converse.com",
-  "sources": [
-   {
-    "domain": "converse.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "US"
-   },
-   {
-    "domain": "converse.com.br",
-    "source_type": "OFFICIAL_STORE",
-    "country": "BR"
-   }
-  ]
- },
- {
-  "name": "Uniqlo",
-  "country": "JP",
-  "website": "https://www.uniqlo.com",
-  "sources": [
-   {
-    "domain": "uniqlo.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "JP"
-   }
-  ]
- },
- {
-  "name": "Zara",
-  "country": "ES",
-  "website": "https://www.zara.com",
-  "sources": [
-   {
-    "domain": "zara.com",
-    "source_type": "OFFICIAL_BRAND",
-    "country": "ES"
-   }
-  ]
- }
+  {
+    "name": "Nike",
+    "country": "US",
+    "website": "https://www.nike.com",
+    "sources": [
+      {
+        "domain": "nike.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "nike.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Adidas",
+    "country": "DE",
+    "website": "https://www.adidas.com",
+    "sources": [
+      {
+        "domain": "adidas.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DE"
+      },
+      {
+        "domain": "adidas.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Lacoste",
+    "country": "FR",
+    "website": "https://www.lacoste.com",
+    "sources": [
+      {
+        "domain": "lacoste.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "FR"
+      }
+    ]
+  },
+  {
+    "name": "Levi's",
+    "country": "US",
+    "website": "https://www.levi.com",
+    "sources": [
+      {
+        "domain": "levi.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "levi.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Puma",
+    "country": "DE",
+    "website": "https://www.puma.com",
+    "sources": [
+      {
+        "domain": "puma.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "DE"
+      }
+    ]
+  },
+  {
+    "name": "New Balance",
+    "country": "US",
+    "website": "https://www.newbalance.com",
+    "sources": [
+      {
+        "domain": "newbalance.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "newbalance.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Vans",
+    "country": "US",
+    "website": "https://www.vans.com",
+    "sources": [
+      {
+        "domain": "vans.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "vans.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Converse",
+    "country": "US",
+    "website": "https://www.converse.com",
+    "sources": [
+      {
+        "domain": "converse.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "converse.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  },
+  {
+    "name": "Uniqlo",
+    "country": "JP",
+    "website": "https://www.uniqlo.com",
+    "sources": [
+      {
+        "domain": "uniqlo.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "JP"
+      }
+    ]
+  },
+  {
+    "name": "Zara",
+    "country": "ES",
+    "website": "https://www.zara.com",
+    "sources": [
+      {
+        "domain": "zara.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "ES"
+      }
+    ]
+  },
+  {
+    "name": "Calvin Klein",
+    "country": "US",
+    "website": "https://www.calvinklein.com",
+    "sources": [
+      {
+        "domain": "calvinklein.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
+      },
+      {
+        "domain": "calvinklein.com.br",
+        "source_type": "OFFICIAL_STORE",
+        "country": "BR"
+      }
+    ]
+  }
 ]

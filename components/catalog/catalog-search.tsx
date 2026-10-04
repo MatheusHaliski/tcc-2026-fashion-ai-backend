@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "@/lib/api/client";
-import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogVariant, type DiscoverResponse, type SearchResponse } from "@/lib/api/catalog";
+import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guides";
@@ -20,7 +20,7 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse }: {
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -28,6 +28,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   category?: string;
   /** Tipo (subcategoria) escolhido na busca segue para o formulário. */
   onContext?: (ctx: Partial<CatalogSearchContext>) => void;
+  /** Texto do botão de cada resultado (padrão "É esta"; no provador, "Provar"). */
+  pickLabel?: string;
+  /** Frase do painel quando não há resultado e não há "usar minha foto" (padrão: preencher os dados abaixo). */
+  noResultHint?: string;
+  /** Navegar pela loja: só a marca (ou só o tipo) já lista produtos — o provador mostra a vitrine da marca. */
+  browse?: boolean;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -55,7 +61,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const seq = useRef(0);
   const params = useMemo(() => ({ category: category || undefined, subcategory: subcategory || undefined, brand: brand.trim() || undefined,
     q: [query, code].filter((s) => s.trim()).join(" ").trim() || undefined, color: color || undefined }), [category, subcategory, brand, query, code, color]);
-  const enough = enoughToSearch({ brand, subcategory, q: params.q });
+  const enough = browse ? !!(brand.trim() || subcategory || category || (params.q ?? "").length >= 2) : enoughToSearch({ brand, subcategory, q: params.q });
 
   // busca automática com debounce assim que houver contexto suficiente; o botão "Buscar peças" força
   useEffect(() => {
@@ -123,6 +129,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           <Input id="cs-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={placeholderFor(category, t)} autoComplete="off"
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); run(++seq.current); } }} />
           {suggestions.length > 0 && <div className="mt-1.5 flex flex-wrap gap-1.5" aria-label={t("catalog.sugestoes")}>{suggestions.map((s) => <Chip key={s} onClick={() => setQuery(s)}>{s}</Chip>)}</div>}
+          {query.trim() && res?.intent.design && <DesignUnderstood design={res.intent.design} />}
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -149,7 +156,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           )}
           {filtered.length > 0 && (
             <ul className="grid-cards" aria-label={t("catalog.resultados")}>
-              {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} /></li>)}
+              {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} pickLabel={pickLabel} /></li>)}
             </ul>
           )}
           <div className={cn("mt-4 rounded-md border border-line-soft bg-surface-2 p-3", !filtered.length && "border-dashed")}>
@@ -158,7 +165,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
               <Button size="sm" onClick={() => setRefine((r) => !r)} aria-expanded={refine}>{t("catalog.nao_encontrei")}</Button>
               {canSearchOfficial && <Button size="sm" variant="primary" onClick={searchOfficial}>{t("catalog.pesquisar_lojas_oficiais")}</Button>}
               {onUsePhoto ? <Button size="sm" variant="ghost" onClick={() => onUsePhoto(ctx)}>{t("catalog.adicionar_com_minha_foto")}</Button>
-                : <span className="type-body-sm text-muted self-center">{t("catalog.ou_preencha_abaixo")}</span>}
+                : <span className="type-body-sm text-muted self-center">{noResultHint ?? t("catalog.ou_preencha_abaixo")}</span>}
             </div>
             {discover.busy && <p className="mt-2 type-body-sm" role="status" aria-live="polite">{t("catalog.procurando_oficiais", { marca: res.intent.brand ?? "" })}</p>}
             {discover.result && !discover.result.results.length && <p className="mt-2 type-body-sm text-muted" role="status">{discover.result.message}</p>}
@@ -177,12 +184,53 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   );
 }
 
+type T = (k: string, v?: Record<string, unknown>) => string;
+
+/** Rótulo de cada característica única (estampa, posição, tamanho, lados, cores com papel). */
+export function designLabels(d: DesignTraits, t: T): string[] {
+  const out: string[] = [];
+  if (d.pattern) out.push(t(`catalog.design.pattern.${d.pattern}`));
+  if (d.logoPlacement && !(d.logoPlacement === "ALLOVER" && d.pattern === "ALLOVER_LOGO")) out.push(t(`catalog.design.placement.${d.logoPlacement}`));
+  if (d.logoSize) out.push(t(`catalog.design.size.${d.logoSize}`));
+  const sides = d.sides ?? [];
+  if (sides.length) out.push(sides.length > 1 ? t("catalog.design.sides.both") : t(`catalog.design.sides.${sides[0]}`));
+  (d.baseColors ?? []).forEach((c) => out.push(t("catalog.design.base_color", { cor: label(c).toLowerCase() })));
+  (d.printColors ?? []).forEach((c) => out.push(t("catalog.design.print_color", { cor: label(c).toLowerCase() })));
+  (d.anyColors ?? []).forEach((c) => out.push(label(c)));
+  return out;
+}
+function reasonLabel(r: MatchReason, t: T): string {
+  switch (r.facet) {
+    case "pattern": return t(`catalog.design.pattern.${r.value}`);
+    case "placement": return t(`catalog.design.placement.${r.value}`);
+    case "size": return t(`catalog.design.size.${r.value}`);
+    case "sides": return r.value.includes("+") ? t("catalog.design.sides.both") : t(`catalog.design.sides.${r.value}`);
+    case "baseColor": return t("catalog.design.base_color", { cor: label(r.value).toLowerCase() });
+    case "printColor": return t("catalog.design.print_color", { cor: label(r.value).toLowerCase() });
+    default: return label(r.value);
+  }
+}
+
+/** "Entendemos: logo em toda a peça · frente e verso · cinza · preto" — o que foi lido da descrição digitada. */
+function DesignUnderstood({ design }: { design: DesignTraits }) {
+  const { t } = useI18n();
+  const labels = designLabels(design, t);
+  if (!labels.length) return null;
+  return (
+    <div className="design-understood" role="status" aria-live="polite">
+      <span className="type-caption text-muted">{t("catalog.design.entendemos")}</span>
+      {labels.map((l) => <span key={l} className="design-chip">{l}</span>)}
+      <Badge tone={design.source === "AI" ? "thread" : "chalk"}>{design.source === "AI" ? t("catalog.design.lido_pela_ia") : t("catalog.design.lido_do_texto")}</Badge>
+    </div>
+  );
+}
+
 function placeholderFor(category: string, t: (k: string) => string) {
   return category === "shoes_piece" ? t("catalog.ex_tenis") : category === "lower_piece" ? t("catalog.ex_calca") : t("catalog.ex_camiseta");
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: p, onPick }: { product: CatalogProduct; onPick: (variant: CatalogVariant | null) => void }) {
+export function CatalogResultCard({ product: p, onPick, pickLabel }: { product: CatalogProduct; onPick: (variant: CatalogVariant | null) => void; pickLabel?: string }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
   const [variant, setVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
@@ -199,13 +247,23 @@ export function CatalogResultCard({ product: p, onPick }: { product: CatalogProd
         <p className="flex items-center gap-1.5 type-caption text-muted"><BrandLogo name={p.brand?.name} src={p.brand?.logoUrl} size={18} />{p.brand?.name}</p>
         <h3 className="type-h3 leading-tight">{p.productName}</h3>
         <p className="type-body-sm text-muted">{[p.modelName && p.modelName !== p.productName ? p.modelName : null, label(p.subcategory)].filter(Boolean).join(" · ")}</p>
+        {p.description && <p className="catalog-card-desc type-caption text-muted">{p.description}</p>}
+        {(p.matchScore?.reasons?.length ?? 0) > 0 && (
+          <ul className="catalog-reasons" aria-label={t("catalog.design.por_que_esta")}>
+            {p.matchScore!.reasons!.slice(0, 5).map((r) => (
+              <li key={`${r.facet}:${r.value}`} className={cn("catalog-reason", r.ok ? "is-ok" : "is-miss")}>
+                <span aria-hidden>{r.ok ? "✓" : "✗"}</span><span className="sr-only">{r.ok ? t("catalog.design.tem") : t("catalog.design.nao_tem")}</span>{reasonLabel(r, t)}
+              </li>
+            ))}
+          </ul>
+        )}
         {(p.variants?.length ?? 0) > 1 ? (
           <div className="mt-1.5 flex flex-wrap gap-1" role="group" aria-label={t("common.color")}>
             {p.variants!.map((v) => <button key={v.id} type="button" className={cn("catalog-swatch", (variant?.id ?? p.selectedVariant?.id) === v.id && "is-active")} title={v.colorName ?? v.color ?? v.key} aria-label={v.colorName ?? v.color ?? v.key} aria-pressed={(variant?.id ?? null) === v.id} onClick={() => setVariant(v)} style={{ background: tax?.colors?.[v.color ?? ""] ?? "var(--surface-3)" }} />)}
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)}>{t("catalog.e_esta")}</Button>
+        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)}>{pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
     </article>
   );
