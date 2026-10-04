@@ -174,7 +174,7 @@ Toda decisão negativa traz **pelo menos um motivo padronizado** e pode trazer u
 | Recusa e pedido de ajustes exigem ao menos um motivo padronizado | `AdminService.decide` |
 | Limite de 5 envios; reenvio só com *Ajustes solicitados* ou *Recusado* | `IssuerReviewService.resubmit` |
 | Prazo da primeira análise contado da confirmação do e-mail; dos reenvios, da data do reenvio | `IssuerReviewService.emailConfirmed` |
-| Nome civil obrigatório no cadastro de celebridade e corrigível no reenvio | `IdentityService`, `IssuerReviewService.resubmit` |
+| Nome civil obrigatório no cadastro de celebridade e em todo reenvio (corrigível; sem ele o reenvio é recusado) | `IdentityService`, `IssuerReviewService.resubmit` |
 | Documentos só para ADMIN, com auditoria a cada abertura | `GET /api/admin/approvals/{id}/documents/{tipo}` |
 | Checklist, motivos e envios gravados no perfil e na auditoria | migração `V31__politica_verificacao_emissor.sql` |
 

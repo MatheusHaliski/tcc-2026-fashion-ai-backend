@@ -150,6 +150,8 @@ function Resubmit({ d, onDone }: { d: IssuerReview; onDone: () => void }) {
   const [busy, setBusy] = useState(false); const [err, setErr] = useState<Record<string, string>>({});
   if (!d.canResubmit) return <Card><p className="type-body-sm">{t("issuerReview.limite_atingido", { max: d.maxAttempts })}</p></Card>;
   async function send() {
+    // nome civil é critério obrigatório da verificação: sem ele o reenvio voltaria à fila sem poder ser aprovado
+    if (celeb && !f.realName.trim()) { setErr({ realName: t("issuerReview.nome_civil_obrigatorio") }); return; }
     setBusy(true); setErr({});
     try {
       await api.post("/api/me/issuer-review/resubmit", { message: f.message || null, documentUrl: doc,
@@ -172,8 +174,8 @@ function Resubmit({ d, onDone }: { d: IssuerReview; onDone: () => void }) {
         <Field label={t(celeb ? "issuerReview.campo_representante" : "issuerReview.campo_contato")} id="rs-contact">
           <Input id="rs-contact" maxLength={160} value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} />
         </Field>
-        {celeb && <Field label={t("issuerReview.campo_nome_civil")} id="rs-realname" hint={t("issuerReview.campo_nome_civil_dica")}>
-          <Input id="rs-realname" maxLength={160} autoComplete="name" value={f.realName} onChange={(e) => setF({ ...f, realName: e.target.value })} />
+        {celeb && <Field label={t("issuerReview.campo_nome_civil")} id="rs-realname" required hint={t("issuerReview.campo_nome_civil_dica")} error={err.realName}>
+          <Input id="rs-realname" maxLength={160} autoComplete="name" required error={!!err.realName} value={f.realName} onChange={(e) => setF({ ...f, realName: e.target.value })} />
         </Field>}
       </div>
       <PhotoPicker kind={d.editable.documentKind ?? (celeb ? "identity" : "activity-proof")} value={doc} onChange={setDoc} error={err.documentUrl}

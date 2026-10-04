@@ -4217,6 +4217,7 @@
   "issuerReview.status_titulo": "Estado de la verificación",
   "issuerReview.campo_nome_civil": "Nombre civil (como en el documento)",
   "issuerReview.campo_nome_civil_dica": "Se compara con el documento de identidad. No aparece en el perfil.",
+  "issuerReview.nome_civil_obrigatorio": "Indica el nombre civil, tal como figura en el documento.",
   "adminApprovals.aguardando_email": "esperando la confirmación del correo",
   "backgroundStudio.cartela_modal_dica": "La paleta define la estación que muestra el layout Paleta estacional; la animación cae sobre el arte. Nada cambia en la tarjeta hasta que apliques.",
   "backgroundStudio.cartela_sem_estacao": "El look aún no tiene estación: elige una paleta arriba (o completa la estación en el paso 3) para que la tarjeta use este layout.",

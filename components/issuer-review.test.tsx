@@ -38,6 +38,16 @@ describe("Central do emissor", () => {
     expect(body).toMatchObject({ storeUrl: "https://lume.com", message: "Novo comprovante" });
   });
 
+  it("celebridade sem nome civil não reenvia com o campo vazio", async () => {
+    const celeb: IssuerReview = { ...REVIEW, profileType: "CELEBRIDADE", reasons: ["DADOS_INCOMPLETOS"],
+      editable: { verificationUrl: "https://instagram.com/lume", representationContact: null, realName: null, hasDocument: true, documentKind: "identity" } };
+    const { calls } = loggedAs(undefined, { "GET /api/me/issuer-review": celeb });
+    renderApp(<Central />);
+    fireEvent.click(await screen.findByRole("button", { name: /Reenviar para análise/ }));
+    expect(await screen.findByText("Informe o nome civil, como está no documento.")).toBeTruthy();
+    expect(calls.some((c) => c.path === "/api/me/issuer-review/resubmit")).toBe(false);
+  });
+
   it("celebridade corrige o nome civil no reenvio", async () => {
     const celeb: IssuerReview = { ...REVIEW, profileType: "CELEBRIDADE", reasons: ["DADOS_INCOMPLETOS"],
       editable: { verificationUrl: "https://instagram.com/lume", representationContact: null, realName: "", hasDocument: true, documentKind: "identity" } };
