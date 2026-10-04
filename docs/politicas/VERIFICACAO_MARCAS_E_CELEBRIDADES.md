@@ -176,7 +176,7 @@ Toda decisão negativa traz **pelo menos um motivo padronizado** e pode trazer u
 | Prazo da primeira análise contado da confirmação do e-mail; dos reenvios, da data do reenvio | `IssuerReviewService.emailConfirmed` |
 | Nome civil obrigatório no cadastro de celebridade e em todo reenvio (corrigível; sem ele o reenvio é recusado) | `IdentityService`, `IssuerReviewService.resubmit` |
 | Documentos só para ADMIN, com auditoria a cada abertura | `GET /api/admin/approvals/{id}/documents/{tipo}` |
-| Checklist, motivos e envios gravados no perfil e na auditoria | migração `V31__politica_verificacao_emissor.sql` |
+| Checklist, motivos e envios gravados no perfil e na auditoria | migração `V33__politica_verificacao_emissor.sql` |
 
 O envio real de e-mails depende de `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` e de um `RESEND_FROM_EMAIL` num
 **domínio verificado no Resend**; sem isso, a notificação no app continua chegando aos administradores.

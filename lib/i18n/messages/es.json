@@ -4310,10 +4310,13 @@
   "sealWizard.texto.year": "Año (sello redondo)",
   "sealWizard.texto.emblem": "Texto del emblema",
   "sealWizard.texto_dica": "Vacío = texto del modelo · hasta {n} caracteres",
-  "backgroundStudio.cartela_modal_dica": "La paleta define la estación que muestra el layout Paleta estacional; la animación cae sobre el arte. Nada cambia en la tarjeta hasta que apliques.",
-  "backgroundStudio.cartela_sem_estacao": "El look aún no tiene estación: elige una paleta arriba (o completa la estación en el paso 3) para que la tarjeta use este layout.",
-  "backgroundStudio.escolher_cartela_e_animacao": "Elegir paleta y animación",
-  "backgroundStudio.cartela_pela_estacao": "por la estación de los datos",
-  "backgroundStudio.aplicar_cartela": "Aplicar",
-  "dnaBuilder.cartela_no_modal": "La paleta y la animación de este layout se eligen en el diálogo que se abre al hacer clic en Paleta estacional. Sin paleta, vale la estación de los datos."
+  "issuerReview.painel": "Panel del examinador",
+  "issuerReview.passo_admins": "Administradores de FashionAI avisados",
+  "issuerReview.admins_avisados": "Recibimos el registro y enviamos un correo a los administradores pidiendo la aprobación del perfil.",
+  "issuerReview.admins_fila": "El registro está en la cola de aprobación de los administradores.",
+  "issuerReview.em_analise_dica": "Un administrador revisa los documentos y decide. Recibes la respuesta aquí, en las notificaciones y por correo.",
+  "issuerReview.motivo": "Motivo: {v}",
+  "issuerReview.abrir_metricas": "Abrir métricas del emisor",
+  "issuerReview.revisar_cadastro": "Revisar datos del registro",
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estación real de la tarjeta</0> — elegir la Paleta estacional sobrescribe el arte de fondo manual (etapas 2–3 del Background Studio)."
 }

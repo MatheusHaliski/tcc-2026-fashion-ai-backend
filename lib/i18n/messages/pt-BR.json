@@ -4310,10 +4310,13 @@
   "sealWizard.texto.year": "Ano (selo redondo)",
   "sealWizard.texto.emblem": "Texto do emblema",
   "sealWizard.texto_dica": "Vazio = texto do modelo · até {n} caracteres",
-  "backgroundStudio.cartela_modal_dica": "A cartela define a estação que o layout Cartela sazonal mostra; a animação cai por cima da arte. Nada muda no card até você aplicar.",
-  "backgroundStudio.cartela_sem_estacao": "O look ainda não tem estação: escolha uma cartela acima (ou preencha a estação na etapa 3) para o card usar este layout.",
-  "backgroundStudio.escolher_cartela_e_animacao": "Escolher cartela e animação",
-  "backgroundStudio.cartela_pela_estacao": "pela estação dos dados",
-  "backgroundStudio.aplicar_cartela": "Aplicar",
-  "dnaBuilder.cartela_no_modal": "A cartela e a animação deste layout são escolhidas no modal que abre ao clicar em Cartela sazonal. Sem cartela, vale a estação dos dados."
+  "issuerReview.painel": "Painel do examinador",
+  "issuerReview.passo_admins": "Administradores do FashionAI avisados",
+  "issuerReview.admins_avisados": "Recebemos o cadastro e enviamos um e-mail aos administradores pedindo a aprovação do perfil.",
+  "issuerReview.admins_fila": "O cadastro está na fila de aprovação dos administradores.",
+  "issuerReview.em_analise_dica": "Um administrador confere os documentos e decide. Você recebe a resposta aqui, nas notificações e por e-mail.",
+  "issuerReview.motivo": "Motivo: {v}",
+  "issuerReview.abrir_metricas": "Abrir métricas do emissor",
+  "issuerReview.revisar_cadastro": "Revisar dados do cadastro",
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estação real do card</0> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio)."
 }
