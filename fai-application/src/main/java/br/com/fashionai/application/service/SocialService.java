@@ -16,6 +16,8 @@ import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.Share;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ReactionType;
@@ -163,6 +165,14 @@ public class SocialService {
         }
     }
 
+    /** HypeScore v2 — sinal de comportamento sobre peça/look (DNA de estilo não tem Hype). Filtrado no HypeSignalRecorder. */
+    private void hypeSignal(Target t, UUID actorId, HypeSignalType signal) {
+        HypeEntityType type = t.type() == TargetType.PIECE ? HypeEntityType.PIECE : t.type() == TargetType.SCHEME ? HypeEntityType.SCHEME : null;
+        if (type != null) {
+            events.publishEvent(new DomainEvents.HypeSignal(signal, type, t.id(), actorId, t.owner().getId()));
+        }
+    }
+
     // ------------------------------------------------------------------ CA01–CA03 curtir e reações
     @Transactional
     public Map<String, Object> react(CurrentUser user, TargetType type, UUID id, ReactionType reaction) {
@@ -195,6 +205,7 @@ public class SocialService {
             if (reaction == ReactionType.LIKE) {
                 // RF35 §5.2 — curtida recebida (+1, 50/dia no total; interação consigo mesmo não pontua)
                 events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "LIKE", id));
+                hypeSignal(t, user.id(), HypeSignalType.LIKE_CREATED);
             }
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -254,6 +265,7 @@ public class SocialService {
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_COMMENT, type.name(), id,
                 Msg.k("social.comentou_em", user.username(), t.title()), text.length() > 120 ? text.substring(0, 117) + "…" : text, null);
         events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "COMMENT", c.getId()));
+        hypeSignal(t, user.id(), HypeSignalType.COMMENT_CREATED);
         return Map.of("id", c.getId(), "author", Views.user(c.getAuthor()), "content", c.getContent(), "createdAt", String.valueOf(c.getCreatedAt()));
     }
 
@@ -287,6 +299,7 @@ public class SocialService {
         s.setTargetId(id);
         saved.save(s);
         bump(t, "saves", 1);
+        hypeSignal(t, user.id(), HypeSignalType.SAVE_CREATED);
         return Map.of("saved", true);
     }
 
@@ -296,6 +309,9 @@ public class SocialService {
         SavedItem s = saved.findByUserIdAndTargetTypeAndTargetId(user.id(), type, id)
                 .orElseThrow(() -> ApiException.notFound(Msg.t("common.look_salvo")));
         s.setFavorite(favorite);
+        if (favorite) {
+            hypeSignal(target(user, type, id), user.id(), HypeSignalType.FAVORITE_CREATED);
+        }
         return Map.of("favorite", favorite);
     }
 
@@ -329,6 +345,7 @@ public class SocialService {
         }
         shares.save(s);
         bump(t, "shares", 1);
+        hypeSignal(t, user.id(), HypeSignalType.SHARE_CREATED);
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REACTION, type.name(), id,
                 "@" + user.username() + " compartilhou \"" + t.title() + "\"", null, Map.of("channel", channel.name()));
         out.put("shareId", s.getId());
@@ -350,6 +367,7 @@ public class SocialService {
         }
         if (type == TargetType.PIECE) {
             bump(t, "remixes", 1);
+            hypeSignal(t, user.id(), HypeSignalType.PIECE_REMIXED);
             WardrobeItem w = (WardrobeItem) t.entity();
             notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REMIX, "PIECE", id,
                     Msg.k("social.remixou_a_peca", user.username(), w.getName()), null, null);

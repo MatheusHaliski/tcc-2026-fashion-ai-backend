@@ -17,6 +17,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { studioOf } from "@/lib/card-art";
 import { CreationSuccess } from "@/components/expanded-card";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface Builder { totalPieces: number; eligiblePieces: number; hiddenPieces?: number; source?: string; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
 interface Orientation { background?: { color?: string | null; gradientPresetId?: string; seasonalPresetId?: string; aura?: { variantId: string }; materialId?: string; cardSkin?: string; animation?: string } | null; occasions?: string[]; styles?: string[]; season?: string | null; mood?: string | null; weather?: string | null }
@@ -104,6 +105,13 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const all = useMemo(() => Object.values(b?.lists ?? {}).flat(), [b]);
   const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
   useEffect(() => { if (b && b.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
+  // ?pieces=a,b — chega com peças já escolhidas (Redescoberta do Hype, "criar look com esta peça")
+  const seed = useSearchParams().get("pieces");
+  useEffect(() => {
+    if (initial || !seed || !b || selected.length) return;
+    const picks = seed.split(",").map((id) => byId.get(id)).filter((p): p is PieceView => !!p);
+    if (picks.length) setSelected(picks.map((p) => ({ id: p.id, slot: slotOf(p) })));
+  }, [b, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   // selos possíveis: a IA procura sozinha na etapa de detalhes, e de novo quando as peças, o estilo ou a ocasião mudam
   const sealKey = `${selected.map((x) => x.id).sort().join(",")}|${[...form.style].sort().join(",")}|${[...form.occasion].sort().join(",")}`;
   useEffect(() => {

@@ -1,0 +1,57 @@
+@startuml RF28_Espelho_Classes
+title RF28 — Vista-me: classes\nDiagrama de classes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+class MirrorState <<Entity mirror_states>> {
+  userId : UUID
+  slotsJson  «upper, lower, dress, shoes,\nouter_layer, accessory»
+  shownCombinationsJson
+  lastPrompt
+}
+class MirrorService {
+  +SLOTS
+  +state(user) / place / remove / clear
+  +suggest(user, slot)
+  +vistaMe(user, prompt, anchors, focus, keep)
+  +another / swap / takeOneOff
+  +useLook / save / draft / grwmStoryboard
+}
+class Interpretation <<record>> {
+  occasion, mood, anchors, constraints, season
+}
+class MirrorPiece <<TS>> {
+  id, name, imageUrl, thumbnailUrl
+  category, subcategory, colorHex
+}
+class Look3dPiece <<TS>> {
+  id, name, slot, category, subcategory
+  imageUrl, colorHex, model3dUrl
+}
+class MirrorStage <<React>> {
+  slots, kelvin
+  +mirrorPieces(slots) : Look3dPiece[]
+  -glassTint(kelvin)
+}
+class AvatarViewer <<React>> {
+  avatar, sex, body, pieces
+  framing : bust|upper|full
+  view, controls, background
+}
+class UserAvatar3d <<Entity user_avatar3d>> {
+  modelVersion, modelJson, adjustJson
+  textureKey, textureModeration
+  publicOnRunway, consentAt
+}
+MirrorService --> MirrorState
+MirrorService ..> Interpretation
+MirrorStage ..> MirrorPiece
+MirrorStage ..> Look3dPiece : converte
+MirrorStage --> AvatarViewer
+AvatarViewer ..> UserAvatar3d : GET /api/me/avatar3d
+@enduml

@@ -42,6 +42,8 @@ import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
@@ -123,6 +125,9 @@ public class WardrobeService {
     private final Guard guard;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    /** HypeScore v2 — estado atual (ordenações e filtro por faixa de Hype do closet) */
+    private final br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores;
+    private final br.com.fashionai.application.hype.HypeScoreConfig hypeConfig;
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
     private final PieceReferenceCatalog pieceReferences;
@@ -145,7 +150,11 @@ public class WardrobeService {
                            Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
                            ApplicationEventPublisher events, BrandLogoService brandLogos,
                            br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles,
-                           PieceReferenceCatalog pieceReferences, OwnMedia ownMedia) {
+                           PieceReferenceCatalog pieceReferences, OwnMedia ownMedia,
+                           br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores,
+                           br.com.fashionai.application.hype.HypeScoreConfig hypeConfig) {
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -1416,8 +1425,36 @@ public class WardrobeService {
     }
 
     // ================================================================== RF6 — Closet Digital
+    /**
+     * Filtros do closet. {@code hypeLevel} é FILTRO (faixa mínima: NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba.
+     * Ordenações: recent, name, price, worn (mais usada), least_worn, idle (mais tempo sem uso) e, do HypeScore v2,
+     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara).
+     */
     public record ClosetFilter(String category, String color, String season, String occasion, String style, String state,
-                               String q, String sort, int page, int size) {
+                               String q, String sort, int page, int size, String hypeLevel) {
+        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort, int page, int size) {
+            this(category, color, season, occasion, style, state, q, sort, page, size, null);
+        }
+    }
+
+    static final java.util.Set<String> HYPE_SORTS = java.util.Set.of("hype", "hype_desc", "hype_asc", "growth", "rarity");
+    /** nomes em português que telas antigas enviavam (antes caíam no padrão e a ordenação era ignorada) */
+    static final Map<String, String> SORT_ALIASES = Map.of("recentes", "recent", "mais_usadas", "worn", "menos_usadas", "least_worn",
+            "nome", "name", "preco", "price", "mais_tempo_sem_uso", "idle");
+
+    /** Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último). */
+    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list) {
+        if (hypeScores == null || hypeConfig == null || list.isEmpty()) {
+            return Map.of();
+        }
+        return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(br.com.fashionai.domain.model.enums.HypeEntityType.PIECE,
+                        list.stream().map(WardrobeItem::getId).toList(), hypeConfig.algorithmVersion()).stream()
+                .collect(Collectors.toMap(br.com.fashionai.domain.model.HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
+    }
+
+    private static Comparator<WardrobeItem> nullsLast(java.util.function.Function<WardrobeItem, BigDecimal> key, boolean desc) {
+        Comparator<BigDecimal> cmp = desc ? Comparator.<BigDecimal>reverseOrder() : Comparator.<BigDecimal>naturalOrder();
+        return Comparator.comparing(key, Comparator.nullsLast(cmp));
     }
 
     @Transactional(readOnly = true)
@@ -1438,8 +1475,22 @@ public class WardrobeService {
                 .filter(w -> blank(f.q()) || contains(w.getName(), f.q()) || contains(w.getBrandName(), f.q())
                         || contains(w.getSubcategory(), f.q()))
                 .collect(Collectors.toCollection(ArrayList::new));
-        Comparator<WardrobeItem> order = switch (f.sort() == null ? "recent" : f.sort()) {
-            case "hype" -> Comparator.comparing((WardrobeItem w) -> w.getHypeScore() == null ? BigDecimal.ZERO : w.getHypeScore()).reversed();
+        String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
+        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel()) ? hypeOf(all) : Map.of();
+        if (!blank(f.hypeLevel()) && hypeConfig != null) {
+            int min = hypeMinimum(f.hypeLevel());
+            all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
+        }
+        java.util.function.Function<WardrobeItem, BigDecimal> score = w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getScore() : null;
+        LocalDate today = LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE);
+        Comparator<WardrobeItem> order = switch (sort) {
+            case "hype", "hype_desc" -> nullsLast(score, true);
+            case "hype_asc" -> nullsLast(score, false);
+            case "growth" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDeltaPoints() : null, true)
+                    .thenComparing(nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getTrend() : null, true));
+            case "rarity" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getRarity() : null, true);
+            case "least_worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).thenComparing(WardrobeItem::getCreatedAt);
+            case "idle" -> Comparator.comparingLong((WardrobeItem w) -> br.com.fashionai.application.hype.HypeQueryService.idleDays(w, today)).reversed();
             case "worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).reversed();
             case "name" -> Comparator.comparing(w -> w.getName().toLowerCase(Locale.ROOT));
             case "price" -> Comparator.comparing((WardrobeItem w) -> w.getPrice() == null ? BigDecimal.ZERO : w.getPrice()).reversed();
@@ -1452,6 +1503,19 @@ public class WardrobeService {
         int to = Math.min(all.size(), from + size);
         List<Views.PieceView> items = all.subList(from, to).stream().map(w -> Views.piece(w, viewerState(viewer, w), null)).toList();
         return new Views.Page<>(items, page, size, all.size(), to < all.size());
+    }
+
+    /** Faixa mínima de Hype → score mínimo (limiares centralizados no HypeScoreConfig). */
+    int hypeMinimum(String level) {
+        int[] t = hypeConfig.levelThresholds();
+        return switch (level.toUpperCase(Locale.ROOT)) {
+            case "NICHE" -> t[0];
+            case "RELEVANT" -> t[1];
+            case "HOT" -> t[2];
+            case "TRENDING" -> t[3];
+            case "VIRAL" -> t[4];
+            default -> 0;
+        };
     }
 
     static boolean stateMatches(WardrobeItem w, String state) {
@@ -1489,6 +1553,9 @@ public class WardrobeService {
         // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
         // e mexer na entidade gerava conflito de versão (409) num simples GET.
         pieces.touchView(w.getId(), owner ? 0 : 1, Instant.now());
+        if (!owner && viewer != null) {
+            events.publishEvent(new DomainEvents.HypeSignal(HypeSignalType.PIECE_VIEWED, HypeEntityType.PIECE, id, viewer.id(), w.getUser().getId()));
+        }
         out.put("piece", Views.piece(w, viewerState(viewer, w), reactionCounts(TargetType.PIECE, w.getId())));
         out.put("fromSchemeId", fromSchemeId);
         out.put("wearstyles", Taxonomy.wearstylesOf(w.getCategory(), Json.csv(w.getOccasionTags())));

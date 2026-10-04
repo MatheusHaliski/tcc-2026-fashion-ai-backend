@@ -1,0 +1,32 @@
+@startuml RF28_Espelho_Estados
+title RF28 — Vista-me: estado do espelho\nMáquina de estados
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Carregando
+Carregando --> SemAvatar : GET /api/me/avatar3d → exists=false
+Carregando --> ComAvatar : exists=true
+state SemAvatar : manequim de referência\n+ convite para criar o avatar
+state ComAvatar : o mesmo avatar do perfil
+SemAvatar --> Vazio
+ComAvatar --> Vazio
+state "Vazio (peças padrão FAI)" as Vazio
+Vazio --> Incompleto : coloca peça
+Incompleto --> Completo : slots obrigatórios preenchidos
+Completo --> Incompleto : "Tira uma coisa" / remover
+Incompleto --> Vazio : limpar
+Completo --> Completo : trocar slot / "outro look"
+Completo --> LookDoDia : "Usar este look hoje"
+Completo --> Salvo : salvar como esquema
+Incompleto --> Rascunho : "Abrir no editor"
+Completo --> Rascunho : "Abrir no editor"
+LookDoDia --> [*]
+Salvo --> [*]
+Rascunho --> [*]
+note right of Vazio : o reflexo nunca aparece\nsem roupa nem descalço
+@enduml

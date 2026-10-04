@@ -71,7 +71,7 @@ class StudioVersionsTest {
         media = mock(MediaService.class);
         service = new WardrobeService(pieces, null, null, null, null, null, null, null, null, mock(ReactionRepository.class),
                 mock(SavedItemRepository.class), null, null, null, media, null, null, null, null, null, null, guard, mock(Audit.class),
-                null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     static Map<String, Object> shot(String id) {
