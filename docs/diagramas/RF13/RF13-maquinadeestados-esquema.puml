@@ -1,0 +1,31 @@
+@startuml RF13_MaquinaDeEstados_Esquema
+!pragma layout smetana
+title RF13 — DnaScheme: ciclo de vida do Esquema de DNA (SchemeStatus) e versões do StyleDna
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "StyleDna (1 por conta)" as Dna {
+  [*] --> Sintetizado : GET /api/me/dna (ensureDna)\nou POST /api/me/dna — snapshot "GERACAO"
+  Sintetizado --> Sintetizado : >= 10 interações novas\nre-síntese — snapshot "EVOLUCAO"
+  Sintetizado --> Sintetizado : PUT /api/me/dna/life\nnova frase — snapshot "EDICAO_VIDA"
+}
+state "DnaScheme" as Esq {
+  [*] --> Rascunho : POST /api/dna-schemes (publish=false)
+  [*] --> Publicado : POST /api/dna-schemes (publish=true)
+  state "DRAFT" as Rascunho
+  state "PUBLISHED" as Publicado
+  state "ARCHIVED" as Arquivado
+  Rascunho --> Publicado : PUT /api/dna-schemes/{id} (publish=true)\npublishedAt = agora
+  Rascunho --> Arquivado : DELETE /api/dna-schemes/{id}
+  Publicado --> Arquivado : DELETE /api/dna-schemes/{id}\nvisibility = PRIVATE
+  Arquivado --> [*]
+}
+Dna --> Esq : stamp(arquétipo, ousadia, frase, paleta)\nno momento da criação
+note right of Publicado : visível a terceiros conforme Visibility\n(PRIVATE / FOLLOWERS / PUBLIC);\nDRAFT nunca é exibido a visitantes
+note right of Arquivado : sai de GET /api/me/dna-schemes;\nexclusão lógica, sem DELETE físico
+note bottom of Dna : cada snapshot vira uma linha em\nstyle_dna_versions (até 20 exibidas)
+@enduml

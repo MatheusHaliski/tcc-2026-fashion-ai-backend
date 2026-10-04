@@ -1,0 +1,70 @@
+@startuml RF45_Componentes
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/pieces/new/page.tsx\n(não usa mais a foto)" as FE0
+  component "lib/capture/capture-guides.ts\n+ components/capture/garment-glyphs.tsx\n(CATEGORY_CARDS, ilustrações)" as FE1
+  component "CaptureRequestCard · CameraCapture\nIdentificationSummary <<planejado>>" as FE2 #FAFAFA
+}
+package "fai-web · controllers" {
+  [WardrobeController\nPOST /api/pieces/analysis · POST /api/pieces] as WC
+  [CaptureController /api/capture/**\n<<planejado>>] as CC #FAFAFA
+  [AdminController ai-review / vision\n<<planejado>>] as AC #FAFAFA
+}
+package "fai-application · services" {
+  [WardrobeService\nanalyzeForCapture · create] as WS
+  [CaptureSessionService\n<<planejado>>] as CSS #FAFAFA
+  package "vision" {
+    [AdaptiveCaptureEngine\n+ CaptureProfiles] as ACE
+    [PhotographyQualityGate] as PQG
+    [LandmarkDetector] as LD
+    [BrandEnsembleResolver\n+ IdentificationHierarchy] as BER
+    [ProductKnowledgeBase] as KB
+    [CanonicalPhotographer\n+ PhotographySpecs] as CPH
+  }
+  [AiEngine (RF24)\nFLAT_LAY_STANDARDIZER · PIECE_ANALYZER\nCONTENT_MODERATOR · BRAND_LOGO_FINDER] as AIE
+}
+package "fai-infrastructure · adapters" {
+  [Repositórios JPA\nCaptureSessionRepository · CaptureRequestRepository\nPieceImageRepository · BrandPredictionRepository\nGarmentLandmarkRepository · GarmentEmbeddingRepository\nModelRegistryEntryRepository · ModelInferenceRepository\nAiReviewItemRepository · TrainingCandidateRepository\nDatasetSourceRepository · Kb*Repository] as REPOS
+  [S3MediaStorageAdapter\nLocalFileMediaStorage] as ST
+  [OnnxTextReader\n(OCR PP-OCRv4 local)] as OCR
+}
+database "MySQL\n• capture_sessions\n• capture_requests\n• piece_images\n• garment_landmarks\n• brand_predictions\n• model_registry\n• model_inferences\n• ai_review_items\n• training_candidates\n• dataset_sources\n• kb_brand_signatures\n• kb_product_lines / kb_product_models\n• garment_embeddings\n• wardrobe_items" as DB
+cloud "Segmentação / visão externas\nrembg · remove.bg · Gemini/Claude visão\n(Roboflow, Cloudinary, Adobe Photoshop: <<planejado>>)" as EXT
+
+FE0 --> WC : chama (HTTPS/JSON)
+FE1 --> FE0 : ilustrações por categoria
+FE2 ..> CC : chama
+WC --> WS : chama
+CC ..> CSS : chama
+AC ..> REPOS : lê/grava
+CSS ..> WS : analyzeForCapture
+CSS ..> ACE : decide
+CSS ..> PQG : evaluate
+CSS ..> LD : detect
+CSS ..> BER : resolve
+CSS ..> CPH : render / detail
+BER --> KB : lê evidências
+KB --> REPOS : lê
+WS --> AIE : chama
+WS --> OCR : lê etiqueta
+AIE --> EXT : chama (com fallback)
+CSS ..> ST : grava original e derivados
+WS --> REPOS : grava
+REPOS --> DB : JPA/Flyway (V29)
+@enduml

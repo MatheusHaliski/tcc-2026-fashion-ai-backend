@@ -1,0 +1,67 @@
+@startuml RF13_Sequencia
+title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+participant "Frontend\n/dna · DnaBuilder" as FE
+participant "DnaController" as C
+participant "DnaService" as S
+participant "AiEngine (RF24)\nDNA Synthesizer" as AI
+participant "MediaService\n(MediaStoragePort)" as M
+database "MySQL" as DB
+U -> FE: abre "DNA de Estilo"
+FE -> C: GET /api/me/dna
+C -> S: overview(user)
+S -> DB: SELECT style_dna, wardrobe_items, daily_looks
+alt sem DNA sintetizado
+  S -> AI: local(DNA_SYNTHESIZER) · LocalDnaSynthesizer
+  AI --> S: arquétipo, ousadia, paleta, silhueta
+  S -> AI: text(DNA_SYNTHESIZER) · frase de identidade
+  AI --> S: frase (ou fallback local)
+  S -> DB: INSERT style_dna + style_dna_versions ("GERACAO")
+else interações desde a síntese >= 10
+  S -> DB: UPDATE style_dna + INSERT style_dna_versions ("EVOLUCAO")
+  S -> DB: INSERT notifications (AI_JOB_FINISHED)
+end
+S --> FE: 200 {prerequisites, dna, versions, lifeForm}
+FE -> C: GET /api/dna-schemes/builder
+C -> S: builder(user)
+S -> DB: SELECT schemes (não ARCHIVED), scheme_items
+S --> FE: 200 {schemes, layouts, narratives}
+opt Modo IA
+  U -> FE: descreve o DNA desejado
+  FE -> C: POST /api/dna-schemes/compositions
+  C -> S: compositions(user, DnaComposeRequest)
+  S -> AI: text(DNA_SYNTHESIZER) · até 3 propostas
+  AI --> S: propostas (ou localProposals)
+  S --> FE: 200 {compositions, fallbackUsed, provider}
+end
+U -> FE: escolhe 2 a 6 esquemas, layout e narrativa
+loop a cada alteração (debounce 250 ms)
+  FE -> C: POST /api/dna-schemes/preview
+  C -> S: preview(user, DnaSchemeForm)
+  S --> FE: 200 card pré-visualizado
+end
+U -> FE: salva (ou publica)
+FE -> C: POST /api/dna-schemes
+C -> S: createDnaScheme(user, DnaSchemeForm)
+S -> S: guard.requireCanCreate · ensureDna · stamp
+S -> DB: INSERT dna_schemes (DRAFT ou PUBLISHED) + dna_scheme_items
+S -> DB: UPDATE style_dna.latest_dna_scheme_id
+S --> FE: 201 dnaSchemeView
+opt compartilhar o card
+  FE -> C: POST /api/me/dna/share-card
+  C -> S: shareCard(user)
+  S -> S: renderCard (PNG 1080x1350, marca d'água)
+  S -> M: put("dna/{userId}/card-*.png")
+  M --> S: url
+  S -> DB: UPDATE style_dna (card_image_url, card_expires_at +30d)
+  S --> FE: 200 {url, expiresAt, hiddenFields}
+end
+@enduml

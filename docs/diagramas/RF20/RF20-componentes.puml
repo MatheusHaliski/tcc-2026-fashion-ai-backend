@@ -1,0 +1,62 @@
+@startuml RF20_Componentes
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "schemes/new/page.tsx\ncomponents/scheme-builder.tsx\n(selos possíveis + pedido ao salvar)" as FE0
+  component "brands/[slug]/page.tsx\nabas Selos · Revisão (ReviewQueue) ·\nMétricas (IssuerMetrics)" as FE1
+  component "components/seal-medallion.tsx\ncomponents/scheme-card.tsx (SealBadges)" as FE2
+  component "Aba \"Meus Selos\" (GET /api/me/seals)\n<<planejado>>" as FE3 #FFF5F8
+}
+package "fai-web · controllers" {
+  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{id}/accept|refuse|review|revoke\nGET /api/seal-bonds/review-queue\nGET /api/me/seals · GET /api/me/issuer-metrics] as C
+  [SchemeController\nPOST /api/schemes\nPOST /api/schemes/{id}/publication] as SCH
+}
+package "fai-application · services" {
+  [SealService] as S
+  [SchemeService (RF5)] as SS
+  [AiEngine\nAiCapability.SEALBOND_MATCHER\n(LocalAdvisors · Similarity)] as AI
+  [NotificationService\nSEAL_BOND_REVIEW · SEAL_GRANTED] as N
+  [Audit\nAuditActions.MUDANCA_ESTADO_VINCULO_SELO] as A
+  [Guard] as G
+  [CouponService (RF38)\nCouponRightsCheck AFTER_COMMIT] as CS
+}
+package "fai-infrastructure · adapters" {
+  [MysqlAuditService\n(audit_log)] as MA
+  [Repositórios JPA (fai-domain · repository)\nSealBondRepository · SealRepository\nBrandProfileRepository · SchemeRepository\nSchemeItemRepository · WardrobeItemRepository\nPromotionRepository · NotificationRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• seal_bonds\n• seals\n• brand_profiles\n• schemes · scheme_items\n• wardrobe_items\n• promotions\n• notifications\n• audit_log\n• ai_inference_logs" as DB
+
+FE0 --> C : preview / seal-bonds
+FE0 --> SCH : cria e publica o look
+FE1 --> C : review-queue / review / revoke / issuer-metrics
+FE2 --> FE1 : usa
+FE3 ..> C : não implementado — conforme Trello\n(lacuna 2: recusados para aplicação manual)
+C --> S : chama
+SCH --> SS : chama
+SS --> S : revokeForScheme / flagRevalidation
+S --> G : requireOwner / requireCanCreate
+S --> AI : local(SEALBOND_MATCHER)
+S --> N : notify
+S --> A : log
+S --> CS : publica CouponRightsCheck
+S --> REPOS : lê/grava
+A --> MA : grava
+MA --> DB : JDBC
+REPOS --> DB : JPA/Flyway
+note bottom of AI : ver RF24 (motor de IA) — matcher local,\ninferência registrada (aiInferenceId)
+@enduml

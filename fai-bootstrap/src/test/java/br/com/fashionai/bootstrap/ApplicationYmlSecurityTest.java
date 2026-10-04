@@ -3,7 +3,7 @@ package br.com.fashionai.bootstrap;
 import br.com.fashionai.infrastructure.mysql.config.MysqlSslModeEnvironmentPostProcessor;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.env.MapPropertySource;

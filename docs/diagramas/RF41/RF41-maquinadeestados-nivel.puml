@@ -1,0 +1,28 @@
+@startuml RF41_MaquinaDeEstados_Nivel
+!pragma layout smetana
+title RF41 — FaiPointsService.Level: nível pelos pontos vitalícios (nunca diminui)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "ESTREIA (0)" as Estreia
+state "STUDIO (300)" as Studio
+state "LOFT (900)" as Loft
+state "CLOSET (2000)" as Closet
+state "ATELIER (4000)" as Atelier
+state "PENTHOUSE (7500)" as Penthouse
+state "MAISON (12000)" as Maison
+[*] --> Estreia : conta criada\n(room_layouts.level = ESTREIA)
+Estreia --> Studio : award() leva lifetime >= 300
+Studio --> Loft : lifetime >= 900
+Loft --> Closet : lifetime >= 2000
+Closet --> Atelier : lifetime >= 4000
+Atelier --> Penthouse : lifetime >= 7500
+Penthouse --> Maison : lifetime >= 12000
+Estreia --> Estreia : award() sem cruzar limiar\n(jogo, esquema, peça, 3D)
+note right of Studio : cada subida: RoomService.setLevel\n+ notificação ROOM_LEVEL_UP
+note right of Maison : lifetime = soma dos deltas > 0 com countsLifetime;\ngastar na loja (POST /api/points/shop/{sku}/purchase)\nreduz o saldo, não o nível
+@enduml

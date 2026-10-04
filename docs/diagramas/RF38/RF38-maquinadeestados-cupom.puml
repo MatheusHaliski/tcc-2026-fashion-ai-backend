@@ -14,12 +14,16 @@ state "Direito ao cupom" as D {
   PENDENTE --> DISPENSADO : "Dispensar"
 }
 state "Cupom Fashion AI" as C {
+  state "EMITIDO (RedemptionStatus.ISSUED)" as EMITIDO
+  state "USADO (USED)" as USADO
+  state "EXPIRADO (EXPIRED / expiresAt vencido)" as EXPIRADO
   [*] --> EMITIDO : código único, desconto,\nvalidade, storeUrl
   EMITIDO --> USADO : loja valida no caixa
   EMITIDO --> EXPIRADO : passa a validade
 }
 RESGATADO --> C : emite
 DISPENSADO --> [*]
+note right of D : CouponRight.status (String):\nPENDENTE · RESGATADO · DISPENSADO\n(constantes de CouponService)
 USADO --> [*]
 EXPIRADO --> [*]
 @enduml

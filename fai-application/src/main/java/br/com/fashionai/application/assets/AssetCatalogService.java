@@ -5,7 +5,7 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.domain.model.AssetPreset;
 import br.com.fashionai.domain.model.enums.AssetKind;
 import br.com.fashionai.domain.repository.AssetPresetRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

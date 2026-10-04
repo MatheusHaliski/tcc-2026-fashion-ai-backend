@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF41): índice e mapa de numeração
+# Novos RF (RF25–RF47): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -23,6 +23,9 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF39 | Criar guarda-roupa 3D + loja do guarda-roupa | RF39 | [RF39_Criar_Guarda_Roupa_3D.md](RF39_Criar_Guarda_Roupa_3D.md) | `docs/diagramas/RF39/` |
 | RF40 | Meu Avatar 3D (busto fiel à foto, usado no manequim) | RF40 | [RF40-RF41.md](RF40-RF41.md) | — |
 | RF41 | FAI Points em todos os jogos e criações | RF41 | [RF40-RF41.md](RF40-RF41.md) | — |
+| RF45 | Imagens canônicas de peças (validação, segmentação, captura adaptativa) | RF4 (V29, `vision/`) | [RF04_ADAPTIVE_GARMENT_CAPTURE.md](../visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md) | `docs/diagramas/RF45/` |
+| RF46 | FAI Creative Engine e serviços Adobe | — (parcial: Background Studio, selos) | cartão Trello | `docs/diagramas/RF46/` |
+| RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
 
 ## Mudanças em RF antigos (2026-09-24)
 

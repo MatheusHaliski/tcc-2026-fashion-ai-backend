@@ -1,0 +1,99 @@
+@startuml RF17_Classes
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User <<@Table users>> {
+  +username: String
+  +displayName: String
+  +bio: String
+  +pronouns: String
+  +coverUrl: String
+  +linksJson: String
+  +profileType: ProfileType
+  +privateAccount: boolean = true
+  +profileVisibility: Visibility = PRIVATE
+  +status: AccountStatus
+}
+class Follow <<@Table follows>> {
+  +follower: User
+  +following: User
+  +status: FollowStatus = ACEITO
+  +respondedAt: Instant
+}
+class Notification <<@Table notifications>> {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +title: String
+  +read: boolean
+}
+class Scheme <<@Table schemes>> {
+  +user: User
+  +status: SchemeStatus
+  +visibility: Visibility
+}
+class WardrobeItem <<@Table wardrobe_items>> {
+  +user: User
+  +visibility: Visibility
+  +availabilityStatus: AvailabilityStatus
+}
+}
+package "fai-domain · enums" {
+enum FollowStatus {
+  PENDENTE
+  ACEITO
+  BLOQUEADO
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum "NotificationType (trecho)" as NT {
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_FOLLOWER
+}
+}
+package "fai-application · service" {
+class ProfileService {
+  +profile(viewer, idOrUsername): Map
+  +counters(userId, published): Map
+  +follow(viewer, targetId): Map
+  +unfollow(viewer, targetId): Map
+  +requests(user): List
+  +respond(user, followId, accept): Map
+  +connections(viewer, userId): Map
+  +block(user, targetId, block): Map
+}
+class Guard {
+  +canView(viewer, ownerId, visibility): boolean
+  +blocked(a, b): boolean
+}
+class WardrobeService {
+  +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
+}
+}
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
+Notification "*" --> "1" User : recipient
+Scheme "*" --> "1" User
+WardrobeItem "*" --> "1" User
+Follow --> FollowStatus
+User --> Visibility
+Notification --> NT
+ProfileService --> Follow
+ProfileService --> Guard
+WardrobeService --> Guard
+note bottom of Follow : uq_follows_pair (follower_id, following_id);\nBLOQUEADO: follower = quem bloqueou
+@enduml

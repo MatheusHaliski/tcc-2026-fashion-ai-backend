@@ -1,0 +1,136 @@
+@startuml RF46_Classes
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de classes — entidades JPA reais (fai-domain), enums e classes planejadas
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class AssetPreset {
+  +id: String
+  +kind: AssetKind
+  +label: String
+  +presetGroup: String
+  +staticUrl: String
+  +animatedUrl: String
+  +paletteJson: String
+  +metadataJson: String
+  +status: String
+  +rfTags: String
+}
+class PipelineJob {
+  +user: User
+  +type: PipelineJobType
+  +status: PipelineJobStatus
+  +provider: String
+  +externalJobId: String
+  +targetType: String
+  +inputResourceId: UUID
+  +outputUrl: String
+  +resultJson: String
+  +qualityScore: BigDecimal
+  +totalCostUsd: BigDecimal
+  +fallbackUsed: boolean
+  +attempts: int
+  +queuedAt / startedAt / finishedAt: Instant
+}
+class PieceImage {
+  +imageType: PieceImageType
+  +url: String
+  +photographySpec: String
+}
+}
+package "fai-domain · enums" {
+enum AssetKind {
+  CHROME_BACKGROUND
+  AURA_PRESET
+  AURA_VARIANT
+  MATERIAL
+  AURA_MATERIAL_STATIC
+  AURA_MATERIAL_ANIMATED
+  AURA_MATERIAL_MOSAIC
+  GRADIENT_AURA
+  SEASONAL
+  CARD_SKIN
+}
+enum PipelineJobStatus {
+  PENDING
+  RUNNING
+  RENDERING
+  ENHANCING
+  COMPOSITING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+enum PipelineJobType {
+  BACKGROUND_GENERATION
+  SCHEME_CARD_RENDER
+  OUTFIT_RENDER
+  FLAT_LAY_STANDARDIZATION
+  .. +10 tipos ..
+}
+}
+package "fai-application · service" {
+class BackgroundStudioService {
+  +catalog(): Map
+  +generateArt(CurrentUser, ArtRequest): Map
+  +upload(CurrentUser, byte[], String): Map
+  +saveScheme(CurrentUser, UUID, Map, boolean): Map
+  +savePiece(CurrentUser, UUID, Object): Map
+  +generateSkinThumbnail(CurrentUser, String, boolean): Map
+}
+class SealDesignService {
+  +catalog(): Map
+  +upload(CurrentUser, byte[]): Map
+}
+interface "ImageProviderPorts.ImageGenerationPort" as IGP {
+  +available(): boolean
+  +generate(prompt, negativePrompt, width, height): Optional<ProviderImage>
+}
+}
+package "FAI Creative Engine <<planejado>>" {
+class CreativeRequest <<planejado>> {
+  +assetType: CreativeAssetType
+  +templateId: String
+  +sourceAssetIds: List<UUID>
+  +prompt: String
+}
+class CreativeTemplate <<planejado>> {
+  +code: String (ex.: BADGE_CIRCULAR_V3)
+  +version: int
+  +layersJson / safeZonesJson
+}
+class CreativeAsset <<planejado>> {
+  +assetType: CreativeAssetType
+  +generative: boolean
+  +provider / model: String
+  +approvalStatus: String
+}
+class AssetVersion <<planejado>> {
+  +width / height / format
+}
+class TemplateResolver <<planejado>>
+}
+BackgroundStudioService --> AssetPreset : lê presets
+BackgroundStudioService --> IGP : fallback entre provedores
+PipelineJob --> PipelineJobStatus
+PipelineJob --> PipelineJobType
+AssetPreset --> AssetKind
+CreativeRequest ..> CreativeTemplate
+TemplateResolver ..> CreativeTemplate
+CreativeRequest ..> PipelineJob : job assíncrono
+CreativeAsset ..> PieceImage : usa CANONICAL (RF45), nunca substitui
+CreativeAsset "1" *-- "*" AssetVersion
+CreativeAsset ..> IGP
+note top of AssetPreset : tabela asset_presets
+note top of PipelineJob : tabela pipeline_jobs\nBACKGROUND_GENERATION existe no enum,\nmas generateArt hoje é síncrono (sem job)
+note bottom of CreativeAsset : <<planejado>> não implementado — conforme Trello\nprovenance: creator, source assets, prompt, template,\nprovider, model, parâmetros (RN46.02/RN46.03)
+note bottom of PieceImage : asset canônico do RF45 (verdade visual)
+@enduml

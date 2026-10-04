@@ -1,0 +1,70 @@
+@startuml RF10_Componentes
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "copilot/page.tsx\n(chat + sugestões visuais)" as FE0
+  component "SchemeCard · PieceCard\nuseDetailModal" as FE1
+  component "autopilot/page.tsx\n(look de hoje · semana)" as FE2
+}
+package "fai-web · controllers" {
+  [AutopilotController\n/api/copilot/* · /api/autopilot/*] as AC
+}
+package "fai-application · services" {
+  [CopilotService] as CS
+  [CopilotLexicon] as LX
+  [WeatherService] as WS
+  [AutopilotService] as AP
+  [WardrobeService] as WD
+  [SchemeService] as SS
+  [DailyLookService] as DL
+  [RoomService] as RM
+  [ChallengeService] as CH
+  [AiEngine (RF24)\nAiCapability.COPILOT\nfallback LocalSchemeComposer] as AI
+}
+package "fai-infrastructure · adapters" {
+  [OpenMeteoAdapter\n(WeatherPort · GeocodingPort)] as OMA
+  [Repositórios JPA\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · WeekPlanRepository\nWeekPlanDayRepository · DailyLookRepository\nPieceUsageDiaryEntryRepository] as REPOS
+}
+database "MySQL\n• wardrobe_items\n• schemes · scheme_items\n• week_plans · week_plan_days\n• daily_looks\n• piece_usage_diary\n• room_inventory" as DB
+cloud "Open-Meteo\napi.open-meteo.com\ngeocoding-api.open-meteo.com" as OMC
+cloud "Provedores de IA\n(ClaudeProvider · GeminiProvider)" as P_ai
+
+FE0 --> AC : GET /api/copilot/context · /api/copilot/suggestions\nPOST /api/copilot/messages · /api/copilot/looks
+FE1 --> FE0 : exibe looks e chips
+FE2 --> AC : POST /api/autopilot/daily · /api/autopilot/weeks\nGET /api/autopilot/weeks/current
+AC --> CS : chama
+AC --> AP : chama
+CS --> LX : extrai termos
+CS --> WS : clima
+CS --> WD : eligible
+CS --> SS : view · canView
+CS --> AP : createScheme
+CS --> DL : register (COPILOT)
+CS --> RM : locateAll
+CS --> CH : restriction
+CS --> AI : text (GENERAL)
+AP --> WS : clima
+AP --> AI : text (ranking)
+AP --> REPOS : grava planos
+WS --> OMA : resolve
+OMA --> OMC : HTTPS
+CS --> REPOS : lê
+WD --> REPOS : lê
+AI --> P_ai : HTTPS
+REPOS --> DB : JPA/Flyway
+@enduml
