@@ -190,15 +190,15 @@ houver algum (não apaga nada sozinha); a limpeza, se necessária, vira uma migr
 
 ## 6. Diff proposto — schema
 
-### 6.1 `V29__integridade_referencial_por_dominio` (migration Java do Flyway)
+### 6.1 `V34__integridade_referencial_por_dominio` (migration Java do Flyway)
 
 Uma migration Java porque o MySQL não tem `DROP FOREIGN KEY IF EXISTS` nem laço em SQL puro, e os nomes das
 constraints **não são presumidos**: são lidos do `INFORMATION_SCHEMA` (algumas vieram de `CONSTRAINT fk_...`,
 outras foram geradas pelo MySQL).
 
 ```java
-// fai-infrastructure/persistence-mysql/src/main/java/db/migration/V29__integridade_referencial_por_dominio.java
-public class V29__integridade_referencial_por_dominio extends BaseJavaMigration {
+// fai-infrastructure/persistence-mysql/src/main/java/db/migration/V34__integridade_referencial_por_dominio.java
+public class V34__integridade_referencial_por_dominio extends BaseJavaMigration {
     record Fk(String table, String column, String refTable, String onDelete) {}
 
     static final List<Fk> POLICY = List.of(               // gerada de docs/banco/integridade/fks_atuais.tsv
@@ -233,7 +233,7 @@ public class V29__integridade_referencial_por_dominio extends BaseJavaMigration 
 - **Sem `FOREIGN_KEY_CHECKS = 0`** em nenhum ponto.
 - Teste de contrato: a lista `POLICY` é comparada com o `fks_atuais.tsv` (nada de FK esquecida ou divergente).
 
-### 6.2 `V30__origem_da_conta_e_fixtures.sql`
+### 6.2 `V35__origem_da_conta_e_fixtures.sql`
 
 ```sql
 ALTER TABLE users

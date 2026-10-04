@@ -9,10 +9,16 @@ import { applyIdle, applyRestPose, type PoseState } from "@/lib/avatar3d/human/p
 import { buildHair } from "@/lib/avatar3d/human/hair-geometry";
 import { hairColorFor } from "@/lib/avatar3d/hair-tone";
 import { hairWithCut } from "@/lib/avatar3d/hair-cut";
+import { strandGeometry, withStrands } from "@/lib/avatar3d/human/hair-strands";
 import { EYE_TEXTURE, bakeSkin } from "@/lib/avatar3d/human/skin-bake";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
+
+/** Cabelo em fios (HAIR-F2, em andamento): desligado por padrão até a validação visual; liga com NEXT_PUBLIC_AVATAR_HAIR_STRANDS=1. */
+const HAIR_STRANDS = process.env.NEXT_PUBLIC_AVATAR_HAIR_STRANDS === "1";
+/** Densidade dos fios: metade em celular/tablet (orçamento de GPU do plano, seção A3.4). */
+const STRAND_DENSITY = typeof navigator !== "undefined" && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 0.5 : 1;
 
 /*
  * Corpo humano do Avatar 3D (RF40): malha MakeHuman (CC0) com esqueleto humanoide, na forma e estatura da pessoa,
@@ -98,15 +104,24 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   const hairMesh = useMemo(() => {
     if (!built || !hair) return null;
     // corte e tom do cabelo: os escolhidos pela pessoa (ajuste fino) ou os medidos na foto
-    const cut = hairWithCut(hair, adjust?.hairCut);
-    const hb = buildHair(built.asset, built.c, built.h.rest.normals, { ...cut, color: hairColorFor(cut.color, adjust?.hairTone) }, adjust?.hairVolume ?? 1); if (!hb) return null;
-    const m = new THREE.SkinnedMesh(hb.geometry, hb.material); m.name = hb.kind === "cover" ? "cobertura" : "cabelo"; m.castShadow = true;
+    const cut = hairWithCut(hair, adjust?.hairCut); const color = hairColorFor(cut.color, adjust?.hairTone);
+    const h2 = { ...cut, color }; const vol = adjust?.hairVolume ?? 1;
+    // cabelo em fios (hair-strands.ts) por cima de uma base que garante cobertura; raspado/careca/cobertura: só a base
+    const fibrous = HAIR_STRANDS && !cut.cover && (cut.length === "short" || cut.length === "medium" || cut.length === "long");
+    const hb = buildHair(built.asset, built.c, built.h.rest.normals, h2, vol, { base: fibrous }); if (!hb) return null;
+    let geometry = hb.geometry; let material: THREE.Material | THREE.Material[] = hb.material;
+    if (fibrous && color) {
+      const st = strandGeometry(built.asset, built.c, h2, hb, vol, { density: STRAND_DENSITY });
+      if (st) { const w = withStrands(hb, st, color); hb.geometry.dispose(); geometry = w.geometry; material = w.material; }
+    }
+    const m = new THREE.SkinnedMesh(geometry, material); m.name = hb.kind === "cover" ? "cobertura" : "cabelo"; m.castShadow = true;
     built.h.root.add(m); m.bind(built.h.skeleton);
     return m;
   }, [built, hairKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => {
     if (!hairMesh) return;
-    hairMesh.removeFromParent(); hairMesh.geometry.dispose(); (hairMesh.material as THREE.MeshPhysicalMaterial).map?.dispose(); (hairMesh.material as THREE.Material).dispose();
+    hairMesh.removeFromParent(); hairMesh.geometry.dispose();
+    for (const mat of ([] as THREE.Material[]).concat(hairMesh.material)) { (mat as THREE.MeshPhysicalMaterial).map?.dispose(); mat.dispose(); }
   }, [hairMesh]);
   useEffect(() => () => built?.h.dispose(), [built]);
   useEffect(() => {

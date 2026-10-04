@@ -1,0 +1,28 @@
+@startuml RF26_MaquinaDeEstados_Pais
+!pragma layout smetana
+title RF26 — Ponto do país no globo: dados suficientes × seleção (ExplorerService.globalPanel)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Ausente : nenhuma peça/esquema PUBLIC\ncom users.country = país
+state "Ausente (fora de countries[])" as Ausente
+state "sufficient = false\n(badge 'poucos dados')" as Insuficiente
+state "sufficient = true\n(ponto luminoso aceso)" as Aceso {
+  [*] --> Intensidade
+  state "intensity = avg_hype\n(faixas DESPRETENSIOSO…ICONE_DE_ESTILO)" as Intensidade
+}
+state "Selecionado\n(selected: hypeBySeason + topColors)" as Selecionado
+Ausente --> Insuficiente : 1º item público do país\n(total < MIN_DATA = 3)
+Insuficiente --> Aceso : total >= 3
+Aceso --> Insuficiente : filtro season/color/hypeBand\nreduz o recorte
+Aceso --> Selecionado : toque no globo →\nGET /api/explorer/global?country=XX
+Insuficiente --> Selecionado : toque na lista →\nGET /api/explorer/global?country=XX
+Selecionado --> Aceso : troca de país / limpa seleção
+Aceso --> Ausente : itens arquivados ou\nvisibilidade deixa de ser PUBLIC
+note right of Aceso : CA01 — um ponto por país com dados suficientes;\nregião = users.country do dono (CA04)
+note bottom of Selecionado : o estado é só de leitura; nada é gravado
+@enduml

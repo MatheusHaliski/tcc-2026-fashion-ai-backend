@@ -1,0 +1,66 @@
+@startuml RF40_Componentes
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "avatar/page.tsx → components/avatar3d/my-avatar.tsx\n(aba Meu Avatar 3D)" as FE0
+  component "lib/avatar3d\npipeline.ts · detect.ts · geometry.ts · image-stats.ts\nquality.ts · atlas.ts · model.ts · hair-*.ts · body-*.ts" as FE1
+  component "components/three/avatar-bust.tsx\n(busto 3D: crânio, orelhas, cabelo, pescoço, ombros)" as FE2
+  component "public/mediapipe\n(face_landmarker.task · hair_segmenter.tflite)" as FE3
+  component "lab/avatar/page.tsx → components/avatar3d/lab.tsx\n(só em desenvolvimento)" as FE4
+  component "Passarela 3D (explorer) · Foto com meu manequim" as FE5
+  component "Meu Quarto (room) · Espelho (mirror)" as FE6 <<planejado>>
+}
+package "fai-web · controllers" {
+  [Avatar3dController] as AC
+  [ShowcaseController] as SC
+  [TryOnController] as TC
+}
+package "fai-application · services" {
+  [Avatar3dService] as AS
+  [ShowcaseService\n(mannequin head=AVATAR)] as SS
+  [TryOnService] as TS
+  [AccountService\n(deleteAllFor ao excluir a conta)] as ACS
+  [AiEngine (RF24)\nCONTENT_MODERATOR] as AI
+  [Audit] as AU
+}
+package "fai-infrastructure · adapters" {
+  [UserAvatar3dRepository\nUserRepository] as REPOS
+  [MediaStoragePort\n(local / S3 — restricted/users/{id}/avatar3d/)] as ST
+}
+database "MySQL · fashionai_app\n• user_avatars_3d (V25__avatar_3d.sql)\n• users\n• ai_inference_log\n• audit_log" as DB
+
+FE0 --> FE1 : analyzePhoto · buildAvatar · atlasBlob
+FE1 --> FE3 : carrega modelos
+FE0 --> FE2 : prévia girável
+FE4 --> FE1 : valida o pipeline com fotos de teste
+FE0 --> AC : GET/POST/PATCH/DELETE /api/me/avatar3d
+FE5 --> SC : GET /api/explorer/runway · POST …/mannequin-photo
+FE5 --> AC : GET /api/avatar3d/{userId}/texture
+FE6 ..> AC : não implementado — conforme Trello (CA10)
+AC --> AS : chama
+SC --> SS : chama
+TC --> TS : chama
+SS --> AS : forMannequin(owner, viewer)
+TS --> AS : forMannequin(user, user)
+ACS --> AS : deleteAllFor(userId)
+AS --> AI : moderateTexture
+AS --> AU : AVATAR3D_SALVO · AVATAR3D_CORPO
+AS --> ST : grava/lê/apaga textura
+AS --> REPOS : lê/grava
+REPOS --> DB : JPA/Flyway
+@enduml

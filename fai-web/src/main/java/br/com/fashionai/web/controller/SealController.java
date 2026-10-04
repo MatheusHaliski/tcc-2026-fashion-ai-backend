@@ -3,6 +3,7 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.SealDesignService;
 import br.com.fashionai.application.service.SealService;
+import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.PromotionStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +36,10 @@ public class SealController {
     }
 
     @PostMapping(value = "/api/seals/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF25 — Enviar selo pronto (só é aceito nas proporções do logo FashionAI: 1:1, circular, 256–4096 px)")
-    public Map<String, Object> uploadSeal(CurrentUser user, @RequestPart("file") MultipartFile file) {
-        return designs.upload(user, Uploads.image(file));
+    @Operation(summary = "RF25 — Enviar selo pronto (1:1, circular, 256–4096 px) ou, com purpose=core, a imagem do núcleo/emblema do selo")
+    public Map<String, Object> uploadSeal(CurrentUser user, @RequestPart("file") MultipartFile file,
+                                          @RequestParam(value = "purpose", required = false) String purpose) {
+        return "core".equalsIgnoreCase(purpose) ? designs.uploadCore(user, Uploads.image(file)) : designs.upload(user, Uploads.image(file));
     }
 
     @PostMapping("/api/seals")
@@ -45,6 +47,15 @@ public class SealController {
     @Operation(summary = "RF20 — Marca/celebridade cria um selo")
     public Map<String, Object> createSeal(CurrentUser user, @RequestBody SealService.SealForm form) {
         return seals.createSeal(user, form);
+    }
+
+    public record DraftRequest(SealTier tier) {
+    }
+
+    @PostMapping("/api/seals/draft")
+    @Operation(summary = "RF25 — Criador de selo \"Com IA\": sugere nome, nível, política e arte a partir do perfil e das peças do emissor (nada é salvo)")
+    public Map<String, Object> draft(CurrentUser user, @RequestBody(required = false) DraftRequest req) {
+        return seals.draft(user, req == null ? null : req.tier());
     }
 
     @PutMapping("/api/seals/{sealId}")

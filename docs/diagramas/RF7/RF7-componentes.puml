@@ -1,0 +1,63 @@
+@startuml RF7_Componentes
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/closet · lookbook-tabs\n(listas que abrem o detalhe)" as FE0
+  component "detail-modal.tsx\n(modal único, pilha de navegação)" as FE1
+  component "expanded-card.tsx\nExpandedPiece · ExpandedScheme" as FE2
+  component "(app)/pieces/[id]/page.tsx\n(app)/schemes/[id]/page.tsx" as FE3
+  component "interactions.tsx\n(InteractionBar — RF19)" as FE4
+}
+package "fai-web · controllers" {
+  [WardrobeController\nGET/PUT /api/pieces/{id} · PATCH flags\ndeletion-impact · DELETE] as WardrobeController
+  [SchemeController\nGET /api/schemes/{id}] as SchemeController
+  [CommentController\nPOST /api/pieces/{pieceId}/return-to-origin] as CommentController
+  [SocialController\n/api/interactions/{type}/{id}/...] as SocialController
+}
+package "fai-application · services" {
+  [WardrobeService\n(detail · toggles · update · delete)] as WardrobeService
+  [SchemeService\n(get · requireView)] as SchemeService
+  [SocialService\n(returnToOrigin · comentários)] as SocialService
+  [WardrobeEventListeners\n(AvailabilityChanged)] as Listeners
+  [Guard] as Guard
+}
+package "fai-domain · repositórios JPA" {
+  [WardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeAvailabilityChangeRepository\nCommentRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• wardrobe_items\n• schemes\n• scheme_items (snapshotJson)\n• wardrobe_availability_log\n• comments" as DB
+
+FE0 --> FE1 : abre
+FE1 --> FE2 : renderiza
+FE3 --> FE2 : rota direta
+FE2 --> WardrobeController : GET peça · flags · editar
+FE2 --> SchemeController : GET esquema
+FE2 --> CommentController : voltar à origem
+FE4 --> SocialController : reagir · comentar · salvar
+WardrobeController --> WardrobeService : chama
+SchemeController --> SchemeService : chama
+CommentController --> SocialService : chama
+SocialController --> SocialService : chama
+WardrobeService ..> Guard : requireView
+SchemeService ..> Guard : requireView
+WardrobeService --> Listeners : publica AvailabilityChanged
+WardrobeService --> REPOS : lê/grava
+SchemeService --> REPOS : lê
+SocialService --> REPOS : lê
+Listeners --> REPOS : grava log
+REPOS --> DB : JPA/Flyway
+@enduml

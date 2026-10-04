@@ -1,0 +1,68 @@
+@startuml RF26_Sequencia
+title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba "Explorador Global"\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\n/explorer (Tabs + Globe)" as FE
+participant "DiscoveryController" as C
+participant "ExplorerService" as S
+participant "AnalyticsQueryPort\n(MysqlAnalyticsAdapter)" as A
+participant "BrandProfileRepository" as R
+participant "AiEngine (RF24)" as AI
+database "MySQL" as DB
+
+== Painel global (CA01) ==
+U -> FE : sub-aba "Painel global" + filtros
+FE -> C : GET /api/explorer/global?country&season&color&hypeBand
+C -> S : globalPanel(viewer, country, season, color, hypeBand)
+alt filtro inválido
+  S --> C : 400 ESTACAO_INVALIDA | COR_INVALIDA | FAIXA_INVALIDA
+  C --> FE : 400 {code, message}
+else filtros válidos
+  S -> A : countryColors()
+  A -> DB : SELECT cor × país (wardrobe_items PUBLIC)
+  S -> A : schemesByCountry(GlobalFilter) / piecesByCountry(GlobalFilter)
+  A -> DB : agrega schemes/wardrobe_items por users.country
+  S -> S : total por país, sufficient = total >= 3,\ndominantColor, intensity = avg_hype
+  opt country informado
+    S -> A : hypeBySeason(country), colorRanking(country, 5)
+  end
+  S --> C : {countries[], minData, filters, facets, selected?, legend}
+  C --> FE : 200 JSON
+  FE --> U : globo com um ponto por país + lista
+end
+
+== Buscar marcas & lojas (CA02) ==
+U -> FE : sub-aba "Buscar marcas & lojas" + filtros
+FE -> C : GET /api/explorer/brands?term&country&category&sort&color&season&hypeMin
+C -> S : brandsAndStores(viewer, term, country, category, sort, color, season, hypeMin)
+S -> A : brandFacets(), brandUsage(500)
+S -> R : findByApprovalStatusOrderByCreatedAtDesc(APROVADO)
+R -> DB : SELECT brand_profiles
+S -> S : filtra por país/categoria/cor/estação/hypeMin\ne ordena por hypeScore
+S --> C : {brands[], facets{countries, categories}}
+C --> FE : 200 JSON
+FE --> U : grade de perfis BRAND (→ RF14)
+
+== Insights globais (CA03) ==
+U -> FE : sub-aba "Insights globais"
+FE -> C : GET /api/explorer/insights
+C -> S : insights(viewer)
+S -> A : brandUsage(5), hypeBySeason(null), colorRanking(null,5),\nhypeByColor(5), hypeByBrand(5), countries()
+A -> DB : agregados
+alt viewer autenticado
+  S -> AI : text(INSIGHT_GENERATOR, rankings)
+  AI --> S : AiOutcome<String> (valor ou fallback local)
+else anônimo
+  S -> S : LocalAdvisors.insightText(rankings)
+end
+S --> C : {rankings, aiInsight, explanation, fallbackUsed, note}
+C --> FE : 200 JSON
+FE --> U : rankings em barras + leitura textual
+@enduml

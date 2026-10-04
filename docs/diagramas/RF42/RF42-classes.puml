@@ -1,0 +1,87 @@
+@startuml RF42_Classes
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User <<@Table users>> {
+  +username: String
+  +lookDoDiaPanelVersion: HypeScorePanelVersion
+}
+class DailyLook <<@Table daily_looks>> {
+  +user: User
+  +scheme: Scheme
+  +materializedFrom: DailyLook
+  +lookDate: LocalDate
+  +source: DailyLookSource = MANUAL
+  +feedback: DailyLookFeedback
+  +feedbackAt: Instant
+  +weekPlanDayId: UUID
+}
+class Scheme <<@Table schemes>> {
+  +user: User
+  +title: String
+  +status: SchemeStatus
+  +lookDoDia: boolean
+  +lookDoDiaCount: int
+  +hypeScore: BigDecimal
+}
+class SchemeItem <<@Table scheme_items>> {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+}
+class WardrobeItem <<@Table wardrobe_items>> {
+  +availabilityStatus: AvailabilityStatus
+  +wearCount: int
+  +lastWornDate: LocalDate
+  +lookDoDiaCount: int
+}
+}
+package "fai-domain · enums" {
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+enum DailyLookFeedback {
+  ADOREI
+  NAO_USEI
+  NAO_GOSTEI
+}
+}
+package "fai-application · service" {
+class DailyLookService {
+  +register(user, scheme, source, date): DailyLook
+  +today(userId): Optional<DailyLook>
+  +feedback(user, date, feedback): Map
+  +history(user): List
+  +pendingFeedback(user): Map
+  +view(dl): Map
+}
+class LookbookService {
+  +markDailyLook(user, schemeId): Map
+  +dailyLookTab(user, withAi): Map
+}
+}
+DailyLook "*" --> "1" User
+DailyLook "*" --> "1" Scheme
+DailyLook "*" --> "0..1" DailyLook : materializedFrom
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
+Scheme "*" --> "1" User
+DailyLook --> DailyLookSource
+DailyLook --> DailyLookFeedback
+LookbookService --> DailyLookService
+DailyLookService --> DailyLook : grava
+note bottom of DailyLook : uq_daily_looks_user_date (user_id, look_date):\num Look do Dia por pessoa por dia
+@enduml

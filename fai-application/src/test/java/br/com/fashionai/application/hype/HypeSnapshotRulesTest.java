@@ -2,6 +2,7 @@ package br.com.fashionai.application.hype;
 
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.AccountOrigin;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ class HypeSnapshotRulesTest {
         User u = new User();
         u.assignId(UUID.randomUUID());
         u.setProfileVisibility(profile);
-        u.setTestAccount(test);
+        u.setAccountOrigin(test ? AccountOrigin.TEST_SEED : AccountOrigin.REAL);   // conta de teste = origem TEST_SEED (V30)
         WardrobeItem w = new WardrobeItem();
         w.setUser(u);
         w.setVisibility(v);

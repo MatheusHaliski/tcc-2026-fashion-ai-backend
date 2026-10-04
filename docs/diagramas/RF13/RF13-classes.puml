@@ -1,0 +1,171 @@
+@startuml RF13_Classes
+title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+  +profileVisibility: Visibility
+  .. +outros campos ..
+}
+class StyleDna {
+  +user: User
+  +archetype: StyleArchetype
+  +boldnessIndex: int
+  +identityPhrase: String (cifrada)
+  +colorPalette: String
+  +styleKeywords: String
+  +occasionKeywords: String
+  +iconPieceName: String
+  +silhouette: String
+  +lifeIdentityJson: String (cifrada)
+  +lifePrivateFieldsJson: String
+  +interactionsAtSynthesis: int
+  +latestDnaSchemeId: UUID
+  +cardImageUrl: String
+  +cardExpiresAt: Instant
+  +phraseSource: String
+  +colorSeason: String
+  +synthesizedAt: Instant
+}
+class StyleDnaVersion {
+  +id: UUID
+  +userId: UUID
+  +snapshotJson: String
+  +createdAt: Instant
+}
+class DnaScheme {
+  +user: User
+  +title: String
+  +identityPhrase: String (cifrada)
+  +archetype: StyleArchetype
+  +boldnessIndex: Integer
+  +iconSchemeId: UUID
+  +colorPaletteJson: String
+  +narrativeType: NarrativeType
+  +seasonalTheme: Season
+  +occasion: String
+  +style: String
+  +cardLayout: String
+  +targetElement: String
+  +backgroundColor: String
+  +backgroundImageUrl: String
+  +backgroundAnimationType: BackgroundAnimation
+  +cardImageUrl: String
+  +creationMode: CreationMode
+  +visibility: Visibility
+  +status: SchemeStatus
+  +likeCount: long
+  +hypeScore: BigDecimal
+  +aiExplanationJson: String
+  +publishedAt: Instant
+}
+class DnaSchemeItem {
+  +dnaScheme: DnaScheme
+  +scheme: Scheme
+  +cell: DnaCell
+  +eraLabel: String
+  +duplicate: boolean
+  +sourceSchemeId: UUID
+  +appliedToOriginal: boolean
+  +milestone: boolean
+}
+class Scheme {
+  +user: User
+  +title: String
+  +status: SchemeStatus
+  +visibility: Visibility
+  .. +outros campos (RF5) ..
+}
+}
+package "fai-domain · enums" {
+enum StyleArchetype {
+  ROMANTIC
+  DRAMATIC
+  CLASSIC
+  NATURAL
+  GAMINE
+}
+enum DnaCell {
+  CELL_1
+  CELL_2
+  CELL_3
+  CELL_4
+  CELL_5
+  CELL_6
+}
+enum NarrativeType {
+  TIMELINE
+  MOMENTOS_MARCANTES
+  PRIMEIRA_VEZ
+  CAPSULA_VERSATILIDADE
+  POR_OCASIAO
+  MOOD_BOARD
+  PALETA_DOMINANTE
+  HARMONIA_CROMATICA
+  MARCAS_FAVORITAS
+  HYPE_FOCUS
+  CARTELA_SAZONAL
+  LEGO
+}
+enum CreationMode {
+  MANUAL
+  AI_ASSISTED
+}
+enum SchemeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+}
+package "fai-application · service" {
+class DnaService {
+  +overview(user): Map
+  +generate(user, LifeForm): Map
+  +updateLife(user, LifeForm): Map
+  +setPrivateFields(user, List): Map
+  +setColorSeason(user, season): Map
+  +shareCard(user): Map
+  +builder(user): Map
+  +preview(user, DnaSchemeForm): Map
+  +compositions(user, DnaComposeRequest): Map
+  +createDnaScheme(user, DnaSchemeForm): Map
+  +updateDnaScheme(user, id, DnaSchemeForm): Map
+  +getDnaScheme(viewer, id): Map
+  +myDnaSchemes(user): List
+  +deleteDnaScheme(user, id): void
+}
+}
+StyleDna "1" --> "1" User : user
+StyleDnaVersion ..> User : userId
+StyleDna ..> StyleDnaVersion : snapshot por geração
+StyleDna ..> DnaScheme : latestDnaSchemeId
+StyleDna --> StyleArchetype
+DnaScheme "*" --> "1" User : user
+DnaScheme --> StyleArchetype
+DnaScheme --> NarrativeType
+DnaScheme --> CreationMode
+DnaScheme --> SchemeStatus
+DnaSchemeItem "*" --> "1" DnaScheme : dnaScheme
+DnaSchemeItem "*" --> "1" Scheme : scheme
+DnaSchemeItem --> DnaCell
+Scheme "*" --> "1" User : user
+DnaService ..> StyleDna
+DnaService ..> DnaScheme
+note top of StyleDna : tabela style_dna (1 por conta)
+note top of StyleDnaVersion : tabela style_dna_versions
+note top of DnaScheme : tabela dna_schemes
+note top of DnaSchemeItem : tabela dna_scheme_items (2 a 6 células)
+note top of Scheme : tabela schemes — ver RF5
+@enduml

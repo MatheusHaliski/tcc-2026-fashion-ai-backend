@@ -16,6 +16,16 @@ log = logging.getLogger("catalog")
 AUDIT = ("version", "created_at", "updated_at")
 
 
+
+def same_value(column: str, current, new) -> bool:
+    """design_json volta do MySQL reformatado (ordem e espaços): compara o JSON, não o texto — rodar de novo não regrava."""
+    if column == "design_json" and current is not None:
+        try:
+            return json.loads(current) == json.loads(new)
+        except (TypeError, ValueError):
+            return False
+    return current == new
+
 @dataclass
 class Report:
     total_read: int = 0
@@ -124,7 +134,7 @@ class Ingestor:
     def search_text(self, cur, brand: dict, p: Product) -> str:
         cur.execute("SELECT alias FROM brand_aliases WHERE brand_id = %s ORDER BY created_at", (brand["id"],))
         parts = [brand["name"], *[r["alias"] for r in cur.fetchall()], p.product_name, p.model_name, p.color_name, p.color,
-                 p.collection, p.product_code, p.sku, p.gtin, p.subcategory.replace("_", " "), *p.aliases,
+                 p.collection, p.description, p.product_code, p.sku, p.gtin, p.subcategory.replace("_", " "), *p.aliases,
                  *[v.get("color_name") or v.get("color") or "" for v in p.variants]]
         seen, out = set(), []
         for part in parts:
@@ -200,6 +210,7 @@ class Ingestor:
         cols = dict(brand_id=brand["id"], category=p.category, subcategory=p.subcategory, product_name=p.product_name,
                     model_name=p.model_name, product_code=p.product_code, sku=p.sku, gtin=p.gtin, ean=p.ean, upc=p.upc,
                     color=p.color, color_name=p.color_name, material=p.material, collection=p.collection, gender=p.gender,
+                    description=p.description, design_json=json.dumps(p.design, ensure_ascii=False) if p.design else None,
                     official_product_url=p.official_product_url, canonical_url=p.canonical_url, source_type=p.source_type,
                     source_domain=p.source_domain, search_text=self.search_text(cur, brand, p))
         if existing:
@@ -208,7 +219,7 @@ class Ingestor:
                 self.report.duplicates_found += 1
                 log.info("[DUP] %s %s já existe como \"%s\" (%s)", brand["name"], p.product_name, existing["product_name"], why)
             if self.overwrite:
-                changed = {k: v for k, v in cols.items() if v is not None and existing.get(k) != v}
+                changed = {k: v for k, v in cols.items() if v is not None and not same_value(k, existing.get(k), v)}
             else:
                 changed = {k: v for k, v in cols.items() if v is not None and existing.get(k) is None}
             pid = existing["id"]

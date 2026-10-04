@@ -6,8 +6,10 @@ updates:
     schedule: { interval: weekly, day: monday }
     open-pull-requests-limit: 5
     groups:
+      # Boot, Framework, Security, Data e springdoc andam juntos (o BOM do Boot fixa Jackson, Hibernate, Flyway,
+      # Testcontainers, JUnit). Major do Boot é migração (docs/MIGRACAO_SPRING_BOOT_4.md), não um bump: só com o CI verde.
       spring:
-        patterns: ["org.springframework*", "io.spring*"]
+        patterns: ["org.springframework*", "io.spring*", "org.springdoc*"]
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly, day: monday }
@@ -21,3 +23,10 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      # Só JVM LTS em produção (21, 25, 29...). Versões não-LTS (24, 26...) perdem as correções de segurança em 6 meses;
+      # a troca de LTS é manual, junto com o teste da imagem (docs/MIGRACAO_SPRING_BOOT_4.md).
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "maven"
+        update-types: ["version-update:semver-major"]

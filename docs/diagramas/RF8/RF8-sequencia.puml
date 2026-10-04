@@ -1,0 +1,67 @@
+@startuml RF8_Sequencia
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\nsearch · feed" as FE
+participant "DiscoveryController" as DC
+participant "SearchService" as SS
+participant "SchemeService" as SCH
+participant "Guard" as G
+participant "SocialController" as SC
+participant "SocialService" as SO
+database "MySQL" as DB
+U -> FE: abre aba "Buscar", digita termo,\nescolhe aba (LOOKS/PECAS/...) e chips
+FE -> DC: GET /api/search?q=&tab=LOOKS&style=&occasion=&color=&brand=&category=&cursor=
+DC -> SS: search(viewer, term, tab, Filters, size, cursor)
+alt aba fora de TABS
+  SS --> FE: 400 ABA_INVALIDA
+else aba válida
+  SS -> DB: SELECT follows (status=BLOQUEADO) → bloqueados
+  SS -> DB: SELECT style_dna (styleKeywords do viewer)
+  SS -> DB: SELECT schemes (findPublicFeed) / wardrobe_items
+  loop para cada candidato
+    SS -> SCH: canView(viewer, scheme)
+    SCH -> G: canView(viewer, ownerId, moreRestrictive(visibility, profileVisibility))
+    G --> SCH: true/false
+    SS -> SS: matches(filters) + relevance(recência, hype, afinidade DNA)
+  end
+  opt sem resultados
+    SS -> SS: trending() + alternatives(term)
+  end
+  SS --> FE: 200 {term, tab, tabs, results, nextCursor, chips, engine, empty?}
+end
+FE -> FE: SchemeCard / PieceCard; InfiniteSentinel
+opt feed da comunidade / passarela
+  FE -> DC: GET /api/feed?cursor=&size=20
+  DC -> SS: communityFeed(viewer, cursor, size, filters)
+  FE -> DC: GET /api/runway?cursor=
+  DC -> SS: runway(viewer, cursor, size)
+  SS -> DB: SELECT follows (status=ACEITO) → seguindo
+  SS --> FE: 200 {items (reason SEGUINDO/TRENDSETTER), nextCursor}
+end
+U -> FE: abre o card de outra pessoa
+FE -> SCH: GET /api/schemes/{id} (SchemeController)
+SCH -> G: requireView(viewer, ownerId, effective, "scheme:{id}")
+alt negado
+  G -> DB: INSERT audit_log (ACESSO_NEGADO_403)
+  G --> FE: 403
+else permitido
+  SCH -> DB: UPDATE schemes SET view_count = view_count + 1
+  SCH --> FE: 200 {scheme, wearstyles, seals, sealBadges, canEdit=false}
+end
+FE -> SC: GET /api/interactions/SCHEME/{id}/counters
+SC -> SO: counters(viewer, type, id)
+SO --> FE: 200 {reactions, comments, saves, shares}
+U -> FE: curte / comenta / salva
+FE -> SC: POST /api/interactions/SCHEME/{id}/reactions {reaction: LIKE}
+SC -> SO: react(user, SCHEME, id, LIKE)
+SO -> DB: INSERT/DELETE reactions; UPDATE schemes.like_count
+SO --> FE: 200 {liked, counters}
+@enduml

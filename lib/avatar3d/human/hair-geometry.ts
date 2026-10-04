@@ -20,11 +20,15 @@ import type { AvatarHair } from "../model";
 
 const CANON_FOREHEAD = 8.26, CANON_CHIN = -9.4, SKULL_TOP = 13;     // y no canônico do rosto (cm)
 
-export interface HairBuild { geometry: THREE.BufferGeometry; material: THREE.Material; kind: "hair" | "cover" }
+/**
+ * calotaIndex: quantos índices (a partir do 0) são da calota — o couro cabeludo coberto, onde nascem os fios
+ * (lib/avatar3d/human/hair-strands.ts); o resto é a cortina do cabelo médio/longo.
+ */
+export interface HairBuild { geometry: THREE.BufferGeometry; material: THREE.Material; kind: "hair" | "cover"; calotaIndex?: number }
 
-interface HeadFrame { cx: number; cz: number; y10: number; k: number; toY: (yc: number) => number; earY: number; chinY: number; headTop: number; halfW: number }
+export interface HeadFrame { cx: number; cz: number; y10: number; k: number; toY: (yc: number) => number; earY: number; chinY: number; headTop: number; halfW: number }
 
-function headFrame(a: BodyAsset, c: Composed): HeadFrame {
+export function headFrame(a: BodyAsset, c: Composed): HeadFrame {
   const L = landmarksOn(a, c.body); const P = (i: number) => [L[i * 3], L[i * 3 + 1], L[i * 3 + 2]];
   const f = P(10), ch = P(152), l = P(234), r = P(454);
   const k = (f[1] - ch[1]) / (CANON_FOREHEAD - CANON_CHIN);
@@ -40,7 +44,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const wobble = (x: number) => Math.sin(x * 23.1) * 0.5 + Math.sin(x * 41.7 + 1.3) * 0.3 + Math.sin(x * 7.3 + 0.4) * 0.2;
 const hash = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
 
-function hairline(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boolean): number {
+export function hairline(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boolean): number {
   return hairlineBase(fr, hair, phi, covered) + (covered ? 0 : wobble(phi) * 0.0035);   // linha viva, não régua
 }
 
@@ -100,7 +104,7 @@ function strandTexture(color: string, texture: string, cover: boolean): THREE.Ca
 const bump = (x: number, y: number, z: number, f: number) =>
   (Math.sin(x * f * 1.7 + Math.sin(y * f * 1.3)) + Math.sin(y * f * 2.1 + Math.sin(z * f * 1.1)) + Math.sin(z * f * 1.9 + Math.sin(x * f * 0.9))) / 3;
 
-function finish(pos: number[], uv: number[], col: number[], si: number[], sw: number[], index: number[], colHex: string, texture: string, covered: boolean): HairBuild {
+function finish(pos: number[], uv: number[], col: number[], si: number[], sw: number[], index: number[], colHex: string, texture: string, covered: boolean, base = false): HairBuild {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
@@ -109,12 +113,14 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
   const w = sw.slice(); for (let i = 0; i < w.length; i += 4) { const s0 = w[i] + w[i + 1] + w[i + 2] + w[i + 3] || 1; for (let k = 0; k < 4; k++) w[i + k] /= s0; }
   g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(w, 4));
   g.setIndex(index); g.computeVertexNormals();
-  const tex = typeof document !== "undefined" ? strandTexture(colHex, texture, covered) : null;
+  // com fios por cima (hair-strands.ts) esta malha é a base: mais escura, é o "fundo" entre as mechas
+  const baseHex = base && !covered ? `#${new THREE.Color(colHex).multiplyScalar(0.72).getHexString()}` : colHex;
+  const tex = typeof document !== "undefined" ? strandTexture(baseHex, texture, covered) : null;
   const mat = new THREE.MeshPhysicalMaterial({
     color: "#ffffff", map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide,
-    roughness: covered ? 0.9 : 0.58, sheen: covered ? 0.2 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(colHex).lerp(new THREE.Color("#ffffff"), 0.25),
+    roughness: covered ? 0.9 : base ? 0.75 : 0.58, sheen: covered ? 0.2 : base ? 0.15 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), 0.25),
     // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
-    anisotropy: covered ? 0 : 0.3,
+    anisotropy: covered || base ? 0 : 0.3,
     // por cima da roupa: as peças puxam a profundidade (polygonOffset −camada, até −6) e "engoliam" o cabelo longo
     // caído sobre a camiseta; o cabelo puxa mais
     polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8,
@@ -165,7 +171,7 @@ function outlineAt(outline: number[] | undefined, yc: number): number {
  *   cortina — cabelo médio/longo: anéis que descem da borda da calota pelos lados e pelas costas até o comprimento
  *             medido, por fora do pescoço, dos ombros e das costas; abaixo dos ombros, só atrás.
  */
-export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair: AvatarHair, volume = 1): HairBuild | null {
+export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair: AvatarHair, volume = 1, opts: { base?: boolean } = {}): HairBuild | null {
   const covered = !!hair.cover;
   if (!covered && (!hair.present || hair.length === "bald" || !hair.color)) return null;
   const fr = headFrame(a, c); const nb = a.meta.counts.body; const k = fr.k;
@@ -230,7 +236,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
       // superfície deixa de ser uma casca lisa; somem no topo (redemoinho) e na borda
       const ny = Math.max(0, normals[v * 3 + 1]); const y = c.body[v * 3 + 1];
       const u = phiOf[v] * 15 + Math.sin(y * 55 + phiOf[v] * 2) * 0.7;
-      t += (Math.abs(Math.sin(u)) ** 0.6 - 0.62) * 0.0032 * (1 - ny ** 4) * Math.min(1, t / 0.012);
+      t += (Math.abs(Math.sin(u)) ** 0.6 - 0.62) * (opts.base ? 0.0015 : 0.0032) * (1 - ny ** 4) * Math.min(1, t / 0.012);
       t += bump(c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2], 70) * 0.0015;
     }
     pos.push(c.body[v * 3] + normals[v * 3] * t, c.body[v * 3 + 1] + normals[v * 3 + 1] * t, c.body[v * 3 + 2] + normals[v * 3 + 2] * t);
@@ -240,6 +246,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     return i;
   };
   for (let t = 0; t < idx.length; t += 3) { const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]]; if (inScalp[p] && inScalp[q] && inScalp[r]) index.push(add(p), add(q), add(r)); }
+  const calotaIndex = index.length;
   // ---- cortina (médio/longo)
   if (long) {
     const bottomC = Math.min(hair.bottom ?? -12, -4);
@@ -314,7 +321,8 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     }
     // mechas soltas por fora (faixas de 3–5 cm, comprimentos e caimentos diferentes): quebram a silhueta de "caixa" e
     // dão profundidade — o que se vê de lado e de costas passa a ser cabelo em camadas, não um painel
-    const cards = texture === "straight" || texture === "wavy" ? 70 : 0;          // cacho/crespo: o relevo já quebra a forma
+    // mechas soltas: só sem os fios (com eles, hair-strands.ts faz esse papel); cacho/crespo: o relevo já quebra a forma
+    const cards = opts.base ? 0 : texture === "straight" || texture === "wavy" ? 70 : 0;
     for (let n = 0; n < cards; n++) {
       const h1 = hash(n), h2 = hash(n + 97), h3 = hash(n + 193);
       const phiC = (n % 2 ? 1 : -1) * (1.95 + (Math.PI - 1.95) * h1);
@@ -342,7 +350,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     }
   }
   if (index.length < 30) return null;
-  return finish(pos, uv, col, si, sw, index, covered ? hair.cover! : hair.color!, texture, covered);
+  return { ...finish(pos, uv, col, si, sw, index, covered ? hair.cover! : hair.color!, texture, covered, !!opts.base), calotaIndex };
 }
 
 /** Alturas (cm, canônico) em que a silhueta ainda tem largura — a mais alta é o topo da cobertura. */

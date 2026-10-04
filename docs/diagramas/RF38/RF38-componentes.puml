@@ -17,9 +17,9 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "brands/[slug] — aba Meus cupons promocionais" as FE0
-  component "lookbook?tab=cupons — Meus cupons resgatados" as FE1
-  component "FaiCoupon (desenho com logo FAI)" as FE2
+  component "brands/[slug] — aba Meus cupons promocionais (BrandCouponsTab)" as FE0
+  component "lookbook (aba coupons) e /coupons — Meus cupons resgatados (MyCoupons)" as FE1
+  component "FaiCoupon (components/coupons/fai-coupon.tsx)" as FE2
   component "notifications — "Parabéns! Deseja resgatar o CUPOM?"" as FE3
 }
 package "fai-web (REST)" {

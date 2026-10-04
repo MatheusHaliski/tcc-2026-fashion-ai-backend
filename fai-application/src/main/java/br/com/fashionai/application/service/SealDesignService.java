@@ -85,6 +85,46 @@ public class SealDesignService {
         return result;
     }
 
+    /**
+     * RF25 — imagem do núcleo do selo (centro do circular ou emblema da folha): qualquer proporção entre 1:4 e 4:1, de 64
+     * a 4096 px; salva em PNG com no máximo 640 px no lado maior (o selo é exibido pequeno).
+     */
+    public Map<String, Object> uploadCore(CurrentUser user, byte[] bytes) {
+        User owner = users.findById(user.id()).orElseThrow();
+        if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE) {
+            throw ApiException.forbidden(Msg.t("sealDesign.so_perfis_de_marca_ou"));
+        }
+        ImageOps.requireAcceptedImage(bytes);
+        BufferedImage img = ImageOps.toArgb(ImageOps.decode(bytes));
+        int w = img.getWidth();
+        int h = img.getHeight();
+        Map<String, Object> details = Map.of("width", w, "height", h);
+        if (Math.min(w, h) < CORE_MIN_PX) {
+            throw ApiException.badRequest("NUCLEO_PEQUENO", Msg.t("sealDesign.nucleo_pequeno", CORE_MIN_PX), details);
+        }
+        if (Math.max(w, h) > (int) SealDesigns.GEOMETRY.get("uploadMaxPx") || Math.max(w, h) > 4 * Math.min(w, h)) {
+            throw ApiException.badRequest("NUCLEO_PROPORCAO", Msg.t("sealDesign.nucleo_proporcao"), details);
+        }
+        double k = Math.min(1.0, CORE_OUTPUT_PX / (double) Math.max(w, h));
+        int ow = Math.max(1, (int) Math.round(w * k));
+        int oh = Math.max(1, (int) Math.round(h * k));
+        BufferedImage scaled = new BufferedImage(ow, oh, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = scaled.createGraphics();
+        ImageOps.quality(g);
+        g.drawImage(img, 0, 0, ow, oh, null);
+        g.dispose();
+        String key = "users/" + user.id() + "/seals/core-" + UUID.randomUUID() + ".png";
+        MediaStoragePort.StoredObject stored = media.put(key, ImageOps.png(scaled), "image/png");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("url", stored.url());
+        result.put("width", ow);
+        result.put("height", oh);
+        return result;
+    }
+
+    static final int CORE_MIN_PX = 64;
+    static final int CORE_OUTPUT_PX = 640;
+
     /** Heurística de "conteúdo circular": os quatro cantos (fora do círculo inscrito) são transparentes ou quase. */
     static boolean cornersClear(BufferedImage img) {
         int n = img.getWidth();

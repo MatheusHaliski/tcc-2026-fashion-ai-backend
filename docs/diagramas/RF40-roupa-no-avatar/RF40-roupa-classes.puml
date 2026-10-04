@@ -1,0 +1,74 @@
+@startuml RF40_Roupa_Classes
+title RF40 — Avatar 3D: tipos da montagem da roupa\nDiagrama de classes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+enum GarmentKind {
+  tee
+  tank
+  longsleeve
+  shirt
+  sweater
+  hoodie
+  jacket
+  coat
+  crop
+  dress
+  jumpsuit
+  skirt
+  pants
+  shorts
+  leggings
+  shoes
+  boots
+}
+class GarmentSpec {
+  kind : GarmentKind
+  ease, hem, neck, vneck, waist
+  sleeve, leg, skirt, drape, flare
+  layer
+}
+class BodyParam {
+  h[], group[], side[]
+  hipY, neckY, torsoZ
+  shoulder{L,R}, wrist{L,R}
+}
+class GarmentGeometry {
+  spec : GarmentSpec
+  position, alpha
+  source  «vértice do corpo de origem»
+  skinIndex, skinWeight, index
+}
+class UnderLayer {
+  ease : Float32Array  «folga já ocupada»
+  tubes : SkirtTube[]
+}
+class CollarBand {
+  position, skinIndex, skinWeight, index
+}
+class TrimBand {
+  part : barra|punho
+  position, skinIndex, skinWeight, index
+}
+class ShoePart {
+  name : cabedal|sola|cadarco|colarinho
+  position, color, skinIndex, skinWeight, index
+}
+class PhotoInfo {
+  width, height, box
+  widthAt(fy), collarRow
+}
+GarmentGeometry --> GarmentSpec
+GarmentSpec ..> GarmentKind
+GarmentGeometry ..> BodyParam
+GarmentGeometry ..> UnderLayer : folga sobre
+TrimBand ..> GarmentGeometry : raio da peça
+CollarBand ..> GarmentSpec
+ShoePart ..> BodyParam
+GarmentGeometry ..> PhotoInfo : textura
+@enduml

@@ -97,7 +97,7 @@ public class IdentityService {
     private final MediaStoragePort storage;
     /** Envio fora da requisição (redefinição de senha): o tempo de resposta não depende de o e-mail existir. */
     private Executor mailExecutor = Executors.newVirtualThreadPerTaskExecutor();
-    /** Aviso aos administradores e painel do examinador (opcional: testes montam o serviço sem ele). */
+    /** Aviso aos administradores e Central do emissor (opcional: testes montam o serviço sem ele). */
     private IssuerReviewService issuerReview;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -284,6 +284,10 @@ public class IdentityService {
             if (c == null || blank(c.stageName())) {
                 errors.put("celebrity.stageName", Msg.t("identity.nome_artistico_e_obrigatorio"));
             }
+            if (c == null || blank(c.realName())) {
+                // critério obrigatório da verificação (NOME_CONFERE): sem ele o perfil nunca poderia ser aprovado
+                errors.put("celebrity.realName", Msg.t("identity.nome_civil_e_obrigatorio"));
+            }
             if (c == null || blank(c.identityProofUrl())) {
                 errors.put("celebrity.identityProofUrl", Msg.t("identity.envie_o_documento_de_identificacao"));
             }
@@ -414,7 +418,7 @@ public class IdentityService {
                     Msg.t("identity.p_recebemos_o_cadastro_de", escape(u.getDisplayName()), (type == ProfileType.MARCA ? "marca" : "celebridade")),
                     "SECURITY");
             if (issuerReview != null) {
-                issuerReview.submitted(u.getId());          // e-mail aos administradores (DEV_GATE_ALLOWED_EMAILS), após o commit
+                issuerReview.submitted(u.getId());          // aviso aos administradores (app + e-mail), após o commit
             }
         }
         notifications.notify(u.getId(), null, NotificationType.WELCOME, "USER", u.getId(), Msg.k("identity.boas_vindas_ao_fashion_ai"),
@@ -510,7 +514,12 @@ public class IdentityService {
 
     /** @ reservado (administração, suporte, a própria marca): comparação exata depois da normalização. */
     public static boolean reservedUsername(String normalized) {
-        return normalized != null && RESERVED_USERNAMES.contains(normalized.toLowerCase(Locale.ROOT));
+        if (normalized == null) {
+            return false;
+        }
+        String n = normalized.toLowerCase(Locale.ROOT);
+        // demo_ é das fixtures do Demo/Test Data Pipeline: uma pessoa real com esse prefixo passaria por conta demo
+        return RESERVED_USERNAMES.contains(n) || n.startsWith(br.com.fashionai.domain.model.User.DEMO_PREFIX);
     }
 
     /**
@@ -589,6 +598,9 @@ public class IdentityService {
         u.setEmailVerified(true);
         boolean needsApproval = u.getProfileType() != ProfileType.PESSOAL && !approved(u);
         u.setStatus(needsApproval ? AccountStatus.PENDING_VALIDATION : AccountStatus.ACTIVE);
+        if (needsApproval && issuerReview != null) {
+            issuerReview.emailConfirmed(u);          // o prazo da primeira análise começa aqui (política de verificação §5)
+        }
         audit.log(current, AuditActions.EMAIL_CONFIRMADO, "user:" + u.getId(), Map.of());
         return Views.user(u);
     }
@@ -661,7 +673,9 @@ public class IdentityService {
      * Conta bloqueada (5 falhas em 15 min) responde igual a credencial errada — o mesmo 401 NAO_AUTENTICADO de uma conta
      * que não existe, e sempre depois de conferir o hash (tempo uniforme). Um 423 só para contas existentes revelaria o
      * cadastro; um 423 só com a senha certa viraria um oráculo de senha durante o bloqueio. Códigos 2FA errados contam
-     * no mesmo bloqueio; o login completo zera o contador.
+     * no mesmo bloqueio; o login completo zera o contador. O palpite é reservado no contador ANTES de conferir a senha
+     * (atômico) e devolvido quando ela confere: ler o contador e só somar depois deixava N pedidos em paralelo avaliarem
+     * N senhas, todos vendo "ainda não bloqueado".
      */
     @Transactional(noRollbackFor = ApiException.class)
     public Session login(LoginCommand cmd, String ip, String userAgent) {
@@ -674,18 +688,19 @@ public class IdentityService {
             audit.log("anonymous", AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "usuario_inexistente"));
             throw invalidCredentials();
         }
-        RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
-        boolean passwordOk = hasher.matches(password, u.getPasswordHash());
-        if (lock.exhausted()) {
+        boolean withinLimit = rateLimit.tryAcquire(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
+        boolean passwordOk = hasher.matches(password, u.getPasswordHash());     // sempre: tempo igual bloqueado ou não
+        if (!withinLimit) {
+            RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
             audit.log(u.getId().toString(), AuditActions.LOGIN_BLOQUEADO_TENTATIVAS, "auth", "BLOQUEADO", ip, userAgent,
                     Map.of("resetAt", lock.resetAt().toString()));
             throw invalidCredentials();
         }
         if (!passwordOk) {
-            rateLimit.tryAcquire(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
             audit.log(u.getId().toString(), AuditActions.LOGIN_FALHO, "auth", "FALHA", ip, userAgent, Map.of("reason", "senha"));
-            throw invalidCredentials();
+            throw invalidCredentials();                                          // a reserva fica: conta como falha
         }
+        rateLimit.release(u.getId(), LOGIN_FAIL);                                 // senha certa não é falha
         if (u.getStatus() == AccountStatus.DELETED || u.getStatus() == AccountStatus.SUSPENDED) {
             throw new ApiException(403, "CONTA_INDISPONIVEL", Msg.t("identity.esta_conta_nao_esta_disponivel"));
         }
@@ -967,7 +982,7 @@ public class IdentityService {
     @Transactional
     public int changePassword(CurrentUser user, UUID currentSession, String currentPassword, String newPassword, String confirm) {
         User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        if (!hasher.matches(currentPassword == null ? "" : currentPassword, u.getPasswordHash())) {
+        if (!passwordMatchesWithLockout(u, currentPassword, "troca_senha")) {
             throw ApiException.badRequest("SENHA_ATUAL_INCORRETA", Msg.t("identity.senha_atual_incorreta"));
         }
         Map<String, Object> errors = new LinkedHashMap<>();
@@ -988,9 +1003,34 @@ public class IdentityService {
     /** Reautenticação exigida para dados sensíveis (RF3.CA01). */
     public void reauthenticate(UUID userId, String password) {
         User u = users.findById(userId).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        if (!hasher.matches(password == null ? "" : password, u.getPasswordHash())) {
+        if (!passwordMatchesWithLockout(u, password, "reautenticacao")) {
             throw new ApiException(401, "REAUTENTICACAO_FALHOU", Msg.t("identity.confirme_sua_senha_para_alterar"));
         }
+    }
+
+    /**
+     * Senha conferida para quem já está logado (troca de senha, dados sensíveis, exclusão da conta), no MESMO bloqueio do
+     * login (5 erros em 15 min). Sem isso, uma sessão roubada — um token de acesso de 15 min basta — testaria a senha
+     * atual sem limite e, acertando, trocaria a senha e encerraria as sessões da vítima. Bloqueado, responde 429 sem
+     * olhar o resultado: nem a senha certa passa, então o bloqueio não vira oráculo.
+     */
+    private boolean passwordMatchesWithLockout(User u, String password, String via) {
+        boolean withinLimit = rateLimit.tryAcquire(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
+        boolean ok = hasher.matches(password == null ? "" : password, u.getPasswordHash());
+        if (!withinLimit) {
+            RateLimitPort.QuotaStatus lock = rateLimit.status(u.getId(), LOGIN_FAIL, MAX_LOGIN_FAILURES, LOCK_WINDOW);
+            audit.log(u.getId().toString(), AuditActions.LOGIN_BLOQUEADO_TENTATIVAS, "auth", "BLOQUEADO", null, null,
+                    Map.of("resetAt", lock.resetAt().toString(), "via", via));
+            long minutes = Math.max(1, (Duration.between(Instant.now(), lock.resetAt()).getSeconds() + 59) / 60);
+            throw new ApiException(429, "MUITAS_TENTATIVAS", Msg.t("identity.muitas_tentativas_senha_minutos", minutes),
+                    Map.of("resetAt", lock.resetAt().toString()));
+        }
+        if (ok) {
+            rateLimit.release(u.getId(), LOGIN_FAIL);
+        } else {
+            audit.log(u.getId().toString(), AuditActions.LOGIN_FALHO, "auth", "FALHA", null, null, Map.of("reason", via));
+        }
+        return ok;
     }
 
     /** Conta pelo e-mail (hash de busca). */

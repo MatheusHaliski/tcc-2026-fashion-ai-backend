@@ -1,0 +1,60 @@
+@startuml RF42_Componentes
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "ExpandedCard (esquema)\nbotão \"Look do dia\"" as FE0
+  component "lookbook → u/[username]?tab=daily\n(LookbookTabs · DailyTab)" as FE1
+  component "explorer — Passarela 3D" as FE2
+}
+package "fai-web · controllers" {
+  [LookbookController] as LC
+  [SchemeController] as SCH
+  [ShowcaseController] as SC
+}
+package "fai-application · services" {
+  [LookbookService] as LS
+  [SchemeService] as SS
+  [DailyLookService] as DS
+  [HypeScoreService] as HS
+  [AutopilotService\nCopilotService\nMirrorService] as OTH
+  [WardrobeEventListeners\nAchievementService] as WL
+  [ShowcaseService] as SHS
+}
+package "fai-infrastructure · adapters" {
+  [DailyLookRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository] as REPOS
+}
+database "MySQL\n• daily_looks\n• schemes\n• scheme_items\n• wardrobe_items" as DB
+
+FE0 --> LC : POST /api/me/daily-look
+FE0 --> SCH : POST /api/schemes (lookDoDia)
+FE1 --> LC : GET /api/me/daily-look-tab\nPUT /api/me/daily-looks/{date}/feedback
+FE2 --> SC : GET /api/explorer/runway
+LC --> LS : chama
+LC --> DS : history / feedback
+SCH --> SS : chama
+SC --> SHS : chama
+LS --> DS : register / today
+LS --> HS : panel
+SS --> DS : register
+OTH --> DS : register (AUTOPILOTO, COPILOT,\nVISTA_ME, SMART_MIRROR)
+SHS --> DS : today
+DS --> WL : publica DailyLookRegistered
+DS --> REPOS : grava/lê
+WL --> REPOS : grava
+REPOS --> DB : JPA/Flyway
+@enduml

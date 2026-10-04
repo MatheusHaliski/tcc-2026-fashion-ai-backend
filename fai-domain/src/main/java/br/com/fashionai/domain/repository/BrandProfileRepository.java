@@ -28,4 +28,7 @@ public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID
     List<BrandProfile> findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);
 
     List<BrandProfile> findTop100ByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);
+
+    /** Política de verificação: já existe outro perfil oficial (aprovado) com este nome de marca? */
+    boolean existsByBrandNameIgnoreCaseAndApprovalStatusAndOwner_IdNot(String brandName, ApprovalStatus status, UUID ownerId);
 }

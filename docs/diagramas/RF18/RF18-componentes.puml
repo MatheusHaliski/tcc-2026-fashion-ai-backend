@@ -1,0 +1,54 @@
+@startuml RF18_Componentes
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de componentes — gerado do código (telas → controllers → serviços → repositórios)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+package "Frontend (Next.js)" {
+  component "try-on/page.tsx\n(Provador virtual)" as P
+  component "components/catalog/catalog-search.tsx\n(modo navegação, botão Provar)" as CSF
+  component "components/three/fitting-room-scene.tsx\n(loja 3D + Avatar)" as SCN
+  component "components/three/mannequin.tsx\n(prévia projetada)" as MAN
+  component "lib/tryon/fitting-room.ts\n(wearItem, resolveEnvironment,\nenvironmentFor, encode/decodeTryOn)" as ENV
+}
+package "fai-web · controllers" {
+  component "TryOnController\nGET /api/try-on" as TC
+  component "CatalogController\nGET /api/catalog/stores\nGET /api/catalog/search\nGET /api/catalog/products/{id}\nPOST /api/pieces/from-catalog" as CC
+}
+package "fai-application · services" {
+  component "TryOnService" as TS
+  component "CatalogService" as CS
+  component "WardrobeService\n(createFromCatalog)" as WS
+}
+package "fai-infrastructure · adapters" {
+  component "Repositórios JPA\n(UserPreferences, UserAvatar3d,\nWardrobeItem, Brand, CatalogProduct,\nCatalogVariant, CatalogImage)" as REP
+}
+database "MySQL\n• user_preferences\n• user_avatar3d\n• wardrobe_items\n• brands\n• catalog_products\n• catalog_variants\n• catalog_images" as DB
+component "Navegador\nsessionStorage fai.tryon.fitting\nlocalStorage fai.tryon.saved" as BR
+P --> CSF : usa
+P --> ENV : decide o ambiente
+P --> SCN : environment + pieces
+SCN --> MAN : veste o Avatar
+P --> TC : chama
+P --> CC : chama
+CSF --> CC : busca
+TC --> TS : chama
+CC --> CS : chama
+CS --> WS : cria por referência
+TS --> REP : lê
+CS --> REP : lê/grava
+WS --> REP : grava
+REP --> DB : SQL
+P --> BR : prova da sessão e provas salvas
+@enduml

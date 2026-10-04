@@ -29,7 +29,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "brand_profiles")
-public class BrandProfile extends VersionedAuditableEntity {
+public class BrandProfile extends VersionedAuditableEntity implements ReviewableProfile {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_user_id", nullable = false)
     private User owner;
@@ -111,4 +111,40 @@ public class BrandProfile extends VersionedAuditableEntity {
     /** RF20 regra 2 — limiar de confiança da sugestão configurável por perfil emissor. */
     @Column(name = "seal_confidence_threshold", nullable = false, precision = 4, scale = 3)
     private java.math.BigDecimal sealConfidenceThreshold = new java.math.BigDecimal("0.600");
+
+    // ---- política de verificação (docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md, V31) ----
+    /** Envios para a fila: o cadastro é o 1º e cada reenvio soma (limite em IssuerVerificationPolicy). */
+    @Column(name = "review_attempts", nullable = false)
+    private int reviewAttempts = 1;
+
+    /** Último envio para a fila (reenvio); nulo = o próprio cadastro (createdAt). */
+    @Column(name = "review_submitted_at")
+    private Instant reviewSubmittedAt;
+
+    /** Motivos padronizados da última decisão negativa, separados por vírgula. */
+    @Column(name = "review_reasons", length = 400)
+    private String reviewReasons;
+
+    /** Checklist da última decisão (JSON: código do critério → atendido). */
+    @Column(name = "review_checklist", length = 1024)
+    private String reviewChecklist;
+
+    /** Mensagem de quem pediu a verificação ao reenviar (o que mudou). */
+    @Column(name = "review_owner_message", length = 600)
+    private String reviewOwnerMessage;
+
+    @Override
+    public String publicName() {
+        return brandName;
+    }
+
+    @Override
+    public ApprovalStatus reviewStatus() {
+        return approvalStatus;
+    }
+
+    @Override
+    public void reviewStatus(ApprovalStatus status) {
+        this.approvalStatus = status;
+    }
 }
