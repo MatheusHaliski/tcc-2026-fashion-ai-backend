@@ -1,0 +1,44 @@
+@startuml RF25_Deteccao_Politica_Sequencia
+title RF25 — Política padronizada do selo usada na detecção dentro dos criadores de peça (RF4) e de look (RF5)\nDiagrama de sequência
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #52606D
+  LifeLineBorderColor #B695F5
+  ParticipantBackgroundColor #F8F4FF
+  ParticipantBorderColor #B695F5
+  ActorBackgroundColor #F8F4FF
+  GroupBackgroundColor #FFF5F8
+}
+actor "Pessoa usuária" as P
+participant "Criador de peça (RF4)\nou de look (RF5)" as F
+participant "SealController" as C
+participant "SealService" as S
+participant "SealPolicies" as POL
+database "MySQL\nseals · seal_bonds" as DB
+actor "Emissor" as E
+
+P -> F : monta a peça / escolhe as peças do look
+F -> C : POST /api/seal-suggestions/preview(-piece)\n{peças | campos da peça, ocasiões, estilos}
+C -> S : preview / previewPiece
+S -> DB : selos ACTIVE (findByStatus)
+loop cada selo ativo com política e dentro da validade
+  S -> POL : parse(policy)
+  alt nível PEÇA
+    S -> POL : evaluate(policy, PECA, [peça], ocasiões, estilos)
+  else nível LOOK
+    S -> POL : evaluate(policy, LOOK, peças, ocasiões, estilos)
+  end
+  POL --> S : Verdict(matched, pieceIds, why)
+end
+S --> F : candidatos (1 por emissor, confiança 0,97,\n"atende: <frase da política>")
+F --> P : selos sugeridos no criador
+P -> F : salva o look com os selos escolhidos
+F -> C : POST /api/schemes … (vínculos sugeridos)
+C -> S : route(bond) → sealFor(emissor, tier)
+S -> DB : seal_bonds SUGGESTED (selo da política)
+S --> E : notificação para revisar o vínculo
+E -> C : aprova (RF20/RF21)
+C -> S : issue(bond)
+S -> DB : seal_bonds APPROVED · emissões +1
+@enduml

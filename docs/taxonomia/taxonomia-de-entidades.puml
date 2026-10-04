@@ -1,0 +1,171 @@
+@startuml Taxonomia_Entidades
+!pragma layout smetana
+title Taxonomia de entidades do FashionAI — 99 entidades em 12 áreas (relações JPA)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+hide empty members
+hide circle
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #8792A2
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #2D2438
+}
+left to right direction
+package "Identidade, conta e privacidade" {
+  class User <<users>>
+  class UserPreferences <<user_preferences>>
+  class UserConsent <<user_consents>>
+  class VerificationCode <<verification_codes>>
+  class RefreshToken <<refresh_tokens>>
+  class DataExportRequest <<data_export_requests>>
+}
+package "Perfis emissores (marca e celebridade)" {
+  class BrandProfile <<brand_profiles>>
+  class CelebrityProfile <<celebrity_profiles>>
+}
+package "Guarda-roupa e peças" {
+  class WardrobeItem <<wardrobe_items>>
+  class PieceImage <<piece_images>>
+  class PieceUsageDiaryEntry <<piece_usage_diary>>
+  class WardrobeAvailabilityChange <<wardrobe_availability_log>>
+  class CaptureSession <<capture_sessions>>
+  class CaptureRequest <<capture_requests>>
+  class QualityScore <<quality_scores>>
+  class AiReviewItem <<ai_review_items>>
+  class GarmentLandmark <<garment_landmarks>>
+  class GarmentEmbedding <<garment_embeddings>>
+  class ItemEmbedding <<item_embeddings>>
+  class BrandPrediction <<brand_predictions>>
+}
+package "Marcas e catálogo global" {
+  class Brand <<brands>>
+  class BrandAlias <<brand_aliases>>
+  class BrandLogo <<brand_logos>>
+  class CatalogSource <<catalog_sources>>
+  class CatalogProduct <<catalog_products>>
+  class CatalogProductAlias <<catalog_product_aliases>>
+  class CatalogVariant <<catalog_variants>>
+  class CatalogImage <<catalog_images>>
+  class CatalogIngestionRun <<catalog_ingestion_runs>>
+  class KbBrandSignature <<kb_brand_signatures>>
+  class KbProductLine <<kb_product_lines>>
+  class KbProductModel <<kb_product_models>>
+}
+package "Esquemas (looks), DNA e planejamento" {
+  class Scheme <<schemes>>
+  class SchemeItem <<scheme_items>>
+  class SchemeGrouping <<scheme_groupings>>
+  class DnaScheme <<dna_schemes>>
+  class DnaSchemeItem <<dna_scheme_items>>
+  class StyleDna <<style_dna>>
+  class StyleDnaVersion <<style_dna_versions>>
+  class DailyLook <<daily_looks>>
+  class HypeScoreMetric <<hype_score_metrics>>
+  class WeekPlan <<week_plans>>
+  class WeekPlanDay <<week_plan_days>>
+  class AcervoGroup <<acervo_groups>>
+  class HypeGroup <<hype_groups>>
+  class MirrorState <<mirror_states>>
+}
+package "Selos, promoções e cupons" {
+  class Seal <<seals>>
+  class SealBond <<seal_bonds>>
+  class Promotion <<promotions>>
+  class PromotionRedemption <<promotion_redemptions>>
+  class CouponRight <<coupon_rights>>
+}
+package "Social e notificações" {
+  class Follow <<follows>>
+  class Comment <<comments>>
+  class Reaction <<reactions>>
+  class Share <<shares>>
+  class SavedItem <<saved_items>>
+  class Notification <<notifications>>
+  class Photo <<photos>>
+}
+package "Gamificação (FAI Points, desafios, rankings)" {
+  class FaiPointsLedgerEntry <<fai_points_ledger>>
+  class FaiPointsRule <<fai_points_rules>>
+  class ChallengeTemplate <<challenge_templates>>
+  class ChallengeInstance <<challenge_instances>>
+  class ChallengeParticipant <<challenge_participants>>
+  class ChallengeEvent <<challenge_events>>
+  class ChallengeNote <<challenge_notes>>
+  class ChallengeVote <<challenge_votes>>
+  class UserAchievement <<user_achievements>>
+  class RankingOptIn <<ranking_opt_ins>>
+  class RankingPosition <<ranking_positions>>
+  class InventoryScoreSnapshot <<inventory_score_snapshots>>
+}
+package "FLAIR (jogo de cartas)" {
+  class FlairProfile <<flair_profiles>>
+  class FlairCoinEntry <<flair_coin_entries>>
+  class FlairCombination <<flair_combinations>>
+  class FlairMatch <<flair_matches>>
+  class FlairMatchEntry <<flair_match_entries>>
+  class FlairModeState <<flair_mode_states>>
+  class FlairRedemption <<flair_redemptions>>
+  class FlairTeam <<flair_teams>>
+  class FlairTeamMember <<flair_team_members>>
+  class FlairTerritory <<flair_territories>>
+  class FlairTrophy <<flair_trophies>>
+}
+package "Quarto 3D e avatar" {
+  class RoomCatalogItem <<room_catalog>>
+  class RoomInventoryItem <<room_inventory>>
+  class RoomLayout <<room_layouts>>
+  class RoomStorageEntry <<room_storage_map>>
+  class UserAvatar3d <<user_avatars_3d>>
+}
+package "IA, visão computacional e pipelines" {
+  class AiInferenceLog <<ai_inference_log>>
+  class ModelInference <<model_inferences>>
+  class ModelRegistryEntry <<model_registry>>
+  class DatasetSource <<dataset_sources>>
+  class TrainingCandidate <<training_candidates>>
+  class PipelineJob <<pipeline_jobs>>
+  class ProcessingJobLog <<processing_jobs_log>>
+  class RenderJobLog <<render_jobs_log>>
+  class MetricSnapshot <<metric_snapshots>>
+  class AssetPreset <<asset_presets>>
+}
+package "Moderação, auditoria e operação" {
+  class ModerationQueueItem <<moderation_queue>>
+  class AuditLog <<audit_log>>
+  class BackupRecord <<backup_records>>
+}
+note as N
+  Relações com **User** (dono/autor) omitidas: 45.
+  Setas: ManyToOne/OneToOne (→), coleções (o–).
+end note
+Brand --> BrandProfile
+DailyLook --> Scheme
+DailyLook --> DailyLook
+DnaSchemeItem --> DnaScheme
+DnaSchemeItem --> Scheme
+FlairMatchEntry --> FlairMatch
+FlairMatchEntry --> Scheme
+FlairRedemption --> FlairCombination
+FlairRedemption --> Scheme
+FlairTeamMember --> FlairTeam
+HypeScoreMetric --> DailyLook
+HypeScoreMetric --> Scheme
+Promotion --> Seal
+Promotion --> SealBond
+PromotionRedemption --> Promotion
+PromotionRedemption --> SealBond
+Scheme --> Scheme
+SchemeItem --> Scheme
+SchemeItem --> WardrobeItem
+SealBond --> Scheme
+SealBond --> Seal
+WardrobeItem --> BrandProfile
+WardrobeItem --> Brand
+WeekPlanDay --> WeekPlan
+WeekPlanDay --> Scheme
+@enduml
