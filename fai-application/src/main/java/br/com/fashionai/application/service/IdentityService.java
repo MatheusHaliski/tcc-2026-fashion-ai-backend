@@ -97,7 +97,7 @@ public class IdentityService {
     private final MediaStoragePort storage;
     /** Envio fora da requisição (redefinição de senha): o tempo de resposta não depende de o e-mail existir. */
     private Executor mailExecutor = Executors.newVirtualThreadPerTaskExecutor();
-    /** Aviso aos administradores e painel do examinador (opcional: testes montam o serviço sem ele). */
+    /** Aviso aos administradores e Central do emissor (opcional: testes montam o serviço sem ele). */
     private IssuerReviewService issuerReview;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -414,7 +414,7 @@ public class IdentityService {
                     Msg.t("identity.p_recebemos_o_cadastro_de", escape(u.getDisplayName()), (type == ProfileType.MARCA ? "marca" : "celebridade")),
                     "SECURITY");
             if (issuerReview != null) {
-                issuerReview.submitted(u.getId());          // e-mail aos administradores (DEV_GATE_ALLOWED_EMAILS), após o commit
+                issuerReview.submitted(u.getId());          // aviso aos administradores (app + e-mail), após o commit
             }
         }
         notifications.notify(u.getId(), null, NotificationType.WELCOME, "USER", u.getId(), Msg.k("identity.boas_vindas_ao_fashion_ai"),

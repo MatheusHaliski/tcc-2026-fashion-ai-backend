@@ -1973,6 +1973,24 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .review-steps > li.is-current .review-dot { background: #F2B705; color: #1d1d1b; box-shadow: 0 0 0 4px rgba(242,183,5,.25); }
 .review-steps > li.is-bad .review-dot { background: var(--mark); color: #fff; }
 :root[data-theme="dark"] .review-pill.is-pending { background: #3A2E10; color: #F5C451; }
+/* Central do emissor e fila de verificação (política de verificação de marcas e celebridades) */
+.issuer-center { display: grid; gap: 16px; }
+@media (min-width: 1024px) { .issuer-center { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+.issuer-code { font-family: var(--font-data); font-size: 20px; font-weight: 700; letter-spacing: .08em; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); user-select: all; }
+.issuer-feedback { border-left: 4px solid #F2B705; }
+.policy-checks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.policy-check { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.policy-mark { display: inline-flex; width: 22px; height: 22px; border-radius: 999px; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.policy-check.is-ok .policy-mark { background: var(--thread); color: #fff; }
+.policy-check.is-bad .policy-mark { background: var(--mark); color: #fff; }
+.policy-check.is-warn .policy-mark { background: #F2B705; color: #1d1d1b; }
+.policy-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--surface-2); color: var(--muted); vertical-align: middle; }
+.policy-tag.is-required { background: var(--mark-soft); color: var(--mark-ink, var(--mark)); }
+.policy-check.is-ok .policy-state { color: var(--thread-ink, var(--thread)); }
+.policy-check.is-bad .policy-state { color: var(--mark-ink, var(--mark)); }
+.dossier-fields { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 4px 12px; margin: 4px 0 0; font-size: 14px; }
+.dossier-fields dt { color: var(--muted); }
+.dossier-fields dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
 
 /* RF28 — Vista-me: espelho de corpo inteiro com o reflexo do Avatar 3D */

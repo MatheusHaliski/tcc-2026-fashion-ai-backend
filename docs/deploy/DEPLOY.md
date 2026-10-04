@@ -49,6 +49,8 @@ No host (Railway/Render/Fly), use o `Dockerfile.backend`, porta `8080`, health c
 | `APP_BASE_URL`, `FRONTEND_URL` | URLs públicas da API e do frontend |
 | `DEV_GATE_ENABLED=true`, `DEV_GATE_SECRET` | o mesmo segredo da Vercel |
 | `FAI_ADMIN_EMAIL`, `FAI_ADMIN_PASSWORD` | primeira conta ADMIN |
+| `ISSUER_REVIEW_NOTIFY_EMAILS` | (opcional) e-mails extras avisados de cada pedido de verificação de marca/celebridade; padrão: `FAI_ADMIN_EMAIL`. As contas com papel ADMIN sempre recebem a notificação no app e o e-mail (`docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md`) |
+| `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | e-mail transacional; o domínio de `RESEND_FROM_EMAIL` precisa estar **verificado no Resend** (sem isso o Resend devolve 403 e nenhum e-mail sai) |
 | `STORAGE_TYPE=s3` + `S3_*` | recomendado: o disco do contêiner é efêmero |
 | chaves de IA | opcionais; confira com `python3 scripts/provision/ai.py` |
 
