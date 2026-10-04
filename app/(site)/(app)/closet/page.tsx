@@ -12,13 +12,14 @@ import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
 import { usePieceUpdates } from "@/lib/pieces/piece-events";
 import { FaiIcon } from "@/components/fai-icon";
+import { hypeLevelFilter, hypeSortOptions } from "@/components/hype";
 
 // valores iguais aos aceitos pelo backend (WardrobeService.stateMatches); "venda" = peças à venda (RF4.CA8)
 const STATES = [["", "common.all"], ["favoritos", "common.favorite"], ["disponivel", "common.available"], ["indisponivel", "common.unavailable"], ["venda", "common.forSale"]] as const;
 
 function Closet() {
   const { t } = useI18n(); const tax = useTaxonomy(); const toast = useToast();
-  const [f, setF] = useState({ category: "", color: "", season: "", occasion: "", style: "", state: "", q: "", sort: "recentes", page: 0, size: 24 });
+  const [f, setF] = useState({ category: "", color: "", season: "", occasion: "", style: "", state: "", hypeLevel: "", q: "", sort: "recent", page: 0, size: 24 });
   const { data, loading, error, reload, setData } = useApi<Page<PieceView>>((signal) => api.get(`/api/me/closet${qs(f)}`, { signal }), [JSON.stringify(f)]);
   const set = (k: keyof typeof f, v: string | number) => setF((o) => ({ ...o, [k]: v, page: k === "page" ? (v as number) : 0 }));
   // favorita/disponível agora se marcam no detalhe da peça ("Mais opções"): a grade acompanha a mudança
@@ -41,11 +42,14 @@ function Closet() {
           { key: "category", label: t("common.category"), options: Object.keys(tax?.subcategories ?? {}).map((c) => ({ value: c, label: CATEGORY_LABEL[c] ?? c })) },
           { key: "color", label: t("common.color"), options: Object.entries(tax?.colors ?? {}).map(([c, hex]) => ({ value: c, label: label(c), swatch: /^#[0-9a-f]{3,8}$/i.test(hex) ? hex : undefined })) },
           { key: "occasion", label: t("common.occasion"), options: (tax?.occasions ?? []).map((c) => ({ value: c, label: label(c) })) },
+          // Hype é filtro (faixa mínima), nunca aba
+          hypeLevelFilter(),
         ]}
-        values={{ state: f.state, category: f.category, color: f.color, occasion: f.occasion }} onChange={(k, v) => set(k as keyof typeof f, v)}
+        values={{ state: f.state, category: f.category, color: f.color, occasion: f.occasion, hypeLevel: f.hypeLevel }} onChange={(k, v) => set(k as keyof typeof f, v)}
+        // valores canônicos de WardrobeService.closet (antes iam "mais_usadas"/"nome"/"preco" e a ordenação era ignorada)
         sort={{ value: f.sort, onChange: (v) => set("sort", v), options: [
-          { value: "recentes", label: t("common.mais_recentes") }, { value: "mais_usadas", label: t("closet.mais_usadas") },
-          { value: "menos_usadas", label: t("closet.menos_usadas") }, { value: "nome", label: t("closet.nome_a_z") }, { value: "preco", label: t("common.price") },
+          { value: "recent", label: t("common.mais_recentes") }, ...hypeSortOptions(),
+          { value: "name", label: t("closet.nome_a_z") }, { value: "price", label: t("common.price") },
         ] }}
         resultCount={data?.total} />
       {error && <ErrorState error={error} onRetry={reload} />}

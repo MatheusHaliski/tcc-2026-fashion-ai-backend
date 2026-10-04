@@ -14,6 +14,7 @@ import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
+import { HypeInline } from "@/components/hype/hype-inline";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { BrandLogo } from "@/components/brand-logo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
@@ -267,6 +268,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
+            <HypeInline type="PIECE" id={p.id} name={p.name} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
               <dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>

@@ -261,7 +261,7 @@ function FlairInner() {
       {tab === "carteira" && (
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("flair.cupons")}</h2><Link href="/lookbook?tab=cupons" className="btn btn-sm">{t("common.meus_cupons_resgatados")}</Link></div>
+            <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("flair.cupons")}</h2><Link href="/coupons" className="btn btn-sm">{t("common.meus_cupons_resgatados")}</Link></div>
             {vouchers.loading ? <Skeleton className="h-32" /> : (vouchers.data ?? []).length === 0 ? <EmptyState title={t("flair.nenhum_cupom_ainda")} hint={t("flair.complete_uma_combinacao_de_loja")} action={<Button size="sm" onClick={() => setTab("lojas")}>{t("flair.ver_combinacoes")}</Button>} /> :
               <ul className="fai-list">{vouchers.data!.map((v) => (
                 <li key={v.id}><button type="button" className="flair-voucher w-full text-left" style={{ borderColor: v.combination.accentColor }} onClick={() => setVoucher(v)}>

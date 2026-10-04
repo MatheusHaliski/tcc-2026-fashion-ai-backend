@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { SeasonDecor, Spotlights } from "@/components/card-art";
 import { BLOCKS_TEXTURE, brickColor, hueChroma, studioOf } from "@/lib/card-art";
 import { BrandLogo } from "@/components/brand-logo";
+import { HypeScoreGauge } from "@/components/hype/hype-score-gauge";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 
@@ -369,8 +370,9 @@ function Silhouette({ pieces, declared }: { pieces: AnatomyPiece[]; declared?: s
   );
 }
 
+/** Medidor do Hype Focus: o mesmo componente do Hype (HypeScoreGauge), com a legenda de faixas desta anatomia. */
 function Gauge({ v, size = 92 }: { v: number; size?: number }) {
-  return <svg width={size} height={Math.round(size * 0.58)} viewBox="0 0 92 54" aria-hidden><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke="var(--line-soft)" strokeWidth="9" strokeLinecap="round" /><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke={hypeStatus(v)} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${(v / 100) * 119.4} 200`} /><text x="46" y="45" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{v}%</text></svg>;
+  return <HypeScoreGauge value={v} size={size} color={hypeStatus(v)} suffix="%" />;
 }
 /** 08 Hype Focus: a peça mais em alta (Hype global) com o valor desta peça ao lado; mede popularidade, não qualidade. */
 function HypeFocus({ pieces }: { pieces: AnatomyPiece[] }) {

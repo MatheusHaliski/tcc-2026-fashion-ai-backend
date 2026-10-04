@@ -10,7 +10,7 @@ import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
 import { CardArtLayer, SeasonDecor } from "@/components/card-art";
 import { CardActions } from "@/components/interactions";
-import { hypeColor } from "@/components/scheme-card";
+import { hypeColor } from "@/lib/hype/model";
 import { BrandLogo } from "@/components/brand-logo";
 import { CardHeader } from "@/components/card-header";
 

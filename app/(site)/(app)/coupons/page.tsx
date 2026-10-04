@@ -1,6 +1,5 @@
 "use client";
 import { Suspense } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RequireAuth } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
@@ -13,8 +12,7 @@ function CouponsInner() {
   const sp = useSearchParams();
   return (
     <>
-      <PageHeader kicker="RF38" title={t("coupons.meus_cupons")} lead={t("coupons.cupons_fashion_ai_conquistados_com")}
-        actions={<Link href="/lookbook?tab=cupons" className="btn btn-sm">{t("coupons.ver_no_lookbook")}</Link>} />
+      <PageHeader kicker="RF38" title={t("coupons.meus_cupons")} lead={t("coupons.cupons_fashion_ai_conquistados_com")} />
       <MyCoupons openRight={sp.get("right")} />
     </>
   );

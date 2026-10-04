@@ -6,7 +6,7 @@ import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { Page, PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useApi } from "@/lib/hooks/use-api";
-import { Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Textarea, useToast } from "@/components/ui";
+import { Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Textarea, useToast } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useReducedMotion, useWebGL, type Look3d, type Mannequin3d } from "@/components/three/common";
@@ -61,12 +61,10 @@ export function CollectionsTab({ slug, admin }: { slug: string; admin: boolean }
   );
 }
 
+/** Visões de uma mesma aba (uma de cada vez): o SegmentPicker padrão, no lugar do tablist feito à mão. */
 function SubTabs<T extends string>({ value, onChange, tabs }: { value: T; onChange: (v: T) => void; tabs: { id: T; label: string }[] }) {
-  return (
-    <div role="tablist" aria-label="sub-abas" className="mb-4 flex flex-wrap gap-1.5 border-b border-line-soft pb-2">
-      {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={value === t.id} className={`chip ${value === t.id ? "is-active" : ""}`} onClick={() => onChange(t.id)}>{t.label}</button>)}
-    </div>
-  );
+  const { t } = useI18n();
+  return <SegmentPicker label={t("showcase.showcaseTabs.visoes")} value={value} onChange={onChange} options={tabs} className="mb-4" />;
 }
 
 // ------------------------------------------------------------------ busca por era/coleção

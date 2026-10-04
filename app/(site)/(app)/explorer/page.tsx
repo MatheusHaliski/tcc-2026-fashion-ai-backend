@@ -12,6 +12,7 @@ import { Globe, countryName, type GlobePoint } from "@/components/globe";
 import { BrandLogo } from "@/components/brand-logo";
 import { RunwayPanel } from "@/components/showcase/runway-panel";
 import { FilterBar } from "@/components/filter-bar";
+import { HypeTrendingPanel } from "@/components/hype/hype-trending";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
 interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
@@ -29,8 +30,8 @@ export default function ExplorerPage() { return <Suspense><Explorer /></Suspense
 
 function Explorer() {
   const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy(); const sp = useSearchParams();
-  const [tab, setTab] = useState<"runway" | "map" | "brands" | "insights">("runway");
-  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map") setTab(q); }, [sp]);
+  const [tab, setTab] = useState<"runway" | "trending" | "map" | "brands" | "insights">("runway");
+  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map" || q === "trending") setTab(q); }, [sp]);
   const [country, setCountry] = useState(""); const [g, setG] = useState({ season: "", color: "", hypeBand: "" });
   const [f, setF] = useState({ term: "", country: "", category: "", color: "", season: "", hypeMin: "", sort: "HYPE" });
   const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country, ...g })}`, { signal, anonymous: !user }), [country, JSON.stringify(g), !!user], { enabled: tab === "map" });
@@ -41,8 +42,9 @@ function Explorer() {
   return (
     <>
       <PageHeader title={t("nav.explorer")} kicker={t("explorer.rf26_explorador_global")} lead={t("explorer.tendencias_agregadas_por_pais_estacao")} />
-      <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "trending", label: t("hypeTrending.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
       {tab === "runway" && <RunwayPanel />}
+      {tab === "trending" && <HypeTrendingPanel />}
       {tab === "map" && (
         <>
           <FilterBar
