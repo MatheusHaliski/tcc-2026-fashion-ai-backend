@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmailHash(String emailHash);
 
+    /** Conta de fixture do Demo/Test Data Pipeline (fixture_key é UNIQUE; contas reais têm null). */
+    Optional<User> findByFixtureKey(String fixtureKey);
+
     Optional<User> findByUsernameIgnoreCase(String username);
 
     boolean existsByUsernameIgnoreCase(String username);
