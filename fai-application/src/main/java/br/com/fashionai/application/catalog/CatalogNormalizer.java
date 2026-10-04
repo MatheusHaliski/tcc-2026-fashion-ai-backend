@@ -1,7 +1,7 @@
 package br.com.fashionai.application.catalog;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,32 +39,32 @@ public final class CatalogNormalizer {
     private final String version;
 
     CatalogNormalizer(JsonNode root) {
-        version = root.path("version").asText("0");
-        root.path("taxonomy").path("subcategories").fields().forEachRemaining(e -> {
+        version = root.path("version").asString("0");
+        root.path("taxonomy").path("subcategories").properties().forEach(e -> {
             List<String> subs = new ArrayList<>();
             e.getValue().forEach(n -> {
-                subs.add(n.asText());
-                subcategoryCategory.put(n.asText(), e.getKey());
-                subcategories.put(key(n.asText()), n.asText());
+                subs.add(n.asString());
+                subcategoryCategory.put(n.asString(), e.getKey());
+                subcategories.put(key(n.asString()), n.asString());
             });
             taxonomy.put(e.getKey(), subs);
             categories.put(key(e.getKey()), e.getKey());
         });
-        root.path("taxonomy").path("colors").forEach(n -> colors.put(key(n.asText()), n.asText()));
-        root.path("taxonomy").path("materials").forEach(n -> materials.put(key(n.asText()), n.asText()));
+        root.path("taxonomy").path("colors").forEach(n -> colors.put(key(n.asString()), n.asString()));
+        root.path("taxonomy").path("materials").forEach(n -> materials.put(key(n.asString()), n.asString()));
         load(root.path("categorySynonyms"), categories);
         load(root.path("subcategorySynonyms"), subcategories);
         load(root.path("colorSynonyms"), colors);
         load(root.path("materialSynonyms"), materials);
         load(root.path("genderSynonyms"), genders);
         load(root.path("brandAliases"), brandAliases);
-        root.path("stopwords").forEach(n -> stopwords.add(key(n.asText())));
+        root.path("stopwords").forEach(n -> stopwords.add(key(n.asString())));
     }
 
     private static void load(JsonNode node, Map<String, String> into) {
-        node.fields().forEachRemaining(e -> {
+        node.properties().forEach(e -> {
             into.put(key(e.getKey()), e.getKey());
-            e.getValue().forEach(v -> into.putIfAbsent(key(v.asText()), e.getKey()));
+            e.getValue().forEach(v -> into.putIfAbsent(key(v.asString()), e.getKey()));
         });
     }
 

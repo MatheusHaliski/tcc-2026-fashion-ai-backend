@@ -32,12 +32,9 @@
             <artifactId>spring-tx</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <!-- Jackson 3 (Spring Boot 4): pacote tools.jackson; java.time já vem no databind -->
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

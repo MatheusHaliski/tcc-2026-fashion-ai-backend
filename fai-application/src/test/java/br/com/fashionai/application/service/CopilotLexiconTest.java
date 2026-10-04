@@ -1,7 +1,7 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.taxonomy.Taxonomy;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
