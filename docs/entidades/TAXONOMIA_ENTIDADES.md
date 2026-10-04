@@ -305,6 +305,6 @@ Transversais a todos os RF: `AuditLog` (RNF5), `BackupRecord` (RNF4), `MetricSna
 
 - As 14 entidades de V29 (RF45) têm repositórios, mas só `ProductKnowledgeBase` (Kb*) e `WardrobeService` (`QualityScore`) os usam; `CaptureSession`, `CaptureRequest`, `PieceImage`, `BrandPrediction`, `GarmentLandmark`, `GarmentEmbedding`, `ModelRegistryEntry`, `ModelInference`, `TrainingCandidate`, `AiReviewItem`, `DatasetSource` ainda não são gravados por nenhum serviço.
 - Os javadocs das classes de V29 dizem "RF4"; no Trello o pipeline canônico é o **RF45**. Este documento usa RF45 e marca "(código: RF4)".
-- RF47 não tem card no Trello (busca em 2026-10-04); o nome "Acervo & Busca Catalogada" vem de `CatalogController`/`CatalogService`.
+- RF47 ("Acervo & Busca Catalogada") ganhou card no Trello em 2026-10-04; especificação em `docs/catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md`.
 - `ChallengeInstance.state`, `ChallengeParticipant.status`, `CouponRight.status`, `FlairMatch.status`, `BackupRecord.status` e `CatalogIngestionRun.status` são `String`, sem enum Java.
 - `RoomCatalogItem` versiona por `@Version` próprio em vez de herdar `VersionedAuditableEntity`.
