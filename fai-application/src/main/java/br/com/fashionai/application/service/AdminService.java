@@ -15,21 +15,14 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.BackupRecord;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.CelebrityProfile;
 import br.com.fashionai.domain.model.ModerationQueueItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.AiInferenceLogRepository;
 import br.com.fashionai.domain.repository.AuditLogRepository;
 import br.com.fashionai.domain.repository.BackupRecordRepository;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.CommentRepository;
 import br.com.fashionai.domain.repository.ModerationQueueRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -55,8 +48,6 @@ import java.util.UUID;
 @Service
 public class AdminService {
     private final UserRepository users;
-    private final BrandProfileRepository brands;
-    private final CelebrityProfileRepository celebrities;
     private final ModerationQueueRepository moderation;
     private final WardrobeItemRepository pieces;
     private final CommentRepository comments;
@@ -65,7 +56,6 @@ public class AdminService {
     private final BackupRecordRepository backups;
     private final ObjectProvider<BackupPort> backupPort;
     private final AnalyticsQueryPort analytics;
-    private final SealService seals;
     private final IdentityService identity;
     private final NotificationService notifications;
     private final UploadQuarantine quarantine;
@@ -80,16 +70,14 @@ public class AdminService {
     @Value("${fashionai.backup.retention-count:14}")
     private int backupRetention = 14;
 
-    public AdminService(UserRepository users, BrandProfileRepository brands, CelebrityProfileRepository celebrities, ModerationQueueRepository moderation,
+    public AdminService(UserRepository users, ModerationQueueRepository moderation,
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
-                        BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics, SealService seals,
+                        BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics,
                         IdentityService identity, NotificationService notifications, AssetCatalogService assets, ChallengeService challenges,
                         HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
                         UploadQuarantine quarantine) {
         this.quarantine = quarantine;
         this.users = users;
-        this.brands = brands;
-        this.celebrities = celebrities;
         this.moderation = moderation;
         this.pieces = pieces;
         this.comments = comments;
@@ -98,7 +86,6 @@ public class AdminService {
         this.backups = backups;
         this.backupPort = backupPort;
         this.analytics = analytics;
-        this.seals = seals;
         this.identity = identity;
         this.notifications = notifications;
         this.assets = assets;
@@ -110,50 +97,7 @@ public class AdminService {
         this.audit = audit;
     }
 
-    // ================================================================== aprovações (RF1.CA07/CA09)
-    @Transactional(readOnly = true)
-    public Map<String, Object> approvals(CurrentUser admin) {
-        guard.requireAdmin(admin);
-        return Map.of(
-                "brands", brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.PENDENTE).stream().map(b -> Map.<String, Object>of("userId", b.getOwner().getId(),
-                        "name", b.getBrandName(), "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()), "category", String.valueOf(b.getFashionCategory()),
-                        "verificationScore", String.valueOf(b.getVerificationScore()), "createdAt", b.getCreatedAt())).toList(),
-                "celebrities", celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.PENDENTE).stream().map(c -> Map.<String, Object>of(
-                        "userId", c.getOwner().getId(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()),
-                        "verificationScore", String.valueOf(c.getVerificationScore()), "createdAt", c.getCreatedAt())).toList());
-    }
-
-    @Transactional
-    public Map<String, Object> decide(CurrentUser admin, UUID userId, boolean approve, String notes) {
-        guard.requireAdmin(admin);
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
-        String clean = notes == null ? null : InputSanitizer.clean(notes, 500);
-        if (u.getProfileType() == ProfileType.MARCA) {
-            BrandProfile b = brands.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Marca"));
-            b.setApprovalStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
-            b.setApprovedBy(admin.id());
-            b.setApprovedAt(Instant.now());
-            b.setVerificationNotes(clean);
-        } else if (u.getProfileType() == ProfileType.CELEBRIDADE) {
-            CelebrityProfile c = celebrities.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Celebridade"));
-            c.setVerificationStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
-            c.setApprovedBy(admin.id());
-            c.setApprovedAt(Instant.now());
-            c.setVerificationNotes(clean);
-            c.setRequiresSealReview(true); // RF21.CA19 — celebridade sempre revisa
-        } else {
-            throw ApiException.badRequest("PERFIL_PESSOAL", Msg.t("admin.perfis_pessoais_nao_passam_por"));
-        }
-        if (approve) {
-            u.setStatus(AccountStatus.ACTIVE);
-            seals.ensureDefaultSeals(u);
-        }
-        users.save(u);
-        notifications.notify(userId, admin.id(), NotificationType.ACCOUNT_APPROVAL, "USER", userId, approve ? Msg.k("admin.perfil_validado") : Msg.k("admin.cadastro_nao_aprovado"),
-                approve ? Msg.k("admin.seu_perfil_ja_aparece_no") : "Motivo: " + (clean == null ? Msg.k("admin.documentacao_insuficiente") : clean), Map.of());
-        audit.log(admin, approve ? "PERFIL_APROVADO" : "PERFIL_RECUSADO", "user:" + userId, Map.of("profileType", u.getProfileType().name()));
-        return Map.of("userId", userId, "approved", approve);
-    }
+    // aprovações de marca/celebridade (RF1.CA07–CA09): IssuerReviewService, com a política de verificação
 
     // ================================================================== moderação
     @Transactional(readOnly = true)

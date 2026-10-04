@@ -21,7 +21,7 @@ import { ProfileHeader } from "@/components/profile-header";
 import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
 import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
 import { RoomStore } from "@/components/room3d/room-store";
-import { IssuerReviewButton } from "@/components/issuer-review";
+import { IssuerCenter, IssuerCenterButton, useIssuerReview } from "@/components/issuer-review";
 
 interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
@@ -35,6 +35,10 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
+  // Central do emissor (verificação do perfil): só para o dono; com o perfil ainda em verificação, a página abre nela
+  const review = useIssuerReview(!!data && (data.admin ?? data.mode === "ADMINISTRADOR"));
+  const reviewStatus = review.data?.status;
+  useEffect(() => { if (reviewStatus && reviewStatus !== "APROVADO" && !new URLSearchParams(window.location.search).get("tab")) setTab("CENTRAL"); }, [reviewStatus]);
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
   type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
@@ -54,7 +58,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []), { id: "GUARDA_ROUPA", label: admin ? t("brands.slug.criar_guarda_roupa_3d") : t("brands.slug.guarda_roupa_3d") },
-    ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
+    ...(admin ? [{ id: "CENTRAL", label: t("issuerReview.central") }, { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
@@ -79,8 +83,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
-        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerReviewButton /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
-      <Tabs tabs={tabs} value={tab} onChange={setTab} />
+        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+      <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
+      {tab === "CENTRAL" && admin && <IssuerCenter review={review} onTab={setTab} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}

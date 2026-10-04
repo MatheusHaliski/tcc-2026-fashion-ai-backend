@@ -8,7 +8,7 @@ import Link from "next/link";
 import { ApiError } from "@/lib/api/client";
 import { Button, Card, ErrorState, Field, Input, PageHeader, Skeleton } from "@/components/ui";
 import { TimeSeries } from "@/components/charts";
-import { IssuerReviewPanel, useIssuerReview } from "@/components/issuer-review";
+import { IssuerCenter, useIssuerReview } from "@/components/issuer-review";
 
 const ISSUER_LABEL: Record<string, string> = { get suggested() { return tr("dashboard.vinculos_sugeridos"); }, get accepted() { return tr("dashboard.aceitos_pelos_usuarios"); }, get approved() { return tr("dashboard.aprovados_por_voce"); }, get pendingReview() { return tr("dashboard.aguardando_sua_revisao"); }, get activeSeals() { return tr("dashboard.selos_ativos"); }, get redemptions() { return tr("common.resgates"); }, get conversionSealToRedemption() { return tr("dashboard.conversao_selo_resgate"); } };
 
@@ -35,9 +35,10 @@ function IssuerDashboard() {
 function PendingReview() {
   const { t } = useI18n(); const review = useIssuerReview();
   return (
-    <div className="surface mx-auto mt-6 max-w-xl p-6">
-      <h1 className="type-h2 mb-3">{t("issuerReview.painel")}</h1>
-      {review.error ? <ErrorState error={review.error} onRetry={review.reload} /> : !review.data ? <Skeleton className="h-40" /> : <IssuerReviewPanel data={review.data} />}
+    <div className="mx-auto mt-6 max-w-5xl">
+      <h1 className="type-h2 mb-1">{t("issuerReview.central")}</h1>
+      <p className="mb-4 type-body-sm text-muted">{t("issuerReview.dashboard_apos_aprovacao")}{review.data?.slug && <> <Link href={`/brands/${review.data.slug}?tab=CENTRAL`} className="underline">{t("issuerReview.abrir_no_perfil")}</Link></>}</p>
+      <IssuerCenter review={review} />
     </div>
   );
 }
