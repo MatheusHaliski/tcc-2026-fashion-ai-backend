@@ -4309,11 +4309,5 @@
   "sealWizard.texto.caption": "Leyenda",
   "sealWizard.texto.year": "Año (sello redondo)",
   "sealWizard.texto.emblem": "Texto del emblema",
-  "sealWizard.texto_dica": "Vacío = texto del modelo · hasta {n} caracteres",
-  "backgroundStudio.cartela_modal_dica": "La paleta define la estación que muestra el layout Paleta estacional; la animación cae sobre el arte. Nada cambia en la tarjeta hasta que apliques.",
-  "backgroundStudio.cartela_sem_estacao": "El look aún no tiene estación: elige una paleta arriba (o completa la estación en el paso 3) para que la tarjeta use este layout.",
-  "backgroundStudio.escolher_cartela_e_animacao": "Elegir paleta y animación",
-  "backgroundStudio.cartela_pela_estacao": "por la estación de los datos",
-  "backgroundStudio.aplicar_cartela": "Aplicar",
-  "dnaBuilder.cartela_no_modal": "La paleta y la animación de este layout se eligen en el diálogo que se abre al hacer clic en Paleta estacional. Sin paleta, vale la estación de los datos."
+  "sealWizard.texto_dica": "Vacío = texto del modelo · hasta {n} caracteres"
 }

@@ -4309,11 +4309,5 @@
   "sealWizard.texto.caption": "Caption",
   "sealWizard.texto.year": "Year (round badge)",
   "sealWizard.texto.emblem": "Emblem text",
-  "sealWizard.texto_dica": "Empty = template text · up to {n} characters",
-  "backgroundStudio.cartela_modal_dica": "The palette sets the season the Seasonal palette layout shows; the animation falls over the art. Nothing changes on the card until you apply.",
-  "backgroundStudio.cartela_sem_estacao": "The look has no season yet: pick a palette above (or fill in the season in step 3) for the card to use this layout.",
-  "backgroundStudio.escolher_cartela_e_animacao": "Choose palette and animation",
-  "backgroundStudio.cartela_pela_estacao": "by the season in the details",
-  "backgroundStudio.aplicar_cartela": "Apply",
-  "dnaBuilder.cartela_no_modal": "This layout's palette and animation are chosen in the dialog that opens when you click Seasonal palette. With no palette, the season in the details is used."
+  "sealWizard.texto_dica": "Empty = template text · up to {n} characters"
 }
