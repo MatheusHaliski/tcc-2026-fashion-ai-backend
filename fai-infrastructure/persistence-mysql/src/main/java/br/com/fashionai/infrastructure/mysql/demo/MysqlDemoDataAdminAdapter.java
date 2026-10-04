@@ -1,8 +1,8 @@
 package br.com.fashionai.infrastructure.mysql.demo;
 
 import br.com.fashionai.application.ports.DemoDataAdminPort;
-import db.migration.V31__integridade_referencial_por_dominio;
-import db.migration.V31__integridade_referencial_por_dominio.Fk;
+import db.migration.V34__integridade_referencial_por_dominio;
+import db.migration.V34__integridade_referencial_por_dominio.Fk;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -379,25 +379,25 @@ public class MysqlDemoDataAdminAdapter implements DemoDataAdminPort {
         List<String> problems = new ArrayList<>();
         MapSqlParameterSource none = new MapSqlParameterSource();
 
-        // 1. FKs: o banco segue a política da V31?
+        // 1. FKs: o banco segue a política da V34?
         Map<String, Edge> live = new TreeMap<>();
         for (Edge e : edges()) {
             live.put(e.table() + "." + e.column() + "→" + e.refTable(), e);
         }
         Set<String> inPolicy = new HashSet<>();
-        for (Fk fk : V31__integridade_referencial_por_dominio.POLICY) {
+        for (Fk fk : V34__integridade_referencial_por_dominio.POLICY) {
             String key = fk.table() + "." + fk.column() + "→" + fk.refTable();
             inPolicy.add(key);
             Edge e = live.get(key);
             if (e == null) {
                 problems.add("[FK] ausente: " + fk);
-            } else if (!V31__integridade_referencial_por_dominio.sameRule(e.rule(), fk.onDelete())) {
+            } else if (!V34__integridade_referencial_por_dominio.sameRule(e.rule(), fk.onDelete())) {
                 problems.add("[FK] " + e.label() + " está ON DELETE " + e.rule() + ", a política é " + fk.onDelete());
             }
         }
         live.forEach((key, e) -> {
             if (!inPolicy.contains(key)) {
-                problems.add("[FK] fora da política (falta na V31.POLICY): " + e.label() + " ON DELETE " + e.rule());
+                problems.add("[FK] fora da política (falta na V34.POLICY): " + e.label() + " ON DELETE " + e.rule());
             }
         });
 

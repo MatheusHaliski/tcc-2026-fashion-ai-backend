@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * Operações em SQL do Demo/Test Data Pipeline (plano e reset por cascata, verificação de integridade). Nunca desliga
- * FOREIGN_KEY_CHECKS: o reset apaga as contas de teste e as cascatas da V31 levam os dados de que elas são donas.
+ * FOREIGN_KEY_CHECKS: o reset apaga as contas de teste e as cascatas da V34 levam os dados de que elas são donas.
  */
 public interface DemoDataAdminPort {
 
