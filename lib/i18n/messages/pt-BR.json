@@ -3882,15 +3882,13 @@
   "verifyEmail.codigo_reenviado": "Código reenviado.",
   "pieces.new.etapa_peca": "Peça",
   "pieces.new.lead_unica": "Diga qual é a peça: busque no catálogo oficial (recomendado) ou envie a sua foto, e confira os dados — tudo na mesma etapa.",
-  "catalog.ou_envie_sua_foto": "Ou envie a sua própria foto logo abaixo.",
   "catalog.peca_do_catalogo": "Peça do catálogo",
   "catalog.remover_referencia": "Remover",
-  "catalog.foto_opcional_catalogo": "Sem foto sua, a peça usa a foto oficial do produto.",
-  "catalog.com_sua_foto_nota": "Com a sua foto, a peça usa a sua foto; os dados do produto continuam preenchidos.",
-  "catalog.sua_foto_opcional": "Sua foto (opcional)",
   "catalog.preenchido_do_catalogo": "Preenchemos os campos com os dados oficiais do produto. Confira e ajuste o que for só seu: tamanho, preço, ocasião…",
   "catalog.origem": "Origem da imagem",
-  "catalog.origem_foto_propria": "Sua foto",
   "catalog.origem_catalogo": "Foto oficial do catálogo ({fonte})",
-  "catalog.origem_sem_foto": "Ilustração da categoria (sem foto)"
+  "catalog.origem_sem_foto": "Ilustração da categoria (sem foto)",
+  "catalog.ou_preencha_abaixo": "Ou preencha os dados da peça logo abaixo.",
+  "catalog.foto_oficial_nota": "A peça usa a foto oficial do produto.",
+  "catalog.sem_foto_oficial_nota": "Este produto ainda não tem foto oficial: a peça usa a ilustração da categoria."
 }

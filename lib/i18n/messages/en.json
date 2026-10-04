@@ -3882,15 +3882,13 @@
   "verifyEmail.codigo_reenviado": "Code resent.",
   "pieces.new.etapa_peca": "Piece",
   "pieces.new.lead_unica": "Tell us what the piece is: search the official catalog (recommended) or upload your photo, then check the details — all in one step.",
-  "catalog.ou_envie_sua_foto": "Or upload your own photo below.",
   "catalog.peca_do_catalogo": "Catalog product",
   "catalog.remover_referencia": "Remove",
-  "catalog.foto_opcional_catalogo": "Without a photo of yours, the piece uses the product's official photo.",
-  "catalog.com_sua_foto_nota": "With your photo, the piece uses your photo; the product data stays filled in.",
-  "catalog.sua_foto_opcional": "Your photo (optional)",
   "catalog.preenchido_do_catalogo": "We filled the fields with the product's official data. Check and adjust what is yours only: size, price, occasion…",
   "catalog.origem": "Image origin",
-  "catalog.origem_foto_propria": "Your photo",
   "catalog.origem_catalogo": "Official catalog photo ({fonte})",
-  "catalog.origem_sem_foto": "Category illustration (no photo)"
+  "catalog.origem_sem_foto": "Category illustration (no photo)",
+  "catalog.ou_preencha_abaixo": "Or fill in the piece details below.",
+  "catalog.foto_oficial_nota": "The piece uses the product's official photo.",
+  "catalog.sem_foto_oficial_nota": "This product has no official photo yet: the piece uses the category illustration."
 }

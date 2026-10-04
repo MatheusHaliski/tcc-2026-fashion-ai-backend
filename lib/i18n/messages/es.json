@@ -3882,15 +3882,13 @@
   "verifyEmail.codigo_reenviado": "Código reenviado.",
   "pieces.new.etapa_peca": "Prenda",
   "pieces.new.lead_unica": "Di cuál es la prenda: busca en el catálogo oficial (recomendado) o sube tu foto, y revisa los datos — todo en un mismo paso.",
-  "catalog.ou_envie_sua_foto": "O sube tu propia foto más abajo.",
   "catalog.peca_do_catalogo": "Prenda del catálogo",
   "catalog.remover_referencia": "Quitar",
-  "catalog.foto_opcional_catalogo": "Sin una foto tuya, la prenda usa la foto oficial del producto.",
-  "catalog.com_sua_foto_nota": "Con tu foto, la prenda usa tu foto; los datos del producto siguen rellenados.",
-  "catalog.sua_foto_opcional": "Tu foto (opcional)",
   "catalog.preenchido_do_catalogo": "Rellenamos los campos con los datos oficiales del producto. Revisa y ajusta lo que es solo tuyo: talla, precio, ocasión…",
   "catalog.origem": "Origen de la imagen",
-  "catalog.origem_foto_propria": "Tu foto",
   "catalog.origem_catalogo": "Foto oficial del catálogo ({fonte})",
-  "catalog.origem_sem_foto": "Ilustración de la categoría (sin foto)"
+  "catalog.origem_sem_foto": "Ilustración de la categoría (sin foto)",
+  "catalog.ou_preencha_abaixo": "O completa los datos de la prenda más abajo.",
+  "catalog.foto_oficial_nota": "La prenda usa la foto oficial del producto.",
+  "catalog.sem_foto_oficial_nota": "Este producto aún no tiene foto oficial: la prenda usa la ilustración de la categoría."
 }

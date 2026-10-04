@@ -158,7 +158,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
               <Button size="sm" onClick={() => setRefine((r) => !r)} aria-expanded={refine}>{t("catalog.nao_encontrei")}</Button>
               {canSearchOfficial && <Button size="sm" variant="primary" onClick={searchOfficial}>{t("catalog.pesquisar_lojas_oficiais")}</Button>}
               {onUsePhoto ? <Button size="sm" variant="ghost" onClick={() => onUsePhoto(ctx)}>{t("catalog.adicionar_com_minha_foto")}</Button>
-                : <span className="type-body-sm text-muted self-center">{t("catalog.ou_envie_sua_foto")}</span>}
+                : <span className="type-body-sm text-muted self-center">{t("catalog.ou_preencha_abaixo")}</span>}
             </div>
             {discover.busy && <p className="mt-2 type-body-sm" role="status" aria-live="polite">{t("catalog.procurando_oficiais", { marca: res.intent.brand ?? "" })}</p>}
             {discover.result && !discover.result.results.length && <p className="mt-2 type-body-sm text-muted" role="status">{discover.result.message}</p>}

@@ -64,89 +64,37 @@ describe("abas do perfil (Lookbook)", () => {
   }
 });
 
-describe("adicionar peça (RF4)", () => {
-  const photo = () => new File([new Uint8Array([1, 2, 3])], "camiseta.jpg", { type: "image/jpeg" });
-  /** RF4/RF47: etapa única "Peça" — escolhe o tipo; o primeiro "Enviar foto" abre o guia "Como fotografar" antes do seletor. */
-  async function enterPhotoFlow(category: RegExp = /^Parte superior$/) {
-    fireEvent.click(await screen.findByRole("button", { name: category }));
-    fireEvent.click(await screen.findByRole("button", { name: /Enviar foto/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "Entendi, adicionar foto" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  }
-  const DRAFT = {
-    draftId: "d1", processedUrl: "/media/d1.png", flatLayUrl: "/media/d1-flat.jpg", thumbnailUrl: "/media/d1-t.png", originalUrl: "/media/d1-o.jpg", backgroundRemoved: true,
-    prefill: { name: "Camiseta branca lisa", category: "upper_piece", subcategory: "t_shirt", color: "white", material: "COTTON", sex: "UNISSEX", occasion: ["casual"], style: ["basic"], size: "m", price: 50,
-      overall: 0.9, confidence: { category: 0.9, subcategory: 0.8, color: 0.4, material: 0.9, brand: 0.2 }, manualFillRequired: true, subcategoryCandidates: [{ code: "t_shirt", score: 0.9 }, { code: "shirt", score: 0.6 }],
-      brandSearch: { zones: ["peito_esquerdo"], brand: null, suggestion: "Nike", foundIn: "peito_esquerdo", certainty: "possivel" } },
-  };
-
-  it("escolhe o tipo, envia a foto, recebe a análise, passa pelas etapas e salva", async () => {
-    URL.createObjectURL = vi.fn(() => "blob:foto");
-    const { calls } = loggedAs(ME, {
-      "GET /api/taxonomy": TAXONOMY,
-      "POST /api/pieces/analysis": DRAFT,
-      "POST /api/pieces/analysis/d1/brand": { grid: 3, regions: 9, brand: "Nike", certainty: "confirmada", region: "grade_r1c2" },
-      "POST /api/pieces": { id: "nova" },
-      "GET /api/studio/backdrops": [],
-    });
+describe("adicionar peça (RF4/RF47) — etapa única Peça, sem envio de foto", () => {
+  it("não há seção de foto: tipo, busca catalogada e dados ficam na mesma etapa", async () => {
+    loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
     const { container } = renderApp(<NewPiecePage />);
-    await enterPhotoFlow();
-    const input = container.querySelector("input[type=file]") as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [photo()] } });
-    await waitFor(() => expect(calls.some((c) => c.path === "/api/pieces/analysis")).toBe(true), { timeout: 4000 });
-    await waitFor(() => expect(screen.getAllByText(/Nike/).length).toBeGreaterThan(0), { timeout: 4000 });
-    // confirma a marca sugerida e pede nova busca
-    screen.queryAllByRole("button").filter((b) => /Nike|marca/i.test(b.textContent ?? "")).slice(0, 2).forEach((b) => fireEvent.click(b));
-    // percorre as etapas até revisar e salvar
-    for (let i = 0; i < 4; i++) {
-      const next = screen.queryAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""));
-      if (next) fireEvent.click(next);
-    }
-    const save = screen.queryAllByRole("button").find((b) => /^Salvar$|Salvar/.test(b.textContent ?? ""));
-    if (save) fireEvent.click(save);
+    expect(await screen.findByRole("heading", { name: "Buscar no catálogo" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Dados" })).toBeTruthy();
+    expect(container.querySelector("input[type=file]")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Enviar foto/ })).toBeNull();
+  });
+
+  it("sem produto do catálogo, salva a peça com os dados do formulário e a ilustração da categoria", async () => {
+    const { calls } = loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] }, "POST /api/pieces": { id: "nova" } });
+    renderApp(<NewPiecePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Parte superior$/ }));
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camiseta branca" } });
+    // o Select desenha a própria lista (Dropdown): abre pelo botão do campo e escolhe a opção
+    const pick = (id: string, option: string) => { fireEvent.click(document.getElementById(id)!); fireEvent.click(screen.getByRole("option", { name: option })); };
+    pick("subcategory", "Camiseta");
+    pick("color", "Branco");
+    pick("material", "Algodão");
+    fireEvent.change(document.getElementById("price") as HTMLInputElement, { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Casual" }));
+    fireEvent.click(screen.getByRole("button", { name: "Básico" }));
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""))!);
+    expect(await screen.findByText(/Ilustração da categoria/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button").find((b) => /Salvar/.test(b.textContent ?? ""))!);
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
-    expect(calls.some((c) => c.path === "/api/pieces/analysis")).toBe(true);
-  });
-
-  it("foto recusada mostra os critérios que falharam", async () => {
-    URL.createObjectURL = vi.fn(() => "blob:foto");
-    loggedAs(ME, {
-      "GET /api/taxonomy": TAXONOMY,
-      "POST /api/pieces/analysis": new Response(JSON.stringify({ status: 422, code: "FOTO_RECUSADA", message: "Refaça", details: { checks: [{ id: "inteira", ok: false, message: "A peça saiu cortada" }] } }), { status: 422, headers: { "content-type": "application/json" } }),
-    });
-    const { container } = renderApp(<NewPiecePage />);
-    await enterPhotoFlow();
-    fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo()] } });
-    await waitFor(() => expect(screen.getByText("A peça saiu cortada")).toBeTruthy(), { timeout: 4000 });
-  });
-
-  it("foto de outra categoria: avisa e oferece usar a categoria detectada, sem trocar em silêncio", async () => {
-    URL.createObjectURL = vi.fn(() => "blob:foto");
-    const { calls } = loggedAs(ME, {
-      "GET /api/taxonomy": TAXONOMY,
-      "POST /api/pieces/analysis": new Response(JSON.stringify({ status: 422, code: "FOTO_RECUSADA", message: "Refaça", details: { detectedCategory: "shoes_piece", failed: ["formato"], checks: [{ id: "formato", ok: false, message: "A foto parece de um calçado" }] } }), { status: 422, headers: { "content-type": "application/json" } }),
-    });
-    const { container } = renderApp(<NewPiecePage />);
-    await enterPhotoFlow();
-    fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo()] } });
-    expect(await screen.findByText(/Esta foto parece ser de calçados/i, {}, { timeout: 4000 })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Usar Calçados/ }));
-    await waitFor(() => expect(calls.filter((c) => c.path === "/api/pieces/analysis").length).toBe(2), { timeout: 4000 });
-    expect(calls.filter((c) => c.path === "/api/pieces/analysis").length).toBe(2);
-  });
-
-  it("várias fotos de uma vez viram lote e são salvas juntas", async () => {
-    URL.createObjectURL = vi.fn(() => "blob:foto");
-    const { calls } = loggedAs(ME, {
-      "GET /api/taxonomy": TAXONOMY,
-      "POST /api/pieces/analysis/batch": [DRAFT, { ...DRAFT, draftId: null, rejection: { message: "Fora de foco" } }],
-      "POST /api/pieces/batch": [PIECE],
-    });
-    const { container } = renderApp(<NewPiecePage />);
-    await enterPhotoFlow();
-    fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [photo(), photo()] } });
-    const go = await waitFor(() => screen.getAllByRole("button").find((b) => /Salvar/.test(b.textContent ?? ""))!);
-    fireEvent.click(go);
-    await waitFor(() => expect(calls.some((c) => c.path === "/api/pieces/batch")).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces")).toBe(true), { timeout: 4000 });
+    const body = calls.find((c) => c.path === "/api/pieces")!.body as Record<string, unknown>;
+    expect(body.name).toBe("Camiseta branca");
+    expect(body.useDefaultImage).toBe(true);
+    expect(body.draftId ?? null).toBeNull();
   });
 });
