@@ -3881,7 +3881,7 @@
   "ui.stepOf": "Paso {n} de {total}",
   "verifyEmail.codigo_reenviado": "Código reenviado.",
   "pieces.new.etapa_peca": "Prenda",
-  "pieces.new.lead_unica": "Di cuál es la prenda: busca en el catálogo oficial (recomendado) o sube tu foto, y revisa los datos — todo en un mismo paso.",
+  "pieces.new.lead_unica": "Di cuál es la prenda: busca en el catálogo oficial (recomendado) o completa los datos — todo en un mismo paso.",
   "catalog.peca_do_catalogo": "Prenda del catálogo",
   "catalog.remover_referencia": "Quitar",
   "catalog.preenchido_do_catalogo": "Rellenamos los campos con los datos oficiales del producto. Revisa y ajusta lo que es solo tuyo: talla, precio, ocasión…",

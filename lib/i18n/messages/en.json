@@ -3881,7 +3881,7 @@
   "ui.stepOf": "Step {n} of {total}",
   "verifyEmail.codigo_reenviado": "Code resent.",
   "pieces.new.etapa_peca": "Piece",
-  "pieces.new.lead_unica": "Tell us what the piece is: search the official catalog (recommended) or upload your photo, then check the details — all in one step.",
+  "pieces.new.lead_unica": "Tell us what the piece is: search the official catalog (recommended) or fill in the details — all in one step.",
   "catalog.peca_do_catalogo": "Catalog product",
   "catalog.remover_referencia": "Remove",
   "catalog.preenchido_do_catalogo": "We filled the fields with the product's official data. Check and adjust what is yours only: size, price, occasion…",

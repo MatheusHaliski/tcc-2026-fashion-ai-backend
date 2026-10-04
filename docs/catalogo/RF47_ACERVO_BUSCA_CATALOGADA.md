@@ -3,14 +3,15 @@
 > 04/10/2026 · RF novo do board "TCC 2026 (Fashion AI)", lista *Requisitos Funcionais*.
 > Diagramas: [`docs/diagramas/RF47/`](../diagramas/RF47/) · Taxonomia: [`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md)
 > · Anatomia da tela: [`docs/anatomias/anatomias_card_v20.html`](../anatomias/anatomias_card_v20.html)
-> · Captura por foto (fallback): [`docs/visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md`](../visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md) (RF45)
+> · Captura por foto (RF45, fora do criador de peça): [`docs/visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md`](../visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md)
 
 ## 1. Objetivo
 
 Adicionar uma peça ao guarda-roupa **identificando o produto num catálogo global** (marca, nome, modelo, cor e foto
 oficial) em vez de depender só da fotografia. A pessoa diz aproximadamente o que é a peça; o FashionAI encontra o
-produto. A foto própria continua possível e passa a ser o caminho para peças vintage, artesanais, sem marca ou fora do
-catálogo.
+produto. Peças fora do catálogo (vintage, artesanais, sem marca) são cadastradas pelos dados do formulário, com a
+ilustração da categoria; a foto própria pode ser trocada depois, no detalhe da peça ("Trocar foto"). Por decisão do
+projeto (04/10/2026), o criador de peça **não tem seção de envio de foto**.
 
 O catálogo é **global e separado do guarda-roupa**: `CatalogProduct` é o produto que o FashionAI conhece;
 `WardrobeItem` é a posse desse produto por uma pessoa, **por referência** (`catalog_product_id`,
@@ -19,7 +20,7 @@ O catálogo é **global e separado do guarda-roupa**: `CatalogProduct` é o prod
 ## 2. Fluxo na tela (`/pieces/new`, etapa única "1 · Peça")
 
 O criador tem 4 etapas: **Peça** → Mais detalhes → Arte de fundo → Revisar e salvar. A etapa Peça junta, na mesma
-tela, com a prévia do card ao lado:
+tela, com a prévia do card ao lado (sem seção de foto):
 
 1. **Tipo da peça** — Parte superior, Parte inferior, Calçados, Acessórios, Peça única.
 2. **Buscar no catálogo** (recomendado) — subtipo → marca (autocomplete com apelidos) → nome/modelo. Duas ou três
@@ -30,15 +31,12 @@ tela, com a prévia do card ao lado:
      dados globais (nome, categoria, subtipo, cor da variante, material, marca, SKU). Os dados da pessoa (tamanho,
      preço, ocasião, estilo, estado, data e local da compra, notas, visibilidade, à venda) ficam com ela.
    - **Sem resultado**: "Não encontrei minha peça" (refinar por código/SKU e cor), **"Pesquisar em lojas
-     oficiais"** e "Ou envie a sua própria foto logo abaixo.".
-3. **Foto** — "Sua foto (opcional)" quando há produto escolhido. O guia **"Como fotografar sua peça"** abre no
-   primeiro "Enviar foto" (por categoria e, em acessórios, por tipo; "Não mostrar novamente" por guia, salvo na conta).
-   Se a análise achar outra categoria na foto, avisa ("Esta foto parece ser de calçados.") e oferece "Usar
-   Calçados" / "Escolher outra foto" — **nunca troca a categoria sozinha**.
-4. **Dados** — o formulário da peça (`PieceFields`), já preenchido pelo produto ou pela análise da foto.
+     oficiais"** e "Ou preencha os dados da peça logo abaixo.".
+3. **Dados** — o formulário da peça (`PieceFields`), já preenchido pelo produto quando há um.
 
-Ao salvar: **sem foto própria** → `POST /api/pieces/from-catalog` (a foto oficial vira a imagem, `image_origin =
-CATALOG`); **com foto própria** → `POST /api/pieces` (`USER_PHOTO`). A revisão mostra a "Origem da imagem".
+Ao salvar: **com produto** → `POST /api/pieces/from-catalog` (a foto oficial vira a imagem, `image_origin = CATALOG`;
+se o produto não tiver foto oficial, a ilustração da categoria); **sem produto** → `POST /api/pieces` com a ilustração
+da categoria. A revisão mostra a "Origem da imagem".
 
 Atalhos: o **Explorador › Buscar marcas & lojas** lista as marcas do catálogo (mesmo sem perfil cadastrado) com
 "Buscar peças" → `/pieces/new?brand=<marca>`; `?category=` e `?q=` também pré-preenchem.
@@ -68,7 +66,7 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
 | GET | `/api/catalog/products/{id}` | produto com variantes, imagens (proveniência) e apelidos |
 | POST | `/api/catalog/discover` | busca nas lojas oficiais (RF24/`CATALOG_DISCOVERY`) |
 | POST | `/api/pieces/from-catalog` | cria a peça por referência (dados pessoais no corpo) |
-| GET / PUT | `/api/me/capture-tutorial[/{guide}]` | "Não mostrar novamente" do guia de fotografia |
+| GET / PUT | `/api/me/capture-tutorial[/{guide}]` | preferências do antigo guia de fotografia — **sem uso no frontend** desde a retirada da seção Foto |
 
 Controller: `CatalogController`. Serviços: `CatalogService` (busca, sugestões, produto, discover, addToWardrobe,
 tutorial, marcas para o Explorador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
@@ -132,24 +130,24 @@ ignorados → 168 ignorados). Credenciais só pelas variáveis do backend (`MYSQ
 | RN47.06 | Nunca inventar marca ou produto: sem evidência, a busca devolve vazio (marca fica `UNKNOWN`/não identificada). |
 | RN47.07 | A ingestão é idempotente e deduplica pela ordem de identidade da seção 7. |
 | RN47.08 | Fontes são revalidadas (`ACTIVE`, `UNAVAILABLE`, `SOURCE_REMOVED`, `NEEDS_REVALIDATION`); a peça da pessoa continua mesmo se a fonte sumir. |
-| RN47.09 | A foto própria é sempre possível e, quando enviada, é a imagem da peça (`USER_PHOTO`). |
-| RN47.10 | A categoria escolhida nunca é trocada em silêncio pela análise da foto. |
+| RN47.09 | O criador não envia foto: a imagem é a foto oficial do produto ou a ilustração da categoria; a pessoa pode trocar a foto depois, no detalhe da peça. |
+| RN47.10 | A categoria só muda pelos chips de tipo ou pelo produto escolhido — nunca em silêncio. |
 
 ## 9. Critérios de aceite (resumo)
 
 - CA01 Buscar por 2–3 informações (marca + tipo, ou nome com 3+ letras) devolve produtos ordenados por compatibilidade.
 - CA02 Escolher um produto preenche o formulário e salva a peça por referência, com a variante/cor escolhida.
-- CA03 Sem resultado, a tela oferece refinar, pesquisar nas lojas oficiais e enviar a própria foto, na mesma etapa.
+- CA03 Sem resultado, a tela oferece refinar, pesquisar nas lojas oficiais ou preencher os dados, na mesma etapa.
 - CA04 A busca externa só mostra produtos de domínios oficiais e nunca inventa resultado.
 - CA05 Produto escolhido na busca externa é encontrado localmente pelo próximo usuário.
 - CA06 Seed e importação rodam duas vezes sem duplicar marcas, produtos, variantes ou imagens.
 - CA07 As marcas do catálogo aparecem no Explorador com atalho para a busca catalogada.
-- CA08 O guia de fotografia respeita "Não mostrar novamente" por guia e a categoria nunca muda sem confirmação.
+- CA08 A etapa Peça não tem envio de foto; sem produto, a peça é salva com a ilustração da categoria.
 
 ## 10. Testes
 
 Java: `CatalogNormalizerTest`, `CatalogMatchScorerTest`, `OfficialCatalogDiscoveryTest`, `DedupParityTest`.
 Python: `scripts/catalog/tests/test_normalize.py`. Frontend (vitest): `components/catalog/catalog-flow.test.tsx`
-(busca → "É esta" → salva por referência; sem resultado → lojas oficiais → foto com guia),
-`components/capture/capture-guide-dialog.test.tsx`, `lib/capture/capture-guides.test.ts`, fluxos RF4 em
-`components/shell-and-flows.test.tsx`.
+(busca → "É esta" → salva por referência; sem resultado → lojas oficiais → preencher os dados),
+`lib/capture/capture-guides.test.ts`, fluxos RF4/RF47 em `components/shell-and-flows.test.tsx` (sem seção de foto;
+salvar sem produto).

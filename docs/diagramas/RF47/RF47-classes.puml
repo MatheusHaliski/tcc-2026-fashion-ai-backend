@@ -1,0 +1,171 @@
+@startuml RF47_Classes
+title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class Brand {
+  +name: String
+  +slug: String
+  +logoUrl: String
+  +website: String
+  +country: String
+}
+class BrandAlias {
+  +brandId: UUID
+  +alias: String
+  +aliasNorm: String
+}
+class CatalogSource {
+  +brandId: UUID
+  +domain: String
+  +sourceType: CatalogSourceType
+  +country: String
+  +allowsImagePersistence: boolean
+  +active: boolean
+}
+class CatalogProduct {
+  +brandId: UUID
+  +category: String
+  +subcategory: String
+  +productName: String
+  +modelName: String
+  +productCode / sku / gtin / ean / upc: String
+  +color / colorName / material: String
+  +officialProductUrl / canonicalUrl: String
+  +sourceType: CatalogSourceType
+  +sourceStatus: CatalogSourceStatus
+  +ingestionStatus: CatalogIngestionStatus
+  +dedupKey: String
+  +searchText: String
+  +ownersCount: int
+  +firstSeenAt / lastVerifiedAt: Instant
+}
+class CatalogProductAlias {
+  +productId: UUID
+  +alias: String
+  +aliasNorm: String
+}
+class CatalogVariant {
+  +productId: UUID
+  +variantKey: String
+  +color / colorName: String
+  +variantCode / sku / gtin: String
+  +availability: String
+}
+class CatalogImage {
+  +productId: UUID
+  +variantId: UUID
+  +imageUrl: String
+  +imageUrlHash: String
+  +imageType: CatalogImageType
+  +sourceDomain: String
+  +primary: boolean
+  +usageStatus: CatalogImageUsage
+  +storedUrl: String
+}
+class CatalogIngestionRun {
+  +kind: String
+  +source: String
+  +dryRun: boolean
+  +totalRead / createdCount / updatedCount: int
+  +skippedCount / duplicatesCount / errorCount: int
+  +reportJson: String
+}
+class WardrobeItem {
+  +catalogProductId: UUID
+  +catalogVariantId: UUID
+  +imageOrigin: ImageOrigin
+  +userImageUrl: String
+  +canonicalImageUrl: String
+  .. demais campos da peça (RF4) ..
+}
+}
+package "fai-domain · enums" {
+enum CatalogIngestionStatus {
+  DISCOVERED
+  VALIDATED
+  PERSISTABLE
+  REFERENCE_ONLY
+  REJECTED
+}
+enum CatalogSourceType {
+  OFFICIAL_BRAND
+  OFFICIAL_STORE
+  AUTHORIZED_RETAILER
+  PARTNER_API
+  MANUAL_ADMIN
+}
+enum CatalogSourceStatus {
+  ACTIVE
+  UNAVAILABLE
+  SOURCE_REMOVED
+  NEEDS_REVALIDATION
+}
+enum CatalogImageType {
+  FRONT
+  BACK
+  SIDE
+  TOP
+  DETAIL
+  SOLE
+  PACKSHOT
+  OTHER
+}
+enum CatalogImageUsage {
+  REFERENCE_ONLY
+  PERSISTED
+  REJECTED
+}
+enum ImageOrigin {
+  CATALOG
+  USER_PHOTO
+  DEFAULT
+}
+}
+package "fai-application · catalog" {
+class CatalogService {
+  +search(SearchRequest): Map
+  +suggestions(SearchRequest): Map
+  +brandSuggestions(String): Map
+  +product(UUID): Map
+  +discover(CurrentUser, SearchRequest): Map
+  +addToWardrobe(CurrentUser, AddRequest): PieceView
+  +catalogBrands(): List<Map>
+}
+class CatalogIngestService {
+  +resolveBrand(String, boolean): Optional<Brand>
+  +upsert(ProductInput, CatalogIngestionStatus, boolean): Result
+}
+}
+BrandAlias "*" ..> "1" Brand : brandId
+CatalogSource "*" ..> "1" Brand : brandId
+CatalogProduct "*" ..> "1" Brand : brandId
+CatalogProductAlias "*" ..> "1" CatalogProduct : productId
+CatalogVariant "*" ..> "1" CatalogProduct : productId
+CatalogImage "*" ..> "1" CatalogProduct : productId
+CatalogImage "*" ..> "0..1" CatalogVariant : variantId
+WardrobeItem "*" ..> "0..1" CatalogProduct : catalogProductId
+WardrobeItem "*" ..> "0..1" CatalogVariant : catalogVariantId
+CatalogProduct --> CatalogIngestionStatus
+CatalogProduct --> CatalogSourceStatus
+CatalogSource --> CatalogSourceType
+CatalogImage --> CatalogImageType
+CatalogImage --> CatalogImageUsage
+WardrobeItem --> ImageOrigin
+CatalogService ..> CatalogIngestService : upsert(DISCOVERED)
+CatalogIngestService ..> CatalogProduct : grava
+CatalogIngestService ..> CatalogIngestionRun
+note top of CatalogProduct : tabela catalog_products\ndedup_key UNIQUE (gtin > ean > upc > sku > código >\nURL canônica > marca+modelo+variante > marca+título+cor)
+note top of WardrobeItem : tabela wardrobe_items\nposse do produto global, por referência
+note bottom of CatalogIngestionRun : tabela catalog_ingestion_runs\n(gravada pelo pipeline Python scripts/catalog)
+note bottom of CatalogImage : tabela catalog_images — REFERENCE_ONLY guarda só a URL;\nPERSISTED só se CatalogSource.allowsImagePersistence
+@enduml
