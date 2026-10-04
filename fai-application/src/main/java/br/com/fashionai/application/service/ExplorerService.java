@@ -51,6 +51,14 @@ public class ExplorerService {
         this.ai = ai;
     }
 
+    /** RF47 · marcas do catálogo global (opcional nos testes): entram na grade ao lado dos perfis BRAND. */
+    private br.com.fashionai.application.catalog.CatalogService catalog;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setCatalog(br.com.fashionai.application.catalog.CatalogService catalog) {
+        this.catalog = catalog;
+    }
+
     /** Mínimo de peças + looks públicos para um país acender no globo (CA01 — "com dados suficientes"). */
     public static final int MIN_DATA = 3;
     /** Faixas do hypeScore (mesmas do RF6/dashboard). */
@@ -204,6 +212,49 @@ public class ExplorerService {
                 continue;
             }
             cards.add(m);
+        }
+        // RF47 · marcas que só existem no catálogo (seed/ingestão) — sem conta de marca, sem perfil inventado
+        if (catalog != null && hypeMin == null && (color == null || color.isBlank()) && (season == null || season.isBlank())) {
+            Set<String> withProfile = new java.util.HashSet<>();
+            cards.forEach(c -> withProfile.add(String.valueOf(c.get("name")).toLowerCase(Locale.ROOT)));
+            for (Map<String, Object> cb : catalog.catalogBrands()) {
+                String name = String.valueOf(cb.get("name"));
+                if (withProfile.contains(name.toLowerCase(Locale.ROOT))) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                List<String> cats = (List<String>) cb.get("categories");
+                if (cb.get("country") != null) {
+                    countries.add(String.valueOf(cb.get("country")));
+                }
+                categories.addAll(cats);
+                if (term != null && !term.isBlank() && !name.toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))) {
+                    continue;
+                }
+                if (country != null && !country.isBlank() && !country.equalsIgnoreCase(String.valueOf(cb.get("country")))) {
+                    continue;
+                }
+                if (category != null && !category.isBlank() && !cats.contains(category)) {
+                    continue;
+                }
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("userId", null);
+                m.put("slug", cb.get("slug"));
+                m.put("name", name);
+                m.put("logoUrl", cb.get("logoUrl"));
+                m.put("country", cb.get("country"));
+                m.put("category", cats.isEmpty() ? null : cats.get(0));
+                m.put("schemes", 0L);
+                m.put("pieces", cb.get("catalogProducts"));
+                m.put("hypeScore", 0L);
+                m.put("stars", 1);
+                m.put("storeUrl", cb.get("storeUrl"));
+                m.put("colors", List.of());
+                m.put("seasons", List.of());
+                m.put("catalog", true);
+                m.put("catalogProducts", cb.get("catalogProducts"));
+                cards.add(m);
+            }
         }
         Comparator<Map<String, Object>> cmp = "SCHEMES".equalsIgnoreCase(sort)
                 ? Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("schemes")).longValue())

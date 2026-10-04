@@ -84,15 +84,15 @@ o cookie na primeira abertura e apagadas do armazenamento.
 
 | Risco | Controle no FashionAI |
 |---|---|
-| A01 Controle de acesso quebrado | Rotas autenticadas por padrão (`anyRequest().authenticated()`); leitura pública só na lista `PUBLIC_GET`; `/api/admin/**` e `/actuator/**` (exceto health/info) exigem `ROLE_ADMIN`; `FashionAuthorization` confere dono do recurso (teste `ResourceOwnerAuthorizationTest`); cadastro público nunca cria ADMIN |
-| A02 Falhas criptográficas | JWT RS256 com chaves por variável (`JWT_REQUIRE_KEYS=true` impede subir com par efêmero); dados sensíveis cifrados com `DATA_ENCRYPTION_KEY`; e-mail guardado também como hash para busca; HSTS (2 anos no frontend, 1 ano na API) |
+| A01 Controle de acesso quebrado | Rotas autenticadas por padrão (`anyRequest().authenticated()`); leitura pública só na lista `PUBLIC_GET`; `/api/admin/**` e `/actuator/**` (exceto health/info) exigem `ROLE_ADMIN`; `FashionAuthorization` confere dono do recurso (teste `ResourceOwnerAuthorizationTest`); URL de mídia vinda do cliente só aponta para arquivo da própria pessoa (`MediaService.ownedMedia`/`OwnMedia`: nunca `restricted/`, `..` ou URL externa); `restricted/` só pela API; cadastro público nunca cria ADMIN; promoção de conta existente a ADMIN só com `FAI_ADMIN_PROMOTE_EXISTING` |
+| A02 Falhas criptográficas | JWT RS256 com `aud` (`JWT_AUDIENCE`) e chaves por variável (`JWT_REQUIRE_KEYS=true` impede subir com par efêmero); dados sensíveis cifrados com AES-256-GCM (`DATA_ENCRYPTION_KEY`); e-mail guardado também como hash; senhas Argon2id com os parâmetros da OWASP (19 MiB, t=2) e rehash no login; **TLS da API até os quatro bancos** (MySQL `sslMode=REQUIRED`, Cassandra e OpenSearch com CA própria fixada, Redis por ACL); HSTS (2 anos no frontend, 1 ano na API) |
 | A03 Injeção | JPA com parâmetros nomeados em todas as consultas; `InputSanitizer` nos textos livres; CSP com nonce por requisição (`script-src 'self' 'nonce-…' 'strict-dynamic'`), sem `unsafe-inline` para script; API responde com `Content-Security-Policy: default-src 'none'` |
-| A04 Design inseguro | Bloqueio por conta após 5 senhas erradas; limite por IP nas rotas de autenticação; recuperação de senha com código de uso único e limite por hora; prova social só com grupos ≥ 10 pessoas (ETI-03) |
-| A05 Configuração insegura | Cabeçalhos: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`; `server.error.include-stacktrace: never`; `poweredByHeader: false`; Swagger desligável (`API_DOCS_ENABLED=false`); CORS só para as origens de `APP_CORS_ALLOWED_ORIGINS` |
-| A06 Componentes vulneráveis | `npm audit --omit=dev`: 0 vulnerabilidades (PostCSS embutido no Next forçado para 8.5.28 por `overrides`). Backend: rodar `mvn org.owasp:dependency-check-maven:check` no CI |
+| A04 Design inseguro | Bloqueio por conta após 5 senhas erradas, sem revelar se a conta existe; limite por IP nas rotas de autenticação; códigos de e-mail/2FA com contador de tentativas; recuperação de senha com código de uso único e limite por hora; teto diário de gasto com IA global e por pessoa (`AiBudget`); prova social só com grupos ≥ 10 pessoas (ETI-03) |
+| A05 Configuração insegura | Cabeçalhos: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`; `server.error.include-stacktrace: never`; `poweredByHeader: false`; Swagger desligável (`API_DOCS_ENABLED=false`); CORS só para as origens de `APP_CORS_ALLOWED_ORIGINS`; bancos sem acesso público e endurecidos como código (`infra/railway`: usuários de menor privilégio, papel padrão do Cassandra e usuários de demonstração do OpenSearch fora) |
+| A06 Componentes vulneráveis | CI (`.github/workflows/ci.yml`) roda `npm audit --omit=dev --audit-level=high` a cada push; Dependabot semanal para Maven, npm, Docker e Actions; imagem do MySQL atualizada para 9.7.2 (CVE-2026-21964) |
 | A07 Falhas de identificação | Senhas com Argon2 (`Argon2PasswordHasher`); sessão ativa conferida a cada requisição (`SessionActiveFilter`: logout e troca de senha derrubam os tokens); aviso de login em aparelho novo; refresh token rotativo |
-| A08 Integridade | Migrações versionadas (Flyway); o token do gate e o JWT são assinados; sem desserialização de objetos arbitrários |
-| A09 Registro e monitoramento | `audit_log` para login, falhas, acessos negados e ações sensíveis; aba **Sistema** do dashboard de admin com logins falhos e 403 por dia e alertas automáticos |
+| A08 Integridade | Migrações versionadas (Flyway); o token do gate e o JWT são assinados; sem desserialização de objetos arbitrários; CI com build e testes antes do deploy e **gitleaks** no histórico inteiro; scripts de início dos bancos conferidos por SHA-256 |
+| A09 Registro e monitoramento | `audit_log` para login, falhas, acessos negados e ações sensíveis; aba **Sistema** do dashboard de admin com logins falhos e 403 por dia e alertas automáticos; auditoria do OpenSearch (logins recusados, acesso negado) no log do serviço; logs sem segredos (e-mails com corpo só com `EMAIL_LOG_BODIES`) |
 | A10 SSRF | `JdkWebFetchAdapter` (busca de logos de marca) recusa loopback, rede privada, link-local, CGNAT e IPv6 local, segue no máximo 3 redirecionamentos (reavaliando cada destino), com timeout de 8 s e limite de bytes |
 
 ## 3. OWASP API Security Top 10 (2023)
@@ -100,9 +100,9 @@ o cookie na primeira abertura e apagadas do armazenamento.
 | Risco | Controle |
 |---|---|
 | API1 Autorização por objeto (BOLA) | Serviços carregam o recurso pelo dono (`owned(user, id)`) e respondem 403/404 para recurso de outra pessoa |
-| API2 Autenticação quebrada | JWT curto (15 min) + refresh; bloqueio por conta; `AuthRateLimitFilter` por IP (login 30/10 min, cadastro 10/h, redefinição 10/h) |
+| API2 Autenticação quebrada | JWT curto (15 min) + refresh rotativo em cookie HttpOnly (BFF); bloqueio por conta; `AuthRateLimitFilter` por IP real (assinado pelo BFF, `ClientIpResolver`) e pelo caminho normalizado (login 30/10 min, cadastro 10/h, redefinição 10/h) |
 | API3 Autorização por propriedade | Entradas são `record`s de DTO com só os campos editáveis (nada de entidade JPA vinda do cliente); campos privados do DNA respeitam `privateFields` |
-| API4 Consumo irrestrito | Limites de upload (15 MB por arquivo, 80 MB por requisição); cotas de IA por usuário (`RateLimitPort`); limite por IP na autenticação |
+| API4 Consumo irrestrito | Limites de upload (15 MB por arquivo, 80 MB por requisição) e de pixels (`IMAGE_MAX_PIXELS`); cotas de IA por usuário (`RateLimitPort`) e teto em dólar por dia (`AI_DAILY_BUDGET_USD`, `AI_USER_DAILY_BUDGET_USD`); limite por IP na autenticação |
 | API5 Autorização por função | `/api/admin/**` e `/actuator/**` com `ROLE_ADMIN`; o `DashboardService` confere de novo (`guard.requireAdmin`) |
 | API6 Fluxos sensíveis | Resgate de cupom e compra na loja validam saldo, estoque, limite por pessoa e janela de disponibilidade no servidor |
 | API7 SSRF | Ver A10 |
@@ -115,7 +115,11 @@ o cookie na primeira abertura e apagadas do armazenamento.
 - O contador de tentativas do `/gate/verify` e o `InMemoryRateLimit` da API vivem na memória de cada instância. Com mais
   de uma instância, ligue também a regra de rate limit do firewall do Vercel para `/gate/verify` e use Redis no backend.
 - `style-src` mantém `'unsafe-inline'` (estilos inline do React e das cenas 3D). Scripts continuam só com nonce.
-- `img-src` aceita `https:` porque os logos de marca podem vir de sites das marcas.
+- `img-src` não aceita mais `https:` em geral: só a própria origem, a API e `NEXT_PUBLIC_MEDIA_ORIGIN`.
+- Senhas de administrador dos bancos (`fai_admin` do Cassandra, `admin` do OpenSearch) não são rotacionadas pelos
+  scripts de início (precisariam da senha antiga): rotação manual descrita em `infra/railway/README.md`.
+- Um ambiente só (`production`) no Railway: dados de teste convivem com os reais, separados por `test_account`
+  (proposta de `account_origin` em `docs/banco/integridade`).
 
 ## 5. Variáveis de produção
 
@@ -134,3 +138,14 @@ o cookie na primeira abertura e apagadas do armazenamento.
 | Backend | `APP_CORS_ALLOWED_ORIGINS` | domínio do Vercel (e o domínio próprio, se houver) |
 | Backend | `API_DOCS_ENABLED=false`, `MANAGEMENT_EXPOSURE=health,info` | documentação e métricas fechadas |
 | Backend | `FAI_ADMIN_EMAIL`, `FAI_ADMIN_PASSWORD` | primeira conta ADMIN (ver `docs/dashboard/DASHBOARD_ADMIN.md`) |
+| Vercel + backend | `EDGE_PROXY_SECRET` | mesmo segredo nos dois lados (IP do cliente assinado pelo BFF) |
+| Vercel + backend | `DEV_GATE_ALLOWED_EMAILS` | mesma lista: revogar uma pessoa vale também na API |
+| Backend | `DEV_GATE_ACCEPT_LEGACY` | `true` só durante a transição do front antigo; depois `false` |
+| Backend | `JWT_AUDIENCE` | `fashionai-api` (claim `aud` exigido) |
+| Backend | `AI_DAILY_BUDGET_USD`, `AI_USER_DAILY_BUDGET_USD` | tetos de gasto com IA (padrão 5,00 e 0,50) |
+| Backend | `MYSQL_USER=fai_app`, `MYSQL_PASSWORD=${{MySQL.MYSQL_APP_PASSWORD}}`, `MYSQL_SSL_MODE=REQUIRED` | usuário de menor privilégio, só com TLS |
+| Backend | `MYSQL_BACKUP_USER=fai_backup`, `MYSQL_BACKUP_PASSWORD=${{MySQL.MYSQL_BACKUP_PASSWORD}}` | backup só leitura |
+| Backend | `CASSANDRA_USERNAME=fai_app`, `CASSANDRA_PASSWORD=${{cassandra.CASSANDRA_APP_PASSWORD}}`, `CASSANDRA_SSL=true`, `CASSANDRA_CA_CERT_PEM` | papel só do keyspace, TLS com a CA fixada |
+| Backend | `OPENSEARCH_URL=https://opensearch.railway.internal:9200`, `OPENSEARCH_USERNAME=fai_app`, `OPENSEARCH_PASSWORD=${{opensearch.OPENSEARCH_APP_PASSWORD}}`, `OPENSEARCH_CA_CERT_PEM` | só índices `fai-*`, TLS com a CA fixada |
+| Backend | `REDIS_USERNAME=fashionai`, `REDIS_PASSWORD=${{Redis.REDIS_APP_PASSWORD}}` | usuário ACL (quando o perfil `redis` for ligado) |
+| Bancos | `FAI_START_SCRIPT` + comando de início | `infra/railway/<banco>/start.sh` (ver `infra/railway/README.md`) |

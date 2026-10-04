@@ -1,0 +1,22 @@
+@startuml DEMO_MaquinaDeEstados_Fixture
+title Fashion AI — Máquina de estados: uma fixture (fixture_key) e o plano de reset (PROPOSTA)
+!include ../seguranca/_estilo.iuml
+state "Fixture (ex.: USER_PUBLIC)" as F {
+  [*] --> Ausente
+  Ausente --> Presente : seed [CREATED]
+  Presente --> Presente : seed, igual à fixture [FOUND]
+  Presente --> Divergente : alguém mexeu pelo app
+  Divergente --> Presente : seed [UPDATED]
+  Presente --> Ausente : reset (DELETE + cascatas)
+  Divergente --> Ausente : reset
+}
+state "Plano de reset" as R {
+  [*] --> Planejado : dry-run (planHash)
+  Planejado --> Confirmado : confirm=planHash
+  Confirmado --> Abortado : plano mudou\nou realUsersToDelete > 0
+  Confirmado --> Executado : COMMIT
+  Executado --> Verificado : verify sem sobras
+  Abortado --> [*]
+  Verificado --> [*]
+}
+@enduml

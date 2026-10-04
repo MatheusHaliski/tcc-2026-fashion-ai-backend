@@ -1,0 +1,49 @@
+@startuml SEG_Atividades_Acesso
+title Fashion AI — Atividades: do navegador à API (dev gate + sessão BFF)
+!include _estilo.iuml
+|Navegador|
+start
+:Abre qualquer página do fai-network.com;
+|middleware.ts (Next.js)|
+:Gera nonce e CSP da requisição;
+if (Cookie **fai_gate** (token "gp") válido?\nassinatura HMAC · validade 12 h · identidade permitida) then (sim)
+  if (Cookie **fai_gate_a** ("ga", 1 h) ausente, de outro formato\nou com menos de 20 min?) then (sim)
+    :Renova fai_gate_a (signApiToken);
+  endif
+  :Entrega a página (SSR dinâmico, nonce em todos os scripts);
+else (não)
+  if (Rota /gate/*, /bff/* ou página?) then (página)
+    :Reescreve para /gate;
+  elseif (/bff/*) then
+    :403 JSON "gate required";
+    stop
+  else (/gate/google · callback · verify · status · renew)
+    :Segue para a rota do gate;
+  endif
+  |/gate (Route Handlers)|
+  if (DEV_GATE_MODE) then (cloudflare)
+    :Valida o JWT do Cloudflare Access\n(RS256 pelo JWKS · iss · aud · exp);
+  else (builtin)
+    :Identidade: login Google (DEV_GATE_GOOGLE, state assinado)\nou usuário DEV_GATE_USER;
+    :Confere a identidade em DEV_GATE_ALLOWED_EMAILS;
+    :PIN de 2º fator (falha apaga o cookie do Google;\nlog de auditoria com identidade mascarada);
+  endif
+  :Emite fai_gate (gp, HttpOnly) e fai_gate_a (ga);
+  :Redireciona para safeNext(next)\n(recusa //, \\, controle e outra origem);
+endif
+|Navegador|
+:App carrega; restoreSession() pede /bff/auth/refresh;
+|BFF /bff/auth/[action]|
+:Confere mesma origem e corpo ≤ 64 KB;
+:Repassa à API com X-Dev-Gate (ga) e IP assinado\n(X-Fai-Client-Ip · X-Fai-Proxy-Ts · X-Fai-Proxy-Sig);
+|API (Spring Boot)|
+:DevGateFilter valida o ga (ou v1 legado na transição);
+:ClientIpResolver aceita o IP só com assinatura válida;
+:AuthRateLimitFilter limita pelo caminho normalizado + IP;
+:JWT com aud · Argon2id · lockout sem enumeração;
+|BFF /bff/auth/[action]|
+:Tira o refresh token do JSON e grava no cookie\n**fai_rt** (HttpOnly · Path=/bff/auth · SameSite=Strict);
+|Navegador|
+:Access token só em memória;\nabas sincronizadas (Web Locks + BroadcastChannel);
+stop
+@enduml

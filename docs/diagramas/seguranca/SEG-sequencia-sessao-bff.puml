@@ -1,0 +1,54 @@
+@startuml SEG_Sequencia_Sessao_BFF
+title Fashion AI — Sequência: sessão pelo BFF (login, chamada com gate vencido, refresh e logout offline)
+!include _estilo.iuml
+autonumber
+actor Pessoa
+participant "App (navegador)\nlib/api/client.ts" as App
+participant "middleware.ts" as MW
+participant "BFF\n/bff/auth/[action]" as BFF
+participant "/gate/renew" as Renew
+participant "API Spring Boot\nDevGateFilter · AuthRateLimitFilter" as API
+database "MySQL\n(fai_app, TLS)" as DB
+
+== Login ==
+Pessoa -> App : e-mail + senha
+App -> MW : POST /bff/auth/login (cookies fai_gate, fai_gate_a)
+MW -> MW : verifyGate("gp")
+MW -> BFF : segue
+BFF -> BFF : mesma origem? corpo ≤ 64 KB?
+BFF -> API : POST /api/auth/login\nX-Dev-Gate: ga · X-Fai-Client-Ip/Ts/Sig (HMAC)
+API -> DB : usuário · Argon2id · tentativas
+API --> BFF : 200 {accessToken, refreshToken}
+BFF --> App : 200 {accessToken} + Set-Cookie fai_rt (HttpOnly, Path=/bff/auth, SameSite=Strict) e fai_rt_h
+App -> App : access token só em memória
+
+== Chamada com o token de API do gate vencido ==
+App -> API : GET /api/... (Bearer, X-Dev-Gate expirado)
+API --> App : 403 X-Dev-Gate-Required
+App -> Renew : POST /gate/renew (cookie fai_gate)
+Renew --> App : Set-Cookie fai_gate_a novo (1 h)
+App -> API : repete UMA vez
+API --> App : 200
+
+== Access token vencido (várias abas) ==
+App -> App : Web Lock "fai-auth-refresh" (só uma aba renova)
+App -> BFF : POST /bff/auth/refresh (cookie fai_rt)
+BFF -> API : POST /api/auth/refresh {refreshToken do cookie}
+API -> DB : rotaciona a família do refresh token
+API --> BFF : 200 {access, refresh novo}
+BFF --> App : {accessToken} + fai_rt novo
+App -> App : BroadcastChannel "fai-auth" avisa as outras abas
+
+== Logout com a API fora do ar ==
+App -> BFF : POST /bff/auth/logout
+BFF -> API : POST /api/auth/logout
+API --> BFF : falha de rede
+BFF --> App : 502 offline + apaga fai_rt e fai_rt_h
+note right of BFF
+  Os cookies saem SEMPRE: num aparelho
+  compartilhado, recarregar a página não
+  pode restaurar a sessão "encerrada".
+  401 da API: refresh com o cookie e
+  repete o logout; 401 de novo = 204.
+end note
+@enduml

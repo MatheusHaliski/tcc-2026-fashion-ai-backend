@@ -1,0 +1,9 @@
+[
+ {"brand": "nike", "subcategory": "casual_sneakers", "gtin": "0195-238321123", "expected": "gtin:0195238321123"},
+ {"brand": "nike", "subcategory": "casual_sneakers", "sku": "cw2288-111", "expected": "sku:nike:CW2288111"},
+ {"brand": "nike", "subcategory": "casual_sneakers", "product_code": "DD1391 100", "expected": "code:nike:DD1391100"},
+ {"brand": "nike", "subcategory": "casual_sneakers", "url": "https://www.nike.com/t/af1/CW2288-111?x=1#y", "expected": "url:nike.com/t/af1/CW2288-111"},
+ {"brand": "nike", "subcategory": "casual_sneakers", "model": "Air Force 1 '07", "variant": "White/White", "title": "x", "color": "white", "expected": "model:nike:casual_sneakers:air-force-1-07:white-white"},
+ {"brand": "nike", "subcategory": "hoodie", "model": "Club Fleece", "variant": "Black", "title": "x", "color": "black", "expected": "model:nike:hoodie:club-fleece:black"},
+ {"brand": "levis", "subcategory": "jeans", "title": "Calça Jeans 501 Original Preta", "color": "black", "expected": "title:levis:jeans:calca-jeans-501-preta:black"}
+]

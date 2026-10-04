@@ -1,0 +1,420 @@
+[
+ {
+  "brand": "Uniqlo",
+  "subcategory": "t_shirt",
+  "product_name": "U Crew Neck T-Shirt",
+  "model_name": "U Crew Neck",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Uniqlo U",
+  "aliases": [
+   "Camiseta U"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "t_shirt",
+  "product_name": "Supima Cotton Crew Neck T-Shirt",
+  "model_name": "Supima Crew Neck",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Supima Tee"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "t_shirt",
+  "product_name": "AIRism Cotton Oversized T-Shirt",
+  "model_name": "AIRism Oversized",
+  "color": "white",
+  "color_name": "White",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "AIRism",
+  "aliases": [
+   "AIRism"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "shirt",
+  "product_name": "Oxford Shirt",
+  "model_name": "Oxford",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Camisa Oxford"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "light_blue",
+    "color_name": "Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "shirt",
+  "product_name": "Linen Blend Shirt",
+  "model_name": "Linen Blend",
+  "color": "white",
+  "color_name": "White",
+  "material": "BLEND",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "sweater",
+  "product_name": "Extra Fine Merino Crew Neck Sweater",
+  "model_name": "Extra Fine Merino",
+  "color": "navy",
+  "color_name": "Navy",
+  "material": "WOOL",
+  "gender": "UNISSEX",
+  "aliases": [
+   "Merino"
+  ],
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "sweater",
+  "product_name": "Souffle Yarn Crew Neck Sweater",
+  "model_name": "Souffle Yarn",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "cardigan",
+  "product_name": "Cashmere Crew Neck Cardigan",
+  "model_name": "Cashmere Cardigan",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "WOOL",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "sweatshirt",
+  "product_name": "Sweatshirt",
+  "model_name": "Sweatshirt",
+  "color": "gray",
+  "color_name": "Grey",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "parka",
+  "product_name": "Ultra Light Down Jacket",
+  "model_name": "Ultra Light Down",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "ULD",
+   "Ultra Light Down"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "jacket",
+  "product_name": "BLOCKTECH Parka",
+  "model_name": "BLOCKTECH",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "jeans",
+  "product_name": "Selvedge Regular Fit Jeans",
+  "model_name": "Selvedge Regular",
+  "color": "denim",
+  "color_name": "Blue",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "jeans",
+  "product_name": "Wide Straight Jeans",
+  "model_name": "Wide Straight",
+  "color": "light_blue",
+  "color_name": "Light Blue",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "chino_pants",
+  "product_name": "Slim Fit Chino Pants",
+  "model_name": "Slim Chino",
+  "color": "beige",
+  "color_name": "Beige",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "tailored_pants",
+  "product_name": "Smart Ankle Pants",
+  "model_name": "Smart Ankle",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "aliases": [
+   "Smart Pants"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "leggings",
+  "product_name": "AIRism UV Protection Leggings",
+  "model_name": "AIRism Leggings",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "FEMININO",
+  "collection": "AIRism",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "crossbody_bag",
+  "product_name": "Round Mini Shoulder Bag",
+  "model_name": "Round Mini",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "Bolsinha Uniqlo"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "beige",
+    "color_name": "Beige"
+   },
+   {
+    "color": "green",
+    "color_name": "Green"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Uniqlo",
+  "subcategory": "socks",
+  "product_name": "Supima Cotton Socks",
+  "model_name": "Supima Socks",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

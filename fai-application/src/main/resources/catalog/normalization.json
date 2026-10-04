@@ -1,0 +1,1152 @@
+{
+ "_doc": "RF47 · Fonte única de normalização do catálogo (Java: CatalogNormalizer via classpath; Python: scripts/catalog). Teste CatalogNormalizerTest garante que 'taxonomy' é igual a Taxonomy.java.",
+ "version": "1.0.0",
+ "taxonomy": {
+  "subcategories": {
+   "upper_piece": [
+    "t_shirt",
+    "shirt",
+    "blouse",
+    "tank_top",
+    "crop_top",
+    "polo_shirt",
+    "bodysuit",
+    "sweater",
+    "sweatshirt",
+    "hoodie",
+    "cardigan",
+    "vest",
+    "blazer",
+    "jacket",
+    "coat",
+    "parka",
+    "windbreaker",
+    "kimono"
+   ],
+   "lower_piece": [
+    "jeans",
+    "tailored_pants",
+    "casual_pants",
+    "chino_pants",
+    "cargo_pants",
+    "jogger_pants",
+    "sweatpants",
+    "leggings",
+    "culottes",
+    "shorts",
+    "bermuda_shorts",
+    "denim_shorts",
+    "skirt",
+    "skort"
+   ],
+   "shoes_piece": [
+    "casual_sneakers",
+    "running_shoes",
+    "training_shoes",
+    "basketball_shoes",
+    "skate_shoes",
+    "high_top_sneakers",
+    "loafers",
+    "moccasins",
+    "oxford_shoes",
+    "derby_shoes",
+    "ankle_boots",
+    "long_boots",
+    "combat_boots",
+    "sandals",
+    "flip_flops",
+    "heels",
+    "flats",
+    "espadrilles"
+   ],
+   "accessory_piece": [
+    "handbag",
+    "crossbody_bag",
+    "tote_bag",
+    "clutch",
+    "backpack",
+    "belt",
+    "cap",
+    "hat",
+    "beanie",
+    "scarf",
+    "tie",
+    "bow_tie",
+    "sunglasses",
+    "eyeglasses",
+    "necklace",
+    "bracelet",
+    "earrings",
+    "ring",
+    "watch",
+    "wallet",
+    "gloves",
+    "socks",
+    "hair_accessory"
+   ],
+   "full_body_piece": [
+    "dress",
+    "jumpsuit",
+    "romper",
+    "matching_set",
+    "overalls"
+   ]
+  },
+  "colors": [
+   "black",
+   "charcoal",
+   "washed_black",
+   "white",
+   "off_white",
+   "ivory",
+   "cream",
+   "light_gray",
+   "gray",
+   "dark_gray",
+   "silver",
+   "blue",
+   "navy",
+   "light_blue",
+   "sky_blue",
+   "cobalt",
+   "denim",
+   "teal",
+   "red",
+   "crimson",
+   "burgundy",
+   "maroon",
+   "rust",
+   "pink",
+   "hot_pink",
+   "rose",
+   "coral",
+   "salmon",
+   "orange",
+   "terracotta",
+   "amber",
+   "apricot",
+   "yellow",
+   "mustard",
+   "gold",
+   "butter",
+   "green",
+   "olive",
+   "military_green",
+   "forest_green",
+   "mint",
+   "sage",
+   "emerald",
+   "purple",
+   "violet",
+   "lilac",
+   "lavender",
+   "plum",
+   "brown",
+   "chocolate",
+   "camel",
+   "tan",
+   "beige",
+   "taupe",
+   "metallic_gold",
+   "metallic_silver",
+   "bronze",
+   "multicolor",
+   "print"
+  ],
+  "materials": [
+   "COTTON",
+   "POLYESTER",
+   "WOOL",
+   "SILK",
+   "LEATHER",
+   "SYNTHETIC",
+   "BLEND"
+  ]
+ },
+ "categorySynonyms": {
+  "upper_piece": [
+   "upper_piece",
+   "parte de cima",
+   "top",
+   "tops",
+   "upper",
+   "parte superior",
+   "superior",
+   "UPPER_PIECE"
+  ],
+  "lower_piece": [
+   "lower_piece",
+   "parte de baixo",
+   "bottom",
+   "bottoms",
+   "lower",
+   "parte inferior",
+   "inferior",
+   "LOWER_PIECE"
+  ],
+  "shoes_piece": [
+   "shoes_piece",
+   "calcados",
+   "calçados",
+   "calcado",
+   "calçado",
+   "shoes",
+   "footwear",
+   "sapatos",
+   "SHOES",
+   "SHOES_PIECE"
+  ],
+  "accessory_piece": [
+   "accessory_piece",
+   "acessorios",
+   "acessórios",
+   "acessorio",
+   "acessório",
+   "accessories",
+   "accessory",
+   "ACCESSORY_PIECE"
+  ],
+  "full_body_piece": [
+   "full_body_piece",
+   "corpo inteiro",
+   "full body",
+   "FULL_BODY_PIECE"
+  ]
+ },
+ "subcategorySynonyms": {
+  "t_shirt": [
+   "t-shirt",
+   "tshirt",
+   "tee",
+   "camiseta",
+   "camisetas",
+   "t shirt",
+   "playera",
+   "camiseta basica"
+  ],
+  "shirt": [
+   "shirt",
+   "camisa",
+   "camisa social",
+   "button down",
+   "camisas"
+  ],
+  "blouse": [
+   "blouse",
+   "blusa",
+   "blusas"
+  ],
+  "tank_top": [
+   "tank top",
+   "regata",
+   "regatas",
+   "tank",
+   "camiseta regata"
+  ],
+  "crop_top": [
+   "crop top",
+   "cropped",
+   "top cropped"
+  ],
+  "polo_shirt": [
+   "polo",
+   "polo shirt",
+   "camisa polo",
+   "polos"
+  ],
+  "bodysuit": [
+   "bodysuit",
+   "body"
+  ],
+  "sweater": [
+   "sweater",
+   "sueter",
+   "suéter",
+   "sweter",
+   "pullover",
+   "tricot",
+   "tricô"
+  ],
+  "sweatshirt": [
+   "sweatshirt",
+   "moletom",
+   "crewneck",
+   "blusa de moletom"
+  ],
+  "hoodie": [
+   "hoodie",
+   "moletom com capuz",
+   "canguru"
+  ],
+  "cardigan": [
+   "cardigan",
+   "casaquinho"
+  ],
+  "vest": [
+   "vest",
+   "colete"
+  ],
+  "blazer": [
+   "blazer",
+   "paleto",
+   "paletó"
+  ],
+  "jacket": [
+   "jacket",
+   "jaqueta",
+   "jaquetas",
+   "bomber",
+   "trucker jacket"
+  ],
+  "coat": [
+   "coat",
+   "casaco",
+   "sobretudo",
+   "trench coat"
+  ],
+  "parka": [
+   "parka"
+  ],
+  "windbreaker": [
+   "windbreaker",
+   "corta vento",
+   "corta-vento"
+  ],
+  "kimono": [
+   "kimono",
+   "quimono"
+  ],
+  "jeans": [
+   "jeans",
+   "calca jeans",
+   "calça jeans",
+   "denim",
+   "jean"
+  ],
+  "tailored_pants": [
+   "tailored pants",
+   "calca de alfaiataria",
+   "calça de alfaiataria",
+   "alfaiataria",
+   "calca social",
+   "calça social"
+  ],
+  "casual_pants": [
+   "casual pants",
+   "calca",
+   "calça",
+   "pants",
+   "calcas",
+   "calças",
+   "trousers"
+  ],
+  "chino_pants": [
+   "chino",
+   "chinos",
+   "calca chino",
+   "calça chino"
+  ],
+  "cargo_pants": [
+   "cargo",
+   "calca cargo",
+   "calça cargo",
+   "cargo pants"
+  ],
+  "jogger_pants": [
+   "jogger",
+   "joggers",
+   "calca jogger",
+   "calça jogger"
+  ],
+  "sweatpants": [
+   "sweatpants",
+   "calca de moletom",
+   "calça de moletom",
+   "moletom calca"
+  ],
+  "leggings": [
+   "legging",
+   "leggings",
+   "calca legging",
+   "calça legging"
+  ],
+  "culottes": [
+   "culottes",
+   "pantacourt"
+  ],
+  "shorts": [
+   "shorts",
+   "short"
+  ],
+  "bermuda_shorts": [
+   "bermuda",
+   "bermudas"
+  ],
+  "denim_shorts": [
+   "short jeans",
+   "shorts jeans",
+   "denim shorts"
+  ],
+  "skirt": [
+   "skirt",
+   "saia",
+   "saias"
+  ],
+  "skort": [
+   "skort",
+   "short saia",
+   "shorts saia"
+  ],
+  "casual_sneakers": [
+   "sneakers",
+   "sneaker",
+   "tenis",
+   "tênis",
+   "tenis casual",
+   "tênis casual",
+   "trainers"
+  ],
+  "running_shoes": [
+   "running",
+   "tenis de corrida",
+   "tênis de corrida",
+   "running shoes"
+  ],
+  "training_shoes": [
+   "training shoes",
+   "tenis de treino",
+   "tênis de treino"
+  ],
+  "basketball_shoes": [
+   "basketball shoes",
+   "tenis de basquete",
+   "tênis de basquete"
+  ],
+  "skate_shoes": [
+   "skate shoes",
+   "tenis de skate",
+   "tênis de skate"
+  ],
+  "high_top_sneakers": [
+   "high top",
+   "cano alto",
+   "tenis cano alto",
+   "tênis cano alto"
+  ],
+  "loafers": [
+   "loafer",
+   "loafers",
+   "mocassim social",
+   "loafer"
+  ],
+  "moccasins": [
+   "moccasin",
+   "mocassim",
+   "mocassins"
+  ],
+  "oxford_shoes": [
+   "oxford",
+   "sapato oxford",
+   "sapato social"
+  ],
+  "derby_shoes": [
+   "derby",
+   "sapato derby"
+  ],
+  "ankle_boots": [
+   "ankle boot",
+   "bota curta",
+   "botinha",
+   "chelsea boot"
+  ],
+  "long_boots": [
+   "long boot",
+   "bota cano longo",
+   "bota alta",
+   "botas"
+  ],
+  "combat_boots": [
+   "combat boot",
+   "coturno"
+  ],
+  "sandals": [
+   "sandal",
+   "sandals",
+   "sandalia",
+   "sandália",
+   "sandalias",
+   "sandálias",
+   "rasteira"
+  ],
+  "flip_flops": [
+   "flip flop",
+   "flip flops",
+   "chinelo",
+   "chinelos",
+   "havaianas"
+  ],
+  "heels": [
+   "heels",
+   "salto",
+   "salto alto",
+   "scarpin",
+   "sandalia de salto"
+  ],
+  "flats": [
+   "flats",
+   "sapatilha",
+   "sapatilhas",
+   "ballet flat"
+  ],
+  "espadrilles": [
+   "espadrille",
+   "alpargata",
+   "espadrilles"
+  ],
+  "handbag": [
+   "handbag",
+   "bolsa",
+   "bolsa de mao",
+   "bolsa de mão",
+   "bolsas"
+  ],
+  "crossbody_bag": [
+   "crossbody",
+   "bolsa transversal",
+   "bolsa tiracolo"
+  ],
+  "tote_bag": [
+   "tote",
+   "tote bag",
+   "bolsa sacola"
+  ],
+  "clutch": [
+   "clutch",
+   "carteira de festa"
+  ],
+  "backpack": [
+   "backpack",
+   "mochila",
+   "mochilas"
+  ],
+  "belt": [
+   "belt",
+   "cinto",
+   "cintos"
+  ],
+  "cap": [
+   "cap",
+   "bone",
+   "boné",
+   "bones",
+   "bonés",
+   "baseball cap"
+  ],
+  "hat": [
+   "hat",
+   "chapeu",
+   "chapéu",
+   "bucket hat"
+  ],
+  "beanie": [
+   "beanie",
+   "gorro",
+   "touca"
+  ],
+  "scarf": [
+   "scarf",
+   "cachecol",
+   "lenco",
+   "lenço",
+   "echarpe"
+  ],
+  "tie": [
+   "tie",
+   "gravata"
+  ],
+  "bow_tie": [
+   "bow tie",
+   "gravata borboleta"
+  ],
+  "sunglasses": [
+   "sunglasses",
+   "oculos de sol",
+   "óculos de sol",
+   "oculos escuros"
+  ],
+  "eyeglasses": [
+   "eyeglasses",
+   "oculos de grau",
+   "óculos de grau",
+   "armacao",
+   "armação",
+   "oculos",
+   "óculos"
+  ],
+  "necklace": [
+   "necklace",
+   "colar",
+   "corrente",
+   "colares"
+  ],
+  "bracelet": [
+   "bracelet",
+   "pulseira",
+   "pulseiras",
+   "bracelete"
+  ],
+  "earrings": [
+   "earrings",
+   "brinco",
+   "brincos"
+  ],
+  "ring": [
+   "ring",
+   "anel",
+   "aneis",
+   "anéis"
+  ],
+  "watch": [
+   "watch",
+   "relogio",
+   "relógio",
+   "relogios",
+   "relógios"
+  ],
+  "wallet": [
+   "wallet",
+   "carteira",
+   "carteiras",
+   "porta cartao",
+   "porta-cartão"
+  ],
+  "gloves": [
+   "gloves",
+   "luva",
+   "luvas"
+  ],
+  "socks": [
+   "socks",
+   "meia",
+   "meias"
+  ],
+  "hair_accessory": [
+   "hair accessory",
+   "acessorio de cabelo",
+   "presilha",
+   "tiara",
+   "scrunchie"
+  ],
+  "dress": [
+   "dress",
+   "vestido",
+   "vestidos"
+  ],
+  "jumpsuit": [
+   "jumpsuit",
+   "macacao",
+   "macacão"
+  ],
+  "romper": [
+   "romper",
+   "macaquinho"
+  ],
+  "matching_set": [
+   "matching set",
+   "conjunto",
+   "conjuntinho"
+  ],
+  "overalls": [
+   "overalls",
+   "jardineira"
+  ]
+ },
+ "colorSynonyms": {
+  "black": [
+   "black",
+   "preto",
+   "preta",
+   "negro",
+   "negra",
+   "noir"
+  ],
+  "white": [
+   "white",
+   "branco",
+   "branca",
+   "blanco",
+   "blanca",
+   "blanc"
+  ],
+  "off_white": [
+   "off white",
+   "off-white",
+   "offwhite",
+   "gelo"
+  ],
+  "cream": [
+   "cream",
+   "creme",
+   "cru",
+   "sail"
+  ],
+  "ivory": [
+   "ivory",
+   "marfim"
+  ],
+  "gray": [
+   "gray",
+   "grey",
+   "cinza",
+   "gris"
+  ],
+  "light_gray": [
+   "light gray",
+   "light grey",
+   "cinza claro",
+   "mescla"
+  ],
+  "dark_gray": [
+   "dark gray",
+   "dark grey",
+   "cinza escuro",
+   "chumbo"
+  ],
+  "charcoal": [
+   "charcoal",
+   "grafite",
+   "carvao",
+   "carvão"
+  ],
+  "silver": [
+   "silver",
+   "prata",
+   "prateado"
+  ],
+  "blue": [
+   "blue",
+   "azul"
+  ],
+  "navy": [
+   "navy",
+   "marinho",
+   "azul marinho",
+   "azul-marinho",
+   "dark navy"
+  ],
+  "light_blue": [
+   "light blue",
+   "azul claro",
+   "azul bebe",
+   "azul bebê"
+  ],
+  "sky_blue": [
+   "sky blue",
+   "azul celeste",
+   "celeste"
+  ],
+  "cobalt": [
+   "cobalt",
+   "azul royal",
+   "royal blue",
+   "royal"
+  ],
+  "denim": [
+   "denim",
+   "indigo",
+   "índigo",
+   "jeans",
+   "stonewash",
+   "medium wash",
+   "dark wash",
+   "light wash"
+  ],
+  "teal": [
+   "teal",
+   "azul petroleo",
+   "azul petróleo",
+   "petroleo"
+  ],
+  "red": [
+   "red",
+   "vermelho",
+   "vermelha",
+   "rojo",
+   "rouge"
+  ],
+  "burgundy": [
+   "burgundy",
+   "bordo",
+   "bordô",
+   "vinho",
+   "wine"
+  ],
+  "maroon": [
+   "maroon",
+   "marsala"
+  ],
+  "crimson": [
+   "crimson",
+   "carmim"
+  ],
+  "rust": [
+   "rust",
+   "ferrugem"
+  ],
+  "pink": [
+   "pink",
+   "rosa",
+   "rose pink"
+  ],
+  "hot_pink": [
+   "hot pink",
+   "pink choque",
+   "rosa choque",
+   "fuchsia",
+   "fucsia"
+  ],
+  "coral": [
+   "coral"
+  ],
+  "salmon": [
+   "salmon",
+   "salmao",
+   "salmão"
+  ],
+  "orange": [
+   "orange",
+   "laranja",
+   "naranja"
+  ],
+  "terracotta": [
+   "terracotta",
+   "terracota"
+  ],
+  "yellow": [
+   "yellow",
+   "amarelo",
+   "amarela",
+   "amarillo"
+  ],
+  "mustard": [
+   "mustard",
+   "mostarda"
+  ],
+  "gold": [
+   "gold",
+   "dourado",
+   "dourada"
+  ],
+  "green": [
+   "green",
+   "verde",
+   "vert"
+  ],
+  "olive": [
+   "olive",
+   "oliva",
+   "verde oliva"
+  ],
+  "military_green": [
+   "military green",
+   "verde militar",
+   "army green",
+   "khaki green"
+  ],
+  "forest_green": [
+   "forest green",
+   "verde floresta",
+   "verde escuro",
+   "dark green"
+  ],
+  "mint": [
+   "mint",
+   "menta",
+   "verde menta"
+  ],
+  "sage": [
+   "sage",
+   "verde salvia",
+   "verde sálvia"
+  ],
+  "emerald": [
+   "emerald",
+   "esmeralda",
+   "verde esmeralda"
+  ],
+  "purple": [
+   "purple",
+   "roxo",
+   "roxa",
+   "morado"
+  ],
+  "violet": [
+   "violet",
+   "violeta"
+  ],
+  "lilac": [
+   "lilac",
+   "lilas",
+   "lilás"
+  ],
+  "lavender": [
+   "lavender",
+   "lavanda"
+  ],
+  "plum": [
+   "plum",
+   "ameixa"
+  ],
+  "brown": [
+   "brown",
+   "marrom",
+   "marron",
+   "castanho"
+  ],
+  "chocolate": [
+   "chocolate"
+  ],
+  "camel": [
+   "camel",
+   "caramelo"
+  ],
+  "tan": [
+   "tan",
+   "wheat",
+   "whisky"
+  ],
+  "beige": [
+   "beige",
+   "bege",
+   "nude",
+   "areia",
+   "sand",
+   "khaki",
+   "caqui",
+   "cáqui"
+  ],
+  "taupe": [
+   "taupe",
+   "fendi"
+  ],
+  "multicolor": [
+   "multicolor",
+   "multicolorido",
+   "colorido",
+   "multi"
+  ],
+  "print": [
+   "print",
+   "estampado",
+   "estampa"
+  ]
+ },
+ "materialSynonyms": {
+  "COTTON": [
+   "cotton",
+   "algodao",
+   "algodão",
+   "piquet",
+   "pique",
+   "piqué",
+   "jersey",
+   "denim",
+   "sarja",
+   "twill",
+   "canvas",
+   "lona"
+  ],
+  "POLYESTER": [
+   "polyester",
+   "poliester",
+   "poliéster",
+   "dri-fit",
+   "dri fit",
+   "climalite"
+  ],
+  "WOOL": [
+   "wool",
+   "la",
+   "lã",
+   "merino",
+   "cashmere",
+   "caxemira",
+   "tricot"
+  ],
+  "SILK": [
+   "silk",
+   "seda",
+   "cetim"
+  ],
+  "LEATHER": [
+   "leather",
+   "couro",
+   "suede",
+   "camurca",
+   "camurça",
+   "nobuck",
+   "nubuck"
+  ],
+  "SYNTHETIC": [
+   "synthetic",
+   "sintetico",
+   "sintético",
+   "nylon",
+   "poliamida",
+   "mesh",
+   "flyknit",
+   "primeknit",
+   "borracha",
+   "rubber",
+   "eva",
+   "pvc",
+   "plastico",
+   "acetato",
+   "metal",
+   "aco",
+   "aço"
+  ],
+  "BLEND": [
+   "blend",
+   "misto",
+   "mesclado"
+  ]
+ },
+ "genderSynonyms": {
+  "MASCULINO": [
+   "masculino",
+   "men",
+   "mens",
+   "man",
+   "male",
+   "homem",
+   "hombre",
+   "m"
+  ],
+  "FEMININO": [
+   "feminino",
+   "women",
+   "womens",
+   "woman",
+   "female",
+   "mulher",
+   "mujer",
+   "f",
+   "w"
+  ],
+  "UNISSEX": [
+   "unissex",
+   "unisex",
+   "u",
+   "all"
+  ]
+ },
+ "brandAliases": {
+  "levis": [
+   "levis",
+   "levi s",
+   "levi strauss",
+   "levi strauss & co"
+  ],
+  "ralph-lauren": [
+   "polo ralph lauren",
+   "prl",
+   "ralph lauren",
+   "polo by ralph lauren"
+  ],
+  "new-balance": [
+   "nb",
+   "new balance"
+  ],
+  "tommy-hilfiger": [
+   "tommy",
+   "tommy hilfiger",
+   "tommy jeans"
+  ],
+  "calvin-klein": [
+   "ck",
+   "calvin klein",
+   "calvin klein jeans"
+  ],
+  "adidas": [
+   "adidas",
+   "adidas originals",
+   "adidas performance"
+  ],
+  "nike": [
+   "nike",
+   "nike sportswear",
+   "nike sb",
+   "nike acg",
+   "nsw"
+  ],
+  "h-m": [
+   "h&m",
+   "hm",
+   "h and m",
+   "hennes & mauritz"
+  ],
+  "c-a": [
+   "c&a",
+   "cea",
+   "c e a"
+  ],
+  "the-north-face": [
+   "tnf",
+   "the north face",
+   "north face"
+  ],
+  "dr-martens": [
+   "dr martens",
+   "dr. martens",
+   "doc martens",
+   "docs"
+  ],
+  "ray-ban": [
+   "ray ban",
+   "rayban",
+   "ray-ban"
+  ],
+  "converse": [
+   "converse",
+   "chuck taylor"
+  ],
+  "puma": [
+   "puma"
+  ],
+  "vans": [
+   "vans"
+  ],
+  "lacoste": [
+   "lacoste"
+  ],
+  "uniqlo": [
+   "uniqlo"
+  ],
+  "zara": [
+   "zara"
+  ]
+ },
+ "stopwords": [
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "e",
+  "the",
+  "and",
+  "a",
+  "o",
+  "com",
+  "sem",
+  "para",
+  "pra",
+  "em",
+  "original",
+  "oficial",
+  "new",
+  "novo",
+  "nova"
+ ]
+}

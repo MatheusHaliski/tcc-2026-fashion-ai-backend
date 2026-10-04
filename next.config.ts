@@ -4,7 +4,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Os assets de /public (chrome, auras, peças padrão, ícones) são servidos como estáticos; o backend serve /media.
   images: { unoptimized: true },
-  eslint: { ignoreDuringBuilds: true },
   poweredByHeader: false,
   // OWASP A05 — cabeçalhos em todas as respostas (a CSP com nonce vem do middleware.ts, por requisição)
   async headers() {

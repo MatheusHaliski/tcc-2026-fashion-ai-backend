@@ -1,0 +1,243 @@
+[
+ {
+  "brand": "Converse",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Chuck Taylor All Star Hi",
+  "model_name": "Chuck Taylor All Star",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Chuck Taylor",
+  "aliases": [
+   "All Star Cano Alto",
+   "Chuck Taylor Hi"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black",
+    "code": "M9160"
+   },
+   {
+    "color": "white",
+    "color_name": "Optical White",
+    "code": "M7650"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "casual_sneakers",
+  "product_name": "Chuck Taylor All Star Ox",
+  "model_name": "Chuck Taylor All Star",
+  "color": "white",
+  "color_name": "Optical White",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Chuck Taylor",
+  "aliases": [
+   "All Star Cano Baixo",
+   "Chuck Taylor Low"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "Optical White",
+    "code": "M7652"
+   },
+   {
+    "color": "black",
+    "color_name": "Black",
+    "code": "M9166"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Chuck 70 Hi",
+  "model_name": "Chuck 70",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Chuck 70",
+  "aliases": [
+   "Chuck 70 High"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "cream",
+    "color_name": "Parchment"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "casual_sneakers",
+  "product_name": "Chuck 70 Ox",
+  "model_name": "Chuck 70",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Chuck 70",
+  "aliases": [
+   "Chuck 70 Low"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "cream",
+    "color_name": "Parchment"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "high_top_sneakers",
+  "product_name": "Chuck Taylor All Star Lift Platform",
+  "model_name": "Chuck Taylor Lift",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "Chuck Taylor",
+  "aliases": [
+   "All Star Plataforma"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "casual_sneakers",
+  "product_name": "Run Star Hike",
+  "model_name": "Run Star Hike",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "casual_sneakers",
+  "product_name": "One Star Pro",
+  "model_name": "One Star",
+  "color": "black",
+  "color_name": "Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "One Star",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "casual_sneakers",
+  "product_name": "Weapon",
+  "model_name": "Weapon",
+  "color": "white",
+  "color_name": "White",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "t_shirt",
+  "product_name": "Go-To Star Chevron T-Shirt",
+  "model_name": "Star Chevron Tee",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Converse",
+  "subcategory": "hoodie",
+  "product_name": "Go-To Embroidered Star Chevron Hoodie",
+  "model_name": "Star Chevron Hoodie",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

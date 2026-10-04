@@ -1,0 +1,7 @@
+# Falsos positivos do gitleaks conferidos à mão (impressão digital exata: qualquer ocorrência nova continua falhando o CI).
+# Segredos de teste fixos (DevGateFilterTest/token.test.ts), EXIF de teste, texto de e-mail de teste e nome de chave do localStorage.
+96972ff856de7b7b86d11f35273da9f9f51ce8c6:fai-application/src/test/java/br/com/fashionai/application/service/ChallengeSecurityTest.java:generic-api-key:137
+42fb59c4b039ac92af22ad62383e6ada198cbce8:fai-infrastructure/platform/src/test/java/br/com/fashionai/infrastructure/platform/email/LoggingEmailSenderTest.java:generic-api-key:38
+d7f283e708d9bbc57d4caf4a4e10c813916d8a6b:fai-web/src/test/java/br/com/fashionai/web/support/DevGateFilterTest.java:generic-api-key:13
+d7f283e708d9bbc57d4caf4a4e10c813916d8a6b:lib/gate/token.test.ts:generic-api-key:5
+6eb8170796c3c32579089f1881940a0ff827f331:lib/i18n/state.ts:generic-api-key:13

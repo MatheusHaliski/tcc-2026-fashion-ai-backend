@@ -1,0 +1,62 @@
+@startuml FashionAI_Componentes_v5_Seguranca
+title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)
+!include _estilo.iuml
+left to right direction
+
+actor "Pessoa autorizada\n(equipe/banca)" as P
+
+package "Vercel · fai-network.com (Next.js 15)" {
+  component "middleware.ts\nCSP com nonce · dev gate" as MW
+  component "/gate/*\nGoogle/usuário + PIN · Cloudflare Access" as GATE
+  component "/bff/auth/[action]\nlogin · refresh · logout" as BFF
+  component "App (React)\nlib/api/client.ts · token em memória" as APP
+}
+
+package "Railway · api (Spring Boot 3, rede privada)" {
+  component "DevGateFilter\nga · v1 legado · Cloudflare JWT" as DGF
+  component "ClientIpResolver\nIP assinado (HMAC)" as CIR
+  component "AuthRateLimitFilter\ncaminho normalizado" as ARL
+  component "Spring Security\nJWT (aud) · papéis · Argon2id" as SEC
+  component "Serviços (RF1–RF40)\nBOLA/BFLA · OwnMedia · locks" as SVC
+  component "AiBudget\nteto USD global e por pessoa" as BUD
+  component "MediaService / MediaProxy\nrestricted/ só pela API" as MED
+  component "BackupJob\nmysqldump → restricted/backups" as BKP
+}
+
+package "Railway · bancos (sem TCP proxy público)" {
+  database "MySQL 9\nfai_app (só o banco, TLS)\nfai_backup (leitura, TLS)" as MY
+  database "Cassandra 4.1\nfai_app (só o keyspace)\nTLS CA própria" as CA
+  database "OpenSearch 2.19\nfai_app (só fai-*)\nTLS CA própria · auditoria" as OS
+  database "Redis 8.2\nfashionai (ACL, sem @dangerous)" as RD
+  database "Bucket S3\nfashionai-media" as S3
+}
+
+cloud "Provedores de IA\nAnthropic · Google · Replicate" as IA
+
+P --> MW : HTTPS
+MW --> GATE : sem gp válido
+MW --> APP : gp válido (renova ga)
+APP --> BFF : sessão (cookie fai_rt)
+APP --> DGF : chamadas /api (Bearer + X-Dev-Gate)
+BFF --> DGF : X-Dev-Gate + IP assinado
+DGF --> CIR
+CIR --> ARL
+ARL --> SEC
+SEC --> SVC
+SVC --> BUD
+SVC --> MED
+BUD --> IA : chaves só no servidor\n(Vision em cabeçalho · Replicate só api.replicate.com)
+SVC --> MY : JDBC sslMode=REQUIRED
+SVC --> CA : CQL + TLS
+SVC --> OS : HTTPS + Basic
+SVC --> RD : AUTH usuário ACL
+MED --> S3
+BKP --> MY : fai_backup
+BKP --> S3 : restricted/backups/
+
+note bottom of MY
+  Cada banco sobe por um start.sh versionado
+  (infra/railway), conferido por SHA-256:
+  usuários de menor privilégio a cada início.
+end note
+@enduml

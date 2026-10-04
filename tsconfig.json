@@ -17,5 +17,5 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "fai-*", "scripts", "docs", "markdowns", ".claude"]
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "test-utils", "fai-*", "scripts", "docs", "markdowns", ".claude"]
 }

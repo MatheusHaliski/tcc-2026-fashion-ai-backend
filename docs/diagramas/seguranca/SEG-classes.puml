@@ -1,0 +1,117 @@
+@startuml SEG_Classes
+title Fashion AI — Classes de segurança (gate, sessão, controle de acesso, custos de IA)
+!include _estilo.iuml
+left to right direction
+
+package "frontend · lib/gate" <<Frame>> {
+  class GateConfig <<TS>> {
+    mode : "builtin" | "cloudflare"
+    apiToken : "legacy" | "v2"
+    secret : string (≥ 32)
+    allowedEmails : Set<string>
+    cloudflare : {teamDomain, aud}
+  }
+  class "token.ts" as Token <<module>> {
+    +signGate(kind, id, jti, secret, ttl) : string
+    +verifyGate(kind, token, cfg) : GatePayload?
+    +signApiToken(cfg, id, jti, ttl) : string
+    +signLegacyApiToken(user, secret, ttl) : string
+    +verifyCloudflareAccess(jwt, cfg) : identidade?
+    +maskIdentity(id) : string
+  }
+  class "safeNext(next, fallback)" as SafeNext <<function>>
+  Token ..> GateConfig
+}
+
+package "frontend · lib/api" <<Frame>> {
+  class TokenStore <<em memória>> {
+    -accessToken : string?
+    +restorable : boolean
+  }
+  class ApiClient <<module>> {
+    +restoreSession()
+    +renewGate()
+    -tryRefresh() «Web Lock»
+    -checkPath(path) «recusa .. e %2f»
+  }
+  ApiClient --> TokenStore
+}
+
+package "fai-web" <<Frame>> {
+  class DevGateFilter {
+    -mode : builtin | cloudflare
+    -allowedEmails : Set<String>
+    -acceptLegacy : boolean
+    +valid(token, secret, list, now) : boolean
+    +validLegacy(token, secret, user, now) : boolean
+  }
+  class ClientIpResolver {
+    +resolve(request) : String
+    -- aceita X-Fai-Client-Ip só com HMAC(ip|ts) e ts recente
+  }
+  class AuthRateLimitFilter {
+    -limit(caminhoNormalizado, ip)
+  }
+  class RequestPaths <<util>> {
+    +normalize(uri) : String
+  }
+  class MediaProxyController {
+    -- users/* e restricted/: Cache-Control private
+    -- exports/ e backups/: bloqueados
+  }
+  AuthRateLimitFilter ..> ClientIpResolver
+  AuthRateLimitFilter ..> RequestPaths
+}
+
+package "fai-application" <<Frame>> {
+  class AiBudget {
+    -globalDaily : BigDecimal = 5.00
+    -userDaily : BigDecimal = 0.50
+    +check(userId, custoEstimado) : Verdict
+  }
+  enum Verdict {
+    OK
+    GLOBAL_EXHAUSTED
+    USER_EXHAUSTED
+  }
+  class MediaService {
+    +{static} ownedMedia(storage, owner, url, scopes) : Optional<OwnedMedia>
+    +requireOwnedMedia(owner, url, scopes, campo) : OwnedMedia
+    +read(url) : bytes «nunca restricted/»
+    +readRestricted(key) : bytes
+  }
+  enum MediaScope {
+    OWNER
+    PENDING
+    CATALOG
+  }
+  class "OwnedMedia" as OwnedMedia <<record>> {
+    key : String
+    url : String
+  }
+  class OwnMedia {
+    +accepts(owner, url, allowCatalog) : boolean
+    +require(owner, url, campo, allowCatalog) : String
+  }
+  AiBudget --> Verdict
+  MediaService --> MediaScope
+  MediaService --> OwnedMedia
+  OwnMedia ..> MediaService
+}
+
+package "fai-domain" <<Frame>> {
+  class AesGcmStringConverter <<JPA>> {
+    -- nome, e-mail, bio, telefone, nascimento
+    -- AES-256-GCM · DATA_ENCRYPTION_KEY
+  }
+  class User {
+    -emailHash : String
+    -status : AccountStatus
+    -testAccount : boolean
+  }
+  User ..> AesGcmStringConverter
+}
+
+ApiClient ..> DevGateFilter : X-Dev-Gate (ga)
+Token ..> DevGateFilter : mesmo formato\n(vetor cruzado nos testes)
+@enduml

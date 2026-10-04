@@ -237,6 +237,13 @@ public final class AiCatalog {
                 local(Msg.k("aiCatalog.monograma_svg_com_as_iniciais"), 5),
                 Msg.k("aiCatalog.sem_logo_confiavel_a_interface"),
                 20, Msg.k("aiCatalog.implementado_wikidata_claude_com_busca"));    // Claude + busca na web (~US$0,035): era 200/dia
+        put(AiCapability.CATALOG_DISCOVERY,
+                Msg.k("aiCatalog.catalog_discovery_funcao"),
+                claude(CLAUDE_DEFAULT_MODEL, Kind.TEXT, "0.0400", Msg.k("aiCatalog.catalog_discovery_custo"), 20000),
+                null,
+                local(Msg.k("aiCatalog.catalog_discovery_local"), 0),
+                Msg.k("aiCatalog.catalog_discovery_fallback"),
+                20, Msg.k("aiCatalog.catalog_discovery_status"));   // busca na web restrita aos domínios oficiais da marca
     }
 
     private AiCatalog() {

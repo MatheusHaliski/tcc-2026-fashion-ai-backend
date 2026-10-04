@@ -1,0 +1,364 @@
+[
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "501 Original",
+  "model_name": "501",
+  "color": "denim",
+  "color_name": "Medium Indigo",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "501",
+  "aliases": [
+   "501 Original Fit",
+   "501 Jeans"
+  ],
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Medium Indigo"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "501 '90s",
+  "model_name": "501 90s",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "501",
+  "aliases": [
+   "501 90s Jeans"
+  ],
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   },
+   {
+    "color": "denim",
+    "color_name": "Medium Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "505 Regular",
+  "model_name": "505",
+  "color": "denim",
+  "color_name": "Dark Stonewash",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "505",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Dark Stonewash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "511 Slim",
+  "model_name": "511",
+  "color": "denim",
+  "color_name": "Dark Indigo",
+  "material": "BLEND",
+  "gender": "MASCULINO",
+  "collection": "511",
+  "aliases": [
+   "511 Slim Fit"
+  ],
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Dark Indigo"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "512 Slim Taper",
+  "model_name": "512",
+  "color": "denim",
+  "color_name": "Medium Indigo",
+  "material": "BLEND",
+  "gender": "MASCULINO",
+  "collection": "512",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Medium Indigo"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "550 '92 Relaxed Taper",
+  "model_name": "550",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "550",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "Ribcage Straight Ankle",
+  "model_name": "Ribcage",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "Ribcage",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "Wedgie Straight",
+  "model_name": "Wedgie",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "Wedgie",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "725 High Rise Bootcut",
+  "model_name": "725",
+  "color": "denim",
+  "color_name": "Medium Indigo",
+  "material": "BLEND",
+  "gender": "FEMININO",
+  "collection": "725",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Medium Indigo"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jeans",
+  "product_name": "Baggy Dad",
+  "model_name": "Baggy Dad",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "denim_shorts",
+  "product_name": "501 Original Shorts",
+  "model_name": "501 Shorts",
+  "color": "light_blue",
+  "color_name": "Light Wash",
+  "material": "COTTON",
+  "gender": "FEMININO",
+  "collection": "501",
+  "variants": [
+   {
+    "color": "light_blue",
+    "color_name": "Light Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jacket",
+  "product_name": "Trucker Jacket",
+  "model_name": "Trucker",
+  "color": "denim",
+  "color_name": "Medium Wash",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Trucker",
+  "aliases": [
+   "Jaqueta Jeans Trucker",
+   "Type III"
+  ],
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Medium Wash"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "jacket",
+  "product_name": "Sherpa Trucker Jacket",
+  "model_name": "Sherpa Trucker",
+  "color": "denim",
+  "color_name": "Medium Wash",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "collection": "Trucker",
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Medium Wash"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "t_shirt",
+  "product_name": "Housemark Graphic T-Shirt",
+  "model_name": "Housemark Tee",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "aliases": [
+   "Batwing Tee",
+   "Camiseta Logo Levi's"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "t_shirt",
+  "product_name": "Original Housemark T-Shirt",
+  "model_name": "Original Tee",
+  "color": "white",
+  "color_name": "White",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "shirt",
+  "product_name": "Barstow Western Shirt",
+  "model_name": "Barstow Western",
+  "color": "denim",
+  "color_name": "Indigo",
+  "material": "COTTON",
+  "gender": "MASCULINO",
+  "aliases": [
+   "Camisa Jeans Western"
+  ],
+  "variants": [
+   {
+    "color": "denim",
+    "color_name": "Indigo"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Levi's",
+  "subcategory": "belt",
+  "product_name": "Cinto de Couro Clássico",
+  "model_name": "Classic Leather Belt",
+  "color": "brown",
+  "color_name": "Brown",
+  "material": "LEATHER",
+  "gender": "MASCULINO",
+  "variants": [
+   {
+    "color": "brown",
+    "color_name": "Brown"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]

@@ -1,0 +1,497 @@
+[
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Samba OG",
+  "model_name": "Samba OG",
+  "color": "white",
+  "color_name": "Cloud White/Core Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "aliases": [
+   "Samba"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "Cloud White/Core Black",
+    "code": "B75806"
+   },
+   {
+    "color": "black",
+    "color_name": "Core Black/Cloud White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Gazelle",
+  "model_name": "Gazelle",
+  "color": "blue",
+  "color_name": "Collegiate Navy",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "variants": [
+   {
+    "color": "blue",
+    "color_name": "Collegiate Navy"
+   },
+   {
+    "color": "red",
+    "color_name": "Scarlet"
+   },
+   {
+    "color": "green",
+    "color_name": "Collegiate Green"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Gazelle Indoor",
+  "model_name": "Gazelle Indoor",
+  "color": "blue",
+  "color_name": "Blue Fusion",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "variants": [
+   {
+    "color": "blue",
+    "color_name": "Blue Fusion"
+   },
+   {
+    "color": "black",
+    "color_name": "Core Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Superstar",
+  "model_name": "Superstar",
+  "color": "white",
+  "color_name": "Cloud White/Core Black",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "aliases": [
+   "Superstar Shell Toe"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "Cloud White/Core Black"
+   },
+   {
+    "color": "black",
+    "color_name": "Core Black/Cloud White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Stan Smith",
+  "model_name": "Stan Smith",
+  "color": "white",
+  "color_name": "Cloud White/Green",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "Cloud White/Green"
+   },
+   {
+    "color": "white",
+    "color_name": "Cloud White/Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Campus 00s",
+  "model_name": "Campus 00s",
+  "color": "gray",
+  "color_name": "Grey Three",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "aliases": [
+   "Campus"
+  ],
+  "variants": [
+   {
+    "color": "gray",
+    "color_name": "Grey Three"
+   },
+   {
+    "color": "black",
+    "color_name": "Core Black"
+   },
+   {
+    "color": "green",
+    "color_name": "Dark Green"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Forum Low",
+  "model_name": "Forum Low",
+  "color": "white",
+  "color_name": "Cloud White/Blue",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "aliases": [
+   "Forum"
+  ],
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "Cloud White/Blue"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "casual_sneakers",
+  "product_name": "Handball Spezial",
+  "model_name": "Handball Spezial",
+  "color": "navy",
+  "color_name": "Navy/Gum",
+  "material": "LEATHER",
+  "gender": "UNISSEX",
+  "collection": "Originals",
+  "aliases": [
+   "Spezial"
+  ],
+  "variants": [
+   {
+    "color": "navy",
+    "color_name": "Navy/Gum"
+   },
+   {
+    "color": "beige",
+    "color_name": "Wonder White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "running_shoes",
+  "product_name": "Ultraboost 5",
+  "model_name": "Ultraboost 5",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Ultraboost",
+  "aliases": [
+   "Ultraboost"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "running_shoes",
+  "product_name": "Adizero Adios Pro 3",
+  "model_name": "Adizero Adios Pro 3",
+  "color": "white",
+  "color_name": "White",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "collection": "Adizero",
+  "variants": [
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "running_shoes",
+  "product_name": "Supernova Rise",
+  "model_name": "Supernova Rise",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "flip_flops",
+  "product_name": "Adilette Aqua",
+  "model_name": "Adilette",
+  "color": "black",
+  "color_name": "Black",
+  "material": "SYNTHETIC",
+  "gender": "UNISSEX",
+  "aliases": [
+   "Adilette"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "jacket",
+  "product_name": "Adicolor Classics SST Track Jacket",
+  "model_name": "SST Track Jacket",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "collection": "Adicolor",
+  "aliases": [
+   "Track Top",
+   "Jaqueta Três Listras"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   },
+   {
+    "color": "red",
+    "color_name": "Red"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "sweatpants",
+  "product_name": "Adicolor Classics SST Track Pants",
+  "model_name": "SST Track Pants",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "collection": "Adicolor",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "jogger_pants",
+  "product_name": "Tiro 24 Training Pants",
+  "model_name": "Tiro 24",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "collection": "Tiro",
+  "aliases": [
+   "Tiro"
+  ],
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "t_shirt",
+  "product_name": "Adicolor Trefoil T-Shirt",
+  "model_name": "Trefoil",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Adicolor",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "t_shirt",
+  "product_name": "Essentials 3-Stripes T-Shirt",
+  "model_name": "Essentials 3-Stripes",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "collection": "Essentials",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "hoodie",
+  "product_name": "Adicolor Trefoil Hoodie",
+  "model_name": "Trefoil Hoodie",
+  "color": "black",
+  "color_name": "Black",
+  "material": "BLEND",
+  "gender": "UNISSEX",
+  "collection": "Adicolor",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "gray",
+    "color_name": "Grey"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "shorts",
+  "product_name": "Adicolor 3-Stripes Shorts",
+  "model_name": "3-Stripes Shorts",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "MASCULINO",
+  "collection": "Adicolor",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "navy",
+    "color_name": "Navy"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "cap",
+  "product_name": "Trefoil Baseball Cap",
+  "model_name": "Trefoil Cap",
+  "color": "black",
+  "color_name": "Black",
+  "material": "COTTON",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   },
+   {
+    "color": "white",
+    "color_name": "White"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ },
+ {
+  "brand": "Adidas",
+  "subcategory": "backpack",
+  "product_name": "Classic Badge of Sport Backpack",
+  "model_name": "Classic Backpack",
+  "color": "black",
+  "color_name": "Black",
+  "material": "POLYESTER",
+  "gender": "UNISSEX",
+  "variants": [
+   {
+    "color": "black",
+    "color_name": "Black"
+   }
+  ],
+  "source_type": "MANUAL_ADMIN"
+ }
+]
