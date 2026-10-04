@@ -9,10 +9,10 @@
   "fps": 10,
   "transparent_center": true,
   "safe_content_box": [
-    49,
-    49,
-    497,
-    677
+    108,
+    108,
+    252,
+    372
   ],
   "variants": [
     {
@@ -190,5 +190,12 @@
       "image": "/aura/electro/06_gold_charge/imagem.png",
       "gif": "/aura/electro/06_gold_charge/loading_10s.gif"
     }
+  ],
+  "ring_px": 108,
+  "inset_px": 0,
+  "movements": "01 cyan pulse       1 cometa horário, cauda longa, origem no topo\n  02 violet voltage   2 cabeças opostas (180°) horárias, caudas curtas, rápido\n  03 magenta rush     2 cometas em sentidos contrários que se cruzam\n  04 lime circuit     24 segmentos acendendo em sequência (circuito), ritmo staccato\n  05 solar flow       2 cabeças anti-horárias com clarões pulsando\n  06 gold charge      barra de carga: enche do centro da base até 100 % e esvazia\n  07 brasil current   verde horário e amarelo anti-horário, cores distintas\n  08 aurora boreal    anel inteiro com 4 cores fluindo + 2 cabeças brilhantes\n  09 rainbow spectrum espectro girando no anel inteiro + faíscas em sentido contrário\n  10 ice chrome       tracejado marchando (loading de quadrados) em dois grupos, respiração branca\n  11 red reactor      batimento cardíaco (duas pulsações + pausa) no anel inteiro + cabeça lenta\n  12 fashion signal   4 cabeças coloridas, duas horárias e duas anti-horárias, com blips de sinal",
+  "size_px": [
+    360,
+    480
   ]
 }

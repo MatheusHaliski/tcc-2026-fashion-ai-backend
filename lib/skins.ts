@@ -1,19 +1,25 @@
 /** Skins de card (asset-manifest.cardSkins) como CSS variables para o .fai-card. */
 export const CARD_SKINS: Record<string, { bg: string; ink: string; accent: string; border: string; radius: number; titleWeight: number }> = {
+  // claras — cada uma num ponto distinto de temperatura × luminosidade × croma (análise sazonal de cor), para a grade de
+  // skins não repetir o branco editorial: neutro (default), blush, aço, lilás, damasco, kraft, sálvia, marfim
   atelier: { bg: "#FFFFFF", ink: "#1A1714", accent: "#1A1714", border: "#E7E2DA", radius: 14, titleWeight: 500 },
-  spread: { bg: "#F7F4EE", ink: "#111111", accent: "#B4442C", border: "#D9D1C4", radius: 6, titleWeight: 800 },
-  index: { bg: "#FBFAF6", ink: "#23201C", accent: "#5B6B7A", border: "#23201C", radius: 4, titleWeight: 600 },
-  trading: { bg: "#F2F2F2", ink: "#16161A", accent: "#7C5FC0", border: "#9A9AA3", radius: 18, titleWeight: 800 },
-  fai_max: { bg: "#FFF4EC", ink: "#1A0F08", accent: "#FF6A1A", border: "#FF6A1A", radius: 20, titleWeight: 900 },
-  stub: { bg: "#FBF7EF", ink: "#2A241C", accent: "#A0522D", border: "#2A241C", radius: 2, titleWeight: 700 },
-  specimen: { bg: "#F4F7F2", ink: "#1F2A22", accent: "#3D7A5A", border: "#9FB3A5", radius: 6, titleWeight: 600 },
-  editorial_ivory: { bg: "#F7F4EE", ink: "#1A1410", accent: "#C4956A", border: "#D4CEC4", radius: 3, titleWeight: 400 },
+  spread: { bg: "#F5E4DE", ink: "#2B1A17", accent: "#B4442C", border: "#DDBFB6", radius: 6, titleWeight: 800 },
+  index: { bg: "#E2E7ED", ink: "#1E2733", accent: "#4A6B8A", border: "#1E2733", radius: 4, titleWeight: 600 },
+  trading: { bg: "#EAE3F6", ink: "#16161A", accent: "#7C5FC0", border: "#B9A9DE", radius: 18, titleWeight: 800 },
+  fai_max: { bg: "#FFE9D6", ink: "#1A0F08", accent: "#FF6A1A", border: "#FF6A1A", radius: 20, titleWeight: 900 },
+  stub: { bg: "#E6D3B3", ink: "#2A241C", accent: "#A0522D", border: "#2A241C", radius: 2, titleWeight: 700 },
+  specimen: { bg: "#DCE8DB", ink: "#1F2A22", accent: "#3D7A5A", border: "#8FA896", radius: 6, titleWeight: 600 },
+  editorial_ivory: { bg: "#F3EEE3", ink: "#1A1410", accent: "#B5883A", border: "#D4CEC4", radius: 3, titleWeight: 400 },
+  // escuras — preto editorial, terracota, navy + rose gold, violeta meia-noite, verde floresta, oxblood
   show_notes: { bg: "#0A0A0A", ink: "#F5F5F5", accent: "#F5F5F5", border: "rgba(255,255,255,0.18)", radius: 3, titleWeight: 900 },
   atelier_terracotta: { bg: "#3A2416", ink: "#F3E6D8", accent: "#C4674A", border: "rgba(243,230,216,0.28)", radius: 7, titleWeight: 300 },
   luxury_glass_warm: { bg: "rgba(13,27,42,0.97)", ink: "#EDE6F5", accent: "#C4956A", border: "rgba(196,149,106,0.22)", radius: 16, titleWeight: 200 },
+  midnight_violet: { bg: "#1C1B2E", ink: "#ECE8F6", accent: "#9B72CF", border: "rgba(155,114,207,0.32)", radius: 12, titleWeight: 300 },
+  forest_archive: { bg: "#16302A", ink: "#E8F0EA", accent: "#8FBF9F", border: "rgba(143,191,159,0.28)", radius: 6, titleWeight: 600 },
+  oxblood: { bg: "#4A1F24", ink: "#F4E6E3", accent: "#D08A7A", border: "rgba(244,230,227,0.25)", radius: 4, titleWeight: 500 },
 };
 /** Skins de fundo escuro; as demais são claras. */
-const DARK_SKINS = new Set(["show_notes", "atelier_terracotta", "luxury_glass_warm"]);
+const DARK_SKINS = new Set(["show_notes", "atelier_terracotta", "luxury_glass_warm", "midnight_violet", "forest_archive", "oxblood"]);
 /* O card tem superfície própria (a skin), independente do tema do app: os tokens de texto secundário, linhas e
    superfícies internas acompanham o tom da skin, para manter contraste AA no tema claro e no escuro. */
 const LIGHT_TOKENS = { "--surface-2": "#F1F0EA", "--surface-3": "#E9E7DF", "--ink": "#191A19", "--muted": "#5C6058", "--faint": "#6B6F66", "--line": "#1A1A18", "--line-soft": "#D8D6CC", "--mark-soft": "#FBE7EE", "--thread-soft": "#E0F0EE", "--chalk-soft": "#FAF0DC", "--chalk-ink": "#7A5710", "--thread-ink": "#165C58", "--mark-ink": "#A51F4E", colorScheme: "light" };

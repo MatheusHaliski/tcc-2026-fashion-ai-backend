@@ -60,8 +60,8 @@
 :root[data-density="compact"] { --radius: 6px; }
 /* RF23 — todo conteúdo navegável pelo menu fica num container (branco por padrão; cor configurável em Configurações → Aparência) */
 .page-container { background: var(--content-bg, var(--surface)); border: 1px solid var(--line-soft); border-radius: 18px; box-shadow: var(--shadow); padding: clamp(12px, 2.2vw, 28px); min-height: calc(100vh - 7rem); color: var(--ink); }
-:root[data-content-tone="light"] .page-container { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #6B6F66; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
-:root[data-content-tone="dark"] .page-container { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
+:root[data-content-tone="light"] :is(.page-container, .app-header) { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #6B6F66; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
+:root[data-content-tone="dark"] :is(.page-container, .app-header) { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
 .page-container .page-container { border: 0; box-shadow: none; padding: 0; min-height: 0; }
 /* nada estoura a largura do conteúdo: itens de grade podem encolher, palavras longas quebram e tabelas rolam dentro do card */
 .page-container { min-width: 0; overflow-wrap: break-word; }
@@ -181,16 +181,31 @@ h1, h2, h3, h4 { margin: 0; }
 .chip.is-blocked { opacity: .5; border-style: dashed; }
 .tag-fix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: .5rem .75rem; border-radius: var(--radius-sm); border: 1.5px solid var(--status-critical); background: color-mix(in srgb, var(--status-critical) 8%, var(--surface)); font-size: var(--text-body-sm); }
 .tag-fix > span { flex: 1 1 16rem; }
+/* Seletor de abas (perfil, looks, admin…): pílulas roláveis, a ativa preenchida; quando há abas escondidas aparecem
+   setas nas bordas e uma barra de rolagem fina e visível (antes ficava oculta e só um degradê indicava a rolagem) */
 .tabs-wrap { position: relative; }
-.tabs { display: flex; gap: .25rem; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
-.tabs::-webkit-scrollbar { display: none; }
-/* sombra nas bordas quando há abas escondidas: o usuário vê que pode rolar */
-.tabs-wrap::before, .tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 2px; width: 28px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
-.tabs-wrap::before { left: 0; background: linear-gradient(90deg, var(--content-bg, var(--surface)), transparent); }
-.tabs-wrap::after { right: 0; background: linear-gradient(270deg, var(--content-bg, var(--surface)), transparent); }
+.tabs { position: relative; display: flex; gap: .35rem; padding: 4px 2px 8px; border-bottom: 1.5px solid var(--line-soft); overflow-x: auto; scroll-behavior: smooth; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 42%, transparent) color-mix(in srgb, var(--ink) 8%, transparent); }
+.tabs::-webkit-scrollbar { height: 6px; }
+.tabs::-webkit-scrollbar-track { background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 999px; }
+.tabs::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 42%, transparent); border-radius: 999px; }
+.tabs::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ink) 65%, transparent); }
+.tabs-wrap.is-overflowing .tabs { scroll-padding-inline: 44px; }
+/* degradê nas bordas quando há abas escondidas, por baixo das setas */
+.tabs-wrap::before, .tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 16px; width: 56px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
+.tabs-wrap::before { left: 0; background: linear-gradient(90deg, var(--content-bg, var(--surface)) 45%, transparent); }
+.tabs-wrap::after { right: 0; background: linear-gradient(270deg, var(--content-bg, var(--surface)) 45%, transparent); }
 .tabs-wrap.fade-start::before, .tabs-wrap.fade-end::after { opacity: 1; }
-.tab { min-height: var(--control-md); padding: .55rem .9rem; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.tabs-arrow { position: absolute; top: 4px; z-index: 2; width: 34px; height: var(--control-md); display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1.5px solid var(--line-soft);
+  background: var(--content-bg, var(--surface)); color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.14); cursor: pointer; }
+.tabs-arrow:hover { background: var(--surface-2); }
+.tabs-arrow.is-start { left: 0; }
+.tabs-arrow.is-end { right: 0; }
+.tab { display: inline-flex; align-items: center; gap: .4rem; flex: none; min-height: var(--control-md); padding: .45rem .95rem; border: 1.5px solid transparent; border-radius: 999px; font-weight: 600; color: var(--muted); white-space: nowrap; cursor: pointer; background: none; transition: background-color .12s, color .12s; }
+.tab:hover { color: var(--ink); background: var(--surface-2); }
+.tab[aria-selected="true"] { color: var(--surface); background: var(--ink); }
+.tab-count { min-width: 1.4em; padding: 0 .4em; border-radius: 999px; font-size: .85em; line-height: 1.5; text-align: center; background: color-mix(in srgb, currentColor 14%, transparent); }
+:root[data-theme="contrast"] .tab[aria-selected="true"] { outline: 2px solid var(--line); outline-offset: 1px; }
 .skeleton { background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm); }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .toast { background: var(--ink); color: var(--surface); padding: .7rem 1rem; border-radius: var(--radius); box-shadow: var(--shadow); font-size: var(--text-body); max-width: 420px; }
@@ -649,12 +664,26 @@ h1, h2, h3, h4 { margin: 0; }
 .fai-card.has-art .hero-lateral-row .c-photo { border-radius: var(--r-in) 0 0 var(--r-in); }
 .fai-card.has-art .piece2 { border-radius: var(--r-in); }
 .fai-card.has-art .c-row:last-child { border-bottom: none; }
-.card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; }
+.card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; container-type: inline-size; }
 .card-art-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-/* arte em moldura (Aura Electro): o GIF 540×720 vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
+.card-art.art-aura-splash > img.card-art-img:not(.card-art-material),
+.card-art.art-aura-splash > video.card-art-img { mix-blend-mode: screen; filter: brightness(1.14) saturate(1.3) contrast(1.06); transform: scale(1.1); }
+.aura-splash-spread { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .78; mix-blend-mode: screen; pointer-events: none; }
+.aura-splash-spread .goo-flow { transform-box: fill-box; transform-origin: center; }
+.aura-splash-spread .goo-flow-pink { animation: splash-spread-pink 7.2s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-gold { animation: splash-spread-gold 8.4s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-cyan { animation: splash-spread-cyan 6.6s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow circle { fill: #fff; opacity: .8; }
+.aura-splash-spread .goo-highlight { fill: none; stroke: #fff; stroke-width: .75; stroke-linecap: round; opacity: .72; }
+.aura-splash-spread .goo-drops { fill: #fff; opacity: .72; animation: splash-drops 5.5s ease-in-out infinite alternate; }
+@keyframes splash-spread-pink { from { transform: translate(-2%, 1%) scale(.92, .92) rotate(-2deg); } to { transform: translate(2%, -2%) scale(1.06, 1.08) rotate(2deg); } }
+@keyframes splash-spread-gold { from { transform: translate(2%, 1%) scale(.94, .9) rotate(2deg); } to { transform: translate(-2%, -2%) scale(1.05, 1.12) rotate(-2deg); } }
+@keyframes splash-spread-cyan { from { transform: translate(1%, -2%) scale(1.02, .92) rotate(1deg); } to { transform: translate(-2%, 2%) scale(.94, 1.08) rotate(-2deg); } }
+@keyframes splash-drops { from { transform: translateY(1%) scale(.9); } to { transform: translateY(-2%) scale(1.08); } }
+/* arte em moldura (Aura Electro): o GIF 360×480 (anel de 108 px, LEDs na faixa inteira) vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
    sobre a faixa da arte, então o feixe sai de um ponto, percorre as quatro bordas e volta ao mesmo ponto, em qualquer
    proporção de card (antes, object-fit: cover cortava as laterais e só as bordas superior e inferior apareciam) */
-.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-band, 20px) + 6px) var(--aura-band, 20px) var(--aura-band, 20px); border-image-slice: 49; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
+.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-frame, 20px) + 6px) var(--aura-frame, 20px) var(--aura-frame, 20px); border-image-slice: 108; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
 /* material sozinho aparece inteiro; sobre uma arte AURA entra em overlay forte (antes: soft-light a 42%, quase invisível) */
 .card-art-material.is-solo { mix-blend-mode: normal; opacity: 1; }
 .card-art-material.is-overlay { mix-blend-mode: overlay; opacity: .72; }
@@ -933,6 +962,8 @@ button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var
 :root[data-theme="contrast"] .side-nav-box { border: 2px solid #000; }
 /* ---------- Shell: cabeçalho fixo (altura reservada = sem salto de layout), menu em grupos, gaveta e barra inferior ---------- */
 .app-header { position: sticky; top: 0; z-index: var(--z-header); height: var(--header-h); border-bottom: 1px solid var(--line-soft); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: saturate(1.4) blur(10px); }
+/* RF23: a cor escolhida para os containers de conteúdo pinta também a barra do topo (tokens de texto/ícone acima) */
+:root:is([data-content-tone="light"], [data-content-tone="dark"]) .app-header { background: color-mix(in srgb, var(--content-bg) 94%, transparent); color: var(--ink); }
 .app-header-inner { display: flex; align-items: center; gap: 8px; height: 100%; max-width: 1400px; margin: 0 auto; padding: 0 12px; }
 @media (min-width: 640px) { .app-header-inner { padding: 0 20px; gap: 12px; } }
 .brand-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--control-md); flex: none; }
@@ -1074,6 +1105,94 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .brick-classic { display: block; margin-top: 3px; background: #1F7A76; color: #fff; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: center; padding: 2px 4px; border-radius: 2px; }
 .brick-replay { grid-column: 1 / -1; justify-self: end; min-height: 32px; background: #F2CD37; color: #1B2A34; font-family: var(--font-data); font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); text-transform: uppercase; }
 .brick-replay:hover { filter: brightness(1.05); }
+
+/* ---------- Seção C · layout das peças no card do look (Background Studio → Layout & Estilo, "versão por modelo") ----------
+   a anatomia do card (seção A) decide onde as peças ficam; data-piece-anatomy decide como cada peça aparece. Peça ampliada
+   (padrão) segue nas linhas .piece2; os demais modelos usam .lp-block/.lp (PieceLayout, components/scheme-card.tsx). */
+.fai-card .lp-block { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 10px; border-top: 1px solid var(--line-soft); min-width: 0; }
+.fai-card .lp { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fai-card .lp.is-action { cursor: pointer; }
+.fai-card .lp.is-action:hover { filter: brightness(.96); }
+.fai-card .lp-thumb { position: relative; display: block; flex: none; width: 36px; height: 36px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.fai-card .lp-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+.fai-card .lp-seal { position: absolute; top: 2px; right: 2px; z-index: 2; display: flex; }
+.fai-card .lp .seal-slot { width: auto; height: auto; }
+.fai-card .lp .seal-medallion:not(.has-design) { width: 20px; height: 20px; border-width: 1.5px; font-size: 8px; }
+.fai-card .lp-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fai-card :is(.lp-name, .lp-meta, .lp-head, .lp-cpu) { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.fai-card .lp-name b { min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fai-card .lp-meta > span { min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fai-card .lp-price { flex: none; font-size: 12px; font-weight: 500; white-space: nowrap; }
+/* C1 Passarela: faixa escura de desfile com tapete vermelho na base — fotos maiores lado a lado, nome e preço sob a foto */
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block { flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: center; gap: 10px 8px; padding: 12px 10px 16px; border-top: 0; background: radial-gradient(ellipse at 50% 0, #2c2836, #0b0a0f 75%); color: #fff; box-shadow: inset 0 -4px 0 #c1121f; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp { flex: 0 1 84px; min-width: 60px; flex-direction: column; align-items: stretch; gap: 3px; text-align: center; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-thumb { width: 100%; height: auto; aspect-ratio: 3 / 4; background: #fff; box-shadow: 0 6px 10px rgba(0,0,0,.55); }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-name { justify-content: center; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-name b { font-size: 12px; color: #fff; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-price { font-family: var(--font-data); font-size: 11px; color: rgba(255,255,255,.72); }
+/* C2 Etiqueta: cada peça vira uma etiqueta de papel — furo com cordão, borda tracejada, marca no cabeçalho, preço em destaque */
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block { gap: 8px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp { padding: 7px 10px 7px 26px; background: #EBDDBF; color: #2b2217; border: 1.5px dashed rgba(43,34,23,.45); border-radius: 4px 9px 9px 4px; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-hole { position: absolute; left: 8px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--container-bg, var(--card-bg, var(--surface))); box-shadow: inset 0 0 0 1.5px rgba(43,34,23,.55); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-hole::before { content: ""; position: absolute; right: 6px; top: 50%; width: 14px; border-top: 1px solid #6b5a41; transform: rotate(-20deg); transform-origin: right center; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-thumb { width: 38px; height: 38px; background: #fff; border-radius: 2px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-head > span { min-width: 0; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-meta > span { color: rgba(43,34,23,.75); font-family: var(--font-data); }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-price { align-self: stretch; display: flex; align-items: center; padding-left: 10px; border-left: 1.5px dashed rgba(43,34,23,.35); font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+/* C3 Raio-X: painel de scanner — pinos numerados ligados por um fio, fotos em cinza com contraste, material e cor */
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block { gap: 0; padding: 6px 12px 8px; border-top: 0; background: linear-gradient(rgba(94,242,255,.07) 1px, transparent 1px) 0 0 / 100% 12px, linear-gradient(90deg, rgba(94,242,255,.07) 1px, transparent 1px) 0 0 / 12px 100%, #06131f; color: #bff6ff; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block::before { content: ""; position: absolute; left: 22px; top: 16px; bottom: 16px; border-left: 1px solid rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp { gap: 10px; padding: 5px 0; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp + .lp { border-top: 1px solid rgba(94,242,255,.15); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-pin { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #5ef2ff; color: #06131f; font-style: normal; font-family: var(--font-data); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px #06131f, 0 0 8px rgba(94,242,255,.6); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-pin::after { content: ""; position: absolute; left: 100%; top: 50%; width: 10px; border-top: 1px solid rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-thumb { background: #dfe9ea; box-shadow: 0 0 0 1px rgba(94,242,255,.5); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-thumb img { filter: grayscale(1) contrast(1.35); }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-name b { color: #e8fdff; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-meta > span { color: #9fe3ee; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-price { font-family: var(--font-data); color: #bff6ff; }
+/* C4 Bento: blocos quadrados de foto em duas colunas (com número ímpar de peças a primeira ocupa a linha toda), legenda sobre a foto */
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp { display: block; aspect-ratio: 1; border-radius: var(--r-in, 4px); background: var(--surface-2); overflow: hidden; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp:first-child:nth-last-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-thumb { position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; background: none; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-thumb img { padding: 8px 8px 34px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 8px 6px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.74)); color: #fff; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-name b { font-size: 12px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-meta > span { font-size: 11px; color: rgba(255,255,255,.85); }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-price { display: none; }
+/* C5 Espectro: faixa com a cor de cada peça (proporção estimada por área) e linhas com a cor dominante como barra à esquerda */
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band { display: flex; height: 12px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band i { flex: 1 1 0; min-width: 6px; background: var(--line-soft); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-band i + i { box-shadow: -1px 0 0 rgba(255,255,255,.7); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp { padding: 5px 10px 5px 14px; border-radius: var(--r-in, 4px); background: color-mix(in srgb, var(--lp, var(--line-soft)) 12%, transparent); box-shadow: inset 6px 0 0 var(--lp, var(--line-soft)); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-thumb { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lp, var(--line-soft)); }
+.scheme-container[data-piece-anatomy="ESPECTRO"] .lp-meta > span { font-family: var(--font-data); }
+/* C6 Custo por uso (só quem é dono do look): preço em destaque e, sob o nome, o valor por uso (preço ÷ usos, mínimo 1 uso) */
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp { padding: 6px 10px; border: 1px solid var(--line-soft); border-radius: var(--r-in, 4px); }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-thumb { width: 30px; height: 30px; }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-cpu b { font-family: var(--font-data); font-size: 11px; font-weight: 700; line-height: 1.6; padding: 0 7px; border-radius: 999px; background: var(--thread-soft); color: var(--thread-ink); white-space: nowrap; }
+.scheme-container[data-piece-anatomy="CUSTO_POR_USO"] .lp-price { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+/* C7 Blocos (LEGO): as peças viram blocos na cor da peça sobre a placa-base; o selo entra como placa redonda 1×1 */
+.scheme-container[data-piece-anatomy="LEGO"] .lp-block { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; border-top: 0; background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp.brick-piece { display: block; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp-stud { position: absolute; top: -6px; right: -6px; z-index: 2; display: flex; padding: 2px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3fa864, #237841 70%); box-shadow: inset 0 -2px 0 rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.3); }
+/* lista lateral (ao lado da foto): o mesmo modelo em versão compacta — foto menor, sem preço nem atributos */
+.fai-card .lp-block.is-side { justify-content: center; align-content: center; gap: 4px; padding: 6px; border-top: 0; }
+.fai-card :where(.lp-block.is-side) .lp-thumb { width: 28px; height: 28px; }
+.fai-card :where(.lp-block.is-side) :is(.lp-price, .lp-meta > span) { display: none; }
+.fai-card :where(.lp-block.is-side) .lp-name b { font-size: 12px; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block.is-side { gap: 6px; padding: 8px 6px 12px; }
+.scheme-container[data-piece-anatomy="PASSARELA"] .lp-block.is-side .lp { flex-basis: 50px; min-width: 44px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp { flex-wrap: wrap; gap: 1px 6px; padding: 5px 6px 5px 22px; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp-thumb { display: none; }
+.scheme-container[data-piece-anatomy="ETIQUETA"] .lp-block.is-side .lp-price { display: block; flex-basis: 100%; padding: 0; border: 0; font-size: 12px; }
+.scheme-container[data-piece-anatomy="RAIO_X"] .lp-block.is-side::before { left: 16px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block.is-side .lp-thumb img { padding: 4px 4px 18px; }
+.scheme-container[data-piece-anatomy="BENTO"] .lp-block.is-side .lp-txt { padding: 10px 4px 3px; }
+.scheme-container[data-piece-anatomy="LEGO"] .lp-block.is-side { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+/* sobre arte (passe-partout): as faixas com fundo próprio seguem o raio interno do container */
+.fai-card.has-art .scheme-container:is([data-piece-anatomy="PASSARELA"], [data-piece-anatomy="RAIO_X"], [data-piece-anatomy="LEGO"]) .lp-block { border-radius: var(--r-in); }
 
 /* Vitrines 3D: Passarela, My Stage, mini lojas */
 .showcase-3d { position: relative; overflow: hidden; border-radius: var(--radius); border: 1.5px solid var(--line-soft); background: #0b0e16; }

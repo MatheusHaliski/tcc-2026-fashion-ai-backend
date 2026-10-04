@@ -97,6 +97,13 @@ public class IdentityService {
     private final MediaStoragePort storage;
     /** Envio fora da requisição (redefinição de senha): o tempo de resposta não depende de o e-mail existir. */
     private Executor mailExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    /** Aviso aos administradores e painel do examinador (opcional: testes montam o serviço sem ele). */
+    private IssuerReviewService issuerReview;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setIssuerReview(IssuerReviewService issuerReview) {
+        this.issuerReview = issuerReview;
+    }
 
     public IdentityService(UserRepository users, UserPreferencesRepository preferences, BrandProfileRepository brands,
                            CelebrityProfileRepository celebrities, RefreshTokenRepository refreshTokens,
@@ -406,6 +413,9 @@ public class IdentityService {
             email.send(mail, Msg.t("identity.cadastro_recebido_pendente_de_validacao"),
                     Msg.t("identity.p_recebemos_o_cadastro_de", escape(u.getDisplayName()), (type == ProfileType.MARCA ? "marca" : "celebridade")),
                     "SECURITY");
+            if (issuerReview != null) {
+                issuerReview.submitted(u.getId());          // e-mail aos administradores (DEV_GATE_ALLOWED_EMAILS), após o commit
+            }
         }
         notifications.notify(u.getId(), null, NotificationType.WELCOME, "USER", u.getId(), Msg.k("identity.boas_vindas_ao_fashion_ai"),
                 Msg.k("identity.monte_seu_guarda_roupa_crie"), null);

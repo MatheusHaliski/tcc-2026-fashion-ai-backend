@@ -1,0 +1,39 @@
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam ArrowColor #4A4852
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam state {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF6E5
+}
+skinparam sequence {
+  LifeLineBorderColor #4A4852
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #CBC6BE
+}

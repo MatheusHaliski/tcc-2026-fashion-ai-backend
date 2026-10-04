@@ -4,6 +4,7 @@ import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.CopilotService;
 import br.com.fashionai.application.service.SchemeService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -25,9 +26,11 @@ import java.util.UUID;
 @Tag(name = "RF5/RF9/RF19 — Esquemas de vestimenta")
 public class SchemeController {
     private final SchemeService schemes;
+    private final CopilotService copilot;
 
-    public SchemeController(SchemeService schemes) {
+    public SchemeController(SchemeService schemes, CopilotService copilot) {
         this.schemes = schemes;
+        this.copilot = copilot;
     }
 
     @GetMapping("/api/schemes/builder")
@@ -43,7 +46,9 @@ public class SchemeController {
     @PostMapping("/api/schemes/compositions")
     @Operation(summary = "RF5.CA04 — Gerar combinações com IA (ou motor local em fallback)")
     public SchemeService.ComposeResult compose(CurrentUser user, @RequestBody SchemeService.ComposeRequest body) {
-        return schemes.compose(user, body, AiCapability.SCHEME_COMPOSER);
+        // a orientação livre também vira arte de background, ocasião, estilo, estação e humor (vocabulário do Copilot)
+        return schemes.compose(user, body, AiCapability.SCHEME_COMPOSER)
+                .withOrientation(copilot.orientation(body.prompt(), body.style(), body.occasion()));
     }
 
     @PostMapping("/api/schemes")

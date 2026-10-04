@@ -1,0 +1,43 @@
+@startuml DEMO_Atividades_Reset
+title Fashion AI — Atividades: reset do universo demo (PROPOSTA · docs/banco/integridade)
+!include ../seguranca/_estilo.iuml
+start
+:python scripts/demo/reset_demo_environment.py;
+:POST /api/admin/demo/reset?dryRun=true\n(ADMIN + dev gate);
+if (FASHIONAI_DEMO_ENABLED?) then (não)
+  :403 — demo desligado;
+  stop
+endif
+if (Ambiente de produção\nsem FASHIONAI_DEMO_ALLOW_PRODUCTION?) then (sim)
+  :403 — bloqueado em produção;
+  stop
+endif
+:Plano: contas com account_origin IN (TEST_SEED, DEMO)\n+ contagem por tabela + planHash;
+:Mostra o preview\n(Users, WardrobeItems, Schemes, Reactions...,\nReal users affected: 0);
+if (--dry-run?) then (sim)
+  stop
+endif
+if (Pessoa confirma?) then (não)
+  stop
+endif
+:POST /api/admin/demo/reset?confirm=planHash;
+partition "Transação MySQL" {
+  :Refaz o plano com FOR UPDATE;
+  if (planHash mudou?) then (sim)
+    :ROLLBACK — plano mudou, rodar o dry-run de novo;
+    stop
+  endif
+  if (realUsersToDelete > 0?) then (sim)
+    :ROLLBACK — ABORT;
+    stop
+  endif
+  :DELETE explícito das linhas polimórficas que apontam\npara conteúdo demo (reações, comentários, salvos,\ncompartilhamentos, notificações, moderação);
+  :DELETE FROM users WHERE account_origin IN (TEST_SEED, DEMO);
+  note right: as cascatas (V29) levam peças, looks,\nfollows, perfis, sessões...\nSEM FOREIGN_KEY_CHECKS = 0
+  :COMMIT;
+}
+:Limpa feed (Cassandra) e busca (OpenSearch) das contas demo\n(idempotente; o verify aponta sobras);
+:[KEEP] brands · room_catalog · challenge_templates;
+:verify_demo_environment → 0 contas demo;
+stop
+@enduml

@@ -1,0 +1,55 @@
+@startuml DB_Classes_Dominios
+title Fashion AI — Integridade por domínio: OWNERSHIP → CASCADE · GLOBAL → RESTRICT (proposta V29)
+!include ../seguranca/_estilo.iuml
+left to right direction
+
+package "USER / SOCIAL (ownership)" {
+  class users
+  class brand_profiles
+  class celebrity_profiles
+  class wardrobe_items
+  class schemes
+  class scheme_items
+  class photos
+  class reactions
+  class comments
+  class follows
+  class saved_items
+  class notifications
+  class refresh_tokens
+  class seals
+  class seal_bonds
+  class room_inventory
+}
+package "GLOBAL / CATALOG" {
+  class brands
+  class room_catalog
+  class challenge_templates
+  class challenge_instances
+}
+
+users *-- brand_profiles : CASCADE
+users *-- celebrity_profiles : CASCADE
+users *-- wardrobe_items : CASCADE
+users *-- schemes : CASCADE
+users *-- photos : CASCADE
+users *-- reactions : CASCADE
+users *-- comments : CASCADE
+users *-- follows : CASCADE (seguidor)
+users *-- follows : CASCADE (seguido)
+users *-- saved_items : CASCADE
+users *-- notifications : CASCADE
+users *-- refresh_tokens : CASCADE
+users *-- seals : CASCADE
+schemes *-- scheme_items : CASCADE
+wardrobe_items *-- scheme_items : CASCADE
+seals *-- seal_bonds : CASCADE
+schemes *-- seal_bonds : CASCADE
+schemes o-- schemes : SET NULL (remix sobrevive)
+
+brands <-- wardrobe_items : RESTRICT
+brand_profiles <.. brands : SET NULL (brand_profile_id:\nmarca sobrevive à conta)
+room_catalog <-- room_inventory : RESTRICT
+users *-- room_inventory : CASCADE
+challenge_templates <-- challenge_instances : RESTRICT
+@enduml

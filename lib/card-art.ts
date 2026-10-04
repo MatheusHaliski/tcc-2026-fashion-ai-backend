@@ -32,7 +32,7 @@ interface Studio {
   animation?: string | null;
 }
 type Idx = {
-  presets: Record<string, { name: string; palette: string[]; animation?: string; recommendedMaterials: string[]; variants: string[] }>;
+  presets: Record<string, { name: string; archetype?: string | null; palette: string[]; animation?: string; recommendedMaterials: string[]; variants: string[] }>;
   variants: Record<string, { presetId: string; code?: string; theme?: string; card?: string | null; preview?: string | null; animated?: string | null; animation?: string | null }>;
   materials: Record<string, { name: string; code?: string; card?: string | null; preview?: string | null }>;
   combos: Record<string, { single?: { url: string; poster?: string | null }; mosaic?: { url: string; poster?: string | null } }>;
@@ -41,11 +41,51 @@ type Idx = {
   skins: Record<string, { nativeContainer?: string; family?: string }>;
 };
 export const ART_INDEX = index as unknown as Idx;
+
+/**
+ * Variante AURA salva → entrada do índice. Ids antigos de uma coleção que foi substituída (ex.: as 120 variantes
+ * "aura_geometry__gradientes_a001_coins" trocadas pelos 6 vídeos de Aura Geometry) continuam desenhando a arte do mesmo
+ * preset: o prefixo "<preset>__" aponta o preset e o id escolhe, de forma estável, uma das variantes atuais.
+ */
+export function auraVariantId(id?: string | null): string | undefined {
+  if (!id) return undefined;
+  if (ART_INDEX.variants[id]) return id;
+  const preset = ART_INDEX.presets[id] ?? ART_INDEX.presets[id.split("__")[0]];
+  const list = preset?.variants ?? [];
+  if (!list.length) return undefined;
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return list[h % list.length];
+}
+
+/** Presets AURA do seletor (Background Studio) montados do índice que acompanha o /public deste build: a lista de
+ *  variantes e as miniaturas sempre batem com os arquivos servidos, mesmo quando a API em produção roda um manifesto
+ *  mais antigo (que listaria variantes cujos arquivos já não existem). */
+export interface AuraPresetOption {
+  id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[];
+  variants: { id: string; code?: string; theme?: string; description?: string; static?: { previewUrl?: string } }[];
+}
+export function bundledAuraPresets(): AuraPresetOption[] {
+  return Object.entries(ART_INDEX.presets).map(([id, p]) => ({
+    id, name: p.name, archetype: p.archetype ?? undefined, palette: p.palette, recommendedMaterials: p.recommendedMaterials,
+    variants: p.variants.filter((vid) => ART_INDEX.variants[vid]).map((vid) => {
+      const v = ART_INDEX.variants[vid];
+      return { id: vid, code: v.code, theme: v.theme, static: { previewUrl: media(v.preview ?? v.card) } };
+    }),
+  }));
+}
 /** Animação da variante gravada como vídeo (MP4/WebM, ex.: Chrome Iridescent e Terracotta Dune com warp fluido). */
 const isVideo = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
 /** Presets cuja arte é uma moldura de centro transparente (os feixes de LED do Aura Electro correm pelo perímetro). */
 const FRAME_PRESETS = new Set(["aura_electro"]);
 const isFrame = (presetId?: string) => (presetId ? FRAME_PRESETS.has(presetId) : false);
+/**
+ * Espessura da faixa da arte em moldura (Aura Electro): 3× a faixa padrão das outras artes (.fai-card:
+ * clamp(14px, 7.5%, 30px) → clamp(42px, 22.5%, 90px)), com os LEDs preenchendo a faixa inteira. Duas variáveis com o
+ * MESMO valor: o padding do palco aceita % (--aura-band), mas border-width não aceita porcentagem — "clamp(…, 14%, …)"
+ * era inválido e a moldura caía para 3 px ("medium"), por isso o feixe parecia sempre fino. A moldura usa cqw medido
+ * na camada .card-art (container com a largura do palco, a mesma base do % do padding).
+ */
+export const FRAME_BAND_VARS = { "--aura-band": "clamp(42px, 22.5%, 90px)", "--aura-frame": "clamp(42px, 22.5cqw, 90px)" } as const;
 const SEASON_PRESET: Record<string, string> = { WINTER: "frost", SUMMER: "solstice", AUTUMN: "ember", SPRING: "bloom" };
 const NONE: CardArt = { kind: "none", get label() { return tr("common.sem_arte"); } };
 
@@ -98,13 +138,14 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   // camadas de imagem (a de cima vence): arte com IA / upload → AURA + material → AURA → material
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
-  const v = s.aura?.variantId ? ART_INDEX.variants[s.aura.variantId] : undefined;
+  const variantId = auraVariantId(s.aura?.variantId);
+  const v = variantId ? ART_INDEX.variants[variantId] : undefined;
   const m = s.materialId ? ART_INDEX.materials[s.materialId] : undefined;
   if (v) {
     const preset = ART_INDEX.presets[v.presetId];
     const withPalette = { ...art, base: art.base ?? `linear-gradient(135deg, ${(preset?.palette ?? ["#222", "#555"]).join(",")})`, presetId: v.presetId };
     if (m) {
-      const combo = ART_INDEX.combos[`${s.aura!.variantId}|${s.materialId}`];
+      const combo = ART_INDEX.combos[`${variantId}|${s.materialId}`];
       if (s.aura?.format === "MOSAICO" && combo?.mosaic) return { ...withPalette, kind: "mosaic", video: { src: media(combo.mosaic.url)!, poster: media(combo.mosaic.poster) }, image: media(combo.mosaic.poster), label: tr("lib.cardArt.aura_mosaico", { name: preset?.name, name2: m.name }) };
       if (combo?.single && s.aura?.format) return { ...withPalette, kind: "aura_material", video: { src: media(combo.single.url)!, poster: media(combo.single.poster) }, image: media(combo.single.poster), label: tr("lib.cardArt.aura_imagem_unica", { name: preset?.name, name2: m.name }) };
       return { ...withPalette, kind: "aura_material", ...variantMotion(v), material: media(m.card), frame: isFrame(v.presetId), label: `AURA ${preset?.name} + ${m.name}` };

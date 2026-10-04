@@ -123,7 +123,7 @@ public class SealService {
     // ================================================================== RF25 — selos do perfil emissor
     public record SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
                            Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status,
-                           Map<String, Object> design) {
+                           Map<String, Object> design, Map<String, Object> policy) {
     }
 
     @Transactional
@@ -151,7 +151,12 @@ public class SealService {
     private void applySeal(Seal s, SealForm f, User owner) {
         s.setName(InputSanitizer.required("name", f.name(), 2, 160));
         s.setTier(f.tier() == null ? SealTier.LOOK : f.tier());
-        s.setPolicyText(InputSanitizer.clean(f.policyText(), 2048));
+        // RF25 — política padronizada (regras avaliadas pelo sistema); o texto do card é gerado a partir delas. Sem regras,
+        // vale o texto antigo (selos criados antes das regras continuam com a descrição que tinham).
+        Map<String, Object> policy = SealPolicies.normalize(f.policy());
+        SealPolicies.Policy parsed = SealPolicies.parse(policy);
+        s.setPolicyText(parsed != null ? InputSanitizer.clean(SealPolicies.describe(parsed, s.getTier()), 2048)
+                : f.policy() != null ? null : InputSanitizer.clean(f.policyText(), 2048));
         // RF25 — desenho do medalhão (validado contra o catálogo) guardado junto da arte de fundo do selo.
         Map<String, Object> design = SealDesigns.normalize(f.design());
         if (design == null) {
@@ -161,6 +166,14 @@ public class SealService {
         }
         Map<String, Object> cfg = new LinkedHashMap<>(f.background() == null ? Map.of() : f.background());
         cfg.put("design", design);
+        if (policy != null) {
+            cfg.put("policy", policy);
+        } else if (f.policy() == null) {
+            Object old = Json.map(s.getBackgroundConfigJson()).get("policy");      // edição antiga sem o campo: mantém
+            if (old != null) {
+                cfg.put("policy", old);
+            }
+        }
         s.setBackgroundConfigJson(Json.write(cfg));
         // ícone: arquivo enviado pelo próprio emissor (ou do catálogo do sistema) — nunca de outra pessoa, restricted/ ou terceiros
         s.setIconUrl("UPLOAD".equals(design.get("mode"))
@@ -241,6 +254,7 @@ public class SealService {
         Map<String, Object> cfg = Json.map(s.getBackgroundConfigJson());
         Object design = cfg.remove("design");
         m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(s.isPremium(), s.getTier()));
+        m.put("policy", cfg.remove("policy"));
         m.put("background", cfg);
         m.put("status", s.getStatus());
         m.put("availableFrom", s.getAvailableFrom());
@@ -303,7 +317,11 @@ public class SealService {
     // ================================================================== RF20.CA01 / RF21.CA17 — sugestões
     public record Candidate(UUID targetOwnerId, String kind, String name, String logoUrl, BigDecimal confidence,
                             String justification, SealTier tier, List<UUID> linkedPieceIds, SealBondBasis basis,
-                            String eraLabel) {
+                            String eraLabel, UUID sealId) {
+        public Candidate(UUID targetOwnerId, String kind, String name, String logoUrl, BigDecimal confidence, String justification,
+                         SealTier tier, List<UUID> linkedPieceIds, SealBondBasis basis, String eraLabel) {
+            this(targetOwnerId, kind, name, logoUrl, confidence, justification, tier, linkedPieceIds, basis, eraLabel, null);
+        }
     }
 
     /** Executa a análise das peças e grava até 3 sugestões (status SUGGESTED). Não bloqueia o salvamento. */
@@ -338,6 +356,9 @@ public class SealService {
             b.setOrigin(SealBondOrigin.AI_SUGGESTION);
             b.setAiInferenceId(outcome.inferenceId());
             b.setEraLabel(c.eraLabel());
+            if (c.sealId() != null) {
+                seals.findById(c.sealId()).ifPresent(b::setSeal);
+            }
             bonds.save(b);
             suggestions.add(bondView(b));
         }
@@ -395,7 +416,7 @@ public class SealService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> previewPiece(CurrentUser user, PieceFields f) {
-        if (f == null || (blank(f.brandName()) && blank(f.subcategory()) && (f.style() == null || f.style().isEmpty()))) {
+        if (f == null || (blank(f.brandName()) && blank(f.subcategory()) && blank(f.color()) && (f.style() == null || f.style().isEmpty()))) {
             return Map.of("suggestions", List.of(), "unregisteredBrands", List.of(), "message", Msg.t("seal.preencha_marca_tipo_ou_estilo"));
         }
         WardrobeItem w = new WardrobeItem();
@@ -414,7 +435,7 @@ public class SealService {
         List<String> unregistered = new ArrayList<>();
         AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
                 List.of(Msg.t("seal.campos_da_peca"), Msg.t("seal.assinatura_de_estilo_das_celebridades")),
-                () -> candidates(draft, List.of(si), unregistered));
+                () -> candidates(draft, List.of(si), unregistered, true));
         return previewResult(outcome, unregistered);
     }
 
@@ -434,6 +455,7 @@ public class SealService {
             m.put("justification", c.justification());
             m.put("tier", c.tier());
             m.put("eraLabel", c.eraLabel());
+            m.put("sealId", c.sealId());
             suggestions.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -448,8 +470,18 @@ public class SealService {
     }
 
     List<Candidate> candidates(Scheme scheme, List<SchemeItem> items, List<String> unregistered) {
+        return candidates(scheme, items, unregistered, false);
+    }
+
+    /**
+     * Sugestões de selo. Primeiro os selos com política padronizada (RF25): a regra do emissor decide — emissor que tem
+     * regras e nenhuma atendida não entra pela heurística de marca/assinatura. {@code pieceOnly}: criador de peça (RF4),
+     * onde só selos de PEÇA podem ser avaliados.
+     */
+    List<Candidate> candidates(Scheme scheme, List<SchemeItem> items, List<String> unregistered, boolean pieceOnly) {
         List<Candidate> out = new ArrayList<>();
         int n = Math.max(1, items.size());
+        Set<UUID> governed = policyCandidates(scheme, items, pieceOnly, out);
         // Marcas: peças com marca cadastrada e perfil aprovado (RF20.CA06).
         Map<UUID, List<WardrobeItem>> byBrandProfile = new LinkedHashMap<>();
         List<BrandProfile> approved = brandProfiles.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO);
@@ -470,6 +502,9 @@ public class SealService {
         }
         for (Map.Entry<UUID, List<WardrobeItem>> e : byBrandProfile.entrySet()) {
             BrandProfile bp = brandProfiles.findById(e.getKey()).orElseThrow();
+            if (governed.contains(bp.getOwner().getId())) {
+                continue;
+            }
             int k = e.getValue().size();
             double conf = Math.min(0.99, 0.45 + 0.5 * k / n + (e.getValue().stream().anyMatch(w -> w.getBrand() != null) ? 0.05 : 0));
             if (conf < bp.getSealConfidenceThreshold().doubleValue()) {
@@ -483,7 +518,7 @@ public class SealService {
         // Celebridades verificadas: assinatura de estilo (RF21.CA17/CA18).
         Similarity.Signature sig = Similarity.of(scheme, items);
         for (CelebrityProfile cp : celebrityProfiles.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO)) {
-            if (!cp.isSealConsentGranted()) {
+            if (!cp.isSealConsentGranted() || governed.contains(cp.getOwner().getId())) {
                 continue;
             }
             Map<String, Object> signature = Json.map(cp.getStyleSignatureJson());
@@ -509,6 +544,63 @@ public class SealService {
         }
         out.sort((a, b) -> b.confidence().compareTo(a.confidence()));
         return out.size() > MAX_SUGGESTIONS ? out.subList(0, MAX_SUGGESTIONS) : out;
+    }
+
+    /** Avalia os selos ativos com política; devolve os emissores "governados" por regras (com ou sem acerto). */
+    private Set<UUID> policyCandidates(Scheme scheme, List<SchemeItem> items, boolean pieceOnly, List<Candidate> out) {
+        Set<UUID> governed = new HashSet<>();
+        List<WardrobeItem> pieces = items.stream().map(SchemeItem::getWardrobeItem).filter(java.util.Objects::nonNull).toList();
+        if (pieces.isEmpty()) {
+            return governed;
+        }
+        List<String> occ = Json.csv(scheme.getOccasion());
+        List<String> sty = Json.csv(scheme.getStyle());
+        Instant now = Instant.now();
+        Map<UUID, Candidate> best = new LinkedHashMap<>();
+        for (Seal seal : seals.findByStatus(SealStatus.ACTIVE)) {
+            SealPolicies.Policy pol = SealPolicies.parse(Json.map(seal.getBackgroundConfigJson()).get("policy"));
+            if (pol == null || !available(seal, now)) {
+                continue;
+            }
+            User owner = seal.getOwner();
+            Issuer issuer = issuer(owner);
+            if (issuer == null) {
+                continue;
+            }
+            governed.add(owner.getId());
+            SealPolicies.Verdict v;
+            if (seal.getTier() == SealTier.PECA) {
+                List<WardrobeItem> ok = pieces.stream().filter(w -> SealPolicies.evaluate(pol, SealTier.PECA, List.of(w), occ, sty).matched()).toList();
+                v = ok.isEmpty() ? new SealPolicies.Verdict(false, List.of(), null)
+                        : new SealPolicies.Verdict(true, ok.stream().map(WardrobeItem::getId).toList(), SealPolicies.describe(pol, SealTier.PECA));
+            } else if (pieceOnly) {
+                continue;
+            } else {
+                v = SealPolicies.evaluate(pol, SealTier.LOOK, pieces, occ, sty);
+            }
+            if (!v.matched() || best.containsKey(owner.getId())) {
+                continue;                                      // um selo por emissor: o mais recente que atende
+            }
+            best.put(owner.getId(), new Candidate(owner.getId(), issuer.kind(), issuer.name(), issuer.logoUrl(),
+                    BigDecimal.valueOf(0.97).setScale(3, RoundingMode.HALF_UP), Msg.t("sealPolicy.atende", seal.getName(), v.why()),
+                    seal.getTier(), v.pieceIds(), issuer.celebrity() ? SealBondBasis.STYLE_SIGNATURE : SealBondBasis.BRAND_MATCH, null, seal.getId()));
+        }
+        out.addAll(best.values());
+        return governed;
+    }
+
+    private record Issuer(String kind, String name, String logoUrl, boolean celebrity) {
+    }
+
+    /** Emissor apto a conceder selo: marca validada ou celebridade verificada com consentimento (RF20.CA06/RF21.CA19). */
+    private Issuer issuer(User owner) {
+        if (owner.getProfileType() == ProfileType.CELEBRIDADE) {
+            return celebrityProfiles.findByOwnerId(owner.getId())
+                    .filter(cp -> cp.getVerificationStatus() == ApprovalStatus.APROVADO && cp.isSealConsentGranted())
+                    .map(cp -> new Issuer("CELEBRITY", cp.getStageName(), cp.getAvatarUrl(), true)).orElse(null);
+        }
+        return brandProfiles.findByOwnerId(owner.getId()).filter(bp -> bp.getApprovalStatus() == ApprovalStatus.APROVADO)
+                .map(bp -> new Issuer("BRAND", bp.getBrandName(), bp.getLogoUrl(), false)).orElse(null);
     }
 
     private static Set<String> strings(Object o) {
@@ -617,7 +709,8 @@ public class SealService {
             throw ApiException.badRequest("CONSENTIMENTO_IMAGEM",
                     Msg.t("seal.confirme_que_entende_que_o"));
         }
-        Seal seal = sealFor(target, b.getTier());
+        Seal seal = b.getSeal() != null && b.getSeal().getOwner().getId().equals(target.getId())
+                && b.getSeal().getStatus() == SealStatus.ACTIVE ? b.getSeal() : sealFor(target, b.getTier(), b.getScheme());
         String reason = seal == null ? Msg.t("seal.o_perfil_nao_tem_selo") : unavailableReason(seal, Instant.now());
         if (reason != null) {
             // RF21.CA23 — teto atingido: recusa com mensagem explicativa, sem emissão.
@@ -640,9 +733,30 @@ public class SealService {
         return bondView(b);
     }
 
-    private Seal sealFor(User target, SealTier tier) {
+    /**
+     * Selo que o vínculo emite: entre os ativos do nível, o primeiro cuja política o look atende; senão um sem política;
+     * senão o primeiro do nível (o emissor ainda revisa quando exige revisão).
+     */
+    private Seal sealFor(User target, SealTier tier, Scheme scheme) {
         List<Seal> active = seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(target.getId(), SealStatus.ACTIVE);
-        return active.stream().filter(s -> s.getTier() == tier).findFirst().orElse(active.isEmpty() ? null : active.get(0));
+        List<Seal> ofTier = active.stream().filter(s -> s.getTier() == tier).toList();
+        if (scheme != null && scheme.getId() != null) {
+            List<WardrobeItem> pieces = schemeItems.findBySchemeIdOrderBySortOrder(scheme.getId()).stream().map(SchemeItem::getWardrobeItem).toList();
+            for (Seal s : ofTier) {
+                SealPolicies.Policy pol = SealPolicies.parse(Json.map(s.getBackgroundConfigJson()).get("policy"));
+                if (pol != null && !pieces.isEmpty() && (tier == SealTier.PECA
+                        ? pieces.stream().anyMatch(w -> SealPolicies.evaluate(pol, tier, List.of(w), Json.csv(scheme.getOccasion()), Json.csv(scheme.getStyle())).matched())
+                        : SealPolicies.evaluate(pol, tier, pieces, Json.csv(scheme.getOccasion()), Json.csv(scheme.getStyle())).matched())) {
+                    return s;
+                }
+            }
+            for (Seal s : ofTier) {
+                if (SealPolicies.parse(Json.map(s.getBackgroundConfigJson()).get("policy")) == null) {
+                    return s;
+                }
+            }
+        }
+        return ofTier.stream().findFirst().orElse(active.isEmpty() ? null : active.get(0));
     }
 
     /** CA08 — emissão do selo único e rastreável. */

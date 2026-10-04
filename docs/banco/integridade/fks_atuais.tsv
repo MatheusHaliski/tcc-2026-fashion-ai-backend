@@ -1,0 +1,90 @@
+referenced_table	table	column	referenced_column	on_delete	on_update	constraint	nullable	classe	acao	proposta	justificativa
+brand_profiles	brands	brand_profile_id	id	RESTRICT*	NO ACTION	fk_brands_profile	YES	GLOBAL_DOMAIN	CHANGE_TO_SET_NULL	SET NULL	marca global continua existindo sem a conta oficial (único SET NULL novo com necessidade real)
+brand_profiles	wardrobe_items	brand_profile_id	id	RESTRICT*	NO ACTION	fk_wardrobe_items_brand_profile	YES	REFERENCE	CHANGE_TO_SET_NULL	SET NULL	peça de outra pessoa marcada com a conta da marca continua existindo
+brands	wardrobe_items	brand_id	id	RESTRICT*	NO ACTION	fk_wardrobe_items_brand	YES	GLOBAL_DOMAIN	KEEP	RESTRICT	catálogo global protegido (NO ACTION = RESTRICT no InnoDB)
+challenge_instances	challenge_events	instance_id	id	RESTRICT*	NO ACTION	fk_ch_evt_inst	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	evento é parte da instância do desafio
+challenge_instances	challenge_notes	instance_id	id	RESTRICT*	NO ACTION	fk_ch_note_inst	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	anotação é parte da instância
+challenge_instances	challenge_participants	instance_id	id	RESTRICT*	NO ACTION	fk_ch_part_inst	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	participação é parte da instância
+challenge_instances	challenge_votes	instance_id	id	RESTRICT*	NO ACTION	fk_ch_vote_inst	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	voto é parte da instância
+challenge_templates	challenge_instances	template_code	code	RESTRICT*	NO ACTION	fk_ch_inst_tpl	NO	GLOBAL_DOMAIN	KEEP	RESTRICT	modelo global protegido
+daily_looks	daily_looks	materialized_from_id	id	RESTRICT*	NO ACTION	fk_daily_looks_materialized_from	YES	REFERENCE	CHANGE_TO_SET_NULL	SET NULL	auto-referência opcional: o look do dia materializado continua válido
+daily_looks	hype_score_metrics	daily_look_id	id	RESTRICT*	NO ACTION	fk_hype_score_metrics_daily_look	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	métrica do look do dia
+dna_schemes	dna_scheme_items	dna_scheme_id	id	CASCADE	NO ACTION	fk_dna_scheme_items_dna	NO	OWNERSHIP	KEEP	CASCADE	item do DNA
+flair_combinations	flair_redemptions	combination_id	id	CASCADE	NO ACTION	fk_flair_red_combination	NO	OWNERSHIP	KEEP	CASCADE	
+flair_matches	flair_match_entries	match_id	id	CASCADE	NO ACTION	fk_flair_entries_match	NO	OWNERSHIP	KEEP	CASCADE	
+flair_teams	flair_team_members	team_id	id	CASCADE	NO ACTION	fk_flair_tm_team	NO	OWNERSHIP	KEEP	CASCADE	
+promotions	promotion_redemptions	promotion_id	id	RESTRICT*	NO ACTION	fk_redemptions_promotion	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	resgate é filho da promoção
+room_catalog	room_inventory	sku	sku	RESTRICT*	NO ACTION	fk_room_inventory_sku	NO	GLOBAL_DOMAIN	KEEP	RESTRICT	catálogo global de móveis protegido enquanto alguém possui o item
+schemes	daily_looks	scheme_id	id	RESTRICT*	NO ACTION	fk_daily_looks_scheme	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	look do dia aponta para um look da pessoa
+schemes	dna_scheme_items	scheme_id	id	RESTRICT*	NO ACTION	fk_dna_scheme_items_scheme	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	item do DNA aponta para o look
+schemes	flair_match_entries	scheme_id	id	SET NULL	NO ACTION	fk_flair_entries_scheme	YES	REFERENCE	KEEP	SET NULL	
+schemes	flair_redemptions	scheme_id	id	SET NULL	NO ACTION	fk_flair_red_scheme	YES	REFERENCE	KEEP	SET NULL	
+schemes	hype_score_metrics	scheme_id	id	RESTRICT*	NO ACTION	fk_hype_score_metrics_scheme	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	métrica do look
+schemes	scheme_items	scheme_id	id	CASCADE	NO ACTION	fk_scheme_items_scheme	NO	OWNERSHIP	KEEP	CASCADE	item é parte do look
+schemes	schemes	original_scheme_id	id	RESTRICT*	NO ACTION	fk_schemes_original	YES	REFERENCE	CHANGE_TO_SET_NULL	SET NULL	remix de outra pessoa sobrevive ao original (hoje BLOQUEIA apagar o original)
+schemes	seal_bonds	scheme_id	id	RESTRICT*	NO ACTION	fk_seal_bonds_scheme	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	vínculo do selo com o look
+schemes	week_plan_days	scheme_id	id	RESTRICT*	NO ACTION	fk_week_plan_days_scheme	YES	REFERENCE	CHANGE_TO_SET_NULL	SET NULL	o dia do plano continua, só sem look
+seal_bonds	promotion_redemptions	seal_bond_id	id	RESTRICT*	NO ACTION	fk_redemptions_bond	NO	OWNERSHIP	REVIEW	CASCADE	resgate de promoção nascida do vínculo
+seal_bonds	promotions	seal_bond_id	id	RESTRICT*	NO ACTION	fk_promotions_bond	YES	REFERENCE	REVIEW	SET NULL	promoção continua sob o selo se o vínculo de origem sumir
+seals	promotions	seal_id	id	RESTRICT*	NO ACTION	fk_promotions_seal	YES	OWNERSHIP	REVIEW	CASCADE	promoção é do selo
+seals	room_catalog	seal_id	id	SET NULL	NO ACTION	fk_room_catalog_seal	YES	REFERENCE	KEEP	SET NULL	
+seals	seal_bonds	seal_id	id	RESTRICT*	NO ACTION	fk_seal_bonds_seal	YES	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	vínculo pertence ao selo
+users	acervo_groups	user_id	id	RESTRICT*	NO ACTION	fk_acervo_groups_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	grupos do acervo da pessoa
+users	brand_profiles	owner_user_id	id	RESTRICT*	NO ACTION	fk_brand_profiles_owner	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	perfil de marca é extensão da conta
+users	celebrity_profiles	owner_user_id	id	RESTRICT*	NO ACTION	fk_celebrity_profiles_owner	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	perfil de celebridade é extensão da conta
+users	comments	author_user_id	id	RESTRICT*	NO ACTION	fk_comments_author	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	política atual: comentário sai com a conta (purga real já anonimiza)
+users	coupon_rights	owner_user_id	id	CASCADE	NO ACTION	fk_coupon_rights_owner	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	coupon_rights	user_id	id	CASCADE	NO ACTION	fk_coupon_rights_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	daily_looks	user_id	id	RESTRICT*	NO ACTION	fk_daily_looks_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	look do dia da pessoa
+users	data_export_requests	user_id	id	RESTRICT*	NO ACTION	fk_data_export_requests_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	pedido LGPD da própria pessoa
+users	dna_schemes	user_id	id	RESTRICT*	NO ACTION	fk_dna_schemes_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	DNA de estilo da pessoa
+users	fai_points_ledger	user_id	id	RESTRICT*	NO ACTION	fk_points_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	extrato de pontos da pessoa (não é dinheiro)
+users	flair_coin_entries	user_id	id	CASCADE	NO ACTION	fk_flair_coin_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_combinations	brand_user_id	id	CASCADE	NO ACTION	fk_flair_combinations_brand	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_match_entries	user_id	id	CASCADE	NO ACTION	fk_flair_entries_user	YES	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_matches	created_by_user_id	id	CASCADE	NO ACTION	fk_flair_matches_creator	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_mode_states	user_id	id	CASCADE	NO ACTION	fk_flair_mode_state_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_profiles	user_id	id	CASCADE	NO ACTION	fk_flair_profiles_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_redemptions	user_id	id	CASCADE	NO ACTION	fk_flair_red_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_team_members	user_id	id	CASCADE	NO ACTION	fk_flair_tm_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_teams	owner_user_id	id	CASCADE	NO ACTION	fk_flair_teams_owner	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	flair_territories	owner_user_id	id	SET NULL	NO ACTION	fk_flair_territory_owner	YES	OWNERSHIP	KEEP	SET NULL	item global/território sobrevive sem o criador
+users	flair_trophies	user_id	id	CASCADE	NO ACTION	fk_flair_trophy_user	NO	OWNERSHIP	KEEP	CASCADE	já cascata (dado da pessoa)
+users	follows	follower_id	id	RESTRICT*	NO ACTION	fk_follows_follower	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	relação bidirecional: sumiu uma ponta, some a relação (as duas FKs iguais)
+users	follows	following_id	id	RESTRICT*	NO ACTION	fk_follows_following	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	relação bidirecional: sumiu uma ponta, some a relação (as duas FKs iguais)
+users	hype_score_metrics	user_id	id	RESTRICT*	NO ACTION	fk_hype_score_metrics_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	métrica do look da pessoa
+users	inventory_score_snapshots	user_id	id	RESTRICT*	NO ACTION	fk_inv_snap_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	histórico da pessoa
+users	mirror_states	user_id	id	RESTRICT*	NO ACTION	fk_mirror_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	estado do espelho da pessoa
+users	notifications	actor_user_id	id	RESTRICT*	NO ACTION	fk_notifications_actor	YES	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	notificação sem destinatário/autor não faz sentido
+users	notifications	recipient_user_id	id	RESTRICT*	NO ACTION	fk_notifications_recipient	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	notificação sem destinatário/autor não faz sentido
+users	photos	user_id	id	RESTRICT*	NO ACTION	fk_photos_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	foto enviada pela pessoa (objeto no storage sai antes, pela aplicação)
+users	pipeline_jobs	user_id	id	RESTRICT*	NO ACTION	fk_pipeline_jobs_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	job de processamento da pessoa
+users	promotion_redemptions	user_id	id	RESTRICT*	NO ACTION	fk_redemptions_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	resgate feito pela pessoa
+users	ranking_opt_ins	user_id	id	RESTRICT*	NO ACTION	fk_opt_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	opt-in da pessoa
+users	reactions	actor_user_id	id	RESTRICT*	NO ACTION	fk_reactions_actor	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	curtida/reação da pessoa
+users	refresh_tokens	user_id	id	RESTRICT*	NO ACTION	fk_refresh_tokens_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	sessão da pessoa
+users	room_catalog	creator_user_id	id	SET NULL	NO ACTION	fk_room_catalog_creator	YES	GLOBAL_DOMAIN	KEEP	SET NULL	item global/território sobrevive sem o criador
+users	room_inventory	user_id	id	RESTRICT*	NO ACTION	fk_room_inventory_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	inventário do quarto da pessoa
+users	room_layouts	user_id	id	RESTRICT*	NO ACTION	fk_room_layouts_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	layout do quarto da pessoa
+users	room_storage_map	user_id	id	RESTRICT*	NO ACTION	fk_room_map_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	mapa do quarto da pessoa
+users	saved_items	user_id	id	RESTRICT*	NO ACTION	fk_saved_items_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	salvos da pessoa
+users	scheme_groupings	owner_user_id	id	RESTRICT*	NO ACTION	fk_scheme_groupings_owner	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	agrupamentos da pessoa
+users	schemes	user_id	id	RESTRICT*	NO ACTION	fk_schemes_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	look pertence à pessoa
+users	seal_bonds	requested_by_user_id	id	RESTRICT*	NO ACTION	fk_seal_bonds_requester	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	vínculo entre selo e look: sumiu qualquer das contas, some o vínculo
+users	seal_bonds	target_owner_user_id	id	RESTRICT*	NO ACTION	fk_seal_bonds_target	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	vínculo entre selo e look: sumiu qualquer das contas, some o vínculo
+users	seals	owner_user_id	id	RESTRICT*	NO ACTION	fk_seals_owner	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	selo é da conta de marca/celebridade
+users	shares	user_id	id	RESTRICT*	NO ACTION	fk_shares_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	compartilhamento feito pela pessoa
+users	style_dna	user_id	id	RESTRICT*	NO ACTION	fk_style_dna_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	DNA da pessoa
+users	style_dna_versions	user_id	id	RESTRICT*	NO ACTION	fk_style_dna_versions_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	versões do DNA da pessoa
+users	user_achievements	user_id	id	RESTRICT*	NO ACTION	fk_ach_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	conquista da pessoa
+users	user_avatars_3d	user_id	id	RESTRICT*	NO ACTION	fk_avatar3d_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	avatar 3D (biométrico) da pessoa
+users	user_consents	user_id	id	RESTRICT*	NO ACTION	fk_user_consents_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	consentimento da pessoa
+users	user_preferences	user_id	id	RESTRICT*	NO ACTION	fk_user_preferences_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	preferências da pessoa
+users	verification_codes	user_id	id	RESTRICT*	NO ACTION	fk_verification_codes_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	código da pessoa
+users	wardrobe_items	user_id	id	RESTRICT*	NO ACTION	fk_wardrobe_items_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	peça do guarda-roupa pertence à pessoa
+users	week_plans	user_id	id	RESTRICT*	NO ACTION	fk_week_plans_user	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	plano semanal da pessoa
+wardrobe_items	piece_usage_diary	wardrobe_item_id	id	RESTRICT*	NO ACTION	fk_diary_item	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	diário de uso da peça
+wardrobe_items	room_storage_map	wardrobe_item_id	id	RESTRICT*	NO ACTION	fk_room_map_item	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	posição da peça no quarto
+wardrobe_items	scheme_items	wardrobe_item_id	id	RESTRICT*	NO ACTION	fk_scheme_items_wardrobe_item	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	item de look sem a peça não existe (o look perde o item)
+wardrobe_items	wardrobe_availability_log	wardrobe_item_id	id	RESTRICT*	NO ACTION	fk_avail_item	NO	OWNERSHIP	CHANGE_TO_CASCADE	CASCADE	histórico da peça
+week_plans	week_plan_days	week_plan_id	id	CASCADE	NO ACTION	fk_week_plan_days_plan	NO	OWNERSHIP	KEEP	CASCADE	
