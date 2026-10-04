@@ -14,6 +14,8 @@ import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.imaging.ImageFilters;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
 import br.com.fashionai.application.ports.MediaStoragePort;
@@ -420,6 +422,7 @@ public class SchemeService {
             notifications.notify(src.getUser().getId(), owner.getId(), NotificationType.NEW_REMIX, "SCHEME", s.getId(),
                     Msg.k("scheme.seu_look_foi_remixado"), Msg.k("scheme.criou_um_look_a_partir", owner.getUsername(), src.getTitle()), null);
             events.publishEvent(new DomainEvents.InteractionReceived(src.getUser().getId(), owner.getId(), "REMIX", src.getId()));
+            events.publishEvent(new DomainEvents.HypeSignal(HypeSignalType.LOOK_REMIXED, HypeEntityType.SCHEME, src.getId(), owner.getId(), src.getUser().getId()));
         }
         projections.scheme(s, items);
         List<UUID> pieceIds = items.stream().map(si -> si.getWardrobeItem().getId()).toList();
@@ -646,6 +649,9 @@ public class SchemeService {
         if (!owner) {
             s.setViewCount(s.getViewCount() + 1);
             counters.increment("scheme", id, "views", 1);
+            if (viewer != null) {
+                events.publishEvent(new DomainEvents.HypeSignal(HypeSignalType.LOOK_VIEWED, HypeEntityType.SCHEME, id, viewer.id(), s.getUser().getId()));
+            }
         }
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
         Map<String, Object> out = new LinkedHashMap<>();

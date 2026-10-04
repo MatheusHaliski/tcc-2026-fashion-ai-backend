@@ -104,8 +104,9 @@ public class WardrobeController {
                                                @RequestParam(required = false) String q,
                                                @RequestParam(required = false) String sort,
                                                @RequestParam(defaultValue = "0") int page,
-                                               @RequestParam(defaultValue = "24") int size) {
-        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
+                                               @RequestParam(defaultValue = "24") int size,
+                                               @RequestParam(required = false) String hypeLevel) {
+        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
