@@ -1,0 +1,60 @@
+@startuml RF28_Espelho_Atividades
+title RF28 — Vista-me: o espelho mostra o reflexo do Avatar 3D da pessoa vestindo as peças, em pose natural\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa usuária|
+start
+:Abre /mirror (ou "Vestir no espelho" numa peça);
+|Sistema (MirrorService)|
+:GET /api/me/mirror → slots, faltas, luz (kelvin);
+|Frontend (MirrorStage)|
+:GET /api/me/avatar3d;
+if (Tem avatar 3D salvo?) then (sim)
+  :Usa o mesmo avatar do perfil e do provador\n(corpo medido, pele, rosto, cabelo);
+else (não)
+  :Manequim de referência (sexo do perfil)\n+ convite "Criar meu avatar";
+endif
+:mirrorPieces(slots) → peças 3D por slot;
+:Completa o que falta com as peças padrão FAI\n(nunca sem roupa, nunca descalço);
+:AvatarViewer framing="full", sem controles,\nfundo no tom da luz do quarto;
+:Pose natural: respiração e apoio parado;
+|Pessoa usuária|
+repeat
+  :Ação no espelho: colocar peça, sugerir por slot,\n"Tira uma coisa", trocar, "Vista-me" com prompt;
+  |Sistema (MirrorService)|
+  :Atualiza MirrorState (MySQL · mirror_states);
+  |Frontend (MirrorStage)|
+  :Reflexo se veste com as novas peças;
+repeat while (Continua experimentando?) is (sim)
+->não;
+|Pessoa usuária|
+if (O que fazer com o look?) then (usar hoje)
+  :POST /api/me/mirror/use → look do dia;
+elseif (salvar)
+  :POST /api/me/mirror/save → esquema;
+else (abrir no editor)
+  :POST /api/me/mirror/draft → /schemes/{id}/edit;
+endif
+stop
+@enduml

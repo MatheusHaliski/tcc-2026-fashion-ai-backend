@@ -1,0 +1,86 @@
+@startuml RF40_Sequencia
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Pessoa as U
+actor "Outra pessoa logada" as V
+participant "Frontend\n/avatar (my-avatar.tsx)" as FE
+participant "lib/avatar3d\n(pipeline · detect · quality · atlas)" as PIPE
+participant "MediaPipe self-hosted\n(public/mediapipe)" as MP
+participant "Avatar3dController" as AC
+participant "Avatar3dService" as AS
+participant "AiEngine (RF24)" as AI
+participant "Storage de mídia\n(MediaStoragePort, restricted/)" as ST
+database "MySQL" as DB
+participant "ShowcaseController" as SC
+participant "ShowcaseService" as SS
+U -> FE: abre Meu Avatar 3D
+FE -> AC: GET /api/me/avatar3d
+AC -> AS: get(user)
+AS -> DB: SELECT user_avatars_3d WHERE user_id
+AC --> FE: 200 {exists:false} | {exists:true, model, adjust, textureUrl, warnings, publicOnRunway, textureModeration}
+U -> FE: envia 1 foto de frente + até 2 de 3/4 e toca Gerar prévia
+loop para cada foto
+  FE -> PIPE: analyzePhoto(blob, role)
+  PIPE -> PIPE: loadOriented (EXIF)
+  PIPE -> MP: detectFace (Face Landmarker 478 pontos) · segmentHair
+  PIPE -> PIPE: checkPhoto → Issue[] (block | warn)
+  alt issue "block" (NO_FACE, BLURRY, TOO_DARK, FACE_CUT…)
+    PIPE --> FE: recusa com o motivo (CA02)
+  else aceita
+    PIPE --> FE: AnalyzedPhoto (pontos, pose, pele, cabelo, avisos)
+  end
+end
+FE -> PIPE: buildAvatar(photos) → {model, atlas, hair}
+FE -> FE: prévia girável (avatar-bust.tsx), ajustes finos (clampAdjust)
+U -> FE: marca consentimento e Salvar avatar
+FE -> PIPE: atlasBlob(atlas) → JPEG
+FE -> AC: POST /api/me/avatar3d (multipart: meta{model, adjust, photos, warnings, consent, publicOnRunway} + texture)
+AC -> AS: save(user, SaveCommand, bytes)
+alt consent != true
+  AS --> AC: 400 CONSENTIMENTO_OBRIGATORIO
+else
+  AS -> AS: validateModel · normalizeTexture · clampAdjust
+  AS -> ST: put(restricted/users/{id}/avatar3d/face-{ts}.jpg, image/jpeg)
+  opt publicOnRunway
+    AS -> AI: text(TextCall CONTENT_MODERATOR, imagem 512px)
+    AI --> AS: AiOutcome<Boolean> → APPROVED | REJECTED_POLICY | PENDING
+  end
+  AS -> DB: INSERT/UPDATE user_avatars_3d (consent_at, texture_moderation)
+  AS -> ST: delete(textura anterior)
+  AC --> FE: 200 view(avatar)
+end
+U -> FE: ajusta ou troca a visibilidade na Passarela
+FE -> AC: PATCH /api/me/avatar3d {adjust, publicOnRunway, body, sex}
+AC -> AS: update(user, SettingsCommand)
+AS -> DB: UPDATE user_avatars_3d
+AC --> FE: 200 view(avatar)
+== Uso no manequim ==
+V -> SC: GET /api/explorer/runway
+SC -> SS: runway(...) → mannequin(owner, peças, viewer)
+SS -> AS: forMannequin(ownerId, viewerId)
+AS -> DB: SELECT user_avatars_3d
+alt avatar público (ou dono)
+  AS --> SS: {model, adjust, textureUrl se APPROVED ou dono}
+  SS --> SC: mannequin {head: "AVATAR", avatar}
+else
+  SS --> SC: mannequin padrão / foto de perfil
+end
+V -> AC: GET /api/avatar3d/{userId}/texture
+AC -> AS: texture(viewer, ownerId)
+AS -> ST: get(textureKey)
+AC --> V: 200 image/jpeg (Cache-Control private) | 404
+== Excluir ==
+U -> FE: Excluir avatar (confirmação)
+FE -> AC: DELETE /api/me/avatar3d
+AC -> AS: delete(user)
+AS -> ST: delete(textureKey)
+AS -> DB: DELETE user_avatars_3d
+AC --> FE: 204
+@enduml

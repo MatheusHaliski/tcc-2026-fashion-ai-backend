@@ -1,0 +1,69 @@
+@startuml RF41_Componentes
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "flair — resultado com\n\"+N FAI Pts\"" as FE0
+  component "challenges" as FE1
+  component "points — saldo, nível,\nregras e extrato" as FE2
+  component "selo \"+N FAI Pts\" na Arena\ne na inscrição em Desafio" <<planejado>> as FEP
+}
+note bottom of FEP : não implementado — conforme\ndocs/novos-rf/RF40-RF41.md (Pendente)
+package "fai-web · controllers" {
+  [FlairController] as FC
+  [FlairModesController] as FMC
+  [ChallengeController] as CC
+  [HighlightsController\n(/api/me/points)] as HC
+  [RoomController\n(/api/me/room)] as RC
+}
+package "fai-application · services" {
+  [FlairService] as FS
+  [FlairModesService] as FMS
+  [ChallengeService] as CS
+  [WardrobeEventListeners\n(AFTER_COMMIT)] as WL
+  [AchievementService] as AS
+  [Model3dService (RF16)] as M3
+  [FaiPointsService\ngame() · award()] as FP
+  [RoomService] as RS
+  [NotificationService] as NS
+}
+package "fai-infrastructure · adapters" {
+  [FaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nUserAchievementRepository\nRoomLayoutRepository] as REPOS
+}
+database "MySQL\n• fai_points_ledger\n• fai_points_rules\n• user_achievements\n• room_layouts\n• notifications" as DB
+
+FE0 --> FC : HTTPS/JSON
+FE0 --> FMC : HTTPS/JSON
+FE1 --> CC : HTTPS/JSON
+FE2 --> HC : GET /api/me/points
+FC --> FS : chama
+FMC --> FMS : chama
+CC --> CS : chama
+HC --> FP : account()
+RC --> RS : chama
+FS --> FP : game() / award(FLAIR_QUEST)
+FMS --> FP : game()
+CS --> FP : game() / award(CHALLENGE_COMPLETED)
+WL --> FP : award(SCHEME_CREATED, PIECE_*)
+AS --> FP : award(ACHIEVEMENT)
+M3 --> FP : awardIsolated(PIECE_3D)
+FP --> RS : setLevel
+FP --> NS : publica ROOM_LEVEL_UP
+FP --> REPOS : grava/lê
+AS --> REPOS : grava
+REPOS --> DB : JPA/Flyway (V26)
+@enduml

@@ -1,0 +1,61 @@
+@startuml RF17_Componentes
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "u/[username]\n(ProfileHeader, seguir, bloquear,\nseguidores/seguindo)" as FE0
+  component "LookbookTabs\n(ClosetTab, LooksTab, GroupsTab)" as FE1
+  component "notifications" as FE2
+  component "Tela de pedidos para seguir\n(aceitar/recusar)" <<planejado>> as FEP
+}
+note bottom of FEP : não implementado no frontend —\nos endpoints /api/me/follow-requests e\n/api/follow-requests/{followId} já existem
+package "fai-web · controllers" {
+  [ProfileController] as PC
+  [WardrobeController] as WC
+  [NotificationController] as NC
+  [SocialController\n(/api/interactions/{type}/{id})] as SC
+}
+package "fai-application · services" {
+  [ProfileService] as PS
+  [WardrobeService] as WS
+  [SchemeService] as SS
+  [Guard\n(canView, blocked)] as G
+  [NotificationService] as NS
+}
+package "fai-infrastructure · adapters" {
+  [UserRepository\nFollowRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nNotificationRepository] as REPOS
+}
+database "MySQL\n• users\n• follows\n• schemes\n• scheme_items\n• wardrobe_items\n• notifications" as DB
+
+FE0 --> PC : GET /api/profiles/{idOrUsername}\nfollowers · block · connections
+FE1 --> WC : GET /api/users/{ownerId}/closet
+FE1 --> SC : reações/comentários (RF8)
+FE2 --> NC : GET /api/notifications
+FEP ..> PC : follow-requests
+PC --> PS : chama
+WC --> WS : chama
+NC --> NS : chama
+PS --> G : canView
+WS --> G : canView
+PS --> SS : view(esquema)
+PS --> NS : publica FOLLOW_*
+PS --> REPOS : lê/grava
+WS --> REPOS : lê
+G --> REPOS : lê follows
+NS --> REPOS : grava
+REPOS --> DB : JPA/Flyway
+@enduml

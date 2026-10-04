@@ -1,0 +1,107 @@
+{
+ "_comment": "Grafo social determinístico. status: ACEITO | PENDENTE | BLOQUEADO. 'ALL_DEMO' = todas as contas demo do perfil.",
+ "follows": [
+  {
+   "from": "ALL_DEMO",
+   "to": "CREATOR_POPULAR",
+   "status": "ACEITO"
+  },
+  {
+   "from": "USER_PUBLIC",
+   "to": "BRAND_FULL",
+   "status": "ACEITO"
+  },
+  {
+   "from": "USER_PUBLIC",
+   "to": "CELEBRITY_FULL_01",
+   "status": "ACEITO"
+  },
+  {
+   "from": "USER_PUBLIC",
+   "to": "CREATOR_BASIC",
+   "status": "ACEITO"
+  },
+  {
+   "from": "CREATOR_BASIC",
+   "to": "USER_PUBLIC",
+   "status": "ACEITO"
+  },
+  {
+   "from": "USER_HEAVY",
+   "to": "USER_PRIVATE",
+   "status": "ACEITO"
+  },
+  {
+   "from": "USER_PUBLIC",
+   "to": "USER_PRIVATE",
+   "status": "PENDENTE"
+  },
+  {
+   "from": "CREATOR_BASIC",
+   "to": "USER_PRIVATE",
+   "status": "PENDENTE"
+  },
+  {
+   "from": "USER_MARKETPLACE",
+   "to": "CREATOR_BASIC",
+   "status": "BLOQUEADO"
+  },
+  {
+   "from": "FOLLOWERS",
+   "to": "CELEBRITY_FULL_01",
+   "status": "ACEITO"
+  },
+  {
+   "from": "FOLLOWERS",
+   "to": "BRAND_FULL",
+   "status": "ACEITO"
+  }
+ ],
+ "likes": {
+  "_comment": "curtidas por post publicado do dono: all = todas as contas demo; n = as n primeiras; 0 = nenhuma",
+  "CREATOR_POPULAR": "all",
+  "CELEBRITY_FULL_01": "all",
+  "BRAND_FULL": 8,
+  "BRAND_VERIFIED": 3,
+  "USER_PUBLIC": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "USER_HEAVY": 2,
+  "CREATOR_BASIC": 1
+ },
+ "comments": {
+  "CREATOR_POPULAR": {
+   "posts": 5,
+   "perPost": 3
+  },
+  "CELEBRITY_FULL_01": {
+   "posts": 3,
+   "perPost": 2
+  },
+  "USER_PUBLIC": {
+   "posts": 1,
+   "perPost": 2
+  }
+ },
+ "saves": [
+  {
+   "user": "USER_PUBLIC",
+   "owner": "CREATOR_POPULAR",
+   "looks": 5
+  },
+  {
+   "user": "USER_PUBLIC",
+   "owner": "BRAND_FULL",
+   "pieces": 2
+  },
+  {
+   "user": "USER_HEAVY",
+   "owner": "CELEBRITY_FULL_01",
+   "looks": 10
+  }
+ ]
+}

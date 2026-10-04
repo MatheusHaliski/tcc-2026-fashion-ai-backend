@@ -25,6 +25,8 @@ public enum NotificationType {
     SCHEME_CREATED(NotificationCategory.SYSTEM, true),
     AI_JOB_FINISHED(NotificationCategory.SYSTEM, true),
     ACCOUNT_APPROVAL(NotificationCategory.SYSTEM, false),
+    /** Para administradores: perfil de marca/celebridade enviado (ou reenviado) para a fila de verificação. */
+    ISSUER_REVIEW_REQUEST(NotificationCategory.SYSTEM, false),
     /** Foto enviada retida pela moderação (docs/seguranca/moderacao-de-imagens.md): aprovada ou recusada na revisão humana. */
     CONTENT_REVIEW(NotificationCategory.SYSTEM, false),
     DAILY_LOOK(NotificationCategory.SOCIAL, true),

@@ -54,6 +54,21 @@ class InMemoryAdaptersTest {
     }
 
     @Test
+    void rateLimitReleaseGivesBackOneUnitAndNeverGoesNegative() {
+        InMemoryRateLimit limit = new InMemoryRateLimit();
+        UUID user = UUID.randomUUID();
+        assertThat(limit.tryAcquire(user, "login-fail", 2, Duration.ofMinutes(15))).isTrue();
+        assertThat(limit.tryAcquire(user, "login-fail", 2, Duration.ofMinutes(15))).isTrue();
+        limit.release(user, "login-fail");
+        assertThat(limit.status(user, "login-fail", 2, Duration.ofMinutes(15)).used()).isEqualTo(1);
+        limit.release(user, "login-fail");
+        limit.release(user, "login-fail");
+        assertThat(limit.status(user, "login-fail", 2, Duration.ofMinutes(15)).used()).isZero();
+        limit.release(UUID.randomUUID(), "nunca-usado");          // balde inexistente: nada acontece
+        assertThat(limit.size()).isEqualTo(1);
+    }
+
+    @Test
     void countersAreIsolatedPerEntity() {
         InMemoryCounterStore counters = new InMemoryCounterStore();
         UUID a = UUID.randomUUID(), b = UUID.randomUUID();

@@ -1,0 +1,89 @@
+@startuml RF2_Atividades
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /login e informa e-mail ou username,\nsenha e "lembrar-me";
+|Frontend (login · BFF /bff/auth)|
+:POST /bff/auth/login → POST /api/auth/login\n(LoginCommand: identifier, password, rememberMe, deviceName, twoFactorCode);
+|Backend (AuthController · IdentityService)|
+:Localiza a conta (e-mail → emailHash;\nusername normalizado);
+if (Conta existe?) then (não)
+  :Compara com hash fictício (tempo uniforme)\ne audita LOGIN_FALHO;
+  #FFE3E3:401 NAO_AUTENTICADO;
+  stop
+endif
+:Confere a senha (Argon2) e o bloqueio\n(5 falhas em 15 min — RateLimitPort);
+if (Bloqueada ou senha errada?) then (sim)
+  :Conta a falha e audita\nLOGIN_FALHO / LOGIN_BLOQUEADO_TENTATIVAS;
+  #FFE3E3:401 idêntico (não revela cadastro);
+  stop
+endif
+if (status DELETED ou SUSPENDED?) then (sim)
+  #FFE3E3:403 CONTA_INDISPONIVEL;
+  stop
+endif
+if (twoFactorEnabled?) then (sim)
+  if (Código 2FA informado?) then (não)
+    :Gera VerificationCode TWO_FACTOR (6 dígitos, 10 min)\ne envia por e-mail;
+    #FFF5F8:401 DOIS_FATORES_NECESSARIO\n{twoFactorRequired: true};
+    |Pessoa|
+    :Digita o código e reenvia o login;
+    |Backend (AuthController · IdentityService)|
+    detach
+  else (sim)
+    if (Código válido (< 5 tentativas, não expirado)?) then (não)
+      #FFE3E3:401 código inválido (conta no bloqueio);
+      stop
+    endif
+  endif
+else (não)
+endif
+:Zera o contador de falhas; lastLoginAt = agora;\naudita LOGIN_SUCESSO;
+if (User-Agent nunca visto nas sessões ativas?) then (sim)
+  :Notificação NEW_LOGIN_DEVICE;
+else (não)
+endif
+:Cria RefreshToken (família nova; 30 d se "lembrar-me", senão 1 d)\ne emite JWT RS256 (15 min; claims sid, user_id, role, profile_type);
+:200 Session {accessToken, refreshToken, status, emailVerified, warnings};
+|Frontend (login · BFF /bff/auth)|
+:BFF guarda o refresh token em cookie HttpOnly (fai_rt);\naccess token só na memória da aba;
+if (E-mail confirmado?) then (não)
+  :Vai para /verify-email (RF1.CA05);
+else (sim)
+  :Vai para ?next= ou /closet;
+endif
+note right
+  Sessão em uso: todo request leva Bearer; SessionActiveFilter
+  confere o sid → 401 SESSAO_ENCERRADA se a família foi revogada.
+  Access expirado → POST /bff/auth/refresh → POST /api/auth/refresh
+  (rotação; reuso de token já rotacionado revoga a família inteira).
+  Sair → POST /api/auth/logout e apaga os cookies.
+  Esqueci a senha → /forgot-password (POST /api/auth/password-reset/request,
+  resposta uniforme) → link por e-mail → /reset-password
+  (POST /api/auth/password-reset/confirm, encerra as outras sessões).
+end note
+stop
+@enduml

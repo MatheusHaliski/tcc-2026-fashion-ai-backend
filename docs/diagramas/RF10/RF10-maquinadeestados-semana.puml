@@ -1,0 +1,34 @@
+@startuml RF10_MaquinaDeEstados_Semana
+!pragma layout smetana
+title RF10 — WeekPlan: ciclo do plano da semana (WeekPlanStatus) e dos seus dias
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Ativo : POST /api/autopilot/weeks\n(acervo >= mínimo; senão 422 ACERVO_INSUFICIENTE)
+state "ACTIVE" as Ativo {
+  state "Dia sugerido\n(pieceIdsJson, combinationKey, rationale)" as Sug
+  state "Dia editado\n(editedManually = true, scheme = null)" as Edit
+  state "Dia usado\n(scheme criado, DailyLook AUTOPILOTO)" as Usado
+  state "Lacuna\n(pieceIdsJson vazio → gapsJson)" as Gap
+  [*] --> Sug : 7 dias sem repetir combinação
+  [*] --> Gap : sem candidatos para o dia
+  Sug --> Edit : PUT /api/autopilot/days/{dayId} {pieceIds}\n(409 COMBINACAO_REPETIDA se igual a outro dia)
+  Edit --> Edit : PUT /api/autopilot/days/{dayId}
+  Sug --> Usado : POST /api/autopilot/days/{dayId}/use
+  Edit --> Usado : POST /api/autopilot/days/{dayId}/use
+  Gap --> Edit : PUT /api/autopilot/days/{dayId}
+  Gap --> Gap : POST .../use → 409 DIA_SEM_LOOK
+}
+state "DISCARDED" as Descartado
+state "COMPLETED" as Concluido #F4F2EF
+Ativo --> Descartado : DELETE /api/autopilot/weeks/current\n(apaga week_plan_days; esquemas já salvos continuam)
+Ativo --> Descartado : novo POST /api/autopilot/weeks\n(só um plano ACTIVE por pessoa)
+Ativo --> Concluido : <<planejado>>
+note right of Concluido : valor existe no enum, mas nenhum fluxo\ngrava COMPLETED — não implementado
+note bottom of Ativo : GET /api/autopilot/weeks/current devolve\nsó o plano ACTIVE mais recente
+note left of Descartado : esquemas e Look do Dia criados\npor "use" permanecem (RF6)
+@enduml

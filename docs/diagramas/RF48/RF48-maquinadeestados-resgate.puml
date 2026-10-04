@@ -1,0 +1,40 @@
+@startuml RF48_MaquinaDeEstados_Resgate
+!pragma layout smetana
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de máquina de estados — PayoutRequest (pedido de resgate)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "REQUESTED\n(pontos reservados:\nPAYOUT_RESERVE)" as REQ
+state "UNDER_REVIEW\n(AUTO ou MANUAL)" as REV
+state "APPROVED\n(taxa, bruto, retenção\ne líquido fixados)" as APR
+state "PROCESSING\n(enviado ao parceiro)" as PRO
+state "PAID\n(id end-to-end do PIX)" as PAID
+state "REJECTED" as REJ
+state "DEFERRED\n(não coube no fundo)" as DEF
+state "FAILED" as FAIL
+state "CANCELLED" as CAN
+state "REVERSED\n(fraude após pagamento)" as REVD
+
+[*] --> REQ : POST /api/me/payout-requests\n(KYC aprovado, 2FA, saldo sacável maturado)
+REQ --> CAN : usuário cancela\nantes do fechamento\n/ PAYOUT_RELEASE
+REQ --> REV : motor de risco
+REV --> APR : fechamento do mês\n(taxa dentro de piso/teto, cabe no fundo)
+REV --> DEF : fundo + reserva esgotados\n/ PAYOUT_RELEASE
+REV --> REJ : admin recusa ou risco alto\n/ PAYOUT_RELEASE (ou REVERSAL se fraude)
+APR --> PRO : job de pagamento\nPayoutProviderPort.pay (idempotente)
+PRO --> PAID : webhook "pago"
+PRO --> FAIL : webhook "falhou"\n(chave inválida, conta encerrada)
+FAIL --> [*] : 24 h depois / PAYOUT_RELEASE
+PAID --> REVD : fraude confirmada\n/ carteira congelada, dívida registrada
+PAID --> [*]
+REVD --> [*]
+REJ --> [*]
+DEF --> [*]
+CAN --> [*]
+note right of APR : total pago no mês\n<= fundo + reserva (RN48.02)
+note left of REQ : no máximo 1 pedido por mês\nmínimo R$ 20, teto R$ 500 (piloto)
+@enduml

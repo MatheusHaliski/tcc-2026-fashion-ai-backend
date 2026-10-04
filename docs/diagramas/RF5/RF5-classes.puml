@@ -1,0 +1,183 @@
+@startuml RF5_Classes
+title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+  +sex: String
+  .. visibilidade padrão do perfil (CA03) ..
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +description: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  +lookDoDia: boolean
+  +coverImageUrl: String
+  +backgroundArtUrl: String
+  +backgroundColor: String
+  +backgroundGradient: String
+  +backgroundAnimationType: BackgroundAnimation
+  +layoutAnatomy: String
+  +sealIdsJson: String
+  +hypeScore: BigDecimal
+  +publishedAt: Instant
+  .. +20 campos (contadores, render, container) ..
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +tryOnLayer: TryOnLayer
+  +sortOrder: int
+  +zIndex: int
+  +positionX: BigDecimal
+  +positionY: BigDecimal
+  +scale: BigDecimal
+  +rotation: BigDecimal
+  +opacity: BigDecimal
+  +snapshotJson: String
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +subcategory: String
+  +brandName: String
+  +brandLogoUrl: String
+  +brandSource: String
+  +color: String
+  +styleTags: String
+  +occasionTags: String
+  +imageUrl: String
+  +visibility: Visibility
+  +disponivel: boolean
+}
+}
+
+package "fai-domain · enums" {
+enum SchemeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  DNA_DUPLICATE
+  SMART_MIRROR
+  VISTA_ME
+  AUTOPILOTO
+}
+enum CreationMode {
+  MANUAL
+  AI_ASSISTED
+}
+enum SchemeSlot {
+  TOP
+  BOTTOM
+  SHOES
+  ACCESSORY
+  FULL_BODY
+  OUTERWEAR
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum Season {
+  SPRING
+  SUMMER
+  AUTUMN
+  WINTER
+}
+enum Mood {
+  ENERGETIC
+  ELEGANT
+  COMFORTABLE
+  SOPHISTICATED
+}
+}
+
+package "fai-application · service" {
+class SchemeService {
+  +builder(user): Map
+  +compose(user, ComposeRequest, AiCapability): ComposeResult
+  +create(user, SchemeForm): Map
+  +suggestSealsAfterSave(user, schemeId): Map
+  +preview(user, SchemeForm): byte[]
+  +uploadLookPhoto(user, bytes): Map
+  +publish(user, id, Visibility): Map
+  +update(user, id, SchemeForm): Map
+  +archive(user, id): Map
+}
+class "SchemeService.SchemeForm" as SchemeForm <<record>> {
+  +title: String
+  +occasion: List<String>
+  +style: List<String>
+  +season: Season
+  +mood: Mood
+  +visibility: Visibility
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +items: List<ItemForm>
+  +background: Map
+  +seals: List<String>
+  +publish: Boolean
+  +lookDoDia: Boolean
+}
+class "SchemeService.ItemForm" as ItemForm <<record>> {
+  +wardrobeItemId: UUID
+  +slot: SchemeSlot
+  +sortOrder: Integer
+  +positionX/positionY/scale/rotation: BigDecimal
+}
+}
+
+Scheme "*" --> "1" User : user
+Scheme "0..1" --> "0..1" Scheme : originalScheme (remix)
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+WardrobeItem "*" --> "1" User : user
+Scheme ..> SchemeStatus
+Scheme ..> SchemeOrigin
+Scheme ..> CreationMode
+Scheme ..> Visibility
+Scheme ..> Season
+Scheme ..> Mood
+SchemeItem ..> SchemeSlot
+SchemeService ..> SchemeForm : recebe
+SchemeForm *-- ItemForm : items
+SchemeService ..> Scheme : cria/publica
+
+note bottom of Scheme
+  Sem campo de marca no esquema: a marca de cada slot
+  vem de WardrobeItem.brandName/brandLogoUrl (RF4).
+  sealIdsJson: selos concedidos via SealBond (RF20/RF21).
+end note
+@enduml

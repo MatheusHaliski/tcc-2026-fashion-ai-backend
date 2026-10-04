@@ -1,0 +1,152 @@
+@startuml RF14_Classes
+title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +avatarUrl: String
+  +profileType: ProfileType
+  +profileVisibility: Visibility
+  .. +outros campos ..
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +coverUrl: String
+  +bio: String (cifrada)
+  +storeUrl: String
+  +cnpj: String (cifrado)
+  +razaoSocial: String
+  +nomeFantasia: String
+  +fashionCategory: String
+  +commercialContact: String (cifrado)
+  +officialHashtag: String
+  +activityProofUrl: String
+  +approvalStatus: ApprovalStatus
+  +source: BrandSource
+  +verificationScore: BigDecimal
+  +approvedBy: UUID
+  +approvedAt: Instant
+  +identityVerified: boolean
+  +documentVerified: boolean
+  +requiresSealReview: boolean
+  +country: String
+  +sealConfidenceThreshold: BigDecimal
+}
+class Brand {
+  +name: String
+  +slug: String
+  +logoUrl: String
+  +website: String
+  +source: BrandSource
+  +sourceConfidence: BigDecimal
+  +verifiedAt: Instant
+  +country: String
+  +brandProfile: BrandProfile
+}
+class BrandLogo {
+  +nameKey: String
+  +displayName: String
+  +logoUrl: String
+  +source: String
+  +status: String
+  +domain: String
+  +originUrl: String
+  +confidence: BigDecimal
+  +attempts: int
+  +checkedAt: Instant
+  +lastError: String
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +verificationStatus: ApprovalStatus
+  .. ver RF22 ..
+}
+class Follow {
+  +follower: User
+  +following: User
+  +status: FollowStatus
+}
+class StyleDna {
+  +user: User
+  +styleKeywords: String
+  .. ver RF13 ..
+}
+}
+package "fai-domain · enums" {
+enum ApprovalStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum BrandSource {
+  SEEDED
+  AUTO_DETECTED
+  USER_SUBMITTED
+}
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+}
+package "fai-application · service" {
+class InstitutionalService {
+  +brandFeed(viewer, term, order): Map
+  +celebrityFeed(viewer, term, order): Map
+  +profile(viewer, slugOrId): Map
+  +tab(viewer, slugOrId, tab, filter, groupingId): Object
+  +store(slugOrId): Map
+  +updateBrand(user, fields): Map
+}
+class BrandLogoService {
+  +cached(rawName): Map
+  +logo(userId, rawName, force): Map
+  +batch(userId, names, syncBudget): Map
+  +acceptWebLogo(rawName, url, source, domain, originUrl): void
+  +refreshPending(): int
+}
+class BrandWebSearchService {
+  +search(userId, rawQuery, allowAi): Map
+  +remember(name, logoUrl, source, domain, originUrl): Map
+}
+}
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
+BrandProfile --> BrandSource
+Brand "*" --> "0..1" BrandProfile : brandProfile
+Brand --> BrandSource
+BrandLogo ..> Brand : nameKey = keyOf(name)
+CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
+StyleDna "1" --> "1" User : user
+User --> ProfileType
+InstitutionalService ..> BrandProfile : feed APROVADO
+InstitutionalService ..> StyleDna : afinidade
+BrandLogoService ..> BrandLogo
+BrandLogoService ..> BrandWebSearchService
+note top of BrandProfile : tabela brand_profiles
+note top of Brand : tabela brands (marca das peças, RF4)
+note top of BrandLogo : tabela brand_logos\nstatus: GENERATED | FOUND | OK | MANUAL
+note top of CelebrityProfile : tabela celebrity_profiles
+note top of Follow : tabela follows — ver RF17
+@enduml

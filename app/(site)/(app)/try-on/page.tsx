@@ -1,321 +1,326 @@
 "use client";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { api, ApiError, mediaUrl } from "@/lib/api/client";
+import dynamic from "next/dynamic";
+import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { label } from "@/lib/api/taxonomy";
-import { RequireAuth } from "@/components/app-shell";
-import dynamic from "next/dynamic";
+import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { retryImport } from "@/lib/chunk-recovery";
-import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, PageHeader, SegmentPicker, Select, Skeleton, useToast } from "@/components/ui";
+import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
+import { RequireAuth } from "@/components/app-shell";
+import { Badge, Button, Card, Chip, Dialog, ErrorState, PageHeader, SegmentPicker, Skeleton, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { BrandLogo } from "@/components/brand-logo";
+import { CatalogSearch } from "@/components/catalog/catalog-search";
+import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { validateBody } from "@/lib/avatar3d/body-spec";
-import { DEFAULT_PIECES, missingZones, type Zone } from "@/lib/avatar3d/human/default-outfit";
+import {
+  FITTING_SLOTS, decodeTryOn, encodeTryOn, removeSlot, resolveEnvironment, slotOf, visibleItems, wearItem, wearOf,
+  type EnvironmentMode, type FittingItem, type FittingSlot, type LightMode,
+} from "@/lib/tryon/fitting-room";
 
-const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
+const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/three/fitting-room-scene")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
 /*
- * Provador (RF18) — experimentar peças no próprio corpo, sem criar look nem post.
- *  - Quatro lugares, pela CATEGORIA gravada da peça: parte de cima, parte de baixo, calçado, acessório. Tocar numa peça
- *    veste no lugar dela e troca só aquele lugar; os outros continuam.
- *  - O palco é o Avatar 3D da pessoa (o mesmo do perfil). Sem avatar, o manequim de referência, identificado como tal.
- *  - A roupa é uma PRÉVIA: a foto da peça projetada no molde do corpo. O FashionAI ainda não tem malha de roupa vestível
- *    com articulações; a tela diz isso em vez de chamar a sobreposição de prova 3D.
- *  - As escolhas ficam só nesta sessão do navegador (sessionStorage).
+ * Provador virtual de lojas (RF18, refeito com o catálogo do RF47).
+ *  - O Espelho (RF28) monta looks com o que a pessoa JÁ TEM; o Provador prova o que ela ainda NÃO tem: peças de várias marcas e
+ *    lojas do catálogo ao mesmo tempo, no próprio Avatar 3D, sem ir a uma loja física. Dá para combinar com peças do guarda-roupa.
+ *  - O ambiente 3D acompanha a prova: a marca da última peça vira o provador da marca (parede do logo, letreiro, luz, piso);
+ *    as outras marcas vestidas aparecem nos painéis laterais. A pessoa pode fixar uma marca ou deixar o provador neutro.
+ *  - Extras: trocar a cor (variante) da peça vestida, foto do provador, link da prova, provas salvas, ver na loja oficial e
+ *    "Já tenho esta peça" (entra no guarda-roupa por referência ao catálogo).
+ *  - A roupa no corpo é a PRÉVIA projetada no molde do avatar (não é prova de caimento nem de tamanho) e a tela diz isso.
  */
-type SlotKey = "upper_piece" | "lower_piece" | "shoes_piece" | "accessory_piece";
-const SLOTS: SlotKey[] = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 type Sex = "MASCULINO" | "FEMININO";
-interface Box { x: number; y: number; w: number; h: number; }
-interface Mannequin { sex: Sex; build: string; skinTone?: string | null; skinHex: string; width: number; height: number; shoulderW: number; waistW: number; hipW: number; headR: number; landmarks: Record<string, { x: number; y: number }>; anchors: Record<string, Box>; levels?: Record<string, number>; params?: Record<string, number>; }
-interface Identity { source: "avatar" | "preferences"; sex: Sex; sexSource: string; skinHex: string; skinSource: "observed" | "preference"; heightCm?: number | null; sources: Record<string, string>; warnings: string[]; }
-/** Peça elegível: lugar (categoria), forma de vestir no corpo (molde 3D/âncora 2D) e se a foto já está sem fundo. */
-interface Entry { piece: PieceView; slot: SlotKey; wear: string; anchor: string; backgroundRemoved: boolean; }
-interface State { mannequin: Mannequin; sex: Sex; skinTones: Record<string, string>; builds: string[]; slots: SlotKey[]; pieces: Record<SlotKey, Entry[]>; needsReview?: Entry[]; identity?: Identity; avatar?: Avatar3dRef | null; }
-type Worn = Partial<Record<SlotKey, string>>;
+interface Entry { piece: PieceView; slot: FittingSlot; wear: string }
+interface State { mannequin: { sex: Sex; build: string; skinTone?: string | null }; sex: Sex; pieces: Record<FittingSlot, Entry[]>; avatar?: Avatar3dRef | null }
+interface Store { brandId: string; slug: string; name: string; logoUrl?: string | null; catalogProducts: number; categories: string[] }
+interface SavedTry { id: string; title: string; items: FittingItem[]; createdAt: number }
+type Tab = "stores" | "wardrobe" | "saved";
 
-/** forma de vestir → molde do manequim 3D */
 const WEAR3D: Record<string, string> = { TOP: "upper", OUTERWEAR: "outer_layer", BOTTOM: "lower", FULL_BODY: "dress", SHOES: "shoes", ACCESSORY: "accessory" };
-// a prévia sempre usa a foto projetada no molde do corpo: o modelo 3D gerado da peça (RF16) é um objeto, não uma roupa com
-// articulações — colocá-lo sobre o corpo daria uma peça rígida flutuando
-const toLook3d = (e: Entry): Look3dPiece => ({ id: e.piece.id, name: e.piece.name, slot: WEAR3D[e.wear] ?? "accessory", category: e.piece.category, subcategory: e.piece.subcategory, imageUrl: e.piece.imageUrl ?? e.piece.thumbnailUrl, colorHex: e.piece.colorHex, model3dUrl: null, defaultImage: e.piece.defaultImage });
-const MEASURES = ["stature", "shoulderW", "chestW", "waistW", "hipW"] as const;
-/** Prévia 2D: âncora da peça padrão do FashionAI de cada zona do corpo sem peça (o manequim nunca fica sem roupa). */
-const ZONE_WEAR: Record<Zone, string> = { upper: "TOP", lower: "BOTTOM", feet: "SHOES" };
-// ordem de desenho na silhueta: parte de cima (camiseta por baixo da jaqueta) → baixo → calçado → acessório
-const WEAR_ORDER: Record<string, number> = { TOP: 0, FULL_BODY: 0, OUTERWEAR: 1, BOTTOM: 2, SHOES: 3, ACCESSORY: 4 };
-interface Layer2d { id: string; src: string; anchor: string; wear: string; blend: boolean }
-const SESSION_KEY = "fai.tryon.worn";
+const SESSION_KEY = "fai.tryon.fitting";
+const SAVED_KEY = "fai.tryon.saved";
+const read = <T,>(store: "session" | "local", key: string, fallback: T): T => { try { const raw = (store === "session" ? sessionStorage : localStorage).getItem(key); return raw ? JSON.parse(raw) as T : fallback; } catch { return fallback; } };
+const write = (store: "session" | "local", key: string, value: unknown) => { try { (store === "session" ? sessionStorage : localStorage).setItem(key, JSON.stringify(value)); } catch { /* navegação privada: só não lembra */ } };
 
-function readSession(): Worn { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? "{}") as Worn; } catch { return {}; } }
-function writeSession(w: Worn) { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(w)); } catch { /* navegação privada: só não lembra */ } }
+let clock = 0;
+const nextTick = () => Math.max(Date.now(), ++clock);
 
-/** Silhueta 2D derivada da MESMA identidade (níveis e larguras do corpo do avatar): usada só como "Prévia 2D". */
-function MannequinBody({ m }: { m: Mannequin }) {
-  const W = m.width, H = m.height, cx = W / 2, male = m.sex === "MASCULINO";
-  const shoulder = m.shoulderW * W, waist = m.waistW * W, hip = m.hipW * W, headR = m.headR * W;
-  const lv = m.levels ?? { headTop: 0.045, shoulder: 0.205, waist: male ? 0.455 : 0.43, hip: 0.52, crotch: 0.52, ankle: 0.9 };
-  const yS = lv.shoulder * H, yW = lv.waist * H, yH = (m.params ? lv.crotch : lv.hip) * H, yA = lv.ankle * H, yTop = lv.headTop * H;
-  const legs = [-1, 1].map((sd) => {
-    const outer = cx + sd * hip / 2, inner = cx + sd * hip * 0.04, ankle = cx + sd * hip * 0.2;
-    return { d: `M ${outer} ${yH - 10} C ${outer + sd * 6} ${0.62 * H} ${ankle + sd * 26} ${0.78 * H} ${ankle + sd * 16} ${yA} L ${ankle - sd * 14} ${yA} C ${ankle - sd * 20} ${0.78 * H} ${inner} ${0.64 * H} ${inner} ${yH + 20} Z`, foot: [ankle + sd * 6, yA + 9] };
-  });
-  const arms = [-1, 1].map((sd) => {
-    const sx = cx + sd * shoulder / 2, wx = cx + sd * (shoulder / 2 + 0.045 * W);
-    return { d: `M ${sx - sd * 6} ${yS + 6} C ${sx + sd * 30} ${yS + 40} ${wx + sd * 20} ${0.4 * H} ${wx + sd * 12} ${0.505 * H} L ${wx - sd * 14} ${0.505 * H} C ${wx - sd * 8} ${0.4 * H} ${sx - sd * 6} ${yS + 90} ${sx - sd * 22} ${yS + 40} Z`, hand: [wx + sd * 2 - 1, 0.505 * H + 20] };
-  });
-  const torso = `M ${cx - shoulder / 2} ${yS} C ${cx - shoulder / 2 - 4} ${yS + 80} ${cx - waist / 2} ${yW - 60} ${cx - waist / 2} ${yW} C ${cx - waist / 2} ${yW + 30} ${cx - hip / 2} ${yH - 30} ${cx - hip / 2} ${yH} L ${cx + hip / 2} ${yH} C ${cx + hip / 2} ${yH - 30} ${cx + waist / 2} ${yW + 30} ${cx + waist / 2} ${yW} C ${cx + waist / 2} ${yW - 60} ${cx + shoulder / 2 + 4} ${yS + 80} ${cx + shoulder / 2} ${yS} C ${cx + shoulder / 4} ${yS - 22} ${cx - shoulder / 4} ${yS - 22} ${cx - shoulder / 2} ${yS} Z`;
-  return (
-    <g>
-      <defs><linearGradient id="tryon-skin" x1="0" x2="1"><stop offset="0" stopColor={m.skinHex} stopOpacity=".78" /><stop offset=".5" stopColor={m.skinHex} /><stop offset="1" stopColor={m.skinHex} stopOpacity=".78" /></linearGradient></defs>
-      <rect width={W} height={H} fill="#EFECE7" />
-      <g fill="url(#tryon-skin)">
-        {legs.map((l, i) => <g key={i}><path d={l.d} /><ellipse cx={l.foot[0]} cy={l.foot[1]} rx={26} ry={15} /></g>)}
-        {arms.map((a, i) => <g key={i}><path d={a.d} /><ellipse cx={a.hand[0]} cy={a.hand[1]} rx={15} ry={24} /></g>)}
-        <path d={torso} stroke="rgba(0,0,0,.12)" strokeWidth="1.2" />
-      </g>
-      <path d={`M ${cx - hip / 2 + 2} ${yH - 34} L ${cx + hip / 2 - 2} ${yH - 34} L ${cx + hip * 0.12} ${yH + 38} L ${cx - hip * 0.12} ${yH + 38} Z`} fill="#B9B4AD" />
-      {!male && <rect x={cx - shoulder * 0.36} y={yS + 58} width={shoulder * 0.72} height={62} rx={15} fill="#B9B4AD" />}
-      <rect x={cx - headR * 0.45} y={yTop + headR * 2.1} width={headR * 0.9} height={Math.max(8, yS - (yTop + headR * 2.1))} rx={9} fill={m.skinHex} />
-      <ellipse cx={cx} cy={yTop + headR * 1.225} rx={headR} ry={headR * 1.225} fill="url(#tryon-skin)" />
-    </g>
-  );
+function fromCatalog(p: CatalogProduct, variant: CatalogVariant | null, colors: Record<string, string> | undefined): FittingItem {
+  const color = variant?.color ?? p.color ?? null;
+  return {
+    key: `c:${p.id}`, source: "catalog", slot: slotOf(p.category), wear: wearOf(p.category, p.subcategory), name: p.productName,
+    brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
+    imageUrl: p.imageUrl ?? null, colorHex: (color && colors?.[color]) || p.colorHex || null, colorName: variant?.colorName ?? p.colorName ?? (color ? label(color) : null),
+    productId: p.id, variantId: variant?.id ?? null,
+    officialUrl: p.source?.productUrl && p.source.productUrl !== "null" ? p.source.productUrl : null, sourceDomain: p.source?.domain && p.source.domain !== "null" ? p.source.domain : null,
+    addedAt: nextTick(),
+  };
 }
-
-/**
- * Camada da prévia 2D recortada pelo alfa da imagem (como o compositor do servidor faz): a foto da peça costuma ter
- * margens transparentes, e encaixar a imagem inteira na caixa deixava a peça menor que o corpo (o jeans virava bermuda).
- */
-const ALPHA_BOX = new Map<string, { x: number; y: number; w: number; h: number; W: number; H: number } | null>();
-function useAlphaBox(src: string) {
-  const [box, setBox] = useState(() => ALPHA_BOX.get(src));
-  useEffect(() => {
-    if (ALPHA_BOX.has(src)) { setBox(ALPHA_BOX.get(src)); return; }
-    let alive = true; const img = new Image(); img.crossOrigin = "anonymous";
-    img.onload = () => {
-      let b: { x: number; y: number; w: number; h: number; W: number; H: number } | null = null;
-      try {
-        const k = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight)); const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
-        const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d", { willReadFrequently: true })!; g.drawImage(img, 0, 0, w, h);
-        const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-        if (x1 >= x0 && y1 >= y0) b = { x: x0 / k, y: y0 / k, w: (x1 - x0 + 1) / k, h: (y1 - y0 + 1) / k, W: img.naturalWidth, H: img.naturalHeight };
-      } catch { b = null; }                                    // imagem de outra origem sem CORS: sem recorte
-      ALPHA_BOX.set(src, b); if (alive) setBox(b);
-    };
-    img.onerror = () => { ALPHA_BOX.set(src, null); if (alive) setBox(null); };
-    img.src = src;
-    return () => { alive = false; };
-  }, [src]);
-  return box;
+function fromWardrobe(e: Entry): FittingItem {
+  const p = e.piece;
+  return {
+    key: `w:${p.id}`, source: "wardrobe", slot: e.slot, wear: (e.wear as FittingItem["wear"]) ?? wearOf(p.category, p.subcategory), name: p.name,
+    brand: p.brandName ? { name: p.brandName, logoUrl: p.brandLogoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
+    imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, colorHex: p.colorHex ?? null, colorName: p.color ? label(p.color) : null, pieceId: p.id, addedAt: nextTick(),
+  };
 }
-function Layer2dImage({ src, x, y, width, height, align, blend }: { src: string; x: number; y: number; width: number; height: number; align: string; blend: boolean }) {
-  const box = useAlphaBox(src); const style = blend ? { mixBlendMode: "multiply" as const, opacity: 0.92 } : undefined;
-  if (!box) return <image href={src} x={x} y={y} width={width} height={height} preserveAspectRatio={align} style={style} />;
-  return (
-    <svg x={x} y={y} width={width} height={height} viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} preserveAspectRatio={align} overflow="hidden">
-      <image href={src} x={0} y={0} width={box.W} height={box.H} style={style} />
-    </svg>
-  );
-}
+const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, colorHex: i.colorHex, model3dUrl: null, defaultImage: !i.imageUrl });
 
-interface RenderResult { imageUrl: string; warnings?: string[]; message?: string | null }
-
-function TryOnInner() {
-  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
-  const { data, loading, error, reload } = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
-  const [worn, setWorn] = useState<Worn>({});
-  const [confirmClear, setConfirmClear] = useState(false); const [fixing, setFixing] = useState<string | null>(null);
+function FittingRoom() {
+  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const tax = useTaxonomy();
+  const { data, error, reload } = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
+  const stores = useApi<{ stores: Store[] }>((signal) => api.get("/api/catalog/stores", { signal }), []);
+  const [items, setItems] = useState<FittingItem[]>([]);
+  const [products, setProducts] = useState<Record<string, CatalogProduct>>({});
+  const [mode, setMode] = useState<EnvironmentMode>("auto");
+  const [light, setLight] = useState<LightMode>("store");
+  const [view, setView] = useState<AvatarView>("front");
+  const [tab, setTab] = useState<Tab>("stores");
+  const [category, setCategory] = useState("");
+  const [store, setStore] = useState<string>(sp.get("marca") ?? "");
+  const [saved, setSaved] = useState<SavedTry[]>([]);
+  const [owned, setOwned] = useState<Record<string, string>>({});
+  const [busyOwn, setBusyOwn] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [status, setStatus] = useState("");
-  const [stage, setStage] = useState<"3d" | "2d">("3d"); const [view3d, setView3d] = useState<AvatarView>("front");
-  const [rendered, setRendered] = useState<RenderResult | null>(null); const [rendering, setRendering] = useState(false);
-  const rackRefs = useRef<Partial<Record<SlotKey, HTMLElement | null>>>({});
-  const byId = useMemo(() => { const m = new Map<string, Entry>(); SLOTS.forEach((s) => (data?.pieces?.[s] ?? []).forEach((e) => m.set(e.piece.id, e))); return m; }, [data]);
-  const slotName: Record<SlotKey, string> = { upper_piece: t("tryOn.slot_upper"), lower_piece: t("tryOn.slot_lower"), shoes_piece: t("tryOn.slot_shoes"), accessory_piece: t("tryOn.slot_accessory") };
+  const canvas = useRef<HTMLCanvasElement | null>(null);
+  const slotName: Record<FittingSlot, string> = { upper_piece: t("tryOn.slot_upper"), lower_piece: t("tryOn.slot_lower"), shoes_piece: t("tryOn.slot_shoes"), accessory_piece: t("tryOn.slot_accessory") };
 
-  // sessão de prova: lembra as quatro escolhas enquanto a pessoa navega (só neste navegador; nada vai para o servidor)
-  useEffect(() => { if (!data) return; const saved = readSession(); const ok: Worn = {}; SLOTS.forEach((s) => { const id = saved[s]; if (id && byId.get(id)?.slot === s) ok[s] = id; }); setWorn(ok); }, [data, byId]);
-  // peças de um look (?scheme=): cada uma no seu lugar
+  const commit = useCallback((next: FittingItem[]) => { setItems(next); write("session", SESSION_KEY, next); }, []);
+
+  // primeira carga: a prova do link (?provar=) vence a da sessão; ?scheme= veste as peças de um look do guarda-roupa
+  const booted = useRef(false);
+  useEffect(() => {
+    if (booted.current || !data) return; booted.current = true;
+    setSaved(read<SavedTry[]>("local", SAVED_KEY, []));
+    const refs = decodeTryOn(sp.get("provar"));
+    if (!refs.length) { setItems(read<FittingItem[]>("session", SESSION_KEY, [])); return; }
+    const wardrobe = new Map(FITTING_SLOTS.flatMap((s) => (data.pieces?.[s] ?? []).map((e) => [e.piece.id, e] as const)));
+    Promise.all(refs.map(async (r) => {
+      if (r.source === "wardrobe") { const e = wardrobe.get(r.id); return e ? fromWardrobe(e) : null; }
+      try { const p = await catalogApi.product(r.id); setProducts((m) => ({ ...m, [p.id]: p })); return fromCatalog(p, p.variants?.find((v) => v.id === r.variantId) ?? null, tax?.colors); } catch { return null; }
+    })).then((list) => { let next: FittingItem[] = []; list.forEach((i) => { if (i) next = wearItem(next, i); }); commit(next); });
+  }, [data, sp, tax, commit]);
   useEffect(() => {
     const s = sp.get("scheme"); if (!s || !data) return;
+    const wardrobe = new Map(FITTING_SLOTS.flatMap((sl) => (data.pieces?.[sl] ?? []).map((e) => [e.piece.id, e] as const)));
     api.get<{ scheme: { items: { wardrobeItemId: string }[] } }>(`/api/schemes/${s}`).then((r) => {
-      const next: Worn = {}; r.scheme.items.forEach((i) => { const e = byId.get(i.wardrobeItemId); if (e) next[e.slot] = e.piece.id; }); setWorn(next); writeSession(next);
+      let next: FittingItem[] = []; r.scheme.items.forEach((i) => { const e = wardrobe.get(i.wardrobeItemId); if (e) next = wearItem(next, fromWardrobe(e)); }); commit(next);
     }).catch(() => undefined);
-  }, [sp, data, byId]);
+  }, [sp, data, commit]);
 
-  // peças mudaram: a imagem gerada deixa de valer
-  useEffect(() => { setRendered(null); }, [worn]);
-  /** RF18.CA03 — imagem do provador no servidor (FASHN quando disponível, compositor local senão); o que faltar vem das peças padrão. */
-  async function renderImage(ids: string[]) {
-    setRendering(true);
-    try { setRendered(await api.post<RenderResult>("/api/try-on/renders", { pieceIds: ids })); }
-    catch (e) { toast.fromError(e); } finally { setRendering(false); }
-  }
-  function choose(e: Entry) {
-    const next = { ...worn, [e.slot]: e.piece.id }; setWorn(next); writeSession(next);
-    setStatus(t("tryOn.vestiu_no_lugar", { name: e.piece.name, slot: slotName[e.slot] }));
-  }
-  function remove(slot: SlotKey) {
-    const next = { ...worn }; delete next[slot]; setWorn(next); writeSession(next); setStatus(t("tryOn.lugar_vazio_status", { slot: slotName[slot] }));
-  }
-  async function savePrefs(patch: { skinTone?: string; build?: string }) { try { await api.put("/api/try-on/preferences", patch); reload(); } catch (e) { toast.fromError(e); } }
-  async function removeBg(id: string) {
-    setFixing(id);
-    try { const r = await api.post<{ ok: boolean; message?: string }>(`/api/pieces/${id}/background-removal`); if (r.ok) { toast.success(t("tryOn.fundo_removido_a_peca_agora")); reload(); } else toast.info(r.message ?? t("tryOn.nao_deu_para_remover_o")); } catch (e) { toast.fromError(e); } finally { setFixing(null); }
-  }
+  const env = useMemo(() => resolveEnvironment(items, mode), [items, mode]);
+  const shown = useMemo(() => visibleItems(items), [items]);
+  const brandsWorn = env.brands;
 
-  if (error instanceof ApiError && error.code === "ACERVO_VAZIO") return <><PageHeader title={t("nav.tryon")} kicker="RF18" /><EmptyState title={t("tryOn.seu_guarda_roupa_ainda_esta")} hint={error.message} action={<Link href="/pieces/new" className="btn btn-primary">{t("common.cadastrar_peca")}</Link>} /></>;
+  function tryOn(item: FittingItem) {
+    commit(wearItem(items, item));
+    setStatus(t("tryOn.provando_status", { name: item.name, slot: slotName[item.slot], marca: item.brand?.name ?? "" }));
+  }
+  function pickProduct(p: CatalogProduct, v: CatalogVariant | null) {
+    setProducts((m) => ({ ...m, [p.id]: p }));
+    tryOn(fromCatalog(p, v ?? p.selectedVariant ?? null, tax?.colors));
+  }
+  function remove(slot: FittingSlot) { commit(removeSlot(items, slot)); setStatus(t("tryOn.lugar_vazio_status", { slot: slotName[slot] })); }
+  function changeVariant(item: FittingItem, v: CatalogVariant) {
+    const p = products[item.productId!]; if (!p) return;
+    commit(items.map((i) => i.key === item.key ? { ...fromCatalog(p, v, tax?.colors), addedAt: i.addedAt } : i));
+  }
+  async function ownIt(item: FittingItem) {
+    if (!item.productId || busyOwn) return;
+    setBusyOwn(item.key);
+    try {
+      const piece = await api.post<PieceView>("/api/pieces/from-catalog", { productId: item.productId, variantId: item.variantId ?? null, visibility: "PRIVATE" });
+      setOwned((o) => ({ ...o, [item.key]: piece.id })); toast.success(t("tryOn.adicionada_ao_guarda_roupa", { name: item.name })); reload();
+    } catch (e) { toast.fromError(e); } finally { setBusyOwn(null); }
+  }
+  function snapshot() {
+    const c = canvas.current; if (!c) return;
+    try {
+      const a = document.createElement("a"); a.href = c.toDataURL("image/png");
+      a.download = `provador-${env.featured.key}.png`; a.click(); toast.success(t("tryOn.foto_salva"));
+    } catch { toast.info(t("tryOn.foto_indisponivel")); }
+  }
+  async function copyLink() {
+    const url = `${window.location.origin}/try-on?provar=${encodeURIComponent(encodeTryOn(items))}`;
+    try { await navigator.clipboard.writeText(url); toast.success(t("tryOn.link_copiado")); } catch { toast.info(url); }
+  }
+  function saveTry() {
+    if (!items.length) return;
+    const title = brandsWorn.length ? brandsWorn.map((b) => b.name).join(" + ") : t("tryOn.prova_sem_marca");
+    const next = [{ id: `${Date.now()}`, title, items, createdAt: Date.now() }, ...saved].slice(0, 8);
+    setSaved(next); write("local", SAVED_KEY, next); toast.success(t("tryOn.prova_salva")); setTab("saved");
+  }
+  function deleteSaved(id: string) { const next = saved.filter((s) => s.id !== id); setSaved(next); write("local", SAVED_KEY, next); }
+
   if (error) return <ErrorState error={error} onRetry={reload} />;
-  if (loading || !data) return <Skeleton className="h-96" />;
-  const m = data.mannequin;
-  const on = SLOTS.map((s) => (worn[s] ? byId.get(worn[s]!) : undefined)).filter((e): e is Entry => !!e);
-  // peça inteira na parte de cima cobre a parte de baixo: a de baixo fica guardada e não é desenhada
-  const fullBody = on.find((e) => e.wear === "FULL_BODY");
-  const shown = fullBody ? on.filter((e) => e.slot !== "lower_piece") : on;
-  // prévia 2D: as peças vestidas + a peça padrão do FashionAI em cada zona vazia (tronco, pernas, pés)
-  const layers2d: Layer2d[] = [
-    ...missingZones(shown.map(toLook3d)).map((z) => ({ id: DEFAULT_PIECES[z].id, src: DEFAULT_PIECES[z].imageUrl!, anchor: ZONE_WEAR[z], wear: ZONE_WEAR[z], blend: false })),
-    ...shown.flatMap((e) => { const src = mediaUrl(e.piece.imageUrl ?? e.piece.thumbnailUrl); return src ? [{ id: e.piece.id, src, anchor: e.anchor, wear: e.wear, blend: !(e.backgroundRemoved || e.piece.defaultImage) }] : []; }),
-  ].sort((a, b) => (WEAR_ORDER[a.wear] ?? 4) - (WEAR_ORDER[b.wear] ?? 4));
-  const avatar = data.avatar ?? null; const identity = data.identity;
+  if (!data) return <Skeleton className="h-96" />;
+  const avatar = data.avatar ?? null;
   const bodyParams = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
-  const skin = m.skinTone ?? "media";
-  const sourceLabel = (src?: string) => src === "observed" ? t("tryOn.fonte_observed") : src === "user" ? t("tryOn.fonte_user") : src === "estimated" ? t("tryOn.fonte_estimated") : t("tryOn.fonte_default");
-  const measureLabel: Record<(typeof MEASURES)[number], string> = { stature: t("tryOn.m_stature"), shoulderW: t("tryOn.m_shoulderW"), chestW: t("tryOn.m_chestW"), waistW: t("tryOn.m_waistW"), hipW: t("tryOn.m_hipW") };
-  const pieceNote = (e: Entry) => e.piece.model3dStatus === "COMPLETED" ? t("tryOn.peca_3d_objeto") : t("tryOn.peca_sem_3d");
+  const pinnedKey = typeof mode === "object" ? mode.pinned : null;
+  const storeList = stores.data?.stores ?? [];
+  const wardrobeCount = FITTING_SLOTS.reduce((n, s) => n + (data.pieces?.[s]?.length ?? 0), 0);
+  const envCaption = env.kind === "neutral" ? t("tryOn.ambiente_neutro_legenda") : env.others.length
+    ? t("tryOn.ambiente_multimarca_legenda", { marca: env.featured.name, outras: env.others.map((o) => o.name).join(", ") })
+    : t("tryOn.ambiente_marca_legenda", { marca: env.featured.name });
+
   return (
     <>
-      <PageHeader title={t("nav.tryon")} kicker="RF18" lead={t("tryOn.lead_slots")} />
-      <div className="grid gap-4 lg:grid-cols-[400px_1fr]">
+      <PageHeader title={t("tryOn.titulo_lojas")} kicker="RF18" lead={t("tryOn.lead_lojas")}
+        actions={<Link href="/mirror" className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>} />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_440px]">
         <div className="grid content-start gap-3">
           <Card pad={false}>
             <div className="flex flex-wrap items-center gap-1.5 px-3 pt-3">
               <Badge tone={avatar ? "thread" : "chalk"}>{avatar ? t("tryOn.seu_avatar_badge") : t("tryOn.referencia_badge")}</Badge>
-              <Badge tone="chalk">{stage === "3d" ? t("tryOn.previa_projetada_badge") : t("tryOn.previa_2d_badge")}</Badge>
+              <Badge tone="chalk">{t("tryOn.previa_projetada_badge")}</Badge>
+              <span className="ml-auto flex items-center gap-1.5 type-caption text-muted" aria-live="polite">
+                {env.kind !== "neutral" && <BrandLogo name={env.featured.name} src={env.featured.logoUrl} size={20} />}{envCaption}
+              </span>
             </div>
-            <div className="tryon-stage" role="region" aria-label={t("tryOn.palco_aria", { n: shown.length })}>
-              {stage === "3d" ? (
-                <div className="h-full w-full">
-                  <AvatarViewer avatar={avatar} sex={data.sex} build={m.build} skinTone={avatar ? null : m.skinTone} body={bodyParams} pieces={shown.map(toLook3d)} view={view3d} framing="full" controls background="#EFECE7" />
-                </div>
-              ) : rendered ? (
-                <img src={mediaUrl(rendered.imageUrl)} alt={t("tryOn.imagem_gerada_alt")} className="h-full w-full object-contain" />
-              ) : (
-                <svg viewBox={`0 0 ${m.width} ${m.height}`} className="h-full w-full" role="img" aria-label={t("tryOn.previa_2d_aria", { n: shown.length })}>
-                  <MannequinBody m={m} />
-                  {layers2d.map((l) => {
-                    const b = m.anchors[l.anchor] ?? m.anchors[l.wear]; if (!b) return null;
-                    return <Layer2dImage key={l.id} src={l.src} x={b.x * m.width} y={b.y * m.height} width={b.w * m.width} height={b.h * m.height} blend={l.blend}
-                      align={l.wear === "SHOES" ? "xMidYMax meet" : l.wear === "ACCESSORY" ? "xMidYMid meet" : "xMidYMin meet"} />;
-                  })}
-                </svg>
-              )}
+            <div className="fitting-stage" role="region" aria-label={t("tryOn.palco_lojas_aria", { n: shown.length, marca: env.featured.name })}
+              style={{ ["--fitting-accent" as string]: env.featured.accent }}>
+              <FittingRoomScene avatar={avatar} sex={data.sex} build={data.mannequin.build} skinTone={avatar ? null : data.mannequin.skinTone} body={bodyParams}
+                pieces={shown.map(toLook3d)} environment={env} light={light} view={view} onCanvas={(c) => { canvas.current = c; }} />
             </div>
             <div className="grid gap-2 p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <SegmentPicker label={t("tryOn.modo")} value={stage} onChange={setStage} options={[{ id: "3d", label: avatar ? t("tryOn.avatar_3d") : t("tryOn.manequim_3d_referencia") }, { id: "2d", label: t("tryOn.previa_2d") }]} />
-                <Button size="sm" variant="ghost" className="ml-auto" disabled={!on.length} onClick={() => setConfirmClear(true)}><FaiIcon id="ACT-24" size={24} decorative />{t("common.limpar")}</Button>
+                <SegmentPicker label={t("tryOn.vista")} value={view} onChange={setView} options={[{ id: "front", label: t("tryOn.vista_frente") }, { id: "right34", label: t("tryOn.vista_tres_quartos") }, { id: "profile", label: t("tryOn.vista_perfil") }, { id: "back", label: t("tryOn.vista_costas") }]} />
+                <SegmentPicker label={t("tryOn.luz")} value={light} onChange={setLight} options={[{ id: "store", label: t("tryOn.luz_loja") }, { id: "daylight", label: t("tryOn.luz_dia") }, { id: "night", label: t("tryOn.luz_noite") }]} />
               </div>
-              {stage === "3d" && <SegmentPicker label={t("tryOn.vista")} value={view3d} onChange={setView3d} options={[{ id: "front", label: t("tryOn.vista_frente") }, { id: "profile", label: t("tryOn.vista_perfil") }, { id: "back", label: t("tryOn.vista_costas") }]} />}
-              {stage === "3d" && <p className="type-caption text-muted">{t("tryOn.girar_dica")}</p>}
-              <p className="type-caption text-muted" role="note">{stage === "3d" ? t("tryOn.nao_e_prova_3d") : t("tryOn.previa_2d_nota")}</p>
-              <p className="type-caption text-muted" role="note">{t("tryOn.padrao_nota")}</p>
-              {stage === "2d" && (
-                <div className="grid gap-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="primary" loading={rendering} disabled={!on.length || rendering} onClick={() => renderImage(on.map((e) => e.piece.id))}>{t("tryOn.gerar_imagem")}</Button>
-                    {rendered && <Button size="sm" variant="ghost" onClick={() => setRendered(null)}>{t("tryOn.voltar_previa")}</Button>}
-                  </div>
-                  <p className="type-caption text-muted">{on.length ? t("tryOn.gerar_imagem_hint") : t("tryOn.gerar_precisa_peca")}</p>
-                  {rendered?.warnings?.length ? <ul className="type-caption text-muted">{rendered.warnings.map((w) => <li key={w}>{w}</li>)}</ul> : null}
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("tryOn.ambiente")}>
+                <span className="type-caption text-muted">{t("tryOn.ambiente")}:</span>
+                <Chip active={mode === "auto"} onClick={() => setMode("auto")}>{t("tryOn.ambiente_auto")}</Chip>
+                {brandsWorn.map((b) => <Chip key={b.key} active={pinnedKey === b.key} onClick={() => setMode(pinnedKey === b.key ? "auto" : { pinned: b.key })} title={t("tryOn.fixar_marca", { marca: b.name })}>
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.accent }} aria-hidden />{b.name}</Chip>)}
+                <Chip active={mode === "neutral"} onClick={() => setMode("neutral")}>{t("tryOn.ambiente_neutro")}</Chip>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" onClick={snapshot}><FaiIcon id="ACT-07" size={20} decorative />{t("tryOn.tirar_foto")}</Button>
+                <Button size="sm" onClick={copyLink} disabled={!items.length}>{t("tryOn.copiar_link")}</Button>
+                <Button size="sm" onClick={saveTry} disabled={!items.length}>{t("tryOn.salvar_prova")}</Button>
+                <Button size="sm" variant="ghost" className="ml-auto" disabled={!items.length} onClick={() => setConfirmClear(true)}><FaiIcon id="ACT-24" size={20} decorative />{t("common.limpar")}</Button>
+              </div>
+              <p className="type-caption text-muted">{t("tryOn.girar_dica")}</p>
+              <p className="type-caption text-muted" role="note">{t("tryOn.previa_lojas_nota")}</p>
             </div>
           </Card>
           <Card>
-            {avatar && identity ? (
-              <>
-                <p className="label">{t("tryOn.identidade")}</p>
-                <p className="type-body-sm">{t("tryOn.manequim_e_seu_avatar")}</p>
-                {!bodyParams && <p className="mt-2 rounded-md border border-line-soft bg-surface-2 p-2 type-caption" role="note">{t("tryOn.corpo_referencia_aviso")}</p>}
-                <div className="fai-list mt-2 type-caption">
-                  <p className="list-row flex items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: identity.skinHex }} />{identity.skinSource === "observed" ? t("tryOn.pele_medida") : t("tryOn.pele_preferencia")}</p>
-                  {MEASURES.map((k) => <p key={k} className="list-row flex items-center justify-between gap-2"><span>{measureLabel[k]}</span><span className={`badge src-${identity.sources[k] ?? "default"}`}>{sourceLabel(identity.sources[k])}</span></p>)}
-                </div>
-                <Link href="/avatar" className="btn btn-sm mt-2"><FaiIcon id="ACT-21" size={20} variant="glyph" decorative />{t("tryOn.ajustar_no_avatar")}</Link>
-              </>
-            ) : (
-              <>
-                <p className="mb-2 type-body-sm">{t("tryOn.sem_avatar_cta")}</p>
-                <Link href="/avatar" className="btn btn-primary btn-sm mb-3"><FaiIcon id="ACT-21" size={20} variant="glyph" decorative />{t("tryOn.criar_avatar")}</Link>
-                <p className="label">{t("tryOn.tom_de_pele_referencia")}</p>
-                <div className="mb-2 flex flex-wrap gap-1.5">{Object.entries(data.skinTones).map(([id, hex]) => <button key={id} type="button" title={label(id)} aria-label={t("tryOn.tom_de_pele", { label: label(id) })} aria-pressed={skin === id} className={`h-7 w-7 rounded-full border-2 ${skin === id ? "border-mark" : "border-line-soft"}`} style={{ background: hex }} onClick={() => savePrefs({ skinTone: id })} />)}</div>
-                <Field label={t("tryOn.porte")} id="build"><Select id="build" value={m.build} onChange={(e) => savePrefs({ build: e.target.value })}>{data.builds.map((b) => <option key={b} value={b}>{t(`tryOn.porte_${b.toLowerCase()}`)}</option>)}</Select></Field>
-              </>
-            )}
-          </Card>
-        </div>
-        <div className="grid content-start gap-4">
-          <Card>
-            <h2 className="type-h3 mb-2">{t("tryOn.vestindo_agora")}</h2>
-            <div className="tryon-slots">
-              {SLOTS.map((s) => { const e = worn[s] ? byId.get(worn[s]!) : undefined; const covered = s === "lower_piece" && !!fullBody && !!e; return (
-                <div key={s} className={`tryon-slot ${e ? "is-filled" : ""}`} data-slot={s}>
-                  <span className="tryon-slot-name">{slotName[s]}</span>
-                  {e ? (
-                    <div className="tryon-slot-body">
-                      <img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl)} alt="" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate type-body-sm font-medium">{e.piece.name}</p>
-                        <p className="type-caption text-muted">{covered ? t("tryOn.coberta_pela_peca_inteira", { name: fullBody!.piece.name }) : pieceNote(e)}</p>
-                        {!e.backgroundRemoved && !e.piece.defaultImage && <p className="type-caption"><span className="text-muted">{t("tryOn.foto_com_fundo")}</span> <Button size="sm" variant="ghost" loading={fixing === e.piece.id} onClick={() => removeBg(e.piece.id)}>{t("tryOn.remover_fundo_curto")}</Button></p>}
-                        {e.piece.model3dStatus !== "COMPLETED" && <Link href={`/pieces/${e.piece.id}`} className="type-caption underline">{t("tryOn.gerar_modelo_3d")}</Link>}
+            <h2 className="type-h3 mb-2">{t("tryOn.provando_agora")}</h2>
+            <ul className="fitting-slots">
+              {FITTING_SLOTS.map((s) => {
+                const i = items.find((x) => x.slot === s); const covered = s === "lower_piece" && !!i && items.some((x) => x.wear === "FULL_BODY");
+                const p = i?.productId ? products[i.productId] : undefined;
+                return (
+                  <li key={s} className={cn("fitting-slot", i && "is-filled")}>
+                    <span className="tryon-slot-name">{slotName[s]}</span>
+                    {i ? (
+                      <div className="fitting-slot-body">
+                        <span className="fitting-slot-thumb" style={{ background: i.colorHex ?? "var(--surface-2)" }}>{i.imageUrl ? <img src={mediaUrl(i.imageUrl) ?? undefined} alt="" /> : null}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-1.5 type-caption text-muted">{i.brand && <BrandLogo name={i.brand.name} src={i.brand.logoUrl} size={16} />}{i.brand?.name ?? t("tryOn.sem_marca")}
+                            <Badge tone={i.source === "catalog" ? "thread" : "chalk"}>{i.source === "catalog" ? t("tryOn.origem_loja") : t("tryOn.origem_guarda_roupa")}</Badge></p>
+                          <p className="truncate type-body-sm font-medium">{i.name}{i.colorName ? ` · ${i.colorName}` : ""}</p>
+                          {covered && <p className="type-caption text-muted">{t("tryOn.coberta_pela_peca_inteira", { name: items.find((x) => x.wear === "FULL_BODY")!.name })}</p>}
+                          {p && (p.variants?.length ?? 0) > 1 && (
+                            <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label={t("tryOn.trocar_cor")}>
+                              {p.variants!.map((v) => <button key={v.id} type="button" className={cn("catalog-swatch", i.variantId === v.id && "is-active")} title={v.colorName ?? v.key} aria-label={v.colorName ?? v.key} aria-pressed={i.variantId === v.id}
+                                onClick={() => changeVariant(i, v)} style={{ background: tax?.colors?.[v.color ?? ""] ?? "var(--surface-3)" }} />)}
+                            </div>
+                          )}
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 type-caption">
+                            {i.officialUrl && <a href={i.officialUrl} target="_blank" rel="noreferrer noopener" className="underline">{t("tryOn.ver_na_loja", { loja: i.sourceDomain ?? i.brand?.name ?? "" })}</a>}
+                            {i.source === "catalog" && (owned[i.key]
+                              ? <Link href={`/pieces/${owned[i.key]}`} className="underline">{t("tryOn.ja_no_guarda_roupa")}</Link>
+                              : <button type="button" className="underline" disabled={busyOwn === i.key} onClick={() => ownIt(i)}>{busyOwn === i.key ? t("tryOn.salvando") : t("tryOn.ja_tenho")}</button>)}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" aria-label={t("tryOn.remover_de", { name: i.name, slot: slotName[s] })} onClick={() => remove(s)}>{t("tryOn.remover")}</Button>
                       </div>
-                      <div className="flex shrink-0 flex-col gap-1">
-                        <Button size="sm" onClick={() => rackRefs.current[s]?.scrollIntoView({ behavior: "smooth", block: "start" })}>{t("tryOn.trocar")}</Button>
-                        <Button size="sm" variant="ghost" aria-label={t("tryOn.remover_de", { name: e.piece.name, slot: slotName[s] })} onClick={() => remove(s)}>{t("tryOn.remover")}</Button>
-                      </div>
-                    </div>
-                  ) : <p className="type-caption text-faint">{t("tryOn.slot_vazio", { slot: slotName[s].toLowerCase() })}</p>}
-                </div>); })}
-            </div>
+                    ) : <p className="type-caption text-faint">{t("tryOn.slot_vazio_lojas")}</p>}
+                  </li>
+                );
+              })}
+            </ul>
             <p className="sr-only" role="status" aria-live="polite">{status}</p>
           </Card>
-          {SLOTS.map((s) => { const list = data.pieces?.[s] ?? []; return (
-            <section key={s} ref={(el) => { rackRefs.current[s] = el; }} aria-label={t("tryOn.guarda_roupa_lugar", { slot: slotName[s] })} className="scroll-mt-20">
-              <h2 className="type-h3 mb-2">{slotName[s]} <span className="type-caption text-muted">· {list.length}</span></h2>
-              {list.length === 0 ? <p className="type-caption text-muted">{t("tryOn.nenhuma_peca_neste_lugar")} <Link href="/pieces/new" className="underline">{t("common.cadastrar_peca")}</Link></p> : (
-                <div className="flex flex-wrap gap-2">{list.map((e) => { const isOn = worn[s] === e.piece.id; return (
-                  <div key={e.piece.id} className="grid gap-1">
-                    <button type="button" aria-pressed={isOn} title={isOn ? t("tryOn.vestida_toque_para_tirar") : t("tryOn.toque_para_vestir")}
-                      onClick={() => (isOn ? remove(s) : choose(e))} className={`tryon-rack-item ${isOn ? "is-worn" : ""}`}>
-                      <img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl)} alt="" className="aspect-square w-full object-contain" draggable={false} />
-                      <span className="block truncate type-caption">{e.piece.name}</span>
-                      {isOn && <span className="tryon-worn-flag">{t("tryOn.vestida")}</span>}
+        </div>
+        <div className="grid content-start gap-3">
+          <SegmentPicker label={t("tryOn.de_onde_provar")} value={tab} onChange={setTab}
+            options={[{ id: "stores", label: t("tryOn.aba_lojas") }, { id: "wardrobe", label: t("tryOn.aba_guarda_roupa", { n: wardrobeCount }) }, { id: "saved", label: t("tryOn.aba_salvas", { n: saved.length }) }]} />
+          {tab === "stores" && (
+            <Card>
+              <p className="label">{t("tryOn.lojas_em_destaque")}</p>
+              {stores.loading ? <Skeleton className="h-16" /> : storeList.length ? (
+                <div className="fitting-stores" role="group" aria-label={t("tryOn.lojas_em_destaque")}>
+                  {storeList.map((s) => (
+                    <button key={s.brandId} type="button" className={cn("fitting-store", store === s.name && "is-active")} aria-pressed={store === s.name}
+                      onClick={() => setStore(store === s.name ? "" : s.name)}>
+                      <BrandLogo name={s.name} src={s.logoUrl} size={32} shape="square" />
+                      <span className="fitting-store-name">{s.name}</span>
+                      <span className="type-caption text-muted">{t("tryOn.n_produtos", { n: s.catalogProducts })}</span>
                     </button>
-                    <Link href={`/pieces/${e.piece.id}`} className="type-caption text-muted underline">{t("tryOn.revisar_categoria")}</Link>
-                  </div>); })}</div>
+                  ))}
+                </div>
+              ) : <p className="type-caption text-muted">{t("tryOn.sem_lojas")}</p>}
+              <p className="label mt-3">{t("tryOn.o_que_provar")}</p>
+              <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label={t("tryOn.o_que_provar")}>
+                <Chip active={!category} onClick={() => setCategory("")}>{t("tryOn.tudo")}</Chip>
+                {CATEGORY_CARDS.map((c) => <Chip key={c.id} active={category === c.id} onClick={() => setCategory(category === c.id ? "" : c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}
+              </div>
+              <CatalogSearch key={store} initial={{ brand: store }} category={category} browse onPick={pickProduct}
+                pickLabel={t("tryOn.provar_peca")} noResultHint={t("tryOn.sem_resultado_dica")} />
+            </Card>
+          )}
+          {tab === "wardrobe" && (
+            <Card>
+              <p className="mb-3 type-caption text-muted">{t("tryOn.combinar_guarda_roupa_dica")}</p>
+              {wardrobeCount === 0 ? <p className="type-body-sm">{t("tryOn.guarda_roupa_vazio")} <Link href="/pieces/new" className="underline">{t("common.cadastrar_peca")}</Link></p> : FITTING_SLOTS.map((s) => {
+                const list = data.pieces?.[s] ?? []; if (!list.length) return null;
+                return (
+                  <section key={s} className="mb-3" aria-label={t("tryOn.guarda_roupa_lugar", { slot: slotName[s] })}>
+                    <h3 className="type-body-sm font-medium mb-1.5">{slotName[s]} <span className="type-caption text-muted">· {list.length}</span></h3>
+                    <div className="flex flex-wrap gap-2">{list.map((e) => { const on = items.some((i) => i.key === `w:${e.piece.id}`); return (
+                      <button key={e.piece.id} type="button" aria-pressed={on} onClick={() => (on ? remove(s) : tryOn(fromWardrobe(e)))} className={cn("tryon-rack-item", on && "is-worn")}>
+                        <img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl) ?? undefined} alt="" className="aspect-square w-full object-contain" draggable={false} />
+                        <span className="block truncate type-caption">{e.piece.name}</span>
+                        {on && <span className="tryon-worn-flag">{t("tryOn.vestida")}</span>}
+                      </button>); })}</div>
+                  </section>
+                );
+              })}
+            </Card>
+          )}
+          {tab === "saved" && (
+            <Card>
+              {!saved.length ? <p className="type-body-sm text-muted">{t("tryOn.nenhuma_prova_salva")}</p> : (
+                <ul className="grid gap-2">
+                  {saved.map((s) => (
+                    <li key={s.id} className="fitting-saved">
+                      <div className="flex -space-x-2">{s.items.slice(0, 4).map((i) => <span key={i.key} className="fitting-slot-thumb is-small" style={{ background: i.colorHex ?? "var(--surface-2)" }}>{i.imageUrl ? <img src={mediaUrl(i.imageUrl) ?? undefined} alt="" /> : null}</span>)}</div>
+                      <div className="min-w-0 flex-1"><p className="truncate type-body-sm font-medium">{s.title}</p><p className="type-caption text-muted">{t("tryOn.n_pecas", { n: s.items.length })} · {new Date(s.createdAt).toLocaleDateString()}</p></div>
+                      <Button size="sm" onClick={() => { commit(s.items.map((i) => ({ ...i, addedAt: nextTick() }))); setStatus(t("tryOn.prova_vestida", { title: s.title })); }}>{t("tryOn.vestir_de_novo")}</Button>
+                      <Button size="sm" variant="ghost" aria-label={t("tryOn.apagar_prova", { title: s.title })} onClick={() => deleteSaved(s.id)}>{t("tryOn.remover")}</Button>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </section>); })}
-          {(data.needsReview?.length ?? 0) > 0 && (
-            <section aria-label={t("tryOn.precisa_revisao")}>
-              <h2 className="type-h3 mb-1">{t("tryOn.precisa_revisao")}</h2>
-              <p className="mb-2 type-caption text-muted">{t("tryOn.precisa_revisao_hint")}</p>
-              <div className="flex flex-wrap gap-2">{data.needsReview!.map((e) => <Link key={e.piece.id} href={`/pieces/${e.piece.id}`} className="tryon-rack-item"><img src={mediaUrl(e.piece.thumbnailUrl ?? e.piece.imageUrl)} alt="" className="aspect-square w-full object-contain" /><span className="block truncate type-caption">{e.piece.name}</span></Link>)}</div>
-            </section>
+            </Card>
           )}
         </div>
       </div>
-      <Dialog open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_manequim")}
-        footer={<><Button onClick={() => setConfirmClear(false)}>{t("common.cancel")}</Button><Button variant="primary" onClick={() => { setWorn({}); writeSession({}); setConfirmClear(false); toast.info(t("tryOn.manequim_limpo_suas_pecas_continuam")); }}>{t("common.limpar")}</Button></>}>
-        <p className="type-body">{t("tryOn.todas_as_peca_s_saem", { onCount: on.length })}</p>
+      <Dialog open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_provador")}
+        footer={<><Button onClick={() => setConfirmClear(false)}>{t("common.cancel")}</Button><Button variant="primary" onClick={() => { commit([]); setConfirmClear(false); toast.info(t("tryOn.provador_limpo")); }}>{t("common.limpar")}</Button></>}>
+        <p className="type-body">{t("tryOn.todas_saem_do_provador", { n: items.length })}</p>
       </Dialog>
     </>
   );
 }
-export default function TryOnPage() { return <RequireAuth><Suspense><TryOnInner /></Suspense></RequireAuth>; }
+export default function TryOnPage() { return <RequireAuth><Suspense><FittingRoom /></Suspense></RequireAuth>; }

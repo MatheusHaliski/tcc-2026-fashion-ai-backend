@@ -1,0 +1,17 @@
+{
+ "_comment": "Marcas SÓ de QA no catálogo global (catalog_origin = DEMO). Nomes fictícios: nada que se confunda com marca real. O reset de usuários NÃO as apaga; só reset_demo_catalog.py, e só sem referências.",
+ "brands": [
+  {
+   "fixtureKey": "BRAND_CATALOG_MAISON_DEMO",
+   "name": "Maison Demo",
+   "slug": "maison-demo",
+   "website": "https://example.test/maison-demo"
+  },
+  {
+   "fixtureKey": "BRAND_CATALOG_ATELIER_EXEMPLO",
+   "name": "Atelier Exemplo",
+   "slug": "atelier-exemplo",
+   "website": "https://example.test/atelier-exemplo"
+  }
+ ]
+}

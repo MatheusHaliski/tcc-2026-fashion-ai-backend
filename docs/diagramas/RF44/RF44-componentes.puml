@@ -1,0 +1,68 @@
+@startuml RF44_Componentes
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js · React Three Fiber)" {
+  component "brands/[slug] — aba GUARDA_ROUPA\n(WardrobeCreatorTab para o dono,\nRoomStore compact para visitantes)" as FE0
+  component "points — RoomStore\n(loja do quarto, try-on, compra, aplicar)" as FE1
+  component "room — RoomScene\n(acabamentos aplicados, placa de logo)" as FE2
+  component "background-studio.tsx\n(catálogo de auras/materiais/skins)" as FE3 #FAFAFA
+}
+package "fai-web · controllers" {
+  [RoomCreatorController] as RCC
+  [HighlightsController\n(/api/points/shop, /api/me/room-inventory)] as HC
+  [RoomController] as RC
+  [BackgroundController] as BGC #FAFAFA
+  [<<planejado>>\nvenda de itens do Background Studio] as PLAN #FFF5F8
+}
+package "fai-application · services" {
+  [WardrobeCreatorService\n(options, save, blocker, availability, view)] as WCS
+  [FaiPointsService\n(shop, tryOn, buy, apply)] as FPS
+  [RoomService\n(compatibleModules, applyFinish)] as RS
+  [FlairService.sellerActive] as FS
+  [MediaService] as MED
+  [BackgroundStudioService\n(catalog, recommend)] as BSS #FAFAFA
+}
+package "fai-infrastructure · adapters" {
+  [RoomCatalogItemRepository\nRoomInventoryItemRepository\nFaiPointsLedgerEntryRepository\nRoomLayoutRepository\nBrandProfileRepository\nCelebrityProfileRepository\nSealRepository\nSealBondRepository\nUserRepository\nAssetPresetRepository] as REPOS
+  [LocalFileMediaStorage /\nS3MediaStorageAdapter\n(MediaStoragePort)] as STOR
+}
+database "MySQL · fashionai_app\n• room_catalog\n• room_inventory\n• fai_points_ledger\n• room_layouts\n• brand_profiles\n• celebrity_profiles\n• seals\n• seal_bonds\n• users\n• asset_presets" as DB
+
+FE0 --> RCC : chama /api/room-creator/**
+FE0 --> HC : chama GET /api/points/shop
+FE1 --> HC : chama shop, try-on, purchase, apply
+FE2 --> RC : lê GET /api/me/room
+FE3 --> BGC : lê GET /api/backgrounds/catalog
+RCC --> WCS : chama
+HC --> FPS : chama
+RC --> RS : chama
+BGC --> BSS : chama
+WCS --> MED : grava logo/arte
+WCS --> FS : checa criador ativo
+WCS --> REPOS : grava room_catalog
+FPS --> WCS : blocker / view
+FPS --> RS : applyFinish
+FPS --> REPOS : grava fai_points_ledger,\nroom_inventory
+RS --> REPOS : grava room_layouts
+BSS --> REPOS : lê asset_presets
+MED --> STOR : grava
+REPOS --> DB : JPA/Flyway
+PLAN ..> BGC : não implementado —\nconforme Trello
+PLAN ..> BSS : não implementado —\nconforme Trello
+note bottom of PLAN : o título do card inclui itens do Background Studio;\nhoje só blocos/guarda-roupas (room_catalog) são vendidos.\nCriação do bloco 3D: ver RF39. Pontos e níveis: ver RF35.
+@enduml

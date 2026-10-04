@@ -5,4 +5,8 @@ import java.util.UUID;
 /** Cassandra — inbox de notificações por destinatário, com TTL de 90 dias (RF3.CA37). */
 public interface NotificationProjectionPort {
     void appendNotification(UUID recipientUserId, UUID notificationId);
+
+    /** Apaga a caixa de notificações projetada do usuário (reset das contas de teste). */
+    default void purgeUser(UUID userId) {
+    }
 }

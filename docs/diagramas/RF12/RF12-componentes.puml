@@ -1,0 +1,75 @@
+@startuml RF12_Componentes
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/photos/page.tsx\n+ infinite-sentinel.tsx · detail-modal.tsx" as FE0
+  component "photo-editor.tsx\n(Editor Canvas 2D — RF15)" as FE1
+  component "multi-piece-review.tsx\nMultiPieceUpload · MultiPieceReview" as FE2
+  component "<<planejado>>\nentrada de lote (várias fotos)\nnuma rota do app" as FE3 #FFF5F8
+}
+package "fai-web · controllers" {
+  [PhotoController\n/api/me/photos · insights · curation · timeline\n/api/photos/{id} · bulk-deletion · file · edits · key-moment] as PhotoController
+  [WardrobeController\n/api/pieces/analysis/batch · /analysis/multi\n/analysis/multi/{draftId}/pieces · ai-image\n/api/pieces · /api/pieces/batch] as WardrobeController
+}
+package "fai-application · services" {
+  [PhotoService] as PhotoService
+  [WardrobeService\n(analyze · analyzeBatch · create · createBatch)] as WardrobeService
+  [MultiPieceService\n(detect · pieceDraft · recreate · aiPieceDraft)] as MultiPieceService
+  [MediaService\n(register · retire)] as MediaService
+  [AiEngine (RF24)\nPHOTO_CURATOR · MULTI_PIECE_DETECTOR\nFLAT_LAY_STANDARDIZER · CONTENT_MODERATOR\nPIECE_IMAGE_RECREATOR] as AiEngine
+  [MediaStoragePort] as MediaPort #FAFAFA
+}
+package "fai-domain · repositórios JPA" {
+  [PhotoRepository\nPipelineJobRepository\nWardrobeItemRepository\nQualityScoreRepository] as REPOS
+}
+package "fai-infrastructure · adapters" {
+  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+  [Provedores de visão / imagem\n(ai-providers)] as Prov
+}
+database "MySQL · fashionai_app\n• photos\n• pipeline_jobs\n• wardrobe_items\n• quality_scores" as DB
+cloud "S3 / storage de mídia\n(users/{id}/drafts · pieces)" as C_s3
+
+FE0 --> PhotoController : galeria · excluir · baixar · curadoria
+FE0 --> FE1 : editar foto
+FE1 --> PhotoController : POST edits
+FE2 --> WardrobeController : analysis/multi · pieces
+FE3 ..> WardrobeController : analysis/batch · pieces/batch
+PhotoController --> PhotoService : chama
+WardrobeController --> WardrobeService : chama
+WardrobeController --> MultiPieceService : chama
+PhotoService --> WardrobeService : useDefaultImageAfterPhotoDeletion
+PhotoService --> AiEngine : local(PHOTO_CURATOR)
+MultiPieceService --> AiEngine : detector · flat lay · moderação · recriação
+WardrobeService --> AiEngine : análise da peça
+WardrobeService --> MediaService : register(WARDROBE_ITEM)
+PhotoService --> MediaService : register(EDITOR)
+MediaService ..> MediaPort
+PhotoService --> REPOS : lê/grava
+WardrobeService --> REPOS : grava
+MultiPieceService --> REPOS : grava pipeline_jobs
+AiEngine ..> Prov
+MediaPort <.. S3
+REPOS --> DB : JPA/Flyway
+S3 --> C_s3 : put/get
+note bottom of FE3
+  não implementado — conforme Trello:
+  POST /api/pieces/analysis/batch e /api/pieces/batch
+  existem no backend, mas nenhuma tela os chama;
+  MultiPieceUpload também não está montado em rota
+end note
+@enduml

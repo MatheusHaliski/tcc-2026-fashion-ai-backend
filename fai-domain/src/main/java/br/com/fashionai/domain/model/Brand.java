@@ -1,6 +1,7 @@
 package br.com.fashionai.domain.model;
 
 import br.com.fashionai.domain.model.enums.BrandSource;
+import br.com.fashionai.domain.model.enums.CatalogOrigin;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,6 +43,14 @@ public class Brand extends VersionedAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private BrandSource source = BrandSource.SEEDED;
+
+    /** Origem no catálogo global (V30): o reset de usuários demo NUNCA apaga marca; DEMO só sai pelo reset de catálogo. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "catalog_origin", nullable = false, length = 20)
+    private CatalogOrigin catalogOrigin = CatalogOrigin.REAL;
+
+    @Column(name = "fixture_key", length = 80, unique = true)
+    private String fixtureKey;
 
     @Column(name = "source_confidence", precision = 5, scale = 4)
     private BigDecimal sourceConfidence;

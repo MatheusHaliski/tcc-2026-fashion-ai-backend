@@ -172,7 +172,7 @@ for line in [
     "Seleção: todas as 100 fotos das partições de validação e teste com rótulo humano de peça (camiseta, polo, tênis, boné, jaqueta, jeans…) e de logo ou marca.",
     "Rótulos esperados (tipo, cor, marca, classe): feitos à mão, olhando cada foto. 11 fotos foram excluídas (aba Excluídas).",
     "Classe A: marca de moda visível. B: logo de outra entidade (time, empresa, evento). C: sem marca. D: logo que o rotulador não reconheceu.",
-    "RF4 atual: POST /api/pieces/analysis num backend local isolado, com a IA remota desligada. Em produção a análise usa IA de visão; "
+    "RF4 atual: POST /api/pieces/analysis/batch num backend local isolado, com a IA remota desligada. Em produção a análise usa IA de visão; "
     "esse caminho não foi executado aqui para não usar as chaves de produção sem autorização.",
     "Pipeline proposto: scripts/logo-eval/pipeline.py. OCR RapidOCR (Apache-2.0) e CLIP ViT-B/32 em ONNX (MIT), rodando na máquina, em 14 recortes por foto.",
     "Regra: texto lido confirma a marca; símbolo só sugere ('Possível marca: X — confirmar') e precisa vencer com folga.",

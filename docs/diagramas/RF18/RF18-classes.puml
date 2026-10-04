@@ -1,0 +1,118 @@
+@startuml RF18_Classes
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — tipos do provador (frontend) e entidades JPA usadas
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+package "lib/tryon/fitting-room.ts" {
+  class FittingItem {
+    +key: string
+    +source: "catalog" | "wardrobe"
+    +slot: FittingSlot
+    +wear: Wear
+    +name: string
+    +brand: FittingBrand
+    +imageUrl, colorHex, colorName
+    +productId, variantId, pieceId
+    +officialUrl, sourceDomain
+    +addedAt: number
+  }
+  class FittingBrand {
+    +name: string
+    +slug: string
+    +logoUrl: string
+  }
+  class BrandEnvironment {
+    +key, name, logoUrl
+    +style: RoomStyle
+    +motif: WallMotif
+    +wall, floor, accent, ink
+    +curated: boolean
+  }
+  class ResolvedEnvironment {
+    +kind: neutral | brand | multibrand
+    +featured: BrandEnvironment
+    +others: BrandEnvironment[0..3]
+    +brands: BrandEnvironment[]
+  }
+  class "funções" as F <<module>> {
+    +wearItem(items, item)
+    +visibleItems(items)
+    +resolveEnvironment(items, mode)
+    +environmentFor(brand)
+    +encodeTryOn(items) / decodeTryOn(raw)
+  }
+  enum FittingSlot {
+    upper_piece
+    lower_piece
+    shoes_piece
+    accessory_piece
+  }
+  enum Wear {
+    TOP
+    OUTERWEAR
+    BOTTOM
+    FULL_BODY
+    SHOES
+    ACCESSORY
+  }
+  enum RoomStyle {
+    arena
+    heritage
+    gallery
+    street
+    boutique
+    atelier
+  }
+  enum LightMode {
+    store
+    daylight
+    night
+  }
+}
+package "fai-domain · model" {
+  class CatalogProduct {
+    +brandId: UUID
+    +category, subcategory
+    +productName, color, colorName
+    +officialProductUrl, sourceDomain
+    +description, designJson
+  }
+  class CatalogVariant {
+    +productId: UUID
+    +color, colorName, variantCode
+  }
+  class WardrobeItem {
+    +category, subcategory, brandName
+    +catalogProductId: UUID
+    +catalogVariantId: UUID
+    +imageOrigin: ImageOrigin
+  }
+  class UserAvatar3d
+  class Brand {
+    +name, slug, logoUrl
+  }
+}
+FittingItem --> FittingSlot
+FittingItem --> Wear
+FittingItem --> FittingBrand
+ResolvedEnvironment --> "1..*" BrandEnvironment
+BrandEnvironment --> RoomStyle
+F ..> FittingItem
+F ..> ResolvedEnvironment
+FittingItem ..> CatalogProduct : source = catalog
+FittingItem ..> WardrobeItem : source = wardrobe
+CatalogVariant "*" --> "1" CatalogProduct
+CatalogProduct "*" --> "1" Brand
+WardrobeItem ..> CatalogProduct : por referência (Já tenho)
+note bottom of BrandEnvironment
+  10 marcas do seed com tema escolhido à mão;
+  as demais: tema estável derivado do nome
+end note
+@enduml

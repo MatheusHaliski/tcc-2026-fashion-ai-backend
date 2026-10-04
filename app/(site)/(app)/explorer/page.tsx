@@ -15,7 +15,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { HypeTrendingPanel } from "@/components/hype/hype-trending";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
-interface BrandCard { userId?: string; slug?: string; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
+interface BrandCard { userId?: string | null; slug?: string; /** RF47 · marca que existe só no catálogo global (sem perfil) */ catalog?: boolean; catalogProducts?: number; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
 interface Brands { brands: BrandCard[]; countries?: string[]; categories?: string[]; seasons?: string[]; }
 interface Insights { rankings: Record<string, { label: string; value: number; hex?: string }[]>; aiInsight?: string; explanation?: unknown; fallbackUsed?: boolean; note?: string; }
 const BAND_LABEL: Record<string, string> = { get DESPRETENSIOSO() { return tr("explorer.despretensioso_0_14"); }, get EM_CONSTRUCAO() { return tr("explorer.em_construcao_15_29"); }, get NOTADO() { return tr("explorer.notado_30_49"); }, get COM_ESTILO() { return tr("explorer.com_estilo_50_69"); }, get MUITO_ESTILOSO() { return tr("explorer.muito_estiloso_70_84"); }, get ARRASANDO_NO_LOOK() { return tr("explorer.arrasando_no_look_85_95"); }, get ICONE_DE_ESTILO() { return tr("explorer.icone_de_estilo_96"); } };
@@ -104,7 +104,8 @@ function Explorer() {
               <p aria-label={t("explorer.de_5_estrelas", { value: b.stars ?? 1 })} className="text-[13px] text-chalk">{"★".repeat(b.stars ?? 1)}<span className="text-line">{"★".repeat(5 - (b.stars ?? 1))}</span></p>
               {b.colors?.length ? <p className="mt-1 flex gap-1">{b.colors.map((c) => <span key={c.color} title={label(c.color)} className="h-3.5 w-3.5 rounded-full border border-line-soft" style={{ background: c.hex }} />)}</p> : null}
               {b.seasons?.length ? <p className="mt-1 type-caption text-muted">{b.seasons.map((s) => label(s)).join(" · ")}</p> : null}
-              <div className="mt-2 flex gap-2">{b.slug && <Link href={`/brands/${b.slug}`} className="btn btn-sm">{t("common.ver_perfil")}</Link>}{b.storeUrl && <a href={b.storeUrl} target="_blank" rel="noreferrer" className="btn btn-sm">{t("explorer.loja")}</a>}</div>
+              {b.catalog && <Badge tone="thread" className="mt-1">{t("explorer.catalogo_n_produtos", { count: b.catalogProducts ?? 0 })}</Badge>}
+              <div className="mt-2 flex gap-2">{b.slug && !b.catalog && <Link href={`/brands/${b.slug}`} className="btn btn-sm">{t("common.ver_perfil")}</Link>}{b.catalog && <Link href={`/pieces/new?mode=catalog&brand=${encodeURIComponent(b.name)}`} className="btn btn-sm btn-primary">{t("explorer.buscar_pecas")}</Link>}{b.storeUrl && <a href={b.storeUrl} target="_blank" rel="noreferrer" className="btn btn-sm">{t("explorer.loja")}</a>}</div>
             </Card>))}</div>
         )}
       </>)}

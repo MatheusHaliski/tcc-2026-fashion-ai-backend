@@ -1,0 +1,102 @@
+@startuml RF26_Atividades
+title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba "Explorador Global"\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+start
+:Abre a aba Explorar (/explorer);
+:Escolhe a sub-aba do Explorador Global;
+if (Qual sub-aba?) then (Painel global)
+  :Ajusta filtros: estação, cor, faixa de hype;
+  |Frontend|
+  :GET /api/explorer/global?country&season&color&hypeBand;
+  |Backend|
+  :ExplorerService.globalPanel valida filtros\n(ESTACAO_INVALIDA / COR_INVALIDA / FAIXA_INVALIDA → 400);
+  |Bancos-serviços|
+  :AnalyticsQueryPort: schemesByCountry, piecesByCountry,\ncountryColors, colorRanking (agregados MySQL);
+  |Backend|
+  :Agrupa por User.country do dono\n(nenhum campo de região em peça/esquema — CA04);
+  :Marca sufficient = total >= MIN_DATA (3)\ne cor dominante por país;
+  note right
+    CA01: um ponto luminoso por país
+    com dados suficientes; intensidade =
+    hype médio dos esquemas públicos.
+  end note
+  |Frontend|
+  :Renderiza Globe (components/globe.tsx)\n+ lista de países com badge "poucos dados";
+  |Pessoa|
+  if (Toca um país?) then (sim)
+    |Frontend|
+    :GET /api/explorer/global?country=XX;
+    |Backend|
+    :Adiciona selected: hypeBySeason(país) + topColors(país, 5);
+    |Frontend|
+    :Mostra painel do país selecionado;
+  else (não)
+  endif
+elseif (Buscar marcas & lojas) then
+  |Pessoa|
+  :Digita termo e filtra país, categoria,\ncor, estação, hype mínimo, ordenação;
+  |Frontend|
+  :GET /api/explorer/brands?term&country&category&sort&color&season&hypeMin;
+  |Backend|
+  :ExplorerService.brandsAndStores lê\nBrandProfile APROVADO (CA02);
+  |Bancos-serviços|
+  :brandFacets + brandUsage (cores, estações, peças, looks com selo);
+  |Backend|
+  :Filtra e ordena os cards por hypeScore;
+  |Frontend|
+  :Grade de perfis BRAND com logo, contadores e paleta;
+  |Pessoa|
+  :Toca um card → abre o perfil da marca (RF14);
+else (Insights globais)
+  |Frontend|
+  :GET /api/explorer/insights;
+  |Backend|
+  :ExplorerService.insights monta rankings:\ntopBrands, hypeBySeason, topColors, hypeByColor,\nhypeByBrand, topCountries;
+  if (Pessoa autenticada?) then (sim)
+    |Bancos-serviços|
+    :AiEngine.text(INSIGHT_GENERATOR) — ver RF24;
+    |Backend|
+    if (IA respondeu?) then (sim)
+      :aiInsight = texto da IA (até 400 chars);
+    else (não / fallback)
+      :aiInsight = LocalAdvisors.insightText (fallbackUsed=true);
+    endif
+  else (não)
+    :aiInsight = leitura local\n("faça login para a leitura da IA");
+  endif
+  |Frontend|
+  :Rankings em barras + leitura textual;
+endif
+|Pessoa|
+:Lê tendências agregadas (sem dados pessoais);
+note right
+  <<planejado>> filtros por clima e gênero do título
+  do Trello: não implementados — o código filtra por
+  estação, cor, faixa de hype, país e categoria.
+end note
+stop
+@enduml

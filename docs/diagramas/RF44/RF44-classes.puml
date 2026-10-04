@@ -1,0 +1,184 @@
+@startuml RF44_Classes
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+  +status: AccountStatus
+  .. +campos ..
+}
+class RoomCatalogItem {
+  +sku: String
+  +name: String
+  +kind: String
+  +slotType: String
+  +moldId: String
+  +material: String
+  +colorName: String
+  +finishJson: String
+  +bundleJson: String
+  +logoUrl: String
+  +artUrl: String
+  +labelText: String
+  +sealId: UUID
+  +rarity: String
+  +pricePoints: int
+  +requiredLevel: String
+  +stockLimit: Integer
+  +soldCount: int
+  +perUserLimit: Integer
+  +availableFrom: Instant
+  +availableUntil: Instant
+  +requiresSeal: boolean
+  +active: boolean
+  +creatorUserId: UUID
+  +maisonBrandUserId: UUID
+  +version: Long
+}
+class RoomInventoryItem {
+  +id: UUID
+  +userId: UUID
+  +sku: String
+  +serial: Integer
+  +source: String
+  +appliedModule: String
+  +acquiredAt: Instant
+}
+class FaiPointsLedgerEntry {
+  +userId: UUID
+  +delta: int
+  +actionCode: String
+  +refType: String
+  +refId: String
+  +idempotencyKey: String
+  +countsLifetime: boolean
+}
+class RoomLayout {
+  +user: User
+  +level: String
+  +modulesJson: String
+}
+class Seal {
+  +owner: User
+  +name: String
+  +status: SealStatus
+  +availableFrom: Instant
+  +availableUntil: Instant
+}
+class SealBond {
+  +targetOwner: User
+  +requestedBy: User
+  +seal: Seal
+  +status: SealBondStatus
+  +expiresAt: Instant
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +approvalStatus: ApprovalStatus
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +avatarUrl: String
+  +verificationStatus: ApprovalStatus
+}
+class AssetPreset {
+  +id: String
+  +kind: AssetKind
+  +label: String
+  +presetGroup: String
+  +staticUrl: String
+  +animatedUrl: String
+  +paletteJson: String
+  +status: String
+}
+class "<<planejado>>\nBackgroundStudioStoreItem" as BSI #FFF5F8 {
+  +creatorUserId: UUID
+  +presetId: String
+  +pricePoints: int
+  +stockLimit: Integer
+}
+}
+package "fai-domain · enums" {
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+}
+enum AssetKind {
+  CHROME_BACKGROUND
+  AURA_PRESET
+  AURA_VARIANT
+  MATERIAL
+  AURA_MATERIAL_STATIC
+  AURA_MATERIAL_ANIMATED
+  AURA_MATERIAL_MOSAIC
+  GRADIENT_AURA
+  SEASONAL
+  CARD_SKIN
+}
+}
+package "fai-application · service" {
+class WardrobeCreatorService {
+  +options(user): Map
+  +save(user, sku, ItemForm): Map
+  +delete(user, sku)
+  +mine(user): Map
+  +uploadArt(user, bytes, kind): Map
+  +{static} availability(item, now): String
+  +hasSeal(buyer, item): boolean
+  +blocker(buyer, item): String
+  +sellerActive(item): boolean
+}
+class FaiPointsService {
+  +shop(user): List<Map>
+  +tryOn(user, sku, moduleId): Map
+  +buy(user, sku): Map
+  +apply(user, inventoryId, moduleId): Map
+}
+}
+RoomCatalogItem ..> User : creatorUserId
+RoomCatalogItem ..> Seal : sealId
+RoomInventoryItem ..> RoomCatalogItem : sku
+RoomInventoryItem ..> User : userId
+FaiPointsLedgerEntry ..> User : userId
+FaiPointsLedgerEntry ..> RoomCatalogItem : refType=SKU, refId
+RoomLayout "*" --> "1" User : user
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : targetOwner
+SealBond "*" --> "1" User : requestedBy
+BrandProfile "1" --> "1" User : owner
+CelebrityProfile "1" --> "1" User : owner
+User --> ProfileType
+AssetPreset --> AssetKind
+BSI ..> AssetPreset : presetId
+BSI ..> User : creatorUserId
+WardrobeCreatorService ..> RoomCatalogItem : cria/edita
+FaiPointsService ..> RoomInventoryItem : cria (buy)
+FaiPointsService ..> FaiPointsLedgerEntry : debita SHOP_PURCHASE
+note top of RoomCatalogItem : tabela room_catalog\nkind = COMPONENT | WARDROBE;\nrarity = MARCA | CELEBRIDADE
+note top of RoomInventoryItem : tabela room_inventory\nserial = número da unidade\n(edição limitada)
+note top of FaiPointsLedgerEntry : tabela fai_points_ledger
+note top of RoomLayout : tabela room_layouts
+note top of AssetPreset : tabela asset_presets\n(Background Studio — RF11)
+note bottom of BSI : não implementado — conforme Trello\n(venda de itens do Background Studio)
+note top of BrandProfile : tabela brand_profiles
+note top of CelebrityProfile : tabela celebrity_profiles
+@enduml

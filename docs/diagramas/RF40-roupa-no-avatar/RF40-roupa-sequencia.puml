@@ -1,0 +1,39 @@
+@startuml RF40_Roupa_Sequencia
+title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #52606D
+  LifeLineBorderColor #B695F5
+  ParticipantBackgroundColor #F8F4FF
+  ParticipantBorderColor #B695F5
+  ActorBackgroundColor #F8F4FF
+  GroupBackgroundColor #FFF5F8
+}
+participant "AvatarViewer" as V
+participant "HumanAvatar" as H
+participant "HumanOutfit" as O
+participant "garments.ts" as G
+participant "garment-relax.ts" as R
+participant "garment-trims.ts" as T
+participant "shoes.ts" as S
+participant "Three.js\n(SkinnedMesh)" as X
+V -> H : avatar, corpo, pieces
+H -> O : asset, composed, skeleton, pieces
+O -> G : kindOf(piece) / SPECS[kind]
+O -> G : bodyParam(asset, composed)
+O -> R : smoothBody(asset, composed)
+loop camadas, de dentro para fora
+  O -> G : garmentGeometry(asset, composed, normals, P, spec, under)
+  O -> R : relaxGarment(gg, composed, normals, P, under)
+  O -> R : foldGarment(gg, composed, normals, P)
+  O -> G : collarBand(...)
+  O -> T : garmentTrims(asset, composed, P, gg)
+  O -> G : photoInfo(img) / texturedGeometry / garmentMaterial
+  O -> G : underLayer(composed, P, [specs até aqui])
+end
+O -> G : shoeColors(img)
+O -> S : shoeParts(asset, composed, P, spec, cores, estilo)
+O -> X : malhas com skinIndex/skinWeight do corpo
+X --> V : avatar vestido, animado
+@enduml

@@ -1,0 +1,111 @@
+@startuml Taxonomia_Contextos
+title FashionAI — Taxonomia das entidades por contexto delimitado\nVisão geral — entidades-chave (fai-domain) e dependências entre contextos
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "1. Identidade & Conta" as CTX_ID {
+  component "User" as User
+  component "RefreshToken" as RefreshToken
+  component "UserConsent" as UserConsent
+  component "UserPreferences" as UserPreferences
+  component "Notification" as Notification
+}
+package "2. Guarda-roupa & Peças" as CTX_WR {
+  component "WardrobeItem" as WardrobeItem
+  component "Photo" as Photo
+  component "PieceUsageDiaryEntry" as PieceUsage
+  component "AcervoGroup" as AcervoGroup
+}
+package "3. Captura adaptativa & Visão (RF45)" as CTX_CAP {
+  component "CaptureSession" as CaptureSession
+  component "CaptureRequest" as CaptureRequest
+  component "PieceImage" as PieceImage
+  component "BrandPrediction" as BrandPrediction
+  component "ModelRegistryEntry" as ModelRegistry
+}
+package "4. Catálogo global & Busca (RF47)" as CTX_CAT {
+  component "Brand" as Brand
+  component "CatalogProduct" as CatalogProduct
+  component "CatalogVariant" as CatalogVariant
+  component "CatalogImage" as CatalogImage
+  component "CatalogSource" as CatalogSource
+}
+package "5. Esquemas & DNA de Estilo" as CTX_SCH {
+  component "Scheme" as Scheme
+  component "SchemeItem" as SchemeItem
+  component "DailyLook" as DailyLook
+  component "WeekPlan" as WeekPlan
+  component "DnaScheme" as DnaScheme
+  component "StyleDna" as StyleDna
+}
+package "6. Social" as CTX_SOC {
+  component "Follow" as Follow
+  component "Comment" as Comment
+  component "Reaction" as Reaction
+  component "SavedItem" as SavedItem
+}
+package "7. Marcas, Celebridades, Selos & Cupons" as CTX_BR {
+  component "BrandProfile" as BrandProfile
+  component "CelebrityProfile" as CelebrityProfile
+  component "Seal" as Seal
+  component "SealBond" as SealBond
+  component "Promotion" as Promotion
+  component "CouponRight" as CouponRight
+}
+package "8. Meu Quarto, Pontos, Desafios & FLAIR" as CTX_ROOM {
+  component "RoomLayout" as RoomLayout
+  component "RoomCatalogItem" as RoomCatalogItem
+  component "FaiPointsLedgerEntry" as FaiPoints
+  component "ChallengeInstance" as ChallengeInstance
+  component "FlairCombination" as FlairCombination
+  component "FlairMatch" as FlairMatch
+}
+package "9. Provador, 3D & Avatar" as CTX_3D {
+  component "UserAvatar3d" as UserAvatar3d
+  component "RenderJobLog" as RenderJobLog
+}
+package "10. IA & Governança" as CTX_AI {
+  component "AiInferenceLog" as AiInferenceLog
+  component "ModerationQueueItem" as ModerationQueue
+  component "ItemEmbedding" as ItemEmbedding
+}
+package "11. Infra & Operação" as CTX_OPS {
+  component "AuditLog" as AuditLog
+  component "PipelineJob" as PipelineJob
+  component "ProcessingJobLog" as ProcessingJobLog
+  component "BackupRecord" as BackupRecord
+}
+
+WardrobeItem --> CatalogProduct : catalogProductId /\ncatalogVariantId (V30)
+WardrobeItem --> Brand : brand (N:1)
+WardrobeItem --> User : user (N:1)
+CaptureSession --> WardrobeItem : pieceId
+PieceImage --> WardrobeItem : pieceId
+SchemeItem --> WardrobeItem : wardrobeItem (N:1)
+Scheme --> User : user (N:1)
+Follow --> User : follower / following
+SealBond --> Scheme : scheme (N:1)
+BrandProfile --> User : owner (1:1)
+Brand --> BrandProfile : brandProfile (N:1)
+CouponRight --> Promotion : sourceId (SELO)
+CouponRight --> FlairCombination : sourceId (FLAIR)
+RoomCatalogItem --> User : creatorUserId / maisonBrandUserId\n(marca/celebridade)
+PieceUsage --> Scheme : schemeId
+UserAvatar3d --> User : user (1:1)
+PipelineJob --> User : user (N:1)
+WardrobeItem ..> PipelineJob : processingJobId
+ItemEmbedding ..> WardrobeItem : entityId (HypeEntityType)
+@enduml

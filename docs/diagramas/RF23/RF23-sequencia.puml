@@ -1,0 +1,82 @@
+@startuml RF23_Sequencia
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Pessoa as U
+participant "Frontend\n/settings" as FE
+participant "PreferencesController" as PC
+participant "PreferencesService" as PS
+participant "AssetCatalogService" as AC
+participant "MeController" as MC
+participant "AccountService" as AS
+database "MySQL" as DB
+participant "Storage de mídia\n(MediaStoragePort)" as ST
+U -> FE: abre Configurações
+FE -> PC: GET /api/me/preferences\n(Accept-Language: pt-BR|en|es)
+PC -> PS: get(user)
+PS -> DB: SELECT user_preferences, users
+PC --> FE: 200 {theme, language, density, fontScale,\nhighContrast, reduceMotion, chromeBackgroundId, …}
+FE -> FE: ThemeProvider aplica data-theme/density,\nfont-size e --chrome-bg (só o chrome, CA08)
+== Aparência / Idioma ==
+U -> FE: troca tema, idioma, fonte ou fundo do chrome
+FE -> FE: aplica na hora + localStorage (fai.locale, tema)
+FE -> PC: PUT /api/me/preferences\n{theme, language, …, clientUpdatedAt}
+PC -> PS: update(user, Update)
+alt clientUpdatedAt anterior ao salvo
+  PS --> PC: estado atual (last-write-wins, CA02)
+else validação
+  PS -> AC: isChromeBackground(id) / cardSkin(id)
+  alt inválido
+    PS --> PC: 400 FUNDO_INVALIDO / FONTE_INVALIDA / COR_INVALIDA
+  else ok
+    PS -> DB: UPDATE user_preferences; audit ALTERACAO_PREFERENCIAS
+    PC --> FE: 200 preferências (Content-Language)
+  end
+end
+== Conta (vitrine, sem reautenticação) ==
+U -> FE: edita nome, bio, país, avatar, capa
+FE -> PC: PATCH /api/me/profile
+PC -> PS: updateProfile(user, ProfileUpdate)
+PS -> DB: UPDATE users
+PC --> FE: 200 Views.UserCard
+U -> FE: troca o @
+FE -> PC: PUT /api/me/username
+PC -> PS: changeUsername(user, username)
+alt @ em uso ou reservado
+  PS --> PC: 400 USERNAME_EM_USO {suggestions} (CA04)
+else livre
+  PS -> DB: UPDATE users.username
+  PC --> FE: 200 {username}
+end
+== Privacidade (LGPD) ==
+FE -> MC: GET /api/me/consents
+MC -> AS: consents(user)
+MC --> FE: 200 [{purpose, granted, grantedAt, …}]
+U -> FE: liga/desliga uma finalidade
+FE -> MC: PUT /api/me/consents/{purpose} {granted}
+MC -> AS: setConsent(user, purpose, granted)
+AS -> DB: UPSERT user_consents; INSERT audit_log
+note right of AS : ver RF24 (motor de IA) — a finalidade\ncontrola o envio a provedores externos
+== Seus dados ==
+U -> FE: Exportar meus dados
+FE -> MC: POST /api/me/exports
+MC -> AS: requestExport(user)
+AS -> DB: INSERT data_export_requests (PROCESSING)
+AS -> ST: put(restricted/users/{id}/exports/{exportId}.json)
+AS -> DB: UPDATE status=READY, expires_at=+7d; notifica DATA_EXPORT_READY
+MC --> FE: 202 {id, status, readyAt, expiresAt, bytes}
+FE -> MC: GET /api/me/exports/{exportId}/file
+MC -> AS: downloadExport(user, exportId)
+alt expirada ou sem arquivo
+  AS --> MC: 410 EXPORTACAO_EXPIRADA
+else ok
+  AS -> ST: get(fileKey)
+  MC --> FE: 200 application/octet-stream (fashionai-dados-{id}.zip)
+end
+@enduml

@@ -1,0 +1,87 @@
+@startuml RF1_Componentes
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(auth)/register/page.tsx\n+ auth-form.tsx + photo-picker.tsx" as FE0
+  component "(auth)/verify-email/page.tsx" as FE1
+  component "BFF /bff/auth/[action]\n(login · register · refresh · logout)" as FE2
+  component "(app)/admin/users/page.tsx\n(fila de aprovações)" as FE3
+}
+package "fai-web · controllers" {
+  [AuthController\n/api/auth/register · uploads\nusername-suggestions · email-verification] as AuthController
+  [PreferencesController\n/api/usernames/{username}/availability] as PreferencesController
+  [AdminController\n/api/admin/approvals] as AdminController
+  [SecurityConfig\n(permitAll do cadastro; /media/restricted só ADMIN)] as Sec
+  [Argon2PasswordHasher\n(PasswordHasherPort)] as Hasher
+  [JwtTokenIssuer\n(TokenIssuerPort)] as Jwt
+}
+package "fai-application · services" {
+  [IdentityService] as IdentityService
+  [AdminService] as AdminService
+  [PreferencesService] as PreferencesService
+  [NotificationService] as NotificationService
+  [Guard\n(requireCanCreate — CA05)] as Guard
+  [EmailSenderPort] as EmailPort #FAFAFA
+  [MediaStoragePort] as MediaPort #FAFAFA
+  [RateLimitPort] as RatePort #FAFAFA
+  [AuditService] as AuditPort #FAFAFA
+}
+package "fai-domain · repositórios JPA" {
+  [UserRepository\nUserPreferencesRepository\nBrandProfileRepository\nCelebrityProfileRepository\nVerificationCodeRepository\nRefreshTokenRepository\nNotificationRepository] as REPOS
+}
+package "fai-infrastructure · adapters" {
+  [ResendEmailSender / LoggingEmailSender] as Resend
+  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+  [InMemoryRateLimit / RedisAdapters] as Rate
+  [MysqlAuditService] as Audit
+}
+database "MySQL · fashionai_app\n• users\n• user_preferences\n• brand_profiles\n• celebrity_profiles\n• verification_codes\n• refresh_tokens\n• notifications\n• audit_log" as DB
+cloud "Resend (e-mail transacional)" as C_mail
+cloud "S3 / storage de mídia\n(pending/, restricted/)" as C_s3
+
+FE0 --> FE2 : POST register
+FE0 --> AuthController : uploads · username-suggestions
+FE0 --> PreferencesController : availability
+FE1 --> AuthController : email-verification (+resend)
+FE2 --> AuthController : POST /api/auth/register
+FE3 --> AdminController : approvals
+AuthController --> IdentityService : chama
+PreferencesController --> PreferencesService : chama
+AdminController --> AdminService : chama
+IdentityService --> Hasher : hash(senha)
+IdentityService --> Jwt : issueAccessToken
+IdentityService --> NotificationService : WELCOME · EMAIL_CONFIRMATION
+IdentityService ..> EmailPort
+IdentityService ..> MediaPort
+IdentityService ..> RatePort
+IdentityService ..> AuditPort
+IdentityService --> REPOS : grava
+AdminService --> NotificationService : ACCOUNT_APPROVAL
+AdminService --> REPOS : grava
+AdminService ..> AuditPort
+PreferencesService --> REPOS : lê
+Sec ..> Guard : status da conta
+EmailPort <.. Resend
+MediaPort <.. S3
+RatePort <.. Rate
+AuditPort <.. Audit
+REPOS --> DB : JPA/Flyway
+Audit --> DB : grava audit_log
+Resend --> C_mail : envia
+S3 --> C_s3 : put/get
+@enduml

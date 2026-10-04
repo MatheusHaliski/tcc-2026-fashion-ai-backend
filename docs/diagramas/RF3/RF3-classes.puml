@@ -1,0 +1,157 @@
+@startuml RF3_Classes
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +email: String
+  +phone: String
+  +birthDate: String
+  +bio: String
+  +coverUrl: String
+  +twoFactorEnabled: boolean
+  +privateAccount: boolean
+  +profileVisibility: Visibility
+  +status: AccountStatus
+  +deletionRequestedAt: Instant
+  +deletionScheduledFor: Instant
+  .. demais campos em RF1 ..
+}
+class UserPreferences {
+  +user: User
+  +notificationPushMaster: boolean
+  +notificationPrefsJson: String
+  .. tema, idioma, densidade ..
+}
+class UserConsent {
+  +user: User
+  +purpose: ConsentPurpose
+  +granted: boolean
+  +legalBasis: String
+  +policyVersion: String
+  +grantedAt: Instant
+  +revokedAt: Instant
+}
+class DataExportRequest {
+  +user: User
+  +status: ExportStatus
+  +fileKey: String
+  +readyAt: Instant
+  +expiresAt: Instant
+}
+class Notification {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +title: String
+  +body: String
+  +read: boolean
+  +readAt: Instant
+  +delivered: boolean
+}
+class AuditLog {
+  +actor: String
+  +acao: String
+  +recurso: String
+  +resultado: String
+  +ip: String
+  +timestamp: Instant
+  +correlationId: String
+}
+}
+package "fai-domain · enums" {
+enum ExportStatus {
+  REQUESTED
+  PROCESSING
+  READY
+  EXPIRED
+}
+enum ConsentPurpose {
+  AI_RECOMMENDATION
+  AI_EXTERNAL_PHOTO_PROCESSING
+  HISTORY_FOR_RECOMMENDATION
+  PERSONALIZED_ADS
+  PARTNER_SHARING
+  BODY_MEASUREMENTS
+  FACIAL_RECOGNITION
+  LOCATION_HISTORY
+  AI_MODEL_TRAINING
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum NotificationCategory {
+  SECURITY
+  SOCIAL
+  ACHIEVEMENT
+  SYSTEM
+}
+}
+package "fai-application · service" {
+class AccountService {
+  +me(user): Map
+  +updateSensitive(user, SensitiveUpdate): Map
+  +confirmEmailChange(user, code): UserCard
+  +updatePrivacy(user, visibility): Map
+  +consents(user): List
+  +setConsent(user, purpose, granted): List
+  +requestExport(user): Map
+  +exportsOf(user): List
+  +downloadExport(user, exportId): byte[]
+  +purgeExpiredExports(): int
+  +requestDeletion(user, password): Map
+  +cancelDeletion(user): Map
+  +purgeScheduledDeletions(): int
+}
+class NotificationService {
+  +notify(recipientId, actorId, type, ...): Notification
+  +inbox(user): Map
+  +markRead(user, ids)
+  +markAllRead(user): int
+  +preferences(user): List
+  +updatePreferences(user, changes, master): List
+  +purgeExpired(): int
+}
+class IdentityService {
+  +reauthenticate(userId, password)
+  +sessions(user, currentSession): List
+  +revokeSession(user, sessionId)
+  +revokeOtherSessions(userId, keep): int
+  +changePassword(user, sid, ...): int
+  +requestPasswordReset(email, ip, ua)
+}
+}
+UserPreferences "1" --> "1" User : user
+UserConsent "*" --> "1" User : user
+DataExportRequest "*" --> "1" User : user
+Notification "*" --> "1" User : recipient
+Notification "*" --> "0..1" User : actor
+User --> Visibility
+UserConsent --> ConsentPurpose
+DataExportRequest --> ExportStatus
+Notification --> NotificationCategory
+AccountService ..> UserConsent : grava
+AccountService ..> DataExportRequest : cria/expira
+AccountService ..> AuditLog : audita
+AccountService ..> IdentityService : reautentica
+NotificationService ..> Notification : grava
+NotificationService ..> UserPreferences : preferências por tipo
+note top of UserConsent : tabela user_consents\n(único: user_id + purpose)
+note top of DataExportRequest : tabela data_export_requests
+note top of Notification : tabela notifications\n(type: NotificationType com 27 valores;\nSECURITY não pode ser desligado)
+note top of AuditLog : tabela audit_log
+@enduml

@@ -83,7 +83,12 @@ def run(C):
                                         storeUrl='https://example.com', commercialContact='contato@example.com', officialHashtag='#marcae2e', activityProofUrl=c['reg_logo'])),
          save=lambda c, b: c.__setitem__('brand_new_id', b['user']['id']))
     step('RF1', 'CA08', 'fila de aprovações (admin)', 'GET', '/api/admin/approvals', who=ADMIN, ctx=C)
-    step('RF1', 'CA08', 'admin aprova a marca', 'POST', '/api/admin/approvals/{brand_new_id}', {'approve': True, 'notes': 'CNPJ conferido (teste E2E)'}, who=ADMIN, ctx=C)
+    # política de verificação (docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md): sem e-mail confirmado não há aprovação
+    step('RF1', 'CA08', 'aprovar sem e-mail confirmado é bloqueado pela política', 'POST', '/api/admin/approvals/{brand_new_id}',
+         {'decision': 'APROVAR', 'checklist': {'CNPJ_ATIVO': True, 'ATIVIDADE_MODA': True, 'COMPROVANTE_ATIVIDADE': True, 'PRESENCA_OFICIAL': True,
+                                               'REPRESENTACAO': True, 'SEM_CONFLITO': True}}, who=ADMIN, ctx=C, expect=(409,))
+    step('RF1', 'CA08', 'admin pede ajustes com motivo padronizado', 'POST', '/api/admin/approvals/{brand_new_id}',
+         {'decision': 'AJUSTES', 'reasons': ['DOCUMENTO_ILEGIVEL'], 'notes': 'Comprovante de teste (E2E)'}, who=ADMIN, ctx=C)
 
     # ---------------- RNF moderação
     step('RF4', 'CA10', 'fila de moderação (admin)', 'GET', '/api/admin/moderation', who=ADMIN, ctx=C, save=lambda c, b: c.__setitem__('mod_item', b[0]['id']))

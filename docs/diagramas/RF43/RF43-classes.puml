@@ -1,0 +1,151 @@
+@startuml RF43_Classes
+title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+}
+class WeekPlan {
+  +user: User
+  +weekStart: LocalDate
+  +status: WeekPlanStatus
+  +gapsJson: String
+}
+class WeekPlanDay {
+  +weekPlan: WeekPlan
+  +dayDate: LocalDate
+  +eventLabel: String
+  +occasion: String
+  +scheme: Scheme
+  +pieceIdsJson: String
+  +combinationKey: String
+  +rationale: String
+  +editedManually: boolean
+}
+class DailyLook {
+  +user: User
+  +scheme: Scheme
+  +lookDate: LocalDate
+  +source: DailyLookSource
+  +feedback: DailyLookFeedback
+  +weekPlanDayId: UUID
+}
+class Scheme {
+  +user: User
+  +title: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +mood: Mood
+  +status: SchemeStatus
+  +lookDoDia: boolean
+  .. +50 campos ..
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +sortOrder: int
+  +zIndex: int
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +category: String
+  +subcategory: String
+  +color: String
+  +occasionTags: String
+  +wearCount: int
+  +disponivel: boolean
+  .. +campos ..
+}
+}
+package "fai-domain · enums" {
+enum WeekPlanStatus {
+  ACTIVE
+  DISCARDED
+  COMPLETED
+}
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  DNA_DUPLICATE
+  SMART_MIRROR
+  VISTA_ME
+  AUTOPILOTO
+}
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+enum CreationMode {
+  MANUAL
+  AI_ASSISTED
+}
+}
+package "fai-application · service" {
+class AutopilotService {
+  +MIN_PIECES = 3
+  +daily(user, DailyRequest): Map
+  +confirmDaily(user, pieceIds, title, occasion, mood): Map
+  +planWeek(user, WeekRequest): Map
+  +currentWeek(user): Map
+  +editDay(user, dayId, pieceIds): Map
+  +useDay(user, dayId): Map
+  +discardWeek(user): Map
+  ~candidates(...): List<Candidate>
+  ~pickWithAi(...): List<Map>
+}
+class WeatherService {
+  +resolve(latitude, longitude, city): Context
+  +{static} band(t): String
+  +{static} withBand(ctx, band): Context
+  +{static} unsuitable(subcategory, band): boolean
+  +{static} isLayer(subcategory): boolean
+}
+}
+WeekPlan "*" --> "1" User : user
+WeekPlanDay "*" --> "1" WeekPlan : weekPlan
+WeekPlanDay "*" --> "0..1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook ..> WeekPlanDay : weekPlanDayId
+Scheme "*" --> "1" User : user
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+WardrobeItem "*" --> "1" User : user
+WeekPlan --> WeekPlanStatus
+Scheme --> SchemeOrigin
+Scheme --> CreationMode
+DailyLook --> DailyLookSource
+AutopilotService ..> WeatherService : clima
+AutopilotService ..> WeekPlan : cria/descarta
+AutopilotService ..> Scheme : cria (origin AUTOPILOTO)
+AutopilotService ..> DailyLook : registra (source AUTOPILOTO)
+note top of WeekPlan : tabela week_plans
+note top of WeekPlanDay : tabela week_plan_days
+note top of DailyLook : tabela daily_looks\n(uq user_id + look_date)
+note top of Scheme : tabela schemes
+note top of SchemeItem : tabela scheme_items
+note top of WardrobeItem : tabela wardrobe_items
+note bottom of WeatherService : faixas: VERAO_LEVE, MEIA_ESTACAO,\nCAMADAS, INVERNO_PESADO (ver RF24 para a IA)
+@enduml
