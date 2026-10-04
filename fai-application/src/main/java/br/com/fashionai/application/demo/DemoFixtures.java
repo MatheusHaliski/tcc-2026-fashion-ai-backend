@@ -73,7 +73,8 @@ public class DemoFixtures {
     private final List<Save> saves;
 
     public DemoFixtures() {
-        // campo numérico omitido = 0 (ex.: um "save" só de looks não traz "pieces"); o Jackson 3 recusaria por padrão
+        // campo ausente na fixture (ex.: "saves" com só "looks" ou só "pieces") vale 0, como no Jackson 2 — o Jackson 3
+        // recusa null em primitivo por padrão e derrubava a subida da aplicação
         ObjectMapper om = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build();
         JsonNode users = read(om, "users.json");
