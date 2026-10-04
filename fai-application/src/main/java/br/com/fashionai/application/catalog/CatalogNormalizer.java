@@ -60,7 +60,7 @@ public final class CatalogNormalizer {
         load(root.path("materialSynonyms"), materials);
         load(root.path("genderSynonyms"), genders);
         load(root.path("brandAliases"), brandAliases);
-        root.path("stopwords").forEach(n -> stopwords.add(key(n.asText())));
+        root.path("stopwords").forEach(n -> stopwords.add(key(n.asString())));
         design = root.path("design");
     }
 
