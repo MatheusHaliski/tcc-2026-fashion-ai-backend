@@ -14,7 +14,6 @@ import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogProductAlias;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.UserPreferences;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -25,8 +24,6 @@ import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,8 +66,6 @@ public class CatalogService {
     private final CatalogIngestService ingest;
     private final OfficialCatalogDiscovery discovery;
     private final WardrobeService wardrobe;
-    private final UserPreferencesRepository preferences;
-    private final UserRepository users;
     private CatalogTextInterpreter textInterpreter;
     private final CatalogNormalizer norm = CatalogNormalizer.get();
     private final CatalogMatchScorer scorer = new CatalogMatchScorer(norm);
@@ -78,7 +73,7 @@ public class CatalogService {
     public CatalogService(CatalogProductRepository products, CatalogVariantRepository variants, CatalogImageRepository images,
                           CatalogProductAliasRepository productAliases, CatalogSourceRepository sources, BrandRepository brands,
                           BrandAliasRepository brandAliases, CatalogIngestService ingest, OfficialCatalogDiscovery discovery,
-                          WardrobeService wardrobe, UserPreferencesRepository preferences, UserRepository users) {
+                          WardrobeService wardrobe) {
         this.products = products;
         this.variants = variants;
         this.images = images;
@@ -89,8 +84,6 @@ public class CatalogService {
         this.ingest = ingest;
         this.discovery = discovery;
         this.wardrobe = wardrobe;
-        this.preferences = preferences;
-        this.users = users;
     }
 
     /** Leitor das características únicas da peça no texto (com IA, RF24); sem ele, só a leitura local. */
@@ -469,31 +462,6 @@ public class CatalogService {
             }
         }
         return fallback;
-    }
-
-    // ───────────────────────────── tutorial "Como fotografar" (por guia, sincronizado na conta)
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> tutorialPreferences(CurrentUser user) {
-        return preferences.findByUserId(user.id()).map(UserPreferences::getCaptureTutorialJson).map(Json::map)
-                .map(m -> Map.<String, Object>of("captureTutorialPreferences", m)).orElse(Map.of("captureTutorialPreferences", Map.of()));
-    }
-
-    @Transactional
-    public Map<String, Object> setTutorialHidden(CurrentUser user, String guide, boolean hidden) {
-        if (guide == null || !guide.matches("[a-z_]{3,40}")) {
-            throw ApiException.badRequest("GUIA_INVALIDO", Msg.t("catalog.guia_invalido"));
-        }
-        UserPreferences prefs = preferences.findByUserId(user.id()).orElseGet(() -> {
-            UserPreferences np = new UserPreferences();
-            np.setUser(users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
-            return np;
-        });
-        Map<String, Object> m = new LinkedHashMap<>(prefs.getCaptureTutorialJson() == null ? Map.of() : Json.map(prefs.getCaptureTutorialJson()));
-        m.put(guide, Map.of("hidden", hidden));
-        prefs.setCaptureTutorialJson(Json.write(m));
-        preferences.save(prefs);
-        return Map.of("captureTutorialPreferences", m);
     }
 
     // ───────────────────────────── Explorador (RF26): marcas do catálogo sem perfil cadastrado

@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -73,20 +72,5 @@ public class CatalogController {
     @Operation(summary = "RF47 — Adiciona ao guarda-roupa a peça escolhida no catálogo (dados pessoais à parte)")
     public Views.PieceView fromCatalog(CurrentUser user, @RequestBody CatalogService.AddRequest request) {
         return catalog.addToWardrobe(user, request);
-    }
-
-    @GetMapping("/api/me/capture-tutorial")
-    @Operation(summary = "RF47 — Preferências \"Não mostrar novamente\" do guia de fotografia, por guia")
-    public Map<String, Object> tutorial(CurrentUser user) {
-        return catalog.tutorialPreferences(user);
-    }
-
-    public record TutorialRequest(boolean hidden) {
-    }
-
-    @PutMapping("/api/me/capture-tutorial/{guide}")
-    @Operation(summary = "RF47 — Esconde ou volta a mostrar o guia de fotografia de uma categoria")
-    public Map<String, Object> setTutorial(CurrentUser user, @PathVariable String guide, @RequestBody TutorialRequest request) {
-        return catalog.setTutorialHidden(user, guide, request.hidden());
     }
 }

@@ -71,10 +71,14 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
 | GET | `/api/catalog/products/{id}` | produto com variantes, imagens (proveniência) e apelidos |
 | POST | `/api/catalog/discover` | busca nas lojas oficiais (RF24/`CATALOG_DISCOVERY`) |
 | POST | `/api/pieces/from-catalog` | cria a peça por referência (dados pessoais no corpo) |
-| GET / PUT | `/api/me/capture-tutorial[/{guide}]` | preferências do antigo guia de fotografia — **sem uso no frontend** desde a retirada da seção Foto |
+| GET | `/api/catalog/stores` | marcas do catálogo com produtos (vitrine do Provador, RF18) |
+
+Removidas em 04/10/2026, sem uso desde que o criador deixou de ter foto: `GET/PUT /api/me/capture-tutorial[/{guide}]` (com a
+coluna `user_preferences.capture_tutorial_json`, apagada na V32) e `POST /api/pieces/analysis` (análise de uma foto; a
+análise continua em `/api/pieces/analysis/batch` e `/multi`).
 
 Controller: `CatalogController`. Serviços: `CatalogService` (busca, sugestões, produto, discover, addToWardrobe,
-tutorial, marcas para o Explorador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
+marcas para o Explorador e o Provador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
 `CatalogMatchScorer`, `OfficialCatalogDiscovery`; `WardrobeService.createFromCatalog`;
 `ExplorerService.brandsAndStores`.
 
@@ -125,7 +129,7 @@ o que separa duas peças da mesma marca e do mesmo tipo. Exemplo (Calvin Klein, 
 | `catalog_ingestion_runs` | relatório de cada execução de ingestão |
 | `catalog_products` (+2, V31) | `description`, `design_json` (características únicas da peça) |
 | `wardrobe_items` (+4 colunas) | `catalog_product_id`, `catalog_variant_id`, `image_origin`, `user_image_url` |
-| `user_preferences` (+1) | `capture_tutorial_json` |
+| `user_preferences` (V32) | `capture_tutorial_json` removida (o guia de fotografia saiu) |
 
 Enums: `CatalogSourceType` (OFFICIAL_BRAND, OFFICIAL_STORE, AUTHORIZED_RETAILER, PARTNER_API, MANUAL_ADMIN),
 `CatalogSourceStatus` (ACTIVE, UNAVAILABLE, SOURCE_REMOVED, NEEDS_REVALIDATION), `CatalogIngestionStatus`

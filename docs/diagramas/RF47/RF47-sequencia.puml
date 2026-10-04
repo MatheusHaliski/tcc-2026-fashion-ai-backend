@@ -82,6 +82,6 @@ else com produto do catálogo
 end
 note over FE, C
   O criador de peça não tem envio de foto: imagem = foto oficial ou ilustração da categoria.
-  GET/PUT /api/me/capture-tutorial continuam no backend, mas SEM USO no frontend.
+  As rotas do antigo guia de fotografia (/api/me/capture-tutorial) e POST /api/pieces/analysis foram removidas.
 end note
 @enduml
