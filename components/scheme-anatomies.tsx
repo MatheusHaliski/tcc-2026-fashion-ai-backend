@@ -3,8 +3,8 @@ import type { SchemeView } from "@/lib/api/types";
 import { mediaUrl, thumbUrl } from "@/lib/api/client";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { SeasonDecor, Spotlights } from "@/components/card-art";
-import { BLOCKS_TEXTURE, brickColor, hueChroma, studioOf } from "@/lib/card-art";
+import { MotionFall, SeasonDecor, Spotlights } from "@/components/card-art";
+import { BLOCKS_TEXTURE, brickColor, cartelaSeason, hueChroma, motionOf, studioOf, type CardArt } from "@/lib/card-art";
 import { BrandLogo } from "@/components/brand-logo";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
@@ -96,10 +96,11 @@ export const silhouetteLabel = (s?: string | null) => (s && (SILHOUETTES as read
  * Anatomia que o card realmente mostra. Custo por uso usa dado pessoal e só aparece para quem é dono do look; Cartela
  * sazonal só existe com a estação preenchida. Nos demais casos o card cai na Lista vertical.
  */
-export function effectiveAnatomy(s: Pick<SchemeView, "layoutAnatomy" | "season" | "viewer">): string {
+export function effectiveAnatomy(s: Pick<SchemeView, "layoutAnatomy" | "season" | "viewer" | "background">): string {
   const a = s.layoutAnatomy ?? "LISTA_VERTICAL";
   if (a === "CUSTO_POR_USO" && !s.viewer?.canEdit) return "LISTA_VERTICAL";
-  if (a === "CARTELA_SAZONAL" && !s.season) return "LISTA_VERTICAL";
+  // a estação vem da cartela escolhida no modal do layout ou, sem ela, da estação do look
+  if (a === "CARTELA_SAZONAL" && !cartelaSeason(s.background, s.season)) return "LISTA_VERTICAL";
   return a;
 }
 
@@ -176,7 +177,7 @@ export function AnatomyBody({ scheme, pieces }: { scheme: SchemeView; pieces: An
     case "CUSTO_POR_USO": return <CostPerUse pieces={pieces} />;
     case "SILHUETA_PROPORCAO": return <Silhouette pieces={pieces} declared={studioOf(scheme.background).silhouette as string | undefined} />;
     case "HYPE_FOCUS": return <HypeFocus pieces={pieces} />;
-    case "CARTELA_SAZONAL": return <SeasonCard pieces={pieces} season={scheme.season!} />;
+    case "CARTELA_SAZONAL": return <SeasonCard pieces={pieces} season={cartelaSeason(scheme.background, scheme.season)!} motion={motionOf(studioOf(scheme.background).animation)} />;
     case "LEGO": return <Blocks pieces={pieces} />;
     default: return null;
   }
@@ -400,7 +401,7 @@ function HypeFocus({ pieces }: { pieces: AnatomyPiece[] }) {
 }
 
 /** 09 Cartela sazonal: as peças sobre a arte da estação do look; indica quais peças conversam com a paleta. */
-function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season: string }) {
+function SeasonCard({ pieces, season, motion }: { pieces: AnatomyPiece[]; season: string; motion?: CardArt["motion"] }) {
   const { t } = useI18n(); const [ref, play] = useInViewOnce<HTMLDivElement>();
   const meta = SEASON_NAME[season] ?? SEASON_NAME.SPRING;
   const inP: string[] = [], neu: string[] = [], out: string[] = [];
@@ -411,8 +412,9 @@ function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season: string
   });
   return (
     <div className="season-card" aria-label={t("schemeAnatomies.cartela_sazonal", { label: meta.label })}>
-      <div ref={ref} className="season-hero" data-play={play || undefined} style={{ backgroundImage: SEASON_ART[season] }}>
+      <div ref={ref} className={`season-hero${motion === "shimmer" ? " motion-shimmer" : ""}`} data-play={play || undefined} style={{ backgroundImage: SEASON_ART[season] }}>
         <SeasonDecor season={season} count={10} once />
+        {motion && motion !== "shimmer" && <MotionFall kind={motion} count={14} />}
         <span className="season-title">{meta.label}</span>
         <div className="season-pieces">{pieces.slice(0, 4).map((p, i) => <span key={p.id} className="season-polaroid" style={{ ["--tilt" as string]: `${(i % 2 ? 1 : -1) * 2}deg` }}>{p.img && <img src={p.img} alt={p.name} />}<em>{p.name}</em></span>)}</div>
       </div>
@@ -457,7 +459,7 @@ export function CompactSignature({ scheme, pieces }: { scheme: SchemeView; piece
   if (a === "CUSTO_POR_USO") { const pr = pieces.filter((p) => p.price != null), spent = pr.reduce((x, p) => x + (p.price ?? 0), 0), uses = pr.reduce((x, p) => x + (p.wearCount ?? 0), 0); return <div className="csig"><b className="csig-text">{uses ? t("anatomy.cpu.perUse", { value: brl(spent / uses) }) : t("anatomy.cpu.notUsed")}</b><em className="anat-lock">{t("anatomy.onlyYou")}</em></div>; }
   if (a === "SILHUETA_PROPORCAO") { const d = studioOf(scheme.background).silhouette as string | undefined; return <div className="csig"><span className="csig-text">{t("anatomy.silhouette.family")}: {silhouetteLabel(d) ?? t("anatomy.silhouette.notDeclared")}</span></div>; }
   if (a === "HYPE_FOCUS") { const s = [...pieces].filter((p) => hyp(p) != null).sort((x, y) => (hyp(y) ?? 0) - (hyp(x) ?? 0))[0]; return <div className="csig">{s ? <><Gauge v={Math.round(hyp(s) ?? 0)} size={52} /><span className="csig-text">{s.name} · {t("anatomy.hype.global")} {s.hypeGlobal != null ? `${Math.round(s.hypeGlobal)} %` : "—"}</span></> : <span className="anat-badge">{t("anatomy.hype.forming")}</span>}</div>; }
-  if (a === "CARTELA_SAZONAL") { const m = SEASON_NAME[scheme.season ?? ""]; return m ? <div className="csig"><span className="csig-palette">{m.palette.map((c) => <i key={c} style={{ background: c }} />)}</span><span className="csig-text">{m.label}</span></div> : null; }
+  if (a === "CARTELA_SAZONAL") { const m = SEASON_NAME[cartelaSeason(scheme.background, scheme.season) ?? ""]; return m ? <div className="csig"><span className="csig-palette">{m.palette.map((c) => <i key={c} style={{ background: c }} />)}</span><span className="csig-text">{m.label}</span></div> : null; }
   if (a === "LEGO") return <div className="csig" role="img" aria-label={pieces.map((p) => p.name).join(", ")}>{pieces.slice(0, 6).map((p) => <span key={p.id} className="csig-stud" style={{ background: brickColor(p.colorHex) }} />)}</div>;
   return <div className="csig"><span className="csig-strip">{pieces.slice(0, 4).map((p) => <Thumb key={p.id} p={p} size={36} />)}</span></div>;
 }

@@ -7,8 +7,8 @@ import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
-import { CardArtLayer, SeasonDecor } from "@/components/card-art";
+import { FRAME_BAND_VARS, brickColor, cartelaSeason, containerColorOf, containerInkOf, motionOf, resolveCardArt, studioOf } from "@/lib/card-art";
+import { CardArtLayer, MotionFall, SeasonDecor } from "@/components/card-art";
 import { CardActions } from "@/components/interactions";
 import { hypeColor } from "@/components/scheme-card";
 import { BrandLogo } from "@/components/brand-logo";
@@ -246,9 +246,11 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
         <span className="dna-hint">{t("dnaCard.valores_recalculam_ao_longo_do")}</span></div>);
     }
     case "CARTELA_SAZONAL": {
-      const season = dna.seasonalTheme ?? "AUTUMN"; const p = SEASON_PRESETS[season] ?? SEASON_PRESETS.AUTUMN;
+      // cartela e animação escolhidas no modal do layout Cartela sazonal (Background Studio); sem cartela, vale o seasonalTheme
+      const season = cartelaSeason(dna.background, dna.seasonalTheme) ?? "AUTUMN"; const p = SEASON_PRESETS[season] ?? SEASON_PRESETS.AUTUMN;
+      const chosen = studioOf(dna.background).animation; const motion = motionOf(chosen);
       const ordered = [...cells].sort((a, b) => Number(b.season === season) - Number(a.season === season));
-      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} /><span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>{t("dnaCard.seasonaltheme_animacao", { season, animation: p.animation })}</em></div>
+      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}${motion === "shimmer" ? " motion-shimmer" : ""}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} />{motion && motion !== "shimmer" && <MotionFall kind={motion} count={14} />}<span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>{t("dnaCard.seasonaltheme_animacao", { season, animation: (motion && chosen) || p.animation })}</em></div>
         <div className="dna-grid">{ordered.slice(0, expanded ? 6 : 4).map((c) => <div key={c.schemeId} className={`dna-grid-cell ${c.season === season ? "" : "secondary"}`}><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? label(c.occasion[0] ?? "livre")).toUpperCase()}</span></div>)}</div></>);
     }
     case "LEGO": return <BlocksBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} />;
