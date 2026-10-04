@@ -1,0 +1,46 @@
+@startuml RF6_MaquinaDeEstados_LookDoDia
+!pragma layout smetana
+title RF6 — DailyLook (source · feedback): o Look do Dia de uma data, da marcação à avaliação
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Sem Look do Dia" as Vazio
+state "Registrado" as Reg {
+  state "MANUAL" as Manual
+  state "AUTOPILOTO" as Auto
+}
+state "Materializado\n(materializedFrom = look anterior)" as Mat
+state "Avaliado" as Aval {
+  state "ADOREI" as Adorei
+  state "NAO_USEI" as NaoUsei
+  state "NAO_GOSTEI" as NaoGostei
+}
+
+[*] --> Vazio
+Vazio --> Manual : POST /api/me/daily-look\nDailyLookService.register(MANUAL)
+Vazio --> Auto : Autopiloto (RF10)\nregister(AUTOPILOTO)
+Vazio --> Mat : virada do dia: GET /api/me/daily-look-tab\ntoday() copia o último look não arquivado
+Vazio --> Vazio : register com peça indisponível\n409 PECA_INDISPONIVEL
+Reg --> Reg : novo register na mesma data\n(substitui o esquema)
+Mat --> Reg : register na mesma data
+Reg --> Aval : PUT /api/me/daily-looks/{date}/feedback
+Mat --> Aval : PUT /api/me/daily-looks/{date}/feedback
+Aval --> Aval : novo feedback (sobrescreve)
+Aval --> [*]
+
+note right of Reg
+  A cada registro: schemes.lookDoDia = true,
+  lookDoDiaCount++, wardrobe_items.lastWornDate;
+  publica DomainEvents.DailyLookRegistered;
+  HypeScoreService.panel grava hype_score_metrics
+end note
+note left of Aval
+  A partir das 18 h, sem feedback,
+  GET /api/me/daily-looks/pending-feedback
+  devolve show = true (lembrete)
+end note
+@enduml

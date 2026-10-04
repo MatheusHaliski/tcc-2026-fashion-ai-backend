@@ -32,6 +32,8 @@ next-env.d.ts
 # mídia local (fashionai.storage.local-dir) fica fora do git; o seed do catálogo (data/catalog) entra
 data/*
 !data/catalog/
+# saída do coletor oficial (scripts/catalog/collect_official.py): gerada onde a rede permite, importada à parte
+data/catalog/collected/
 backups/
 
 # teste ponta a ponta: saídas locais (ctx, resultados, mídia, fotos)

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label } from "@/lib/api/taxonomy";
@@ -58,7 +58,18 @@ const gradientCss = (g: { stops: string[]; type?: string; angle?: number }) =>
   `${g.type === "radial" ? "radial-gradient(circle" : `linear-gradient(${g.angle ?? 135}deg`}, ${g.stops.join(",")})`;
 
 /** Campos que pertencem ao layout Cartela sazonal: escolhidos no modal dele e limpos quando o layout sai. */
-export const CLEAR_CARTELA: Partial<BgConfig> = { seasonalPresetId: null, seasonalAuto: false, animation: null };
+// animação "NONE" (e não null): é o valor que desliga a animação gravada no esquema também em APIs anteriores
+export const CLEAR_CARTELA: Partial<BgConfig> = { seasonalPresetId: null, seasonalAuto: false, animation: "NONE" };
+
+/**
+ * Quando o layout Cartela sazonal deixa de valer — por qualquer caminho, não só pelos botões de layout (no DNA: outra
+ * narrativa, anatomia base, elemento-alvo que não é o DNA completo, proposta da IA) — limpa o que era dele.
+ */
+export function useLeaveCartela(active: boolean, clear: () => void) {
+  const was = useRef(active);
+  const clearRef = useRef(clear); clearRef.current = clear;
+  useEffect(() => { if (was.current && !active) clearRef.current(); was.current = active; }, [active]);
+}
 
 /**
  * Cartela sazonal, cartela automática e animação. No segmento Cor da peça elas são arte de fundo (a cartela vira o
@@ -78,7 +89,7 @@ export function SeasonalOptions({ value, onChange, season, forLayout }: { value:
       {season !== undefined && (season ? <Switch checked={!!value.seasonalAuto} onChange={(v) => onChange({ seasonalAuto: v })} label={t("backgroundStudio.cartela_sazonal_automatica_usa_a")} hint={value.seasonalAuto ? t("anatomy.studio.seasonOn") : t("anatomy.studio.seasonOff", { season: label(season.toLowerCase()) })} />
         : <p className="type-caption text-muted">{t(forLayout ? "backgroundStudio.cartela_sem_estacao" : "anatomy.studio.seasonNeeded")}</p>)}
       <OptionStrip title={t("backgroundStudio.animacao_2")} kind="row">
-        <Chip active={!value.animation || value.animation === "NONE"} onClick={() => onChange({ animation: null })}>{t("backgroundStudio.sem_animacao")}</Chip>
+        <Chip active={!value.animation || value.animation === "NONE"} onClick={() => onChange({ animation: "NONE" })}>{t("backgroundStudio.sem_animacao")}</Chip>
         {(cat?.animations ?? []).filter((a) => a !== "NONE").map((a) => <Chip key={a} active={value.animation === a} onClick={() => onChange({ animation: a })}>{t(`backgroundStudio.anim.${a}`)}</Chip>)}
       </OptionStrip>
     </div>
@@ -215,24 +226,31 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   season?: string | null;
   /**
    * RF13: painel de layout próprio (anatomias A1–A4 e narrativas B1–B12 do DNA) no lugar dos layouts do card. Como
-   * função, recebe {@code openSeasonal} para abrir o modal da Cartela sazonal ao clicar na narrativa B11.
+   * função, recebe {@code openSeasonal} para abrir o modal da Cartela sazonal ao clicar na narrativa B11; {@code enter}
+   * (selecionar a narrativa) só roda se a pessoa Aplicar — Cancelar não muda o layout.
    */
-  layoutPanel?: ReactNode | ((ctx: { openSeasonal: () => void }) => ReactNode); ownArt?: boolean; ownArtLabel?: string;
+  layoutPanel?: ReactNode | ((ctx: { openSeasonal: (enter?: () => void) => void }) => ReactNode); ownArt?: boolean; ownArtLabel?: string;
 }) {
   const { t, rich } = useI18n();
   const { data: rec } = useApi<{ skins?: { id: string }[]; recommended?: string[] }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
   const [seg, setSeg] = useState<ArtSegment>("cor");
-  const [seasonalOpen, setSeasonalOpen] = useState(false);
+  // modal da Cartela sazonal aberto; enter/patch = o que só vale ao Aplicar (entrar no layout e o que isso limpa)
+  const [seasonal, setSeasonal] = useState<{ enter?: () => void; patch?: Partial<BgConfig> } | null>(null);
   const set = (p: Partial<BgConfig>) => onChange({ ...value, ...p });
   const special = ownArt ?? hasOwnArt(anatomy);
   function chooseAnatomy(a: string) {
-    onAnatomy(a);
     // seções B/C: a arte do layout sobrepõe aura, material e arte própria
     const patch: Partial<BgConfig> = hasOwnArt(a) ? { aura: null, materialId: null, aiArt: null, uploadUrl: null, posterUrl: undefined } : {};
+    // Cartela sazonal: o layout só muda ao Aplicar o modal (Cancelar deixa tudo como estava)
+    if (a === "CARTELA_SAZONAL") { setSeasonal(anatomy === a ? {} : { enter: () => onAnatomy(a), patch }); return; }
+    onAnatomy(a);
     // a cartela e a animação são do layout Cartela sazonal: escolhidas no modal dele, saem junto com ele
-    if (a === "CARTELA_SAZONAL") setSeasonalOpen(true);
-    else if (anatomy === "CARTELA_SAZONAL") Object.assign(patch, CLEAR_CARTELA);
+    if (anatomy === "CARTELA_SAZONAL") Object.assign(patch, CLEAR_CARTELA);
     if (Object.keys(patch).length) set(patch);
+  }
+  function applySeasonal(draft: Partial<BgConfig>) {
+    seasonal?.enter?.();
+    set({ ...(seasonal?.patch ?? {}), ...draft });
   }
   const cartela = value.seasonalAuto && season ? t("backgroundStudio.cartela_pela_estacao") : (value.seasonalPresetId && ART_INDEX.seasonal[value.seasonalPresetId]?.name) || t("backgroundStudio.cartela_pela_estacao");
   const animation = value.animation && value.animation !== "NONE" ? t(`backgroundStudio.anim.${value.animation}`) : t("backgroundStudio.sem_animacao");
@@ -245,7 +263,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
       {seg === "aura" && <AuraMaterialPanel value={value} onChange={set} onSkin={onSkin} styles={styles} occasions={occasions} disabledNote={disabledNote} />}
       {seg === "layout" && (
         <div className="grid gap-3">
-          {(typeof layoutPanel === "function" ? layoutPanel({ openSeasonal: () => setSeasonalOpen(true) }) : layoutPanel) ?? <>
+          {(typeof layoutPanel === "function" ? layoutPanel({ openSeasonal: (enter) => setSeasonal({ enter }) }) : layoutPanel) ?? <>
             <OptionStrip kind="wide" title={t("backgroundStudio.layout_do_esquema_anatomia_do")} hint={<p className="type-caption text-muted">{t("backgroundStudio.secao_a_layouts_base_secao")}</p>}>
               {SCHEME_ANATOMIES.map((a) => {
                 return <button key={a.id} type="button" aria-pressed={anatomy === a.id} aria-haspopup={a.id === "CARTELA_SAZONAL" ? "dialog" : undefined} onClick={() => chooseAnatomy(a.id)} className="opt-tile is-wide">
@@ -268,13 +286,13 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
           {anatomy === "CARTELA_SAZONAL" && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-line-soft p-2">
               <span className="min-w-0 flex-1 type-body-sm"><b>{t("common.cartela_sazonal")}:</b> {cartela} · {animation}</span>
-              <Button size="sm" aria-haspopup="dialog" onClick={() => setSeasonalOpen(true)}>{t("backgroundStudio.escolher_cartela_e_animacao")}</Button>
+              <Button size="sm" aria-haspopup="dialog" onClick={() => setSeasonal({})}>{t("backgroundStudio.escolher_cartela_e_animacao")}</Button>
             </div>
           )}
           <SkinPicker skin={skin} onSkin={onSkin} recommended={recommendedSkins} />
         </div>
       )}
-      <SeasonalDialog open={seasonalOpen} onClose={() => setSeasonalOpen(false)} value={value} onApply={set} season={season} />
+      <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={value} onApply={applySeasonal} season={season} />
       {seg === "container" && <ContainerColor value={value} onChange={set} skin={skin} />}
     </div>
   );

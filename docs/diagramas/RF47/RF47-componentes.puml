@@ -23,7 +23,7 @@ package "Frontend (Next.js)" {
   component "lib/api/catalog.ts (catalogApi)" as FE3
 }
 package "fai-web · controllers" {
-  [CatalogController\nGET /api/catalog/search\nGET /api/catalog/suggestions\nGET /api/catalog/brands\nGET /api/catalog/products/{id}\nPOST /api/catalog/discover\nPOST /api/pieces/from-catalog\nGET/PUT /api/me/capture-tutorial\n(sem uso no frontend)] as CC
+  [CatalogController\nGET /api/catalog/search\nGET /api/catalog/suggestions\nGET /api/catalog/brands\nGET /api/catalog/products/{id}\nPOST /api/catalog/discover\nPOST /api/pieces/from-catalog\nGET /api/catalog/stores] as CC
   [WardrobeController\nPOST /api/pieces\n(sem produto)] as WC
   [DiscoveryController\nGET /api/explorer/brands] as DC
 }
@@ -31,9 +31,10 @@ package "fai-application · services" {
   [CatalogService] as CS
   [CatalogIngestService] as CIS
   [CatalogNormalizer\n(catalog/normalization.json)] as CN
-  [CatalogMatchScorer] as CMS
+  [CatalogMatchScorer\n(componente design + motivos)] as CMS
+  [CatalogTextInterpreter\nCatalogDesignInterpreter\n(normalization.json → design)] as CTI
   [OfficialCatalogDiscovery] as OCD
-  [AiEngine (RF24)\nCATALOG_DISCOVERY] as AIE
+  [AiEngine (RF24)\nCATALOG_DISCOVERY\nCATALOG_TEXT_INTERPRETER] as AIE
   [WardrobeService\ncreateFromCatalog · create] as WS
   [ExplorerService\nbrandsAndStores] as ES
 }
@@ -45,7 +46,7 @@ package "scripts/catalog (Python)" {
   [normalize_product.py · deduplicate.py\nvalidate_source.py] as PY2
   [rebuild_search_index.py\nrevalidate_catalog.py] as PY3
 }
-database "MySQL\n• brands / brand_aliases\n• catalog_sources\n• catalog_products (dedup_key UNIQUE,\n  FULLTEXT ngram search_text)\n• catalog_product_aliases\n• catalog_variants\n• catalog_images\n• catalog_ingestion_runs\n• wardrobe_items (catalog_product_id,\n  catalog_variant_id, image_origin, user_image_url)\n• user_preferences.capture_tutorial_json" as DB
+database "MySQL\n• brands / brand_aliases\n• catalog_sources\n• catalog_products (dedup_key UNIQUE,\n  FULLTEXT ngram search_text,\n  description, design_json)\n• catalog_product_aliases\n• catalog_variants\n• catalog_images\n• catalog_ingestion_runs\n• wardrobe_items (catalog_product_id,\n  catalog_variant_id, image_origin, user_image_url)" as DB
 cloud "Sites oficiais das marcas\n(domínios de catalog_sources)" as WEB
 cloud "Provedor LLM com busca web\n(Claude; fallback local vazio)" as LLM
 
@@ -61,6 +62,9 @@ DC --> ES : chama
 ES --> CS : catalogBrands()
 CS --> CN : normaliza intenção
 CS --> CMS : score
+CS --> CTI : interpreta o texto da busca
+CTI --> AIE : refina (4+ palavras)
+CIS --> CTI : design da descrição
 CS --> OCD : discover
 OCD --> AIE : chama
 AIE --> LLM : chama
@@ -71,7 +75,7 @@ CS --> WS : createFromCatalog
 CS --> REPOS : lê/grava
 CIS --> REPOS : grava
 WS --> REPOS : grava
-REPOS --> DB : JPA/Flyway (V30)
+REPOS --> DB : JPA/Flyway (V30, V31)
 PY1 --> PY2 : usa (normalization.json\ncompartilhado com CatalogNormalizer)
 PY1 --> DB : grava
 PY3 --> DB : search_text / source_status

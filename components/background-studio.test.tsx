@@ -6,8 +6,8 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
-import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor, within } from "@/test-utils/render";
-import { BackgroundStudio, type BgCatalog, type BgConfig } from "./background-studio";
+import { cleanup, fireEvent, mockApi, renderApp, renderHook, screen, waitFor, within } from "@/test-utils/render";
+import { BackgroundStudio, useLeaveCartela, type BgCatalog, type BgConfig } from "./background-studio";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -17,9 +17,9 @@ const CATALOG: Partial<BgCatalog> = {
   auraPresets: [], materials: [], skins: [], directions: {}, anatomies: [], animations: ["NONE", "SNOW", "LEAVES"], imageGenerationAvailable: false,
 };
 
-function Studio({ onBg, initialAnatomy = "LISTA_VERTICAL", initialBg = {} }: { onBg: (b: BgConfig) => void; initialAnatomy?: string; initialBg?: BgConfig }) {
+function Studio({ onBg, onAnatomy = () => undefined, initialAnatomy = "LISTA_VERTICAL", initialBg = {} }: { onBg: (b: BgConfig) => void; onAnatomy?: (a: string) => void; initialAnatomy?: string; initialBg?: BgConfig }) {
   const [bg, setBg] = useState<BgConfig>(initialBg); const [anatomy, setAnatomy] = useState(initialAnatomy);
-  return <BackgroundStudio value={bg} onChange={(b) => { setBg(b); onBg(b); }} skin="atelier" onSkin={() => undefined} anatomy={anatomy} onAnatomy={setAnatomy} season="SUMMER" />;
+  return <BackgroundStudio value={bg} onChange={(b) => { setBg(b); onBg(b); }} skin="atelier" onSkin={() => undefined} anatomy={anatomy} onAnatomy={(a) => { setAnatomy(a); onAnatomy(a); }} season="SUMMER" />;
 }
 
 describe("Background Studio — Cartela sazonal", () => {
@@ -31,18 +31,34 @@ describe("Background Studio — Cartela sazonal", () => {
     expect(screen.queryByRole("group", { name: "Animação" })).toBeNull();
   });
 
-  it("clicar no layout abre o modal; Aplicar grava cartela e animação; Cancelar não muda nada", async () => {
+  it("Cancelar na primeira escolha não troca o layout nem a arte", async () => {
     mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
-    const onBg = vi.fn();
-    renderApp(<Studio onBg={onBg} />);
+    const onBg = vi.fn(); const onAnatomy = vi.fn();
+    renderApp(<Studio onBg={onBg} onAnatomy={onAnatomy} initialBg={{ aura: { variantId: "aura_x" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Cartela sazonal/ })[0]);
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /Frost/ }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(onAnatomy).not.toHaveBeenCalled();
+    expect(onBg).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("button", { name: /Lista vertical/ })[0].getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("clicar no layout abre o modal; Aplicar entra no layout e grava cartela e animação; Cancelar não muda nada", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const onBg = vi.fn(); const onAnatomy = vi.fn();
+    renderApp(<Studio onBg={onBg} onAnatomy={onAnatomy} />);
     fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Cartela sazonal/ })[0]);
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: /Frost/ }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Neve" }));
     onBg.mockClear();
+    expect(onAnatomy).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Aplicar" }));
-    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({ seasonalPresetId: "frost", animation: "SNOW" }));
+    expect(onAnatomy).toHaveBeenCalledWith("CARTELA_SAZONAL");
+    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({ seasonalPresetId: "frost", animation: "SNOW", aura: null }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getByText(/Frost · Neve/)).toBeTruthy();
 
@@ -60,6 +76,17 @@ describe("Background Studio — Cartela sazonal", () => {
     renderApp(<Studio onBg={onBg} initialAnatomy="CARTELA_SAZONAL" initialBg={{ seasonalPresetId: "frost", animation: "SNOW", color: "#FFFFFF" }} />);
     fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Lista vertical/ })[0]);
-    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({ seasonalPresetId: null, animation: null, seasonalAuto: false, color: "#FFFFFF" }));
+    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({ seasonalPresetId: null, animation: "NONE", seasonalAuto: false, color: "#FFFFFF" }));
+  });
+
+  it("DNA: sair da Cartela sazonal por qualquer caminho (ex.: trocar o elemento-alvo) limpa a cartela", () => {
+    const clear = vi.fn();
+    const { rerender } = renderHook(({ active }) => useLeaveCartela(active, clear), { initialProps: { active: true } });
+    rerender({ active: true });
+    expect(clear).not.toHaveBeenCalled();
+    rerender({ active: false });   // effNarrative deixou de ser B11 (alvo ESQUEMA, outra narrativa, anatomia base…)
+    expect(clear).toHaveBeenCalledTimes(1);
+    rerender({ active: false });
+    expect(clear).toHaveBeenCalledTimes(1);
   });
 });

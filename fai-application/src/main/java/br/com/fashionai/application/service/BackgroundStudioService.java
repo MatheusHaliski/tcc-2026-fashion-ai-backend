@@ -418,8 +418,10 @@ public class BackgroundStudioService {
         Map<String, Object> aiArt = scheme.get("aiArt") instanceof Map<?, ?> art ? (Map<String, Object>) art : null;
         String upload = (String) scheme.get("uploadUrl");
         s.setBackgroundArtUrl(artUrl(s, aiArt != null ? (String) aiArt.get("url") : upload));
-        if (scheme.get("animation") instanceof String anim) {
-            s.setBackgroundAnimationType(BackgroundAnimation.valueOf(anim));
+        // chave presente: o valor manda — null (o Studio limpa a cartela ao trocar de layout, "Sem animação") desliga.
+        // Sem gravar NONE, a animação antiga ficava na entidade e o Views.scheme a devolvia no lugar do null.
+        if (scheme.containsKey("animation")) {
+            s.setBackgroundAnimationType(scheme.get("animation") instanceof String anim ? BackgroundAnimation.valueOf(anim) : BackgroundAnimation.NONE);
         }
         if (Boolean.TRUE.equals(scheme.get("seasonalAuto"))) {
             // v17 prancha 09 — Cartela sazonal: opt-in, só com season preenchido; sobrescreve o fundo manual.

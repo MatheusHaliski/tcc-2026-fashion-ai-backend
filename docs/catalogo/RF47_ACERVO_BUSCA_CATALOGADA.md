@@ -55,6 +55,11 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
   nada — **nunca inventa** produto, marca ou imagem.
 - O descoberto entra como `DISCOVERED` (não aparece para outros). Quando alguém o escolhe, passa a
   `REFERENCE_ONLY` e `owners_count` sobe: o próximo usuário o encontra na busca local.
+- **Crescimento em lote** (`scripts/catalog/collect_official.py`): coleta nomes e dados de produtos direto dos sites
+  oficiais das marcas (sitemaps do robots.txt + JSON-LD/OpenGraph da página). Respeita robots.txt e Crawl-delay, para
+  no primeiro 403/429, não baixa imagens e grava a URL oficial de cada produto. A saída (JSONL por marca) entra pelo
+  `import_products.py`, com dry-run e dedup. Busca na web genérica não serve: devolve sobretudo marketplaces,
+  proibidos pelo RN47.04. Detalhes em `scripts/catalog/README.md`.
 
 ## 4. API
 
@@ -66,10 +71,14 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
 | GET | `/api/catalog/products/{id}` | produto com variantes, imagens (proveniência) e apelidos |
 | POST | `/api/catalog/discover` | busca nas lojas oficiais (RF24/`CATALOG_DISCOVERY`) |
 | POST | `/api/pieces/from-catalog` | cria a peça por referência (dados pessoais no corpo) |
-| GET / PUT | `/api/me/capture-tutorial[/{guide}]` | preferências do antigo guia de fotografia — **sem uso no frontend** desde a retirada da seção Foto |
+| GET | `/api/catalog/stores` | marcas do catálogo com produtos (vitrine do Provador, RF18) |
+
+Removidas em 04/10/2026, sem uso desde que o criador deixou de ter foto: `GET/PUT /api/me/capture-tutorial[/{guide}]` (com a
+coluna `user_preferences.capture_tutorial_json`, apagada na V32) e `POST /api/pieces/analysis` (análise de uma foto; a
+análise continua em `/api/pieces/analysis/batch` e `/multi`).
 
 Controller: `CatalogController`. Serviços: `CatalogService` (busca, sugestões, produto, discover, addToWardrobe,
-tutorial, marcas para o Explorador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
+marcas para o Explorador e o Provador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
 `CatalogMatchScorer`, `OfficialCatalogDiscovery`; `WardrobeService.createFromCatalog`;
 `ExplorerService.brandsAndStores`.
 
@@ -80,6 +89,32 @@ coleção, códigos, apelidos) e re-ranqueados por `CatalogMatchScorer`: marca 0
 0,20 · texto 0,35 · cor 0,10 (· visual 0,15, reservado), normalizados pelos pesos presentes na busca. Texto: palavra
 exata 1, prefixo 0,85, Levenshtein 0,7 (prefixo também na última palavra ainda sendo digitada). Abaixo de 0,35 o
 resultado não aparece.
+
+## 5.1 Características únicas da peça lidas do texto
+
+O campo **"Como ela se chama?"** aceita nome, modelo **ou descrição**. O texto é lido como as características únicas da peça,
+o que separa duas peças da mesma marca e do mesmo tipo. Exemplo (Calvin Klein, no seed):
+
+| A pessoa escreve | O FashionAI entende | Primeiro resultado |
+|---|---|---|
+| "camisa com o logo ck estampado em toda a superfície, frente e verso, cinza e preto" | logo em toda a peça · frente e verso · cinza · preto | Camiseta Monogram Allover (cinza/preto) |
+| "camisa toda azul com um único logo ck branco no centro" | um logo · centro do peito · peça azul · estampa branca | Camiseta Logo Central (azul) |
+
+- **Leitura local** (`CatalogDesignInterpreter`): vocabulário em `normalization.json → design` (o mesmo que o Python valida) —
+  estampa (logo em toda a peça/monograma, um logo, listras, xadrez, floral, camuflado, tie-dye, color block, lisa, estampa),
+  posição e tamanho do logo, lados ("frente e verso") e o **papel das cores**: cor logo depois de "logo/estampa" é da
+  estampa; depois de "toda/fundo" ou antes de "com" é da peça; cores ligadas por "e" herdam o papel.
+- **IA** (`CatalogTextInterpreter`, capacidade `CATALOG_TEXT_INTERPRETER`, RF24): refina descrições com 4+ palavras, só com
+  o vocabulário fechado (valor fora dele é descartado); cache por texto; roda fora da transação da busca. Sem IA, vale a
+  leitura local — nada é inventado.
+- **Produto**: `catalog_products.description` e `design_json` (Flyway V31). Sem design gravado, ele é lido do nome +
+  descrição + cor pelo mesmo intérprete.
+- **Ranqueamento**: componente **design** (peso 0,45) no `% compatível`: estampa 0,40 · posição 0,15 · tamanho 0,05 ·
+  lados 0,10 · cores 0,30 (no papel certo; com logo em toda a peça, as cores do produto inteiro). Cada característica volta
+  como motivo (✓/✗) no card.
+- **Tela**: chips "Entendemos: …" abaixo do campo (com "lido pela IA" / "lido do texto") e a descrição + os motivos em cada
+  card de resultado.
+- Subtipo deduzido do texto ("camisa") só pontua, não filtra (no Brasil "camisa" também é camiseta).
 
 ## 6. Modelo de dados (V30 `V30__catalogo_global.sql`)
 
@@ -92,8 +127,9 @@ resultado não aparece.
 | `catalog_variants` | cor/código/SKU/GTIN por variante (`uq (product_id, variant_key)`) |
 | `catalog_images` | imagem com proveniência: URL, hash, domínio, tipo de fonte, `usage_status`, `retrieved_at`, `last_verified_at` |
 | `catalog_ingestion_runs` | relatório de cada execução de ingestão |
+| `catalog_products` (+2, V31) | `description`, `design_json` (características únicas da peça) |
 | `wardrobe_items` (+4 colunas) | `catalog_product_id`, `catalog_variant_id`, `image_origin`, `user_image_url` |
-| `user_preferences` (+1) | `capture_tutorial_json` |
+| `user_preferences` (V32) | `capture_tutorial_json` removida (o guia de fotografia saiu) |
 
 Enums: `CatalogSourceType` (OFFICIAL_BRAND, OFFICIAL_STORE, AUTHORIZED_RETAILER, PARTNER_API, MANUAL_ADMIN),
 `CatalogSourceStatus` (ACTIVE, UNAVAILABLE, SOURCE_REMOVED, NEEDS_REVALIDATION), `CatalogIngestionStatus`

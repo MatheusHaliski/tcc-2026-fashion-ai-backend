@@ -14,8 +14,9 @@ participant "CatalogController" as C
 participant "WardrobeController" as WC
 participant "CatalogService" as S
 participant "CatalogMatchScorer\nCatalogNormalizer" as M
+participant "CatalogTextInterpreter\nCatalogDesignInterpreter" as TI
 participant "OfficialCatalogDiscovery" as D
-participant "AiEngine (RF24)\nCATALOG_DISCOVERY" as AI
+participant "AiEngine (RF24)\nCATALOG_DISCOVERY\nCATALOG_TEXT_INTERPRETER" as AI
 participant "CatalogIngestService" as I
 participant "WardrobeService" as W
 database "MySQL" as DB
@@ -27,11 +28,24 @@ S -> DB: SELECT brands + brand_aliases
 C --> FE: 200 {brands} ("Levis" → Levi's)
 U -> FE: digita "501 preto"
 FE -> C: GET /api/catalog/search?category&subcategory&brand&q&color
-C -> S: search(SearchRequest)
-S -> M: resolve intenção (slug, cor, tokens)
+C -> S: search(userId, SearchRequest)
+S -> TI: interpret(userId, q) — características únicas da peça
+note right of TI
+  Leitura local sempre (normalization.json → design):
+  estampa, posição/tamanho do logo, lados,
+  cor da peça × cor da estampa.
+  4+ palavras: AiEngine CATALOG_TEXT_INTERPRETER
+  (vocabulário fechado, cache, fora da transação).
+end note
+opt descrição com 4+ palavras e IA disponível
+  TI -> AI: text(CATALOG_TEXT_INTERPRETER)
+  AI --> TI: JSON {pattern, logoPlacement, sides, baseColors, printColors}
+end
+TI --> S: DesignTraits (+ palavras consumidas)
+S -> M: resolve intenção (slug, cor, tokens restantes, design)
 S -> DB: candidates(brandId, category, subcategory, terms)\nMATCH(search_text) AGAINST (BOOLEAN MODE)
-S -> M: score(Intent, Candidate) — descarta < MIN_SCORE 0,35
-C --> FE: 200 {results, matchScore, canSearchOfficial}\n(cards "% compatível")
+S -> M: score(Intent, Candidate com design_json/descrição)\n— componente design (peso 0,45) + motivos ✓/✗; descarta < 0,35
+C --> FE: 200 {intent.design, results, matchScore.reasons, canSearchOfficial}\n(chips "Entendemos: …" e cards "% compatível")
 alt nada encontrado e canSearchOfficial
   U -> FE: "Pesquisar em lojas oficiais"
   FE -> C: POST /api/catalog/discover (SearchRequest)
@@ -68,6 +82,6 @@ else com produto do catálogo
 end
 note over FE, C
   O criador de peça não tem envio de foto: imagem = foto oficial ou ilustração da categoria.
-  GET/PUT /api/me/capture-tutorial continuam no backend, mas SEM USO no frontend.
+  As rotas do antigo guia de fotografia (/api/me/capture-tutorial) e POST /api/pieces/analysis foram removidas.
 end note
 @enduml

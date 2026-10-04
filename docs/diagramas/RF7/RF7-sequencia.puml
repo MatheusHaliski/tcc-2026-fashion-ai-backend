@@ -1,0 +1,69 @@
+@startuml RF7_Sequencia
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "Frontend\ndetail-modal · expanded-card\n(pieces/[id] · schemes/[id])" as FE
+participant "SchemeController" as SCC
+participant "WardrobeController" as WC
+participant "CommentController" as CC
+participant "SchemeService" as SS
+participant "WardrobeService" as WS
+participant "SocialService" as SO
+participant "Guard" as G
+database "MySQL" as DB
+
+P -> FE: clica num esquema da lista do Closet
+FE -> SCC: GET /api/schemes/{id}
+SCC -> SS: get(viewer, id)
+SS -> G: requireView(viewer, ownerId, visibilidade efetiva)
+SS -> DB: schemes · scheme_items · seals
+SCC --> FE: 200 {scheme, wearstyles, seals, sealBadges, remixedFrom, canEdit}
+P -> FE: clica numa peça (linha compacta do esquema)
+FE -> FE: empilha navegação (origem = schemeId) — CA01
+FE -> WC: GET /api/pieces/{id}?fromScheme={schemeId}
+WC -> WS: detail(viewer, id, fromScheme)
+WS -> WS: requireVisiblePiece (moderação APPROVED + Guard.requireView)
+alt sem permissão
+  WS --> FE: 404 / 403
+else peça ARCHIVED e quem pede não é o dono (CA03)
+  WS -> DB: scheme_items.snapshotJson do esquema de origem
+  WC --> FE: 200 {notAvailableAnymore: true, snapshot, fromSchemeId}
+else peça disponível
+  WS -> DB: touchView(id) · scheme_items (originSchemes)
+  WC --> FE: 200 {piece, wearstyles, originSchemes, fromSchemeId, canEdit}
+end
+alt canEdit = true (dono)
+  P -> FE: alterna disponível/indisponível
+  FE -> WC: PATCH /api/pieces/{id}/flags {disponivel}
+  WC -> WS: toggles(user, id, favorite, disponivel, forSale)
+  WS -> DB: wardrobe_items.availabilityStatus = AVAILABLE | UNAVAILABLE
+  WS -> WS: publishEvent(AvailabilityChanged)
+  WS -> DB: INSERT wardrobe_availability_log (WardrobeEventListeners, após o commit)
+  WC --> FE: 200 PieceView
+  opt editar
+    FE -> WC: PUT /api/pieces/{id} (PieceForm)
+    WC -> WS: update(user, id, form)
+    WC --> FE: 200 PieceView
+  end
+else visitante (CA02)
+  FE -> FE: dados públicos + InteractionBar (RF19), sem edição
+  opt voltar ao esquema de origem
+    FE -> CC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme=
+    CC -> SO: returnToOrigin(user, pieceId, fromScheme)
+    alt peça indisponível
+      SO --> FE: 409 INDISPONIVEL
+    else
+      CC --> FE: 200 {originSchemeId, title, otherSchemes}
+    end
+  end
+end
+P -> FE: "voltar"
+FE -> FE: desempilha para o esquema de origem
+@enduml

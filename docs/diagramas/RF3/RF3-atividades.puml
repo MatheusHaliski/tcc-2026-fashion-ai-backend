@@ -1,0 +1,99 @@
+@startuml RF3_Atividades
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /settings (abas Conta · Privacidade · Aparência · Idioma · Seus dados);
+|Frontend (settings)|
+:GET /api/me · /api/me/preferences · /api/me/consents\n· /api/auth/sessions · /api/me/exports;
+|Pessoa|
+if (O que deseja gerenciar?) then (dados do perfil)
+  |Frontend (settings)|
+  :PATCH /api/me/profile (nome, bio, país)\nPOST /api/me/avatar · /api/me/cover;
+  |Backend (PreferencesController · PreferencesService)|
+  :updateProfile / uploadProfileImage;\naudita ALTERACAO_PERFIL;
+elseif (dado sensível)
+  |Frontend (settings)|
+  :PATCH /api/me/sensitive {password, email, phone,\nbirthDate, twoFactorEnabled};
+  |Backend (MeController · AccountService)|
+  :identity.reauthenticate(senha atual) — CA01;
+  if (Senha correta?) then (não)
+    #FFE3E3:401/403 reautenticação recusada;
+    stop
+  endif
+  if (Trocou o e-mail?) then (sim)
+    :VerificationCode EMAIL_CHANGE (6 dígitos, 2 h)\ne-mail ao novo endereço + aviso ao antigo (CA02);
+    |Pessoa|
+    :Digita o código;
+    |Backend (MeController · AccountService)|
+    :POST /api/me/email-change/confirm\n(5 tentativas; 409 EMAIL_EM_USO se tomado);
+  endif
+  :Audita ALTERACAO_DADO_PESSOAL_SENSIVEL;
+elseif (senha e sessões)
+  |Backend (AuthController · IdentityService)|
+  :PUT /api/auth/password — changePassword\n(revoga as outras sessões — CA11);
+  :GET /api/auth/sessions; DELETE /api/auth/sessions/{id}\nou DELETE /api/auth/sessions (CA10);
+  note right
+    CA07 recuperação: POST /api/auth/password-reset/request
+    e /confirm; CA08 logout: POST /api/auth/logout
+  end note
+elseif (privacidade e consentimentos)
+  |Backend (MeController · AccountService)|
+  :PUT /api/me/privacy {PUBLIC | FOLLOWERS | PRIVATE}\n(privateAccount = visibility != PUBLIC — CA12);
+  :PUT /api/me/consents/{purpose} {granted}\n(concessão e revogação com o mesmo gesto);
+  note right
+    CA19–CA22 Privacy by Default: conta nasce PRIVATE,
+    nenhum consentimento pré-marcado; FACIAL_RECOGNITION
+    concedido → 400 FINALIDADE_NAO_UTILIZADA;
+    audita CONSENTIMENTO_CONCEDIDO / REVOGADO
+  end note
+elseif (notificações)
+  |Backend (NotificationController · NotificationService)|
+  :GET /api/notifications · POST /read · POST /read-all (CA15–CA16);
+  :PUT /api/notifications/preferences {changes, master} (CA17);
+  if (Desligar tipo SECURITY/obrigatório?) then (sim)
+    #FFE3E3:400 TIPO_OBRIGATORIO;
+    stop
+  endif
+else (seus dados — LGPD)
+  |Backend (MeController · AccountService)|
+  if (Exportar ou excluir?) then (exportar)
+    :POST /api/me/exports → 202 (CA04/CA24);
+    :Gera JSON (perfil, peças, esquemas, comentários,\nconsentimentos, fotos, inferências de IA);
+    :Grava em restricted/users/{id}/exports/{exportId}.json\nstatus READY, expira em 7 dias;
+    :Notificação DATA_EXPORT_READY; audita EXPORTACAO_CONTA;
+    |Pessoa|
+    :GET /api/me/exports/{id}/file (só o dono; 410 se expirou);
+  else (excluir conta)
+    |Backend (MeController · AccountService)|
+    :POST /api/me/deletion {password} → reautentica;
+    :status DELETION_SCHEDULED, deletionScheduledFor = +30 dias (CA05);\ne-mail de aviso; audita EXCLUSAO_CONTA;
+    note right: DELETE /api/me/deletion cancela na carência; ver RF1 (ciclo da conta)
+  endif
+endif
+|Frontend (settings)|
+:Atualiza a seção e exibe o aviso de sucesso;
+stop
+@enduml
