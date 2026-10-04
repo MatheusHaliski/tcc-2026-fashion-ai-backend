@@ -116,7 +116,7 @@ def run(args, fetch=None, brands=None, log=print) -> dict:
         cfg = brand.get("collector") or {}
         warnings: list[str] = []
         written = 0
-        fh = None if args.dry_run else jsonl.open("a", encoding="utf-8")
+        fh = None                                                 # aberto só no 1º produto (sem arquivo vazio)
 
         def on_item(item: dict):
             nonlocal written
@@ -129,8 +129,11 @@ def run(args, fetch=None, brands=None, log=print) -> dict:
             if item.get("official_product_url") in seen_urls:
                 return
             seen_urls.add(item.get("official_product_url"))
+            nonlocal fh
             written += 1
-            if fh:
+            if not args.dry_run:
+                if fh is None:
+                    fh = jsonl.open("a", encoding="utf-8")
                 fh.write(json.dumps(item, ensure_ascii=False) + "\n")
                 fh.flush()
             if args.verbose:

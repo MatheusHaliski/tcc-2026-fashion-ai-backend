@@ -232,6 +232,11 @@ class CliTest(unittest.TestCase):
             self.assertFalse(set(urls) & set(web2.calls))
             self.assertEqual(len(jsonl.read_text(encoding="utf-8").splitlines()), 2)
 
+    def test_sem_produto_nao_cria_arquivo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            collect_official.run(self.args(tmp), fetch=FakeWeb({}), brands=self.BRANDS, log=lambda *_: None)
+            self.assertFalse((Path(tmp) / "nike.jsonl").exists())
+
     def test_dry_run_nao_grava(self):
         pages = {"https://nike.com.br/robots.txt": (200, b"", "text/plain"),
                  "https://nike.com.br/sitemap.xml": (200, urlset("https://nike.com.br/p/1"), XML),
