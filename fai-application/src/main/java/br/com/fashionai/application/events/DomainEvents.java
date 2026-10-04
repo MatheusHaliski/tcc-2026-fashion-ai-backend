@@ -46,6 +46,15 @@ public final class DomainEvents {
     public record InteractionReceived(UUID ownerId, UUID actorId, String kind, UUID targetId) {
     }
 
+    /**
+     * HypeScore v2 — um sinal de comportamento sobre uma peça ou look (curtida, save, compartilhamento, remix, visualização).
+     * Gravado no agregado diário depois do commit, já filtrado pela política de integridade (sem auto-interação, 1 por
+     * pessoa/dia, conta nova pesa menos). {@code actorId} nulo = visitante (não conta).
+     */
+    public record HypeSignal(br.com.fashionai.domain.model.enums.HypeSignalType signal, br.com.fashionai.domain.model.enums.HypeEntityType entityType,
+                             UUID entityId, UUID actorId, UUID ownerId) {
+    }
+
     public record MirrorAction(UUID userId, String action) {
     }
 

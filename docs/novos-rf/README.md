@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF47): índice e mapa de numeração
+# Novos RF (RF25–RF48): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -26,7 +26,8 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF45 | Imagens canônicas de peças (validação, segmentação, captura adaptativa) | RF4 (V29, `vision/`) | [RF04_ADAPTIVE_GARMENT_CAPTURE.md](../visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md) | `docs/diagramas/RF45/` |
 | RF46 | FAI Creative Engine e serviços Adobe | — (parcial: Background Studio, selos) | cartão Trello | `docs/diagramas/RF46/` |
 | RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
-| RF48 | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) — **proposta** | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
+| RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
+| RF48 *(proposta concorrente; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF48_FashionAI_Lens.md](RF48_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
 
 ## Mudanças em RF antigos (2026-09-24)
 

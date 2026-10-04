@@ -15,6 +15,11 @@ import { skinStyle } from "@/lib/skins";
 import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
+import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeViewState } from "@/lib/hype/model";
+import { useHypeSummary } from "@/lib/hype/use-hype";
 
 /**
  * Imagem da peça para o card: a foto do feed (4:5, enquadrada pelo template da categoria) quando existe; senão a
@@ -37,14 +42,19 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
  * Camadas (RF11): superfície externa (o article) → área artística visível nas quatro laterais ({@link ArtStage}) →
  * container com o conteúdo acima → área da peça com fundo próprio. A arte é decorativa: não recebe clique nem foco.
  */
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra, flip = true }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
+  /** verso com o Hype (↻); desligado na seleção (montar look) e na prévia */
+  flip?: boolean;
 }) {
   const detail = useDetailModal();
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
   const preview = href === "#";
+  const flippable = flip && !preview && !selectable;
+  const hype = useHypeSummary("PIECE", piece.id, !preview && !selectable);
+  const hypeState = hypeViewState(hype.summary, hype);
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
@@ -73,7 +83,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
     </>
   );
   const name = <span className="pc-name">{piece.name}</span>;
-  return (
+  const card = (
     <article {...surface} className={`fai-card piece-card ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} />
       <div className="pc-frame">
@@ -100,6 +110,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
+                {!preview && <span className="pc-hype-row"><HypeBadge state={hypeState} summary={hype.summary} />{flippable && <CardFlipButton side="front" />}</span>}
               </div>
             </>
           )}
@@ -107,5 +118,13 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
         </div>
       </div>
     </article>
+  );
+  if (!flippable) return card;
+  // frente = identidade + moda + social; verso = HYPE ANALYTICS (só o ↻ vira — foto abre o detalhe, curtir curte)
+  return (
+    <FashionCard name={piece.name}>
+      <FashionCardFront>{card}</FashionCardFront>
+      <FashionCardBack><HypeCardBack type="PIECE" id={piece.id} name={piece.name} /></FashionCardBack>
+    </FashionCard>
   );
 }

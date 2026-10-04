@@ -7,23 +7,29 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
-import { MyCoupons } from "@/components/coupons/my-coupons";
+import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
 import { Avatar, Button, Card, Chip, Dropdown, EmptyState, ErrorState, Field, Input, Pagination, SegmentPicker, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { DnaCard, type DnaView } from "@/components/dna-card";
-import { SchemeCard, hypeColor } from "@/components/scheme-card";
+import { SchemeCard } from "@/components/scheme-card";
+import { hypeColor } from "@/lib/hype/model";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
-export type TabId = "closet" | "looks" | "dna" | "saved_looks" | "saved_pieces" | "daily" | "capsule" | "groups" | "coupons";
+/**
+ * Abas do Lookbook (docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md §3.3). "Salvos" reúne looks e peças salvos (SegmentPicker,
+ * ids antigos saved_looks/saved_pieces viram alias); "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
+ */
+export type TabId = "closet" | "looks" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights";
+export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
 /** estado da peça no closet (valores aceitos por WardrobeService.stateMatches); "venda" = sub-aba Peças à venda (RF4.CA8) */
 const STATES = ["", "disponivel", "indisponivel", "venda"] as const;
 
 /** Lookbook (RF6) — usado no próprio perfil (/lookbook) e no perfil de terceiros (/u/[username]). */
-export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: string; initialTab?: TabId }) {
+export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "looks" }: { ownerId: string; initialTab?: TabId; initialSaved?: SavedView }) {
   const { t } = useI18n(); const { user } = useAuth();
   const { data: ov, loading, error, reload } = useApi<Overview>((signal) => api.get(`/api/users/${ownerId}/lookbook`, { signal, anonymous: !user }), [ownerId, !!user]);
   const [tab, setTab] = useState<TabId>(initialTab);
@@ -34,22 +40,21 @@ export function LookbookTabs({ ownerId, initialTab = "closet" }: { ownerId: stri
   if (!ov.visible) return <EmptyState title={t("lookbookTabs.perfil_privado")} hint={t("lookbookTabs.siga_esta_pessoa_para_ver")} />;
   // Peças e esquemas nunca dividem aba: Closet e Peças salvas (peças) × Looks e Looks salvos (esquemas).
   const count = (id: string) => ov.tabs.find((x) => x.id === id)?.count;
+  const saved = (count("saved_looks") ?? 0) + (count("saved_pieces") ?? 0);
   const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: count("looks") },
-    ...(ov.self ? [{ id: "dna" as TabId, label: t("lookbook.dna") }] : []),
-    ...(ov.self ? [{ id: "saved_looks" as TabId, label: t("lookbook.savedLooks"), count: count("saved_looks") }, { id: "saved_pieces" as TabId, label: t("lookbook.savedPieces"), count: count("saved_pieces") },
+    ...(ov.self ? [{ id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
       { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") },
-    ...(ov.self ? [{ id: "coupons" as TabId, label: t("common.meus_cupons_resgatados") }] : [])];
+    ...(ov.self ? [{ id: "insights" as TabId, label: t("lookbook.insights") }] : [])];
   return (
     <>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "closet" && <ClosetTab ownerId={ownerId} self={ov.self} empty={ov.emptyCloset} />}
       {tab === "looks" && <LooksTab ownerId={ownerId} self={ov.self} />}
       {tab === "dna" && ov.self && <DnaLooksTab />}
-      {tab === "saved_looks" && ov.self && <SavedLooksTab />}
-      {tab === "saved_pieces" && ov.self && <SavedPiecesTab />}
+      {tab === "saved" && ov.self && <SavedTab initial={initialSaved} looks={count("saved_looks")} pieces={count("saved_pieces")} />}
       {tab === "daily" && ov.self && <DailyTab />}
       {tab === "capsule" && ov.self && <CapsuleTab />}
-      {tab === "coupons" && ov.self && <MyCoupons />}
+      {tab === "insights" && ov.self && <HypeWardrobeInsights />}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
     </>
   );
@@ -100,6 +105,20 @@ function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
 }
 
 /** Looks salvos (RF6.CA09–CA13) — só esquemas salvos de outras pessoas; os próprios ficam em "Meus looks". */
+/** Salvos: looks e peças salvos numa aba só — o SegmentPicker troca a lista (uma de cada vez, nunca empilhadas). */
+function SavedTab({ initial, looks, pieces }: { initial: SavedView; looks?: number; pieces?: number }) {
+  const { t } = useI18n();
+  const [view, setView] = useState<SavedView>(initial);
+  useEffect(() => { setView(initial); }, [initial]);
+  return (
+    <>
+      <SegmentPicker label={t("lookbook.saved")} value={view} onChange={setView} className="mb-3"
+        options={[{ id: "looks", label: t("lookbook.savedLooks"), count: looks }, { id: "pieces", label: t("lookbook.savedPieces"), count: pieces }]} />
+      {view === "looks" ? <SavedLooksTab /> : <SavedPiecesTab />}
+    </>
+  );
+}
+
 function SavedLooksTab() {
   const { t } = useI18n(); const toast = useToast(); const [page, setPage] = useState(0); const [occasion, setOccasion] = useState("");
   const { data, loading, reload } = useApi<Page<{ scheme: SchemeView; favorite?: boolean; origin?: string; originLabel?: string; savedAt?: string }>>((signal) => api.get(`/api/me/saved-looks${qs({ page, size: 24, occasion })}`, { signal }), [page, occasion]);
@@ -128,7 +147,7 @@ function SavedPiecesTab() {
 
 function DailyTab() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const [withAi, setWithAi] = useState(false);
-  const { data, loading, reload } = useApi<{ panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: Record<string, unknown>; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: { date: string; scheme?: SchemeView; feedback?: string | null; hype?: number }[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
+  const { data, loading, reload } = useApi<{ panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: Record<string, unknown>; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: { date: string; title?: string; scheme?: SchemeView; feedback?: string | null; hypeScore?: number | null; hype?: number }[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
   // recarregar (depois de trocar a versão do painel) mantém a aba na tela: a lista não some e o foco fica nela
   if (!data) return <Skeleton className="h-64" />;
   const panel = data.panel ?? {}; const hype = Number(panel.hype ?? panel.score ?? data.scheme?.hypeScore ?? 0);
@@ -157,7 +176,7 @@ function DailyTab() {
           ) : <p className="type-body text-muted">{t("lookbookTabs.marque_um_look_como_look")}</p>}
         </Card>
         {data.today && (data.today.feedback == null) && <Card className="mb-4"><p className="type-body mb-2">{data.feedbackReminder?.message ?? t("lookbookTabs.como_foi_o_look_de")}</p><div className="flex gap-2">{(data.feedbackOptions ?? ["ADOREI", "NAO_USEI", "NAO_GOSTEI"]).map((o) => <Button key={o} onClick={() => feedback(o)}>{o === "ADOREI" ? t("lookbookTabs.adorei") : o === "NAO_USEI" ? t("lookbookTabs.nao_usei") : t("lookbookTabs.nao_gostei")}</Button>)}</div></Card>}
-        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="flex items-center justify-between py-2 type-body-sm"><span>{fmtDate(h.date)} · {h.scheme?.title ?? ""}</span><span className="type-data">{h.feedback ?? "—"}{h.hype != null ? t("lookbookTabs.hype", { Math: Math.round(h.hype) }) : ""}</span></li>)}</ul>}</Card>
+        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="flex items-center justify-between py-2 type-body-sm"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="type-data">{h.feedback ?? "—"}{(h.hypeScore ?? h.hype) != null ? t("lookbookTabs.hype", { Math: Math.round(Number(h.hypeScore ?? h.hype)) }) : ""}</span></li>)}</ul>}</Card>
       </div>
     </div>
   );
