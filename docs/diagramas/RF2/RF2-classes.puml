@@ -1,0 +1,157 @@
+@startuml RF2_Classes
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  +status: AccountStatus
+  +twoFactorEnabled: boolean
+  +country: String
+  +lastLoginAt: Instant
+  +deletionScheduledFor: Instant
+  .. +25 campos ..
+}
+class RefreshToken {
+  +user: User
+  +tokenHash: String
+  +familyId: UUID
+  +expiresAt: Instant
+  +revokedAt: Instant
+  +rotatedFromId: UUID
+  +createdIp: String
+  +userAgent: String
+  +deviceName: String
+  +locationApprox: String
+  +lastUsedAt: Instant
+  +persistent: boolean
+  +isUsable(now): boolean
+}
+class VerificationCode {
+  +user: User
+  +purpose: VerificationPurpose
+  +codeHash: String
+  +target: String
+  +expiresAt: Instant
+  +consumedAt: Instant
+  +attempts: int
+  +isUsable(now): boolean
+}
+class AuditLog {
+  +actor: String
+  +acao: String
+  +recurso: String
+  +resultado: String
+  +ip: String
+  +userAgent: String
+  +timestamp: Instant
+  +correlationId: String
+}
+}
+package "fai-domain · enums" {
+enum AccountStatus {
+  PENDING_EMAIL_VERIFICATION
+  ACTIVE
+  PENDING_VALIDATION
+  SUSPENDED
+  DELETION_SCHEDULED
+  DELETED
+}
+enum VerificationPurpose {
+  EMAIL_VERIFICATION
+  EMAIL_CHANGE
+  TWO_FACTOR
+  PASSWORD_RESET
+}
+}
+package "fai-application · service" {
+class IdentityService {
+  +login(cmd, ip, userAgent): Session
+  +refresh(rawRefresh, ip, userAgent): Session
+  +logout(user, sessionId)
+  +sessionActive(familyId): boolean
+  +requestPasswordReset(email, ip, userAgent)
+  +confirmPasswordReset(token, newPassword, confirm)
+  +reauthenticate(userId, password)
+  +findByEmail(rawEmail): Optional<User>
+}
+class "LoginCommand" as LoginCommand << (R,#E4DEF0) record >> {
+  +identifier: String
+  +password: String
+  +rememberMe: boolean
+  +deviceName: String
+  +twoFactorCode: String
+}
+class "Session" as Session << (R,#E4DEF0) record >> {
+  +accessToken: String
+  +expiresInSeconds: long
+  +refreshToken: String
+  +refreshExpiresAt: Instant
+  +sessionId: UUID
+  +user: UserCard
+  +status: String
+  +emailVerified: boolean
+  +warnings: List<String>
+}
+interface TokenIssuerPort {
+  +issueAccessToken(user, sessionId): String
+  +accessTokenTtl(): Duration
+}
+interface PasswordHasherPort {
+  +hash(raw): String
+  +matches(raw, encoded): boolean
+  +needsRehash(encoded): boolean
+}
+interface RateLimitPort {
+  +tryAcquire(owner, key, limit, window): boolean
+  +status(owner, key, limit, window): QuotaStatus
+  +reset(owner, key)
+}
+}
+package "fai-web · security" {
+class JwtTokenIssuer {
+  +issueAccessToken(user, sessionId): String
+  +accessTokenTtl(): Duration
+}
+class Argon2PasswordHasher {
+  +hash(raw): String
+  +matches(raw, encoded): boolean
+  +needsRehash(encoded): boolean
+}
+class SessionActiveFilter {
+  #doFilterInternal(request, response, chain)
+}
+}
+RefreshToken "*" --> "1" User : user
+VerificationCode "*" --> "1" User : user
+User --> AccountStatus
+VerificationCode --> VerificationPurpose
+IdentityService ..> LoginCommand
+IdentityService ..> Session
+IdentityService --> TokenIssuerPort
+IdentityService --> PasswordHasherPort
+IdentityService --> RateLimitPort
+IdentityService ..> RefreshToken : cria/rotaciona
+JwtTokenIssuer ..|> TokenIssuerPort
+Argon2PasswordHasher ..|> PasswordHasherPort
+SessionActiveFilter --> IdentityService : sessionActive(sid)
+note top of User : tabela users
+note top of RefreshToken : tabela refresh_tokens\n(1 sessão = 1 familyId)
+note top of VerificationCode : tabela verification_codes
+note top of AuditLog : tabela audit_log
+@enduml

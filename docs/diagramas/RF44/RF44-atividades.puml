@@ -1,0 +1,102 @@
+@startuml RF44_Atividades
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca / Celebridade|
+start
+:Perfil (brands/[slug]) → aba Guarda-roupa 3D;
+note right
+  Card do Trello sem descrição: fluxo tirado do código.
+  A criação do bloco/guarda-roupa em si é o RF39;
+  aqui o foco é a venda do item único e personalizável.
+end note
+|Backend (WardrobeCreatorService)|
+if (Perfil MARCA ou CELEBRIDADE?) then (não)
+  #FFE3E3:403 (creator exige perfil de marca/celebridade);
+  stop
+endif
+:GET /api/room-creator/options: blocos, materiais,
+cores, níveis, identidade e selos ATIVOS;
+|Marca / Celebridade|
+:Personaliza o item: material, cor, logo (PNG),
+arte das portas, texto da placa e selo exigido;
+:Define a venda: pricePoints, requiredLevel, stock,
+perUserLimit, availableFrom/Until, requiresSeal;
+if (Tipo de item?) then (Meu Quarto)
+  :Bloco do móvel (COMPONENT) ou
+  guarda-roupa inteiro (WARDROBE);
+else (Background Studio)
+  #FFE3E3:Aura / material / skin à venda
+  <<planejado>> — não implementado, conforme Trello;
+  note right
+    Hoje asset_presets (AssetPreset) não tem
+    criador, preço nem estoque; não há endpoint
+    de venda no BackgroundController.
+  end note
+  stop
+endif
+|Backend (WardrobeCreatorService)|
+:POST /api/room-creator/items → save();
+if (Preço 0..20000, janela válida e selo do próprio perfil?) then (não)
+  #FFE3E3:400 PRECO_INVALIDO / PERIODO_INVALIDO
+  ou 403 selo de outro perfil;
+  stop
+endif
+:sku "BRD-<marca>-<token>", rarity MARCA/CELEBRIDADE,
+requiredLevel = maior(escolhido, bloco, material);
+|Bancos-serviços|
+:INSERT room_catalog (kind, finish_json, bundle_json,
+stock_limit, per_user_limit, requires_seal);
+|Comprador|
+:Loja do quarto (points → RoomStore)
+ou aba da marca (RoomStore compact);
+|Backend (FaiPointsService)|
+:GET /api/points/shop: itens ativos, criador ativo,
+availability, blocker, levelOk, affordable;
+|Comprador|
+:Experimenta no módulo (try-on) e compra;
+|Backend (FaiPointsService)|
+:POST /api/points/shop/{sku}/purchase → buy()
+trava usuário → item;
+if (nível OK, não esgotado, sem blocker e saldo suficiente?) then (não)
+  #FFE3E3:409 NIVEL_INSUFICIENTE, ESGOTADO,
+  CONDICAO_DE_COMPRA ou SALDO_INSUFICIENTE;
+  stop
+endif
+note right
+  blocker(): EM_BREVE, EXPIRADO, ESGOTADO, INATIVO,
+  criador suspenso, limite por pessoa, selo exigido
+  (SealBond APPROVED com o criador — ver RF25/RF20).
+end note
+|Bancos-serviços|
+:INSERT fai_points_ledger (SHOP_PURCHASE, -pricePoints);
+:UPDATE room_catalog.sold_count + 1;
+:INSERT room_inventory (serial = sold_count
+quando há stock_limit → unidade numerada);
+|Comprador|
+:Monta no quarto: POST /api/me/room-inventory/{id}/apply;
+|Backend (RoomService)|
+:compatibleModules → applyFinish (room_layouts.modules_json);
+stop
+@enduml

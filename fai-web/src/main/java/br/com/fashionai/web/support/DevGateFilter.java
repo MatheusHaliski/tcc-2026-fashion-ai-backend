@@ -1,8 +1,8 @@
 package br.com.fashionai.web.support;
 
 import br.com.fashionai.application.common.Msg;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -228,7 +228,7 @@ public class DevGateFilter extends OncePerRequestFilter {
                 return false;
             }
             JsonNode data = JSON.readTree(Base64.getUrlDecoder().decode(p[1]));
-            String id = data.path("i").asText("").trim().toLowerCase(Locale.ROOT);
+            String id = data.path("i").asString("").trim().toLowerCase(Locale.ROOT);
             return !id.isEmpty() && (allowed.isEmpty() || allowed.contains(id));
         } catch (Exception e) {
             return false;

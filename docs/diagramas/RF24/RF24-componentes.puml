@@ -1,0 +1,76 @@
+@startuml RF24_Componentes
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de componentes — arquitetura do motor (gerado do código: serviços → AiEngine → provedores/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "settings/page.tsx — aba Privacidade\n(consentimentos por finalidade)" as FE0
+  component "admin/system/page.tsx\n(providers · catalog · recent · remoteEnabled)" as FE1
+  component "Telas dos RFs hospedeiros\n(pieces/new · copilot · explorer · room · photos · autopilot)" as FE2
+}
+package "fai-web · controllers" {
+  [MeController] as MC
+  [AdminController] as AC
+  [Controllers dos RFs hospedeiros\n(WardrobeController, SchemeController, DnaController,\nBackgroundController, TryOnController, SealController…)] as HC
+}
+package "fai-application · services" {
+  [AccountService] as AS
+  [AdminService] as ADS
+  [Serviços hospedeiros\n(WardrobeService, SchemeService, DnaService, CopilotService,\nBackgroundStudioService, TryOnService, SealService, PhotoService,\nMirrorService, Avatar3dService, HypeScoreService…)] as HS
+}
+package "fai-application · ai (motor RF24)" {
+  [AiEngine\n(text · execute · remoteAllowed)] as AI
+  [AiCatalog\n(CapabilitySpec: primário · alternativo · local · cota · timeout)] as CAT
+  [AiCapability\n(25 capacidades · hostRf · consentPurpose)] as CAP
+  [AiBudget\n(teto diário US$ global e por usuário)] as BUD
+  [CelebrityPromptValidator] as VAL
+  [ai.local\n(LocalAdvisors · LocalSchemeComposer ·\nLocalDnaSynthesizer · Similarity · ColorMath)] as LOC
+}
+package "fai-infrastructure · adapters" {
+  [ai-providers\nGeminiProvider (id gemini)\nClaudeProvider (id claude)] as PROV
+  [ai-providers · image\nMeshyModel3dAdapter · StabilityFast3dAdapter] as PROV3D
+  [platform · InMemoryRateLimit\n(RateLimitPort)] as RL
+  [AiInferenceLogRepository\nUserConsentRepository\nAiReviewItemRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• ai_inference_log\n• user_consents\n• ai_review_items\n• audit_log" as DB
+cloud "Google Gemini API\n(generativelanguage.googleapis.com)" as GEM
+cloud "Anthropic API\n(Claude)" as CLA
+
+FE0 --> MC : GET/PUT /api/me/consents/{purpose}
+FE1 --> AC : GET /api/admin/ai
+FE2 --> HC : rotas dos RFs hospedeiros
+MC --> AS : chama
+AC --> ADS : chama
+HC --> HS : chama
+AS --> REPOS : grava consentimento
+ADS --> AI : providerAvailability · remoteEnabled
+ADS --> CAT : AiCatalog.all()
+ADS --> REPOS : lê ai_inference_log
+HS --> AI : text(TextCall) / execute(...)
+AI --> CAT : spec(capability)
+CAT --> CAP : usa
+AI --> VAL : valida prompt
+AI --> BUD : check(userId, custo)
+AI --> RL : tryAcquire / status
+AI --> PROV : invoke(AiRequest)
+HS --> LOC : fallback local
+HS --> PROV3D : RF16 (feature flag)
+AI --> REPOS : lê consentimento · grava inferência
+BUD --> REPOS : soma custo do dia
+PROV --> GEM : HTTPS
+PROV --> CLA : HTTPS
+REPOS --> DB : JPA/Flyway
+@enduml

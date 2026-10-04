@@ -1,0 +1,34 @@
+@startuml RF43_MaquinaDeEstados_Sugestao
+!pragma layout smetana
+title RF43 — Sugestão do Autopiloto e WeekPlan: da combinação ranqueada ao esquema / Look do Dia
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Sugestão diária (em memória)" as Diaria {
+  [*] --> Candidata : LocalSchemeComposer.compose\n+ pontuação
+  Candidata --> Sugerida : IA (COPILOT) ou fallback\nescolhe 3 (POST /api/autopilot/daily)
+  Candidata --> Excluida : combinationKey em excludeKeys
+  Sugerida --> Excluida : "Outras opções"\n(key entra em excludeKeys)
+  Sugerida --> Confirmada : POST /api/autopilot/daily/confirmation
+  Excluida --> [*]
+}
+Confirmada --> SchemeAutopiloto : createScheme (reaproveita esquema\ncom a mesma combinationKey ou cria)
+state "Scheme origin=AUTOPILOTO\ncreationMode=AI_ASSISTED" as SchemeAutopiloto
+SchemeAutopiloto --> DailyLookAutopiloto : DailyLookService.register
+state "DailyLook source=AUTOPILOTO" as DailyLookAutopiloto
+DailyLookAutopiloto --> [*]
+
+state "WeekPlan (week_plans.status)" as Semana {
+  [*] --> ACTIVE : POST /api/autopilot/weeks\n(plano ACTIVE anterior vira DISCARDED)
+  ACTIVE --> ACTIVE : PUT /api/autopilot/days/{dayId}\n(editedManually, revalida repetição → 409)
+  ACTIVE --> ACTIVE : POST /api/autopilot/days/{dayId}/use\n(dia ganha scheme + DailyLook)
+  ACTIVE --> DISCARDED : DELETE /api/autopilot/weeks/current\nou novo planWeek
+  DISCARDED --> [*]
+}
+note right of Semana : enum WeekPlanStatus = ACTIVE, DISCARDED, COMPLETED;\nCOMPLETED existe no enum mas nenhuma transição\no atribui no código atual
+note bottom of SchemeAutopiloto : esquemas já salvos continuam após o descarte\nda semana (discardWeek não apaga schemes)
+@enduml

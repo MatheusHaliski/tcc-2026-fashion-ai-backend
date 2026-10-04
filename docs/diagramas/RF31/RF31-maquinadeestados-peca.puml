@@ -1,0 +1,32 @@
+@startuml RF31_MaquinaDeEstados_Peca
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+title RF31 — WardrobeItem: disponibilidade (availability_status) × favorita × à venda
+[*] --> Disponivel : peça cadastrada (RF4)
+state "AVAILABLE\n(disponivel = true)" as Disponivel {
+  state "favorite = false" as NaoFav
+  state "favorite = true (estrela)" as Fav
+  NaoFav --> Fav : PATCH /api/pieces/{id}/flags {favorite:true}
+  Fav --> NaoFav : PATCH /api/pieces/{id}/flags {favorite:false}
+  --
+  state "forSale = false" as NaoVenda
+  state "forSale = true (à venda)" as Venda
+  NaoVenda --> Venda : PATCH /api/pieces/{id}/flags {forSale:true}
+  Venda --> NaoVenda : PATCH /api/pieces/{id}/flags {forSale:false}
+}
+state "UNAVAILABLE\n(disponivel = false)" as Indisponivel
+state "ARCHIVED" as Arquivada
+Disponivel --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false}\n→ AvailabilityChanged → wardrobe_availability_log
+Indisponivel --> Disponivel : PATCH /api/pieces/{id}/flags {disponivel:true}\n→ AvailabilityChanged → wardrobe_availability_log
+Disponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
+Indisponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
+Arquivada --> [*]
+note right of Indisponivel : exclusivo com AVAILABLE (CA06); some do Criar Look (RF5),\ndo Copilot (RF10) e do Vista-me (RF28), mas segue no acervo;\nno Meu Quarto vai para o cesto (RF27)
+note bottom of Disponivel : favoritar é independente da disponibilidade;\nfiltro state=todos|favoritos|disponivel|indisponivel|venda\nem GET /api/me/closet (mesmo filtro em /api/me/schemes)
+@enduml

@@ -1,0 +1,28 @@
+@startuml RF42_MaquinaDeEstados_LookDoDia
+!pragma layout smetana
+title RF42 — DailyLook: Look do Dia de uma data (marcação, troca, avaliação e continuidade)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Sem Look do Dia na data" as Vazio
+state "Marcado\n(feedback = null)" as Marcado
+state "Avaliado" as Avaliado {
+  state "ADOREI" as Adorei
+  state "NAO_USEI" as NaoUsei
+  state "NAO_GOSTEI" as NaoGostei
+}
+[*] --> Vazio
+Vazio --> Marcado : POST /api/me/daily-look\n(ou Autopiloto, Copilot, Vista-me, Smart Mirror)
+Vazio --> Vazio : 409 PECA_INDISPONIVEL
+Vazio --> Marcado : today() materializa cópia do\nlook anterior (materializedFrom)
+Marcado --> Marcado : novo register na mesma data\n(troca o esquema e a origem)
+Marcado --> Avaliado : PUT /api/me/daily-looks/{date}/feedback
+Avaliado --> Avaliado : nova avaliação substitui
+Avaliado --> [*] : vira histórico (GET /api/me/daily-looks)
+Marcado --> [*] : passa o dia sem avaliação\n(lembrete após 18h — pending-feedback)
+note right of Marcado : schemes.look_do_dia = true;\naparece na Passarela 3D (RF33)\nenquanto for a data de hoje
+@enduml

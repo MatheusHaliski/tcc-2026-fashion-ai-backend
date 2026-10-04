@@ -1,17 +1,15 @@
 package br.com.fashionai.web.config;
 
 import br.com.fashionai.application.common.Msg;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
-
-import java.io.IOException;
 
 /**
  * RF23 — idioma da requisição e textos adiados.
@@ -33,7 +31,8 @@ public class I18nConfig {
     }
 
     @Bean
-    public Module i18nJsonModule() {
+    /** Boot 4 registra no JsonMapper todo bean {@link JacksonModule} (um bean do Jackson 2 seria ignorado em silêncio). */
+    public JacksonModule i18nJsonModule() {
         SimpleModule m = new SimpleModule("fai-i18n");
         m.addSerializer(String.class, new DeferredTextSerializer());
         return m;
@@ -46,7 +45,7 @@ public class I18nConfig {
         }
 
         @Override
-        public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        public void serialize(String value, JsonGenerator gen, SerializationContext provider) {
             gen.writeString(Msg.hasMark(value) ? Msg.resolve(value) : value);
         }
     }

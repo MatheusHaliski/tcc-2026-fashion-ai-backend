@@ -1,0 +1,66 @@
+@startuml RF14_Sequencia
+title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+participant "Frontend\n/brands · /brands/[slug]" as FE
+participant "ProfileController" as PC
+participant "InstitutionalService" as IS
+participant "AiEngine (RF24)" as AI
+participant "BrandLogoController" as LC
+participant "BrandLogoService" as LS
+participant "BrandWebSearchService" as WS
+participant "Wikidata / Simple Icons\n/ IA com busca web" as EXT
+database "MySQL" as DB
+U -> FE: abre a aba "Marcas"
+FE -> PC: GET /api/brands?term=&order=
+PC -> IS: brandFeed(viewer, term, order)
+IS -> DB: SELECT brand_profiles WHERE approval_status = APROVADO
+alt viewer logado com DNA e order != RECENTES
+  IS -> DB: SELECT style_dna.style_keywords (viewer)
+  IS -> AI: local(AFFINITY) · afinidade por marca
+  IS -> IS: ordena por afinidade desc
+else sem DNA ou order = RECENTES
+  IS -> IS: ordena por createdAt desc
+end
+IS -> DB: COUNT seal_bonds APPROVED, follows ACEITO por marca
+IS --> FE: 200 {brands[], order, orders, empty}
+loop card sem logo_url
+  FE -> LC: GET /api/brand-logos?name={marca}
+  LC -> LS: logo(userId, name, false) · visitante: cached(name)
+  LS -> DB: SELECT brand_logos (name_key)
+  opt não encontrado e logado (dentro da cota)
+    LS -> WS: search(userId, name, allowAi)
+    WS -> EXT: Wikidata (P154/P856) → Simple Icons → IA
+    EXT --> WS: nome, site, logo
+    WS -> LS: acceptWebLogo(name, url, source, domain, originUrl)
+    LS -> DB: UPSERT brand_logos (status FOUND)
+  end
+  LS --> FE: 200 {logoUrl, source, status}
+end
+U -> FE: toca no card da marca
+FE -> PC: GET /api/institutional/{slug}
+PC -> IS: profile(viewer, slug)
+IS -> DB: SELECT brand_profiles by slug → owner
+alt approval_status != APROVADO e viewer não é dono/admin
+  IS --> FE: 404 Marca
+else aprovada
+  IS -> DB: COUNT follows, wardrobe_items, schemes, seals ACTIVE
+  IS --> FE: 200 {header, mode, tabs, groupings}
+  FE -> PC: GET /api/institutional/{slug}/tabs/{tab}
+  PC -> IS: tab(viewer, slug, tab, filter, groupingId)
+  IS --> FE: 200 conteúdo da aba (PROMOCOES / LOOKS_CONSAGRADOS / CATALOGO)
+end
+opt dona da marca edita os dados institucionais
+  FE -> PC: PATCH /api/me/brand-profile
+  PC -> IS: updateBrand(user, fields)
+  IS -> DB: UPDATE brand_profiles
+  IS --> FE: 200 header atualizado
+end
+@enduml
