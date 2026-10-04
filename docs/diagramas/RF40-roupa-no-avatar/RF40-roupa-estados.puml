@@ -1,0 +1,24 @@
+@startuml RF40_Roupa_Estados
+title RF40 — Avatar 3D: ciclo de vida de uma peça no corpo\nMáquina de estados
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Mapeada : kindOf(peça)
+Mapeada --> Padrao : sem molde / slot vazio → peça padrão FAI
+Mapeada --> Casca : garmentGeometry
+Padrao --> Casca
+Casca --> Relaxada : relaxGarment
+Relaxada --> Dobrada : foldGarment (tecidos moles)
+Relaxada --> Acabada : tecidos rígidos
+Dobrada --> Acabada : gola + barra + punhos
+Acabada --> Texturizada : foto da peça (ou cor do tecido)
+Texturizada --> PresaAoEsqueleto : pesos de pele do corpo
+PresaAoEsqueleto --> Animada : pose natural
+Animada --> Casca : corpo/medidas mudam (recalcula)
+Animada --> [*] : peça removida do look
+@enduml

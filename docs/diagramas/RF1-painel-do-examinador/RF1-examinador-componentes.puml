@@ -1,0 +1,40 @@
+@startuml RF1_Examinador_Componentes
+title RF1.CA07/CA09 — Painel do examinador: componentes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+package "Frontend (Next.js)" {
+  [IssuerReviewButton + IssuerReviewPanel\n(components/issuer-review.tsx)] as Btn
+  [dashboard/page.tsx\n(PendingReview em PERFIL_EM_VALIDACAO)] as Dash
+  [brands/{slug}/page.tsx\n(cabeçalho do perfil)] as Prof
+  [admin/users (aba approvals)] as Adm
+}
+package "Backend (Spring Boot)" {
+  [IssuerReviewController\nGET /api/me/issuer-review] as RC
+  [IssuerReviewService] as RS
+  [IdentityService] as IS
+  [AdminController / AdminService\n/api/admin/approvals] as AS
+  [SideEffectRunner] as SE
+  [NotificationService] as NS
+  [Audit] as AU
+}
+cloud "Resend (EmailPort)" as Mail
+database "MySQL" as DB
+Prof --> Btn
+Dash --> Btn
+Btn --> RC
+RC --> RS
+IS --> RS : submitted(userId)
+RS --> SE : afterCommit
+SE --> Mail : e-mails aos administradores
+RS --> DB
+Adm --> AS
+AS --> DB
+AS --> NS
+AS --> AU
+@enduml

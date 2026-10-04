@@ -1,0 +1,73 @@
+@startuml RF1_Examinador_Classes
+title RF1.CA07/CA09 — Painel do examinador: classes\nDiagrama de classes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+enum ApprovalStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+class User <<Entity users>> {
+  id : UUID
+  username, displayName, email
+  profileType : ProfileType
+  status : AccountStatus
+  emailVerified : boolean
+}
+class BrandProfile <<Entity brand_profiles>> {
+  brandName, slug, logoUrl
+  approvalStatus : ApprovalStatus
+  approvedBy, approvedAt, verificationNotes
+}
+class CelebrityProfile <<Entity celebrity_profiles>> {
+  stageName, slug, avatarUrl
+  verificationStatus : ApprovalStatus
+  sealConsentGranted, requiresSealReview
+  approvedBy, approvedAt, verificationNotes
+}
+class IssuerReviewService {
+  -adminEmails : List<String>
+  -frontendUrl : String
+  +adminsConfigured() : boolean
+  +submitted(userId)
+  ~notifyAdmins(userId)
+  +status(CurrentUser) : Map
+  ~parse(csv) : List<String>
+}
+class IssuerReview <<DTO>> {
+  profileType, name, status
+  submittedAt, emailVerified
+  adminsNotified, decidedAt, reason
+}
+class AdminService {
+  +approvals(admin) : Map
+  +decide(admin, userId, approve, notes) : Map
+}
+class IdentityService {
+  +register(...)
+  ~setIssuerReview(IssuerReviewService)
+}
+User "1" -- "0..1" BrandProfile
+User "1" -- "0..1" CelebrityProfile
+BrandProfile ..> ApprovalStatus
+CelebrityProfile ..> ApprovalStatus
+User ..> ProfileType
+IdentityService ..> IssuerReviewService : submitted()
+IssuerReviewService ..> IssuerReview : status()
+IssuerReviewService --> User
+AdminService --> BrandProfile
+AdminService --> CelebrityProfile
+@enduml

@@ -1,0 +1,26 @@
+@startuml RF1_Examinador_Estados
+!pragma layout smetana
+title RF1.CA07/CA09 — Análise do perfil emissor (marca/celebridade)\nMáquina de estados
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> PENDENTE : cadastro MARCA/CELEBRIDADE
+state PENDENTE {
+  [*] --> Enviado
+  Enviado --> EmailConfirmado : confirma o e-mail
+  Enviado --> AdminsAvisados : e-mail aos admins (afterCommit)
+  EmailConfirmado --> EmAnalise : admins avisados
+  AdminsAvisados --> EmAnalise : e-mail confirmado
+}
+PENDENTE --> APROVADO : admin aprova
+PENDENTE --> RECUSADO : admin recusa (motivo)
+APROVADO --> SUSPENSO : admin suspende a conta
+SUSPENSO --> APROVADO : admin reativa
+RECUSADO --> PENDENTE : revisa o cadastro e reenvia
+note right of APROVADO : conta ACTIVE, selos padrão,\nmétricas e criador de selos liberados
+note right of PENDENTE : o dono acompanha no\nPainel do examinador\n(GET /api/me/issuer-review)
+@enduml

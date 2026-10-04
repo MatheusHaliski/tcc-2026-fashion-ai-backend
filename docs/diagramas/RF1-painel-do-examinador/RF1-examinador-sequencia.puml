@@ -1,0 +1,52 @@
+@startuml RF1_Examinador_Sequencia
+title RF1.CA07/CA09 — Painel do examinador: envio, e-mail aos administradores, decisão e status\nDiagrama de sequência
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #52606D
+  LifeLineBorderColor #B695F5
+  ParticipantBackgroundColor #F8F4FF
+  ParticipantBorderColor #B695F5
+  ActorBackgroundColor #F8F4FF
+  GroupBackgroundColor #FFF5F8
+}
+actor "Marca/Celebridade" as M
+participant "Frontend\n(register, dashboard,\nIssuerReviewButton)" as F
+participant "AuthController /\nIdentityService" as I
+participant "IssuerReviewService" as R
+participant "SideEffectRunner\n(thread virtual)" as X
+participant "EmailPort\n(Resend)" as EM
+actor "Administradores\n(DEV_GATE_ALLOWED_EMAILS)" as A
+participant "AdminController /\nAdminService" as AD
+database "MySQL\nusers · brand_profiles ·\ncelebrity_profiles" as DB
+
+M -> F : envia cadastro de MARCA/CELEBRIDADE
+F -> I : POST /api/auth/register
+I -> DB : INSERT user + perfil (PENDENTE)
+I -> R : submitted(userId)
+R -> R : registra afterCommit
+I --> F : 201
+== depois do commit ==
+R -> X : run("analise-perfil:aviso-admins")
+X -> R : notifyAdmins(userId)
+R -> DB : nome público, @usuário, tipo
+loop cada e-mail de administrador
+  R -> EM : send(assunto_admin, corpo_admin + link da fila)
+  EM --> A : e-mail "Novo perfil para análise"
+end
+== acompanhamento ==
+M -> F : "Painel do examinador"
+F -> R : GET /api/me/issuer-review
+R -> DB : perfil + e-mail verificado + decisão
+R --> F : {profileType, name, status, submittedAt,\nemailVerified, adminsNotified, decidedAt, reason}
+F --> M : linha do tempo + selo de status
+== decisão ==
+A -> F : /admin/users?tab=approvals
+F -> AD : POST /api/admin/approvals/{userId} {approve, notes}
+AD -> DB : approvalStatus = APROVADO | RECUSADO; approvedBy/At; notes
+AD -> AD : aprovado → conta ACTIVE + ensureDefaultSeals
+AD --> M : notificação ACCOUNT_APPROVAL
+M -> F : "Atualizar" no painel
+F -> R : GET /api/me/issuer-review
+R --> F : status atualizado
+@enduml

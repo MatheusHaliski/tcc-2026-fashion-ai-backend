@@ -1,0 +1,140 @@
+@startuml RF25_Criador_Classes
+title RF25 — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+enum SealKind {
+  CIRCULAR
+  FOLHA
+  FASHIONAI
+}
+enum DesignMode {
+  GENERATED
+  UPLOAD
+  TEMPLATE
+}
+enum SealCoreMode {
+  ELEMENT
+  IMAGE
+  TEXT
+}
+class SealDesign <<JSON em seals.background_config_json.design>> {
+  kind : SealKind
+  mode : DesignMode
+  template : String  «circular/07 · folha/col-01 · fai/03»
+  label : String  «título da folha (vazio = nome)»
+  caption : String
+  texts : Map<series|subtitle|style|year|emblem, String>
+  core : SealCore
+  palette : String
+  border / field / center : Parte
+  element : Elemento
+  uploadUrl : String
+}
+class SealCore {
+  mode : SealCoreMode
+  imageUrl : String  «users/{id}/seals/core-*.png»
+  text : String  «≤ 24»
+  textColor : #RRGGBB
+  zoom : 1..3
+}
+class Elemento {
+  id : BAG|HANGER|STAR|…|MONOGRAM
+  material : String
+  color : #RRGGBB
+  text : String  «≤ 3»
+}
+class SealPolicy <<JSON em ...policy>> {
+  match : ALL|ANY
+  rules : List<Rule>
+  occasions : List<String>
+  styles : List<String>
+}
+class Rule {
+  quantifier : AT_LEAST|ALL|NONE
+  count : int
+  color / brand / category / subcategory
+}
+class FolhaTemplate <<lib/seals/templates.json>> {
+  id, src  «arte sem textos»
+  emblem : {src, x, y, w, h}
+  ink : cor
+  slots : Map<FolhaSlotKey, FolhaSlot>
+}
+class FolhaSlot {
+  text  «padrão neutro»
+  x, y, m[6]  «posição e matriz»
+  size, weight, family, italic, ls, anchor, fill, opacity
+}
+class CircularTemplate {
+  id, src
+  center : fração do raio do disco liso
+  plain : boolean
+  color : cor dominante
+}
+class FaiTemplate {
+  id, src, color
+}
+class Seal <<Entity seals>> {
+  id : UUID
+  name, tier : SealTier
+  policyText : String
+  backgroundConfigJson : String
+  iconUrl, status, premium
+  availableFrom / availableUntil / usageLimit
+}
+class SealService {
+  +createSeal(user, SealForm)
+  +updateSeal(user, id, SealForm)
+  +draft(user, tier)
+  -applySeal(seal, form, owner)
+}
+class SealDrafts {
+  +suggest(nome, celebridade, tier, peças) : Map
+  ~initials(nome) : String
+}
+class SealDesigns {
+  +KINDS, LABEL_MAX, CAPTION_MAX, CORE_TEXT_MAX
+  +FOLHA_TEXT_LIMITS
+  +normalize(raw) : Map
+  +nearestCircular(hex) : String
+  +labelFrom(nome) : String
+  +catalog() : Map
+}
+class SealPolicies {
+  +normalize(raw) / parse(obj)
+  +evaluate(policy, tier, peças, ocasiões, estilos) : Verdict
+  +describe(policy, tier) : String
+}
+class SealDesignService {
+  +upload(user, bytes)  «selo pronto 1:1»
+  +uploadCore(user, bytes)  «núcleo ≤ 4:1»
+}
+class OwnMedia {
+  +require(owner, url, campo, catálogo?)
+}
+SealDesign *-- SealCore
+SealDesign *-- Elemento
+SealDesign ..> SealKind
+SealDesign ..> DesignMode
+SealCore ..> SealCoreMode
+SealPolicy *-- "0..6" Rule
+FolhaTemplate *-- "1..7" FolhaSlot
+SealDesign ..> FolhaTemplate : template (FOLHA)
+SealDesign ..> CircularTemplate : template (CIRCULAR)
+SealDesign ..> FaiTemplate : template (FASHIONAI)
+Seal o-- SealDesign
+Seal o-- SealPolicy
+SealService --> Seal
+SealService ..> SealDesigns
+SealService ..> SealPolicies
+SealService ..> SealDrafts
+SealService ..> OwnMedia
+SealDrafts ..> SealDesigns
+SealDesignService ..> SealDesigns
+@enduml
