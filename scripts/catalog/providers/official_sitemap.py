@@ -68,10 +68,16 @@ class Site:
         self.requests = 0
 
     def load_robots(self):
-        status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
-        if status in (0, 404) and not self.domain.startswith("www."):
-            alt = f"https://www.{self.domain}"                    # muitos sites só respondem no www.
-            s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
+        try:
+            status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
+        except StopDomain:
+            status, body = 403, b""
+        if status in (0, 403, 404) and not self.domain.startswith("www."):
+            alt = f"https://www.{self.domain}"                    # muitos sites só respondem (ou só liberam) no www.
+            try:
+                s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
+            except StopDomain:
+                s2, b2 = 403, b""
             if s2 not in (0, 404):
                 self.base, status, body = alt, s2, b2
         if status in (401, 403):
@@ -278,6 +284,34 @@ UNSUPPORTED = ("bra", "bras", "sports bra", "sutia", "underwear", "cueca", "cuec
 _PACK = re.compile(r"\b(tripack|tri pack|\d+\s?pack|pack\s?\d+|kit\s?(com\s)?\d+|\d+\s?pares|multipack)\b")
 
 
+_AUDIENCE = re.compile(r"\s+-\s+(women|men|unisex|kids|boys|girls|baby|feminino|masculino|infantil)\s*$", re.I)
+
+
+def clean_title(raw: Optional[str], brand: str, n: Normalizer) -> tuple[Optional[str], Optional[str]]:
+    """Título da página → (nome do produto, cor citada no título).
+
+    "Utility Barrel Pant | Bone | Tall" → ("Utility Barrel Pant", "Bone");
+    "Trench Coat in Ivory white - Women | Burberry® Official" → ("Trench Coat", "Ivory white").
+    Sufixo da loja ("| Marca® Official"), público ("- Women") e caimento ("| Tall") saem; a cor só é separada quando a
+    taxonomia a reconhece (senão fica no nome)."""
+    if not raw:
+        return raw, None
+    parts = [p.strip() for p in re.split(r"\s+\|\s+", raw) if p.strip()]
+    brand_key = _squash(brand)
+    parts = [p for p in parts if not (brand_key and brand_key in _squash(p) and re.search(r"official|oficial|loja|store|®", p, re.I))
+             and not re.fullmatch(r"(official|oficial)( site| store| loja)?", p, re.I)] or parts[:1]
+    name, color = parts[0], None
+    for extra in parts[1:]:
+        if color is None and n.color(extra):
+            color = extra
+    name = _AUDIENCE.sub("", name).strip()
+    m = re.search(r"\s+in\s+([A-Za-z][A-Za-z /-]{2,30})$", name)
+    if m and n.color(m.group(1)):
+        color = color or m.group(1).strip()
+        name = name[:m.start()].strip()
+    return name or raw, color
+
+
 def unsupported_reason(name: Optional[str]) -> Optional[str]:
     """Peças fora da taxonomia do acervo (roupa íntima, vale-presente): ficam de fora em vez de virar outro tipo."""
     k = " " + key(name) + " "
@@ -315,7 +349,7 @@ def same_brand(n: Normalizer, page_brand: str, brand: str) -> bool:
 def to_catalog_item(found: dict, page_url: str, brand: str, official: str, source_type: str, n: Normalizer,
                     warnings: list) -> Optional[dict]:
     node = found["node"]
-    name = _text(node.get("name"))
+    name, title_color = clean_title(_text(node.get("name")), brand, n)
     if not name:
         warnings.append(f"{page_url}: sem nome de produto")
         return None
@@ -349,10 +383,11 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
     if not same_site(domain(url), official):
         url = page_url
     imgs = [u for u in _images(node.get("image")) if brand_cdn_ok(u, official)]
-    color_raw = _text(node.get("color"))
+    color_raw = _text(node.get("color")) or title_color
     item = {
         "brand": brand, "subcategory": sub, "product_name": name[:240],
-        "model_name": _text(node.get("model")) or None,
+        # cor tirada do título ("Hoodie | Black"): o nome limpo vira o modelo, e as outras cores entram como variantes
+        "model_name": _text(node.get("model")) or (name if title_color else None),
         "sku": _text(node.get("sku")), "gtin": _gtin(node), "product_code": _text(node.get("mpn")),
         "color": n.color(color_raw) if color_raw else None, "color_name": color_raw,
         "description": (_text(node.get("description")) or "")[:2000] or None,
