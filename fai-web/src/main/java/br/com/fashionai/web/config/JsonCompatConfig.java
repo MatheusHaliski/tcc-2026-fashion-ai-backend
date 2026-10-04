@@ -5,15 +5,14 @@ import br.com.fashionai.domain.model.enums.Mood;
 import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.Season;
 import br.com.fashionai.domain.model.enums.Visibility;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.module.SimpleModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
@@ -27,7 +26,7 @@ import java.util.Map;
 public class JsonCompatConfig {
 
     @Bean
-    public Module jsonCompatModule() {
+    public JacksonModule jsonCompatModule() {
         SimpleModule m = new SimpleModule("fai-json-compat");
         m.addDeserializer(CreationMode.class, new CreationModeDeserializer());
         m.addDeserializer(Mood.class, new MoodDeserializer());
@@ -47,7 +46,7 @@ public class JsonCompatConfig {
         }
 
         @Override
-        public E deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+        public E deserialize(JsonParser p, DeserializationContext ctx) {
             String raw = p.getValueAsString();
             if (raw == null || raw.isBlank()) {
                 return null;
@@ -71,7 +70,7 @@ public class JsonCompatConfig {
         }
 
         @Override
-        public SealTier deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+        public SealTier deserialize(JsonParser p, DeserializationContext ctx) {
             String raw = p.getValueAsString();
             if (raw == null || raw.isBlank()) {
                 return null;
@@ -90,7 +89,7 @@ public class JsonCompatConfig {
         }
 
         @Override
-        public CreationMode deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+        public CreationMode deserialize(JsonParser p, DeserializationContext ctx) {
             String raw = p.getValueAsString();
             if (raw == null || raw.isBlank()) {
                 return null;
@@ -125,7 +124,7 @@ public class JsonCompatConfig {
         }
 
         @Override
-        public Mood deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+        public Mood deserialize(JsonParser p, DeserializationContext ctx) {
             String raw = p.getValueAsString();
             if (raw == null || raw.isBlank()) {
                 return null;

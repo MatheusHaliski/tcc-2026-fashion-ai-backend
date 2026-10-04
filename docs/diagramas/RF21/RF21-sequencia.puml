@@ -1,0 +1,74 @@
+@startuml RF21_Sequencia
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+actor "Celebridade" as CE
+participant "Frontend\n/schemes/new · brands/[slug]" as FE
+participant "SchemeController" as SCH
+participant "SealController" as C
+participant "SealService" as S
+participant "AiEngine (RF24)\nSEALBOND_MATCHER" as AI
+participant "NotificationService" as N
+participant "Audit" as A
+database "MySQL" as DB
+U -> FE: escolhe peças, estilo e ocasião (RF5)
+FE -> C: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
+C -> S: preview(user, pieceIds, occasion, style)
+S -> DB: SELECT celebrity_profiles (verification_status = APROVADO, seal_consent_granted)
+S -> AI: local(SEALBOND_MATCHER, candidates()) — Similarity × style_signature_json
+AI --> S: Candidate {kind CELEBRITY, confidence, basis STYLE_SIGNATURE, eraLabel}
+S --> FE: 200 {suggestions, message}
+U -> FE: marca a celebridade + confirma direito de imagem; salva
+FE -> SCH: POST /api/schemes (SchemeForm)
+SCH -> DB: INSERT schemes, scheme_items
+SCH --> FE: 201 {scheme}
+FE -> C: POST /api/schemes/{schemeId}/seal-bonds {targetOwnerId, imageRightsConsent:true}
+C -> S: linkManually(user, schemeId, targetOwnerId, true)
+alt celebridade não verificada
+  S --> FE: 400 CELEBRIDADE_NAO_VERIFICADA (CA18)
+else sem consentimento de imagem
+  S --> FE: 400 CONSENTIMENTO_IMAGEM (CA19)
+else selo premium fora da janela / cota esgotada
+  S -> DB: UPDATE seal_bonds SET status = REJECTED, review_note
+  S -> A: log(MUDANCA_ESTADO_VINCULO_SELO, "RECUSADO_LIMITE")
+  S --> FE: 409 SELO_INDISPONIVEL (CA23)
+else ok
+  S -> DB: INSERT seal_bonds (origin MANUAL, EDITED, basis STYLE_SIGNATURE)
+  S -> S: route(): celebrity → requiresReview = true (sem auto-aprovação)
+  S -> DB: UPDATE seal_bonds SET status = PENDING_REVIEW, seal_id (premium)
+  S -> N: notify(celebridade, SEAL_BOND_REVIEW)
+  S -> A: log(…, "PENDENTE")
+  S --> FE: 201 bondView {kind CELEBRITY, sealKind PREMIUM_SEAL,\nvisualFamily vitreo-holografico}
+end
+CE -> FE: abre a fila de revisão
+FE -> C: GET /api/seal-bonds/review-queue
+C -> S: reviewQueue(user)
+S --> FE: 200 [bonds PENDING_REVIEW]
+CE -> FE: aprova
+FE -> C: POST /api/seal-bonds/{bondId}/review {approve:true}
+C -> S: review(user, bondId, true, null)
+S -> S: issue(b, celebridadeId): APPROVED, sealCode PRM-…, expiresAt
+S -> DB: UPDATE seal_bonds · seals.usage_count+1 · schemes.seal_ids_json
+S -> N: notify(autor, SEAL_GRANTED "Selo Premium emitido!") (CA20)
+S -> A: log(…, "EMITIDO")
+S ->> S: publishEvent(CouponRightsCheck) — promoções CA21/CA22 (RF38)
+S --> FE: 200 bondView (APPROVED)
+opt CA14 — revogação pela celebridade
+  FE -> C: POST /api/seal-bonds/{bondId}/revoke {reason}
+  C -> S: revoke(user, bondId, reason)
+  S -> DB: UPDATE seal_bonds SET status = REVOKED
+  S -> N: notify(autor, SEAL_BOND_REVIEW "selo revogado")
+end
+U -> FE: resgata promoção da celebridade
+FE -> C: POST /api/promotions/{id}/redemptions
+C -> S: redeem(user, promotionId)
+S -> DB: SELECT seal_bonds APPROVED do usuário com a celebridade
+S --> FE: 201 {code} ou 409 SELO_INVALIDO / PROMOCAO_INDISPONIVEL
+@enduml

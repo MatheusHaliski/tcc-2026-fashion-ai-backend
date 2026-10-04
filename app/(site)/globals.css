@@ -481,6 +481,10 @@ h1, h2, h3, h4 { margin: 0; }
 .seal-stud-tile { margin-left: auto; font-family: var(--font-data); font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 3px; background: var(--surface); border: 1px solid var(--line-soft); }
 .seal-medallion.has-design { border: 0; background: none; box-shadow: 0 2px 6px rgba(0,0,0,.28); position: relative; }
 .seal-medallion.has-design svg { border-radius: 50%; }
+/* RF25 — selo de folha (4:5, picotado): sem recorte redondo; a sombra segue o picote */
+.seal-medallion.is-folha { border-radius: 2px; overflow: visible; box-shadow: none; filter: drop-shadow(0 1.5px 2.5px rgba(0,0,0,.3)); }
+.seal-medallion.is-folha svg { border-radius: 0; }
+.seal-medallion.is-folha.premium::before { content: none; }
 .seal-slot .seal-medallion + .seal-medallion { margin-left: -14px; }
 .seal-slot.many { width: auto; }
 .seal-sm .seal-slot, .seal-sm .seal-medallion { width: 36px; height: 36px; }
@@ -883,6 +887,12 @@ button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var
 .dna-blocks .dna-container { background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; border-color: #7C3AED; }
 .dna-season .season-decor { z-index: 0; } .dna-season > :not(.season-decor) { position: relative; z-index: 1; }
 .dna-season::after { content: none; }
+/* animação "Brilho" escolhida no modal da Cartela sazonal: o mesmo brilho que passa pela arte do card */
+.season-hero.motion-shimmer::after, .dna-season.motion-shimmer::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.38) 50%, transparent 60%); background-size: 300% 300%; animation: art-sweep 5s ease-in-out infinite; }
+/* movimento reduzido (preferência do app ou do sistema): o brilho fica parado — depois da regra acima, que é mais
+   específica que os seletores genéricos de redução de movimento */
+:root[data-reduce-motion="true"] :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; } }
 
 /* ---------- RF26 · globo interativo do Explorador Global ---------- */
 .globe { display: flex; flex-direction: column; align-items: center; user-select: none; }
@@ -1927,22 +1937,61 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .file-button { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .file-button-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ---------- Minha Cápsula & Versatilidade (RF6 · anatomia da prancha DNA B4 aplicada ao guarda-roupa inteiro) ---------- */
-.capsule-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.capsule-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
-.capsule-stat { flex: 1 1 180px; display: grid; justify-items: center; padding: 16px 18px; border-radius: 8px; background: var(--dna-soft, color-mix(in srgb, var(--mark) 10%, var(--surface))); text-align: center; }
-.capsule-stat .num { font-family: var(--font-editorial); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--dna, var(--mark)); }
-.capsule-stat .lbl { margin-top: 2px; font-family: var(--font-data); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.capsule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
-.capsule-piece { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1.4px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
-.capsule-piece:hover { box-shadow: var(--shadow); }
-.capsule-ph { display: block; height: 96px; background: linear-gradient(155deg, color-mix(in srgb, var(--dna, var(--mark)) 18%, var(--surface-2)), color-mix(in srgb, var(--dna, var(--mark)) 40%, var(--surface-2))); }
-.capsule-ph img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 6px; }
-.capsule-cat { position: absolute; top: 8px; left: 8px; padding: 2px 7px; border-radius: 99px; background: rgba(255,255,255,.88); color: #3a2c53; font-family: var(--font-data); font-size: 8px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
-.capsule-badge { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border: 2px solid var(--surface); border-radius: 99px; background: var(--dna, var(--mark)); color: #fff; font-family: var(--font-data); font-size: 10.5px; font-weight: 700; }
-.capsule-body { display: grid; gap: 1px; padding: 9px 10px 11px; }
-.capsule-name { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.capsule-brand { font-family: var(--font-data); font-size: 9px; color: var(--faint, var(--muted)); }
+/* ───────── RF47 · Adicionar peça catalog-first: cards de modo e de categoria, guia de fotografia, catálogo ───────── */
+.mode-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.mode-card { display: flex; align-items: center; gap: 1rem; text-align: left; padding: 1.1rem 1.2rem; border-radius: var(--radius); border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer; box-shadow: var(--shadow); transition: transform .12s ease, border-color .15s ease, background .15s ease; }
+.mode-card:hover { border-color: var(--line); transform: translateY(-1px); }
+.mode-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.mode-card.is-primary { border-color: var(--thread); background: linear-gradient(135deg, var(--thread-soft), var(--surface) 65%); }
+.mode-card-art { display: grid; place-items: center; flex: 0 0 84px; height: 84px; border-radius: 14px; background: var(--surface-2); color: var(--ink); }
+.mode-card-body { display: grid; gap: .25rem; min-width: 0; }
+.mode-card-title { font-family: var(--font-display, inherit); font-size: var(--text-h3); font-weight: 650; line-height: 1.15; }
+.mode-card-desc { font-size: var(--text-body-sm); color: var(--muted); }
+.cat-cards { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.cat-cards-3 { grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
+.cat-card { display: flex; align-items: center; gap: .85rem; min-height: var(--touch); text-align: left; padding: .9rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .12s ease; }
+.cat-cards-compact .cat-card { padding: .6rem .75rem; gap: .6rem; }
+.cat-card:hover { border-color: var(--line); background: var(--surface-2); }
+.cat-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cat-card.is-selected { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.cat-card.is-selected .cat-card-desc { color: var(--surface); opacity: .8; }
+.cat-card-art { display: grid; place-items: center; flex: 0 0 auto; border-radius: 12px; background: var(--surface-2); color: var(--ink); padding: .25rem; }
+.cat-card.is-selected .cat-card-art { background: var(--surface); }
+.cat-card-body { display: grid; gap: .15rem; min-width: 0; }
+.cat-card-title { font-weight: 650; font-size: var(--text-body); line-height: 1.2; }
+.cat-card-desc { font-size: var(--text-caption); color: var(--muted); line-height: 1.3; }
+.guide-steps { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: 0 0 1rem; padding: 0; list-style: none; font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--faint); }
+.guide-steps li { display: inline-flex; align-items: center; gap: .4rem; }
+.guide-steps li.is-current { color: var(--ink); }
+.guide-steps li.is-done { color: var(--thread-ink); }
+.guide-step-n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid currentColor; font-size: 11px; font-weight: 700; }
+.guide-steps li.is-current .guide-step-n { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.guide-art { position: relative; display: grid; place-items: center; padding: .5rem; border-radius: var(--radius); background: var(--surface-2); color: var(--ink); }
+.guide-art-note { position: absolute; right: .5rem; bottom: .4rem; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); }
+.guide-regions { display: grid; gap: .3rem; margin: .25rem 0 0; padding: 0; list-style: none; font-size: var(--text-body-sm); }
+.guide-regions li { display: flex; align-items: center; gap: .5rem; }
+.guide-regions .guide-step-n { color: var(--thread-ink); border-color: var(--thread); background: var(--thread-soft); }
+.guide-region rect, .guide-region ellipse { fill: var(--thread-soft); fill-opacity: .55; stroke: var(--thread); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.guide-region.is-animated rect, .guide-region.is-animated ellipse { animation: guide-pulse 2.4s ease-in-out infinite; }
+.guide-region-badge { fill: var(--thread); }
+.guide-region-num { fill: #fff; font-family: var(--font-data); font-size: 9px; font-weight: 700; }
+.guide-camera, .guide-turn { color: var(--muted); }
+@keyframes guide-pulse { 0%, 100% { fill-opacity: .35; stroke-opacity: .7; } 50% { fill-opacity: .7; stroke-opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .guide-region.is-animated rect, .guide-region.is-animated ellipse { animation: none; } }
+[data-reduce-motion="true"] .guide-region.is-animated rect, [data-reduce-motion="true"] .guide-region.is-animated ellipse { animation: none; }
+.brand-ac-list { position: absolute; z-index: var(--z-popover); left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: .25rem; list-style: none; max-height: 280px; overflow: auto; background: var(--surface); border: 1.5px solid var(--line-soft); border-radius: var(--radius); box-shadow: var(--shadow); }
+.brand-ac-item { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-body-sm); }
+.brand-ac-item.is-active, .brand-ac-item:hover { background: var(--surface-2); }
+.catalog-card { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+.catalog-card-media { position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; background: var(--surface-2); }
+.catalog-card-media img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.catalog-card-match { position: absolute; left: .5rem; top: .5rem; }
+.catalog-card-new { position: absolute; right: .5rem; top: .5rem; }
+.catalog-card-body { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .8rem .8rem; }
+.catalog-swatch { width: 18px; height: 18px; border-radius: 999px; border: 1.5px solid var(--line-soft); cursor: pointer; }
+.catalog-swatch.is-active { outline: 2px solid var(--ink); outline-offset: 2px; }
+.catalog-hero { display: grid; place-items: center; aspect-ratio: 1 / 1; border-radius: var(--radius); background: var(--surface-2); overflow: hidden; }
+.catalog-hero img { width: 100%; height: 100%; object-fit: contain; }
 
 /* ---------- Seletor de porcentagem (token FashionAI): o mesmo range em todas as abas — Arte da peça (Aura, Luz), Criador de selos,
    Editor de foto, Avatar 3D. Trilho fino na cor da linha, preenchimento até o valor na cor da marca (--pct, 0–100) e polegar redondo. ---------- */
@@ -1955,6 +2004,13 @@ input[type="range"]:not(.before-after-range)::-moz-range-thumb { width: 18px; he
 input[type="range"]:not(.before-after-range):focus-visible { outline: none; }
 input[type="range"]:not(.before-after-range):focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mark) 35%, transparent); }
 input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: not-allowed; }
+
+/* RF4 + RF47 · criador de peça em uma etapa: seções (busca catalogada, dados) e o produto escolhido */
+.creator-section { border-top: 1px solid var(--line-soft); padding-top: 14px; margin-top: 14px; }
+.catalog-pick { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--thread); border-radius: 12px; background: var(--thread-soft); }
+.catalog-pick-art { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
+.catalog-pick-art img { width: 100%; height: 100%; object-fit: contain; }
+@media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }
 
 /* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
 .review-pill { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; background: var(--surface-2); color: var(--ink-2, inherit); }
@@ -1969,7 +2025,24 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .review-steps > li.is-current .review-dot { background: #F2B705; color: #1d1d1b; box-shadow: 0 0 0 4px rgba(242,183,5,.25); }
 .review-steps > li.is-bad .review-dot { background: var(--mark); color: #fff; }
 :root[data-theme="dark"] .review-pill.is-pending { background: #3A2E10; color: #F5C451; }
-
+/* Central do emissor e fila de verificação (política de verificação de marcas e celebridades) */
+.issuer-center { display: grid; gap: 16px; }
+@media (min-width: 1024px) { .issuer-center { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+.issuer-code { font-family: var(--font-data); font-size: 20px; font-weight: 700; letter-spacing: .08em; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); user-select: all; }
+.issuer-feedback { border-left: 4px solid #F2B705; }
+.policy-checks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.policy-check { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.policy-mark { display: inline-flex; width: 22px; height: 22px; border-radius: 999px; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.policy-check.is-ok .policy-mark { background: var(--thread); color: #fff; }
+.policy-check.is-bad .policy-mark { background: var(--mark); color: #fff; }
+.policy-check.is-warn .policy-mark { background: #F2B705; color: #1d1d1b; }
+.policy-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--surface-2); color: var(--muted); vertical-align: middle; }
+.policy-tag.is-required { background: var(--mark-soft); color: var(--mark-ink, var(--mark)); }
+.policy-check.is-ok .policy-state { color: var(--thread-ink, var(--thread)); }
+.policy-check.is-bad .policy-state { color: var(--mark-ink, var(--mark)); }
+.dossier-fields { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 4px 12px; margin: 4px 0 0; font-size: 14px; }
+.dossier-fields dt { color: var(--muted); }
+.dossier-fields dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
 /* RF28 — Vista-me: espelho de corpo inteiro com o reflexo do Avatar 3D */
 .mirror-frame { position: relative; padding: 14px; border-radius: 180px 180px 22px 22px; background: linear-gradient(145deg, #E9D9B4 0%, #B8975A 38%, #F3E6C4 52%, #9C7A3E 78%, #D9C08A 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 18px 40px -18px rgba(40,30,10,.55); }
@@ -2108,3 +2181,44 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .copilot-scores dd { margin: 0; font-family: var(--font-data); font-weight: 700; }
 .trend-rank { display: inline-flex; align-items: center; font-family: var(--font-data); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--surface); }
 .hype-inline { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+
+/* RF47 · leitura das características únicas da peça (texto → estampa, logo, cores) e o "por que esta?" do card */
+.design-understood { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.design-chip { padding: 2px 9px; border-radius: 999px; background: var(--thread-soft); color: var(--thread); font-size: 12px; font-weight: 600; }
+.catalog-card-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; }
+.catalog-reasons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.catalog-reason { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; border: 1px solid var(--line-soft); }
+.catalog-reason.is-ok { background: var(--thread-soft); color: var(--thread); border-color: transparent; }
+.catalog-reason.is-miss { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--muted) 60%, transparent); }
+
+/* RF28 — Vista-me: espelho de corpo inteiro com o reflexo do Avatar 3D */
+.mirror-frame { position: relative; padding: 14px; border-radius: 180px 180px 22px 22px; background: linear-gradient(145deg, #E9D9B4 0%, #B8975A 38%, #F3E6C4 52%, #9C7A3E 78%, #D9C08A 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 18px 40px -18px rgba(40,30,10,.55); }
+.mirror-glass { position: relative; height: clamp(420px, 62vh, 620px); overflow: hidden; border-radius: 168px 168px 12px 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), inset 0 0 40px rgba(0,0,0,.12); }
+.mirror-glass canvas { display: block; }
+.mirror-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.22) 42%, rgba(255,255,255,0) 55%), linear-gradient(115deg, rgba(255,255,255,0) 62%, rgba(255,255,255,.12) 66%, rgba(255,255,255,0) 72%); mix-blend-mode: screen; }
+.mirror-empty { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(280px, 86%); padding: 12px 14px; text-align: center; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 6px 20px -10px rgba(0,0,0,.4); }
+.mirror-note { margin-top: 10px; text-align: center; font-size: 13px; color: #3b2f17; }
+@media (max-width: 480px) { .mirror-frame { padding: 10px; border-radius: 140px 140px 18px 18px; } .mirror-glass { border-radius: 130px 130px 10px 10px; } }
+
+/* ---------- RF25 · criador de selo em etapas (modo → dados → arte → revisar e salvar) ---------- */
+.seal-mode { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 16px; border-radius: 10px; border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.seal-mode:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line-soft)); }
+.seal-mode.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.seal-mode:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.seal-mode:disabled { cursor: progress; opacity: .7; }
+.seal-ai-note { padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line-soft)); }
+.seal-ai-note ul { margin: 4px 0 0; padding-left: 18px; list-style: disc; }
+.seal-wizard-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.seal-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; max-height: 248px; overflow-y: auto; padding: 4px; }
+.seal-gallery.is-sheet { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+.seal-gallery-item { padding: 3px; border-radius: 10px; border: 2px solid transparent; background: var(--surface-2); cursor: pointer; line-height: 0; }
+.seal-gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.seal-gallery.is-sheet .seal-gallery-item img { aspect-ratio: 4 / 5; object-fit: contain; }
+.seal-gallery-item:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.seal-gallery-item.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+.seal-gallery-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.seal-review { display: grid; gap: 10px; margin: 0; }
+.seal-review > div { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft); }
+.seal-review dd { margin: 0; }
+.seal-review .link { margin-left: 6px; color: var(--muted); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
+.seal-core-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface-2); }

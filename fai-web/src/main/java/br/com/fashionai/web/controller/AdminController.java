@@ -4,6 +4,7 @@ import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.AdminService;
+import br.com.fashionai.application.service.IssuerReviewService;
 import br.com.fashionai.application.view.Views;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,26 +24,36 @@ import java.util.UUID;
 @Tag(name = "Administração (aprovações, moderação, usuários, auditoria, IA, backups, jobs)")
 public class AdminController {
     private final AdminService admin;
+    private final IssuerReviewService review;
     private final AiEngine ai;
 
-    public AdminController(AdminService admin, AiEngine ai) {
+    public AdminController(AdminService admin, IssuerReviewService review, AiEngine ai) {
         this.admin = admin;
+        this.review = review;
         this.ai = ai;
     }
 
     @GetMapping("/approvals")
-    @Operation(summary = "RF1.CA08 — Marcas e celebridades aguardando validação")
+    @Operation(summary = "RF1.CA08 — Fila de verificação de marcas e celebridades: dossiês na fila (mais antigo primeiro), "
+            + "pedidos aguardando ajustes, critérios e motivos da política (docs/politicas/VERIFICACAO_MARCAS_E_CELEBRIDADES.md)")
     public Map<String, Object> approvals(CurrentUser user) {
-        return admin.approvals(user);
-    }
-
-    public record DecisionRequest(boolean approve, String notes) {
+        return review.queue(user);
     }
 
     @PostMapping("/approvals/{userId}")
-    @Operation(summary = "RF1.CA08 — Aprovar ou rejeitar perfil institucional")
-    public Map<String, Object> decide(CurrentUser user, @PathVariable UUID userId, @RequestBody DecisionRequest body) {
-        return admin.decide(user, userId, body.approve(), body.notes());
+    @Operation(summary = "RF1.CA08 — Decidir a verificação: APROVAR (checklist completa), AJUSTES ou RECUSAR (motivos "
+            + "padronizados). Aceita a forma antiga {approve, notes}.")
+    public Map<String, Object> decide(CurrentUser user, @PathVariable UUID userId, @RequestBody IssuerReviewService.DecisionCommand body) {
+        return review.decide(user, userId, body);
+    }
+
+    @GetMapping("/approvals/{userId}/documents/{kind}")
+    @Operation(summary = "RF1.CA08 — Documento do pedido de verificação (identity | activity-proof): só ADMIN, sem cache, auditado")
+    public ResponseEntity<byte[]> approvalDocument(CurrentUser user, @PathVariable UUID userId, @PathVariable String kind) {
+        byte[] bytes = review.document(user, userId, kind);
+        String mime = ImageOps.detectMime(bytes);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(mime == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(mime)).body(bytes);
     }
 
     @GetMapping("/moderation")

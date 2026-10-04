@@ -1,0 +1,70 @@
+@startuml RF15_Componentes
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "photos/page.tsx\n(Minhas Fotos, RF12)" as FE0
+  component "components/expanded-card.tsx\n(card da peça / esquema)" as FE1
+  component "components/photo-editor.tsx\n<canvas> 2D: recorte, giro,\nbrilho/contraste, remover fundo,\ndesfazer/refazer" as FE2
+  component "components/edit-image.tsx\n(diálogo Estúdio / substituir)" as FE3
+}
+package "fai-web · controllers" {
+  [PhotoController] as PhotoController
+  [WardrobeController] as WardrobeController
+  [DiscoveryController] as DiscoveryController
+}
+package "fai-application · services" {
+  [PhotoService] as PhotoService
+  [WardrobeService] as WardrobeService
+  [MediaService] as MediaService
+  [FlatLayPipeline\n(imaging)] as FlatLay
+  [AiEngine (RF24)] as AiEngine
+  [SearchService\n(publicPieces)] as SearchService
+}
+package "fai-infrastructure · adapters" {
+  [PhotoRepository\nWardrobeItemRepository\nPieceImageRepository\nProcessingJobLogRepository] as REPOS
+  [MediaStoragePort\n(LocalFileMediaStorage / S3MediaStorageAdapter)] as STORAGE
+  [BackgroundRemovalPort\n(RemoveBgAdapter)] as BGPORT
+}
+database "MySQL\n• photos\n• wardrobe_items\n• piece_images\n• processing_jobs_log" as DB
+cloud "remove.bg\n(remoção de fundo paga)" as EXT
+
+FE0 --> FE2 : abre (photoId)
+FE1 --> FE2 : abre (pieceId)
+FE1 --> FE3 : abre
+FE2 --> PhotoController : GET /api/photos/{id}/file\nPOST /api/photos/{id}/edits\nPOST /api/photos/background-removal
+FE2 --> WardrobeController : PUT /api/pieces/{id}/image
+FE1 --> WardrobeController : POST /api/pieces/{id}/copy
+FE1 --> DiscoveryController : GET /api/public-pieces
+PhotoController --> PhotoService : chama
+WardrobeController --> WardrobeService : chama
+DiscoveryController --> SearchService : chama
+PhotoService --> WardrobeService : replaceImage · governedFlatLay
+PhotoService --> MediaService : grava cópia editada
+WardrobeService --> MediaService : grava imagem + thumb
+WardrobeService --> AiEngine : execute(FLAT_LAY_STANDARDIZER)
+AiEngine --> FlatLay : fallback local
+FlatLay --> BGPORT : chama
+BGPORT --> EXT : HTTPS
+MediaService --> STORAGE : put / register
+PhotoService --> REPOS : lê / grava
+WardrobeService --> REPOS : grava
+SearchService --> REPOS : lê
+REPOS --> DB : JPA/Flyway
+note bottom of FlatLay : ver RF4 (análise da foto e flat lay)
+note bottom of FE0 : galeria e curadoria: ver RF12
+@enduml

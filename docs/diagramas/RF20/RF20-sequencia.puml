@@ -1,0 +1,84 @@
+@startuml RF20_Sequencia
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+actor "Marca" as M
+participant "Frontend\n/schemes/new · brands/[slug]" as FE
+participant "SchemeController" as SCH
+participant "SealController" as C
+participant "SealService" as S
+participant "AiEngine (RF24)\nSEALBOND_MATCHER" as AI
+participant "NotificationService" as N
+participant "Audit" as A
+database "MySQL" as DB
+U -> FE: escolhe peças, estilo e ocasião (RF5)
+FE -> C: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
+C -> S: preview(user, pieceIds, occasion, style)
+S -> DB: SELECT brand_profiles (approval_status = APROVADO)
+S -> AI: local(SEALBOND_MATCHER, candidates())
+AI --> S: até 3 Candidate {confidence, justification, tier, basis BRAND_MATCH}
+S --> FE: 200 {suggestions, unregisteredBrands, message}
+U -> FE: marca as sugestões e salva o look
+FE -> SCH: POST /api/schemes (SchemeForm)
+SCH -> DB: INSERT schemes, scheme_items
+SCH --> FE: 201 {scheme}
+loop cada marca marcada
+  FE -> C: POST /api/schemes/{schemeId}/seal-bonds {targetOwnerId}
+  C -> S: linkManually(user, schemeId, targetOwnerId, null)
+  alt marca não APROVADA
+    S --> FE: 400 MARCA_NAO_VALIDADA (CA06)
+  else par já PENDING_REVIEW/APPROVED
+    S --> FE: 409 VINCULO_EXISTENTE (CA09)
+  else ok
+    S -> DB: INSERT seal_bonds (origin MANUAL, status EDITED)
+    S -> S: route(): Seal ACTIVE do tier, janela e usageLimit
+    alt BrandProfile.requiresSealReview
+      S -> DB: UPDATE seal_bonds SET status = PENDING_REVIEW
+      S -> N: notify(marca, SEAL_BOND_REVIEW)
+      S -> A: log(MUDANCA_ESTADO_VINCULO_SELO, "PENDENTE")
+      S --> FE: 201 bondView (PENDING_REVIEW)
+    else auto-aprovação
+      S -> S: issue(): APPROVED, sealCode BRD-…, expiresAt
+      S -> DB: UPDATE seal_bonds · seals.usage_count+1 · schemes.seal_ids_json
+      S -> N: notify(autor, SEAL_GRANTED)
+      S -> A: log(…, "EMITIDO")
+      S ->> S: publishEvent(CouponRightsCheck) — ver RF38
+      S --> FE: 201 bondView (APPROVED)
+    end
+  end
+end
+M -> FE: abre a fila de revisão
+FE -> C: GET /api/seal-bonds/review-queue
+C -> S: reviewQueue(user)
+S --> FE: 200 [bonds PENDING_REVIEW + APPROVED recentes]
+M -> FE: aprova ou rejeita
+FE -> C: POST /api/seal-bonds/{bondId}/review {approve, reason}
+C -> S: review(user, bondId, approve, reason)
+alt approve
+  S -> S: issue(b, marcaId)
+  S -> N: notify(autor, SEAL_GRANTED)
+else rejeita (motivo obrigatório)
+  S -> DB: UPDATE seal_bonds SET status = REJECTED, review_note
+  S -> N: notify(autor, SEAL_BOND_REVIEW "não aprovado")
+end
+S -> A: log(MUDANCA_ESTADO_VINCULO_SELO)
+S --> FE: 200 bondView
+opt CA14 — revogação
+  M -> FE: revoga
+  FE -> C: POST /api/seal-bonds/{bondId}/revoke {reason}
+  C -> S: revoke(user, bondId, reason)
+  S -> DB: UPDATE seal_bonds SET status = REVOKED
+  S -> N: notify(autor, SEAL_BOND_REVIEW "selo revogado")
+end
+U -> FE: Meus Selos
+FE -> C: GET /api/me/seals
+C -> S: mySeals(user)
+S --> FE: 200 {ativos, pendentes, recusados, sugeridos, inativos, redemptions}
+@enduml

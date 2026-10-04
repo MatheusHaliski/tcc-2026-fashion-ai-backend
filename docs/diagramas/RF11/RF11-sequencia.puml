@@ -1,0 +1,84 @@
+@startuml RF11_Sequencia
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "Frontend\nscheme-builder · background-studio\npiece-art-editor" as FE
+participant "BackgroundController" as BC
+participant "SchemeController" as SC
+participant "BackgroundStudioService" as BS
+participant "AssetCatalogService" as AC
+participant "AiEngine (RF24)" as AI
+participant "ImageGenerationPort\n(Replicate)" as IMG
+participant "MediaService\n(storage + photos)" as MS
+database "MySQL" as DB
+
+P -> FE: abre a etapa 4 (Background Studio)
+FE -> BC: GET /api/backgrounds/catalog
+BC -> BS: catalog()
+BS -> AC: auras · materiais · gradientes · mosaicos · skins
+BC --> FE: 200 catálogo
+FE -> BC: GET /api/backgrounds/recommendations?styles=&occasions=
+BC -> BS: recommend(styles, occasions)
+BC --> FE: 200 {skins, direction, reason}
+== Modo 2 · Arte com AI ==
+P -> FE: descreve o cenário e escolhe a direção
+FE -> BC: POST /api/backgrounds/art {prompt, direction, celebrityId, era, passePartout, target}
+BC -> BS: generateArt(user, ArtRequest)
+alt prompt vazio
+  BS --> FE: 400 PROMPT_VAZIO
+else
+  BS -> DB: celebrity_profiles (stageName, realName protegidos)
+  BS -> AI: execute(userId, BACKGROUND_GENERATOR, prompt, protectedNames, steps)
+  alt prompt viola atmosfera × retrato (CelebrityPromptValidator)
+    AI -> DB: ai_inference_log (PROMPT_REJECTED, antes do envio)
+    AI --> FE: 422 PROMPT_REJEITADO {violations, inferenceId}
+  else provedor disponível
+    AI -> IMG: generate(prompt, negative "no people, no faces", 896, 1344)
+    IMG --> AI: bytes + custo
+    AI -> DB: ai_inference_log
+    BS -> MS: put(users/{id}/backgrounds/{uuid}.png) · register(BACKGROUND_STUDIO)
+    MS -> DB: INSERT photos
+    BC --> FE: 200 {status: READY, url, provider, latencyMs, costUsd}
+  else sem provedor / sem cota
+    BC --> FE: 200 {status: FALLBACK_GALLERY, suggestions[6]}
+  end
+end
+== Modo 1 · Cor & Gradiente (prévia) ==
+FE -> BC: GET /api/backgrounds/combination?aura=&material=&animated=&mosaic=
+BC --> FE: 200 combinação resolvida
+FE -> SC: POST /api/schemes/preview (rascunho)
+SC --> FE: 200 image/png
+== Salvar (etapa 5 do Criar Look) ==
+P -> FE: salvar
+FE -> SC: POST /api/schemes | PUT /api/schemes/{id} {..., background, applyRecommendedDirection}
+SC -> BS: applyToScheme(scheme, background, applyRecommendedDirection)
+alt preset/skin/anatomia/cor inválidos
+  BS --> FE: 400 PRESET_INVALIDO | SKIN_INVALIDA | COR_INVALIDA
+else container travado pela direção
+  BS --> FE: 409 CONTAINER_TRAVADO
+else
+  BS -> DB: schemes (backgroundColor, backgroundGradient, backgroundArtUrl,\ncardSkin, containerOrigin, studioConfigJson)
+  SC --> FE: 200/201 SchemeView
+end
+== Modo 3 · Background da peça ==
+FE -> BC: PUT /api/pieces/{id}/background {config, baseRev}
+BC -> BS: savePiece(user, id, config)
+alt baseRev desatualizado
+  BS --> FE: 409 ARTE_ALTERADA
+else
+  BS -> DB: wardrobe_items.backgroundConfigJson (rev + 1)
+  BC --> FE: 200 {pieceId, background}
+end
+opt restaurar padrão do esquema
+  FE -> BC: DELETE /api/schemes/{id}/background
+  BC -> BS: resetScheme(user, id)
+  BC --> FE: 200 {reset: true, containerMandatory}
+end
+@enduml

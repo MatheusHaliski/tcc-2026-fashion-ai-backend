@@ -1,0 +1,27 @@
+@startuml RF14_MaquinaDeEstados_PerfilMarca
+!pragma layout smetana
+title RF14 — BrandProfile: approval_status e presença no feed "Marcas"
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Pendente : cadastro de conta MARCA (RF1)\nIdentityService → approval_status = PENDENTE
+state "PENDENTE" as Pendente
+state "APROVADO" as Aprovado {
+  [*] --> NoFeed
+  state "Listada em GET /api/brands\ne com página /brands/{slug}" as NoFeed
+  NoFeed --> NoFeed : PATCH /api/me/brand-profile\n(dona edita bio, loja, categoria)
+}
+state "RECUSADO" as Recusado
+state "SUSPENSO" as Suspenso
+Pendente --> Aprovado : POST /api/admin/approvals/{userId} (approve=true)\nAdminService — approvedBy/approvedAt
+Pendente --> Recusado : POST /api/admin/approvals/{userId} (approve=false)
+Aprovado --> Suspenso : <<planejado>> suspensão pelo admin
+Suspenso --> Aprovado : <<planejado>> reativação
+note right of Pendente : sem tela pública (RF1.CA06):\nGET /api/institutional/{slug} → 404\npara quem não é dono nem admin
+note right of Aprovado : único estado visível no feed;\nordem AFINIDADE (DNA do visitante) ou RECENTES
+note bottom of Suspenso : valor existe no enum ApprovalStatus,\nmas nenhum endpoint o atribui —\nnão implementado, conforme Trello (RF27 habilita RF14)
+@enduml

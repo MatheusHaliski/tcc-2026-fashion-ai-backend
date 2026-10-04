@@ -1,0 +1,145 @@
+@startuml RF19_Classes
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +profileType: ProfileType
+}
+class Reaction {
+  +actor: User
+  +targetType: TargetType
+  +targetId: UUID
+  +reactionType: ReactionType
+}
+class Comment {
+  +author: User
+  +targetType: TargetType
+  +targetId: UUID
+  +parentCommentId: UUID
+  +content: String
+  +active: boolean
+}
+class SavedItem {
+  +user: User
+  +targetType: TargetType
+  +targetId: UUID
+  +savedAt: Instant
+  +favorite: boolean
+}
+class Share {
+  +user: User
+  +targetType: TargetType
+  +targetId: UUID
+  +channel: ShareChannel
+  +caption: String
+  +exportUrl: String
+}
+class Notification {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +delivered: boolean
+  +read: boolean
+}
+class Scheme {
+  +user: User
+  +originalScheme: Scheme
+  +origin: SchemeOrigin
+  +visibility: Visibility
+  +disponivel: boolean
+  +likeCount: long
+  +commentCount: long
+  +shareCount: long
+  +remixCount: long
+  +saveCount: long
+}
+class WardrobeItem {
+  +user: User
+  +name: String
+  +disponivel: boolean
+  +likesCount: long
+  +commentCount: long
+  +sharesCount: long
+  +remixesCount: long
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+}
+}
+package "fai-domain · enums" {
+enum ReactionType {
+  LIKE
+  TREND
+  ELEGANTE
+  CRIATIVO
+}
+enum ShareChannel {
+  FEED
+  EXTERNAL
+}
+enum TargetType {
+  PIECE
+  SCHEME
+  DNA
+}
+enum NotificationType {
+  NEW_LIKE
+  NEW_REACTION
+  NEW_COMMENT
+  NEW_REMIX
+  ..
+}
+}
+package "fai-application · service" {
+class SocialService {
+  {static} COMMENT_MAX = 500
+  +react(user, type, id, reaction): Map
+  +comments(viewer, type, id): List
+  +comment(user, type, id, content, parentId): Map
+  +deleteComment(user, commentId)
+  +toggleSave(user, type, id): Map
+  +favoriteSaved(user, type, id, favorite): Map
+  +share(user, type, id, channel, caption): Map
+  +remix(user, type, id): Map
+  +returnToOrigin(user, pieceId, fromSchemeId): Map
+  +counters(viewer, type, id): Map
+}
+}
+Reaction "*" --> "1" User : actor
+Comment "*" --> "1" User : author
+SavedItem "*" --> "1" User
+Share "*" --> "1" User
+Notification "*" --> "1" User : recipient
+Scheme "*" --> "1" User
+Scheme "*" --> "0..1" Scheme : originalScheme (remix)
+WardrobeItem "*" --> "1" User
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
+Reaction ..> ReactionType
+Reaction ..> TargetType
+Share ..> ShareChannel
+Notification ..> NotificationType
+SocialService ..> Reaction
+SocialService ..> Comment
+SocialService ..> SavedItem
+SocialService ..> Share
+note bottom of Reaction : uq_reactions_actor_target —\nsem curtida duplicada (CA02)
+note bottom of SchemeItem : returnToOrigin (CA14) percorre\nscheme_items por wardrobe_item_id
+@enduml

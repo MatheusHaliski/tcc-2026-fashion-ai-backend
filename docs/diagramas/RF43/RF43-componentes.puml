@@ -1,0 +1,64 @@
+@startuml RF43_Componentes
+title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "autopilot/page.tsx — aba Hoje\n(ocasião, humor, cidade, 3 sugestões)" as FE0
+  component "autopilot/page.tsx — aba Semana\n(planejar, usar, descartar)" as FE1
+}
+package "fai-web · controllers" {
+  [AutopilotController] as AC
+}
+package "fai-application · services" {
+  [AutopilotService] as AS
+  [WeatherService] as WS
+  [PreferenceModel] as PM
+  [LocalSchemeComposer\n(ai.local)] as LSC
+  [SchemeService] as SS
+  [DailyLookService] as DLS
+  [WardrobeService.eligible] as WDS
+  [AiEngine (RF24)\ncapability COPILOT] as AI
+}
+package "fai-infrastructure · adapters" {
+  [OpenMeteoAdapter\n(WeatherPort + GeocodingPort)] as OMA
+  [Provedores de IA\n(ai-providers)] as AIP
+  [WeekPlanRepository\nWeekPlanDayRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserPreferencesRepository\nUserRepository] as REPOS
+}
+database "MySQL · fashionai_app\n• week_plans\n• week_plan_days\n• schemes\n• scheme_items\n• daily_looks\n• wardrobe_items\n• user_preferences\n• users" as DB
+cloud "Open-Meteo\n(previsão + geocodificação)" as OM
+cloud "LLM remoto\n(fallback local se indisponível)" as LLM
+
+FE0 --> AC : chama POST /api/autopilot/daily,\n/daily/confirmation
+FE1 --> AC : chama POST/GET/DELETE /api/autopilot/weeks,\nPUT/POST /api/autopilot/days/{id}
+AC --> AS : chama
+AS --> WDS : lê peças disponíveis
+AS --> WS : resolve clima
+AS --> PM : lê preferências aprendidas
+AS --> LSC : compõe candidatas
+AS --> AI : escolhe e justifica 3 looks
+AS --> SS : cria Scheme (origin AUTOPILOTO)
+AS --> DLS : registra Look do Dia (AUTOPILOTO)
+AS --> REPOS : grava week_plans / week_plan_days
+WS --> OMA : chama
+OMA --> OM : HTTPS
+AI --> AIP : chama
+AIP --> LLM : HTTPS
+SS --> REPOS : grava
+DLS --> REPOS : grava
+REPOS --> DB : JPA/Flyway
+note bottom of AC : no código a tag é "RF10 — Autopiloto, Semana e Copilot";\nnumeração oficial do Trello: RF43
+@enduml

@@ -26,7 +26,9 @@ function csp(nonce: string): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${PROD ? "" : " 'unsafe-eval'"}`,   // wasm: MediaPipe do Avatar 3D (RF40); não libera eval de JS
     "style-src 'self' 'unsafe-inline'",                      // estilos inline do React (style={…}) e das cenas 3D
-    `img-src 'self' data: blob: ${API}${MEDIA ? ` ${MEDIA}` : ""}`,   // mídia só do site e do backend (logos de marca são baixados pelo backend)
+    // mídia do site e do backend (logos de marca são baixados pelo backend) + fotos oficiais do catálogo (RF47): só a URL
+    // https da fonte oficial é referenciada, nunca copiada — o backend valida o domínio; imagens não executam código
+    `img-src 'self' data: blob: https: ${API}${MEDIA ? ` ${MEDIA}` : ""}`,
     "font-src 'self' data:",
     `connect-src 'self' ${API} blob: data:`,
     `media-src 'self' blob: data:${MEDIA ? ` ${MEDIA}` : ""}`,

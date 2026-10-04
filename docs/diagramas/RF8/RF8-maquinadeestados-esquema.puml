@@ -1,0 +1,32 @@
+@startuml RF8_MaquinaDeEstados_Esquema
+!pragma layout smetana
+title RF8 — Scheme: publicação (SchemeStatus) × visibilidade (Visibility) — o que aparece na aba "Buscar"
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Rascunho : POST /api/schemes (sem publish)
+state "DRAFT" as Rascunho
+state "PUBLISHED" as Publicado {
+  state "PRIVATE" as Priv
+  state "FOLLOWERS" as Seg
+  state "PUBLIC" as Pub
+  [*] --> Priv : visibilidade padrão
+  Priv --> Seg : PUT /api/schemes/{id} visibility=FOLLOWERS
+  Seg --> Pub : PUT /api/schemes/{id} visibility=PUBLIC
+  Pub --> Seg : PUT /api/schemes/{id} visibility=FOLLOWERS
+  Seg --> Priv : PUT /api/schemes/{id} visibility=PRIVATE\n(revoga selos — RF20.CA14)
+  Pub --> Priv : PUT /api/schemes/{id} visibility=PRIVATE
+}
+state "ARCHIVED" as Arquivado
+Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT /api/schemes/{id} publish=true\n(publishedAt, communityIndexed = PUBLIC, snapshot das peças)
+Publicado --> Arquivado : POST /api/schemes/{id}/archive\n(revoga selos, remove projeções, retira foto de Minhas Fotos)
+Rascunho --> Arquivado : POST /api/schemes/{id}/archive
+note right of Pub : aparece em GET /api/search (LOOKS),\nGET /api/feed e GET /api/runway\npara qualquer pessoa não bloqueada\n(dono com AccountStatus ACTIVE)
+note right of Seg : aparece só para quem tem\nFollow ACEITO com o dono\n(Guard.canView)
+note bottom of Arquivado : invisível fora do dono\n(SchemeService.canView = false)
+note left of Publicado : visibilidade efetiva =\nmoreRestrictive(scheme.visibility,\nuser.profileVisibility)
+@enduml

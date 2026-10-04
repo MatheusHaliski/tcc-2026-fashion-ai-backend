@@ -1,0 +1,81 @@
+@startuml RF20_Atividades
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Usuário|
+start
+:Cria o look em /schemes/new (RF5):\nescolhe peças, estilo e ocasião;
+|Frontend (scheme-builder.tsx)|
+:POST /api/seal-suggestions/preview\n{pieceIds, occasion, style};
+|Backend (SealService)|
+:SealBond Matcher (AiCapability.SEALBOND_MATCHER, local):\npeças × marcas com BrandProfile APROVADO (CA01);
+if (Marca da peça sem perfil cadastrado?) then (sim)
+  :unregisteredBrands + mensagem\n"somente marcas com perfil cadastrado" (CA06);
+else (não)
+endif
+:Confiança 0,45 + 0,5·k/n (+0,05 se Brand);\ndescarta abaixo de sealConfidenceThreshold;
+:Até 3 candidatos com confiança, justificativa\ne tier (1 peça = PECA, várias = LOOK);
+|Frontend (scheme-builder.tsx)|
+if (Há sugestões?) then (não)
+  :"Nenhuma marca atingiu a confiança" —\nlook segue sem vínculo (CA05);
+else (sim)
+  |Usuário|
+  :Marca as sugestões que quer pedir\n(ou nenhuma = recusa — CA04);
+endif
+:Salva/publica o look\nPOST /api/schemes (+ /publication);
+|Frontend (scheme-builder.tsx)|
+:Para cada marca marcada:\nPOST /api/schemes/{id}/seal-bonds {targetOwnerId};
+|Backend (SealService)|
+:linkManually(): só MARCA/CELEBRIDADE;\nmarca precisa estar APROVADA (CA06);
+:SealBond origin=MANUAL, status=EDITED (CA02/CA03);
+if (Já há PENDING_REVIEW/APPROVED\npara o par esquema × marca?) then (sim)
+  #FFE3E3:409 VINCULO_EXISTENTE — selo único por par (CA09);
+  stop
+else (não)
+endif
+:route(): escolhe o Seal ATIVO do tier;
+if (Selo ausente, fora da janela\nou sem emissões?) then (sim)
+  #FFE3E3:REJECTED + 409 SELO_INDISPONIVEL;
+  stop
+else (não)
+endif
+if (BrandProfile.requiresSealReview?) then (sim)
+  :PENDING_REVIEW + notify(SEAL_BOND_REVIEW) à marca (CA07);
+  |Marca|
+  :Abre brands/[slug] → aba Revisão\nGET /api/seal-bonds/review-queue;
+  :POST /api/seal-bonds/{id}/review {approve, reason};
+  |Backend (SealService)|
+  if (Aprovou?) then (não)
+    :REJECTED + motivo obrigatório\n+ notify ao autor;
+    stop
+  else (sim)
+  endif
+else (não — auto-aprovação)
+endif
+:issue(): APPROVED, sealCode "BRD-…",\nissuedAt/expiresAt, usageCount+1 (CA08/CA10);
+:notify(SEAL_GRANTED) + AuditLog\nMUDANCA_ESTADO_VINCULO_SELO (CA16);
+:CouponRightsCheck → promoções habilitadas\n(CA11; resgate em RF38/RF25);
+note right: revogação/expiração (CA14): POST /api/seal-bonds/{id}/revoke,\nesquema excluído/privado → revokeForScheme
+stop
+@enduml

@@ -1,0 +1,35 @@
+@startuml RF5_MaquinaDeEstados_Esquema
+!pragma layout smetana
+title RF5 — Scheme: ciclo de vida do esquema (SchemeStatus × Visibility)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Rascunho : POST /api/schemes\n(publish=false; CA06: items vazio → 400 SEM_PECAS)
+[*] --> Publicado : POST /api/schemes\n(publish=true)
+state "DRAFT" as Rascunho
+state "PUBLISHED" as Publicado {
+  [*] --> Privado : visibility=PRIVATE
+  [*] --> Seguidores : visibility=FOLLOWERS
+  [*] --> Publico : visibility=PUBLIC\n(communityIndexed=true → feed RF8)
+  state "PRIVATE" as Privado
+  state "FOLLOWERS" as Seguidores
+  state "PUBLIC" as Publico
+  Privado --> Seguidores : PUT /api/schemes/{id}
+  Seguidores --> Publico : PUT /api/schemes/{id}
+  Publico --> Privado : PUT /api/schemes/{id}
+}
+state "ARCHIVED" as Arquivado
+Rascunho --> Rascunho : PUT /api/schemes/{id}\n(editar peças/arte, RF9)
+Rascunho --> Publicado : POST /api/schemes/{id}/publication\n{visibility} (CA05) — snapshot das peças (RF7.CA03)
+Publicado --> Publicado : PUT /api/schemes/{id}\n(re-projeção se peças mudam)
+Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
+Publicado --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}\n(selos revogados, sai do feed e de Minhas Fotos)
+Arquivado --> [*]
+note right of Rascunho : visibilidade inicial herdada do perfil\n(AccountService.defaultVisibility, CA03)
+note right of Arquivado : só o dono ainda enxerga (get/canView);\nnão há transição de volta no código
+note bottom of Publicado : flags independentes do status:\ndisponivel / favorite via PATCH /api/schemes/{id}/flags (RF31)\ne lookDoDia no SchemeForm (RF28)
+@enduml

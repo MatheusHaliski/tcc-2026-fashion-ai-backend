@@ -39,6 +39,9 @@ public class ClientIpResolver {
     /** Atributo da requisição com o IP já resolvido (a assinatura é conferida uma vez por requisição). */
     static final String ATTRIBUTE = ClientIpResolver.class.getName() + ".ip";
     static final long MAX_SKEW_SECONDS = 60;
+    /** O mesmo mínimo do BFF (app/bff/auth/[action]/route.ts). */
+    static final int MIN_SECRET_LENGTH = 32;
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ClientIpResolver.class);
     private static final Pattern IPV4 = Pattern.compile("^(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}$");
     private static final Pattern IPV6_CHARS = Pattern.compile("^[0-9A-Fa-f:.]{2,45}$");
 
@@ -54,6 +57,14 @@ public class ClientIpResolver {
 
     ClientIpResolver(String edgeSecret, String header, LongSupplier nowEpochSeconds) {
         String secret = edgeSecret == null ? "" : edgeSecret.trim();
+        if (secret.isEmpty()) {
+            LOG.warn("EDGE_PROXY_SECRET ausente: pedidos que passam pelo BFF (Vercel) contam no IP da Vercel — o limite por IP"
+                    + " do login vira um balde só para todos os usuários do site. Defina o mesmo segredo na Vercel e aqui.");
+        } else if (secret.length() < MIN_SECRET_LENGTH) {
+            // o BFF só assina com 32+ caracteres: abaixo disso nada chega assinado e o IP do cliente nunca é conhecido
+            LOG.warn("EDGE_PROXY_SECRET com {} caracteres: o BFF exige {}+ e não vai assinar; gere com openssl rand -hex 32",
+                    secret.length(), MIN_SECRET_LENGTH);
+        }
         this.edgeSecret = secret.isEmpty() ? null : secret.getBytes(StandardCharsets.UTF_8);
         this.header = header == null ? "" : header.trim();
         this.nowEpochSeconds = nowEpochSeconds;

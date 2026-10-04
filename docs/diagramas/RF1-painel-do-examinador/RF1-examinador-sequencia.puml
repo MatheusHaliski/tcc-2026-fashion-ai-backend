@@ -1,0 +1,74 @@
+@startuml RF1_Examinador_Sequencia
+title RF1.CA07/CA09 — Verificação do emissor: envio, aviso à administração, decisão e reenvio pela Central\nDiagrama de sequência
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #52606D
+  LifeLineBorderColor #B695F5
+  ParticipantBackgroundColor #F8F4FF
+  ParticipantBorderColor #B695F5
+  ActorBackgroundColor #F8F4FF
+  GroupBackgroundColor #FFF5F8
+}
+actor "Marca/Celebridade" as M
+participant "Frontend\n(register, IssuerCenter,\nAdminApprovals)" as F
+participant "AuthController /\nIdentityService" as I
+participant "IssuerReviewService" as R
+participant "IssuerVerificationPolicy" as P
+participant "NotificationService" as N
+participant "EmailPort" as EM
+actor "Administrador" as A
+database "MySQL\nusers · brand_profiles ·\ncelebrity_profiles · audit_log" as DB
+
+M -> F : envia cadastro de MARCA/CELEBRIDADE
+F -> I : POST /api/auth/register
+I -> DB : INSERT user + perfil (PENDENTE, reviewAttempts = 1)
+I -> R : submitted(userId)
+I --> F : 201
+== depois do commit ==
+R -> DB : contas ADMIN ativas
+loop cada administrador
+  R -> N : ISSUER_REVIEW_REQUEST (href /admin/users?tab=approvals)
+end
+loop ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS
+  R -> EM : send(assunto_admin, corpo_admin)
+end
+== confirmação do e-mail ==
+M -> I : confirma o código
+I -> R : emailConfirmed(user)
+R -> DB : reviewSubmittedAt = agora (prazo de 3 dias úteis)
+== Central do emissor ==
+M -> F : abre a Central
+F -> R : GET /api/me/issuer-review
+R -> P : checks(user, perfil) + verificationCode(userId)
+R --> F : status, motivos, checklist, código FAI-XXXXXX,\nenvios/limite, prazo, canResubmit
+== análise ==
+A -> F : fila de aprovações
+F -> R : GET /api/admin/approvals
+R --> F : dossiês com verificações automáticas
+A -> F : decisão + motivos + checklist
+F -> R : POST /api/admin/approvals/{userId}\n{decision, reasons, notes, checklist}
+R -> P : checks(user, perfil)
+alt APROVAR sem e-mail confirmado ou com obrigatório em aberto
+  R --> F : 409 EMAIL_NAO_CONFIRMADO | CRITERIOS_PENDENTES
+else decisão válida
+  R -> DB : status APROVADO | AJUSTES | RECUSADO; motivos; checklist
+  opt APROVADO
+    R -> DB : conta ACTIVE + verificada; ensureDefaultSeals
+  end
+  R -> N : ACCOUNT_APPROVAL ao dono (href da Central)
+  R -> EM : e-mail da decisão ao dono (depois do commit)
+  R -> DB : audit_log PERFIL_APROVADO | PERFIL_AJUSTES_SOLICITADOS | PERFIL_RECUSADO
+  R --> F : {userId, status, approved}
+end
+== reenvio (AJUSTES ou RECUSADO, envios < 5) ==
+M -> F : corrige e reenvia pela Central
+F -> R : POST /api/me/issuer-review/resubmit
+alt campo inválido ou limite de envios
+  R --> F : 400 FORMULARIO_INVALIDO | 409 LIMITE_DE_ENVIOS (nada gravado)
+else
+  R -> DB : novo documento em restricted/; PENDENTE; attempts + 1
+  R -> R : submitted(userId) → admins avisados de novo
+  R --> F : status atualizado
+end
+@enduml

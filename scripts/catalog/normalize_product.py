@@ -63,6 +63,12 @@ class Normalizer:
                 for s in syns:
                     target.setdefault(key(s), canon)
         self.stopwords = {key(s) for s in data.get("stopwords", [])}
+        # vocabulário das características únicas da peça (o mesmo do CatalogDesignInterpreter no Java)
+        design = data.get("design", {})
+        self.design_patterns = set(design.get("patterns", {}))
+        self.design_placements = set(design.get("placements", {}))
+        self.design_sizes = set(design.get("sizes", {}))
+        self.design_sides = set(design.get("sides", {}))
 
     def category(self, raw):
         return self.categories.get(key(raw))
@@ -141,6 +147,8 @@ class Product:
     images: list = field(default_factory=list)
     aliases: list = field(default_factory=list)
     variants: list = field(default_factory=list)
+    description: Optional[str] = None
+    design: Optional[dict] = None
     warnings: list = field(default_factory=list)
 
 
@@ -196,4 +204,43 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     aliases = raw.get("aliases") or []
     p.aliases = [a for a in (aliases.split("|") if isinstance(aliases, str) else aliases) if str(a).strip()]
     p.variants = list(raw.get("variants") or [])
+    p.description = re.sub(r"\s+", " ", s("description")) if s("description") else None
+    p.design = normalize_design(raw.get("design"), n, p.warnings)
     return p
+
+
+def normalize_design(raw, n: Normalizer, warnings: list) -> Optional[dict]:
+    """Design da peça (estampa, logo, lados, cores da peça × da estampa) só com o vocabulário de normalization.json → design.
+    Valor fora do vocabulário vira aviso e sai do design (nunca é gravado como veio). Sem design, o backend lê a descrição."""
+    if not raw:
+        return None
+    if not isinstance(raw, dict):
+        warnings.append("design ignorado: não é um objeto")
+        return None
+    out: dict = {}
+    for name, allowed in (("pattern", n.design_patterns), ("logoPlacement", n.design_placements), ("logoSize", n.design_sizes)):
+        v = raw.get(name)
+        if v in (None, ""):
+            continue
+        v = str(v).strip().upper()
+        if v in allowed:
+            out[name] = v
+        else:
+            warnings.append(f"design.{name} fora do vocabulário ignorado: {v}")
+    sides = [str(x).strip().upper() for x in raw.get("sides") or []]
+    bad = [x for x in sides if x not in n.design_sides]
+    if bad:
+        warnings.append(f"design.sides fora do vocabulário ignorado: {', '.join(bad)}")
+    if [x for x in sides if x in n.design_sides]:
+        out["sides"] = [x for x in sides if x in n.design_sides]
+    for name in ("baseColors", "printColors", "anyColors"):
+        colors = []
+        for c in raw.get(name) or []:
+            code = n.color(c)
+            if code and code not in ("print", "multicolor"):
+                colors.append(code)
+            else:
+                warnings.append(f"design.{name}: cor fora da taxonomia ignorada: {c}")
+        if colors:
+            out[name] = list(dict.fromkeys(colors))
+    return out or None

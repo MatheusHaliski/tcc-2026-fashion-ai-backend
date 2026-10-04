@@ -79,6 +79,13 @@ public class InMemoryRateLimit implements RateLimitPort {
         windows.remove(key(userId, bucket));
     }
 
+    @Override
+    public void release(UUID userId, String bucket) {
+        Instant now = clock.instant();
+        windows.computeIfPresent(key(userId, bucket), (k, old) ->
+                !old.resetAt.isAfter(now) ? null : new Window(Math.max(0, old.count - 1), old.resetAt));
+    }
+
     int size() {
         return windows.size();
     }

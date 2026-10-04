@@ -1,0 +1,70 @@
+@startuml RF45_Sequencia
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — endpoints reais e motores de visão (fai-application · vision)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\npieces/new" as FE
+participant "WardrobeController" as C
+participant "CaptureSessionService\n<<planejado>>" as CS #FAFAFA
+participant "WardrobeService" as W
+participant "AiEngine (RF24)" as AI
+participant "LandmarkDetector\nBrandEnsembleResolver\nIdentificationHierarchy" as V
+participant "PhotographyQualityGate" as Q
+participant "AdaptiveCaptureEngine" as A
+participant "CanonicalPhotographer\n+ PhotographySpecs" as CP
+participant "MediaStoragePort\n(S3 / local)" as ST
+database "MySQL" as DB
+
+note over U, FE
+  O criador de peça (pieces/new) não envia mais foto:
+  POST /api/pieces/analysis segue no backend, sem tela que o chame nesse fluxo
+end note
+U -> FE: escolhe o tipo e envia a foto principal
+alt fluxo implementado hoje
+  FE -> C: POST /api/pieces/analysis (file, category)
+  C -> W: analyze(user, bytes, category)
+else fluxo de captura adaptativa
+  FE -> CS: POST /api/capture/sessions (file, category, viewType, identifyModel)
+  note right of CS: <<planejado>> não há controller /api/capture/**\nnão implementado — conforme Trello
+  CS -> ST: put(piece_original_{vista}.jpg) — ORIGINAL imutável
+  CS -> W: analyzeForCapture(user, bytes, category, lenient=true)
+end
+W -> AI: FLAT_LAY_STANDARDIZER (rembg → remove.bg → local)
+AI --> W: recorte + studioSource
+W -> AI: CONTENT_MODERATOR / PIECE_ANALYZER
+AI --> W: PieceGuess (categoria, subcategoria, marca, confianças)
+W --> CS: CaptureAnalysis (draft, studioSource, logoBox, ocr, failedChecks)
+CS -> V: detect(cutout, family) · resolve(evidências) · reconcile()
+V --> CS: landmarks + BrandPrediction por IdentificationLevel
+CS -> Q: evaluate(profile, view, Signals)
+Q --> CS: Report(score, ACCEPT | ACCEPT_WITH_GUIDANCE | RETAKE_SUGGESTED)
+CS -> A: decide(Context)
+A --> CS: Decision(next, alternatives, done, doneReason)
+opt Decision.done = false
+  CS -> DB: INSERT capture_requests (PENDING, expected_gain, confidence_before)
+  CS --> FE: 201 sessão AWAITING_CAPTURE + próxima vista
+  alt pessoa envia a vista complementar
+    FE -> CS: POST /api/capture/sessions/{id}/images <<planejado>>
+    CS -> DB: UPDATE capture_requests FULFILLED (confidence_after)
+  else pessoa pula
+    FE -> CS: POST /api/capture/sessions/{id}/requests/{requestId}/skip <<planejado>>
+    CS -> DB: UPDATE capture_requests SKIPPED
+  end
+end
+CS -> CP: render(cutout, PhotographySpecs.get(specId), landmarks, clipped)
+CP --> CS: Result(image, Report: specId, rotação, escala, cobertura)
+CS -> ST: put(piece_product_front.png, piece_logo_detail.png…)
+CS -> DB: INSERT piece_images (CANONICAL/DETAIL, derived_from_id), brand_predictions,\ngarment_landmarks, model_inferences
+CS --> FE: sessão READY_FOR_REVIEW (identificação, qualidade, canônicos)
+U -> FE: confirma
+FE -> C: POST /api/pieces (PieceForm.captureSessionId)
+C -> W: create(user, form)
+W -> DB: INSERT wardrobe_items (capture_session_id, canonical_image_url)
+C --> FE: 201 PieceView
+@enduml

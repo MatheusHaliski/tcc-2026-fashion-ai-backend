@@ -9,8 +9,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Tabs, Textarea, useToast } from "@/components/ui";
 import { SchemeCard, toSealBadges } from "@/components/scheme-card";
-import { SealCreator } from "@/components/seal-creator";
-import { EMPTY_POLICY, SealPolicyEditor, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
+import { SealWizard, type SealFormState } from "@/components/seal-wizard";
+import { EMPTY_POLICY, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
@@ -21,7 +21,7 @@ import { ProfileHeader } from "@/components/profile-header";
 import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
 import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
 import { RoomStore } from "@/components/room3d/room-store";
-import { IssuerReviewButton } from "@/components/issuer-review";
+import { IssuerCenter, IssuerCenterButton, useIssuerReview } from "@/components/issuer-review";
 
 interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
@@ -35,6 +35,10 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
+  // Central do emissor (verificação do perfil): só para o dono; com o perfil ainda em verificação, a página abre nela
+  const review = useIssuerReview(!!data && (data.admin ?? data.mode === "ADMINISTRADOR"));
+  const reviewStatus = review.data?.status;
+  useEffect(() => { if (reviewStatus && reviewStatus !== "APROVADO" && !new URLSearchParams(window.location.search).get("tab")) setTab("CENTRAL"); }, [reviewStatus]);
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
   type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
@@ -46,7 +50,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK" as SealTierId, policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign, policy: EMPTY_POLICY };
   // RF25 — política padronizada (regras + tags) no lugar do texto livre; policyText só guarda a descrição antiga, se houver
-  const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: SealTierId; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign; policy: SealPolicy }>(emptySeal);
+  const [sealForm, setSealForm] = useState<SealFormState>(emptySeal);
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} page notFound={{ title: t("brands.noOfficialTitle", { name: decodeURIComponent(slug) }), hint: t("brands.noOfficialHint"), action: <Link href={`/search?tab=PECAS&q=${encodeURIComponent(decodeURIComponent(slug))}`} className="btn btn-primary">{t("brands.seePieces")}</Link> }} />;
   if (loading || !data) return <Skeleton className="h-64" />;
@@ -54,13 +58,13 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []), { id: "GUARDA_ROUPA", label: admin ? t("brands.slug.criar_guarda_roupa_3d") : t("brands.slug.guarda_roupa_3d") },
-    ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
+    ...(admin ? [{ id: "CENTRAL", label: t("issuerReview.central") }, { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
     const policy = cleanPolicy(sealForm.policy);
     const body = { name: sealForm.name.trim(), tier: sealForm.tier, policy, policyText: policy ? null : sealForm.policyText || null, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design };
-    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); } catch (e) { toast.fromError(e); }
+    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); return true; } catch (e) { toast.fromError(e); return false; }
   }
   async function savePromo() {
     const body = { type: promoForm.type, title: promoForm.title, description: promoForm.description, rules: promoForm.rules, discountPercent: promoForm.discountPercent ? Number(promoForm.discountPercent) : null };
@@ -79,8 +83,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
-        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerReviewButton /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
-      <Tabs tabs={tabs} value={tab} onChange={setTab} />
+        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+      <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
+      {tab === "CENTRAL" && admin && <IssuerCenter review={review} onTab={setTab} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
@@ -115,16 +120,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       )}
       {tab === "REVISAO" && admin && <ReviewQueue />}
       {tab === "METRICAS" && admin && <IssuerMetrics />}
-      <Dialog open={sealForm.open} onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")} footer={<Button variant="primary" onClick={saveSeal} disabled={sealForm.name.trim().length < 2}>{t("common.save")}</Button>}>
-        <Field label={t("common.nome")} id="sname" required><Input id="sname" value={sealForm.name} onChange={(e) => setSealForm({ ...sealForm, name: e.target.value })} /></Field>
-        <div className="mb-3"><p className="label mb-1">{t("brands.slug.desenho_do_selo_proporcoes_do")}</p><SealCreator value={sealForm.design} onChange={(dd) => setSealForm({ ...sealForm, design: dd })} premium={isCeleb} /></div>
-        <div className="mb-3">
-          <SealPolicyEditor value={sealForm.policy} onChange={(policy) => setSealForm((f) => ({ ...f, policy }))} tier={sealForm.tier} onTier={(tier) => setSealForm((f) => ({ ...f, tier }))}
-            brandName={!isCeleb ? ((brand.brandName as string) ?? h.name ?? null) : null} />
-          {sealForm.policyText && !cleanPolicy(sealForm.policy) && <p className="help mt-2">{t("sealPolicy.texto_antigo", { v: sealForm.policyText })}</p>}
-        </div>
-        <div className="grid grid-cols-2 gap-3"><Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label={t("common.expira_em")} id="suntil" hint={t("common.vazio_sem_expiracao")}><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>
-        <Field label={t("brands.slug.limite_de_emissoes")} id="slimit"><Input id="slimit" type="number" min={1} value={sealForm.usageLimit} onChange={(e) => setSealForm({ ...sealForm, usageLimit: e.target.value })} /></Field>
+      <Dialog open={sealForm.open} size="lg" onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")}>
+        <SealWizard key={sealForm.id ?? "novo"} form={sealForm} setForm={setSealForm} premium={isCeleb} onSave={saveSeal}
+          brandName={!isCeleb ? ((brand.brandName as string) ?? h.name ?? null) : null} />
       </Dialog>
       <Dialog open={promoForm.open} onClose={() => setPromoForm({ ...promoForm, open: false })} title={promoForm.id ? t("brands.slug.editar_promocao") : t("brands.slug.nova_promocao")} footer={<Button variant="primary" onClick={savePromo} disabled={!promoForm.title.trim()}>{t("common.save")}</Button>}>
         <Field label={t("common.tipo")} id="ptype"><Select id="ptype" value={promoForm.type} onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value })}>{(isCeleb ? CELEB_PROMO_TYPES : BRAND_PROMO_TYPES).map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>

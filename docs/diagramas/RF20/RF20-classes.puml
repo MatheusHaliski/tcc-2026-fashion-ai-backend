@@ -1,0 +1,158 @@
+@startuml RF20_Classes
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +profileType: ProfileType
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +approvalStatus: ApprovalStatus
+  +requiresSealReview: boolean
+  +sealConfidenceThreshold: BigDecimal
+}
+class Seal {
+  +owner: User
+  +name: String
+  +tier: SealTier
+  +status: SealStatus
+  +premium: boolean
+  +availableFrom: Instant
+  +availableUntil: Instant
+  +usageLimit: Integer
+  +usageCount: int
+}
+class SealBond {
+  +scheme: Scheme
+  +targetOwner: User
+  +requestedBy: User
+  +seal: Seal
+  +tier: SealTier
+  +linkedPieceIdsJson: String
+  +confidence: BigDecimal
+  +justification: String
+  +basis: SealBondBasis
+  +origin: SealBondOrigin
+  +status: SealBondStatus
+  +requiresReview: boolean
+  +aiInferenceId: UUID
+  +sealCode: String
+  +issuedAt: Instant
+  +expiresAt: Instant
+  +reviewedBy: UUID
+  +reviewNote: String
+}
+class Scheme {
+  +user: User
+  +title: String
+  +status: SchemeStatus
+  +visibility: Visibility
+  +sealIdsJson: String
+  +revalidationPending: boolean
+}
+class SchemeItem {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+}
+class WardrobeItem {
+  +brandName: String
+  +brand: Brand
+  +brandProfile: BrandProfile
+}
+class Promotion {
+  +seal: Seal
+  +sealBond: SealBond
+  +type: PromotionType
+  +status: PromotionStatus
+  +ownerUserId: UUID
+}
+class AuditLog {
+  +actor: String
+  +acao: String
+  +recurso: String
+  +resultado: String
+  +metadataJson: String
+}
+}
+package "fai-domain · enums" {
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+enum SealBondOrigin {
+  AI_SUGGESTION
+  MANUAL
+}
+enum SealBondBasis {
+  BRAND_MATCH
+  STYLE_SIGNATURE
+}
+enum SealTier {
+  PECA
+  LOOK
+}
+enum ApprovalStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+}
+package "fai-application · service" {
+class SealService {
+  {static} MAX_SUGGESTIONS = 3
+  +preview(user, pieceIds, occasion, style): Map
+  +suggest(user, schemeId): Map
+  +accept(user, bondId, imageRightsConsent): Map
+  +linkManually(user, schemeId, targetOwnerId, consent): Map
+  +refuse(user, bondId): Map
+  +refuseAll(user, schemeId): int
+  +reviewQueue(user): List
+  +review(user, bondId, approve, reason): Map
+  +revoke(user, bondId, reason): Map
+  +revokeForScheme(schemeId, reason)
+  +mySeals(user): Map
+  +issuerMetrics(user): Map
+}
+}
+BrandProfile "1" --> "1" User : owner
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Scheme
+SealBond "*" --> "1" User : targetOwner
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "0..1" Seal
+Scheme "*" --> "1" User
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
+WardrobeItem "*" --> "0..1" BrandProfile
+Promotion "*" --> "0..1" Seal
+Promotion "*" --> "0..1" SealBond
+SealBond ..> SealBondStatus
+SealBond ..> SealBondOrigin
+SealBond ..> SealBondBasis
+Seal ..> SealTier
+BrandProfile ..> ApprovalStatus
+SealService ..> SealBond
+SealService ..> AuditLog : logBond()
+note bottom of SealBond : CA09 — único por par esquema × emissor\n(PENDING_REVIEW/APPROVED); CA16 — aiInferenceId + audit_log
+@enduml

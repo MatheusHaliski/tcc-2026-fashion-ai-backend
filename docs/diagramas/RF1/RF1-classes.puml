@@ -1,0 +1,159 @@
+@startuml RF1_Classes
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class User {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +emailVerified: boolean
+  +birthDate: String
+  +passwordHash: String
+  +profileType: ProfileType
+  +role: String
+  +status: AccountStatus
+  +avatarUrl: String
+  +privateAccount: boolean
+  +country: String
+  +termsAcceptedAt: Instant
+  +termsVersion: String
+  +sex: MannequinSex
+  .. +20 campos ..
+}
+class UserPreferences {
+  +user: User
+  +language: UiLanguage
+  +theme: ThemeMode
+  +mannequinSex: MannequinSex
+  .. +25 campos ..
+}
+class VerificationCode {
+  +user: User
+  +purpose: VerificationPurpose
+  +codeHash: String
+  +target: String
+  +expiresAt: Instant
+  +consumedAt: Instant
+  +attempts: int
+  +sendCount: int
+  +lastSentAt: Instant
+  +isUsable(now): boolean
+}
+class RefreshToken {
+  +user: User
+  +tokenHash: String
+  +familyId: UUID
+  +expiresAt: Instant
+  +revokedAt: Instant
+  +persistent: boolean
+}
+class BrandProfile {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +logoUrl: String
+  +cnpj: String
+  +razaoSocial: String
+  +nomeFantasia: String
+  +fashionCategory: String
+  +activityProofUrl: String
+  +approvalStatus: ApprovalStatus
+  +verificationNotes: String
+  +approvedBy: UUID
+  +approvedAt: Instant
+}
+class CelebrityProfile {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +avatarUrl: String
+  +realName: String
+  +identityProofUrl: String
+  +verificationUrl: String
+  +sealConsentGranted: boolean
+  +verificationStatus: ApprovalStatus
+  +verificationNotes: String
+  +approvedBy: UUID
+  +approvedAt: Instant
+}
+}
+package "fai-domain · enums" {
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+enum AccountStatus {
+  PENDING_EMAIL_VERIFICATION
+  ACTIVE
+  PENDING_VALIDATION
+  SUSPENDED
+  DELETION_SCHEDULED
+  DELETED
+}
+enum ApprovalStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum VerificationPurpose {
+  EMAIL_VERIFICATION
+  EMAIL_CHANGE
+  TWO_FACTOR
+  PASSWORD_RESET
+}
+}
+package "fai-application · service" {
+class IdentityService {
+  +register(cmd, ip, userAgent): Session
+  +preRegistrationUpload(bytes, kind, ip): Map
+  +suggestUsername(name): String
+  +usernameSuggestions(taken): List<String>
+  +verifyEmail(current, code): UserCard
+  +resendEmailVerification(current)
+  {static} +validatePassword(password, errors)
+  {static} +validCnpj(raw): boolean
+}
+class AdminService {
+  +approvals(admin): Map
+  +decide(admin, userId, approve, notes): Map
+}
+class PreferencesService {
+  +checkUsername(requested): Map
+}
+}
+UserPreferences "1" --> "1" User : user
+VerificationCode "*" --> "1" User : user
+RefreshToken "*" --> "1" User : user
+BrandProfile "1" --> "1" User : owner
+CelebrityProfile "1" --> "1" User : owner
+User --> ProfileType
+User --> AccountStatus
+BrandProfile --> ApprovalStatus
+CelebrityProfile --> ApprovalStatus
+VerificationCode --> VerificationPurpose
+IdentityService ..> User : cria
+IdentityService ..> VerificationCode : cria
+AdminService ..> BrandProfile : aprova/recusa
+AdminService ..> CelebrityProfile : aprova/recusa
+note top of User : tabela users
+note top of UserPreferences : tabela user_preferences
+note top of VerificationCode : tabela verification_codes
+note top of RefreshToken : tabela refresh_tokens
+note top of BrandProfile : tabela brand_profiles
+note top of CelebrityProfile : tabela celebrity_profiles
+note bottom of IdentityService : RegisterCommand(profileType, fullName, username, email,\npassword, confirmPassword, acceptTerms, birthDate,\ncountry, brand: BrandData, celebrity: CelebrityData, avatarUrl, sex)
+@enduml

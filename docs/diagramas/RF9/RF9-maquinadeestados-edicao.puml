@@ -1,0 +1,30 @@
+@startuml RF9_MaquinaDeEstados_Edicao
+!pragma layout smetana
+title RF9 — Scheme: edição × publicação (SchemeStatus) e revalidação do vínculo de selo (SealBondStatus)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+[*] --> Rascunho : POST /api/schemes
+state "DRAFT" as Rascunho
+state "PUBLISHED" as Publicado {
+  state "revalidationPending = false" as Ok
+  state "revalidationPending = true" as Reval
+  [*] --> Ok
+  Ok --> Ok : PUT /api/schemes/{id}\n(só campos, mesmas peças)
+  Ok --> Reval : PUT /api/schemes/{id} com peças alteradas\ne algum SealBond APPROVED\n(SealService.flagRevalidation → notifica a marca)
+  Reval --> Ok : marca revisa o vínculo\n(POST /api/seal-bonds/{id}/review — RF20/RF21)
+}
+state "ARCHIVED" as Arquivado
+Rascunho --> Rascunho : PUT /api/schemes/{id}\nPOST .../improvements/apply
+Rascunho --> Publicado : PUT /api/schemes/{id} publish=true\nPOST /api/schemes/{id}/publication
+Publicado --> Publicado : POST /api/schemes/{id}/improvements/apply\n(diff aceito item a item)
+Publicado --> Arquivado : POST /api/schemes/{id}/archive\n(revoga selos: SealBond → REVOKED)
+Rascunho --> Arquivado : POST /api/schemes/{id}/archive
+note right of Reval : CA05 — "revalidação pendente";\nos scheme_items ganham snapshot_json\nse ainda não tinham
+note left of Publicado : visibilidade → PRIVATE em qualquer\nedição revoga os selos (RF20.CA14)
+note bottom of Arquivado : qualquer edição é negada:\nowned() + Guard.requireOwner;\nnão-autor sempre recebe 403 auditado (CA04)
+@enduml

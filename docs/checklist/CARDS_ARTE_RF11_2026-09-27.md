@@ -1,7 +1,8 @@
 # Card da peça em camadas, detalhe e arte do card (RF11) — entrega de 27/09/2026
 
 Continuação de [CARDS_DETALHE_2026-09-27.md](CARDS_DETALHE_2026-09-27.md). Anatomia atualizada:
-[docs/anatomias/anatomias_card_v19.html](../anatomias/anatomias_card_v19.html) (a v18 fica como histórico).
+[docs/anatomias/anatomias_card_v19.html](../anatomias/anatomias_card_v19.html) (a v18 fica como histórico). O criador de peça com busca catalogada (RF47) e a peça por referência ao catálogo estão na
+[docs/anatomias/anatomias_card_v20.html](../anatomias/anatomias_card_v20.html) (04/10/2026); a v19 continua valendo para camadas, arte e editor RF11.
 
 ## O que faltou para verificar
 

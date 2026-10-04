@@ -1,0 +1,83 @@
+@startuml RF47_Componentes
+title RF47 — Acervo & Busca Catalogada\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports) + pipeline Python
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/pieces/new/page.tsx\n(tipo → catálogo → dados;\nsem seção Foto)" as FE0
+  component "components/catalog/\ncatalog-search.tsx\ncategory-cards.tsx" as FE1
+  component "components/catalog/\nbrand-autocomplete.tsx" as FE2
+  component "lib/api/catalog.ts (catalogApi)" as FE3
+}
+package "fai-web · controllers" {
+  [CatalogController\nGET /api/catalog/search\nGET /api/catalog/suggestions\nGET /api/catalog/brands\nGET /api/catalog/products/{id}\nPOST /api/catalog/discover\nPOST /api/pieces/from-catalog\nGET /api/catalog/stores] as CC
+  [WardrobeController\nPOST /api/pieces\n(sem produto)] as WC
+  [DiscoveryController\nGET /api/explorer/brands] as DC
+}
+package "fai-application · services" {
+  [CatalogService] as CS
+  [CatalogIngestService] as CIS
+  [CatalogNormalizer\n(catalog/normalization.json)] as CN
+  [CatalogMatchScorer\n(componente design + motivos)] as CMS
+  [CatalogTextInterpreter\nCatalogDesignInterpreter\n(normalization.json → design)] as CTI
+  [OfficialCatalogDiscovery] as OCD
+  [AiEngine (RF24)\nCATALOG_DISCOVERY\nCATALOG_TEXT_INTERPRETER] as AIE
+  [WardrobeService\ncreateFromCatalog · create] as WS
+  [ExplorerService\nbrandsAndStores] as ES
+}
+package "fai-infrastructure · adapters" {
+  [CatalogProductRepository\nCatalogVariantRepository\nCatalogImageRepository\nCatalogSourceRepository\nCatalogProductAliasRepository\nCatalogIngestionRunRepository\nBrandRepository · BrandAliasRepository\nWardrobeItemRepository] as REPOS
+}
+package "scripts/catalog (Python)" {
+  [seed_catalog.py · import_products.py\n(ingest.py → VALIDATED)] as PY1
+  [normalize_product.py · deduplicate.py\nvalidate_source.py] as PY2
+  [rebuild_search_index.py\nrevalidate_catalog.py] as PY3
+}
+database "MySQL\n• brands / brand_aliases\n• catalog_sources\n• catalog_products (dedup_key UNIQUE,\n  FULLTEXT ngram search_text,\n  description, design_json)\n• catalog_product_aliases\n• catalog_variants\n• catalog_images\n• catalog_ingestion_runs\n• wardrobe_items (catalog_product_id,\n  catalog_variant_id, image_origin, user_image_url)" as DB
+cloud "Sites oficiais das marcas\n(domínios de catalog_sources)" as WEB
+cloud "Provedor LLM com busca web\n(Claude; fallback local vazio)" as LLM
+
+FE0 --> FE1
+FE1 --> FE2
+FE1 --> FE3
+FE2 --> CC : GET /api/catalog/brands
+FE3 --> CC : chama (HTTPS/JSON)
+CC --> CS : chama
+FE0 --> WC : chama (ilustração da categoria)
+WC --> WS : create
+DC --> ES : chama
+ES --> CS : catalogBrands()
+CS --> CN : normaliza intenção
+CS --> CMS : score
+CS --> CTI : interpreta o texto da busca
+CTI --> AIE : refina (4+ palavras)
+CIS --> CTI : design da descrição
+CS --> OCD : discover
+OCD --> AIE : chama
+AIE --> LLM : chama
+LLM ..> WEB : lê só domínios oficiais
+CS --> CIS : upsert(DISCOVERED)
+CIS --> CN : dedupKey / taxonomia
+CS --> WS : createFromCatalog
+CS --> REPOS : lê/grava
+CIS --> REPOS : grava
+WS --> REPOS : grava
+REPOS --> DB : JPA/Flyway (V30, V31)
+PY1 --> PY2 : usa (normalization.json\ncompartilhado com CatalogNormalizer)
+PY1 --> DB : grava
+PY3 --> DB : search_text / source_status
+PY3 ..> WEB : HEAD nas fontes
+@enduml

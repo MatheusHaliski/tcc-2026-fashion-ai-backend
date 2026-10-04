@@ -1,0 +1,451 @@
+[
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Monogram Allover",
+    "model_name": "Monogram Allover Tee",
+    "color": "gray",
+    "color_name": "Cinza/Preto",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "CK Monogram",
+    "description": "Camiseta com o monograma CK estampado em toda a superfície, frente e verso, nas cores cinza e preto.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "ALLOVER_LOGO",
+      "logoPlacement": "ALLOVER",
+      "sides": [
+        "FRONT",
+        "BACK"
+      ],
+      "baseColors": [
+        "gray"
+      ],
+      "printColors": [
+        "black"
+      ]
+    },
+    "variants": [
+      {
+        "color": "gray",
+        "color_name": "Cinza/Preto",
+        "code": "CK-J30J3201-PZ1"
+      }
+    ],
+    "aliases": [
+      "CK Monogram",
+      "Monogram AOP"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Monogram Allover Marinho",
+    "model_name": "Monogram Allover Tee Navy",
+    "color": "navy",
+    "color_name": "Azul-marinho/Branco",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "CK Monogram",
+    "description": "Camiseta azul-marinho com o monograma CK em branco repetido em toda a peça, frente e verso.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "ALLOVER_LOGO",
+      "logoPlacement": "ALLOVER",
+      "sides": [
+        "FRONT",
+        "BACK"
+      ],
+      "baseColors": [
+        "navy"
+      ],
+      "printColors": [
+        "white"
+      ]
+    },
+    "variants": [
+      {
+        "color": "navy",
+        "color_name": "Azul-marinho/Branco",
+        "code": "CK-J30J3201-CHW"
+      }
+    ],
+    "aliases": [
+      "CK Monogram"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Logo Central",
+    "model_name": "Institutional Logo Tee",
+    "color": "blue",
+    "color_name": "Azul",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Institutional",
+    "description": "Camiseta toda azul com um único logo CK branco, grande, no centro do peito.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "SINGLE_LOGO",
+      "logoPlacement": "CENTER_CHEST",
+      "logoSize": "LARGE",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "blue"
+      ],
+      "printColors": [
+        "white"
+      ]
+    },
+    "variants": [
+      {
+        "color": "blue",
+        "color_name": "Azul",
+        "code": "CK-J30J3221-C4X"
+      },
+      {
+        "color": "black",
+        "color_name": "Preto com logo branco",
+        "code": "CK-J30J3221-BEH"
+      }
+    ],
+    "aliases": [
+      "Institutional Tee"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Logo Central Branca",
+    "model_name": "Institutional Logo Tee White",
+    "color": "white",
+    "color_name": "Branco",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Institutional",
+    "description": "Camiseta branca com um logo CK preto no centro do peito.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "SINGLE_LOGO",
+      "logoPlacement": "CENTER_CHEST",
+      "logoSize": "LARGE",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "white"
+      ],
+      "printColors": [
+        "black"
+      ]
+    },
+    "variants": [
+      {
+        "color": "white",
+        "color_name": "Branco",
+        "code": "CK-J30J3221-YAF"
+      }
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Logo Pequeno Bordado",
+    "model_name": "Embroidered Badge Tee",
+    "color": "white",
+    "color_name": "Branco",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Essentials",
+    "description": "Camiseta branca básica com logo pequeno bordado em preto no peito esquerdo.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "SINGLE_LOGO",
+      "logoPlacement": "LEFT_CHEST",
+      "logoSize": "SMALL",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "white"
+      ],
+      "printColors": [
+        "black"
+      ]
+    },
+    "variants": [
+      {
+        "color": "white",
+        "color_name": "Branco",
+        "code": "CK-J30J3157-YAF"
+      },
+      {
+        "color": "black",
+        "color_name": "Preto",
+        "code": "CK-J30J3157-BEH"
+      }
+    ],
+    "aliases": [
+      "Badge Tee"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Listrada Logo Peito",
+    "model_name": "Stripe Logo Tee",
+    "color": "navy",
+    "color_name": "Azul-marinho/Branco",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Essentials",
+    "description": "Camiseta listrada azul-marinho e branca com logo CK pequeno no peito esquerdo.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "STRIPES",
+      "logoPlacement": "LEFT_CHEST",
+      "logoSize": "SMALL",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "navy",
+        "white"
+      ],
+      "printColors": [
+        "navy"
+      ]
+    }
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Lettering Costas",
+    "model_name": "Back Lettering Tee",
+    "color": "black",
+    "color_name": "Preto",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Logo",
+    "description": "Camiseta preta com o nome Calvin Klein escrito em letras brancas grandes nas costas.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "GRAPHIC",
+      "logoPlacement": "BACK",
+      "logoSize": "LARGE",
+      "sides": [
+        "BACK"
+      ],
+      "baseColors": [
+        "black"
+      ],
+      "printColors": [
+        "white"
+      ]
+    }
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "t_shirt",
+    "product_name": "Camiseta Básica Lisa",
+    "model_name": "Essential Plain Tee",
+    "color": "black",
+    "color_name": "Preto",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Essentials",
+    "description": "Camiseta preta lisa, sem estampa e sem logo aparente.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "PLAIN",
+      "logoPlacement": null,
+      "baseColors": [
+        "black"
+      ],
+      "printColors": []
+    },
+    "variants": [
+      {
+        "color": "black",
+        "color_name": "Preto",
+        "code": "CK-J30J3100-BEH"
+      },
+      {
+        "color": "white",
+        "color_name": "Branco",
+        "code": "CK-J30J3100-YAF"
+      },
+      {
+        "color": "gray",
+        "color_name": "Cinza mescla",
+        "code": "CK-J30J3100-P2D"
+      }
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "hoodie",
+    "product_name": "Moletom Monogram Allover",
+    "model_name": "Monogram Allover Hoodie",
+    "color": "gray",
+    "color_name": "Cinza/Preto",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "CK Monogram",
+    "description": "Moletom com capuz e o monograma CK cinza e preto estampado em toda a peça.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "ALLOVER_LOGO",
+      "logoPlacement": "ALLOVER",
+      "sides": [
+        "FRONT",
+        "BACK"
+      ],
+      "baseColors": [
+        "gray"
+      ],
+      "printColors": [
+        "black"
+      ]
+    },
+    "aliases": [
+      "CK Monogram Hoodie"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "hoodie",
+    "product_name": "Moletom Logo Central",
+    "model_name": "Institutional Logo Hoodie",
+    "color": "black",
+    "color_name": "Preto",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Institutional",
+    "description": "Moletom com capuz preto com um logo CK branco grande no centro do peito.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "SINGLE_LOGO",
+      "logoPlacement": "CENTER_CHEST",
+      "logoSize": "LARGE",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "black"
+      ],
+      "printColors": [
+        "white"
+      ]
+    }
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "polo_shirt",
+    "product_name": "Polo Logo Pequeno",
+    "model_name": "Slim Fit Polo",
+    "color": "green",
+    "color_name": "Verde",
+    "material": "COTTON",
+    "gender": "MASCULINO",
+    "collection": "Essentials",
+    "description": "Camisa polo verde lisa com logo CK pequeno bordado no peito esquerdo.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "SINGLE_LOGO",
+      "logoPlacement": "LEFT_CHEST",
+      "logoSize": "SMALL",
+      "sides": [
+        "FRONT"
+      ],
+      "baseColors": [
+        "green"
+      ],
+      "printColors": [
+        "white"
+      ]
+    },
+    "variants": [
+      {
+        "color": "green",
+        "color_name": "Verde",
+        "code": "CK-K10K1110-L9X"
+      },
+      {
+        "color": "white",
+        "color_name": "Branco",
+        "code": "CK-K10K1110-YAF"
+      }
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "jeans",
+    "product_name": "Calça Jeans 90s Straight",
+    "model_name": "90s Straight Jeans",
+    "color": "denim",
+    "color_name": "Lavagem média",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Jeans",
+    "description": "Calça jeans de cintura alta e perna reta, lavagem média, com etiqueta CK de couro no cós traseiro.",
+    "source_type": "MANUAL_ADMIN",
+    "variants": [
+      {
+        "color": "denim",
+        "color_name": "Lavagem média",
+        "code": "CK-J30J3240-1A4"
+      },
+      {
+        "color": "black",
+        "color_name": "Preto",
+        "code": "CK-J30J3240-1BY"
+      }
+    ],
+    "aliases": [
+      "90s Straight"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "jacket",
+    "product_name": "Jaqueta Jeans Trucker",
+    "model_name": "Trucker Denim Jacket",
+    "color": "denim",
+    "color_name": "Lavagem clara",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "Jeans",
+    "description": "Jaqueta jeans clássica em lavagem clara com logo CK pequeno bordado no peito esquerdo.",
+    "source_type": "MANUAL_ADMIN",
+    "aliases": [
+      "Trucker"
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "subcategory": "cap",
+    "product_name": "Boné Monogram",
+    "model_name": "Monogram Cap",
+    "color": "black",
+    "color_name": "Preto/Cinza",
+    "material": "COTTON",
+    "gender": "UNISSEX",
+    "collection": "CK Monogram",
+    "description": "Boné preto com o monograma CK cinza estampado em toda a superfície.",
+    "source_type": "MANUAL_ADMIN",
+    "design": {
+      "pattern": "ALLOVER_LOGO",
+      "logoPlacement": "ALLOVER",
+      "baseColors": [
+        "black"
+      ],
+      "printColors": [
+        "gray"
+      ]
+    }
+  }
+]

@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmailHash(String emailHash);
 
+    /** Conta de fixture do Demo/Test Data Pipeline (fixture_key é UNIQUE; contas reais têm null). */
+    Optional<User> findByFixtureKey(String fixtureKey);
+
     Optional<User> findByUsernameIgnoreCase(String username);
 
     boolean existsByUsernameIgnoreCase(String username);
@@ -32,6 +35,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findTop50ByProfileTypeOrderByCreatedAtDesc(ProfileType profileType);
 
     List<User> findByStatus(AccountStatus status);
+
+    /** Contas com o papel informado (ex.: ADMIN, que recebe os pedidos de verificação de marca/celebridade). */
+    List<User> findByRole(String role);
 
     @Query("select u from User u where lower(u.username) like lower(concat('%', :term, '%'))") List<User> searchByUsername(@Param("term") String term, Pageable pageable);
 

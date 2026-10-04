@@ -5,8 +5,9 @@ import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.Mood;
 import br.com.fashionai.domain.model.enums.SchemeSlot;
 import br.com.fashionai.domain.model.enums.Visibility;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,9 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * teste lê o payload real com o mesmo módulo de compatibilidade da API.
  */
 class SchemeFormPayloadTest {
-    private final ObjectMapper json = new ObjectMapper()
+    private final ObjectMapper json = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .registerModule(new JsonCompatConfig().jsonCompatModule());
+            .addModule(new JsonCompatConfig().jsonCompatModule())
+            .build();
 
     private static final String PAYLOAD = """
             {"title":"Sexta casual","description":"","occasion":["casual","work"],"style":["classic"],"season":null,"mood":"COMFORTABLE",

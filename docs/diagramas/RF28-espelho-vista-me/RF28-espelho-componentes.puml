@@ -1,0 +1,35 @@
+@startuml RF28_Espelho_Componentes
+title RF28 — Vista-me: componentes
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+package "Frontend (Next.js)" {
+  [mirror/page.tsx] as Page
+  [MirrorStage + MirrorWornStrip\n(components/mirror/mirror-stage.tsx)] as Stage
+  [AvatarViewer\n(components/three/avatar-viewer.tsx)] as Viewer
+  [HumanAvatar + HumanOutfit\n(corpo MakeHuman com esqueleto)] as Human
+  [lib/avatar3d/human\n(garments, relax, trims, shoes)] as Lib
+}
+package "Backend (Spring Boot)" {
+  [MirrorController\n/api/me/mirror/*] as MC
+  [MirrorService] as MS
+  [Avatar3dController\n/api/me/avatar3d] as AC
+  [WardrobeService / RoomService] as WS
+}
+database "MySQL" as DB
+Page --> Stage
+Stage --> Viewer
+Viewer --> Human
+Human --> Lib
+Page --> MC
+Stage --> AC
+MC --> MS
+MS --> WS
+MS --> DB
+AC --> DB
+@enduml

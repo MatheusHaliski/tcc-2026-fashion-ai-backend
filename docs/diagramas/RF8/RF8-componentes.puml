@@ -1,0 +1,64 @@
+@startuml RF8_Componentes
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "search/page.tsx\n(aba Buscar: LOOKS, PECAS, PESSOAS,\nMARCAS, CELEBRIDADES)" as FE0
+  component "feed/page.tsx\n(Comunidade · Passarela)" as FE1
+  component "SchemeCard · PieceCard\nFilterBar · InfiniteSentinel" as FE2
+  component "interactions.tsx\n(InteractionBar)" as FE3
+}
+package "fai-web · controllers" {
+  [DiscoveryController] as DC
+  [SocialController] as SC
+  [SchemeController] as SCC
+}
+package "fai-application · services" {
+  [SearchService] as SS
+  [SchemeService] as SCH
+  [SocialService] as SO
+  [ProjectionService] as PJ
+  [Guard] as G
+  [AiEngine (RF24)\nAiCapability.AFFINITY] as AI
+}
+package "fai-infrastructure · adapters" {
+  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nFollowRepository · StyleDnaRepository\nBrandProfileRepository · CelebrityProfileRepository\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository] as REPOS
+  [OpenSearchIndexAdapter\n(SearchIndexPort · TimelineProjectionPort)] as OS
+  [MysqlAuditService] as AUD
+}
+database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• users\n• follows\n• style_dna\n• brand_profiles\n• celebrity_profiles\n• reactions · comments\n• saved_items · shares\n• audit_log" as DB
+cloud "OpenSearch\n(opcional: engine=opensearch)" as OSC
+
+FE0 --> DC : GET /api/search · /api/feed · /api/public-pieces
+FE1 --> DC : GET /api/feed · /api/runway
+FE2 --> SCC : GET /api/schemes/{id}
+FE3 --> SC : POST reactions · comments · saves · shares
+DC --> SS : chama
+SC --> SO : chama
+SCC --> SCH : chama
+SS --> SCH : canView
+SS --> G : canView (visibilidade efetiva)
+SS --> REPOS : lê
+SS --> OS : lê índice (se habilitado)
+SS ..> AI : afinidade (relevância local)
+SCH --> PJ : publica projeções
+PJ --> OS : indexa
+SO --> REPOS : grava
+G --> AUD : audita 403
+REPOS --> DB : JPA/Flyway
+OS --> OSC : HTTP
+@enduml

@@ -1,0 +1,44 @@
+@startuml RF40_Roupa_Componentes
+title RF40 — Avatar 3D: componentes da roupa no corpo
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+package "components/three" {
+  [AvatarViewer] as AV
+  [HumanAvatar\n(corpo, rosto, cabelo)] as HA
+  [HumanOutfit\n(roupa e calçado)] as HO
+}
+package "lib/avatar3d/human" {
+  [asset / compose\n(MakeHuman CC0 + esqueleto)] as AS
+  [garments.ts\n(moldes, casca, textura, cores)] as GA
+  [garment-relax.ts\n(caimento, dobras)] as GR
+  [garment-trims.ts\n(barras e punhos 3D)] as GT
+  [shoes.ts\n(tênis/sapato em loft)] as SH
+  [hair-geometry.ts\n(cabelo)] as HG
+}
+package "Consumidores" {
+  [Provador 3D (RF18)] as PV
+  [Espelho Vista-me (RF28)] as MI
+  [Meu Avatar 3D / perfil] as MA
+  [Lab do avatar\n(/lab/human)] as LAB
+}
+PV --> AV
+MI --> AV
+MA --> AV
+LAB --> HA
+AV --> HA
+HA --> HO
+HA --> AS
+HA --> HG
+HO --> GA
+HO --> GR
+HO --> GT
+HO --> SH
+GA --> AS
+GR --> AS
+@enduml
