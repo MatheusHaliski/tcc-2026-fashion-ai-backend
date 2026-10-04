@@ -379,7 +379,7 @@ public class MysqlDemoDataAdminAdapter implements DemoDataAdminPort {
         List<String> problems = new ArrayList<>();
         MapSqlParameterSource none = new MapSqlParameterSource();
 
-        // 1. FKs: o banco segue a política da V31?
+        // 1. FKs: o banco segue a política da V34?
         Map<String, Edge> live = new TreeMap<>();
         for (Edge e : edges()) {
             live.put(e.table() + "." + e.column() + "→" + e.refTable(), e);
@@ -397,7 +397,7 @@ public class MysqlDemoDataAdminAdapter implements DemoDataAdminPort {
         }
         live.forEach((key, e) -> {
             if (!inPolicy.contains(key)) {
-                problems.add("[FK] fora da política (falta na V31.POLICY): " + e.label() + " ON DELETE " + e.rule());
+                problems.add("[FK] fora da política (falta na V34.POLICY): " + e.label() + " ON DELETE " + e.rule());
             }
         });
 
