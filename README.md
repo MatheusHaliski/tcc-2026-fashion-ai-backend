@@ -28,6 +28,7 @@ export DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)   # chave AES para campos 
 # 3) build + run (Flyway cria o schema V1..V6 na primeira subida)
 mvn -DskipTests package
 java -jar fai-bootstrap/target/fai-bootstrap-0.1.0-SNAPSHOT.jar
+# ou, sem gerar o jar: mvn -pl fai-bootstrap -am spring-boot:run
 ```
 
 Depois: `curl http://localhost:8080/actuator/health` → `{"status":"UP"}` e abra o Swagger em
