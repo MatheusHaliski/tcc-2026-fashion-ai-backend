@@ -3,9 +3,9 @@ package br.com.fashionai.web.config;
 import br.com.fashionai.application.service.SealService;
 import br.com.fashionai.domain.model.enums.SealStatus;
 import br.com.fashionai.domain.model.enums.SealTier;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,10 +16,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * tela oferecia não existe no enum e o backend respondia 400 "JSON inválido".
  */
 class SealFormPayloadTest {
-    private final ObjectMapper json = new ObjectMapper()
+    private final ObjectMapper json = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .registerModule(new JavaTimeModule())
-            .registerModule(new JsonCompatConfig().jsonCompatModule());
+            .addModule(new JsonCompatConfig().jsonCompatModule())
+            .build();
 
     private static final String PAYLOAD = """
             {"name":"Azul Zara","tier":"LOOK","usageLimit":null,"status":"ACTIVE","availableFrom":"2026-10-03T13:00:00.000Z","availableUntil":null,

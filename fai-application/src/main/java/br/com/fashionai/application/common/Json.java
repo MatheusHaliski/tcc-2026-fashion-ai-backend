@@ -1,11 +1,11 @@
 package br.com.fashionai.application.common;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,10 +17,12 @@ import java.util.stream.Collectors;
 
 /** Utilitário JSON para as colunas JSON do MySQL (listas curtas, configs do Background Studio, métricas). */
 public final class Json {
-    public static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    /** Jackson 3: imutável (thread-safe por construção) e com java.time embutido; datas saem em ISO-8601. */
+    public static final ObjectMapper MAPPER = JsonMapper.builder()
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)   // JSON já gravado com null lê como no Jackson 2
+            .build();
 
     private Json() {
     }
@@ -31,7 +33,7 @@ public final class Json {
         }
         try {
             return MAPPER.writeValueAsString(value);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("JSON inválido", ex);
         }
     }
@@ -43,7 +45,7 @@ public final class Json {
         try {
             return MAPPER.readValue(json, new TypeReference<LinkedHashMap<String, Object>>() {
             });
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             return new LinkedHashMap<>();
         }
     }
@@ -55,7 +57,7 @@ public final class Json {
         try {
             return MAPPER.readValue(json, new TypeReference<ArrayList<String>>() {
             });
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             return new ArrayList<>();
         }
     }
@@ -68,7 +70,7 @@ public final class Json {
         try {
             return MAPPER.readValue(json, new TypeReference<ArrayList<Map<String, Object>>>() {
             });
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             return new ArrayList<>();
         }
     }
@@ -84,7 +86,7 @@ public final class Json {
         try {
             return MAPPER.readValue(json, new TypeReference<ArrayList<Double>>() {
             });
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             return new ArrayList<>();
         }
     }
@@ -95,7 +97,7 @@ public final class Json {
         }
         try {
             return MAPPER.readValue(json, type);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             return null;
         }
     }

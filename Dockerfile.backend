@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
-# Backend Spring Boot (Java 21) do FashionAI para Railway, Render, Fly.io ou qualquer host de contêiner.
+# Backend Spring Boot 4 (bytecode Java 21, roda na JVM 25 LTS) do FashionAI para Railway, Render, Fly.io ou qualquer host de contêiner.
 # A Vercel hospeda só o frontend Next.js; a API roda aqui. Variáveis: ver .env.example e docs/deploy/DEPLOY.md.
 #   docker build -f Dockerfile.backend -t fashionai-api .
 #   docker run --env-file .env -p 8080:8080 fashionai-api
-FROM maven:3-eclipse-temurin-24 AS build
+# Java 25 = LTS (o 24 não recebe mais correções de segurança); o código continua compilado com --release 21
+FROM maven:3-eclipse-temurin-25 AS build
 WORKDIR /src
 COPY pom.xml .
 COPY fai-domain fai-domain
@@ -15,7 +16,7 @@ COPY fai-bootstrap fai-bootstrap
 RUN mvn -q -DskipTests package
 
 # Ubuntu 24.04 (noble) fixo: o nome do pacote do cliente MySQL não muda entre builds (a tag 21-jre muda de Ubuntu sozinha)
-FROM eclipse-temurin:24-jre-noble
+FROM eclipse-temurin:25-jre-noble
 # Cliente MySQL da Oracle empacotado pelo Ubuntu (mysql-client 8.0.x, com atualizações de segurança da Canonical):
 # o mysqldump do backup diário (AdminService -> MysqlDumpBackupAdapter). Conecta em MySQL 8.4 LTS e 9.x, entende
 # --ssl-mode e caching_sha2_password. Só o pacote, sem recomendados, e sem as listas do apt na imagem final.

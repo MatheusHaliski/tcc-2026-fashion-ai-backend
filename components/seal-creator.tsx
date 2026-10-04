@@ -6,12 +6,13 @@ import { api } from "@/lib/api/client";
 import { Button, Chip, Field, FileButton, Input, Select, useToast } from "@/components/ui";
 import { DEFAULT_DESIGN, ELEMENTS, GEOMETRY, MATERIALS, PALETTES, PATTERNS, SealMedallion, designFromPalette, validateSealImage, type SealDesign } from "@/components/seal-medallion";
 import { useI18n } from "@/lib/i18n/i18n";
+import { SealCoreEditor } from "@/components/seal-core-editor";
 
 type PartKey = "border" | "field" | "center" | "element";
 const METALLIC = ["DOURADO", "PRATA", "BRONZE", "HOLOGRAFICO"];
 
 /**
- * RF25 — criador de selo. Segue o desenho do logo FashionAI: 1) elemento central, 2) elemento entre a borda e o centro
+ * RF25 — criador de selo. Segue o desenho do logo FashionAI: 1) núcleo (elemento central, imagem enviada ou texto), 2) elemento entre a borda e o centro
  * (malha, grade, fluxo de pontos, raios…), 3) disco central, 4) borda — cada parte com material e cor. Também aceita
  * upload de um selo pronto, desde que respeite as proporções do logo (1:1, circular, 256–4096 px).
  */
@@ -95,12 +96,12 @@ export function SealCreator({ value, onChange, premium }: { value?: SealDesign |
               <p className="label mb-1">{t("common.paleta")}</p>
               <div className="flex flex-wrap gap-2">{Object.keys(PALETTES).map((id) => <Chip key={id} active={d.palette === id} onClick={() => onChange(designFromPalette(id, d))} title={id}><SealMedallion design={designFromPalette(id, d)} size={22} />{id.charAt(0) + id.slice(1).toLowerCase()}</Chip>)}</div>
             </div>
-            <section>
-              <p className="label mb-1">{t("sealCreator.n1_elemento_central")}</p>
+            {/* 1. núcleo: elemento central, imagem enviada ou texto */}
+            <SealCoreEditor design={d} onChange={(nd) => onChange({ ...nd, mode: "GENERATED" })} elementEditor={<>
               <div className="mb-2 flex flex-wrap gap-2">{ELEMENTS.map((e) => <Chip key={e.id} active={elementId === e.id} onClick={() => setPart("element", { id: e.id })}><SealMedallion design={{ ...d, element: { ...(d.element ?? {}), id: e.id }, field: { ...(d.field ?? {}), pattern: "NENHUM" } }} size={22} />{e.label}</Chip>)}</div>
               {(elementId === "BAG" || elementId === "MONOGRAM") && <Field label={t("sealCreator.texto_ate_3_caracteres")} id="etext"><Input id="etext" value={d.element?.text ?? "FAI"} maxLength={3} onChange={(e) => setPart("element", { text: e.target.value.toUpperCase().replace(/[^A-Z0-9&+]/g, "") })} /></Field>}
               <MaterialColor part="element" label={t("sealCreator.elemento")} />
-            </section>
+            </>} />
             <section>
               <p className="label mb-1">{t("sealCreator.n2_entre_a_borda_e")}</p>
               <div className="mb-2 flex flex-wrap gap-2">{PATTERNS.map((p) => <Chip key={p.id} active={(d.field?.pattern ?? "MALHA") === p.id} onClick={() => setPart("field", { pattern: p.id })}><SealMedallion design={{ ...d, field: { ...(d.field ?? {}), pattern: p.id } }} size={26} />{p.label}</Chip>)}</div>
