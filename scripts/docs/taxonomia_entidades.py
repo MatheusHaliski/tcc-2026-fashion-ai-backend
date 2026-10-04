@@ -95,8 +95,9 @@ def parse_entity(path):
 def parse_enums():
     out = {}
     for f in sorted(glob.glob(os.path.join(MODEL, "enums", "*.java"))):
-        s = open(f, encoding="utf-8").read()
-        body = s[s.find("{") + 1:]
+        s = re.sub(r"/\*.*?\*/|//[^\n]*", "", open(f, encoding="utf-8").read(), flags=re.S)   # sem Javadoc ({@link …})
+        m = re.search(r"\benum\s+\w+[^{]*\{", s)
+        body = s[m.end():] if m else ""
         body = body.split(";")[0]
         vals = [v.strip().split("(")[0] for v in body.split(",") if re.match(r"\s*[A-Z][A-Z0-9_]*", v)]
         out[os.path.basename(f)[:-5]] = [re.sub(r"[^A-Z0-9_]", "", v) for v in vals if v]
@@ -122,7 +123,10 @@ def md_table(rows, head):
 
 
 def main():
-    ents = {e["name"]: e for e in (parse_entity(p) for p in sorted(glob.glob(os.path.join(MODEL, "*.java"))))}
+    # só classes JPA (@Entity) e as bases @MappedSuperclass; interfaces do modelo (ex.: ReviewableProfile) ficam de fora
+    java = [p for p in sorted(glob.glob(os.path.join(MODEL, "*.java")))
+            if re.search(r"^@(Entity|MappedSuperclass)\b", open(p, encoding="utf-8").read(), re.M)]
+    ents = {e["name"]: e for e in (parse_entity(p) for p in java)}
     concrete = {n: e for n, e in ents.items() if n not in BASES}
     placed = {n for _, _, ns in AREAS for n in ns}
     missing = sorted(set(concrete) - placed)

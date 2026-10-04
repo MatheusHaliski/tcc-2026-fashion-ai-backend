@@ -1,5 +1,5 @@
 @startuml RF1_Examinador_Sequencia
-title RF1.CA07/CA09 — Painel do examinador: envio, e-mail aos administradores, decisão e status\nDiagrama de sequência
+title RF1.CA07/CA09 — Verificação do emissor: envio, aviso à administração, decisão e reenvio pela Central\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -11,42 +11,64 @@ skinparam sequence {
   GroupBackgroundColor #FFF5F8
 }
 actor "Marca/Celebridade" as M
-participant "Frontend\n(register, dashboard,\nIssuerReviewButton)" as F
+participant "Frontend\n(register, IssuerCenter,\nAdminApprovals)" as F
 participant "AuthController /\nIdentityService" as I
 participant "IssuerReviewService" as R
-participant "SideEffectRunner\n(thread virtual)" as X
-participant "EmailPort\n(Resend)" as EM
-actor "Administradores\n(DEV_GATE_ALLOWED_EMAILS)" as A
-participant "AdminController /\nAdminService" as AD
-database "MySQL\nusers · brand_profiles ·\ncelebrity_profiles" as DB
+participant "IssuerVerificationPolicy" as P
+participant "NotificationService" as N
+participant "EmailPort" as EM
+actor "Administrador" as A
+database "MySQL\nusers · brand_profiles ·\ncelebrity_profiles · audit_log" as DB
 
 M -> F : envia cadastro de MARCA/CELEBRIDADE
 F -> I : POST /api/auth/register
-I -> DB : INSERT user + perfil (PENDENTE)
+I -> DB : INSERT user + perfil (PENDENTE, reviewAttempts = 1)
 I -> R : submitted(userId)
-R -> R : registra afterCommit
 I --> F : 201
 == depois do commit ==
-R -> X : run("analise-perfil:aviso-admins")
-X -> R : notifyAdmins(userId)
-R -> DB : nome público, @usuário, tipo
-loop cada e-mail de administrador
-  R -> EM : send(assunto_admin, corpo_admin + link da fila)
-  EM --> A : e-mail "Novo perfil para análise"
+R -> DB : contas ADMIN ativas
+loop cada administrador
+  R -> N : ISSUER_REVIEW_REQUEST (href /admin/users?tab=approvals)
 end
-== acompanhamento ==
-M -> F : "Painel do examinador"
+loop ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS
+  R -> EM : send(assunto_admin, corpo_admin)
+end
+== confirmação do e-mail ==
+M -> I : confirma o código
+I -> R : emailConfirmed(user)
+R -> DB : reviewSubmittedAt = agora (prazo de 3 dias úteis)
+== Central do emissor ==
+M -> F : abre a Central
 F -> R : GET /api/me/issuer-review
-R -> DB : perfil + e-mail verificado + decisão
-R --> F : {profileType, name, status, submittedAt,\nemailVerified, adminsNotified, decidedAt, reason}
-F --> M : linha do tempo + selo de status
-== decisão ==
-A -> F : /admin/users?tab=approvals
-F -> AD : POST /api/admin/approvals/{userId} {approve, notes}
-AD -> DB : approvalStatus = APROVADO | RECUSADO; approvedBy/At; notes
-AD -> AD : aprovado → conta ACTIVE + ensureDefaultSeals
-AD --> M : notificação ACCOUNT_APPROVAL
-M -> F : "Atualizar" no painel
-F -> R : GET /api/me/issuer-review
-R --> F : status atualizado
+R -> P : checks(user, perfil) + verificationCode(userId)
+R --> F : status, motivos, checklist, código FAI-XXXXXX,\nenvios/limite, prazo, canResubmit
+== análise ==
+A -> F : fila de aprovações
+F -> R : GET /api/admin/approvals
+R --> F : dossiês com verificações automáticas
+A -> F : decisão + motivos + checklist
+F -> R : POST /api/admin/approvals/{userId}\n{decision, reasons, notes, checklist}
+R -> P : checks(user, perfil)
+alt APROVAR sem e-mail confirmado ou com obrigatório em aberto
+  R --> F : 409 EMAIL_NAO_CONFIRMADO | CRITERIOS_PENDENTES
+else decisão válida
+  R -> DB : status APROVADO | AJUSTES | RECUSADO; motivos; checklist
+  opt APROVADO
+    R -> DB : conta ACTIVE + verificada; ensureDefaultSeals
+  end
+  R -> N : ACCOUNT_APPROVAL ao dono (href da Central)
+  R -> EM : e-mail da decisão ao dono (depois do commit)
+  R -> DB : audit_log PERFIL_APROVADO | PERFIL_AJUSTES_SOLICITADOS | PERFIL_RECUSADO
+  R --> F : {userId, status, approved}
+end
+== reenvio (AJUSTES ou RECUSADO, envios < 5) ==
+M -> F : corrige e reenvia pela Central
+F -> R : POST /api/me/issuer-review/resubmit
+alt campo inválido ou limite de envios
+  R --> F : 400 FORMULARIO_INVALIDO | 409 LIMITE_DE_ENVIOS (nada gravado)
+else
+  R -> DB : novo documento em restricted/; PENDENTE; attempts + 1
+  R -> R : submitted(userId) → admins avisados de novo
+  R --> F : status atualizado
+end
 @enduml

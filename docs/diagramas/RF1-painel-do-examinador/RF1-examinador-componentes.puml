@@ -1,5 +1,5 @@
 @startuml RF1_Examinador_Componentes
-title RF1.CA07/CA09 — Painel do examinador: componentes
+title RF1.CA07/CA09 — Verificação do emissor e Central do emissor: componentes
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam component {
@@ -9,32 +9,36 @@ skinparam component {
   ArrowColor #52606D
 }
 package "Frontend (Next.js)" {
-  [IssuerReviewButton + IssuerReviewPanel\n(components/issuer-review.tsx)] as Btn
-  [dashboard/page.tsx\n(PendingReview em PERFIL_EM_VALIDACAO)] as Dash
-  [brands/{slug}/page.tsx\n(cabeçalho do perfil)] as Prof
-  [admin/users (aba approvals)] as Adm
+  [IssuerCenter + IssuerCenterButton\n(components/issuer-review.tsx)] as Center
+  [dashboard/page.tsx\n(Central aberta enquanto não aprovado)] as Dash
+  [brands/{slug}/page.tsx\n(aba Central do emissor)] as Prof
+  [AdminApprovals\n(components/admin-approvals.tsx,\n/admin/users?tab=approvals)] as Adm
 }
 package "Backend (Spring Boot)" {
-  [IssuerReviewController\nGET /api/me/issuer-review] as RC
+  [IssuerReviewController\n/api/me/issuer-review(/resubmit)] as RC
+  [AdminController\n/api/admin/approvals(/{userId}(/documents/{tipo}))] as AC
   [IssuerReviewService] as RS
+  [IssuerVerificationPolicy] as POL
   [IdentityService] as IS
-  [AdminController / AdminService\n/api/admin/approvals] as AS
-  [SideEffectRunner] as SE
+  [SealService.ensureDefaultSeals] as SS
   [NotificationService] as NS
   [Audit] as AU
 }
-cloud "Resend (EmailPort)" as Mail
-database "MySQL" as DB
-Prof --> Btn
-Dash --> Btn
-Btn --> RC
+cloud "EmailPort (Resend)" as Mail
+database "MySQL\n(V31: review_attempts, review_reasons,\nreview_checklist, review_owner_message)" as DB
+cloud "Armazenamento\nrestricted/ (só ADMIN)" as ST
+Prof --> Center
+Dash --> Center
+Center --> RC
+Adm --> AC
 RC --> RS
-IS --> RS : submitted(userId)
-RS --> SE : afterCommit
-SE --> Mail : e-mails aos administradores
+AC --> RS
+IS --> RS : submitted(userId)\nemailConfirmed(user)
+RS --> POL : checks · código · motivos
+RS --> SS : aprovação
+RS --> NS
+RS --> AU
+RS --> Mail : avisos aos admins\ne decisão ao dono
 RS --> DB
-Adm --> AS
-AS --> DB
-AS --> NS
-AS --> AU
+RS --> ST : documentos
 @enduml

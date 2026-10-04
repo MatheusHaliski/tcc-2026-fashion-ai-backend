@@ -1,5 +1,5 @@
 @startuml RF1_Examinador_Atividades
-title RF1.CA07/CA09 — Cadastro de marca/celebridade, aviso aos administradores e Painel do examinador\nDiagrama de atividades
+title RF1.CA07/CA09 — Cadastro de marca/celebridade, aviso à administração, análise e Central do emissor\nDiagrama de atividades (política de verificação v1.0)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,39 +25,48 @@ skinparam note {
 }
 |Marca/Celebridade|
 start
-:Cadastro (RF1) como MARCA ou CELEBRIDADE\n(documentos, nome público, consentimentos);
+:Cadastro (RF1) como MARCA ou CELEBRIDADE\n(documento em restricted/, links, nome civil da celebridade);
 |Sistema (IdentityService)|
-:Cria a conta com perfil emissor PENDENTE;
+:Cria a conta com perfil emissor PENDENTE\n(reviewAttempts = 1);
 :issuerReview.submitted(userId);
 |Sistema (IssuerReviewService)|
-if (DEV_GATE_ALLOWED_EMAILS vazio?) then (sim)
-  :Log de aviso (nenhum admin a avisar);
-else (não)
-  :Depois do commit, em thread virtual (SideEffectRunner):\ne-mail a cada administrador com nome público,\n@usuário, tipo e link /admin/users?tab=approvals;
-  note right: nada de documentos ou\ndados privados no e-mail
-endif
+:Depois do commit: notificação no app a cada conta ADMIN\ne e-mail a ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS\n(link /admin/users?tab=approvals);
+note right: nada de documento\nou dado privado no aviso
 |Marca/Celebridade|
-:Vê "Perfil em análise" (dashboard: PERFIL_EM_VALIDACAO);
-:Abre "Painel do examinador" no próprio perfil;
-|Sistema (IssuerReviewService)|
-:GET /api/me/issuer-review → status;
-|Marca/Celebridade|
-:Linha do tempo: enviado → e-mail confirmado →\nadministradores avisados → decisão;
 if (E-mail confirmado?) then (não)
-  :Confirma o e-mail (/verify-email);
+  :Confirma o e-mail;
+  |Sistema (IssuerReviewService)|
+  :emailConfirmed → grava reviewSubmittedAt\n(começa o prazo de 3 dias úteis);
 endif
-|Administrador|
-:Abre a fila de aprovações (/admin/users?tab=approvals);
-:Confere o cadastro e decide (aprovar / recusar + motivo);
-|Sistema (AdminService)|
-:POST /api/admin/approvals/{userId}\n→ approvalStatus APROVADO | RECUSADO;
-if (Aprovado?) then (sim)
-  :Conta ACTIVE; selos padrão criados;
-else (não)
-  :Motivo gravado em verificationNotes;
-endif
-:Notifica o dono (ACCOUNT_APPROVAL) e audita;
 |Marca/Celebridade|
-:Painel do examinador mostra a decisão\n(APROVADO → "Abrir métricas"; RECUSADO/SUSPENSO → "Revisar cadastro");
-stop
+:Abre a Central do emissor (aba do perfil / dashboard):\nstatus, código FAI-XXXXXX, critérios e regras;
+|Administrador|
+:Abre a fila (/admin/users?tab=approvals) e o dossiê:\ndados, documentos (auditados), verificações automáticas;
+:Marca a checklist e escolhe a decisão\n(APROVAR / AJUSTES / RECUSAR + motivos padronizados);
+|Sistema (IssuerReviewService.decide)|
+if (Decisão válida?\n(analista ≠ dono; aprovar exige e-mail confirmado e\nobrigatórios atendidos; negativa exige motivo)) then (não)
+  :409/400 com o que falta;
+  stop
+else (sim)
+endif
+:Grava status, motivos, checklist, approvedBy/At;\nnotifica o dono (app + e-mail) e audita;
+if (Aprovado?) then (sim)
+  :Conta ACTIVE e verificada; selos padrão criados;
+  |Marca/Celebridade|
+  :Central mostra o perfil oficial e libera o emissor;
+  stop
+else (AJUSTES ou RECUSADO)
+  |Marca/Celebridade|
+  :Central mostra os motivos e o que corrigir;
+  if (Envios < 5?) then (sim)
+    :Corrige links, contato, nome civil, novo documento\ne mensagem ao analista → Reenviar;
+    |Sistema (IssuerReviewService.resubmit)|
+    :Valida tudo antes de gravar; PENDENTE, attempts + 1,\nnovo prazo (2 dias úteis); avisa os admins de novo;
+    stop
+  else (não)
+    |Marca/Celebridade|
+    :Só a administração reabre (contato direto);
+    stop
+  endif
+endif
 @enduml

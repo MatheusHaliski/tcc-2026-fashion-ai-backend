@@ -10,9 +10,9 @@ Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28
 |---|---|
 | Entidades persistidas (JPA, MySQL) | 99 |
 | Áreas de negócio | 12 |
-| Campos (somados) | 1172 |
+| Campos (somados) | 1187 |
 | Relações JPA (ManyToOne/OneToOne/…) | 70 |
-| Enums de domínio | 85 |
+| Enums de domínio | 87 |
 | Categorias de peça · subcategorias | 5 · 78 |
 | Cores · famílias | 59 · 12 |
 | Ocasiões · estilos | 20 · 25 |
@@ -26,8 +26,8 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **User** | `users` | versionada | 30 | — | Conta do usuário (RF1/RF2/RF3/RF23). Dados pessoais identificadores ficam cifrados em repouso (RNF3); e-mail tem hash determinístico para unicidade e login sem expor o valor. |
-| **UserPreferences** | `user_preferences` | versionada | 26 | user → User | RF23 — preferências de interface e de uso. Não são dado pessoal (doc LGPD do RNF6): salvam direto, sem reautenticação, persistidas no servidor e replicadas entre dispositivos (CA16-CA18, last-write-wins por #clientUpdate… |
+| **User** | `users` | versionada | 32 | — | Conta do usuário (RF1/RF2/RF3/RF23). Dados pessoais identificadores ficam cifrados em repouso (RNF3); e-mail tem hash determinístico para unicidade e login sem expor o valor. |
+| **UserPreferences** | `user_preferences` | versionada | 25 | user → User | RF23 — preferências de interface e de uso. Não são dado pessoal (doc LGPD do RNF6): salvam direto, sem reautenticação, persistidas no servidor e replicadas entre dispositivos (CA16-CA18, last-write-wins por #clientUpdate… |
 | **UserConsent** | `user_consents` | versionada | 7 | user → User | RF3.CA16-CA21 e RF24.CA15 — consentimento por finalidade. Estado atual por (usuário, finalidade); cada manifestação/revogação também vira evento em audit_log (CA18: data e hora da manifestação). |
 | **VerificationCode** | `verification_codes` | versionada | 9 | user → User | Código/link transacional (confirmação de e-mail, troca de e-mail, 2FA, redefinição de senha). Só o hash do código é persistido; o destino novo (troca de e-mail) fica cifrado (RNF3). |
 | **RefreshToken** | `refresh_tokens` | versionada | 12 | user → User | RNF2 — refresh token rotativo (armazenado só como hash). Cada família representa uma sessão ativa exibida em "Sessões ativas" (RF3.CA32); logout invalida no servidor (RF3.CA31). |
@@ -37,8 +37,8 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **BrandProfile** | `brand_profiles` | versionada | 24 | owner → User | Perfil empresarial de marca (RF1.CA06-CA07, RF14, RF20). Aprovação depende de administrador; CNPJ e contato comercial ficam cifrados (RNF3). #requiresSealReview é o CA07 do RF20. |
-| **CelebrityProfile** | `celebrity_profiles` | versionada | 23 | owner → User | Perfil de celebridade (RF1.CA09-CA10, RF21, RF22). Só celebridades verificadas entram no pool de sugestão de vínculo (RF21.CA18). A assinatura de estilo (CA17) guarda paleta/arquétipo/estilos — atmosfera, nunca retrato (… |
+| **BrandProfile** | `brand_profiles` | versionada | 29 | owner → User | Perfil empresarial de marca (RF1.CA06-CA07, RF14, RF20). Aprovação depende de administrador; CNPJ e contato comercial ficam cifrados (RNF3). #requiresSealReview é o CA07 do RF20. |
+| **CelebrityProfile** | `celebrity_profiles` | versionada | 28 | owner → User | Perfil de celebridade (RF1.CA09-CA10, RF21, RF22). Só celebridades verificadas entram no pool de sugestão de vínculo (RF21.CA18). A assinatura de estilo (CA17) guarda paleta/arquétipo/estilos — atmosfera, nunca retrato (… |
 
 ### Guarda-roupa e peças  ·  RF4, RF6, RF7, RF9, RF28, RF29, RF31, RF45  ·  12 entidades
 
@@ -61,11 +61,11 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **Brand** | `brands` | versionada | 9 | brandProfile → BrandProfile | Catálogo de marcas referenciado por ClothesPiece.brandId (taxonomia §brand). SEEDED = carga inicial; AUTO_DETECTED = criado pelo Brand Resolver (RF24) somente após regex + dedup + validação externa — nunca por omissão. |
+| **Brand** | `brands` | versionada | 11 | brandProfile → BrandProfile | Catálogo de marcas referenciado por ClothesPiece.brandId (taxonomia §brand). SEEDED = carga inicial; AUTO_DETECTED = criado pelo Brand Resolver (RF24) somente após regex + dedup + validação externa — nunca por omissão. |
 | **BrandAlias** | `brand_aliases` | versionada | 3 | — | RF47 · Apelido de marca ("PRL" → Ralph Lauren): normalização sem marca duplicada. |
 | **BrandLogo** | `brand_logos` | versionada | 11 | — | Logo de marca encontrado na internet (Wikidata, busca na web pela IA ou ícone do site oficial) e guardado no storage próprio. A chave é o nome normalizado, então serve tanto para marcas do catálogo quanto para o texto li… |
 | **CatalogSource** | `catalog_sources` | versionada | 7 | — | RF47 · Fonte oficial/autorizada de uma marca (domínio) e se ela permite guardar cópia das imagens. |
-| **CatalogProduct** | `catalog_products` | versionada | 27 | — | RF47 · Produto global conhecido pelo FashionAI (≠ WardrobeItem, a posse por uma pessoa). |
+| **CatalogProduct** | `catalog_products` | versionada | 29 | — | RF47 · Produto global conhecido pelo FashionAI (≠ WardrobeItem, a posse por uma pessoa). |
 | **CatalogProductAlias** | `catalog_product_aliases` | versionada | 3 | — | RF47 · Apelido de produto ("AF1" → Air Force 1). |
 | **CatalogVariant** | `catalog_variants` | versionada | 8 | — | RF47 · Variante de um produto (cor, código, SKU). |
 | **CatalogImage** | `catalog_images` | versionada | 13 | — | RF47 · Foto oficial com proveniência; REFERENCE_ONLY guarda só a URL autorizada. |
@@ -187,8 +187,8 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Identidade, conta e privacidade</b></summary>
 
-- **User** — `username`: String; `displayName`: String; `email`: String; `emailHash`: String; `emailVerified`: boolean; `phone`: String; `birthDate`: String; `passwordHash`: String; `profileType`: ProfileType ◆; `role`: String; `status`: AccountStatus ◆; `testAccount`: boolean; `avatarUrl`: String; `coverUrl`: String; `bio`: String; `privateAccount`: boolean; `verified`: boolean; `twoFactorEnabled`: boolean; `country`: String; `interfaceBackgroundPresetId`: String; `lookDoDiaPanelVersion`: HypeScorePanelVersion ◆; `lastLoginAt`: Instant; `termsAcceptedAt`: Instant; `termsVersion`: String; `deletionRequestedAt`: Instant; `deletionScheduledFor`: Instant; `profileVisibility`: Visibility ◆; `runwayOptOut`: boolean; `pronouns`: String; `linksJson`: String
-- **UserPreferences** — `user`: User ⟶; `theme`: ThemeMode ◆; `language`: UiLanguage ◆; `density`: UiDensity ◆; `fontScale`: int; `highContrast`: boolean; `reduceMotion`: boolean; `chromeBackgroundId`: String; `sizeSystem`: SizeSystem ◆; `unitSystem`: UnitSystem ◆; `mannequinSex`: MannequinSex ◆; `mannequinSkinTone`: String; `mannequinBuild`: BodyBuild ◆; `contentContainerColor`: String; `defaultCardSkin`: String; `notificationPushMaster`: boolean; `notificationPrefsJson`: String; `clientUpdatedAt`: Instant; `purchaseSuggestionsEnabled`: boolean; `soundEnabled`: boolean; `hapticsEnabled`: boolean; `coreAesthetic`: String; `lifeIdentityInAi`: boolean; `dashboardLayoutJson`: String; `mannequinFaceJson`: String; `captureTutorialJson`: String
+- **User** — `username`: String; `displayName`: String; `email`: String; `emailHash`: String; `emailVerified`: boolean; `phone`: String; `birthDate`: String; `passwordHash`: String; `profileType`: ProfileType ◆; `role`: String; `status`: AccountStatus ◆; `accountOrigin`: AccountOrigin ◆; `fixtureKey`: String; `testAccountColumn`: Boolean; `avatarUrl`: String; `coverUrl`: String; `bio`: String; `privateAccount`: boolean; `verified`: boolean; `twoFactorEnabled`: boolean; `country`: String; `interfaceBackgroundPresetId`: String; `lookDoDiaPanelVersion`: HypeScorePanelVersion ◆; `lastLoginAt`: Instant; `termsAcceptedAt`: Instant; `termsVersion`: String; `deletionRequestedAt`: Instant; `deletionScheduledFor`: Instant; `profileVisibility`: Visibility ◆; `runwayOptOut`: boolean; `pronouns`: String; `linksJson`: String
+- **UserPreferences** — `user`: User ⟶; `theme`: ThemeMode ◆; `language`: UiLanguage ◆; `density`: UiDensity ◆; `fontScale`: int; `highContrast`: boolean; `reduceMotion`: boolean; `chromeBackgroundId`: String; `sizeSystem`: SizeSystem ◆; `unitSystem`: UnitSystem ◆; `mannequinSex`: MannequinSex ◆; `mannequinSkinTone`: String; `mannequinBuild`: BodyBuild ◆; `contentContainerColor`: String; `defaultCardSkin`: String; `notificationPushMaster`: boolean; `notificationPrefsJson`: String; `clientUpdatedAt`: Instant; `purchaseSuggestionsEnabled`: boolean; `soundEnabled`: boolean; `hapticsEnabled`: boolean; `coreAesthetic`: String; `lifeIdentityInAi`: boolean; `dashboardLayoutJson`: String; `mannequinFaceJson`: String
 - **UserConsent** — `user`: User ⟶; `purpose`: ConsentPurpose ◆; `granted`: boolean; `legalBasis`: String; `policyVersion`: String; `grantedAt`: Instant; `revokedAt`: Instant
 - **VerificationCode** — `user`: User ⟶; `purpose`: VerificationPurpose ◆; `codeHash`: String; `target`: String; `expiresAt`: Instant; `consumedAt`: Instant; `attempts`: int; `sendCount`: int; `lastSentAt`: Instant
 - **RefreshToken** — `user`: User ⟶; `tokenHash`: String; `familyId`: UUID; `expiresAt`: Instant; `revokedAt`: Instant; `rotatedFromId`: UUID; `createdIp`: String; `userAgent`: String; `deviceName`: String; `locationApprox`: String; `lastUsedAt`: Instant; `persistent`: boolean
@@ -198,8 +198,8 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Perfis emissores (marca e celebridade)</b></summary>
 
-- **BrandProfile** — `owner`: User ⟶; `brandName`: String; `slug`: String; `logoUrl`: String; `coverUrl`: String; `bio`: String; `storeUrl`: String; `cnpj`: String; `razaoSocial`: String; `nomeFantasia`: String; `fashionCategory`: String; `commercialContact`: String; `officialHashtag`: String; `activityProofUrl`: String; `approvalStatus`: ApprovalStatus ◆; `source`: BrandSource ◆; `verificationScore`: BigDecimal; `verificationNotes`: String; `approvedBy`: UUID; `approvedAt`: Instant; `identityVerified`: boolean; `documentVerified`: boolean; `requiresSealReview`: boolean; `country`: String
-- **CelebrityProfile** — `owner`: User ⟶; `stageName`: String; `slug`: String; `avatarUrl`: String; `coverUrl`: String; `bio`: String; `realName`: String; `areasJson`: String; `verifiableFollowersJson`: String; `identityProofUrl`: String; `verificationUrl`: String; `professionalHistory`: String; `representationContact`: String; `fashionInterestsJson`: String; `styleSignatureJson`: String; `verificationStatus`: ApprovalStatus ◆; `verificationScore`: BigDecimal; `verificationNotes`: String; `approvedBy`: UUID; `approvedAt`: Instant; `identityVerified`: boolean; `sealConsentGranted`: boolean; `requiresSealReview`: boolean
+- **BrandProfile** — `owner`: User ⟶; `brandName`: String; `slug`: String; `logoUrl`: String; `coverUrl`: String; `bio`: String; `storeUrl`: String; `cnpj`: String; `razaoSocial`: String; `nomeFantasia`: String; `fashionCategory`: String; `commercialContact`: String; `officialHashtag`: String; `activityProofUrl`: String; `approvalStatus`: ApprovalStatus ◆; `source`: BrandSource ◆; `verificationScore`: BigDecimal; `verificationNotes`: String; `approvedBy`: UUID; `approvedAt`: Instant; `identityVerified`: boolean; `documentVerified`: boolean; `requiresSealReview`: boolean; `country`: String; `reviewAttempts`: int; `reviewSubmittedAt`: Instant; `reviewReasons`: String; `reviewChecklist`: String; `reviewOwnerMessage`: String
+- **CelebrityProfile** — `owner`: User ⟶; `stageName`: String; `slug`: String; `avatarUrl`: String; `coverUrl`: String; `bio`: String; `realName`: String; `areasJson`: String; `verifiableFollowersJson`: String; `identityProofUrl`: String; `verificationUrl`: String; `professionalHistory`: String; `representationContact`: String; `fashionInterestsJson`: String; `styleSignatureJson`: String; `verificationStatus`: ApprovalStatus ◆; `verificationScore`: BigDecimal; `verificationNotes`: String; `approvedBy`: UUID; `approvedAt`: Instant; `identityVerified`: boolean; `sealConsentGranted`: boolean; `requiresSealReview`: boolean; `reviewAttempts`: int; `reviewSubmittedAt`: Instant; `reviewReasons`: String; `reviewChecklist`: String; `reviewOwnerMessage`: String
 
 </details>
 
@@ -222,11 +222,11 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Marcas e catálogo global</b></summary>
 
-- **Brand** — `name`: String; `slug`: String; `logoUrl`: String; `website`: String; `source`: BrandSource ◆; `sourceConfidence`: BigDecimal; `verifiedAt`: Instant; `country`: String; `brandProfile`: BrandProfile ⟶
+- **Brand** — `name`: String; `slug`: String; `logoUrl`: String; `website`: String; `source`: BrandSource ◆; `catalogOrigin`: CatalogOrigin ◆; `fixtureKey`: String; `sourceConfidence`: BigDecimal; `verifiedAt`: Instant; `country`: String; `brandProfile`: BrandProfile ⟶
 - **BrandAlias** — `brandId`: UUID; `alias`: String; `aliasNorm`: String
 - **BrandLogo** — `nameKey`: String; `displayName`: String; `logoUrl`: String; `source`: String; `status`: String; `domain`: String; `originUrl`: String; `confidence`: BigDecimal; `attempts`: int; `checkedAt`: Instant; `lastError`: String
 - **CatalogSource** — `brandId`: UUID; `domain`: String; `sourceType`: CatalogSourceType ◆; `country`: String; `allowsImagePersistence`: boolean; `active`: boolean; `notes`: String
-- **CatalogProduct** — `brandId`: UUID; `category`: String; `subcategory`: String; `productName`: String; `modelName`: String; `productCode`: String; `sku`: String; `gtin`: String; `ean`: String; `upc`: String; `color`: String; `colorName`: String; `material`: String; `collection`: String; `gender`: String; `officialProductUrl`: String; `canonicalUrl`: String; `sourceType`: CatalogSourceType ◆; `sourceDomain`: String; `sourceStatus`: CatalogSourceStatus ◆; `ingestionStatus`: CatalogIngestionStatus ◆; `dedupKey`: String; `searchText`: String; `metadataJson`: String; `ownersCount`: int; `firstSeenAt`: Instant; `lastVerifiedAt`: Instant
+- **CatalogProduct** — `brandId`: UUID; `category`: String; `subcategory`: String; `productName`: String; `modelName`: String; `productCode`: String; `sku`: String; `gtin`: String; `ean`: String; `upc`: String; `color`: String; `colorName`: String; `material`: String; `collection`: String; `gender`: String; `officialProductUrl`: String; `canonicalUrl`: String; `sourceType`: CatalogSourceType ◆; `sourceDomain`: String; `sourceStatus`: CatalogSourceStatus ◆; `ingestionStatus`: CatalogIngestionStatus ◆; `dedupKey`: String; `description`: String; `designJson`: String; `searchText`: String; `metadataJson`: String; `ownersCount`: int; `firstSeenAt`: Instant; `lastVerifiedAt`: Instant
 - **CatalogProductAlias** — `productId`: UUID; `alias`: String; `aliasNorm`: String
 - **CatalogVariant** — `productId`: UUID; `variantKey`: String; `color`: String; `colorName`: String; `variantCode`: String; `sku`: String; `gtin`: String; `availability`: String
 - **CatalogImage** — `productId`: UUID; `variantId`: UUID; `imageUrl`: String; `imageUrlHash`: String; `imageType`: CatalogImageType ◆; `sourceUrl`: String; `sourceDomain`: String; `sourceType`: CatalogSourceType ◆; `primary`: boolean; `usageStatus`: CatalogImageUsage ◆; `storedUrl`: String; `retrievedAt`: Instant; `lastVerifiedAt`: Instant
@@ -405,12 +405,13 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 
 | Enum | Nº | Valores |
 |---|---|---|
+| AccountOrigin | 4 | REAL, TEST_SEED, DEMO, SYSTEM |
 | AccountStatus | 6 | PENDING_EMAIL_VERIFICATION, ACTIVE, PENDING_VALIDATION, SUSPENDED, DELETION_SCHEDULED, DELETED |
 | AiCallResult | 8 | SUCCESS, FALLBACK_LOCAL, TIMEOUT, CIRCUIT_OPEN, RATE_LIMITED, CONSENT_DENIED, PROMPT_REJECTED, ERROR |
 | AiReviewDecision | 4 | ACCEPT_USER, ACCEPT_AI, OVERRIDE, DISMISS |
 | AiReviewKind | 2 | CORRECTION, LOW_CONFIDENCE |
 | AiReviewStatus | 3 | PENDING_REVIEW, CONFIRMED, DISMISSED |
-| ApprovalStatus | 4 | PENDENTE, APROVADO, RECUSADO, SUSPENSO |
+| ApprovalStatus | 5 | PENDENTE, AJUSTES, APROVADO, RECUSADO, SUSPENSO |
 | AssetKind | 10 | CHROME_BACKGROUND, AURA_PRESET, AURA_VARIANT, MATERIAL, AURA_MATERIAL_STATIC, AURA_MATERIAL_ANIMATED, AURA_MATERIAL_MOSAIC, GRADIENT_AURA, SEASONAL, CARD_SKIN |
 | AvailabilityStatus | 3 | AVAILABLE, UNAVAILABLE, ARCHIVED |
 | BackgroundAnimation | 5 | NONE, SNOW, PETALS, LEAVES, SHIMMER |
@@ -422,13 +423,14 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | CaptureRole | 2 | PRIMARY, COMPLEMENTARY |
 | CaptureSessionStatus | 5 | ANALYZING, AWAITING_CAPTURE, READY_FOR_REVIEW, COMPLETED, ABANDONED |
 | CaptureSource | 4 | CAMERA, GALLERY, UPLOAD, IMPORT |
-| CaptureView | 0 |  |
+| CaptureView | 22 | FRONT_VIEW, BACK_VIEW, LEFT_SIDE, RIGHT_SIDE, THREE_QUARTER, TOP_VIEW, WATCH_FACE, LOGO_DETAIL, BRAND_DETAIL, TEXTURE_DETAIL, LABEL_DETAIL, INNER_LABEL, INNER_VIEW, SOLE_VIEW, TONGUE_LABEL, SERIAL_DETAIL, CLASP_DETAIL, HARDWARE_DETAIL, BUCKLE_DETAIL, WATCH_BACK, TEMPLE_DETAIL, ENGRAVING_DETAIL |
 | CatalogImageType | 8 | FRONT, BACK, SIDE, TOP, DETAIL, SOLE, PACKSHOT, OTHER |
 | CatalogImageUsage | 3 | REFERENCE_ONLY, PERSISTED, REJECTED |
 | CatalogIngestionStatus | 5 | DISCOVERED, VALIDATED, PERSISTABLE, REFERENCE_ONLY, REJECTED |
+| CatalogOrigin | 3 | REAL, SEED, DEMO |
 | CatalogSourceStatus | 4 | ACTIVE, UNAVAILABLE, SOURCE_REMOVED, NEEDS_REVALIDATION |
 | CatalogSourceType | 5 | OFFICIAL_BRAND, OFFICIAL_STORE, AUTHORIZED_RETAILER, PARTNER_API, MANUAL_ADMIN |
-| ConsentPurpose | 8 | AI_RECOMMENDATION, AI_EXTERNAL_PHOTO_PROCESSING, HISTORY_FOR_RECOMMENDATION, PERSONALIZED_ADS, PARTNER_SHARING, BODY_MEASUREMENTS, FACIAL_RECOGNITION, LOCATION_HISTORY |
+| ConsentPurpose | 9 | AI_RECOMMENDATION, AI_EXTERNAL_PHOTO_PROCESSING, HISTORY_FOR_RECOMMENDATION, PERSONALIZED_ADS, PARTNER_SHARING, BODY_MEASUREMENTS, FACIAL_RECOGNITION, LOCATION_HISTORY, AI_MODEL_TRAINING |
 | ContainerOrigin | 3 | INDEFINIDA, MANUAL, AUTO |
 | CreationMode | 2 | MANUAL, AI_ASSISTED |
 | DailyLookFeedback | 3 | ADOREI, NAO_USEI, NAO_GOSTEI |
@@ -454,20 +456,20 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | Mood | 4 | ENERGETIC, ELEGANT, COMFORTABLE, SOPHISTICATED |
 | NarrativeType | 12 | TIMELINE, MOMENTOS_MARCANTES, PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS, HYPE_FOCUS, CARTELA_SAZONAL, LEGO |
 | NotificationCategory | 4 | SECURITY, SOCIAL, ACHIEVEMENT, SYSTEM |
-| NotificationType | 23 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, DAILY_LOOK, CHALLENGE_RESULT, ROOM_LEVEL_UP |
+| NotificationType | 28 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, ISSUER_REVIEW_REQUEST, CONTENT_REVIEW, DAILY_LOOK, CHALLENGE_INVITE, CHALLENGE_RESULT, ACHIEVEMENT_UNLOCKED, ROOM_LEVEL_UP, COUPON_AVAILABLE |
 | PhotoOrigin | 8 | WARDROBE_ITEM, SCHEME, TRY_ON, STYLE_DNA, PROFILE, BACKGROUND_STUDIO, LOOSE, EDITOR |
 | PhotoProcessingStatus | 6 | NEW, MODERATING, PROCESSING, COMPLETED, NEEDS_REUPLOAD, FAILED |
 | PieceImageStatus | 5 | PENDING, PROCESSING, COMPLETED, NEEDS_REVIEW, FAILED |
-| PieceImageType | 2 | ORIGINAL_BACK, CANONICAL_BACKORIGINAL |
+| PieceImageType | 6 | ORIGINAL, CANONICAL, DETAIL, LOGO_DETAIL, TEXTURE_DETAIL, SEGMENTATION_MASK |
 | PipelineJobStatus | 8 | PENDING, RUNNING, RENDERING, ENHANCING, COMPOSITING, COMPLETED, FAILED, CANCELLED |
 | PipelineJobType | 14 | PIECE_ANALYSIS, FLAT_LAY_STANDARDIZATION, CONTENT_MODERATION, BACKGROUND_GENERATION, SCHEME_CARD_RENDER, TRY_ON_2D, OUTFIT_RENDER, TRY_ON_POLISH, CATEGORY_FALLBACK_COMPOSITION, STYLE_DNA_SYNTHESIS, EMBEDDING_GENERATION, HYPE_SCORE_RECALC, DATA_EXPORT, THREE_D_GENERATION |
-| ProfileType | 3 | PESSOAL, MARCA, CELEBRIDADE |
+| ProfileType | 4 | PESSOAL, MARCA, CELEBRIDADE, ADMIN |
 | PromotionStatus | 4 | AVAILABLE, REDEEMED, EXPIRED, REVOKED |
 | PromotionType | 10 | DESCONTO_ECOMMERCE, CUPOM_LOJA, EVENTO, SHOW, FRETE_GRATIS, BRINDE, ACESSO_ANTECIPADO, MEET_GREET, PRE_VENDA, CONTEUDO_EXCLUSIVO |
 | ReactionType | 4 | LIKE, TREND, ELEGANTE, CRIATIVO |
 | RedemptionStatus | 3 | ISSUED, USED, EXPIRED |
 | RenderStatus | 7 | PENDING, RENDERING, ENHANCING, COMPOSITING, CACHED, COMPLETED, FAILED |
-| SchemeOrigin | 7 | CRIAR_LOOK, PROVADOR, REMIX, COPILOT, DNA_DUPLICATE, SMART_MIRROR, VISTA_ME |
+| SchemeOrigin | 8 | CRIAR_LOOK, PROVADOR, REMIX, COPILOT, DNA_DUPLICATE, SMART_MIRROR, VISTA_ME, AUTOPILOTO |
 | SchemeSlot | 6 | TOP, BOTTOM, SHOES, ACCESSORY, FULL_BODY, OUTERWEAR |
 | SchemeStatus | 3 | DRAFT, PUBLISHED, ARCHIVED |
 | SealBondBasis | 2 | BRAND_MATCH, STYLE_SIGNATURE |

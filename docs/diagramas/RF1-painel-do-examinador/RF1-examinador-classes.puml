@@ -1,5 +1,5 @@
 @startuml RF1_Examinador_Classes
-title RF1.CA07/CA09 — Painel do examinador: classes\nDiagrama de classes
+title RF1.CA07/CA09 — Verificação do emissor e Central do emissor: classes\nDiagrama de classes
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam class {
@@ -10,6 +10,7 @@ skinparam class {
 }
 enum ApprovalStatus {
   PENDENTE
+  AJUSTES
   APROVADO
   RECUSADO
   SUSPENSO
@@ -25,49 +26,83 @@ class User <<Entity users>> {
   username, displayName, email
   profileType : ProfileType
   status : AccountStatus
-  emailVerified : boolean
+  emailVerified, verified : boolean
+}
+interface ReviewableProfile {
+  reviewStatus() : ApprovalStatus
+  reviewAttempts : int
+  reviewSubmittedAt : Instant
+  reviewReasons : csv
+  reviewChecklist : json
+  reviewOwnerMessage : String
+  approvedBy, approvedAt, verificationNotes
+  publicName() : String
 }
 class BrandProfile <<Entity brand_profiles>> {
   brandName, slug, logoUrl
-  approvalStatus : ApprovalStatus
-  approvedBy, approvedAt, verificationNotes
+  cnpj (cifrado), storeUrl, commercialContact
+  activityProofUrl (restricted/)
+  documentVerified : boolean
 }
 class CelebrityProfile <<Entity celebrity_profiles>> {
-  stageName, slug, avatarUrl
-  verificationStatus : ApprovalStatus
+  stageName, slug, realName
+  verificationUrl, representationContact
+  identityProofUrl (restricted/)
   sealConsentGranted, requiresSealReview
-  approvedBy, approvedAt, verificationNotes
+}
+class IssuerVerificationPolicy {
+  VERSION = "1.0"
+  MAX_SUBMISSIONS = 5
+  SLA_BUSINESS_DAYS = 3
+  RESUBMIT_SLA_BUSINESS_DAYS = 2
+  BRAND, CELEBRITY : List<Criterion>
+  REASONS : List<String>
+  +checks(User, ReviewableProfile) : List<Check>
+  +verificationCode(userId) : String
+  +validCnpj(String) : boolean
+  +webUrl(String) : boolean
+}
+class Criterion <<record>> {
+  code : String
+  mandatory : boolean
+}
+class Check <<record>> {
+  code : String
+  mandatory : boolean
+  auto : OK | FALHA | ANALISTA
+  detail : String
 }
 class IssuerReviewService {
-  -adminEmails : List<String>
-  -frontendUrl : String
-  +adminsConfigured() : boolean
   +submitted(userId)
   ~notifyAdmins(userId)
+  +emailConfirmed(User)
   +status(CurrentUser) : Map
-  ~parse(csv) : List<String>
+  +resubmit(CurrentUser, ResubmitCommand) : Map
+  +queue(admin) : Map
+  +document(admin, userId, kind) : byte[]
+  +decide(admin, userId, DecisionCommand) : Map
 }
-class IssuerReview <<DTO>> {
-  profileType, name, status
-  submittedAt, emailVerified
-  adminsNotified, decidedAt, reason
+class ResubmitCommand <<record>> {
+  message, storeUrl, commercialContact
+  verificationUrl, representationContact
+  documentUrl, realName
 }
-class AdminService {
-  +approvals(admin) : Map
-  +decide(admin, userId, approve, notes) : Map
-}
-class IdentityService {
-  +register(...)
-  ~setIssuerReview(IssuerReviewService)
+class DecisionCommand <<record>> {
+  decision : APROVAR | AJUSTES | RECUSAR
+  reasons : List<String>
+  notes : String
+  checklist : Map<String, Boolean>
 }
 User "1" -- "0..1" BrandProfile
 User "1" -- "0..1" CelebrityProfile
-BrandProfile ..> ApprovalStatus
-CelebrityProfile ..> ApprovalStatus
+BrandProfile ..|> ReviewableProfile
+CelebrityProfile ..|> ReviewableProfile
+ReviewableProfile ..> ApprovalStatus
 User ..> ProfileType
-IdentityService ..> IssuerReviewService : submitted()
-IssuerReviewService ..> IssuerReview : status()
-IssuerReviewService --> User
-AdminService --> BrandProfile
-AdminService --> CelebrityProfile
+IssuerVerificationPolicy *-- Criterion
+IssuerVerificationPolicy ..> Check : checks()
+IssuerReviewService --> IssuerVerificationPolicy
+IssuerReviewService ..> ReviewableProfile
+IssuerReviewService ..> ResubmitCommand
+IssuerReviewService ..> DecisionCommand
 @enduml
