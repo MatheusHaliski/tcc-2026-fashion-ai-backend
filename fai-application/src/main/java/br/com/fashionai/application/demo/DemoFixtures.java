@@ -71,7 +71,10 @@ public class DemoFixtures {
     private final List<Save> saves;
 
     public DemoFixtures() {
-        ObjectMapper om = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
+        // campo ausente na fixture (ex.: "saves" com só "looks" ou só "pieces") vale 0, como no Jackson 2 — o Jackson 3
+        // recusa null em primitivo por padrão e derrubava a subida da aplicação
+        ObjectMapper om = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build();
         JsonNode users = read(om, "users.json");
         this.personas = list(om, users.get("personas"), Persona.class);
         this.followers = users.get("followers");

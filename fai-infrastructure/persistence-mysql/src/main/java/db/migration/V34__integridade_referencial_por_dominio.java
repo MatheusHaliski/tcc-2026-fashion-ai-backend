@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
  *       {@code verify} do pipeline demo lista as FKs que ficaram fora da política, para uma migration de correção.</li>
  * </ul>
  */
-public class V31__integridade_referencial_por_dominio extends BaseJavaMigration {
-    private static final Logger log = LoggerFactory.getLogger(V31__integridade_referencial_por_dominio.class);
+public class V34__integridade_referencial_por_dominio extends BaseJavaMigration {
+    private static final Logger log = LoggerFactory.getLogger(V34__integridade_referencial_por_dominio.class);
     private static final Pattern IDENT = Pattern.compile("[a-z0-9_]{1,64}");
 
     public record Fk(String table, String column, String refTable, String refColumn, String onDelete) {
@@ -255,7 +255,7 @@ public class V31__integridade_referencial_por_dominio extends BaseJavaMigration 
             String problem = problem(c, schema, fk);
             if (problem != null) {
                 deferred.add(fk + " — " + problem);
-                log.warn("V31: {} NÃO aplicada ({}); {}", fk, problem,
+                log.warn("V34: {} NÃO aplicada ({}); {}", fk, problem,
                         current.isEmpty() ? "a FK não foi criada" : "a constraint atual continua valendo");
                 continue;
             }
@@ -271,7 +271,7 @@ public class V31__integridade_referencial_por_dominio extends BaseJavaMigration 
             }
             applied++;
         }
-        log.info("V31: {} FKs aplicadas, {} já na política, {} adiadas{}", applied, alreadyOk, deferred.size(),
+        log.info("V34: {} FKs aplicadas, {} já na política, {} adiadas{}", applied, alreadyOk, deferred.size(),
                 deferred.isEmpty() ? "" : ": " + String.join(" | ", deferred));
     }
 
