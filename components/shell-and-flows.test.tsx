@@ -66,10 +66,10 @@ describe("abas do perfil (Lookbook)", () => {
 
 describe("adicionar peça (RF4)", () => {
   const photo = () => new File([new Uint8Array([1, 2, 3])], "camiseta.jpg", { type: "image/jpeg" });
-  /** RF47: a página abre no catálogo; "Usar minha foto" leva ao fluxo da foto, que começa pelo guia "Como fotografar". */
-  async function enterPhotoFlow(category: RegExp = /Parte de cima/) {
-    fireEvent.click(await screen.findByRole("button", { name: /Usar minha foto/ }));
-    fireEvent.click(await screen.findByRole("radio", { name: category }));
+  /** RF4/RF47: etapa única "Peça" — escolhe o tipo; o primeiro "Enviar foto" abre o guia "Como fotografar" antes do seletor. */
+  async function enterPhotoFlow(category: RegExp = /^Parte superior$/) {
+    fireEvent.click(await screen.findByRole("button", { name: category }));
+    fireEvent.click(await screen.findByRole("button", { name: /Enviar foto/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Entendi, adicionar foto" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   }

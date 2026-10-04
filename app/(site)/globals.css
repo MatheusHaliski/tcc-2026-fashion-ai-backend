@@ -1867,3 +1867,9 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .catalog-swatch.is-active { outline: 2px solid var(--ink); outline-offset: 2px; }
 .catalog-hero { display: grid; place-items: center; aspect-ratio: 1 / 1; border-radius: var(--radius); background: var(--surface-2); overflow: hidden; }
 .catalog-hero img { width: 100%; height: 100%; object-fit: contain; }
+
+/* RF4 + RF47 · criador de peça em uma etapa: seções (busca catalogada, foto, dados) e o produto escolhido */
+.creator-section { border-top: 1px solid var(--line-soft); padding-top: 14px; margin-top: 14px; }
+.catalog-pick { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--thread); border-radius: 12px; background: var(--thread-soft); }
+.catalog-pick img, .catalog-pick-art { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: var(--surface); display: grid; place-items: center; }
+@media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }

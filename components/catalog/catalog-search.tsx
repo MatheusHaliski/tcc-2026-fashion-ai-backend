@@ -20,13 +20,26 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto }: {
-  initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void; onUsePhoto: (ctx: CatalogSearchContext) => void;
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext }: {
+  initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
+  /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
+  onUsePhoto?: (ctx: CatalogSearchContext) => void;
+  /** Embutida no criador (RF4): a categoria é a do formulário, escolhida fora — a busca não repete os cards de categoria. */
+  category?: string;
+  /** Tipo (subcategoria) escolhido na busca segue para o formulário. */
+  onContext?: (ctx: Partial<CatalogSearchContext>) => void;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
-  const [category, setCategory] = useState(initial?.category ?? "");
-  const [subcategory, setSubcategory] = useState(initial?.subcategory ?? "");
+  const embedded = controlledCategory !== undefined;
+  const [ownCategory, setOwnCategory] = useState(initial?.category ?? "");
+  const category = embedded ? controlledCategory : ownCategory;
+  const setCategory = (c: string) => { setOwnCategory(c); setSubcategory(""); };
+  const [subcategory, setSubcategoryState] = useState(initial?.subcategory ?? "");
+  const setSubcategory = (s: string) => { setSubcategoryState(s); onContext?.({ subcategory: s }); };
+  // categoria trocada fora (modo embutido): o tipo anterior não vale mais
+  const prevCat = useRef(category);
+  useEffect(() => { if (prevCat.current !== category) { prevCat.current = category; setSubcategoryState(""); } }, [category]);
   const [brand, setBrand] = useState(initial?.brand ?? "");
   const [brandRef, setBrandRef] = useState<CatalogBrand | null>(null);
   const [query, setQuery] = useState(initial?.query ?? "");
@@ -89,11 +102,11 @@ export function CatalogSearch({ initial, onPick, onUsePhoto }: {
 
   return (
     <div className="grid gap-4">
-      <section aria-labelledby="cs-cat">
+      {!embedded && <section aria-labelledby="cs-cat">
         <p id="cs-cat" className="label">{t("catalog.q_categoria")}</p>
         <CategoryCards compact columns={3} options={CATEGORY_CARDS} value={(category as CaptureCategory) || null} label={t("catalog.q_categoria")}
-          onChange={(c) => { setCategory(c); setSubcategory(""); }} />
-      </section>
+          onChange={(c) => setCategory(c)} />
+      </section>}
       {category && (
         <section aria-labelledby="cs-sub">
           <p id="cs-sub" className="label">{t("catalog.q_tipo")}</p>
@@ -115,7 +128,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto }: {
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" onClick={() => run(++seq.current)} loading={loading} disabled={!enough && !brand && !subcategory}>{t("catalog.buscar_pecas")}</Button>
         {!enough && <span className="type-caption text-muted">{t("catalog.duas_ou_tres_infos")}</span>}
-        <Button variant="ghost" size="sm" onClick={() => onUsePhoto(ctx)}>{t("catalog.usar_minha_foto")}</Button>
+        {onUsePhoto && <Button variant="ghost" size="sm" onClick={() => onUsePhoto(ctx)}>{t("catalog.usar_minha_foto")}</Button>}
       </div>
 
       {error && <p role="alert" className="error-text">{error}</p>}
@@ -144,7 +157,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto }: {
             <div className="mt-1 flex flex-wrap gap-2">
               <Button size="sm" onClick={() => setRefine((r) => !r)} aria-expanded={refine}>{t("catalog.nao_encontrei")}</Button>
               {canSearchOfficial && <Button size="sm" variant="primary" onClick={searchOfficial}>{t("catalog.pesquisar_lojas_oficiais")}</Button>}
-              <Button size="sm" variant="ghost" onClick={() => onUsePhoto(ctx)}>{t("catalog.adicionar_com_minha_foto")}</Button>
+              {onUsePhoto ? <Button size="sm" variant="ghost" onClick={() => onUsePhoto(ctx)}>{t("catalog.adicionar_com_minha_foto")}</Button>
+                : <span className="type-body-sm text-muted self-center">{t("catalog.ou_envie_sua_foto")}</span>}
             </div>
             {discover.busy && <p className="mt-2 type-body-sm" role="status" aria-live="polite">{t("catalog.procurando_oficiais", { marca: res.intent.brand ?? "" })}</p>}
             {discover.result && !discover.result.results.length && <p className="mt-2 type-body-sm text-muted" role="status">{discover.result.message}</p>}
