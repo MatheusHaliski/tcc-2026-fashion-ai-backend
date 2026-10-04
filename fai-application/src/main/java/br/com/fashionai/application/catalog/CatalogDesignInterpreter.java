@@ -1,6 +1,6 @@
 package br.com.fashionai.application.catalog;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -42,9 +42,9 @@ public final class CatalogDesignInterpreter {
         placements = phrases(d.path("placements"));
         sizes = phrases(d.path("sizes"));
         sides = phrases(d.path("sides"));
-        d.path("printNouns").forEach(n -> printNouns.add(CatalogNormalizer.key(n.asText())));
-        d.path("baseCues").forEach(n -> baseCues.add(CatalogNormalizer.key(n.asText())));
-        d.path("connectors").forEach(n -> connectors.add(CatalogNormalizer.key(n.asText())));
+        d.path("printNouns").forEach(n -> printNouns.add(CatalogNormalizer.key(n.asString())));
+        d.path("baseCues").forEach(n -> baseCues.add(CatalogNormalizer.key(n.asString())));
+        d.path("connectors").forEach(n -> connectors.add(CatalogNormalizer.key(n.asString())));
     }
 
     public static CatalogDesignInterpreter get() {
@@ -218,10 +218,10 @@ public final class CatalogDesignInterpreter {
 
     private static Map<String, List<List<String>>> phrases(JsonNode node) {
         Map<String, List<List<String>>> out = new LinkedHashMap<>();
-        node.fields().forEachRemaining(e -> {
+        node.properties().forEach(e -> {
             List<List<String>> list = new ArrayList<>();
             e.getValue().forEach(v -> {
-                String k = CatalogNormalizer.key(v.asText());
+                String k = CatalogNormalizer.key(v.asString());
                 if (!k.isBlank()) {
                     list.add(List.of(k.split(" ")));
                 }

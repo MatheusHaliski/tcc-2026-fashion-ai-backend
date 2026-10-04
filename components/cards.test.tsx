@@ -25,6 +25,8 @@ describe("anatomias do card de look (RF11)", () => {
   it("regras de anatomia: efetiva, arte própria, selo, silhueta e cor do hype", () => {
     expect(effectiveAnatomy({ layoutAnatomy: "CUSTO_POR_USO", season: null, viewer: { ...SCHEME.viewer, canEdit: false } })).toBe("LISTA_VERTICAL");
     expect(effectiveAnatomy({ layoutAnatomy: "CARTELA_SAZONAL", season: null, viewer: SCHEME.viewer })).toBe("LISTA_VERTICAL");
+    // sem estação no look, a cartela escolhida no modal do layout dá a estação do card
+    expect(effectiveAnatomy({ layoutAnatomy: "CARTELA_SAZONAL", season: null, viewer: SCHEME.viewer, background: { seasonalPresetId: "frost" } })).toBe("CARTELA_SAZONAL");
     expect(effectiveAnatomy({ layoutAnatomy: "BENTO", season: "summer", viewer: SCHEME.viewer })).toBe("BENTO");
     expect(hasOwnArt("PASSARELA")).toBe(true);
     expect(sealPlacement("inexistente")).toBe(sealPlacement("LISTA_VERTICAL"));

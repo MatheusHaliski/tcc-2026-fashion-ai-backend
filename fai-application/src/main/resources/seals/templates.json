@@ -1,0 +1,379 @@
+{
+ "fai": [
+  {
+   "id": "fai/01",
+   "color": "#3F3340"
+  },
+  {
+   "id": "fai/02",
+   "color": "#276161"
+  },
+  {
+   "id": "fai/03",
+   "color": "#B55214"
+  },
+  {
+   "id": "fai/04",
+   "color": "#23302C"
+  },
+  {
+   "id": "fai/05",
+   "color": "#1B3941"
+  },
+  {
+   "id": "fai/06",
+   "color": "#4E5538"
+  },
+  {
+   "id": "fai/07",
+   "color": "#08151E"
+  },
+  {
+   "id": "fai/08",
+   "color": "#666A6D"
+  },
+  {
+   "id": "fai/09",
+   "color": "#573E30"
+  },
+  {
+   "id": "fai/10",
+   "color": "#351D0F"
+  },
+  {
+   "id": "fai/11",
+   "color": "#C4CED6"
+  },
+  {
+   "id": "fai/12",
+   "color": "#505F93"
+  },
+  {
+   "id": "fai/13",
+   "color": "#3D333F"
+  }
+ ],
+ "circular": [
+  {
+   "id": "circular/01",
+   "color": "#053F7D",
+   "plain": true
+  },
+  {
+   "id": "circular/02",
+   "color": "#930C35",
+   "plain": true
+  },
+  {
+   "id": "circular/03",
+   "color": "#044027",
+   "plain": true
+  },
+  {
+   "id": "circular/04",
+   "color": "#CC2403",
+   "plain": true
+  },
+  {
+   "id": "circular/05",
+   "color": "#298843",
+   "plain": true
+  },
+  {
+   "id": "circular/06",
+   "color": "#743E0F",
+   "plain": true
+  },
+  {
+   "id": "circular/07",
+   "color": "#B79681",
+   "plain": true
+  },
+  {
+   "id": "circular/08",
+   "color": "#797A53",
+   "plain": true
+  },
+  {
+   "id": "circular/09",
+   "color": "#9D5A31",
+   "plain": true
+  },
+  {
+   "id": "circular/10",
+   "color": "#D67853",
+   "plain": true
+  },
+  {
+   "id": "circular/11",
+   "color": "#807E74",
+   "plain": true
+  },
+  {
+   "id": "circular/12",
+   "color": "#5F3E5C",
+   "plain": true
+  },
+  {
+   "id": "circular/13",
+   "color": "#BF8A44",
+   "plain": true
+  },
+  {
+   "id": "circular/14",
+   "color": "#4C7B6A",
+   "plain": true
+  },
+  {
+   "id": "circular/15",
+   "color": "#306232",
+   "plain": true
+  },
+  {
+   "id": "circular/16",
+   "color": "#185559",
+   "plain": true
+  },
+  {
+   "id": "circular/17",
+   "color": "#6A4F60",
+   "plain": true
+  },
+  {
+   "id": "circular/18",
+   "color": "#404828",
+   "plain": true
+  },
+  {
+   "id": "circular/19",
+   "color": "#B27966",
+   "plain": true
+  },
+  {
+   "id": "circular/20",
+   "color": "#1E4946",
+   "plain": true
+  },
+  {
+   "id": "circular/21",
+   "color": "#3A232F",
+   "plain": true
+  },
+  {
+   "id": "circular/22",
+   "color": "#697577",
+   "plain": true
+  },
+  {
+   "id": "circular/23",
+   "color": "#A48A33",
+   "plain": true
+  },
+  {
+   "id": "circular/24",
+   "color": "#4A1811",
+   "plain": true
+  },
+  {
+   "id": "circular/25",
+   "color": "#595F2F",
+   "plain": true
+  },
+  {
+   "id": "circular/26",
+   "color": "#A15427",
+   "plain": true
+  },
+  {
+   "id": "circular/27",
+   "color": "#5E5443",
+   "plain": true
+  },
+  {
+   "id": "circular/28",
+   "color": "#A12D8B",
+   "plain": true
+  },
+  {
+   "id": "circular/29",
+   "color": "#C8891B",
+   "plain": true
+  },
+  {
+   "id": "circular/30",
+   "color": "#202B38",
+   "plain": true
+  },
+  {
+   "id": "circular/31",
+   "color": "#14252D",
+   "plain": true
+  },
+  {
+   "id": "circular/32",
+   "color": "#494E36",
+   "plain": true
+  },
+  {
+   "id": "circular/33",
+   "color": "#653033",
+   "plain": true
+  },
+  {
+   "id": "circular/34",
+   "color": "#504232",
+   "plain": true
+  },
+  {
+   "id": "circular/35",
+   "color": "#A65320",
+   "plain": true
+  },
+  {
+   "id": "circular/36",
+   "color": "#AC8565",
+   "plain": true
+  },
+  {
+   "id": "circular/37",
+   "color": "#350611",
+   "plain": true
+  },
+  {
+   "id": "circular/38",
+   "color": "#5A4630",
+   "plain": true
+  },
+  {
+   "id": "circular/39",
+   "color": "#DA600E",
+   "plain": true
+  },
+  {
+   "id": "circular/40",
+   "color": "#D38610",
+   "plain": true
+  },
+  {
+   "id": "circular/41",
+   "color": "#288043",
+   "plain": true
+  },
+  {
+   "id": "circular/42",
+   "color": "#A36D4B",
+   "plain": true
+  },
+  {
+   "id": "circular/43",
+   "color": "#B95213",
+   "plain": true
+  },
+  {
+   "id": "circular/44",
+   "color": "#4D1A03",
+   "plain": true
+  }
+ ],
+ "folha": [
+  {
+   "id": "folha/fai-01"
+  },
+  {
+   "id": "folha/fai-02"
+  },
+  {
+   "id": "folha/fai-03"
+  },
+  {
+   "id": "folha/fai-04"
+  },
+  {
+   "id": "folha/fai-05"
+  },
+  {
+   "id": "folha/fai-06"
+  },
+  {
+   "id": "folha/mat-01"
+  },
+  {
+   "id": "folha/mat-02"
+  },
+  {
+   "id": "folha/mat-03"
+  },
+  {
+   "id": "folha/mat-04"
+  },
+  {
+   "id": "folha/mat-05"
+  },
+  {
+   "id": "folha/mat-06"
+  },
+  {
+   "id": "folha/mat-07"
+  },
+  {
+   "id": "folha/mat-08"
+  },
+  {
+   "id": "folha/mat-09"
+  },
+  {
+   "id": "folha/mat-10"
+  },
+  {
+   "id": "folha/mat-11"
+  },
+  {
+   "id": "folha/mat-12"
+  },
+  {
+   "id": "folha/col-01"
+  },
+  {
+   "id": "folha/col-02"
+  },
+  {
+   "id": "folha/col-03"
+  },
+  {
+   "id": "folha/col-04"
+  },
+  {
+   "id": "folha/col-05"
+  },
+  {
+   "id": "folha/col-06"
+  },
+  {
+   "id": "folha/col-07"
+  },
+  {
+   "id": "folha/col-08"
+  },
+  {
+   "id": "folha/col-09"
+  },
+  {
+   "id": "folha/col-10"
+  },
+  {
+   "id": "folha/cmat-01"
+  },
+  {
+   "id": "folha/cmat-02"
+  },
+  {
+   "id": "folha/cmat-03"
+  },
+  {
+   "id": "folha/cmat-04"
+  },
+  {
+   "id": "folha/cmat-05"
+  }
+ ]
+}
