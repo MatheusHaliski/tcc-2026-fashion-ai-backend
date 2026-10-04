@@ -1,2 +1,2 @@
 # Compatibilidade MYSQL_USE_SSL (legado) -> sslMode do Connector/J
-org.springframework.boot.env.EnvironmentPostProcessor=br.com.fashionai.infrastructure.mysql.config.MysqlSslModeEnvironmentPostProcessor
+org.springframework.boot.EnvironmentPostProcessor=br.com.fashionai.infrastructure.mysql.config.MysqlSslModeEnvironmentPostProcessor

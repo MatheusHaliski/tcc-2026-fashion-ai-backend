@@ -45,7 +45,7 @@ aumenta de fato a confiança em um atributo que importa, sempre com "Pular".
 
 ### 1.1 Visão geral
 
-Monólito modular hexagonal (Spring Boot 3.3, Java 21, MySQL 8 + Flyway) com frontend Next.js 15 que chama a API
+Monólito modular hexagonal (Spring Boot 4.1, Java 21, MySQL 8 + Flyway) com frontend Next.js 15 que chama a API
 direto do navegador. O RF04 hoje é um **formulário em etapas com análise síncrona de uma foto**.
 
 ```

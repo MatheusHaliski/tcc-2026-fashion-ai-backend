@@ -1,7 +1,7 @@
 package br.com.fashionai.application.catalog;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,14 +13,14 @@ class DedupParityTest {
         JsonNode cases = new ObjectMapper().readTree(getClass().getResourceAsStream("/catalog/dedup-cases.json"));
         CatalogNormalizer n = CatalogNormalizer.get();
         for (JsonNode c : cases) {
-            String key = n.dedupKey(c.path("brand").asText(), c.path("subcategory").asText(), t(c, "gtin"), null, null, t(c, "sku"),
-                    t(c, "product_code"), c.hasNonNull("url") ? CatalogNormalizer.canonicalUrl(c.get("url").asText()) : null,
+            String key = n.dedupKey(c.path("brand").asString(), c.path("subcategory").asString(), t(c, "gtin"), null, null, t(c, "sku"),
+                    t(c, "product_code"), c.hasNonNull("url") ? CatalogNormalizer.canonicalUrl(c.get("url").asString()) : null,
                     t(c, "model"), t(c, "variant"), t(c, "title"), t(c, "color"));
-            assertThat(key).as(c.toString()).isEqualTo(c.get("expected").asText());
+            assertThat(key).as(c.toString()).isEqualTo(c.get("expected").asString());
         }
     }
 
     private static String t(JsonNode c, String f) {
-        return c.hasNonNull(f) ? c.get(f).asText() : null;
+        return c.hasNonNull(f) ? c.get(f).asString() : null;
     }
 }
