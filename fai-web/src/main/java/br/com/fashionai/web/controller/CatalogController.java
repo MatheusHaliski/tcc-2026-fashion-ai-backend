@@ -49,6 +49,12 @@ public class CatalogController {
         return catalog.brandSuggestions(q);
     }
 
+    @GetMapping("/api/catalog/stores")
+    @Operation(summary = "RF18/RF47 — Lojas do catálogo (marcas com produtos visíveis) para o provador virtual")
+    public Map<String, Object> stores() {
+        return Map.of("stores", catalog.catalogBrands());
+    }
+
     @GetMapping("/api/catalog/products/{id}")
     @Operation(summary = "RF47 — Produto do catálogo com variantes, fotos oficiais e proveniência")
     public Map<String, Object> product(@PathVariable UUID id) {

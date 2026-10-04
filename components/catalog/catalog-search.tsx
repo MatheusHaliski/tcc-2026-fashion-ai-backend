@@ -20,7 +20,7 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse }: {
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -28,6 +28,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   category?: string;
   /** Tipo (subcategoria) escolhido na busca segue para o formulário. */
   onContext?: (ctx: Partial<CatalogSearchContext>) => void;
+  /** Texto do botão de cada resultado (padrão "É esta"; no provador, "Provar"). */
+  pickLabel?: string;
+  /** Frase do painel quando não há resultado e não há "usar minha foto" (padrão: preencher os dados abaixo). */
+  noResultHint?: string;
+  /** Navegar pela loja: só a marca (ou só o tipo) já lista produtos — o provador mostra a vitrine da marca. */
+  browse?: boolean;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -55,7 +61,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const seq = useRef(0);
   const params = useMemo(() => ({ category: category || undefined, subcategory: subcategory || undefined, brand: brand.trim() || undefined,
     q: [query, code].filter((s) => s.trim()).join(" ").trim() || undefined, color: color || undefined }), [category, subcategory, brand, query, code, color]);
-  const enough = enoughToSearch({ brand, subcategory, q: params.q });
+  const enough = browse ? !!(brand.trim() || subcategory || category || (params.q ?? "").length >= 2) : enoughToSearch({ brand, subcategory, q: params.q });
 
   // busca automática com debounce assim que houver contexto suficiente; o botão "Buscar peças" força
   useEffect(() => {
@@ -149,7 +155,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           )}
           {filtered.length > 0 && (
             <ul className="grid-cards" aria-label={t("catalog.resultados")}>
-              {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} /></li>)}
+              {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} pickLabel={pickLabel} /></li>)}
             </ul>
           )}
           <div className={cn("mt-4 rounded-md border border-line-soft bg-surface-2 p-3", !filtered.length && "border-dashed")}>
@@ -158,7 +164,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
               <Button size="sm" onClick={() => setRefine((r) => !r)} aria-expanded={refine}>{t("catalog.nao_encontrei")}</Button>
               {canSearchOfficial && <Button size="sm" variant="primary" onClick={searchOfficial}>{t("catalog.pesquisar_lojas_oficiais")}</Button>}
               {onUsePhoto ? <Button size="sm" variant="ghost" onClick={() => onUsePhoto(ctx)}>{t("catalog.adicionar_com_minha_foto")}</Button>
-                : <span className="type-body-sm text-muted self-center">{t("catalog.ou_preencha_abaixo")}</span>}
+                : <span className="type-body-sm text-muted self-center">{noResultHint ?? t("catalog.ou_preencha_abaixo")}</span>}
             </div>
             {discover.busy && <p className="mt-2 type-body-sm" role="status" aria-live="polite">{t("catalog.procurando_oficiais", { marca: res.intent.brand ?? "" })}</p>}
             {discover.result && !discover.result.results.length && <p className="mt-2 type-body-sm text-muted" role="status">{discover.result.message}</p>}
@@ -182,7 +188,7 @@ function placeholderFor(category: string, t: (k: string) => string) {
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: p, onPick }: { product: CatalogProduct; onPick: (variant: CatalogVariant | null) => void }) {
+export function CatalogResultCard({ product: p, onPick, pickLabel }: { product: CatalogProduct; onPick: (variant: CatalogVariant | null) => void; pickLabel?: string }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
   const [variant, setVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
@@ -205,7 +211,7 @@ export function CatalogResultCard({ product: p, onPick }: { product: CatalogProd
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)}>{t("catalog.e_esta")}</Button>
+        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)}>{pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
     </article>
   );
