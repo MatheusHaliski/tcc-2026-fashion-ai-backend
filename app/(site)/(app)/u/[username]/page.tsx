@@ -46,7 +46,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </>} />
       {!data.contentVisible
         ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
-        : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} />}
+        : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}
+      {data && data.self && (initialTab === "cupons" || initialTab === "coupons") && <CouponsRedirect />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}
         footer={<><Button onClick={() => setConfirmBlock(false)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => { setConfirmBlock(false); block(); }}>{t("lookbook.block")}</Button></>}>
         <p className="type-body">{t("profile.blockBody")}</p>
@@ -64,10 +65,18 @@ function InstitutionalRedirect({ slug }: { slug: string }) {
   return <p className="type-body text-muted" role="status">{t("common.loading")}</p>;
 }
 
-/** Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono ("cupons" é o nome antigo de coupons). */
+/**
+ * Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono. Ids antigos continuam valendo:
+ * saved_looks/saved_pieces → Salvos; cupons/coupons → /coupons (a aba duplicava a página de cupons e saiu do Lookbook).
+ */
 function profileTab(tab: string | null, self: boolean): TabId {
-  const t = tab === "cupons" ? "coupons" : tab;
+  const t = tab === "saved_looks" || tab === "saved_pieces" ? "saved" : tab;
   if (t === "closet" || t === "looks" || t === "groups") return t;
-  if (self && (t === "dna" || t === "saved_looks" || t === "saved_pieces" || t === "daily" || t === "capsule" || t === "coupons")) return t;
+  if (self && (t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
+}
+function CouponsRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/coupons"); }, [router]);
+  return null;
 }

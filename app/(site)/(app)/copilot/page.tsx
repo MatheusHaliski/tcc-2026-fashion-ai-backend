@@ -1,11 +1,15 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Button, Card, Input, PageHeader, useToast } from "@/components/ui";
+import { Button, Card, Input, PageHeader, SegmentPicker, Tabs, useToast } from "@/components/ui";
+import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
+import { HypeRediscoveryCard } from "@/components/hype/hype-rediscovery";
+import type { HypeWardrobe } from "@/lib/hype/types";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
@@ -14,15 +18,20 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { resolveCardArt } from "@/lib/card-art";
 
-interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; }
+interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
-interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; }
+/** scores: recomendação multidimensional — compatibilidade com o DNA, Hype, novidade e reutilização, nunca somados num número só */
+interface LookScores { compatibility?: number | null; hype?: number | null; novelty?: number | null; reuse?: number | null }
+interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; scores?: LookScores; }
 interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; backgroundNotice?: Record<string, string>; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
 interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
 
 interface Suggestions { weather?: { available?: boolean; temperatureC?: number; city?: string; description?: string }; weatherBand?: string; readyLooks: SchemeView[]; newCombinations: { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number }[]; forgottenPieces: PieceView[]; weatherPieces: PieceView[]; trendingLooks: SchemeView[]; }
-type SuggestionSection = "ready" | "new" | "forgotten" | "weather" | "trending";
+/** Seções do Copilot (domínios, não filtros): recomendações · descoberta · experimentação · redescoberta · insights. */
+type SuggestionSection = "recommendations" | "discovery" | "experiment" | "rediscovery" | "insights";
+/** Modo escolhido ANTES de gerar: Seguro prioriza o DNA; Descoberta mistura familiar e novo; Experimental vai mais longe. */
+type Mode = "SAFE" | "DISCOVERY" | "EXPERIMENTAL";
 
 const lookKey = (look: SuggestedLook) => `${look.title}|${look.pieceIds.join(",")}`;
 
@@ -43,6 +52,18 @@ function Understood({ look }: { look: SuggestedLook }) {
   );
 }
 
+/** Os quatro números do look sugerido, lado a lado — Hype é contexto, nunca o critério único. */
+function LookScoresRow({ scores }: { scores?: LookScores }) {
+  const { t } = useI18n();
+  if (!scores) return null;
+  const items: [keyof LookScores, string][] = [["compatibility", "copilot.scores.compatibility"], ["hype", "copilot.scores.hype"], ["novelty", "copilot.scores.novelty"], ["reuse", "copilot.scores.reuse"]];
+  return (
+    <dl className="copilot-scores">
+      {items.map(([k, key]) => <div key={k}><dt>{t(key)}</dt><dd className="tabular">{scores[k] ?? "—"}</dd></div>)}
+    </dl>
+  );
+}
+
 //Funcao para o copilot funcionar
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
@@ -50,7 +71,11 @@ function Copilot() {
   const sug = useApi<Suggestions>((signal) => api.get("/api/copilot/suggestions", { signal }), []);
   const detail = useDetailModal();
   const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const endRef = useRef<HTMLDivElement>(null);
-  const [section, setSection] = useState<SuggestionSection>("ready"); const [savedLooks, setSavedLooks] = useState<SuggestedLook[]>([]); const [activeLook, setActiveLook] = useState<string | null>(null); const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
+  const [section, setSection] = useState<SuggestionSection>("recommendations"); const [mode, setMode] = useState<Mode>("SAFE");
+  const hypeWardrobe = useApi<HypeWardrobe>((signal) => api.get("/api/me/hype/wardrobe", { signal }), [], { enabled: section === "rediscovery" });
+  // ?ask= (Redescoberta do Hype: "Pedir sugestão ao Copilot") preenche a pergunta — a pessoa confirma antes de enviar
+  const askParam = useSearchParams().get("ask");
+  useEffect(() => { if (askParam) setInput(askParam); }, [askParam]); const [savedLooks, setSavedLooks] = useState<SuggestedLook[]>([]); const [activeLook, setActiveLook] = useState<string | null>(null); const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
   useEffect(() => { if (msgs.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [msgs]);   // sem conversa não rola; com conversa, só o mínimo para a última mensagem aparecer
   const storageKey = ctx?.userId ? `fashionai.copilot.looks.v1.${ctx.userId}` : null;
   const rememberLooks = useCallback((looks: SuggestedLook[]) => {
@@ -79,7 +104,7 @@ function Copilot() {
   async function ask(text: string) {
     if (!text.trim()) return;
     setMsgs((m) => [...m, { role: "user", text }]); setInput(""); setBusy(true);
-    try { const r = await api.post<Reply>("/api/copilot/messages", { message: text, view: "copilot" }); setMsgs((m) => [...m, { role: "copilot", text: r.text, reply: r }]); rememberLooks(r.looks ?? []); }
+    try { const r = await api.post<Reply>("/api/copilot/messages", { message: text, view: "copilot", mode }); setMsgs((m) => [...m, { role: "copilot", text: r.text, reply: r }]); rememberLooks(r.looks ?? []); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function accept(a: Action | SuggestedLook) {
@@ -87,19 +112,28 @@ function Copilot() {
   }
   const prompts = msgs.length ? msgs[msgs.length - 1].reply?.suggestedPrompts ?? ctx?.suggestedPrompts : ctx?.suggestedPrompts;
   const md = (s: string) => s.split(/(\*\*[^*]+\*\*)/g).map((part, i) => part.startsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : <span key={i}>{part}</span>);
-  const sections: { id: SuggestionSection; title: string; content: React.ReactNode; empty: boolean }[] = [
-    { id: "ready", title: t("copilot.looks_prontos_para_hoje"), content: (sug.data?.readyLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />), empty: !sug.data?.readyLooks.length },
-    { id: "new", title: t("copilot.combinacoes_novas_com_o_seu"), content: (sug.data?.newCombinations ?? []).map((c, i) => (
+  const newCard = (c: Suggestions["newCombinations"][number], i: number) => (
       <article key={i} className="fai-card" aria-label={c.title}>
         <div className="c-header"><span className="c-meta">{t("copilot.sugestao_do_copilot")}</span></div>
         <div className="grid grid-cols-2 gap-1 p-2">{c.pieces.map((p) => <button key={p.id} type="button" className="aspect-square overflow-hidden rounded bg-surface-2 hover:ring-2 hover:ring-mark" title={p.name} onClick={() => detail?.openPiece(p.id)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} className="h-full w-full object-contain p-1" /></button>)}</div>
         <div className="c-title">{c.title}</div>
         {c.rationale && <div className="c-row">{c.rationale}</div>}
         <div className="c-extra"><Button size="sm" variant="primary" onClick={() => accept({ pieceIds: c.pieceIds, title: c.title, occasion: c.occasions })}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button></div>
-      </article>)), empty: !sug.data?.newCombinations.length },
-    { id: "forgotten", title: t("copilot.pecas_esquecidas"), content: (sug.data?.forgottenPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />), empty: !sug.data?.forgottenPieces.length },
-    { id: "weather", title: t("copilot.para_o_clima_de_hoje"), content: (sug.data?.weatherPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />), empty: !sug.data?.weatherPieces.length },
-    { id: "trending", title: t("copilot.em_alta_na_rede"), content: (sug.data?.trendingLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />), empty: !sug.data?.trendingLooks.length },
+      </article>);
+  const row = (title: string, items: React.ReactNode[]) => items.length ? <div key={title}><h3 className="label mb-2">{title}</h3><div className="hscroll">{items}</div></div> : null;
+  const rediscoveries = hypeWardrobe.data?.rediscoveries ?? [];
+  const sections: { id: SuggestionSection; title: string; content: React.ReactNode; empty: boolean }[] = [
+    { id: "recommendations", title: t("copilot.section.recommendations"), content: <div className="grid gap-4">
+        {row(t("copilot.looks_prontos_para_hoje"), (sug.data?.readyLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />))}
+        {row(t("copilot.para_o_clima_de_hoje"), (sug.data?.weatherPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />))}
+      </div>, empty: !sug.data?.readyLooks.length && !sug.data?.weatherPieces.length },
+    { id: "discovery", title: t("copilot.section.discovery"), content: <div className="grid gap-2"><p className="type-caption text-muted">{t("copilot.section.discovery_hint")}</p><div className="hscroll">{(sug.data?.trendingLooks ?? []).map((sc) => <SchemeCard key={sc.id} scheme={sc} />)}</div></div>, empty: !sug.data?.trendingLooks.length },
+    { id: "experiment", title: t("copilot.section.experiment"), content: <div className="hscroll">{(sug.data?.newCombinations ?? []).map(newCard)}</div>, empty: !sug.data?.newCombinations.length },
+    { id: "rediscovery", title: t("copilot.section.rediscovery"), content: <div className="grid gap-4">
+        {rediscoveries.length > 0 && <div className="grid gap-2">{rediscoveries.map((r) => <HypeRediscoveryCard key={r.id} item={r} />)}</div>}
+        {row(t("copilot.pecas_esquecidas"), (sug.data?.forgottenPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />))}
+      </div>, empty: !sug.data?.forgottenPieces.length && rediscoveries.length === 0 },
+    { id: "insights", title: t("copilot.section.insights"), content: <HypeWardrobeInsights compact />, empty: false },
   ];
   return (
     <>
@@ -116,14 +150,13 @@ function Copilot() {
       </aside>
       <div className="min-w-0 space-y-4">
         <section className="surface p-4">
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("copilot.sugestao_do_copilot")}>
-            {sections.map((item) => <button key={item.id} type="button" role="tab" aria-selected={section === item.id} className={`chip ${section === item.id ? "is-active" : ""}`} onClick={() => { setSection(item.id); setActiveLook(null); }}>{item.title}</button>)}
-          </div>
+          <Tabs label={t("copilot.sugestao_do_copilot")} value={section} onChange={(id) => { setSection(id); setActiveLook(null); }} className="mb-0"
+            tabs={sections.map((item) => ({ id: item.id, label: item.title }))} />
           {sug.loading ? <p className="mt-4 type-body text-muted">{t("copilot.montando_sugestoes")}</p> : activeLook ? (() => {
             const look = visibleLooks.find((item) => lookKey(item) === activeLook);
             return look ? <Card className="mt-4"><h2 className="type-h3">{look.title}</h2>{look.why && <p className="mt-1 type-body-sm text-muted">{look.why}</p>}<div className="mt-3 flex flex-wrap gap-2">{(look.pieces ?? []).map((piece) => <button key={piece.pieceId} type="button" title={piece.name} onClick={() => detail?.openPiece(piece.pieceId)}><img src={mediaUrl(piece.imageUrl)} alt={piece.name} className="h-16 w-16 rounded bg-surface-2 object-contain" /></button>)}</div><Button size="sm" className="mt-3" variant="primary" onClick={() => accept(look)}>{t("common.salvar_como_look")}</Button></Card> : null;
           })() : sections.find((item) => item.id === section)?.empty ? <p className="mt-4 type-body-sm text-muted">{t("copilot.sem_clima_pecas_versateis")}</p>
-            : <div role="tabpanel" className="hscroll mt-4">{sections.find((item) => item.id === section)?.content}</div>}
+            : <div role="tabpanel" className="mt-4">{sections.find((item) => item.id === section)?.content}</div>}
         </section>
         <div className="surface flex min-h-[50vh] flex-col">
         <div className="flex-1 space-y-3 overflow-auto p-4" role="log" aria-live="polite">
@@ -131,8 +164,8 @@ function Copilot() {
           {msgs.map((m, i) => (
             <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
-              {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}</Link>)}</div> : null}
-              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
+              {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}{c.hype != null && <span className="text-faint"> · {t("copilot.scores.chip_hype", { value: c.hype })}</span>}{c.compatibility != null && <span className="text-faint"> · {t("copilot.scores.chip_style", { value: c.compatibility })}</span>}</Link>)}</div> : null}
+              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<LookScoresRow scores={l.scores} /><Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
               {m.reply?.backgroundNotice && <p className="mt-2 type-caption text-muted">{Object.values(m.reply.backgroundNotice).join(" ")}</p>}
               {m.reply?.purchases?.length ? <div className="mt-2 rounded border border-line-soft p-2"><p className="label">{t("copilot.sugestoes_de_compra_genericas")}</p><ul className="fai-list type-body-sm">{m.reply.purchases.map((p, j) => <li key={j}>• {p.name}{p.delta != null ? t("copilot.combinacoes", { delta: p.delta }) : ""}{p.reason ? ` · ${p.reason}` : ""}{p.sponsored && <span className="badge ml-1">{t("copilot.patrocinado")}</span>}</li>)}</ul></div> : null}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}
@@ -145,6 +178,11 @@ function Copilot() {
         </div>
         <div className="border-t border-line-soft p-3">
           {prompts?.length ? <div className="mb-2 flex flex-wrap gap-1.5">{prompts.map((p) => <button key={p} type="button" className="chip" onClick={() => ask(p)}>{p}</button>)}</div> : null}
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <SegmentPicker label={t("copilot.mode.label")} value={mode} onChange={setMode}
+              options={[{ id: "SAFE", label: t("copilot.mode.SAFE") }, { id: "DISCOVERY", label: t("copilot.mode.DISCOVERY") }, { id: "EXPERIMENTAL", label: t("copilot.mode.EXPERIMENTAL") }]} />
+            <span className="type-caption text-muted">{t(`copilot.mode.${mode}_hint`)}</span>
+          </div>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask(input); }}><Input aria-label={t("copilot.mensagem")} value={input} onChange={(e) => setInput(e.target.value)} placeholder={t("copilot.onde_esta_meu_jeans_o")} /><Button type="submit" variant="primary" loading={busy}><FaiIcon id="ACT-13" size={24} decorative />{t("auth.send")}</Button></form>
         </div>
         </div>

@@ -22,7 +22,7 @@ docker compose -f docker-compose.dev.yml up -d mysql
 
 # 2) variáveis (só o MySQL é obrigatório; o resto tem fallback local)
 cp .env.example .env
-export $(grep -v '^#' .env | xargs)
+set -a; . ./.env; set +a
 export DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)   # chave AES para campos sensíveis
 
 # 3) build + run (Flyway cria o schema V1..V6 na primeira subida)

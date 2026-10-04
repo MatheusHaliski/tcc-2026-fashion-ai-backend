@@ -27,6 +27,11 @@ import br.com.fashionai.domain.repository.DailyLookRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
+import br.com.fashionai.application.hype.StyleCompatibility;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
@@ -161,8 +166,12 @@ public class CopilotService {
         CopilotLexicon.PIECE_MATERIALS.forEach(MATERIAL_WORDS::putIfAbsent);
     }
 
+    /**
+     * {@code mode}: SAFE (prioriza o DNA de estilo), DISCOVERY (familiar + novidades) ou EXPERIMENTAL (mais distância do
+     * histórico) — reordena os looks sugeridos pela pontuação multidimensional ({@link RecommendationScoring}).
+     */
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
-                             Double latitude, Double longitude, List<String> excludeKeys) {
+                             Double latitude, Double longitude, List<String> excludeKeys, String mode) {
     }
 
     private final WardrobeService wardrobe;
@@ -183,13 +192,16 @@ public class CopilotService {
     private final Audit audit;
     private final SchemeService schemeService;
     private final BackgroundStudioService backgroundStudio;
+    /** HypeScore v2 — contexto de recomendação (nunca critério único) */
+    private final HypeQueryService hype;
     private final Map<UUID, Deque<String>> shown = new ConcurrentHashMap<>();
 
     public CopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                           DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, RoomService room,
                           MirrorService mirror, InventoryScoreService inventory, ChallengeService challenges, AutopilotService autopilot,
                           DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService,
-                          BackgroundStudioService backgroundStudio) {
+                          BackgroundStudioService backgroundStudio, HypeQueryService hype) {
+        this.hype = hype;
         this.schemeService = schemeService;
         this.backgroundStudio = backgroundStudio;
         this.wardrobe = wardrobe;
@@ -293,17 +305,28 @@ public class CopilotService {
         out.put("weatherPieces", eligible.stream().filter(x -> !WeatherService.unsuitable(x.getSubcategory(), band))
                 .sorted(Comparator.comparing((WardrobeItem x) -> !("CAMADAS".equals(band) || "INVERNO_PESADO".equals(band)) || !WeatherService.isLayer(x.getSubcategory())))
                 .limit(6).map(x -> Views.piece(x, null, null)).toList());
-        // 5) em alta na rede: looks públicos de outras pessoas, os de maior Hype primeiro
-        out.put("trendingLooks", schemes.findPublicFeed(org.springframework.data.domain.PageRequest.of(0, 30)).stream()
-                .filter(s -> !s.getUser().getId().equals(user.id()) && schemeService.canView(user, s))
-                .sorted(Comparator.comparing((Scheme s) -> s.getHypeScore() == null ? java.math.BigDecimal.ZERO : s.getHypeScore()).reversed())
+        // 5) em alta na rede: looks públicos de outras pessoas, os de maior HypeScore v2 primeiro (sem Hype calculado = por último)
+        List<Scheme> publicLooks = schemes.findPublicFeed(org.springframework.data.domain.PageRequest.of(0, 30)).stream()
+                .filter(s -> !s.getUser().getId().equals(user.id()) && schemeService.canView(user, s)).toList();
+        Map<UUID, HypeScoreCurrent> lookHype = hype.currentOf(HypeEntityType.SCHEME, publicLooks.stream().map(Scheme::getId).toList());
+        out.put("trendingLooks", publicLooks.stream()
+                .sorted(Comparator.comparing((Scheme s) -> lookHype.containsKey(s.getId()) ? lookHype.get(s.getId()).getScore() : null,
+                        Comparator.nullsLast(Comparator.<java.math.BigDecimal>reverseOrder())))
                 .limit(4).map(s -> schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
         out.put("suggestedPrompts", promptsFor("COPILOT"));
         return out;
     }
 
     // ================================================================== intenções
-    enum Intent { WHERE_IS, FORGOTTEN, DIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL }
+    enum Intent { WHERE_IS, HYPE, FORGOTTEN, DIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL }
+
+    /** Pergunta sobre relevância das próprias peças/looks ("qual peça está em alta?", "tenho peça rara?"). */
+    static final java.util.regex.Pattern HYPE_QUESTION = java.util.regex.Pattern.compile(
+            ".*\\b(qual|quais|tenho|minhas?|meus?|which|what|do i|my|cu[aá]l|cu[aá]les|tengo|mis?)\\b.*\\b(hype|em alta|relevan\\w*|tend[eê]nc\\w*|trend\\w*|"
+                    + "crescend\\w*|subindo|voltando|rar[ao]s?|raridade|rare|rarest|exclusiv\\w*|popular\\w*|viral|bombando|potencial|growing|rising|creciendo|volviendo)\\b.*");
+    /** Pedido para montar algo continua sendo LOOKS, mesmo citando tendência ("monte um look em alta"). */
+    static final java.util.regex.Pattern BUILD_REQUEST = java.util.regex.Pattern.compile(
+            ".*\\b(monte|montar|monta|sugira|sugere|crie|criar|gere|gerar|build|suggest|create|make me|arma|sugiere|crea)\\b.*");
 
     /** weather: faixa de clima pedida no texto (VERAO_LEVE, MEIA_ESTACAO, CAMADAS, INVERNO_PESADO) ou null */
     record LookPrompt(List<String> occasions, List<String> styles, String mood, String season, String weather) {}
@@ -378,6 +401,9 @@ public class CopilotService {
         String t = m == null ? "" : m.toLowerCase(Locale.ROOT);
         if (t.matches(".*(onde est|onde fica|cadê|cade |onde guardei|onde deixei|where is|where are|where's|where did i|dónde est|donde est|dónde guard|donde guard).*")) {
             return Intent.WHERE_IS;
+        }
+        if (HYPE_QUESTION.matcher(t).matches() && !BUILD_REQUEST.matcher(t).matches()) {
+            return Intent.HYPE;
         }
         if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo).*")) {
             return Intent.FORGOTTEN;
@@ -649,6 +675,7 @@ public class CopilotService {
         Intent intent = intent(message);
         Map<String, Object> out = switch (intent) {
             case WHERE_IS -> whereIs(user, message, req.view());
+            case HYPE -> hypeAnswer(user, message);
             case FORGOTTEN -> forgotten(user);
             case IMPROVE_INVENTORY -> improveInventory(user);
             case DIFFERENT -> different(user, req);
@@ -956,10 +983,182 @@ public class CopilotService {
             card.put("description", InputSanitizer.clean(message, 2048));
             return card;
         }).toList();
-        out.put("looks", lookCards);
+        RecommendationScoring.Mode mode = RecommendationScoring.Mode.parse(req.mode());
+        out.put("looks", scoreLooks(user, lookCards, mode));
+        out.put("mode", mode == null ? null : mode.name());
         if (hasPieceConstraints(message)) out.put("requestedFilters", Map.of("pieceIds", requiredPieceIds));
         out.put("tools", List.of("buscar_pecas", "listar_looks", "montar_no_espelho", "abrir_criar_look"));
         return out;
+    }
+
+    // ================================================================== HypeScore v2 como contexto
+    /**
+     * Pontua cada look sugerido em quatro dimensões independentes (compatibilidade com o DNA, Hype, novidade, reutilização)
+     * e, com um modo escolhido, reordena pelo peso do modo. Sem modo, mantém a ordem do motor e só mostra os números.
+     */
+    List<Map<String, Object>> scoreLooks(CurrentUser user, List<Map<String, Object>> cards, RecommendationScoring.Mode mode) {
+        if (cards.isEmpty()) {
+            return cards;
+        }
+        LocalDate today = LocalDate.now(FaiPointsService.ZONE);
+        StyleCompatibility.Profile dna = dnas.findByUserId(user.id()).map(HypeQueryService::profileOf).orElse(null);
+        Set<String> seen = new HashSet<>();
+        List<Scheme> mine = schemes.findByUserIdOrderByCreatedAtDesc(user.id());
+        if (!mine.isEmpty()) {
+            schemeItems.findBySchemeIdIn(mine.stream().map(Scheme::getId).toList()).stream()
+                    .collect(Collectors.groupingBy(si -> si.getScheme().getId(), Collectors.mapping(si -> si.getWardrobeItem().getId(), Collectors.toList())))
+                    .values().forEach(ids -> {
+                        for (int a = 0; a < ids.size(); a++) {
+                            for (int b = a + 1; b < ids.size(); b++) {
+                                seen.add(RecommendationScoring.pair(ids.get(a), ids.get(b)));
+                            }
+                        }
+                    });
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        Map<Map<String, Object>, Double> rank = new java.util.IdentityHashMap<>();
+        for (Map<String, Object> card : cards) {
+            @SuppressWarnings("unchecked") List<UUID> ids = (List<UUID>) card.getOrDefault("pieceIds", List.of());
+            List<WardrobeItem> look = ids.isEmpty() ? List.of() : pieces.findByIdIn(ids);
+            Map<UUID, HypeScoreCurrent> h = hype.currentOf(HypeEntityType.PIECE, ids);
+            List<Double> hypes = h.values().stream().filter(c -> c.getScore() != null).map(c -> c.getScore().doubleValue()).toList();
+            Integer compat = null;
+            if (dna != null && !look.isEmpty()) {
+                Set<String> styles = new LinkedHashSet<>(), colors = new LinkedHashSet<>(), occasions = new LinkedHashSet<>();
+                look.forEach(w -> {
+                    styles.addAll(Json.csv(w.getStyleTags()));
+                    colors.addAll(HypeQueryService.colorsOf(w));
+                    occasions.addAll(Json.csv(w.getOccasionTags()));
+                });
+                Map<String, Object> c = StyleCompatibility.score(dna, StyleCompatibility.profile(styles, colors, occasions));
+                compat = c == null ? null : ((Number) c.get("score")).intValue();
+            }
+            RecommendationScoring.Scores scores = new RecommendationScoring.Scores(compat,
+                    hypes.isEmpty() ? null : (int) Math.round(hypes.stream().mapToDouble(Double::doubleValue).average().orElse(0)),
+                    RecommendationScoring.novelty(ids, seen),
+                    RecommendationScoring.reuse(look.stream().map(w -> HypeQueryService.idleDays(w, today)).toList()));
+            Map<String, Object> m = new LinkedHashMap<>(card);
+            m.put("scores", scores.toMap());
+            rank.put(m, RecommendationScoring.rankValue(mode, scores));
+            out.add(m);
+        }
+        if (mode != null) {
+            out.sort(Comparator.comparingDouble((Map<String, Object> m) -> rank.get(m)).reversed());
+        }
+        return out;
+    }
+
+    /**
+     * "Qual é a peça mais relevante do meu guarda-roupa?", "qual item está crescendo?", "tenho alguma peça rara?",
+     * "qual peça está voltando a ser tendência?", "qual look tem mais potencial de trend?" — respondido com o HypeScore v2
+     * e SEMPRE com a compatibilidade com o estilo ao lado (Hype ≠ estilo pessoal).
+     */
+    Map<String, Object> hypeAnswer(CurrentUser user, String message) {
+        String t = message.toLowerCase(Locale.ROOT);
+        LocalDate today = LocalDate.now(FaiPointsService.ZONE);
+        Map<String, Object> out = new LinkedHashMap<>();
+        StyleCompatibility.Profile dna = dnas.findByUserId(user.id()).map(HypeQueryService::profileOf).orElse(null);
+        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        boolean looksAsked = t.matches(".*\\b(look|looks|esquema|esquemas|outfit)\\b.*");
+        if (looksAsked) {
+            List<Scheme> mine = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
+            Map<UUID, HypeScoreCurrent> h = hype.currentOf(HypeEntityType.SCHEME, mine.stream().map(Scheme::getId).toList());
+            List<Scheme> ranked = mine.stream().filter(s -> h.containsKey(s.getId()) && h.get(s.getId()).getScore() != null)
+                    .sorted(Comparator.comparingDouble((Scheme s) -> potential(h.get(s.getId()))).reversed()).limit(3).toList();
+            if (ranked.isEmpty()) {
+                out.put("text", Msg.t("copilot.hype.nada") + "\n\n" + Msg.t("copilot.hype.aviso"));
+                out.put("chips", List.of());
+                return out;
+            }
+            StringBuilder sb = new StringBuilder(Msg.t("copilot.hype.looks"));
+            List<Map<String, Object>> cards = new ArrayList<>();
+            for (Scheme s : ranked) {
+                HypeScoreCurrent c = h.get(s.getId());
+                sb.append("\n• ").append(Msg.t("copilot.hype.linha_look", s.getTitle(), (int) Math.round(c.getScore().doubleValue()), dim(c.getDimensions().getTrend()), dim(c.getDimensions().getTrendVelocity())));
+                List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
+                Map<String, Object> card = new LinkedHashMap<>();
+                card.put("title", s.getTitle());
+                card.put("pieceIds", items.stream().map(si -> si.getWardrobeItem().getId()).toList());
+                card.put("pieces", items.stream().map(si -> chip(si.getWardrobeItem(), where)).toList());
+                card.put("why", Msg.t("copilot.hype.linha_look", s.getTitle(), (int) Math.round(c.getScore().doubleValue()), dim(c.getDimensions().getTrend()), dim(c.getDimensions().getTrendVelocity())));
+                card.put("schemeId", s.getId());
+                cards.add(card);
+            }
+            out.put("text", sb + "\n\n" + Msg.t("copilot.hype.aviso"));
+            out.put("looks", cards);
+            out.put("chips", List.of());
+            out.put("actions", List.of(Map.of("type", "OPEN_HYPE", "label", Msg.t("copilot.hype.ver_historico"), "href", "/history?tab=hype")));
+            out.put("tools", List.of("hype_score"));
+            return out;
+        }
+        List<WardrobeItem> own = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
+        Map<UUID, HypeScoreCurrent> h = hype.currentOf(HypeEntityType.PIECE, own.stream().map(WardrobeItem::getId).toList());
+        java.util.function.Predicate<WardrobeItem> scored = w -> h.containsKey(w.getId()) && h.get(w.getId()).getScore() != null;
+        String header;
+        List<WardrobeItem> picked;
+        if (t.matches(".*(rar[ao]s?|raridade|rare|rarest|exclusiv).*")) {
+            header = Msg.t("copilot.hype.rare");
+            // só o que é de fato raro (≥ 50): listar peças comuns como "raras" seria enganoso
+            picked = own.stream().filter(w -> h.containsKey(w.getId()) && h.get(w.getId()).getDimensions().getRarity() != null
+                            && h.get(w.getId()).getDimensions().getRarity().doubleValue() >= 50)
+                    .sorted(Comparator.comparing((WardrobeItem w) -> h.get(w.getId()).getDimensions().getRarity()).reversed()).limit(5).toList();
+        } else if (t.matches(".*(voltando|volta a ser|voltar a ser|comeback|coming back|volviendo|vuelve a ser).*")) {
+            header = Msg.t("copilot.hype.comeback");
+            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= 60 && comeback(h.get(w.getId())))
+                    .sorted(Comparator.comparingDouble((WardrobeItem w) -> similarGrowth(h.get(w.getId()))).reversed()).limit(5).toList();
+        } else if (t.matches(".*(crescend|subindo|growing|rising|creciendo|em crescimento|aumentando).*")) {
+            header = Msg.t("copilot.hype.rising", hype.config().deltaWindowDays());
+            picked = own.stream().filter(scored).filter(w -> h.get(w.getId()).getDeltaPoints() != null && h.get(w.getId()).getDeltaPoints().signum() > 0
+                            || (h.get(w.getId()).getDimensions().getTrend() != null && h.get(w.getId()).getDimensions().getTrend().doubleValue() >= 60))
+                    .sorted(Comparator.comparingDouble((WardrobeItem w) -> dim(h.get(w.getId()).getDimensions().getTrend())).reversed()).limit(5).toList();
+        } else {
+            header = Msg.t("copilot.hype.top");
+            picked = own.stream().filter(scored).sorted(Comparator.comparing((WardrobeItem w) -> h.get(w.getId()).getScore()).reversed()).limit(5).toList();
+        }
+        if (picked.isEmpty()) {
+            out.put("text", Msg.t("copilot.hype.nada") + "\n\n" + Msg.t("copilot.hype.aviso"));
+            out.put("chips", List.of());
+            out.put("actions", List.of(Map.of("type", "OPEN_HYPE", "label", Msg.t("copilot.hype.ver_historico"), "href", "/history?tab=hype")));
+            return out;
+        }
+        StringBuilder sb = new StringBuilder(header);
+        List<Map<String, Object>> chips = new ArrayList<>();
+        for (WardrobeItem w : picked) {
+            HypeScoreCurrent c = h.get(w.getId());
+            Map<String, Object> compat = dna == null ? null : StyleCompatibility.score(dna, HypeQueryService.profileOf(w));
+            Integer style = compat == null ? null : ((Number) compat.get("score")).intValue();
+            String hypeText = c.getScore() == null ? Msg.t("copilot.hype.sem_dados") : String.valueOf(Math.round(c.getScore().doubleValue()));
+            sb.append("\n• ").append(style == null ? Msg.t("copilot.hype.linha", w.getName(), hypeText) : Msg.t("copilot.hype.linha_estilo", w.getName(), hypeText, style));
+            Map<String, Object> chip = chip(w, where);
+            chip.put("hype", c.getScore() == null ? null : (int) Math.round(c.getScore().doubleValue()));
+            chip.put("compatibility", style);
+            chip.put("daysUnused", HypeQueryService.idleDays(w, today));
+            chips.add(chip);
+        }
+        out.put("text", sb + "\n\n" + Msg.t("copilot.hype.aviso"));
+        out.put("chips", chips);
+        out.put("actions", List.of(Map.of("type", "COMPOSE_WITH", "label", Msg.t("common.criar_look_com_elas"), "pieceIds", picked.stream().limit(3).map(WardrobeItem::getId).toList()),
+                Map.of("type", "OPEN_HYPE", "label", Msg.t("copilot.hype.ver_historico"), "href", "/history?tab=hype")));
+        out.put("tools", List.of("hype_score", "dna_de_estilo"));
+        return out;
+    }
+
+    /** Potencial de trend de um look: crescimento recente + aceleração (não o score acumulado). */
+    static double potential(HypeScoreCurrent c) {
+        return 0.6 * dim(c.getDimensions().getTrend()) + 0.4 * dim(c.getDimensions().getTrendVelocity());
+    }
+
+    static boolean comeback(HypeScoreCurrent c) {
+        return similarGrowth(c) >= 15 || dim(c.getDimensions().getTrend()) >= 60;
+    }
+
+    static double similarGrowth(HypeScoreCurrent c) {
+        Map<String, Object> sig = Json.map(c.getSignalsJson());
+        return sig != null && sig.get("similarGrowthPercent") instanceof Number n ? n.doubleValue() : 0;
+    }
+
+    static int dim(java.math.BigDecimal v) {
+        return v == null ? 0 : (int) Math.round(v.doubleValue());
     }
 
     /** CA06 — aceitar sugestão: esquema com origem Copilot + Look do Dia. */
@@ -981,6 +1180,7 @@ public class CopilotService {
         }
         Map<String, WardrobeItem> refs = new LinkedHashMap<>();
         List<Map<String, Object>> tool = new ArrayList<>();
+        Map<UUID, HypeScoreCurrent> toolHype = hype.currentOf(HypeEntityType.PIECE, relevant.stream().map(WardrobeItem::getId).toList());
         int i = 1;
         for (WardrobeItem w : relevant) {
             String ref = "p" + i++;
@@ -1000,6 +1200,9 @@ public class CopilotService {
             fields.put("favorite", w.isFavorite());
             fields.put("forSale", w.isForSale());
             fields.put("wearCount", w.getWearCount());
+            fields.put("lastWornDate", w.getLastWornDate() == null ? "" : w.getLastWornDate().toString());
+            // HypeScore v2 = relevância no ecossistema agora (contexto), não compatibilidade com o estilo da pessoa
+            fields.put("hype", toolHype.containsKey(w.getId()) && toolHype.get(w.getId()).getScore() != null ? (int) Math.round(toolHype.get(w.getId()).getScore().doubleValue()) : "");
             fields.put("tags", Json.csv(w.getTags()));
             fields.put("notes", InputSanitizer.clean(w.getNotes(), 160));
             tool.add(fields);

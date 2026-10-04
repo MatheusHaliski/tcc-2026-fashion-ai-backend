@@ -102,7 +102,7 @@ class WardrobeAnalyzeFlowTest {
         });
         service = new WardrobeService(null, users, null, jobs, null, null, null, null, null, null, null, null,
                 new FlatLayPipeline(List.of(), List.of()), ai, media, null, null, null, null, null,
-                new StudioPipeline(List.of(), List.of()), mock(br.com.fashionai.application.security.Guard.class), null, null, null, null, catalog, null);
+                new StudioPipeline(List.of(), List.of()), mock(br.com.fashionai.application.security.Guard.class), null, null, null, null, catalog, null, null, null);
     }
 
     static AiOutcome<Object> outcome(Object value, String provider) {
