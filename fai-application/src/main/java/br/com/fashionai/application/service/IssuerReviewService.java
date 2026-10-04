@@ -216,6 +216,15 @@ public class IssuerReviewService {
         })));
     }
 
+    /**
+     * Política §5: o prazo da primeira análise conta da confirmação do e-mail — antes dela não há análise possível. O
+     * cadastro deixa o 1º envio sem data; a confirmação a grava (os reenvios gravam a própria data).
+     */
+    public void emailConfirmed(User u) {
+        profileOf(u).filter(p -> p.reviewStatus() == ApprovalStatus.PENDENTE && p.getReviewAttempts() == 1 && p.getReviewSubmittedAt() == null)
+                .ifPresent(p -> p.setReviewSubmittedAt(Instant.now()));
+    }
+
     // ================================================================== Central do emissor (dono do perfil)
 
     private User owner(CurrentUser current) {
@@ -276,6 +285,7 @@ public class IssuerReviewService {
         } else if (p instanceof CelebrityProfile c) {
             editable.put("verificationUrl", c.getVerificationUrl());
             editable.put("representationContact", c.getRepresentationContact());
+            editable.put("realName", c.getRealName());
             editable.put("hasDocument", c.getIdentityProofUrl() != null);
             editable.put("documentKind", DOC_IDENTITY);
         }
@@ -283,9 +293,12 @@ public class IssuerReviewService {
         return m;
     }
 
-    /** O que a pessoa pode corrigir sozinha ao reenviar; {@code documentUrl} é um envio de POST /api/auth/uploads. */
+    /**
+     * O que a pessoa pode corrigir sozinha ao reenviar; {@code documentUrl} é um envio de POST /api/auth/uploads.
+     * {@code realName} (celebridade): o nome civil é critério obrigatório (NOME_CONFERE) e precisa poder ser corrigido.
+     */
     public record ResubmitCommand(String message, String storeUrl, String commercialContact, String verificationUrl,
-                                  String representationContact, String documentUrl) {
+                                  String representationContact, String documentUrl, String realName) {
     }
 
     @Transactional
@@ -298,54 +311,55 @@ public class IssuerReviewService {
         if (p.getReviewAttempts() >= IssuerVerificationPolicy.MAX_SUBMISSIONS) {
             throw ApiException.conflict("LIMITE_DE_ENVIOS", Msg.t("issuerReview.limite_de_envios", IssuerVerificationPolicy.MAX_SUBMISSIONS));
         }
-        ResubmitCommand c = cmd == null ? new ResubmitCommand(null, null, null, null, null, null) : cmd;
+        ResubmitCommand c = cmd == null ? new ResubmitCommand(null, null, null, null, null, null, null) : cmd;
+        boolean celebrity = p instanceof CelebrityProfile;
+        String docKind = celebrity ? DOC_IDENTITY : DOC_ACTIVITY;
+        // 1) valida tudo antes de qualquer efeito: um documento só é copiado para restricted/ se o pedido inteiro passar
+        //    (senão a cópia ficava órfã — fora de pending/, a limpeza dos envios abandonados não a encontra)
         Map<String, Object> errors = new LinkedHashMap<>();
-        String document = null;
-        String docKind = p instanceof CelebrityProfile ? DOC_IDENTITY : DOC_ACTIVITY;
-        if (c.documentUrl() != null && !c.documentUrl().isBlank()) {
-            Optional<MediaService.OwnedMedia> upload = MediaService.ownedMedia(storage, null, c.documentUrl(),
-                    Set.of(MediaService.MediaScope.PENDING_RESTRICTED)).filter(m -> docKind.equals(MediaService.pendingKind(m.key())));
-            byte[] bytes = upload.map(m -> readQuietly(m.key())).orElse(null);
-            if (bytes == null) {
+        String link = celebrity ? c.verificationUrl() : c.storeUrl();
+        if (present(link) && !IssuerVerificationPolicy.webUrl(link)) {
+            errors.put(celebrity ? "verificationUrl" : "storeUrl", Msg.t("issuerReview.link_invalido"));
+        }
+        byte[] documentBytes = null;
+        if (present(c.documentUrl())) {
+            documentBytes = MediaService.ownedMedia(storage, null, c.documentUrl(), Set.of(MediaService.MediaScope.PENDING_RESTRICTED))
+                    .filter(m -> docKind.equals(MediaService.pendingKind(m.key()))).map(m -> readQuietly(m.key())).orElse(null);
+            if (documentBytes == null) {
                 errors.put("documentUrl", Msg.t("identity.envie_o_arquivo_pelo_formulario"));
-            } else {
-                document = storage.put("restricted/users/" + u.getId() + "/documents/" + docKind + "-" + System.currentTimeMillis() + ".jpg",
-                        bytes, "image/jpeg").url();
             }
         }
+        if (!errors.isEmpty()) {
+            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
+        }
+        // 2) aplica
+        String document = documentBytes == null ? null : storage.put("restricted/users/" + u.getId() + "/documents/" + docKind + "-"
+                + System.currentTimeMillis() + ".jpg", documentBytes, "image/jpeg").url();
         if (p instanceof BrandProfile b) {
-            if (c.storeUrl() != null && !c.storeUrl().isBlank()) {
-                if (IssuerVerificationPolicy.webUrl(c.storeUrl())) {
-                    b.setStoreUrl(c.storeUrl().trim());
-                } else {
-                    errors.put("storeUrl", Msg.t("issuerReview.link_invalido"));
-                }
+            if (present(c.storeUrl())) {
+                b.setStoreUrl(c.storeUrl().trim());
             }
-            if (c.commercialContact() != null && !c.commercialContact().isBlank()) {
+            if (present(c.commercialContact())) {
                 b.setCommercialContact(InputSanitizer.clean(c.commercialContact(), 160));
             }
             if (document != null) {
                 b.setActivityProofUrl(document);
             }
         } else if (p instanceof CelebrityProfile cp) {
-            if (c.verificationUrl() != null && !c.verificationUrl().isBlank()) {
-                if (IssuerVerificationPolicy.webUrl(c.verificationUrl())) {
-                    cp.setVerificationUrl(c.verificationUrl().trim());
-                } else {
-                    errors.put("verificationUrl", Msg.t("issuerReview.link_invalido"));
-                }
+            if (present(c.verificationUrl())) {
+                cp.setVerificationUrl(c.verificationUrl().trim());
             }
-            if (c.representationContact() != null && !c.representationContact().isBlank()) {
+            if (present(c.representationContact())) {
                 cp.setRepresentationContact(InputSanitizer.clean(c.representationContact(), 160));
+            }
+            if (present(c.realName())) {
+                cp.setRealName(InputSanitizer.clean(c.realName(), 160));
             }
             if (document != null) {
                 cp.setIdentityProofUrl(document);
             }
         }
-        if (!errors.isEmpty()) {
-            throw ApiException.badRequest("FORMULARIO_INVALIDO", Msg.t("common.corrija_os_campos_destacados"), errors);
-        }
-        String message = c.message() == null || c.message().isBlank() ? null : InputSanitizer.clean(c.message(), 600);
+        String message = present(c.message()) ? InputSanitizer.clean(c.message(), 600) : null;
         ApprovalStatus previous = p.reviewStatus();
         p.reviewStatus(ApprovalStatus.PENDENTE);
         p.setReviewAttempts(p.getReviewAttempts() + 1);
@@ -355,6 +369,10 @@ public class IssuerReviewService {
                 "previous", previous.name(), "newDocument", document != null));
         submitted(u.getId());
         return status(current);
+    }
+
+    private static boolean present(String s) {
+        return s != null && !s.isBlank();
     }
 
     private byte[] readQuietly(String key) {
@@ -405,6 +423,9 @@ public class IssuerReviewService {
         m.put("emailVerified", u.isEmailVerified());
         m.put("createdAt", u.getCreatedAt());
         m.put("submittedAt", p.getReviewSubmittedAt() != null ? p.getReviewSubmittedAt() : u.getCreatedAt());
+        // prazo da análise: do e-mail confirmado (1º envio) ou do reenvio; sem e-mail confirmado, ainda não corre. Pedidos
+        // confirmados antes desta regra não têm a data gravada e contam do cadastro.
+        m.put("reviewableSince", !u.isEmailVerified() ? null : p.getReviewSubmittedAt() != null ? p.getReviewSubmittedAt() : u.getCreatedAt());
         m.put("attempts", p.getReviewAttempts());
         m.put("decidedAt", p.reviewStatus() == ApprovalStatus.PENDENTE ? null : p.getApprovedAt());
         m.put("ownerMessage", p.getReviewOwnerMessage());
@@ -476,6 +497,11 @@ public class IssuerReviewService {
             }
             return approve == null ? null : approve ? "APROVAR" : "RECUSAR";
         }
+
+        /** Recusa na forma antiga, sem {@code decision} nem motivos padronizados. */
+        boolean legacyRejection() {
+            return (decision == null || decision.isBlank()) && Boolean.FALSE.equals(approve);
+        }
     }
 
     @Transactional
@@ -500,6 +526,11 @@ public class IssuerReviewService {
         }
         List<String> reasons = cmd.reasons() == null ? List.of() : cmd.reasons().stream().filter(Objects::nonNull)
                 .map(r -> r.trim().toUpperCase(Locale.ROOT)).distinct().toList();
+        if (cmd.legacyRejection() && reasons.isEmpty()) {
+            // forma antiga {approve: false, notes}: a observação vira o motivo "Outro"; sem observação, "Dados incompletos"
+            // (a recusa antiga dizia "documentação insuficiente")
+            reasons = List.of(cmd.notes() == null || cmd.notes().isBlank() ? "DADOS_INCOMPLETOS" : "OUTRO");
+        }
         List<String> unknown = reasons.stream().filter(r -> !IssuerVerificationPolicy.REASONS.contains(r)).toList();
         if (!unknown.isEmpty()) {
             throw ApiException.badRequest("MOTIVO_INVALIDO", Msg.t("issuerReview.motivo_invalido"), Map.of("reasons", unknown));

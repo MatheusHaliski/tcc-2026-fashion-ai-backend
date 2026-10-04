@@ -23,7 +23,7 @@ export interface IssuerReview {
   profileType: IssuerKind; name: string; slug?: string; status: ReviewStatus; submittedAt?: string | null; firstSubmittedAt?: string | null;
   attempts: number; maxAttempts: number; canResubmit: boolean; emailVerified: boolean; adminsNotified: boolean; slaBusinessDays: number;
   decidedAt?: string | null; reasons: string[]; notes?: string | null; verificationCode: string; checks: PolicyCheck[]; policyVersion: string;
-  editable: { storeUrl?: string | null; commercialContact?: string | null; verificationUrl?: string | null; representationContact?: string | null; hasDocument?: boolean; documentKind?: "identity" | "activity-proof" };
+  editable: { storeUrl?: string | null; commercialContact?: string | null; verificationUrl?: string | null; representationContact?: string | null; realName?: string | null; hasDocument?: boolean; documentKind?: "identity" | "activity-proof" };
 }
 
 const TONE: Record<ReviewStatus, string> = { PENDENTE: "is-pending", AJUSTES: "is-pending", APROVADO: "is-ok", RECUSADO: "is-bad", SUSPENSO: "is-bad" };
@@ -90,8 +90,10 @@ function StatusCard({ d, onReload, reloading, onTab }: { d: IssuerReview; onRelo
   const { t, fmtDateTime } = useI18n();
   const kind = t(d.profileType === "CELEBRIDADE" ? "issuerReview.tipo_celebridade" : "issuerReview.tipo_marca");
   const decided = d.status !== "PENDENTE";
+  // 1º envio: a data do cadastro (o prazo conta da confirmação do e-mail, gravada em submittedAt); reenvio: a dele
+  const sentAt = d.attempts > 1 ? d.submittedAt : d.firstSubmittedAt ?? d.submittedAt;
   const steps: { done: boolean; current?: boolean; bad?: boolean; title: string; body?: React.ReactNode }[] = [
-    { done: true, title: d.attempts > 1 ? t("issuerReview.passo_reenviado") : t("issuerReview.passo_enviado"), body: d.submittedAt ? fmtDateTime(d.submittedAt) : undefined },
+    { done: true, title: d.attempts > 1 ? t("issuerReview.passo_reenviado") : t("issuerReview.passo_enviado"), body: sentAt ? fmtDateTime(sentAt) : undefined },
     { done: d.emailVerified, current: !d.emailVerified, title: d.emailVerified ? t("issuerReview.passo_email_ok") : t("issuerReview.passo_email_pendente"),
       body: d.emailVerified ? undefined : <><span className="block">{t("issuerReview.email_antes_da_analise")}</span><Link href="/verify-email" className="underline">{t("issuerReview.confirmar_email")}</Link></> },
     { done: true, title: t("issuerReview.passo_fila"), body: d.adminsNotified ? t("issuerReview.fila_avisados") : t("issuerReview.fila_sem_aviso") },
@@ -143,7 +145,7 @@ function Feedback({ d }: { d: IssuerReview }) {
 function Resubmit({ d, onDone }: { d: IssuerReview; onDone: () => void }) {
   const { t } = useI18n(); const toast = useToast();
   const celeb = d.profileType === "CELEBRIDADE";
-  const [f, setF] = useState({ link: (celeb ? d.editable.verificationUrl : d.editable.storeUrl) ?? "", contact: (celeb ? d.editable.representationContact : d.editable.commercialContact) ?? "", message: "" });
+  const [f, setF] = useState({ link: (celeb ? d.editable.verificationUrl : d.editable.storeUrl) ?? "", contact: (celeb ? d.editable.representationContact : d.editable.commercialContact) ?? "", realName: d.editable.realName ?? "", message: "" });
   const [doc, setDoc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState<Record<string, string>>({});
   if (!d.canResubmit) return <Card><p className="type-body-sm">{t("issuerReview.limite_atingido", { max: d.maxAttempts })}</p></Card>;
@@ -151,7 +153,7 @@ function Resubmit({ d, onDone }: { d: IssuerReview; onDone: () => void }) {
     setBusy(true); setErr({});
     try {
       await api.post("/api/me/issuer-review/resubmit", { message: f.message || null, documentUrl: doc,
-        ...(celeb ? { verificationUrl: f.link || null, representationContact: f.contact || null } : { storeUrl: f.link || null, commercialContact: f.contact || null }) });
+        ...(celeb ? { verificationUrl: f.link || null, representationContact: f.contact || null, realName: f.realName || null } : { storeUrl: f.link || null, commercialContact: f.contact || null }) });
       toast.success(t("issuerReview.reenviado")); onDone();
     } catch (e) {
       if (e instanceof ApiError) setErr(Object.fromEntries(Object.entries(e.fields).filter(([, v]) => typeof v === "string")) as Record<string, string>);
@@ -170,6 +172,9 @@ function Resubmit({ d, onDone }: { d: IssuerReview; onDone: () => void }) {
         <Field label={t(celeb ? "issuerReview.campo_representante" : "issuerReview.campo_contato")} id="rs-contact">
           <Input id="rs-contact" maxLength={160} value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} />
         </Field>
+        {celeb && <Field label={t("issuerReview.campo_nome_civil")} id="rs-realname" hint={t("issuerReview.campo_nome_civil_dica")}>
+          <Input id="rs-realname" maxLength={160} autoComplete="name" value={f.realName} onChange={(e) => setF({ ...f, realName: e.target.value })} />
+        </Field>}
       </div>
       <PhotoPicker kind={d.editable.documentKind ?? (celeb ? "identity" : "activity-proof")} value={doc} onChange={setDoc} error={err.documentUrl}
         label={t(celeb ? "issuerReview.novo_documento_identidade" : "issuerReview.novo_comprovante")} hint={t("issuerReview.documento_dica")} />

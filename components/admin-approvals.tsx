@@ -16,6 +16,8 @@ import { PolicyCheckRow, ReviewPill, type IssuerKind, type PolicyCheck, type Rev
  */
 export interface Dossier {
   user: UserCard; kind: IssuerKind; name: string; slug: string; status: ReviewStatus; email: string; emailVerified: boolean; createdAt: string; submittedAt: string; decidedAt?: string | null;
+  /** início do prazo: e-mail confirmado (1º envio) ou reenvio; nulo enquanto o e-mail não é confirmado */
+  reviewableSince?: string | null;
   attempts: number; ownerMessage?: string | null; lastReasons: string[]; lastNotes?: string | null; verificationCode: string; checks: PolicyCheck[];
   data: Record<string, unknown>; documents: { kind: string; available: boolean }[];
 }
@@ -67,7 +69,7 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
   const [picked, setPicked] = useState<string[]>([]); const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [doc, setDoc] = useState<{ url: string; kind: string } | null>(null);
-  const waited = businessDaysSince(d.submittedAt);
+  const waited = d.reviewableSince ? businessDaysSince(d.reviewableSince) : null;   // o prazo só corre com o e-mail confirmado
   const ok = (c: PolicyCheck) => c.auto === "OK" || (c.auto === "ANALISTA" && !!checked[c.code]);
   const openMandatory = d.checks.filter((c) => c.mandatory && !ok(c));
   const canApprove = d.emailVerified && openMandatory.length === 0;
@@ -92,7 +94,7 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
           <p className="type-h3">{d.name} <ReviewPill status={d.status} /></p>
           <p className="type-caption text-muted"><Link href={`/brands/${d.slug}`} className="underline">@{d.user.username}</Link> · {t(`adminApprovals.tipo.${d.kind}`)} · {t("adminApprovals.envio", { n: d.attempts })} · {fmtDateTime(d.submittedAt)}</p>
         </div>
-        <Badge tone={waited > sla ? "mark" : "chalk"}>{waited > sla ? t("adminApprovals.atrasado", { n: waited }) : t("adminApprovals.aguardando", { n: waited })}</Badge>
+        <Badge tone={waited != null && waited > sla ? "mark" : "chalk"}>{waited == null ? t("adminApprovals.aguardando_email") : waited > sla ? t("adminApprovals.atrasado", { n: waited }) : t("adminApprovals.aguardando", { n: waited })}</Badge>
       </header>
 
       <div className="mt-3 grid gap-4 lg:grid-cols-2">

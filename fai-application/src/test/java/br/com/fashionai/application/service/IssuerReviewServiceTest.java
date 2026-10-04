@@ -245,7 +245,7 @@ class IssuerReviewServiceTest {
         User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
         BrandProfile b = brand(owner, ApprovalStatus.RECUSADO);
 
-        service("").resubmit(me(owner), new ResubmitCommand("Novo site no ar", "https://atelierlume.com", null, null, null, null));
+        service("").resubmit(me(owner), new ResubmitCommand("Novo site no ar", "https://atelierlume.com", null, null, null, null, null));
 
         assertEquals(ApprovalStatus.PENDENTE, b.getApprovalStatus());
         assertEquals(2, b.getReviewAttempts());
@@ -272,9 +272,78 @@ class IssuerReviewServiceTest {
         User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
         BrandProfile b = brand(owner, ApprovalStatus.AJUSTES);
         ApiException e = assertThrows(ApiException.class, () -> service("").resubmit(me(owner),
-                new ResubmitCommand(null, "javascript:alert(1)", null, null, null, null)));
+                new ResubmitCommand(null, "javascript:alert(1)", null, null, null, null, null)));
         assertEquals("FORMULARIO_INVALIDO", e.code());
         assertEquals(ApprovalStatus.AJUSTES, b.getApprovalStatus());
+    }
+
+    @Test
+    void documentoValidoComLinkInvalidoNaoCopiaODocumento() {
+        User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
+        BrandProfile b = brand(owner, ApprovalStatus.AJUSTES);
+        String key = "restricted/pending/" + UUID.randomUUID() + "/activity-proof.jpg";
+        when(storage.keyOf("https://cdn/" + key)).thenReturn(Optional.of(key));
+        when(storage.publicUrl(key)).thenReturn(java.net.URI.create("https://cdn/" + key));
+        when(storage.get(key)).thenReturn(new byte[]{1, 2, 3});
+
+        assertThrows(ApiException.class, () -> service("").resubmit(me(owner),
+                new ResubmitCommand(null, "javascript:alert(1)", null, null, null, "https://cdn/" + key, null)));
+
+        // nada copiado para restricted/users/… (ficaria órfão: a limpeza só olha os prefixos pending/)
+        verify(storage, never()).put(anyString(), any(), anyString());
+        assertEquals("https://cdn/restricted/users/x/documents/activity-proof-1.jpg", b.getActivityProofUrl());
+    }
+
+    @Test
+    void celebridadeCorrigeONomeCivilNoReenvio() {
+        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+        CelebrityProfile c = new CelebrityProfile();
+        c.setOwner(owner);
+        c.setStageName("MC Lume");
+        c.setSlug("mc-lume");
+        c.setVerificationStatus(ApprovalStatus.AJUSTES);
+        when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
+        when(celebrities.findByOwnerId(owner.getId())).thenReturn(Optional.of(c));
+        Map<String, IssuerVerificationPolicy.Auto> auto = new java.util.HashMap<>();
+        policy.checks(owner, c).forEach(ch -> auto.put(ch.code(), ch.auto()));
+        assertEquals(IssuerVerificationPolicy.Auto.FALHA, auto.get("NOME_CONFERE"));   // sem nome civil, nunca aprovável
+
+        service("").resubmit(me(owner), new ResubmitCommand(null, null, null, null, null, null, "Maria Clara Lume"));
+
+        assertEquals("Maria Clara Lume", c.getRealName());
+        policy.checks(owner, c).forEach(ch -> auto.put(ch.code(), ch.auto()));
+        assertEquals(IssuerVerificationPolicy.Auto.ANALISTA, auto.get("NOME_CONFERE"));
+    }
+
+    @Test
+    void recusaNoFormatoAntigoViraMotivoPadronizado() {
+        User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
+        BrandProfile b = brand(owner, ApprovalStatus.PENDENTE);
+        service("").decide(admin(), owner.getId(), new DecisionCommand(null, null, "CNPJ baixado", null, false));
+        assertEquals(ApprovalStatus.RECUSADO, b.getApprovalStatus());
+        assertEquals("OUTRO", b.getReviewReasons());
+        assertEquals("CNPJ baixado", b.getVerificationNotes());
+
+        User other = user("lume_b", ProfileType.MARCA, "b@lume.com", true);
+        BrandProfile b2 = brand(other, ApprovalStatus.PENDENTE);
+        service("").decide(admin(), other.getId(), new DecisionCommand(null, null, null, null, false));
+        assertEquals("DADOS_INCOMPLETOS", b2.getReviewReasons());
+    }
+
+    @Test
+    void prazoDaPrimeiraAnaliseContaDaConfirmacaoDoEmail() {
+        User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", false);
+        BrandProfile b = brand(owner, ApprovalStatus.PENDENTE);
+        IssuerReviewService s = service("");
+        assertNull(s.dossier(b).get("reviewableSince"));           // sem e-mail confirmado o prazo não corre
+
+        owner.setEmailVerified(true);
+        s.emailConfirmed(owner);
+        Instant confirmedAt = b.getReviewSubmittedAt();
+        assertTrue(confirmedAt != null && confirmedAt.isAfter(owner.getCreatedAt()));
+        assertEquals(confirmedAt, s.dossier(b).get("reviewableSince"));
+        s.emailConfirmed(owner);                                     // idempotente
+        assertEquals(confirmedAt, b.getReviewSubmittedAt());
     }
 
     // ------------------------------------------------------------------ verificações automáticas da política
