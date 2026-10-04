@@ -55,6 +55,11 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
   nada — **nunca inventa** produto, marca ou imagem.
 - O descoberto entra como `DISCOVERED` (não aparece para outros). Quando alguém o escolhe, passa a
   `REFERENCE_ONLY` e `owners_count` sobe: o próximo usuário o encontra na busca local.
+- **Crescimento em lote** (`scripts/catalog/collect_official.py`): coleta nomes e dados de produtos direto dos sites
+  oficiais das marcas (sitemaps do robots.txt + JSON-LD/OpenGraph da página). Respeita robots.txt e Crawl-delay, para
+  no primeiro 403/429, não baixa imagens e grava a URL oficial de cada produto. A saída (JSONL por marca) entra pelo
+  `import_products.py`, com dry-run e dedup. Busca na web genérica não serve: devolve sobretudo marketplaces,
+  proibidos pelo RN47.04. Detalhes em `scripts/catalog/README.md`.
 
 ## 4. API
 
