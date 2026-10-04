@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anatomias do Card v20</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Tokens com os mesmos nomes de app/globals.css. Texto só em pares com contraste ≥ 4,5:1. */
+:root{
+  color-scheme:light;
+  --ground:#F7F6F2; --surface:#FFFFFF; --surface-2:#F1F0EA; --surface-3:#E7E5DD;
+  --ink:#191A19; --muted:#5C6058; --line:#1A1A18; --line-soft:#D8D6CC;
+  --mark:#C6275E; --mark-soft:#FBE7EE; --thread:#1F7A76; --thread-soft:#E0F0EE; --chalk-ink:#7D5A12; --chalk-soft:#FAF0DC;
+  --focus:#C6275E;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter","Helvetica Neue",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --line:#C9C7BE; --line-soft:#3A3D42; --mark:#F06A93; --mark-soft:#3A1E28;
+  --thread:#5FBFB8; --thread-soft:#1B3331; --chalk-ink:#E2C27A; --chalk-soft:#3A3120; --focus:#F06A93; } }
+:root[data-theme="dark"]{
+  color-scheme:dark; --ground:#141517; --surface:#1F2124; --surface-2:#191B1E; --surface-3:#2C2F33;
+  --ink:#EDECE6; --muted:#A9ADA4; --line:#C9C7BE; --line-soft:#3A3D42; --mark:#F06A93; --mark-soft:#3A1E28;
+  --thread:#5FBFB8; --thread-soft:#1B3331; --chalk-ink:#E2C27A; --chalk-soft:#3A3120; --focus:#F06A93; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans)}
+main{max-width:1080px;margin:0 auto;padding:32px 16px 80px}
+h1{font:600 34px/1.15 var(--serif);margin:0 0 6px}
+h2.sec{font:600 24px/1.2 var(--serif);margin:48px 0 10px;padding-top:18px;border-top:1.5px solid var(--line-soft)}
+h3{font:600 17px/1.3 var(--sans);margin:24px 0 8px}
+p{margin:0 0 10px;max-width:72ch}
+.kicker{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{color:var(--muted);font-size:16px}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font:600 11px/1.6 var(--mono);letter-spacing:.04em;text-transform:uppercase}
+.tag.real{background:var(--thread-soft);color:var(--thread)} .tag.diagrama{background:var(--chalk-soft);color:var(--chalk-ink)}
+table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+code{font:500 13px/1.4 var(--mono);background:var(--surface-2);padding:1px 5px;border-radius:4px}
+figure{margin:12px 0 20px} figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line-soft);border-radius:8px;background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+.grid2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.note{background:var(--surface);border:1.5px solid var(--line-soft);border-radius:10px;padding:12px 14px;margin:12px 0}
+.toc{columns:2;column-gap:32px;padding-left:18px} @media (max-width:640px){.toc{columns:1}}
+/* diagrama das camadas (ilustração, não é o componente) */
+.layers{display:grid;gap:18px;grid-template-columns:minmax(0,300px) minmax(0,1fr);align-items:start} @media (max-width:720px){.layers{grid-template-columns:1fr}}
+.d-outer{position:relative;border:2px solid var(--line);border-radius:12px;padding:16px 16px 30px;background:repeating-linear-gradient(135deg,#F3D9C2 0 10px,#EFCDAE 10px 20px)}
+.d-outer.em-top{padding:30px 16px 16px}
+.d-content{position:relative;background:var(--surface);border-radius:8px;box-shadow:0 0 0 2px #fff,0 0 14px 2px rgba(198,39,94,.45);overflow:hidden}
+.d-row{padding:8px 10px;font:600 11px/1.3 var(--mono);color:var(--muted);border-bottom:1px dashed var(--line-soft)}
+.d-media{aspect-ratio:4/5;background:linear-gradient(160deg,#2340A0,#10225E);display:grid;place-items:center;color:#fff;font:600 12px var(--mono)}
+.d-num{position:absolute;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 12px var(--mono)}
+.legend li{margin-bottom:6px}
+/* v20 · diagramas do criador e do catálogo (ilustrações, não são os componentes) */
+.d-box{position:relative;border:1.5px solid var(--line-soft);border-radius:10px;background:var(--surface);padding:10px}
+.d-steps{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.d-steps span{flex:1 1 auto;padding:6px 8px;border:1.5px solid var(--line-soft);border-radius:8px;font:600 11px/1.2 var(--mono);color:var(--muted);text-align:center}
+.d-steps span.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.d-creator{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) 150px;align-items:start} @media (max-width:640px){.d-creator{grid-template-columns:1fr}}
+.d-sec{position:relative;border-top:1px solid var(--line-soft);padding:8px 0 4px 28px;font-size:13px}
+.d-sec:first-child{border-top:0}
+.d-sec b{display:block;font:600 12px/1.3 var(--sans)}
+.d-sec .d-num{left:0;top:8px}
+.d-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.d-chip{display:inline-block;padding:2px 8px;border:1.5px solid var(--line-soft);border-radius:999px;font-size:11px;color:var(--ink)}
+.d-chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.d-badge{display:inline-block;padding:1px 7px;border-radius:999px;font:600 10px/1.6 var(--mono);background:var(--thread-soft);color:var(--thread)}
+.d-badge.chalk{background:var(--chalk-soft);color:var(--chalk-ink)}
+.d-field{height:24px;border:1.5px solid var(--line-soft);border-radius:6px;margin-top:4px;padding:3px 6px;font-size:11px;color:var(--muted)}
+.d-btn{display:inline-block;padding:3px 10px;border-radius:8px;border:1.5px solid var(--line-soft);font:600 11px/1.5 var(--sans);color:var(--ink);background:var(--surface)}
+.d-btn.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.d-btn.ghost{border-color:transparent;text-decoration:underline}
+.d-aside{position:sticky;top:12px;border:1.5px dashed var(--mark);border-radius:10px;padding:8px;font-size:11px;color:var(--muted);text-align:center}
+.d-aside .d-mini{aspect-ratio:4/5;margin:6px 0;border-radius:6px;background:var(--surface-2);display:grid;place-items:center;font:600 10px var(--mono)}
+.d-cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr))}
+.d-ccard{position:relative;border:1.5px solid var(--line-soft);border-radius:10px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
+.d-cmedia{position:relative;aspect-ratio:1/1;background:var(--surface-2);display:grid;place-items:center;color:var(--muted);font:600 11px var(--mono)}
+.d-cmedia .d-badge{position:absolute;left:8px;top:8px}
+.d-cmedia .d-badge.chalk{left:auto;right:8px}
+.d-cbody{padding:8px 10px 10px;display:grid;gap:3px;font-size:12px}
+.d-cbody h4{margin:0;font:600 14px/1.2 var(--serif)}
+.d-logo{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;background:var(--ink);color:var(--surface);font:700 9px var(--mono);margin-right:4px;vertical-align:-3px}
+.d-sw{display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-soft);margin-right:3px;vertical-align:-2px}
+.d-sw.on{outline:2px solid var(--ink);outline-offset:2px}
+.d-skel{border-radius:10px;min-height:180px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%)}
+.d-dashed{border:1.5px dashed var(--line-soft);border-radius:10px;background:var(--surface-2);padding:10px;font-size:12px}
+.d-pick{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1.5px solid var(--thread);border-radius:12px;background:var(--thread-soft);font-size:12px}
+.d-pick .d-thumb{width:48px;height:48px;border-radius:8px;background:var(--surface);display:grid;place-items:center;font:600 9px var(--mono);color:var(--muted)}
+.d-prov{position:absolute;left:6px;bottom:6px;padding:1px 6px;border-radius:999px;font:600 9px/1.6 var(--mono);background:var(--surface);color:var(--ink);border:1px dashed var(--chalk-ink)}
+</style>
+</head>
+<body>
+<main>
+<p class="kicker">FashionAI · anatomia do card · v20 · 04/10/2026</p>
+<h1>Criador de peça em etapa única e peça por referência ao catálogo (RF47)</h1>
+<p class="lead">A v20 acrescenta a anatomia do criador de peça em etapa única com busca catalogada (RF47) e da peça criada por referência ao catálogo. Camadas do card, arte de fundo, detalhe e editor RF11 continuam na <a href="anatomias_card_v19.html">v19</a>, que segue valendo.</p>
+<div class="note">
+  <p><span class="tag real">Código real</span>: cada afirmação abaixo foi conferida no código desta data. Arquivos: <code>app/(site)/(app)/pieces/new/page.tsx</code>, <code>components/catalog/catalog-search.tsx</code>, <code>category-cards.tsx</code>, <code>brand-autocomplete.tsx</code>, <code>components/capture/garment-glyphs.tsx</code>, <code>lib/capture/capture-guides.ts</code>, <code>lib/api/catalog.ts</code>, o bloco RF47 no fim de <code>app/(site)/globals.css</code>, <code>lib/i18n/messages/pt-BR.json</code>, <code>components/piece-card.tsx</code>, <code>components/expanded-card.tsx</code> e, no backend, <code>CatalogService</code>, <code>CatalogController</code>, <code>OfficialCatalogDiscovery</code>, <code>CatalogIngestService</code>, <code>WardrobeService.createFromCatalog</code> e os enums <code>ImageOrigin</code>, <code>CatalogSourceType</code>, <code>CatalogIngestionStatus</code> e <code>CatalogImageUsage</code>.</p>
+  <p><span class="tag diagrama">Diagrama</span>: ilustrações em HTML/CSS feitas neste documento para explicar a estrutura. Não são capturas do produto. Esta versão não traz capturas: nenhuma foi gerada para o fluxo novo.</p>
+  <p><b>Estado do código.</b> Esta anatomia segue a versão do criador sem a seção Foto (decisão do projeto, 04/10/2026). A etapa “Peça” não tem mais envio de foto, análise, estúdio, lote, guia “Como fotografar sua peça” nem alerta de categoria divergente. <code>capture-guide-dialog.tsx</code> e <code>tutorial-prefs.ts</code> foram apagados. As menções a <code>05d7ab7</code> indicam a forma anterior, só como referência.</p>
+</div>
+<ol class="toc">
+  <li><a href="#etapa">Etapa única “Peça”</a></li>
+  <li><a href="#resultado">Card de resultado do catálogo</a></li>
+  <li><a href="#escolhido">Produto escolhido e o que ele preenche</a></li>
+  <li><a href="#referencia">Peça por referência no card e no detalhe</a></li>
+  <li><a href="#guia">Guia de fotografia (saiu do criador)</a></li>
+  <li><a href="#contrato">Contrato visual, acessibilidade e celular</a></li>
+  <li><a href="#mensagens">Estados e mensagens</a></li>
+  <li><a href="#regras">Regras de produto que a UI respeita</a></li>
+</ol>
+
+<h2 class="sec" id="etapa">1. Etapa única “Peça”</h2>
+<p>O criador tem quatro etapas num <code>SegmentPicker</code> (rótulo acessível “Etapas da criação”): <b>1 · Peça</b> → <b>2 · Mais detalhes</b> → <b>3 · Arte de fundo</b> → <b>4 · Revisar e salvar</b> (<code>STEPS = ["piece", "more", "art", "review"]</code>). Embaixo de cada etapa ficam “Voltar” e “Próximo”; na revisão, “Próximo” vira “Salvar”. O cabeçalho é “Adicionar peça”, com o kicker RF47.</p>
+<div class="layers">
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> etapa 1, desktop (≥ 1024 px)</p>
+    <div class="d-box" aria-hidden="true">
+      <div class="d-steps"><span class="on">1 · Peça</span><span>2 · Mais detalhes</span><span>3 · Arte de fundo</span><span>4 · Revisar e salvar</span></div>
+      <div class="d-creator">
+        <div>
+          <div class="d-sec"><span class="d-num">1</span><b>Tipo da peça *</b><div class="d-chips"><span class="d-chip on">Parte superior</span><span class="d-chip">Parte inferior</span><span class="d-chip">Calçados</span><span class="d-chip">Acessórios</span><span class="d-chip">Peça única</span></div></div>
+          <div class="d-sec"><span class="d-num">2</span><b>Buscar no catálogo <span class="d-badge">Recomendado</span></b>2. Qual tipo? → 3. De qual marca? → 4. Como ela se chama? → resultados (ou o produto escolhido)</div>
+          <div class="d-sec"><span class="d-num">3</span><b>Dados</b>nota “Preenchemos os campos…” (com produto) + <code>PieceFields</code></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px"><span class="d-btn">Voltar</span><span class="d-btn pri">Próximo</span></div>
+        </div>
+        <div class="d-aside">Card<div class="d-mini">PieceCard</div>prévia sticky</div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><b>1 · Tipo da peça</b>: cinco <code>Chip</code> (ids de <code>CATEGORY_CARDS</code>, rótulos de <code>CATEGORY_LABEL</code>) num <code>role="group"</code> com <code>aria-labelledby</code>. Trocar o tipo limpa o subtipo e tira as ocasiões que não valem para o novo tipo.</li>
+    <li><b>2 · Buscar no catálogo</b>: <code>section.creator-section</code> com título, selo “Recomendado” (<code>Badge tone="thread"</code>) e “Diga aproximadamente qual é a sua peça. Nós encontramos o produto e a foto oficial para você.” Dentro vai o <code>CatalogSearch</code> em modo embutido. A pergunta “1. O que você procura?” (cards de categoria) não aparece, porque o chip do item 1 já faz esse papel; por isso a busca começa em “2. Qual tipo?”. O subtipo escolhido na busca vai para o formulário. Com produto escolhido, a busca dá lugar ao <code>.catalog-pick</code> (seção 3).</li>
+    <li><b>3 · Dados</b>: <code>section#piece-form-fields</code> com <code>PieceFields</code> (nome, tipo, subtipo, cor, material, sexo, tamanho, marca, preço, ocasião, estilo). Escolher um produto rola a página até aqui.</li>
+  </ol>
+</div>
+<div class="note">
+  <p><b>Retirado em 04/10/2026:</b> entre a busca e os Dados ficava a seção <b>Foto</b>. O título virava “Sua foto (opcional)” quando havia produto. Ela tinha o quadro da imagem, o botão “Enviar foto”, o link “Como tirar uma boa foto?”, a análise (subtipo, marca, estúdio), o alerta de categoria divergente e o envio de várias peças numa foto. Também saiu a ajuda “Escolha o tipo antes de enviar a foto…”. Hoje o criador não tem nenhuma forma de enviar foto.</p>
+</div>
+<h3>Prévia do card</h3>
+<p>Ao lado fica um <code>&lt;aside class="card-preview"&gt;</code> (rótulo “pré-visualização”, título “Card”) com o próprio <code>PieceCard</code>, montado com o que já foi preenchido. A grade é <code>lg:grid-cols-[minmax(0,1fr)_280px]</code> e o aside é <code>lg:sticky lg:top-16</code>: a partir de 1024 px a prévia acompanha a rolagem; abaixo disso ela vai para depois do formulário. Na etapa “Arte de fundo” o aside some, porque o editor RF11 já mostra o mesmo card (v19, seção 7). A imagem da prévia é a foto oficial do produto (<code>pick.product.imageUrl</code>) ou, sem ela, o asset do subtipo/tipo (ou o genérico). <code>defaultImage</code> só é verdadeiro sem foto oficial.</p>
+<h3>Como a peça é salva</h3>
+<table>
+  <tr><th>Situação</th><th>Pedido</th><th>O que fica gravado</th></tr>
+  <tr><td>Produto escolhido</td><td><code>POST /api/pieces/from-catalog</code></td><td><code>catalogProductId</code>, <code>catalogVariantId</code>, <code>imageUrl</code> = <code>thumbnailUrl</code> = primeira imagem do produto que não está <code>REJECTED</code> (a cópia guardada, se houver; senão a URL oficial), <code>imageOrigin</code> = <code>CATALOG</code>. Produto sem imagem: asset da categoria, <code>defaultImage</code> = verdadeiro, <code>imageOrigin</code> = <code>DEFAULT</code>. Marca com <code>brandSource</code> = <code>CATALOGO</code> e <code>brandRef</code> = id do produto.</td></tr>
+  <tr><td>Sem produto</td><td><code>POST /api/pieces</code> (<code>useDefaultImage: true</code>)</td><td>Os dados do formulário e o asset da categoria/subtipo (<code>defaultImage</code>), sem <code>imageOrigin</code>.</td></tr>
+</table>
+<p>A revisão (etapa 4) lista a “Origem da imagem”. Com produto e foto oficial, mostra “Foto oficial do catálogo (&lt;domínio da fonte&gt;)”, com “Catálogo FashionAI” quando não há domínio. Nos outros casos, inclusive produto sem foto, mostra “Ilustração da categoria (sem foto)”. A opção “Sua foto” saiu com a seção Foto.</p>
+
+<h2 class="sec" id="resultado">2. Card de resultado do catálogo</h2>
+<div class="layers">
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> <code>CatalogResultCard</code></p>
+    <div class="d-ccard" aria-hidden="true" style="max-width:240px">
+      <div class="d-cmedia"><span class="d-badge">87% compatível</span><span class="d-badge chalk">Loja oficial</span>foto oficial (contain)</div>
+      <div class="d-cbody">
+        <span style="color:var(--muted)"><span class="d-logo">L</span>Marca</span>
+        <h4>Nome do produto</h4>
+        <span style="color:var(--muted)">Modelo · Subtipo</span>
+        <span><span class="d-sw on" style="background:#1d3b2a"></span><span class="d-sw" style="background:#fff"></span><span class="d-sw" style="background:#14213d"></span></span>
+        <span style="color:var(--muted);font-size:11px">Fonte: domínio-oficial.com</span>
+        <span><span class="d-btn pri">É esta</span></span>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><b>Mídia</b> (<code>.catalog-card-media</code>, 1:1, fundo <code>--surface-2</code>): a foto oficial com <code>object-fit:contain</code>, <code>alt</code> “marca + nome” e <code>loading="lazy"</code>. Sem foto oficial, entra a ilustração da categoria (<code>GarmentGlyph</code> 120 px, sem animação nem números: camiseta, calça de costas, tênis de lado, bolsa ou vestido) e a mídia fica <code>aria-hidden</code>.</li>
+    <li><b>“% compatível”</b> (<code>.catalog-card-match</code>, canto superior esquerdo, <code>Badge tone="thread"</code>): <code>matchPercent</code> = <code>round(matchScore.total × 100)</code>. É a similaridade da busca (marca, categoria, subtipo, texto, cor e, quando houver, visual), não uma certeza: quem confirma é a pessoa. Produtos abaixo de <code>MIN_SCORE = 0,35</code> não aparecem, então o menor valor visível é 35%.</li>
+    <li><b>“Loja oficial”</b> (<code>.catalog-card-new</code>, canto superior direito, <code>tone="chalk"</code>): só em candidatos <code>DISCOVERED</code>, vindos da busca nas lojas oficiais.</li>
+    <li><b>Marca</b>: <code>BrandLogo</code> 18 px + nome. <b>Nome</b>: <code>h3</code>. <b>Modelo · subtipo</b>: o modelo só aparece quando difere do nome.</li>
+    <li><b>Variantes</b>: com mais de uma, bolinhas <code>.catalog-swatch</code> (18 px) num <code>role="group"</code> “Cor”, cada uma com <code>aria-label</code> e <code>aria-pressed</code>; a ativa ganha <code>.is-active</code> (contorno <code>--ink</code>). A variante da cor pedida (“501 preto”) já vem selecionada. Com uma só variante, aparece o nome da cor com um ponto colorido.</li>
+    <li><b>Fonte</b>: “Fonte: &lt;domínio&gt;”, ou “Fonte: Catálogo FashionAI” sem domínio. <b>“É esta”</b>: botão principal; envia o produto e a variante escolhida.</li>
+  </ol>
+</div>
+<h3>Estados da busca</h3>
+<div class="grid2">
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> carregando (primeira busca)</p>
+    <div class="d-cards" aria-hidden="true"><div class="d-skel"></div><div class="d-skel"></div><div class="d-skel"></div></div>
+    <p style="font-size:13px;color:var(--muted);margin-top:6px">Três <code>Skeleton</code> <code>h-64</code> em <code>.grid-cards</code>, só enquanto não há resultado anterior. Numa nova busca, os cards antigos ficam e só o botão “Buscar peças” mostra o carregamento.</p>
+  </div>
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> sem foto oficial</p>
+    <div class="d-ccard" aria-hidden="true" style="max-width:200px">
+      <div class="d-cmedia"><span class="d-badge">62% compatível</span>
+        <svg viewBox="0 0 200 200" width="96" height="96" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"><path d="M70 30 L40 45 L20 80 L45 92 L55 75 L55 170 L145 170 L145 75 L155 92 L180 80 L160 45 L130 30 Q100 50 70 30 Z"/></svg>
+      </div>
+      <div class="d-cbody"><h4>Nome do produto</h4><span><span class="d-btn pri">É esta</span></span></div>
+    </div>
+  </div>
+  <div>
+    <p class="kicker"><span class="tag diagrama">Diagrama</span> sem resultado (modo embutido)</p>
+    <div class="d-dashed" aria-hidden="true">
+      <b>Ainda não encontramos essa peça no catálogo.</b>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"><span class="d-btn">Não encontrei minha peça</span><span class="d-btn pri">Pesquisar em lojas oficiais</span><span style="color:var(--muted)">Ou preencha os dados da peça logo abaixo.</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-top:6px">O painel aparece embaixo de qualquer resultado. A borda tracejada e a frase “Ainda não encontramos…” só aparecem quando a lista está vazia. “Não encontrei minha peça” (<code>aria-expanded</code>) abre “Código ou SKU” e a cartela de cores para refinar. “Pesquisar em lojas oficiais” só aparece com <code>canSearchOfficial</code> (marca conhecida e com fonte oficial ativa) e some depois de usado. Antes da retirada da seção Foto, a terceira opção era “Ou envie a sua própria foto logo abaixo.”.</p>
+  </div>
+</div>
+<h3>Antes dos resultados</h3>
+<ul>
+  <li>A busca roda sozinha, depois de 350 ms, quando há informação suficiente: duas entre marca, subtipo e texto com 2+ letras, ou texto com 3+ letras (<code>enoughToSearch</code>). Antes disso aparece “Duas ou três informações já bastam para começar.”</li>
+  <li>Marca: <code>BrandAutocomplete</code> com <code>GET /api/catalog/brands?q=</code> (espera de 280 ms) e a lista <code>.brand-ac-list</code>, com logo de 26 px, o apelido que casou (“PRL” → Ralph Lauren) e “N produtos”. Texto livre continua valendo; uma marca fora do catálogo mostra “Ainda não conhecemos essa marca no catálogo; a busca segue pelo nome.”</li>
+  <li>Nome: “Nome, modelo ou descrição — não precisa ser exato.”, com um exemplo conforme o tipo (“Ex.: Air Force 1 '07”, “Ex.: Levi's 501 preto”, “Ex.: polo Lacoste verde”) e chips de sugestão (com marca ou subtipo e 2+ letras).</li>
+  <li>Com resultado: o título “Encontramos N &lt;tipo&gt; &lt;marca&gt; parecidos. Selecione a sua.”, o logo da marca escolhida e filtros rápidos de cor e gênero quando os resultados têm mais de um valor.</li>
+</ul>
+
+<h2 class="sec" id="escolhido">3. Produto escolhido e o que ele preenche</h2>
+<p class="kicker"><span class="tag diagrama">Diagrama</span> <code>.catalog-pick</code></p>
+<div class="d-pick" aria-hidden="true" style="max-width:560px">
+  <span class="d-thumb">foto 56</span>
+  <span style="min-width:0"><span style="color:var(--muted);font-size:11px">Peça do catálogo</span><br><b>Marca · Nome do produto — Nome da cor</b><br><span style="color:var(--muted);font-size:11px">A peça usa a foto oficial do produto.</span></span>
+  <span class="d-btn ghost">Remover</span>
+</div>
+<p style="margin-top:10px"><code>.catalog-pick</code> é uma grade <code>56px · 1fr · auto</code> com borda <code>--thread</code>, fundo <code>--thread-soft</code> e <code>role="status"</code>. A miniatura <code>.catalog-pick-art</code> (56 × 56, <code>overflow:hidden</code>) mostra a foto oficial ou, sem ela, o asset da categoria, sempre com <code>object-fit:contain</code>. A terceira linha diz “A peça usa a foto oficial do produto.” ou “Este produto ainda não tem foto oficial: a peça usa a ilustração da categoria.” “Remover” tira a referência (<code>brandSource</code> e <code>brandRef</code>) e devolve a busca; os campos já preenchidos ficam. Na seção Dados, com produto, aparece a nota “Preenchemos os campos com os dados oficiais do produto. Confira e ajuste o que for só seu: tamanho, preço, ocasião…”</p>
+<h3>Dados globais × dados da pessoa (<code>applyCatalog</code>)</h3>
+<table>
+  <tr><th>Campo</th><th>Origem</th><th>Regra</th></tr>
+  <tr><td>Nome</td><td>Produto</td><td><code>productName</code> (editável)</td></tr>
+  <tr><td>Tipo e subtipo</td><td>Produto</td><td><code>category</code>, <code>subcategory</code></td></tr>
+  <tr><td>Cor</td><td>Variante → produto</td><td>cor da variante, senão a do produto; sem nenhuma, a atual ou “black”</td></tr>
+  <tr><td>Material</td><td>Produto</td><td>o do produto; sem ele, o atual ou “BLEND”</td></tr>
+  <tr><td>Sexo</td><td>Produto</td><td><code>gender</code> só se existir na taxonomia; senão fica o atual</td></tr>
+  <tr><td>SKU</td><td>Variante → produto</td><td>SKU ou código da variante, senão o SKU do produto</td></tr>
+  <tr><td>Marca</td><td>Produto</td><td><code>brandId</code>, nome, logo, <code>brandSource = "CATALOGO"</code>, <code>brandRef</code> = id do produto</td></tr>
+  <tr><td>Ocasião</td><td>Pessoa</td><td>mantida, filtrada pelas ocasiões permitidas no tipo; vazia → a primeira permitida (ou “casual”)</td></tr>
+  <tr><td>Estilo</td><td>Pessoa</td><td>mantido; vazio → “basic”</td></tr>
+  <tr><td>Preço, tamanho</td><td>Pessoa</td><td>mantidos; vazios → “0” e “m”</td></tr>
+  <tr><td>Estado, data e local de compra, notas, visibilidade, à venda, selos</td><td>Pessoa</td><td>não são tocados</td></tr>
+</table>
+<p>No backend, <code>AddRequest</code> recebe só os dados pessoais e o que a pessoa pode ter ajustado (nome, cor, material, sexo). Cor, material e sexo passam por <code>firstValid</code>: vale o valor enviado, depois o da variante ou do produto, depois um padrão válido. O SKU gravado é o do produto, não o da variante. Um produto <code>DISCOVERED</code>, quando escolhido, vira <code>REFERENCE_ONLY</code> e entra no catálogo, e o próximo usuário o encontra localmente. Um produto <code>REJECTED</code> é recusado com “Este produto foi retirado do catálogo.”</p>
+
+<h2 class="sec" id="referencia">4. Peça por referência no card e no detalhe</h2>
+<h3>Origem da imagem (<code>ImageOrigin</code>)</h3>
+<table>
+  <tr><th>Valor</th><th>Quando é gravado hoje</th><th>Imagem</th></tr>
+  <tr><td><code>CATALOG</code></td><td><code>from-catalog</code> com imagem do produto</td><td>foto oficial (a cópia guardada, se a fonte permite; senão a URL oficial)</td></tr>
+  <tr><td><code>DEFAULT</code></td><td><code>from-catalog</code> sem imagem do produto</td><td>asset da categoria/subtipo</td></tr>
+  <tr><td><code>USER_PHOTO</code></td><td>Nunca: nenhum caminho grava esse valor. Peças criadas por <code>POST /api/pieces</code>, peças antigas e fotos trocadas depois (“Trocar foto” no detalhe) ficam com <code>image_origin</code> nulo.</td><td>foto da pessoa</td></tr>
+</table>
+<p>A migração <code>V30__catalogo_global.sql</code> criou também <code>user_image_url</code>, para guardar a foto da pessoa separada da oficial. Nenhum fluxo escreve nessa coluna.</p>
+<h3>Foto oficial × foto própria no card</h3>
+<p>O <code>PieceCard</code> não distingue as duas. <code>pieceCardImage</code> usa a foto de estúdio quando existe e, senão, <code>thumbnailUrl</code>/<code>imageUrl</code> contida (<code>is-contain</code>). Uma peça por referência tem <code>imageUrl</code> = <code>thumbnailUrl</code> = foto oficial, sem estúdio, então aparece contida na área 4:5, como um recorte. O detalhe (<code>/pieces/[id]</code> → <code>ExpandedPiece</code>) também não mostra a origem nem um link para o produto. A foto oficial pode ser trocada pela da pessoa em <i>Mais opções › Trocar foto</i>, e nada na tela marca essa troca. O <code>PieceView</code> da API não expõe <code>imageOrigin</code>, <code>catalogProductId</code> nem <code>catalogVariantId</code>, só <code>brandSource</code>.</p>
+<div class="note">
+  <p><span class="tag diagrama">Diagrama</span> <b>Proposto, não implementado.</b> Hoje nem o card nem o detalhe mostram um selo de proveniência. A proposta é um selo pequeno no canto inferior esquerdo da área da peça, visível para todos, com o texto “Foto oficial”. A fonte (domínio) iria no nome acessível e no detalhe. O selo ficaria na camada 4 (v19, seção 1), sem cobrir a peça, e não apareceria em fotos da pessoa. Depende de a API expor <code>imageOrigin</code> e de <code>USER_PHOTO</code> passar a ser gravado.</p>
+  <div class="d-ccard" aria-hidden="true" style="max-width:180px;margin-top:8px">
+    <div class="d-cmedia" style="aspect-ratio:4/5">foto oficial<span class="d-prov">Foto oficial · proposto</span></div>
+    <div class="d-cbody"><h4>Nome da peça</h4><span style="color:var(--muted)"><span class="d-logo">L</span>Marca</span></div>
+  </div>
+</div>
+
+<h2 class="sec" id="guia">5. Guia de fotografia e categoria divergente (saíram do criador)</h2>
+<div class="note">
+  <p>Desde a retirada da seção Foto, o criador não abre o guia “Como fotografar sua peça” nem mostra o alerta “Esta foto parece ser de &lt;categoria&gt;.” (“Usar &lt;categoria&gt;” / “Escolher outra foto”), porque não há mais envio de foto nessa tela. <code>components/capture/capture-guide-dialog.tsx</code> e <code>lib/capture/tutorial-prefs.ts</code> foram apagados. Ficaram no código, sem uso nesta tela: <code>lib/capture/capture-guides.ts</code> (o criador ainda lê dele os ids das categorias, <code>CATEGORY_CARDS</code>), <code>garment-glyphs.tsx</code> (ilustração do card de resultado e dos <code>CategoryCards</code>), as classes <code>.guide-*</code>, as chaves <code>pieces.guide.*</code> e <code>pieces.new.parece_outra_categoria</code>/<code>usar_categoria</code>/<code>escolher_outra_foto</code> e os endpoints <code>GET/PUT /api/me/capture-tutorial</code>.</p>
+</div>
+
+<h2 class="sec" id="contrato">6. Contrato visual, acessibilidade e celular</h2>
+<table>
+  <tr><th>Classe</th><th>Onde</th><th>Regra (globals.css, bloco RF47)</th></tr>
+  <tr><td><code>.creator-section</code></td><td>seções Catálogo e Dados</td><td>linha superior <code>--line-soft</code>, 14 px acima e abaixo da linha</td></tr>
+  <tr><td><code>.catalog-pick</code>, <code>.catalog-pick-art</code></td><td>produto escolhido</td><td>grade 56 px · 1fr · auto, borda 1,5 px <code>--thread</code>, fundo <code>--thread-soft</code>, raio 12; miniatura 56 × 56, raio 8, imagem contida</td></tr>
+  <tr><td><code>.catalog-card</code>, <code>-media</code>, <code>-body</code></td><td>card de resultado</td><td>coluna de altura total; mídia 1:1 em <code>--surface-2</code>, imagem contida; corpo com 0,7–0,8 rem de respiro</td></tr>
+  <tr><td><code>.catalog-card-match</code> / <code>-new</code></td><td>selos da mídia</td><td>absolutos, a 0,5 rem do canto superior esquerdo / direito</td></tr>
+  <tr><td><code>.catalog-swatch</code></td><td>variantes</td><td>18 px, redonda, borda <code>--line-soft</code>; <code>.is-active</code> com contorno de 2 px <code>--ink</code></td></tr>
+  <tr><td><code>.grid-cards</code></td><td>resultados e skeleton</td><td>colunas de no mínimo 176 px; até 639 px, duas colunas</td></tr>
+  <tr><td><code>.brand-ac-list</code>, <code>.brand-ac-item</code></td><td>autocomplete de marca</td><td>popover abaixo do campo, até 280 px com rolagem própria; item ativo ou sob o cursor em <code>--surface-2</code></td></tr>
+  <tr><td><code>.cat-cards</code>, <code>.cat-card</code> (+ <code>-3</code>, <code>-compact</code>)</td><td>busca avulsa (fora do criador)</td><td>cards ilustrados com no mínimo 220 px (170 px em <code>-3</code>) e altura mínima de toque; selecionado com fundo <code>--ink</code></td></tr>
+  <tr><td><code>.guide-*</code></td><td>sem uso desde a retirada da seção Foto</td><td>sobra do guia de fotografia</td></tr>
+</table>
+<p>A busca embutida não usa <code>.cat-cards</code>: no criador, o tipo é escolhido nos <code>Chip</code>.</p>
+<h3>Acessibilidade</h3>
+<table>
+  <tr><th>Parte</th><th>Papel e estados</th></tr>
+  <tr><td>Etapas</td><td><code>SegmentPicker</code>: <code>radiogroup</code> com <code>radio</code>/<code>aria-checked</code>, um só item na ordem de Tab, setas, Home e End</td></tr>
+  <tr><td>Tipo da peça, subtipo, sugestões, filtros</td><td><code>Chip</code> = botão com <code>aria-pressed</code>; grupos com <code>role="group"</code> + <code>aria-labelledby</code></td></tr>
+  <tr><td>Seções</td><td><code>&lt;section aria-labelledby&gt;</code> apontando para o <code>h2</code> de cada uma</td></tr>
+  <tr><td>Marca</td><td><code>combobox</code> com <code>aria-expanded</code>, <code>aria-controls</code> e <code>aria-autocomplete="list"</code>; <code>listbox</code>/<code>option</code> com <code>aria-selected</code>; ↑ ↓ Enter Esc</td></tr>
+  <tr><td>Resultados</td><td>região com <code>aria-live="polite"</code> e título; lista com o rótulo “Resultados do catálogo”; erro em <code>role="alert"</code>; skeleton <code>aria-hidden</code>; mensagens das lojas oficiais em <code>role="status"</code></td></tr>
+  <tr><td>Produto escolhido</td><td><code>.catalog-pick</code> com <code>role="status"</code>, miniatura <code>aria-hidden</code>; nota de preenchimento com <code>role="note"</code></td></tr>
+  <tr><td>Prévia</td><td><code>&lt;aside aria-label="pré-visualização"&gt;</code>; o card da prévia não tem links (<code>href="#"</code> = modo prévia)</td></tr>
+  <tr><td>Foco</td><td>controles com o foco global do app; <code>.cat-card:focus-visible</code> com contorno de 3 px <code>--focus</code></td></tr>
+  <tr><td>Movimento</td><td>a regra global de <code>prefers-reduced-motion: reduce</code> zera animações e transições (o skeleton para de cintilar e a rolagem até os Dados vira salto)</td></tr>
+</table>
+<h3>Abaixo de 640 px</h3>
+<ul>
+  <li>Os campos de marca e nome (<code>sm:grid-cols-2</code>) ficam empilhados.</li>
+  <li>Os resultados ficam em duas colunas (<code>.grid-cards</code>, espaço de 0,6 rem).</li>
+  <li>Até 480 px, o “Remover” do <code>.catalog-pick</code> desce para baixo do texto (grade de duas colunas).</li>
+  <li>Desde 1024 px, a prévia do card já fica abaixo do formulário, sem <code>sticky</code>.</li>
+</ul>
+
+<h2 class="sec" id="mensagens">7. Estados e mensagens</h2>
+<table>
+  <tr><th>Chave</th><th>Texto pt-BR</th><th>Quando aparece</th></tr>
+  <tr><td><code>pieces.new.lead_unica</code></td><td>Diga qual é a peça: busque no catálogo oficial (recomendado) ou envie a sua foto, e confira os dados — tudo na mesma etapa.</td><td>cabeçalho</td></tr>
+  <tr><td><code>pieces.new.etapa_peca</code></td><td>Peça</td><td>etapa 1</td></tr>
+  <tr><td><code>pieces.new.tipo_da_peca</code></td><td>Tipo da peça</td><td>topo da etapa</td></tr>
+  <tr><td><code>catalog.buscar_no_catalogo</code> + <code>catalog.recomendado</code></td><td>Buscar no catálogo · Recomendado</td><td>título da busca</td></tr>
+  <tr><td><code>catalog.lead_busca</code></td><td>Diga aproximadamente qual é a sua peça. Nós encontramos o produto e a foto oficial para você.</td><td>ao lado do título</td></tr>
+  <tr><td><code>catalog.q_tipo</code> / <code>q_marca</code> / <code>q_nome</code></td><td>2. Qual tipo? / 3. De qual marca? / 4. Como ela se chama?</td><td>campos da busca</td></tr>
+  <tr><td><code>catalog.duas_ou_tres_infos</code></td><td>Duas ou três informações já bastam para começar.</td><td>sem informação suficiente</td></tr>
+  <tr><td><code>catalog.marca_desconhecida</code></td><td>Ainda não conhecemos essa marca no catálogo; a busca segue pelo nome.</td><td>marca fora do catálogo</td></tr>
+  <tr><td><code>catalog.encontramos</code></td><td>Encontramos # {tipo} {marca} parecidos. Selecione a sua.</td><td>com resultados</td></tr>
+  <tr><td><code>catalog.compativel</code></td><td>{pct}% compatível</td><td>selo de cada card</td></tr>
+  <tr><td><code>catalog.loja_oficial</code></td><td>Loja oficial</td><td>candidato <code>DISCOVERED</code></td></tr>
+  <tr><td><code>catalog.fonte</code> / <code>fonte_fashionai</code></td><td>Fonte: {fonte} / Catálogo FashionAI</td><td>rodapé do card</td></tr>
+  <tr><td><code>catalog.e_esta</code></td><td>É esta</td><td>escolher o produto</td></tr>
+  <tr><td><code>catalog.nao_encontramos</code></td><td>Ainda não encontramos essa peça no catálogo.</td><td>lista vazia</td></tr>
+  <tr><td><code>catalog.nao_encontrei</code></td><td>Não encontrei minha peça</td><td>abre o refinamento (SKU, cor)</td></tr>
+  <tr><td><code>catalog.codigo_sku</code> / <code>codigo_sku_hint</code></td><td>Código ou SKU / Da etiqueta, da caixa ou da nota.</td><td>refinamento</td></tr>
+  <tr><td><code>catalog.pesquisar_lojas_oficiais</code></td><td>Pesquisar em lojas oficiais</td><td>marca com fonte oficial ativa</td></tr>
+  <tr><td><code>catalog.procurando_oficiais</code></td><td>Procurando produtos oficiais da marca {marca}…</td><td>busca nas lojas em andamento</td></tr>
+  <tr><td><code>catalog.ou_preencha_abaixo</code></td><td>Ou preencha os dados da peça logo abaixo.</td><td>painel de alternativas (modo embutido)</td></tr>
+  <tr><td><code>catalog.erro_busca</code></td><td>Não foi possível buscar agora. Tente de novo.</td><td>falha na busca</td></tr>
+  <tr><td><code>catalog.peca_do_catalogo</code> / <code>remover_referencia</code></td><td>Peça do catálogo / Remover</td><td>produto escolhido</td></tr>
+  <tr><td><code>catalog.foto_oficial_nota</code></td><td>A peça usa a foto oficial do produto.</td><td>produto com foto oficial</td></tr>
+  <tr><td><code>catalog.sem_foto_oficial_nota</code></td><td>Este produto ainda não tem foto oficial: a peça usa a ilustração da categoria.</td><td>produto sem foto oficial</td></tr>
+  <tr><td><code>catalog.preenchido_do_catalogo</code></td><td>Preenchemos os campos com os dados oficiais do produto. Confira e ajuste o que for só seu: tamanho, preço, ocasião…</td><td>Dados, com produto</td></tr>
+  <tr><td><code>pieces.new.etapa_dados</code></td><td>Dados</td><td>título da seção do formulário</td></tr>
+  <tr><td><code>catalog.origem</code> + <code>origem_catalogo</code> / <code>origem_sem_foto</code></td><td>Origem da imagem: Foto oficial do catálogo ({fonte}) / Ilustração da categoria (sem foto)</td><td>revisão</td></tr>
+  <tr><td><code>piece.created</code></td><td>Peça cadastrada!</td><td>depois de salvar</td></tr>
+</table>
+<p>As mensagens das lojas oficiais vêm do backend (<code>messages.properties</code>): “Achamos estas peças nas lojas oficiais da marca. Selecione a sua.”, “Não achamos essa peça nas lojas oficiais da marca. Refine a busca ou adicione com a sua foto.” e “Ainda não conhecemos a loja oficial dessa marca. Refine a busca ou adicione com a sua foto.”</p>
+<p>Chaves que saíram do pt-BR junto com a seção Foto: <code>catalog.ou_envie_sua_foto</code>, <code>sua_foto_opcional</code>, <code>foto_opcional_catalogo</code>, <code>com_sua_foto_nota</code> e <code>origem_foto_propria</code>.</p>
+<div class="note">
+  <p><b>Inconsistências encontradas na leitura</b> (não corrigidas aqui, porque esta entrega não altera código):</p>
+  <ul>
+    <li><code>pieces.new.lead_unica</code> ainda diz “ou envie a sua foto”, mas o criador não tem mais envio de foto.</li>
+    <li>As três mensagens das lojas oficiais (backend) terminam em “adicione com a sua foto”, uma opção que o criador não oferece mais.</li>
+    <li><code>ImageOrigin.USER_PHOTO</code> nunca é gravado e a API não devolve <code>imageOrigin</code> (seção 4).</li>
+    <li>Os endpoints <code>/api/me/capture-tutorial</code> e as chaves <code>pieces.guide.*</code> ficaram sem nenhum consumidor na interface.</li>
+  </ul>
+</div>
+
+<h2 class="sec" id="regras">8. Regras de produto que a UI respeita</h2>
+<table>
+  <tr><th>Regra</th><th>Como o código garante</th></tr>
+  <tr><td>Nunca inventar marca</td><td>A marca vem do autocomplete (entidade <code>Brand</code> + apelidos) ou do texto da pessoa. Uma marca desconhecida é dita na tela (“Ainda não conhecemos essa marca…”) e nunca é criada em silêncio. A busca externa recusa marca sem cadastro (<code>BRAND_UNKNOWN</code>) e, sem IA disponível, devolve vazio.</td></tr>
+  <tr><td>Nunca imagem sem origem ou licença</td><td>Toda imagem do catálogo tem proveniência (<code>sourceType</code>, domínio, URL do produto, datas e <code>usage</code>). Só URLs https entram. O uso padrão é <code>REFERENCE_ONLY</code> (apontar para a URL oficial); <code>PERSISTED</code> só quando a fonte oficial permite guardar cópia. Imagens <code>REJECTED</code> nunca viram foto da peça.</td></tr>
+  <tr><td>Só fontes oficiais</td><td><code>CatalogSourceType</code>: <code>OFFICIAL_BRAND</code>, <code>OFFICIAL_STORE</code>, <code>AUTHORIZED_RETAILER</code>, <code>PARTNER_API</code> e <code>MANUAL_ADMIN</code>. A busca externa só procura nos domínios cadastrados em <code>catalog_sources</code> para a marca. Produto e imagem precisam ser do domínio oficial, e o prompt proíbe marketplaces, Pinterest, Instagram, blogs e fóruns.</td></tr>
+  <tr><td>Descoberta não é catálogo</td><td><code>CatalogIngestionStatus</code>: o que é encontrado entra como <code>DISCOVERED</code> e fica oculto da busca normal, que só mostra <code>VALIDATED</code>, <code>PERSISTABLE</code> e <code>REFERENCE_ONLY</code>. Só vira <code>REFERENCE_ONLY</code> quando alguém o escolhe; <code>REJECTED</code> não pode ser adicionado.</td></tr>
+  <tr><td>Sem envio de foto no criador (RN47.09)</td><td>Decisão do projeto: a peça nasce com a foto oficial do produto ou com a ilustração da categoria. A foto da pessoa entra depois de salvar, em <i>Mais opções › Trocar foto</i> no detalhe.</td></tr>
+  <tr><td><code>matchScore</code> é similaridade</td><td>O selo diz “% compatível”, nunca “é esta”. A confirmação vem da pessoa, no botão “É esta”. Abaixo de 35%, o produto não aparece.</td></tr>
+  <tr><td>A categoria não muda sozinha</td><td>O tipo só muda pelos chips ou pelo produto escolhido. A detecção de categoria na foto saiu junto com a seção Foto; antes, ela virava uma pergunta (“Usar &lt;categoria&gt;” / “Escolher outra foto”), nunca uma troca automática.</td></tr>
+</table>
+</main>
+</body>
+</html>

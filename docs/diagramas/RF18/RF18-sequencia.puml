@@ -1,0 +1,73 @@
+@startuml RF18_Sequencia
+title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\n/try-on" as FE
+participant "TryOnController" as C
+participant "TryOnService" as S
+participant "Avatar3dService" as AV
+participant "AiEngine (RF24)" as AI
+participant "TryOnCompositor" as CP
+participant "FashnTryOnAdapter" as FASHN
+participant "MediaService" as M
+participant "SchemeService" as SS
+database "MySQL" as DB
+U -> FE: abre o Provador
+FE -> C: GET /api/try-on
+C -> S: state(user, sex)
+S -> DB: SELECT user_preferences (mannequin_sex, skin_tone, build)
+S -> AV: forMannequin(userId)
+AV --> S: avatar (sexo, corpo, pele) ou vazio
+S -> DB: SELECT wardrobe_items (não arquivadas)
+alt acervo vazio
+  S --> FE: 422 ACERVO_VAZIO {href:/pieces/new}
+else peças
+  S -> S: filtra sex compatível (CA08) e agrupa\npor upper/lower/shoes/accessory_piece
+  S --> FE: 200 {mannequin, identity, avatar, sex, slots, pieces, needsReview}
+end
+U -> FE: ajusta tom de pele / porte
+FE -> C: PUT /api/try-on/preferences {sex, skinTone, build}
+C -> S: savePreferences(user, sex, skinTone, build)
+S -> DB: UPDATE user_preferences
+S --> FE: 200 {sex, skinTone, build}
+U -> FE: veste peças (toque) — troca avisada na mesma camada
+U -> FE: "Gerar imagem"
+FE -> C: POST /api/try-on/renders {pieceIds}
+C -> S: render(user, sex, pieceIds)
+loop cada peça
+  S -> DB: SELECT wardrobe_item (dono)
+  alt WardrobeItem.sex incompatível
+    S --> FE: 400 SEXO_INCOMPATIVEL
+  end
+end
+S -> S: resolveLayers() → dressed + replaced (CA02/CA03)
+S -> S: recorte local se fundo não removido (CA05)
+S -> AI: execute(AiCapability.TRY_ON, RemoteStep fashn, fallback local)
+alt FASHN disponível e consentimento AI_EXTERNAL_PHOTO_PROCESSING
+  AI -> CP: render(body, skinHex, garments, allowExternal=true)
+  CP -> FASHN: tryOn(modelImage, garmentImage, category)
+  FASHN --> CP: imagem (ou vazio → âncora local)
+else fallback
+  AI -> CP: render(body, skinHex, garments, allowExternal=false)
+end
+CP --> AI: Result {png, stages RENDERING/ENHANCING/COMPOSITING, warnings, placements}
+AI --> S: AiOutcome {value, fallbackUsed, explanation, quota}
+S -> M: put("users/{id}/tryon/{ts}.png") + register(Photo origin TRY_ON)
+M -> DB: INSERT photos
+S --> FE: 200 {imageUrl, photoId, pieceIds, placements, warnings, replaced, stages, fallbackUsed}
+opt API legada (CA04) — a tela atual não a chama
+  FE -> C: POST /api/try-on/schemes {pieceIds, title, tryOnUrl}
+  C -> S: saveAsScheme(user, pieceIds, title, tryOnUrl)
+  S -> SS: create(user, SchemeForm origin=PROVADOR)
+  SS -> DB: INSERT schemes, scheme_items
+  S -> DB: UPDATE schemes.virtual_try_on_url
+  S --> FE: 201 {schemeId, origin:"PROVADOR"}
+end
+@enduml

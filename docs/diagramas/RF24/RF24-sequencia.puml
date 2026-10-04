@@ -1,0 +1,68 @@
+@startuml RF24_Sequencia
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de sequência — endpoints reais (consentimento, inferência e governança)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Pessoa as U
+actor Admin as A
+participant "Frontend\n/settings · tela do RF hospedeiro · /admin/system" as FE
+participant "MeController" as MC
+participant "AccountService" as AS
+participant "Controller do RF hospedeiro\n(ex.: SchemeController, WardrobeController)" as HC
+participant "Serviço hospedeiro\n(ex.: SchemeService)" as HS
+participant "AiEngine (RF24)" as AI
+participant "AiBudget / RateLimitPort" as RL
+participant "AiProviderPort\n(GeminiProvider · ClaudeProvider)" as PR
+participant "AdminController" as AC
+database "MySQL" as DB
+== Consentimento (LGPD, RF23 → RF24) ==
+U -> FE: liga "IA de recomendação" em Privacidade
+FE -> MC: PUT /api/me/consents/{AI_RECOMMENDATION} {granted: true}
+MC -> AS: setConsent(user, purpose, granted)
+AS -> DB: UPSERT user_consents (granted_at); INSERT audit_log
+MC --> FE: 200 [{purpose, granted, grantedAt, …}]
+== Inferência dentro do RF hospedeiro ==
+U -> FE: pede um recurso com IA (ex.: compor look)
+FE -> HC: POST /api/… (rota do RF hospedeiro)
+HC -> HS: caso de uso
+HS -> AI: text(TextCall{userId, capability, system, prompt, images, parser, local})
+AI -> AI: AiCatalog.spec(capability) → primário, alternativo, cota, timeout
+AI -> AI: CelebrityPromptValidator.validate(prompt)
+AI -> DB: SELECT user_consents (purpose da capacidade)
+alt consentimento NEGADO
+  AI --> HS: AiOutcome(CONSENT_DENIED, fallbackUsed=true, valor local)
+else concedido ou finalidade sem dado pessoal
+  AI -> RL: budget.check(userId, custo estimado)
+  AI -> RL: rateLimit.tryAcquire(userId, "ai:"+capability, dailyQuotaPerUser, 1 dia)
+  alt teto ou cota esgotada
+    AI --> HS: AiOutcome(RATE_LIMITED, Quota{limit, used, resetAt}, valor local)
+  else dentro do limite
+    loop provedores do catálogo (primário → alternativo)
+      AI -> PR: invoke(AiRequest{model, system, prompt, images, expectJson})
+      alt resposta dentro do contrato JSON
+        PR --> AI: AiResponse{text, latencyMs, estimatedCostUsd, tokens}
+        AI -> DB: INSERT ai_inference_log (SUCCESS)
+        AI --> HS: AiOutcome(SUCCESS, inferenceId, Explanation, Quota)
+      else timeout / circuito aberto / erro
+        AI -> DB: INSERT ai_inference_log (TIMEOUT|CIRCUIT_OPEN|RATE_LIMITED|ERROR, fallbackUsed)
+      end
+    end
+    opt todos os provedores falharam
+      AI --> HS: AiOutcome(FALLBACK_LOCAL, userMessage com a razão)
+    end
+  end
+end
+HS --> HC: resultado do caso de uso (+ explanation "por quê?")
+HC --> FE: 200 DTO do RF hospedeiro
+== Governança (admin) ==
+A -> FE: abre /admin/system
+FE -> AC: GET /api/admin/ai
+AC -> AC: AdminService.aiOverview(admin) (requireAdmin)
+AC -> DB: SELECT ai_inference_log (top 300, últimos 100)
+AC --> FE: 200 {providers, remoteEnabled, catalog[capability, hostRf,\nprimary, fallback, dailyQuota, status], recent[…]}
+@enduml

@@ -1,0 +1,85 @@
+@startuml RF44_Sequencia
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Marca / Celebridade" as M
+actor Comprador as U
+participant "Frontend\nbrands/[slug] · WardrobeCreatorTab" as FEM
+participant "Frontend\npoints · RoomStore" as FEU
+participant "RoomCreatorController" as RC
+participant "WardrobeCreatorService" as W
+participant "HighlightsController" as HC
+participant "FaiPointsService" as P
+participant "RoomService" as R
+participant "BackgroundController" as BG
+database "MySQL" as DB
+database "Storage de mídia" as MS
+
+M -> FEM: aba Guarda-roupa 3D
+FEM -> RC: GET /api/room-creator/options
+RC -> W: options(user)
+W -> DB: SELECT brand/celebrity_profiles, seals ACTIVE
+W --> FEM: 200 {blocks, materials, colors, levels, identity, seals}
+M -> FEM: envia logo e arte da personalização
+FEM -> RC: POST /api/room-creator/uploads?kind=logo|art (multipart)
+RC -> W: uploadArt(user, bytes, kind)
+W -> MS: put(users/{id}/room-creator/...)
+W --> FEM: 200 {url}
+M -> FEM: define item único: estoque, limite por pessoa, janela, selo, preço
+FEM -> RC: POST /api/room-creator/items (ItemForm)
+RC -> W: save(user, null, form)
+alt preço fora de 0..20000 ou janela invertida
+  W --> FEM: 400 PRECO_INVALIDO / PERIODO_INVALIDO
+else selo de outro perfil
+  W --> FEM: 403
+else válido
+  W -> DB: INSERT room_catalog (sku BRD-…, kind, finish_json, bundle_json,\nstock_limit, per_user_limit, requires_seal, available_from/until)
+  W --> FEM: 201 view(item)
+end
+opt gerenciar a venda
+  FEM -> RC: GET /api/room-creator/items (vendas por item)
+  FEM -> RC: PUT /api/room-creator/items/{sku} (condições)
+  FEM -> RC: DELETE /api/room-creator/items/{sku}
+  RC -> W: delete(user, sku) — com vendas só desativa
+end
+
+U -> FEU: Loja do quarto
+FEU -> HC: GET /api/points/shop
+HC -> P: shop(user)
+P -> DB: SELECT room_catalog active, room_inventory do comprador
+P -> W: view(item, buyer) + sellerActive + blocker
+P --> FEU: 200 [{sku, availability, blocker, levelOk, affordable, inventory, compatibleModules}]
+U -> FEU: Experimentar
+FEU -> HC: POST /api/points/shop/{sku}/try-on
+HC -> P: tryOn(user, sku, moduleId)
+P --> FEU: 200 {preview: true, finish}
+U -> FEU: Comprar
+FEU -> HC: POST /api/points/shop/{sku}/purchase
+HC -> P: buy(user, sku)
+P -> DB: SELECT ... FOR UPDATE (ledger.lockOwner, catalog.lockBySku)
+P -> W: blocker(buyer, item)
+alt nível, estoque, condição ou saldo falham
+  P --> FEU: 409 NIVEL_INSUFICIENTE | ESGOTADO | CONDICAO_DE_COMPRA | SALDO_INSUFICIENTE
+else compra válida
+  P -> DB: INSERT fai_points_ledger (SHOP_PURCHASE)
+  P -> DB: UPDATE room_catalog.sold_count; INSERT room_inventory (serial)
+  P --> FEU: 200 {inventoryId, serial, balance, level}
+end
+U -> FEU: Montar no módulo
+FEU -> HC: POST /api/me/room-inventory/{inventoryId}/apply {moduleId}
+HC -> P: apply(user, inventoryId, moduleId)
+P -> R: compatibleModules / applyFinish
+R -> DB: UPDATE room_layouts.modules_json
+P --> FEU: 200 {applied: true}
+
+group <<planejado>> item do Background Studio à venda — não implementado, conforme Trello
+  M -> BG: (sem endpoint) aura/material/skin com criador, preço e estoque
+  note over BG, DB: BackgroundController só serve catálogo (GET /api/backgrounds/catalog)\ne arte por prompt; asset_presets não tem criador/preço
+end
+@enduml

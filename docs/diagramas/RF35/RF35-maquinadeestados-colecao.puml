@@ -1,0 +1,32 @@
+@startuml RF35_MaquinaDeEstados_Colecao
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+title RF35 — Coleção da marca (scheme_groupings, type = COLLECTION): da criação à mini loja 3D com fogos
+[*] --> Criada : POST /api/groupings {type: COLLECTION, label}\n(só perfil MARCA; tipos permitidos por profileType)
+state "Criada\n(sem itens)" as Criada
+state "Com arte da coleção\n(coverUrl → fachada, vitrine, letreiro)" as ComArte
+state "Com itens\n(schemes/wardrobe_items.grouping_id)" as ComItens
+state "Ranqueada em Collections Insights\n(0,5·curtidas + 0,35·hype + 0,15·itens)" as Ranqueada {
+  state "rank 1–4 com fraction >= 0,25\n(fireworks = 4 − rank, público máximo)" as Top
+  state "demais posições\n(público proporcional, sem fogos)" as Resto
+  Resto --> Top : sobe no ranking
+  Top --> Resto : outra coleção ultrapassa
+}
+Criada --> ComArte : POST /api/groupings/{id}/cover (arte da coleção)
+Criada --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
+ComArte --> ComItens : POST /api/groupings/{id}/items
+ComItens --> ComItens : PUT /api/groupings/{id} (label, descrição, accentColor)
+ComItens --> Ranqueada : GET /api/institutional/{slug}/showcase/collections/insights
+Ranqueada --> ComItens : marca edita/adiciona itens
+ComItens --> Criada : POST /api/groupings/{id}/items com groupingId=null
+Criada --> [*] : DELETE /api/groupings/{id}
+ComItens --> [*] : DELETE /api/groupings/{id}\n(itens ficam, grouping_id = null)
+note right of Ranqueada : mesma fórmula do RF34 (ShowcaseService.insights);\nmini loja 3D usa o motor do RF33/RF34 no cliente
+note bottom of ComItens : busca por coleção: GET /api/institutional/{slug}/showcase/collections/items?grouping&q&year
+@enduml

@@ -1,0 +1,96 @@
+@startuml RF18_Atividades
+title RF18 — Usar o Provador 2D virtual com manequim masculino ou feminino\nDiagrama de atividades — fluxo da pessoa e do sistema
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a tela /try-on;
+|Frontend (try-on/page.tsx)|
+:GET /api/try-on;
+|Backend (TryOnService)|
+:resolve(): manequim = Avatar 3D da pessoa;\nsem avatar, sexo do cadastro (RF1)\nou UserPreferences.mannequinSex;
+note right
+  CA01 — a escolha masc/fem fica salva em
+  user_preferences.mannequin_sex e volta na próxima sessão
+end note
+if (Acervo tem peça não arquivada?) then (não)
+  #FFE3E3:422 ACERVO_VAZIO (href /pieces/new);
+  stop
+else (sim)
+endif
+:Filtra o catálogo: só peças com\nWardrobeItem.sex compatível com o manequim (CA08);
+:Agrupa por lugar pela categoria gravada:\nupper_piece · lower_piece · shoes_piece · accessory_piece;
+:Peça com categoria fora da taxonomia\nentra em "needsReview" (não chuta lugar);
+|Frontend (try-on/page.tsx)|
+:Mostra avatar/manequim, 4 lugares,\nguarda-roupa por lugar e tom de pele/porte;
+|Pessoa|
+:Ajusta tom de pele / porte (CA06);
+|Frontend (try-on/page.tsx)|
+:PUT /api/try-on/preferences;
+|Backend (TryOnService)|
+if (skinTone em MannequinGeometry.SKIN_TONES?) then (não)
+  #FFE3E3:400 TOM_INVALIDO;
+else (sim)
+  :Grava mannequin_sex / skin_tone / build (RF23);
+endif
+|Pessoa|
+:Toca na peça para vestir;
+|Frontend (try-on/page.tsx)|
+if (Lugar já ocupado?) then (sim)
+  :Substitui a peça do mesmo lugar\ne avisa a troca (CA03);
+else (não)
+  :Veste no lugar vazio (CA02);
+endif
+:Guarda a composição na sessão do navegador;
+|Pessoa|
+if (Ação?) then (Gerar imagem)
+  |Frontend (try-on/page.tsx)|
+  :POST /api/try-on/renders {pieceIds};
+  |Backend (TryOnService)|
+  if (Toda peça com sex compatível?) then (não)
+    #FFE3E3:400 SEXO_INCOMPATIVEL — bloqueia (CA08);
+    stop
+  else (sim)
+  endif
+  :resolveLayers(): última peça da mesma\ncamada/âncora substitui; peça inteira\nremove TOP e BOTTOM ("replaced");
+  if (Peça sem fundo removido?) then (sim)
+    :ImageOps.removeBackgroundLocal\n+ aviso de sobreposição aproximada (CA05);
+  else (não)
+  endif
+  :AiEngine.execute(TRY_ON):\nFASHN → fallback TryOnCompositor local;
+  note right: ver RF24 (motor de IA)\nconsentimento AI_EXTERNAL_PHOTO_PROCESSING
+  :Grava PNG em users/{id}/tryon/ e Photo (origin TRY_ON);
+  |Frontend (try-on/page.tsx)|
+  :Exibe imagem, warnings e "replaced";
+elseif (Limpar) then
+  :Esvazia os 4 lugares só na sessão;\nguarda-roupa não muda (CA07);
+elseif (Salvar como esquema (API legada)) then
+  |Frontend (try-on/page.tsx)|
+  :POST /api/try-on/schemes;
+  note right: a tela atual não oferece o botão;\nendpoint mantido (CA04)
+  |Backend (TryOnService)|
+  :SchemeService.create(origin PROVADOR)\n+ virtualTryOnUrl (RF5);
+endif
+stop
+@enduml
