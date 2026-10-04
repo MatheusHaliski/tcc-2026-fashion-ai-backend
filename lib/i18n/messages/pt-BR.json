@@ -4533,5 +4533,6 @@
   "sealWizard.texto.caption": "Legenda",
   "sealWizard.texto.year": "Ano (selo redondo)",
   "sealWizard.texto.emblem": "Texto do emblema",
-  "sealWizard.texto_dica": "Vazio = texto do modelo · até {n} caracteres"
+  "sealWizard.texto_dica": "Vazio = texto do modelo · até {n} caracteres",
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estação real do card</0> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio)."
 }
