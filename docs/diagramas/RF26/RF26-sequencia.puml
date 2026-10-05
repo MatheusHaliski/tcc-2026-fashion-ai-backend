@@ -15,6 +15,10 @@ participant "ExplorerService" as S
 participant "AnalyticsQueryPort\n(MysqlAnalyticsAdapter)" as A
 participant "BrandProfileRepository" as R
 participant "AiEngine (RF24)" as AI
+participant "HypeController\n<<RF49>>" as HC
+participant "HypeQueryService\n<<RF49>>" as HQ
+participant "HypeCache\n<<RF49>>\n(RenderCachePort)" as HCA
+participant "HypeScoreCurrentRepository\n<<RF49>>" as HSR
 database "MySQL" as DB
 
 == Painel global (CA01) ==
@@ -49,6 +53,34 @@ S -> S : filtra por país/categoria/cor/estação/hypeMin\ne ordena por hypeScor
 S --> C : {brands[], facets{countries, categories}}
 C --> FE : 200 JSON
 FE --> U : grade de perfis BRAND (→ RF14)
+
+== Em alta (novo · RF49 · HypeScore v2) ==
+U -> FE : sub-aba "Em alta" (HypeTrendingPanel): tipo Peças | Looks,\njanela Hoje | 7 dias | 30 dias, categoria (só peças), estilo, ocasião
+FE -> HC : GET /api/hype/trending?type&window&category&style&occasion&limit=24
+HC -> HQ : trending(viewer, type, window,\ncategory, style, occasion, limit)
+HQ -> HQ : window → 1 | 7 | 30; limit 1..50
+HQ -> HCA : get("trending:{type}:{window}:…", rank)\n(chave com a geração do job)
+alt chave da geração atual em cache (TTL 10 min)
+  HCA --> HQ : ranking em cache
+else cache vazio
+  HCA -> HQ : rank(type, window, category, style, occasion, limit)
+  HQ -> HSR : findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(type, versão, AVAILABLE)
+  HSR -> DB : SELECT hype_scores (só itens públicos elegíveis)
+  HQ -> HQ : filtra categoria / estilo / ocasião
+  alt window = 1 (Hoje)
+    HQ -> HQ : ordena pela dimensão trend (desempate: score)
+  else window = 7
+    HQ -> HQ : ordena pelo score atual
+  else window = 30
+    HQ -> DB : SELECT hype_score_snapshots (últimos 30 dias)
+    HQ -> HQ : ordena pela média mensal dos snapshots
+  end
+  HCA -> HCA : put(chave, ranking, TTL 10 min)
+end
+HQ -> HQ : views(viewer, type, ids) — descarta\no que quem vê não pode ver\n(bloqueio / visibilidade mudou)
+HQ --> HC : {type, window, algorithmVersion,\nitems[rank, id, hype, piece|scheme]}
+HC --> FE : 200 JSON
+FE --> U : grade de PieceCard / SchemeCard com #posição
 
 == Insights globais (CA03) ==
 U -> FE : sub-aba "Insights globais"

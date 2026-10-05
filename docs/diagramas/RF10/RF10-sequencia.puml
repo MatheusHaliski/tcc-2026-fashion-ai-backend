@@ -16,6 +16,8 @@ participant "WeatherService" as WS
 participant "Open-Meteo\n(OpenMeteoAdapter)" as OM
 participant "WardrobeService" as WD
 participant "AiEngine (RF24)\nCOPILOT" as AI
+participant "HypeController\n<<RF49>>" as HC
+participant "HypeQueryService\n<<RF49>>" as HQ
 participant "AutopilotService" as AP
 participant "DailyLookService" as DL
 database "MySQL" as DB
@@ -34,17 +36,41 @@ opt clima disponível
 end
 WS --> CS: Context{band, season}
 CS -> DB: SELECT schemes (meus, não ARCHIVED) · findPublicFeed (em alta)
+CS -> HQ: currentOf(SCHEME, looks públicos)
+HQ -> DB: SELECT hype_scores
+HQ --> CS: HypeScoreCurrent por look
+note right of CS: novo (RF49 · HypeScore v2):\ntrendingLooks ordenados pelo Hype\n(sem Hype calculado = por último)
 CS -> CS: LocalSchemeComposer.compose(eligible, season) — combinações novas
 CS --> FE: 200 {weather, readyLooks, newCombinations,\nforgottenPieces, weatherBand, weatherPieces, trendingLooks}
-U -> FE: digita um pedido
-FE -> AC: POST /api/copilot/messages {message, view, selection, city}
+FE -> FE: abas (Tabs): Recomendações · Descoberta ·\nExperimentação · Redescoberta · Insights
+opt aba Redescoberta ou Insights (novo · RF49)
+  FE -> HC: GET /api/me/hype/wardrobe
+  HC -> HQ: wardrobe(user)
+  HQ --> FE: 200 {Hype médio, destaques, rediscoveries}
+end
+U -> FE: escolhe o modo (Seguro/SAFE padrão · Descoberta · Experimental)\ne digita um pedido (ou confirma o ?ask= pré-preenchido)
+FE -> AC: POST /api/copilot/messages {message, view, mode}
 AC -> CS: ask(user, AskRequest)
 alt mensagem em branco
   CS --> FE: 400 MENSAGEM_VAZIA
 else
-  CS -> CS: intent(message) via CopilotLexicon
+  CS -> CS: intent(message) via CopilotLexicon\n(HYPE = HYPE_QUESTION e não BUILD_REQUEST)
   alt Intent.LOOKS
     CS -> CS: looks(user, req, message) — peças do acervo + restrição de desafio
+    CS -> CS: scoreLooks(user, cards, RecommendationScoring.Mode.parse(mode))
+    CS -> HQ: currentOf(PIECE, peças de cada look)
+    HQ --> CS: Hype das peças (média = dimensão hype)
+    CS -> CS: StyleCompatibility.score(DNA, look) · novelty · reuse\n→ scores {compatibility, hype, novelty, reuse}
+    opt modo informado
+      CS -> CS: ordena por rankValue(mode, scores)\n(pesos [compat, hype, novidade, reuso] do modo)
+    end
+    note right of CS: novo (RF49 · HypeScore v2)
+  else Intent.HYPE (novo · RF49)
+    CS -> CS: hypeAnswer(user, message)
+    CS -> HQ: currentOf(PIECE | SCHEME, peças ou looks próprios)
+    HQ --> CS: HypeScoreCurrent (score, dimensões, delta)
+    CS -> CS: StyleCompatibility.score(DNA, peça) — separado do Hype
+    CS -> CS: anexa ao texto o aviso copilot.hype.aviso (sempre)
   else Intent.GENERAL
     CS -> AI: text(TextCall COPILOT, resumo + peças refs p1..pn + pergunta)
     AI --> CS: texto citando [[pN]] (fallback: texto local)
@@ -52,7 +78,7 @@ else
   else WHERE_IS / FORGOTTEN / DIAGNOSIS / IMPROVE_INVENTORY / DIFFERENT
     CS -> DB: SELECT wardrobe_items (busca por termos) · room_inventory
   end
-  CS --> FE: 200 {text, chips, actions, looks?, intent, suggestedPrompts}
+  CS --> FE: 200 {text, chips(hype?, compatibility?), actions, looks?(scores),\nmode?, intent, suggestedPrompts}
 end
 U -> FE: aceita um look sugerido
 FE -> AC: POST /api/copilot/looks {pieceIds, title, occasion, style, mood, season, background}

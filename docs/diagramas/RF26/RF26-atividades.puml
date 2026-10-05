@@ -71,6 +71,23 @@ elseif (Buscar marcas & lojas) then
   :Grade de perfis BRAND com logo, contadores e paleta;
   |Pessoa|
   :Toca um card → abre o perfil da marca (RF14);
+elseif (Em alta) then
+  |Pessoa|
+  :novo (RF49 · HypeScore v2)\nEscolhe tipo (Peças · Looks),\njanela (Hoje · 7 · 30 dias) e filtros\n(categoria só p/ peças, estilo, ocasião);
+  |Frontend|
+  :HypeTrendingPanel (hype-trending.tsx)\nGET /api/hype/trending?type&window\n&category&style&occasion&limit=24;
+  |Backend|
+  :HypeController →\nHypeQueryService.trending\n(window → 1, 7 ou 30);
+  if (Ranking no HypeCache?\n(geração, TTL 10 min)) then (não)
+    |Bancos-serviços|
+    :HypeScoreCurrentRepository\n.findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(AVAILABLE);
+    |Backend|
+    :rank(): filtra categoria/estilo/ocasião;\nordena: 1 = dimensão trend ·\n7 = score atual · 30 = média\ndos snapshots do mês;
+  else (sim)
+  endif
+  :views(viewer): tira o que quem\nvê não pode ver (bloqueio /\nvisibilidade mudou);
+  |Frontend|
+  :Grade PieceCard / SchemeCard\ncom #posição;
 else (Insights globais)
   |Frontend|
   :GET /api/explorer/insights;
@@ -96,7 +113,8 @@ endif
 note right
   <<planejado>> filtros por clima e gênero do título
   do Trello: não implementados — o código filtra por
-  estação, cor, faixa de hype, país e categoria.
+  estação, cor, faixa de hype, país e categoria
+  (e, em "Em alta", estilo e ocasião).
 end note
 stop
 @enduml

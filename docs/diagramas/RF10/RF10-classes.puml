@@ -72,6 +72,17 @@ class PieceUsageDiaryEntry {
   +source: String
   +schemeId: UUID
 }
+class HypeScoreCurrent <<RF49>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  +dimensions: HypeDimensions
+  +deltaPoints: BigDecimal
+  +publicEligible: boolean
+}
 }
 package "fai-domain · enums" {
 enum WeekPlanStatus {
@@ -103,6 +114,20 @@ class CopilotService {
   +suggestions(user, city, lat, lon)
   +ask(user, AskRequest)
   +accept(user, pieceIds, title, occasion, style, mood, season, description, background)
+  ~hypeAnswer(user, message) <<RF49>>
+  ~scoreLooks(user, cards, mode) <<RF49>>
+}
+class "CopilotService.AskRequest" as AskRequest <<record>> {
+  +message: String
+  +view: String
+  +selection: List<UUID>
+  +occasion: List<String>
+  +mood: String
+  +city: String
+  +latitude: Double
+  +longitude: Double
+  +excludeKeys: List<String>
+  +mode: String <<RF49>>
 }
 class CopilotLexicon {
   {static} +matches(vocab, message)
@@ -125,6 +150,35 @@ class AutopilotService {
   +discardWeek(user)
 }
 }
+package "fai-application · hype <<RF49>>" {
+class HypeQueryService {
+  +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
+  +wardrobe(user)
+}
+class RecommendationScoring {
+  {static} WEIGHTS: Map<Mode, double[]>
+  {static} +rankValue(mode, Scores): double
+  {static} +novelty(pieces, seenPairs): Integer
+  {static} +reuse(idleDays): Integer
+  {static} +pair(a, b): String
+}
+enum "RecommendationScoring.Mode" as Mode {
+  SAFE
+  DISCOVERY
+  EXPERIMENTAL
+  {static} +parse(raw)
+}
+class "RecommendationScoring.Scores" as Scores <<record>> {
+  +compatibility: Integer
+  +hype: Integer
+  +novelty: Integer
+  +reuse: Integer
+}
+class StyleCompatibility {
+  {static} +score(dna, item): Map
+  {static} +profile(styles, colors, occasions): Profile
+}
+}
 WardrobeItem "*" --> "1" User : user
 Scheme "*" --> "1" User : user
 Scheme --> SchemeOrigin
@@ -142,9 +196,19 @@ CopilotService ..> WardrobeItem : eligible / forgotten
 AutopilotService ..> WeekPlan
 AutopilotService ..> WeekPlanDay
 AutopilotService ..> DailyLook
+AskRequest ..> Mode : mode (parse)
+CopilotService ..> AskRequest
+CopilotService ..> HypeQueryService : currentOf (HYPE, scoreLooks,\ntrendingLooks)
+CopilotService ..> RecommendationScoring : scoreLooks
+CopilotService ..> StyleCompatibility : DNA × peça/look
+RecommendationScoring ..> Mode
+RecommendationScoring ..> Scores
+HypeQueryService ..> HypeScoreCurrent
 note top of WeekPlan : tabela week_plans
 note top of WeekPlanDay : tabela week_plan_days
 note top of DailyLook : tabela daily_looks
 note top of PieceUsageDiaryEntry : tabela piece_usage_diary\n(gravada por WardrobeEventListeners; base de "peças esquecidas")
 note top of WardrobeItem : tabela wardrobe_items
+note top of HypeScoreCurrent : tabela hype_scores\nnovo (RF49 · HypeScore v2)
+note bottom of Mode : pesos [compat, hype, novidade, reuso]\nSAFE 0,60/0,10/0,10/0,20\nDISCOVERY 0,35/0,20/0,25/0,20\nEXPERIMENTAL 0,15/0,20/0,45/0,20\nparse aceita SEGURO · DESCOBERTA · EXPERIMENTAL
 @enduml

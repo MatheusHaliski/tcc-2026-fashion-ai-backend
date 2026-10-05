@@ -110,12 +110,50 @@ class HypeScoreMetric {
   +globalHypeScore: BigDecimal
   .. +9 campos ..
 }
+class HypeScoreCurrent <<RF49>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  +dimensions: HypeDimensions
+  +publicEligible: boolean
+  +category: String
+  +styles: String
+  +occasions: String
+  .. +11 campos ..
+}
+class HypeScoreSnapshot <<RF49>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +snapshotDate: LocalDate
+  +status: HypeStatus
+  +score: BigDecimal
+  +publicEligible: boolean
+  .. +5 campos ..
+}
+class HypeDimensions <<embeddable>> {
+  +popularity · engagement
+  +trend · trendVelocity
+  +novelty · longevity · rarity
+  +originality · influence
+}
 }
 package "fai-domain · enums" {
 enum ProfileType {
   PESSOAL
   MARCA
   CELEBRIDADE
+}
+enum HypeEntityType {
+  PIECE
+  SCHEME
+}
+enum HypeStatus <<RF49>> {
+  AVAILABLE
+  INSUFFICIENT_DATA
 }
 }
 BrandProfile "1" --> "1" User : owner
@@ -128,9 +166,18 @@ SealBond "*" --> "1" User : targetOwner
 User --> ProfileType
 WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
+HypeScoreCurrent *-- HypeDimensions : dimensions
+HypeScoreSnapshot *-- HypeDimensions : dimensions
+HypeScoreCurrent ..> HypeEntityType
+HypeScoreCurrent ..> HypeStatus
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreSnapshot ..> HypeScoreCurrent : mesma entidade, por dia
 note top of User : tabela users
 note top of BrandProfile : tabela brand_profiles
 note top of WardrobeItem : tabela wardrobe_items
 note top of Scheme : tabela schemes
 note top of SealBond : tabela seal_bonds
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF49 · HypeScore v2)\n"Em alta" lê só publicEligible = true e status = AVAILABLE\n(janela 1 = dimensions.trend · 7 = score)
+note bottom of HypeScoreSnapshot : tabela hype_score_snapshots\njanela 30 = média dos snapshots do mês
 @enduml
