@@ -220,6 +220,12 @@ export function SkinPicker({ skin, onSkin, recommended }: { skin: string; onSkin
  * Raio-X, Bento, Espectro, Custo por uso, Silhueta, Hype Focus, Cartela sazonal, LEGO) trazem arte própria e SOBREPÕEM
  * aura, material e arte própria — o segmento "Aura & Material" fica desativado com a explicação.
  */
+/** Skins recomendadas para os estilos e ocasiões do conteúdo (look, peça ou DNA), marcadas no seletor de skin. */
+export function useRecommendedSkins(styles?: string[], occasions?: string[]): Set<string> {
+  const { data: rec } = useApi<{ skins?: { id: string }[]; recommended?: string[] }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
+  return useMemo(() => new Set([...(rec?.recommended ?? []), ...((rec?.skins ?? []).map((s) => s.id))]), [rec]);
+}
+
 export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAnatomy, pieceAnatomy, onPieceAnatomy, styles, occasions, layoutPanel, ownArt, ownArtLabel, season }: {
   value: BgConfig; onChange: (v: BgConfig) => void; skin: string; onSkin: (s: string) => void; anatomy: string; onAnatomy: (a: string) => void; pieceAnatomy?: string; onPieceAnatomy?: (a: string) => void; styles?: string[]; occasions?: string[];
   /** estação do look: a Cartela sazonal e a arte sazonal automática só existem com ela preenchida */
@@ -232,7 +238,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   layoutPanel?: ReactNode | ((ctx: { openSeasonal: (enter?: () => void) => void }) => ReactNode); ownArt?: boolean; ownArtLabel?: string;
 }) {
   const { t, rich } = useI18n();
-  const { data: rec } = useApi<{ skins?: { id: string }[]; recommended?: string[] }>((signal) => api.get(`/api/backgrounds/recommendations?${(styles ?? []).map((s) => `styles=${s}`).concat((occasions ?? []).map((o) => `occasions=${o}`)).join("&")}`, { signal, anonymous: true }), [JSON.stringify(styles), JSON.stringify(occasions)]);
+  const recommendedSkins = useRecommendedSkins(styles, occasions);
   const [seg, setSeg] = useState<ArtSegment>("cor");
   // modal da Cartela sazonal aberto; enter/patch = o que só vale ao Aplicar (entrar no layout e o que isso limpa)
   const [seasonal, setSeasonal] = useState<{ enter?: () => void; patch?: Partial<BgConfig> } | null>(null);
@@ -254,7 +260,6 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   }
   const cartela = value.seasonalAuto && season ? t("backgroundStudio.cartela_pela_estacao") : (value.seasonalPresetId && ART_INDEX.seasonal[value.seasonalPresetId]?.name) || t("backgroundStudio.cartela_pela_estacao");
   const animation = value.animation && value.animation !== "NONE" ? t(`backgroundStudio.anim.${value.animation}`) : t("backgroundStudio.sem_animacao");
-  const recommendedSkins = new Set([...(rec?.recommended ?? []), ...((rec?.skins ?? []).map((s) => s.id))]);
   const disabledNote = special ? <p className="rounded-md bg-chalk-soft p-2 type-body-sm">{ownArtLabel ? <>{rich("backgroundStudio.narrativa", { ownArtLabel }, { 0: ($c) => <b>{$c}</b> })}</> : <>{t("scheme.anatomy")}{" "}<b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b></>}{" "}{t("backgroundStudio.traz_arte_propria_presets_aura")}</p> : undefined;
   return (
     <div className="art-editor surface p-3">

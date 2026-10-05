@@ -58,6 +58,15 @@ describe("Central do emissor", () => {
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/me/issuer-review/resubmit")).toBe(true));
     expect(calls.find((c) => c.path === "/api/me/issuer-review/resubmit")!.body).toMatchObject({ realName: "Maria Lume", verificationUrl: "https://instagram.com/lume" });
   });
+
+  it("API de versão anterior (sem critérios, motivos nem campos editáveis) não derruba a página", async () => {
+    // resposta do GET /api/me/issuer-review antes da política de verificação (b7e0695)
+    const old = { profileType: "CELEBRIDADE", name: "Lume", status: "AJUSTES", submittedAt: "2026-10-01T12:00:00Z", emailVerified: true, adminsNotified: true, decidedAt: null, reason: null };
+    loggedAs(undefined, { "GET /api/me/issuer-review": old });
+    renderApp(<Central />);
+    expect(await screen.findByText("Critérios da verificação")).toBeTruthy();
+    expect(screen.getByText("O que corrigir")).toBeTruthy();
+  });
 });
 
 const DOSSIER: Dossier = {

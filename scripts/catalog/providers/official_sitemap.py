@@ -68,10 +68,16 @@ class Site:
         self.requests = 0
 
     def load_robots(self):
-        status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
-        if status in (0, 404) and not self.domain.startswith("www."):
-            alt = f"https://www.{self.domain}"                    # muitos sites só respondem no www.
-            s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
+        try:
+            status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
+        except StopDomain:
+            status, body = 403, b""
+        if status in (0, 403, 404) and not self.domain.startswith("www."):
+            alt = f"https://www.{self.domain}"                    # muitos sites só respondem (ou só liberam) no www.
+            try:
+                s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
+            except StopDomain:
+                s2, b2 = 403, b""
             if s2 not in (0, 404):
                 self.base, status, body = alt, s2, b2
         if status in (401, 403):
@@ -213,14 +219,24 @@ def _images(v) -> list[str]:
     for item in v if isinstance(v, list) else [v]:
         if isinstance(item, dict):
             item = item.get("url") or item.get("contentUrl")
-        if isinstance(item, str) and item.startswith("http"):
-            out.append(item)
+        if isinstance(item, str):
+            item = item.strip()
+            if item.startswith("//"):
+                item = "https:" + item
+            if item.startswith("http://"):                      # CDNs de loja servem https (o acervo só guarda https)
+                item = "https://" + item[len("http://"):]
+            if item.startswith("https://"):
+                out.append(item)
     return out
 
 
 def structured_product(page: bytes) -> Optional[dict]:
-    """Product/ProductGroup do JSON-LD da página; sem JSON-LD de produto, o OpenGraph (og:type=product)."""
+    """Product/ProductGroup do JSON-LD da página; sem JSON-LD de produto, o OpenGraph (og:type=product).
+    O og:image vem junto: é a imagem que a própria página declara, usada quando o JSON-LD não traz foto."""
     text = page.decode("utf-8", "replace")
+    meta = {k.lower(): v for k, v in _META.findall(text)}
+    meta.update({k.lower(): v for v, k in _META_REV.findall(text)})
+    og_image = html.unescape(meta.get("og:image") or "") or None
     for block in _LD.findall(text):
         try:
             data = json.loads(html.unescape(block.strip()))
@@ -231,13 +247,11 @@ def structured_product(page: bytes) -> Optional[dict]:
         prod = group or next((n for n in nodes if "Product" in _types(n)), None)
         if prod:
             variants = [n for n in (prod.get("hasVariant") or []) if isinstance(n, dict)] if group else []
-            return {"kind": "jsonld", "node": prod, "variants": variants}
-    meta = {k.lower(): v for k, v in _META.findall(text)}
-    meta.update({k.lower(): v for v, k in _META_REV.findall(text)})
+            return {"kind": "jsonld", "node": prod, "variants": variants, "og_image": og_image}
     if meta.get("og:type", "").lower().startswith("product") or meta.get("product:retailer_item_id"):
         return {"kind": "og", "node": {"name": meta.get("og:title"), "description": meta.get("og:description"),
                                          "image": meta.get("og:image"), "sku": meta.get("product:retailer_item_id"),
-                                         "color": meta.get("product:color")}, "variants": []}
+                                         "color": meta.get("product:color")}, "variants": [], "og_image": og_image}
     return None
 
 
@@ -278,6 +292,34 @@ UNSUPPORTED = ("bra", "bras", "sports bra", "sutia", "underwear", "cueca", "cuec
 _PACK = re.compile(r"\b(tripack|tri pack|\d+\s?pack|pack\s?\d+|kit\s?(com\s)?\d+|\d+\s?pares|multipack)\b")
 
 
+_AUDIENCE = re.compile(r"\s+-\s+(women|men|unisex|kids|boys|girls|baby|feminino|masculino|infantil)\s*$", re.I)
+
+
+def clean_title(raw: Optional[str], brand: str, n: Normalizer) -> tuple[Optional[str], Optional[str]]:
+    """Título da página → (nome do produto, cor citada no título).
+
+    "Utility Barrel Pant | Bone | Tall" → ("Utility Barrel Pant", "Bone");
+    "Trench Coat in Ivory white - Women | Burberry® Official" → ("Trench Coat", "Ivory white").
+    Sufixo da loja ("| Marca® Official"), público ("- Women") e caimento ("| Tall") saem; a cor só é separada quando a
+    taxonomia a reconhece (senão fica no nome)."""
+    if not raw:
+        return raw, None
+    parts = [p.strip() for p in re.split(r"\s+\|\s+", raw) if p.strip()]
+    brand_key = _squash(brand)
+    parts = [p for p in parts if not (brand_key and brand_key in _squash(p) and re.search(r"official|oficial|loja|store|®", p, re.I))
+             and not re.fullmatch(r"(official|oficial)( site| store| loja)?", p, re.I)] or parts[:1]
+    name, color = parts[0], None
+    for extra in parts[1:]:
+        if color is None and n.color(extra):
+            color = extra
+    name = _AUDIENCE.sub("", name).strip()
+    m = re.search(r"\s+in\s+([A-Za-z][A-Za-z /-]{2,30})$", name)
+    if m and n.color(m.group(1)):
+        color = color or m.group(1).strip()
+        name = name[:m.start()].strip()
+    return name or raw, color
+
+
 def unsupported_reason(name: Optional[str]) -> Optional[str]:
     """Peças fora da taxonomia do acervo (roupa íntima, vale-presente): ficam de fora em vez de virar outro tipo."""
     k = " " + key(name) + " "
@@ -289,14 +331,26 @@ def is_pack(name: Optional[str]) -> bool:
     return bool(_PACK.search(key(name)))
 
 
+# Servidores de imagem das plataformas de loja e DAMs das marcas: a página oficial declara a foto apontando para eles
+# (lojalevis.vtexassets.com, cdn.shopify.com, amq-mcq.dam.kering.com…). Entram só como referência (URL), nunca copiadas.
+STORE_IMAGE_HOSTS = ("vtexassets.com", "vteximg.com.br", "cdn.shopify.com", "dam.kering.com", "thron.com", "bynder.com",
+                     "scene7.com", "demandware.static.net", "imgix.net", "cloudinary.com", "ctfassets.net", "akamaized.net")
+
+
 def brand_cdn_ok(image_url: str, official: str) -> bool:
-    """Imagem do próprio domínio oficial ou de um CDN cujo nome contém o rótulo da marca (static.nike.com)."""
-    d = domain(image_url) or ""
+    """Imagem que a página oficial declara: do próprio domínio oficial, de um host com o rótulo da marca no nome
+    (static.nike.com, valentino-cdn.thron.com) ou do servidor de imagens da plataforma da loja (STORE_IMAGE_HOSTS).
+    Domínios bloqueados (Pinterest, marketplaces…) nunca passam."""
+    d = (domain(image_url) or "").lower()
+    if not d or blocked(image_url):
+        return False
     if same_site(d, official):
         return True
     parts = official.lower().split(".")
     label = parts[-3] if len(parts) >= 3 and len(parts[-2]) <= 3 and len(parts[-1]) == 2 else parts[-2] if len(parts) >= 2 else official
-    return label in d.split(".")
+    if label in re.split(r"[.-]", d):
+        return True
+    return any(d == h or d.endswith("." + h) for h in STORE_IMAGE_HOSTS)
 
 
 def _squash(s: Optional[str]) -> str:
@@ -315,7 +369,7 @@ def same_brand(n: Normalizer, page_brand: str, brand: str) -> bool:
 def to_catalog_item(found: dict, page_url: str, brand: str, official: str, source_type: str, n: Normalizer,
                     warnings: list) -> Optional[dict]:
     node = found["node"]
-    name = _text(node.get("name"))
+    name, title_color = clean_title(_text(node.get("name")), brand, n)
     if not name:
         warnings.append(f"{page_url}: sem nome de produto")
         return None
@@ -348,11 +402,12 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
     url = urljoin(page_url, url)
     if not same_site(domain(url), official):
         url = page_url
-    imgs = [u for u in _images(node.get("image")) if brand_cdn_ok(u, official)]
-    color_raw = _text(node.get("color"))
+    imgs = product_images(found, official)
+    color_raw = _text(node.get("color")) or title_color
     item = {
         "brand": brand, "subcategory": sub, "product_name": name[:240],
-        "model_name": _text(node.get("model")) or None,
+        # cor tirada do título ("Hoodie | Black"): o nome limpo vira o modelo, e as outras cores entram como variantes
+        "model_name": _text(node.get("model")) or (name if title_color else None),
         "sku": _text(node.get("sku")), "gtin": _gtin(node), "product_code": _text(node.get("mpn")),
         "color": n.color(color_raw) if color_raw else None, "color_name": color_raw,
         "description": (_text(node.get("description")) or "")[:2000] or None,
@@ -373,6 +428,24 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
     if item["gtin"] and not re.fullmatch(r"\d{8,14}", item["gtin"]):
         item["gtin"] = None
     return {k: v for k, v in item.items() if v not in (None, "", [])}
+
+
+def product_images(found: dict, official: str) -> list[str]:
+    """Fotos do produto: as do nó principal; sem elas, a 1ª de cada variante (Nike e Shopify põem a foto só nas
+    variantes de cor); sem nenhuma, o og:image da página. Sem repetição, só hosts aceitos por brand_cdn_ok."""
+    node = found.get("node") or {}
+    imgs = _images(node.get("image"))
+    if not imgs:
+        for v in found.get("variants") or []:
+            imgs += _images(v.get("image"))[:1]
+    if not imgs and found.get("og_image"):
+        imgs = _images(found["og_image"])
+    seen, out = set(), []
+    for u in imgs:
+        if u not in seen and brand_cdn_ok(u, official):
+            seen.add(u)
+            out.append(u)
+    return out
 
 
 def _gtin(node: dict) -> Optional[str]:

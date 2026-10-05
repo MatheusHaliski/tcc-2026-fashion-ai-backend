@@ -123,8 +123,27 @@ public class CatalogService {
         if (color == null && !design.isEmpty()) {
             color = !design.baseColors().isEmpty() ? design.baseColors().get(0) : !design.anyColors().isEmpty() ? design.anyColors().get(0) : null;
         }
+        // subtipo pela FRASE mais longa do texto: "moletom com capuz" é hoodie (não "moletom" + a palavra solta "capuz")
+        Set<String> subWords = new LinkedHashSet<>();
+        if (sub == null && r.query() != null && !r.query().isBlank()) {
+            String[] w = CatalogNormalizer.key(r.query()).split(" ");
+            phrase:
+            for (int size = Math.min(4, w.length); size >= 2; size--) {
+                for (int i = 0; i + size <= w.length; i++) {
+                    Optional<String> s = norm.subcategory(String.join(" ", java.util.Arrays.copyOfRange(w, i, i + size)));
+                    if (s.isPresent()) {
+                        sub = s.get();
+                        if (cat == null) {
+                            cat = norm.categoryOf(sub);
+                        }
+                        subWords.addAll(java.util.Arrays.asList(w).subList(i, i + size));
+                        break phrase;
+                    }
+                }
+            }
+        }
         for (String t : norm.tokens(r.query())) {
-            if (brandWords.contains(t) || design.consumed().contains(t)) {
+            if (brandWords.contains(t) || design.consumed().contains(t) || subWords.contains(t)) {
                 continue;
             }
             if (color == null && norm.color(t).isPresent()) {
@@ -170,7 +189,22 @@ public class CatalogService {
         // subtipo deduzido do texto ("camisa") só pontua, não filtra: no Brasil "camisa" também é camiseta
         String subFilter = res.subcategoryFromText() ? null : q.subcategory();
         try {
-            products.candidates(brandId, q.category(), subFilter, terms).forEach(p -> pool.put(p.getId(), p));
+            // com milhares de produtos o pool (200 por consulta) começa pelo que a pessoa descreveu: subtipo (mesmo o lido
+            // do texto, que só pontua) com a cor, depois só o subtipo, depois a estampa citada, e por fim o pool geral
+            if (q.subcategory() != null && q.color() != null) {
+                products.candidatesWithColor(brandId, q.category(), q.subcategory(), q.color(), terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+                if (terms != null) {
+                    products.candidatesWithColor(brandId, q.category(), q.subcategory(), q.color(), null).forEach(p -> pool.putIfAbsent(p.getId(), p));
+                }
+            }
+            if (q.subcategory() != null) {
+                products.candidates(brandId, q.category(), q.subcategory(), terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            }
+            String patternTerms = patternTerms(q.design().pattern());
+            if (patternTerms != null) {
+                products.candidates(brandId, q.category(), q.subcategory(), patternTerms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            }
+            products.candidates(brandId, q.category(), subFilter, terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
         } catch (RuntimeException ex) {
             // índice FULLTEXT indisponível (banco de teste): segue só com os filtros estruturados
         }
@@ -186,6 +220,28 @@ public class CatalogService {
         out.put("canSearchOfficial", res.brand() != null && !sources.findByBrandIdAndActiveTrue(res.brand().getId()).isEmpty());
         out.put("message", ranked.isEmpty() ? Msg.t("catalog.nao_encontramos") : null);
         return out;
+    }
+
+    static final double NO_PHOTO_PENALTY = 0.10;
+
+    static double orderScore(Map<String, Object> m) {
+        double total = ((Number) ((Map<?, ?>) m.get("matchScore")).get("total")).doubleValue();
+        return m.get("imageUrl") == null ? total - NO_PHOTO_PENALTY : total;
+    }
+
+    /** Palavras da estampa no vocabulário (pt/en/es: "listrada stripe striped rayas") para o índice FULLTEXT. */
+    String patternTerms(String pattern) {
+        if (pattern == null || "PLAIN".equals(pattern)) {
+            return null;
+        }
+        List<String> words = new ArrayList<>();
+        norm.design().path("patterns").path(pattern).forEach(n -> {
+            String k = CatalogNormalizer.key(n.asString());
+            if (k.length() >= 3) {
+                words.add(k.contains(" ") ? "\"" + k + "\"" : k);
+            }
+        });
+        return words.isEmpty() ? null : String.join(" ", words);
     }
 
     List<Map<String, Object>> rank(Resolved res, List<CatalogProduct> pool, int limit) {
@@ -222,8 +278,10 @@ public class CatalogService {
             m.put("matchPercent", (int) Math.round(s.total() * 100));
             out.add(m);
         }
-        out.sort(Comparator.comparingDouble((Map<String, Object> m) -> ((Number) ((Map<?, ?>) m.get("matchScore")).get("total")).doubleValue())
-                .reversed().thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
+        // ordem: o produto sem foto cede até 10 pontos para o que tem foto oficial (a pessoa reconhece a peça pela foto);
+        // o "% compatível" mostrado não muda
+        out.sort(Comparator.comparingDouble((Map<String, Object> m) -> orderScore(m)).reversed()
+                .thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
         return out.size() > limit ? out.subList(0, limit) : out;
     }
 

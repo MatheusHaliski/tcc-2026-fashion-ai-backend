@@ -117,11 +117,19 @@ class SitemapTest(unittest.TestCase):
         self.assertIn("403", rep["stopped"])
         self.assertEqual(rep["accepted"], 0)
 
+    def test_robots_403_no_dominio_puro_tenta_www(self):
+        web = FakeWeb({"https://vans.com/robots.txt": (403, b"", "text/plain"),
+                       "https://www.vans.com/robots.txt": (200, b"Sitemap: https://www.vans.com/sm.xml", "text/plain")})
+        site = Site("vans.com", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.sitemaps, ["https://www.vans.com/sm.xml"])
+
     def test_robots_403_nao_coleta(self):
         web = FakeWeb({"https://nike.com.br/robots.txt": (403, b"", "text/plain")})
         rep = collect(Site("nike.com.br", web, polite()[0]), "Nike", "OFFICIAL_STORE", N, 10)
         self.assertIsNotNone(rep["stopped"])
-        self.assertEqual(web.calls, ["https://nike.com.br/robots.txt"])
+        # domínio puro e www. recusam: para sem baixar mais nada
+        self.assertEqual(web.calls, ["https://nike.com.br/robots.txt", "https://www.nike.com.br/robots.txt"])
 
     def test_sem_conexao_avisa(self):
         web = FakeWeb({"https://nike.com.br/robots.txt": (0, b"", "")})
@@ -211,6 +219,36 @@ class StructuredDataTest(unittest.TestCase):
         self.assertIsNone(item("Tripack Cano Alto Fbox"))
         self.assertEqual(item("Kit 3 Pares de Meias Cano Alto")["subcategory"], "socks")
         self.assertEqual(item("UA Matchplay", category="Men's Golf Shorts")["subcategory"], "shorts")
+
+    def test_titulo_limpo_e_cor_do_titulo(self):
+        from providers.official_sitemap import clean_title
+        self.assertEqual(clean_title("The Utility Barrel Pant | Bone | Tall", "Everlane", N)[0], "The Utility Barrel Pant")
+        self.assertEqual(clean_title("The Waffle-Knit Hoodie | Black", "Everlane", N), ("The Waffle-Knit Hoodie", "Black"))
+        self.assertEqual(clean_title("Long Cashmere Kensington Trench Coat in Ivory white - Women | Burberry® Official", "Burberry", N),
+                         ("Long Cashmere Kensington Trench Coat", "Ivory white"))
+        self.assertEqual(clean_title("Camiseta Levi's® Perfect Graphic Tee", "Levi's", N)[0], "Camiseta Levi's® Perfect Graphic Tee")
+        item = to_catalog_item({"node": {"name": "The Waffle-Knit Hoodie | Black", "brand": "Everlane"}, "variants": []},
+                               "https://www.everlane.com/p/x", "Everlane", "everlane.com", "OFFICIAL_BRAND", N, [])
+        self.assertEqual((item["product_name"], item["color"]), ("The Waffle-Knit Hoodie", "black"))
+
+    def test_imagem_das_variantes_e_og_image(self):
+        group = {"@context": "https://schema.org", "@type": "ProductGroup", "name": "Nike Dri-FIT Shorts", "brand": "Nike",
+                 "hasVariant": [{"@type": "Product", "color": "Black", "image": "https://static.nike.com/a/1.png"},
+                                {"@type": "Product", "color": "Blue", "image": ["https://static.nike.com/a/2.png"]}]}
+        item = to_catalog_item(structured_product(ld(group)), "https://www.nike.com/t/x", "Nike", "nike.com", "OFFICIAL_BRAND", N, [])
+        self.assertEqual([i["url"] for i in item["images"]], ["https://static.nike.com/a/1.png", "https://static.nike.com/a/2.png"])
+        page = ld({"@type": "Product", "name": "Camiseta Logo", "brand": "Fila"}).replace(
+            b"<head>", b'<head><meta property="og:image" content="http://fila.vtexassets.com/arquivos/ids/1/a.jpg">')
+        item = to_catalog_item(structured_product(page), "https://www.fila.com.br/x/p", "Fila", "fila.com.br", "OFFICIAL_STORE", N, [])
+        self.assertEqual(item["images"][0]["url"], "https://fila.vtexassets.com/arquivos/ids/1/a.jpg")   # og:image, http → https
+
+    def test_hosts_de_imagem_da_loja(self):
+        self.assertTrue(brand_cdn_ok("https://lojalevis.vtexassets.com/arquivos/ids/1/a.jpg", "levi.com.br"))
+        self.assertTrue(brand_cdn_ok("https://cdn.shopify.com/s/files/1/a.jpg", "dickies.com"))
+        self.assertTrue(brand_cdn_ok("https://valentino-cdn.thron.com/a.jpg", "valentino.com"))
+        self.assertTrue(brand_cdn_ok("https://amq-mcq.dam.kering.com/asset/a", "alexandermcqueen.com"))
+        self.assertFalse(brand_cdn_ok("https://i.pinimg.com/a.jpg", "levi.com.br"))
+        self.assertFalse(brand_cdn_ok("https://http2.mlstatic.com/a.jpg", "levi.com.br"))
 
     def test_marca_sem_pontuacao(self):
         item = to_catalog_item({"node": {"name": "Camiseta Logo", "brand": "Levis"}, "variants": []}, "https://www.levi.com.br/x/p",
