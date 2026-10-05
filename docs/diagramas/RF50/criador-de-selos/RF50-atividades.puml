@@ -1,0 +1,90 @@
+@startuml RF50_Atividades
+title RF50 (evolução do RF25) — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca/Celebridade (aprovada)|
+start
+:Perfil → aba "Selos" → "Novo selo"
+(só com perfil emissor APROVADO no RF1);
+partition "Passo 1 · Modo" {
+  if (Com IA?) then (sim)
+    |Sistema (SealService / SealDrafts)|
+    :POST /api/seals/draft {tier};
+    :Lê o perfil emissor e as peças do emissor\n(cor mais frequente, ocasiões, estilos, categoria);
+    :Sugere nome, nível, política padronizada\ne arte (marca: anel circular da cor mais próxima\n+ iniciais; celebridade: folha holográfica);
+    note right: nada é salvo aqui;\no emissor revisa tudo
+    |Marca/Celebridade (aprovada)|
+    :Vê "Sugerido pela IA" com o porquê de cada escolha;
+  else (não)
+    :Começa do desenho padrão;
+  endif
+}
+partition "Passo 2 · Dados" {
+  :Nome, nível (LOOK/PEÇA), política padronizada\n(regras: quantificador × cor × marca × categoria;\ntags de ocasião e estilo), validade e limite de emissões;
+}
+partition "Passo 3 · Arte" {
+  :Escolhe o tipo de selo;
+  if (Tipo?) then (Circular)
+    if (Origem?) then (Modelo)
+      :Escolhe um dos anéis com centro livre (44);
+    else (Personalizado)
+      :Gerador (paleta, padrão, materiais, bisel)\nou envio de selo pronto (1:1, circular);
+    endif
+    :Núcleo do selo: Elemento (ícone + texto + material)\n| Imagem enviada (zoom + texto opcional)\n| Texto livre (até 24 caracteres, 2 linhas);
+  elseif (Folha)
+    :Escolhe uma das 33 folhas picotadas;
+    :Edita os textos da folha: título (vazio = nome do selo),\nsérie, subtítulo, rótulo, legenda, ano e texto do emblema;
+    :Imagem central: emblema da arte | imagem enviada | texto;
+  else (Padrão FashionAI)
+    :Escolhe um dos 13 medalhões prontos;
+  endif
+  if (Imagem do núcleo?) then (enviada)
+    |Sistema (SealService / SealDesigns)|
+    :POST /api/seals/uploads?purpose=core\n(≥ 64 px, proporção ≤ 4:1, PNG ≤ 640 px\nem users/{id}/seals/);
+    |Marca/Celebridade (aprovada)|
+  endif
+  :Prévia ao vivo no tamanho do card do look (44 px)\ne do card da peça (36 px);
+}
+partition "Passo 4 · Revisar e salvar" {
+  :Confere nome, nível, política (frase gerada),\nvalidade, limite e tipo — "Editar" volta ao passo;
+  :Salvar selo;
+}
+|Sistema (SealService / SealDesigns)|
+:SealDesigns.normalize: kind, template do catálogo,\ntextos da folha, núcleo (modo, URL, texto, cor, zoom);
+if (Desenho válido?) then (não)
+  #FFE3E3:400 SELO_DESIGN_INVALIDO\n(campos apontados);
+  stop
+endif
+:OwnMedia: a imagem do núcleo é do próprio emissor;
+:SealPolicies.normalize + describe → policyText;
+:Folha sem título → título = nome do selo;
+:Salva o selo (MySQL · seals.background_config_json\n{design, policy}) e audita;
+|Marca/Celebridade (aprovada)|
+:Selo aparece na aba e nos cards com o medalhão do tipo escolhido;
+|Sistema (SealService / SealDesigns)|
+:Selo ACTIVE, dentro da validade e do limite de emissões
+entra na detecção por política nos criadores de peça (RF4)
+e de look (RF5) — ver RF50_Sequencia_Deteccao;
+stop
+@enduml

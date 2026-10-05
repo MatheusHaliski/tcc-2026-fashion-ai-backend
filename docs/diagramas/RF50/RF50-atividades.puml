@@ -1,5 +1,5 @@
 @startuml RF50_Atividades
-title RF50 (evolução do RF25) — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades
+title RF50 — Verificar perfis de Marca e Celebridade (política v1.0)\nDiagrama de atividades — cadastro, aviso à administração, análise, decisão e reenvio pela Central do emissor
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,68 +23,72 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Marca/Celebridade (aprovada)|
+|Marca/Celebridade|
 start
-:Perfil → aba "Selos" → "Novo selo"
-(só com perfil emissor APROVADO no RF1);
-partition "Passo 1 · Modo" {
-  if (Com IA?) then (sim)
-    |Sistema (SealService / SealDrafts)|
-    :POST /api/seals/draft {tier};
-    :Lê o perfil emissor e as peças do emissor\n(cor mais frequente, ocasiões, estilos, categoria);
-    :Sugere nome, nível, política padronizada\ne arte (marca: anel circular da cor mais próxima\n+ iniciais; celebridade: folha holográfica);
-    note right: nada é salvo aqui;\no emissor revisa tudo
-    |Marca/Celebridade (aprovada)|
-    :Vê "Sugerido pela IA" com o porquê de cada escolha;
-  else (não)
-    :Começa do desenho padrão;
-  endif
-}
-partition "Passo 2 · Dados" {
-  :Nome, nível (LOOK/PEÇA), política padronizada\n(regras: quantificador × cor × marca × categoria;\ntags de ocasião e estilo), validade e limite de emissões;
-}
-partition "Passo 3 · Arte" {
-  :Escolhe o tipo de selo;
-  if (Tipo?) then (Circular)
-    if (Origem?) then (Modelo)
-      :Escolhe um dos anéis com centro livre (44);
-    else (Personalizado)
-      :Gerador (paleta, padrão, materiais, bisel)\nou envio de selo pronto (1:1, circular);
+repeat
+  :Preenche o cadastro (RF1) como MARCA ou CELEBRIDADE;
+  note right
+    MARCA: razão social, CNPJ, logo, site,
+    comprovante de atividade (restricted/)
+    CELEBRIDADE: nome artístico, **nome civil**,
+    documento de identidade, foto oficial, link oficial
+  end note
+  |Sistema|
+repeat while (Campo obrigatório ausente\nou CNPJ inválido?) is (sim: 400 com os campos destacados)
+->não;
+:IdentityService.register: cria a conta (PENDING_EMAIL_VERIFICATION) e o perfil PENDENTE\n(reviewAttempts = 1, reviewSubmittedAt vazio);
+:Envia o código de confirmação e o e-mail "cadastro recebido";
+:issuerReview.submitted(userId);
+:IssuerReviewService, depois do commit (SideEffectRunner, thread virtual):\nnotificação ISSUER_REVIEW_REQUEST a cada conta ADMIN ativa\ne e-mail aos ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS;
+note right
+  sem destinatário: log de aviso e a Central mostra
+  "fila sem aviso" (adminsConfigured = false).
+  Nenhum documento ou dado privado no aviso.
+end note
+|Marca/Celebridade|
+:Confirma o e-mail (POST /api/auth/email-verification);
+|Sistema|
+:Conta PENDING_VALIDATION; emailConfirmed grava reviewSubmittedAt\n→ começa o prazo de 3 dias úteis;
+|Marca/Celebridade|
+:Acompanha pela Central do emissor (aba do perfil ou dashboard):\nstatus, código FAI-XXXXXX, critérios e regras;
+:Publica o código FAI-XXXXXX no perfil oficial\n(prova de controle da conta);
+repeat
+  |Administrador|
+  :Abre a fila /admin/users?tab=approvals:\ndossiês PENDENTE (mais antigos primeiro) e prazo em dias úteis;
+  note right
+    sem e-mail confirmado o dossiê já aparece,
+    mas como "aguardando o e-mail ser confirmado"
+    (reviewableSince nulo) e não pode ser aprovado.
+    AJUSTES sem resposta há 30 dias: a fila
+    oferece RECUSAR com os últimos motivos
+  end note
+  :Abre os documentos (auditado: DOCUMENTO_VERIFICACAO_ABERTO)\ne confere as verificações automáticas (OK / FALHA / ANALISTA);
+  repeat
+    :Marca a checklist e escolhe a decisão:\nAPROVAR · AJUSTES · RECUSAR + motivos padronizados + observação;
+    |Sistema|
+  repeat while (Decisão recusada?) is (sim: 403 próprio perfil · 409 EMAIL_NAO_CONFIRMADO |\nCRITERIOS_PENDENTES · 400 MOTIVO_OBRIGATORIO | OBSERVACAO_OBRIGATORIA)
+  ->não;
+  :IssuerReviewService.decide grava status, motivos, checklist, approvedBy/At;\nnotificação ACCOUNT_APPROVAL ao dono + e-mail depois do commit; auditoria;
+  if (Decisão?) then (APROVAR)
+    :Conta ACTIVE e verificada; identityVerified;\nselos padrão criados (SealService.ensureDefaultSeals);
+    |Marca/Celebridade|
+    :Central mostra o perfil oficial;\nselos, promoções, cupons e dashboard do emissor liberados;
+    stop
+  else (AJUSTES ou RECUSAR)
+    |Marca/Celebridade|
+    :Central mostra os motivos, a observação e o que corrigir;
+    if (Envios < 5?) then (não)
+      :Só a administração reabre o pedido;
+      stop
+    else (sim)
     endif
-    :Núcleo do selo: Elemento (ícone + texto + material)\n| Imagem enviada (zoom + texto opcional)\n| Texto livre (até 24 caracteres, 2 linhas);
-  elseif (Folha)
-    :Escolhe uma das 33 folhas picotadas;
-    :Edita os textos da folha: título (vazio = nome do selo),\nsérie, subtítulo, rótulo, legenda, ano e texto do emblema;
-    :Imagem central: emblema da arte | imagem enviada | texto;
-  else (Padrão FashionAI)
-    :Escolhe um dos 13 medalhões prontos;
+    repeat
+      :Corrige link, contato, nome civil, novo documento\ne escreve uma mensagem ao analista → Reenviar;
+      |Sistema|
+    repeat while (Algum campo inválido?\n(link, nome civil vazio, documento)) is (sim: 400 FORMULARIO_INVALIDO,\nnada é gravado)
+    ->não;
+    :IssuerReviewService.resubmit copia o documento para restricted/; aplica os campos;\nPENDENTE, attempts + 1, reviewSubmittedAt = agora (prazo de 2 dias úteis);
+    :submitted(userId) → administradores avisados de novo;
   endif
-  if (Imagem do núcleo?) then (enviada)
-    |Sistema (SealService / SealDesigns)|
-    :POST /api/seals/uploads?purpose=core\n(≥ 64 px, proporção ≤ 4:1, PNG ≤ 640 px\nem users/{id}/seals/);
-    |Marca/Celebridade (aprovada)|
-  endif
-  :Prévia ao vivo no tamanho do card do look (44 px)\ne do card da peça (36 px);
-}
-partition "Passo 4 · Revisar e salvar" {
-  :Confere nome, nível, política (frase gerada),\nvalidade, limite e tipo — "Editar" volta ao passo;
-  :Salvar selo;
-}
-|Sistema (SealService / SealDesigns)|
-:SealDesigns.normalize: kind, template do catálogo,\ntextos da folha, núcleo (modo, URL, texto, cor, zoom);
-if (Desenho válido?) then (não)
-  #FFE3E3:400 SELO_DESIGN_INVALIDO\n(campos apontados);
-  stop
-endif
-:OwnMedia: a imagem do núcleo é do próprio emissor;
-:SealPolicies.normalize + describe → policyText;
-:Folha sem título → título = nome do selo;
-:Salva o selo (MySQL · seals.background_config_json\n{design, policy}) e audita;
-|Marca/Celebridade (aprovada)|
-:Selo aparece na aba e nos cards com o medalhão do tipo escolhido;
-|Sistema (SealService / SealDesigns)|
-:Selo ACTIVE, dentro da validade e do limite de emissões
-entra na detecção por política nos criadores de peça (RF4)
-e de look (RF5) — ver RF50_Sequencia_Deteccao;
-stop
+repeat while (Pedido de volta à fila)
 @enduml

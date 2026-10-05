@@ -170,8 +170,8 @@ Toda decisão negativa traz **pelo menos um motivo padronizado** e pode trazer u
 | Aviso à administração por notificação no app e e-mail a cada envio e reenvio | `IssuerReviewService` |
 | Destinatários: contas com papel ADMIN, mais `ISSUER_REVIEW_NOTIFY_EMAILS` (padrão: `FAI_ADMIN_EMAIL`) | `IssuerReviewService` |
 | Verificações automáticas, código de verificação e catálogo de critérios e motivos | `IssuerVerificationPolicy` |
-| Aprovação bloqueada sem e-mail confirmado, com obrigatório em aberto ou do próprio perfil | `AdminService.decide` |
-| Recusa e pedido de ajustes exigem ao menos um motivo padronizado | `AdminService.decide` |
+| Aprovação bloqueada sem e-mail confirmado, com obrigatório em aberto ou do próprio perfil | `IssuerReviewService.decide` |
+| Recusa e pedido de ajustes exigem ao menos um motivo padronizado | `IssuerReviewService.decide` |
 | Limite de 5 envios; reenvio só com *Ajustes solicitados* ou *Recusado* | `IssuerReviewService.resubmit` |
 | Prazo da primeira análise contado da confirmação do e-mail; dos reenvios, da data do reenvio | `IssuerReviewService.emailConfirmed` |
 | Nome civil obrigatório no cadastro de celebridade e em todo reenvio (corrigível; sem ele o reenvio é recusado) | `IdentityService`, `IssuerReviewService.resubmit` |

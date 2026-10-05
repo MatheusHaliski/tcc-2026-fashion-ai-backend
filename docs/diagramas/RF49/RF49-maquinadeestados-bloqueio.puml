@@ -1,0 +1,36 @@
+@startuml RF49_MaquinaDeEstados_Bloqueio
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nMáquina de estados: tentativas de senha de uma conta (balde "login-fail", 5 em 15 min)
+
+[*] --> Livre : conta criada
+
+state Livre : contador = 0\n(nenhuma janela aberta)
+
+state "Contando" as Contando : 1 a 5 tentativas reservadas\njanela fixa de 15 min aberta na 1ª
+state "Bloqueada" as Bloqueada : 6ª reserva ou mais na janela\nlogin → 401 genérico · logado → 429 MUITAS_TENTATIVAS\nnem a senha certa entra (sem oráculo)\naudita LOGIN_BLOQUEADO_TENTATIVAS
+
+Livre --> Contando : tentativa de senha\n(reserva atômica: contador = 1)
+Contando --> Contando : [reserva ≤ 5] senha errada ou 2FA errado: a reserva fica\nsenha certa com 2FA pendente: release (devolve a reserva)
+Contando --> Livre : login completo\n(reset do contador)
+Contando --> Livre : a janela de 15 min vence
+Contando --> Livre : redefinição de senha por e-mail\n(quem provou o e-mail sai do bloqueio)
+Contando --> Bloqueada : nova reserva [contador > 5]\n(inclui pedidos em paralelo)
+Bloqueada --> Bloqueada : qualquer tentativa\n(conta, mas não estende a janela)
+Bloqueada --> Livre : a janela de 15 min vence
+Bloqueada --> Livre : redefinição de senha por e-mail
+
+note right of Contando
+  A mesma máquina vale para a troca de senha,
+  PATCH /api/me/sensitive e a exclusão da conta:
+  uma sessão roubada não testa a senha atual
+  sem limite. O limite por IP (AuthRateLimitFilter)
+  e o teto de hashes ficam ANTES desta máquina.
+end note
+
+note bottom of Bloqueada
+  Contador no RateLimitPort: INCR atômico no Redis (com TTL)
+  ou memória com teto de 100 mil baldes e varredura dos vencidos.
+  Antes da correção, o contador era lido antes do hash e somado
+  depois: 40 pedidos em paralelo avaliavam 40 senhas (agora 5).
+end note
+@enduml
