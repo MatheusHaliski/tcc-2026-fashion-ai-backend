@@ -11,44 +11,45 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FlairLooksTest {
-    static Card card(String id, String cat, String sub, String hex, String brand, List<String> styles, List<String> occ, double price) {
+    static Card card(String id, String cat, String sub, String hex, String brand, List<String> styles, List<String> occ) {
         return FlairEngine.card(new FlairEngine.PieceInput(id, id, cat, sub, null, hex, brand, brand != null, null, styles, occ, "COTTON",
-                0.7, false, false, false, false, false, price, 0, 0), "SPRING");
+                0.7, false, false, false, false, false, FlairEngine.Hype.NONE, 0), "SPRING");
     }
 
-    static Look look(String title, double hype, long likes, List<Card> cards) {
+    /** {@code hype} = HypeScore v2 público do look (nulo = sem Hype público). */
+    static Look look(String title, Double hype, long likes, List<Card> cards) {
         return FlairLooks.look(new FlairLooks.LookInput(title, title, "u", null, hype, likes, 0, 0, 0, 0, List.of(), List.of(), null, cards));
     }
 
     static final List<Card> STREET = List.of(
-            card("tee", "upper_piece", "t_shirt", "#FFFFFF", "A", List.of("streetwear", "y2k"), List.of("festival", "casual", "party"), 100),
-            card("cargo", "lower_piece", "cargo_pants", "#111111", "B", List.of("streetwear", "utility"), List.of("festival", "casual"), 200),
-            card("dunk", "shoes_piece", "casual_sneakers", "#E0457B", "C", List.of("streetwear"), List.of("festival", "casual"), 700));
+            card("tee", "upper_piece", "t_shirt", "#FFFFFF", "A", List.of("streetwear", "y2k"), List.of("festival", "casual", "party")),
+            card("cargo", "lower_piece", "cargo_pants", "#111111", "B", List.of("streetwear", "utility"), List.of("festival", "casual")),
+            card("dunk", "shoes_piece", "casual_sneakers", "#E0457B", "C", List.of("streetwear"), List.of("festival", "casual")));
     static final List<Card> MINIMAL = List.of(
-            card("blazer", "upper_piece", "blazer", "#222222", "Lume", List.of("tailored", "minimalist"), List.of("work", "business"), 900),
-            card("shirt", "upper_piece", "shirt", "#FFFFFF", "Lume", List.of("minimalist", "classic"), List.of("work", "business"), 300),
-            card("pants", "lower_piece", "tailored_pants", "#222222", "Lume", List.of("tailored"), List.of("work", "business"), 500),
-            card("loafer", "shoes_piece", "loafers", "#111111", "Lume", List.of("classic"), List.of("work", "formal"), 700));
+            card("blazer", "upper_piece", "blazer", "#222222", "Lume", List.of("tailored", "minimalist"), List.of("work", "business")),
+            card("shirt", "upper_piece", "shirt", "#FFFFFF", "Lume", List.of("minimalist", "classic"), List.of("work", "business")),
+            card("pants", "lower_piece", "tailored_pants", "#222222", "Lume", List.of("tailored"), List.of("work", "business")),
+            card("loafer", "shoes_piece", "loafers", "#111111", "Lume", List.of("classic"), List.of("work", "formal")));
 
     @Test
     void lookHasTenStatsAndSynergies() {
-        Look street = look("Neon Street", 86, 40, STREET);
+        Look street = look("Neon Street", 86.0, 40, STREET);
         assertThat(street.stats()).containsOnlyKeys(FlairLooks.STATS);
         assertThat(street.synergies()).extracting(FlairLooks.Synergy::code).contains("STREETWEAR_COMBO", "MIX_MATCH");
-        Look minimal = look("Minimal Luxury", 89, 10, MINIMAL);
+        Look minimal = look("Minimal Luxury", 89.0, 10, MINIMAL);
         assertThat(minimal.synergies()).extracting(FlairLooks.Synergy::code).contains("CLASSIC_FORMAL", "BRAND_LOYALTY");
     }
 
     @Test
     void themeChangesTheWinnerNotOnlyTheHypeScore() {
-        Look street = look("Neon Street", 80, 40, STREET), minimal = look("Minimal Luxury", 92, 40, MINIMAL);
+        Look street = look("Neon Street", 80.0, 40, STREET), minimal = look("Minimal Luxury", 92.0, 40, MINIMAL);
         assertThat(FlairLooks.battle(street, minimal, FlairLooks.theme("FESTIVAL_NOITE")).winner()).isEqualTo("A");
         assertThat(FlairLooks.battle(street, minimal, FlairLooks.theme("BUSINESS_MEETING")).winner()).isEqualTo("B");
     }
 
     @Test
     void squadAssignsEachSituationToADifferentLook() {
-        List<Look> looks = List.of(look("Street", 80, 0, STREET), look("Office", 80, 0, MINIMAL));
+        List<Look> looks = List.of(look("Street", 80.0, 0, STREET), look("Office", 80.0, 0, MINIMAL));
         List<Integer> a = FlairLooks.assign(looks, List.of(FlairLooks.theme("MUSIC_FESTIVAL"), FlairLooks.theme("BUSINESS_MEETING")));
         assertThat(a).containsExactly(0, 1);
     }
@@ -88,7 +89,7 @@ class FlairLooksTest {
 
     @Test
     void tagTeamHarmonyPrefersCompatibleLooks() {
-        Look s1 = look("S1", 80, 0, STREET), s2 = look("S2", 80, 0, STREET), m = look("M", 80, 0, MINIMAL);
+        Look s1 = look("S1", 80.0, 0, STREET), s2 = look("S2", 80.0, 0, STREET), m = look("M", 80.0, 0, MINIMAL);
         assertThat(FlairLooks.harmony(s1, s2)).isGreaterThan(FlairLooks.harmony(s1, m));
     }
 
@@ -98,6 +99,59 @@ class FlairLooksTest {
         Look boss = FlairLooks.bossLook(FlairLooks.BOSSES.get("MINIMALIST"));
         assertThat(boss.stats().get("STYLE")).isEqualTo(100);
         assertThat(FlairLooks.bossScore(boss, FlairLooks.theme("NEW_YORK_MINIMAL"))).isGreaterThan(80);
+    }
+
+    // ------------------------------------------------------------------ RF53 · P2-17: atributo HYPE em v2
+
+    @Test
+    void withoutPublicHypeTheStatIsNeutralFiftyNotZeroNorCardPower() {
+        Look none = look("Sem Hype", null, 0, MINIMAL);
+        assertThat(none.stats().get("HYPE")).isEqualTo(FlairLooks.NEUTRAL_HYPE).isEqualTo(50);
+        // um score 0 de verdade (AVAILABLE) continua 0: só "sem dados" vira neutro
+        assertThat(look("Zero", 0.0, 0, MINIMAL).stats().get("HYPE")).isZero();
+        assertThat(look("Alto", 87.4, 0, MINIMAL).stats().get("HYPE")).isEqualTo(87);
+    }
+
+    @Test
+    void hypeWeighsLikeAnyOtherStatInTheOverallRating() {
+        Look low = look("A", 0.0, 0, STREET), high = look("B", 100.0, 0, STREET);
+        // 10 atributos com peso 1: 100 pontos de HYPE mudam a nota em 10 (com o antigo ×1,5 seriam ~14)
+        assertThat(high.rating() - low.rating()).isBetween(9, 10);
+    }
+
+    @Test
+    void noThemeWeighsHypeAboveAnyOtherStat() {
+        for (FlairLooks.Theme t : FlairLooks.THEMES.values()) {
+            double hype = FlairLooks.weight(t, "HYPE");
+            for (String k : FlairLooks.STATS) {
+                if (!"HYPE".equals(k)) {
+                    assertThat(hype).as(t.code() + " HYPE × " + k).isLessThanOrEqualTo(FlairLooks.weight(t, k));
+                }
+            }
+        }
+        FlairLooks.Clash c = FlairLooks.battle(look("A", 90.0, 0, STREET), look("B", 10.0, 0, MINIMAL), FlairLooks.theme("RED_CARPET"));
+        assertThat(c.breakdown()).filteredOn(m -> "HYPE".equals(m.get("stat")))
+                .singleElement().satisfies(m -> assertThat(((Number) m.get("weight")).doubleValue()).isLessThanOrEqualTo(0.8));
+    }
+
+    @Test
+    void sameLooksDifferentHypeDoNotDecideABusinessMeeting() {
+        // relevância é contexto: no tema de trabalho o look adequado vence mesmo com Hype público muito menor
+        Look street = look("Neon Street", 98.0, 0, STREET), minimal = look("Minimal", 5.0, 0, MINIMAL);
+        assertThat(FlairLooks.battle(street, minimal, FlairLooks.theme("BUSINESS_MEETING")).winner()).isEqualTo("B");
+    }
+
+    @Test
+    void wardrobeWarsComparesRelevanceNotQuality() {
+        FlairLooks.Wardrobe noHype = new FlairLooks.Wardrobe("a", (Double) null, 3, 3, 10, 10, 10, 10);
+        FlairLooks.Wardrobe withHype = new FlairLooks.Wardrobe("b", 72.0, 3, 3, 10, 10, 10, 10);
+        assertThat(noHype.quality()).isEqualTo(50);                        // campo deprecado espelha o neutro, nunca 0
+        List<FlairLooks.Clash> rounds = FlairLooks.wardrobeWars(noHype, withHype);
+        FlairLooks.Clash first = rounds.get(0);
+        assertThat(first.label()).isEqualTo("Relevância média (HypeScore)").doesNotContainIgnoringCase("qualidade");
+        assertThat(first.scoreA()).isEqualTo(50.0);
+        assertThat(first.scoreB()).isEqualTo(72.0);
+        assertThat(first.notes()).singleElement().asString().contains("A").contains("50");
     }
 
     @Test
