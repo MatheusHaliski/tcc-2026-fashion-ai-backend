@@ -20,26 +20,32 @@ package "Frontend (Next.js · React Three Fiber)" {
   component "explorer — Painel global" as FE0
   component "explorer — Buscar marcas & lojas" as FE1
   component "explorer — Insights globais" as FE2
+  component "explorer — Em alta <<RF49>>\nHypeTrendingPanel\n(components/hype/hype-trending.tsx)" as FE3
 }
 package "fai-web (REST)" {
   [DiscoveryController] as DiscoveryController
+  [HypeController <<RF49>>\nGET /api/hype/trending] as HypeController
 }
 package "fai-application (casos de uso)" {
   [SearchService] as SearchService
   [ExplorerService] as ExplorerService
   [SchemeService] as SchemeService #FAFAFA
   [ChallengeService] as ChallengeService #FAFAFA
+  [HypeQueryService <<RF49>>\ntrending · rank · monthAverage] as HypeQueryService
+  [HypeCache <<RF49>>\nchave com geração · TTL 10 min] as HypeCache
 }
 package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nBrandRepository\nCelebrityProfileRepository\nFollowRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nShareRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+  [BrandProfileRepository\nBrandRepository\nCelebrityProfileRepository\nFollowRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nShareRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository\nHypeScoreCurrentRepository <<RF49>>\nHypeScoreSnapshotRepository <<RF49>>] as REPOS
 }
-database "MySQL · fashionai_app\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• scheme_items\n• schemes\n• seal_bonds\n• shares\n• style_dna\n• users\n• wardrobe_items" as DB
+database "MySQL · fashionai_app\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• scheme_items\n• schemes\n• seal_bonds\n• shares\n• style_dna\n• users\n• wardrobe_items\n• hype_scores (RF49)\n• hype_score_snapshots (RF49)" as DB
 cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
 database "AnalyticsQueryPort\n(MysqlAnalyticsAdapter · agregados)" as P_analytics
+database "RenderCachePort\n(Redis · memória)" as P_cache
 
 FE0 --> DiscoveryController : HTTPS/JSON
 FE1 --> DiscoveryController : HTTPS/JSON
 FE2 --> DiscoveryController : HTTPS/JSON
+FE3 --> HypeController : GET /api/hype/trending\n?type&window(1|7|30)&category&style&occasion
 DiscoveryController --> SearchService
 DiscoveryController --> ExplorerService
 SearchService ..> SchemeService
@@ -48,5 +54,9 @@ SearchService --> REPOS
 ExplorerService --> REPOS
 ExplorerService --> P_analytics
 ExplorerService --> P_ai
+HypeController --> HypeQueryService : trending
+HypeQueryService --> HypeCache : get(chave, rank)
+HypeCache --> P_cache
+HypeQueryService --> REPOS : só publicEligible + AVAILABLE
 REPOS --> DB : JPA/Flyway
 @enduml

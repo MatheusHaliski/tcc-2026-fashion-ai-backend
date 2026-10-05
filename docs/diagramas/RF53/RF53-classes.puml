@@ -1,0 +1,208 @@
+@startuml RF53_Classes
+title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de classes — entidades JPA reais (fai-domain), enums e núcleo de cálculo (fai-application)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class HypeSignalDaily <<@Table hype_signal_daily>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +signalType: HypeSignalType
+  +signalDate: LocalDate
+  +eventCount: int
+  +weightedCount: BigDecimal = 0
+  +updatedAt: Instant
+}
+note bottom of HypeSignalDaily : UNIQUE (entity_type, entity_id,\nsignal_type, signal_date)\nincrementado por upsert nativo
+
+class HypeScoreCurrent <<@Table hype_scores>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String = "HYPE_V2"
+  +status: HypeStatus
+  +score: BigDecimal [0–100, null se insuficiente]
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +deltaPoints: BigDecimal
+  +deltaPercent: BigDecimal
+  +direction: String [UP|DOWN|STABLE]
+  +momentum: HypeMomentum
+  +publicEligible: boolean
+  +category: String
+  +styles: String
+  +occasions: String
+  +signalsJson: String
+  +reasonsJson: String
+  +windowStart: Instant
+  +windowEnd: Instant
+  +calculatedAt: Instant
+}
+note bottom of HypeScoreCurrent : UNIQUE (entity_type, entity_id,\nalgorithm_version) — estado atual\n(read model dos cards e rankings)
+
+class HypeScoreSnapshot <<@Table hype_score_snapshots>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +snapshotDate: LocalDate
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +publicEligible: boolean
+  +windowStart: Instant
+  +windowEnd: Instant
+  +calculatedAt: Instant
+}
+note bottom of HypeScoreSnapshot : 1 por entidade, versão e dia\n(histórico, delta de 7 dias, média de 30 dias)
+
+class HypeDimensions <<@Embeddable>> {
+  +popularity: BigDecimal
+  +engagement: BigDecimal
+  +trend: BigDecimal
+  +trendVelocity: BigDecimal
+  +novelty: BigDecimal
+  +longevity: BigDecimal
+  +rarity: BigDecimal
+  +originality: BigDecimal
+  +influence: BigDecimal [só looks]
+}
+
+class WardrobeItem <<@Table wardrobe_items>> {
+  +user: User
+  +category: String
+  +visibility: Visibility
+  +catalogProductId: UUID
+  +hypeScore: BigDecimal [v1]
+}
+class Scheme <<@Table schemes>> {
+  +user: User
+  +visibility: Visibility
+  +originalScheme: Scheme [remix]
+  +hypeScore: BigDecimal [v1]
+}
+}
+
+package "fai-domain · model.enums" {
+enum HypeEntityType {
+  PIECE
+  SCHEME
+}
+enum HypeSignalType {
+  LIKE_CREATED
+  COMMENT_CREATED
+  SAVE_CREATED
+  SHARE_CREATED
+  FAVORITE_CREATED
+  LOOK_REMIXED
+  PIECE_REMIXED
+  LOOK_VIEWED
+  PIECE_VIEWED
+  PIECE_USED
+  PIECE_IN_LOOK
+  LOOK_WORN
+}
+enum HypeStatus {
+  AVAILABLE
+  INSUFFICIENT_DATA
+}
+enum HypeLevel {
+  LOW_SIGNAL
+  NICHE
+  RELEVANT
+  HOT
+  TRENDING
+  VIRAL
+}
+enum HypeMomentum {
+  EMERGING
+  RISING
+  STABLE
+  COOLING
+  CLASSIC
+}
+}
+
+package "fai-application · hype" {
+class HypeScoreConfig <<@Component>> {
+  +algorithmVersion(): String
+  +weights(type): Map<Dimension, Double>
+  +signalWeight(signal): double
+  +level(score): HypeLevel
+  +decayLambda(): double
+  +describe(): Map
+}
+class HypeCalculator {
+  +baseline(publicPopulation): Baseline
+  +compute(in: HypeInputs, base: Baseline): HypeResult
+  +direction(score, base): String
+  ~momentum(dims): HypeMomentum
+}
+class HypeInputs <<record>>
+class HypeResult <<record>> {
+  +status: HypeStatus
+  +score: Double
+  +level: HypeLevel
+  +dimensions: Map
+  +momentum: HypeMomentum
+  +reasons: List<HypeReason>
+}
+class HypeReason <<record>> {
+  +code: String
+  +tone: String
+  +dimension: String
+  +value: Double
+}
+class HypeSignalSeries <<record>> {
+  +build(rows, today, config): Map<UUID, HypeSignalSeries>
+}
+class HypeIntegrityPolicy <<@Component>> {
+  +weight(sinal: HypeSignal, dia): double
+}
+class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
+  +signal: HypeSignalType
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +actorId: UUID
+  +ownerId: UUID
+}
+class StyleCompatibility {
+  +profile(styles, colors, occasions): Profile
+  +score(dna, item): Map {score, parts}
+}
+class RecommendationScoring {
+  +Mode: SAFE | DISCOVERY | EXPERIMENTAL
+  +rankValue(scores, mode): double
+}
+}
+
+HypeScoreCurrent *-- HypeDimensions
+HypeScoreSnapshot *-- HypeDimensions
+HypeSignalDaily --> HypeEntityType
+HypeSignalDaily --> HypeSignalType
+HypeScoreCurrent --> HypeStatus
+HypeScoreCurrent --> HypeLevel
+HypeScoreCurrent --> HypeMomentum
+HypeScoreSnapshot --> HypeLevel
+HypeSignalDaily ..> WardrobeItem : entity_id (PIECE)
+HypeSignalDaily ..> Scheme : entity_id (SCHEME)
+HypeScoreCurrent ..> WardrobeItem : entity_id (PIECE)
+HypeScoreCurrent ..> Scheme : entity_id (SCHEME)
+HypeScoreCurrent "1" ..> "0..*" HypeScoreSnapshot : mesma entidade e versão
+HypeSignal ..> HypeSignalDaily : HypeSignalRecorder grava\n(peso de HypeIntegrityPolicy)
+HypeIntegrityPolicy ..> HypeSignal
+HypeCalculator ..> HypeScoreConfig
+HypeCalculator ..> HypeInputs
+HypeCalculator ..> HypeResult
+HypeResult *-- HypeReason
+HypeSignalSeries ..> HypeSignalDaily : lê as linhas
+HypeResult ..> HypeScoreCurrent : persistido pelo\nHypeSnapshotService
+@enduml

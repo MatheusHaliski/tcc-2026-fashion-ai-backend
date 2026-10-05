@@ -60,14 +60,65 @@ class PieceUsageDiaryEntry {
   +schemeId: UUID
   +createdAt: Instant
 }
+class HypeScoreCurrent <<RF53>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +deltaPoints: BigDecimal
+  +calculatedAt: Instant
+  .. +12 campos ..
+}
+}
+package "fai-domain · enums" {
+enum HypeLevel <<RF53>> {
+  LOW_SIGNAL
+  NICHE
+  RELEVANT
+  HOT
+  TRENDING
+  VIRAL
+}
+}
+package "fai-application · service" {
+class "WardrobeService.ClosetFilter" as ClosetFilter <<record>> {
+  +category, color, season, occasion, style: String
+  +state: String
+  +q: String
+  +sort: String
+  +page, size: int
+  +hypeLevel: String
+}
+class WardrobeService {
+  ~{static} HYPE_SORTS = hype, hype_desc, hype_asc, growth, rarity
+  ~{static} SORT_ALIASES: Map<String, String>
+  +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
+  ~hypeMinimum(level): int
+  ~{static} stateMatches(w, state): boolean
+}
 }
 PieceUsageDiaryEntry ..> User : userId
 PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
 WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
 WardrobeItem "*" --> "1" User : user
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent --> HypeLevel
+WardrobeService ..> ClosetFilter
+WardrobeService ..> WardrobeItem : filtra/ordena
+WardrobeService ..> HypeScoreCurrent : lê (sort Hype · hypeLevel)
 note top of User : tabela users
 note top of WardrobeItem : tabela wardrobe_items
 note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
 note top of PieceUsageDiaryEntry : tabela piece_usage_diary
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)
+note bottom of ClosetFilter : hypeLevel = faixa mínima (filtro, não aba) — novo (RF53)
+note top of WardrobeService
+  novo (RF53) — SORT_ALIASES: recentes→recent · mais_usadas→worn
+  menos_usadas→least_worn · nome→name · preco→price · mais_tempo_sem_uso→idle
+  (sort Hype e hypeLevel leem hype_scores; sem Hype fica por último)
+end note
 @enduml

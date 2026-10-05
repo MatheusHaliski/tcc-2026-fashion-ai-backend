@@ -17,12 +17,14 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "copilot/page.tsx\n(chat + sugestões visuais)" as FE0
+  component "copilot/page.tsx\n(chat + sugestões visuais)\nTabs: Recomendações · Descoberta · Experimentação\n· Redescoberta · Insights; modo (SegmentPicker,\nSAFE padrão); ?ask= pré-preenche; LookScoresRow" as FE0
+  component "components/hype <<RF49>>\nHypeWardrobeInsights · HypeRediscoveryCard" as FE3
   component "SchemeCard · PieceCard\nuseDetailModal" as FE1
   component "autopilot/page.tsx\n(look de hoje · semana)" as FE2
 }
 package "fai-web · controllers" {
   [AutopilotController\n/api/copilot/* · /api/autopilot/*] as AC
+  [HypeController <<RF49>>\nGET /api/me/hype/wardrobe] as HC
 }
 package "fai-application · services" {
   [CopilotService] as CS
@@ -35,17 +37,21 @@ package "fai-application · services" {
   [RoomService] as RM
   [ChallengeService] as CH
   [AiEngine (RF24)\nAiCapability.COPILOT\nfallback LocalSchemeComposer] as AI
+  [HypeQueryService <<RF49>>\ncurrentOf(PIECE|SCHEME) · wardrobe] as HQ
+  [RecommendationScoring <<RF49>>\nMode SAFE · DISCOVERY · EXPERIMENTAL\nStyleCompatibility (DNA ≠ Hype)] as RS
 }
 package "fai-infrastructure · adapters" {
   [OpenMeteoAdapter\n(WeatherPort · GeocodingPort)] as OMA
-  [Repositórios JPA\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · WeekPlanRepository\nWeekPlanDayRepository · DailyLookRepository\nPieceUsageDiaryEntryRepository] as REPOS
+  [Repositórios JPA\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · WeekPlanRepository\nWeekPlanDayRepository · DailyLookRepository\nPieceUsageDiaryEntryRepository\nHypeScoreCurrentRepository <<RF49>>] as REPOS
 }
-database "MySQL\n• wardrobe_items\n• schemes · scheme_items\n• week_plans · week_plan_days\n• daily_looks\n• piece_usage_diary\n• room_inventory" as DB
+database "MySQL\n• wardrobe_items\n• schemes · scheme_items\n• week_plans · week_plan_days\n• daily_looks\n• piece_usage_diary\n• room_inventory\n• hype_scores (RF49)" as DB
 cloud "Open-Meteo\napi.open-meteo.com\ngeocoding-api.open-meteo.com" as OMC
 cloud "Provedores de IA\n(ClaudeProvider · GeminiProvider)" as P_ai
 
 FE0 --> AC : GET /api/copilot/context · /api/copilot/suggestions\nPOST /api/copilot/messages · /api/copilot/looks
 FE1 --> FE0 : exibe looks e chips
+FE3 --> FE0 : abas Redescoberta · Insights
+FE3 --> HC : GET /api/me/hype/wardrobe
 FE2 --> AC : POST /api/autopilot/daily · /api/autopilot/weeks\nGET /api/autopilot/weeks/current
 AC --> CS : chama
 AC --> AP : chama
@@ -58,6 +64,10 @@ CS --> DL : register (COPILOT)
 CS --> RM : locateAll
 CS --> CH : restriction
 CS --> AI : text (GENERAL)
+CS --> HQ : currentOf — trendingLooks,\nscoreLooks, hypeAnswer (HYPE)
+CS --> RS : scoreLooks(mode) · compatibilidade
+HC --> HQ : wardrobe(user)
+HQ --> REPOS : lê hype_scores
 AP --> WS : clima
 AP --> AI : text (ranking)
 AP --> REPOS : grava planos
