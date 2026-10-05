@@ -1,0 +1,81 @@
+@startuml RF49_Componentes
+title RF49 — Verificar perfis de Marca e Celebridade\nDiagrama de componentes — páginas → controllers → serviços → ports/adaptadores
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(auth)/register/page.tsx\n(nome civil obrigatório)" as Reg
+  component "brands/[slug]/page.tsx\n(aba CENTRAL + IssuerCenterButton)" as Prof
+  component "dashboard/page.tsx\n(PendingReview no 403\nPERFIL_EM_VALIDACAO)" as Dash
+  component "components/issuer-review.tsx\nIssuerCenter · StatusCard · Feedback\nResubmit · CodeCard · RulesCard\nuseIssuerReview" as Center
+  component "admin/users/page.tsx\n(aba approvals)" as AdmPage
+  component "components/admin-approvals.tsx\nAdminApprovals · DossierCard\nWaitingRow · businessDaysSince" as Adm
+  component "notifications/page.tsx\n(payload.href)" as Notif
+}
+package "fai-web · controllers" {
+  component "AuthController\n/api/auth/register\n/api/auth/email-verification\n/api/auth/uploads" as AuthC
+  component "IssuerReviewController\nGET /api/me/issuer-review\nPOST /api/me/issuer-review/resubmit" as RC
+  component "AdminController\nGET /api/admin/approvals\nPOST /api/admin/approvals/{userId}\nGET …/{userId}/documents/{kind}" as AC
+}
+package "fai-application · serviços" {
+  component "IdentityService\nregister · verifyEmail" as IS
+  component "IssuerReviewService\nsubmitted · emailConfirmed · status\nresubmit · queue · dossier\ndocument · decide" as RS
+  component "IssuerVerificationPolicy\ncritérios · motivos · checks\nverificationCode · validCnpj · webUrl" as POL
+  component "Guard\nrequireAdmin\nrequireApprovedProfile" as G
+  component "NotificationService" as NS
+  component "SealService\nensureDefaultSeals" as SS
+  component "MediaService\nreadRestricted" as MS
+  component "Audit" as AU
+  component "SideEffectRunner\n(depois do commit,\nthread virtual)" as SE
+}
+package "Ports e adaptadores" {
+  component "EmailSenderPort" as EP
+  component "ResendEmailSender\n(EMAIL_PROVIDER=resend)" as RES
+  component "LoggingEmailSender\n(padrão)" as LOG
+  component "MediaStoragePort\nrestricted/ (só ADMIN)" as STP
+}
+database "MySQL\nV33__politica_verificacao_emissor\n(review_attempts, review_submitted_at,\nreview_reasons, review_checklist,\nreview_owner_message)" as DB
+cloud "Resend API" as ResendApi
+
+Reg --> AuthC
+Prof --> Center
+Dash --> Center
+Center --> RC
+AdmPage --> Adm
+Adm --> AC
+Notif ..> Prof : href da Central
+Notif ..> AdmPage : href da fila
+AuthC --> IS
+RC --> RS
+AC --> RS
+IS --> RS : submitted(userId)\nemailConfirmed(user)
+RS --> POL
+RS --> G
+RS --> NS
+RS --> SS : aprovação
+RS --> MS : documentos
+RS --> AU
+RS --> SE
+SE --> EP
+EP <|.. RES
+EP <|.. LOG
+RES --> ResendApi
+MS --> STP
+RS --> DB
+IS --> DB
+@enduml

@@ -1,0 +1,89 @@
+@startuml RF50_Componentes
+title RF50 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de componentes — editores → Studio/modal → renderização do card → API → serviços
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend · editores" {
+  component "scheme-builder.tsx\n(look, etapa 4)" as SB
+  component "dna-builder.tsx\n(narrativa B11 via layoutPanel)" as DB2
+  component "piece-art-editor.tsx\nPieceArtDialog\n(família seasonal)" as PE
+}
+package "Frontend · Background Studio" {
+  component "BackgroundStudio\n(segmentos Cor · Aura · Layout & Estilo · Container)\nchooseAnatomy · applySeasonal" as BS
+  component "SeasonalDialog → SeasonalDraft\n(rascunho, Aplicar/Cancelar)" as SD
+  component "SeasonalOptions (forLayout)\ncartelas · automática · animações" as SO
+  component "ColorPanel\n(hideSeasonal, keepCartela)" as CP
+  component "CLEAR_CARTELA\nuseLeaveCartela" as CL
+  component "useBgCatalog" as CAT
+  component "components/ui Dialog\n(useFocusTrap: Esc, X, fundo)" as DLG
+}
+package "Frontend · renderização do card" {
+  component "lib/card-art.ts\ncartelaSeason · resolveCardArt\nmotionOf · studioOf" as LIB
+  component "lib/assets/card-art-index.json\n(seasonal: frost, solstice,\nember, bloom)" as IDX
+  component "scheme-anatomies.tsx\neffectiveAnatomy · SeasonCard" as SA
+  component "dna-card.tsx\n(faixa B11 .dna-season)" as DC
+  component "card-art.tsx\nCardArtLayer · MotionFall\nSeasonDecor" as CA
+  component "globals.css\n.season-hero · .dna-season\nmotion-shimmer · movimento reduzido" as CSS
+}
+package "fai-web · controllers" {
+  component "BackgroundController\nGET /api/backgrounds/catalog\nPUT /api/pieces/{id}/background" as BC
+  component "SchemeController\nPOST/PUT /api/schemes" as SC
+  component "DnaController\nPOST /api/dna-schemes(/preview)\nPUT /api/dna-schemes/{id}" as DCt
+}
+package "fai-application · serviços" {
+  component "SchemeService\napplyForm · create · update" as SS
+  component "BackgroundStudioService\ncatalog · applyToScheme\nsavePiece · resetScheme" as BSS
+  component "AssetCatalogService\nlist(seasonalPresets)\ngradient(id)" as ACS
+  component "DnaService.apply\n(seasonalTheme, narrativeType)" as DS
+  component "Views.scheme\n(animation do studioConfigJson)" as V
+}
+database "MySQL\nschemes · dna_schemes ·\nwardrobe_items" as DB
+
+SB --> BS
+DB2 --> BS : layoutPanel({openSeasonal})
+DB2 --> CL : useLeaveCartela
+PE --> SD
+BS --> SD
+SD --> SO
+SD --> DLG
+BS --> CP
+BS --> CL
+BS --> CAT
+CAT --> BC
+SB --> SA : prévia
+DB2 --> DC : prévia
+PE --> CA : prévia
+SA --> LIB
+DC --> LIB
+CA --> LIB
+LIB --> IDX
+SA ..> CSS
+DC ..> CSS
+CA ..> CSS
+SB --> SC
+DB2 --> DCt
+PE --> BC
+BC --> BSS
+SC --> SS
+SS --> BSS
+DCt --> DS
+BSS --> ACS
+SS --> V
+BSS --> DB
+DS --> DB
+@enduml

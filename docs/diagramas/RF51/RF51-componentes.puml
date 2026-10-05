@@ -1,0 +1,64 @@
+@startuml RF51_Componentes
+title RF51 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de componentes — geração dos arquivos → índice → resolução da arte → ArtVideo → APIs do navegador
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+left to right direction
+
+package "Geração dos arquivos (scripts/assets)" {
+  component "aura_motion_library.py\n(MP4 libx264, 480 px, 20 fps, laço de 8 s)" as GEN
+  component "build_card_art_index.py\n(asset-manifest.json → índice)" as IDXB
+}
+package "public/ (Next.js, estático)" {
+  component "/aura_com_GIF/*.mp4\n/aura/geometry|splash/NN/animacao.mp4\n/aura_com_material_mosaico_com_GIF/*.mp4" as MP4
+  component "/_derived/aura/*_card.webp\n…_poster.jpg (pôsteres)" as POS
+  component "middleware.ts\n(CSP media-src 'self' blob: data:)" as MW
+}
+package "Frontend · dados e resolução" {
+  component "lib/assets/card-art-index.json\n(44 variantes: 30 MP4, 12 GIF Electro,\n216 mosaicos MP4)" as IDX
+  component "lib/card-art.ts\nresolveCardArt · resolveLayers\nvariantMotion · isVideo · media" as LIB
+}
+package "Frontend · renderização" {
+  component "components/card-art.tsx\nCardArtLayer (stuck)" as CL
+  component "ArtVideo\n(nearIO 300 px · seenIO · tryPlay\nretry · dropRetry · limpeza)" as AV
+  component "globals.css\nanim-sweep · breathe · drift · …\n(plano B) · movimento reduzido" as CSS
+}
+package "Frontend · telas que usam" {
+  component "scheme-card.tsx (look)" as SC
+  component "dna-card.tsx (DNA)" as DC
+  component "piece-art.tsx ArtStage\n(expanded-card · piece-art-editor;\ncompacto mostra só o pôster)" as PA
+}
+package "Navegador" {
+  component "IntersectionObserver" as IO
+  component "HTMLVideoElement\nplay() → Promise" as HV
+  component "Page Visibility · pageshow\npointerdown · keydown" as EV
+}
+
+GEN --> MP4
+GEN --> POS
+IDXB --> IDX
+SC --> LIB
+DC --> LIB
+PA --> LIB
+LIB --> IDX
+SC --> CL
+DC --> CL
+PA --> CL
+CL --> AV
+CL ..> CSS : anim-<still>
+AV --> IO
+AV --> HV
+AV --> EV
+HV --> MP4 : GET (src só perto da tela)
+CL --> POS : pôster
+MW ..> MP4
+@enduml

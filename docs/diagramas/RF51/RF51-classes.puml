@@ -1,0 +1,93 @@
+@startuml RF51_Classes
+title RF51 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de classes — tipos da arte, CardArtLayer e ArtVideo
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty members
+set separator none
+
+package "lib/card-art.ts" {
+  class CardArt <<type>> {
+    +kind : aura | mosaic | seasonal | …
+    {field} +image : string (pôster ou arte)
+    +video : {src, poster} | undefined
+    +still : string | null
+    +animation : string | null
+    +frame : string | undefined
+    +motion : snow | petals | leaves | shimmer | null
+    +presetId : string
+  }
+  class CardArtLib <<module>> {
+    +ART_INDEX : Idx
+    +resolveCardArt(bg, opts) : CardArt
+    -resolveLayers(...)
+    -variantMotion(variant)
+    +isVideo(url) : boolean
+    +media(url) : string
+    +FRAME_PRESETS = {aura_electro}
+  }
+  class Idx <<type card-art-index.json>> {
+    +variants[] : {id, card, animated, animation}
+    +combos[] : {single, mosaic: {url, poster}}
+    +seasonal : {...}
+  }
+}
+package "components/card-art.tsx" {
+  class CardArtLayer <<React>> {
+    -stuck : boolean
+    +art : CardArt
+    -fallback = stuck ∧ art.video ? art.still ?? "drift" : null
+  }
+  class ArtVideo <<React>> {
+    +src : string
+    +poster : string
+    +onStuck(stuck : boolean)
+    -ref : HTMLVideoElement
+    -stuckRef : onStuck mais recente
+    -seen : boolean
+    {field} -retry : (() => void) | null
+    -tryPlay()
+    -mark(stuck)
+    -dropRetry()
+    {field} -nearIO : IntersectionObserver (300px 0px)
+    -seenIO : IntersectionObserver
+  }
+}
+package "Telas" {
+  class SchemeCard <<React>>
+  class DnaCard <<React>>
+  class ArtStage <<React>> {
+    +density : compact | expanded
+  }
+}
+package "Navegador" {
+  class HTMLVideoElement <<DOM>> {
+    +src, poster, muted, playsInline
+    +play() : Promise<void>
+    +pause()
+    +load()
+  }
+  class IntersectionObserver <<DOM>>
+}
+
+CardArtLib ..> CardArt : cria
+CardArtLib --> Idx
+SchemeCard ..> CardArtLib
+DnaCard ..> CardArtLib
+ArtStage ..> CardArtLib
+SchemeCard --> CardArtLayer
+DnaCard --> CardArtLayer
+ArtStage --> CardArtLayer
+CardArtLayer *-- ArtVideo : art.video
+CardArtLayer ..> CardArt
+ArtVideo --> HTMLVideoElement
+ArtVideo --> "2" IntersectionObserver
+@enduml

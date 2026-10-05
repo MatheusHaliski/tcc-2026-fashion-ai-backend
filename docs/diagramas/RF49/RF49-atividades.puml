@@ -1,0 +1,94 @@
+@startuml RF49_Atividades
+title RF49 — Verificar perfis de Marca e Celebridade (política v1.0)\nDiagrama de atividades — cadastro, aviso à administração, análise, decisão e reenvio pela Central do emissor
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca/Celebridade|
+start
+repeat
+  :Preenche o cadastro (RF1) como MARCA ou CELEBRIDADE;
+  note right
+    MARCA: razão social, CNPJ, logo, site,
+    comprovante de atividade (restricted/)
+    CELEBRIDADE: nome artístico, **nome civil**,
+    documento de identidade, foto oficial, link oficial
+  end note
+  |Sistema|
+repeat while (Campo obrigatório ausente\nou CNPJ inválido?) is (sim: 400 com os campos destacados)
+->não;
+:IdentityService.register: cria a conta (PENDING_EMAIL_VERIFICATION) e o perfil PENDENTE\n(reviewAttempts = 1, reviewSubmittedAt vazio);
+:Envia o código de confirmação e o e-mail "cadastro recebido";
+:issuerReview.submitted(userId);
+:IssuerReviewService, depois do commit (SideEffectRunner, thread virtual):\nnotificação ISSUER_REVIEW_REQUEST a cada conta ADMIN ativa\ne e-mail aos ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS;
+note right
+  sem destinatário: log de aviso e a Central mostra
+  "fila sem aviso" (adminsConfigured = false).
+  Nenhum documento ou dado privado no aviso.
+end note
+|Marca/Celebridade|
+:Confirma o e-mail (POST /api/auth/email-verification);
+|Sistema|
+:Conta PENDING_VALIDATION; emailConfirmed grava reviewSubmittedAt\n→ começa o prazo de 3 dias úteis;
+|Marca/Celebridade|
+:Acompanha pela Central do emissor (aba do perfil ou dashboard):\nstatus, código FAI-XXXXXX, critérios e regras;
+:Publica o código FAI-XXXXXX no perfil oficial\n(prova de controle da conta);
+repeat
+  |Administrador|
+  :Abre a fila /admin/users?tab=approvals:\ndossiês PENDENTE (mais antigos primeiro) e prazo em dias úteis;
+  note right
+    sem e-mail confirmado o dossiê já aparece,
+    mas como "aguardando o e-mail ser confirmado"
+    (reviewableSince nulo) e não pode ser aprovado.
+    AJUSTES sem resposta há 30 dias: a fila
+    oferece RECUSAR com os últimos motivos
+  end note
+  :Abre os documentos (auditado: DOCUMENTO_VERIFICACAO_ABERTO)\ne confere as verificações automáticas (OK / FALHA / ANALISTA);
+  repeat
+    :Marca a checklist e escolhe a decisão:\nAPROVAR · AJUSTES · RECUSAR + motivos padronizados + observação;
+    |Sistema|
+  repeat while (Decisão recusada?) is (sim: 403 próprio perfil · 409 EMAIL_NAO_CONFIRMADO |\nCRITERIOS_PENDENTES · 400 MOTIVO_OBRIGATORIO | OBSERVACAO_OBRIGATORIA)
+  ->não;
+  :IssuerReviewService.decide grava status, motivos, checklist, approvedBy/At;\nnotificação ACCOUNT_APPROVAL ao dono + e-mail depois do commit; auditoria;
+  if (Decisão?) then (APROVAR)
+    :Conta ACTIVE e verificada; identityVerified;\nselos padrão criados (SealService.ensureDefaultSeals);
+    |Marca/Celebridade|
+    :Central mostra o perfil oficial;\nselos, promoções, cupons e dashboard do emissor liberados;
+    stop
+  else (AJUSTES ou RECUSAR)
+    |Marca/Celebridade|
+    :Central mostra os motivos, a observação e o que corrigir;
+    if (Envios < 5?) then (não)
+      :Só a administração reabre o pedido;
+      stop
+    else (sim)
+    endif
+    repeat
+      :Corrige link, contato, nome civil, novo documento\ne escreve uma mensagem ao analista → Reenviar;
+      |Sistema|
+    repeat while (Algum campo inválido?\n(link, nome civil vazio, documento)) is (sim: 400 FORMULARIO_INVALIDO,\nnada é gravado)
+    ->não;
+    :IssuerReviewService.resubmit copia o documento para restricted/; aplica os campos;\nPENDENTE, attempts + 1, reviewSubmittedAt = agora (prazo de 2 dias úteis);
+    :submitted(userId) → administradores avisados de novo;
+  endif
+repeat while (Pedido de volta à fila)
+@enduml
