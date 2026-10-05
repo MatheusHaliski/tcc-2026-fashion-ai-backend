@@ -133,6 +133,16 @@ public class HypeController {
         return hype.rankingFacets(type(type), window, region, category);
     }
 
+    @GetMapping("/api/hype/globe")
+    @Operation(summary = "Globo do Painel global: Hype por país (médio, máximo, crescimento, faixas, criadores e o item de destaque) no recorte de tipo, janela, categoria e nível mínimo; só conteúdo público")
+    public Map<String, Object> globe(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
+                                     @RequestParam(defaultValue = "7") int window,
+                                     @RequestParam(required = false) String category,
+                                     @RequestParam(required = false) String subcategory,
+                                     @RequestParam(required = false) String minLevel) {
+        return hype.globe(viewer, type(type), window, category, subcategory, minLevel);
+    }
+
     @GetMapping("/api/hype/pieces/{id}/positions")
     @Operation(summary = "Posições da peça no ranking público: mundo, categoria, subcategoria, região e país")
     public Map<String, Object> piecePositions(CurrentUser viewer, @PathVariable UUID id) {

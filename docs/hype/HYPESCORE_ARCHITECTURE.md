@@ -137,6 +137,7 @@ duplicado: `metric_snapshots`/`hype_score_metrics` continuam do v1 (calibração
 | `GET /api/hype/pieces/{id}/history?days=90` · `/looks/{id}/history` | público (visibilidade) | snapshots diários |
 | `GET /api/hype/trending?type&window=1\|7\|30&category&style&occasion&limit` | público | ranking só de `public_eligible`; 1 = trend, 7 = score, 30 = média do mês |
 | `GET /api/hype/trending?type=BRAND\|CREATOR&…` | público | **Marcas em alta** (só peças) e **Criadores em alta** (peças + looks): agregados por marca ou por pessoa, só com itens `public_eligible`; o grupo precisa de ≥ 3 itens públicos e o valor é a média dos seus 5 itens mais relevantes; criador bloqueado some para quem vê |
+| `GET /api/hype/globe?type&window=1\|7\|30&category&subcategory&minLevel` | público | **Globo do Painel global** (Explorador): por país do dono, só `public_eligible` — itens, criadores, Hype médio/máximo (com a faixa), crescimento (TREND), subindo, faixas, cor dominante, item de destaque (respeita a visibilidade de quem vê) e `sufficient` (≥ 3 itens); sem país só no `world`. Camadas no front: números, colunas 3D, bonecos, cards e calor |
 | `GET /api/me/hype/wardrobe` · alias `GET /api/hype/me/wardrobe` | autenticado | Hype médio, destaques, redescobertas (o alias, citado na especificação, exige login no próprio endpoint porque `/api/hype/**` é GET público) |
 | `GET /api/me/hype/movers?days=90` | autenticado | séries, subiram/caíram, emergentes, novas tendências |
 | `POST /api/admin/hype/snapshots` | admin | recalcula agora |
