@@ -5279,5 +5279,8 @@
   "multiPiece.revisar": "Review",
   "multiPiece.remover_foto": "Remove photo {n}",
   "multiPiece.limite_fotos": "Up to {max} photos at a time: the rest were left out.",
-  "pieces.new.foto_opcional": "Prefer to take photos?"
+  "pieces.new.forma_de_adicionar": "How do you want to add it?",
+  "pieces.new.modo_catalogo": "Catalog search",
+  "pieces.new.modo_fotos": "Photograph (several photos)",
+  "pieces.new.tipo_para_o_guia": "Piece type (for the photo guide)"
 }

@@ -5279,5 +5279,8 @@
   "multiPiece.revisar": "Revisar",
   "multiPiece.remover_foto": "Quitar foto {n}",
   "multiPiece.limite_fotos": "Hasta {max} fotos por vez: las demás quedaron fuera.",
-  "pieces.new.foto_opcional": "¿Prefieres fotografiar?"
+  "pieces.new.forma_de_adicionar": "¿Cómo quieres añadirla?",
+  "pieces.new.modo_catalogo": "Búsqueda en catálogo",
+  "pieces.new.modo_fotos": "Fotografiar (varias fotos)",
+  "pieces.new.tipo_para_o_guia": "Tipo de prenda (para la guía de cómo fotografiar)"
 }

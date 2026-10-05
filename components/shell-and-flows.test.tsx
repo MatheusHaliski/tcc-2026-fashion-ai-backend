@@ -65,14 +65,17 @@ describe("abas do perfil (Lookbook)", () => {
 });
 
 describe("adicionar peça (RF4/RF47) — etapa única Peça, foto opcional", () => {
-  it("tipo, busca catalogada e dados na mesma etapa; a foto é opcional e aceita várias fotos", async () => {
+  it("duas formas de adicionar separadas: busca catalogada (padrão) e fotografar com várias fotos", async () => {
     loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
     const { container } = renderApp(<NewPiecePage />);
     expect(await screen.findByRole("heading", { name: "Buscar no catálogo" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Dados" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Prefere fotografar?" })).toBeTruthy();
-    const input = container.querySelector("input[type=file]")!;
-    expect(input.hasAttribute("multiple")).toBe(true);
+    expect(screen.getByRole("radio", { name: "Busca catalogada" }).getAttribute("aria-checked")).toBe("true");
+    expect(container.querySelector("input[type=file]")).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Fotografar (várias fotos)" }));
+    expect(screen.queryByRole("heading", { name: "Buscar no catálogo" })).toBeNull();
+    expect(container.querySelector("input[type=file]")!.hasAttribute("multiple")).toBe(true);
+    expect(screen.getByRole("button", { name: "Escolher fotos" })).toBeTruthy();
   });
 
   it("sem produto do catálogo, salva a peça com os dados do formulário e a ilustração da categoria", async () => {

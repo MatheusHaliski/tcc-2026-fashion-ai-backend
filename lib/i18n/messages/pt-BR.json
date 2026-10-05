@@ -5279,5 +5279,8 @@
   "multiPiece.revisar": "Revisar",
   "multiPiece.remover_foto": "Remover foto {n}",
   "multiPiece.limite_fotos": "Até {max} fotos por vez: as demais ficaram de fora.",
-  "pieces.new.foto_opcional": "Prefere fotografar?"
+  "pieces.new.forma_de_adicionar": "Como você quer adicionar?",
+  "pieces.new.modo_catalogo": "Busca catalogada",
+  "pieces.new.modo_fotos": "Fotografar (várias fotos)",
+  "pieces.new.tipo_para_o_guia": "Tipo da peça (para o guia de como fotografar)"
 }
