@@ -37,14 +37,23 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | # | Item | Por que nesta posição |
 |---|---|---|
 | 1 | **WARDROBE-FIX**: tirar a peça do guarda-roupa e provar no espelho (hoje não funciona) | Defeito funcional relatado em teste |
-| 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
-| 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
-| 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) | Alimenta cards, IA, 2D, 3D e Hype Score |
+| 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
+| 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
+| 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
+| 4b | **RF4-FOTO**: etapa opcional "Fotografia" no criador de peça (seção 5.1) | Definição nova do RF4 no Trello; o editor completo é o RF15 (Tema Futuro) |
 | 5 | **QUARTO-REAL**: quarto, guarda-roupa e espelho coerentes e realistas, avatar dentro do quarto, looks do Copilot (seção 3.5) | Depende de 2 e 3 |
 | 6 | **PASSARELA-REAL**: plateia semi-realista e caminhada profissional do avatar da pessoa (seção 3.2) | Depende de 2 e 3 |
 | 7 | **PROVADOR-MARCA**: provador 3D ultra-realista da marca escolhida (seção 3.1) | Depende de 3 e 4 |
 | 8 | **PALCOS-ARTISTAS**: estudo a fundo + mini-palcos e mini-lojas únicos por artista ou marca (seção 3.3) | Estudo primeiro, depois implementação |
 | 9 | **LOJA-EXCLUSIVOS**: itens, consumíveis, peças e looks exclusivos de celebridades, marcas e do FashionAI com FAI Points (seção 3.4) | Usa os itens 5 e 8 |
+| 10 | **SEC-A** e **SEC-B**: auditoria do gate de desenvolvedor e planilha RF × entidade × banco calculada das fontes (seção 5.1) | Pedidos anteriores ainda abertos; o SEC-A protege a produção pública |
+| 11 | **MOD-1**: plano estratégico de moderação das imagens enviadas (seção 5.1) | A fila de moderação já existe; falta o plano e a verificação central |
+| 12 | **FRONT-10**: telas, imagens, desempenho, qualidade do código e medição; listas; marca por logo no card (seção 5.1) | Fecha o "Frontend nota 10" |
+| 13 | **VISÃO-RF**: melhorias de visão de produto nos RF1–RF39 com relatório do que mudou e por quê (seção 5.1) | Revisão final, depois que as telas estiverem estáveis |
+
+O **RF15** (Editor de Fotografia da Peça, fases E0–E7) é Tema Futuro: está estudado e planejado em
+[RF15_Editor_de_Fotografia_da_Peca.md](../novos-rf/RF15_Editor_de_Fotografia_da_Peca.md) e entra na ordem quando o
+time o tirar do Tema Futuro no Trello.
 
 As decisões padrão das auditorias continuam valendo até a pessoa responsável pedir outra coisa:
 
@@ -366,3 +375,60 @@ resto.
 - maximiza a ocupação útil;
 - é consistente com o resto do catálogo;
 - passa nas métricas automáticas.
+
+---
+
+## 5. Pendências anteriores (revisão de todo o histórico, 05/10/2026)
+
+Os 287 pedidos da conversa, desde 23/09, foram relidos e conferidos com o git e os documentos. As seções 1–4 cobriam só
+a rodada de 05/10. Abaixo está o que tinha ficado de fora, com o estado conferido e o lugar na ordem da seção 2.
+
+### 5.1 Itens abertos ou parciais
+
+| Item | Pedido (data) | Estado conferido | Entra em |
+|---|---|---|---|
+| **RF4-FOTO** | Trello, 05/10: RF4 = busca catalogada, formulário & fotografia, com foto opcional | Parcial: dá para trocar a foto depois (`/api/pieces/{id}/image`), mas o criador força a imagem padrão (`useDefaultImage: true`) e não tem a etapa "Fotografia" | 4b |
+| **FRAME** | 27/09: enquadramento por subcategoria (camiseta com foco no peito, gola, ombros e mangas; jeans do cós até perto do joelho), pranchas antes/depois de 5 camisetas e 5 jeans, ajuste pela pessoa | Parcial: há `PhotographySpecs` e o enquadramento por categoria; faltam os gabaritos por subcategoria, as pranchas e o ajuste manual | 4 (§4.3 e §4.4) |
+| **Relatório de imagens** | 27/09: 40 perguntas de qualidade + 39 de isolamento e enquadramento | Aberto: as respostas estão espalhadas (auditoria de captura adaptativa, RF15, seção 4); falta o relatório que responde pergunta por pergunta | 4 (entregáveis 1–3 do §4.10) |
+| **SEC-A** | 27/09: auditoria do gate de desenvolvedor (Google + PIN) | Aberto: o gate existe (`middleware.ts`, `app/(gate)/gate/*`, `lib/gate/token.ts`) e há `SEGURANCA_PRODUCAO.md`, mas não há a auditoria pedida (mapa de superfícies, identidade, PIN e bloqueio, cookie, `next`, CSRF, cache, UI e logs, tabela de achados, testes negativos e positivos, plano de correção) | 10 |
+| **SEC-B** | 27/09: planilha própria RF × entidade × banco gerada das fontes do projeto | Aberto: `docs/planilhas/Entidades_BD_por_RF_RNF.xlsx` existe, mas foi escrita à mão; falta a versão calculada do código (entidades JPA, repositórios, Flyway, adaptadores), com contagens e "não verificado" onde faltar prova | 10 |
+| **MOD-1** | 27/09: moderação das imagens enviadas | Parcial: `ModerationQueueItem` e a fila existem; faltam o plano estratégico, a verificação central única para todo upload e a política de retenção para revisão | 11 |
+| **FRONT-10** | 25/09: "Frontend nota 10" | Fundação, navegação e cards feitos; faltam as telas restantes (perfil, social, 3D, pontos, admin, cadastro, notificações) e o bloco de imagens, desempenho, qualidade do código e medição | 12 |
+| **LISTAS** | 27/09: padrão FashionAI dos campos de lista (única, múltipla, pesquisável) | Parcial: checklist feito, migração incompleta | 12 |
+| **PEÇA-P1/P2** | 27/09: marca por logo, anatomia e artes do card de peça, variações da Seção C, controles de lista | Parcial: marca pelo logo com "É essa a marca?" e sub-retângulos (25737e0); faltam as variações da Seção C e os controles de lista | 12 |
+| **A6–A8** | 27/09: analisador que sempre preenche; estados da marca pelo logo (confirmada, possível, logo sem marca, sem logo) | Parcial: `BrandEnsembleResolver` e `IdentificationHierarchy` (IDENTIFIED, LIKELY, POSSIBLE, UNKNOWN) existem; falta o estado "logo sem marca" ponta a ponta e a verificação com capturas | 12 |
+| **VISÃO-RF** | 24/09: melhorias de visão de produto nos RF1–RF39, simulando usuários reais, com relatório | Aberto | 13 |
+| **PROV-3D** | 02/10: roupa vestida de verdade no provador (não imagem colada sobre casca justa) | Aberto; é o objetivo da GARMENT F0–F6 | 3 |
+
+### 5.2 Lista de problemas do avatar (29/09) → fases
+
+| # | Problema relatado | Estado | Fase |
+|---|---|---|---|
+| 1 | Cabelo sempre com o mesmo formato e a mesma franja | Parcial: fios por padrão (HAIR-F2), volume pela foto; falta variedade de forma e franja | AVATAR-ID I5 |
+| 2 | Orelhas quebradas | Aberto: orelha genérica do MakeHuman, a malha do MediaPipe não cobre orelha | AVATAR-ID I6 (detalhes individuais; acréscimo à fase) e I7 (revisão visual) |
+| 3 | Óculos escuros devem ser removidos; óculos de grau ficam | Aberto | AVATAR-ID I4 (junto dos olhos; acréscimo à fase: detectar o tipo de óculos na foto) |
+| 4 | Cabelo parece capacete, sem movimento | Parcial: fios com volume; falta o movimento (física leve do cabelo) | AVATAR-ID I5 + GARMENT F4 (XPBD) |
+| 5 | Braços travados | Parcial: pose de repouso e respiração (A2); falta movimento natural dos braços | PASSARELA-REAL (ciclo de caminhada) e QUARTO-REAL (animações por comando) |
+| 6 | Golas e mangas sem polimento | Medido na auditoria de roupas (P4) | GARMENT F2–F3 |
+| 7 | Óculos grudados no rosto | Aberto | AVATAR-ID I4 (armação com afastamento do rosto; acréscimo à fase) |
+| 8 | Rostos parecidos demais | Melhorou: SFace 0,369 → 0,476, top-1 15/15 (I2) | AVATAR-ID I4–I7 (gate continua medindo) |
+| 9 | Bochechas no mesmo padrão | Parcial: medidas nomeadas (I2), cor da bochecha (I3) | AVATAR-ID I6 (detalhes individuais por máscara) |
+| 10 | Pouca variação de olhos e cor de olhos | Aberto | AVATAR-ID I4 (íris, shader, ossos) |
+| 11 | Pouca variação de nariz | Parcial: `NOSE_WIDTH`, `NOSE_LENGTH`, `NOSE_PROJECTION` (I2) | AVATAR-ID I6 |
+| 11b | Detecção automática de cor e tipo de olhos, tipo de rosto, tipo e cor de cabelo, franja | Parcial: sexo, cabelo, pele, altura, peso e volume já detectados | AVATAR-ID I4–I5 |
+| 12 | Moletons e casacos estufados, como armadura | Medido: folga de 13–18 mm (auditoria de roupas) | GARMENT F2–F3 |
+| 13 | Avatar descalço | Feito: tênis 3D de verdade (7d3d83f); conferir em todos os ambientes | GARMENT F0 (teste de regressão) |
+
+### 5.3 Feitos, mas com status desatualizado na lista de tarefas
+
+| Item | Prova |
+|---|---|
+| RF5-ART (Criar Look com a mesma estrutura da Arte de fundo) | 5a87c99 — Background Studio no mesmo padrão (look, peça, DNA) |
+| CARDS (card e detalhe com leitura de rede social) | `docs/checklist/CARDS_DETALHE_2026-09-27.md`, 0faa450 |
+| Eras, Coleções, My Stage, Gerar 3D, Foto com meu manequim | a1e4d51 |
+| Animação da arte na prévia e asset por subcategoria | bbb3e44 |
+| Editar perfil com "+" e caixa 3D | 25d3766 |
+| Deploy (Vercel + backend + domínio) | domínio em uso; deploy de produção pelo `main` |
+
+Os documentos de diagnóstico (auditorias de roupa e de identidade) e as decisões da seção 2 continuam valendo para
+estes itens.
