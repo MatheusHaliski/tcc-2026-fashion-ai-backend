@@ -176,7 +176,8 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     let alive = true; ud.skin = "pending";
     const id = window.setTimeout(() => {
       if (!alive) return;
-      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, imageOf(atlas))); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      // relatório da pele (erro de cor e costura): números agregados para o gate, nunca em log
+      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, imageOf(atlas), 2048, (r) => { ud.skinReport = r; })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
       m.map?.dispose(); m.map = tex; m.color.set("#ffffff"); m.needsUpdate = true; ud.skin = "baked";
     }, 0);
     return () => { alive = false; window.clearTimeout(id); };

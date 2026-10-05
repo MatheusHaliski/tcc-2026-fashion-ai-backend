@@ -75,7 +75,10 @@ export default function HumanLab() {
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
-    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes, hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
+    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes,
+      // métricas agregadas do gate de identidade (números, nunca forma nem cor): fidelidade do rosto e relatório da pele
+      identity: () => parts.current?.identity ?? null, skinReport: () => parts.current?.human.root.userData.skinReport ?? null,
+      warnings: () => built?.model.warnings ?? [], hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
   });
   const model = built?.model ?? null;
   // Prévia 2D do avatar da foto (mesmo caminho do espelho: Avatar3dRef com a textura do atlas)

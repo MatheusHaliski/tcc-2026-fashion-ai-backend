@@ -37,9 +37,12 @@ interface Saved {
 interface VersionRow { version: number; status: IdentityView["status"]; basedOn?: number | null; current: boolean; approved: boolean; approvedWithWarnings?: boolean; createdAt?: string; gate?: GateView | null }
 
 /** Relatório de qualidade que vai com o avatar: só números agregados (lib/avatar3d/identity), nunca forma ou cor. */
-function qualityReport(f: FaceFidelity | null | undefined) {
+function qualityReport(f: FaceFidelity | null | undefined, skin?: { skinColorError: number | null; seams: number } | null) {
   if (!f) return undefined;
-  return { reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry, capture: f.capture, shapePreservation: f.shapePreservation, proportionErrorPct: f.proportionErrorPct };
+  return {
+    reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry, capture: f.capture, shapePreservation: f.shapePreservation, proportionErrorPct: f.proportionErrorPct,
+    ...(skin?.skinColorError != null ? { skinColorError: skin.skinColorError, seams: skin.seams } : {}),
+  };
 }
 
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
@@ -173,6 +176,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   const [pub, setPub] = useState(initialPublic);
   const [sexChoice, setSexChoice] = useState<Sex | null>(null);        // null = automático (rosto; senão o cadastro)
   const fidelity = useRef<FaceFidelity | null>(null);                    // medida pelo corpo da prévia (gate de identidade)
+  const human = useRef<HumanParts | null>(null);                          // a pele (erro de cor, costura) sai depois do bake
   const texture = useMemo(() => {
     if (!built) return null;
     const tex = new THREE.CanvasTexture(built.atlas); tex.colorSpace = THREE.SRGBColorSpace; return tex;
@@ -218,7 +222,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     setBusy("save");
     try {
       const fd = new FormData();
-      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(fidelity.current) }));
+      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(fidelity.current, human.current?.human.root.userData.skinReport) }));
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
@@ -270,7 +274,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       <div className="grid content-start gap-3">
         <Card>
           <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => { fidelity.current = p.identity ?? null; }} />
+            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => { fidelity.current = p.identity ?? null; human.current = p; }} />
               : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
           </div>
           {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
