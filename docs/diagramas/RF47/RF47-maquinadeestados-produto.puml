@@ -1,6 +1,6 @@
 @startuml RF47_MaquinaDeEstados_Produto
 !pragma layout smetana
-title RF47 — CatalogProduct: ciclo de ingestão no catálogo global (descoberta ≠ persistência)
+title RF47 — Acervo & Busca Catalogada\nDiagrama de máquina de estados — CatalogProduct: ciclo de ingestão no catálogo global (descoberta ≠ persistência)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -26,4 +26,12 @@ note right of Descoberto : oculto da busca local até ser escolhido;\nnunca reba
 note right of Referencia : visível na busca: o próximo usuário\nacha o produto localmente
 note bottom of Recusado : addToWardrobe recusa com 400 PRODUTO_RECUSADO.\nNenhum endpoint/script atribui PERSISTABLE ou REJECTED hoje:\nos estados existem no enum e na consulta FULLTEXT\n(VISIBLE = VALIDATED | PERSISTABLE | REFERENCE_ONLY)
 note left of Validado : source_status é um eixo à parte (revalidate_catalog.py):\nACTIVE · UNAVAILABLE · SOURCE_REMOVED · NEEDS_REVALIDATION
+note right of Validado
+  RF49 (acervo oficial em escala): os itens coletados
+  dos sites oficiais entram por import_products.py como
+  VALIDATED; reimportar não muda o estado ([UPDATE] só
+  preenche vazios e anexa variantes/fotos — a foto é
+  catalog_images.usage_status REFERENCE_ONLY, ≠ ingestion_status).
+  Ciclo da URL coletada: RF49_MaquinaDeEstados_ItemColetado
+end note
 @enduml

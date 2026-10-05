@@ -42,12 +42,20 @@ note right
   Leitura local sempre; IA (CATALOG_TEXT_INTERPRETER)
   refina descrições com 4+ palavras, só com o
   vocabulário fechado. Subtipo deduzido do texto
-  ("camisa") só pontua, não filtra.
+  ("camisa") pontua e prioriza o pool, não filtra.
 end note
-:CatalogProductRepository.candidates\n(FULLTEXT ngram, só VALIDATED/PERSISTABLE/REFERENCE_ONLY);
+:Tipo pela frase mais longa do texto (4 → 2 palavras):\n"moletom com capuz" = hoodie, não "moletom" + "capuz";
+:Pool priorizado — CatalogProductRepository, LIMIT 200 cada\n(FULLTEXT ngram, só VALIDATED/PERSISTABLE/REFERENCE_ONLY):\n1. candidatesWithColor (subtipo + cor no produto ou variante)\n2. candidates (subtipo) · 3. candidates (estampa: patternTerms)\n4. candidates (pool geral) · reforço se o pool < 8;
+note right
+  Com milhares de produtos (RF49), o pool
+  começa pelo que a pessoa descreveu;
+  o subtipo lido do texto prioriza o pool,
+  mas continua sem filtrar
+end note
 :CatalogMatchScorer.score por candidato\n(+ componente design e motivos ✓/✗; descarta < 0,35);
+:Ordem com foto: orderScore() — produto sem foto\ncede NO_PHOTO_PENALTY = 0,10 na ordem\n(o "% compatível" mostrado não muda);
 |Frontend|
-:Cards com foto oficial e "% compatível";
+:Cards com foto oficial e "% compatível"\n(variante da cor pedida pré-selecionada);
 if (Achou no catálogo local?) then (sim)
 else (não)
   |Pessoa|
@@ -63,6 +71,7 @@ else (não)
     :CatalogIngestService.upsert(..., DISCOVERED)\nnormaliza, dedup_key único, imagens REFERENCE_ONLY;
     note right: candidato DISCOVERED fica oculto da busca\naté alguém escolher
   else (refinar ou preencher os dados)
+    |Pessoa|
     :Refina a busca ou segue sem produto;
   endif
 endif
