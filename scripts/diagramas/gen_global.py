@@ -11,7 +11,12 @@ AREAS = [
     ('Vitrine: passarela, eras, coleções e manequim (RF33–RF36)', ['DailyLook', 'SchemeGrouping', 'UserPreferences']),
     ('FLAIR (RF37)', ['FlairProfile', 'FlairCoinEntry', 'FlairMatch', 'FlairMatchEntry', 'FlairTeam', 'FlairTeamMember', 'FlairCombination', 'FlairRedemption', 'FlairModeState', 'FlairTerritory', 'FlairTrophy']),
     ('Núcleo (RF1–RF24)', ['User', 'BrandProfile', 'CelebrityProfile', 'WardrobeItem', 'Scheme', 'SchemeItem', 'Follow']),
+    ('HypeScore v2 (RF49)', ['HypeSignalDaily', 'HypeScoreCurrent', 'HypeScoreSnapshot']),
 ]
+# Atenção (RF49, 2026-10): docs/diagramas/fashionai-*-v4.puml foram completados à mão depois da última geração —
+# enums, @Embeddable HypeDimensions, repositórios e notas do HypeScore v2, HypeController e o pacote hype nos
+# componentes, e dois rótulos de aresta removidos (FlairTeam→User, SealBond→Scheme) que derrubavam o Smetana.
+# Rodar este script de novo sobrescreve esses acréscimos: reaplique-os (ver git log dos .puml).
 names = [e for _, es in AREAS for e in es if e in ENTITIES]
 L = ['@startuml FashionAI_Classes_v4', 'title Fashion AI — Diagrama de Classes v4 (RF25–RF39)\\nEntidades JPA reais do fai-domain, agrupadas por área — gerado do código', CLS_STYLE, '']
 for title, es in AREAS:

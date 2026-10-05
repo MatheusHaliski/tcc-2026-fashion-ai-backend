@@ -1,5 +1,5 @@
 @startuml FashionAI_Componentes_v4
-title Fashion AI — Diagrama de Componentes v4 (RF25–RF39)\nControllers → serviços de aplicação → adaptadores de infraestrutura — gerado do código
+title Fashion AI — Diagrama de Componentes v4 (RF25–RF39 + RF49 HypeScore v2)\nControllers → serviços de aplicação → adaptadores de infraestrutura — gerado do código
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -33,6 +33,7 @@ package "fai-web (REST · Spring Boot)" {
   component "FlairModesController\n(RF37)" as FlairModesController
   component "CouponController\n(RF38)" as CouponController
   component "RoomCreatorController\n(RF39)" as RoomCreatorController
+  component "HypeController\n(RF49)" as HypeController
 }
 package "fai-application (casos de uso)" {
   [SealService] as SealService
@@ -56,9 +57,23 @@ package "fai-application (casos de uso)" {
   [WardrobeCreatorService] as WardrobeCreatorService
   [FlairEngine + FlairLooks\n(atributos de carta e de look)] as FlairCore
   [WorldRegions\n(país → região)] as WR
+  [SocialService] as SocialService
+  [SchemeService] as SchemeService
+  [CopilotService] as CopilotService
+  [AdminService] as AdminService
+  package "HypeScore v2 (RF49) · application/hype" {
+    [HypeQueryService\n(cards em lote, histórico, trending,\nguarda-roupa, movers)] as HypeQueryService
+    [HypeSnapshotService\n(@Scheduled · a cada 6 h)] as HypeSnapshotService
+    [HypeSignalRecorder\n(listener AFTER_COMMIT)] as HypeSignalRecorder
+    [HypeIntegrityPolicy\n(dedupe, sem auto-interação,\nconta nova pesa menos)] as HypeIntegrityPolicy
+    [HypeCalculator + HypeSignalSeries\n(cálculo puro · 9 dimensões)] as HypeCalculator
+    [HypeScoreConfig\n(pesos, janelas, algorithmVersion)] as HypeScoreConfig
+    [HypeCache\n(geração + TTL)] as HypeCache
+    [StyleCompatibility +\nRecommendationScoring] as HypeReco
+  }
 }
 package "fai-infrastructure (adaptadores + fallbacks)" {
-  database "MySQL 8 · Flyway V1–V20\n(persistence-mysql)" as DB
+  database "MySQL 8 · Flyway V1–V37\n(persistence-mysql)" as DB
   database "Storage de mídia\n(storage-s3 · fallback disco local)" as MS
   cloud "Motor de IA (ai-providers)\nprovedores externos · fallback local" as AI
   database "Redis (cache-redis)\ncontadores, rate limit, cache\nfallback em memória" as RD
@@ -146,4 +161,33 @@ WardrobeCreatorService --> DB
 WardrobeCreatorService --> MS
 FlairModesService ..> FlairCore
 ShowcaseService ..> WR
+' --- HypeScore v2 (RF49) ---
+FE --> HypeController : HTTPS/JSON
+HypeController --> HypeQueryService : GET /api/hype/**\n/api/me/hype/**
+HypeController --> HypeSnapshotService : POST /api/admin/hype/snapshots
+LookbookController --> HypeScoreConfig : /api/hype/method (v2)
+SocialService ..> HypeSignalRecorder : DomainEvents.HypeSignal
+SchemeService ..> HypeSignalRecorder : HypeSignal · SchemeSaved
+WardrobeService ..> HypeSignalRecorder : HypeSignal · PieceWorn
+DailyLookService ..> HypeSignalRecorder : DailyLookRegistered
+RoomService ..> HypeSignalRecorder : PieceWorn
+HypeSignalRecorder ..> HypeIntegrityPolicy
+HypeSignalRecorder --> DB : hype_signal_daily
+HypeIntegrityPolicy --> DB
+HypeIntegrityPolicy --> RD : RenderCachePort
+HypeSnapshotService ..> HypeCalculator
+HypeSnapshotService ..> HypeCache
+HypeSnapshotService --> DB : hype_scores,\nhype_score_snapshots
+HypeCalculator ..> HypeScoreConfig
+HypeQueryService ..> HypeCache
+HypeQueryService ..> HypeReco
+HypeQueryService ..> WardrobeService
+HypeQueryService ..> SchemeService
+HypeQueryService --> DB : hype_scores,\nhype_score_snapshots
+HypeCache --> RD : RenderCachePort
+CopilotService ..> HypeQueryService
+CopilotService ..> HypeReco
+WardrobeService --> DB : hype_scores\n(ordenação do closet)
+AdminService ..> HypeSnapshotService : job "hype" (v2)
+AdminService ..> HypeScoreService : job "hype" (v1)
 @enduml
