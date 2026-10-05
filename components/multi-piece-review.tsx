@@ -7,6 +7,9 @@ import { CATEGORY_LABEL, label, useTaxonomy, type Taxonomy } from "@/lib/api/tax
 import { keepAllowed } from "@/lib/pieces/tags";
 import { Button, ChipMultiSelect, Dialog, Field, Input, Select, cn } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { CaptureGuideDialog } from "@/components/capture/capture-guide-dialog";
+import { guideFor, type CaptureCategory } from "@/lib/capture/capture-guides";
+import { useCaptureTutorialPrefs } from "@/lib/capture/tutorial-prefs";
 import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_MAX_TAGS, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 
 /** Caixa da peça em % (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
@@ -73,8 +76,27 @@ interface PhotoItem {
  * sistema detecta as peças de cada foto. A revisão abre foto por foto ("Foto 2 de 3") e cada peça confirmada vira uma
  * peça no guarda-roupa. Fotos com erro podem ser analisadas de novo sem refazer as outras.
  */
-export function MultiPieceUpload({ onSaved }: { onSaved: (count: number) => void }) {
+export function MultiPieceUpload({ onSaved, category, subcategory, onCategory }: {
+  onSaved: (count: number) => void;
+  /** tipo escolhido na página: o guia "Como fotografar" abre direto na orientação dessa categoria */
+  category?: string | null; subcategory?: string | null;
+  /** categoria escolhida dentro do guia (sincroniza a página) */
+  onCategory?: (category: CaptureCategory, subcategory?: string) => void;
+}) {
   const { t } = useI18n(); const inputRef = useRef<HTMLInputElement>(null);
+  const prefs = useCaptureTutorialPrefs();
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideCat, setGuideCat] = useState<{ category?: string | null; subcategory?: string | null }>({});
+  useEffect(() => { setGuideCat({ category, subcategory }); }, [category, subcategory]);
+  /**
+   * Antes de escolher as fotos, o guia "Como fotografar" da categoria (RF4/RF47), salvo se a pessoa marcou "Não
+   * mostrar novamente" para esse guia; sem categoria escolhida, o guia começa perguntando o que ela vai adicionar.
+   */
+  function pickPhotos() {
+    const guide = guideFor(guideCat.category, guideCat.subcategory);
+    if (guide && prefs.isHidden(guide.id)) { inputRef.current?.click(); return; }
+    setGuideOpen(true);
+  }
   const [items, setItems] = useState<PhotoItem[]>([]);
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -160,9 +182,12 @@ export function MultiPieceUpload({ onSaved }: { onSaved: (count: number) => void
       )}
       {limitHit && <p role="note" className="type-caption text-muted">{t("multiPiece.limite_fotos", { max: MAX_PHOTOS })}</p>}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => inputRef.current?.click()} disabled={analyzing || items.length >= MAX_PHOTOS}>{items.length ? t("multiPiece.adicionar_fotos") : t("multiPiece.escolher_foto")}</Button>
+        <Button size="sm" onClick={pickPhotos} disabled={analyzing || items.length >= MAX_PHOTOS}>{items.length ? t("multiPiece.adicionar_fotos") : t("multiPiece.escolher_foto")}</Button>
         {toAnalyze > 0 && <Button size="sm" variant="primary" onClick={analyzeAll} loading={analyzing}><FaiIcon id="ACT-07" size={20} decorative />{analyzing ? t("multiPiece.analisando") : t("multiPiece.analisar")}</Button>}
       </div>
+      <CaptureGuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} category={guideCat.category} subcategory={guideCat.subcategory} prefs={prefs}
+        onCategory={(c, sub) => { setGuideCat({ category: c, subcategory: sub ?? null }); onCategory?.(c, sub); }}
+        onConfirm={() => { setGuideOpen(false); inputRef.current?.click(); }} />
       {current && current.detection && (
         <MultiPieceReview key={current.id} file={current.file} detection={current.detection}
           subtitle={order.length > 1 ? t("multiPiece.foto_de", { n: order.indexOf(current.id) + 1, total: order.length }) : undefined}

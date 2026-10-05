@@ -197,7 +197,9 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
                   peça no guarda-roupa (revisão foto por foto). Independe do tipo escolhido acima. */}
               <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+                <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+                  onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
+                  onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
               </section>
               {nav}
             </Card>
