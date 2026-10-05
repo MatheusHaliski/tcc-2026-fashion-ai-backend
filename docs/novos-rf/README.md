@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF54): índice e mapa de numeração
+# Novos RF (RF25–RF50): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -28,11 +28,7 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
 | RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
 | RF49 | Proteger contas e a plataforma: sessão segura, limites contra força bruta, bancos endurecidos, dados demo isolados e entrega confiável | RF1–RF3 (autenticação), `infra/railway`, `demo/` | [RF49_Seguranca_Integridade_Operacao.md](RF49_Seguranca_Integridade_Operacao.md) | `docs/diagramas/RF49/` (+ `seguranca/`, `dados-demo/`) |
-| RF50 | Verificar perfis de Marca e Celebridade (fila do administrador, Central do emissor, ajustes, reenvio e limite de 5 envios) | RF1.CA07/CA09 | cartão Trello | `docs/diagramas/RF50/` |
-| RF51 | Cartela sazonal e animação no Background Studio | — | cartão Trello | `docs/diagramas/RF51/` |
-| RF52 | Auras animadas dos cards sem travar | — | cartão Trello | `docs/diagramas/RF52/` |
-| RF53 | HypeScore v2: Hype analítico de peças e looks (verso dos cards com flip, Histórico › Hype, Em alta, ordenações do Guarda-roupa, Copilot com modos) + navegação por domínios | `application/hype/*`, `HypeController` (V31) | [RF53_HypeScore_v2.md](RF53_HypeScore_v2.md) · arquitetura: [HYPESCORE_ARCHITECTURE.md](../hype/HYPESCORE_ARCHITECTURE.md) | `docs/diagramas/RF53/` (+ RF6, RF10, RF19, RF26, RF31, RF42 e globais atualizados) |
-| RF54 *(proposta; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF54_FashionAI_Lens.md](RF54_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
+| RF50 | Criar selos em três tipos (Circular, Folha, Padrão FashionAI) num criador em 4 passos (Com IA/Sem IA), com folha e núcleo editáveis e política padronizada usada na detecção — evolução do RF25 | RF25 (comentários de `SealService`/`SealDesigns`) | [RF50_Criador_de_Selos.md](RF50_Criador_de_Selos.md) | `docs/diagramas/RF50/criador-de-selos/` |
 
 ## Mudanças em RF antigos (2026-09-24)
 
