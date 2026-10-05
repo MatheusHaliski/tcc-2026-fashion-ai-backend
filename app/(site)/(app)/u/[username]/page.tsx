@@ -12,6 +12,8 @@ import { LookbookTabs, type TabId } from "@/components/lookbook-tabs";
 import { FaiIcon } from "@/components/fai-icon";
 import { ProfileHeader } from "@/components/profile-header";
 import { EditProfileButton } from "@/components/edit-profile";
+import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 interface Profile { user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
 
@@ -34,6 +36,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         link={data.links?.[0] ? { href: data.links[0].url, label: data.links[0].title || data.links[0].url.replace(/^https?:\/\//, "") } : null}
         counts={{ pieces: data.counters.pieces, schemes: data.counters.schemes, followers: data.counters.followers, following: data.counters.following }}
         onCounts={() => setConn(true)}
+        hype={data.contentVisible ? <HypeGroupBadge type="CREATOR" groupKey={data.user.id} variant="header" /> : null}
         actions={<>
           {!data.self && user && <>
             <Button size="sm" variant={following || data.relation === "PENDENTE" ? "default" : "primary"} onClick={follow} aria-pressed={following}>{following ? t("lookbook.unfollow") : data.relation === "PENDENTE" ? t("lookbook.requested") : t("lookbook.follow")}</Button>
@@ -44,6 +47,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </>}
           {data.self && <><EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href="/explorer?tab=passarela" className="btn btn-sm">{t("common.passarela_3d")}</Link></>}
         </>} />
+      {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
+      {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
       {!data.contentVisible
         ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
         : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}

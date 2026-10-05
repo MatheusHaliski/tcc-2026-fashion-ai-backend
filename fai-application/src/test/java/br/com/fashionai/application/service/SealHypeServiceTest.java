@@ -416,6 +416,66 @@ class SealHypeServiceTest {
         assertThat(seals.sealsOf(nike.getId())).allSatisfy(v -> assertThat(v).containsKey("hype"));
     }
 
+    // ------------------------------------------------------------------ métricas do emissor (Lote A2 · P2-09)
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void metricasDoEmissorTrazemOHypeDosLooksVinculadosSoPublicos() {
+        when(bondRepo.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(any(), any())).thenAnswer(inv -> allBonds.stream()
+                .filter(b -> b.getTargetOwner().getId().equals(inv.getArgument(0)) && b.getStatus() == inv.getArgument(1)).toList());
+        Seal lookSeal = seal(nike, "Nike Look", SealTier.LOOK, Map.of("rules", List.of(Map.of("brand", "Nike"))));
+        Seal pieceSeal = seal(nike, "Nike Peça", SealTier.PECA, Map.of("rules", List.of(Map.of("brand", "Nike"))));
+        Scheme alto = look(Visibility.PUBLIC, p1);
+        Scheme medio = look(Visibility.PUBLIC, p1);
+        Scheme semDados = look(Visibility.PUBLIC, p1);
+        Scheme privado = look(Visibility.FOLLOWERS, p1);
+        Scheme vencido = look(Visibility.PUBLIC, p1);
+        approved(lookSeal, alto, SealTier.LOOK, p1);
+        approved(pieceSeal, alto, SealTier.PECA, p1);              // dois selos no mesmo look: conta uma vez
+        approved(lookSeal, medio, SealTier.LOOK, p1);
+        approved(lookSeal, semDados, SealTier.LOOK, p1);
+        approved(lookSeal, privado, SealTier.LOOK, p1);
+        approved(lookSeal, vencido, SealTier.LOOK, p1).setExpiresAt(Instant.now().minusSeconds(60));
+        HypeScoreCurrent a = hype(alto.getId(), 80, HypeLevel.TRENDING, HypeMomentum.RISING, true);
+        a.setDeltaPoints(BigDecimal.valueOf(6));
+        HypeScoreCurrent b = hype(medio.getId(), 60, HypeLevel.HOT, HypeMomentum.STABLE, true);
+        b.setDeltaPoints(BigDecimal.valueOf(2));
+        HypeScoreCurrent insuficiente = hype(semDados.getId(), 0, HypeLevel.LOW_SIGNAL, HypeMomentum.STABLE, true);
+        insuficiente.setStatus(HypeStatus.INSUFFICIENT_DATA);
+        insuficiente.setScore(null);
+        lookHype.put(alto.getId(), a);
+        lookHype.put(medio.getId(), b);
+        lookHype.put(semDados.getId(), insuficiente);
+        lookHype.put(privado.getId(), hype(privado.getId(), 99, HypeLevel.VIRAL, HypeMomentum.STABLE, false));   // Hype pessoal: fora
+        lookHype.put(vencido.getId(), hype(vencido.getId(), 97, HypeLevel.VIRAL, HypeMomentum.STABLE, true));    // vínculo vencido: fora
+
+        Map<String, Object> metrics = seals.issuerMetrics(nikeSession);
+        assertThat(metrics).containsKeys("suggested", "approved", "redemptions");   // campos antigos continuam
+        Map<String, Object> h = (Map<String, Object>) metrics.get("hype");
+        assertThat(h).containsEntry("bonded", 4).containsEntry("withHype", 2).containsEntry("avgScore", 70.0).containsEntry("level", "HOT")
+                .containsEntry("deltaPoints", 4.0).containsEntry("direction", "UP").containsEntry("deltaWindowDays", 7);
+        List<Map<String, Object>> top = (List<Map<String, Object>>) h.get("top");
+        assertThat(top).extracting(t -> t.get("schemeId")).containsExactly(alto.getId().toString(), medio.getId().toString());
+        assertThat(top.get(0)).containsEntry("score", 80.0).containsEntry("level", "TRENDING").containsEntry("title", "Look");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void metricasDoEmissorSemHypePublicoNaoViramZero() {
+        when(bondRepo.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(any(), any())).thenAnswer(inv -> allBonds.stream()
+                .filter(b -> b.getTargetOwner().getId().equals(inv.getArgument(0)) && b.getStatus() == inv.getArgument(1)).toList());
+        Seal lookSeal = seal(nike, "Nike Look", SealTier.LOOK, Map.of("rules", List.of(Map.of("brand", "Nike"))));
+        Scheme s = look(Visibility.PUBLIC, p1);
+        approved(lookSeal, s, SealTier.LOOK, p1);
+        Map<String, Object> h = (Map<String, Object>) seals.issuerMetrics(nikeSession).get("hype");
+        assertThat(h).containsEntry("bonded", 1).containsEntry("withHype", 0);
+        assertThat(h.get("avgScore")).isNull();
+        assertThat(h.get("level")).isNull();
+        assertThat(h.get("deltaPoints")).isNull();
+        assertThat(h.get("direction")).isNull();
+        assertThat((List<?>) h.get("top")).isEmpty();
+    }
+
     // ------------------------------------------------------------------ selos das peças (guarda-roupa)
 
     @Test

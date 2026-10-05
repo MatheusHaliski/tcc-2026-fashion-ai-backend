@@ -4,7 +4,6 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.DailyLookService;
 import br.com.fashionai.application.service.HypeScoreService;
 import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.ProfileService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
@@ -29,12 +28,10 @@ public class LookbookController {
     private final HypeScoreService hype;
 
     private final br.com.fashionai.application.hype.HypeScoreConfig hypeV2;
-    private final ProfileService profiles;
 
     public LookbookController(LookbookService lookbook, DailyLookService dailyLooks, HypeScoreService hype,
-                              br.com.fashionai.application.hype.HypeScoreConfig hypeV2, ProfileService profiles) {
+                              br.com.fashionai.application.hype.HypeScoreConfig hypeV2) {
         this.hypeV2 = hypeV2;
-        this.profiles = profiles;
         this.lookbook = lookbook;
         this.dailyLooks = dailyLooks;
         this.hype = hype;
@@ -75,19 +72,6 @@ public class LookbookController {
                                                      @RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "20") int size) {
         return lookbook.savedLooks(user, occasion, sort, page, size);
-    }
-
-    /**
-     * Lookbook › Looks com ordenação (P3-02): a MESMA resposta de {@code GET /api/profiles/{idOrUsername}}
-     * (ProfileController), só que com {@code sort} (recent | hype_desc | hype_asc | growth pelo HypeScore v2; terceiros
-     * só ordenam pelo Hype público elegível). O Spring escolhe este método quando a requisição traz {@code sort} — a
-     * condição de parâmetro é mais específica —, então a rota sem {@code sort} continua no ProfileController. Fica aqui
-     * porque o ProfileController está fora do Lote 4; ao mexer nele, mover para lá como parâmetro opcional.
-     */
-    @GetMapping(value = "/api/profiles/{idOrUsername}", params = "sort")
-    @Operation(summary = "RF6/RF17 — Perfil com a grade de looks ordenada (sort pelo HypeScore v2)")
-    public Map<String, Object> profileLooks(CurrentUser viewer, @PathVariable String idOrUsername, @RequestParam String sort) {
-        return profiles.profile(viewer, idOrUsername, sort);
     }
 
     public record FavoriteRequest(boolean favorite) {
@@ -235,12 +219,12 @@ public class LookbookController {
 
     /**
      * @deprecated legado v1: agrupamentos globais por SIMILARIDADE com a média v1 ({@code hypeScoreGlobal}); nenhuma tela
-     * usa. Atenção (Lote A1): {@code GET /api/hype/groups?type=CREATOR|BRAND} no HypeController colide com esta rota
-     * (mesmo caminho e método) — remover ou mover este mapeamento antes de criar aquele.
+     * usa. Saiu de GET /api/hype/groups (Lote A1), que agora é o Hype agregado de marcas e criadores no HypeController;
+     * o nome novo diz o que é (similaridade, não Hype).
      */
     @Deprecated
-    @GetMapping("/api/hype/groups")
-    @Operation(summary = "RF6 — Agrupamentos globais por similaridade (legado v1 \"HypeGroups\"; deprecado)", deprecated = true)
+    @GetMapping("/api/similarity-groups/global")
+    @Operation(summary = "RF6 — Agrupamentos globais por similaridade (legado v1 \"HypeGroups\", antes em /api/hype/groups; deprecado)", deprecated = true)
     public List<Map<String, Object>> hypeGroups(@RequestParam HypeEntityType type) {
         return hype.hypeGroups(type);
     }

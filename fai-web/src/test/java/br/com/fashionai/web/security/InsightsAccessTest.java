@@ -57,8 +57,8 @@ class InsightsAccessTest {
 
         @Override
         public Map<String, Object> insights(CurrentUser viewer, String context, Integer window, String region, String category, String subcategory,
-                                            boolean withAi) {
-            calls.add(context + ":" + (viewer == null ? "anon" : "user"));
+                                            String key, List<UUID> pieces, boolean withAi) {
+            calls.add(context + ":" + (viewer == null ? "anon" : "user") + (key == null ? "" : ":key=" + key) + (pieces == null || pieces.isEmpty() ? "" : ":pieces=" + pieces.size()));
             return Map.of("context", context, "source", "local", "algorithmVersion", "HYPE_V2", "items", List.of());
         }
     }
@@ -77,10 +77,30 @@ class InsightsAccessTest {
     @Test
     void anonymousGets401OnPersonalContexts() throws Exception {
         calls.clear();
-        for (String ctx : List.of("CAPSULE", "COPILOT", "AUTOPILOT", "HISTORY", "CLOSET", "LOOKS")) {
+        for (String ctx : List.of("CAPSULE", "COPILOT", "AUTOPILOT", "HISTORY", "CLOSET", "LOOKS", "LOOK_EDITOR")) {
             mockMvc.perform(get("/api/insights").param("context", ctx)).andExpect(status().isUnauthorized());
         }
         assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void anonymousGetsTheNewPublicContextsWithTheProfileKey() throws Exception {
+        calls.clear();
+        for (String ctx : List.of("FEED", "SEARCH")) {
+            mockMvc.perform(get("/api/insights").param("context", ctx)).andExpect(status().isOk()).andExpect(jsonPath("$.context").value(ctx));
+        }
+        mockMvc.perform(get("/api/insights").param("context", "BRAND_PROFILE").param("key", "nike")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/insights").param("context", "CREATOR_PROFILE").param("key", "bia")).andExpect(status().isOk());
+        assertThat(calls).containsExactly("FEED:anon", "SEARCH:anon", "BRAND_PROFILE:anon:key=nike", "CREATOR_PROFILE:anon:key=bia");
+    }
+
+    @Test
+    void lookEditorReceivesTheChosenPiecesAndIgnoresMalformedIds() throws Exception {
+        calls.clear();
+        mockMvc.perform(get("/api/insights").param("context", "LOOK_EDITOR").param("pieces", UUID.randomUUID() + ",x," + UUID.randomUUID())
+                        .with(jwt().jwt(t -> t.subject(USER_ID.toString()).claim("user_id", USER_ID.toString()))))
+                .andExpect(status().isOk());
+        assertThat(calls).containsExactly("LOOK_EDITOR:user:pieces=2");
     }
 
     @Test

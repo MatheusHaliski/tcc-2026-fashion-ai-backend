@@ -70,6 +70,9 @@ class InstitutionalDisplayPolicyTest {
     private final Map<UUID, HypeScoreCurrent> hypeRows = new HashMap<>();
     private final List<WardrobeItem> brandCatalog = new ArrayList<>();
     private FollowRepository follows;
+    private HypeQueryService hypeQuery;
+    private BrandProfileRepository brandProfiles;
+    private CelebrityProfileRepository celebrityProfiles;
     private InstitutionalService service;
     private User brand;
     private User ana;
@@ -126,6 +129,9 @@ class InstitutionalDisplayPolicyTest {
             return v;
         });
         HypeQueryService hype = mock(HypeQueryService.class);
+        hypeQuery = hype;
+        brandProfiles = mock(BrandProfileRepository.class);
+        celebrityProfiles = mock(CelebrityProfileRepository.class);
         when(hype.currentOf(eq(HypeEntityType.SCHEME), anyCollection())).thenAnswer(inv -> {
             Map<UUID, HypeScoreCurrent> out = new HashMap<>();
             for (Object id : (java.util.Collection<?>) inv.getArgument(1)) {
@@ -136,7 +142,7 @@ class InstitutionalDisplayPolicyTest {
             return out;
         });
 
-        service = new InstitutionalService(mock(UserRepository.class), mock(BrandProfileRepository.class), mock(CelebrityProfileRepository.class),
+        service = new InstitutionalService(mock(UserRepository.class), brandProfiles, celebrityProfiles,
                 follows, mock(SealRepository.class), bonds, mock(SchemeRepository.class), schemeItems, pieces, mock(SavedItemRepository.class),
                 mock(ReactionRepository.class), mock(SchemeGroupingRepository.class), mock(StyleDnaRepository.class), schemeService,
                 mock(SealService.class), mock(AiEngine.class), guard, hype);
@@ -206,13 +212,25 @@ class InstitutionalDisplayPolicyTest {
         return bond(s, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(2, ChronoUnit.DAYS), now.plus(30, ChronoUnit.DAYS));
     }
 
-    private void hype(Scheme s, double score) {
+    private HypeScoreCurrent hype(Scheme s, double score) {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(HypeEntityType.SCHEME);
         c.setEntityId(s.getId());
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
+        c.setPublicEligible(true);   // destaques são de looks de outras pessoas: só o Hype público ordena
         hypeRows.put(s.getId(), c);
+        return c;
+    }
+
+    /** Hype com crescimento (dimensão TREND do v2) e Δ. */
+    private HypeScoreCurrent hype(Scheme s, double score, double trend, double delta) {
+        HypeScoreCurrent c = hype(s, score);
+        br.com.fashionai.domain.model.HypeDimensions d = new br.com.fashionai.domain.model.HypeDimensions();
+        d.setTrend(BigDecimal.valueOf(trend));
+        c.setDimensions(d);
+        c.setDeltaPoints(BigDecimal.valueOf(delta));
+        return c;
     }
 
     private List<UUID> ids(List<Map<String, Object>> entries) {
@@ -382,6 +400,110 @@ class InstitutionalDisplayPolicyTest {
         insuficiente.setStatus(HypeStatus.INSUFFICIENT_DATA);
         hypeRows.put(c.getId(), insuficiente);
         assertThat(ids(service.highlightedSchemes(visitor, brand, "DESTAQUES", null))).containsExactly(b.getId(), a.getId());
+    }
+
+    @Test
+    void hypeQueNaoEhPublicoNaoOrdenaODestaqueDeTerceiros() {
+        Scheme seguidores = look("Só seguidores (Hype pessoal)", tenis);
+        Scheme publico = look("Público", jeans);
+        bond(seguidores, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(1, ChronoUnit.DAYS), null);
+        bond(publico, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(5, ChronoUnit.DAYS), null);
+        hype(seguidores, 95).setPublicEligible(false);
+        hype(publico, 40);
+        assertThat(destaque(visitor)).containsExactly(publico.getId(), seguidores.getId());   // o 95 pessoal não conta: vai para o fim
+        assertThat(ids(service.highlightedSchemes(visitor, brand, "DESTAQUES", null))).containsExactly(publico.getId());
+    }
+
+    // ------------------------------------------------------------------ ordenação das abas de destaque (Lote A2 · P3-17)
+
+    @Test
+    void ordenacaoRecentesHypeEEmCrescimentoSoMudaAOrdemNuncaQuemAparece() {
+        Scheme classico = look("Clássico (Hype alto, parado)", tenis);
+        Scheme subindo = look("Subindo (Hype médio, trend alto)", jeans);
+        Scheme semHype = look("Sem Hype", camiseta);
+        Scheme pessoal = look("Hype só pessoal", camiseta);
+        bond(classico, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(9, ChronoUnit.DAYS), null);
+        bond(subindo, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(5, ChronoUnit.DAYS), null);
+        bond(semHype, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(1, ChronoUnit.DAYS), null);
+        bond(pessoal, SealBondStatus.APPROVED, SealTier.LOOK, now.minus(3, ChronoUnit.DAYS), null);
+        hype(classico, 88, 35, -1);
+        hype(subindo, 61, 82, 9);
+        hype(pessoal, 99, 99, 20).setPublicEligible(false);
+        bond(look("Rejeitado", tenis), SealBondStatus.REJECTED, SealTier.LOOK, now, null);   // a política continua valendo
+
+        assertThat(ids(service.highlightedSchemes(visitor, brand, "RECENTES", null)))
+                .containsExactly(semHype.getId(), pessoal.getId(), subindo.getId(), classico.getId());
+        assertThat(ids(service.highlightedSchemes(visitor, brand, "HYPE", null)))
+                .containsExactly(classico.getId(), subindo.getId(), semHype.getId(), pessoal.getId());
+        // crescimento = TREND do v2, não volume: o look médio que está subindo passa o clássico parado; sem Hype público no fim
+        assertThat(ids(service.highlightedSchemes(visitor, brand, "GROWTH", null)))
+                .containsExactly(subindo.getId(), classico.getId(), semHype.getId(), pessoal.getId());
+        // consagrados (histórico) e peças em destaque aceitam a mesma ordenação
+        assertThat(ids(service.consecrated(visitor, brand, "GROWTH", null, false))).startsWith(subindo.getId(), classico.getId());
+        assertThat(service.highlightedPieces(visitor, brand, "GROWTH", null)).extracting(m -> ((Views.PieceView) m.get("piece")).id())
+                .startsWith(jeans.getId(), tenis.getId());
+    }
+
+    @Test
+    void empateNoCrescimentoDecidePeloDelta() {
+        Scheme a = look("A", tenis);
+        Scheme b = look("B", jeans);
+        approved(a);
+        approved(b);
+        hype(a, 50, 70, 1);
+        hype(b, 50, 70, 6);
+        assertThat(ids(service.highlightedSchemes(visitor, brand, "growth", null))).containsExactly(b.getId(), a.getId());
+    }
+
+    // ------------------------------------------------------------------ /brands: ordem "Em alta" (Lote A2 · P2-05)
+
+    private static br.com.fashionai.domain.model.BrandProfile brandProfile(String name) {
+        br.com.fashionai.domain.model.BrandProfile b = new br.com.fashionai.domain.model.BrandProfile();
+        b.setOwner(user(name.toLowerCase(), ProfileType.MARCA));
+        b.setBrandName(name);
+        b.setSlug(name.toLowerCase());
+        return b;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void feedDeMarcasEmAltaOrdenaPeloHypeAgregadoESemBaseFicaNoFim() {
+        var nova = brandProfile("Nova");
+        var media = brandProfile("Media");
+        var topo = brandProfile("Topo");
+        var pouca = brandProfile("Pouca");
+        when(brandProfiles.findByApprovalStatusOrderByCreatedAtDesc(any())).thenReturn(List.of(nova, media, topo, pouca));
+        Map<String, Object> groups = new HashMap<>();
+        groups.put("media", Map.of("key", "media", "sufficient", true, "value", 55.0, "level", "RELEVANT", "items", 4));
+        groups.put("topo", Map.of("key", "topo", "sufficient", true, "value", 81.0, "level", "TRENDING", "items", 6));
+        groups.put("pouca", Map.of("key", "pouca", "sufficient", false, "items", 2));
+        when(hypeQuery.groups(any(), eq(HypeQueryService.RankGroup.BRAND), anyCollection(), eq(7))).thenReturn(Map.of("items", groups));
+
+        Map<String, Object> out = service.brandFeed(null, null, "EM_ALTA");
+        List<Map<String, Object>> cards = (List<Map<String, Object>>) out.get("brands");
+        assertThat(cards).extracting(m -> m.get("name")).containsExactly("Topo", "Media", "Nova", "Pouca");   // sem base: ordem recente
+        assertThat(out.get("order")).isEqualTo("EM_ALTA");
+        assertThat((List<String>) out.get("orders")).contains("AFINIDADE", "RECENTES", "EM_ALTA");
+        assertThat(cards.get(0).get("hype")).isEqualTo(groups.get("topo"));
+        assertThat(cards.get(2).get("hype")).isNull();                                        // sem dado: nada (nunca 0)
+        // as outras ordens não mudam, mas o card também traz o Hype
+        List<Map<String, Object>> recent = (List<Map<String, Object>>) service.brandFeed(null, null, "RECENTES").get("brands");
+        assertThat(recent).extracting(m -> m.get("name")).containsExactly("Nova", "Media", "Topo", "Pouca");
+        assertThat(recent.get(1).get("hype")).isEqualTo(groups.get("media"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void feedDeCelebridadesUsaOAgregadoDeCriadorPeloIdDaPessoa() {
+        var c1 = new br.com.fashionai.domain.model.CelebrityProfile();
+        c1.setOwner(ana);
+        c1.setStageName("Ana Star");
+        c1.setSlug("ana-star");
+        when(celebrityProfiles.findByVerificationStatusOrderByCreatedAtDesc(any())).thenReturn(List.of(c1));
+        when(hypeQuery.groups(any(), eq(HypeQueryService.RankGroup.CREATOR), anyCollection(), eq(7)))
+                .thenReturn(Map.of("items", Map.of(ana.getId().toString(), Map.of("sufficient", true, "value", 77.0, "level", "TRENDING"))));
+        List<Map<String, Object>> cards = (List<Map<String, Object>>) service.celebrityFeed(visitor, null, "EM_ALTA").get("celebrities");
+        assertThat(cards).singleElement().satisfies(m -> assertThat((Map<String, Object>) m.get("hype")).containsEntry("level", "TRENDING"));
     }
 
     // ------------------------------------------------------------------ peças em destaque

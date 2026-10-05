@@ -1,14 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { primeHype } from "@/lib/hype/use-hype";
+import { levelTone } from "@/lib/hype/model";
 import type { HypeEntity, HypeRankGroup, HypeTrending, HypeTrendingGroups } from "@/lib/hype/types";
-import { Avatar, EmptyState, ErrorState, SegmentPicker, SkeletonGrid } from "@/components/ui";
+import { Avatar, EmptyState, ErrorState, SegmentPicker, SkeletonGrid, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
@@ -17,6 +19,11 @@ import { InsightStrip } from "@/components/insights/insight-strip";
 
 type TrendType = HypeEntity | HypeRankGroup;
 const isGroup = (x: TrendType): x is HypeRankGroup => x === "BRAND" || x === "CREATOR";
+/** Tipo inicial pela URL (?type=BRAND|CREATOR|PIECE|LOOK — links dos chips de Hype e dos insights); o resto cai em peças. */
+const typeFrom = (raw: string | null | undefined): TrendType => {
+  const v = (raw ?? "").toUpperCase();
+  return v === "BRAND" || v === "CREATOR" || v === "SCHEME" ? v : v === "LOOK" ? "SCHEME" : "PIECE";
+};
 
 /**
  * Descobrir → Em alta. Nunca um "ORDER BY hype DESC" sem contexto: a janela (hoje, 7, 30 dias) e o tipo são escolhas
@@ -26,7 +33,8 @@ const isGroup = (x: TrendType): x is HypeRankGroup => x === "BRAND" || x === "CR
  */
 export function HypeTrendingPanel() {
   const { t } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy();
-  const [type, setType] = useState<TrendType>("PIECE");
+  const sp = useSearchParams();
+  const [type, setType] = useState<TrendType>(() => typeFrom(sp?.get("type")));
   const [window, setWindow] = useState<"1" | "7" | "30">("7");
   const [f, setF] = useState({ category: "", style: "", occasion: "" });
   const withCategory = type === "PIECE" || type === "BRAND";
@@ -62,14 +70,19 @@ export function HypeTrendingPanel() {
   );
 }
 
-/** Marcas e criadores em alta: posição, identidade, valor (com o que ele significa) e quantos itens públicos o sustentam. */
+/**
+ * Marcas e criadores em alta: posição, identidade, valor (com o que ele significa) e quantos itens públicos o sustentam.
+ * P3-01: a faixa do valor aparece em texto (na janela "hoje" o valor é crescimento — trend médio —, que não tem faixa) e a
+ * marca com perfil oficial leva para /brands/{slug}; sem perfil, para as peças da marca na busca.
+ */
 function HypeGroupList({ data }: { data: HypeTrendingGroups }) {
   const { t } = useI18n();
+  const trend = data.metric === "TREND" || data.window === 1;
   return (
     <ol className="trend-groups" aria-label={data.type === "BRAND" ? t("hypeTrending.brands") : t("hypeTrending.creators")}>
       {data.items.map((g) => {
         const name = data.type === "BRAND" ? (g.name ?? g.key) : (g.user?.displayName || g.user?.username || g.key);
-        const href = data.type === "BRAND" ? `/search?tab=PECAS&q=${encodeURIComponent(name)}` : g.user ? `/u/${g.user.username}` : undefined;
+        const href = data.type === "BRAND" ? (g.slug ? `/brands/${encodeURIComponent(g.slug)}` : `/search?tab=PECAS&q=${encodeURIComponent(name)}`) : g.user ? `/u/${g.user.username}` : undefined;
         const ident = data.type === "BRAND" ? <BrandLogo name={name} src={g.logoUrl ?? undefined} size={36} /> : <Avatar src={mediaUrl(g.user?.avatarUrl)} name={name} size={36} />;
         const body = (
           <>
@@ -80,8 +93,10 @@ function HypeGroupList({ data }: { data: HypeTrendingGroups }) {
               <span className="type-caption text-muted">{data.type === "BRAND" ? t("hypeTrending.group_pieces", { n: g.pieces }) : t("hypeTrending.group_items", { pieces: g.pieces, looks: g.looks })}</span>
             </span>
             <span className="trend-group-value">
-              <b className="tabular" aria-hidden>🔥 {Math.round(g.value)}</b>
-              <span className="sr-only">{t("hypeTrending.group_value", { value: Math.round(g.value) })}</span>
+              {!trend && g.level && <span className={cn("hype-level-chip", levelTone(g.level))}>{t(`hype.level.${g.level}`)}</span>}
+              {trend && <span className="hype-level-chip">{t("hypeGroups.growth")}</span>}
+              <b className="tabular" aria-hidden>{trend ? "↗" : "🔥"} {Math.round(g.value)}</b>
+              <span className="sr-only">{t(trend ? "hypeGroups.trend_value" : "hypeTrending.group_value", { value: Math.round(g.value) })}</span>
             </span>
           </>
         );

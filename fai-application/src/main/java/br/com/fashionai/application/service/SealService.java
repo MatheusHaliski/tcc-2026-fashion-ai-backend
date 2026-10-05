@@ -407,8 +407,7 @@ public class SealService {
         for (Seal s : list) {
             Set<UUID> ids = items.getOrDefault(s.getId(), Set.of());
             Map<UUID, HypeScoreCurrent> rows = s.getTier() == SealTier.PECA ? pieceHype : lookHype;
-            double[] scores = ids.stream().map(rows::get)
-                    .filter(c -> c != null && c.getStatus() == HypeStatus.AVAILABLE && c.isPublicEligible() && c.getScore() != null)
+            double[] scores = ids.stream().map(rows::get).filter(SealService::publicHype)
                     .mapToDouble(c -> c.getScore().doubleValue()).toArray();
             Map<String, Object> m = emptySealHype();
             if (scores.length > 0) {
@@ -420,6 +419,59 @@ public class SealService {
             out.put(s.getId(), m);
         }
         return out;
+    }
+
+    /** O Hype que entra num agregado de terceiros: disponível, com score e público elegível (o de item privado é só do dono). */
+    static boolean publicHype(HypeScoreCurrent c) {
+        return c != null && c.getStatus() == HypeStatus.AVAILABLE && c.isPublicEligible() && c.getScore() != null;
+    }
+
+    /** Quantos looks vinculados aparecem no "top" do Hype das métricas do emissor. */
+    static final int ISSUER_HYPE_TOP = 3;
+
+    /**
+     * P2-09 — Hype dos looks vinculados nas métricas do emissor, com a régua do "Hype do selo" ({@link #computeSealHype}):
+     * média do HypeScore v2 atual dos looks com vínculo APROVADO e vigente deste emissor, só os públicos elegíveis com Hype
+     * disponível ({@link #publicHype}); {@code bonded} conta todos os looks vinculados. Também o Δ médio na janela do
+     * delta (só quem tem base de comparação; sem base, nulo e sem seta) e os {@value #ISSUER_HYPE_TOP} de maior Hype.
+     * Sem nenhum público com Hype: {@code avgScore}/{@code level} nulos — a interface diz "Dados insuficientes", nunca 0.
+     * Só lê o estado gravado pelo job (GET nunca recalcula) e nada aqui vira sinal do Hype.
+     */
+    Map<String, Object> bondedHype(UUID issuerId) {
+        Instant now = Instant.now();
+        Map<UUID, Scheme> looks = new LinkedHashMap<>();
+        for (SealBond b : bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(issuerId, SealBondStatus.APPROVED)) {
+            if (b.getScheme() != null && b.getStatus() == SealBondStatus.APPROVED && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now))) {
+                looks.putIfAbsent(b.getScheme().getId(), b.getScheme());
+            }
+        }
+        HypeQueryService q = hype();
+        Map<UUID, HypeScoreCurrent> rows = q == null || looks.isEmpty() ? Map.of() : q.currentOf(HypeEntityType.SCHEME, looks.keySet());
+        List<HypeScoreCurrent> shown = looks.keySet().stream().map(rows::get).filter(SealService::publicHype).toList();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("bonded", looks.size());
+        m.put("withHype", shown.size());
+        Double avg = shown.isEmpty() ? null : Math.round(shown.stream().mapToDouble(c -> c.getScore().doubleValue()).average().orElse(0) * 10) / 10.0;
+        m.put("avgScore", avg);
+        m.put("level", avg == null ? null : q.config().level(avg).name());
+        List<HypeScoreCurrent> withDelta = shown.stream().filter(c -> c.getDeltaPoints() != null).toList();
+        Double delta = withDelta.isEmpty() ? null : Math.round(withDelta.stream().mapToDouble(c -> c.getDeltaPoints().doubleValue()).average().orElse(0) * 10) / 10.0;
+        m.put("deltaPoints", delta);
+        m.put("direction", delta == null ? null : Math.abs(delta) < q.config().stablePoints() ? "STABLE" : delta > 0 ? "UP" : "DOWN");
+        m.put("deltaWindowDays", q == null ? null : q.config().deltaWindowDays());
+        m.put("top", shown.stream().sorted(Comparator.comparing(HypeScoreCurrent::getScore).reversed()
+                        .thenComparing(c -> c.getEntityId().toString())).limit(ISSUER_HYPE_TOP)
+                .map(c -> {
+                    Map<String, Object> t = new LinkedHashMap<>();
+                    Scheme s = looks.get(c.getEntityId());
+                    t.put("schemeId", c.getEntityId().toString());
+                    t.put("title", s == null ? null : s.getTitle());
+                    double score = Math.round(c.getScore().doubleValue() * 10) / 10.0;
+                    t.put("score", score);
+                    t.put("level", q.config().level(score).name());
+                    return t;
+                }).toList());
+        return m;
     }
 
     private static Map<String, Object> emptySealHype() {
@@ -1607,6 +1659,7 @@ public class SealService {
         m.put("activeSeals", approved);
         m.put("redemptions", redeemed);
         m.put("conversionSealToRedemption", approved == 0 ? 0 : Math.round(redeemed * 1000.0 / approved) / 10.0);
+        m.put("hype", bondedHype(user.id()));   // RF53 · P2-09 (aditivo): Hype v2 dos looks vinculados, só públicos
         return m;
     }
 

@@ -99,8 +99,32 @@ export interface HypeTrending {
 export type HypeRankGroup = "BRAND" | "CREATOR";
 export interface HypeTrendingGroups {
   type: HypeRankGroup; window: 1 | 7 | 30; algorithmVersion: string; minItems: number;
-  items: { rank: number; key: string; name?: string; logoUrl?: string | null; ownerId?: string; user?: UserCard; value: number; items: number; pieces: number; looks: number; top: { type: HypeEntity; id: string; hype: HypeSummary } }[];
+  /** P3-01: TREND = o valor é o trend médio (janela "hoje", sem faixa); HYPE = Hype médio com faixa */
+  metric?: "TREND" | "HYPE";
+  items: {
+    rank: number; key: string; name?: string; logoUrl?: string | null; ownerId?: string; user?: UserCard; value: number; items: number; pieces: number; looks: number;
+    /** faixa do valor (só quando o valor é Hype) e o perfil oficial da marca, quando existe (link /brands/{slug}) */
+    level?: HypeLevel | null; slug?: string | null; sufficient?: boolean;
+    top: { type: HypeEntity; id: string; hype: HypeSummary };
+  }[];
 }
+
+/**
+ * Lote A1 — Hype agregado de uma marca (chave = nome normalizado) ou de uma pessoa (chave = id) em
+ * GET /api/hype/groups?type=BRAND|CREATOR&keys=. Só itens públicos elegíveis; abaixo de `minItems` (3) o grupo é
+ * insuficiente: sem valor, sem faixa e sem posição — a interface não mostra nada (nunca 0).
+ */
+export interface HypeGroupSummary {
+  key: string; name?: string; slug?: string | null; logoUrl?: string | null; ownerId?: string;
+  sufficient: boolean;
+  /** média dos 5 itens públicos mais relevantes (HypeScore atual ou média do mês) */
+  value?: number | null; level?: HypeLevel | null;
+  /** posição no ranking público completo do tipo (sem recorte) */
+  rank?: number | null;
+  items: number; pieces: number; looks: number;
+  top?: { type: HypeEntity; id: string } | null;
+}
+export interface HypeGroups { type: HypeRankGroup; window: 7 | 30; algorithmVersion: string; minItems: number; total: number; items: Record<string, HypeGroupSummary> }
 
 /* ---------- Explorador → Ranking de HypeScore (por região do mundo, país, categoria e subcategoria) ---------- */
 /** Regiões do mundo (WorldRegions do backend); quem não informou o país fica em OUTRAS. */

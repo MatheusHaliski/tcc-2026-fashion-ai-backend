@@ -127,9 +127,15 @@ final class PersonalInsights {
     }
 
     List<Insight> build(InsightContext ctx, CurrentUser user) {
+        return build(ctx, user, List.of());
+    }
+
+    /** @param selected peças escolhidas no editor de look (LOOK_EDITOR); só as da própria pessoa contam */
+    List<Insight> build(InsightContext ctx, CurrentUser user, List<UUID> selected) {
         Personal p = load(user);
         List<Insight> out = new ArrayList<>();
         switch (ctx) {
+            case LOOK_EDITOR -> lookEditor(p, selected == null ? List.of() : selected, out);
             case CAPSULE -> capsule(p, out);
             case COPILOT -> copilot(p, out);
             case AUTOPILOT -> autopilot(p, out);
@@ -273,6 +279,53 @@ final class PersonalInsights {
                         args(title(s), fmt1(Math.abs(d.scored(s.getId()).getDeltaPoints().doubleValue())), config.deltaWindowDays(), s.getLookDoDiaCount()),
                         metric("insights.metric.variacao", round1(d.scored(s.getId()).getDeltaPoints().doubleValue()), "pts"),
                         action("insights.action.ver_look", "/schemes/" + s.getId()), HYPE_V2, WARDROBE_USAGE)));
+    }
+
+    /**
+     * Editor de look (Lote A5 · P3-15): primeiro a leitura das peças escolhidas — Hype médio (pessoal: são as peças da
+     * própria pessoa) SEMPRE ao lado da compatibilidade com o DNA e do uso real, com o aviso de que o Hype do look nasce
+     * dos sinais do próprio look —; depois a redescoberta (peça parada cujas semelhantes cresceram), o estilo acima do
+     * Hype e a peça de maior Hype com o estilo ao lado. Nada aqui grava nem emite sinal de Hype.
+     */
+    void lookEditor(Personal p, List<UUID> selected, List<Insight> out) {
+        List<WardrobeItem> chosen = selected.stream().filter(Objects::nonNull).distinct().map(p.byId()::get).filter(Objects::nonNull).toList();
+        if (!chosen.isEmpty()) {
+            out.add(selection(p, chosen));
+        }
+        Optional<Insight> rediscovery = rediscovery(p, rediscoveries(p), "IDLE_REDISCOVERY", 0.9);
+        rediscovery.ifPresent(out::add);
+        styleOverHype(p, 0.8).ifPresent(out::add);
+        hypeAndStyle(p, 0.7).ifPresent(out::add);
+        if (p.dna() == null) {
+            dnaStatus(p, 0.65, false).ifPresent(out::add);
+        }
+        if (rediscovery.isEmpty()) {
+            idlePieces(p, "IDLE_PIECES", 0.6).ifPresent(out::add);
+        }
+    }
+
+    /** As peças escolhidas: Hype médio (só as com Hype calculado; sem nenhuma, o texto diz "sem Hype", nunca 0), DNA e uso. */
+    Insight selection(Personal p, List<WardrobeItem> chosen) {
+        List<HypeScoreCurrent> scored = chosen.stream().map(w -> p.scored(w.getId())).filter(Objects::nonNull).toList();
+        Double hypeAvg = scored.isEmpty() ? null : scored.stream().mapToDouble(c -> c.getScore().doubleValue()).average().orElse(0);
+        List<Integer> compats = chosen.stream().map(p::compat).filter(Objects::nonNull).toList();
+        Integer compat = compats.isEmpty() ? null : (int) Math.round(compats.stream().mapToInt(Integer::intValue).average().orElse(0));
+        long uses = chosen.stream().mapToLong(WardrobeItem::getWearCount).sum();
+        int n = chosen.size();
+        if (hypeAvg != null && compat != null) {
+            return insight("LOOK_EDITOR_SELECTION", NEUTRAL, 0.95, "insights.look_editor_selection.text_full", args(n, fmt0(hypeAvg), scored.size(), compat, uses),
+                    metric("insights.metric.hype_medio", round(hypeAvg), "pts"), null, HYPE_V2, STYLE_DNA, WARDROBE_USAGE);
+        }
+        if (hypeAvg != null) {
+            return insight("LOOK_EDITOR_SELECTION", NEUTRAL, 0.95, "insights.look_editor_selection.text_hype", args(n, fmt0(hypeAvg), scored.size(), uses),
+                    metric("insights.metric.hype_medio", round(hypeAvg), "pts"), action("insights.action.definir_dna", "/dna"), HYPE_V2, WARDROBE_USAGE);
+        }
+        if (compat != null) {
+            return insight("LOOK_EDITOR_SELECTION", NEUTRAL, 0.95, "insights.look_editor_selection.text_dna", args(n, compat, uses),
+                    metric("insights.metric.compatibilidade", compat, "%"), null, STYLE_DNA, WARDROBE_USAGE);
+        }
+        return insight("LOOK_EDITOR_SELECTION", NEUTRAL, 0.95, "insights.look_editor_selection.text", args(n, uses),
+                metric("insights.metric.pecas", n, "peças"), null, WARDROBE_USAGE);
     }
 
     // ================================================================== geradores de peça

@@ -11,6 +11,7 @@ import { Chip, EmptyState, ErrorState, PageHeader, SkeletonGrid, Tabs } from "@/
 import { SchemeCard } from "@/components/scheme-card";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { OnboardingChecklist } from "@/components/onboarding";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 type Chips = { label?: string; key: string; value: string }[];
 type Feed = { items: SchemeView[]; nextCursor: string | null; chips?: Chips; order?: string };
@@ -49,6 +50,8 @@ export default function FeedPage() {
       <OnboardingChecklist />
       <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); }} />
       {tab === "runway" && !user && <EmptyState title={t("common.loginRequired")} action={<Link href="/login" className="btn btn-primary">{t("nav.login")}</Link>} />}
+      {/* RF53 · Lote A5 (P3-15): leitura do feed da comunidade — só looks públicos; crescimento ≠ popularidade */}
+      {tab === "feed" && <InsightStrip context="FEED" params={{ window: 7 }} collapsible className="mb-3" />}
       {tab === "feed" && (
         <div className="mb-4 flex flex-wrap gap-2">
           <Chip active={hot} onClick={() => toggle("hypeLevel", HOT)} title={t("feed.hot_hint")}>{t("feed.hot_chip")}</Chip>

@@ -157,25 +157,34 @@ public class InstitutionalService {
         return Similarity.jaccard(userStyles, styles);
     }
 
+    /** Ordens dos feeds de /brands: afinidade com o DNA, mais recentes e "Em alta" (Hype agregado público, P2-05). */
+    static final List<String> FEED_ORDERS = List.of("AFINIDADE", "RECENTES", "EM_ALTA");
+
     @Transactional(readOnly = true)
     public Map<String, Object> brandFeed(CurrentUser viewer, String term, String order) {
         List<BrandProfile> list = brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(b -> term == null || term.isBlank() || b.getBrandName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
         Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
-        boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        boolean hypeOrder = "EM_ALTA".equalsIgnoreCase(order);
+        boolean affinityOrder = !hypeOrder && !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        // RF53 · P2-05: o Hype agregado da marca (peças públicas com o nome da marca, ≥ 3 itens) em todo card, numa leitura só
+        Map<String, Object> hypeByKey = feedHype(viewer, HypeQueryService.RankGroup.BRAND, list.stream().map(b -> HypeQueryService.brandKey(b.getBrandName())).toList());
         List<Map<String, Object>> cards = new ArrayList<>();
         for (BrandProfile b : list) {
             Map<String, Object> m = brandCard(b);
             if (affinityOrder) {
                 m.put("affinity", Math.round(affinity(styles, b.getOwner().getId()) * 100));
             }
+            m.put("hype", hypeByKey.get(HypeQueryService.brandKey(b.getBrandName())));
             cards.add(m);
         }
         if (affinityOrder) {
             ai.local(viewer.id(), AiCapability.AFFINITY, List.of(Msg.t("institutional.estilos_do_seu_dna"), Msg.t("institutional.estilos_do_catalogo_das_marcas")), () -> cards.size());
             cards.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("affinity")).longValue()).reversed());
+        } else if (hypeOrder) {
+            cards.sort(BY_GROUP_HYPE);
         }
-        return Map.of("brands", cards, "order", affinityOrder ? "AFINIDADE" : "RECENTES", "orders", List.of("AFINIDADE", "RECENTES"),
+        return Map.of("brands", cards, "order", hypeOrder ? "EM_ALTA" : affinityOrder ? "AFINIDADE" : "RECENTES", "orders", FEED_ORDERS,
                 "empty", cards.isEmpty() ? (term == null ? Msg.t("institutional.nenhuma_marca_validada_ainda") : Msg.t("institutional.nenhuma_marca_encontrada_para", term)) : "");
     }
 
@@ -184,20 +193,44 @@ public class InstitutionalService {
         List<CelebrityProfile> list = celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(c -> term == null || term.isBlank() || c.getStageName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
         Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
-        boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        boolean hypeOrder = "EM_ALTA".equalsIgnoreCase(order);
+        boolean affinityOrder = !hypeOrder && !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        // celebridade = criadora: o agregado CREATOR das peças e looks públicos dela (bloqueio entre quem vê e ela = sem Hype)
+        Map<String, Object> hypeByKey = feedHype(viewer, HypeQueryService.RankGroup.CREATOR, list.stream().map(c -> c.getOwner().getId().toString()).toList());
         List<Map<String, Object>> cards = new ArrayList<>();
         for (CelebrityProfile c : list) {
             Map<String, Object> m = celebrityCard(c);
             if (affinityOrder) {
                 m.put("affinity", Math.round(affinity(styles, c.getOwner().getId()) * 100));
             }
+            m.put("hype", hypeByKey.get(c.getOwner().getId().toString()));
             cards.add(m);
         }
         if (affinityOrder) {
             cards.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("affinity")).longValue()).reversed());
+        } else if (hypeOrder) {
+            cards.sort(BY_GROUP_HYPE);
         }
-        return Map.of("celebrities", cards, "order", affinityOrder ? "AFINIDADE" : "RECENTES", "orders", List.of("AFINIDADE", "RECENTES"));
+        return Map.of("celebrities", cards, "order", hypeOrder ? "EM_ALTA" : affinityOrder ? "AFINIDADE" : "RECENTES", "orders", FEED_ORDERS);
     }
+
+    /** Agregados do Hype por chave ({@link HypeQueryService#groups}); falha ou sem serviço = sem Hype (o feed nunca quebra). */
+    @SuppressWarnings("unchecked")
+    Map<String, Object> feedHype(CurrentUser viewer, HypeQueryService.RankGroup group, List<String> keys) {
+        if (hype == null || keys.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> out = hype.groups(viewer, group, keys, 7);
+        return out != null && out.get("items") instanceof Map<?, ?> items ? (Map<String, Object>) items : Map.of();
+    }
+
+    /**
+     * "Em alta" (P2-05): grupos suficientes primeiro, do maior Hype agregado para o menor; quem não tem base (menos de 3
+     * itens públicos, bloqueio, sem dado) fica depois, na ordem recente — nunca vira 0. Sort estável.
+     */
+    static final Comparator<Map<String, Object>> BY_GROUP_HYPE = Comparator.comparing(
+            (Map<String, Object> m) -> m.get("hype") instanceof Map<?, ?> h && Boolean.TRUE.equals(h.get("sufficient")) && h.get("value") instanceof Number n
+                    ? n.doubleValue() : null, Comparator.nullsLast(Comparator.reverseOrder()));
 
     // ================================================================== perfil institucional (artefato #11)
     User institutionalUser(String slugOrId) {
@@ -412,8 +445,32 @@ public class InstitutionalService {
     }
 
     static Double lookHype(Map<UUID, HypeScoreCurrent> hype, UUID schemeId) {
+        return lookHype(hype, schemeId, false);
+    }
+
+    /**
+     * Score que pode ordenar: AVAILABLE com score. Em contexto de terceiros (destaques de looks de outras pessoas), só o
+     * Hype público elegível — o de look privado ou só para seguidores é pessoal, do dono (auditoria §3.1); sem ele, o look
+     * vai para o fim, nunca vira 0. {@code personal} = o próprio dono ordenando os próprios looks.
+     */
+    static Double lookHype(Map<UUID, HypeScoreCurrent> hype, UUID schemeId, boolean personal) {
         HypeScoreCurrent c = hype.get(schemeId);
-        return c == null || c.getStatus() != HypeStatus.AVAILABLE || c.getScore() == null ? null : c.getScore().doubleValue();
+        return c == null || c.getStatus() != HypeStatus.AVAILABLE || c.getScore() == null || (!personal && !c.isPublicEligible())
+                ? null : c.getScore().doubleValue();
+    }
+
+    /** Crescimento (P3-17): a dimensão TREND do Hype v2 (janela atual × anterior) — crescimento, não volume nem curtidas. */
+    static Double lookGrowth(Map<UUID, HypeScoreCurrent> hype, UUID schemeId, boolean personal) {
+        if (lookHype(hype, schemeId, personal) == null) {
+            return null;
+        }
+        HypeScoreCurrent c = hype.get(schemeId);
+        return c.getDimensions() == null || c.getDimensions().getTrend() == null ? null : c.getDimensions().getTrend().doubleValue();
+    }
+
+    static Double lookDelta(Map<UUID, HypeScoreCurrent> hype, UUID schemeId) {
+        HypeScoreCurrent c = hype.get(schemeId);
+        return c == null || c.getDeltaPoints() == null ? null : c.getDeltaPoints().doubleValue();
     }
 
     /** Looks consagrados: o histórico (ou, para o administrador, os próprios looks); filtros de era, disponibilidade, uso e Hype. */
@@ -421,7 +478,7 @@ public class InstitutionalService {
         if (admin) {
             List<Scheme> own = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED);
             return filterLooks(own.stream().map(s -> new Promoted(s, bonds.findBySchemeId(s.getId()).stream()
-                    .filter(b -> b.getStatus() == SealBondStatus.APPROVED).toList(), null, null, false, s.isRevalidationPending())).toList(), filter, groupingId)
+                    .filter(b -> b.getStatus() == SealBondStatus.APPROVED).toList(), null, null, false, s.isRevalidationPending())).toList(), filter, groupingId, true)
                     .stream().map(p -> entry(viewer, p)).toList();
         }
         return filterLooks(promoted(viewer, u, true, Instant.now()), filter, groupingId).stream().map(p -> entry(viewer, p)).toList();
@@ -451,8 +508,19 @@ public class InstitutionalService {
         return out;
     }
 
-    /** Filtros das abas de looks: era/fase/temporada, disponível/indisponível, mais usadas e destaques (Hype v2). */
+    /** Filtros das abas de looks de outras pessoas (destaques e consagrados): o Hype que ordena é só o público elegível. */
     List<Promoted> filterLooks(List<Promoted> list, String filter, UUID groupingId) {
+        return filterLooks(list, filter, groupingId, false);
+    }
+
+    /**
+     * Filtros e ordenações das abas de looks: era/fase/temporada ({@code groupingId}), disponível/indisponível, mais usadas,
+     * destaques (Hype v2) e — P3-17, o SegmentPicker "Recentes · Hype · Em crescimento" da interface (ordenação, não aba):
+     * RECENTES (emissão mais recente), HYPE (HypeScore v2, sem score no fim) e GROWTH (dimensão TREND do v2 —
+     * crescimento, não volume —, empate pelo Δ; sem Hype no fim). Nada sai da lista nessas três: só muda a ordem, e a
+     * política de exibição (quem entra) continua a de {@link #promoted}. Sort estável: o empate mantém a ordem anterior.
+     */
+    List<Promoted> filterLooks(List<Promoted> list, String filter, UUID groupingId, boolean personal) {
         if (groupingId != null) {
             list = list.stream().filter(p -> groupingId.equals(p.scheme().getGroupingId())).toList();
         }
@@ -463,9 +531,22 @@ public class InstitutionalService {
             case "MAIS_USADAS" -> list.stream().sorted(Comparator.comparingInt((Promoted p) -> p.scheme().getLookDoDiaCount()).reversed()).toList();
             case "DESTAQUES" -> {
                 Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
-                yield list.stream().filter(p -> lookHype(h, p.scheme().getId()) != null)
-                        .sorted(Comparator.comparing((Promoted p) -> lookHype(h, p.scheme().getId()), Comparator.reverseOrder()))
+                yield list.stream().filter(p -> lookHype(h, p.scheme().getId(), personal) != null)
+                        .sorted(Comparator.comparing((Promoted p) -> lookHype(h, p.scheme().getId(), personal), Comparator.reverseOrder()))
                         .limit(DESTAQUES_LIMIT).toList();
+            }
+            case "RECENTES", "RECENT" -> list.stream().sorted(Comparator.comparing((Promoted p) -> p.issuedAt() != null ? p.issuedAt() : p.scheme().getCreatedAt(),
+                    Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+            case "HYPE" -> {
+                Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
+                yield list.stream().sorted(Comparator.comparing((Promoted p) -> lookHype(h, p.scheme().getId(), personal),
+                        Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+            }
+            case "GROWTH", "CRESCIMENTO" -> {
+                Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
+                yield list.stream().sorted(Comparator.comparing((Promoted p) -> lookGrowth(h, p.scheme().getId(), personal), Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(p -> lookGrowth(h, p.scheme().getId(), personal) == null ? null : lookDelta(h, p.scheme().getId()),
+                                Comparator.nullsLast(Comparator.reverseOrder()))).toList();
             }
             default -> list;
         };

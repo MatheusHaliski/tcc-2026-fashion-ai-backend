@@ -2639,7 +2639,8 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .globe-pill-text { font-family: var(--font-data); font-weight: 700; fill: #0B1622; pointer-events: none; }
 .globe-fig { transform-box: fill-box; transform-origin: 50% 100%; animation: globe-fig-idle 2.8s ease-in-out infinite; }
 @keyframes globe-fig-idle { 0%, 100% { transform: translateY(0) rotate(0deg); } 30% { transform: translateY(-.6px) rotate(-3deg); } 70% { transform: translateY(-.3px) rotate(3deg); } }
-.globe-fig-more { font: 700 6.5px/1 var(--font-data); fill: #fff; paint-order: stroke; stroke: rgba(10, 28, 46, .85); stroke-width: 2px; }
+.globe-fig-more { font: 700 12px/1 var(--font-data); fill: #fff; paint-order: stroke; stroke: rgba(10, 28, 46, .85); stroke-width: 3px; }
+.globe-figs-hit { pointer-events: all; }
 .globe-sel-ring { pointer-events: none; }
 .globe-card-leader { stroke: var(--globe-leader); stroke-width: 1; stroke-dasharray: 3 2; fill: none; pointer-events: none; }
 .globe-card-dot { fill: var(--globe-leader); }
@@ -2745,3 +2746,66 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .lb-hype-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
 .dna-hype-level { display: flex; justify-content: center; margin: 2px 0 6px; }
 .dna-mini .hype-level-chip { padding: 0 6px; font-size: 10px; }
+
+/* RF53 · Lotes A1/A2/A5 — Hype agregado de criador e marca (chips da busca e de /brands, cabeçalhos de perfil), faixa no
+   ranking de grupos do Em alta, ordenação das abas de destaque da marca, Hype dos vinculados nas métricas do emissor.
+   A faixa sempre vem em texto; a cor é só reforço. */
+.hype-group-badge { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; max-width: 100%; margin-top: 2px; padding: 1px 9px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 12px; white-space: nowrap; }
+.hype-group-badge b { font-family: var(--font-data); font-weight: 700; font-size: 12px; }
+.hype-group-badge-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hype-group-badge .hype-level-chip { padding: 0 7px; font-size: 10px; }
+.hype-group-badge.is-hot { border-color: var(--mark-soft); }
+.hype-group-badge.is-trending { border-color: var(--thread-soft); }
+.hype-group-badge.is-viral { border-color: var(--accent); }
+/* cabeçalho do perfil: fundo branco fixo (ProfileHeader), tinta escura própria */
+.profile-header-hype:empty { display: none; }
+.hype-group-header { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; margin-top: 4px; color: #111; font-size: 13px; text-decoration: none; }
+.hype-group-header:hover .hype-group-header-label { text-decoration: underline; }
+.hype-group-header:focus-visible { outline: 2px solid #2D55C9; outline-offset: 2px; border-radius: 6px; }
+.hype-group-header-label { font-weight: 600; }
+.hype-group-header-value b { font-family: var(--font-data); }
+.hype-group-header-base { color: #737373; font-size: 12px; }
+.trend-group-value { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.trend-group-value .hype-level-chip { padding: 0 7px; font-size: 10px; }
+/* A2: ordenação das abas de destaque (é ordenação, não aba) e Hype dos looks vinculados nas métricas do emissor */
+.brand-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.brand-sort-hint { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; }
+.brand-card-hype { display: flex; justify-content: center; min-height: 0; }
+.issuer-hype { display: grid; gap: 8px; }
+.issuer-hype-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.issuer-hype-top { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.issuer-hype-top li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.issuer-hype-top a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (forced-colors: active) { .hype-group-badge { border-color: CanvasText; } }
+
+/* RF53 · Lote A3 — Explorador em HypeScore v2: Hype da marca no card (número + faixa em texto + base; "—" e "Dados
+   insuficientes" sem base, nunca 0 nem estrelas), linhas dos rankings de Insights (Hype atual, Crescimento a partir do
+   estável, Volume) e a lista de países do Painel global (volume do painel + Hype v2 do globo). Duas linhas por item: cabe
+   no celular sem rolagem horizontal. */
+.explorer-brand-hype { display: grid; justify-items: center; gap: 2px; margin-top: 6px; max-width: 100%; }
+.explorer-brand-hype-main { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; margin: 0; }
+.explorer-brand-hype-k { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); }
+.explorer-brand-hype-main b { font-family: var(--font-data); font-size: 20px; line-height: 1.1; }
+.explorer-brand-hype.is-empty .explorer-brand-hype-main b { color: var(--muted); }
+.xp-section { display: grid; gap: 8px; min-width: 0; }
+.xp-row { display: grid; grid-template-columns: minmax(min(6.5rem, 45%), 1fr) auto; grid-template-areas: "name val" "bar meta"; align-items: center; gap: 4px 10px; min-width: 0; }
+.xp-row.is-volume { grid-template-areas: "name val" "bar bar"; }
+.xp-row-name { grid-area: name; display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 600; }
+.xp-row-val { grid-area: val; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 6px; min-width: 0; }
+.xp-row-val > * { white-space: nowrap; }
+.xp-row-val b { font-family: var(--font-data); }
+.xp-row-bar { grid-area: bar; position: relative; display: block; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.xp-row-bar > span { position: absolute; top: 0; bottom: 0; left: 0; border-radius: inherit; background: var(--thread); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.xp-row-bar.is-diverging { overflow: visible; }
+.xp-row-bar.is-diverging::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1.5px; background: var(--ink); opacity: .55; }
+.xp-row-meta { grid-area: meta; justify-self: end; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.xp-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line); }
+.xp-dir { font-size: 12px; color: var(--muted); }
+.explorer-country-list > li { padding: 2px; }
+.explorer-country-row { width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.explorer-country-row:hover, .explorer-country-row.is-selected { background: var(--surface-2); }
+.explorer-country-row:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.explorer-country-row .xp-row-bar { height: 10px; }
+.explorer-country-row .xp-row-meta { white-space: normal; text-align: right; }
+:root[data-theme="contrast"] .xp-row-bar > span { background: var(--ink) !important; opacity: 1 !important; }
+@media (forced-colors: active) { .xp-row-bar { border: 1px solid CanvasText; } .xp-row-bar > span { forced-color-adjust: none; background: CanvasText !important; } }

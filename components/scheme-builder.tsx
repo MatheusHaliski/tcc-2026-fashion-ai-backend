@@ -16,6 +16,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import { LookHypePreview, PieceHypeTag } from "@/components/hype/look-hype-preview";
+import { InsightStrip } from "@/components/insights/insight-strip";
 import type { LookScoreValues } from "@/components/hype/look-scores";
 import type { HypeLevel } from "@/lib/hype/types";
 import { studioOf } from "@/lib/card-art";
@@ -301,7 +302,9 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
         <SchemeCard scheme={draft} href="#" />
         {/* RF53 (P1-08): os seis números do rascunho — o Hype aqui é a média das peças; nada é salvo nem vira sinal */}
-        <LookHypePreview pieceIds={selected.map((x) => x.id)} occasion={form.occasion} style={form.style} schemeId={initial?.id ?? null} /></aside>
+        <LookHypePreview pieceIds={selected.map((x) => x.id)} occasion={form.occasion} style={form.style} schemeId={initial?.id ?? null} />
+        {/* RF53 · Lote A5 (P3-15): leitura pessoal das peças escolhidas (Hype ao lado do DNA e do uso) e redescobertas; fechada até abrir */}
+        <InsightStrip context="LOOK_EDITOR" params={{ pieces: selected.map((x) => x.id).sort().join(",") }} collapsible className="mt-3" /></aside>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );

@@ -10,11 +10,16 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.hype.HypeCache;
 import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.service.ExplorerService;
 import br.com.fashionai.application.service.LookbookService;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.taxonomy.WorldRegions;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
+import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
+import br.com.fashionai.domain.repository.SealBondRepository;
+import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
@@ -22,6 +27,7 @@ import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +39,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Insights dinâmicos e contextualizados (RF53, GET /api/insights). Cada aba com análise pede os insights do seu contexto:
  * os públicos (Explorador) leem só agregados de itens públicos elegíveis e ficam no {@link HypeCache} pela geração do job;
- * os pessoais (Cápsula, Copilot, Autopiloto, Histórico, Guarda-roupa, Looks) leem o guarda-roupa, o uso e o DNA de quem
- * pede. Tudo é determinístico a partir dos dados; {@code withAi=true} só reescreve o TEXTO pela IA (INSIGHT_GENERATOR),
+ * os pessoais (Cápsula, Copilot, Autopiloto, Histórico, Guarda-roupa, Looks, Editor de look) leem o guarda-roupa, o uso e
+ * o DNA de quem pede. Lote A5: Feed e Busca (públicos, como o Explorador) e os perfis de marca/celebridade e de pessoa
+ * (públicos por chave: só o agregado público do perfil, com o bloqueio de quem vê aplicado antes do cache). Tudo é determinístico a partir dos dados; {@code withAi=true} só reescreve o TEXTO pela IA (INSIGHT_GENERATOR),
  * e a reescrita é descartada se mudar qualquer número.
  *
  * <p>Princípios codificados: Hype é contexto, nunca critério único; tendência ≠ popularidade; Hype global ≠
@@ -57,15 +65,30 @@ public class InsightService {
     private final AiEngine ai;
     private final PublicInsights publicInsights;
     private final PersonalInsights personalInsights;
+    /** Lote A5: perfis de marca, celebridade e pessoa (BRAND_PROFILE, CREATOR_PROFILE). */
+    private final ProfileInsights profileInsights;
+    /** Bloqueio entre quem vê e o perfil (o agregado é público, mas o perfil bloqueado some, como no Em alta). */
+    private final Guard guard;
 
+    /** Construtor de 12 argumentos (testes existentes): sem os repositórios de perfil, BRAND_PROFILE e CREATOR_PROFILE ficam vazios. */
     public InsightService(HypeQueryService hype, HypeScoreCurrentRepository current, HypeCache cache, WardrobeItemRepository pieces, SchemeRepository schemes,
                           SchemeItemRepository schemeItems, StyleDnaRepository dnas, UserPreferencesRepository preferences, LookbookService lookbook,
                           ExplorerService explorer, WardrobeService wardrobe, AiEngine ai) {
+        this(hype, current, cache, pieces, schemes, schemeItems, dnas, preferences, lookbook, explorer, wardrobe, ai, null, null, null, null, null);
+    }
+
+    @Autowired
+    public InsightService(HypeQueryService hype, HypeScoreCurrentRepository current, HypeCache cache, WardrobeItemRepository pieces, SchemeRepository schemes,
+                          SchemeItemRepository schemeItems, StyleDnaRepository dnas, UserPreferencesRepository preferences, LookbookService lookbook,
+                          ExplorerService explorer, WardrobeService wardrobe, AiEngine ai, UserRepository users, BrandProfileRepository brands,
+                          CelebrityProfileRepository celebrities, SealBondRepository bonds, Guard guard) {
         this.hype = hype;
         this.cache = cache;
         this.ai = ai;
+        this.guard = guard;
         this.publicInsights = new PublicInsights(hype.config(), current, hype, explorer);
         this.personalInsights = new PersonalInsights(hype.config(), hype, pieces, schemes, schemeItems, dnas, preferences, lookbook, wardrobe);
+        this.profileInsights = new ProfileInsights(hype.config(), current, hype, pieces, schemes, users, brands, celebrities, bonds);
     }
 
     /**
@@ -74,6 +97,16 @@ public class InsightService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> insights(CurrentUser viewer, String context, Integer window, String region, String category, String subcategory, boolean withAi) {
+        return insights(viewer, context, window, region, category, subcategory, null, null, withAi);
+    }
+
+    /**
+     * @param key    perfil dos contextos BRAND_PROFILE (slug da marca/celebridade) e CREATOR_PROFILE (@ ou id da pessoa)
+     * @param pieces peças escolhidas no editor de look (LOOK_EDITOR); só as de quem pede contam
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> insights(CurrentUser viewer, String context, Integer window, String region, String category, String subcategory,
+                                        String key, List<UUID> pieces, boolean withAi) {
         InsightContext ctx = InsightContext.parse(context);
         if (ctx == null) {
             throw ApiException.badRequest("CONTEXTO_INVALIDO", Msg.t("insights.contexto_invalido", Arrays.toString(InsightContext.values())));
@@ -82,12 +115,20 @@ public class InsightService {
             throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
         }
         Map<String, Object> out;
-        if (ctx.isPublic()) {
+        if (ctx.isProfile()) {
+            ProfileInsights.Target target = profileInsights.resolve(ctx, key);
+            if (target == null || blocked(viewer, target)) {
+                out = response(ctx, List.of());   // perfil desconhecido, não aprovado ou bloqueado: faixa vazia, sem erro e sem vazar nada
+            } else {
+                String ck = "insights:" + ctx + ":" + target.cacheKey() + ":" + Msg.locale().toLanguageTag();
+                out = new LinkedHashMap<>(cache.get(ck, () -> response(ctx, finish(profileInsights.build(target)))));
+            }
+        } else if (ctx.isPublic()) {
             PublicInsights.Filters f = filters(window, region, category, subcategory);
-            String key = "insights:" + ctx + ":" + f.window() + ":" + f.region() + ":" + f.category() + ":" + f.subcategory() + ":" + Msg.locale().toLanguageTag();
-            out = new LinkedHashMap<>(cache.get(key, () -> response(ctx, finish(publicInsights.build(ctx, f)))));
+            String ck = "insights:" + ctx + ":" + f.window() + ":" + f.region() + ":" + f.category() + ":" + f.subcategory() + ":" + Msg.locale().toLanguageTag();
+            out = new LinkedHashMap<>(cache.get(ck, () -> response(ctx, finish(publicInsights.build(ctx, f)))));
         } else {
-            out = response(ctx, finish(personalInsights.build(ctx, viewer)));
+            out = response(ctx, finish(personalInsights.build(ctx, viewer, pieces == null ? List.of() : pieces)));
         }
         if (withAi && viewer != null && out.get("items") instanceof List<?> items && !items.isEmpty()) {
             rewrite(viewer, ctx, out);
@@ -106,6 +147,11 @@ public class InsightService {
             log.warn("Insights {} indisponíveis: {}", ctx, e.toString());
             return List.of();
         }
+    }
+
+    /** Bloqueio (em qualquer direção) entre quem vê e o dono do perfil: o perfil some da leitura, como no Em alta. */
+    boolean blocked(CurrentUser viewer, ProfileInsights.Target target) {
+        return viewer != null && guard != null && guard.blocked(viewer.id(), target.ownerId());
     }
 
     static PublicInsights.Filters filters(Integer window, String region, String category, String subcategory) {

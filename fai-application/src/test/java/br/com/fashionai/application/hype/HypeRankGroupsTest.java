@@ -3,14 +3,18 @@ package br.com.fashionai.application.hype;
 import br.com.fashionai.application.ports.RenderCachePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.BrandProfile;
+import br.com.fashionai.domain.model.HypeDimensions;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
+import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +35,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/** "Marcas em alta" e "Criadores em alta" (RF53): agregados só de itens públicos elegíveis, com mínimo de itens por grupo. */
+/**
+ * "Marcas em alta" e "Criadores em alta" (RF53): agregados só de itens públicos elegíveis, com mínimo de itens por grupo.
+ * Lote A1: faixa e link da marca no ranking (P3-01) e o lote GET /api/hype/groups dos chips (P2-02, P2-03, P2-10).
+ */
 class HypeRankGroupsTest {
     private final HypeScoreConfig config = HypeScoreConfig.defaults();
     private HypeScoreCurrentRepository current;
@@ -65,6 +72,9 @@ class HypeRankGroupsTest {
         c.setAlgorithmVersion("HYPE_V2");
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
+        HypeDimensions d = new HypeDimensions();
+        d.setTrend(BigDecimal.valueOf(score / 2));   // crescimento ≠ Hype: o trend vale a metade do score aqui
+        c.setDimensions(d);
         c.setPublicEligible(true);
         c.setCalculatedAt(Instant.now());
         c.setWindowStart(Instant.now());
@@ -124,5 +134,83 @@ class HypeRankGroupsTest {
         assertThat(HypeQueryService.RankGroup.parse("marcas")).isEqualTo(HypeQueryService.RankGroup.BRAND);
         assertThat(HypeQueryService.RankGroup.parse("CREATOR")).isEqualTo(HypeQueryService.RankGroup.CREATOR);
         assertThat(HypeQueryService.RankGroup.parse("PIECE")).isNull();
+    }
+
+    // ================================================================== Lote A1
+    @SuppressWarnings("unchecked")
+    static Map<String, Map<String, Object>> byKey(Map<String, Object> out) {
+        return (Map<String, Map<String, Object>>) out.get("items");
+    }
+
+    @Test
+    void rankingDeGruposTrazAFaixaEmTextoESoNaJanelaDeHype() {
+        Map<String, Object> week = query.trendingGroups(null, HypeQueryService.RankGroup.BRAND, 7, null, null, null, 10);
+        assertThat(week.get("metric")).isEqualTo("HYPE");
+        assertThat(items(week).get(0).get("level")).isEqualTo("HOT");          // 70 = "Em alta"
+        assertThat(items(week).get(0).get("sufficient")).isEqualTo(true);
+        Map<String, Object> today = query.trendingGroups(null, HypeQueryService.RankGroup.BRAND, 1, null, null, null, 10);
+        assertThat(today.get("metric")).isEqualTo("TREND");
+        assertThat(((Number) items(today).get(0).get("value")).doubleValue()).isEqualTo(35.0);   // trend médio, não o Hype
+        assertThat(items(today).get(0).get("level")).isNull();                // crescimento não tem faixa de Hype
+    }
+
+    @Test
+    void marcaComPerfilOficialAprovadoLevaOSlug() {
+        BrandProfileRepository brands = mock(BrandProfileRepository.class);
+        BrandProfile nike = new BrandProfile();
+        nike.setBrandName("NIKE ");
+        nike.setSlug("nike-oficial");
+        nike.setApprovalStatus(ApprovalStatus.APROVADO);
+        when(brands.findByApprovalStatus(ApprovalStatus.APROVADO)).thenReturn(List.of(nike));
+        RenderCachePort cache = mock(RenderCachePort.class);
+        when(cache.get(any())).thenReturn(Optional.empty());
+        HypeQueryService withBrands = new HypeQueryService(config, current, null, pieces, null, null, null, guard, null, null, new HypeCache(cache), brands);
+        assertThat(items(withBrands.trendingGroups(null, HypeQueryService.RankGroup.BRAND, 7, null, null, null, 10)).get(0).get("slug")).isEqualTo("nike-oficial");
+        assertThat(byKey(withBrands.groups(null, HypeQueryService.RankGroup.BRAND, List.of("Nike"), 7)).get("nike").get("slug")).isEqualTo("nike-oficial");
+        // sem o repositório (construtor antigo), nada de slug: a interface cai na busca de peças
+        assertThat(items(query.trendingGroups(null, HypeQueryService.RankGroup.BRAND, 7, null, null, null, 10)).get(0)).doesNotContainKey("slug");
+    }
+
+    @Test
+    void loteDeMarcasDevolveFaixaPosicaoESuficienciaPorChave() {
+        Map<String, Object> out = query.groups(null, HypeQueryService.RankGroup.BRAND, List.of(" NIKE ", "Zara", "Gucci", "nike", ""), 7);
+        assertThat(out.get("type")).isEqualTo("BRAND");
+        assertThat(out.get("minItems")).isEqualTo(3);
+        assertThat(out.get("total")).isEqualTo(1);                       // só a Nike entra no ranking público
+        Map<String, Map<String, Object>> got = byKey(out);
+        assertThat(got).containsOnlyKeys("nike", "zara", "gucci");      // normalizadas, sem repetição, sem vazio
+        assertThat(got.get("nike")).containsEntry("sufficient", true).containsEntry("level", "HOT").containsEntry("rank", 1)
+                .containsEntry("items", 3).containsEntry("name", "Nike");
+        assertThat(((Number) got.get("nike").get("value")).doubleValue()).isEqualTo(70.0);
+        // Zara: 2 peças muito altas, mas insuficientes — sem valor, sem faixa e sem posição (nunca 0)
+        assertThat(got.get("zara")).containsEntry("sufficient", false).containsEntry("items", 2);
+        assertThat(got.get("zara").get("value")).isNull();
+        assertThat(got.get("zara").get("level")).isNull();
+        assertThat(got.get("zara").get("rank")).isNull();
+        // marca sem nenhum item público: zero itens, nada mais
+        assertThat(got.get("gucci")).containsEntry("sufficient", false).containsEntry("items", 0);
+        assertThat(got.get("gucci").get("value")).isNull();
+    }
+
+    @Test
+    void loteDeCriadoresRespeitaOBloqueioEIgnoraIdMalformado() {
+        CurrentUser viewer = new CurrentUser(UUID.randomUUID(), "leitor", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
+        Map<String, Map<String, Object>> got = byKey(query.groups(viewer, HypeQueryService.RankGroup.CREATOR,
+                List.of(ana.getId().toString(), bia.getId().toString(), "nao-e-id"), 7));
+        assertThat(got).containsOnlyKeys(ana.getId().toString(), bia.getId().toString());
+        assertThat(got.get(ana.getId().toString())).containsEntry("sufficient", true).containsEntry("level", "TRENDING").containsEntry("rank", 1)
+                .containsEntry("pieces", 4).containsEntry("looks", 0).doesNotContainKey("user");
+        assertThat(got.get(bia.getId().toString())).containsEntry("sufficient", false);
+
+        when(guard.canView(eq(viewer), eq(ana.getId()), eq(Visibility.PUBLIC))).thenReturn(false);   // bloqueio
+        assertThat(byKey(query.groups(viewer, HypeQueryService.RankGroup.CREATOR, List.of(ana.getId().toString()), 7))).isEmpty();
+    }
+
+    @Test
+    void itemPrivadoNuncaEntraNoAgregadoDoLote() {
+        rows.forEach(c -> c.setPublicEligible(false));   // defesa em profundidade: a linha não elegível é descartada
+        Map<String, Map<String, Object>> got = byKey(query.groups(null, HypeQueryService.RankGroup.BRAND, List.of("nike"), 7));
+        assertThat(got.get("nike")).containsEntry("sufficient", false).containsEntry("items", 0);
+        assertThat(query.groups(null, HypeQueryService.RankGroup.BRAND, List.of(), 7).get("items")).isEqualTo(Map.of());
     }
 }

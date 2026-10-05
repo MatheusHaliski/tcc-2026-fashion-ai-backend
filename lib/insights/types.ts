@@ -3,8 +3,12 @@
  * os públicos (EXPLORER_*) funcionam sem login e só usam dados públicos agregados, os pessoais exigem sessão.
  * Hype é contexto, nunca critério único; tendência (crescimento) ≠ popularidade (volume); o texto já vem traduzido.
  */
-export const PUBLIC_INSIGHT_CONTEXTS = ["EXPLORER_RUNWAY", "EXPLORER_TRENDING", "EXPLORER_RANKING", "EXPLORER_MAP", "EXPLORER_BRANDS", "EXPLORER_GLOBAL"] as const;
-export const PERSONAL_INSIGHT_CONTEXTS = ["CAPSULE", "COPILOT", "AUTOPILOT", "HISTORY", "CLOSET", "LOOKS"] as const;
+/**
+ * Lote A5 (P3-15): FEED, SEARCH, BRAND_PROFILE (chave = slug) e CREATOR_PROFILE (chave = @) também são públicos — só o
+ * agregado público, com o bloqueio de quem vê aplicado no backend; LOOK_EDITOR (peças escolhidas no editor) é pessoal.
+ */
+export const PUBLIC_INSIGHT_CONTEXTS = ["EXPLORER_RUNWAY", "EXPLORER_TRENDING", "EXPLORER_RANKING", "EXPLORER_MAP", "EXPLORER_BRANDS", "EXPLORER_GLOBAL", "FEED", "SEARCH", "BRAND_PROFILE", "CREATOR_PROFILE"] as const;
+export const PERSONAL_INSIGHT_CONTEXTS = ["CAPSULE", "COPILOT", "AUTOPILOT", "HISTORY", "CLOSET", "LOOKS", "LOOK_EDITOR"] as const;
 export type InsightContext = (typeof PUBLIC_INSIGHT_CONTEXTS)[number] | (typeof PERSONAL_INSIGHT_CONTEXTS)[number];
 export const isPublicInsightContext = (c: InsightContext) => (PUBLIC_INSIGHT_CONTEXTS as readonly string[]).includes(c);
 
@@ -32,5 +36,8 @@ export interface InsightsResponse {
   items: Insight[];
 }
 
-/** Parâmetros opcionais do recorte (janela em dias, região, categoria, subcategoria). */
-export type InsightParams = { window?: string | number | null; region?: string | null; category?: string | null; subcategory?: string | null };
+/**
+ * Parâmetros opcionais do recorte (janela em dias, região, categoria, subcategoria); `key` = perfil (BRAND_PROFILE: slug,
+ * CREATOR_PROFILE: @) e `pieces` = ids das peças escolhidas no editor (LOOK_EDITOR), separados por vírgula.
+ */
+export type InsightParams = { window?: string | number | null; region?: string | null; category?: string | null; subcategory?: string | null; key?: string | null; pieces?: string | null };

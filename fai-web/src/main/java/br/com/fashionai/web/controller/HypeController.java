@@ -111,6 +111,22 @@ public class HypeController {
         return hype.trending(viewer, type(type), window, category, style, occasion, limit);
     }
 
+    /**
+     * Lote A1 (P2-02, P2-03, P2-10): Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id)
+     * numa requisição — chips da busca, do perfil e de /brands. Só itens públicos elegíveis; {@code sufficient} = ≥ 3.
+     * Substitui o antigo GET /api/hype/groups (agrupamentos por similaridade, v1), que foi para /api/similarity-groups/global.
+     */
+    @GetMapping("/api/hype/groups")
+    @Operation(summary = "Hype agregado em lote de marcas (BRAND, chave = nome) ou criadores (CREATOR, chave = id): faixa, valor, itens públicos, suficiente (≥ 3) e posição; só conteúdo público")
+    public Map<String, Object> groups(CurrentUser viewer, @RequestParam String type, @RequestParam(required = false) String keys,
+                                      @RequestParam(defaultValue = "7") int window) {
+        HypeQueryService.RankGroup group = HypeQueryService.RankGroup.parse(type);
+        if (group == null) {
+            throw ApiException.badRequest("TIPO_INVALIDO", "type: BRAND | CREATOR");
+        }
+        return hype.groups(viewer, group, keys == null ? List.of() : List.of(keys.split(",")), window);
+    }
+
     @GetMapping("/api/hype/ranking")
     @Operation(summary = "Ranking de HypeScore por região do mundo, país, categoria e subcategoria (peças ou looks; o look entra pelas peças dele); só conteúdo público")
     public Map<String, Object> ranking(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,

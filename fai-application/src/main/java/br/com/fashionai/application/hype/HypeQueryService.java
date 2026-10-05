@@ -21,12 +21,15 @@ import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeMomentum;
 import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.model.enums.ApprovalStatus;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.HypeScoreSnapshotRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,10 +78,21 @@ public class HypeQueryService {
     private final WardrobeService wardrobe;
     private final SchemeService schemeService;
     private final HypeCache cache;
+    /** Perfis oficiais de marca (link {@code /brands/{slug}} dos agregados de marca, P3-01); nulo nos testes antigos. */
+    private final BrandProfileRepository brandProfiles;
 
+    /** Construtor de 11 argumentos (testes e stubs existentes): sem o repositório de perfis de marca, o agregado não leva {@code slug}. */
     public HypeQueryService(HypeScoreConfig config, HypeScoreCurrentRepository current, HypeScoreSnapshotRepository snapshots,
                             WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems, StyleDnaRepository dnas,
                             Guard guard, WardrobeService wardrobe, SchemeService schemeService, HypeCache cache) {
+        this(config, current, snapshots, pieces, schemes, schemeItems, dnas, guard, wardrobe, schemeService, cache, null);
+    }
+
+    @Autowired
+    public HypeQueryService(HypeScoreConfig config, HypeScoreCurrentRepository current, HypeScoreSnapshotRepository snapshots,
+                            WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems, StyleDnaRepository dnas,
+                            Guard guard, WardrobeService wardrobe, SchemeService schemeService, HypeCache cache, BrandProfileRepository brandProfiles) {
+        this.brandProfiles = brandProfiles;
         this.config = config;
         this.current = current;
         this.snapshots = snapshots;
@@ -409,23 +423,47 @@ public class HypeQueryService {
         out.put("window", win);
         out.put("algorithmVersion", config.algorithmVersion());
         out.put("minItems", MIN_GROUP_ITEMS);
+        // P3-01: o número do grupo é o trend médio na janela "hoje" (crescimento, sem faixa) e o Hype médio nas demais (com faixa)
+        out.put("metric", win == 1 ? "TREND" : "HYPE");
         out.put("items", items);
         return out;
     }
 
     Map<String, Object> rankGroups(RankGroup group, int win, String category, String style, String occasion, int lim) {
+        List<Map<String, Object>> ranked = groupRows(group, win, category, style, occasion).stream()
+                .filter(m -> Boolean.TRUE.equals(m.get("sufficient"))).toList();
+        List<Map<String, Object>> items = new ArrayList<>();
+        int rank = 1;
+        for (Map<String, Object> m : ranked.subList(0, Math.min(lim, ranked.size()))) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("rank", rank++);
+            r.putAll(m);
+            items.add(r);
+        }
+        return Map.of("items", items);
+    }
+
+    /**
+     * Todos os grupos (marca ou pessoa) com pelo menos um item público elegível no recorte: primeiro os suficientes
+     * (≥ {@value #MIN_GROUP_ITEMS} itens), do maior valor para o menor (empate pela chave), depois os insuficientes — esses
+     * sem valor nem faixa ("sem dados" nunca vira 0). A faixa ({@code level}) só existe quando o valor é Hype (janelas 7 e
+     * 30); na janela 1 o valor é o trend médio (crescimento), que não tem faixa. A marca com perfil oficial aprovado leva
+     * o {@code slug} (link para /brands/{slug}).
+     */
+    List<Map<String, Object>> groupRows(RankGroup group, int win, String category, String style, String occasion) {
         List<HypeEntityType> types = group == RankGroup.BRAND ? List.of(HypeEntityType.PIECE) : List.of(HypeEntityType.PIECE, HypeEntityType.SCHEME);
         record Scored(HypeEntityType type, HypeScoreCurrent c, double value) {
         }
         List<Scored> scored = new ArrayList<>();
         for (HypeEntityType type : types) {
             List<HypeScoreCurrent> pool = current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(type, config.algorithmVersion(), HypeStatus.AVAILABLE)
-                    .stream().filter(c -> blank(category) || category.equalsIgnoreCase(c.getCategory()))
+                    .stream().filter(c -> c.isPublicEligible() && c.getScore() != null)
+                    .filter(c -> blank(category) || category.equalsIgnoreCase(c.getCategory()))
                     .filter(c -> blank(style) || Json.csv(c.getStyles()).contains(style))
                     .filter(c -> blank(occasion) || Json.csv(c.getOccasions()).contains(occasion)).toList();
             Map<UUID, Double> avg = win == 30 ? monthAverage(type, pool.stream().map(HypeScoreCurrent::getEntityId).collect(Collectors.toSet())) : Map.of();
             for (HypeScoreCurrent c : pool) {
-                double v = win == 1 ? (c.getDimensions().getTrend() == null ? 0 : c.getDimensions().getTrend().doubleValue())
+                double v = win == 1 ? trendOf(c)
                         : win == 30 ? avg.getOrDefault(c.getEntityId(), c.getScore().doubleValue()) : c.getScore().doubleValue();
                 scored.add(new Scored(type, c, v));
             }
@@ -436,6 +474,7 @@ public class HypeQueryService {
         Map<UUID, Scheme> schemeById = scored.stream().anyMatch(x -> x.type() == HypeEntityType.SCHEME)
                 ? schemes.findByIdIn(scored.stream().filter(x -> x.type() == HypeEntityType.SCHEME).map(x -> x.c().getEntityId()).toList()).stream()
                 .collect(Collectors.toMap(Scheme::getId, Function.identity(), (a, b) -> a)) : Map.of();
+        Map<String, String> slugs = group == RankGroup.BRAND ? officialBrandSlugs() : Map.of();
 
         Map<String, List<Scored>> byKey = new LinkedHashMap<>();
         Map<String, Map<String, Object>> meta = new HashMap<>();
@@ -447,11 +486,14 @@ public class HypeQueryService {
                 if (blank(name)) {
                     continue;   // peça sem marca não representa marca nenhuma
                 }
-                key = name.trim().toLowerCase(Locale.ROOT);
+                key = brandKey(name);
                 Map<String, Object> m = meta.computeIfAbsent(key, k -> new LinkedHashMap<>());
                 m.putIfAbsent("name", name.trim());
                 if (m.get("logoUrl") == null && Views.brandLogo(w) != null) {
                     m.put("logoUrl", Views.brandLogo(w));
+                }
+                if (slugs.containsKey(key)) {
+                    m.putIfAbsent("slug", slugs.get(key));
                 }
             } else {
                 br.com.fashionai.domain.model.User owner = x.type() == HypeEntityType.PIECE
@@ -471,33 +513,164 @@ public class HypeQueryService {
             byKey.computeIfAbsent(key, k -> new ArrayList<>()).add(x);
         }
         Instant now = Instant.now();
-        List<Map<String, Object>> rows = new ArrayList<>();
+        List<Map<String, Object>> ranked = new ArrayList<>();
+        List<Map<String, Object>> thin = new ArrayList<>();
         byKey.forEach((key, list) -> {
-            if (list.size() < MIN_GROUP_ITEMS) {
-                return;
-            }
-            List<Scored> top = list.stream().sorted(Comparator.comparingDouble(Scored::value).reversed()).limit(GROUP_TOP_ITEMS).toList();
+            boolean sufficient = list.size() >= MIN_GROUP_ITEMS;
             Map<String, Object> m = new LinkedHashMap<>(meta.get(key));
             m.put("key", key);
-            m.put("value", round1(top.stream().mapToDouble(Scored::value).average().orElse(0)));
+            if (sufficient) {
+                List<Scored> top = list.stream().sorted(Comparator.comparingDouble(Scored::value).reversed()).limit(GROUP_TOP_ITEMS).toList();
+                double value = round1(top.stream().mapToDouble(Scored::value).average().orElse(0));
+                m.put("value", value);
+                m.put("level", win == 1 ? null : config.level(value).name());
+                Scored best = top.get(0);
+                m.put("top", Map.of("type", best.type().name(), "id", best.c().getEntityId().toString(), "hype", summary(best.c(), now)));
+            } else {
+                m.put("value", null);   // um ou dois itens não representam o grupo: sem valor e sem faixa, nunca 0
+                m.put("level", null);
+            }
             m.put("items", list.size());
             m.put("pieces", list.stream().filter(x -> x.type() == HypeEntityType.PIECE).count());
             m.put("looks", list.stream().filter(x -> x.type() == HypeEntityType.SCHEME).count());
-            Scored best = top.get(0);
-            m.put("top", Map.of("type", best.type().name(), "id", best.c().getEntityId().toString(), "hype", summary(best.c(), now)));
-            rows.add(m);
+            m.put("sufficient", sufficient);
+            (sufficient ? ranked : thin).add(m);
         });
-        rows.sort(Comparator.comparingDouble((Map<String, Object> m) -> ((Number) m.get("value")).doubleValue()).reversed()
+        ranked.sort(Comparator.comparingDouble((Map<String, Object> m) -> ((Number) m.get("value")).doubleValue()).reversed()
                 .thenComparing(m -> String.valueOf(m.get("key"))));
-        List<Map<String, Object>> items = new ArrayList<>();
-        int rank = 1;
-        for (Map<String, Object> m : rows.subList(0, Math.min(lim, rows.size()))) {
-            Map<String, Object> r = new LinkedHashMap<>();
-            r.put("rank", rank++);
-            r.putAll(m);
-            items.add(r);
+        thin.sort(Comparator.comparing(m -> String.valueOf(m.get("key"))));
+        List<Map<String, Object>> out = new ArrayList<>(ranked);
+        out.addAll(thin);
+        return out;
+    }
+
+    /** Chave do agregado de marca: o nome normalizado (minúsculas, sem espaços nas pontas), igual ao ranking. */
+    public static String brandKey(String name) {
+        return name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Nome normalizado → slug dos perfis oficiais de marca aprovados (uma consulta; vazio sem o repositório). */
+    Map<String, String> officialBrandSlugs() {
+        if (brandProfiles == null) {
+            return Map.of();
         }
-        return Map.of("items", items);
+        Map<String, String> out = new HashMap<>();
+        for (br.com.fashionai.domain.model.BrandProfile b : brandProfiles.findByApprovalStatus(ApprovalStatus.APROVADO)) {
+            if (!blank(b.getBrandName()) && !blank(b.getSlug())) {
+                out.putIfAbsent(brandKey(b.getBrandName()), b.getSlug());
+            }
+        }
+        return out;
+    }
+
+    // ================================================================== agregados por chave (Lote A1: chips de criador e de marca)
+    /*
+     * GET /api/hype/groups?type=CREATOR|BRAND&keys=a,b,c — o Hype agregado de várias marcas (chave = nome normalizado) ou
+     * pessoas (chave = id) numa requisição, para os chips da busca, dos perfis e de /brands. Mesma régua do "Em alta":
+     * só itens públicos elegíveis; o grupo é suficiente com ≥ 3 itens públicos e o valor é a média dos seus 5 itens mais
+     * relevantes; {@code rank} é a posição no ranking público completo do tipo (sem recorte). Janela 7 (HypeScore atual)
+     * ou 30 (média do mês); a 1 (trend) cai em 7, porque o chip fala de Hype, e crescimento não é Hype. A tabela completa
+     * vai para o HypeCache por geração (GET nunca recalcula); o bloqueio entre quem vê e o criador é aplicado depois:
+     * a chave bloqueada some da resposta, como se não houvesse dado.
+     */
+    public static final int MAX_GROUP_KEYS = MAX_BATCH;
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> groups(CurrentUser viewer, RankGroup group, Collection<String> rawKeys, int window) {
+        int win = window >= 30 ? 30 : 7;
+        List<String> keys = groupKeys(group, rawKeys);
+        Map<String, Object> table = keys.isEmpty() ? Map.of() : cache.get("groups-table:" + group + ":" + win, () -> groupTable(group, win));
+        Map<?, ?> rows = table.get("rows") instanceof Map<?, ?> m ? m : Map.of();
+        Map<String, Object> items = new LinkedHashMap<>();
+        for (String k : keys) {
+            if (group == RankGroup.CREATOR && !guard.canView(viewer, UUID.fromString(k), br.com.fashionai.domain.model.enums.Visibility.PUBLIC)) {
+                continue;   // bloqueio (em qualquer direção): nada de chip, como se não existisse
+            }
+            items.put(k, rows.get(k) instanceof Map<?, ?> row ? groupView(row) : emptyGroup(k));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("type", group.name());
+        out.put("window", win);
+        out.put("algorithmVersion", config.algorithmVersion());
+        out.put("minItems", MIN_GROUP_ITEMS);
+        out.put("total", table.get("ranked") instanceof Number n ? n.intValue() : 0);
+        out.put("items", items);
+        return out;
+    }
+
+    /** Chaves válidas, distintas e no limite do lote: marca = nome normalizado; criador = id (malformado é ignorado). */
+    static List<String> groupKeys(RankGroup group, Collection<String> raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        for (String k : raw) {
+            if (blank(k) || out.size() >= MAX_GROUP_KEYS) {
+                continue;
+            }
+            if (group == RankGroup.BRAND) {
+                out.add(brandKey(k));
+            } else {
+                try {
+                    out.add(UUID.fromString(k.trim()).toString());
+                } catch (IllegalArgumentException ignored) {
+                    // id malformado: ignorado (o lote continua)
+                }
+            }
+        }
+        return new ArrayList<>(out);
+    }
+
+    /** Tabela completa do tipo (todas as chaves, com a posição dos suficientes); independe de quem vê. */
+    Map<String, Object> groupTable(RankGroup group, int win) {
+        Map<String, Object> rows = new LinkedHashMap<>();
+        int rank = 0;
+        for (Map<String, Object> m : groupRows(group, win, null, null, null)) {
+            Map<String, Object> r = new LinkedHashMap<>(m);
+            r.remove("user");   // o chip já tem a identidade de quem aparece; a tabela guarda só o agregado
+            r.put("rank", Boolean.TRUE.equals(m.get("sufficient")) ? ++rank : null);
+            rows.put(String.valueOf(m.get("key")), r);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ranked", rank);
+        out.put("rows", rows);
+        return out;
+    }
+
+    /** Item do lote: só o agregado (sem o resumo do item de destaque, que é coisa do ranking). */
+    static Map<String, Object> groupView(Map<?, ?> row) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        for (String f : List.of("key", "name", "slug", "logoUrl", "ownerId")) {
+            if (row.get(f) != null) {
+                m.put(f, row.get(f));
+            }
+        }
+        boolean sufficient = Boolean.TRUE.equals(row.get("sufficient"));
+        m.put("sufficient", sufficient);
+        m.put("value", sufficient ? row.get("value") : null);
+        m.put("level", sufficient ? row.get("level") : null);
+        m.put("rank", sufficient ? row.get("rank") : null);
+        m.put("items", row.get("items") instanceof Number n ? n.intValue() : 0);
+        m.put("pieces", row.get("pieces") instanceof Number n ? n.intValue() : 0);
+        m.put("looks", row.get("looks") instanceof Number n ? n.intValue() : 0);
+        if (sufficient && row.get("top") instanceof Map<?, ?> top) {
+            m.put("top", Map.of("type", String.valueOf(top.get("type")), "id", String.valueOf(top.get("id"))));
+        }
+        return m;
+    }
+
+    /** Chave sem nenhum item público elegível: insuficiente, sem valor nem faixa (a interface não mostra nada). */
+    static Map<String, Object> emptyGroup(String key) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("key", key);
+        m.put("sufficient", false);
+        m.put("value", null);
+        m.put("level", null);
+        m.put("rank", null);
+        m.put("items", 0);
+        m.put("pieces", 0);
+        m.put("looks", 0);
+        return m;
     }
 
     Map<UUID, Double> monthAverage(HypeEntityType type, Set<UUID> ids) {

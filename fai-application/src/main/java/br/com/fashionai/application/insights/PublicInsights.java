@@ -9,6 +9,7 @@ import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.taxonomy.WorldRegions;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeLevel;
 import br.com.fashionai.domain.model.enums.HypeMomentum;
 import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
@@ -79,6 +80,8 @@ final class PublicInsights {
             case EXPLORER_BRANDS -> brands(f);
             case EXPLORER_GLOBAL -> global(f);
             case EXPLORER_RUNWAY -> runway(f);
+            case FEED -> feed(f);
+            case SEARCH -> search(f);
             default -> List.of();
         };
     }
@@ -405,6 +408,106 @@ final class PublicInsights {
             out.add(insight("RUNWAY_REMIX_INFLUENCE", NEUTRAL, 0.6, "insights.runway_remix_influence.text", args(influential),
                     metric("insights.metric.looks", influential, "looks"), null, HYPE_V2, PUBLIC_RANKING));
         }
+        return out;
+    }
+
+    // ================================================================== Feed da comunidade (Lote A5 · P3-15)
+    /** Faixa do item (a gravada pelo job; sem ela, a régua configurada sobre o score). */
+    HypeLevel levelOf(HypeScoreCurrent c) {
+        return c.getLevel() != null ? c.getLevel() : config.level(InsightMath.score(c));
+    }
+
+    /**
+     * Feed: só looks públicos elegíveis. Estilo e ocasião que mais crescem (crescimento ≠ volume), quantos estão na faixa
+     * "Em alta" ou acima (o mesmo corte do chip Em alta do feed), o estilo popular × o que cresce e os emergentes.
+     */
+    List<Insight> feed(Filters f) {
+        List<HypeScoreCurrent> looks = pool(HypeEntityType.SCHEME, f);
+        List<Insight> out = new ArrayList<>();
+        if (looks.isEmpty()) {
+            return out;
+        }
+        String scope = scope(f);
+        int wd = config.windowDays();
+        double alpha = config.growthSmoothing();
+        InsightMath.growthBy(looks, c -> Json.csv(c.getStyles()), f.window(), wd, alpha, MIN_GROUP_ITEMS, MIN_ACTIVITY).stream()
+                .filter(g -> g.percent() >= RISING_PERCENT).findFirst()
+                .ifPresent(g -> out.add(insight("FEED_STYLE_RISING", POSITIVE, 0.95, "insights.feed_style_rising.text",
+                        args(label(g.key()), fmt0(g.percent()), g.days(), scope),
+                        metric("insights.metric.crescimento", round(g.percent()), "%"),
+                        action("insights.action.ver_em_alta", "/explorer?tab=trending&type=LOOK&style=" + enc(g.key())), HYPE_V2, PUBLIC_RANKING)));
+        InsightMath.growthBy(looks, c -> Json.csv(c.getOccasions()), f.window(), wd, alpha, MIN_GROUP_ITEMS, MIN_ACTIVITY).stream()
+                .filter(g -> g.percent() >= RISING_PERCENT).findFirst()
+                .ifPresent(g -> out.add(insight("FEED_OCCASION_RISING", POSITIVE, 0.85, "insights.feed_occasion_rising.text",
+                        args(label(g.key()), fmt0(g.percent()), g.days(), scope),
+                        metric("insights.metric.crescimento", round(g.percent()), "%"),
+                        action("insights.action.ver_em_alta", "/explorer?tab=trending&type=LOOK&occasion=" + enc(g.key())), HYPE_V2, PUBLIC_RANKING)));
+        long hot = looks.stream().filter(c -> levelOf(c).compareTo(HypeLevel.HOT) >= 0).count();
+        if (hot > 0) {
+            double pct = 100.0 * hot / looks.size();
+            out.add(insight("FEED_HOT_SHARE", NEUTRAL, 0.8, "insights.feed_hot_share.text", args(hot, looks.size(), fmt0(pct)),
+                    metric("insights.metric.em_alta", round(pct), "%"), null, HYPE_V2, PUBLIC_RANKING));
+        }
+        List<InsightMath.Avg> pop = InsightMath.averageBy(looks, c -> Json.csv(c.getStyles()), InsightMath::popularity, MIN_GROUP_ITEMS);
+        List<InsightMath.Avg> tr = InsightMath.averageBy(looks, c -> Json.csv(c.getStyles()), InsightMath::trend, MIN_GROUP_ITEMS);
+        if (!pop.isEmpty() && !tr.isEmpty() && !pop.get(0).key().equals(tr.get(0).key())) {
+            out.add(insight("FEED_TREND_VS_POPULARITY", NEUTRAL, 0.75, "insights.feed_trend_vs_popularity.text",
+                    args(label(pop.get(0).key()), fmt0(pop.get(0).value()), label(tr.get(0).key()), fmt0(tr.get(0).value())),
+                    metric("insights.metric.trend_medio", round(tr.get(0).value()), "pts"), null, HYPE_V2, PUBLIC_RANKING));
+        }
+        long emerging = looks.stream().filter(c -> c.getMomentum() == HypeMomentum.EMERGING).count();
+        if (emerging > 0) {
+            double pct = 100.0 * emerging / looks.size();
+            out.add(insight("FEED_EMERGING_LOOKS", POSITIVE, 0.7, "insights.feed_emerging_looks.text", args(fmt0(pct), emerging, looks.size()),
+                    metric("insights.metric.emergentes", round(pct), "%"),
+                    action("insights.action.ver_em_alta", "/explorer?tab=trending&type=LOOK&window=1"), HYPE_V2, PUBLIC_RANKING));
+        }
+        return out;
+    }
+
+    // ================================================================== Busca (Lote A5 · P3-15)
+    /**
+     * Busca: peças e looks públicos elegíveis. Categoria e subcategoria que mais crescem, quantos itens o filtro "Em alta"
+     * da busca alcança e a marca que mais cresce (trend médio — crescimento, não volume), com o link para a aba Marcas.
+     * Nada aqui ordena a busca: são leituras do contexto.
+     */
+    @SuppressWarnings("unchecked")
+    List<Insight> search(Filters f) {
+        List<HypeScoreCurrent> ps = pool(HypeEntityType.PIECE, f);
+        List<HypeScoreCurrent> ls = pool(HypeEntityType.SCHEME, f);
+        List<Insight> out = new ArrayList<>();
+        String scope = scope(f);
+        int wd = config.windowDays();
+        double alpha = config.growthSmoothing();
+        if (f.category().isEmpty()) {
+            InsightMath.growthBy(ps, InsightMath::categoriesOf, f.window(), wd, alpha, MIN_GROUP_ITEMS, MIN_ACTIVITY).stream()
+                    .filter(g -> g.percent() >= RISING_PERCENT).findFirst()
+                    .ifPresent(g -> out.add(insight("SEARCH_CATEGORY_RISING", POSITIVE, 0.9, "insights.category_rising.text",
+                            args(label(g.key()), fmt0(g.percent()), g.days(), scope),
+                            metric("insights.metric.crescimento", round(g.percent()), "%"),
+                            action("insights.action.ver_em_alta", "/explorer?tab=trending&category=" + enc(g.key())), HYPE_V2, PUBLIC_RANKING)));
+        }
+        if (f.subcategory().isEmpty()) {
+            InsightMath.growthBy(ps, InsightMath::subcategoriesOf, f.window(), wd, alpha, MIN_GROUP_ITEMS, MIN_ACTIVITY).stream()
+                    .filter(g -> g.percent() >= RISING_PERCENT).findFirst()
+                    .ifPresent(g -> out.add(insight("SEARCH_SUBCATEGORY_RISING", POSITIVE, 0.8, "insights.subcategory_rising.text",
+                            args(label(g.key()), fmt0(g.percent()), g.days(), g.items(), scope),
+                            metric("insights.metric.crescimento", round(g.percent()), "%"),
+                            action("insights.action.ver_em_alta", "/explorer?tab=trending&subcategory=" + enc(g.key())), HYPE_V2, PUBLIC_RANKING)));
+        }
+        List<HypeScoreCurrent> all = Stream.concat(ps.stream(), ls.stream()).toList();
+        long hot = all.stream().filter(c -> levelOf(c).compareTo(HypeLevel.HOT) >= 0).count();
+        if (hot > 0) {
+            out.add(insight("SEARCH_HOT_SHARE", NEUTRAL, 0.75, "insights.search_hot_share.text", args(hot, all.size()),
+                    metric("insights.metric.itens_publicos", hot, null), null, HYPE_V2, PUBLIC_RANKING));
+        }
+        Map<String, Object> rising = hype.trendingGroups(null, HypeQueryService.RankGroup.BRAND, 1, f.category().isEmpty() ? null : f.category(), null, null, 10);
+        List<Map<String, Object>> r = rising != null && rising.get("items") instanceof List<?> l ? (List<Map<String, Object>>) l : List.of();
+        r.stream().filter(m -> m.get("name") != null && m.get("value") instanceof Number).findFirst()
+                .ifPresent(m -> out.add(insight("SEARCH_BRAND_RISING", POSITIVE, 0.7, "insights.brand_rising.text",
+                        args(m.get("name"), fmt0(((Number) m.get("value")).doubleValue()), longOf(m.get("items"))),
+                        metric("insights.metric.trend_medio", round(((Number) m.get("value")).doubleValue()), "pts"),
+                        action("insights.action.ver_marca_na_busca", "/search?tab=MARCAS&q=" + enc(String.valueOf(m.get("name")))), HYPE_V2, PUBLIC_RANKING)));
         return out;
     }
 }
