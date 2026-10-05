@@ -107,6 +107,7 @@ export interface LensCreateInput {
   image: Blob; source: LensSource; intent?: LensIntent;
   /** rostos borrados no aparelho antes do envio */
   facesRedacted: number;
-  /** a pessoa confirmou que a foto não mostra rostos (o detector não pôde rodar) */
+  /** o borrão de rostos rodou no aparelho, ou a pessoa confirmou que a foto não mostra rostos (o detector não pôde rodar);
+   *  sem isso o servidor não manda a foto para a IA externa */
   redactionConfirmed: boolean;
 }

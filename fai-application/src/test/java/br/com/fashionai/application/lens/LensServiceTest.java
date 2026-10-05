@@ -70,6 +70,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -77,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -124,6 +126,10 @@ class LensServiceTest {
                     .filter(s -> s.getUserId().equals(a[0]) && s.getSavedAt() != null).toList(), (Pageable) a[1]);
             case "findByUserIdAndSavedAtIsNullOrderByCreatedAtDesc" -> page(scanRows.values().stream()
                     .filter(s -> s.getUserId().equals(a[0]) && s.getSavedAt() == null).toList(), (Pageable) a[1]);
+            case "findWanted" -> page(scanRows.values().stream().filter(s -> s.getUserId().equals(a[0])
+                    && (a[1] == null || (Boolean) a[1] == (s.getSavedAt() != null))
+                    && detectionRows.values().stream().anyMatch(d -> d.getScanId().equals(s.getId()) && d.getWantedAt() != null
+                    && d.getDismissedAt() == null)).toList(), (Pageable) a[2]);
             case "findTop200BySavedAtIsNullAndExpiresAtBefore" -> scanRows.values().stream()
                     .filter(s -> s.getSavedAt() == null && s.getExpiresAt() != null && s.getExpiresAt().isBefore((Instant) a[0])).limit(200).toList();
             case "delete" -> {
@@ -314,7 +320,7 @@ class LensServiceTest {
     }
 
     LensViews.ScanView scan() {
-        return lens.create(meUser, new LensService.CreateCommand("CAMERA", "IDENTIFY", 1, false), photo());
+        return lens.create(meUser, new LensService.CreateCommand("CAMERA", "IDENTIFY", 1, true), photo());
     }
 
     static String code(Executable e) {
@@ -644,6 +650,41 @@ class LensServiceTest {
         assertThat(ex.details()).containsKeys("resetAt", "limit");
         assertThat(scanRows).isEmpty();
         assertThat(blobs).isEmpty();
+    }
+
+    @Test
+    void semConfirmacaoDoBorraoAFotoNaoVaiParaAIaExterna() {
+        for (Boolean confirmed : Arrays.asList(null, false)) {
+            LensViews.ScanView v = lens.create(meUser, new LensService.CreateCommand("UPLOAD", "IDENTIFY", null, confirmed), photo());
+            assertThat(v.aiSource()).isEqualTo("local");
+            assertThat(v.detections()).hasSize(1);
+            assertThat(scanRows.get(v.id()).isRedactionConfirmed()).isFalse();
+        }
+        verify(multiPiece, never()).detectPieces(any(), any());
+        assertThat(scan().aiSource()).isEqualTo("ia");
+        verify(multiPiece).detectPieces(any(), any());
+    }
+
+    @Test
+    void inspiracoesFiltramQueroAntesDePaginar() {
+        List<UUID> wantedIds = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            LensViews.ScanView v = scan();
+            if (i % 2 == 0) {
+                lens.want(meUser, v.id(), v.detections().get(0).id(), true);
+                wantedIds.add(v.id());
+            }
+        }
+        Views.Page<LensViews.ScanCard> first = lens.history(meUser, null, true, 0, 2);
+        assertThat(first.items()).hasSize(2);
+        assertThat(first.total()).isEqualTo(3);
+        assertThat(first.hasMore()).isTrue();
+        Views.Page<LensViews.ScanCard> second = lens.history(meUser, null, true, 1, 2);
+        assertThat(second.items()).hasSize(1);
+        assertThat(second.hasMore()).isFalse();
+        assertThat(Stream.concat(first.items().stream(), second.items().stream()).map(LensViews.ScanCard::id).toList())
+                .containsExactlyInAnyOrderElementsOf(wantedIds);
+        assertThat(lens.history(meUser, true, true, 0, 2).items()).isEmpty();
     }
 
     @Test
