@@ -1,5 +1,6 @@
 package br.com.fashionai.domain.model;
 
+import br.com.fashionai.domain.model.enums.IdentityStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,11 +15,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * RF40 — Meu Avatar 3D: o rosto/busto da própria pessoa (forma em pose neutra + pele + cabelo medidos na foto),
  * confirmado por ela. A textura do rosto (atlas) é biométrica: fica em chave privada do storage e só sai pela API.
- * Um por usuário; refazer substitui; excluir apaga o modelo e a textura (o manequim volta ao rosto padrão).
+ * Um por usuário: é a versão ATUAL da identidade (AVATAR-ID I1). Refazer cria uma versão nova em
+ * {@link AvatarIdentityVersion} e aponta para ela; a versão aprovada continua guardada e é a que outras pessoas veem.
+ * Excluir apaga todas as versões e texturas (o manequim volta ao rosto padrão).
  */
 @Getter
 @Setter
@@ -61,4 +65,23 @@ public class UserAvatar3d extends VersionedAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "texture_moderation", nullable = false, length = 30)
     private ModerationStatus textureModeration = ModerationStatus.PENDING;
+
+    /** AVATAR-ID I1: identidade estável entre versões. */
+    @Column(name = "identity_id", length = 36)
+    private UUID identityId;
+
+    /** Número da versão atual (a que a pessoa vê). */
+    @Column(name = "current_version", nullable = false)
+    private int currentVersion = 1;
+
+    /** Número da última versão aprovada (a que outras pessoas veem); null = nenhuma ainda. */
+    @Column(name = "approved_version")
+    private Integer approvedVersion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "identity_status", nullable = false, length = 20)
+    private IdentityStatus identityStatus = IdentityStatus.APPROVED;
+
+    @Column(name = "quality_json", columnDefinition = "json")
+    private String qualityJson;
 }
