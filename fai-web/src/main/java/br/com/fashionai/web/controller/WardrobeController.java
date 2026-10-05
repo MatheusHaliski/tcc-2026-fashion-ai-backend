@@ -103,7 +103,8 @@ public class WardrobeController {
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
-    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade)")
+    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade); sort=recent|hype_desc|growth… e "
+            + "hypeLevel (faixa mínima). Para quem não é o dono, só o Hype público (publicEligible) ordena e filtra")
     public Views.Page<Views.PieceView> closet(CurrentUser viewer, @PathVariable UUID ownerId,
                                              @RequestParam(required = false) String category,
                                              @RequestParam(required = false) String color,
@@ -114,9 +115,12 @@ public class WardrobeController {
                                              @RequestParam(required = false) String q,
                                              @RequestParam(required = false) String sort,
                                              @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "24") int size) {
+                                             @RequestParam(defaultValue = "24") int size,
+                                             @RequestParam(required = false) String hypeLevel) {
         // estado (disponível / indisponível / à venda) também vale no perfil: são dados públicos da peça
-        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
+        // hypeLevel (P2-11, Lookbook › Peças): FILTRO por faixa mínima, mesma regra do /api/me/closet; o serviço aplica a
+        // guarda de privacidade (terceiros só com score publicEligible; o resto fica "—", por último e fora do filtro)
+        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
     }
 
     @GetMapping("/api/pieces/{id}")

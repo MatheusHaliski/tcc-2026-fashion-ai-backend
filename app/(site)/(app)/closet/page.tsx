@@ -11,7 +11,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, EmptyState, ErrorState, PageHeader, Pagination, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
-import { toSealBadges } from "@/components/scheme-card";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { usePieceUpdates } from "@/lib/pieces/piece-events";
 import { FaiIcon } from "@/components/fai-icon";
 import { hypeLevelFilter, hypeSortOptions } from "@/components/hype";
@@ -35,7 +35,6 @@ const SEAL_FILTERS = ["hype", "brand", "any"] as const;
 type SealFilter = (typeof SEAL_FILTERS)[number] | "";
 const parseSeal = (v: string | null): SealFilter => (SEAL_FILTERS as readonly string[]).includes(v ?? "") ? ((v ?? "") as SealFilter) : "";
 const closetHref = (category: string, seal: string) => `/closet${qs({ category, seal })}`;
-type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
 
 function Closet() {
   const { t } = useI18n(); const tax = useTaxonomy(); const toast = useToast();
@@ -51,9 +50,7 @@ function Closet() {
   const changeTab = (next: CategoryTab) => { set("category", next); router.replace(closetHref(next, f.seal), { scroll: false }); };
   const changeSeal = (next: SealFilter) => { set("seal", next); router.replace(closetHref(f.category, next), { scroll: false }); };
   // selos de marca/celebridade aprovados nas peças da página: UM pedido por página (até 60 ids); falha = cards sem selo
-  const ids = (data?.items ?? []).slice(0, 60).map((p) => p.id).join(",");
-  const pieceSeals = useApi<{ items?: Record<string, SealBadgeSource[]> }>((signal) => api.get(`/api/pieces/seals?ids=${ids}`, { signal }), [ids], { enabled: !!ids });
-  const sealsOf = (id: string) => toSealBadges(pieceSeals.data?.items?.[id]);
+  const sealsOf = usePieceSeals(data?.items);
   // favorita/disponível agora se marcam no detalhe da peça ("Mais opções"): a grade acompanha a mudança
   usePieceUpdates((p) => setData((d) => (d ? { ...d, items: d.items.map((x) => (x.id === p.id ? p : x)) } : d)));
   // RF4 · Estúdio: leva ao estúdio as peças que ainda estão só com o recorte (até 40 por vez)

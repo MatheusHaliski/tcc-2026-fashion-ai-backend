@@ -21,6 +21,8 @@ import { DIMENSION_ORDER, displayScore, hypeViewState, levelTone } from "@/lib/h
 import { primeHype, useHypeSummary } from "@/lib/hype/use-hype";
 import type { HypeLevel, HypeSummary } from "@/lib/hype/types";
 import { PieceCard } from "@/components/piece-card";
+import { hypeLevelFilter } from "@/components/hype/hype-filters";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
@@ -79,20 +81,41 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   );
 }
 
+/** Ordenação de Lookbook › Peças (P2-11): é ordenação, não aba. Valores aceitos por GET /api/users/{id}/closet?sort=. */
+type PieceSort = "recent" | "hype_desc" | "growth";
+
+/**
+ * Peças do perfil. Ordenar (Recentes · Maior Hype · Em crescimento) e filtrar por faixa mínima de Hype (P2-11, Lote A4):
+ * o dono usa o próprio Hype pessoal; quem visita, só o Hype público — o backend (WardrobeService.closet) aplica a guarda
+ * de privacidade, e peça sem Hype público fica "—" e no fim (nunca vale 0). Os selos de marca/celebridade chegam num pedido
+ * por página (GET /api/pieces/seals) e dividem o SealSlot com os Selos de Hype com as mesmas vagas do /closet.
+ */
 function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; empty?: Overview["emptyCloset"] }) {
   const { t } = useI18n(); const { user } = useAuth(); const [page, setPage] = useState(0); const [category, setCategory] = useState(""); const [state, setState] = useState<(typeof STATES)[number]>("");
-  const { data, loading } = useApi<Page<PieceView>>((signal) => api.get(`/api/users/${ownerId}/closet${qs({ page, size: 24, category, state })}`, { signal, anonymous: !user }), [ownerId, page, category, state, !!user]);
+  const [sort, setSort] = useState<PieceSort>("recent"); const [hypeLevel, setHypeLevel] = useState("");
+  // "Recentes" é a rota de sempre (sem ?sort=); faixa vazia = sem filtro
+  const { data, loading } = useApi<Page<PieceView>>((signal) => api.get(`/api/users/${ownerId}/closet${qs({ page, size: 24, category, state, sort: sort === "recent" ? undefined : sort, hypeLevel })}`, { signal, anonymous: !user }), [ownerId, page, category, state, sort, hypeLevel, !!user]);
+  const sealsOf = usePieceSeals(data?.items, { anonymous: !user });
   const stateLabel = (v: string) => v === "" ? t("common.all") : v === "disponivel" ? t("common.available") : v === "indisponivel" ? t("common.unavailable") : v === "doar" ? t("common.forDonation") : t("common.forSale");
-  const filtered = !!category || !!state;
+  // faixa mínima (a partir de Nicho), sempre com o nome da faixa em texto; "Todos" tira o filtro
+  const levels = hypeLevelFilter();
+  const filtered = !!category || !!state || !!hypeLevel;
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <SegmentPicker label={t("closet.state")} value={state} onChange={(v) => { setState(v); setPage(0); }} options={STATES.map((v) => ({ id: v, label: stateLabel(v) }))} />
         <SegmentPicker label={t("common.category")} value={category} onChange={(v) => { setCategory(v); setPage(0); }} options={["", ...CATEGORIES].map((c) => ({ id: c, label: c ? label(c) : t("common.all") }))} />
       </div>
+      <div className="lookbook-sort">
+        <Dropdown label={t("hypeLookbook.pecas.ordenar")} prefix={t("hypeLookbook.ordenar_prefixo")} value={sort} onChange={(v) => { setSort(v); setPage(0); }}
+          options={[{ id: "recent", label: t("hypeLookbook.ordem.recent") }, { id: "hype_desc", label: t("hypeLookbook.ordem.hype_desc") }, { id: "growth", label: t("hypeLookbook.ordem.growth") }]} />
+        <Dropdown label={t("hypeLookbook.pecas.faixa")} prefix={t("hypeLookbook.pecas.faixa_prefixo")} value={hypeLevel} onChange={(v) => { setHypeLevel(v); setPage(0); }}
+          options={[{ id: "", label: t("common.all") }, ...levels.options.map((o) => ({ id: o.value, label: o.label }))]} />
+        {(sort !== "recent" || !!hypeLevel) && <span className="type-caption text-muted">{self ? t("hypeLookbook.pecas.ordem_pessoal") : t("hypeLookbook.pecas.ordem_publica")}</span>}
+      </div>
       {loading ? <SkeletonGrid /> : !data || data.items.length === 0
-        ? <EmptyState title={filtered ? t("common.empty") : empty?.message ?? t("closet.empty")} action={self && !filtered ? <Link href="/pieces/new" className="btn btn-primary">{empty?.action?.label ?? t("closet.addPiece")}</Link> : undefined} />
-        : <><div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
+        ? <EmptyState title={hypeLevel ? t("hypeLookbook.pecas.vazio_faixa") : filtered ? t("common.empty") : empty?.message ?? t("closet.empty")} action={self && !filtered ? <Link href="/pieces/new" className="btn btn-primary">{empty?.action?.label ?? t("closet.addPiece")}</Link> : undefined} />
+        : <><div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
     </>
   );
 }

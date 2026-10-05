@@ -1469,13 +1469,19 @@ public class WardrobeService {
     static final Map<String, String> SORT_ALIASES = Map.of("recentes", "recent", "mais_usadas", "worn", "menos_usadas", "least_worn",
             "nome", "name", "preco", "price", "mais_tempo_sem_uso", "idle");
 
-    /** Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último). */
-    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list) {
+    /**
+     * Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último).
+     * Privacidade (HYPE_AUDITORIA_ABAS §3.1, P2-11): o dono vê o Hype pessoal de todas as peças; para terceiros (perfil
+     * de outra pessoa, visitante sem conta) só entra o score {@code publicEligible} — o resto conta como "sem Hype"
+     * ("—" no card, por último na ordem, fora do filtro por faixa), mesmo que a peça seja visível para quem segue.
+     */
+    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list, boolean self) {
         if (hypeScores == null || hypeConfig == null || list.isEmpty()) {
             return Map.of();
         }
         return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(br.com.fashionai.domain.model.enums.HypeEntityType.PIECE,
                         list.stream().map(WardrobeItem::getId).toList(), hypeConfig.algorithmVersion()).stream()
+                .filter(h -> self || h.isPublicEligible())
                 .collect(Collectors.toMap(br.com.fashionai.domain.model.HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
     }
 
@@ -1505,8 +1511,9 @@ public class WardrobeService {
         String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
         String seal = sealFilter(f.seal());
         Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel())
-                || (seal != null && !"brand".equals(seal)) ? hypeOf(all) : Map.of();
+                || (seal != null && !"brand".equals(seal)) ? hypeOf(all, self) : Map.of();
         if (!blank(f.hypeLevel()) && hypeConfig != null) {
+            // faixa mínima sobre o número EXIBIDO (arredondado): 59,6 aparece como 60 e já é "Em alta"
             int min = hypeMinimum(f.hypeLevel());
             all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
         }
