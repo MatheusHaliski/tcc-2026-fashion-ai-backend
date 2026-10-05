@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -65,12 +66,34 @@ public class Avatar3dController {
         avatars.delete(user);
     }
 
+    @GetMapping("/api/me/avatar3d/versions")
+    @Operation(summary = "AVATAR-ID I1 — Versões da identidade do avatar (status, origem, gate), da mais nova para a mais antiga")
+    public List<Map<String, Object>> versions(CurrentUser user) {
+        return avatars.listVersions(user);
+    }
+
+    /** acceptWarnings: aprovar mesmo com métricas reprovadas no gate (fica marcada "aprovada com avisos"). */
+    public record ApproveBody(Boolean acceptWarnings) {
+    }
+
+    @PostMapping("/api/me/avatar3d/versions/{version}/approve")
+    @Operation(summary = "AVATAR-ID I1 — A pessoa aprova uma versão (a que outras pessoas passam a ver)")
+    public Map<String, Object> approve(CurrentUser user, @PathVariable int version, @RequestBody(required = false) ApproveBody body) {
+        return avatars.approve(user, version, body != null && Boolean.TRUE.equals(body.acceptWarnings()));
+    }
+
+    @PostMapping("/api/me/avatar3d/versions/{version}/restore")
+    @Operation(summary = "AVATAR-ID I1 — Voltar para uma versão anterior (cria uma versão nova igual a ela)")
+    public Map<String, Object> restore(CurrentUser user, @PathVariable int version) {
+        return avatars.restore(user, version);
+    }
+
     @GetMapping("/api/avatar3d/{userId}/texture")
-    @Operation(summary = "RF40 — Textura do rosto (dono, ou qualquer pessoa logada se o avatar for público)")
-    public ResponseEntity<byte[]> texture(CurrentUser user, @PathVariable UUID userId) {
+    @Operation(summary = "RF40 — Textura do rosto (dono: qualquer versão; outras pessoas: só a versão aprovada de avatar público)")
+    public ResponseEntity<byte[]> texture(CurrentUser user, @PathVariable UUID userId, @RequestParam(name = "version", required = false) Integer version) {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePrivate())   // a URL muda (?v=) quando o avatar muda
-                .body(avatars.texture(user, userId));
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePrivate())   // a URL muda (?v=, ?version=) quando o avatar muda
+                .body(avatars.texture(user, userId, version));
     }
 }

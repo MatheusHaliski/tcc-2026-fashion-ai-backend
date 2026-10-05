@@ -8,6 +8,10 @@ os critérios de aprovação e o plano. O Provador refeito está em `docs/provad
 rosto do Avatar 3D. A roupa ainda é a foto da peça projetada num molde do corpo. Não há esqueleto, pesos de skinning,
 malha de roupa vestível, simulação de tecido nem GLB exportado. As telas chamam o resultado de **prévia** e dizem isso.
 
+> **Atualização 2026-10-05:** a auditoria [`auditoria-identidade-avatar/`](auditoria-identidade-avatar/README.md) mede
+> a semelhança do avatar atual com reconhecedores faciais independentes. Ela localiza a perda de identidade na passagem
+> do busto para o corpo MakeHuman e propõe um perfil de identidade versionado (`CanonicalAvatarIdentity`).
+
 ---
 
 ## 1. Onde o pipeline perde fidelidade
