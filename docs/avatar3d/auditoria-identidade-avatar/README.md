@@ -549,3 +549,21 @@ A escolha segue o nível do cabelo (aparelho + tempo de quadro, HAIR-F2) e a dis
 
 **Ordem com o restante do plano:** I0–I3 vêm antes do fitting novo de roupas (o pescoço e as âncoras são
 compartilhados).
+
+---
+
+## 23. Estado da implementação
+
+| Fase | Estado | Onde |
+|---|---|---|
+| I0 | **Entregue (05/10)** | `lib/avatar3d/identity/metrics.ts` (reprojeção por região, preservação da forma, captura, assimetria, CIEDE2000, IoU), `gate.ts` (limiares da seção 16; o que o aparelho não mede fica "não medido"), `privacy.ts` (`identityLogPayload`, chaves proibidas), `identity.test.ts` (referências de cor de Sharma et al., gate, varredura de `console.*`, **linha de base no CI** com rostos sintéticos). O `HumanAvatar` calcula a fidelidade ao montar o corpo (`parts.identity`), sem log. |
+
+**Linha de base do I0 (rostos sintéticos, sem foto de ninguém):**
+
+| Caso | Valor |
+|---|---|
+| Olho e sobrancelha 3 mm mais altos, canto da boca 2 mm mais baixo | assimetria medida 1,08 mm; preservada **0,009** |
+| O mesmo caso | reprojeção nos olhos 1,6 mm |
+| Mandíbula 6% mais larga | captura 0,48 |
+
+A regressão não pode piorar mais que 0,03; o I2 sobe estes pisos.

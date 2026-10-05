@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { loadBodyAsset, type BodyAsset } from "@/lib/avatar3d/human/asset";
-import { compose, fitBody, fitFace, type BodyInput, type Composed } from "@/lib/avatar3d/human/compose";
+import { compose, fitBody, fitFace, landmarksOn, type BodyInput, type Composed } from "@/lib/avatar3d/human/compose";
+import { faceFidelity, type FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 import { buildHuman, type Human } from "@/lib/avatar3d/human/three-human";
 import { applyIdle, applyRestPose, type PoseState } from "@/lib/avatar3d/human/pose";
 import { buildHair } from "@/lib/avatar3d/human/hair-geometry";
@@ -67,6 +68,8 @@ export interface HumanParts {
   exportHair?: () => THREE.SkinnedMesh | null;
   /** nível de detalhe do cabelo em cena (3 = só a casca ou sem fios) */
   hairLod?: HairLod;
+  /** fidelidade do rosto medido no corpo (AVATAR-ID I0): só números agregados, nunca vai para log */
+  identity?: FaceFidelity | null;
 }
 
 export interface HumanAvatarProps {
@@ -97,17 +100,19 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   const built = useMemo(() => {
     if (!asset || asset === "error") return null;
     const fit = fitBody(asset, body);
-    let fz: Float64Array | null = null;
+    let fz: Float64Array | null = null; let rawBody: Float32Array | null = null;
     if (face?.shape?.length === 468 * 3) {
-      const raw = compose(asset, fit.z, null, stature);
+      const raw = compose(asset, fit.z, null, stature); rawBody = raw.body;
       fz = fitFace(asset, Float32Array.from(raw.body, (v) => v / raw.scale), face.shape).z;
     }
     const c = compose(asset, fit.z, fz, stature);
+    // métricas de fidelidade (reprojeção, assimetria, captura): o gate de identidade usa estes números
+    const identity = face?.shape?.length === 468 * 3 && rawBody ? faceFidelity(face.shape, landmarksOn(asset, c.body), landmarksOn(asset, rawBody)) : null;
     const h = buildHuman(asset, c, { skin, debugHair });
     h.root.visible = false; h.root.userData.dressed = false;           // só aparece vestido (HumanOutfit)
     const st = applyRestPose(h);
     const head = h.bone("Head"); head.scale.setScalar(adjust?.headScale ?? 1); head.position.y += adjust?.neck ?? 0;
-    return { h, st, c, asset };
+    return { h, st, c, asset, identity };
   }, [asset, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1, adjust?.hairTone ?? 0, adjust?.hairCut ?? 0]);
   const [autoLod, setAutoLod] = useState<HairLod>(INITIAL_HAIR_LOD);
@@ -178,7 +183,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     });
     return () => { alive = false; };
   }, [built]);
-  const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
+  const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (parts) onReady?.(parts); }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
   const t0 = useRef(Math.random() * 20);
   useFrame(({ clock }, delta) => {
