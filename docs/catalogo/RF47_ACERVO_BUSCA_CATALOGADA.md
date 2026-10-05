@@ -168,6 +168,8 @@ ignorados → 168 ignorados). Credenciais só pelas variáveis do backend (`MYSQ
 | RN47.08 | Fontes são revalidadas (`ACTIVE`, `UNAVAILABLE`, `SOURCE_REMOVED`, `NEEDS_REVALIDATION`); a peça da pessoa continua mesmo se a fonte sumir. |
 | RN47.09 | O criador não envia foto: a imagem é a foto oficial do produto ou a ilustração da categoria; a pessoa pode trocar a foto depois, no detalhe da peça. |
 | RN47.10 | A categoria só muda pelos chips de tipo ou pelo produto escolhido — nunca em silêncio. |
+| RN47.11 | *[validar com jurídico]* Análise transitória: o pipeline de imagens (`docs/catalogo/PIPELINE_IMAGENS_OFICIAIS.md`) pode baixar a foto oficial só para a memória do worker, analisá-la com processadores locais e descartá-la; guarda apenas números (enquadramento, métricas, hashes, decisão). Nada de pixels, máscaras ou miniaturas, e nada enviado a terceiros, salvo autorização da fonte. |
+| RN47.12 | *[validar com jurídico]* Versão derivada publicada (recorte, fundo normalizado, reenquadramento gravado) só para fonte com `image_rights = DERIVE_PUBLISH`, com evidência registrada (contrato/termo/e-mail), responsável, data e validade; vencida a validade, volta a valer a RN47.11. |
 
 ## 9. Critérios de aceite (resumo)
 
