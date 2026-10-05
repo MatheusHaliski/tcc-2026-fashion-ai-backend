@@ -68,10 +68,12 @@ function InstitutionalRedirect({ slug }: { slug: string }) {
 /**
  * Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono. Ids antigos continuam valendo:
  * saved_looks/saved_pieces → Salvos; cupons/coupons → /coupons (a aba duplicava a página de cupons e saiu do Lookbook).
+ * Publicações e Favoritos aceitam também o nome em português (publicacoes, favoritos).
  */
+const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces: "saved", publicacoes: "publications", favoritos: "favorites" };
 function profileTab(tab: string | null, self: boolean): TabId {
-  const t = tab === "saved_looks" || tab === "saved_pieces" ? "saved" : tab;
-  if (t === "closet" || t === "looks" || t === "groups") return t;
+  const t = (tab && TAB_ALIASES[tab]) || tab;
+  if (t === "closet" || t === "looks" || t === "publications" || t === "favorites" || t === "groups") return t;
   if (self && (t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
 }
