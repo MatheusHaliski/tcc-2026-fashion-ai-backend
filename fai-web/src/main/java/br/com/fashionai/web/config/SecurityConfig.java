@@ -50,7 +50,7 @@ public class SecurityConfig {
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
             "/api/users/*/publications", "/api/users/*/favorites",
             "/api/users/*/groupings", "/api/users/*/connections", "/api/groupings/*/schemes",
-            "/api/hype/**", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
+            "/api/hype/**", "/api/insights", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
     };
 
     @Bean
