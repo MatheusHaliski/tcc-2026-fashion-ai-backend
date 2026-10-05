@@ -1,0 +1,45 @@
+@startuml pipeline-proposto
+title Pipeline proposto: roupa como objeto técnico (regiões, âncoras, restrições)
+skinparam defaultFontName DejaVu Sans
+skinparam activity {
+  BackgroundColor #F2FAF4
+  BorderColor #2E7D4F
+}
+skinparam note {
+  BackgroundColor #FFF6E0
+  BorderColor #C08A20
+}
+|Entrada|
+start
+:Foto + análise da peça (RF4): tipo, fit (SKINNY…OVERSIZED),
+silhueta (larguras por altura), gola, punhos, logo/bordado;
+|Modelo da peça|
+:GarmentTemplate da biblioteca por tipo
+(malha por moldes: regiões, costuras, âncoras, UV por painel);
+:Parâmetros da peça a partir da foto
+(comprimento, larguras, abertura da barra, gola);
+|Avatar canônico|
+:BodyAnchors + loops (pescoço, cavas, punhos, cintura,
+tornozelos) + SDF do corpo — uma vez por versão do avatar;
+|Fitting por passes|
+:P1 alinhamento global (âncoras do tronco);
+:P2 tronco · P3 ombros · P4 gola (CollarFitConstraint);
+:P5 mangas (cava ↔ cava do corpo) · P6 punhos · P7 barra;
+:P8 relaxamento XPBD (limites de estiramento por região,
+costuras mais rígidas, regiões protegidas);
+:P9 preservação de detalhes (logo/bordado/patch rígidos);
+:P10 limpeza de colisão (corpo SDF + camadas de baixo);
+|Validação|
+:Métricas (interseção, folga, gola, manga, costura, UV,
+bordado, silhueta) + Quality Gate;
+if (aprovado?) then (sim)
+  :APPROVED → cache por (avatar, peça, fit, modo);
+else (não)
+  :NEEDS_REPROCESSING → passe com mais iterações
+  ou modo HIGH_QUALITY no worker;
+endif
+|Render / export|
+:SkinnedMesh com pesos transferidos (+ corretivos no ombro),
+decal/normal map/patch; debug de cores; GLB;
+stop
+@enduml

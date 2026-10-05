@@ -1,0 +1,185 @@
+{
+ "F:pants+tee:pants": {
+  "poseInsideByRegion": {}
+ },
+ "F:pants+tee:tee": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "0/38 dentro, min 0 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min 0 mm",
+   "anel1-lado": "20/38 dentro, min -15.8 mm",
+   "anel1-frente": "0/17 dentro, min -1.1 mm",
+   "anel2-costas": "4/17 dentro, min -3.3 mm",
+   "anel2-lado": "30/38 dentro, min -18.2 mm",
+   "anel2-frente": "8/17 dentro, min -6.8 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "0/38 dentro, min 0 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "SHOULDER": "2/254 (0.8%)",
+   "SLEEVE": "11/144 (7.6%)",
+   "CUFF": "12/72 (16.7%)",
+   "CHEST": "8/351 (2.3%)",
+   "BACK": "2/179 (1.1%)"
+  }
+ },
+ "F:tank:tank": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "17/38 dentro, min -29.6 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min -1 mm",
+   "anel1-lado": "21/38 dentro, min -49.8 mm",
+   "anel1-frente": "0/17 dentro, min -1.5 mm",
+   "anel2-costas": "2/17 dentro, min -6 mm",
+   "anel2-lado": "30/38 dentro, min -50.7 mm",
+   "anel2-frente": "10/17 dentro, min -7.2 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "19/38 dentro, min -31 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "CHEST": "2/286 (0.7%)",
+   "BACK": "2/156 (1.3%)"
+  }
+ },
+ "F:dress:dress": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "19/38 dentro, min -26.2 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min -0.3 mm",
+   "anel1-lado": "25/38 dentro, min -48.1 mm",
+   "anel1-frente": "0/17 dentro, min 0 mm",
+   "anel2-costas": "2/17 dentro, min -5.4 mm",
+   "anel2-lado": "32/38 dentro, min -48.7 mm",
+   "anel2-frente": "4/17 dentro, min -2.8 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "23/38 dentro, min -27.4 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "CHEST": "2/312 (0.6%)",
+   "BACK": "2/156 (1.3%)"
+  }
+ },
+ "F:tee+jacket:tee": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "0/38 dentro, min 0 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min 0 mm",
+   "anel1-lado": "20/38 dentro, min -15.8 mm",
+   "anel1-frente": "0/17 dentro, min -1.1 mm",
+   "anel2-costas": "4/17 dentro, min -3.3 mm",
+   "anel2-lado": "30/38 dentro, min -18.2 mm",
+   "anel2-frente": "8/17 dentro, min -6.8 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "0/38 dentro, min 0 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "SHOULDER": "16/254 (6.3%)",
+   "SLEEVE": "12/144 (8.3%)"
+  }
+ },
+ "F:tee+jacket:jacket": {
+  "poseInsideByRegion": {
+   "SHOULDER": "24/268 (9%)",
+   "SLEEVE": "26/746 (3.5%)",
+   "CHEST": "19/362 (5.2%)",
+   "BACK": "8/195 (4.1%)"
+  }
+ },
+ "M:pants+tee:pants": {
+  "poseInsideByRegion": {}
+ },
+ "M:pants+tee:tee": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "0/38 dentro, min 0 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min 0 mm",
+   "anel1-lado": "22/38 dentro, min -11.2 mm",
+   "anel1-frente": "0/17 dentro, min -0.4 mm",
+   "anel2-costas": "1/17 dentro, min -2.1 mm",
+   "anel2-lado": "37/38 dentro, min -13.8 mm",
+   "anel2-frente": "10/17 dentro, min -6.1 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "0/38 dentro, min 0 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "SHOULDER": "5/268 (1.9%)",
+   "SLEEVE": "14/160 (8.8%)",
+   "BACK": "4/180 (2.2%)",
+   "CUFF": "12/62 (19.4%)"
+  }
+ },
+ "M:tank:tank": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "19/38 dentro, min -20.6 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "1/17 dentro, min -5.2 mm",
+   "anel1-lado": "30/38 dentro, min -42.7 mm",
+   "anel1-frente": "0/17 dentro, min 0 mm",
+   "anel2-costas": "7/17 dentro, min -7.5 mm",
+   "anel2-lado": "37/38 dentro, min -44.1 mm",
+   "anel2-frente": "3/17 dentro, min -4.5 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "24/38 dentro, min -21.7 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "BACK": "1/154 (0.6%)"
+  }
+ },
+ "M:dress:dress": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "16/38 dentro, min -17.3 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "1/17 dentro, min -4.6 mm",
+   "anel1-lado": "24/38 dentro, min -40.4 mm",
+   "anel1-frente": "0/17 dentro, min 0 mm",
+   "anel2-costas": "5/17 dentro, min -6.9 mm",
+   "anel2-lado": "34/38 dentro, min -41.9 mm",
+   "anel2-frente": "5/17 dentro, min -5.2 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "18/38 dentro, min -18.4 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {}
+ },
+ "M:tee+jacket:tee": {
+  "band": {
+   "anel0-costas": "0/17 dentro, min 0 mm",
+   "anel0-lado": "0/38 dentro, min 0 mm",
+   "anel0-frente": "0/17 dentro, min 0 mm",
+   "anel1-costas": "0/17 dentro, min 0 mm",
+   "anel1-lado": "22/38 dentro, min -11.2 mm",
+   "anel1-frente": "0/17 dentro, min -0.4 mm",
+   "anel2-costas": "1/17 dentro, min -2.1 mm",
+   "anel2-lado": "37/38 dentro, min -13.8 mm",
+   "anel2-frente": "10/17 dentro, min -6.1 mm",
+   "anel3-costas": "0/17 dentro, min 0 mm",
+   "anel3-lado": "0/38 dentro, min 0 mm",
+   "anel3-frente": "0/17 dentro, min 0 mm"
+  },
+  "poseInsideByRegion": {
+   "SHOULDER": "8/268 (3%)",
+   "SLEEVE": "2/160 (1.3%)"
+  }
+ },
+ "M:tee+jacket:jacket": {
+  "poseInsideByRegion": {
+   "SHOULDER": "16/286 (5.6%)",
+   "SLEEVE": "24/740 (3.2%)",
+   "CHEST": "4/374 (1.1%)",
+   "BACK": "5/201 (2.5%)"
+  }
+ }
+}
