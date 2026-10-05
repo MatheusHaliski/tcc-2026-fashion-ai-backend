@@ -136,14 +136,15 @@ duplicado: `metric_snapshots`/`hype_score_metrics` continuam do v1 (calibração
 | `GET /api/hype/pieces/{id}` · `/api/hype/looks/{id}` | público (visibilidade) | análise completa: dimensões, motivos, sinais, pesos, `compatibility` à parte |
 | `GET /api/hype/pieces/{id}/history?days=90` · `/looks/{id}/history` | público (visibilidade) | snapshots diários |
 | `GET /api/hype/trending?type&window=1\|7\|30&category&style&occasion&limit` | público | ranking só de `public_eligible`; 1 = trend, 7 = score, 30 = média do mês |
-| `GET /api/me/hype/wardrobe` | autenticado | Hype médio, destaques, redescobertas |
+| `GET /api/hype/trending?type=BRAND\|CREATOR&…` | público | **Marcas em alta** (só peças) e **Criadores em alta** (peças + looks): agregados por marca ou por pessoa, só com itens `public_eligible`; o grupo precisa de ≥ 3 itens públicos e o valor é a média dos seus 5 itens mais relevantes; criador bloqueado some para quem vê |
+| `GET /api/me/hype/wardrobe` · alias `GET /api/hype/me/wardrobe` | autenticado | Hype médio, destaques, redescobertas (o alias, citado na especificação, exige login no próprio endpoint porque `/api/hype/**` é GET público) |
 | `GET /api/me/hype/movers?days=90` | autenticado | séries, subiram/caíram, emergentes, novas tendências |
 | `POST /api/admin/hype/snapshots` | admin | recalcula agora |
 | `GET /api/hype/method` | público | v1 + `v2` (configuração ativa) |
 | `GET /api/me/closet?sort=hype_desc\|hype_asc\|growth\|worn\|least_worn\|rarity\|idle&hypeLevel=HOT` | autenticado | ordenações e filtro por faixa |
 
-O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API), não em `/api/hype/me/*`, porque `/api/hype/**`
-é público para GET.
+O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API). `/api/hype/me/wardrobe` existe só como alias,
+com a checagem de login no controller, porque `/api/hype/**` é público para GET.
 
 ## 8. Cache e desempenho
 
@@ -193,8 +194,23 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
 * Intenção `HYPE` (regex, sem custo de IA): "qual a peça mais relevante", "o que está crescendo", "tenho peça rara",
   "o que está voltando a ser tendência", "qual look tem mais potencial de trend". Pedidos para **montar** look
   continuam `LOOKS`. Toda resposta traz a compatibilidade com o estilo ao lado e o aviso "Hype ≠ seu estilo".
-* Modos `SAFE` / `DISCOVERY` / `EXPERIMENTAL` reordenam os looks por `RecommendationScoring`
-  (compatibilidade, Hype, novidade, reutilização); o Hype nunca passa de 20% do peso.
+* Modos `SAFE` / `DISCOVERY` / `EXPERIMENTAL` reordenam os looks por `RecommendationScoring`, com **seis** dimensões
+  independentes, todas exibidas no card do look: compatibilidade com o DNA, Hype, novidade (pares nunca combinados),
+  reutilização (traz de volta peças paradas há 60+ dias), **uso comprovado** (peças que a pessoa de fato veste, 8+ usos
+  = 100) e **sustentabilidade** (metade pela parte do look que a pessoa já tem, metade pelo quanto mais um uso dilui o
+  custo por uso das peças pouco usadas). Pesos por modo:
+
+  | Modo | Compat. | Hype | Novidade | Reutilização | Uso | Sustentab. |
+  |---|---|---|---|---|---|---|
+  | SEGURO | .50 | .10 | .05 | .10 | .15 | .10 |
+  | DESCOBERTA | .30 | .20 | .20 | .10 | .10 | .10 |
+  | EXPERIMENTAL | .15 | .20 | .40 | .10 | .05 | .10 |
+
+  O Hype nunca passa de 20% do peso; dimensão sem base fica neutra (50) e aparece como "—", nunca 0.
+* "Peça esquecida" tem uma régua só no app inteiro: `RoomService.FORGOTTEN_DAYS` (60 dias desde o último uso ou, se
+  nunca usada, desde o cadastro). O Copilot usava 30 dias e contava como esquecida até a peça cadastrada ontem.
+* As sugestões de compra (`purchaseSuggestions`: subcategoria, cor e ganho de combinações, sem marca) passaram a
+  aparecer na tela — a página lia um campo `purchases` que o backend nunca enviou. Patrocínio fica num bloco separado.
 * A ferramenta da IA (`buscar_pecas`) agora recebe o Hype v2 e a data do último uso de cada peça.
 
 ## 13. Testes
@@ -215,6 +231,10 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
 * Visualizações só existem a partir da V31; até lá o engajamento usa interações como piso do alcance.
 * "Usuários únicos" é aproximado pelo dedupe pessoa/dia, não por contagem distinta exata.
 * Ranking por região não foi implementado (a arquitetura de recortes comporta; falta o país no `hype_scores`).
+* Marcas em alta agrupam pelo nome da marca normalizado (minúsculas, sem espaços nas pontas); variações de grafia
+  ("Levi's" × "Levis") ainda contam como marcas diferentes até a peça apontar para o catálogo (RF47).
+* O ranking de marcas e criadores carrega as entidades da população pública numa consulta (volume do TCC); em escala,
+  gravar `brand_key` no `hype_scores` durante o job.
 
 ## 15. Próximos passos
 

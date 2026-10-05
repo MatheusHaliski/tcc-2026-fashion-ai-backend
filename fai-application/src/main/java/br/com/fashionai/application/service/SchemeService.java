@@ -711,11 +711,23 @@ public class SchemeService {
 
     @Transactional(readOnly = true)
     public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, int page, int size) {
-        List<Scheme> all = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream()
+        return mine(user, occasion, state, null, page, size);
+    }
+
+    /**
+     * Meus looks (domínio Looks e Lookbook). {@code state} restringe pelo estado (favoritos, disponível, indisponível,
+     * publicados, rascunhos, arquivados) e {@code kind} pela origem (ia, manual, remix). Antes, publicados/rascunhos/
+     * arquivados chegavam do frontend e eram ignorados; arquivados só aparecem quando pedidos.
+     */
+    public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, String kind, int page, int size) {
+        String st = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
+        boolean archived = st.equals("arquivados") || st.equals("archived");
+        List<Scheme> source = archived ? schemes.findByUserIdOrderByCreatedAtDesc(user.id())
+                : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
+        List<Scheme> all = source.stream()
                 .filter(s -> occasion == null || occasion.isBlank() || Json.csv(s.getOccasion()).contains(occasion))
-                .filter(s -> state == null || state.isBlank() || "todos".equals(state)
-                        || ("favoritos".equals(state) && s.isFavorite()) || ("disponivel".equals(state) && s.isDisponivel())
-                        || ("indisponivel".equals(state) && !s.isDisponivel()))
+                .filter(s -> stateMatches(s, st))
+                .filter(s -> kind == null || kind.isBlank() || kind.equalsIgnoreCase(kindOf(s)) || "todos".equalsIgnoreCase(kind))
                 .toList();
         int sz = Math.max(1, Math.min(60, size <= 0 ? 20 : size));
         int from = Math.min(all.size(), Math.max(0, page) * sz);
@@ -723,6 +735,32 @@ public class SchemeService {
         List<Views.SchemeView> items = all.subList(from, to).stream()
                 .map(s -> view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
         return new Views.Page<>(items, page, sz, all.size(), to < all.size());
+    }
+
+    static boolean stateMatches(Scheme s, String state) {
+        return switch (state == null ? "" : state) {
+            case "", "todos", "all" -> true;
+            case "favoritos", "favorites" -> s.isFavorite();
+            case "disponivel", "available" -> s.isDisponivel();
+            case "indisponivel", "unavailable" -> !s.isDisponivel();
+            case "publicados", "published" -> s.getStatus() == SchemeStatus.PUBLISHED;
+            case "rascunhos", "drafts" -> s.getStatus() == SchemeStatus.DRAFT;
+            case "arquivados", "archived" -> s.getStatus() == SchemeStatus.ARCHIVED;
+            default -> true;
+        };
+    }
+
+    /** Origem do look para o domínio Looks: remix (derivado de outro), ia (Copilot, Autopiloto, espelho, IA no criador) ou manual. */
+    public static String kindOf(Scheme s) {
+        if (s.getOrigin() == SchemeOrigin.REMIX || s.getOriginalScheme() != null) {
+            return "remix";
+        }
+        if (s.getCreationMode() == CreationMode.AI_ASSISTED || s.getOrigin() == SchemeOrigin.COPILOT
+                || s.getOrigin() == SchemeOrigin.AUTOPILOTO || s.getOrigin() == SchemeOrigin.VISTA_ME
+                || s.getOrigin() == SchemeOrigin.SMART_MIRROR) {
+            return "ia";
+        }
+        return "manual";
     }
 
     // ================================================================== RF9 — edição

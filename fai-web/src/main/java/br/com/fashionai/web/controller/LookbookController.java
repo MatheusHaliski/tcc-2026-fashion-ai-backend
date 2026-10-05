@@ -43,6 +43,20 @@ public class LookbookController {
         return lookbook.overview(viewer, ownerId);
     }
 
+    @GetMapping("/api/users/{ownerId}/publications")
+    @Operation(summary = "RF6/RF53 — Publicações do Lookbook: looks publicados e peças visíveis, em ordem cronológica")
+    public Views.Page<Map<String, Object>> publications(CurrentUser viewer, @PathVariable UUID ownerId,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "24") int size) {
+        return lookbook.publications(viewer, ownerId, page, size);
+    }
+
+    @GetMapping("/api/users/{ownerId}/favorites")
+    @Operation(summary = "RF6/RF53 — Favoritos do Lookbook: peças e looks marcados como favoritos, visíveis para quem vê")
+    public Map<String, Object> favorites(CurrentUser viewer, @PathVariable UUID ownerId) {
+        return lookbook.favorites(viewer, ownerId);
+    }
+
     @GetMapping("/api/me/saved-pieces")
     @Operation(summary = "RF6 — Peças salvas (aba própria, separada dos looks salvos)")
     public Views.Page<Map<String, Object>> savedPieces(CurrentUser user, @RequestParam(required = false) String category,

@@ -1527,6 +1527,7 @@ public class WardrobeService {
             case "disponivel", "disponiveis", "available" -> w.isDisponivel();
             case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
             case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
+            case "doar", "para_doar", "doacao", "for_donation", "donation" -> w.isForDonation();
             default -> true;
         };
     }
@@ -1634,9 +1635,31 @@ public class WardrobeService {
         return Views.piece(w, viewerState(user, w), null);
     }
 
+    /** "À venda" e "para doar" são exclusivos: marcar um desmarca o outro; desmarcar não mexe no outro. */
+    static void applyListing(WardrobeItem w, Boolean forSale, Boolean forDonation) {
+        if (forSale != null) {
+            w.setForSale(forSale);
+            if (forSale) {
+                w.setForDonation(false);
+            }
+        }
+        if (forDonation != null) {
+            w.setForDonation(forDonation);
+            if (forDonation) {
+                w.setForSale(false);
+            }
+        }
+    }
+
     // ================================================================== RF31 — toggles da faixa superior
     @Transactional
     public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale) {
+        return toggles(user, id, favorite, disponivel, forSale, null);
+    }
+
+    /** Estados da peça; "à venda" e "para doar" são exclusivos entre si (marcar um desmarca o outro). */
+    @Transactional
+    public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
         if (favorite != null) {
@@ -1652,9 +1675,7 @@ public class WardrobeService {
                 events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), id, disponivel));
             }
         }
-        if (forSale != null) {
-            w.setForSale(forSale);
-        }
+        applyListing(w, forSale, forDonation);
         return Views.piece(w, viewerState(user, w), null);
     }
 

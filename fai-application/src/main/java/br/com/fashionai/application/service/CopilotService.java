@@ -294,10 +294,11 @@ public class CopilotService {
             }
         }
         out.put("newCombinations", fresh);
-        // 3) peças esquecidas: disponíveis e sem uso há 30+ dias (ou nunca usadas)
-        LocalDate limit = LocalDate.now().minusDays(30);
-        out.put("forgottenPieces", eligible.stream().filter(x -> x.getLastWornDate() == null || x.getLastWornDate().isBefore(limit))
-                .sorted(Comparator.comparing((WardrobeItem x) -> x.getLastWornDate() == null ? LocalDate.MIN : x.getLastWornDate()))
+        // 3) peças esquecidas: a MESMA régua do app inteiro (RoomService.forgotten — 60+ dias desde o último uso ou, se
+        //    nunca usada, desde o cadastro). Antes era 30 dias aqui e "nunca usada" contava até para peça cadastrada ontem.
+        LocalDate todayZ = LocalDate.now(FaiPointsService.ZONE);
+        out.put("forgottenPieces", eligible.stream().filter(x -> RoomService.forgotten(x, x.getLastWornDate(), todayZ))
+                .sorted(Comparator.comparingLong((WardrobeItem x) -> -HypeQueryService.idleDays(x, todayZ)))
                 .limit(6).map(x -> Views.piece(x, null, null)).toList());
         // 4) peças para o clima: mesma régua do Autopiloto (faixa de temperatura → descarta peças inadequadas; camadas no frio)
         String band = w.band();
@@ -1033,10 +1034,14 @@ public class CopilotService {
                 Map<String, Object> c = StyleCompatibility.score(dna, StyleCompatibility.profile(styles, colors, occasions));
                 compat = c == null ? null : ((Number) c.get("score")).intValue();
             }
+            List<Integer> wears = look.stream().map(WardrobeItem::getWearCount).toList();
+            long owned = look.stream().filter(w -> w.getUser() != null && user.id().equals(w.getUser().getId())).count();
             RecommendationScoring.Scores scores = new RecommendationScoring.Scores(compat,
                     hypes.isEmpty() ? null : (int) Math.round(hypes.stream().mapToDouble(Double::doubleValue).average().orElse(0)),
                     RecommendationScoring.novelty(ids, seen),
-                    RecommendationScoring.reuse(look.stream().map(w -> HypeQueryService.idleDays(w, today)).toList()));
+                    RecommendationScoring.reuse(look.stream().map(w -> HypeQueryService.idleDays(w, today)).toList()),
+                    RecommendationScoring.usage(wears),
+                    RecommendationScoring.sustainability(wears, owned, look.size()));
             Map<String, Object> m = new LinkedHashMap<>(card);
             m.put("scores", scores.toMap());
             rank.put(m, RecommendationScoring.rankValue(mode, scores));
@@ -1104,7 +1109,7 @@ public class CopilotService {
                     .sorted(Comparator.comparing((WardrobeItem w) -> h.get(w.getId()).getDimensions().getRarity()).reversed()).limit(5).toList();
         } else if (t.matches(".*(voltando|volta a ser|voltar a ser|comeback|coming back|volviendo|vuelve a ser).*")) {
             header = Msg.t("copilot.hype.comeback");
-            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= 60 && comeback(h.get(w.getId())))
+            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= RoomService.FORGOTTEN_DAYS && comeback(h.get(w.getId())))
                     .sorted(Comparator.comparingDouble((WardrobeItem w) -> similarGrowth(h.get(w.getId()))).reversed()).limit(5).toList();
         } else if (t.matches(".*(crescend|subindo|growing|rising|creciendo|em crescimento|aumentando).*")) {
             header = Msg.t("copilot.hype.rising", hype.config().deltaWindowDays());

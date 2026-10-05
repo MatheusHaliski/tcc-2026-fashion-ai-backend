@@ -83,13 +83,14 @@ public class SchemeController {
     }
 
     @GetMapping("/api/me/schemes")
-    @Operation(summary = "RF6 — Meus esquemas (filtros por ocasião e estado)")
+    @Operation(summary = "RF6/RF53 — Meus esquemas: ocasião, estado (favoritos, disponível, indisponível, publicados, rascunhos, arquivados) e origem (ia, manual, remix)")
     public Views.Page<Views.SchemeView> mine(CurrentUser user,
                                             @RequestParam(required = false) String occasion,
                                             @RequestParam(required = false) String state,
+                                            @RequestParam(required = false) String kind,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "20") int size) {
-        return schemes.mine(user, occasion, state, page, size);
+        return schemes.mine(user, occasion, state, kind, page, size);
     }
 
     @PutMapping("/api/schemes/{id}")

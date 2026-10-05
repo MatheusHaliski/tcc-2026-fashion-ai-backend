@@ -61,7 +61,8 @@ import java.util.stream.Collectors;
 @Service
 public class HypeQueryService {
     public static final int MAX_BATCH = 100;
-    static final int FORGOTTEN_DAYS = 60;
+    /** Peça esquecida: a régua única do app (RoomService.FORGOTTEN_DAYS, também usada pelo Copilot e pelo Meu Quarto). */
+    static final int FORGOTTEN_DAYS = br.com.fashionai.application.service.RoomService.FORGOTTEN_DAYS;
 
     private final HypeScoreConfig config;
     private final HypeScoreCurrentRepository current;
@@ -327,6 +328,138 @@ public class HypeQueryService {
             m.put("id", c.getEntityId().toString());
             m.put("hype", summary(c, now));
             items.add(m);
+        }
+        return Map.of("items", items);
+    }
+
+    // ================================================================== ranking agregado: marcas e criadores em alta
+    /** Recortes agregados do "Em alta": a unidade é a marca (peças) ou a pessoa criadora (peças + looks). */
+    public enum RankGroup {
+        BRAND, CREATOR;
+
+        public static RankGroup parse(String raw) {
+            String t = raw == null ? "" : raw.trim().toUpperCase(Locale.ROOT);
+            return switch (t) {
+                case "BRAND", "BRANDS", "MARCA", "MARCAS" -> BRAND;
+                case "CREATOR", "CREATORS", "CRIADOR", "CRIADORES", "USER", "USERS" -> CREATOR;
+                default -> null;
+            };
+        }
+    }
+
+    /** Itens públicos mínimos para uma marca/pessoa entrar no ranking (um item viral sozinho não representa o grupo). */
+    static final int MIN_GROUP_ITEMS = 3;
+    /** O valor do grupo é a média dos seus N itens mais relevantes (constância, não um pico isolado). */
+    static final int GROUP_TOP_ITEMS = 5;
+
+    public Map<String, Object> trendingGroups(CurrentUser viewer, RankGroup group, int window, String category, String style, String occasion, int limit) {
+        int win = window <= 1 ? 1 : window >= 30 ? 30 : 7;
+        int lim = Math.max(1, Math.min(50, limit <= 0 ? 24 : limit));
+        String key = "trending-groups:" + group + ":" + win + ":" + norm(category) + ":" + norm(style) + ":" + norm(occasion) + ":" + lim;
+        Map<String, Object> ranked = cache.get(key, () -> rankGroups(group, win, category, style, occasion, lim));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) ranked.getOrDefault("items", List.of());
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            // criador bloqueado (em qualquer direção) some do ranking de quem vê; a posição dos demais não muda
+            if (group == RankGroup.CREATOR && r.get("ownerId") != null
+                    && !guard.canView(viewer, UUID.fromString(String.valueOf(r.get("ownerId"))), br.com.fashionai.domain.model.enums.Visibility.PUBLIC)) {
+                continue;
+            }
+            items.add(r);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("type", group.name());
+        out.put("window", win);
+        out.put("algorithmVersion", config.algorithmVersion());
+        out.put("minItems", MIN_GROUP_ITEMS);
+        out.put("items", items);
+        return out;
+    }
+
+    Map<String, Object> rankGroups(RankGroup group, int win, String category, String style, String occasion, int lim) {
+        List<HypeEntityType> types = group == RankGroup.BRAND ? List.of(HypeEntityType.PIECE) : List.of(HypeEntityType.PIECE, HypeEntityType.SCHEME);
+        record Scored(HypeEntityType type, HypeScoreCurrent c, double value) {
+        }
+        List<Scored> scored = new ArrayList<>();
+        for (HypeEntityType type : types) {
+            List<HypeScoreCurrent> pool = current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(type, config.algorithmVersion(), HypeStatus.AVAILABLE)
+                    .stream().filter(c -> blank(category) || category.equalsIgnoreCase(c.getCategory()))
+                    .filter(c -> blank(style) || Json.csv(c.getStyles()).contains(style))
+                    .filter(c -> blank(occasion) || Json.csv(c.getOccasions()).contains(occasion)).toList();
+            Map<UUID, Double> avg = win == 30 ? monthAverage(type, pool.stream().map(HypeScoreCurrent::getEntityId).collect(Collectors.toSet())) : Map.of();
+            for (HypeScoreCurrent c : pool) {
+                double v = win == 1 ? (c.getDimensions().getTrend() == null ? 0 : c.getDimensions().getTrend().doubleValue())
+                        : win == 30 ? avg.getOrDefault(c.getEntityId(), c.getScore().doubleValue()) : c.getScore().doubleValue();
+                scored.add(new Scored(type, c, v));
+            }
+        }
+        Map<UUID, WardrobeItem> pieceById = scored.stream().anyMatch(x -> x.type() == HypeEntityType.PIECE)
+                ? pieces.findByIdIn(scored.stream().filter(x -> x.type() == HypeEntityType.PIECE).map(x -> x.c().getEntityId()).toList()).stream()
+                .collect(Collectors.toMap(WardrobeItem::getId, Function.identity(), (a, b) -> a)) : Map.of();
+        Map<UUID, Scheme> schemeById = scored.stream().anyMatch(x -> x.type() == HypeEntityType.SCHEME)
+                ? schemes.findByIdIn(scored.stream().filter(x -> x.type() == HypeEntityType.SCHEME).map(x -> x.c().getEntityId()).toList()).stream()
+                .collect(Collectors.toMap(Scheme::getId, Function.identity(), (a, b) -> a)) : Map.of();
+
+        Map<String, List<Scored>> byKey = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> meta = new HashMap<>();
+        for (Scored x : scored) {
+            String key;
+            if (group == RankGroup.BRAND) {
+                WardrobeItem w = pieceById.get(x.c().getEntityId());
+                String name = w == null ? null : (w.getBrand() != null ? w.getBrand().getName() : w.getBrandName());
+                if (blank(name)) {
+                    continue;   // peça sem marca não representa marca nenhuma
+                }
+                key = name.trim().toLowerCase(Locale.ROOT);
+                Map<String, Object> m = meta.computeIfAbsent(key, k -> new LinkedHashMap<>());
+                m.putIfAbsent("name", name.trim());
+                if (m.get("logoUrl") == null && Views.brandLogo(w) != null) {
+                    m.put("logoUrl", Views.brandLogo(w));
+                }
+            } else {
+                br.com.fashionai.domain.model.User owner = x.type() == HypeEntityType.PIECE
+                        ? Optional.ofNullable(pieceById.get(x.c().getEntityId())).map(WardrobeItem::getUser).orElse(null)
+                        : Optional.ofNullable(schemeById.get(x.c().getEntityId())).map(Scheme::getUser).orElse(null);
+                if (owner == null) {
+                    continue;
+                }
+                key = owner.getId().toString();
+                if (!meta.containsKey(key)) {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("ownerId", key);
+                    m.put("user", Views.user(owner));
+                    meta.put(key, m);
+                }
+            }
+            byKey.computeIfAbsent(key, k -> new ArrayList<>()).add(x);
+        }
+        Instant now = Instant.now();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        byKey.forEach((key, list) -> {
+            if (list.size() < MIN_GROUP_ITEMS) {
+                return;
+            }
+            List<Scored> top = list.stream().sorted(Comparator.comparingDouble(Scored::value).reversed()).limit(GROUP_TOP_ITEMS).toList();
+            Map<String, Object> m = new LinkedHashMap<>(meta.get(key));
+            m.put("key", key);
+            m.put("value", round1(top.stream().mapToDouble(Scored::value).average().orElse(0)));
+            m.put("items", list.size());
+            m.put("pieces", list.stream().filter(x -> x.type() == HypeEntityType.PIECE).count());
+            m.put("looks", list.stream().filter(x -> x.type() == HypeEntityType.SCHEME).count());
+            Scored best = top.get(0);
+            m.put("top", Map.of("type", best.type().name(), "id", best.c().getEntityId().toString(), "hype", summary(best.c(), now)));
+            rows.add(m);
+        });
+        rows.sort(Comparator.comparingDouble((Map<String, Object> m) -> ((Number) m.get("value")).doubleValue()).reversed()
+                .thenComparing(m -> String.valueOf(m.get("key"))));
+        List<Map<String, Object>> items = new ArrayList<>();
+        int rank = 1;
+        for (Map<String, Object> m : rows.subList(0, Math.min(lim, rows.size()))) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("rank", rank++);
+            r.putAll(m);
+            items.add(r);
         }
         return Map.of("items", items);
     }

@@ -96,19 +96,34 @@ public class HypeController {
     }
 
     @GetMapping("/api/hype/trending")
-    @Operation(summary = "Em alta — ranking com recortes (janela 1/7/30 dias, tipo, categoria, estilo, ocasião); só conteúdo público")
+    @Operation(summary = "Em alta — ranking com recortes (janela 1/7/30 dias; tipo PIECE, LOOK, BRAND ou CREATOR; categoria, estilo, ocasião); só conteúdo público")
     public Map<String, Object> trending(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
                                         @RequestParam(defaultValue = "7") int window,
                                         @RequestParam(required = false) String category,
                                         @RequestParam(required = false) String style,
                                         @RequestParam(required = false) String occasion,
                                         @RequestParam(defaultValue = "24") int limit) {
+        HypeQueryService.RankGroup group = HypeQueryService.RankGroup.parse(type);
+        if (group != null) {
+            // Marcas em alta / Criadores em alta: agregados de itens públicos elegíveis (mínimo de itens por grupo)
+            return hype.trendingGroups(viewer, group, window, category, style, occasion, limit);
+        }
         return hype.trending(viewer, type(type), window, category, style, occasion, limit);
     }
 
     @GetMapping("/api/me/hype/wardrobe")
     @Operation(summary = "Seu guarda-roupa: Hype médio, destaques (maior Hype, crescimento, clássica, rara, esquecida) e redescobertas")
     public Map<String, Object> wardrobe(CurrentUser user) {
+        return hype.wardrobe(user);
+    }
+
+    @GetMapping("/api/hype/me/wardrobe")
+    @Operation(summary = "Alias de /api/me/hype/wardrobe (forma citada na especificação do HypeScore)")
+    public Map<String, Object> wardrobeAlias(CurrentUser user) {
+        if (user == null) {
+            // /api/hype/** é GET público na SecurityConfig: o painel pessoal exige login aqui
+            throw ApiException.unauthorized("login");
+        }
         return hype.wardrobe(user);
     }
 

@@ -129,13 +129,13 @@ public class WardrobeController {
         return wardrobe.update(user, id, form);
     }
 
-    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale) {
+    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
     }
 
     @PatchMapping("/api/pieces/{id}/flags")
-    @Operation(summary = "RF7 — Favoritar, marcar disponível/indisponível ou à venda")
+    @Operation(summary = "RF7/RF31 — Favoritar, marcar disponível/indisponível, à venda ou para doar")
     public Views.PieceView flags(CurrentUser user, @PathVariable UUID id, @RequestBody Flags body) {
-        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale());
+        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale(), body.forDonation());
     }
 
     @PostMapping("/api/pieces/{id}/worn")

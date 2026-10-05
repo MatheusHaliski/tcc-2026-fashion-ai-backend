@@ -110,6 +110,8 @@ public class LookbookService {
             all = all.stream().filter(w -> guard.canView(viewer, ownerId, WardrobeService.effectiveVisibility(w))).toList();
             looks = looks.stream().filter(s -> s.getStatus() == SchemeStatus.PUBLISHED && guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility()))).toList();
         }
+        long publicationsCount = canSee ? publicationRows(viewer, owner).size() : 0;
+        long favoritesCount = canSee ? all.stream().filter(WardrobeItem::isFavorite).count() + looks.stream().filter(Scheme::isFavorite).count() : 0;
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("owner", Views.user(owner));
         out.put("self", self);
@@ -122,10 +124,89 @@ public class LookbookService {
                 Map.of("id", "saved_pieces", "label", Msg.t("lookbook.pecas_salvas"), "count", self ? saved.countByUserIdAndTargetType(ownerId, TargetType.PIECE) : 0),
                 Map.of("id", "daily", "label", Msg.t("lookbook.look_do_dia"), "count", self ? dailyLooks.today(ownerId).isPresent() ? 1 : 0 : 0),
                 Map.of("id", "capsule", "label", Msg.t("lookbook.minha_capsula"), "count", looks.isEmpty() ? 0 : basePieces(looks).size()),
-                Map.of("id", "room", "label", Msg.t("lookbook.meu_guarda_roupa"), "count", all.size())));
+                Map.of("id", "room", "label", Msg.t("lookbook.meu_guarda_roupa"), "count", all.size()),
+                Map.of("id", "publications", "label", Msg.t("lookbook.publicacoes"), "count", publicationsCount),
+                Map.of("id", "favorites", "label", Msg.t("lookbook.favoritos"), "count", favoritesCount)));
         out.put("emptyCloset", all.isEmpty() ? Map.of("message", Msg.t("lookbook.seu_closet_digital_esta_vazio"), "action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/pieces/new")) : null);
         out.put("panelVersion", owner.getLookDoDiaPanelVersion() == null ? HypeScorePanelVersion.SPOTLIGHT_CLASSICO.name() : owner.getLookDoDiaPanelVersion().name());
         out.put("groupingSuggestionsAvailable", self && all.size() >= GROUPING_MIN_PIECES);
+        return out;
+    }
+
+    // ================================================================== Publicações e Favoritos (RF6 + RF53, Lookbook social)
+    /**
+     * Publicações: o que o perfil mostra ao mundo, em ordem cronológica — looks publicados e peças que não são privadas,
+     * nunca rascunhos nem itens em moderação. Para o dono é a mesma lista que os outros veem (o Lookbook é a vitrine);
+     * a gestão completa dos looks fica em /looks.
+     */
+    @Transactional
+    public Views.Page<Map<String, Object>> publications(CurrentUser viewer, UUID ownerId, int page, int size) {
+        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        boolean self = viewer != null && viewer.id().equals(ownerId);
+        if (!self && !guard.canView(viewer, ownerId, owner.getProfileVisibility())) {
+            return new Views.Page<>(List.of(), page, Math.max(1, size), 0, false);
+        }
+        List<Object[]> rows = publicationRows(viewer, owner);
+        int sz = Math.max(1, Math.min(60, size <= 0 ? 24 : size));
+        int from = Math.min(rows.size(), Math.max(0, page) * sz);
+        int to = Math.min(rows.size(), from + sz);
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Object[] r : rows.subList(from, to)) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("at", r[0].toString());
+            if (r[1] instanceof Scheme s) {
+                m.put("type", "LOOK");
+                m.put("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
+            } else if (r[1] instanceof WardrobeItem w) {
+                m.put("type", "PIECE");
+                m.put("piece", Views.piece(w, wardrobe.viewerState(viewer, w), null));
+            }
+            items.add(m);
+        }
+        return new Views.Page<>(items, page, sz, rows.size(), to < rows.size());
+    }
+
+    /** [instante, entidade] das publicações visíveis para quem vê, mais recentes primeiro. */
+    List<Object[]> publicationRows(CurrentUser viewer, User owner) {
+        UUID ownerId = owner.getId();
+        List<Object[]> rows = new ArrayList<>();
+        schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED).stream()
+                .filter(s -> s.getStatus() == SchemeStatus.PUBLISHED)
+                .filter(s -> s.getVisibility() != br.com.fashionai.domain.model.enums.Visibility.PRIVATE)
+                .filter(s -> guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility())))
+                .forEach(s -> rows.add(new Object[]{s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), s}));
+        pieces.findByUserIdOrderByCreatedAtDesc(ownerId).stream()
+                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> w.getModerationStatus() == br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED)
+                .filter(w -> WardrobeService.effectiveVisibility(w) != br.com.fashionai.domain.model.enums.Visibility.PRIVATE)
+                .filter(w -> guard.canView(viewer, ownerId, WardrobeService.effectiveVisibility(w)))
+                .forEach(w -> rows.add(new Object[]{w.getCreatedAt(), w}));
+        rows.sort((a, b) -> ((java.time.Instant) b[0]).compareTo((java.time.Instant) a[0]));
+        return rows;
+    }
+
+    /** Favoritos do perfil: peças e looks que o dono marcou como favoritos, com a mesma visibilidade do Lookbook. */
+    @Transactional
+    public Map<String, Object> favorites(CurrentUser viewer, UUID ownerId) {
+        User owner = users.findById(ownerId).orElseThrow(() -> ApiException.notFound("Perfil"));
+        boolean self = viewer != null && viewer.id().equals(ownerId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (!self && !guard.canView(viewer, ownerId, owner.getProfileVisibility())) {
+            out.put("pieces", List.of());
+            out.put("looks", List.of());
+            return out;
+        }
+        out.put("pieces", pieces.findByUserIdOrderByCreatedAtDesc(ownerId).stream()
+                .filter(WardrobeItem::isFavorite)
+                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> self || (w.getModerationStatus() == br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED
+                        && guard.canView(viewer, ownerId, WardrobeService.effectiveVisibility(w))))
+                .limit(60).map(w -> Views.piece(w, wardrobe.viewerState(viewer, w), null)).toList());
+        out.put("looks", schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(ownerId, SchemeStatus.ARCHIVED).stream()
+                .filter(Scheme::isFavorite)
+                .filter(s -> self || (s.getStatus() == SchemeStatus.PUBLISHED
+                        && guard.canView(viewer, ownerId, SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility()))))
+                .limit(60).map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
         return out;
     }
 
