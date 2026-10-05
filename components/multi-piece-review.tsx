@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
-import { CATEGORY_LABEL, label, useTaxonomy, type Taxonomy } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy, type Taxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { Button, ChipMultiSelect, Dialog, Field, Input, Select, cn } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
@@ -380,7 +380,7 @@ function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onCr
           </Select>
         </Field>
         <Field label={t("common.subcategory")} id={fid("subcategory")} required error={err.subcategory}>
-          <Select id={fid("subcategory")} value={v.subcategory} onChange={(e) => set("subcategory", e.target.value)}>{(tax?.subcategories?.[v.category] ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
+          <Select id={fid("subcategory")} value={v.subcategory} onChange={(e) => set("subcategory", e.target.value)}>{(tax?.subcategories?.[v.category] ?? []).map((s) => <option key={s} value={s}>{subcategoryLabel(s)}</option>)}</Select>
         </Field>
         <Field label={t("common.color")} id={fid("color")} required error={err.color}>
           <div className="flex items-center gap-2">

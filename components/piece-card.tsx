@@ -8,7 +8,7 @@ import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
 import { CardActions } from "@/components/interactions";
-import { label, CATEGORY_LABEL } from "@/lib/api/taxonomy";
+import { label, CATEGORY_LABEL, subcategoryLabel } from "@/lib/api/taxonomy";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { skinStyle } from "@/lib/skins";
@@ -72,7 +72,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const tags = (piece.style ?? []).filter(Boolean).slice(0, 2).map((s) => label(s)).join(" · ");
   const secondary = piece.brandName
     ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName />
-    : <span>{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
+    : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
       {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}

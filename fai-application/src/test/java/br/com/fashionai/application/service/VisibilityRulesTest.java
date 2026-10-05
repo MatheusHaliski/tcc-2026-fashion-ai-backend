@@ -84,7 +84,7 @@ class VisibilityRulesTest {
         notifications = mock(NotificationService.class);
         wardrobe = new WardrobeService(pieces, mock(UserRepository.class), null, null, null, null, null, schemeItems, null, null,
                 null, null, null, null, null, null, null, notifications, null, null, null, guard, null, null, null, null, null, null, null, null);
-        social = new SocialService(null, null, null, null, null, pieces, null, null, null, null, notifications, null, null, guard, null);
+        social = new SocialService(null, null, null, null, null, pieces, null, null, null, null, null, notifications, null, null, guard, null);
     }
 
     private void blockedByOwner() {

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
-import { label, useTaxonomy } from "@/lib/api/taxonomy";
+import { label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guides";
 import { Badge, Button, Chip, Field, Input, Skeleton, cn } from "@/components/ui";
@@ -118,7 +118,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
         <section aria-labelledby="cs-sub">
           <p id="cs-sub" className="label">{t("catalog.q_tipo")}</p>
           <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="cs-sub">
-            {subs.map((s) => <Chip key={s} active={subcategory === s} onClick={() => setSubcategory(subcategory === s ? "" : s)}>{label(s)}</Chip>)}
+            {subs.map((s) => <Chip key={s} active={subcategory === s} onClick={() => setSubcategory(subcategory === s ? "" : s)}>{subcategoryLabel(s)}</Chip>)}
           </div>
         </section>
       )}
@@ -145,7 +145,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
         <section aria-live="polite" aria-labelledby="cs-results">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <h2 id="cs-results" className="type-h3">
-              {discover.result?.results.length ? discover.result.message : filtered.length ? t("catalog.encontramos", { count: filtered.length, tipo: subcategory ? label(subcategory).toLowerCase() : t("common.pieces").toLowerCase(), marca: res.intent.brand ?? "" }) : res.message ?? t("catalog.nao_encontramos")}
+              {discover.result?.results.length ? discover.result.message : filtered.length ? t("catalog.encontramos", { count: filtered.length, tipo: subcategory ? subcategoryLabel(subcategory).toLowerCase() : t("common.pieces").toLowerCase(), marca: res.intent.brand ?? "" }) : res.message ?? t("catalog.nao_encontramos")}
             </h2>
             {brandRef && <BrandLogo name={brandRef.name} src={brandRef.logoUrl} size={22} />}
           </div>
@@ -247,7 +247,7 @@ export function CatalogResultCard({ product: p, onPick, pickLabel }: { product: 
       <div className="catalog-card-body">
         <p className="flex items-center gap-1.5 type-caption text-muted"><BrandLogo name={p.brand?.name} src={p.brand?.logoUrl} size={18} />{p.brand?.name}</p>
         <h3 className="type-h3 leading-tight">{p.productName}</h3>
-        <p className="type-body-sm text-muted">{[p.modelName && p.modelName !== p.productName ? p.modelName : null, label(p.subcategory)].filter(Boolean).join(" · ")}</p>
+        <p className="type-body-sm text-muted">{[p.modelName && p.modelName !== p.productName ? p.modelName : null, subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")}</p>
         {p.description && <p className="catalog-card-desc type-caption text-muted">{p.description}</p>}
         {(p.matchScore?.reasons?.length ?? 0) > 0 && (
           <ul className="catalog-reasons" aria-label={t("catalog.design.por_que_esta")}>

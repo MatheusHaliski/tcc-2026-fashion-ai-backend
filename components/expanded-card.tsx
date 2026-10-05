@@ -8,7 +8,7 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { label, CATEGORY_LABEL, useTaxonomy } from "@/lib/api/taxonomy";
+import { label, CATEGORY_LABEL, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
@@ -228,7 +228,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   ];
   const vis = mine && p.visibility !== "PUBLIC" ? (p.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const rows: [string, ReactNode][] = ([
-    [t("common.category"), [CATEGORY_LABEL[p.category] ?? label(p.category), label(p.subcategory)].filter(Boolean).join(" · ")],
+    [t("common.category"), [CATEGORY_LABEL[p.category] ?? label(p.category), subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")],
     [t("common.color"), <span key="c" className="inline-flex items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: p.colorHex ?? "#ccc" }} />{label(p.color)}</span>],
     [t("common.size"), sizeLabel(p.size)],
     [t("common.material"), label((p.material ?? "").toLowerCase()) || null],

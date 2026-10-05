@@ -6,7 +6,7 @@ import { api, mediaUrl, qs } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { primeHype } from "@/lib/hype/use-hype";
 import { hypeViewState } from "@/lib/hype/model";
 import type { HypeEntity, HypeRanking, HypeRankingFacets, HypeRankingItem } from "@/lib/hype/types";
@@ -103,8 +103,8 @@ export function HypeRankingPanel() {
   const countryOptions = [{ id: ALL, label: t("hypeRanking.all_countries") }, ...(fc?.countries ?? []).map((c) => ({ id: c.key, label: count(countryLabel(c.key), c.count) }))];
   if (f.country && !countryOptions.some((o) => o.id === f.country)) countryOptions.push({ id: f.country, label: countryLabel(f.country) });
   const subOptions = [{ id: ALL, label: t("hypeRanking.all_subcategories") },
-    ...(fc?.subcategories ?? []).filter((s) => !f.category || !s.category || s.category === f.category).map((s) => ({ id: s.key, label: count(label(s.key), s.count) }))];
-  if (f.subcategory && !subOptions.some((o) => o.id === f.subcategory)) subOptions.push({ id: f.subcategory, label: label(f.subcategory) });
+    ...(fc?.subcategories ?? []).filter((s) => !f.category || !s.category || s.category === f.category).map((s) => ({ id: s.key, label: count(subcategoryLabel(s.key), s.count) }))];
+  if (f.subcategory && !subOptions.some((o) => o.id === f.subcategory)) subOptions.push({ id: f.subcategory, label: subcategoryLabel(f.subcategory) });
   const catCount = (c: string) => fc?.categories?.find((x) => x.key === c)?.count;
   const filtered = !!(f.region || f.country || f.category || f.subcategory);
   const rank = (i: HypeRankingItem) => (

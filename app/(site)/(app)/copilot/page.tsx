@@ -17,7 +17,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useDetailModal } from "@/components/detail-modal";
 import type { PieceView, SchemeView } from "@/lib/api/types";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { resolveCardArt } from "@/lib/card-art";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
@@ -63,7 +63,7 @@ function Understood({ look }: { look: SuggestedLook }) {
  */
 function PurchaseBlock({ reply }: { reply: Reply }) {
   const { t } = useI18n();
-  const organic = (reply.purchaseSuggestions ?? []).map((p) => ({ name: [label(p.subcategory ?? ""), p.color ? label(p.color) : ""].filter(Boolean).join(" · "), gain: p.gainText, reason: p.reason, href: p.action?.href, cta: p.action?.label }))
+  const organic = (reply.purchaseSuggestions ?? []).map((p) => ({ name: [subcategoryLabel(p.subcategory), p.color ? label(p.color) : ""].filter(Boolean).join(" · "), gain: p.gainText, reason: p.reason, href: p.action?.href, cta: p.action?.label }))
     .concat((reply.purchases ?? []).filter((p) => !p.sponsored).map((p) => ({ name: p.name ?? "", gain: p.delta != null ? t("copilot.combinacoes", { delta: p.delta }) : undefined, reason: p.reason, href: undefined, cta: undefined })));
   const sponsored = [...(reply.sponsored?.items ?? []), ...(reply.purchases ?? []).filter((p) => p.sponsored)];
   if (organic.length === 0 && sponsored.length === 0) return null;
