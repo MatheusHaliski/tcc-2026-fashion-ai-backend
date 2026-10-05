@@ -27,6 +27,15 @@ export interface ReviewQueue { pending: Dossier[]; waitingOwner: Dossier[]; reas
 const RECEITA_CNPJ = "https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_Solicitacao.asp";
 const BRAND_FIELDS = ["razaoSocial", "nomeFantasia", "cnpj", "fashionCategory", "storeUrl", "commercialContact", "officialHashtag", "country"];
 const CELEB_FIELDS = ["stageName", "realName", "birthDate", "areas", "verificationUrl", "followers", "professionalHistory", "representationContact", "fashionInterests", "sealConsentGranted"];
+/**
+ * Critérios conferidos num link do cadastro (o perfil oficial da celebridade, o site da marca): o botão Verificar abre o
+ * modal com o link e o código, e o que o analista decide vira o item marcado ou o motivo para pedir ajustes.
+ */
+const LINK_CHECKS: Record<IssuerKind, Record<string, { field: string; reason: string }>> = {
+  CELEBRIDADE: { CONTROLE_PERFIL_OFICIAL: { field: "verificationUrl", reason: "CONTROLE_NAO_COMPROVADO" } },
+  MARCA: { PRESENCA_OFICIAL: { field: "storeUrl", reason: "PRESENCA_NAO_VERIFICAVEL" }, REPRESENTACAO: { field: "storeUrl", reason: "REPRESENTACAO_NAO_COMPROVADA" } },
+};
+const hostOf = (url: string) => { try { return new URL(url).host; } catch { return url; } };
 
 /** Dias úteis (seg–sex) desde a data: o prazo da política conta dias úteis. */
 export function businessDaysSince(iso: string, now = new Date()): number {
@@ -69,6 +78,19 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
   const [picked, setPicked] = useState<string[]>([]); const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [doc, setDoc] = useState<{ url: string; kind: string } | null>(null);
+  const [verify, setVerify] = useState<PolicyCheck | null>(null);
+  const linkCheck = verify ? LINK_CHECKS[d.kind]?.[verify.code] : undefined;
+  const link = linkCheck && typeof d.data[linkCheck.field] === "string" ? String(d.data[linkCheck.field]) : "";
+  function verdict(found: boolean) {
+    if (!verify || !linkCheck) return;
+    const code = verify.code;
+    setChecked((m) => ({ ...m, [code]: found && verify.auto === "ANALISTA" }));
+    if (!found) {
+      setPicked((p) => (p.includes(linkCheck.reason) ? p : [...p, linkCheck.reason]));
+      toast.info(t("adminApprovals.motivo_marcado", { motivo: t(`issuerPolicy.motivo_curto.${linkCheck.reason}`) }));
+    }
+    setVerify(null);
+  }
   const waited = d.reviewableSince ? businessDaysSince(d.reviewableSince) : null;   // o prazo só corre com o e-mail confirmado
   const ok = (c: PolicyCheck) => c.auto === "OK" || (c.auto === "ANALISTA" && !!checked[c.code]);
   const openMandatory = d.checks.filter((c) => c.mandatory && !ok(c));
@@ -119,7 +141,8 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
           <p className="label">{t("adminApprovals.checklist")}</p>
           <ul className="policy-checks">
             {d.checks.map((c) => (
-              <PolicyCheckRow key={c.code} c={c} kind={d.kind}>
+              <PolicyCheckRow key={c.code} c={c} kind={d.kind}
+                action={LINK_CHECKS[d.kind]?.[c.code] && c.auto !== "OK" ? <Button size="sm" aria-haspopup="dialog" onClick={() => setVerify(c)}>{t("adminApprovals.verificar")}</Button> : undefined}>
                 <input type="checkbox" className="mt-1 h-4 w-4" aria-label={t(`issuerPolicy.${d.kind}.${c.code}`)}
                   checked={c.auto === "OK" || (c.auto === "ANALISTA" && !!checked[c.code])} disabled={c.auto !== "ANALISTA"}
                   onChange={(e) => setChecked((m) => ({ ...m, [c.code]: e.target.checked }))} />
@@ -145,6 +168,21 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
           </span>
         </div>
       </div>
+      <Dialog open={!!verify} onClose={() => setVerify(null)} title={verify ? t("adminApprovals.verificar_titulo", { criterio: t(`issuerPolicy.${d.kind}.${verify.code}`) }) : ""}
+        footer={verify && (verify.auto === "ANALISTA" && link
+          ? <><Button onClick={() => verdict(false)}>{t("adminApprovals.verificar_nao")}</Button><Button variant="primary" onClick={() => verdict(true)}>{t("adminApprovals.verificar_ok")}</Button></>
+          : <><Button onClick={() => setVerify(null)}>{t("common.fechar")}</Button><Button variant="primary" onClick={() => verdict(false)}>{t("adminApprovals.pedir_link")}</Button></>)}>
+        {verify && (verify.auto === "ANALISTA" && link ? (
+          <div className="grid gap-3">
+            <p className="type-body-sm">{t(`adminApprovals.verificar.${verify.code}`, { code: d.verificationCode })}</p>
+            <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-primary justify-center">{t("adminApprovals.abrir_link", { host: hostOf(link) })} ↗</a>
+            <p className="break-all type-caption text-muted">{link}</p>
+            <div className="flex items-center gap-2"><span className="label mb-0">{t("adminApprovals.codigo_procurar")}</span><code className="issuer-code">{d.verificationCode}</code>
+              <Button size="sm" onClick={() => navigator.clipboard?.writeText(d.verificationCode).then(() => toast.success(t("issuerReview.codigo_copiado"))).catch(() => undefined)}>{t("issuerReview.copiar")}</Button></div>
+            <p className="type-caption text-muted">{t("adminApprovals.nova_aba_dica")}</p>
+          </div>
+        ) : <p className="type-body-sm">{t("adminApprovals.sem_link")}</p>)}
+      </Dialog>
       <Dialog open={!!doc} onClose={closeDoc} size="lg" title={doc ? t(`adminApprovals.doc.${doc.kind}`) : ""}>
         {doc && <img src={doc.url} alt={t(`adminApprovals.doc.${doc.kind}`)} className="mx-auto max-h-[70vh] w-auto rounded" />}
         <p className="mt-2 type-caption text-muted">{t("adminApprovals.doc_privado")}</p>

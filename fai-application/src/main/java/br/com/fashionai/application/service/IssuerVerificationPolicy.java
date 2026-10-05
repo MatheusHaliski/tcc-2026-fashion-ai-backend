@@ -209,6 +209,21 @@ public class IssuerVerificationPolicy {
     }
 
     /** Link aceito como site, loja ou perfil oficial: http(s) com um domínio de verdade. */
+    /**
+     * Link como a pessoa digita ("instagram.com/samuel", "www.marca.com.br") vira URL completa com https://; vazio vira
+     * null e o resto (ex.: "@samuel", sem domínio) volta como veio, para a validação recusar com a mensagem certa.
+     */
+    public static String normalizeUrl(String raw) {
+        if (blank(raw)) {
+            return null;
+        }
+        String s = raw.trim();
+        if (s.toLowerCase(Locale.ROOT).matches("^https?://.*")) {
+            return s;
+        }
+        return s.matches("^[\\w.-]+\\.[A-Za-z]{2,}(/.*)?$") ? "https://" + s : s;
+    }
+
     public static boolean webUrl(String url) {
         if (blank(url)) {
             return false;
