@@ -1,5 +1,6 @@
--- Renumerada de V31 para V33: duas migrations chegaram ao main como V31 (esta e V31__politica_verificacao_emissor) e o
--- Flyway recusa versões repetidas — a API não subia. Nenhum ambiente publicado tinha aplicado V31+ (deploy em V30).
+-- Renumerada para V36: nasceu V31 e, nas correções paralelas dos merges, acabou como V33 junto com
+-- V33__politica_verificacao_emissor — o Flyway recusa versões repetidas e a API não subia. Nenhum ambiente
+-- publicado tinha aplicado V31+ (produção em V30). Só acrescenta colunas em catalog_products, sem FK.
 -- RF47 · Características únicas da peça no catálogo: a descrição oficial do produto e o design estruturado lido dela
 -- (estampa, posição/tamanho do logo, lados, cores da peça × cores da estampa). É o que separa, por exemplo, duas
 -- camisetas da mesma marca e do mesmo tipo quando a pessoa descreve a peça por texto na busca catalogada.

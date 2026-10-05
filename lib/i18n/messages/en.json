@@ -367,6 +367,7 @@
   "auth.registerTitle": "Create account",
   "auth.remember": "Keep me signed in",
   "auth.resend": "Resend code",
+  "auth.resetDone": "Your password has been reset successfully! You can close this page.",
   "auth.resetLead": "Choose a strong password (8+ chars, letters, numbers and a symbol).",
   "auth.resetTitle": "New password",
   "auth.send": "Send",
