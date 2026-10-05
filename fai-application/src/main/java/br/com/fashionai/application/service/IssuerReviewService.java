@@ -317,7 +317,7 @@ public class IssuerReviewService {
         // 1) valida tudo antes de qualquer efeito: um documento só é copiado para restricted/ se o pedido inteiro passar
         //    (senão a cópia ficava órfã — fora de pending/, a limpeza dos envios abandonados não a encontra)
         Map<String, Object> errors = new LinkedHashMap<>();
-        String link = celebrity ? c.verificationUrl() : c.storeUrl();
+        String link = IssuerVerificationPolicy.normalizeUrl(celebrity ? c.verificationUrl() : c.storeUrl());
         if (present(link) && !IssuerVerificationPolicy.webUrl(link)) {
             errors.put(celebrity ? "verificationUrl" : "storeUrl", Msg.t("issuerReview.link_invalido"));
         }
@@ -343,7 +343,7 @@ public class IssuerReviewService {
                 + System.currentTimeMillis() + ".jpg", documentBytes, "image/jpeg").url();
         if (p instanceof BrandProfile b) {
             if (present(c.storeUrl())) {
-                b.setStoreUrl(c.storeUrl().trim());
+                b.setStoreUrl(IssuerVerificationPolicy.normalizeUrl(c.storeUrl()));
             }
             if (present(c.commercialContact())) {
                 b.setCommercialContact(InputSanitizer.clean(c.commercialContact(), 160));
@@ -353,7 +353,7 @@ public class IssuerReviewService {
             }
         } else if (p instanceof CelebrityProfile cp) {
             if (present(c.verificationUrl())) {
-                cp.setVerificationUrl(c.verificationUrl().trim());
+                cp.setVerificationUrl(IssuerVerificationPolicy.normalizeUrl(c.verificationUrl()));
             }
             if (present(c.representationContact())) {
                 cp.setRepresentationContact(InputSanitizer.clean(c.representationContact(), 160));

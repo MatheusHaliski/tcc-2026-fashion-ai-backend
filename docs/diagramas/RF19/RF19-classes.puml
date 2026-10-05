@@ -82,6 +82,15 @@ class SchemeItem {
   +wardrobeItem: WardrobeItem
   +slot: SchemeSlot
 }
+class HypeSignalDaily <<RF53>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +signalType: HypeSignalType
+  +signalDate: LocalDate
+  +eventCount: int
+  +weightedCount: BigDecimal
+  +updatedAt: Instant
+}
 }
 package "fai-domain · enums" {
 enum ReactionType {
@@ -106,6 +115,24 @@ enum NotificationType {
   NEW_REMIX
   ..
 }
+enum HypeSignalType <<RF53>> {
+  LIKE_CREATED
+  COMMENT_CREATED
+  SAVE_CREATED
+  SHARE_CREATED
+  FAVORITE_CREATED
+  LOOK_REMIXED
+  PIECE_REMIXED
+  LOOK_VIEWED
+  PIECE_VIEWED
+  PIECE_USED
+  PIECE_IN_LOOK
+  LOOK_WORN
+}
+enum HypeEntityType {
+  PIECE
+  SCHEME
+}
 }
 package "fai-application · service" {
 class SocialService {
@@ -120,6 +147,29 @@ class SocialService {
   +remix(user, type, id): Map
   +returnToOrigin(user, pieceId, fromSchemeId): Map
   +counters(viewer, type, id): Map
+  -hypeSignal(t, actorId, signal) <<RF53>>
+}
+}
+package "fai-application · hype <<RF53>>" {
+class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
+  +signal: HypeSignalType
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +actorId: UUID
+  +ownerId: UUID
+}
+class HypeSignalRecorder {
+  +onSignal(HypeSignal)
+  ~record(HypeSignal)
+}
+class HypeIntegrityPolicy {
+  {static} OWNER_ACTIONS = PIECE_USED, PIECE_IN_LOOK, LOOK_WORN
+  {static} -DEDUPE_TTL = 26 h
+  +weight(HypeSignal, day): double
+  ~isNewAccount(actorId): boolean
+}
+interface HypeSignalDailyRepository {
+  +increment(id, entityType, entityId, signalType, day, weight, now): int
 }
 }
 Reaction "*" --> "1" User : actor
@@ -140,6 +190,18 @@ SocialService ..> Reaction
 SocialService ..> Comment
 SocialService ..> SavedItem
 SocialService ..> Share
+SocialService ..> HypeSignal : publica (LIKE, COMMENT, SAVE,\nFAVORITE, SHARE, PIECE_REMIXED)
+HypeSignal ..> HypeSignalType
+HypeSignal ..> HypeEntityType
+HypeSignalRecorder ..> HypeSignal : consome (AFTER_COMMIT)
+HypeSignalRecorder ..> HypeIntegrityPolicy : weight
+HypeSignalRecorder ..> HypeSignalDailyRepository : increment (peso > 0)
+HypeSignalDailyRepository ..> HypeSignalDaily
+HypeSignalDaily ..> HypeSignalType
 note bottom of Reaction : uq_reactions_actor_target —\nsem curtida duplicada (CA02)
 note bottom of SchemeItem : returnToOrigin (CA14) percorre\nscheme_items por wardrobe_item_id
+note bottom of HypeSignalDaily : tabela hype_signal_daily\nnovo (RF53 · HypeScore v2)
+note bottom of HypeSignalDailyRepository : @Modifying nativo: INSERT … ON DUPLICATE KEY UPDATE\nevent_count + 1, weighted_count + peso
+note bottom of HypeIntegrityPolicy : 0 = visitante, próprio dono (fora OWNER_ACTIONS)\nou repetido no dia (hype:dedupe:* no RenderCachePort);\nconta nova (< 7 dias) = 0,5; demais = 1
+note top of HypeSignal : também publicado por SchemeService\n(LOOK_REMIXED, LOOK_VIEWED) e\nWardrobeService (PIECE_VIEWED)
 @enduml

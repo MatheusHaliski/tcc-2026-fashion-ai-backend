@@ -26,7 +26,18 @@ skinparam note {
 |Usuário|
 start
 :Closet → filtro (Todas, Favoritas,\nDisponíveis, Indisponíveis, À venda);
+:Opcional: faixa mínima de Hype (hypeLevel) e ordenação\n(recent · hype_desc · hype_asc · growth · rarity\n· worn · least_worn · idle · name · price);
+note right
+  novo (RF53 · HypeScore v2): hype-filters.ts
+  (hypeSortOptions · hypeLevelFilter); antes a tela
+  mandava mais_usadas/nome/preco e a ordem era ignorada
+end note
 |Sistema (WardrobeService)|
+:GET /api/me/closet → closet(viewer, ownerId, ClosetFilter);\nSORT_ALIASES normaliza o sort (mais_usadas → worn, nome → name…);
+if (sort em HYPE_SORTS ou hypeLevel informado?) then (sim)
+  :Lê hype_scores das peças (HypeScoreCurrentRepository,\nalgorithmVersion do HypeScoreConfig);
+  :hypeLevel: tira peças abaixo do score mínimo da faixa\n(e as sem Hype); ordenação Hype: sem Hype por último;
+endif
 :Lista as peças do filtro;
 |Usuário|
 :Abre uma peça e muda o estado;

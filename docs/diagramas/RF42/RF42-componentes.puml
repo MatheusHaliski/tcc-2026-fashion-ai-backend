@@ -4,6 +4,7 @@ title RF42 — Marcar um look como "Look do dia"\nDiagrama de componentes — ge
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
+  BackgroundColor<<RF49>> #EAF6EE
   BorderColor #4A4852
   ArrowColor #4A4852
 }
@@ -34,11 +35,13 @@ package "fai-application · services" {
   [AutopilotService\nCopilotService\nMirrorService] as OTH
   [WardrobeEventListeners\nAchievementService] as WL
   [ShowcaseService] as SHS
+  [HypeSignalRecorder\nHypeIntegrityPolicy] as HSR <<RF49>>
 }
 package "fai-infrastructure · adapters" {
   [DailyLookRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository] as REPOS
+  [HypeSignalDailyRepository] as HREPO <<RF49>>
 }
-database "MySQL\n• daily_looks\n• schemes\n• scheme_items\n• wardrobe_items" as DB
+database "MySQL\n• daily_looks\n• schemes\n• scheme_items\n• wardrobe_items\n• hype_signal_daily (RF49)" as DB
 
 FE0 --> LC : POST /api/me/daily-look
 FE0 --> SCH : POST /api/schemes (lookDoDia)
@@ -56,5 +59,8 @@ SHS --> DS : today
 DS --> WL : publica DailyLookRegistered
 DS --> REPOS : grava/lê
 WL --> REPOS : grava
+DS --> HSR : publica DailyLookRegistered\n(AFTER_COMMIT)
+HSR --> HREPO : increment (LOOK_WORN, PIECE_USED)
+HREPO --> DB : JPA/Flyway
 REPOS --> DB : JPA/Flyway
 @enduml

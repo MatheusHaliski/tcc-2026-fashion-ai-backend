@@ -67,6 +67,29 @@ class SchemeGrouping {
   +periodTo: Integer
   +accentColor: String
 }
+class HypeScoreCurrent <<RF53>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +deltaPoints: BigDecimal
+  +momentum: HypeMomentum
+  +calculatedAt: Instant
+}
+class HypeScoreSnapshot <<RF53>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +snapshotDate: LocalDate
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+}
 class Scheme {
   +title: String
   +status: SchemeStatus
@@ -98,6 +121,14 @@ enum HypeScoreBand {
   COM_ESTILO
   MUITO_ESTILOSO
   ARRASANDO_NO_LOOK
+}
+enum HypeLevel <<RF53>> {
+  LOW_SIGNAL
+  NICHE
+  RELEVANT
+  HOT
+  TRENDING
+  VIRAL
 }
 enum GroupingType {
   COLLECTION
@@ -136,6 +167,12 @@ class HypeScoreService {
   +scoreScheme(scheme): Score
   +hypeGroups(type): List
 }
+class HypeQueryService <<RF53>> {
+  +summaries(viewer, type, ids): Map
+  +detail(viewer, type, id): Map
+  +history(viewer, type, id, days): Map
+  +wardrobe(user): Map
+}
 }
 DailyLook "*" --> "1" Scheme : scheme
 DailyLook "*" --> "0..1" DailyLook : materializedFrom
@@ -153,10 +190,16 @@ LookbookService ..> SchemeGrouping : cria/edita
 LookbookService ..> DailyLookService
 DailyLookService ..> DailyLook : grava
 HypeScoreService ..> HypeScoreMetric : grava
+HypeScoreCurrent --> HypeLevel
+HypeScoreSnapshot --> HypeLevel
+HypeQueryService ..> HypeScoreCurrent : lê (cards · insights)
+HypeQueryService ..> HypeScoreSnapshot : lê (history)
 note top of SavedItem : tabela saved_items\n(único: user_id + target_type + target_id)
 note top of DailyLook : tabela daily_looks\n(único: user_id + look_date)
 note top of HypeScoreMetric : tabela hype_score_metrics
 note top of AcervoGroup : tabela acervo_groups
 note top of SchemeGrouping : tabela scheme_groupings
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)\nentityType PIECE | SCHEME; gravada pelo job de snapshots
+note top of HypeScoreSnapshot : tabela hype_score_snapshots\n(série diária) — novo (RF53)
 note bottom of User : todas as entidades acima têm\n"*" --> "1" User (dono)
 @enduml

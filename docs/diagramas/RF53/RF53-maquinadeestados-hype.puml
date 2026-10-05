@@ -1,0 +1,71 @@
+@startuml RF53_MaquinaDeEstados_Hype
+!pragma layout smetana
+title RF53 — Estado do HypeScore v2 de uma peça ou look (hype_scores, por algorithm_version)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Não calculado\n(sem linha em hype_scores)\nUI: HYPE NÃO CALCULADO" as NaoCalc
+state "Dados insuficientes\nstatus = INSUFFICIENT_DATA\n(< 3 eventos no horizonte)\nUI: DADOS INSUFICIENTES" as Insuf
+state "Disponível\nstatus = AVAILABLE" as Disp {
+  state "Nível" as Nivel {
+    state "LOW_SIGNAL (< 20)" as L0
+    state "NICHE (20–39)" as L1
+    state "RELEVANT (40–59)" as L2
+    state "HOT (60–74)" as L3
+    state "TRENDING (75–89)" as L4
+    state "VIRAL (≥ 90)" as L5
+    [*] --> L0
+    L0 -down-> L1
+    L1 -down-> L2
+    L2 -down-> L3
+    L3 -down-> L4
+    L4 -down-> L5
+    L5 -up-> L4
+    L4 -up-> L3
+    L3 -up-> L2
+    L2 -up-> L1
+    L1 -up-> L0
+  }
+  note right of Nivel
+    a cada recálculo o nível segue o score
+    (faixas do HypeScoreConfig, arredondamento
+    igual ao do frontend); o texto do nível
+    sempre acompanha a cor
+  end note
+}
+state "Desatualizado\n(calculated_at > 24 h)\nUI: HYPE DESATUALIZADO" as Stale
+
+[*] --> NaoCalc : peça cadastrada\nou look criado
+NaoCalc --> Insuf : job (< 3 eventos)
+NaoCalc --> Disp : job (≥ 3 eventos)
+Insuf --> Disp : novos sinais
+Disp --> Insuf : sinais saem\ndo horizonte
+Disp -right-> Stale
+Insuf --> Stale : job atrasado
+Stale --> Disp
+Disp --> [*] : peça/look arquivado\nou excluído
+
+note right of Disp
+  a cada recálculo (6/6 h):
+  • score e nível novos
+  • delta de 7 dias em pontos e %
+    → direção UP / DOWN / STABLE
+    (sem snapshot de 7 dias: sem seta)
+  • momentum EMERGING · RISING ·
+    STABLE · COOLING · CLASSIC
+  • public_eligible = false (item ou perfil
+    privado, moderação pendente, conta de
+    teste): o dono continua vendo, mas o
+    item sai do "Em alta" e das estatísticas
+end note
+note bottom of Stale
+  entra quando o job atrasa (vale também
+  para "Dados insuficientes"); o próximo
+  recálculo devolve o estado calculado;
+  arquivado/excluído some no job seguinte
+end note
+@enduml
