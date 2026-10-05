@@ -6,6 +6,7 @@ import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.lens.LensService;
 import br.com.fashionai.application.ports.EmailSenderPort;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -48,6 +49,7 @@ import br.com.fashionai.domain.repository.VerificationCodeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -122,6 +124,8 @@ public class AccountService {
     private final IdentityService identity;
     private final MediaStoragePort storage;
     private final Avatar3dService avatars3d;
+    /** RF54: scans do FashionAI Lens (imagens e linhas) saem junto com a conta. */
+    private final LensService lens;
     private final EmailSenderPort email;
     private final NotificationService notifications;
     private final Audit audit;
@@ -134,6 +138,22 @@ public class AccountService {
                           StyleDnaRepository styleDna, AiInferenceLogRepository inferences, BrandProfileRepository brands,
                           CelebrityProfileRepository celebrities, IdentityService identity, MediaStoragePort storage,
                           EmailSenderPort email, NotificationService notifications, Audit audit, Avatar3dService avatars3d) {
+        this(users, preferences, consents, codes, exports, pieces, schemes, schemeItems, comments, reactions, saved, follows,
+                photos, notificationRepository, dnaSchemes, styleDna, inferences, brands, celebrities, identity, storage, email,
+                notifications, audit, avatars3d, null);
+    }
+
+    @Autowired
+    public AccountService(UserRepository users, UserPreferencesRepository preferences, UserConsentRepository consents,
+                          VerificationCodeRepository codes, DataExportRequestRepository exports, WardrobeItemRepository pieces,
+                          SchemeRepository schemes, SchemeItemRepository schemeItems, CommentRepository comments,
+                          ReactionRepository reactions, SavedItemRepository saved, FollowRepository follows,
+                          PhotoRepository photos, NotificationRepository notificationRepository, DnaSchemeRepository dnaSchemes,
+                          StyleDnaRepository styleDna, AiInferenceLogRepository inferences, BrandProfileRepository brands,
+                          CelebrityProfileRepository celebrities, IdentityService identity, MediaStoragePort storage,
+                          EmailSenderPort email, NotificationService notifications, Audit audit, Avatar3dService avatars3d,
+                          LensService lens) {
+        this.lens = lens;
         this.avatars3d = avatars3d;
         this.users = users;
         this.preferences = preferences;
@@ -542,6 +562,9 @@ public class AccountService {
                 p.setDeletedAt(Instant.now());
             });
             avatars3d.deleteAllFor(u.getId());                     // RF40: rosto 3D e textura (dado biométrico) saem junto
+            if (lens != null) {
+                lens.deleteAllFor(u.getId());                      // RF54: scans do Lens (imagens privadas e leituras)
+            }
             u.setUsername("deleted_" + tag);
             u.setDisplayName(Msg.t("account.conta_excluida"));
             u.setEmail("deleted+" + tag + "@fashionai.invalid");
