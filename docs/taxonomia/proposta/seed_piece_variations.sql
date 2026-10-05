@@ -3,7 +3,7 @@
 -- Gerado a partir de docs/taxonomia/proposta/taxonomia_variacoes.json. MySQL 8.0+/9.x, InnoDB, utf8mb4.
 -- Categorias/subcategorias reaproveitam os códigos existentes (lower_snake_case) como chave natural: wardrobe_items.subcategory
 -- e catalog_products.subcategory já guardam exatamente esses códigos, então nada é renomeado.
--- Na migration real (V38+): mesmas tabelas, sem DROP; o bloco final (colunas em wardrobe_items/catalog_products) entra em V39+.
+-- Na migration real (V39+): mesmas tabelas, sem DROP; o bloco final (colunas em wardrobe_items/catalog_products) entra em V40+.
 -- ============================================================================================================
 SET NAMES utf8mb4;
 
@@ -3238,16 +3238,16 @@ INSERT INTO attribute_value (dimension_code, code, display_name_pt, display_name
   ('MATERIAL_DETAIL', 'GOLD_PLATED', 'Banhado a ouro / folheado', 'Gold plated', 'CORE', 'METAL', NULL, NULL, NULL, 'ACTIVE', 41),
   ('MATERIAL_DETAIL', 'TITANIUM', 'Titânio', 'Titanium', 'EXTENDED', 'METAL', NULL, NULL, NULL, 'ACTIVE', 42),
   ('MATERIAL_DETAIL', 'PEARL', 'Pérola', 'Pearl', 'EXTENDED', 'BLEND', NULL, NULL, NULL, 'ACTIVE', 43),
-  ('PATTERN', 'ALLOVER_LOGO', 'Allover Logo', 'Allover Logo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
-  ('PATTERN', 'SINGLE_LOGO', 'Single Logo', 'Single Logo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
-  ('PATTERN', 'STRIPES', 'Stripes', 'Stripes', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
-  ('PATTERN', 'PLAID', 'Plaid', 'Plaid', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 4),
+  ('PATTERN', 'ALLOVER_LOGO', 'Logo em toda a peça', 'Allover Logo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
+  ('PATTERN', 'SINGLE_LOGO', 'Logo único', 'Single Logo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
+  ('PATTERN', 'STRIPES', 'Listrada', 'Stripes', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
+  ('PATTERN', 'PLAID', 'Xadrez', 'Plaid', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 4),
   ('PATTERN', 'FLORAL', 'Floral', 'Floral', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 5),
-  ('PATTERN', 'CAMO', 'Camo', 'Camo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 6),
-  ('PATTERN', 'TIE_DYE', 'Tie Dye', 'Tie Dye', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 7),
-  ('PATTERN', 'COLOR_BLOCK', 'Color Block', 'Color Block', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 8),
-  ('PATTERN', 'GRAPHIC', 'Graphic', 'Graphic', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 9),
-  ('PATTERN', 'PLAIN', 'Plain', 'Plain', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 10),
+  ('PATTERN', 'CAMO', 'Camuflada', 'Camo', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 6),
+  ('PATTERN', 'TIE_DYE', 'Tie-dye', 'Tie Dye', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 7),
+  ('PATTERN', 'COLOR_BLOCK', 'Color block', 'Color Block', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 8),
+  ('PATTERN', 'GRAPHIC', 'Estampa gráfica', 'Graphic', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 9),
+  ('PATTERN', 'PLAIN', 'Lisa', 'Plain', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 10),
   ('PATTERN', 'POLKA_DOT', 'Poá', 'Polka dot', 'CORE', NULL, NULL, NULL, NULL, 'PROPOSED', 11),
   ('PATTERN', 'ANIMAL_PRINT', 'Animal print', 'Animal print', 'CORE', NULL, NULL, NULL, NULL, 'PROPOSED', 12),
   ('PATTERN', 'PAISLEY', 'Paisley / caxemira', 'Paisley', 'EXTENDED', NULL, NULL, NULL, NULL, 'PROPOSED', 13),
@@ -3259,11 +3259,11 @@ INSERT INTO attribute_value (dimension_code, code, display_name_pt, display_name
   ('PATTERN', 'ABSTRACT', 'Abstrata', 'Abstract', 'EXTENDED', NULL, NULL, NULL, NULL, 'PROPOSED', 19),
   ('PATTERN', 'TROPICAL', 'Tropical', 'Tropical', 'EXTENDED', NULL, NULL, NULL, NULL, 'PROPOSED', 20),
   ('PATTERN', 'LETTERING', 'Lettering / frase', 'Lettering', 'EXTENDED', NULL, NULL, NULL, NULL, 'PROPOSED', 21),
-  ('LOGO_PLACEMENT', 'ALLOVER', 'Allover', 'Allover', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
-  ('LOGO_PLACEMENT', 'CENTER_CHEST', 'Center Chest', 'Center Chest', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
-  ('LOGO_PLACEMENT', 'LEFT_CHEST', 'Left Chest', 'Left Chest', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
-  ('LOGO_PLACEMENT', 'BACK', 'Back', 'Back', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 4),
-  ('LOGO_PLACEMENT', 'SLEEVE', 'Sleeve', 'Sleeve', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 5),
+  ('LOGO_PLACEMENT', 'ALLOVER', 'Em toda a peça', 'Allover', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
+  ('LOGO_PLACEMENT', 'CENTER_CHEST', 'Centro do peito', 'Center Chest', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
+  ('LOGO_PLACEMENT', 'LEFT_CHEST', 'Peito esquerdo', 'Left Chest', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
+  ('LOGO_PLACEMENT', 'BACK', 'Costas', 'Back', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 4),
+  ('LOGO_PLACEMENT', 'SLEEVE', 'Manga', 'Sleeve', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 5),
   ('STYLE', 'classic', 'Clássico', 'Classic', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
   ('STYLE', 'minimalist', 'Minimalista', 'Minimalist', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
   ('STYLE', 'modern', 'Moderno', 'Modern', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
@@ -3361,7 +3361,7 @@ INSERT INTO attribute_value (dimension_code, code, display_name_pt, display_name
   ('SLEEVE_STYLE', 'FLUTTER', 'Babado na manga', 'Flutter', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 10),
   ('NECKLINE', 'CREW_NECK', 'Gola redonda', 'Crew neck', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 1),
   ('NECKLINE', 'V_NECK', 'Gola V', 'V-neck', 'CORE', NULL, NULL, NULL, NULL, 'ACTIVE', 2),
-  ('NECKLINE', 'SCOOP', 'Decote canoa aberto (U)', 'Scoop', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
+  ('NECKLINE', 'SCOOP', 'Decote U', 'Scoop', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 3),
   ('NECKLINE', 'BOAT', 'Canoa', 'Boat / bateau', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 4),
   ('NECKLINE', 'SQUARE_NECK', 'Quadrado', 'Square neck', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 5),
   ('NECKLINE', 'SWEETHEART', 'Coração', 'Sweetheart', 'EXTENDED', NULL, NULL, NULL, NULL, 'ACTIVE', 6),
@@ -6535,7 +6535,7 @@ INSERT INTO attribute_applicability (dimension_code, value_code, subcategory_cod
   ('WATCH_STRAP', '*', 'watch');
 
 
--- ───────────── V39+ (NÃO executar neste rascunho: depende das tabelas reais) — só aditivo, tudo NULL
+-- ───────────── V40+ (NÃO executar neste rascunho: depende das tabelas reais) — só aditivo, tudo NULL
 -- ALTER TABLE wardrobe_items   ADD COLUMN variation_code VARCHAR(60) NULL AFTER subcategory,
 --                              ADD COLUMN variation_source VARCHAR(20) NULL AFTER variation_code,
 --                              ADD COLUMN variation_confidence DECIMAL(4,3) NULL AFTER variation_source,

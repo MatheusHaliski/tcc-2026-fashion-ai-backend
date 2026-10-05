@@ -13884,7 +13884,7 @@
       "values": [
         {
           "code": "ALLOVER_LOGO",
-          "pt": "Allover Logo",
+          "pt": "Logo em toda a peça",
           "en": "Allover Logo",
           "tier": "CORE",
           "aliases": [
@@ -13918,7 +13918,7 @@
         },
         {
           "code": "SINGLE_LOGO",
-          "pt": "Single Logo",
+          "pt": "Logo único",
           "en": "Single Logo",
           "tier": "CORE",
           "aliases": [
@@ -13949,7 +13949,7 @@
         },
         {
           "code": "STRIPES",
-          "pt": "Stripes",
+          "pt": "Listrada",
           "en": "Stripes",
           "tier": "CORE",
           "aliases": [
@@ -13968,7 +13968,7 @@
         },
         {
           "code": "PLAID",
-          "pt": "Plaid",
+          "pt": "Xadrez",
           "en": "Plaid",
           "tier": "CORE",
           "aliases": [
@@ -13998,7 +13998,7 @@
         },
         {
           "code": "CAMO",
-          "pt": "Camo",
+          "pt": "Camuflada",
           "en": "Camo",
           "tier": "CORE",
           "aliases": [
@@ -14012,7 +14012,7 @@
         },
         {
           "code": "TIE_DYE",
-          "pt": "Tie Dye",
+          "pt": "Tie-dye",
           "en": "Tie Dye",
           "tier": "CORE",
           "aliases": [
@@ -14025,7 +14025,7 @@
         },
         {
           "code": "COLOR_BLOCK",
-          "pt": "Color Block",
+          "pt": "Color block",
           "en": "Color Block",
           "tier": "CORE",
           "aliases": [
@@ -14038,7 +14038,7 @@
         },
         {
           "code": "GRAPHIC",
-          "pt": "Graphic",
+          "pt": "Estampa gráfica",
           "en": "Graphic",
           "tier": "CORE",
           "aliases": [
@@ -14057,7 +14057,7 @@
         },
         {
           "code": "PLAIN",
-          "pt": "Plain",
+          "pt": "Lisa",
           "en": "Plain",
           "tier": "CORE",
           "aliases": [
@@ -14324,7 +14324,7 @@
       "values": [
         {
           "code": "ALLOVER",
-          "pt": "Allover",
+          "pt": "Em toda a peça",
           "en": "Allover",
           "tier": "EXTENDED",
           "aliases": [
@@ -14347,7 +14347,7 @@
         },
         {
           "code": "CENTER_CHEST",
-          "pt": "Center Chest",
+          "pt": "Centro do peito",
           "en": "Center Chest",
           "tier": "EXTENDED",
           "aliases": [
@@ -14365,7 +14365,7 @@
         },
         {
           "code": "LEFT_CHEST",
-          "pt": "Left Chest",
+          "pt": "Peito esquerdo",
           "en": "Left Chest",
           "tier": "EXTENDED",
           "aliases": [
@@ -14378,7 +14378,7 @@
         },
         {
           "code": "BACK",
-          "pt": "Back",
+          "pt": "Costas",
           "en": "Back",
           "tier": "EXTENDED",
           "aliases": [
@@ -14390,7 +14390,7 @@
         },
         {
           "code": "SLEEVE",
-          "pt": "Sleeve",
+          "pt": "Manga",
           "en": "Sleeve",
           "tier": "EXTENDED",
           "aliases": [
@@ -16591,7 +16591,7 @@
         },
         {
           "code": "SCOOP",
-          "pt": "Decote canoa aberto (U)",
+          "pt": "Decote U",
           "en": "Scoop",
           "tier": "EXTENDED",
           "aliases": [
