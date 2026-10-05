@@ -45,7 +45,7 @@ export function IssuerCenterButton({ status, onOpen }: { status?: ReviewStatus; 
 }
 
 /** Um critério da política com o que o sistema já conferiu (o resto o analista confere). */
-export function PolicyCheckRow({ c, kind, children }: { c: PolicyCheck; kind: IssuerKind; children?: React.ReactNode }) {
+export function PolicyCheckRow({ c, kind, children, action }: { c: PolicyCheck; kind: IssuerKind; children?: React.ReactNode; action?: React.ReactNode }) {
   const { t } = useI18n();
   const state = c.auto === "OK" ? "ok" : c.auto === "FALHA" ? (c.mandatory ? "bad" : "warn") : "manual";
   const detail = !c.detail ? null : c.code === "NOTORIEDADE" ? t("issuerPolicy.seguidores_declarados", { n: Number(c.detail) })
@@ -58,6 +58,7 @@ export function PolicyCheckRow({ c, kind, children }: { c: PolicyCheck; kind: Is
           <span className={cn("policy-tag", c.mandatory && "is-required")}>{c.mandatory ? t("issuerPolicy.obrigatorio") : t("issuerPolicy.complementar")}</span></p>
         <p className="type-caption text-muted">{t(`issuerPolicy.${kind}.${c.code}.dica`)}</p>
         <p className="type-caption policy-state">{t(`issuerPolicy.estado.${state}`)}{detail && <> · {detail}</>}</p>
+        {action && <div className="mt-1">{action}</div>}
       </div>
     </li>
   );

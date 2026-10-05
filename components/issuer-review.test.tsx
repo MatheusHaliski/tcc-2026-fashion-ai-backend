@@ -4,7 +4,7 @@
  * pedido; a fila do analista só libera "Aprovar" com a checklist completa e exige motivo para pedir ajustes ou recusar.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { IssuerCenter, useIssuerReview, type IssuerReview } from "./issuer-review";
 import { AdminApprovals, businessDaysSince, type Dossier, type ReviewQueue } from "./admin-approvals";
 
@@ -101,6 +101,48 @@ describe("fila de verificação (admin)", () => {
     renderApp(<AdminApprovals queue={{ ...QUEUE, pending: [unconfirmed] }} onChanged={() => undefined} />);
     expect(await screen.findByText("aguardando o e-mail ser confirmado")).toBeTruthy();
     expect(screen.queryByText(/na fila há|entrou na fila hoje|atrasado/i)).toBeNull();
+  });
+
+  it("Verificar o perfil oficial: o modal traz o link e o código; Confere marca o item, Não confere vira motivo", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/admin/approvals/c1": { status: "APROVADO" } });
+    const celeb: Dossier = { ...DOSSIER, user: { ...DOSSIER.user, id: "c1", username: "samuel", profileType: "CELEBRIDADE" }, kind: "CELEBRIDADE", name: "Samuel Rosa", slug: "samuel-rosa",
+      checks: [{ code: "EMAIL_CONFIRMADO", mandatory: true, auto: "OK" }, { code: "CONTROLE_PERFIL_OFICIAL", mandatory: true, auto: "ANALISTA" }],
+      data: { stageName: "Samuel Rosa", verificationUrl: "https://instagram.com/samuelrosa" }, documents: [] };
+    renderApp(<AdminApprovals queue={{ ...QUEUE, pending: [celeb], reasons: ["CONTROLE_NAO_COMPROVADO", "OUTRO"] }} onChanged={() => undefined} />);
+    const approve = await screen.findByRole("button", { name: "Aprovar" }) as HTMLButtonElement;
+    expect(approve.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar" }));
+    let dialog = await screen.findByRole("dialog");
+    const open = within(dialog).getByRole("link", { name: /Abrir instagram\.com em nova aba/ });
+    expect(open.getAttribute("href")).toBe("https://instagram.com/samuelrosa");
+    expect(open.getAttribute("target")).toBe("_blank");
+    expect(within(dialog).getAllByText("FAI-1A2B3C").length).toBeGreaterThan(0);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Não confere" }));
+    expect(screen.getByRole("button", { name: "Controle não comprovado" }).getAttribute("aria-pressed")).toBe("true");
+    expect(approve.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar" }));
+    dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confere — validar item" }));
+    expect((screen.getByLabelText("Controle do perfil oficial") as HTMLInputElement).checked).toBe(true);
+    expect(approve.disabled).toBe(false);
+    fireEvent.click(approve);
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/admin/approvals/c1")).toBe(true));
+    expect(calls.find((c) => c.path === "/api/admin/approvals/c1")!.body).toMatchObject({ decision: "APROVAR", checklist: { CONTROLE_PERFIL_OFICIAL: true } });
+  });
+
+  it("sem link no cadastro, o modal explica e oferece o motivo para pedir ajustes", async () => {
+    loggedAs(undefined, {});
+    const celeb: Dossier = { ...DOSSIER, kind: "CELEBRIDADE", checks: [{ code: "CONTROLE_PERFIL_OFICIAL", mandatory: true, auto: "FALHA" }], data: {}, documents: [] };
+    renderApp(<AdminApprovals queue={{ ...QUEUE, pending: [celeb], reasons: ["CONTROLE_NAO_COMPROVADO", "OUTRO"] }} onChanged={() => undefined} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Verificar" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/não traz um link válido/)).toBeTruthy();
+    expect(within(dialog).queryByRole("link")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Usar como motivo para pedir ajustes" }));
+    expect(screen.getByRole("button", { name: "Controle não comprovado" }).getAttribute("aria-pressed")).toBe("true");
+    expect((screen.getByRole("button", { name: "Pedir ajustes" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("conta só dias úteis no prazo", () => {

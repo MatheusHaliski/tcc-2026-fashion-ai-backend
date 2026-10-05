@@ -278,6 +278,12 @@ public class IdentityService {
             if (b == null || blank(b.logoUrl())) {
                 errors.put("brand.logoUrl", Msg.t("identity.envie_o_logo_da_marca"));
             }
+            // critério obrigatório da verificação (PRESENCA_OFICIAL): sem o site o perfil nunca poderia ser aprovado
+            if (b == null || blank(b.storeUrl())) {
+                errors.put("brand.storeUrl", Msg.t("identity.informe_o_site_oficial"));
+            } else if (!IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl(b.storeUrl()))) {
+                errors.put("brand.storeUrl", Msg.t("issuerReview.link_invalido"));
+            }
         }
         if (type == ProfileType.CELEBRIDADE) {
             CelebrityData c = cmd.celebrity();
@@ -293,6 +299,12 @@ public class IdentityService {
             }
             if (c == null || blank(c.officialPhotoUrl())) {
                 errors.put("celebrity.officialPhotoUrl", Msg.t("identity.envie_a_foto_oficial"));
+            }
+            // critério obrigatório da verificação (CONTROLE_PERFIL_OFICIAL): é nesse perfil que o analista procura o código
+            if (c == null || blank(c.verificationUrl())) {
+                errors.put("celebrity.verificationUrl", Msg.t("identity.informe_o_perfil_oficial"));
+            } else if (!IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl(c.verificationUrl()))) {
+                errors.put("celebrity.verificationUrl", Msg.t("issuerReview.link_invalido"));
             }
         }
         if (type != ProfileType.MARCA && cmd.sex() == null) {
@@ -385,7 +397,7 @@ public class IdentityService {
             bp.setRazaoSocial(b.razaoSocial().trim());
             bp.setNomeFantasia(b.nomeFantasia());
             bp.setFashionCategory(b.fashionCategory());
-            bp.setStoreUrl(b.storeUrl());
+            bp.setStoreUrl(IssuerVerificationPolicy.normalizeUrl(b.storeUrl()));
             bp.setCommercialContact(b.commercialContact());
             bp.setOfficialHashtag(b.officialHashtag());
             bp.setActivityProofUrl(own.apply(b.activityProofUrl()));
@@ -404,7 +416,7 @@ public class IdentityService {
             cp.setIdentityProofUrl(own.apply(c.identityProofUrl()));
             cp.setAreasJson(Json.write(c.areas()));
             cp.setVerifiableFollowersJson(Json.write(c.verifiableFollowers()));
-            cp.setVerificationUrl(c.verificationUrl());
+            cp.setVerificationUrl(IssuerVerificationPolicy.normalizeUrl(c.verificationUrl()));
             cp.setProfessionalHistory(c.professionalHistory());
             cp.setRepresentationContact(c.representationContact());
             cp.setFashionInterestsJson(Json.write(c.fashionInterests()));
