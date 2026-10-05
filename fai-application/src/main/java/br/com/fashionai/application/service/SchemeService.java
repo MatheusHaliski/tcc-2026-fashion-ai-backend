@@ -12,9 +12,12 @@ import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.imaging.ImageFilters;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeLevel;
 import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
@@ -42,6 +45,7 @@ import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Season;
 import br.com.fashionai.domain.model.enums.TargetType;
 import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.ReactionRepository;
 import br.com.fashionai.domain.repository.SavedItemRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -102,14 +106,23 @@ public class SchemeService {
     private final DailyLookService dailyLooks;
     private final ApplicationEventPublisher events;
     private final StyleDnaRepository dna;
+    /**
+     * RF53 — HypeScore v2 lido direto do estado gravado pelo job (GET nunca recalcula). Repositório + configuração, e
+     * NÃO o HypeQueryService: ele injeta este serviço (views dos looks), e a injeção inversa fecharia um ciclo.
+     */
+    private final HypeScoreCurrentRepository hypeScores;
+    private final HypeScoreConfig hypeConfig;
 
     public SchemeService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                          UserRepository users, ReactionRepository reactions, SavedItemRepository saved,
                          WardrobeService wardrobe, BackgroundStudioService studio, SealService seals,
                          SchemeCardRenderer renderer, ProjectionService projections, NotificationService notifications,
                          CounterStorePort counters, MediaService media, AiEngine ai, Guard guard, Audit audit,
-                         DailyLookService dailyLooks, ApplicationEventPublisher events, StyleDnaRepository dna) {
+                         DailyLookService dailyLooks, ApplicationEventPublisher events, StyleDnaRepository dna,
+                         HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
         this.dna = dna;
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -179,15 +192,30 @@ public class SchemeService {
                                 AiOutcome.Explanation explanation, UUID inferenceId, AiOutcome.Quota quota,
                                 boolean fallbackUsed, String provider,
                                 /** o que a orientação livre pediu (CopilotService.orientation): background, ocasiões, estilos, estação, humor */
-                                Map<String, Object> orientation) {
+                                Map<String, Object> orientation,
+                                /**
+                                 * RF53 (P2-14) — os seis números de cada composição (RecommendationScoring, mesma ordem de
+                                 * {@code compositions}), calculados pelo LookPreviewService; nulo quando não deu para calcular
+                                 */
+                                List<Map<String, Object>> scores) {
         public ComposeResult(List<LocalSchemeComposer.Composition> compositions, String message, AiOutcome.Explanation explanation,
                              UUID inferenceId, AiOutcome.Quota quota, boolean fallbackUsed, String provider) {
-            this(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider, null);
+            this(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider, null, null);
+        }
+
+        public ComposeResult(List<LocalSchemeComposer.Composition> compositions, String message, AiOutcome.Explanation explanation,
+                             UUID inferenceId, AiOutcome.Quota quota, boolean fallbackUsed, String provider, Map<String, Object> orientation) {
+            this(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider, orientation, null);
         }
 
         public ComposeResult withOrientation(Map<String, Object> orientation) {
             return new ComposeResult(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider,
-                    orientation == null || orientation.isEmpty() ? null : orientation);
+                    orientation == null || orientation.isEmpty() ? null : orientation, scores);
+        }
+
+        public ComposeResult withScores(List<Map<String, Object>> scores) {
+            return new ComposeResult(compositions, message, explanation, inferenceId, quota, fallbackUsed, provider, orientation,
+                    scores == null || scores.size() != (compositions == null ? 0 : compositions.size()) ? null : scores);
         }
     }
 
@@ -200,6 +228,8 @@ public class SchemeService {
         Set<String> exclude = new HashSet<>(req.excludeCombinations() == null ? List.of() : req.excludeCombinations());
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
         List<Map<String, Object>> catalog = new ArrayList<>();
+        // RF53 (P2-14) — a IA recebe o HypeScore v2 das peças (Hype pessoal do dono: são as próprias peças), não o v1
+        Map<UUID, HypeScoreCurrent> hype = currentHype(HypeEntityType.PIECE, eligible.stream().map(WardrobeItem::getId).toList());
         int i = 1;
         for (WardrobeItem w : eligible) {
             String ref = "p" + i++;
@@ -222,7 +252,11 @@ public class SchemeService {
             m.put("favorite", w.isFavorite());
             m.put("wearCount", w.getWearCount());
             m.put("lastWorn", w.getLastWornDate());
-            m.put("hypeScore", w.getHypeScore());
+            HypeScoreCurrent h = hype.get(w.getId());
+            // sem dados = nulo (nunca 0); a faixa acompanha o número
+            m.put("hypeScore", h == null || h.getScore() == null ? null : h.getScore().setScale(0, java.math.RoundingMode.HALF_UP));
+            HypeLevel level = h == null || h.getScore() == null ? null : levelOf(h);
+            m.put("hypeLevel", level == null ? null : level.name());
             m.put("tags", Json.csv(w.getTags()));
             m.put("notes", InputSanitizer.clean(w.getNotes(), 160));
             m.put("analysis", pieceAnalysis(w));
@@ -260,6 +294,8 @@ public class SchemeService {
                 as FOTOS anexadas (caimento, corte, comprimento, brilho, estado real da peça), tamanho/caimento, estado de
                 conservação, preço (coerência entre peças), frequência de uso (varie peças pouco usadas quando o usuário
                 pedir novidade), favoritas, notas/tags do usuário, além de ocasião, estilo, humor, estação e clima do país.
+                hypeScore (0–100) e hypeLevel são o HypeScore v2: a relevância atual da peça no FashionAI, não qualidade
+                nem gosto pessoal; nulo = sem dados. Use só como contexto, nunca como critério principal do look.
                 As orientações livres do usuário podem citar materiais, cores, estampas ou peças específicas: respeite-as.
                 Sintetize ocasião e estilo (máx. 3 cada, nunca concatene as tags das peças). No rationale, cite os
                 atributos que pesaram (ex.: "linho cru + terracota, sem estampa, clima quente"). Responda SOMENTE com JSON:
@@ -711,15 +747,26 @@ public class SchemeService {
 
     @Transactional(readOnly = true)
     public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, int page, int size) {
-        return mine(user, occasion, state, null, page, size);
+        return mine(user, occasion, state, null, null, null, page, size);
+    }
+
+    public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, String kind, int page, int size) {
+        return mine(user, occasion, state, kind, null, null, page, size);
     }
 
     /**
      * Meus looks (domínio Looks e Lookbook). {@code state} restringe pelo estado (favoritos, disponível, indisponível,
      * publicados, rascunhos, arquivados) e {@code kind} pela origem (ia, manual, remix). Antes, publicados/rascunhos/
      * arquivados chegavam do frontend e eram ignorados; arquivados só aparecem quando pedidos.
+     * <p>
+     * RF53 (P1-07) — {@code sort}: recent (padrão), hype/hype_desc, hype_asc e growth (maior crescimento), do HypeScore
+     * v2; {@code hypeLevel} é FILTRO (faixa mínima NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba. A lista é sempre do
+     * próprio dono, então vale o Hype PESSOAL (look privado ou só para seguidores também tem score para quem o criou).
+     * Look sem Hype (dados insuficientes ou ainda não calculado) vai para o fim, nunca vira 0.
      */
-    public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, String kind, int page, int size) {
+    @Transactional(readOnly = true)
+    public Views.Page<Views.SchemeView> mine(CurrentUser user, String occasion, String state, String kind, String sort, String hypeLevel,
+                                             int page, int size) {
         String st = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
         boolean archived = st.equals("arquivados") || st.equals("archived");
         List<Scheme> source = archived ? schemes.findByUserIdOrderByCreatedAtDesc(user.id())
@@ -729,12 +776,94 @@ public class SchemeService {
                 .filter(s -> stateMatches(s, st))
                 .filter(s -> kind == null || kind.isBlank() || kind.equalsIgnoreCase(kindOf(s)) || "todos".equalsIgnoreCase(kind))
                 .toList();
+        String order = lookSort(sort);
+        Integer minimum = hypeMinimum(hypeLevel, hypeConfig == null ? null : hypeConfig.levelThresholds());
+        if (LOOK_HYPE_SORTS.contains(order) || minimum != null) {
+            all = byHype(all, order, minimum, currentHype(HypeEntityType.SCHEME, all.stream().map(Scheme::getId).toList()));
+        }
         int sz = Math.max(1, Math.min(60, size <= 0 ? 20 : size));
         int from = Math.min(all.size(), Math.max(0, page) * sz);
         int to = Math.min(all.size(), from + sz);
         List<Views.SchemeView> items = all.subList(from, to).stream()
                 .map(s -> view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
         return new Views.Page<>(items, page, sz, all.size(), to < all.size());
+    }
+
+    /** Ordenações de Meus looks que dependem do HypeScore v2 (as demais caem em "recent", a ordem do repositório). */
+    static final Set<String> LOOK_HYPE_SORTS = Set.of("hype", "hype_desc", "hype_asc", "growth");
+
+    /** Ordenação pedida pela tela; nomes em português e valores desconhecidos caem em "recent". */
+    static String lookSort(String raw) {
+        String s = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        return switch (s) {
+            case "hype", "hype_desc", "maior_hype" -> "hype_desc";
+            case "hype_asc", "menor_hype" -> "hype_asc";
+            case "growth", "crescimento", "em_crescimento" -> "growth";
+            default -> "recent";
+        };
+    }
+
+    /**
+     * Faixa mínima de Hype → score mínimo (limiares do HypeScoreConfig: NICHE, RELEVANT, HOT, TRENDING, VIRAL).
+     * LOW_SIGNAL = "tem Hype calculado" (0); faixa vazia ou desconhecida = sem filtro (nulo).
+     */
+    static Integer hypeMinimum(String level, int[] thresholds) {
+        if (level == null || level.isBlank() || thresholds == null || thresholds.length < 5) {
+            return null;
+        }
+        return switch (level.trim().toUpperCase(Locale.ROOT)) {
+            case "LOW_SIGNAL" -> 0;
+            case "NICHE" -> thresholds[0];
+            case "RELEVANT" -> thresholds[1];
+            case "HOT" -> thresholds[2];
+            case "TRENDING" -> thresholds[3];
+            case "VIRAL" -> thresholds[4];
+            default -> null;
+        };
+    }
+
+    /**
+     * Filtro e ordenação de Meus looks pelo HypeScore v2 (pura, testável). {@code minimum} usa o mesmo arredondamento
+     * da faixa exibida ({@code min - 0,5}: 59,6 aparece como 60 e já é "Em alta"), igual ao guarda-roupa. Sem score =
+     * fora do filtro e por último na ordenação (nunca 0); empate mantém a ordem recebida (mais recentes primeiro).
+     */
+    static List<Scheme> byHype(List<Scheme> list, String order, Integer minimum, Map<UUID, HypeScoreCurrent> hype) {
+        java.util.function.Function<Scheme, BigDecimal> score = s -> hype.containsKey(s.getId()) ? hype.get(s.getId()).getScore() : null;
+        List<Scheme> out = new ArrayList<>(list);
+        if (minimum != null) {
+            out.removeIf(s -> score.apply(s) == null || score.apply(s).doubleValue() < minimum - 0.5);
+        }
+        Comparator<Scheme> cmp = switch (order == null ? "" : order) {
+            case "hype", "hype_desc" -> nullsLast(score, true);
+            case "hype_asc" -> nullsLast(score, false);
+            case "growth" -> nullsLast(s -> hype.containsKey(s.getId()) && hype.get(s.getId()).getScore() != null ? hype.get(s.getId()).getDeltaPoints() : null, true)
+                    .thenComparing(nullsLast(s -> hype.containsKey(s.getId()) && hype.get(s.getId()).getDimensions() != null
+                            ? hype.get(s.getId()).getDimensions().getTrend() : null, true));
+            default -> null;
+        };
+        if (cmp != null) {
+            out.sort(cmp);   // List.sort é estável: empates continuam do mais recente para o mais antigo
+        }
+        return out;
+    }
+
+    private static Comparator<Scheme> nullsLast(java.util.function.Function<Scheme, BigDecimal> key, boolean desc) {
+        Comparator<BigDecimal> cmp = desc ? Comparator.<BigDecimal>reverseOrder() : Comparator.<BigDecimal>naturalOrder();
+        return Comparator.comparing(key, Comparator.nullsLast(cmp));
+    }
+
+    /** Estado atual do HypeScore v2 (versão ativa) de várias entidades, numa consulta. */
+    Map<UUID, HypeScoreCurrent> currentHype(HypeEntityType type, List<UUID> ids) {
+        if (hypeScores == null || hypeConfig == null || ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+        return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, ids, hypeConfig.algorithmVersion()).stream()
+                .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
+    }
+
+    /** Faixa do estado gravado; sem ela (linha antiga), a mesma classificação do job a partir do score. */
+    private HypeLevel levelOf(HypeScoreCurrent h) {
+        return h.getLevel() != null || hypeConfig == null ? h.getLevel() : hypeConfig.level(h.getScore().doubleValue());
     }
 
     static boolean stateMatches(Scheme s, String state) {
@@ -990,10 +1119,33 @@ public class SchemeService {
         Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
         requireView(viewer, s);
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
-        return renderer.render(card(s, items, expanded));
+        boolean owner = viewer != null && viewer.id().equals(s.getUser().getId());
+        return renderer.render(card(s, items, expanded, cardHypeLabel(currentHype(HypeEntityType.SCHEME, List.of(id)).get(id), owner)));
     }
 
+    /**
+     * RF53 (P2-15) — rótulo do Hype no PNG do card: HypeScore v2 do look + faixa em texto ("HypeScore 72 · Em alta").
+     * Sem dados (insuficiente ou não calculado) o rótulo é omitido, nunca "0". Para terceiros só aparece o Hype
+     * público ({@code publicEligible}); o dono vê o próprio Hype pessoal (look privado ou só para seguidores).
+     */
+    String cardHypeLabel(HypeScoreCurrent h, boolean owner) {
+        return cardHypeLabel(h == null ? null : h.getScore(), h == null || h.getScore() == null ? null : levelOf(h),
+                h != null && (owner || h.isPublicEligible()));
+    }
+
+    static String cardHypeLabel(BigDecimal score, HypeLevel level, boolean visible) {
+        if (!visible || score == null || level == null) {
+            return null;
+        }
+        return Msg.t("schemeHype.card", score.setScale(0, java.math.RoundingMode.HALF_UP), Msg.t("schemeHype.level." + level.name()));
+    }
+
+    /** Card sem Hype (prévia da etapa 5: o look ainda não existe, então não tem sinais próprios). */
     SchemeCardRenderer.Card card(Scheme s, List<SchemeItem> items, boolean expanded) {
+        return card(s, items, expanded, null);
+    }
+
+    SchemeCardRenderer.Card card(Scheme s, List<SchemeItem> items, boolean expanded, String hypeLabel) {
         List<SchemeCardRenderer.CardItem> cardItems = new ArrayList<>();
         Map<String, Object> studioCfg = Json.map(s.getStudioConfigJson());
         Map<?, ?> pieceBgs = studioCfg.get("pieces") instanceof Map<?, ?> p ? p : Map.of();
@@ -1015,8 +1167,8 @@ public class SchemeService {
         java.text.NumberFormat brl = java.text.NumberFormat.getCurrencyInstance(Msg.locale());
         brl.setCurrency(java.util.Currency.getInstance("BRL"));
         String price = s.getTotalPrice() == null ? null : brl.format(s.getTotalPrice());
-        String hype = s.getHypeScore() == null ? null : Msg.t("scheme.cardHype", s.getHypeScore().setScale(0, java.math.RoundingMode.HALF_UP));
-        return new SchemeCardRenderer.Card(s.getTitle(), s.getUser().getUsername(), chips, price, hype, studio.rendererBackground(s),
+        // o Hype do PNG é o v2 do look (cardHypeLabel); a coluna v1 schemes.hype_score não entra mais na imagem
+        return new SchemeCardRenderer.Card(s.getTitle(), s.getUser().getUsername(), chips, price, hypeLabel, studio.rendererBackground(s),
                 cardItems, expanded ? SchemeCardRenderer.Size.EXPANDED : SchemeCardRenderer.Size.COMPACT);
     }
 

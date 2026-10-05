@@ -6,14 +6,19 @@
  */
 import { Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 import { nav, router } from "@/test-utils/setup";
-import { OWNER, PIECE, SCHEME, page } from "@/test-utils/fixtures";
+import { OWNER, PIECE, PIECE_2, SCHEME, page } from "@/test-utils/fixtures";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import LooksPage from "@/app/(site)/(app)/looks/page";
 import ProfilePage from "@/app/(site)/(app)/u/[username]/page";
+import EditSchemePage from "@/app/(site)/(app)/schemes/[id]/edit/page";
 import { LookbookTabs } from "@/components/lookbook-tabs";
+import { SchemeBuilder } from "@/components/scheme-builder";
+import { AiCompositionCard } from "@/components/ai-compositions";
+import { lookHypeSortOptions, hypeSortOptions } from "@/components/hype/hype-filters";
+import type { HypeSummary } from "@/lib/hype/types";
 
 const HYPE = { "GET /api/hype/summaries": { type: "PIECE", algorithmVersion: "HYPE_V2", deltaWindowDays: 7, items: {} } };
 const schemeCalls = (calls: { method: string; path: string }[]) => calls.filter((c) => c.method === "GET" && c.path.startsWith("/api/me/schemes"));
@@ -133,5 +138,128 @@ describe("Lookbook — vitrine social", () => {
       await waitFor(() => expect(api.calls.some((c) => c.path.startsWith(path))).toBe(true), { timeout: 3000 });
       cleanup();
     }
+  });
+});
+
+/** RF53 · Lote 2 do HypeScore (docs/hype/HYPE_AUDITORIA_ABAS.md): Hype em Meus looks, Salvos e no editor de look. */
+const NOW_ISO = new Date().toISOString();
+const SUMMARY: Record<string, HypeSummary> = {
+  p1: { status: "AVAILABLE", score: 72, level: "HOT", direction: "UP", deltaPercent: 14, deltaPoints: 9, calculatedAt: NOW_ISO, seals: [] },
+  p2: { status: "INSUFFICIENT_DATA", calculatedAt: NOW_ISO, seals: [] },
+  s1: { status: "AVAILABLE", score: 81, level: "TRENDING", direction: "STABLE", calculatedAt: NOW_ISO, seals: [] },
+};
+/** /api/hype/summaries por tipo e ids (o que não está no mapa volta fora da resposta = "não calculado"). */
+const summaries = (url: URL) => {
+  const ids = (url.searchParams.get("ids") ?? "").split(",");
+  return { type: url.searchParams.get("type"), algorithmVersion: "HYPE_V2", deltaWindowDays: 7, items: Object.fromEntries(ids.filter((id) => SUMMARY[id]).map((id) => [id, SUMMARY[id]])) };
+};
+const BUILDER = { totalPieces: 2, eligiblePieces: 2, status: "PRONTO", lists: { upper_piece: [PIECE], lower_piece: [PIECE_2] }, defaultVisibility: "PRIVATE" };
+const PREVIEW = { scores: { compatibility: 64, hype: 72, novelty: 100, reuse: 10, usage: 40, sustainability: 77 }, hype: { basis: "PIECES_AVERAGE", withData: 1, total: 2 }, persisted: false };
+
+describe("Meus looks — Hype como ordenação e filtro (P1-07)", () => {
+  it("lookHypeSortOptions é o subconjunto de looks e não muda as ordenações do guarda-roupa", () => {
+    expect(lookHypeSortOptions().map((o) => o.value)).toEqual(["hype_desc", "hype_asc", "growth"]);
+    expect(hypeSortOptions().map((o) => o.value)).toEqual(["hype_desc", "hype_asc", "growth", "worn", "least_worn", "rarity", "idle"]);
+  });
+
+  it("ordenar por Hype envia sort=hype_desc, o filtro de faixa envia hypeLevel e a tela avisa que é o Hype pessoal", async () => {
+    const api = loggedAs(undefined, { ...HYPE, "GET /api/me/schemes": page([SCHEME]) });
+    renderApp(<LooksPage />);
+    await settle();
+    expect(await screen.findByText("Look de sexta")).toBeTruthy();
+    expect(screen.queryByText(/inclusive os privados/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar: Mais recentes" }));
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Mais recentes", "Maior Hype", "Menor Hype", "Maior crescimento"]);
+    fireEvent.click(screen.getByRole("option", { name: "Maior Hype" }));
+    await waitFor(() => expect(schemeCalls(api.calls).some((c) => c.path.includes("sort=hype_desc"))).toBe(true));
+    expect(screen.getByText(/inclusive os privados \(só você vê\)/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Hype: Todos" }));
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Todos", "Nicho ou mais", "Relevante ou mais", "Em alta ou mais", "Tendência ou mais", "Viral ou mais"]);
+    fireEvent.click(screen.getByRole("option", { name: "Em alta ou mais" }));
+    await waitFor(() => expect(schemeCalls(api.calls).some((c) => c.path.includes("hypeLevel=HOT") && c.path.includes("sort=hype_desc"))).toBe(true));
+    // a ordem padrão (mais recentes) não manda sort
+    expect(schemeCalls(api.calls)[0].path).not.toContain("sort=");
+  });
+
+  it("Salvos: a ordenação por Hype vai para /api/me/saved-looks (o backend decide com o Hype público)", async () => {
+    const api = loggedAs(undefined, { ...HYPE, "GET /api/me/schemes": page([]), "GET /api/me/saved-looks": page([{ scheme: SAVED, origin: "SALVO", originLabel: "Salvo de @bia" }]) });
+    renderApp(<LooksPage />);
+    await settle();
+    fireEvent.click(await screen.findByRole("tab", { name: "Salvos" }));
+    expect(await screen.findByText("Look salvo da Bia")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar: Mais recentes" }));
+    fireEvent.click(screen.getByRole("option", { name: "Maior crescimento" }));
+    await waitFor(() => expect(api.calls.some((c) => c.path.startsWith("/api/me/saved-looks") && c.path.includes("sort=growth") && c.path.includes("page=0"))).toBe(true));
+  });
+});
+
+describe("Editor de look — Hype das peças e prévia (P1-08, P2-14, P3-08)", () => {
+  it("a prévia pede os seis números uma vez (com debounce), mostra a base do Hype e nada vira sinal", async () => {
+    const api = loggedAs(undefined, { "GET /api/hype/summaries": summaries, "GET /api/schemes/builder": BUILDER, "POST /api/schemes/scores": PREVIEW });
+    renderApp(<SchemeBuilder initial={SCHEME} />);
+    await settle();
+    expect(await screen.findByText("Prévia do look")).toBeTruthy();
+    expect(await screen.findByText("Hype = média do HypeScore das peças com dados (1 de 2).", {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText(/nunca uma nota do look/)).toBeTruthy();
+    const posts = api.calls.filter((c) => c.method === "POST" && c.path === "/api/schemes/scores");
+    expect(posts).toHaveLength(1);
+    // o look em edição vai junto: os pares dele não contam como "já combinados" na novidade
+    expect(posts[0].body).toEqual({ pieceIds: ["p1", "p2"], occasion: ["work"], style: ["basic"], schemeId: "s1" });
+    const scores = screen.getByText("Compatibilidade").closest("dl")!;
+    expect(scores.textContent).toContain("Novidade100");
+    // a prévia só lê: nenhuma outra escrita além do POST de leitura
+    expect(api.calls.filter((c) => c.method !== "GET" && !c.path.startsWith("/bff/")).map((c) => c.path)).toEqual(["/api/schemes/scores"]);
+  });
+
+  it("cada peça escolhida mostra o Hype v2 com a faixa em texto; sem dados aparece \"—\", nunca 0", async () => {
+    loggedAs(undefined, { "GET /api/hype/summaries": summaries, "GET /api/schemes/builder": BUILDER, "POST /api/schemes/scores": PREVIEW });
+    const { container } = renderApp(<SchemeBuilder initial={SCHEME} />);
+    await settle();
+    fireEvent.click(await screen.findByRole("button", { name: /Peças/ }));
+    const slots = await screen.findByRole("region", { name: "partes do look" });
+    await waitFor(() => expect(slots.textContent).toContain("Em alta"));
+    expect(slots.querySelectorAll(".look-hype-tag")).toHaveLength(2);
+    expect(slots.textContent).toContain("🔥 72");
+    expect(slots.textContent).toContain("🔥 —");
+    expect(slots.textContent).not.toMatch(/🔥 0\b/);
+    expect(container.querySelector(".look-hype-tag .hype-level-chip.is-hot")).toBeTruthy();
+  });
+
+  it("composições da IA trazem os seis números ao lado (Hype é só uma das leituras)", () => {
+    mockApi({});
+    renderApp(<AiCompositionCard title="Linho e terracota" items={[{ wardrobeItemId: "p1", slot: "TOP", piece: PIECE }]} slotLabel={(s) => s} onApply={vi.fn()}
+      scores={{ compatibility: 80, hype: null, novelty: 50, reuse: 0, usage: 20, sustainability: 60 }} />);
+    const dl = screen.getByText("Compatibilidade").closest("dl")!;
+    expect(dl.textContent).toContain("Compatibilidade80");
+    // Hype sem base: "—", nunca 0
+    expect(screen.getByText("Hype").nextElementSibling?.textContent).toBe("—");
+    cleanup();
+    renderApp(<AiCompositionCard title="Sem números" items={[]} slotLabel={(s) => s} onApply={vi.fn()} />);
+    expect(screen.queryByText("Compatibilidade")).toBeNull();
+  });
+
+  it("gerar com IA guarda os números de cada composição na ordem da resposta", async () => {
+    loggedAs(undefined, { "GET /api/hype/summaries": summaries, "GET /api/schemes/builder": BUILDER,
+      "POST /api/schemes/compositions": { compositions: [{ title: "Primeiro", items: [{ wardrobeItemId: "p1", slot: "TOP" }, { wardrobeItemId: "p2", slot: "BOTTOM" }] }, { title: "Segundo", items: [{ wardrobeItemId: "p2", slot: "BOTTOM" }] }],
+        scores: [{ compatibility: 91, hype: 72, novelty: 100, reuse: 0, usage: 50, sustainability: 70 }, { compatibility: 33, hype: null, novelty: null, reuse: 5, usage: 0, sustainability: 60 }] } });
+    renderApp(<SchemeBuilder />);
+    await settle();
+    fireEvent.click(await screen.findByRole("button", { name: /Com IA/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Gerar com IA/ }));
+    const first = await screen.findByRole("button", { name: "Usar o conjunto Primeiro" });
+    expect(first.querySelector("dl")?.textContent).toContain("Compatibilidade91");
+    expect(screen.getByRole("button", { name: "Usar o conjunto Segundo" }).querySelector("dl")?.textContent).toContain("Compatibilidade33");
+  });
+
+  it("editar look mostra o Hype atual do look (sinais do próprio look) acima do editor", async () => {
+    loggedAs(undefined, { "GET /api/hype/summaries": summaries, "GET /api/schemes/builder": BUILDER, "GET /api/schemes/s1": { scheme: SCHEME }, "POST /api/schemes/scores": PREVIEW });
+    const params = Object.assign(Promise.resolve({ id: "s1" }), { status: "fulfilled", value: { id: "s1" } });
+    renderApp(<Suspense fallback={null}><EditSchemePage params={params} /></Suspense>);
+    expect(await screen.findByText("Hype atual deste look", {}, { timeout: 3000 })).toBeTruthy();
+    const inline = screen.getByRole("region", { name: /Look de sexta/ });
+    await waitFor(() => expect(inline.textContent).toContain("81"));
+    expect(screen.getByRole("button", { name: "Ver análise completa" })).toBeTruthy();
   });
 });
