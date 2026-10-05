@@ -10,7 +10,8 @@ import type { PieceView } from "@/lib/api/types";
 import { PieceCard } from "@/components/piece-card";
 import { Button, EmptyState, ErrorState, SegmentPicker, SkeletonGrid, cn, useToast } from "@/components/ui";
 import { useLens } from "./lens-context";
-import { LensGapCard, LensScoresRow } from "./lens-parts";
+import { LookScores } from "@/components/hype/look-scores";
+import { LensGapCard } from "./lens-parts";
 
 const MODES: LensMode[] = ["SAFE", "DISCOVERY", "EXPERIMENTAL"];
 
@@ -138,7 +139,7 @@ export function LensRecreateTab() {
                 ))}
               </div>
             ) : <EmptyState title={t("lens.recreate.empty")} />}
-            <LensScoresRow scores={plan.data.scores} />
+            <div className="lens-scores" role="group" aria-label={t("lens.recreate.scores")}><LookScores scores={plan.data.scores} /></div>
             <div className="lens-recreate-cta">
               {selected.length > 0 ? <Link href={createHref} className="btn btn-primary">{t("common.salvar_como_look")}</Link>
                 : <Button variant="primary" disabled>{t("common.salvar_como_look")}</Button>}

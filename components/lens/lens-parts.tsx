@@ -7,7 +7,7 @@ import { label } from "@/lib/api/taxonomy";
 import { ARROW, LEVELS, levelTone } from "@/lib/hype/model";
 import type { HypeLevel } from "@/lib/hype/types";
 import { cropOf, shownSimilarity } from "@/lib/lens/model";
-import type { LensBox, LensDetectionView, LensFit, LensMatchView, LensScores, LensTrend } from "@/lib/lens/types";
+import type { LensBox, LensDetectionView, LensFit, LensMatchView, LensTrend } from "@/lib/lens/types";
 import { useCardFlip } from "@/components/fashion-card";
 import { HypeStateNotice } from "@/components/hype/hype-state-notice";
 import { Button, cn } from "@/components/ui";
@@ -134,24 +134,6 @@ export function LensMetric({ name, value, suffix = "", note }: { name: string; v
       <span className="hype-metric-value tabular">{has ? `${Math.round(value!)}${suffix}` : <><span aria-hidden>—</span><span className="sr-only">{t("lens.no_data")}</span></>}</span>
       <span className="hype-bar hype-metric-bar" aria-hidden><i style={{ width: `${has ? Math.max(0, Math.min(100, value!)) : 0}%`, background: "var(--thread)" }} /></span>
     </li>
-  );
-}
-
-/** Os seis números do look recriado (RecommendationScoring), independentes — "—" = sem base, nunca 0. */
-export function LensScoresRow({ scores }: { scores: LensScores | null | undefined }) {
-  const { t } = useI18n();
-  if (!scores) return null;
-  const items: [keyof LensScores, string][] = [["compatibility", "copilot.scores.compatibility"], ["hype", "copilot.scores.hype"], ["novelty", "copilot.scores.novelty"],
-    ["reuse", "copilot.scores.reuse"], ["usage", "copilot.scores.usage"], ["sustainability", "copilot.scores.sustainability"]];
-  return (
-    <dl className="copilot-scores lens-scores" aria-label={t("lens.recreate.scores")}>
-      {items.map(([k, key]) => (
-        <div key={k} title={t(`${key}_hint`)}>
-          <dt>{t(key)}</dt>
-          <dd className="tabular">{scores[k] != null ? Math.round(scores[k]!) : <><span aria-hidden>—</span><span className="sr-only">{t("copilot.scores.no_base")}</span></>}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

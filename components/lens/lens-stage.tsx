@@ -35,7 +35,7 @@ export function LensStage({ detections, width, height, imageUrl, imageFailed, fo
           {list.map((d, i) => {
             const p = hotspotPoint(d.box); const band = bandOf(d); const on = d.id === focusId;
             const aria = t("lens.hotspot.aria", { n: i + 1, total: list.length, label: d.label, confidence: t(`lens.confidence.${band}`) })
-              + (band === "LOW" ? `. ${t("lens.confidence.check")}` : "") + (d.status === "CORRECTED" ? `. ${t("lens.status.corrected")}` : "");
+              + (band === "LOW" ? `, ${t("lens.confidence.check")}` : "") + (d.status === "CORRECTED" ? `, ${t("lens.status.corrected")}` : "");
             return (
               <li key={d.id} style={{ left: `${p.left}%`, top: `${p.top}%` }} className="lens-hotspot-pos">
                 <button type="button" className={cn("lens-hotspot", on && "is-focused", band === "LOW" && "is-low", d.status === "CORRECTED" && "is-corrected")}
