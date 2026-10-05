@@ -9,6 +9,8 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Input, PageHeader, SegmentPicker, Tabs, useToast } from "@/components/ui";
 import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
 import { HypeRediscoveryCard } from "@/components/hype/hype-rediscovery";
+import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
+import { InsightStrip } from "@/components/insights/insight-strip";
 import type { HypeWardrobe } from "@/lib/hype/types";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
@@ -20,9 +22,7 @@ import { resolveCardArt } from "@/lib/card-art";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
-/** scores: recomendação multidimensional — compatibilidade com o DNA, Hype, novidade e reutilização, nunca somados num número só */
-interface LookScores { compatibility?: number | null; hype?: number | null; novelty?: number | null; reuse?: number | null; usage?: number | null; sustainability?: number | null }
-interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; scores?: LookScores; }
+interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; /** recomendação multidimensional (components/hype/look-scores) */ scores?: LookScoreValues; }
 /** Sugestão de compra genérica do backend (CopilotService): só depois do reuso, com o ganho de combinações e sem marca. */
 interface PurchaseSuggestion { subcategory?: string; color?: string; gain?: number; gainText?: string; reason?: string; action?: { label?: string; href?: string } }
 interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; backgroundNotice?: Record<string, string>; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; purchaseSuggestions?: PurchaseSuggestion[]; sponsored?: { label?: string; items?: { name?: string; reason?: string }[] }; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
@@ -54,7 +54,6 @@ function Understood({ look }: { look: SuggestedLook }) {
   );
 }
 
-/** Os quatro números do look sugerido, lado a lado — Hype é contexto, nunca o critério único. */
 /**
  * Sugestões de compra genéricas (só depois do reuso; sem marca nem produto) e, separado delas, o bloco de patrocínio —
  * patrocínio nunca se mistura com recomendação orgânica nem com o Hype. O backend manda `purchaseSuggestions`
@@ -73,19 +72,6 @@ function PurchaseBlock({ reply }: { reply: Reply }) {
       {sponsored.length > 0 && <div className="mt-2 rounded border border-dashed border-line-soft p-2"><p className="label">{t("copilot.patrocinado")}</p>
         <ul className="fai-list type-body-sm">{sponsored.map((p, j) => <li key={j}>• {p.name}{p.reason ? ` · ${p.reason}` : ""}</li>)}</ul></div>}
     </>
-  );
-}
-
-function LookScoresRow({ scores }: { scores?: LookScores }) {
-  const { t } = useI18n();
-  if (!scores) return null;
-  // seis dimensões independentes (RecommendationScoring): o Hype é só uma delas; "—" = sem base, nunca 0
-  const items: [keyof LookScores, string][] = [["compatibility", "copilot.scores.compatibility"], ["hype", "copilot.scores.hype"], ["novelty", "copilot.scores.novelty"],
-    ["reuse", "copilot.scores.reuse"], ["usage", "copilot.scores.usage"], ["sustainability", "copilot.scores.sustainability"]];
-  return (
-    <dl className="copilot-scores">
-      {items.filter(([k]) => k in scores).map(([k, key]) => <div key={k} title={t(`${key}_hint`)}><dt>{t(key)}</dt><dd className="tabular">{scores[k] ?? <span title={t("copilot.scores.no_base")}>—</span>}</dd></div>)}
-    </dl>
   );
 }
 
@@ -158,7 +144,7 @@ function Copilot() {
         {rediscoveries.length > 0 && <div className="grid gap-2">{rediscoveries.map((r) => <HypeRediscoveryCard key={r.id} item={r} />)}</div>}
         {row(t("copilot.pecas_esquecidas"), (sug.data?.forgottenPieces ?? []).map((p) => <PieceCard key={p.id} piece={p} />))}
       </div>, empty: !sug.data?.forgottenPieces.length && rediscoveries.length === 0 },
-    { id: "insights", title: t("copilot.section.insights"), content: <HypeWardrobeInsights compact />, empty: false },
+    { id: "insights", title: t("copilot.section.insights"), content: <div className="grid gap-4"><InsightStrip context="COPILOT" /><HypeWardrobeInsights compact /></div>, empty: false },
   ];
   return (
     <>
@@ -190,7 +176,7 @@ function Copilot() {
             <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
               {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}{c.hype != null && <span className="text-faint"> · {t("copilot.scores.chip_hype", { value: c.hype })}</span>}{c.compatibility != null && <span className="text-faint"> · {t("copilot.scores.chip_style", { value: c.compatibility })}</span>}</Link>)}</div> : null}
-              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<LookScoresRow scores={l.scores} /><Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
+              {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<LookScores scores={l.scores} /><Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
               {m.reply?.backgroundNotice && <p className="mt-2 type-caption text-muted">{Object.values(m.reply.backgroundNotice).join(" ")}</p>}
               {m.reply && <PurchaseBlock reply={m.reply} />}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}

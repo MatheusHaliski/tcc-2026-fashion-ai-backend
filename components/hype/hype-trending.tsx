@@ -13,6 +13,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 type TrendType = HypeEntity | HypeRankGroup;
 const isGroup = (x: TrendType): x is HypeRankGroup => x === "BRAND" || x === "CREATOR";
@@ -36,6 +37,8 @@ export function HypeTrendingPanel() {
   const rank = (n: number) => <span className="trend-rank">{t("hypeTrending.rank", { n })}</span>;
   return (
     <section className="grid gap-3" aria-label={t("hypeTrending.title")}>
+      {/* RF53 · insights do Em alta no mesmo recorte (janela e categoria): crescimento ≠ volume */}
+      <InsightStrip context="EXPLORER_TRENDING" params={{ window, category: withCategory ? f.category : "" }} />
       <div className="flex flex-wrap items-center gap-2">
         <SegmentPicker label={t("hypeTrending.type")} value={type} onChange={setType} options={[{ id: "PIECE", label: t("hypeTrending.pieces") }, { id: "SCHEME", label: t("hypeTrending.looks") }, { id: "BRAND", label: t("hypeTrending.brands") }, { id: "CREATOR", label: t("hypeTrending.creators") }]} />
         <SegmentPicker label={t("hypeTrending.window")} value={window} onChange={setWindow} options={[{ id: "1", label: t("hypeTrending.today") }, { id: "7", label: t("hypeTrending.days", { n: 7 }) }, { id: "30", label: t("hypeTrending.days", { n: 30 }) }]} />

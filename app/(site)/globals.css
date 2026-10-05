@@ -2369,3 +2369,37 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 :root[data-theme="contrast"] .insight-card.is-positive { border-left-color: var(--thread); }
 :root[data-theme="contrast"] .insight-card.is-attention { border-left-color: var(--chalk); }
 @media (pointer: coarse) { .insight-cta, .insight-ai { min-height: var(--touch); } }
+
+/* RF53 · Ranking de HypeScore (Explorador): tipo e janela mudam o contexto; região, país, categoria e subcategoria são
+   filtros. "Hype por região" = lista de barras com o valor sempre em texto (a barra só reforça); a posição do ranking
+   reaproveita o .trend-rank e as peças do look, o .hype-look-pieces da análise completa. */
+.hype-ranking { display: grid; gap: 12px; min-width: 0; }
+.hype-ranking-context, .hype-ranking-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.hype-ranking-filters .dd { min-width: 0; max-width: 100%; }
+.hype-ranking-cats .chip[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.hype-ranking-cats .seg-count { margin-left: 6px; font-family: var(--font-data); font-size: 11px; opacity: .75; }
+.hype-region-compare { display: grid; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.hype-region-compare h3 { margin: 0; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.hype-region-bars { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hype-region-row { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 32px; padding: 4px 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hype-region-row:hover { background: var(--surface-2); }
+.hype-region-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.hype-region-row[aria-pressed="true"] { background: var(--thread-soft); }
+.hype-region-row[aria-pressed="true"] .hype-region-name { font-weight: 700; }
+.hype-region-row.is-world { cursor: default; border-bottom: 1px dashed var(--line-soft); border-radius: 0; }
+.hype-region-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.hype-region-track { height: 10px; overflow: hidden; border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.hype-region-fill { display: block; height: 100%; border-radius: inherit; background: var(--thread); }
+.hype-region-row.is-world .hype-region-fill { background: var(--muted); }
+.hype-region-value { font-family: var(--font-data); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hype-region-value b { color: var(--ink); font-size: 13px; }
+.hype-ranking-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.hype-ranking-meta .type-caption { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hype-ranking-look { display: grid; gap: 6px; width: 100%; }
+.hype-ranking-toggle { display: inline-flex; align-items: center; gap: 4px; width: fit-content; min-height: 28px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.hype-ranking-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.hype-ranking-look .hype-look-pieces > li { grid-template-columns: 36px minmax(0, 1fr) auto; padding: 4px 6px; }
+.hype-ranking-look .hype-look-piece-ph { width: 36px; height: 36px; }
+@media (max-width: 639px) { .hype-region-row { grid-template-columns: minmax(0, 1fr) auto; } .hype-region-track { grid-column: 1 / -1; grid-row: 2; } }
+@media (pointer: coarse) { .hype-region-row, .hype-ranking-toggle { min-height: var(--touch); } }
+:root[data-theme="contrast"] .hype-region-fill { background: var(--ink); }

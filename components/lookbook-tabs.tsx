@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
+import { InsightStrip } from "@/components/insights/insight-strip";
 import { Avatar, Button, Card, Chip, Dropdown, EmptyState, ErrorState, Field, Input, Pagination, SegmentPicker, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { SchemeCard } from "@/components/scheme-card";
@@ -65,7 +66,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
       {tab === "saved" && ov.self && <SavedTab initial={initialSaved} looks={count("saved_looks")} pieces={count("saved_pieces")} />}
       {tab === "daily" && ov.self && <DailyTab />}
       {tab === "capsule" && ov.self && <CapsuleTab />}
-      {tab === "insights" && ov.self && <HypeWardrobeInsights />}
+      {tab === "insights" && ov.self && <><InsightStrip context="CLOSET" className="mb-4" /><HypeWardrobeInsights /></>}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
     </>
   );
@@ -194,7 +195,8 @@ function DailyTab() {
   const panel = data.panel ?? {}; const hype = Number(panel.hype ?? panel.score ?? data.scheme?.hypeScore ?? 0);
   const metrics = (panel.metrics ?? panel.components ?? {}) as Record<string, number | { value?: number; label?: string }>;
   async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
-  return (
+  return (<>
+    <InsightStrip context="HISTORY" collapsible className="mb-4" />
     <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
       <div>{data.scheme && <SchemeCard scheme={data.scheme} />}{data.scheme && <LookExports scheme={data.scheme} hype={hype} bandLabel={typeof panel.band === "object" && panel.band ? (panel.band as { label?: string }).label : undefined} date={data.today?.date} />}{!data.scheme && <EmptyState title={data.empty?.message ?? t("lookbookTabs.nenhum_look_do_dia")} action={(data.empty?.actions ?? []).map((a) => <Link key={a.href} href={a.href === "/add-piece" ? "/pieces/new" : a.href.startsWith("/create") ? "/schemes/new" : a.href.endsWith("?tab=looks") ? "/looks" : a.href} className="btn btn-primary">{a.label}</Link>)} />}</div>
       <div>
@@ -220,7 +222,7 @@ function DailyTab() {
         <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="flex items-center justify-between py-2 type-body-sm"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="type-data">{h.feedback ?? "—"}{(h.hypeScore ?? h.hype) != null ? t("lookbookTabs.hype", { Math: Math.round(Number(h.hypeScore ?? h.hype)) }) : ""}</span></li>)}</ul>}</Card>
       </div>
     </div>
-  );
+  </>);
 }
 
 /**
@@ -238,6 +240,8 @@ function CapsuleTab() {
   const catOf = (p: PieceView) => label(p.category);
   return (<>
     <div className="capsule-chips">{(data.filters ?? []).map((f) => <Chip key={f} active={(f === "Tudo" ? "" : f) === category} onClick={() => setCategory(f === "Tudo" ? "" : f)}>{f === "Tudo" ? t("common.all") : label(f)}</Chip>)}</div>
+    {/* insights da cápsula (RF53): redescoberta antes de compra, peças-base paradas, versatilidade — acima dos números */}
+    <InsightStrip context="CAPSULE" params={{ category }} className="mb-4" />
     <div className="capsule-stats">
       <div className="capsule-stat"><span className="num tabular">{data.basePieces}</span><span className="lbl">{t("lookbookTabs.pecas_base")}</span></div>
       <div className="capsule-stat"><span className="num tabular">{data.looks}</span><span className="lbl">{t("lookbookTabs.looks_no_guarda_roupa")}</span></div>

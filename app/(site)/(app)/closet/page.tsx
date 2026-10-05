@@ -14,6 +14,7 @@ import { PieceCard } from "@/components/piece-card";
 import { usePieceUpdates } from "@/lib/pieces/piece-events";
 import { FaiIcon } from "@/components/fai-icon";
 import { hypeLevelFilter, hypeSortOptions } from "@/components/hype";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 // valores iguais aos aceitos pelo backend (WardrobeService.stateMatches); "venda" = peças à venda (RF4.CA8); "doar" = para doar
 const STATES = [["", "common.all"], ["favoritos", "common.favorite"], ["disponivel", "common.available"], ["indisponivel", "common.unavailable"], ["venda", "common.forSale"], ["doar", "common.forDonation"]] as const;
@@ -52,6 +53,8 @@ function Closet() {
         actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button>}</>} />
       <Tabs label={t("common.category")} value={parseTab(f.category)} onChange={changeTab}
         tabs={CATEGORY_TABS.map((c) => ({ id: c, label: c ? label(c) : t("closet.tab.all") }))} />
+      {/* insights do guarda-roupa (RF53): fechados por padrão para não disputar espaço com a grade */}
+      <InsightStrip context="CLOSET" params={{ category: f.category }} collapsible className="mb-3" />
       <FilterBar search={f.q} onSearch={(v) => set("q", v)} searchLabel={t("closet.searchLabel")}
         quick={{ key: "state", label: t("closet.state"), options: STATES.map(([v, k]) => ({ value: v, label: t(k) })) }}
         filters={[

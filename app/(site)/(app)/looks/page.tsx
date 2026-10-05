@@ -9,6 +9,7 @@ import { PageHeader, Tabs } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { MyLooks, parseLookKind, type LookKind } from "@/components/looks/my-looks";
 import { SavedLooks } from "@/components/looks/saved-looks";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 type Tab = "mine" | "saved";
 const parseTab = (v: string | null): Tab => (v === "saved" || v === "salvos" ? "saved" : "mine");
@@ -35,6 +36,7 @@ function Looks() {
       <Tabs label={t("looks.title")} value={tab} onChange={(next) => go(next, kind)} tabs={[
         { id: "mine", label: t("looks.title") }, { id: "saved", label: t("lookbook.saved") },
       ]} />
+      {tab === "mine" && <InsightStrip context="LOOKS" collapsible className="mb-3" />}
       {tab === "mine" && <MyLooks kind={kind} onKind={(next) => go("mine", next)} />}
       {tab === "saved" && <SavedLooks />}
     </>
