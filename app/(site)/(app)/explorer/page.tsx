@@ -13,6 +13,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { RunwayPanel } from "@/components/showcase/runway-panel";
 import { FilterBar } from "@/components/filter-bar";
 import { HypeTrendingPanel } from "@/components/hype/hype-trending";
+import { HypeRankingPanel } from "@/components/hype/hype-ranking";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; hypeBands: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; avg_hype?: number; total?: number }[]; topColors?: { color: string; total: number; avg_hype?: number }[] }; legend?: string; }
 interface BrandCard { userId?: string | null; slug?: string; /** RF47 · marca que existe só no catálogo global (sem perfil) */ catalog?: boolean; catalogProducts?: number; name: string; logoUrl?: string | null; country?: string | null; category?: string | null; schemes?: number; pieces?: number; hypeScore?: number; stars?: number; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[]; }
@@ -30,8 +32,8 @@ export default function ExplorerPage() { return <Suspense><Explorer /></Suspense
 
 function Explorer() {
   const { t, fmtNumber } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy(); const sp = useSearchParams();
-  const [tab, setTab] = useState<"runway" | "trending" | "map" | "brands" | "insights">("runway");
-  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map" || q === "trending") setTab(q); }, [sp]);
+  const [tab, setTab] = useState<"runway" | "trending" | "ranking" | "map" | "brands" | "insights">("runway");
+  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map" || q === "trending" || q === "ranking") setTab(q); }, [sp]);
   const [country, setCountry] = useState(""); const [g, setG] = useState({ season: "", color: "", hypeBand: "" });
   const [f, setF] = useState({ term: "", country: "", category: "", color: "", season: "", hypeMin: "", sort: "HYPE" });
   const global = useApi<Global>((signal) => api.get(`/api/explorer/global${qs({ country, ...g })}`, { signal, anonymous: !user }), [country, JSON.stringify(g), !!user], { enabled: tab === "map" });
@@ -42,11 +44,14 @@ function Explorer() {
   return (
     <>
       <PageHeader title={t("nav.explorer")} kicker={t("explorer.rf26_explorador_global")} lead={t("explorer.tendencias_agregadas_por_pais_estacao")} />
-      <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "trending", label: t("hypeTrending.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
-      {tab === "runway" && <RunwayPanel />}
+      <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "trending", label: t("hypeTrending.title") }, { id: "ranking", label: t("hypeRanking.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
+      {/* RF53 · cada aba abre com os insights dinâmicos do seu contexto (públicos, agregados; o Em alta passa a janela e a categoria) */}
+      {tab === "runway" && <><InsightStrip context="EXPLORER_RUNWAY" className="mb-4" /><RunwayPanel /></>}
       {tab === "trending" && <HypeTrendingPanel />}
+      {tab === "ranking" && <HypeRankingPanel />}
       {tab === "map" && (
         <>
+          <InsightStrip context="EXPLORER_MAP" params={{ region: country }} className="mb-4" />
           <FilterBar
             filters={[
               { key: "season", label: t("explorer.estacao"), options: (global.data?.facets?.seasons ?? ["SPRING", "SUMMER", "AUTUMN", "WINTER"]).map((x) => ({ value: x, label: label(x.toLowerCase()) })) },
@@ -85,6 +90,7 @@ function Explorer() {
         </>
       )}
       {tab === "brands" && (<>
+        <InsightStrip context="EXPLORER_BRANDS" params={{ region: f.country, category: f.category }} className="mb-4" />
         <div className="mb-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-7" aria-label={t("explorer.filtros_de_marcas")}>
           <Input aria-label={t("common.search")} placeholder={t("explorer.nome_da_marca")} value={f.term} onChange={(e) => setF({ ...f, term: e.target.value })} />
           <Select aria-label={t("explorer.pais")} value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })}><option value="">{t("auth.country")}</option>{(brands.data?.countries ?? []).map((c) => <option key={c} value={c}>{countryName(c)}</option>)}</Select>
@@ -109,6 +115,7 @@ function Explorer() {
             </Card>))}</div>
         )}
       </>)}
+      {tab === "insights" && <InsightStrip context="EXPLORER_GLOBAL" className="mb-4" />}
       {tab === "insights" && (insights.error ? <ErrorState error={insights.error} onRetry={insights.reload} /> : insights.loading || !insights.data ? <Skeleton className="h-48" /> : (
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-3"><p className="label">{t("explorer.leitura_de_tendencia", { value: insights.data.fallbackUsed ? t("explorer.motor_local") : t("explorer.ia_rf24") })}</p><p className="type-h2">{insights.data.aiInsight}</p>{insights.data.note && <p className="type-caption text-faint mt-2">{insights.data.note}</p>}</Card>
