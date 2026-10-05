@@ -5,12 +5,14 @@ import type { PieceView } from "@/lib/api/types";
 import { api, type ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Chip, Dialog, SegmentPicker, Switch, useToast } from "@/components/ui";
-import { ArtSegments, AuraMaterialPanel, ColorPanel, ContainerColor, OptionStrip, SkinPicker, type ArtSegment, type BgConfig } from "@/components/background-studio";
+import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, ContainerColor, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
+import { useUndo } from "@/lib/hooks/use-undo";
+import { ART_INDEX } from "@/lib/card-art";
 import { PieceCard } from "@/components/piece-card";
 import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import {
   AURA_MAX, EFFECT_LIMIT, FAMILIES, FAMILY_EFFECTS, FAMILY_EMPHASIS, SEASONS, STUDIO_KEYS, activeEffects, constrainEffects, defaultArt, readPieceArt, studioPart, writePieceArt,
-  type ArtEffects, type ArtFamily, type ArtVariant, type Emphasis, type PieceArt,
+  type ArtEffects, type ArtFamily, type ArtVariant, type Emphasis, type PieceArt, type Season,
 } from "@/lib/piece-art";
 
 /** Efeitos liga/desliga, na ordem em que aparecem no editor (acabamento e textura têm opções próprias). */
@@ -34,16 +36,36 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
   const { t } = useI18n();
   const [seg, setSeg] = useState<ArtSegment>("cor");
   const [view, setView] = useState<"feed" | "expanded">("feed");
+  // modal da Cartela sazonal (como no look e no DNA): aberto ao clicar na família; variant = a variação em que se entra
+  // ao Aplicar (Cancelar não muda nada)
+  const [seasonal, setSeasonal] = useState<{ variant?: ArtVariant } | null>(null);
   const art = readPieceArt(value);
   const studio = studioPart(value) as BgConfig & { skin?: string };
   const emit = (next: PieceArt, patch: Record<string, unknown> = {}) => onChange(writePieceArt(value, next, patch));
   const family = art.template.family;
   const preview = useMemo(() => ({ ...piece, background: value }), [piece, value]);
+  // mesmo padrão do Background Studio do look e do DNA: skins recomendadas, Desfazer e Limpar arte acima da prévia
+  const recommendedSkins = useRecommendedSkins(styles, occasions);
+  const artUndo = useUndo(value, onChange);
 
+  // a composição volta à da família (ênfase própria) e só ficam os efeitos que combinam com ela
+  const withTemplate = (f: ArtFamily, v: ArtVariant): PieceArt =>
+    ({ ...art, template: { ...art.template, family: f, variant: v }, composition: { emphasis: FAMILY_EMPHASIS[f][v] }, effects: constrainEffects(art.effects, f) });
   function chooseTemplate(f: ArtFamily, v: ArtVariant) {
-    // a composição volta à da família (ênfase própria) e só ficam os efeitos que combinam com ela
-    emit({ ...art, template: { ...art.template, family: f, variant: v }, composition: { emphasis: FAMILY_EMPHASIS[f][v] }, effects: constrainEffects(art.effects, f) });
+    // Cartela sazonal: a família só entra ao Aplicar o modal; um novo clique na variação atual reabre o modal
+    if (f === "seasonal") { setSeasonal(family === f && art.template.variant === v ? {} : { variant: v }); return; }
+    // a cartela e a animação são da Cartela sazonal: escolhidas no modal dela, saem junto com ela
+    emit(withTemplate(f, v), family === "seasonal" ? { ...CLEAR_CARTELA } : {});
   }
+  function applySeasonal(draft: Partial<BgConfig>) {
+    const next = seasonal?.variant ? withTemplate("seasonal", seasonal.variant) : art;
+    // a cartela escolhida define a estação da paisagem; sem cartela, fica a estação que já estava
+    const picked = draft.seasonalPresetId ? ART_INDEX.seasonal[draft.seasonalPresetId]?.season : undefined;
+    const season = (SEASONS as string[]).includes(picked ?? "") ? (picked as Season) : next.template.season;
+    emit({ ...next, template: { ...next.template, season } }, { ...draft });
+  }
+  const cartela = (studio.seasonalPresetId && ART_INDEX.seasonal[studio.seasonalPresetId]?.name) || t("pieceArt.cartela_nenhuma", { season: t(`pieceArt.season.${art.template.season}`) });
+  const animation = studio.animation && studio.animation !== "NONE" ? t(`backgroundStudio.anim.${studio.animation}`) : t("backgroundStudio.sem_animacao");
   const setEffects = (e: ArtEffects) => emit({ ...art, effects: constrainEffects(e, family) });
   const on = activeEffects(art.effects).length;
   const allowed = new Set(FAMILY_EFFECTS[family]);
@@ -55,14 +77,8 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
     <div className="pae">
       <div className="pae-main art-editor">
         <ArtSegments value={seg} onChange={setSeg} />
-        {(seg === "cor" || seg === "aura") && (
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Chip active={!hasStudioArt} onClick={() => emit(art, clearStudio)}>{t("pieceArt.sem_arte_do_studio")}</Chip>
-            <span className="type-caption text-muted">{hasStudioArt ? t("pieceArt.arte_do_studio_ativa") : t("pieceArt.fundo_ajuda")}</span>
-          </div>
-        )}
-
-        {seg === "cor" && <ColorPanel value={studio} onChange={setStudio} />}
+        {/* cartela sazonal e animação moram no modal da família Cartela sazonal (Layout & Estilo), como no look e no DNA */}
+        {seg === "cor" && <ColorPanel value={studio} onChange={setStudio} hideSeasonal keepCartela={family === "seasonal"} />}
         {seg === "aura" && <AuraMaterialPanel value={studio} onChange={setStudio} onSkin={(s) => emit(art, { skin: s })} styles={styles} occasions={occasions} />}
 
         {seg === "layout" && (
@@ -78,7 +94,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
                       {(["a", "b"] as const).map((v) => {
                         const current = family === f && art.template.variant === v;
                         return (
-                          <button key={v} type="button" className="pae-swatch-btn" aria-pressed={current} onClick={() => chooseTemplate(f, v)}
+                          <button key={v} type="button" className="pae-swatch-btn" aria-pressed={current} aria-haspopup={f === "seasonal" ? "dialog" : undefined} onClick={() => chooseTemplate(f, v)}
                             aria-label={t("pieceArt.template_rotulo", { family: t(`pieceArt.family.${f}`), variant: v.toUpperCase(), desc: t(`pieceArt.variant.${f}.${v}`) })}>
                             <Swatch art={{ ...defaultArt(f, v), template: { family: f, variant: v, season: art.template.season } }} pieceHex={piece.colorHex} />
                             <span className="pae-swatch-cap">{v.toUpperCase()} · {t(`pieceArt.variant.${f}.${v}`)}</span>
@@ -91,9 +107,15 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
               </div>
             </div>
             {family === "seasonal" && (
-              <OptionStrip kind="row" title={t("pieceArt.estacao")}>
-                {SEASONS.map((s) => <Chip key={s} active={art.template.season === s} onClick={() => emit({ ...art, template: { ...art.template, season: s } })}>{t(`pieceArt.season.${s}`)}</Chip>)}
-              </OptionStrip>
+              <>
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-line-soft p-2">
+                  <span className="min-w-0 flex-1 type-body-sm"><b>{t("common.cartela_sazonal")}:</b> {cartela} · {animation}</span>
+                  <Button size="sm" aria-haspopup="dialog" onClick={() => setSeasonal({})}>{t("backgroundStudio.escolher_cartela_e_animacao")}</Button>
+                </div>
+                <OptionStrip kind="row" title={t("pieceArt.estacao")}>
+                  {SEASONS.map((s) => <Chip key={s} active={art.template.season === s} onClick={() => emit({ ...art, template: { ...art.template, season: s } })}>{t(`pieceArt.season.${s}`)}</Chip>)}
+                </OptionStrip>
+              </>
             )}
             <OptionStrip title={t("pieceArt.step.composition")} hint={<p className="type-caption text-muted">{t("pieceArt.composicao_ajuda")}</p>}>
               {(["balanced", "top", "bottom"] as Emphasis[]).map((e) => (
@@ -103,7 +125,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
                 </button>
               ))}
             </OptionStrip>
-            <SkinPicker skin={studio.skin ?? ""} onSkin={(s) => emit(art, { skin: s })} />
+            <SkinPicker skin={studio.skin ?? ""} onSkin={(s) => emit(art, { skin: s })} recommended={recommendedSkins} />
             <fieldset className="grid gap-2">
               <legend className="label">{t("pieceArt.step.effects")}</legend>
               <p className="type-caption text-muted" aria-live="polite">{t("pieceArt.efeitos_limite", { on, max: EFFECT_LIMIT })}</p>
@@ -144,10 +166,13 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
           </div>
         )}
 
+        <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={studio} onApply={applySeasonal} />
         {actions && <div className="pae-nav">{actions}</div>}
       </div>
       {/* sem "card-preview": a prévia é idêntica ao card do feed (nem o lugar reservado do selo aparece) */}
       <aside className="pae-preview" aria-label={view === "feed" ? t("pieceArt.previa_no_feed") : t("pieceArt.previa_ampliada")}>
+        {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, cor do container); família, efeitos e skin ficam */}
+        <span className="flex justify-end gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!hasStudioArt && !art.surface.color} onClick={() => emit({ ...art, surface: { ...art.surface, color: null } }, clearStudio)}>{t("backgroundStudio.limpar_arte")}</Button></span>
         <SegmentPicker label={t("pieceArt.step.preview")} value={view} onChange={setView} options={[{ id: "feed", label: t("pieceArt.previa_feed") }, { id: "expanded", label: t("pieceArt.previa_ampliado") }]} />
         {view === "feed"
           ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
