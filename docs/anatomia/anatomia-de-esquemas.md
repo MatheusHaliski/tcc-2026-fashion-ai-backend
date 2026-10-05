@@ -97,7 +97,7 @@ BENTO (META_BLOCK), ESPECTRO (TITLE_ROW), CUSTO_POR_USO (HEADER) e LEGO (STUDS).
 
 | Elemento | Valores | Regra |
 |---|---|---|
-| Selo (`seals`) | tipo de arte **Circular · Folha · Padrão FashionAI**; política padronizada (regras + tags) | ver `docs/diagramas/RF25-criador-de-selos` |
+| Selo (`seals`) | tipo de arte **Circular · Folha · Padrão FashionAI**; política padronizada (regras + tags) | ver `docs/diagramas/RF50` (RF50, evolução do RF25) |
 | Vínculo (`seal_bonds.status`) | SUGGESTED → ACCEPTED/EDITED/REFUSED → PENDING_REVIEW → APPROVED/REJECTED → REVOKED | um vínculo por emissor por look; a política detecta o selo nos criadores de peça e de look |
 | Base do vínculo | BRAND_MATCH (marca) · STYLE_SIGNATURE (celebridade) | celebridade sempre revisa (RF21.CA19) |
 | Nível | LOOK ou PEÇA | no nível PEÇA, `linkedPieceIds` diz qual peça sustenta o selo |
