@@ -95,7 +95,7 @@ public final class SealPolicies {
                     throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealPolicy.categoria_invalida", category));
                 }
                 String sub = text(m.get("subcategory"));
-                if (sub != null && Taxonomy.SUBCATEGORIES.values().stream().noneMatch(l -> l.contains(sub))) {
+                if (sub != null && !Taxonomy.isSubcategory(sub)) {                        // ativa ou LEGACY
                     throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealPolicy.categoria_invalida", sub));
                 }
                 String brand = text(m.get("brand"));

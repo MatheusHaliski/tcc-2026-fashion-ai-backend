@@ -46,8 +46,8 @@ public final class FlairEngine {
             Map.entry("modern", 6), Map.entry("resort", 6), Map.entry("classic", 4), Map.entry("minimalist", 4), Map.entry("basic", 2));
 
     static final Set<String> COLD = Set.of("coat", "parka", "jacket", "blazer", "sweater", "sweatshirt", "hoodie", "cardigan",
-            "beanie", "gloves", "scarf", "long_boots", "combat_boots", "ankle_boots");
-    static final Set<String> WARM = Set.of("shorts", "denim_shorts", "bermuda_shorts", "tank_top", "crop_top", "sandals",
+            "beanie", "gloves", "scarf", "long_boots", "combat_boots", "ankle_boots", "boots");
+    static final Set<String> WARM = Set.of("shorts", "denim_shorts", "bermuda_shorts", "tank_top", "crop_top", "top", "sandals",
             "flip_flops", "sunglasses", "espadrilles", "skort", "kimono");
 
     public record Ability(String code, String label, String description) {
