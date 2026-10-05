@@ -57,13 +57,23 @@ if (todas as peças disponíveis\n(isDisponivel e AVAILABLE)?) then (sim)
   :peças: lookDoDiaCount + 1 e lastWornDate = hoje;
   :Publica DomainEvents.DailyLookRegistered;
   |Bancos-serviços|
-  :WardrobeEventListeners (AFTER_COMMIT):\ndiário de uso e wearCount + 1;
-  note right
-    origem VISTA_ME pontua
-    VISTA_ME_DAILY_LOOK (RF41);
-    AchievementService.onDailyLook
-    avalia conquistas
-  end note
+  fork
+    :WardrobeEventListeners (AFTER_COMMIT):\ndiário de uso e wearCount + 1;
+    note right
+      origem VISTA_ME pontua
+      VISTA_ME_DAILY_LOOK (RF41);
+      AchievementService.onDailyLook
+      avalia conquistas
+    end note
+  fork again
+    :HypeSignalRecorder.onDailyLook\n(AFTER_COMMIT): HypeIntegrityPolicy\n.weight → HypeSignalDailyRepository\n.increment em hype_signal_daily:\nLOOK_WORN (look) + PIECE_USED (peças);
+    note right
+      novo (RF49 · HypeScore v2):
+      transação própria; 1 sinal por
+      entidade/pessoa/dia; o score sai do
+      job de snapshots (HypeSnapshotService)
+    end note
+  end fork
   |Frontend|
   :Toast "Look do dia" e recarrega o card;
 else (não)
@@ -78,7 +88,7 @@ endif
 :GET /api/me/daily-look-tab;
 |Backend|
 if (há DailyLook hoje?) then (sim)
-  :Devolve look, painel de Hype Score e histórico;
+  :Devolve look, painel de Hype Score e histórico\n(cada dia com title e hypeScore);
 else (não)
   if (há look anterior não arquivado?) then (sim)
     :today() materializa uma cópia\n(materializedFrom) na virada do dia;

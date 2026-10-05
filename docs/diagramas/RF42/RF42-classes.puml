@@ -44,6 +44,15 @@ class WardrobeItem <<@Table wardrobe_items>> {
   +lastWornDate: LocalDate
   +lookDoDiaCount: int
 }
+class HypeSignalDaily <<@Table hype_signal_daily>> <<RF49>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +signalType: HypeSignalType
+  +signalDate: LocalDate
+  +eventCount: int
+  +weightedCount: BigDecimal
+  +updatedAt: Instant
+}
 }
 package "fai-domain · enums" {
 enum DailyLookSource {
@@ -57,6 +66,12 @@ enum DailyLookFeedback {
   ADOREI
   NAO_USEI
   NAO_GOSTEI
+}
+enum HypeSignalType <<RF49>> {
+  LOOK_WORN
+  PIECE_USED
+  PIECE_IN_LOOK
+  .. +9 (curtida, save, view…) ..
 }
 }
 package "fai-application · service" {
@@ -72,6 +87,20 @@ class LookbookService {
   +markDailyLook(user, schemeId): Map
   +dailyLookTab(user, withAi): Map
 }
+class "DomainEvents.DailyLookRegistered" as DLR <<record>> {
+  +userId: UUID
+  +schemeId: UUID
+  +date: LocalDate
+  +source: String
+  +pieceIds: List<UUID>
+}
+class HypeSignalRecorder <<RF49>> {
+  +onDailyLook(DailyLookRegistered)
+  ~record(HypeSignal)
+}
+class HypeIntegrityPolicy <<RF49>> {
+  +weight(HypeSignal, day): double
+}
 }
 DailyLook "*" --> "1" User
 DailyLook "*" --> "1" Scheme
@@ -83,5 +112,11 @@ DailyLook --> DailyLookSource
 DailyLook --> DailyLookFeedback
 LookbookService --> DailyLookService
 DailyLookService --> DailyLook : grava
+DailyLookService ..> DLR : publica
+HypeSignalRecorder ..> DLR : @TransactionalEventListener\n(AFTER_COMMIT)
+HypeSignalRecorder --> HypeIntegrityPolicy : peso
+HypeSignalRecorder ..> HypeSignalDaily : increment
+HypeSignalDaily --> HypeSignalType
 note bottom of DailyLook : uq_daily_looks_user_date (user_id, look_date):\num Look do Dia por pessoa por dia
+note bottom of HypeSignalDaily : novo (RF49 · HypeScore v2): Look do Dia soma\nLOOK_WORN (SCHEME) e PIECE_USED (cada peça) no dia
 @enduml

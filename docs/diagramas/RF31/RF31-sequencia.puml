@@ -13,10 +13,17 @@ participant "Frontend\ncloset / pieces" as FE
 participant "WardrobeController" as C
 participant "WardrobeService" as S
 database "MySQL" as DB
-U -> FE: filtra "Indisponíveis"
-FE -> C: GET /api/me/closet?state=indisponivel
+U -> FE: filtra "Indisponíveis"\n(+ faixa de Hype e ordenação, opcionais)
+FE -> C: GET /api/me/closet?state=indisponivel\n&hypeLevel=HOT&sort=hype_desc
 C -> S: closet(filter)
 S -> DB: SELECT wardrobe_items
+S -> S: SORT_ALIASES normaliza o sort\n(mais_usadas → worn, nome → name, preco → price…)
+opt sort ∈ HYPE_SORTS (hype, hype_desc, hype_asc, growth, rarity) ou hypeLevel
+  S -> DB: SELECT hype_scores (HypeScoreCurrentRepository,\nPIECE, algorithmVersion do HypeScoreConfig)
+  S -> S: hypeLevel → score mínimo (levelThresholds);\nsem Hype fica por último (nullsLast)
+end
+note right of S: novo (RF49 · HypeScore v2):\nClosetFilter.hypeLevel e sorts canônicos
+S --> FE: Page<PieceView>
 U -> FE: marca "Indisponível"
 FE -> C: PATCH /api/pieces/{id}/flags
 C -> S: toggles(user, id, favorite,\ndisponivel, forSale)
