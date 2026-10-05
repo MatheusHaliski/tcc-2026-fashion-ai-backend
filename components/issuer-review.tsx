@@ -67,7 +67,8 @@ export function PolicyCheckRow({ c, kind, children }: { c: PolicyCheck; kind: Is
 export function IssuerCenter({ review, onTab }: { review: ReturnType<typeof useIssuerReview>; onTab?: (tab: string) => void }) {
   if (review.error) return <ErrorState error={review.error} onRetry={review.reload} />;
   if (!review.data) return <Skeleton className="h-64" />;
-  const d = review.data;
+  // API de versão anterior (sem critérios, motivos ou campos editáveis) não derruba a página: as listas vêm vazias
+  const d: IssuerReview = { ...review.data, reasons: review.data.reasons ?? [], checks: review.data.checks ?? [], editable: review.data.editable ?? {} };
   return (
     <div className="issuer-center">
       <div className="grid min-w-0 content-start gap-4">

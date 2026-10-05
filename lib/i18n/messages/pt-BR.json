@@ -367,6 +367,7 @@
   "auth.registerTitle": "Criar conta",
   "auth.remember": "Manter conectado",
   "auth.resend": "Reenviar código",
+  "auth.resetDone": "Sua senha foi redefinida com sucesso! Pode fechar esta página.",
   "auth.resetLead": "Escolha uma senha forte (8+ caracteres, letras, números e símbolo).",
   "auth.resetTitle": "Nova senha",
   "auth.send": "Enviar",

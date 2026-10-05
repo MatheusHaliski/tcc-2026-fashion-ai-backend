@@ -16,7 +16,7 @@ function ResetForm() {
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirm] = useState("");
   const { run, busy, error } = useAction(async () => api.post("/api/auth/password-reset/confirm", { token, newPassword, confirmPassword }, { anonymous: true }));
   useNoticeOnError(error);
-  async function submit(e: FormEvent) { e.preventDefault(); const r = await run(); if (r !== undefined) notice.success(t("common.saved"), { onClose: () => router.push("/login") }); }
+  async function submit(e: FormEvent) { e.preventDefault(); const r = await run(); if (r !== undefined) notice.success(t("auth.resetDone"), { onClose: () => router.push("/login") }); }
   return (
     <AuthCard title={t("auth.resetTitle")} lead={t("auth.resetLead")} footer={<Link href="/login" className="underline">← {t("nav.login")}</Link>}>
       <form onSubmit={submit} noValidate>
