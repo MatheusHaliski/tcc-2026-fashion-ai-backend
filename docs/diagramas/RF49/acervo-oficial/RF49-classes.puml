@@ -1,0 +1,287 @@
+@startuml RF49_Classes
+title RF49 — Acervo oficial em escala\nDiagrama de classes — coletor e importador Python (scripts/catalog) + busca catalogada Java com milhares de produtos
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFFFF
+  BorderColor #CBC6BE
+}
+skinparam packageStyle rectangle
+hide empty methods
+hide empty fields
+
+package "data/catalog · cadastro" {
+class "brands.json" as BrandsJson <<arquivo>> {
+  100 marcas · 112 domínios oficiais
+  sources[].source_type: OFFICIAL_BRAND | OFFICIAL_STORE
+  collector (opcional): product_patterns, sitemap_patterns
+}
+class "aliases.json" as AliasesJson <<arquivo>> {
+  apelidos de marca (CK → Calvin Klein)
+}
+}
+
+package "scripts/catalog · coleta (Python)" {
+class "collect_official.py" as CollectOfficial <<módulo CLI>> {
+  BRANDS / OUT
+  ALLOWED_SOURCES = OFFICIAL_BRAND, OFFICIAL_STORE,
+    AUTHORIZED_RETAILER
+  CLI: ~--brands ~--max-per-brand ~--min-interval
+  CLI: ~--workers ~--fresh ~--dry-run
+  --
+  +run(args, fetch, brands, log): dict
+  +collect_brand(brand, srcs, args, fetch, n, log, total, lock): int
+  +official_sources(brands, only): list
+  +make_fetch(user_agent, timeout, retries): fetch
+  +ascii_url(url): str
+}
+class "providers/official_sitemap.py" as OfficialSitemap <<módulo>> {
+  STORE_IMAGE_HOSTS: vtexassets, vteximg, cdn.shopify,
+    dam.kering, thron, bynder, scene7…
+  MODIFIERS / UNSUPPORTED / PRODUCT_SITEMAP_HINTS
+  --
+  +collect(site, brand, source_type, n, max_products, …): dict
+  +product_urls(site, product_patterns, sitemap_patterns): Iterator
+  +structured_product(page): dict
+  +to_catalog_item(found, page_url, brand, official, source_type, n, warnings): dict
+  +product_images(found, official): list
+  +brand_cdn_ok(image_url, official): bool
+  +clean_title(raw, brand, n): (nome, cor)
+  +infer_subcategory(n, *texts): str | None
+  +unsupported_reason(name): str | None
+  +is_pack(name): bool
+  +same_brand(n, page_brand, brand): bool
+}
+class Site <<official_sitemap.py>> {
+  domain / base: str
+  robots: RobotFileParser
+  sitemaps: list
+  requests: int
+  --
+  +load_robots()
+  +allowed(url): bool
+  +get(url): (status, corpo, content-type)
+}
+class Politeness <<dataclass · official_sitemap.py>> {
+  min_interval: float
+  last: dict
+  --
+  +wait(host, crawl_delay)
+}
+class StopDomain <<Exception · official_sitemap.py>> {
+}
+class "recheck_collected.py" as Recheck <<módulo CLI>> {
+  +recheck(item, n): (motivo, item)
+  +https_images(item): dict
+  --
+  fora_do_acervo · sem_tipo_no_nome · kit_sem_tipo
+  tipo_corrigido · titulo_limpo · foto_https
+}
+class "enrich_images.py" as Enrich <<módulo CLI>> {
+  +enrich_file(path, fetch, args, log): (int, int)
+  --
+  4.059 de 4.371 sem foto ganharam foto
+}
+}
+
+package "data/catalog · coletado" {
+class "collected/<marca>.jsonl" as CollectedJsonl <<arquivo>> {
+  1 produto por linha · o coletor só acrescenta
+  recheck/enrich reescrevem o arquivo via .jsonl.tmp
+  {field} .state/<marca>.visited = URLs já visitadas (retomada)
+}
+class "acervo/acervo-oficial-2026-10-05.jsonl.gz" as AcervoGz <<arquivo>> {
+  9.573 produtos consolidados
+}
+}
+
+package "scripts/catalog · importação (Python)" {
+class "import_products.py" as ImportProducts <<módulo CLI>> {
+  +read_items(path): Iterator
+  --
+  JSON · JSONL · .jsonl.gz · CSV
+}
+class Ingestor <<ingest.py>> {
+  dry_run / create_brands / overwrite: bool
+  seen: dict
+  report: Report
+  --
+  +ingest(raw, label): CREATE | UPDATE | DUPLICATE | SKIP | ERROR
+  +upsert_brand(cur, b) / upsert_source(cur, brand_id, src)
+  +search_text(cur, brand, p): str
+  +record_run(kind, source, started)
+  -_upsert(cur, p) / _variants / _images / _aliases
+}
+class Report <<dataclass · ingest.py>> {
+  total_read / created / updated
+  skipped / duplicates_found / errors
+}
+class "deduplicate.py" as Dedup <<módulo>> {
+  STRONG: gtin › ean › upc › sku › product_code › canonical_url
+  --
+  +find_existing(cur, p, dedup_key): (linha, motivo)
+  +find_same_model(cur, brand_id, p): linha
+}
+class Normalizer <<normalize_product.py>> {
+  +subcategory(raw) / color(raw) / brand_slug(raw)
+  +tokens(raw)
+  +dedup_key(brand_slug, p): str
+}
+class "seed_catalog.py" as Seed <<módulo CLI>> {
+}
+class "rebuild_search_index.py" as Rebuild <<módulo CLI>> {
+}
+class "revalidate_catalog.py" as Revalidate <<módulo CLI>> {
+  +check(url, timeout): str
+  --
+  ACTIVE · UNAVAILABLE · SOURCE_REMOVED · NEEDS_REVALIDATION
+}
+class "import_railway.sh" as ImportRailway <<script>> {
+  TCP proxy temporário · fai_app com TLS
+  senha só por RAILWAY_MYSQL_APP_PASSWORD
+}
+}
+
+package "fai-web · controller" {
+class CatalogController {
+  GET /api/catalog/search
+  GET /api/catalog/suggestions
+  GET /api/catalog/brands · /stores
+  GET /api/catalog/products/{id}
+}
+}
+
+package "fai-application · catalog" {
+class CatalogService {
+  {static} +MIN_SCORE = 0.35
+  {static} ~NO_PHOTO_PENALTY = 0.10
+  --
+  +search(UUID, SearchRequest): Map
+  ~resolve(UUID, SearchRequest): Resolved
+  ~patternTerms(String): String
+  ~rank(Resolved, List<CatalogProduct>, int): List<Map>
+  {static} ~orderScore(Map): double
+}
+class CatalogMatchScorer {
+  W_BRAND 0.25 · W_CATEGORY 0.10 · W_SUBCATEGORY 0.20
+  W_TEXT 0.35 · W_COLOR 0.10 · W_VISUAL 0.15 · W_DESIGN 0.45
+  --
+  +score(Intent, Candidate, Double): Score
+}
+}
+
+package "fai-domain · model e repository" {
+interface CatalogProductRepository {
+  LIMIT 200 · MATCH(search_text) AGAINST(terms)
+  --
+  +candidates(brandId, category, subcategory, terms)
+  +candidatesWithColor(brandId, category, subcategory, color, terms)
+  +findByDedupKey(String): Optional<CatalogProduct>
+}
+class Brand {
+  +name / slug / website: String
+}
+class CatalogSource {
+  +brandId: UUID
+  +domain: String
+  +sourceType: CatalogSourceType
+  +allowsImagePersistence: boolean
+}
+class CatalogProduct {
+  +brandId: UUID
+  +subcategory / productName / modelName: String
+  +color / colorName: String
+  +gtin / sku / productCode / canonicalUrl: String
+  +dedupKey: String
+  {field} +searchText: String (FULLTEXT ngram)
+  +ingestionStatus: CatalogIngestionStatus
+  +sourceStatus: CatalogSourceStatus
+  +ownersCount: int
+}
+class CatalogVariant {
+  +productId: UUID
+  +color / colorName: String
+  +sku / gtin: String
+}
+note as NAcervo
+  acervo importado: 8.810 produtos · 52 marcas
+  26.457 variantes · 8.357 com foto (95%)
+  12/12 buscas reais passaram (docs/testes/busca-catalogada)
+end note
+class CatalogImage {
+  +productId / variantId: UUID
+  +imageUrl / sourceDomain: String
+  +primary: boolean
+  {field} +usageStatus: CatalogImageUsage (REFERENCE_ONLY)
+}
+}
+
+BrandsJson <.. CollectOfficial : lê fontes oficiais
+CollectOfficial --> OfficialSitemap : collect()
+CollectOfficial ..> Site : 1 por domínio
+CollectOfficial ..> Politeness : 1 por marca
+OfficialSitemap ..> Site : product_urls / get
+Site --> Politeness : wait(host, Crawl-delay)
+Site ..> StopDomain : 403 / 429
+Recheck ..> OfficialSitemap : reaplica regras
+Enrich ..> OfficialSitemap : structured_product, product_images
+Enrich ..> Site : load_robots / allowed / get
+CollectOfficial ..> Normalizer : normalize_product(item, n)\nvalida antes de gravar
+CollectOfficial ..> CollectedJsonl : grava
+Recheck ..> CollectedJsonl : reescreve
+Enrich ..> CollectedJsonl : completa fotos
+Politeness -[hidden]down- CollectedJsonl
+StopDomain -[hidden]down- AcervoGz
+CollectedJsonl <.. ImportProducts : lê
+AcervoGz <.. ImportProducts : lê
+AcervoGz <.. ImportRailway : envia
+ImportRailway ..> Seed : 1º
+ImportRailway ..> ImportProducts : 2º
+ImportRailway ..> Rebuild : 3º
+BrandsJson <.. Seed
+AliasesJson <.. Seed
+ImportProducts --> Ingestor : ingest(raw)
+Seed --> Ingestor
+Rebuild --> Ingestor : search_text
+Ingestor *-- Report
+Ingestor ..> Dedup : find_existing
+Ingestor ..> Normalizer : dedup_key
+OfficialSitemap ..> Normalizer : subtipo, cor, marca
+Ingestor ..> CatalogProduct : upsert por produto\n(transação)
+Revalidate ..> CatalogProduct : sourceStatus
+
+CatalogController --> CatalogService
+CatalogService --> CatalogProductRepository : candidatesWithColor › candidates
+CatalogService --> CatalogMatchScorer : score
+CatalogProductRepository ..> CatalogProduct
+CatalogImage "*" ..> "0..1" CatalogVariant : variantId
+CatalogImage "*" ..> "1" CatalogProduct : productId
+CatalogVariant "*" ..> "1" CatalogProduct : productId
+CatalogProduct "*" ..> "1" Brand : brandId
+CatalogSource "*" ..> "1" Brand : brandId
+
+note bottom of OfficialSitemap
+  RN47.04 só domínios oficiais; same_brand descarta marca diferente da fonte
+  (nunca inventa marca); subtipo só pelo nome — sem acerto, None (nunca chutado);
+  RN47.03 foto só de hosts aceitos por brand_cdn_ok, guardada como URL (REFERENCE_ONLY)
+end note
+note bottom of Site
+  robots.txt (fallback www. em 0/403/404) e Crawl-delay respeitados;
+  403/429 encerra o domínio; marcas em paralelo, 1 requisição por vez por site
+end note
+note bottom of Dedup
+  depois: dedup_key = marca+subtipo+modelo+variante › marca+subtipo+título+cor;
+  log [CREATE]/[UPDATE]/[DUP]/[SKIP] por item; record_run grava as
+  contagens do Report em catalog_ingestion_runs
+end note
+note bottom of CatalogService
+  pool (LIMIT 200 cada): subtipo+cor → subtipo → palavras da estampa → geral;
+  reforço se pool < 8; ordem = total − 0,10 sem foto (% mostrado igual)
+end note
+@enduml

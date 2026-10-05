@@ -1,148 +1,74 @@
 @startuml RF49_Sequencia
-title RF49 — Acervo oficial em escala\nDiagrama de sequência — coleta nos sites oficiais → fotos completas → importação idempotente → busca com milhares de produtos
-skinparam backgroundColor #FFFFFF
-skinparam sequence {
-  ArrowColor #4A4852
-  LifeLineBorderColor #CBC6BE
-  ParticipantBackgroundColor #F4F2EF
-  ParticipantBorderColor #4A4852
-}
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nDiagrama de sequência: login pelo BFF com IP assinado, limite por IP, teto de hashes e bloqueio por conta
 autonumber
-actor "Operador" as OP
-participant "collect_official.py\nrun() · collect_brand()\nmake_fetch() · ascii_url()" as CO
-participant "official_sitemap.py\ncollect() · Site · Politeness\nstructured_product()\nto_catalog_item()" as SM
-participant "Site oficial\nda marca" as WEB
-collections "data/catalog/collected\n<marca>.jsonl\n.state/<marca>.visited" as FS
-participant "recheck_collected.py\nenrich_images.py" as REV
-participant "import_railway.sh\nimport_products.py\nIngestor (ingest.py)" as IMP
-database "MySQL" as DB
-participant "CatalogProductRepository" as REPO
-participant "CatalogMatchScorer" as M
-participant "CatalogService" as S
-participant "CatalogController" as C
-participant "Frontend\npieces/new\n(catalog-search.tsx)" as FE
-actor "Pessoa" as U
 
-== Parte 1 · Coleta (1/3) — sites oficiais → JSONL (CLI, sem acesso ao banco) ==
-OP -> CO: collect_official.py ~--brands nike,levis\n~--max-per-brand 2000 ~--min-interval 1.5\n~--workers 12 [~--fresh] [~--dry-run]
-CO -> CO: official_sources(brands.json):\nsó OFFICIAL_BRAND / OFFICIAL_STORE /\nAUTHORIZED_RETAILER (RN47.04)
-note left of CO
-  brands.json: 100 marcas,
-  112 domínios oficiais.
-  A marca vem da fonte
-  (nunca inventada).
-end note
-par marcas em paralelo (~--workers) — cada site com 1 requisição por vez
-  CO -> FS: collect_brand(): lê .visited e o .jsonl\n(retomada; ~--fresh apaga)
-  loop cada domínio oficial da marca (um de cada vez)
-    CO -> SM: collect(Site(domínio, fetch de make_fetch,\nPoliteness, user_agent), marca, restantes,\nvisited, on_item)
-    SM -> WEB: Site.load_robots():\nGET /robots.txt\n(0/403/404 → tenta www.)
-    alt robots.txt 401/403 ou sem conexão
-      SM --> CO: StopDomain capturado →\nrelatório stopped ("PAROU")
-    else robots.txt lido (404 = sem regras)
-      WEB --> SM: regras + Crawl-delay\n+ "Sitemap:"
-      SM -> WEB: product_urls(): sitemaps\nde produto/pdp primeiro\n(ajuda, blog, lojas: fora)
-      WEB --> SM: URLs de produto\ndo domínio
-      loop cada URL nova (fora de visited) até ~--max-per-brand
-        SM -> WEB: allowed(url) · get(url)\n(Politeness.wait: Crawl-delay)
-        alt 403 / 429
-          WEB --> SM: 403 / 429 → StopDomain\n(encerra o domínio)
-        else 200 HTML
-          WEB --> SM: HTML
-          SM -> SM: structured_product():\nJSON-LD Product/ProductGroup\nou OpenGraph + og:image
-          SM -> SM: to_catalog_item(): clean_title ·\nsame_brand (outra marca → descarta) ·\nunsupported_reason · infer_subcategory\n· is_pack (sem subtipo → descarta,\nnunca chuta) · product_images\n+ brand_cdn_ok (só a URL)
-          SM -> CO: on_item(item)
-          CO -> FS: normalize_product(item) ok\n→ +1 linha em <marca>.jsonl
+actor Pessoa
+participant "Navegador\n(lib/api/client.ts)" as NAV
+participant "Vercel · BFF\n/bff/auth/login" as BFF
+participant "DevGateFilter\n(-103)" as GATE
+participant "ClientIpResolver" as IP
+participant "AuthRateLimitFilter\n(-102)" as ARL
+participant "IdentityService" as IDS
+participant "RateLimitPort\n(memória · Redis)" as RL
+participant "Argon2id\n(PasswordHasherPort)" as HASH
+database "MySQL 9\n(TLS · fai_app)" as DB
+participant "Audit" as AUD
+
+Pessoa -> NAV : e-mail/usuário + senha
+NAV -> BFF : POST /bff/auth/login (mesma origem)
+BFF -> BFF : ts = agora · sig = HMAC-SHA256(EDGE_PROXY_SECRET, ip|ts)
+BFF -> GATE : POST /api/auth/login\nX-Fai-Client-Ip · X-Fai-Proxy-Ts · X-Fai-Proxy-Sig · X-Dev-Gate
+GATE -> GATE : token do gate (ga) válido
+GATE -> ARL
+ARL -> IP : resolve(request)
+IP --> ARL : IP do cliente (assinatura conferida em tempo constante;\nIPv6 vira o prefixo /64)
+ARL -> RL : tryAcquire(ip, "ip:post:api:auth:login", 30, 10 min)
+alt balde do IP estourado
+  RL --> ARL : false
+  ARL --> BFF : 429 MUITAS_TENTATIVAS · Retry-After
+else dentro do limite
+  RL --> ARL : true
+  ARL -> ARL : vaga no teto de hashes (Semaphore, espera até 2 s)
+  alt sem vaga (pico de logins)
+    ARL --> BFF : 503 AUTENTICACAO_OCUPADA · Retry-After: 2
+  else com vaga
+    ARL -> IDS : login(identificador, senha, ip, user-agent)
+    IDS -> DB : findByEmailHash / findByUsername
+    alt conta não existe
+      IDS -> HASH : matches(senha, hashFalso) — tempo igual
+      IDS -> AUD : LOGIN_FALHO (usuario_inexistente)
+      IDS --> ARL : 401 NAO_AUTENTICADO
+    else conta existe
+      IDS -> RL : tryAcquire(userId, "login-fail", 5, 15 min) — reserva atômica
+      IDS -> HASH : matches(senha, hash da conta)
+      alt reserva acima do limite (bloqueada)
+        IDS -> AUD : LOGIN_BLOQUEADO_TENTATIVAS
+        IDS --> ARL : 401 genérico (nem a senha certa entra)
+      else senha errada
+        IDS -> AUD : LOGIN_FALHO (senha) — a reserva fica
+        IDS --> ARL : 401 genérico
+      else senha certa
+        IDS -> RL : release(userId, "login-fail")
+        opt 2FA ligado
+          IDS -> DB : código TWO_FACTOR válido?
         end
+        IDS -> RL : reset(userId, "login-fail")
+        IDS -> DB : refresh token (hash) + lastLoginAt
+        IDS -> AUD : LOGIN_SUCESSO
+        IDS --> ARL : sessão (JWT RS256 aud, 15 min + refresh)
       end
     end
-    CO -> FS: URLs novas em\n.state/<marca>.visited
+    ARL -> ARL : devolve a vaga do teto de hashes (finally)
+    ARL --> BFF : resposta
   end
 end
-CO --> OP: Resumo: domínios · páginas · produtos\nnovos · inválidos · domínios que pararam
+BFF --> NAV : access token no corpo · refresh em cookie HttpOnly fai_rt
+NAV -> NAV : guarda o access token só em memória
 
-== Parte 1 · Coleta (2/3) — revisão das regras e fotos completas (antes de importar) ==
-OP -> REV: recheck_collected.py [~--dry-run]
-REV -> FS: recheck(): fora_do_acervo · sem_tipo_no_nome ·\nkit_sem_tipo · tipo_corrigido · titulo_limpo ·\nfoto_https → reescreve via .jsonl.tmp
-OP -> REV: enrich_images.py [~--workers 8]
-loop cada produto sem foto com official_product_url (1 requisição por vez por site)
-  REV -> SM: Site(host).load_robots() · allowed(url) · get(url)
-  SM -> WEB: GET página oficial\n(403/429 → StopDomain)
-  WEB --> SM: HTML
-  SM --> REV: HTML
-  REV -> REV: structured_product()\n→ product_images()\n(nó → variantes →\nog:image; brand_cdn_ok)
-end
-REV -> FS: reescreve <marca>.jsonl\nvia .jsonl.tmp
-REV --> OP: Resumo: 4.059 de 4.371 produtos sem foto ganharam foto
-
-== Parte 1 · Coleta (3/3) — importação idempotente no MySQL ==
-OP -> IMP: import_railway.sh <host> <porta> [~--dry-run] — TCP proxy temporário ·\nusuário fai_app com TLS · senha só em RAILWAY_MYSQL_APP_PASSWORD
-note over IMP
-  1) seed_catalog.py
-  2) import_products.py
-     acervo-oficial-2026-10-05.jsonl.gz
-     (9.573 produtos)
-  3) rebuild_search_index.py
-end note
-IMP -> FS: read_items(): .jsonl.gz\nem streaming
-loop cada produto (Ingestor.ingest(): uma transação por produto)
-  IMP -> IMP: normalize_product\n(inválido → [ERROR])
-  IMP -> DB: brand_by_name · official_sources →\nclassify(URL): domínio oficial da marca?
-  IMP -> DB: find_existing: gtin › ean › upc ›\nsku › código › URL canônica ›\ndedup_key · find_same_model\n(mesmo modelo → nova variante)
-  alt não existe
-    IMP -> DB: INSERT catalog_products\n(VALIDATED, search_text) — [CREATE]
-  else já existe
-    IMP -> DB: só campos vazios — [UPDATE]\nnada novo — [SKIP] · [DUP] no log
-  end
-  IMP -> DB: catalog_variants · catalog_product_aliases ·\ncatalog_images (REFERENCE_ONLY)
-end
-IMP -> DB: record_run(): catalog_ingestion_runs
-IMP -> DB: rebuild_search_index.py:\nUPDATE search_text (FULLTEXT ngram)
-IMP --> OP: total_read · created · updated · skipped · duplicates_found · errors
-note over DB
-  8.810 produtos · 52 marcas
-  26.457 variantes
-  8.357 com foto (95%)
-  rodar de novo não duplica
-end note
-
-== Parte 2 · Busca catalogada em escala (milhares de produtos) ==
-U -> FE: tipo → marca →\n"camiseta azul"
-FE -> C: GET /api/catalog/search\n?category&subcategory&brand\n&q&color&limit=24
-C -> S: search(userId,\nSearchRequest)
-S -> S: resolve(): marca · subtipo\npela frase mais longa ·\ndesign (CatalogTextInterpreter\n/ CatalogDesignInterpreter)\n· cor · termos
-alt sem marca, tipo, termo nem design
-  S --> C: enoughInput = false
-else
-  opt subtipo e cor conhecidos
-    S -> REPO: candidatesWithColor(marca, categoria,\nsubtipo, cor, termos | null) — cor no\nproduto ou numa variante
-  end
-  opt subtipo conhecido
-    S -> REPO: candidates(marca, categoria, subtipo, termos)
-  end
-  opt estampa citada (≠ PLAIN)
-    S -> REPO: candidates(…, subtipo, patternTerms(estampa))
-  end
-  S -> REPO: candidates(…, subFilter, termos) — pool geral
-  opt pool < 8
-    S -> REPO: candidates(…, subFilter, null) — reforço
-  end
-  REPO -> DB: cada consulta: MATCH(search_text)\nAGAINST (BOOLEAN MODE) · ORDER BY\nowners_count DESC · LIMIT 200
-  DB --> REPO: produtos
-  REPO --> S: pool (sem repetir id)
-  S -> DB: rank(): findByProductIdInAndPrimaryTrue ·\nvariantes · apelidos do pool
-  loop cada produto do pool
-    S -> M: score(Intent, Candidate, null)
-    M --> S: Score (total + motivos)
-    S -> S: total < MIN_SCORE (0,35) → sai;\nsenão card + selectedVariant\n(variante da cor pedida) + matchPercent
-  end
-  S -> S: orderScore(): sem foto cede\nNO_PHOTO_PENALTY = 0,10\nsó na ordem (o "% compatível"\nmostrado não muda) ·\ndesempate ownersCount
-  S --> C: intent · results\n(imageUrl, selectedVariant,\nmatchPercent) · canSearchOfficial
-end
-C --> FE: 200 {intent, results, total,\nenoughInput, canSearchOfficial}
-FE --> U: cards com foto\noficial + "% compatível"\n(sem foto → ilustração)
-note over FE, U
-  12/12 buscas reais passaram
-  (docs/testes/busca-catalogada)
+note over IDS, RL
+  Troca de senha, PATCH /api/me/sensitive e POST /api/me/deletion usam a
+  mesma reserva no "login-fail": 5 erros → 429 MUITAS_TENTATIVAS
+  (uma sessão roubada não testa a senha atual sem limite).
 end note
 @enduml

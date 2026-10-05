@@ -13,4 +13,4 @@ Fonte PlantUML (`*.puml`, estilo comum em `_estilo.iuml`) e PNG gerado ao lado. 
 | Máquina de estados | `SEG-maquinadeestados-conta.puml` | `AccountStatus` (inclui exclusão LGPD por anonimização) e `account_origin` |
 | Classes | `SEG-classes.puml` | gate, cliente da API, filtros, `AiBudget`, mídia com dono, criptografia de campo |
 
-O pipeline de dados demo (proposta) está em [`../dados-demo/`](../dados-demo/).
+O pipeline de dados demo (base implementada; seed/reset planejados) está em [`../dados-demo/`](../dados-demo/).

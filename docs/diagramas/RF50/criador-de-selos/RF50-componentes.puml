@@ -1,0 +1,83 @@
+@startuml RF50_Componentes
+title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #2D2438
+}
+package "Frontend (Next.js)" {
+  [brands/{slug}/page.tsx\n(aba Selos + Dialog)] as Page
+  [SealWizard\n(Modo · Dados · Arte · Revisar)] as Wizard
+  [SealPolicyEditor\n(regras + tags)] as Policy
+  [SealArt\n(tipo + galerias + textos da folha)] as Art
+  [SealCoreEditor\n(Elemento · Imagem · Texto)] as Core
+  [SealCreator\n(gerador circular / upload)] as Gen
+  [SealMedallion\n(render por tipo)] as Med
+  [lib/seals/templates.ts\n+ templates.json] as Cat
+  [scheme-card / cards\n(selos nos looks e peças)] as Cards
+  [Criador de peça (RF4)\ne de look (RF5)\n(selos sugeridos)] as Criadores
+}
+package "Assets públicos" {
+  [public/selos/fai/*.webp\n(13 medalhões)] as FAI
+  [public/selos/circular/*.webp\n(44 anéis, centro livre)] as CIRC
+  [public/selos/folha/*.webp\n(33 folhas + emblemas)] as FOL
+}
+package "Geração de modelos (scripts/selos)" {
+  [build_templates.py\n(OpenCV: recorte circular,\ndisco central, cor dominante)] as BT
+  [build_folhas.mjs\n(Chromium: camadas, slots\nde texto e emblema)] as BF
+}
+package "Backend (Spring Boot)" {
+  [SealController\n/api/seals, /draft, /uploads,\n/api/seal-suggestions, /api/seal-bonds] as Ctl
+  [SealService] as Svc
+  [SealDrafts\n(IA local)] as Drafts
+  [SealDesigns\n(validação do desenho)] as Designs
+  [SealPolicies] as Pol
+  [SealDesignService\n(upload selo/núcleo)] as Up
+  [OwnMedia] as Own
+  [seals/templates.json\n(ids + cores)] as BCat
+}
+database "MySQL\nseals, seal_bonds" as DB
+database "Storage S3/local\nusers/{id}/seals" as ST
+
+Page --> Wizard
+Wizard --> Policy
+Wizard --> Art
+Art --> Core
+Art --> Gen
+Gen --> Core
+Art --> Med
+Wizard --> Med
+Cards --> Med
+Med --> Cat
+Cat ..> FAI
+Cat ..> CIRC
+Cat ..> FOL
+BT --> FAI
+BT --> CIRC
+BF --> FOL
+BT --> Cat
+BF --> Cat
+BT --> BCat
+BF --> BCat
+Wizard --> Ctl : POST /api/seals/draft\nPOST/PUT /api/seals
+Criadores --> Ctl : POST /api/seal-suggestions/preview(-piece)\nPOST /api/schemes/{id}/seal-bonds
+Criadores --> Med
+Core --> Ctl : POST /api/seals/uploads?purpose=core
+Ctl --> Svc
+Ctl --> Up
+Svc --> Drafts
+Svc --> Designs
+Svc --> Pol
+Svc --> Own
+Drafts --> Designs
+Designs --> BCat
+Svc --> DB
+Up --> ST
+@enduml

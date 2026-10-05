@@ -1,8 +1,8 @@
-# RF49 — Acervo oficial em escala: coleta dos sites oficiais, fotos completas, importação idempotente e busca com milhares de produtos
+# RF47 — Acervo oficial em escala: coleta dos sites oficiais, fotos completas, importação idempotente e busca com milhares de produtos
 
-> 05/10/2026 · Amplia o RF47 (Acervo & Busca Catalogada). O RF47 nasceu com 11 marcas e 182 produtos semeados à mão;
-> o RF49 leva o catálogo para **100 marcas e 8.810 produtos oficiais** e ajusta a busca para continuar certeira nessa
-> escala. Diagramas: `docs/diagramas/RF49/` · Testes reais: `docs/testes/busca-catalogada/`.
+> 05/10/2026 · Evolução do RF47 (Acervo & Busca Catalogada), originalmente proposta como RF49. O RF47 nasceu com 11 marcas e 182 produtos semeados à mão;
+> esta evolução leva o catálogo para **100 marcas e 8.810 produtos oficiais** e ajusta a busca para continuar certeira nessa
+> escala. Diagramas: `docs/diagramas/RF49/acervo-oficial/` · Testes reais: `docs/testes/busca-catalogada/`.
 
 ## 1. Objetivo
 

@@ -1,123 +1,70 @@
 @startuml RF49_Componentes
-title RF49 — Acervo oficial em escala\nDiagrama de componentes — sites oficiais → coletor CLI → JSONL + estado → revisão/fotos → importação idempotente → MySQL → busca catalogada
-!pragma layout smetana
-skinparam backgroundColor #FFFFFF
-skinparam component {
-  BackgroundColor #F4F2EF
-  BorderColor #4A4852
-  ArrowColor #4A4852
-}
-skinparam package {
-  BorderColor #CBC6BE
-}
-skinparam node {
-  BorderColor #CBC6BE
-}
-skinparam database {
-  BackgroundColor #EEF6FF
-  BorderColor #4A4852
-}
-skinparam artifact {
-  BackgroundColor #FFFFFF
-  BorderColor #4A4852
-}
-skinparam cloud {
-  BackgroundColor #FFFFFF
-  BorderColor #4A4852
-}
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nDiagrama de componentes (v6): camadas de defesa da borda aos bancos, dados demo isolados e entrega contínua
+
+actor "Pessoa\n(usuária · equipe · banca)" as P
+
+package "GitHub" {
+  component "CI (Actions)\nAPI mvn verify · Front · gitleaks" as CI
+  component "Dependabot\nMaven · npm · Actions · Docker (JVM só LTS)" as DEP
 }
 
-cloud "Sites oficiais das marcas\n112 domínios OFFICIAL_BRAND /\nOFFICIAL_STORE / AUTHORIZED_RETAILER\n(robots.txt · Crawl-delay · sitemaps de\nproduto · JSON-LD Product · og:image)" as WEB
-cloud "Servidores de imagem da loja\nSTORE_IMAGE_HOSTS: vtexassets, vteximg,\ncdn.shopify, dam.kering, thron, bynder, scene7…\n(foto só por URL · REFERENCE_ONLY)" as CDN
-
-package "data/catalog (arquivos)" {
-  artifact "brands.json (100 marcas, 112 domínios)\naliases.json (CK, LV, A&F)" as BR
-  artifact "collected/<marca>.jsonl\ncollected/.state/<marca>.visited\n(retomada da coleta)" as JL
-  artifact "acervo/acervo-oficial-2026-10-05.jsonl.gz\n(9.573 produtos)" as ACV
+package "Vercel · Next.js (fai-network.com)" {
+  component "middleware.ts\nCSP com nonce · dev gate" as MW
+  component "/gate/*\nGoogle autorizado + PIN\n8 erros por IP / 15 min" as GATE
+  component "BFF /bff/auth/[action]\nIP assinado (EDGE_PROXY_SECRET)\nrefresh em cookie HttpOnly fai_rt" as BFF
+  component "App React\naccess token só em memória" as APP
 }
 
-package "scripts/catalog · coleta (Python)" {
-  [collect_official.py (CLI)\nrun() · collect_brand() · make_fetch()\nofficial_sources() · ascii_url()\n~--brands ~--max-per-brand ~--min-interval\n~--workers ~--fresh ~--dry-run\n(marcas em paralelo; 1 requisição por vez por site)] as COL
-  [providers/official_sitemap.py\ncollect() · Site (load_robots com fallback www. ·\nallowed · get) · Politeness (Crawl-delay)\nproduct_urls · structured_product · to_catalog_item\nproduct_images · brand_cdn_ok · clean_title\ninfer_subcategory · unsupported_reason\nis_pack · same_brand\nStopDomain (robots 401/403 · página 403/429)] as OSM
-  [normalize_product.py (Normalizer)\nvalidate_source.py (same_site)\n(normalization.json compartilhado)] as NRM
-  [recheck_collected.py\nrecheck() · https_images()] as RCK
-  [enrich_images.py\nenrich_file()] as ENR
+package "Railway · api (Spring Boot 4.1 · Java 21 em JVM 25 LTS)" {
+  component "CorrelationIdFilter · idioma\nDevGateFilter (-103)" as F1
+  component "ClientIpResolver\nIP assinado › X-Real-IP › TCP\nIPv6 por /64" as CIR
+  component "AuthRateLimitFilter (-102)\nlimite por IP + método + rota\nteto de hashes Argon2 (503)" as ARL
+  component "Spring Security 7\nJWT RS256 (aud) · papéis\nSessionActiveFilter" as SEC
+  component "IdentityService\nbloqueio 5/15 min (reserva atômica)\nreconferência de senha bloqueável" as IDS
+  component "Serviços RF1–RF48\nBOLA/BFLA · OwnMedia · AiBudget" as SVC
+  component "Demo/Test Data Pipeline\nDemoEnvironmentGuard · DemoFixtures (@Lazy)\nseed/reset/verify: planejado" as DEMO
+  component "Flyway V1–V36\nV34 política de ON DELETE\nV35 account_origin" as FW
+  component "Jackson 3 · JacksonModule\ni18n · apelidos de enums" as JSON
+  component "BackupJob\nmysqldump → restricted/backups" as BKP
 }
 
-package "scripts/catalog · carga (Python)" {
-  component "import_railway.sh <host> <porta> ~[--dry-run]\n1/3 seed → 2/3 acervo → 3/3 índice\nMYSQL_USER=fai_app · MYSQL_SSL_MODE=REQUIRED\n(senha só por RAILWAY_MYSQL_APP_PASSWORD)" as RWS
-  [seed_catalog.py\n(marcas, apelidos, fontes oficiais\ne produtos do seed)] as SEED
-  [import_products.py\nread_items(): JSON / JSONL / .jsonl.gz / CSV\n~--batch-size · ~--overwrite · ~--dry-run] as IMP
-  component "ingest.py · Ingestor\ningest() · _upsert() · record_run()\ndedup gtin › ean › upc › sku › código ›\nURL canônica › marca+subtipo+modelo+variante ›\nmarca+subtipo+título+cor\n[CREATE] [UPDATE] [DUP] [SKIP]" as ING
-  [rebuild_search_index.py\n(search_text · FULLTEXT ngram)] as IDX
-  [revalidate_catalog.py\n(manutenção: HEAD nas páginas\ne fotos oficiais)] as REV
-  [db.py · connect() · transaction()\n(TLS conforme MYSQL_SSL_MODE)] as DBPY
+package "Railway · bancos (rede privada, start.sh conferido por SHA-256)" {
+  database "MySQL 9\nfai_app · fai_backup (TLS)" as MY
+  database "Cassandra 4.1\nfai_app · TLS CA própria" as CA
+  database "OpenSearch\nfai_app só fai-* · TLS · auditoria" as OS
+  database "Redis 8.2 (opcional)\nACL fashionai" as RD
+  database "Bucket S3\nmídia · restricted/" as S3
 }
 
-node "Railway (produção)" {
-  [TCP proxy temporário\n(MySQL → Networking;\nremovido ao fim da importação)] as PROXY
-  database "MySQL fashionai\n(usuário fai_app, só TLS)\n• brands / brand_aliases\n• catalog_sources\n• catalog_products\n  (FULLTEXT ngram search_text)\n• catalog_product_aliases\n• catalog_variants · catalog_images\n• catalog_ingestion_runs" as DB
-}
+component "Railway deploy\nhealthcheck /actuator/health\n(versão anterior segue se falhar)" as RWD
+cloud "IA (Anthropic · Google · Replicate)\nchaves só no servidor" as IA
 
-package "API Spring (fai-web → fai-application → fai-domain)" {
-  [CatalogController\nGET /api/catalog/search\nGET /api/catalog/suggestions\nGET /api/catalog/brands\nGET /api/catalog/stores\nGET /api/catalog/products/{id}] as CC
-  [CatalogService\nresolve() (subtipo pela frase mais longa)\nsearch() · rank() · orderScore()\npool: subtipo+cor → subtipo → patternTerms → geral\n(reforço se pool < 8)\nNO_PHOTO_PENALTY = 0,10 (só na ordem)] as CS
-  [CatalogMatchScorer\nCatalogTextInterpreter\nCatalogDesignInterpreter] as CMS
-  [CatalogProductRepository\ncandidatesWithColor() · candidates()\n(LIMIT 200 cada)] as REPO
-}
-
-package "Frontend (Next.js)" {
-  [app/(site)/(app)/pieces/new/page.tsx] as FE0
-  [components/catalog/catalog-search.tsx] as FE1
-  [lib/api/catalog.ts (catalogApi)] as FE2
-}
-
-note bottom of OSM
-  RN47.03 / RN47.04: só domínios oficiais/autorizados;
-  foto só como URL (REFERENCE_ONLY), nunca baixada.
-  robots.txt e Crawl-delay respeitados; 403/429 encerra o domínio.
-  Subtipo só pelo nome (sem tipo → descartado, nunca chutado);
-  marca da página ≠ marca da fonte → descartado (same_brand).
-end note
-
-' ── Coleta ──
-COL --> BR : lê marcas e fontes oficiais
-COL --> OSM : usa (Site por domínio)
-COL --> NRM : normaliza e valida cada item
-OSM --> WEB : GET robots.txt, sitemaps e\npáginas de produto (Crawl-delay;\n403/429 → StopDomain)
-OSM ..> CDN : brand_cdn_ok (aceita só a URL)
-COL --> JL : grava JSONL + URLs visitadas
-RCK --> JL : reaplica regras (fora_do_acervo,\nsem_tipo_no_nome, kit_sem_tipo,\ntipo_corrigido, titulo_limpo, foto_https)
-ENR --> OSM : Site.get · structured_product ·\nproduct_images
-ENR --> JL : completa fotos faltantes
-JL ..> ACV : consolidado (.jsonl.gz)
-
-' ── Carga ──
-RWS --> SEED : 1/3
-RWS --> IMP : 2/3
-RWS --> IDX : 3/3
-SEED --> BR : lê
-SEED --> ING : upsert_brand · upsert_brand_alias ·\nupsert_source · ingest()
-IMP --> ACV : lê
-IMP --> ING : ingest() por produto
-ING --> DBPY : transação por produto
-IDX --> DBPY : UPDATE search_text
-REV --> DBPY : source_status / last_verified_at
-REV ..> WEB : HEAD
-DBPY --> PROXY : TCP + TLS (host/porta do proxy)
-PROXY --> DB : fai_app
-
-' ── Busca ──
-FE0 --> FE1
-FE1 --> FE2
-FE2 --> CC : GET /api/catalog/search (HTTPS/JSON)
-FE1 ..> CDN : exibe a foto oficial (URL)
-CC --> CS : search() · suggestions()
-CS --> CMS : interpreta o texto e pontua
-CS --> REPO : pool priorizado
-REPO --> DB : MATCH(search_text) AGAINST\n(JPA nativeQuery)
+P --> MW : HTTPS
+MW --> GATE : sem gate válido
+MW --> APP
+APP --> BFF : login · refresh · logout
+APP --> F1 : /api (Bearer + X-Dev-Gate)
+BFF --> F1 : X-Fai-Client-Ip/Ts/Sig
+F1 --> CIR
+CIR --> ARL
+ARL --> SEC
+SEC --> IDS
+SEC --> SVC
+SVC --> DEMO
+SVC --> JSON
+IDS --> MY : JDBC sslMode=REQUIRED
+SVC --> MY
+SVC --> CA : CQL + TLS
+SVC --> OS : HTTPS
+ARL ..> RD : contadores (se ligado;\nsenão memória com teto)
+SVC --> S3
+SVC --> IA : AiBudget (teto USD)
+BKP --> MY
+BKP --> S3
+FW --> MY
+DEMO --> MY : só account_origin\nTEST_SEED/DEMO
+CI --> RWD : merge → branch de deploy
+DEP --> CI : PRs semanais
+RWD --> FW : sobe a imagem\n(valida versões únicas)
 @enduml

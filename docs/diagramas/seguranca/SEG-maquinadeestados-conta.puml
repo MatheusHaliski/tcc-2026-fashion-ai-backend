@@ -1,5 +1,5 @@
 @startuml SEG_MaquinaDeEstados_Conta
-title Fashion AI — Máquina de estados: conta (AccountStatus) e origem (account_origin, proposta V30)
+title Fashion AI — Máquina de estados: conta (AccountStatus) e origem (account_origin, V35)
 !include _estilo.iuml
 [*] --> PENDING_EMAIL_VERIFICATION : cadastro
 PENDING_EMAIL_VERIFICATION --> ACTIVE : código de e-mail ok\n(perfil pessoal)
@@ -16,7 +16,7 @@ note right of DELETED
   Conta real NUNCA sofre DELETE:
   a linha fica, anonimizada.
   DELETE FROM users (com as cascatas
-  da V29) é só do reset do universo
+  da V34) é só do reset do universo
   demo: account_origin IN (TEST_SEED, DEMO).
 end note
 
