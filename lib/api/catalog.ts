@@ -10,14 +10,23 @@ export interface DesignTraits { pattern?: string | null; logoPlacement?: string 
 /** Uma característica pedida e se o produto a tem ("por que esta?"). */
 export interface MatchReason { facet: "pattern" | "placement" | "size" | "sides" | "baseColor" | "printColor" | "color"; value: string; ok: boolean }
 export interface MatchScore { total: number; brandMatch: number; categoryMatch: number; subcategoryMatch: number; textSimilarity: number; colorMatch: number; visualSimilarity?: number | null; designMatch?: number | null; reasons?: MatchReason[] }
+/** Retângulo normalizado (0–1) na foto original; pode passar das bordas (smartPadding). */
+export interface NormRect { x: number; y: number; w: number; h: number }
+/**
+ * Foto canônica escolhida pelo pipeline de imagens do catálogo. SEMANTIC_CROP: URL original da marca com o recorte 4:5
+ * aplicado na exibição (nada é copiado — RN47.03). PROCESSED: master processado no storage (fonte com permissão).
+ */
+export interface CatalogCardImage { url: string; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null }
+export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
+
 export interface CatalogProduct {
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
   description?: string | null; design?: DesignTraits | null;
-  productCode?: string | null; sku?: string | null; imageUrl?: string | null; imageSource?: ImageProvenance | null;
+  productCode?: string | null; sku?: string | null; imageUrl?: string | null; imageSource?: ImageProvenance | null; catalogImage?: CatalogCardImage | null;
   source: { type: string; domain: string; productUrl: string; status: string; lastVerifiedAt: string }; ingestionStatus: string; ownersCount: number;
   matchScore?: MatchScore; matchPercent?: number; variants?: CatalogVariant[]; selectedVariant?: CatalogVariant | null;
-  images?: { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance }[]; aliases?: string[];
+  images?: CatalogProductImage[]; aliases?: string[];
 }
 export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null; design?: DesignTraits | null }
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }

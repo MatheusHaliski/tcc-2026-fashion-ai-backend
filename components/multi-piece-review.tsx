@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
-import { useAction } from "@/lib/hooks/use-api";
 import { CATEGORY_LABEL, label, useTaxonomy, type Taxonomy } from "@/lib/api/taxonomy";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { Button, ChipMultiSelect, Dialog, Field, Input, Select, cn } from "@/components/ui";
@@ -60,36 +59,115 @@ function initialValue(p: Pick<DetectedPiece, "name" | "category" | "subcategory"
     occasion: occasion.length ? occasion : [allowedOccasions?.[0] ?? "casual"], style: style.length ? style : ["basic"] };
 }
 
+/** Teto de fotos por envio: cada foto passa pela IA de visão e por uma revisão, então o lote fica revisável. */
+export const MAX_PHOTOS = 10;
+
+interface PhotoItem {
+  id: string; file: File; preview: string;
+  status: "idle" | "analyzing" | "ready" | "error" | "done";
+  detection?: MultiDetection; error?: string; saved?: number;
+}
+
 /**
- * Entrada "Várias peças numa foto" (RF4): a pessoa escolhe a foto, confere a prévia e pede a análise; a revisão abre em
- * seguida com cada peça encontrada.
+ * Foto opcional do RF4: a pessoa escolhe uma ou várias fotos (cada foto pode ter várias peças), pede a análise e o
+ * sistema detecta as peças de cada foto. A revisão abre foto por foto ("Foto 2 de 3") e cada peça confirmada vira uma
+ * peça no guarda-roupa. Fotos com erro podem ser analisadas de novo sem refazer as outras.
  */
 export function MultiPieceUpload({ onSaved }: { onSaved: (count: number) => void }) {
   const { t } = useI18n(); const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null); const [preview, setPreview] = useState<string | null>(null);
-  const [detection, setDetection] = useState<MultiDetection | null>(null);
-  const analyze = useAction(async (f: File) => { const fd = new FormData(); fd.append("file", f); return api.upload<MultiDetection>("/api/pieces/analysis/multi", fd); });
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  const [items, setItems] = useState<PhotoItem[]>([]);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [limitHit, setLimitHit] = useState(false);
+  const itemsRef = useRef(items); itemsRef.current = items;
+  useEffect(() => () => itemsRef.current.forEach((i) => URL.revokeObjectURL(i.preview)), []);
+
+  const patch = (id: string, p: Partial<PhotoItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)));
 
   function choose(files: FileList | null) {
-    const f = files?.[0]; if (!f) return;
-    setFile(f); setPreview(URL.createObjectURL(f)); setDetection(null);
+    const picked = Array.from(files ?? []).filter((f) => f.type.startsWith("image/") || f.type === "");
     if (inputRef.current) inputRef.current.value = "";
+    if (!picked.length) return;
+    const room = MAX_PHOTOS - itemsRef.current.length;
+    setLimitHit(picked.length > room);
+    const add = picked.slice(0, Math.max(0, room)).map((file, i) => ({ id: `${Date.now()}-${i}-${file.name}`, file, preview: URL.createObjectURL(file), status: "idle" as const }));
+    setItems((xs) => [...xs, ...add]);
   }
-  async function run() { if (!file) return; const d = await analyze.run(file); if (d) setDetection(d); }
+  function remove(id: string) {
+    setItems((xs) => { const gone = xs.find((x) => x.id === id); if (gone) URL.revokeObjectURL(gone.preview); return xs.filter((x) => x.id !== id); });
+    setLimitHit(false);
+  }
+
+  /** Analisa em sequência as fotos ainda não analisadas (uma de cada vez: a IA de visão tem cota por pessoa). */
+  async function analyzeAll() {
+    const queue = itemsRef.current.filter((i) => i.status === "idle" || i.status === "error");
+    if (!queue.length) return;
+    setAnalyzing(true);
+    let first: string | null = null;
+    for (const it of queue) {
+      patch(it.id, { status: "analyzing", error: undefined });
+      try {
+        const fd = new FormData(); fd.append("file", it.file);
+        const d = await api.upload<MultiDetection>("/api/pieces/analysis/multi", fd);
+        patch(it.id, { status: "ready", detection: d });
+        first ??= it.id;
+      } catch (e) {
+        const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
+        patch(it.id, { status: "error", error: err.status === 0 || err.status === 413 ? t("piece.err_upload") : err.status >= 500 ? t("piece.err_analise") : err.message });
+      }
+    }
+    setAnalyzing(false);
+    if (first && !reviewing) setReviewing(first);
+  }
+
+  /** Depois de salvar uma foto, abre a próxima pronta; sem mais nenhuma, avisa o total cadastrado. */
+  function savedOne(id: string, count: number) {
+    const next = itemsRef.current.map((x) => (x.id === id ? { ...x, status: "done" as const, saved: count } : x));
+    setItems(next);
+    const pending = next.find((x) => x.status === "ready");
+    if (pending) { setReviewing(pending.id); return; }
+    setReviewing(null);
+    if (!next.some((x) => x.status === "idle" || x.status === "analyzing" || x.status === "error")) onSaved(next.reduce((n, x) => n + (x.saved ?? 0), 0));
+  }
+
+  const current = items.find((i) => i.id === reviewing && i.detection);
+  const toAnalyze = items.filter((i) => i.status === "idle" || i.status === "error").length;
+  const order = items.filter((i) => i.detection).map((i) => i.id);
+  const statusText = (i: PhotoItem) => i.status === "analyzing" ? t("multiPiece.analisando")
+    : i.status === "ready" ? t("multiPiece.encontradas_curto", { count: i.detection?.pieces.length ?? 0 })
+    : i.status === "done" ? t("multiPiece.salvas", { count: i.saved ?? 0 })
+    : i.status === "error" ? i.error : t("multiPiece.aguardando");
 
   return (
     <div className="grid gap-2 rounded-md border border-line-soft bg-surface-2 p-3">
       <p className="font-medium">{t("multiPiece.entrada")}</p>
       <p className="type-caption text-muted">{t("multiPiece.entrada_ajuda")}</p>
-      <input ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={(e) => choose(e.target.files)} aria-label={t("multiPiece.escolher_foto")} />
-      {preview && <img src={preview} alt={t("multiPiece.previa")} className="max-h-48 w-full rounded object-contain" />}
+      <input ref={inputRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => choose(e.target.files)} aria-label={t("multiPiece.escolher_foto")} />
+      {items.length > 0 && (
+        <ul className="grid gap-2 sm:grid-cols-2" aria-label={t("multiPiece.fotos_escolhidas", { count: items.length })}>
+          {items.map((i, n) => (
+            <li key={i.id} className="flex items-center gap-2 rounded border border-line-soft bg-surface p-2">
+              <img src={i.preview} alt={t("multiPiece.foto_n", { n: n + 1 })} className="h-14 w-14 shrink-0 rounded object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="type-body-sm font-medium">{t("multiPiece.foto_n", { n: n + 1 })}</p>
+                <p className={cn("type-caption", i.status === "error" ? "error-text" : "text-muted")} role={i.status === "error" ? "alert" : undefined}>{statusText(i)}</p>
+              </div>
+              {i.status === "ready" && <Button size="sm" onClick={() => setReviewing(i.id)}>{t("multiPiece.revisar")}</Button>}
+              {(i.status === "idle" || i.status === "error") && <Button size="sm" variant="ghost" onClick={() => remove(i.id)} disabled={analyzing} aria-label={t("multiPiece.remover_foto", { n: n + 1 })}>✕</Button>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {limitHit && <p role="note" className="type-caption text-muted">{t("multiPiece.limite_fotos", { max: MAX_PHOTOS })}</p>}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => inputRef.current?.click()} disabled={analyze.busy}>{file ? t("multiPiece.trocar_foto") : t("multiPiece.escolher_foto")}</Button>
-        {file && <Button size="sm" variant="primary" onClick={run} loading={analyze.busy}><FaiIcon id="ACT-07" size={20} decorative />{analyze.busy ? t("multiPiece.analisando") : t("multiPiece.analisar")}</Button>}
+        <Button size="sm" onClick={() => inputRef.current?.click()} disabled={analyzing || items.length >= MAX_PHOTOS}>{items.length ? t("multiPiece.adicionar_fotos") : t("multiPiece.escolher_foto")}</Button>
+        {toAnalyze > 0 && <Button size="sm" variant="primary" onClick={analyzeAll} loading={analyzing}><FaiIcon id="ACT-07" size={20} decorative />{analyzing ? t("multiPiece.analisando") : t("multiPiece.analisar")}</Button>}
       </div>
-      {analyze.error && <p role="alert" className="error-text">{analyze.error.status === 0 || analyze.error.status === 413 ? t("piece.err_upload") : analyze.error.status >= 500 ? t("piece.err_analise") : analyze.error.message}</p>}
-      {file && detection && <MultiPieceReview file={file} detection={detection} onClose={() => setDetection(null)} onSaved={onSaved} />}
+      {current && current.detection && (
+        <MultiPieceReview key={current.id} file={current.file} detection={current.detection}
+          subtitle={order.length > 1 ? t("multiPiece.foto_de", { n: order.indexOf(current.id) + 1, total: order.length }) : undefined}
+          onClose={() => setReviewing(null)} onSaved={(count) => savedOne(current.id, count)} />
+      )}
     </div>
   );
 }
@@ -100,7 +178,7 @@ export function MultiPieceUpload({ onSaved }: { onSaved: (count: number) => void
  * inteira, quando a pessoa não recortou —, passando pelo rascunho do servidor (Flat Lay + moderação) e pelo cadastro
  * normal da peça. Peças já salvas não são reenviadas numa nova tentativa.
  */
-export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: File; detection: MultiDetection; onClose: () => void; onSaved: (count: number) => void }) {
+export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved }: { file: File; detection: MultiDetection; subtitle?: string; onClose: () => void; onSaved: (count: number) => void }) {
   const { t } = useI18n(); const tax = useTaxonomy();
   const [photo] = useState(() => URL.createObjectURL(file));
   const [rows, setRows] = useState<Row[]>([]);
@@ -210,7 +288,7 @@ export function MultiPieceReview({ file, detection, onClose, onSaved }: { file: 
     </div>
   );
   return (
-    <Dialog open onClose={() => { if (!saving) onClose(); }} title={t("multiPiece.titulo")} size="xl" footer={footer}>
+    <Dialog open onClose={() => { if (!saving) onClose(); }} title={subtitle ? `${t("multiPiece.titulo")} · ${subtitle}` : t("multiPiece.titulo")} size="xl" footer={footer}>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_1fr]">
         <div className="lg:sticky lg:top-0 lg:self-start">
           <div className="relative overflow-hidden rounded-md border border-line-soft" role="img" aria-label={t("multiPiece.marcacoes")}>
