@@ -48,7 +48,11 @@ public class CatalogProduct extends VersionedAuditableEntity {
     @Column(name = "variation_confidence", precision = 4, scale = 3)
     private BigDecimal variationConfidence;
 
-    /** Atributos por dimensão (acabamento, comprimento, estilo, ocasião…), tabela catalog_product_attributes (V43). */
+    /** Quem escreveu a variação: CATALOG (dado oficial) · RULE · AI · USER (curadoria) — V45. */
+    @Column(name = "variation_source", length = 12)
+    private String variationSource;
+
+    /** Atributos por dimensão (acabamento, comprimento, estilo, ocasião…), tabela catalog_product_attributes (V44). */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "catalog_product_attributes", joinColumns = @JoinColumn(name = "product_id"))
     @BatchSize(size = 200)
@@ -114,6 +118,13 @@ public class CatalogProduct extends VersionedAuditableEntity {
 
     @Column(name = "price_checked_at")
     private Instant priceCheckedAt;
+
+    /** Versão das regras do enriquecimento (job fora do Flyway) que derivou variação/atributos; null = nunca rodou. */
+    @Column(name = "enrichment_version", length = 40)
+    private String enrichmentVersion;
+
+    @Column(name = "enriched_at")
+    private Instant enrichedAt;
 
     @Column(name = "official_product_url", length = 1024)
     private String officialProductUrl;

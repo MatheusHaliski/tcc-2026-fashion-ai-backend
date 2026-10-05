@@ -6,13 +6,13 @@
 
 Saídas (nunca edite à mão):
   fai-application/src/main/resources/taxonomy/taxonomy.json      — lida pelo backend (TaxonomyRegistry) e pelo Python
-  db/migration/V39__taxonomia_seed_estrutura.sql                 — categorias, subcategorias, legado, dimensões, escopos
-  db/migration/V40__taxonomia_seed_valores.sql                   — valores das dimensões + aliases de valor
-  db/migration/V41__taxonomia_seed_variacoes.sql                 — variações, subcategoria × variação, aliases
+  db/migration/V40__taxonomia_seed_estrutura.sql                 — categorias, subcategorias, legado, dimensões, escopos
+  db/migration/V41__taxonomia_seed_valores.sql                   — valores das dimensões + aliases de valor
+  db/migration/V42__taxonomia_seed_variacoes.sql                 — variações, subcategoria × variação, aliases
   docs/taxonomia/proposta/taxonomia_variacoes.csv                — tabela mestre (uma linha por subcategoria × variação)
   fai-application/src/main/resources/catalog/normalization.json  — seções taxonomy.subcategories, taxonomy.materials,
                                                                    legacySubcategories e sinônimos das subcategorias novas
-As migrations já aplicadas não mudam: depois que V39–V41 forem para produção, mudanças entram numa migration nova.
+As migrations já aplicadas não mudam: depois que V40–V42 forem para produção, mudanças entram numa migration nova.
 """
 from __future__ import annotations
 
@@ -241,7 +241,7 @@ def inserts(out: io.StringIO, table: str, cols: list[str], rows: list[tuple], si
 
 
 HEADER = ("-- GERADO por scripts/taxonomy/build_taxonomy.py a partir de scripts/taxonomy/*.py — não edite à mão.\n"
-          "-- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V38.\n")
+          "-- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V39.\n")
 
 v39 = io.StringIO()
 v39.write(HEADER + "-- Estrutura: categorias, subcategorias (ativas e LEGACY), o que cada legado implica, dimensões e escopos.\n\n")
@@ -315,9 +315,9 @@ for x in subcats:
                          "shared_with": " ".join(s for s in used[code] if s != x["code"])})
 inserts(v41, "taxonomy_subcategory_variations", ["subcategory_code", "variation_code", "tier", "priority", "sort_order"], link_rows)
 inserts(v41, "taxonomy_aliases", ["target_type", "target_code", "scope_subcategory_code", "alias", "alias_norm", "locale"], var_alias)
-outputs[MIGRATIONS / "V39__taxonomia_seed_estrutura.sql"] = v39.getvalue()
-outputs[MIGRATIONS / "V40__taxonomia_seed_valores.sql"] = v40.getvalue()
-outputs[MIGRATIONS / "V41__taxonomia_seed_variacoes.sql"] = v41.getvalue()
+outputs[MIGRATIONS / "V40__taxonomia_seed_estrutura.sql"] = v39.getvalue()
+outputs[MIGRATIONS / "V41__taxonomia_seed_valores.sql"] = v40.getvalue()
+outputs[MIGRATIONS / "V42__taxonomia_seed_variacoes.sql"] = v41.getvalue()
 
 buf = io.StringIO()
 w = csv.DictWriter(buf, fieldnames=list(csv_rows[0]), lineterminator="\n")

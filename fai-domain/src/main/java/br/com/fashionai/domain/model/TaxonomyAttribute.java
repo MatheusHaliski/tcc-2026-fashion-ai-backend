@@ -19,7 +19,7 @@ import java.util.Set;
 
 /**
  * Atributo da peça/produto numa dimensão da taxonomia (acabamento, comprimento, cano, estilo, ocasião…): uma linha por
- * (dimensão, valor) em wardrobe_item_attributes / catalog_product_attributes (V42/V43). O vocabulário e o escopo são
+ * (dimensão, valor) em wardrobe_item_attributes / catalog_product_attributes (V43/V44). O vocabulário e o escopo são
  * validados pela aplicação (Taxonomy.variationErrors) e pela FK para taxonomy_values.
  */
 @Getter

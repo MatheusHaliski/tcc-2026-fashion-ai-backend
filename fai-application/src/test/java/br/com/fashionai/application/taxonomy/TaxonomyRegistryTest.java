@@ -126,12 +126,12 @@ class TaxonomyRegistryTest {
         assertThat(n.material("couro sintético")).contains("FAUX_LEATHER");
     }
 
-    /** As migrations V39–V41 são geradas do mesmo JSON: cada variação e cada subcategoria do JSON está no seed. */
+    /** As migrations V40–V42 são geradas do mesmo JSON: cada variação e cada subcategoria do JSON está no seed. */
     @Test
     void seedDoBancoEmDiaComOJson() throws IOException {
         Path dir = Path.of("..", "fai-infrastructure", "persistence-mysql", "src", "main", "resources", "db", "migration");
-        String v39 = Files.readString(dir.resolve("V39__taxonomia_seed_estrutura.sql"));
-        String v41 = Files.readString(dir.resolve("V41__taxonomia_seed_variacoes.sql"));
+        String v39 = Files.readString(dir.resolve("V40__taxonomia_seed_estrutura.sql"));
+        String v41 = Files.readString(dir.resolve("V42__taxonomia_seed_variacoes.sql"));
         reg.variations().keySet().forEach(code -> assertThat(v41).as(code).contains("('" + code + "', "));
         reg.activeSubcategories().values().stream().flatMap(List::stream)
                 .forEach(code -> assertThat(v39).as(code).contains("('" + code + "', "));

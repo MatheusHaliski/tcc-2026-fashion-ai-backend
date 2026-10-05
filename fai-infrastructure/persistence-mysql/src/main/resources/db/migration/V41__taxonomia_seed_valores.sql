@@ -1,5 +1,5 @@
 -- GERADO por scripts/taxonomy/build_taxonomy.py a partir de scripts/taxonomy/*.py — não edite à mão.
--- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V38.
+-- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V39.
 -- Valores das dimensões (os atuais — cores, estilos, ocasiões, gêneros — com os mesmos códigos) e aliases de valor.
 
 INSERT INTO taxonomy_values (dimension_code, code, display_name_pt_br, display_name_en, tier, priority, value_group, hex, scope_json, status, sort_order) VALUES

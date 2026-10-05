@@ -19,7 +19,7 @@ import java.util.Optional;
 /**
  * Taxonomia de peças CATEGORY → SUBCATEGORY → VARIATION + dimensões de atributo (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md).
  * Lê {@code taxonomy/taxonomy.json}, gerado por scripts/taxonomy/build_taxonomy.py — o mesmo conteúdo das tabelas
- * taxonomy_* (V38–V41), que dão a integridade no banco. Também é lido pelo pipeline Python.
+ * taxonomy_* (V39–V42), que dão a integridade no banco. Também é lido pelo pipeline Python.
  *
  * <ul>
  *   <li>Subcategoria LEGACY (ex.: bermuda_shorts) continua válida nos dados; {@link #resolve} diz o equivalente novo

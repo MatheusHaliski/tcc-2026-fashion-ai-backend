@@ -1,5 +1,5 @@
 -- Taxonomia de peças CATEGORY → SUBCATEGORY → VARIATION + dimensões de atributo (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md,
--- seções C e E). Só cria as tabelas de vocabulário (vazias); os dados entram em V39–V41, gerados de
+-- seções C e E). Só cria as tabelas de vocabulário (vazias); os dados entram em V40–V42, gerados de
 -- fai-application/src/main/resources/taxonomy/taxonomy.json por scripts/taxonomy/build_taxonomy.py.
 -- Aditiva: não toca em nenhuma tabela existente.
 

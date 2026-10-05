@@ -21,7 +21,7 @@ Resumo:
   - **8 subcategorias atuais viram LEGADO.** Elas continuam válidas, mas cada uma mapeia para "subcategoria + atributo".
   - **353 variações** com código único em inglês, ligadas às subcategorias em **530 pares**: 248 CORE, 212 EXTENDED e 70 NICHE.
   - **23 dimensões de atributo** separadas: acabamento, comprimento, cano, cintura, barra, manga, decote, fechamento, salto, bico, solado, uso/esporte, forma de carregar, aro, cor, material, estampa, estilo, ocasião, gênero e faixa etária.
-- **Modelo de dados:** tabelas de vocabulário, mais `variation_code` na peça e no produto, mais tabelas de atributos peça→valor. **Migrations só aditivas, a partir da V38.**
+- **Modelo de dados:** tabelas de vocabulário, mais `variation_code` na peça e no produto, mais tabelas de atributos peça→valor. **Migrations só aditivas, a partir da V39** (a V38 de produção é a identidade do avatar).
 - **Busca catalogada:** todos os atributos viram select. Preço vem do JSON-LD (`offers`) das páginas oficiais. Estilo e ocasião saem de regras + IA com vocabulário fechado.
 
 ---
@@ -1124,7 +1124,7 @@ erDiagram
 
 ### E.3 Tabelas
 
-**Vocabulário** (DDL completa em `proposta/seed_piece_variations.sql` e na V38):
+**Vocabulário** (DDL completa em `proposta/seed_piece_variations.sql` e na V39):
 
 | Tabela | Chave | Colunas principais |
 |---|---|---|
@@ -1166,18 +1166,18 @@ erDiagram
 
 ---
 
-## F. Plano de migration (V38+, só aditivo)
+## F. Plano de migration (V39+, só aditivo)
 
-A `main` está em **V37**. A branch de deploy (`claude/fashion-ai-interfaces-config-id7naj`) só tem migrations até a **V36** (o banco do Railway foi informado em V37; não consegui conferir daqui) e precisa receber a `main` antes. Nenhuma migration abaixo faz `DROP`, `RENAME`, `NOT NULL` em coluna existente ou `UPDATE` em dado de usuário.
+A `main` está em **V37**. A branch de deploy (`claude/fashion-ai-interfaces-config-id7naj`) e a produção estão na **V38** (`identidade_do_avatar_versionada`, log do deploy de 05/10/2026), que ainda não está na `main`. Por isso a taxonomia começa na **V39**; a `main` precisa receber a V38 do avatar antes (ou junto) do merge desta série. Nenhuma migration abaixo faz `DROP`, `RENAME`, `NOT NULL` em coluna existente ou `UPDATE` em dado de usuário.
 
 | Versão | Conteúdo | Risco / observação |
 |---|---|---|
-| **V38__taxonomia_vocabulario.sql** | `CREATE TABLE` das 9 tabelas de vocabulário (E.3). CHECKs de tier, priority, status e target_type. | tabelas novas e vazias; nenhum lock em tabela existente |
-| **V39__taxonomia_seed_estrutura.sql** | 5 categorias; 80 subcategorias (78 atuais, sendo 8 LEGACY, + `top` e `boots`); mapeamentos de legado; 23 dimensões com escopo | gerada do JSON; `INSERT … AS new ON DUPLICATE KEY UPDATE` (idempotente) |
-| **V40__taxonomia_seed_valores.sql** | valores das dimensões: os atuais (59 cores, 25 estilos, 20 ocasiões, 3 gêneros) **sem mudar código** + os novos; aliases de valor | idem |
-| **V41__taxonomia_seed_variacoes.sql** | 353 variações, 530 ligações, 2.486 aliases de variação | é o conteúdo de `proposta/seed_piece_variations.sql`, sem a DDL |
-| **V42__peca_variacao_e_atributos.sql** | `ALTER TABLE wardrobe_items ADD variation_code, variation_status, variation_confidence, price_currency` (anuláveis/default); índice (`subcategory`, `variation_code`); FK composta; `CREATE TABLE wardrobe_item_attributes` | `ADD COLUMN` anulável é INPLACE/INSTANT no MySQL 8; a FK nova é validada de forma trivial (tudo NULL) |
-| **V43__catalogo_variacao_atributos_preco.sql** | `ALTER TABLE catalog_products ADD variation_*, price_*, age_group`; `ALTER TABLE catalog_variants ADD price, price_currency`; `CREATE TABLE catalog_product_attributes, brand_style_priors`; `ALTER TABLE brands ADD price_tier` + CHECK | idem |
+| **V39__taxonomia_vocabulario.sql** | `CREATE TABLE` das 9 tabelas de vocabulário (E.3). CHECKs de tier, priority, status e target_type. | tabelas novas e vazias; nenhum lock em tabela existente |
+| **V40__taxonomia_seed_estrutura.sql** | 5 categorias; 80 subcategorias (78 atuais, sendo 8 LEGACY, + `top` e `boots`); mapeamentos de legado; 23 dimensões com escopo | gerada do JSON; `INSERT … AS new ON DUPLICATE KEY UPDATE` (idempotente) |
+| **V41__taxonomia_seed_valores.sql** | valores das dimensões: os atuais (59 cores, 25 estilos, 20 ocasiões, 3 gêneros) **sem mudar código** + os novos; aliases de valor | idem |
+| **V42__taxonomia_seed_variacoes.sql** | 353 variações, 530 ligações, 2.486 aliases de variação | é o conteúdo de `proposta/seed_piece_variations.sql`, sem a DDL |
+| **V43__peca_variacao_e_atributos.sql** | `ALTER TABLE wardrobe_items ADD variation_code, variation_status, variation_confidence, price_currency` (anuláveis/default); índice (`subcategory`, `variation_code`); FK composta; `CREATE TABLE wardrobe_item_attributes` | `ADD COLUMN` anulável é INPLACE/INSTANT no MySQL 8; a FK nova é validada de forma trivial (tudo NULL) |
+| **V44__catalogo_variacao_atributos_preco.sql** | `ALTER TABLE catalog_products ADD variation_*, price_*, age_group`; `ALTER TABLE catalog_variants ADD price, price_currency`; `CREATE TABLE catalog_product_attributes, brand_style_priors`; `ALTER TABLE brands ADD price_tier` + CHECK | idem |
 | (job, não migration) | **backfill com dry-run e relatório:** (1) aliases do nome oficial → variação/atributos do catálogo; (2) legado → novo, com `NEEDS_REVIEW` quando `needsReview`; (3) CSV de estilo/ocasião → linhas de atributo; (4) recalcular `search_text` com nomes e aliases da variação | fica fora do Flyway, para poder rodar em lotes, repetir e desfazer |
 
 **F.3 Ordem de adoção no código** (depois das migrations, em PRs separados):
@@ -1211,7 +1211,7 @@ A `main` está em **V37**. A branch de deploy (`claude/fashion-ai-interfaces-con
   - dentro de uma subcategoria, **nenhum alias normalizado aponta para duas variações**;
   - dentro de uma dimensão, nenhum alias se repete entre valores de escopo sobreposto;
   - os mapeamentos de legado apontam para valores que existem.
-- **Fora deste arquivo** (vai para V39/V40, gerado do mesmo JSON): os valores das 23 dimensões, os escopos e os mapeamentos de legado.
+- **Fora deste arquivo** (vai para V40/V41, gerado do mesmo JSON): os valores das 23 dimensões, os escopos e os mapeamentos de legado.
 
 ---
 
@@ -1315,4 +1315,4 @@ Tudo isso passa pelos mesmos aliases. Quando nada é encontrado, o campo fica `N
 | I.15 | Alias com atributos implícitos ("bermuda" → shorts + KNEE, "rasteira" → STRAPPY + FLAT) | só nos mapeamentos de legado × coluna `implies_json` em `taxonomy_aliases` | **coluna `implies_json`** (só leitura pela IA e pela busca) |
 | I.16 | Onde fica a variação de `matching_set` e `overalls` | composição (TOP_AND_PANTS…) e perna (STRAIGHT…) × tipo de peitilho (calça/short/saia) | como proposto; jardineira-short = LENGTH, jardineira-saia = `dress.PINAFORE` |
 | I.17 | Revisão humana do backfill | tudo automático × fila só para `needsReview` e confiança < 0,75 | **fila** (`ai_review_items`) |
-| I.18 | Ordem de deploy | aplicar V38+ só depois de levar a `main` (V37) para a branch de deploy | **sim** (o código da branch de deploy vai só até a V36) |
+| I.18 | Ordem de deploy | aplicar V39+ só depois de levar a `main` (V37) para a branch de deploy | **sim**. Em 05/10/2026 a produção já está na V38 (`V38__identidade_do_avatar_versionada`, vinda da branch de deploy); por isso a taxonomia foi renumerada para V39–V44. Outras frentes (HypeScore v2/Lens, pipeline de imagens) também usam V38+: o número final é atribuído no merge, sempre `max(branch de deploy) + 1` |

@@ -1,5 +1,5 @@
 -- GERADO por scripts/taxonomy/build_taxonomy.py a partir de scripts/taxonomy/*.py — não edite à mão.
--- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V38.
+-- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V39.
 -- 353 variações (corte/silhueta/construção), ligações subcategoria × variação e aliases por subcategoria.
 
 INSERT INTO taxonomy_variations (code, display_name_pt_br, display_name_en, description_pt_br) VALUES

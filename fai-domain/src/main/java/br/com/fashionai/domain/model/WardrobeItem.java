@@ -73,7 +73,11 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "variation_confidence", precision = 4, scale = 3)
     private BigDecimal variationConfidence;
 
-    /** Atributos por dimensão (acabamento, comprimento, cintura, estilo, ocasião…), tabela wardrobe_item_attributes (V42). */
+    /** Quem escreveu a variação: USER · AI · CATALOG · RULE (V45). */
+    @Column(name = "variation_source", length = 12)
+    private String variationSource;
+
+    /** Atributos por dimensão (acabamento, comprimento, cintura, estilo, ocasião…), tabela wardrobe_item_attributes (V43). */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "wardrobe_item_attributes", joinColumns = @JoinColumn(name = "item_id"))
     @BatchSize(size = 100)

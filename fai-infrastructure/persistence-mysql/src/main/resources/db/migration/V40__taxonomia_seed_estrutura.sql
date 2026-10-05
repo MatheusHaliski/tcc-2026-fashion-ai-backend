@@ -1,5 +1,5 @@
 -- GERADO por scripts/taxonomy/build_taxonomy.py a partir de scripts/taxonomy/*.py — não edite à mão.
--- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V38.
+-- Taxonomia de peças (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Só INSERT em tabelas da V39.
 -- Estrutura: categorias, subcategorias (ativas e LEGACY), o que cada legado implica, dimensões e escopos.
 
 INSERT INTO taxonomy_categories (code, display_name_pt_br, display_name_en, sort_order) VALUES
