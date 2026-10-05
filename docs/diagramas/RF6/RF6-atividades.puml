@@ -30,7 +30,7 @@ start
 :/lookbook redireciona para /u/{seu usuário}?tab=...;
 if (?tab=cupons|coupons (dono)?) then (sim)
   :CouponsRedirect → /coupons\n(a aba de cupons saiu do Lookbook);
-  note right: alterado (RF49 · HypeScore v2)
+  note right: alterado (RF53 · HypeScore v2)
   stop
 endif
 :GET /api/users/{ownerId}/lookbook;
@@ -45,7 +45,7 @@ endif
 |Frontend (u/[username] · lookbook-tabs)|
 :Mostra as abas (TabId): closet · looks · groups\n+ dono: saved · dna · daily · capsule · insights;
 note right
-  alterado (RF49 · HypeScore v2): saved_looks/saved_pieces
+  alterado (RF53 · HypeScore v2): saved_looks/saved_pieces
   viram "saved" (SegmentPicker looks | peças);
   nova aba insights; sem aba de cupons
 end note
@@ -93,7 +93,7 @@ elseif (Look do Dia)
 elseif (Insights (dono))
   |Frontend (u/[username] · lookbook-tabs)|
   :HypeWardrobeInsights → GET /api/me/hype/wardrobe\n(HypeController → HypeQueryService.wardrobe:\nhype_scores do dono → Hype médio e variação,\ndestaques e redescobertas);
-  note right: novo (RF49 · HypeScore v2) —\nnunca compara com outras pessoas
+  note right: novo (RF53 · HypeScore v2) —\nnunca compara com outras pessoas
 else (Agrupamentos)
   |Backend (LookbookController · LookbookService)|
   if (Sugestão por IA ou manual?) then (IA)
@@ -119,7 +119,7 @@ endif
 :Atualiza a aba;
 :Cards de peça e look (PieceCard · SchemeCard) em FashionCard:\nHypeBadge na frente; use-hype.ts junta os ids do tick\n→ GET /api/hype/summaries?type=PIECE|SCHEME&ids=;
 note right
-  novo (RF49 · HypeScore v2) — nas abas com cards
+  novo (RF53 · HypeScore v2) — nas abas com cards
   (closet, looks, salvos, look do dia, grupos)
 end note
 if (Pessoa vira o card (↻)?) then (sim)

@@ -1,5 +1,5 @@
 @startuml FashionAI_Classes_v4
-title Fashion AI — Diagrama de Classes v4 (RF25–RF39 + RF49 HypeScore v2)\nEntidades JPA reais do fai-domain, agrupadas por área — gerado do código
+title Fashion AI — Diagrama de Classes v4 (RF25–RF39 + RF53 HypeScore v2)\nEntidades JPA reais do fai-domain, agrupadas por área — gerado do código
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -339,7 +339,7 @@ class FlairTrophy {
   +detailJson: String
 }
 }
-package "HypeScore v2 (RF49)" {
+package "HypeScore v2 (RF53)" {
 class HypeSignalDaily {
   +entityType: HypeEntityType
   +entityId: UUID
@@ -552,7 +552,7 @@ WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
 WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
-' --- HypeScore v2 (RF49) ---
+' --- HypeScore v2 (RF53) ---
 HypeScoreCurrent *-- HypeDimensions : dimensions
 HypeScoreSnapshot *-- HypeDimensions : dimensions
 HypeScoreCurrent --> HypeEntityType

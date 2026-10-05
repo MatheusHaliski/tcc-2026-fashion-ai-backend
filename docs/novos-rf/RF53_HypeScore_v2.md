@@ -1,7 +1,9 @@
-# RF49 — HypeScore v2: Hype analítico de peças e looks (verso dos cards, Histórico, Em alta, Guarda-roupa e Copilot)
+# RF53 — HypeScore v2: Hype analítico de peças e looks (verso dos cards, Histórico, Em alta, Guarda-roupa e Copilot)
 
-Numeração do Trello: card **RF49** na lista *Requisitos Funcionais* (https://trello.com/c/YP4B9hfa). O RF48 não foi usado aqui porque já é o
-resgate e as doações de FAI Points ([RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md)).
+**Numeração.** Esta implementação foi originalmente identificada como RF49 (cartão
+[YP4B9hfa](https://trello.com/c/YP4B9hfa)). Como a documentação atual também usa RF49–RF52 para outros requisitos,
+ela aparece aqui como **RF53**; confirme a numeração final no Trello. O RF48 permanece reservado às propostas de
+resgate e doações de FAI Points ([RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md)).
 Este documento registra **o que foi implementado**. A arquitetura completa está em
 [`docs/hype/HYPESCORE_ARCHITECTURE.md`](../hype/HYPESCORE_ARCHITECTURE.md), e a auditoria com a proposta de navegação
 que motivou a entrega, em [`docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md`](../hype/01-AUDITORIA_E_PROPOSTA_IA.md).
@@ -56,21 +58,21 @@ entidade, tipo e dia; conta com menos de 7 dias pesa 0,5; visitante sem conta n�
 
 | CA | Regra | Situação |
 |---|---|---|
-| RF49.CA01 | card de peça e de look com frente (Hype compacto) e verso "Hype analytics"; só o botão ↻ vira, um card por vez, sem virar ao tocar na foto ou no curtir | pronto (`components/fashion-card.tsx`, `piece-card.tsx`, `scheme-card.tsx`) |
-| RF49.CA02 | o giro funciona por teclado e toque, move o foco e respeita `prefers-reduced-motion` | pronto |
-| RF49.CA03 | estados CARREGANDO, HYPE NÃO CALCULADO, DADOS INSUFICIENTES, HYPE DISPONÍVEL, HYPE DESATUALIZADO e ERRO; "sem dado" nunca aparece como 0 | pronto (`lib/hype/model.ts`, `HypeStateNotice`) |
-| RF49.CA04 | HypeScore com 9 dimensões normalizadas, pesos centralizados e decaimento temporal | pronto (`HypeCalculator`, `HypeScoreConfig`) |
-| RF49.CA05 | nível sempre com texto e seta ↑/↓/→ pela direção calculada (−1,9 pts dentro da faixa estável é "estável") | pronto |
-| RF49.CA06 | snapshots diários com `algorithmVersion` e histórico no drawer | pronto |
-| RF49.CA07 | explicação humana dos motivos ("apresenta forte crescimento de salvamentos"), nunca juízo de qualidade | pronto (`lib/hype/explain.ts`) |
-| RF49.CA08 | tendência ≠ popularidade e Hype ≠ compatibilidade com o DNA, sempre exibidos separados | pronto |
-| RF49.CA09 | guarda-roupa ordena por Hype, crescimento, uso, raridade e tempo sem uso, e filtra por nível mínimo | pronto |
-| RF49.CA10 | Histórico › Hype e Lookbook › Insights mostram subidas, quedas, redescobertas e destaques do próprio guarda-roupa | pronto |
-| RF49.CA11 | Explorador › Em alta com Hoje / 7 / 30 dias e recortes por categoria, estilo e ocasião | pronto |
-| RF49.CA12 | Copilot responde perguntas sobre Hype, nunca recomenda só pelo Hype e oferece os modos Seguro, Descoberta e Experimental | pronto |
-| RF49.CA13 | item privado nunca entra em ranking nem em estatística pública, e terceiros não leem o Hype dele | pronto |
-| RF49.CA14 | sinais filtrados contra autointeração, repetição, conta nova e visitante; patrocínio nunca pesa | pronto (extensões previstas: reputação, cadência de bots, grafo de contas, IP/dispositivo) |
-| RF49.CA15 | navegação por domínios sem remover funcionalidades: rotas antigas continuam por alias ou redirecionamento | pronto |
+| RF53.CA01 | card de peça e de look com frente (Hype compacto) e verso "Hype analytics"; só o botão ↻ vira, um card por vez, sem virar ao tocar na foto ou no curtir | pronto (`components/fashion-card.tsx`, `piece-card.tsx`, `scheme-card.tsx`) |
+| RF53.CA02 | o giro funciona por teclado e toque, move o foco e respeita `prefers-reduced-motion` | pronto |
+| RF53.CA03 | estados CARREGANDO, HYPE NÃO CALCULADO, DADOS INSUFICIENTES, HYPE DISPONÍVEL, HYPE DESATUALIZADO e ERRO; "sem dado" nunca aparece como 0 | pronto (`lib/hype/model.ts`, `HypeStateNotice`) |
+| RF53.CA04 | HypeScore com 9 dimensões normalizadas, pesos centralizados e decaimento temporal | pronto (`HypeCalculator`, `HypeScoreConfig`) |
+| RF53.CA05 | nível sempre com texto e seta ↑/↓/→ pela direção calculada (−1,9 pts dentro da faixa estável é "estável") | pronto |
+| RF53.CA06 | snapshots diários com `algorithmVersion` e histórico no drawer | pronto |
+| RF53.CA07 | explicação humana dos motivos ("apresenta forte crescimento de salvamentos"), nunca juízo de qualidade | pronto (`lib/hype/explain.ts`) |
+| RF53.CA08 | tendência ≠ popularidade e Hype ≠ compatibilidade com o DNA, sempre exibidos separados | pronto |
+| RF53.CA09 | guarda-roupa ordena por Hype, crescimento, uso, raridade e tempo sem uso, e filtra por nível mínimo | pronto |
+| RF53.CA10 | Histórico › Hype e Lookbook › Insights mostram subidas, quedas, redescobertas e destaques do próprio guarda-roupa | pronto |
+| RF53.CA11 | Explorador › Em alta com Hoje / 7 / 30 dias e recortes por categoria, estilo e ocasião | pronto |
+| RF53.CA12 | Copilot responde perguntas sobre Hype, nunca recomenda só pelo Hype e oferece os modos Seguro, Descoberta e Experimental | pronto |
+| RF53.CA13 | item privado nunca entra em ranking nem em estatística pública, e terceiros não leem o Hype dele | pronto |
+| RF53.CA14 | sinais filtrados contra autointeração, repetição, conta nova e visitante; patrocínio nunca pesa | pronto (extensões previstas: reputação, cadência de bots, grafo de contas, IP/dispositivo) |
+| RF53.CA15 | navegação por domínios sem remover funcionalidades: rotas antigas continuam por alias ou redirecionamento | pronto |
 
 ## 4. Testes
 
@@ -84,7 +86,7 @@ insights, subidas/quedas, ordenações do guarda-roupa e intenções de Hype do 
 
 ## 5. Diagramas
 
-`docs/diagramas/RF49/`: atividades, sequência, componentes, máquina de estados (estado do Hype de uma peça ou look) e
+`docs/diagramas/RF53/`: atividades, sequência, componentes, máquina de estados (estado do Hype de uma peça ou look) e
 classes. Os diagramas dos RF afetados também foram atualizados: RF6 (Lookbook), RF10 (Copilot), RF19 (interações →
 sinais), RF26 (Em alta), RF31 (ordenações e filtro de Hype), RF42 (look do dia → LOOK_WORN), além dos globais
 `fashionai-classes-v4` e `fashionai-componentes-v4`.

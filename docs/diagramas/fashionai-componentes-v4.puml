@@ -1,5 +1,5 @@
 @startuml FashionAI_Componentes_v4
-title Fashion AI — Diagrama de Componentes v4 (RF25–RF39 + RF49 HypeScore v2)\nControllers → serviços de aplicação → adaptadores de infraestrutura — gerado do código
+title Fashion AI — Diagrama de Componentes v4 (RF25–RF39 + RF53 HypeScore v2)\nControllers → serviços de aplicação → adaptadores de infraestrutura — gerado do código
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -33,7 +33,7 @@ package "fai-web (REST · Spring Boot)" {
   component "FlairModesController\n(RF37)" as FlairModesController
   component "CouponController\n(RF38)" as CouponController
   component "RoomCreatorController\n(RF39)" as RoomCreatorController
-  component "HypeController\n(RF49)" as HypeController
+  component "HypeController\n(RF53)" as HypeController
 }
 package "fai-application (casos de uso)" {
   [SealService] as SealService
@@ -61,7 +61,7 @@ package "fai-application (casos de uso)" {
   [SchemeService] as SchemeService
   [CopilotService] as CopilotService
   [AdminService] as AdminService
-  package "HypeScore v2 (RF49) · application/hype" {
+  package "HypeScore v2 (RF53) · application/hype" {
     [HypeQueryService\n(cards em lote, histórico, trending,\nguarda-roupa, movers)] as HypeQueryService
     [HypeSnapshotService\n(@Scheduled · a cada 6 h)] as HypeSnapshotService
     [HypeSignalRecorder\n(listener AFTER_COMMIT)] as HypeSignalRecorder
@@ -161,7 +161,7 @@ WardrobeCreatorService --> DB
 WardrobeCreatorService --> MS
 FlairModesService ..> FlairCore
 ShowcaseService ..> WR
-' --- HypeScore v2 (RF49) ---
+' --- HypeScore v2 (RF53) ---
 FE --> HypeController : HTTPS/JSON
 HypeController --> HypeQueryService : GET /api/hype/**\n/api/me/hype/**
 HypeController --> HypeSnapshotService : POST /api/admin/hype/snapshots

@@ -11,9 +11,9 @@ AREAS = [
     ('Vitrine: passarela, eras, coleções e manequim (RF33–RF36)', ['DailyLook', 'SchemeGrouping', 'UserPreferences']),
     ('FLAIR (RF37)', ['FlairProfile', 'FlairCoinEntry', 'FlairMatch', 'FlairMatchEntry', 'FlairTeam', 'FlairTeamMember', 'FlairCombination', 'FlairRedemption', 'FlairModeState', 'FlairTerritory', 'FlairTrophy']),
     ('Núcleo (RF1–RF24)', ['User', 'BrandProfile', 'CelebrityProfile', 'WardrobeItem', 'Scheme', 'SchemeItem', 'Follow']),
-    ('HypeScore v2 (RF49)', ['HypeSignalDaily', 'HypeScoreCurrent', 'HypeScoreSnapshot']),
+    ('HypeScore v2 (RF53)', ['HypeSignalDaily', 'HypeScoreCurrent', 'HypeScoreSnapshot']),
 ]
-# Atenção (RF49, 2026-10): docs/diagramas/fashionai-*-v4.puml foram completados à mão depois da última geração —
+# Atenção (RF53, 2026-10): docs/diagramas/fashionai-*-v4.puml foram completados à mão depois da última geração —
 # enums, @Embeddable HypeDimensions, repositórios e notas do HypeScore v2, HypeController e o pacote hype nos
 # componentes, e dois rótulos de aresta removidos (FlairTeam→User, SealBond→Scheme) que derrubavam o Smetana.
 # Rodar este script de novo sobrescreve esses acréscimos: reaplique-os (ver git log dos .puml).

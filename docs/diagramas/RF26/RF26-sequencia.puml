@@ -15,10 +15,10 @@ participant "ExplorerService" as S
 participant "AnalyticsQueryPort\n(MysqlAnalyticsAdapter)" as A
 participant "BrandProfileRepository" as R
 participant "AiEngine (RF24)" as AI
-participant "HypeController\n<<RF49>>" as HC
-participant "HypeQueryService\n<<RF49>>" as HQ
-participant "HypeCache\n<<RF49>>\n(RenderCachePort)" as HCA
-participant "HypeScoreCurrentRepository\n<<RF49>>" as HSR
+participant "HypeController\n<<RF53>>" as HC
+participant "HypeQueryService\n<<RF53>>" as HQ
+participant "HypeCache\n<<RF53>>\n(RenderCachePort)" as HCA
+participant "HypeScoreCurrentRepository\n<<RF53>>" as HSR
 database "MySQL" as DB
 
 == Painel global (CA01) ==
@@ -54,7 +54,7 @@ S --> C : {brands[], facets{countries, categories}}
 C --> FE : 200 JSON
 FE --> U : grade de perfis BRAND (→ RF14)
 
-== Em alta (novo · RF49 · HypeScore v2) ==
+== Em alta (novo · RF53 · HypeScore v2) ==
 U -> FE : sub-aba "Em alta" (HypeTrendingPanel): tipo Peças | Looks,\njanela Hoje | 7 dias | 30 dias, categoria (só peças), estilo, ocasião
 FE -> HC : GET /api/hype/trending?type&window&category&style&occasion&limit=24
 HC -> HQ : trending(viewer, type, window,\ncategory, style, occasion, limit)

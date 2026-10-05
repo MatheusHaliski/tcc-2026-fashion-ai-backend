@@ -15,7 +15,7 @@ participant "LookbookService" as LS
 participant "SchemeService" as SS
 participant "DailyLookService" as DS
 participant "WardrobeEventListeners" as WL
-participant "HypeSignalRecorder" as HSR <<RF49>>
+participant "HypeSignalRecorder" as HSR <<RF53>>
 participant "Frontend\nlookbook → u/[username]?tab=daily" as FEL
 participant "ShowcaseController" as SC
 database "MySQL" as DB
@@ -41,7 +41,7 @@ else
   DS ->> HSR: DailyLookRegistered (AFTER_COMMIT)
   HSR -> HSR: HypeIntegrityPolicy.weight(sinal, dia)\n(1 sinal por entidade/pessoa/dia)
   HSR -> DB: HypeSignalDailyRepository.increment → hype_signal_daily\nLOOK_WORN (SCHEME) + PIECE_USED (cada peça)
-  note right of HSR: novo (RF49 · HypeScore v2): transação própria;\no score sai do job de snapshots, não daqui
+  note right of HSR: novo (RF53 · HypeScore v2): transação própria;\no score sai do job de snapshots, não daqui
   DS --> LS: DailyLook
   LS --> FE: 200 {id, date, source, schemeId, title, coverImageUrl, hypeScore}
 end
@@ -53,7 +53,7 @@ opt sem registro hoje e há look anterior
   DS -> DB: INSERT daily_looks (materialized_from)
 end
 LS --> FEL: 200 {today, scheme, panel, history, feedbackReminder}
-note right of FEL: histórico: cada dia com title e hypeScore\n(a aba agora lê esses campos — RF49)
+note right of FEL: histórico: cada dia com title e hypeScore\n(a aba agora lê esses campos — RF53)
 U -> FEL: avalia (ADOREI | NAO_USEI | NAO_GOSTEI)
 FEL -> LC: PUT /api/me/daily-looks/{date}/feedback
 LC -> DS: feedback(user, date, feedback)

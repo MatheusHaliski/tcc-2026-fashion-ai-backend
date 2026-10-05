@@ -1,79 +1,92 @@
 @startuml RF49_Atividades
-!pragma layout smetana
-title RF49 — HypeScore v2: Hype de peças e looks\nDiagrama de atividades (sinal → agregado diário → snapshot → leitura no card)
-skinparam backgroundColor #FFFFFF
-skinparam activity {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
-|Usuário (app)|
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nDiagrama de atividades: login (e reconferência de senha) passando pelas camadas de defesa
+
+|Pessoa|
 start
-:Interage com peça ou look de outra pessoa\n(curtir, comentar, salvar, favoritar,\ncompartilhar, remixar, abrir o detalhe)\nou registra uso (vestir, look do dia, look salvo);
-|Backend · ingestão|
-:SocialService / SchemeService / WardrobeService\npublicam DomainEvents.HypeSignal\n(ou PieceWorn, SchemeSaved, DailyLookRegistered);
-:HypeSignalRecorder (AFTER_COMMIT)\nchama HypeIntegrityPolicy.weight(sinal, dia);
-if (visitante sem conta (sem ator)?) then (sim)
-  :peso 0 — descartado\n(sem conta não há como deduplicar);
+:Envia e-mail/usuário e senha
+(ou troca de senha, dados sensíveis, exclusão);
+
+|Vercel (Next.js)|
+:middleware.ts confere o gate (fai_gate)
+e aplica CSP com nonce;
+if (Gate ligado e sem sessão de gate?) then (sim)
+  :/gate: conta Google autorizada + PIN
+  (8 erros por IP em 15 min, atraso fixo);
   stop
-elseif (interação do próprio dono\n(não é uso: vestir, look, look do dia)?) then (sim)
-  :peso 0 — descartado (self-like farming);
-  stop
-elseif (mesma pessoa, mesmo sinal, mesma entidade\nno mesmo dia (curtir → descurtir → curtir)?) then (sim)
-  :deduplicado (chave hype:dedupe:… no cache, TTL 26 h);
-  stop
+endif
+:BFF /bff/auth/[action] repassa à API;
+if (EDGE_PROXY_SECRET com 32+ caracteres?) then (sim)
+  :Assina o IP do cliente
+  HMAC-SHA256(ip|ts) em X-Fai-Proxy-Sig;
 else (não)
-  if (uso do próprio dono?) then (sim)
-    :peso 1;
-  elseif (conta com menos de 7 dias?) then (sim)
-    :peso × 0,5;
-  else (não)
-    :peso 1;
-  endif
-  :HypeSignalDailyRepository.increment\n(upsert em hype_signal_daily:\nevent_count + 1, weighted_count + peso);
+  :Sem assinatura: a API vê o IP da Vercel
+  (log de aviso na subida da API);
 endif
-|Job de snapshots|
-:@Scheduled a cada 6 h (0 20 */6 * * *)\nou POST /api/admin/hype/snapshots;
-:Monta HypeSignalSeries (12 semanas)\npor peça e por look não arquivados;
-:Baseline = população PÚBLICA elegível\n(item público, perfil não privado,\nmoderação aprovada, conta não-teste);
-while (para cada entidade) is (próxima)
-  if (eventos no horizonte ≥ 3?) then (sim)
-    :HypeCalculator.compute → 9 dimensões 0–100\n(popularidade, engajamento, trend, velocidade,\nnovidade, longevidade, raridade, originalidade,\ninfluência só em looks);
-    :score = média ponderada renormalizada\nnível LOW_SIGNAL…VIRAL · momentum;
-    if (existe snapshot de 7 dias atrás?) then (sim)
-      :delta (pts e %) e direção UP/DOWN/STABLE;
-    else (não)
-      :sem delta (seta oculta);
-    endif
-    :status AVAILABLE + motivos explicáveis;
-  else (não)
-    :status INSUFFICIENT_DATA\n(sem score; nunca "0");
-  endif
-  :upsert hype_scores (algorithm_version = HYPE_V2)\n+ snapshot do dia em hype_score_snapshots;
-endwhile (fim)
-:apaga linhas de entidades que sumiram;
-:HypeCache.bump() (nova geração do cache);
-|Frontend|
-:Grade de cards renderiza HypeBadge na frente\n(useHypeSummary agrupa ids em lotes de 100);
-:GET /api/hype/summaries?type=&ids=;
-if (item visível para quem vê?) then (não)
-  :fora da resposta (privado nunca vaza);
+
+|API · filtros|
+:CorrelationIdFilter → idioma → DevGateFilter
+(token ga · Cloudflare Access);
+:ClientIpResolver: IP assinado (até 60 s) ›
+X-Real-IP da borda › conexão TCP
+(IPv6 conta pelo prefixo /64);
+:AuthRateLimitFilter: balde por IP + método + rota
+(login 30/10 min · cadastro 10/h · troca de senha 20/h ·
+username 120/10 min ...);
+if (Balde do IP estourado?) then (sim)
+  :429 MUITAS_TENTATIVAS + Retry-After;
   stop
-else (sim)
 endif
-fork
-  :Frente: score + nível em texto + seta ↑↓→;
-fork again
-  :Toca em ↻ (só o botão vira o card);
-  :Verso "Hype analytics" montado no 1º giro\n(foco vai para o botão do verso;\nmovimento reduzido = troca simples);
-  if (pede "Ver análise completa"?) then (sim)
-    :GET /api/hype/{pieces|looks}/{id}\n+ /history?days=90;
-    :Drawer: gráfico, dimensões, explicação\ne "Hype × seu estilo" separados;
-  else (não)
+if (A rota calcula Argon2?) then (sim)
+  if (Vaga no teto de hashes em até 2 s?\n(1 por núcleo, no máx. metade do pool do MySQL)) then (não)
+    :503 AUTENTICACAO_OCUPADA + Retry-After: 2
+    (o resto da API segue com conexões livres);
+    stop
   endif
-end fork
-|Usuário (app)|
-:Usa o Hype em outros contextos:\nEm alta (Explorador), Histórico › Hype,\nLookbook › Insights, ordenar o Guarda-roupa,\nperguntar ao Copilot;
+endif
+
+|IdentityService|
+if (Conta existe?) then (não)
+  :Argon2 contra hash falso
+  (tempo igual ao de uma conta real);
+  :Audita LOGIN_FALHO (usuario_inexistente);
+  :401 genérico;
+  stop
+endif
+:Reserva a tentativa no contador da conta
+(INCR atômico ANTES do hash: pedidos em paralelo
+não avaliam mais que 5 senhas);
+:Argon2id confere a senha (sempre, mesmo bloqueada);
+if (Mais de 5 tentativas em 15 min?) then (sim)
+  :Audita LOGIN_BLOQUEADO_TENTATIVAS;
+  :Login: 401 genérico · logado: 429 MUITAS_TENTATIVAS
+  (nem a senha certa passa: o bloqueio não vira oráculo);
+  stop
+elseif (Senha errada?) then (sim)
+  :Audita LOGIN_FALHO
+  (a reserva fica: conta como falha);
+  :401 genérico (ou SENHA_ATUAL_INCORRETA);
+  stop
+else (senha certa)
+  :Devolve a reserva (release);
+endif
+if (2FA ligado?) then (sim)
+  if (Código certo e válido?) then (não)
+    :Conta no mesmo bloqueio;
+    :401;
+    stop
+  endif
+endif
+:Zera as falhas da conta;
+:Emite JWT RS256 (aud) de 15 min
++ refresh token rotativo;
+:Audita LOGIN_SUCESSO (+ aviso de novo dispositivo);
+
+|Vercel (Next.js)|
+:Refresh em cookie HttpOnly fai_rt ·
+access token só em memória (nada no localStorage);
+
+|Pessoa|
+:Entra;
 stop
 @enduml

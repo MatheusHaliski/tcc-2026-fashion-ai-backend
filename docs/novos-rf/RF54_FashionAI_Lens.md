@@ -1,4 +1,4 @@
-# RF50 (proposta) — FashionAI Lens
+# RF54 (proposta) — FashionAI Lens
 
 > **O Google Lens responde "o que é isto e onde compro?". O FashionAI Lens responde "o que isto significa para o meu
 > estilo e para o meu guarda-roupa?".** A pessoa aponta a câmera (ou envia uma foto ou um print) para uma roupa vista na
@@ -7,9 +7,9 @@
 
 **Numeração.** A numeração oficial é a do Trello e um RF novo recebe o próximo número livre
 (`markdowns/02-rf-reestruturados-e-criterios-aceite.md` §1). Este documento nasceu como "RF48", mas o RF48 ficou com
-o resgate e as doações de FAI Points ([documento](RF48_FAI_Points_Resgate_e_Doacoes.md)) e o RF49 com o HypeScore v2
-([documento](RF49_HypeScore_v2.md)). Por isso o Lens é proposto como **RF50**: confirme no board antes de criar os
-cards RF50 e HU-RF50.
+o resgate e as doações de FAI Points ([documento](RF48_FAI_Points_Resgate_e_Doacoes.md)) e o RF53 com o HypeScore v2
+([documento](RF53_HypeScore_v2.md)). Por isso o Lens é proposto como **RF54**: confirme no board antes de criar os
+cards RF54 e HU-RF54.
 
 Contexto: este RF faz parte da refatoração por domínios descrita em
 [`docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md`](../hype/01-AUDITORIA_E_PROPOSTA_IA.md) e usa o HypeScore v2
@@ -576,7 +576,7 @@ O evento `LENS_SCAN` entra na linha do tempo (filtro por tipo). Lookbook › Sal
 | Pessoas menores de idade na foto | o borrão vale para todos os rostos; nenhuma inferência sobre a pessoa (idade, corpo, gênero) é feita ou exibida |
 
 Pendência herdada: o código aponta para `docs/seguranca/moderacao-de-imagens.md`, que não existe. Criar esse arquivo
-junto com o RF50, porque o Lens passa a depender dele.
+junto com o RF54, porque o Lens passa a depender dele.
 
 ---
 
@@ -590,31 +590,31 @@ junto com o RF50, porque o Lens passa a depender dele.
 
 ---
 
-## 13. Critérios de aceite (proposta para o HU-RF50)
+## 13. Critérios de aceite (proposta para o HU-RF54)
 
 | ID | Dado que | Quando | Então |
 |---|---|---|---|
-| RF50.CA01 | pessoa logada em `/lens` | tira uma foto ou escolhe uma imagem | o scan é criado e a tela mostra o progresso em texto até as peças aparecerem |
-| RF50.CA02 | foto com várias roupas | a detecção termina | cada peça aparece como hotspot e como card, com categoria, cor e a confiança escrita |
-| RF50.CA03 | foto com rostos | o scan é gravado ou enviado à IA | os rostos estão borrados e nenhum dado sobre a pessoa é mostrado |
-| RF50.CA04 | foto sem roupas | a detecção termina | o app diz que não encontrou roupas, dá dicas e permite marcar uma peça |
-| RF50.CA05 | detecção com atributo errado | a pessoa corrige o chip | a correção é gravada e as correspondências se atualizam sem recarregar |
-| RF50.CA06 | peça detectada | a pessoa abre "Seu guarda-roupa" | vê as peças próprias parecidas com a semelhança (%) e os motivos, ou "sem correspondência" (nunca 0%) |
-| RF50.CA07 | peça sem correspondência no guarda-roupa | a aba Recriar abre | o slot aparece como lacuna, com a alternativa própria mais próxima |
-| RF50.CA08 | plano de recriação | a pessoa troca o modo Seguro/Descoberta/Experimental | só os slots não fixados mudam |
-| RF50.CA09 | plano pronto | a pessoa toca "Salvar como look" | o criador de looks abre com as peças próprias do plano |
-| RF50.CA10 | pessoa com DNA de estilo | abre "Estilo & Hype" | vê a compatibilidade e o Hype do grupo separados, cada um com explicação |
-| RF50.CA11 | grupo com poucos itens públicos | abre "Estilo & Hype" | o Hype aparece como "dados insuficientes" |
-| RF50.CA12 | resultados em Descobrir | a lista é exibida | a ordem é só por semelhança; nada patrocinado aparece dentro dos resultados |
-| RF50.CA13 | peça ou look privado de outra pessoa | alguém tenta escaneá-lo pelo app | a API responde 404 |
-| RF50.CA14 | scan de uma pessoa | outra pessoa tenta abri-lo | a API responde 404 |
-| RF50.CA15 | scan não salvo | passam 30 dias | imagem, detecções e correspondências são apagadas |
-| RF50.CA16 | scan salvo como inspiração | a pessoa adiciona ao guarda-roupa uma peça que completa o look | ao reabrir, aparece "desde o scan: +1 peça sua recria este look" |
-| RF50.CA17 | pessoa sem consentimento para IA externa | faz um scan | o app explica e oferece a leitura local, sem enviar a imagem a terceiros |
-| RF50.CA18 | pessoa que atingiu a cota do dia | tenta um novo scan | o app informa quando poderá voltar a escanear |
-| RF50.CA19 | qualquer scan | é concluído | nada do scan entra no Hype, nos rankings ou em estatísticas públicas |
-| RF50.CA20 | detecção "Eu tenho" sem peça correspondente | a pessoa confirma | `/pieces/new` abre pré-preenchido, sem usar o recorte da foto de outra pessoa como foto da peça |
-| RF50.CA21 | leitor de tela ou teclado | a pessoa navega pelo resultado | hotspots, Foco, chips e cards são alcançáveis e descritos, e o flip segue as regras do FashionCard |
+| RF54.CA01 | pessoa logada em `/lens` | tira uma foto ou escolhe uma imagem | o scan é criado e a tela mostra o progresso em texto até as peças aparecerem |
+| RF54.CA02 | foto com várias roupas | a detecção termina | cada peça aparece como hotspot e como card, com categoria, cor e a confiança escrita |
+| RF54.CA03 | foto com rostos | o scan é gravado ou enviado à IA | os rostos estão borrados e nenhum dado sobre a pessoa é mostrado |
+| RF54.CA04 | foto sem roupas | a detecção termina | o app diz que não encontrou roupas, dá dicas e permite marcar uma peça |
+| RF54.CA05 | detecção com atributo errado | a pessoa corrige o chip | a correção é gravada e as correspondências se atualizam sem recarregar |
+| RF54.CA06 | peça detectada | a pessoa abre "Seu guarda-roupa" | vê as peças próprias parecidas com a semelhança (%) e os motivos, ou "sem correspondência" (nunca 0%) |
+| RF54.CA07 | peça sem correspondência no guarda-roupa | a aba Recriar abre | o slot aparece como lacuna, com a alternativa própria mais próxima |
+| RF54.CA08 | plano de recriação | a pessoa troca o modo Seguro/Descoberta/Experimental | só os slots não fixados mudam |
+| RF54.CA09 | plano pronto | a pessoa toca "Salvar como look" | o criador de looks abre com as peças próprias do plano |
+| RF54.CA10 | pessoa com DNA de estilo | abre "Estilo & Hype" | vê a compatibilidade e o Hype do grupo separados, cada um com explicação |
+| RF54.CA11 | grupo com poucos itens públicos | abre "Estilo & Hype" | o Hype aparece como "dados insuficientes" |
+| RF54.CA12 | resultados em Descobrir | a lista é exibida | a ordem é só por semelhança; nada patrocinado aparece dentro dos resultados |
+| RF54.CA13 | peça ou look privado de outra pessoa | alguém tenta escaneá-lo pelo app | a API responde 404 |
+| RF54.CA14 | scan de uma pessoa | outra pessoa tenta abri-lo | a API responde 404 |
+| RF54.CA15 | scan não salvo | passam 30 dias | imagem, detecções e correspondências são apagadas |
+| RF54.CA16 | scan salvo como inspiração | a pessoa adiciona ao guarda-roupa uma peça que completa o look | ao reabrir, aparece "desde o scan: +1 peça sua recria este look" |
+| RF54.CA17 | pessoa sem consentimento para IA externa | faz um scan | o app explica e oferece a leitura local, sem enviar a imagem a terceiros |
+| RF54.CA18 | pessoa que atingiu a cota do dia | tenta um novo scan | o app informa quando poderá voltar a escanear |
+| RF54.CA19 | qualquer scan | é concluído | nada do scan entra no Hype, nos rankings ou em estatísticas públicas |
+| RF54.CA20 | detecção "Eu tenho" sem peça correspondente | a pessoa confirma | `/pieces/new` abre pré-preenchido, sem usar o recorte da foto de outra pessoa como foto da peça |
+| RF54.CA21 | leitor de tela ou teclado | a pessoa navega pelo resultado | hotspots, Foco, chips e cards são alcançáveis e descritos, e o flip segue as regras do FashionCard |
 
 ---
 
@@ -622,7 +622,7 @@ junto com o RF50, porque o Lens passa a depender dele.
 
 | Fase | Entrega | Depende de |
 |---|---|---|
-| 0 | este documento + card HU-RF50 + `docs/seguranca/moderacao-de-imagens.md` | numeração no Trello |
+| 0 | este documento + card HU-RF54 + `docs/seguranca/moderacao-de-imagens.md` | numeração no Trello |
 | 1 · MVP | `/lens` com upload e galeria (câmera via `<input capture>`); pipeline 1–6 só com `MY_CLOSET`; abas **Leitura** e **Seu guarda-roupa**; rostos borrados; retenção; histórico básico | núcleo do `MultiPieceService` extraído; backfill de `garment_embeddings` |
 | 2 | **Recriar** (modos + slots + Salvar como look), chips corrigíveis, Eu tenho / Quero, Inspirações no Lookbook | Copilot |
 | 3 | **Estilo & Hype** (Hype de grupo, `LensFit`), **Descobrir** (comunidade, Catálogo RF47 com imagem, à venda), `CatalogProductCard`, leitura viva | HypeScore v2 |

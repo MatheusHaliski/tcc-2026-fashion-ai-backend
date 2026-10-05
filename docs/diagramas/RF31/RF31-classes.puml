@@ -60,7 +60,7 @@ class PieceUsageDiaryEntry {
   +schemeId: UUID
   +createdAt: Instant
 }
-class HypeScoreCurrent <<RF49>> {
+class HypeScoreCurrent <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +algorithmVersion: String
@@ -74,7 +74,7 @@ class HypeScoreCurrent <<RF49>> {
 }
 }
 package "fai-domain · enums" {
-enum HypeLevel <<RF49>> {
+enum HypeLevel <<RF53>> {
   LOW_SIGNAL
   NICHE
   RELEVANT
@@ -114,10 +114,10 @@ note top of User : tabela users
 note top of WardrobeItem : tabela wardrobe_items
 note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
 note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF49 · HypeScore v2)
-note bottom of ClosetFilter : hypeLevel = faixa mínima (filtro, não aba) — novo (RF49)
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)
+note bottom of ClosetFilter : hypeLevel = faixa mínima (filtro, não aba) — novo (RF53)
 note top of WardrobeService
-  novo (RF49) — SORT_ALIASES: recentes→recent · mais_usadas→worn
+  novo (RF53) — SORT_ALIASES: recentes→recent · mais_usadas→worn
   menos_usadas→least_worn · nome→name · preco→price · mais_tempo_sem_uso→idle
   (sort Hype e hypeLevel leem hype_scores; sem Hype fica por último)
 end note

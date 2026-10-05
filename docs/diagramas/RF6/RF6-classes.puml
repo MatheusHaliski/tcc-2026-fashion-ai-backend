@@ -67,7 +67,7 @@ class SchemeGrouping {
   +periodTo: Integer
   +accentColor: String
 }
-class HypeScoreCurrent <<RF49>> {
+class HypeScoreCurrent <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +ownerId: UUID
@@ -80,7 +80,7 @@ class HypeScoreCurrent <<RF49>> {
   +momentum: HypeMomentum
   +calculatedAt: Instant
 }
-class HypeScoreSnapshot <<RF49>> {
+class HypeScoreSnapshot <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +algorithmVersion: String
@@ -122,7 +122,7 @@ enum HypeScoreBand {
   MUITO_ESTILOSO
   ARRASANDO_NO_LOOK
 }
-enum HypeLevel <<RF49>> {
+enum HypeLevel <<RF53>> {
   LOW_SIGNAL
   NICHE
   RELEVANT
@@ -167,7 +167,7 @@ class HypeScoreService {
   +scoreScheme(scheme): Score
   +hypeGroups(type): List
 }
-class HypeQueryService <<RF49>> {
+class HypeQueryService <<RF53>> {
   +summaries(viewer, type, ids): Map
   +detail(viewer, type, id): Map
   +history(viewer, type, id, days): Map
@@ -199,7 +199,7 @@ note top of DailyLook : tabela daily_looks\n(único: user_id + look_date)
 note top of HypeScoreMetric : tabela hype_score_metrics
 note top of AcervoGroup : tabela acervo_groups
 note top of SchemeGrouping : tabela scheme_groupings
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF49 · HypeScore v2)\nentityType PIECE | SCHEME; gravada pelo job de snapshots
-note top of HypeScoreSnapshot : tabela hype_score_snapshots\n(série diária) — novo (RF49)
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)\nentityType PIECE | SCHEME; gravada pelo job de snapshots
+note top of HypeScoreSnapshot : tabela hype_score_snapshots\n(série diária) — novo (RF53)
 note bottom of User : todas as entidades acima têm\n"*" --> "1" User (dono)
 @enduml

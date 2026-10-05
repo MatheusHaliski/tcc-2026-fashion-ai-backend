@@ -27,7 +27,7 @@ skinparam note {
 start
 :Vê o card de um esquema ou peça\n(feed, /schemes/[id], /pieces/[id]);
 note right
-  novo (RF49 · HypeScore v2): abrir o detalhe
+  novo (RF53 · HypeScore v2): abrir o detalhe
   (GET /api/schemes/{id} · GET /api/pieces/{id})
   logado e sem ser dono publica HypeSignal
   LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
@@ -47,7 +47,7 @@ if (Interação?) then (reagir)
   else (não)
     :Grava Reaction e bump("likes") se LIKE (CA01/CA03);
     :notify(NEW_LIKE | NEW_REACTION) + InteractionReceived;
-    :Se LIKE: publica HypeSignal(LIKE_CREATED) <<RF49>>;
+    :Se LIKE: publica HypeSignal(LIKE_CREATED) <<RF53>>;
   endif
 elseif (comentar) then
   |Frontend (CardActions)|
@@ -59,7 +59,7 @@ elseif (comentar) then
   else (não)
     :Grava Comment (active=true), bump("comments");
     :notify(NEW_COMMENT) (CA04);
-    :publica HypeSignal(COMMENT_CREATED) <<RF49>>;
+    :publica HypeSignal(COMMENT_CREATED) <<RF53>>;
   endif
 elseif (excluir comentário) then
   |Frontend (CardActions)|
@@ -76,7 +76,7 @@ elseif (salvar) then
   :POST .../saves;
   |Backend (SocialService)|
   :toggleSave: cria/remove SavedItem\nnos Looks Salvos (CA07);
-:Se criou: HypeSignal(SAVE_CREATED);\nPUT .../saves/favorite (true):\nHypeSignal(FAVORITE_CREATED) <<RF49>>;
+:Se criou: HypeSignal(SAVE_CREATED);\nPUT .../saves/favorite (true):\nHypeSignal(FAVORITE_CREATED) <<RF53>>;
 elseif (compartilhar) then
   |Frontend (CardActions)|
   :POST .../shares {channel: FEED|EXTERNAL, caption};
@@ -92,17 +92,17 @@ elseif (compartilhar) then
     :Share no feed interno (CA08);
   endif
   :bump("shares") + notify;
-:publica HypeSignal(SHARE_CREATED) <<RF49>>;
+:publica HypeSignal(SHARE_CREATED) <<RF53>>;
 elseif (remixar) then
   |Frontend (useRemix)|
   :POST .../remixes;
   |Backend (SocialService)|
   if (type == SCHEME?) then (sim)
     :SchemeService.remix(): prefill com itens\nmapeados por similaridade, origin=REMIX,\nremixedFromId=origem (CA13);
-    :Ao salvar o remix (SchemeService.create\ncom originalScheme):\nHypeSignal(LOOK_REMIXED) <<RF49>>;
+    :Ao salvar o remix (SchemeService.create\ncom originalScheme):\nHypeSignal(LOOK_REMIXED) <<RF53>>;
   else (PIECE)
     :bump("remixes") + notify(NEW_REMIX);\nnext=/create-look?seedPiece=;
-    :publica HypeSignal(PIECE_REMIXED) <<RF49>>;
+    :publica HypeSignal(PIECE_REMIXED) <<RF53>>;
   endif
 elseif (retornar) then
   |Frontend (CardActions)|
@@ -116,7 +116,7 @@ endif
 note right: tipo desativado contabiliza mas não entrega
 if (HypeSignal publicado?) then (sim)
   |Backend (HypeSignalRecorder)|
-  :novo (RF49 · HypeScore v2)\n@TransactionalEventListener(AFTER_COMMIT)\nonSignal → SideEffectRunner (REQUIRES_NEW):\nfalha aqui nunca desfaz a interação;
+  :novo (RF53 · HypeScore v2)\n@TransactionalEventListener(AFTER_COMMIT)\nonSignal → SideEffectRunner (REQUIRES_NEW):\nfalha aqui nunca desfaz a interação;
   :HypeIntegrityPolicy.weight(sinal, dia)\ndedupe hype:dedupe:{sinal}:{entidade}:\n{ator}:{dia} no RenderCachePort (TTL 26 h);
   if (Visitante, interação do próprio\ndono (exceto ações de dono)\nou repetido no dia?) then (sim)
     :peso 0 —\ndescartado;

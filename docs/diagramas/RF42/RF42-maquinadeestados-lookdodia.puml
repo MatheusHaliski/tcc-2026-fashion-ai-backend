@@ -26,7 +26,7 @@ Avaliado --> [*] : vira histórico (GET /api/me/daily-looks)
 Marcado --> [*] : passa o dia sem avaliação\n(lembrete após 18h — pending-feedback)
 note right of Marcado : schemes.look_do_dia = true;\naparece na Passarela 3D (RF33)\nenquanto for a data de hoje
 note left of Marcado
-  novo (RF49 · HypeScore v2): cada register
+  novo (RF53 · HypeScore v2): cada register
   publica DailyLookRegistered → HypeSignalRecorder
   grava LOOK_WORN e PIECE_USED em hype_signal_daily
   (a cópia do today() não gera sinal)

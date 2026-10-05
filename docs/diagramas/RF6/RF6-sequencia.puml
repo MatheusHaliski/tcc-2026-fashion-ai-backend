@@ -12,11 +12,11 @@ actor "Pessoa" as P
 participant "Frontend\n/lookbook → /u/[username]\n(lookbook-tabs)" as FE
 participant "LookbookController" as LC
 participant "SocialController" as SC
-participant "HypeController" as HC <<RF49>>
+participant "HypeController" as HC <<RF53>>
 participant "LookbookService" as LS
 participant "DailyLookService" as DS
 participant "HypeScoreService" as HS
-participant "HypeQueryService" as HQ <<RF49>>
+participant "HypeQueryService" as HQ <<RF53>>
 participant "AiEngine (RF24)" as AI
 database "MySQL" as DB
 
@@ -24,7 +24,7 @@ P -> FE: abre /lookbook
 FE -> FE: router.replace(/u/{username}?tab=)
 opt ?tab=cupons|coupons (dono)
   FE -> FE: CouponsRedirect → router.replace(/coupons)
-  note right of FE: alterado (RF49 · HypeScore v2):\na aba de cupons saiu do Lookbook
+  note right of FE: alterado (RF53 · HypeScore v2):\na aba de cupons saiu do Lookbook
 end
 FE -> LC: GET /api/users/{ownerId}/lookbook
 LC -> LS: overview(viewer, ownerId)
@@ -43,7 +43,7 @@ FE -> LC: DELETE /api/me/saved-looks/{schemeId}
 LC -> LS: removeSaved(user, schemeId)
 FE -> SC: POST /api/interactions/PIECE/{id}/saves
 SC --> FE: 200 {saved} (toggleSave)
-== Cards de peça e look com Hype (FashionCard) — novo (RF49 · HypeScore v2) ==
+== Cards de peça e look com Hype (FashionCard) — novo (RF53 · HypeScore v2) ==
 FE -> HC: GET /api/hype/summaries?type=PIECE|SCHEME&ids=\n(use-hype.ts: ids do mesmo tick, até 100; cache com TTL)
 HC -> HQ: summaries(viewer, type, ids)
 HQ -> DB: hype_scores (só ids visíveis para quem vê)
@@ -71,7 +71,7 @@ opt há Look do Dia
   HS -> DB: UPSERT hype_score_metrics (hypeScore, band, trendsetterSeal)
 end
 LC --> FE: 200 {today, scheme, panel, history, feedbackReminder}
-note right of FE: histórico mostra title e hypeScore\nde cada dia (ajuste RF49)
+note right of FE: histórico mostra title e hypeScore\nde cada dia (ajuste RF53)
 opt marcar um esquema
   FE -> LC: POST /api/me/daily-look {schemeId}
   LC -> LS: markDailyLook(user, schemeId)
@@ -86,7 +86,7 @@ end
 FE -> LC: PUT /api/me/daily-looks/{date}/feedback {feedback}
 LC -> DS: feedback(user, date, ADOREI | NAO_USEI | NAO_GOSTEI)
 LC --> FE: 200
-== Insights (dono) — novo (RF49 · HypeScore v2) ==
+== Insights (dono) — novo (RF53 · HypeScore v2) ==
 FE -> HC: GET /api/me/hype/wardrobe (HypeWardrobeInsights)
 HC -> HQ: wardrobe(user)
 HQ -> DB: hype_scores das peças e looks do dono

@@ -1,6 +1,6 @@
-@startuml RF49_MaquinaDeEstados_Hype
+@startuml RF53_MaquinaDeEstados_Hype
 !pragma layout smetana
-title RF49 — Estado do HypeScore v2 de uma peça ou look (hype_scores, por algorithm_version)
+title RF53 — Estado do HypeScore v2 de uma peça ou look (hype_scores, por algorithm_version)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF

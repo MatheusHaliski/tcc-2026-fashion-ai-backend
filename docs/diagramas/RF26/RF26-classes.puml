@@ -110,7 +110,7 @@ class HypeScoreMetric {
   +globalHypeScore: BigDecimal
   .. +9 campos ..
 }
-class HypeScoreCurrent <<RF49>> {
+class HypeScoreCurrent <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +ownerId: UUID
@@ -124,7 +124,7 @@ class HypeScoreCurrent <<RF49>> {
   +occasions: String
   .. +11 campos ..
 }
-class HypeScoreSnapshot <<RF49>> {
+class HypeScoreSnapshot <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +algorithmVersion: String
@@ -151,7 +151,7 @@ enum HypeEntityType {
   PIECE
   SCHEME
 }
-enum HypeStatus <<RF49>> {
+enum HypeStatus <<RF53>> {
   AVAILABLE
   INSUFFICIENT_DATA
 }
@@ -178,6 +178,6 @@ note top of BrandProfile : tabela brand_profiles
 note top of WardrobeItem : tabela wardrobe_items
 note top of Scheme : tabela schemes
 note top of SealBond : tabela seal_bonds
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF49 · HypeScore v2)\n"Em alta" lê só publicEligible = true e status = AVAILABLE\n(janela 1 = dimensions.trend · 7 = score)
+note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)\n"Em alta" lê só publicEligible = true e status = AVAILABLE\n(janela 1 = dimensions.trend · 7 = score)
 note bottom of HypeScoreSnapshot : tabela hype_score_snapshots\njanela 30 = média dos snapshots do mês
 @enduml

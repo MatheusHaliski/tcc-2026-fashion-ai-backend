@@ -28,7 +28,7 @@ start
 :Closet → filtro (Todas, Favoritas,\nDisponíveis, Indisponíveis, À venda);
 :Opcional: faixa mínima de Hype (hypeLevel) e ordenação\n(recent · hype_desc · hype_asc · growth · rarity\n· worn · least_worn · idle · name · price);
 note right
-  novo (RF49 · HypeScore v2): hype-filters.ts
+  novo (RF53 · HypeScore v2): hype-filters.ts
   (hypeSortOptions · hypeLevelFilter); antes a tela
   mandava mais_usadas/nome/preco e a ordem era ignorada
 end note

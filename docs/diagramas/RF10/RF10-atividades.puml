@@ -34,18 +34,18 @@ note right: OpenMeteoAdapter (WeatherPort/GeocodingPort);\nsem clima → Context
 :Lista peças elegíveis (WardrobeService.eligible:\ndisponíveis do acervo real);
 :Monta 5 blocos: looks prontos, combinações novas\n(LocalSchemeComposer), peças esquecidas (30+ dias sem uso),\npeças para o clima, looks em alta na rede;
 :Looks em alta ordenados pelo HypeScore v2\n(HypeQueryService.currentOf(SCHEME); sem Hype = por último);
-note right: novo (RF49 · HypeScore v2)
+note right: novo (RF53 · HypeScore v2)
 |Frontend (Next.js)|
 :Renderiza SchemeCard / PieceCard + prompts sugeridos\nem abas (Tabs): Recomendações · Descoberta ·\nExperimentação · Redescoberta · Insights;
 note right
-  novo (RF49 · HypeScore v2):
+  novo (RF53 · HypeScore v2):
   Redescoberta e Insights leem
   GET /api/me/hype/wardrobe (HypeController)
 end note
 |Pessoa|
 :Escolhe o modo (SegmentPicker): Seguro (SAFE, padrão)\n· Descoberta (DISCOVERY) · Experimental (EXPERIMENTAL);
 note right
-  novo (RF49 · HypeScore v2)
+  novo (RF53 · HypeScore v2)
   pesos [compat, hype, novidade, reuso]:
   SAFE 0,60/0,10/0,10/0,20
   DISCOVERY 0,35/0,20/0,25/0,20
@@ -64,9 +64,9 @@ endif
 note right: CopilotLexicon extrai ocasião, estilo, humor,\nestação, cor, tipo, material e faixa de clima do texto;\nHYPE = HYPE_QUESTION e não BUILD_REQUEST ("monte um look em alta" → LOOKS)
 if (Intenção) then (LOOKS)
   :Compõe looks com as peças do acervo\n(respeita desafio ativo, se houver);
-  :scoreLooks(user, cards, mode) <<RF49>>:\nscores {compatibility, hype, novelty, reuse}\n(0–100 ou nulo); com modo, reordena\npor RecommendationScoring.rankValue;
+  :scoreLooks(user, cards, mode) <<RF53>>:\nscores {compatibility, hype, novelty, reuse}\n(0–100 ou nulo); com modo, reordena\npor RecommendationScoring.rankValue;
 elseif (HYPE)
-  :hypeAnswer(user, message) <<RF49>>:\nHypeQueryService.currentOf (peças ou\nlooks próprios) → maior Hype, crescendo,\nraras, voltando ou potencial de trend;
+  :hypeAnswer(user, message) <<RF53>>:\nHypeQueryService.currentOf (peças ou\nlooks próprios) → maior Hype, crescendo,\nraras, voltando ou potencial de trend;
   :StyleCompatibility.score(DNA, peça)\nao lado do Hype (nunca misturada);\nchips com hype e compatibility;
   :Anexa sempre o aviso copilot.hype.aviso;
 elseif (GENERAL)

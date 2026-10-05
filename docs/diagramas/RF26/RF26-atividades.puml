@@ -73,7 +73,7 @@ elseif (Buscar marcas & lojas) then
   :Toca um card → abre o perfil da marca (RF14);
 elseif (Em alta) then
   |Pessoa|
-  :novo (RF49 · HypeScore v2)\nEscolhe tipo (Peças · Looks),\njanela (Hoje · 7 · 30 dias) e filtros\n(categoria só p/ peças, estilo, ocasião);
+  :novo (RF53 · HypeScore v2)\nEscolhe tipo (Peças · Looks),\njanela (Hoje · 7 · 30 dias) e filtros\n(categoria só p/ peças, estilo, ocasião);
   |Frontend|
   :HypeTrendingPanel (hype-trending.tsx)\nGET /api/hype/trending?type&window\n&category&style&occasion&limit=24;
   |Backend|

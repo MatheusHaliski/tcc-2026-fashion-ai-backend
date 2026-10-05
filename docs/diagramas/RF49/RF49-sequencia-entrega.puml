@@ -1,0 +1,50 @@
+@startuml RF49_Sequencia_Entrega
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nDiagrama de sequência: da branch ao ar — CI, deploy, Flyway e healthcheck
+autonumber
+
+actor "Dev (ou sessão Claude)" as DEV
+participant "GitHub\nPR / main" as GH
+participant "CI · API\nmvn verify (JDK 21)" as CIAPI
+participant "CI · Front\ntsc · vitest · build · audit" as CIFE
+participant "CI · Segredos\ngitleaks (histórico inteiro)" as CIGL
+participant "Railway\nbuild (Dockerfile.backend)" as RB
+participant "Contêiner da API\n(Temurin 25 LTS · Spring Boot 4.1)" as API
+database "MySQL 9" as DB
+participant "Railway\nhealthcheck /actuator/health" as HC
+
+DEV -> GH : push / PR
+par
+  GH -> CIAPI : verify
+  CIAPI -> CIAPI : 596 testes, incluindo\nMigrationVersionsTest (versão de migration única)\nJsonContractTest (contrato JSON do Jackson 3)\nAutoConfigurationExclusionsTest (exclusões do Boot 4)
+else
+  GH -> CIFE : typecheck · testes · build
+else
+  GH -> CIGL : gitleaks --redact (.gitleaksignore com impressões digitais exatas)
+end
+alt algum job vermelho
+  GH --> DEV : CI vermelho no PR: corrigir antes do merge\n(recomendado: proteção de branch exigindo os 3 jobs)
+else tudo verde
+  DEV -> GH : merge no main → merge na branch de deploy
+  GH -> RB : deploy (branch claude/fashion-ai-interfaces-config-id7naj)
+  RB -> API : nova versão
+  API -> DB : Flyway validate (versões únicas, checksums)
+  alt migration repetida ou inválida
+    API -> API : não sobe (nenhuma migration aplicada)
+    HC -> API : /actuator/health (até 300 s)
+    HC --> RB : falhou → deploy FAILED
+    RB -> RB : a versão anterior continua servindo
+  else ok
+    API -> DB : migrate V(n+1)…V36\n(V34: política de ON DELETE por domínio, 0 adiadas)
+    API -> API : sobe (DemoFixtures @Lazy não interfere)
+    HC -> API : /actuator/health
+    API --> HC : UP
+    HC --> RB : saudável → tráfego vai para a nova versão
+  end
+end
+note over DEV, GH
+  Dependabot abre bumps semanais; major de Boot é migração (docs/MIGRACAO_SPRING_BOOT_4.md)
+  e JVM só LTS na imagem. Merge com conflito: nunca "accept current" em bloco —
+  as perdas desta sessão foram restauradas nos PRs #119 e #125.
+end note
+@enduml

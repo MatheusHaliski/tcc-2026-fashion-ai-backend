@@ -1,208 +1,122 @@
 @startuml RF49_Classes
-title RF49 — HypeScore v2: Hype de peças e looks\nDiagrama de classes — entidades JPA reais (fai-domain), enums e núcleo de cálculo (fai-application)
-!pragma layout smetana
-skinparam backgroundColor #FFFFFF
-skinparam class {
-  BackgroundColor #F4F2EF
-  BorderColor #4A4852
-  ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
-}
-skinparam packageStyle rectangle
-hide empty methods
+!include ../seguranca/_estilo.iuml
+title RF49 — Segurança, integridade e operação\nDiagrama de classes: freios de autenticação, contadores, origem da conta, integridade por domínio e dados demo
 
-package "fai-domain · model" {
-class HypeSignalDaily <<@Table hype_signal_daily>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +signalType: HypeSignalType
-  +signalDate: LocalDate
-  +eventCount: int
-  +weightedCount: BigDecimal = 0
-  +updatedAt: Instant
-}
-note bottom of HypeSignalDaily : UNIQUE (entity_type, entity_id,\nsignal_type, signal_date)\nincrementado por upsert nativo
-
-class HypeScoreCurrent <<@Table hype_scores>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +ownerId: UUID
-  +algorithmVersion: String = "HYPE_V2"
-  +status: HypeStatus
-  +score: BigDecimal [0–100, null se insuficiente]
-  +level: HypeLevel
-  +dimensions: HypeDimensions
-  +deltaPoints: BigDecimal
-  +deltaPercent: BigDecimal
-  +direction: String [UP|DOWN|STABLE]
-  +momentum: HypeMomentum
-  +publicEligible: boolean
-  +category: String
-  +styles: String
-  +occasions: String
-  +signalsJson: String
-  +reasonsJson: String
-  +windowStart: Instant
-  +windowEnd: Instant
-  +calculatedAt: Instant
-}
-note bottom of HypeScoreCurrent : UNIQUE (entity_type, entity_id,\nalgorithm_version) — estado atual\n(read model dos cards e rankings)
-
-class HypeScoreSnapshot <<@Table hype_score_snapshots>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +algorithmVersion: String
-  +snapshotDate: LocalDate
-  +status: HypeStatus
-  +score: BigDecimal
-  +level: HypeLevel
-  +dimensions: HypeDimensions
-  +publicEligible: boolean
-  +windowStart: Instant
-  +windowEnd: Instant
-  +calculatedAt: Instant
-}
-note bottom of HypeScoreSnapshot : 1 por entidade, versão e dia\n(histórico, delta de 7 dias, média de 30 dias)
-
-class HypeDimensions <<@Embeddable>> {
-  +popularity: BigDecimal
-  +engagement: BigDecimal
-  +trend: BigDecimal
-  +trendVelocity: BigDecimal
-  +novelty: BigDecimal
-  +longevity: BigDecimal
-  +rarity: BigDecimal
-  +originality: BigDecimal
-  +influence: BigDecimal [só looks]
+package "fai-web · support" {
+  class AuthRateLimitFilter <<OncePerRequestFilter · @Order(-102)>> {
+    ~RULES : List<Rule>
+    -hashing : Semaphore «teto de hashes Argon2»
+    -hashWaitMillis : long = 2000
+    ~ruleFor(method, path) : Optional<Rule>
+    ~bucketKey(ip) : String «IPv6 → prefixo /64»
+    ~defaultHashPermits(cores, dbPool) : int
+    #doFilterInternal(req, res, chain) «429 · 503 + Retry-After»
+  }
+  class Rule <<record>> {
+    method : String
+    path : String «* = um segmento»
+    limit : int
+    window : Duration
+    hashes : boolean
+  }
+  class ClientIpResolver {
+    ~MAX_SKEW_SECONDS = 60
+    ~MIN_SECRET_LENGTH = 32
+    +resolve(request) : String
+    ~signedIp(ip, ts, sig) : String «HMAC-SHA256, tempo constante»
+  }
 }
 
-class WardrobeItem <<@Table wardrobe_items>> {
-  +user: User
-  +category: String
-  +visibility: Visibility
-  +catalogProductId: UUID
-  +hypeScore: BigDecimal [v1]
-}
-class Scheme <<@Table schemes>> {
-  +user: User
-  +visibility: Visibility
-  +originalScheme: Scheme [remix]
-  +hypeScore: BigDecimal [v1]
-}
-}
-
-package "fai-domain · model.enums" {
-enum HypeEntityType {
-  PIECE
-  SCHEME
-}
-enum HypeSignalType {
-  LIKE_CREATED
-  COMMENT_CREATED
-  SAVE_CREATED
-  SHARE_CREATED
-  FAVORITE_CREATED
-  LOOK_REMIXED
-  PIECE_REMIXED
-  LOOK_VIEWED
-  PIECE_VIEWED
-  PIECE_USED
-  PIECE_IN_LOOK
-  LOOK_WORN
-}
-enum HypeStatus {
-  AVAILABLE
-  INSUFFICIENT_DATA
-}
-enum HypeLevel {
-  LOW_SIGNAL
-  NICHE
-  RELEVANT
-  HOT
-  TRENDING
-  VIRAL
-}
-enum HypeMomentum {
-  EMERGING
-  RISING
-  STABLE
-  COOLING
-  CLASSIC
-}
+package "fai-application" {
+  interface RateLimitPort {
+    +tryAcquire(owner, bucket, limit, window) : boolean
+    +status(owner, bucket, limit, window) : QuotaStatus
+    +reset(owner, bucket)
+    +release(owner, bucket) «nunca abaixo de 0»
+  }
+  class IdentityService {
+    ~LOGIN_FAIL = "login-fail"
+    -MAX_LOGIN_FAILURES = 5
+    -LOCK_WINDOW = 15 min
+    +login(cmd, ip, userAgent) : Session
+    +changePassword(user, sessão, atual, nova, confirma) : int
+    +reauthenticate(userId, senha)
+    -passwordMatchesWithLockout(user, senha, via) : boolean «429 MUITAS_TENTATIVAS»
+  }
+  class DemoEnvironmentGuard {
+    +requireEnabled() «FASHIONAI_DEMO_ENABLED; produção exige ALLOW_PRODUCTION»
+    +production() : boolean
+  }
+  class DemoFixtures <<@Component @Lazy>> {
+    +SEED = 2026
+    +personas(profile) : List<Persona>
+    +fixtureKeys(profile) : List<String>
+    «campo omitido = 0 · validado contra a taxonomia»
+  }
+  interface DemoDataAdminPort {
+    +testAccountIds() : List<UUID>
+    +realAccountsAmong(ids) : long
+    +plan(ids) : ResetCounts
+    +interactionsOnRealContent(ids) : List<CounterDelta>
+    +deletePolymorphicTargeting(ids) : Map
+    +deleteTestAccounts(ids) : long «só TEST_SEED/DEMO»
+    +integrityProblems(fixtureKeys) : List<String>
+  }
+  class "DemoDataService\n(planejado)" as DDS #FFFFFF {
+    +seed(profile) · plan() · reset(planHash) · verify()
+  }
 }
 
-package "fai-application · hype" {
-class HypeScoreConfig <<@Component>> {
-  +algorithmVersion(): String
-  +weights(type): Map<Dimension, Double>
-  +signalWeight(signal): double
-  +level(score): HypeLevel
-  +decayLambda(): double
-  +describe(): Map
-}
-class HypeCalculator {
-  +baseline(publicPopulation): Baseline
-  +compute(in: HypeInputs, base: Baseline): HypeResult
-  +direction(score, base): String
-  ~momentum(dims): HypeMomentum
-}
-class HypeInputs <<record>>
-class HypeResult <<record>> {
-  +status: HypeStatus
-  +score: Double
-  +level: HypeLevel
-  +dimensions: Map
-  +momentum: HypeMomentum
-  +reasons: List<HypeReason>
-}
-class HypeReason <<record>> {
-  +code: String
-  +tone: String
-  +dimension: String
-  +value: Double
-}
-class HypeSignalSeries <<record>> {
-  +build(rows, today, config): Map<UUID, HypeSignalSeries>
-}
-class HypeIntegrityPolicy <<@Component>> {
-  +weight(sinal: HypeSignal, dia): double
-}
-class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
-  +signal: HypeSignalType
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +actorId: UUID
-  +ownerId: UUID
-}
-class StyleCompatibility {
-  +profile(styles, colors, occasions): Profile
-  +score(dna, item): Map {score, parts}
-}
-class RecommendationScoring {
-  +Mode: SAFE | DISCOVERY | EXPERIMENTAL
-  +rankValue(scores, mode): double
-}
+package "fai-infrastructure" {
+  class InMemoryRateLimit {
+    -windows : ConcurrentHashMap «teto 100 mil, varredura»
+  }
+  class RedisRateLimit <<RedisAdapters>> {
+    «INCR + TTL · RELEASE em script Lua»
+  }
+  class MysqlDemoDataAdminAdapter {
+    ~edges() : List<Edge> «FKs reais do INFORMATION_SCHEMA»
+    ~deletedRows(edges) : Map<tabela, condição> «CASCADE recursivo»
+  }
+  class "V34__integridade_referencial_por_dominio" as V34 <<Flyway Java>> {
+    +POLICY : List<Fk> «131 FKs»
+    +sameRule(atual, política) : boolean
+    +migrate(ctx) «uma ALTER por FK · órfão adia só aquela»
+  }
+  class Fk <<record>> {
+    table · column · refTable · refColumn
+    onDelete : CASCADE | RESTRICT | SET NULL
+  }
 }
 
-HypeScoreCurrent *-- HypeDimensions
-HypeScoreSnapshot *-- HypeDimensions
-HypeSignalDaily --> HypeEntityType
-HypeSignalDaily --> HypeSignalType
-HypeScoreCurrent --> HypeStatus
-HypeScoreCurrent --> HypeLevel
-HypeScoreCurrent --> HypeMomentum
-HypeScoreSnapshot --> HypeLevel
-HypeSignalDaily ..> WardrobeItem : entity_id (PIECE)
-HypeSignalDaily ..> Scheme : entity_id (SCHEME)
-HypeScoreCurrent ..> WardrobeItem : entity_id (PIECE)
-HypeScoreCurrent ..> Scheme : entity_id (SCHEME)
-HypeScoreCurrent "1" ..> "0..*" HypeScoreSnapshot : mesma entidade e versão
-HypeSignal ..> HypeSignalDaily : HypeSignalRecorder grava\n(peso de HypeIntegrityPolicy)
-HypeIntegrityPolicy ..> HypeSignal
-HypeCalculator ..> HypeScoreConfig
-HypeCalculator ..> HypeInputs
-HypeCalculator ..> HypeResult
-HypeResult *-- HypeReason
-HypeSignalSeries ..> HypeSignalDaily : lê as linhas
-HypeResult ..> HypeScoreCurrent : persistido pelo\nHypeSnapshotService
+package "fai-domain" {
+  class User {
+    -accountOrigin : AccountOrigin = REAL
+    -fixtureKey : String «único»
+    -testAccountColumn : Boolean «gerada (V35)»
+    +isTestAccount() : boolean
+    +isTestUsername(username) : boolean «e2e_ · demo_»
+  }
+  enum AccountOrigin {
+    REAL
+    TEST_SEED
+    DEMO
+    SYSTEM
+  }
+}
+
+AuthRateLimitFilter *-- Rule
+AuthRateLimitFilter --> ClientIpResolver
+AuthRateLimitFilter --> RateLimitPort : balde por IP
+IdentityService --> RateLimitPort : balde por conta
+RateLimitPort <|.. InMemoryRateLimit
+RateLimitPort <|.. RedisRateLimit
+DemoDataAdminPort <|.. MysqlDemoDataAdminAdapter
+MysqlDemoDataAdminAdapter ..> V34 : confere desvio da política
+V34 *-- Fk
+DDS ..> DemoEnvironmentGuard
+DDS ..> DemoFixtures
+DDS ..> DemoDataAdminPort
+User --> AccountOrigin
+IdentityService ..> User
 @enduml

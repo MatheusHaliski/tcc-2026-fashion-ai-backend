@@ -16,9 +16,9 @@ participant "SocialService" as S
 participant "SchemeService" as SS
 participant "NotificationService" as N
 participant "CounterStorePort" as CT
-participant "HypeSignalRecorder\n+ HypeIntegrityPolicy\n<<RF49>>" as HR
+participant "HypeSignalRecorder\n+ HypeIntegrityPolicy\n<<RF53>>" as HR
 database "MySQL" as DB
-note over FE, SS : novo (RF49 · HypeScore v2): GET /api/schemes/{id} e GET /api/pieces/{id} por pessoa logada que não é dona\npublicam HypeSignal LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
+note over FE, SS : novo (RF53 · HypeScore v2): GET /api/schemes/{id} e GET /api/pieces/{id} por pessoa logada que não é dona\npublicam HypeSignal LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
 U -> FE: curtir
 FE -> SC: POST /api/interactions/{type}/{id}/reactions {reaction: LIKE}
 SC -> S: react(user, type, id, LIKE)
@@ -65,7 +65,7 @@ opt INSERT (salvou)
   S ->> HR: publishEvent HypeSignal(SAVE_CREATED)
 end
 S --> FE: 200 {saved}
-note right of S: PUT .../saves/favorite (favorite = true)\n→ HypeSignal(FAVORITE_CREATED) <<RF49>>
+note right of S: PUT .../saves/favorite (favorite = true)\n→ HypeSignal(FAVORITE_CREATED) <<RF53>>
 U -> FE: compartilhar (FEED ou EXTERNAL)
 FE -> SC: POST /api/interactions/{type}/{id}/shares {channel, caption}
 SC -> S: share(user, type, id, channel, caption)
@@ -84,7 +84,7 @@ alt type == SCHEME
   S -> SS: remix(user, id)
   SS -> DB: SELECT scheme_items da origem · peças elegíveis do remixador
   SS --> FE: 201 {prefill(origin REMIX, remixedFromId), missingPieces, next:/create-look?remix=}
-  note right of SS: ao salvar o remix (POST /api/schemes → SchemeService.create\ncom originalScheme): HypeSignal(LOOK_REMIXED) <<RF49>>
+  note right of SS: ao salvar o remix (POST /api/schemes → SchemeService.create\ncom originalScheme): HypeSignal(LOOK_REMIXED) <<RF53>>
 else type == PIECE
   S ->> HR: publishEvent HypeSignal(PIECE_REMIXED)
   S -> N: notify(owner, NEW_REMIX)
@@ -96,7 +96,7 @@ CC -> S: returnToOrigin(user, pieceId, fromScheme)
 S -> DB: SELECT scheme_items WHERE wardrobe_item_id (esquemas visíveis, mais antigo primeiro)
 S --> FE: 200 {originSchemeId, title, otherSchemes}
 
-== HypeScore v2: gravação do sinal (novo · RF49) ==
+== HypeScore v2: gravação do sinal (novo · RF53) ==
 note over HR : @TransactionalEventListener(AFTER_COMMIT) onSignal\n→ SideEffectRunner (REQUIRES_NEW): falha aqui nunca desfaz a interação
 HR -> HR: HypeIntegrityPolicy.weight(sinal, dia)
 alt visitante (sem ator) · ator == dono (exceto PIECE_USED / PIECE_IN_LOOK / LOOK_WORN)\n· chave hype:dedupe:{sinal}:{entidade}:{ator}:{dia} já existe (TTL 26 h)

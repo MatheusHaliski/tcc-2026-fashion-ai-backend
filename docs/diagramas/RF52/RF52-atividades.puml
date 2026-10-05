@@ -1,0 +1,79 @@
+@startuml RF52_Atividades
+title RF52 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de atividades — carregar perto da tela, tocar quando visível, plano B quando o navegador recusa
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre uma tela com cards que usam Aura em vídeo\n(feed, perfil, DNA, peça expandida, editor de arte);
+|Card (CardArtLayer + ArtVideo)|
+:resolveCardArt devolve video {src, poster} e still\n(animação CSS do preset para o plano B);
+:Mostra o pôster; o <video> nasce sem src, mudo,\nplaysinline e sem autoplay;
+if (Navegador tem IntersectionObserver?) then (não)
+  :autoplay = true e src = arquivo\n(o navegador decide);
+  stop
+else (sim)
+endif
+:Observa "perto da tela" (300 px) e "visível";\nescuta visibilitychange, pageshow e canplay;
+|Pessoa|
+:Rola a página;
+|Card (CardArtLayer + ArtVideo)|
+:Card a até 300 px da tela → src = arquivo\n(só agora o MP4 é baixado);
+repeat
+  if (Card visível e aba visível?) then (sim)
+    :play();
+    |Navegador|
+    :Aplica a política de reprodução automática\n(modo pouca energia do iOS, economia de bateria,\nlimite de vídeos tocando);
+    |Card (CardArtLayer + ArtVideo)|
+    switch (Resultado de play())
+    case (tocou)
+      :Vídeo tocando; remove a nova tentativa;\nonStuck(false) tira o plano B;
+    case (NotAllowedError)
+      :onStuck(true): pôster animado pela classe\nanim-<still> (padrão: drift);
+      :Arma nova tentativa no 1º toque ou tecla\n(pointerdown/keydown em captura);
+    case (AbortError ou outro)
+      :Ignora (pausa ou troca de arquivo em andamento);
+    endswitch
+  else (não)
+    :Pausa (o arquivo continua carregado);
+  endif
+  |Pessoa|
+  :Toca na tela, volta para a aba, volta pelo histórico\nou o card reaparece;
+  |Card (CardArtLayer + ArtVideo)|
+repeat while (Card ainda a até 300 px?) is (sim)
+->não;
+:Pausa, remove o src e chama load()\n(libera rede e decodificador);
+note right
+  ao voltar para perto da tela,
+  o arquivo é carregado de novo
+end note
+if (Aura trocada ou card desmontado?) then (sim)
+  :Limpeza: desconecta os observadores, remove ouvintes\ne a nova tentativa, libera o arquivo, onStuck(false);
+  note right
+    com outra Aura, o ciclo recomeça
+    e o vídeo novo substitui o antigo
+  end note
+else (não)
+endif
+stop
+@enduml

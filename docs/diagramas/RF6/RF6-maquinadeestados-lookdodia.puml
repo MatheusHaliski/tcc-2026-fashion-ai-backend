@@ -37,7 +37,7 @@ note right of Reg
   lookDoDiaCount++, wardrobe_items.lastWornDate;
   publica DomainEvents.DailyLookRegistered;
   HypeScoreService.panel grava hype_score_metrics
-  ..novo (RF49 · HypeScore v2)..
+  ..novo (RF53 · HypeScore v2)..
   após o commit, HypeSignalRecorder.onDailyLook grava
   LOOK_WORN (look) e PIECE_USED (peças) em hype_signal_daily
   (a cópia materializada por today() não gera sinal)

@@ -72,7 +72,7 @@ class PieceUsageDiaryEntry {
   +source: String
   +schemeId: UUID
 }
-class HypeScoreCurrent <<RF49>> {
+class HypeScoreCurrent <<RF53>> {
   +entityType: HypeEntityType
   +entityId: UUID
   +ownerId: UUID
@@ -114,8 +114,8 @@ class CopilotService {
   +suggestions(user, city, lat, lon)
   +ask(user, AskRequest)
   +accept(user, pieceIds, title, occasion, style, mood, season, description, background)
-  ~hypeAnswer(user, message) <<RF49>>
-  ~scoreLooks(user, cards, mode) <<RF49>>
+  ~hypeAnswer(user, message) <<RF53>>
+  ~scoreLooks(user, cards, mode) <<RF53>>
 }
 class "CopilotService.AskRequest" as AskRequest <<record>> {
   +message: String
@@ -127,7 +127,7 @@ class "CopilotService.AskRequest" as AskRequest <<record>> {
   +latitude: Double
   +longitude: Double
   +excludeKeys: List<String>
-  +mode: String <<RF49>>
+  +mode: String <<RF53>>
 }
 class CopilotLexicon {
   {static} +matches(vocab, message)
@@ -150,7 +150,7 @@ class AutopilotService {
   +discardWeek(user)
 }
 }
-package "fai-application · hype <<RF49>>" {
+package "fai-application · hype <<RF53>>" {
 class HypeQueryService {
   +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
   +wardrobe(user)
@@ -209,6 +209,6 @@ note top of WeekPlanDay : tabela week_plan_days
 note top of DailyLook : tabela daily_looks
 note top of PieceUsageDiaryEntry : tabela piece_usage_diary\n(gravada por WardrobeEventListeners; base de "peças esquecidas")
 note top of WardrobeItem : tabela wardrobe_items
-note top of HypeScoreCurrent : tabela hype_scores\nnovo (RF49 · HypeScore v2)
+note top of HypeScoreCurrent : tabela hype_scores\nnovo (RF53 · HypeScore v2)
 note bottom of Mode : pesos [compat, hype, novidade, reuso]\nSAFE 0,60/0,10/0,10/0,20\nDISCOVERY 0,35/0,20/0,25/0,20\nEXPERIMENTAL 0,15/0,20/0,45/0,20\nparse aceita SEGURO · DESCOBERTA · EXPERIMENTAL
 @enduml

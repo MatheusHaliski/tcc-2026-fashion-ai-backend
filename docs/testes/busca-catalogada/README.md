@@ -5,7 +5,7 @@ Backend do `main` (Spring Boot 4.1, schema V37) contra MySQL com o acervo coleta
 `GET /api/catalog/search` com um usuário de teste, exatamente como o criador de peças faz: tipo da peça
 (`category`) + "De qual marca?" (`brand`) + "Como ela se chama?" (`q`).
 
-Script: `search_tests.py` (bateria abaixo). Verifica por busca: tem resultado · todos os 5 primeiros são da marca
+Script: `search_tests.py <arquivo-com-o-token> [relatorio.json]` (bateria abaixo; outra API com `FAI_API=https://...`). Verifica por busca: tem resultado · todos os 5 primeiros são da marca
 pedida · subtipo certo no 1º · cor pedida no 1º · 1º com foto.
 
 | | Tipo | Marca | Como ela se chama? | Resultados | Com foto | 1º resultado | Subtipo | Cor | % |
