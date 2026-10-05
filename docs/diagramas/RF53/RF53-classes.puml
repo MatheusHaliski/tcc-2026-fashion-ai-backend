@@ -1,5 +1,5 @@
 @startuml RF53_Classes
-title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de classes — entidades JPA reais (fai-domain), enums e núcleo de cálculo (fai-application)
+title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de classes — entidades JPA reais (fai-domain), enums, núcleo de cálculo, recálculo ao vivo, Selos de Hype e marcos (fai-application)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -40,7 +40,11 @@ class HypeScoreCurrent <<@Table hype_scores>> {
   +category: String
   +styles: String
   +occasions: String
-  +signalsJson: String
+  +country: String [V39, país do dono]
+  +region: String [V39, WorldRegions]
+  +categories: String [V39, csv]
+  +subcategories: String [V39, csv]
+  +signalsJson: String [+ byType]
   +reasonsJson: String
   +windowStart: Instant
   +windowEnd: Instant
@@ -74,6 +78,29 @@ class HypeDimensions <<@Embeddable>> {
   +rarity: BigDecimal
   +originality: BigDecimal
   +influence: BigDecimal [só looks]
+}
+
+class HypeMilestone <<@Table hype_milestones>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +milestone: Kind
+  +level: HypeLevel
+  +momentum: HypeMomentum
+  +score: BigDecimal
+  +publicEligible: boolean
+  +algorithmVersion: String
+  +achievedAt: Instant
+  +digestDate: LocalDate
+  +notificationId: UUID
+}
+note bottom of HypeMilestone : V41 — UNIQUE (entity_type, entity_id,\nmilestone); queda nunca grava linha
+
+enum "HypeMilestone.Kind" as Kind {
+  HOT
+  TRENDING
+  VIRAL
+  EMERGING
 }
 
 class WardrobeItem <<@Table wardrobe_items>> {
@@ -182,6 +209,40 @@ class RecommendationScoring {
   +Mode: SAFE | DISCOVERY | EXPERIMENTAL
   +rankValue(scores, mode): double
 }
+class HypeLiveRecalc <<@Component>> {
+  -dirty: AtomicBoolean
+  -lastRun: Instant
+  -minInterval: Duration = 120 s
+  +markDirty()
+  +onSignal / onPieceCreated / onSchemeSaved …()
+  +tick() <<@Scheduled 30 s>>
+}
+class HypeSnapshotService <<@Service>> {
+  +recalculate(): Map <<synchronized>>
+  ~milestones(hadPrevious, levelBefore, momentumBefore,\n  levelAfter, momentumAfter): List<Kind>
+}
+class HypeSeals <<final>> {
+  +VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+  +CARD_MAX = 2
+  +of(c: HypeScoreCurrent): List<String>
+  +forCard(c): List<String>
+  +progress(c, thresholds): List<Map>
+}
+class "DomainEvents.HypeMilestone" as HypeMilestoneEvent <<record>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +milestone: Kind
+  +level: HypeLevel
+  +momentum: HypeMomentum
+  +score: Double
+  +publicEligible: boolean
+}
+class HypeMilestoneNotifier <<@Component>> {
+  +MAX_NAMED = 3
+  +onMilestone(ev) <<AFTER_COMMIT>>
+  ~record(ev): boolean
+}
 }
 
 HypeScoreCurrent *-- HypeDimensions
@@ -205,4 +266,11 @@ HypeCalculator ..> HypeResult
 HypeResult *-- HypeReason
 HypeSignalSeries ..> HypeSignalDaily : lê as linhas
 HypeResult ..> HypeScoreCurrent : persistido pelo\nHypeSnapshotService
+HypeLiveRecalc ..> HypeSnapshotService : recalculate()\n(≤ 1 a cada 120 s)
+HypeSnapshotService ..> HypeCalculator
+HypeSnapshotService ..> HypeMilestoneEvent : publica só na subida
+HypeMilestoneNotifier ..> HypeMilestoneEvent : ouve
+HypeMilestoneNotifier ..> HypeMilestone : grava (dedupe)\n+ resumo do dia
+HypeMilestone --> Kind
+HypeSeals ..> HypeScoreCurrent : deriva (nada gravado;\nsó AVAILABLE e publicEligible)
 @enduml

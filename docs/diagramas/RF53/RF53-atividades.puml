@@ -1,6 +1,6 @@
 @startuml RF53_Atividades
 !pragma layout smetana
-title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de atividades (sinal → agregado diário → snapshot → leitura no card)
+title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de atividades (sinal → sujo/ao vivo ou job → snapshot com recortes → marcos → card, verso e análise)
 skinparam backgroundColor #FFFFFF
 skinparam activity {
   BackgroundColor #F8F4FF
@@ -10,70 +10,71 @@ skinparam activity {
 }
 |Usuário (app)|
 start
-:Interage com peça ou look de outra pessoa\n(curtir, comentar, salvar, favoritar,\ncompartilhar, remixar, abrir o detalhe)\nou registra uso (vestir, look do dia, look salvo);
+:Interage com peça ou look de outra pessoa\n(curtir, comentar, salvar, favoritar,\ncompartilhar, remixar, abrir o detalhe)\nou registra uso (vestir, look do dia, look salvo)\nou cria/edita/exclui peça ou look;
 |Backend · ingestão|
-:SocialService / SchemeService / WardrobeService\npublicam DomainEvents.HypeSignal\n(ou PieceWorn, SchemeSaved, DailyLookRegistered);
-:HypeSignalRecorder (AFTER_COMMIT)\nchama HypeIntegrityPolicy.weight(sinal, dia);
-if (visitante sem conta (sem ator)?) then (sim)
-  :peso 0 — descartado\n(sem conta não há como deduplicar);
-  stop
-elseif (interação do próprio dono\n(não é uso: vestir, look, look do dia)?) then (sim)
-  :peso 0 — descartado (self-like farming);
-  stop
-elseif (mesma pessoa, mesmo sinal, mesma entidade\nno mesmo dia (curtir → descurtir → curtir)?) then (sim)
-  :deduplicado (chave hype:dedupe:… no cache, TTL 26 h);
-  stop
-else (não)
-  if (uso do próprio dono?) then (sim)
-    :peso 1;
-  elseif (conta com menos de 7 dias?) then (sim)
-    :peso × 0,5;
+:SocialService / SchemeService / WardrobeService\npublicam DomainEvents.HypeSignal\n(ou PieceWorn, SchemeSaved, DailyLookRegistered,\nPieceCreated/Updated/Deleted, AvailabilityChanged);
+fork
+  :HypeLiveRecalc (AFTER_COMMIT)\nmarkDirty() — só marca, nunca recalcula no evento;
+fork again
+  :HypeSignalRecorder (AFTER_COMMIT)\nchama HypeIntegrityPolicy.weight(sinal, dia);
+  if (visitante, interação do próprio dono\nou repetição no mesmo dia?) then (sim)
+    :peso 0 — descartado\n(dedupe hype:dedupe:… TTL 26 h);
   else (não)
-    :peso 1;
+    :peso 1 (uso do dono) · 0,5 (conta < 7 dias) · 1;
+    :upsert hype_signal_daily\n(event_count + 1, weighted_count + peso);
   endif
-  :HypeSignalDailyRepository.increment\n(upsert em hype_signal_daily:\nevent_count + 1, weighted_count + peso);
+end fork
+|Recálculo|
+if (quem dispara?) then (job @Scheduled 6/6 h\nou POST /api/admin/hype/snapshots)
+  :recalculate();
+else (HypeLiveRecalc.tick() a cada 30 s)
+  if (está sujo e o último recálculo\ntem ≥ 120 s?) then (sim)
+    :limpa o "sujo" e chama recalculate()\n(falhou → volta a ficar sujo);
+  else (não)
+    :espera a próxima verificação\n(rajada de eventos = 1 recálculo);
+    stop
+  endif
 endif
-|Job de snapshots|
-:@Scheduled a cada 6 h (0 20 */6 * * *)\nou POST /api/admin/hype/snapshots;
-:Monta HypeSignalSeries (12 semanas)\npor peça e por look não arquivados;
+:recalculate() é synchronized\n(job e ao vivo nunca se sobrepõem);
+:HypeSignalSeries (12 semanas) + sinais por tipo\n(janela atual × anterior × horizonte);
 :Baseline = população PÚBLICA elegível\n(item público, perfil não privado,\nmoderação aprovada, conta não-teste);
-while (para cada entidade) is (próxima)
+while (para cada peça e look não arquivados) is (próxima)
   if (eventos no horizonte ≥ 3?) then (sim)
-    :HypeCalculator.compute → 9 dimensões 0–100\n(popularidade, engajamento, trend, velocidade,\nnovidade, longevidade, raridade, originalidade,\ninfluência só em looks);
-    :score = média ponderada renormalizada\nnível LOW_SIGNAL…VIRAL · momentum;
-    if (existe snapshot de 7 dias atrás?) then (sim)
-      :delta (pts e %) e direção UP/DOWN/STABLE;
-    else (não)
-      :sem delta (seta oculta);
-    endif
-    :status AVAILABLE + motivos explicáveis;
+    :HypeCalculator.compute → 9 dimensões, score,\nnível, momentum, delta de 7 dias e motivos;
   else (não)
-    :status INSUFFICIENT_DATA\n(sem score; nunca "0");
+    :status INSUFFICIENT_DATA (sem score; nunca "0");
   endif
-  :upsert hype_scores (algorithm_version = HYPE_V2)\n+ snapshot do dia em hype_score_snapshots;
+  :recortes V39: país do dono → região (WorldRegions),\ncategorias e subcategorias (no look, as das peças);
+  :upsert hype_scores (HYPE_V2) + signals_json.byType\n+ snapshot do dia em hype_score_snapshots;
+  if (subiu para Em alta / Tendência / Viral\nou passou a ser EMERGING (havia estado anterior)?) then (sim)
+    :guarda DomainEvents.HypeMilestone;
+  else (não)
+  endif
 endwhile (fim)
 :apaga linhas de entidades que sumiram;
-:HypeCache.bump() (nova geração do cache);
+:HypeCache.bump() (nova geração);
+:publica os marcos depois do commit;
+|Notificações|
+:HypeMilestoneNotifier: 1ª vez por (item, marco)\n→ hype_milestones; resumo do dia do dono\n(HYPE_MILESTONE, ACHIEVEMENT, desativável; nunca queda);
 |Frontend|
-:Grade de cards renderiza HypeBadge na frente\n(useHypeSummary agrupa ids em lotes de 100);
-:GET /api/hype/summaries?type=&ids=;
+:Grade de cards: useHypeSummary agrupa ids\n→ GET /api/hype/summaries (lote de 100);
 if (item visível para quem vê?) then (não)
   :fora da resposta (privado nunca vaza);
   stop
 else (sim)
 endif
 fork
-  :Frente: score + nível em texto + seta ↑↓→;
+  :Frente: score + nível em texto + seta ↑↓→\n+ até 2 Selos de Hype (VIRAL, TRENDING, EMERGING,\nCLASSIC, RARE; só público elegível);
 fork again
   :Toca em ↻ (só o botão vira o card);
-  :Verso "Hype analytics" montado no 1º giro\n(foco vai para o botão do verso;\nmovimento reduzido = troca simples);
+  :Verso "Hype analytics" com arte por faixa\n(HypeBackArt: 3 → 36 estrelas; para com\nmovimento reduzido; some em alto contraste);
   if (pede "Ver análise completa"?) then (sim)
-    :GET /api/hype/{pieces|looks}/{id}\n+ /history?days=90;
-    :Drawer: gráfico, dimensões, explicação\ne "Hype × seu estilo" separados;
+    :GET /api/hype/{pieces|looks}/{id}\n+ /history?days=90 + /positions;
+    :Drawer: gráfico, pesos, sinais por tipo, em quantos looks\n(peça) ou peças do look com o Hype de cada uma,\nposições (mundo, categoria, subcategoria, região, país),\nSelos de Hype (conquistados e metas) e "Hype × seu estilo";
   else (não)
   endif
 end fork
 |Usuário (app)|
-:Usa o Hype em outros contextos:\nEm alta (Explorador), Histórico › Hype,\nLookbook › Insights, ordenar o Guarda-roupa,\nperguntar ao Copilot;
+:Usa o Hype em outros contextos:\nEm alta, Ranking, Painel global (globo), Insights,\nHistórico › Hype, Guarda-roupa, Meus looks,\neditor (prévia), Copilot e Autopiloto, selos;
 stop
 @enduml

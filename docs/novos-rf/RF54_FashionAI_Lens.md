@@ -1,4 +1,4 @@
-# RF54 (proposta) — FashionAI Lens
+# RF54 — FashionAI Lens (especificação + MVP implementado em 2026-10-05)
 
 > **O Google Lens responde "o que é isto e onde compro?". O FashionAI Lens responde "o que isto significa para o meu
 > estilo e para o meu guarda-roupa?".** A pessoa aponta a câmera (ou envia uma foto ou um print) para uma roupa vista na
@@ -14,6 +14,113 @@ cards RF54 e HU-RF54.
 Contexto: este RF faz parte da refatoração por domínios descrita em
 [`docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md`](../hype/01-AUDITORIA_E_PROPOSTA_IA.md) e usa o HypeScore v2
 ([`docs/hype/HYPESCORE_ARCHITECTURE.md`](../hype/HYPESCORE_ARCHITECTURE.md)).
+
+---
+
+## Implementação (2026-10-05)
+
+O MVP entrou nos commits `d865abc5` (backend), `07262131` e `87c00ed3` (frontend). Ele cobre a fase 1 e parte das
+fases 2 e 3 do §14, pelo contrato de API do MVP. Daqui em diante, o resto do documento é a **especificação**; onde o
+código ficou diferente, vale esta seção.
+
+### O que foi feito × especificação
+
+| Tema | Especificação | Implementado |
+|---|---|---|
+| Processamento | assíncrono (`JobQueuePort`), `202` + consulta | **síncrono**: o `POST` já devolve o scan pronto (`200`) |
+| Rostos | borrados no servidor (`OnnxPersonSegmenter`) | borrados **no navegador**, antes do upload (`lib/lens/redact.ts`): a foto é redesenhada num canvas (o que descarta EXIF/GPS), e cada rosto achado pelo MediaPipe Face Landmarker (o mesmo do Avatar 3D) é pixelado e desfocado, em até 4 passadas. Sem detector (offline, sem WebAssembly/WebGL), `faces = -1` e a tela exige a confirmação explícita "a foto não mostra o rosto de ninguém" antes de enviar. O servidor grava `faces_redacted` e `redaction_confirmed`, mas **não** borra de novo |
+| Detecção | núcleo do `MultiPieceService` | `MultiPieceService.detectPieces` (extraído do cadastro de várias peças), pelo `AiEngine` (`MULTI_PIECE_DETECTOR`: consentimento `AI_EXTERNAL_PHOTO_PROCESSING`, cota, orçamento). Sem IA: **leitura local** = uma peça cobrindo a foto, sem categoria e com confiança 0 (faixa "baixa"); o scan sai `READY`, com `aiSource = local` e `errorCode` `CONSENT_REQUIRED` ou `QUOTA` quando é esse o motivo |
+| Leitura do recorte | `PatternAnalyzer`, `ColorMath`, `GarmentEmbedder` | `LensImageAnalysis`: paleta com a fração de cada cor (cor principal primeiro), padrão (`solid`, `striped`, `checked`, `printed`) e embedding de 96 dimensões do recorte |
+| Semelhança | §9.2 | `LensSimilarity` + `LensConfig` (`LENS_V1`): pesos .45/.35/.20, atributos .40/.15/.15/.15/.15, cor por **ΔE00 (CIEDE2000, Sharma et al. 2005)** com teto 40, renormalização sem embedding ou sem cor, pisos 55 (`MY_CLOSET`) e 65 (`COMMUNITY`), top 12 |
+| Camada viva | recalculada quando a geração muda | recalculada **a cada leitura** e nunca gravada (não existe `lens_matches`): correspondências, compatibilidade, Hype do grupo e plano sempre refletem o guarda-roupa, o DNA e o Hype de agora |
+| Hype do grupo | §10.1 | `LensReading.trend`: chaves `cc:`/`st:`/`cm:` no formato do `HypeSnapshotService`, ordem cor → estilo → material, ≥ 5 peças públicas elegíveis; senão "dados insuficientes" |
+| Recriar | modos + slots | `POST …/recreate`: slots TOP, BOTTOM, FULL, SHOES, ACCESSORY (estado `own`, `alternative` ou `gap`), peso da semelhança por modo (Seguro .75, Descoberta .55, Experimental .35), `locked`, os seis números do `RecommendationScoring` e `createHref` para o criador de looks |
+| Correções | chips editáveis + `lens_feedback` | `PATCH …/detections/{did}` (categoria, subcategoria, cor, material, padrão, estilos, `dismissed`) grava `lens_feedback` (`WRONG_CATEGORY`, `WRONG_COLOR`, `WRONG_ATTRIBUTE`, `NOT_CLOTHING`, `MISSING_PIECE`…), com `training_consent` só se a pessoa concedeu `AI_MODEL_TRAINING` |
+| Cota e retenção | 30 scans/dia; 30 dias | `RateLimitPort` (`fashionai.lens.daily-scans`, padrão 30): estourada, `429 QUOTA` com `resetAt` e nada gravado; falha do detector devolve a cota. `LensRetentionJob` (diário, 04:40, America/Sao_Paulo) apaga scans não salvos vencidos (imagem, miniatura, peças e correções); excluir a conta apaga todos (`AccountService` → `LensService.deleteAllFor`) |
+| Telas | 6 abas + captura | `/lens` (Câmera · Galeria · Recentes; a câmera é `<input capture="environment">`) e `/lens/[scanId]` com hotspots, **Foco** na URL (`?focus=`) e as abas Leitura, Seu guarda-roupa, Recriar, Estilo & Hype e Descobrir (`?tab=`); `LensDetectionCard` com flip próprio; item "FashionAI Lens" no menu |
+
+### API (13 rotas em `/api/lens/**` + o histórico em `/api/me/lens/scans`; todas exigem login)
+
+| Método | Rota | Observação |
+|---|---|---|
+| POST | `/api/lens/scans` | multipart `image`, `source` (CAMERA, GALLERY, UPLOAD), `intent` (IDENTIFY, RECREATE), `facesRedacted`, `redactionConfirmed`; passa pelo `UploadSafetyInterceptor` |
+| POST | `/api/lens/scans/from-app` | `{type: PIECE\|LOOK, id}`: 404 se quem pede não pode ver o original; nada vira visualização |
+| GET | `/api/lens/scans/{id}` | scan + peças + leitura |
+| GET | `/api/lens/scans/{id}/image?variant=thumb` | JPEG sem metadados, `Cache-Control: private` (rota nova, não estava no §9.3) |
+| PATCH · DELETE | `/api/lens/scans/{id}` | `{saved}` (inspiração não expira) · apaga tudo (204) |
+| GET | `/api/lens/scans/{id}/matches?detection=&scope=MY_CLOSET\|COMMUNITY` | `COMMUNITY` = só peças públicas elegíveis de **outras** pessoas, visíveis para quem pede |
+| GET | `/api/lens/scans/{id}/reading?detection=` | estilos, paleta, ocasiões, estação, `fit` (DNA; nulo sem DNA), `trend` (Hype do grupo), `impact` |
+| POST | `/api/lens/scans/{id}/recreate` | `{mode, focus?, locked?}` |
+| PATCH | `/api/lens/scans/{id}/detections/{did}` | correção ou "não é roupa" |
+| POST | `/api/lens/scans/{id}/detections` | a pessoa marca uma peça (caixa em %, lado mínimo 3%) |
+| PUT | `/api/lens/scans/{id}/detections/{did}/want` | `{wanted}` ("Quero"; no lugar do PUT/DELETE do §9.3) |
+| POST | `/api/lens/scans/{id}/detections/{did}/own` | "Eu tenho": liga a uma peça própria ou devolve `/pieces/new?…` pré-preenchido, nunca com o recorte da foto |
+| GET | `/api/me/lens/scans?saved=&wanted=&page=&size=` | histórico e inspirações (`Page<LensScanCard>`) |
+
+Outra pessoa recebe **404** em qualquer rota (nunca 403). `GET /api/admin/lens/metrics` não foi implementado.
+
+### Dados (Flyway `V40__fashionai_lens.sql`)
+
+`lens_scans` (dono, origem, intenção, estado, `error_code`, chaves `restricted/users/{id}/lens/{scanId}.jpg` e
+`-thumb.jpg`, tamanho, `faces_redacted`, `redaction_confirmed`, `ai_source`, `model_version`, `algorithm_version`,
+`ai_inference_id`, `saved_at`, `expires_at`), `lens_detections` (caixa em %, rótulo, taxonomia, material, cores,
+padrão, estilos, ocasiões, confiança, `attribute_confidence_json`, embedding, estado, `dismissed_at`, `wanted_at`,
+`owned_item_id`) e `lens_feedback` (antes/depois da correção, tipo, `training_consent`). Diferenças do §5.2: estados do
+scan reduzidos a `READY`, `PARTIAL` (reservado; o MVP síncrono não usa), `NO_FASHION_FOUND` e `FAILED`; intenções só
+`IDENTIFY` e `RECREATE`; sem `lens_matches`.
+
+### Privacidade
+
+Scan sempre privado (só o dono lê, terceiros recebem 404); imagem em área `restricted/`, regravada em JPEG sem
+EXIF/GPS e servida só ao dono; rostos borrados no aparelho antes do envio; o Lens **nunca** escreve em
+`hype_signal_daily` nem entra em ranking ou estatística pública (teste `lensNuncaEscreveSinalDeHype`); "Eu tenho" nunca
+usa o recorte da foto como foto da peça; retenção de 30 dias sem salvar; exclusão da conta apaga os scans.
+
+### O que ficou de fora do MVP
+
+- **Desenhar a caixa**: "Marcar uma peça" envia a imagem inteira como caixa (o backend já aceita caixa em %).
+- **Confiança por atributo** na tela: o banco guarda a da detecção e a do padrão (`attribute_confidence_json`), mas a
+  interface mostra uma faixa só por peça.
+- **Provar** as peças do plano (RF18), **modo ao vivo** (`getUserMedia` + MediaPipe contínuo) e a foto no Copilot.
+- **Descobrir** sem filtros e só com peças da comunidade: faltam Catálogo RF47 (`CatalogProductCard`), peças à venda e
+  looks parecidos.
+- Ponto de entrada "Ver no Lens" dentro do app (o backend `from-app` existe, a tela ainda não chama), segmento
+  Inspirações no Lookbook, evento `LENS_SCAN` no Histórico, "desde o scan" (`LensDiff`), intenções do Copilot e
+  `/api/admin/lens/metrics`.
+- Borrão de rosto **no servidor**: quem chama a API sem o cliente web (ou com o detector indisponível e a confirmação
+  marcada) envia a imagem como está; a moderação de upload continua valendo. `docs/seguranca/moderacao-de-imagens.md`
+  continua pendente.
+
+### Testes
+
+| Camada | Classe / arquivo | Casos |
+|---|---|---|
+| Backend | `LensSimilarityTest` (pesos, renormalização, ΔE00 com dados de referência, pisos e top N) | 8 |
+| Backend | `LensReadingTest` (composição de estilo, paleta, chaves do Hype, k ≥ 5, slots) | 6 |
+| Backend | `LensServiceTest` (imagem privada sem metadados, 404 em toda rota, NO_FASHION_FOUND, leitura local, correção + feedback, descartar e desfazer, retenção de 30 dias, excluir scan e conta, "Ver no Lens" com visibilidade, comunidade sem peça própria nem não pública, Hype do grupo, Recriar, Eu tenho/Quero, cota sem gravar nada, validação, nunca escreve sinal de Hype) | 16 |
+| fai-web | `LensAccessTest` (visitante 401, outra pessoa 404, dono lê scan e imagem, multipart do contrato) | 4 |
+| Frontend | `components/lens/lens-capture.test.tsx` (login, rostos borrados → multipart, confirmação com `faces = -1`, cota, Recentes) | 5 |
+| Frontend | `components/lens/lens-result.test.tsx` (hotspots acessíveis, Foco na URL, flip, Quero, nunca "0%", correção sem recarregar, Recriar, DNA × Hype separados, NO_FASHION_FOUND, cota, salvar, excluir, 404) | 15 |
+| Frontend | `lib/lens/model.test.ts` (hotspot, caixa saneada, recorte, expiração, caixa do rosto, sem detector → `faces = -1`) | 8 |
+
+### Evidência real (E2E de 2026-10-05)
+
+Com MySQL 8.4 (V1–V40), o backend local e o Next no Chromium sem interface (Playwright), uma foto de jaqueta
+(1532 × 1027) enviada pela aba Câmera:
+
+1. O navegador sem interface não carrega o detector de rostos, então a tela pediu a confirmação explícita antes de
+   enviar (`redaction_confirmed = true`, `faces_redacted = 0`).
+2. O scan voltou `READY` com **1 peça detectada**: paleta azul (59%), preto (25%) e laranja (16%), padrão
+   "estampado", sem categoria. Sem IA externa no ambiente, a leitura foi **local**
+   (`model_version = multi-piece-detector@local+garment-embedding@1.0.0`), e a tela avisou: "Leitura local: a IA
+   online não foi usada" e "baixa confiança · confira esta leitura".
+3. Seu guarda-roupa: "Sem correspondência no seu guarda-roupa" + a lacuna (nunca "0%"). Estilo & Hype: sem DNA, convite
+   para criar; Hype do grupo "Dados insuficientes". Recriar: sem plano, porque a peça local não tem categoria.
+   Descobrir: nenhuma peça pública parecida.
+4. Expiração mostrada: 30 dias (`expires_at` = criação + 30 dias).
+
+Telas em [`docs/hype/EVIDENCIAS_E2E.md`](../hype/EVIDENCIAS_E2E.md) (11 e 12). Diagramas (os cinco tipos):
+`docs/diagramas/RF54/`.
 
 ---
 
