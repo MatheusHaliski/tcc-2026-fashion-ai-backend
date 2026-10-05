@@ -9,6 +9,9 @@
  * (ganho limitado), o que preserva os detalhes (sobrancelhas, lábios, barba) e tira as manchas.
  */
 import type { BodyAsset } from "./asset";
+import { CANON_UV, FACE_OVAL } from "../canonical-face";
+import { SKIN_POINTS } from "../image-stats";
+import { deltaE2000, rgbToLab } from "../identity/metrics";
 
 type Pt = [number, number];
 
@@ -44,16 +47,56 @@ export function evenShading(atlas: HTMLCanvasElement, skinHex: string, strength 
   g.putImageData(id, 0, 0); return out;
 }
 
+const hexRgb = (h: string): [number, number, number] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+
+/** Média da pele do atlas (UV canônico) em discos nos pontos de pele, sem pixels estourados nem sombra funda. */
+function atlasMean(img: ImageData, pts: readonly number[], r: number, inward = 0): [number, number, number] | null {
+  const S = img.width; let sr = 0, sg = 0, sb = 0, n = 0;
+  for (const i of pts) {
+    let u = CANON_UV[i * 2] * S, v = CANON_UV[i * 2 + 1] * S;
+    if (inward) { u += (S / 2 - u) * inward; v += (S / 2 - v) * inward; }
+    for (let y = Math.round(v - r); y <= v + r; y++) for (let x = Math.round(u - r); x <= u + r; x++) {
+      if (x < 0 || y < 0 || x >= S || y >= img.height || (x - u) ** 2 + (y - v) ** 2 > r * r) continue;
+      const o = (y * S + x) * 4; const L = lum(img.data[o], img.data[o + 1], img.data[o + 2]); if (L < 15 || L > 245) continue;
+      sr += img.data[o]; sg += img.data[o + 1]; sb += img.data[o + 2]; n++;
+    }
+  }
+  return n ? [sr / n, sg / n, sb / n] : null;
+}
+
+/**
+ * AVATAR-ID I3 — o rosto e o corpo com a mesma pele: a média da pele do atlas (bochechas, testa, queixo) é levada ao
+ * tom do corpo com ganhos por canal (limitados: detalhe e maquiagem ficam). Devolve o relatório: o erro de cor da pele
+ * (ΔE2000 entre o rosto e o tom intrínseco) e a costura (ΔE2000 entre a borda do rosto e o corpo).
+ */
+export function matchFaceToBody(src: HTMLCanvasElement, skinHex: string): SkinReport {
+  const g = src.getContext("2d", { willReadFrequently: true })!; const id = g.getImageData(0, 0, src.width, src.height);
+  const skin = hexRgb(skinHex); const r = Math.max(2, Math.round(src.width * 0.018));
+  const before = atlasMean(id, SKIN_POINTS, r);
+  if (before) {
+    const k = [0, 1, 2].map((c) => Math.min(1.18, Math.max(0.85, skin[c] / Math.max(1, before[c]))));
+    for (let i = 0; i < id.data.length; i += 4) for (let c = 0; c < 3; c++) id.data[i + c] = Math.min(255, id.data[i + c] * k[c]);
+    g.putImageData(id, 0, 0);
+  }
+  const after = atlasMean(id, SKIN_POINTS, r); const ring = atlasMean(id, FACE_OVAL, r, 0.06);
+  const lab = (c: [number, number, number]) => rgbToLab(c[0], c[1], c[2]);
+  const skinColorError = after ? Math.round(deltaE2000(lab(after), lab(skin)) * 10) / 10 : null;
+  const seamDeltaE = ring ? Math.round(deltaE2000(lab(ring), lab(skin)) * 10) / 10 : null;
+  return { skinColorError, seamDeltaE, seams: seamDeltaE !== null && seamDeltaE > 5 ? 1 : 0 };
+}
+export interface SkinReport { skinColorError: number | null; seamDeltaE: number | null; seams: number }
+
 /**
  * Textura de pele no UV do MakeHuman (tamanho `size`²): tom de pele em tudo; o rosto vem do atlas (UV canônico, v para
- * baixo). Só os triângulos inteiramente sobre o rosto canônico recebem o atlas; o atlas já termina no tom de pele, então
- * não há costura.
+ * baixo). Só os triângulos inteiramente sobre o rosto canônico recebem o atlas; o atlas já termina no tom de pele e a
+ * pele dele é levada ao tom do corpo (matchFaceToBody), então não há costura.
  */
-export function bakeSkin(a: BodyAsset, skinHex: string, atlas: HTMLCanvasElement | null, size = 2048): HTMLCanvasElement {
+export function bakeSkin(a: BodyAsset, skinHex: string, atlas: HTMLCanvasElement | null, size = 2048, onReport?: (r: SkinReport) => void): HTMLCanvasElement {
   const c = document.createElement("canvas"); c.width = size; c.height = size;
   const g = c.getContext("2d")!; g.fillStyle = skinHex; g.fillRect(0, 0, size, size);
   if (!atlas) return c;
   const src = evenShading(atlas, skinHex); const AS = src.width;
+  const report = matchFaceToBody(src, skinHex); onReport?.(report);
   const { renderVertex: rv, renderUv: ruv, index, faceUv, faceWeight } = a.body;
   const dst = (r: number): Pt => [ruv[r * 2] * size, (1 - ruv[r * 2 + 1]) * size];
   const from = (v: number): Pt => [faceUv[v * 2] * AS, faceUv[v * 2 + 1] * AS];
