@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF48): índice e mapa de numeração
+# Novos RF (RF25–RF50): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -27,7 +27,8 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF46 | FAI Creative Engine e serviços Adobe | — (parcial: Background Studio, selos) | cartão Trello | `docs/diagramas/RF46/` |
 | RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
 | RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
-| RF48 *(proposta concorrente; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF48_FashionAI_Lens.md](RF48_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
+| RF49 | HypeScore v2: Hype analítico de peças e looks (verso dos cards com flip, Histórico › Hype, Em alta, ordenações do Guarda-roupa, Copilot com modos) + navegação por domínios | `application/hype/*`, `HypeController` (V31) | [RF49_HypeScore_v2.md](RF49_HypeScore_v2.md) · arquitetura: [HYPESCORE_ARCHITECTURE.md](../hype/HYPESCORE_ARCHITECTURE.md) | `docs/diagramas/RF49/` (+ RF6, RF10, RF19, RF26, RF31, RF42 e globais atualizados) |
+| RF50 *(proposta; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF50_FashionAI_Lens.md](RF50_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
 
 ## Mudanças em RF antigos (2026-09-24)
 

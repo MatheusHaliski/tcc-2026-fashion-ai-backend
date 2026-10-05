@@ -1,0 +1,77 @@
+@startuml RF49_Sequencia
+title RF49 — HypeScore v2: Hype de peças e looks\nDiagrama de sequência — endpoints reais
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Usuário" as U
+participant "Frontend\nPieceCard / SchemeCard\n(FashionCard)" as FE
+participant "useHypeSummary\n(lote de até 100 ids)" as LOT
+participant "SocialController\n→ SocialService" as SOC
+participant "HypeSignalRecorder\n(AFTER_COMMIT)" as REC
+participant "HypeIntegrityPolicy" as POL
+participant "HypeController" as HC
+participant "HypeQueryService" as HQ
+participant "HypeCache\n(RenderCachePort)" as CACHE
+participant "HypeSnapshotService\n(@Scheduled 6/6 h)" as JOB
+participant "HypeCalculator" as CALC
+database "MySQL" as DB
+
+== 1. Sinal (ex.: curtir a peça de outra pessoa) ==
+U -> FE: curte a peça
+FE -> SOC: POST /api/interactions/PIECE/{id}/reactions {reaction: LIKE}
+SOC -> DB: grava a reação (transação)
+SOC -> REC: publishEvent(HypeSignal LIKE_CREATED,\nPIECE, id, ator, dono)
+note right of REC: só depois do commit;\nfalha aqui nunca desfaz a curtida
+REC -> POL: weight(sinal, hoje)
+POL -> CACHE: get/put hype:dedupe:LIKE_CREATED:{id}:{ator}:{dia}
+POL --> REC: 0 (dono, visitante ou repetido)\n| 0,5 (conta nova) | 1
+alt peso > 0
+  REC -> DB: INSERT … ON DUPLICATE KEY UPDATE\nhype_signal_daily (event_count, weighted_count)
+end
+
+== 2. Recálculo periódico (ou POST /api/admin/hype/snapshots) ==
+JOB -> DB: sinais das últimas 12 semanas,\npeças e looks não arquivados
+JOB -> CALC: baseline(população pública elegível)
+loop cada peça e cada look
+  JOB -> CALC: compute(inputs, baseline)
+  CALC --> JOB: HypeResult (status, score, nível,\n9 dimensões, momentum, motivos)
+end
+JOB -> DB: upsert hype_scores (HYPE_V2) com delta de 7 dias\n+ snapshot do dia em hype_score_snapshots;\napaga entidades que sumiram
+JOB -> CACHE: bump() — nova geração
+
+== 3. Leitura na grade (frente) e no verso ==
+FE -> LOT: useHypeSummary(PIECE, id) por card
+LOT -> HC: GET /api/hype/summaries?type=PIECE&ids=a,b,c…
+HC -> HQ: summaries(viewer, PIECE, ids)
+HQ -> DB: carrega as peças e filtra por Guard.canView\n(privado de terceiros fica fora)
+HQ -> DB: hype_scores dos ids visíveis
+HQ --> HC: items{id → status, score, level, direction,\ndimensions, stale, calculatedAt}
+HC --> LOT: 200
+LOT --> FE: HypeBadge (score + nível em texto + seta)
+U -> FE: toca em ↻ (FashionCard vira)
+FE --> U: verso "Hype analytics" (montado no 1º giro)
+U -> FE: "Ver análise completa"
+FE -> HC: GET /api/hype/pieces/{id}
+HC -> HQ: detail(viewer, PIECE, id)
+HQ --> HC: dimensões, motivos, compatibilidade\ncom o DNA (StyleCompatibility) à parte
+FE -> HC: GET /api/hype/pieces/{id}/history?days=90
+HC -> HQ: history(viewer, PIECE, id, 90)
+HQ -> DB: hype_score_snapshots da peça
+HC --> FE: série diária (lacunas sem dado)
+FE --> U: drawer com gráfico 0–100 e explicação
+
+== 4. Ranking "Em alta" (Explorador) ==
+U -> FE: Explorador › Em alta (Hoje / 7 / 30 dias, recortes)
+FE -> HC: GET /api/hype/trending?type=&window=&category=&style=&occasion=
+HC -> HQ: trending(viewer, type, window, …)
+HQ -> CACHE: get(chave da geração, loader)
+alt sem cache
+  HQ -> DB: hype_scores com public_eligible = true e AVAILABLE\n(window 30 = média dos snapshots do mês)
+end
+HQ --> FE: itens ranqueados (só públicos)
+@enduml
