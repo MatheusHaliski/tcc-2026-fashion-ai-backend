@@ -1,5 +1,5 @@
 @startuml RF28_Espelho_Componentes
-title RF28 — Vista-me: componentes
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de componentes — reflexo do Avatar 3D e os seis números do look
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam component {
@@ -11,25 +11,37 @@ skinparam component {
 package "Frontend (Next.js)" {
   [mirror/page.tsx] as Page
   [MirrorStage + MirrorWornStrip\n(components/mirror/mirror-stage.tsx)] as Stage
+  [LookScores\n(components/hype/look-scores.tsx)] as Scores
   [AvatarViewer\n(components/three/avatar-viewer.tsx)] as Viewer
+  [Mannequin\n(components/three/mannequin.tsx)] as Man
   [HumanAvatar + HumanOutfit\n(corpo MakeHuman com esqueleto)] as Human
-  [lib/avatar3d/human\n(garments, relax, trims, shoes)] as Lib
+  [lib/avatar3d/human\n(default-outfit, garments, pose, shoes)] as Lib
 }
 package "Backend (Spring Boot)" {
   [MirrorController\n/api/me/mirror/*] as MC
   [MirrorService] as MS
-  [Avatar3dController\n/api/me/avatar3d] as AC
+  [LookScorer\n(RecommendationScoring)] as LS
+  [HypeQueryService\n(HypeScore v2, RF46)] as HQ
+  [Avatar3dController → Avatar3dService\n/api/me/avatar3d (RF40)] as AC
   [WardrobeService / RoomService] as WS
 }
-database "MySQL" as DB
+database "MySQL\nmirror_states · wardrobe_items\nstyle_dna · schemes · scheme_items\nhype_scores · user_avatars_3d" as DB
+database "Storage de mídia\n(textura do rosto, chave privada)" as ST
 Page --> Stage
+Page --> Scores : scores do estado
 Stage --> Viewer
-Viewer --> Human
+Viewer --> Man
+Man --> Human
 Human --> Lib
-Page --> MC
-Stage --> AC
+Page --> MC : HTTPS/JSON
+Stage --> AC : GET /api/me/avatar3d
 MC --> MS
+MS --> LS : seis números (P3-07)
+LS --> HQ : Hype v2 das peças (só leitura)
 MS --> WS
 MS --> DB
+LS --> DB
+HQ --> DB
 AC --> DB
+AC --> ST : GET /api/avatar3d/{userId}/texture
 @enduml

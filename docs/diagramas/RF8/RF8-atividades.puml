@@ -1,5 +1,5 @@
 @startuml RF8_Atividades
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de atividades — feed, busca por abas, filtros (faixa de Hype público v2), insights FEED/SEARCH e abertura do card
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,52 +25,83 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a aba "Buscar" (search) ou "Feed" (feed);
-if (Digitou um termo?) then (sim)
-  :Escolhe a aba: LOOKS, PECAS, PESSOAS,\nMARCAS ou CELEBRIDADES;
-  :Aplica chips de filtro\n(estilo, ocasião, cor, marca, categoria);
-  |Frontend (Next.js)|
-  :GET /api/search?q=&tab=&cursor=;
-else (não)
-  |Frontend (Next.js)|
-  :GET /api/feed (comunidade) ou\nGET /api/runway (quem eu sigo);
+:Abre Buscar (/search) ou Feed (/feed)\n(sem login funciona, como anônimo);
+|Frontend|
+if (Página?) then (Feed)
+  :feed/page.tsx — abas Feed | Passarela\nInsightStrip FEED (GET /api/insights?context=FEED&window=7);
+  if (Aba Passarela?) then (sim)
+    if (Logado?) then (não)
+      :EmptyState "Entre para ver" → /login;
+      stop
+    endif
+    :GET /api/runway?cursor&size=12\n(quem sigo, compartilhados no feed,\nlooks vinculados às marcas que sigo);
+  else (Feed)
+    :Chip "Em alta" = hypeLevel=HOT + chips de filtro\nGET /api/feed?cursor&size=12&style&occasion&color\n&brand&category&hypeLevel;
+  endif
+else (Buscar)
+  :search/page.tsx — termo q e abas\nLOOKS · PECAS · PESSOAS · MARCAS · CELEBRIDADES;
+  if (Aba LOOKS ou PECAS?) then (sim)
+    :InsightStrip SEARCH (window=7, category)\n+ FilterBar: estilo, ocasião, cor, marca, categoria,\nfaixa mínima de Hype + chip "Em alta" (HOT);
+  endif
+  if (Sem termo e aba LOOKS/PECAS?) then (sim)
+    :Feed da comunidade: LOOKS → GET /api/feed\nPECAS → GET /api/public-pieces;
+  else (não)
+    :GET /api/search?q&tab&size=24&cursor\n&style&occasion&color&brand&category&hypeLevel;
+  endif
 endif
-|Backend (SearchService)|
-if (Aba válida?) then (não)
+|API e serviços|
+if (Aba fora de TABS?) then (sim)
   #FFE3E3:400 ABA_INVALIDA;
   stop
+elseif (hypeLevel fora de HypeLevel?) then (sim)
+  #FFE3E3:400 NIVEL_INVALIDO;
+  stop
+elseif (Cursor ilegível?) then (sim)
+  #FFE3E3:400 CURSOR_INVALIDO;
+  stop
+else (ok)
 endif
-:Monta lista de bloqueios (Follow BLOQUEADO\nnos dois sentidos) e estilos do meu StyleDna;
-:Lê candidatos públicos:\nSchemeRepository.findPublicFeed /\nWardrobeItemRepository;
-:Filtra por visibilidade efetiva\n(moreRestrictive(esquema, perfil) + Guard.canView);
-note right
-  RN: esquema ARCHIVED só aparece para o dono;
-  peça só com ModerationStatus APPROVED;
-  dono com AccountStatus ACTIVE;
-  bloqueados nunca aparecem (RF17)
-end note
-:Aplica os filtros (SearchService.matches);
-:Ordena por relevância =\n0,5·recência + 0,3·hype + 0,2·afinidade (DNA);
-note right: afinidade = Affinity AI (AiCapability.AFFINITY,\nmotor local — ver RF24)
-if (Houve resultado?) then (não)
-  :Monta "empty": termos alternativos +\nlooks em alta (trending);
+:SearchService: bloqueios nos dois sentidos\n(follows BLOQUEADO) e estilos do StyleDna de quem vê;
+|Banco/índice|
+:Candidatos públicos: schemes.findPublicFeed /\nsearchPublic / findAllPublic (PUBLIC + PUBLISHED)\nwardrobe_items.findAllPublic / searchPublic;
+if (OpenSearch ligado e há termo?) then (sim)
+  :SearchIndexPort.search (engine = opensearch);
+else (não)
+  :Consulta MySQL (engine = mysql);
 endif
-:Responde results + nextCursor + chips + engine (mysql|opensearch);
-|Frontend (Next.js)|
-:Renderiza SchemeCard / PieceCard / Avatar;
-:InfiniteSentinel pede a próxima página pelo cursor;
+|API e serviços|
+:visible(): dono ACTIVE, não bloqueado, conta de teste\nsó para conta de teste, SchemeService.canView\n(moreRestrictive(item, perfil) + Guard.canView);\npeça só com moderação APPROVED;
+if (Filtro hypeLevel?) then (sim)
+  :meetsLevel: só Hype PÚBLICO (publicEligible,\nAVAILABLE) ≥ limiar da faixa (20/40/60/75/90,\ncom o arredondamento da tela);
+  note right: item sem Hype público fica fora\ndo filtro — nunca vale 0
+endif
+:matches(filtros): estilo, ocasião, cor, marca, categoria;
+if (Feed da comunidade?) then (sim)
+  :Ordena a página por relevância =\n0,5·recência (meia-vida 72 h) + 0,3·Hype v2 público\n+ 0,2·afinidade com o DNA (Jaccard);
+  note right: sem Hype público = 0,5 (neutro),\npara não punir conteúdo novo
+endif
+if (Busca sem resultado na 1ª página?) then (sim)
+  :empty = termos parecidos (Jaro-Winkler ≥ 0,75)\n+ "Em alta na comunidade": até 30 looks públicos\ncom maior Hype v2, 6 visíveis para quem vê;
+endif
+:Responde itens + nextCursor + chips\n(+ tabs, engine e empty na busca);
+|Frontend|
+:SchemeCard / PieceCard (HypeBadge via\nGET /api/hype/summaries) · listas de Pessoas,\nMarcas e Celebridades;
+if (Aba PESSOAS, MARCAS ou CELEBRIDADES?) then (sim)
+  :HypeGroupBadge: GET /api/hype/groups?type=CREATOR|BRAND&keys=\n(chip só a partir de "Em alta", ≥ 3 itens públicos;\nnunca reordena a busca; opt-out de criador = sem chip);
+endif
+:InfiniteSentinel pede a próxima página pelo cursor\n(nextCursor nulo = fim, sem repetir itens);
 |Pessoa|
-:Abre um card de outra pessoa;
-|Frontend (Next.js)|
-:GET /api/schemes/{id} ou GET /api/pieces/{id}\n+ GET /api/interactions/{type}/{id}/counters;
-|Backend (SearchService)|
-:SchemeService.requireView — 403 auditado\nse a visibilidade não permitir;
-:Incrementa viewCount quando não é o dono;
-|Pessoa|
-if (Interage?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/interactions/{type}/{id}/reactions | comments | saves | shares;
-  note right: SocialController (RF8/RF17/RF19)
+if (Abre o card de outra pessoa?) then (sim)
+  |Frontend|
+  :GET /api/schemes/{id} ou GET /api/pieces/{id};
+  |API e serviços|
+  if (Pode ver? (requireView)) then (não)
+    #FFE3E3:403 auditado (ACESSO_NEGADO_403)\nou 404 (peça não aprovada);
+    stop
+  endif
+  :Quem vê não é o dono: viewCount + 1;\nlogado → publica HypeSignal LOOK_VIEWED /\nPIECE_VIEWED (gravado depois do commit, ver RF19);
+  |Pessoa|
+  :Curte, comenta, salva, compartilha ou remixa (RF19);
 endif
 stop
 @enduml

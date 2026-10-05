@@ -15,7 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
-interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; [k: string]: unknown; }
+interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
@@ -31,8 +31,8 @@ function Settings() {
   useEffect(() => { if (me) { setProfile({ displayName: me.user.displayName ?? "", bio: me.bio ?? "", country: me.user.country ?? "" }); setUsername(me.user.username); setSensitive((s) => ({ ...s, email: me.email ?? "", phone: me.phone ?? "", birthDate: me.birthDate ?? "", twoFactorEnabled: me.twoFactorEnabled })); } }, [me]);
   // sincroniza tema/idioma locais com a preferência salva no servidor (RF23.CA02: last-write-wins)
   useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
-  async function savePrefs(patch: Partial<Prefs>) {
-    try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); } catch (e) { notice.fromError(e); }
+  async function savePrefs(patch: Partial<Prefs>): Promise<boolean> {
+    try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); return true; } catch (e) { notice.fromError(e); return false; }
   }
   const call = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) notice.success(ok); await refreshMe(); } catch (e) { notice.fromError(e); } };
   if (!me) return <Skeleton className="h-96" />;
@@ -122,6 +122,10 @@ function Settings() {
               <li className="py-1.5">{t("hypePrivacy.signals")}</li>
               <li className="py-1.5">{rich("hypePrivacy.notifications", undefined, { 0: ($c) => <Link className="underline" href="/notifications">{$c}</Link> })}</li>
             </ul>
+            {/* RF53 · P3-12 — sair do agregado público "Criadores em alta"; as peças e looks continuam com o próprio Hype */}
+            <div className="mt-2">
+              <Switch checked={!!server.data?.hypeCreatorOptOut} disabled={!server.data} onChange={async (v) => { const prev = server.data!; server.setData({ ...prev, hypeCreatorOptOut: v }); if (!(await savePrefs({ hypeCreatorOptOut: v }))) server.setData(prev); }} label={t("hypePrivacy.creatorOptOut")} hint={t("hypePrivacy.creatorOptOutHint")} />
+            </div>
             <a className="mt-2 inline-block type-body-sm underline" href={`${API_BASE}/api/hype/method`} target="_blank" rel="noopener noreferrer">{t("hypePrivacy.method")}</a>
           </Card>
         </div>

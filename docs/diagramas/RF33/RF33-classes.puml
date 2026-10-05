@@ -1,5 +1,5 @@
 @startuml RF33_Classes
-title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de classes — serviço da Passarela, Look do Dia, manequim e HypeScore v2
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,20 +11,69 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web" {
+class ShowcaseController {
+  +runway(viewer, limit, offset, ranking, region,\n  country, colors, occasions, styles, sex): Map
 }
+}
+package "fai-application" {
+class ShowcaseService {
+  +RUNWAY_RANKINGS: List<String> {TOP100_GLOBAL,\n  TOP100_REGIONAL, TOP100_PAIS, SEGUINDO, EM_ALTA, RECENTES}
+  ~RUNWAY_TOP = 100
+  ~RUNWAY_MAX = 24
+  +runway(viewer, RunwayFilter): Map
+  ~entry(DailyLook): RunwayEntry
+  ~{static} runwayOrder(ranking, hype): Comparator
+  ~look(Scheme, viewer, HypeScoreCurrent): Map
+  ~mannequin(User, peças, viewer): Map
+  ~hypeOf(HypeEntityType, ids): Map<UUID, HypeScoreCurrent>
+}
+class "ShowcaseService.RunwayFilter" as RunwayFilter <<record>> {
+  +ranking: String
+  +region: String
+  +country: String
+  +colors: List<String>
+  +occasions: List<String>
+  +styles: List<String>
+  +sex: String
+  +limit: Integer
+  +offset: Integer
+}
+class "ShowcaseService.RunwayEntry" as RunwayEntry <<record>> {
+  +dl: DailyLook
+  +country: String
+  +region: String
+  +colors: Set<String>
+  +occasions: Set<String>
+  +styles: Set<String>
+  +sex: String
+}
+class DailyLookService {
+  +register(user, Scheme, DailyLookSource, LocalDate): DailyLook
+  +today(userId): Optional<DailyLook>
+  +feedback(user, LocalDate, DailyLookFeedback): Map
+}
+class SearchService <<helpers estáticos>> {
+  ~showcaseAllows(viewer, owner): boolean
+  ~publicScore(HypeScoreCurrent): Double
+  ~trendFor(HypeScoreCurrent, self): Double
+  ~risingFor(HypeScoreCurrent, self): boolean
+  ~hypeSummary(HypeScoreCurrent, self, cfg): Map
+}
+class WorldRegions <<taxonomy>> {
+  +{static} of(country): String
+  +{static} label(region): String
+  +{static} codes(): List<String>
+}
+class Avatar3dService {
+  +forMannequin(ownerId, viewerId): Optional<Map>
+}
+class HypeScoreConfig <<hype>> {
+  +algorithmVersion(): String
+  +staleAfterHours(): int
+}
+}
+package "fai-domain · model" {
 class DailyLook {
   +user: User
   +scheme: Scheme
@@ -32,103 +81,126 @@ class DailyLook {
   +lookDate: LocalDate
   +source: DailyLookSource
   +feedback: DailyLookFeedback
-  +feedbackAt: Instant
-  +weekPlanDayId: UUID
+}
+class User {
+  +username: String
+  +status: AccountStatus
+  +profileType: ProfileType
+  +country: String
+  +sex: MannequinSex
+  +avatarUrl: String
+  +runwayOptOut: boolean
+  +isTestAccount(): boolean
 }
 class Scheme {
   +user: User
-  +originalScheme: Scheme
   +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
   +style: String
   +occasion: String
-  +season: Season
-  +mood: Mood
   +visibility: Visibility
   +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+  +likeCount: long
 }
 class SchemeItem {
   +scheme: Scheme
   +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +tryOnLayer: TryOnLayer
   +sortOrder: int
-  +zIndex: int
-  +positionX: BigDecimal
-  +positionY: BigDecimal
-  +scale: BigDecimal
-  +rotation: BigDecimal
-  +opacity: BigDecimal
-  +filtersJson: String
-  +snapshotJson: String
 }
 class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
   +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
   +styleTags: String
   +occasionTags: String
-  .. +54 campos ..
+  +imageUrl: String
+  +model3dStatus: Model3dStatus
+  +model3dUrl: String
+}
+class UserPreferences {
+  +mannequinSex: MannequinSex
+  +mannequinSkinTone: String
+  +mannequinBuild: BodyBuild
+  +mannequinFaceJson: String
 }
 class Follow {
   +follower: User
   +following: User
   +status: FollowStatus
-  +respondedAt: Instant
 }
-class UserPreferences {
-  +user: User
-  +theme: ThemeMode
-  +language: UiLanguage
-  +density: UiDensity
-  +fontScale: int
-  +highContrast: boolean
-  +reduceMotion: boolean
-  +chromeBackgroundId: String
-  +sizeSystem: SizeSystem
-  +unitSystem: UnitSystem
-  +mannequinSex: MannequinSex
-  +mannequinSkinTone: String
-  +mannequinBuild: BodyBuild
-  +contentContainerColor: String
-  .. +10 campos ..
+class HypeScoreCurrent {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +momentum: HypeMomentum
+  +publicEligible: boolean
+  +calculatedAt: Instant
 }
 }
 package "fai-domain · enums" {
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+enum HypeMomentum {
+  EMERGING
+  RISING
+  STABLE
+  COOLING
+  CLASSIC
+}
+enum HypeStatus {
+  AVAILABLE
+  INSUFFICIENT_DATA
+}
 enum MannequinSex {
   MASCULINO
   FEMININO
 }
 }
-DailyLook "*" --> "1" Scheme : scheme
+package "fai-domain · repository" {
+interface DailyLookRepository {
+  +findByLookDate(LocalDate): List<DailyLook>
+  +findByLookDateGreaterThanEqual(LocalDate): List<DailyLook>
+  +findByUserIdAndLookDate(userId, LocalDate): Optional<DailyLook>
+}
+interface HypeScoreCurrentRepository {
+  +findByEntityTypeAndEntityIdInAndAlgorithmVersion(\n  HypeEntityType, ids, String): List<HypeScoreCurrent>
+}
+}
+ShowcaseController --> ShowcaseService
+ShowcaseService ..> RunwayFilter
+ShowcaseService ..> RunwayEntry
+ShowcaseService --> DailyLookService : today()
+ShowcaseService --> DailyLookRepository
+ShowcaseService --> HypeScoreCurrentRepository
+ShowcaseService ..> SearchService
+ShowcaseService ..> WorldRegions
+ShowcaseService --> Avatar3dService : cabeça AVATAR
+ShowcaseService ..> HypeScoreConfig
+RunwayEntry --> "1" DailyLook
 DailyLook "*" --> "1" User : user
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "0..1" --> "0..1" DailyLook : materializedFrom
+DailyLook --> DailyLookSource
+Scheme "*" --> "1" User : user
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
+UserPreferences "1" --> "1" User
+UserPreferences --> MannequinSex
+User --> MannequinSex
 Follow "*" --> "1" User : follower
 Follow "*" --> "1" User : following
-Scheme "*" --> "1" User : user
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-UserPreferences "1" --> "1" User : user
-UserPreferences --> MannequinSex
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of DailyLook : tabela daily_looks
-note top of Scheme : tabela schemes
-note top of SchemeItem : tabela scheme_items
-note top of WardrobeItem : tabela wardrobe_items
-note top of Follow : tabela follows
-note top of UserPreferences : tabela user_preferences
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreCurrent --> HypeMomentum
+HypeScoreCurrent --> HypeStatus
+DailyLookRepository ..> DailyLook
+HypeScoreCurrentRepository ..> HypeScoreCurrent
+note top of DailyLook : tabela daily_looks\n(único: user_id + look_date)
+note top of HypeScoreCurrent : tabela hype_scores — gravada pelo job\nHypeSnapshotService e por HypeLiveRecalc;\na Passarela só lê
+note bottom of User : tabela users (runway_opt_out na V16)
 @enduml

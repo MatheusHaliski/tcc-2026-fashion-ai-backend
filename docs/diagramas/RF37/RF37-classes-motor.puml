@@ -1,0 +1,127 @@
+@startuml RF37_Classes_Motor
+title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de classes — motor puro (fai-application · flair): carta, deck, look, tema e Hype v2
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "FlairEngine — cartas, decks e duelo" {
+class FlairEngine <<final>> {
+  +{static} STATS = EDGE, RANGE, CLOUT, GLOW, ART, SYNC
+  +{static} DUEL_ROUNDS = EDGE, RANGE, CLOUT, GLOW, ART
+  +{static} RARITIES = STANDARD, PREMIUM, LIMITED, RARE
+  +{static} RARE_RARITY_MIN = 75
+  +{static} LIMITED_RARITY_MIN = 60
+  +{static} card(PieceInput, season): Card
+  +{static} rarity(Hype, seals, model3d, studio): String
+  +{static} deck(schemeId, title, cards, schemeSeason, season): Deck
+  +{static} duel(Deck, Deck): DuelResult
+  +{static} occasionScore(Deck, occasion): double
+  +{static} rank(points): Map
+  +{static} season(LocalDate): String
+}
+class "FlairEngine.Hype" as Hype <<record>> {
+  +score: Double
+  +level: String
+  +rarity: Double
+  +{static} NONE
+  +{static} of(publicEligible, status, score, level, rarity): Hype
+  +atLeast(HypeLevel): boolean
+}
+class "FlairEngine.PieceInput" as PieceInput <<record>> {
+  +id, name, category, subcategory
+  +brandName, registeredBrand, brandOwner
+  +styles, occasions, material, qualityOverall
+  +studio, logoDetail, model3d, mannequinPhoto
+  +defaultImage, seals: int
+  +hype: Hype
+}
+class "FlairEngine.Card" as Card <<record>> {
+  +stats: Map<String, Integer>
+  +rarity: String
+  +multiplier: double
+  +power: int
+  +ability: Ability
+  +hype: Hype
+}
+class "FlairEngine.Deck" as Deck <<record>> {
+  +schemeId, title
+  +cards: List<Card>
+  +combos: List<Combo>
+  +brandMultiplier: double
+  +seasonBonus: int
+  +power: int
+  +avg: Map<String, Integer>
+}
+class "FlairEngine.DuelResult" as DuelResult <<record>> {
+  +rounds: List<Round>
+  +winsA / winsB: int
+  +winner: String
+}
+}
+package "FlairLooks — looks, temas e sinergias" {
+class FlairLooks <<final>> {
+  +{static} STATS = HYPE, STYLE, COLOR, OCCASION, ORIGINALITY,\n  BRAND, RARITY, TREND, COMMUNITY, AI
+  +{static} NEUTRAL_HYPE = 50
+  +{static} THEMES: Map<String, Theme> (18)
+  +{static} BOSSES: Map<String, Boss>
+  +{static} look(LookInput): Look
+  +{static} synergies(cards, Theme): List<Synergy>
+  +{static} weight(Theme, stat): double
+  +{static} score(Look, Theme): Score
+  +{static} battle(Look, Look, Theme): Clash
+  +{static} squad(…) · leagueMatch(…) · runwayScore(…)
+}
+class "FlairLooks.LookInput" as LookInput <<record>> {
+  +schemeId, title, owner, coverUrl
+  +hype: Double  «Hype v2 público ou nulo»
+  +likes, saves, comments, shares, remixes
+  +styles, occasions, season
+  +cards: List<Card>
+}
+class "FlairLooks.Look" as Look <<record>> {
+  +stats: Map<String, Integer>
+  +synergies: List<Synergy>
+  +rating: int
+  +families, brands
+  +cards: List<Card>
+}
+class "FlairLooks.Synergy" as Synergy <<record>> {
+  +code: STREETWEAR_COMBO | CLASSIC_FORMAL |\n  MONOCHROME | BRAND_LOYALTY |\n  MIX_MATCH | VINTAGE_REVIVAL
+  +stat: String
+  +bonus: int
+}
+class "FlairLooks.Theme" as Theme <<record>> {
+  +code, label
+  +occasions, styles
+  +weights: Map<String, Double>
+  +bonusSubcategories, boostStyle, boostStat
+}
+}
+class "FlairModesService.Mode" as Mode <<record>> {
+  +code: BATTLE | SQUAD | LEAGUE | TOUR | CONQUEST | DECK |\n  WARDROBE | RUNWAY | DRAFT | TAG_TEAM | BOSS |\n  COMBO | MONOPOLY | CHESS | ULTIMATE
+  +group: NUCLEO | ESPECIAL
+}
+FlairEngine ..> PieceInput
+FlairEngine ..> Card : cria
+FlairEngine ..> Deck : cria
+FlairEngine ..> DuelResult
+PieceInput --> Hype
+Card --> Hype
+Deck "1" o-- "*" Card
+FlairLooks ..> LookInput
+FlairLooks ..> Look : cria
+LookInput "1" o-- "*" Card
+Look "1" o-- "*" Synergy
+Look "1" o-- "*" Card
+FlairLooks ..> Theme
+Mode ..> FlairLooks : todos os modos usam
+note right of Hype : vem de hype_scores; só PUBLICO e AVAILABLE\nviram score/nível — o adversário nunca vê\nHype pessoal. Sem dado = NONE (não rebaixa)
+note bottom of LookInput : FlairService.publicLookHype(schemeId)\npreenche o hype; nunca o v1 (removido)
+@enduml

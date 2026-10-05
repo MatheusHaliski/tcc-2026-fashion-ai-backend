@@ -1,5 +1,5 @@
 @startuml RF24_Sequencia
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de sequência — endpoints reais (consentimento, inferência e governança)
+title RF24 — Usar a IA do sistema\nDiagrama de sequência — consentimento (LGPD), inferência governada, motor local e governança no admin
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,61 +8,80 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Pessoa as U
-actor Admin as A
-participant "Frontend\n/settings · tela do RF hospedeiro · /admin/system" as FE
+actor "Pessoa" as U
+actor "Admin" as A
+participant "Frontend\nsettings/page.tsx · tela do RF hospedeiro ·\nadmin/system/page.tsx" as FE
 participant "MeController" as MC
 participant "AccountService" as AS
-participant "Controller do RF hospedeiro\n(ex.: SchemeController, WardrobeController)" as HC
+participant "Controller do RF hospedeiro\n(ex.: SchemeController)" as HC
 participant "Serviço hospedeiro\n(ex.: SchemeService)" as HS
-participant "AiEngine (RF24)" as AI
-participant "AiBudget / RateLimitPort" as RL
+participant "AiEngine" as AI
+participant "AiBudget" as BU
+participant "RateLimitPort\n(Redis | memória)" as RL
 participant "AiProviderPort\n(GeminiProvider · ClaudeProvider)" as PR
-participant "AdminController" as AC
+participant "AdminController\n/ AdminService" as AC
 database "MySQL" as DB
-== Consentimento (LGPD, RF23 → RF24) ==
-U -> FE: liga "IA de recomendação" em Privacidade
-FE -> MC: PUT /api/me/consents/{AI_RECOMMENDATION} {granted: true}
+
+== Consentimento por finalidade (RF23 grava, RF24 lê) ==
+U -> FE: liga "Recomendações por IA" (aba Privacidade)
+FE -> MC: PUT /api/me/consents/AI_RECOMMENDATION {granted: true}
 MC -> AS: setConsent(user, purpose, granted)
-AS -> DB: UPSERT user_consents (granted_at); INSERT audit_log
-MC --> FE: 200 [{purpose, granted, grantedAt, …}]
-== Inferência dentro do RF hospedeiro ==
-U -> FE: pede um recurso com IA (ex.: compor look)
-FE -> HC: POST /api/… (rota do RF hospedeiro)
+alt FACIAL_RECOGNITION com granted = true
+  AS --> FE: 400 FINALIDADE_NAO_UTILIZADA
+else demais finalidades
+  AS -> DB: UPSERT user_consents (granted, legalBasis,\npolicyVersion, grantedAt | revokedAt)
+  AS -> DB: audit_log CONSENTIMENTO_CONCEDIDO | _REVOGADO
+  AS --> FE: 200 lista de consentimentos
+end
+
+== Inferência dentro do RF hospedeiro (ex.: compor look) ==
+U -> FE: pede um recurso com IA
+FE -> HC: rota do RF hospedeiro
 HC -> HS: caso de uso
-HS -> AI: text(TextCall{userId, capability, system, prompt, images, parser, local})
-AI -> AI: AiCatalog.spec(capability) → primário, alternativo, cota, timeout
-AI -> AI: CelebrityPromptValidator.validate(prompt)
-AI -> DB: SELECT user_consents (purpose da capacidade)
-alt consentimento NEGADO
-  AI --> HS: AiOutcome(CONSENT_DENIED, fallbackUsed=true, valor local)
-else concedido ou finalidade sem dado pessoal
-  AI -> RL: budget.check(userId, custo estimado)
-  AI -> RL: rateLimit.tryAcquire(userId, "ai:"+capability, dailyQuotaPerUser, 1 dia)
-  alt teto ou cota esgotada
-    AI --> HS: AiOutcome(RATE_LIMITED, Quota{limit, used, resetAt}, valor local)
+HS -> AI: text(TextCall{userId, SCHEME_COMPOSER, system,\nprompt, images, parser, local})
+AI -> AI: AiCatalog.spec() → RemoteSteps (primário,\nalternativo); CelebrityPromptValidator se houver\nnomes protegidos (422 PROMPT_REJEITADO)
+AI -> DB: SELECT user_consents (finalidade da capacidade)
+alt sem provedor disponível ou consentimento NEGADO
+  AI -> DB: INSERT ai_inference_log (FALLBACK_LOCAL | CONSENT_DENIED)
+  AI --> HS: AiOutcome(valor local, fallbackUsed = true)
+else liberado
+  AI -> BU: check(userId, custo estimado)
+  BU -> DB: SUM(estimated_cost_usd) do dia UTC (global e do usuário)
+  BU --> AI: OK | USER_EXHAUSTED | GLOBAL_EXHAUSTED
+  AI -> RL: status / tryAcquire(userId, "ai:SCHEME_COMPOSER",\ndailyQuotaPerUser, 1 dia)
+  alt teto ou cota estourados
+    AI -> DB: INSERT ai_inference_log (RATE_LIMITED | FALLBACK_LOCAL)
+    AI --> HS: AiOutcome(valor local, Quota{limit, used, resetAt})
   else dentro do limite
-    loop provedores do catálogo (primário → alternativo)
+    loop RemoteSteps disponíveis (primário → alternativo)
       AI -> PR: invoke(AiRequest{model, system, prompt, images, expectJson})
-      alt resposta dentro do contrato JSON
+      alt resposta válida (parser devolve valor)
         PR --> AI: AiResponse{text, latencyMs, estimatedCostUsd, tokens}
-        AI -> DB: INSERT ai_inference_log (SUCCESS)
+        AI -> DB: INSERT ai_inference_log (SUCCESS) + audit_log CHAMADA_IA
         AI --> HS: AiOutcome(SUCCESS, inferenceId, Explanation, Quota)
-      else timeout / circuito aberto / erro
-        AI -> DB: INSERT ai_inference_log (TIMEOUT|CIRCUIT_OPEN|RATE_LIMITED|ERROR, fallbackUsed)
+      else exceção / fora do contrato
+        AI -> DB: INSERT ai_inference_log (TIMEOUT | CIRCUIT_OPEN |\nRATE_LIMITED | ERROR, fallbackUsed = true)
       end
     end
-    opt todos os provedores falharam
-      AI --> HS: AiOutcome(FALLBACK_LOCAL, userMessage com a razão)
+    opt todos falharam
+      AI -> DB: INSERT ai_inference_log (FALLBACK_LOCAL)
+      AI --> HS: AiOutcome(valor local, userMessage com o motivo)
     end
   end
 end
-HS --> HC: resultado do caso de uso (+ explanation "por quê?")
+HS --> HC: resultado do caso de uso (+ explanation, fallbackUsed)
 HC --> FE: 200 DTO do RF hospedeiro
+
+== Motor local primário (ex.: SealBond Matcher, RF20/RF21) ==
+HS -> AI: local(userId, SEALBOND_MATCHER, inputsUsed, engine)
+AI -> DB: INSERT ai_inference_log (SUCCESS, provider = local)
+AI --> HS: AiOutcome(valor, Explanation "motor local determinístico")
+
 == Governança (admin) ==
 A -> FE: abre /admin/system
 FE -> AC: GET /api/admin/ai
-AC -> AC: AdminService.aiOverview(admin) (requireAdmin)
-AC -> DB: SELECT ai_inference_log (top 300, últimos 100)
-AC --> FE: 200 {providers, remoteEnabled, catalog[capability, hostRf,\nprimary, fallback, dailyQuota, status], recent[…]}
+AC -> AC: AdminService.aiOverview(admin) → guard.requireAdmin (403)
+AC -> DB: SELECT ai_inference_log (top 300, mostra 100)
+AC -> AI: providerAvailability(), remoteEnabled()
+AC --> FE: 200 {providers, remoteEnabled, catalog[capability, name,\nhostRf, primary, fallback, dailyQuota, status], recent[…], hypeV2}
 @enduml

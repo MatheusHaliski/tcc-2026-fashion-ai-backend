@@ -237,15 +237,6 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "background_config_json", columnDefinition = "json")
     private String backgroundConfigJson;
 
-    @Column(name = "hype_score", precision = 6, scale = 2)
-    private BigDecimal hypeScore;
-
-    @Column(name = "hype_score_global", precision = 6, scale = 2)
-    private BigDecimal hypeScoreGlobal;
-
-    @Column(name = "hype_group_id", length = 36)
-    private UUID hypeGroupId;
-
     @Column(name = "remixed_from_piece_id", length = 36)
     private UUID remixedFromPieceId;
 

@@ -1,5 +1,5 @@
 @startuml RF8_Componentes
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de componentes — feed e busca → DiscoveryController/SearchService → MySQL, OpenSearch, Cassandra e HypeScore v2
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,48 +17,82 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "search/page.tsx\n(aba Buscar: LOOKS, PECAS, PESSOAS,\nMARCAS, CELEBRIDADES)" as FE0
-  component "feed/page.tsx\n(Comunidade · Passarela)" as FE1
-  component "SchemeCard · PieceCard\nFilterBar · InfiniteSentinel" as FE2
-  component "interactions.tsx\n(InteractionBar)" as FE3
+  component "(app)/search/page.tsx\nabas LOOKS · PECAS · PESSOAS · MARCAS · CELEBRIDADES\nFilterBar + hypeLevelFilter() + chip Em alta" as FE0
+  component "(app)/feed/page.tsx\nFeed (chip Em alta) · Passarela (logado)" as FE1
+  component "scheme-card.tsx · piece-card.tsx · fashion-card.tsx\ninfinite-sentinel.tsx · interactions.tsx (RF19)\nlib/hype/use-hype.ts" as FE2
+  component "hype/hype-group-badge.tsx\nlib/hype/use-hype-group.ts\n(Criador/Marca em alta)" as FE3
+  component "insights/insight-strip.tsx\n(FEED · SEARCH)" as FE4
 }
 package "fai-web · controllers" {
-  [DiscoveryController] as DC
-  [SocialController] as SC
-  [SchemeController] as SCC
+  [DiscoveryController\n/api/feed · /api/runway · /api/search\n/api/public-pieces] as DC
+  [SchemeController\nGET /api/schemes/{id}] as SCC
+  [WardrobeController\nGET /api/pieces/{id}] as WC
+  [HypeController\n/api/hype/summaries · /api/hype/groups] as HC
+  [InsightsController\n/api/insights?context=FEED|SEARCH] as IC
 }
-package "fai-application · services" {
-  [SearchService] as SS
-  [SchemeService] as SCH
-  [SocialService] as SO
-  [ProjectionService] as PJ
-  [Guard] as G
-  [AiEngine (RF24)\nAiCapability.AFFINITY] as AI
+package "fai-application" {
+  [SearchService\n(relevância, filtros, cursor,\nbusca vazia com Em alta v2)] as SS
+  [SchemeService\n(canView · requireView · get)] as SCH
+  [WardrobeService\n(detalhe da peça)] as WS
+  [ChallengeService\n(voteFeed na Passarela)] as CH
+  [Guard\n(canView · blocked · deny)] as G
+  [HypeQueryService\n(summaries · groups)] as HQ
+  [HypeScoreConfig\n(HYPE_V2, faixas)] as CFG
+  [InsightService\nPublicInsights] as IS
+  [HypeCache] as HCA
+  [AuditService\n(MysqlAuditService)] as AUD
 }
-package "fai-infrastructure · adapters" {
-  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nFollowRepository · StyleDnaRepository\nBrandProfileRepository · CelebrityProfileRepository\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository] as REPOS
-  [OpenSearchIndexAdapter\n(SearchIndexPort · TimelineProjectionPort)] as OS
-  [MysqlAuditService] as AUD
+package "portas (fai-application · ports)" {
+  [SearchIndexPort] as SIP <<port>>
+  [TimelineProjectionPort] as TPP <<port>>
+  [RenderCachePort] as RCP <<port>>
 }
-database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• users\n• follows\n• style_dna\n• brand_profiles\n• celebrity_profiles\n• reactions · comments\n• saved_items · shares\n• audit_log" as DB
-cloud "OpenSearch\n(opcional: engine=opensearch)" as OSC
+package "fai-infrastructure" {
+  [OpenSearchIndexAdapter] as OSA
+  [CassandraProjectionAdapter] as CPA
+  [RedisAdapters · InMemoryRenderCache] as RCA
+  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nFollowRepository · StyleDnaRepository\nBrandProfileRepository · CelebrityProfileRepository\nBrandRepository · ShareRepository · SealBondRepository\nHypeScoreCurrentRepository] as REPOS
+}
+database "MySQL\n• schemes · scheme_items · wardrobe_items\n• users · follows · style_dna · shares\n• brand_profiles · celebrity_profiles · brands\n• seal_bonds · hype_scores · audit_log" as DB
+cloud "OpenSearch\n(opcional; engine = opensearch)" as OSC
+cloud "Cassandra\n(timeline, opcional)" as CAS
+cloud "Redis\n(opcional)" as RED
 
 FE0 --> DC : GET /api/search · /api/feed · /api/public-pieces
 FE1 --> DC : GET /api/feed · /api/runway
-FE2 --> SCC : GET /api/schemes/{id}
-FE3 --> SC : POST reactions · comments · saves · shares
-DC --> SS : chama
-SC --> SO : chama
-SCC --> SCH : chama
-SS --> SCH : canView
-SS --> G : canView (visibilidade efetiva)
-SS --> REPOS : lê
-SS --> OS : lê índice (se habilitado)
-SS ..> AI : afinidade (relevância local)
-SCH --> PJ : publica projeções
-PJ --> OS : indexa
-SO --> REPOS : grava
-G --> AUD : audita 403
+FE0 --> FE2
+FE1 --> FE2
+FE0 --> FE3 : Pessoas · Marcas · Celebridades
+FE0 --> FE4
+FE1 --> FE4
+FE2 --> SCC : abrir look
+FE2 --> WC : abrir peça
+FE2 --> HC : summaries (HypeBadge)
+FE3 --> HC : groups (CREATOR | BRAND)
+FE4 --> IC
+DC --> SS
+SCC --> SCH
+WC --> WS
+HC --> HQ
+IC --> IS
+SS --> SCH : canView · view
+SS --> G : peças · bloqueios
+SS --> CH : battles
+SS --> CFG
+SS --> REPOS : candidatos + hype_scores
+SS --> SIP : busca com termo
+SS --> TPP : runway
+SCH --> G
+G --> AUD : 403 auditado
+HQ --> HCA : groupTable por geração
+IS --> HCA
+IS --> HQ
+HCA --> RCP
+SIP <|.. OSA
+TPP <|.. CPA
+RCP <|.. RCA
+OSA --> OSC : HTTP
+CPA --> CAS : CQL
+RCA --> RED
 REPOS --> DB : JPA/Flyway
-OS --> OSC : HTTP
 @enduml

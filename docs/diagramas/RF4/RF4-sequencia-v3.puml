@@ -1,6 +1,6 @@
 @startuml RF4_Sequencia_v3
 !pragma layout smetana
-title RF4 — Criar Peça (v3)\nDiagrama de sequência — campo marca com buscador web e logo filtrado · análise por foto só em /batch e /multi
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — criador catalog-first: busca catalogada, marca pelo buscador web e salvar
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,74 +8,99 @@ skinparam sequence {
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
 }
-actor Usuário as U
-participant "Formulário da peça\n(PieceForm + BrandSearchInput\n· MultiPieceUpload)" as App
-participant "WardrobeController /\nWardrobeService ·\nMultiPieceService" as WS
-participant "BrandLogoController /\nBrandWebSearchService" as BS
-participant "Wikidata" as WD
-participant "Simple Icons\n(raw.githubusercontent.com)" as SI
-participant "IA com busca na web\n(BRAND_LOGO_FINDER)" as AI
-participant "LogoFilter /\nSvgPathRenderer" as LF
-participant "MediaStorage\n(local / S3)" as ST
+autonumber
+actor "Pessoa" as U
+participant "pieces/new/page.tsx\nPieceCreator · CatalogSearch\nPieceFields · BrandSearchInput" as FE
+participant "CatalogController" as CC
+participant "CatalogService" as CS
+participant "BrandLogoController" as BC
+participant "BrandWebSearchService\n+ LogoFilter" as BS
+participant "WardrobeController" as WC
+participant "WardrobeService" as WS
 participant "BrandLogoService" as BL
+participant "MediaService\n(MediaStoragePort)" as ST
+participant "Wikidata · Simple Icons\n· IA (BRAND_LOGO_FINDER)" as EXT
 database "MySQL" as DB
 
-opt foto da peça (opcional)
-  alt 1 a 10 fotos, uma peça por foto (cliente da API)
-    U -> App: envia as fotos
-    App -> WS: POST /api/pieces/analysis/batch (files, category)\n→ WardrobeService.analyzeBatch
-    WS --> App: List<Draft> — rascunho + prefill\n(marca identificada, se houver)
-  else uma foto com várias peças (MultiPieceUpload)
-    U -> App: envia a foto
-    App -> WS: POST /api/pieces/analysis/multi (file)\n→ MultiPieceService.detect
-    WS --> App: Detection (peças + caixas em % da foto)
-    App -> WS: POST /api/pieces/analysis/multi/{draftId}/pieces\n(file, index) → MultiPieceService.pieceDraft
-    WS --> App: PieceDraft (draftId + imagens)
+U -> FE: abre /pieces/new (?category, ?brand, ?q ou ?from=lens)
+FE -> FE: readPiecePrefill + validPiecePrefill (GET /api/taxonomy em cache)
+U -> FE: tipo da peça + subtipo/marca/nome na busca
+FE -> CC: GET /api/catalog/search?category=&subcategory=&brand=&q=&color=
+CC -> CS: search(userId, SearchRequest)
+CS -> DB: candidatos (FULLTEXT) em catalog_products\n+ brands/brand_aliases (só status visíveis)
+CS -> CS: CatalogMatchScorer (similaridade, apelidos,\nsinônimos, cor, design) — corte MIN_SCORE 0,35
+CC --> FE: 200 {intent, results[matchScore, foto oficial], total, enoughInput}
+opt sem resultado
+  U -> FE: "procurar nas lojas oficiais"
+  FE -> CC: POST /api/catalog/discover
+  CC -> CS: discover(user, SearchRequest)
+  alt marca desconhecida / sem catalog_sources
+    CS --> FE: 200 {status: BRAND_UNKNOWN | NO_OFFICIAL_SOURCE}
+  else achou nas fontes oficiais
+    CS -> DB: CatalogIngestService.upsert(..., DISCOVERED)
+    CS --> FE: 200 {status: FOUND, results}
   end
 end
-note over App, WS
-  POST /api/pieces/analysis (foto única) foi REMOVIDO:
-  a análise por foto segue só em /api/pieces/analysis/batch
-  e /api/pieces/analysis/multi (o criador catalog-first, RF47,
-  não pede foto: imagem = foto oficial ou ilustração).
+opt escolhe "É esta"
+  FE -> FE: applyCatalog — formulário preenchido;\nbrandSource CATALOGO, brandRef = productId
+end
+
+== Campo marca: buscador web (sem catálogo pré-cadastrado) ==
+U -> FE: digita a marca (2 a 60 letras, 380 ms)
+FE -> BC: GET /api/brand-search?q=
+BC -> BS: search(userId, q, allowAi = true)
+alt texto < 2 ou > 60
+  BS --> FE: 400 BUSCA_INVALIDA
+else em cache (30 min, só memória)
+  BS --> FE: 200 {..., cache: true}
+else busca nova
+  par
+    BS -> EXT: Wikidata (wbsearchentities + EntityData P154/P856)
+  else
+    BS -> EXT: Simple Icons (índice em memória, 12 h)
+  end
+  opt menos de 2 nomes iguais/começando pelo texto (q ≥ 3)
+    BS -> EXT: AiEngine BRAND_LOGO_FINDER (até 4 marcas)
+  end
+  BS -> BS: merge + ordenação; LogoFilter nos 6 primeiros\n(ver RF4-pipeline-filtro-logo)
+  BS -> ST: put(brands/logos/web/<marca>-<fonte>.png)
+  BS --> FE: 200 {results[nome, site, fonte, logoUrl, logoWideUrl],\nsources[status por fonte]}
+end
+U -> FE: escolhe a marca (ou fica com o texto livre)
+
+== Salvar (etapa 4 · Revisar) ==
+U -> FE: Salvar
+FE -> FE: validatePieceForm (erro → volta ao campo)
+alt produto do catálogo escolhido
+  FE -> CC: POST /api/pieces/from-catalog {productId, variantId, dados pessoais, background}
+  CC -> CS: addToWardrobe(user, AddRequest)
+  CS -> DB: catalog_products (REJECTED → 400 PRODUTO_RECUSADO;\nDISCOVERED → REFERENCE_ONLY; owners_count + 1)
+  CS -> DB: 1ª catalog_image não recusada (foto oficial)
+  CS -> WS: createFromCatalog(user, PieceForm, CatalogPick)
+else sem produto
+  FE -> WC: POST /api/pieces {PieceForm, useDefaultImage: true}
+  WC -> WS: create(user, form)
+end
+WS -> WS: Guard.requireCanCreate (401 · 403 EMAIL_NAO_CONFIRMADO…)
+WS -> WS: validate → 400 FORMULARIO_INVALIDO {campos}
+WS -> WS: resolveBrand + brandFromWebSearch
+opt logo da web escolhido
+  WS -> ST: logo está no storage próprio? (OwnMedia + read)
+  WS -> BL: acceptWebLogo(marca, logo, fonte)
+  BL -> DB: UPSERT brand_logos
+end
+alt com foto oficial
+  WS -> DB: INSERT wardrobe_items (image_origin CATALOG, catalog_product_id,\ncatalog_variant_id, moderation APPROVED, COMPLETED)
+else sem foto
+  WS -> DB: INSERT wardrobe_items (ilustração da subcategoria,\ndefault_image = true)
+  WS -> ST: defaultStudio — foto de estúdio da ilustração (aprovada)
+end
+WS -> DB: notifications (PIECE_CREATED) · audit_log (CADASTRO_PECA)
+WS --> FE: 201 PieceView
+FE --> U: CreationSuccess → perfil ou Closet
+WS ->> WS: PieceCreated (AFTER_COMMIT): FAI Points, Hype ao vivo,\nInventory Score, Meu Quarto, desafios, cupons
+note over FE, WS
+  Análise por foto (POST /api/pieces/analysis/batch e /analysis/multi) continua no backend,
+  mas o criador não envia foto desde 04/10: ver RF12. O passo "foto opcional" é <<planejado>> (RF15 §8.1).
 end note
-
-U -> App: digita a marca (≥ 2 letras)
-App -> BS: GET /api/brand-search?q=zar
-par fontes em paralelo
-  BS -> WD: wbsearchentities + EntityData (P154, P856)
-  WD --> BS: itens de moda (ou indisponível)
-else
-  BS -> SI: data/simple-icons.json (índice em memória, 12 h)
-  SI --> BS: marcas que casam com o texto
-end
-opt menos de 2 marcas com nome igual/começando pelo texto
-  BS -> AI: até 4 marcas de moda + site + URL do logo
-  AI --> BS: candidatos (ou indisponível)
-end
-BS -> BS: juntar a mesma marca, ordenar
-loop até 6 resultados
-  BS -> SI: GET icons/<slug>.svg (ou PNG do Commons / URL da IA)
-  BS -> LF: filtrar (vetor → preto no branco;\nPNG → fundo, contraste, nitidez, recorte)
-  alt logo aprovado
-    LF --> BS: quadrado 320 + faixa 160 + métricas
-    BS -> ST: brands/logos/web/zara-simple-icons.png
-  else recusado
-    LF --> BS: motivo (SEM_NITIDEZ, RESOLUCAO_BAIXA...)
-  end
-end
-BS --> App: 200 {results[nome, descrição, site, fonte, logoUrl,\nlogoWideUrl, logo.metrics], sources[status por fonte]}
-App --> U: lista com logo + nome + fonte\n+ "usar texto sem logo"
-U -> App: escolhe "Zara"
-App --> U: slot do logo preenchido\n(fundo branco, letras pretas)
-
-U -> App: salvar
-App -> WS: POST /api/pieces {..., brandName, brandLogoUrl,\nbrandSource, brandRef}
-WS -> ST: o logo está no storage próprio? (media.read)
-WS -> BL: acceptWebLogo(marca, logo, fonte)
-BL -> DB: UPSERT brand_logos (status FOUND, fonte)
-WS -> DB: INSERT wardrobe_items (brand_name, brand_logo_url,\nbrand_source, brand_ref, ...)
-DB --> WS: id
-WS --> App: 201 Created (PieceView com brandLogoUrl, brandSource)
-App --> U: peça no guarda-roupa com a marca e o logo
 @enduml

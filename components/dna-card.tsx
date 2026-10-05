@@ -19,8 +19,6 @@ import { CardHeader } from "@/components/card-header";
 export interface DnaCellView {
   cell: string; schemeId: string; title: string; description?: string | null; coverImageUrl?: string | null; occasion: string[]; style: string[]; season?: string | null;
   eraLabel?: string | null; milestone: boolean; createdAt?: string; dominantBrand?: string | null; dominantBrandLogoUrl?: string | null; dominantColor?: string | null;
-  /** @deprecated v1 (escala legada; 0 quando não havia dado) — a narrativa HYPE_FOCUS usa `hype` (v2) */
-  hypeScoreGlobal?: number | null;
   /**
    * HypeScore v2 do look (DnaService, P2-12): Hype pessoal para o dono; para quem visita, só o público elegível. "Sem
    * dados" chega como status (INSUFFICIENT_DATA/NOT_CALCULATED) e score nulo — nunca 0. Hype ≠ DNA: é só um dado da célula.

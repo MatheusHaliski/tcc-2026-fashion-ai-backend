@@ -1,0 +1,89 @@
+@startuml RF6_Atividades_LookDoDia
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — aba Look do dia (painel HypeScore v2 só leitura, dica tip e avaliação)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba Look do dia do próprio Lookbook\n(u/[username]?tab=daily);
+|Frontend|
+:DailyTab (lookbook-tabs.tsx)\nGET /api/me/daily-look-tab?withAi=false;
+|API e serviços|
+:LookbookService.dailyLookTab → DailyLookService.today(userId);
+if (Há registro de hoje?) then (não)
+  if (Há look anterior com esquema não arquivado?) then (sim)
+    :Materializa cópia em daily_looks\n(materializedFrom = look anterior, mesma origem);
+  else (não)
+  endif
+endif
+if (Há Look do Dia?) then (não)
+  |Frontend|
+  :Estado vazio com 3 ações: marcar um look salvo (/looks),\nusar o Autopiloto (/autopilot), Vista-me no espelho (/mirror);
+  |Pessoa|
+  :Marca um look pelo detalhe do esquema (ver RF42);
+  stop
+else (sim)
+  |API e serviços|
+  :HypeScoreService.panel(dailyLook, withAi):\nlê hype_scores do look (HypeScore v2, SCHEME)\n— o GET nunca recalcula nem grava;
+  note right
+    O v1 (hype_score_metrics, faixas de juízo,
+    HypeGroups) saiu na limpeza P3-16. O painel
+    devolve v2 (status, score, faixa, dimensões),
+    magazineCover, tip e previousDailyLook
+  end note
+  if (Status do Hype do look?) then (sem linha)
+    :v2.status = NOT_CALCULATED\n(score e faixa nulos, nunca 0);
+  elseif () then (poucos sinais)
+    :v2.status = INSUFFICIENT_DATA\n("Dados insuficientes");
+  else (AVAILABLE)
+    :Score, faixa em texto, seta de variação\ne stale quando passou de 24 h;
+  endif
+  :tip = dica local pela dimensão v2 mais fraca\n(engajamento/tendência; sem base = neutro 50);
+  if (withAi = true?) then (sim)
+    |Banco/IA|
+    :AiEngine.text (STYLE_ADVISOR): uma dica de até\n2 frases, sem juízo de qualidade e sem marcas;
+    if (IA respondeu?) then (não)
+      :Mantém a dica local;
+    endif
+    |API e serviços|
+  endif
+  :magazineCover.unlocked = faixa ≥ TRENDING;
+endif
+:Histórico (até 60 dias, DailyLookService.history)\n+ feedbackReminder (pendente e depois das 18 h);
+|Frontend|
+:Painel na versão escolhida (6 versões visuais, mesmo número v2)\n+ HypeInline (análise completa) + LookExports (capa);
+:Cada linha do histórico pede o HypeBadge em lote\n(GET /api/hype/summaries?type=SCHEME&ids=);
+|Pessoa|
+if (Ação?) then (avaliar o look)
+  |Frontend|
+  :PUT /api/me/daily-looks/{date}/feedback\n{ADOREI | NAO_USEI | NAO_GOSTEI};
+  note right: alimenta o PreferenceModel do\nAutopiloto (RF43); sem look na data = 404 SEM_LOOK_DO_DIA
+elseif () then (trocar a versão do painel)
+  |Frontend|
+  :PUT /api/me/hype-panel-version {version}\n(users.look_do_dia_panel_version);
+else (pedir dica com IA)
+  |Frontend|
+  :Marca a caixa → novo GET ?withAi=true;
+endif
+stop
+@enduml

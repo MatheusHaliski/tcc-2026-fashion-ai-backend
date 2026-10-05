@@ -1,5 +1,5 @@
 @startuml RF25_Atividades
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de atividades
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de atividades — aba Selos (criar, editar, ativar) e política de promoção do perfil emissor
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,42 +23,74 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Marca/Celebridade|
+|Pessoa|
 start
-:Abre o próprio perfil (RF14/RF22)\n→ aba "Selos";
-if (É o dono do perfil?) then (não)
-  :Vê só os selos públicos\n(disponíveis ou não, com motivo);
-  stop
-else (sim)
-endif
-:Toca em "Novo selo" ou "Editar";
-:Preenche nome, tipo (PEÇA/LOOK),\npolítica, limite de emissões e status;
-:Monta o medalhão no catálogo de desenhos\n(forma, cores, ícone) ou envia a arte;
-:Define a janela de validade\n"Disponível a partir de" / "Expira em";
-|Sistema (SealService)|
-if (Fim antes do início?) then (sim)
-  #FFE3E3:400 PERIODO_INVALIDO;
-  stop
-endif
-:Salva o selo (MySQL · seals)\ne audita a alteração;
-|Marca/Celebridade|
-:Aba "Promoções" → "Nova promoção";
-:Escolhe tipo, título, regras, desconto,\ncota, limite por pessoa, período,\nselo exigido e link da loja externa;
-|Sistema (SealService)|
-:Salva a promoção (MySQL · promotions);
-|Usuário comum|
-:Publica um look compatível com a política;
-|Sistema (SealService)|
-:SealBond Matcher (IA RF24) sugere o vínculo;
-:A marca aprova o vínculo (RF20/RF21);
-if (Selo dentro da janela e com emissões?) then (sim)
-  :Emite o selo no look\n(seal_bonds APPROVED);
-  :Publica CouponRightsCheck (AFTER_COMMIT);
-  |Sistema (CouponService)|
-  :Cria o direito ao cupom (coupon_rights)\ne notifica "Parabéns! Deseja resgatar o CUPOM?";
-  note right: o resgate segue no RF38
+:Abre o perfil /brands/[slug] (RF14/RF22) → aba "Selos";
+|Frontend|
+:GET /api/users/{ownerId}/seals;
+|Serviço|
+if (Quem vê é o dono ou admin?) then (sim)
+  :SealService.sealsOf(ownerId): todos os selos;
 else (não)
-  :Selo indisponível (motivo exibido);
+  if (Emissor aprovado e ativo (sellerActive)?) then (não)
+    :Lista vazia;
+  else (sim)
+    :Só os selos ACTIVE;
+  endif
 endif
+:sealViews(): design, policy, available,\nunavailableReason, emissões e o "Hype do selo"\n(média do HypeScore v2 dos vínculos aprovados);
+|Frontend|
+if (Lista vazia?) then (sim)
+  :EmptyState "Nenhum selo ainda";
+else (não)
+  :Cards: SealMedallion + nível + disponível/motivo\n+ SealHypeStat + frase da política;
+endif
+|Pessoa|
+if (É o dono do perfil?) then (não)
+  :Só consulta (o vínculo do selo ao look é no RF20/RF21);
+  stop
+endif
+if (O que fazer?) then (Novo selo / Editar)
+  :SealWizard em 4 passos: modo (com/sem IA) → dados\n(nome, nível, política, validade, limite) → arte → revisar\n(detalhes em RF25-criador-de-selos);
+  |Frontend|
+  :POST /api/seals ou PUT /api/seals/{id}\n{name, tier, policy, design, availableFrom/Until, usageLimit, status};
+  |Serviço|
+  if (Perfil institucional aprovado (requireIssuer)?\nE, na edição, é o dono do selo?) then (não)
+    #FFE3E3:403;
+    stop
+  endif
+  :applySeal(): nome 2–160; nível (padrão LOOK);\nSealPolicies.normalize → policyText gerado;\nSealDesigns.normalize; OwnMedia nas imagens;\npremium = perfil CELEBRIDADE;
+  if (Validações?) then (falhou)
+    #FFE3E3:400 SELO_DESIGN_INVALIDO · PERIODO_INVALIDO ·\nLIMITE_INVALIDO (< 1) · campo obrigatório;
+    |Frontend|
+    :toast com o erro; o assistente continua aberto;
+    stop
+  endif
+  |Banco|
+  :INSERT/UPDATE seals (background_config_json =\n{design, policy}) + audit SELO_EDITADO;
+  |Frontend|
+  :201/200 → fecha o diálogo e recarrega a lista;
+elseif (Ativar / Desativar) then
+  |Frontend|
+  :PUT /api/seals/{id} com status ACTIVE ⇄ INACTIVE;
+  note right: inativo não emite; promoção\nligada a ele fica indisponível
+else (Criar promoção)
+  |Pessoa|
+  :Aba "Meus cupons promocionais" → "Criar promoção"\n(tipo, título, regras, desconto, selo exigido,\nperíodo, estoque, limite por pessoa, link da loja);
+  |Frontend|
+  :POST /api/promotions ou PUT /api/promotions/{id};
+  |Serviço|
+  :SealService.applyPromotion();
+  if (Regras da promoção?) then (falhou)
+    #FFE3E3:400 TIPO_OBRIGATORIO · TIPO_INVALIDO (marca: 6 tipos) ·\nDESCONTO_INVALIDO (1–90 %) · SELO_INATIVO ·\nPERIODO_INVALIDO · PARCEIRA_INVALIDA · LINK_INVALIDO (só https)\n409 PARCERIA_NAO_AUTORIZADA;
+    stop
+  endif
+  |Banco|
+  :INSERT/UPDATE promotions (status AVAILABLE,\nrequiredSealKind BRAND_SEAL | PREMIUM_SEAL, perUserLimit ≥ 1);
+  |Frontend|
+  :Pausar/retomar: PUT /api/promotions/{id}/status\n(AVAILABLE ⇄ REVOKED);
+endif
+|Serviço|
+:Quando um look/peça recebe o selo (RF20/RF21 · issue):\nemissões +1 e evento CouponRightsCheck (AFTER_COMMIT)\n→ direito ao cupom (RF38);
 stop
 @enduml

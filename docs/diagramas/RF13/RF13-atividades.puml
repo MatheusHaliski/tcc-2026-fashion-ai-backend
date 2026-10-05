@@ -1,5 +1,5 @@
 @startuml RF13_Atividades
-title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de atividades — criar o Esquema de DNA (2 a 6 looks), com IA ou manual, até salvar ou publicar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,66 +25,81 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a página "DNA de Estilo" (/dna);
-|Frontend (DnaBuilder)|
-:GET /api/dna-schemes/builder\n(meus esquemas, anatomias A1–A4, narrativas B1–B12);
-|Backend (DnaService)|
-if (Já existe style_dna sintetizado?) then (não)
-  :ensureDna: cria StyleDna e sintetiza a Camada 1\n(DNA Synthesizer · AiEngine RF24, fallback local);
-  :snapshot "GERACAO" em style_dna_versions;
+:Abre "DNA de Estilo" (/dna, só logado)\nou edita um DNA (/dna-schemes/[id]/edit);
+|Frontend (dna/page.tsx · DnaBuilder)|
+:GET /api/dna-schemes/builder;
+|API (DnaController · DnaService)|
+if (Já existe StyleDna sintetizado?) then (não)
+  :ensureDna cria o StyleDna e sintetiza a Camada 1:\nAiEngine.local(DNA_SYNTHESIZER) → LocalDnaSynthesizer\n(arquétipo, paleta, estilos, silhueta, peça-ícone)\n+ frase de identidade por AiEngine.text (ou local);
+  |Banco/IA (MySQL · AiEngine)|
+  :INSERT style_dna + style_dna_versions ("GERACAO");
 else (sim)
-  if (interações desde a síntese >= 10?) then (sim)
-    :Re-sintetiza ("EVOLUCAO") e notifica\nAI_JOB_FINISHED "Sua identidade evoluiu";
-  else (não)
-  endif
 endif
+|API (DnaController · DnaService)|
+:Lista os looks do próprio usuário que não estão ARCHIVED;
 note right
-  RN: sem pré-requisito de desbloqueio;
-  10 peças e 5 looks "adorei" só deixam
-  a síntese mais precisa (precisionNote)
+  Sem pré-requisito de desbloqueio: 10 peças e 5 looks
+  "adorei" só deixam a síntese mais precisa. A re-síntese
+  "EVOLUCAO" (10 interações novas) roda em GET /api/me/dna,
+  hoje chamado só pela aba Histórico › Evolução do estilo.
 end note
-|Pessoa|
-:Escolhe o modo de criação;
-if (Modo IA?) then (sim)
-  |Frontend (DnaBuilder)|
-  :POST /api/dna-schemes/compositions\n(prompt, ocasião, estilo, narrativa, estação);
-  |Backend (DnaService)|
-  :DNA Synthesizer propõe até 3 DNAs\n(2 a 6 esquemas do próprio usuário);
-  |Pessoa|
-  :Escolhe uma proposta;
-else (não)
-  |Pessoa|
-  :Seleciona de 2 a 6 esquemas (células CELL_1..CELL_6),\nrótulo de época e marcos;
-endif
-:Define título, layout do card (AMPLIADO/GRADE/HORIZONTAL/LATERAL),\nnarrativa, visibilidade e fundo (Background Studio, RF11);
-|Frontend (DnaBuilder)|
-:POST /api/dna-schemes/preview (pré-visualização sem salvar);
-|Pessoa|
-if (Confirma?) then (não)
+if (Menos de 2 looks?) then (sim)
+  |Frontend (dna/page.tsx · DnaBuilder)|
+  :Estado vazio "Crie esquemas de vestimenta primeiro"\ncom atalho para /schemes/new;
   stop
-else (sim)
-endif
-|Frontend (DnaBuilder)|
-:POST /api/dna-schemes (ou PUT /api/dna-schemes/{id});
-|Backend (DnaService)|
-:guard.requireCanCreate + stamp(arquétipo, ousadia,\nfrase e paleta copiados do StyleDna);
-:Grava dna_schemes (status DRAFT, creationMode MANUAL/AI_ASSISTED)\ne dna_scheme_items;
-if (publish = true?) then (sim)
-  :status = PUBLISHED, publishedAt = agora;
 else (não)
 endif
-:Atualiza style_dna.latest_dna_scheme_id;
-|Frontend (DnaBuilder)|
-:Exibe o card de identidade de moda\n(anatomia_cards_DNA_v4_1);
 |Pessoa|
-if (Quer compartilhar o card?) then (sim)
-  |Backend (DnaService)|
-  :POST /api/me/dna/share-card → PNG 1080x1350\ncom marca d'água "Fashion AI", válido 30 dias;
-  note right
-    RN07: campos de vida marcados como
-    privados nunca aparecem na imagem
-  end note
+if (Etapa 1 — modo?) then (IA)
+  :Escreve o pedido e escolhe ocasião, estilo,\nnarrativa e estação (opcionais);
+  |Frontend (dna/page.tsx · DnaBuilder)|
+  :POST /api/dna-schemes/compositions;
+  |API (DnaController · DnaService)|
+  :Contexto: até 40 looks com peças, marcas, cores, datas\ne HypeScore v2 PESSOAL (sem dados = null, nunca 0);
+  |Banco/IA (MySQL · AiEngine)|
+  :AiEngine.text(DNA_SYNTHESIZER) pede até 3 propostas;\nsem IA remota → localProposals (motor local);
+  |Pessoa|
+  :Escolhe uma proposta (vai para a etapa 2 preenchida);
+else (manual)
+endif
+:Etapa 2 — marca de 2 a 6 looks (células CELL_1..CELL_6),\nordem, rótulo de época e um marco opcional;
+:Etapa 3 — título, ocasião, estilo, elemento-alvo\n(DNA_COMPLETO ou ESQUEMA), estação e visibilidade;
+:Etapa 4 — Background Studio (RF11): anatomia A1–A4\n(AMPLIADO, GRADE, HORIZONTAL, LATERAL) ou narrativa B1–B12,\ncor, Aura & Material, skin, container;
+note right
+  B10 HYPE_FOCUS: medidores em HypeScore v2,
+  maior Hype primeiro e "sem dados" por último.
+  B11 CARTELA_SAZONAL: cartela e animação no modal
+  (RF11_Atividades_Cartela).
+end note
+|Frontend (dna/page.tsx · DnaBuilder)|
+:Prévia ao vivo: POST /api/dna-schemes/preview\n(debounce 250 ms; nada é gravado);
+|Pessoa|
+:Etapa 5 — Salvar ou Publicar;
+|Frontend (dna/page.tsx · DnaBuilder)|
+:POST /api/dna-schemes (ou PUT /api/dna-schemes/{id})\ncom cells, cardLayout, targetElement, narrativeType,\nseasonalTheme, visibility, background {..., skin}, publish;
+|API (DnaController · DnaService)|
+if (E-mail não confirmado ou conta bloqueada?) then (sim)
+  #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA;
+  stop
+elseif (Título, layout, alvo ou narrativa inválidos?) then (sim)
+  #FFE3E3:400 CAMPO_INVALIDO · LAYOUT_INVALIDO ·\nALVO_INVALIDO · NARRATIVA_INDISPONIVEL;
+  stop
+elseif (Células fora de 2–6, look repetido ou 2 marcos?) then (sim)
+  #FFE3E3:400 CELULAS_INVALIDAS · ESQUEMA_REPETIDO · MARCO_UNICO;
+  stop
+elseif (Algum look não é da pessoa?) then (sim)
+  #FFE3E3:403 (acesso negado, auditado);
+  stop
+else (ok)
+endif
+:Na criação, stamp copia arquétipo, ousadia, frase\ne paleta do StyleDna para o esquema;
+|Banco/IA (MySQL · AiEngine)|
+:INSERT/UPDATE dna_schemes (novo = DRAFT, creationMode\nMANUAL/AI_ASSISTED) + dna_scheme_items;\nstyle_dna.latest_dna_scheme_id (na criação);
+if (publish = true?) then (sim)
+  :status PUBLISHED, published_at = agora;
 else (não)
 endif
+|Frontend (dna/page.tsx · DnaBuilder)|
+:201 DnaView → tela de sucesso; o card fica na sub-aba\n"Meus looks DNA" do Lookbook (GET /api/me/dna-schemes);
 stop
 @enduml

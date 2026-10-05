@@ -522,4 +522,3 @@ Especificação completa, agrupada (108 requisitos, 22 entregáveis, fases P1–
     primeira mudança de arquitetura;
   - as abas `stores | wardrobe | saved` devem ser reavaliadas como modos ou painéis.
 - **Teste crítico:** Nike → Sneakers → Air Max → Vista-me → Voltar retorna exatamente ao mesmo contexto.
-

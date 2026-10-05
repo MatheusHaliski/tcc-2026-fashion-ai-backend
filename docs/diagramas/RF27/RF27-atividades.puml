@@ -1,5 +1,5 @@
 @startuml RF27_Atividades
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de atividades
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de atividades — abrir o quarto, ver o estado do acervo e agir sobre as peças
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,41 +23,52 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Meu Guarda-Roupa → "Meu Quarto";
-|Sistema (RoomService)|
-:Carrega o layout do nível (Estreia…Maison)\ne endereça cada peça (Porta 2, Gaveta 4 · Jeans);
-:Calcula estados: esquecida (poeira),\nindisponível (cesto), favorita (cabide especial),\nPeça Ícone (vitrine), esquemas (caixas no maleiro);
-if (WebGL disponível?) then (sim)
-  |Usuário|
-  :Quarto 3D: câmera 3/4 limitada,\nabre portas e gavetas;
+:Abre o menu **Meu Quarto** (/room)\nou "Mostrar no quarto" (/room?piece={id});
+|Frontend (room/page.tsx)|
+:GET /api/me/room · GET /api/me/room/list\n· GET /api/me/mirror;
+|Serviço (RoomService)|
+:layout(userId): cria room_layouts na 1ª vez\n(nível pelos FAI Points vitalícios, 6 rótulos de gaveta)\ne acrescenta os módulos liberados pelo nível;
+:entries(): peça sem endereço ganha posição automática\n(porta/cabide, gaveta pela categoria, base, sapateira…);
+if (Há posição livre compatível?) then (sim)
+  :Grava room_storage_map (assigned_by = AUTO);
 else (não)
-  :Visão 2.5D / Lista (fallback);
+  :Vai para a **Cadeira** (chair:n);
+  note right: o cadastro de peça nunca é bloqueado
 endif
-|Usuário|
-split
-  :Toca numa peça → ficha / etiqueta costurada;
-split again
-  :Renomeia gaveta / monograma / luz guiada;
-  |Sistema (RoomService)|
-  :Salva em room_layouts;
-split again
-  |Usuário|
-  :"Organizar" → prévia (com ou sem IA);
-  |Sistema (RoomService)|
-  :Gera movimentos e rótulos;
-  |Usuário|
-  if (Aplicar?) then (sim)
-    |Sistema (RoomService)|
-    :Aplica e guarda o mapa anterior\n(permite desfazer);
+:statesOf(peça) → marcadores do ambiente:\nINDISPONIVEL (cesto) · ESQUECIDA (60+ dias sem uso)\nFAVORITA · ICONE (Peça Ícone do DNA) · A_VENDA (arara)\nLOOK_DO_DIA · CADEIRA · FORA_DE_ESTACAO · CROQUI · 30_USOS · GARIMPO;
+:Monta a resposta: módulos e peças por endereço,\ncaixas de look no maleiro, luzes do closet (Inventory Score),\nunboxing, decorações de desafios, chaves e ambiente;
+|Frontend (room/page.tsx)|
+if (Erro ao carregar?) then (sim)
+  #FFE3E3:ErrorState com "Tentar de novo";
+  stop
+endif
+if (Navegador tem WebGL?) then (sim)
+  :Abre a aba **Quarto 3D** (RoomScene,\ncâmera 3/4 limitada);
+else (não)
+  :Abre a aba **2.5D**\n(mesmas ações, sem cena 3D);
+endif
+note right: a aba **Lista** (acessível) fica sempre disponível
+|Frontend (room/page.tsx)|
+switch (Ação da pessoa no quarto)
+case (toca numa peça)
+  :GET /api/pieces/{id}/tag\n(etiqueta: composição, custo por uso,\ndiário de uso e onde está);
+case (move a peça)
+  :PUT /api/pieces/{id}/room-address\n{address: "drawer:4", "door:2/hanger:3"…};
+  if (RoomService.move aceita?) then (sim)
+    :Grava assigned_by = USER e mostra\nse a posição é coerente com a peça;
   else (não)
+    #FFE3E3:400 ENDERECO_INVALIDO / POSICAO_INVALIDA\nou 409 MODULO_INDISPONIVEL / GAVETA_CHEIA (6)\n/ POSICAO_OCUPADA;
   endif
-split again
-  |Usuário|
-  :Caixa de entrega (item comprado);
-  |Sistema (RoomService)|
-  :Monta sozinho no módulo compatível\n(guarda-roupa inteiro → todos os blocos);
-end split
+case (renomeia gaveta)
+  :PUT /api/me/room/drawers/{n}\n(rótulo até 24 caracteres; vazio volta a "Gaveta n");
+  :Servidor publica RoomOrganized\n(+20 FAI Points, no máximo 1 por semana);
+case (organiza)
+  :Prévia com ou sem IA, aplicar e desfazer\n— ver RF27_Atividades_Organizar;
+case (outras ações)
+  :Vista-me no espelho do quarto (RF28),\ncaixa de entrega → aplicar item comprado (RF30),\nluz guiada (nível STUDIO; senão 409 NIVEL_INSUFICIENTE),\ndar a chave do quarto, modo foto (JPG no navegador);
+endswitch
+:Recarrega /api/me/room e a lista;
 stop
 @enduml

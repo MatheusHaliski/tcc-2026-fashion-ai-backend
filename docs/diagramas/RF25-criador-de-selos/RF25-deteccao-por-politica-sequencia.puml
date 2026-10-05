@@ -1,5 +1,5 @@
 @startuml RF25_Deteccao_Politica_Sequencia
-title RF25 — Política padronizada do selo usada na detecção dentro dos criadores de peça (RF4) e de look (RF5)\nDiagrama de sequência
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de sequência — política padronizada (com critério de Hype) detectada nos criadores de peça (RF4) e de look (RF5) e emissão do selo
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -10,35 +10,86 @@ skinparam sequence {
   ActorBackgroundColor #F8F4FF
   GroupBackgroundColor #FFF5F8
 }
+autonumber
 actor "Pessoa usuária" as P
-participant "Criador de peça (RF4)\nou de look (RF5)" as F
+participant "scheme-builder.tsx (RF5)\npiece-form.tsx (RF4)" as F
 participant "SealController" as C
 participant "SealService" as S
+participant "AiEngine" as AI
+participant "HypeQueryService" as H
 participant "SealPolicies" as POL
-database "MySQL\nseals · seal_bonds" as DB
+database "MySQL\nseals · seal_bonds · hype_scores" as DB
 actor "Emissor" as E
 
-P -> F : monta a peça / escolhe as peças do look
-F -> C : POST /api/seal-suggestions/preview(-piece)\n{peças | campos da peça, ocasiões, estilos}
-C -> S : preview / previewPiece
-S -> DB : selos ACTIVE (findByStatus)
-loop cada selo ativo com política e dentro da validade
-  S -> POL : parse(policy)
-  alt nível PEÇA
-    S -> POL : evaluate(policy, PECA, [peça], ocasiões, estilos)
-  else nível LOOK
-    S -> POL : evaluate(policy, LOOK, peças, ocasiões, estilos)
+group Prévia no criador (nada é gravado)
+  P -> F : escolhe as peças do look (ou preenche a peça)
+  alt look (RF5)
+    F -> C : POST /api/seal-suggestions/preview {pieceIds, occasion, style}
+    C -> S : preview(user, pieceIds, occasion, style)
+    S -> H : currentOf(PIECE, peças) — o look ainda não tem Hype
+  else peça ainda não salva (RF4)
+    F -> C : POST /api/seal-suggestions/preview-piece\n{name, category, subcategory, color, brandName, occasion, style}
+    C -> S : previewPiece(user, PieceFields)
+    note right of S : sem Hype: selo com critério\nde Hype não é sugerido aqui
   end
-  POL --> S : Verdict(matched, pieceIds, why)
+  S -> AI : local(SEALBOND_MATCHER, inputsUsed, candidates)
+  AI -> S : engine.get() → candidates() → policyCandidates()
+  S -> DB : seals ACTIVE (findByStatus)
+  loop selo com política e available(seal, agora)
+    S -> POL : parse(background_config_json.policy)
+    alt nível PEÇA
+      S -> POL : evaluate(policy, PECA, [cada peça], ocasiões, estilos, hype)
+    else nível LOOK
+      S -> POL : evaluate(policy, LOOK, peças, ocasiões, estilos, hype)
+    end
+    POL --> S : Verdict(matched, pieceIds, why)
+  end
+  S -> S : 1 candidato por emissor (confiança 0,97,\n"atende: <frase da política>") + marcas/celebridades\npor semelhança; ordena por Hype (RF53)
+  AI -> DB : INSERT ai_inference_log (SUCCESS, local)
+  S --> F : {suggestions[], unregisteredBrands, message}
+  F --> P : selos possíveis (celebridade pede consentimento de imagem)
 end
-S --> F : candidatos (1 por emissor, confiança 0,97,\n"atende: <frase da política>")
-F --> P : selos sugeridos no criador
-P -> F : salva o look com os selos escolhidos
-F -> C : POST /api/schemes … (vínculos sugeridos)
-C -> S : route(bond) → sealFor(emissor, tier)
-S -> DB : seal_bonds SUGGESTED (selo da política)
-S --> E : notificação para revisar o vínculo
-E -> C : aprova (RF20/RF21)
-C -> S : issue(bond)
-S -> DB : seal_bonds APPROVED · emissões +1
+
+group Salvar o look e pedir os vínculos
+  P -> F : salva/publica o look com os selos marcados
+  F -> C : POST /api/schemes (ou PUT /api/schemes/{id})
+  loop cada emissor marcado
+    F -> C : POST /api/schemes/{id}/seal-bonds {targetOwnerId, imageRightsConsent}
+    C -> S : linkManually(user, schemeId, targetOwnerId, consent)
+    alt perfil pessoal, marca não validada ou celebridade não verificada
+      S --> F : 400 PERFIL_INVALIDO | MARCA_NAO_VALIDADA |\nCELEBRIDADE_NAO_VERIFICADA (o look continua salvo)
+    else vínculo já pendente/aprovado
+      S --> F : 409 VINCULO_EXISTENTE
+    else ok
+      S -> DB : INSERT seal_bonds (origin MANUAL, status EDITED)
+      S -> S : route(): sealFor(emissor, nível, look)\n= 1º selo ativo cuja política o look atende
+      alt celebridade sem consentimento de imagem
+        S --> F : 400 CONSENTIMENTO_IMAGEM
+      else selo indisponível (inativo, fora da janela, esgotado)
+        S -> DB : seal_bonds REJECTED (motivo)
+        S --> F : 409 SELO_INDISPONIVEL
+      else celebridade ou marca que exige revisão
+        S -> DB : seal_bonds PENDING_REVIEW
+        S -> E : notificação SEAL_BOND_REVIEW
+      else marca sem revisão
+        S -> S : issue(bond) — selo emitido na hora
+      end
+    end
+  end
+end
+
+group Revisão pelo emissor (RF20/RF21)
+  E -> C : POST /api/seal-bonds/{id}/review {approve, reason}
+  C -> S : review(user, bondId, approve, reason)
+  alt aprovar
+    S -> S : issue(bond)
+    S -> DB : seal_bonds APPROVED (sealCode, issuedAt, expiresAt)\nseals.usageCount + 1; schemes.seal_ids_json
+    S -> P : notificação SEAL_GRANTED
+    S ->> S : publica CouponRightsCheck (CouponService, AFTER_COMMIT)
+  else rejeitar sem motivo
+    S --> E : 400 MOTIVO_OBRIGATORIO
+  else rejeitar
+    S -> DB : seal_bonds REJECTED (reviewNote)
+  end
+end
 @enduml

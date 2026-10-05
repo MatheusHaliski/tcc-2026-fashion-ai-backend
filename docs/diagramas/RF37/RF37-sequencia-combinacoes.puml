@@ -1,0 +1,74 @@
+@startuml RF37_Sequencia_Combinacoes
+title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de sequência — combinação da loja → checklist do deck → cupom FLR → validação no caixa
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Loja\n(marca/celebridade)" as L
+actor Jogador as J
+participant "brands/[slug]/page.tsx\n→ BrandFlairTab" as BFE
+participant "flair/page.tsx\n(aba Lojas / Carteira)" as FE
+participant "FlairController" as C
+participant "FlairService" as S
+participant "Guard" as G
+participant "InstitutionalService" as INST
+database "MySQL" as DB
+== A loja publica a combinação ==
+L -> BFE: perfil → aba FLAIR → nova combinação
+BFE -> C: GET /api/institutional/{slug}/flair
+C -> S: brandTab(viewer, slug)
+S -> INST: institutionalUser(slug)
+S --> BFE: {admin, combinations, redemptions, stats, gameTypes}
+BFE -> C: POST /api/flair/brand/combinations {name, gameType, requiredCategories,\nrequiredStyles, requiredOccasions, minBrandPieces, minDeckPower, minRarity,\nminWins, couponTitle, discountPercent | discountAmount, validDays, stock, storeUrl…}
+C -> S: saveCombination(user, null, CombinationForm)
+S -> G: requireApprovedInstitutional(user, "flair:combinations")
+alt não é marca/celebridade aprovada e ativa
+  G --> BFE: 403
+else gameType inválido · sem requisito · sem desconto
+  S --> BFE: 400 TIPO_INVALIDO · SEM_REQUISITOS · DESCONTO_OBRIGATORIO
+else ok
+  S -> DB: INSERT flair_combinations (active, validDays 7–120,\nminWins ≥ 1 só no DUELO_PATROCINADO)
+  S --> BFE: combinationView
+end
+note over BFE, C: PUT /api/flair/brand/combinations/{id} edita (403 se é de outra loja);\nDELETE apaga, ou só desativa quando já há cupons emitidos
+== O jogador confere o checklist ==
+J -> FE: aba Lojas
+FE -> C: GET /api/flair/combinations
+C -> S: combinationsFor(user)
+S -> DB: SELECT flair_combinations WHERE active (loja ativa e aprovada)
+S -> S: para cada deck: check(c, deck, guarda-roupa) →\nCATEGORY · STYLE · OCCASION · BRAND · POWER · RARITY · WINS
+S --> FE: [{…, bestDeck, checks[], complete, redemption}]
+J -> FE: Trocar pelo cupom
+FE -> C: POST /api/flair/combinations/{id}/redeem?schemeId=…
+C -> S: redeem(user, id, schemeId)
+alt inativa · fora de startsAt/endsAt · estoque esgotado · loja inativa
+  S --> FE: 409 COMBINACAO_INDISPONIVEL
+else já tem cupom desta combinação
+  S --> FE: 409 CUPOM_JA_EMITIDO
+else requisitos não batem
+  S --> FE: 422 COMBINACAO_INCOMPLETA {checks}
+else completa
+  S -> DB: INSERT flair_redemptions (code FLR-XXXX-XXXX, status EMITIDO,\nexpiresAt = agora + validDays) · UPDATE flair_combinations.redeemed
+  S -> DB: INSERT flair_coin_entries (REDEMPTION, +50 de rank)
+  S --> FE: redemptionView → VoucherDialog
+end
+J -> FE: Carteira
+FE -> C: GET /api/flair/vouchers
+note right of FE: o mesmo cupom aparece em /coupons\n(Meus cupons resgatados, RF38)
+== No caixa ==
+L -> BFE: digita o código FLR-…
+BFE -> C: POST /api/flair/brand/redemptions/validate {code}
+C -> S: validateCode(user, code)
+alt código de outra loja ou inexistente
+  S --> BFE: 404 Cupom
+else já usado · expirado
+  S --> BFE: 409 CUPOM_USADO · 409 CUPOM_EXPIRADO
+else válido
+  S -> DB: UPDATE flair_redemptions SET status = USADO, used_at
+  S --> BFE: redemptionView
+end
+@enduml

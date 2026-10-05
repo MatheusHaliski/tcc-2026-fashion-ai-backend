@@ -1,6 +1,6 @@
 @startuml RF11_MaquinaDeEstados_Arte
 !pragma layout smetana
-title RF11 — Arte do card do esquema (Scheme · containerOrigin): do padrão ao rascunho do modal e à arte aplicada
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de máquina de estados — arte gravada no look (Scheme) e origem da cor do container
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,34 +8,49 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Padrão\n(#F4F2EF, sem arte, NONE)" as Padrao
-state "Rascunho no modal\n(só no frontend, nada gravado)" as Rascunho
-state "Aplicada" as Aplicada {
+state "Padrão" as Padrao
+Padrao : background_color #F4F2EF, sem gradiente nem arte
+Padrao : animação NONE · studio_config_json nulo
+state "Rascunho no construtor" as Rascunho
+Rascunho : só no frontend (bg, skin, anatomia)
+Rascunho : nada vai ao banco
+state "Arte gravada" as Gravada {
   state "INDEFINIDA" as Indef
+  Indef : container com a cor nativa do skin
   state "MANUAL" as Manual
-  state "AUTO\n(containerMandatory = true)" as Auto
+  Manual : container.color escolhido
+  state "AUTO (travado)" as Auto
+  Auto : containerMandatory = true
+  Auto : cor nativa da direção recomendada
+  [*] --> Indef
+  Indef --> Manual : salvar com container.color
+  Manual --> Indef : salvar com container.color vazio
+  Indef --> Auto : salvar com applyRecommendedDirection = true
+  Manual --> Auto : idem (cardSkin da direção)
+  Auto --> Auto : cor diferente no container\n→ 409 CONTAINER_TRAVADO
 }
 
 [*] --> Padrao : esquema criado sem fundo
-Padrao --> Rascunho : abre o Background Studio\n(etapa 4 ou "Editar arte")
-Aplicada --> Rascunho : reabre o Background Studio
-Rascunho --> Rascunho : modos 1 · 2 · 3 em qualquer ordem\nPOST /api/backgrounds/art · uploads\nPOST /api/schemes/preview
-Rascunho --> Padrao : cancelar (0 pedidos)
-Rascunho --> Indef : salvar sem cor de container\nPOST/PUT /api/schemes · PUT /api/schemes/{id}/background
-Rascunho --> Manual : salvar com container.color
-Rascunho --> Auto : salvar com applyRecommendedDirection = true
-Manual --> Indef : container.color vazio
-Auto --> Auto : cor diferente no container\n409 CONTAINER_TRAVADO
-Aplicada --> Padrao : DELETE /api/schemes/{id}/background\n(resetScheme — CA05)
+[*] --> Rascunho : etapa 4 do Criar Look
+Padrao --> Rascunho : Editar look (/schemes/[id]/edit)
+Gravada --> Rascunho : Editar look
+Rascunho --> Rascunho : segmentos, arte com IA (POST /api/backgrounds/art),\nprévia PNG; salvar com 400/409 não grava nada
+Rascunho --> Padrao : salvar um look novo sem arte\n(o padrão da entidade fica)
+Rascunho --> Gravada : POST /api/schemes · PUT /api/schemes/{id}\n→ applyToScheme válido
+Gravada --> Padrao : DELETE /api/schemes/{id}/background\n(resetScheme; API sem tela)
+Gravada --> [*] : esquema excluído (RF9)
 
 note right of Auto
-  A direção recomendada define cardSkin e a cor
-  nativa do container; resetScheme mantém o
-  container travado (containerMandatory)
+  A trava vem de applyRecommendedDirection = true (aceito em
+  POST/PUT /api/schemes e PUT /api/schemes/{id}/background).
+  O construtor atual nunca envia esse campo: "Aplicar
+  recomendada" só copia aura, material e skin para o rascunho.
+  resetScheme mantém AUTO quando o container é obrigatório.
 end note
 note left of Rascunho
-  Peça (modo 3): PUT /api/pieces/{id}/background
-  grava backgroundConfigJson com rev + 1;
-  baseRev antigo → 409 ARTE_ALTERADA
+  A peça segue outro ciclo: background_config_json
+  com "rev"; cada PUT /api/pieces/{id}/background
+  grava rev + 1 e baseRev antigo → 409 ARTE_ALTERADA
+  (ver RF11_Sequencia_Peca).
 end note
 @enduml

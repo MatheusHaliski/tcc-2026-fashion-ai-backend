@@ -38,15 +38,28 @@ Requisito e critérios de aceite: [`RF53_HypeScore_v2.md`](../novos-rf/RF53_Hype
 | Contexto do Copilot | `RecommendationScoring`, `StyleCompatibility`, `CopilotService.hypeAnswer/scoreLooks` | Hype como contexto, nunca critério único |
 | UI | `components/fashion-card.tsx`, `components/hype/*`, `lib/hype/*` | frente/verso, estados, análise completa |
 
-### Convivência com o v1 (RF6)
+### Fim do v1 (RF6) — limpeza final P3-16
 
-O `HypeScoreService` (v1: `0,65·E_norm + 0,35·T_norm`) ainda escreve as colunas `hype_score`/`hype_score_global` das
-entidades. O v2 grava **só** nas tabelas novas, sempre com `algorithm_version`, então as duas séries nunca se misturam.
-Depois dos lotes 1–9 da auditoria de abas, as telas leem o v2: cards, Histórico, Insights, guarda-roupa, Meus looks,
-Em alta, Ranking, Globo, feed, busca, Passarela 3D, vitrines, painel do Look do Dia (bloco `v2`), DNA, FLAIR, painéis e
-Copilot/Autopiloto. Ainda exibem números v1 as telas Marcas & lojas e Insights globais do Explorador e o painel lateral
-do país no globo (`avg_hype` por estação); o backend de Marcas & lojas e Insights globais já envia o v2, e a troca na
-tela é o Lote A3. Os campos v1 das views ficam como deprecados até a limpeza final (P3-16, §15).
+O v1 (`0,65·E_norm + 0,35·T_norm`, percentis de 90 dias, 7 faixas de juízo "Despretensioso…Ícone de estilo", Top X%
+semanal e HypeGroups com `hypeScoreGlobal`) **saiu do código** no lote Final da auditoria de abas:
+
+* nada mais grava `wardrobe_items.hype_score(_global)`, `schemes.hype_score(_global)`, `hype_group_id`,
+  `dna_schemes.hype_score`, `hype_score_metrics`, `hype_groups` nem os `metric_snapshots` `HYPE_CAL_*`/`HYPE_WEEK_*`. O
+  job agendado do v1 (a cada 4 h) e as entidades/repositórios `HypeScoreMetric`, `HypeGroup`, `MetricSnapshot` e o enum
+  `HypeScoreBand` foram removidos. As **colunas e tabelas ficam no banco** só como histórico (o schema é 100% Flyway e
+  nenhuma migração as apaga; um `DROP` pode vir numa migração futura, depois de exportar o histórico se o time quiser);
+* as views da API (`PieceView`, `PieceRow`, `SchemeView`) e os mapas de Passarela, My Stage, ilha do quarto, histórico
+  do Look do Dia, DNA (`hypeScoreGlobal` das células e o `hype` v1 dos medidores), documento de busca e insights de
+  Eras/Coleções (`topHype`) não levam mais `hypeScore`/`hypeScoreGlobal`;
+* o painel do Look do Dia (`HypeScoreService.panel`) só lê: devolve `v2`, `magazineCover`, `tip` (dica pela dimensão v2
+  mais fraca, local ou da IA) e `previousDailyLook`. Antes a dica saía como `aiSuggestion`, que a tela não lia;
+* Explorador: saíram o filtro `hypeBand` e as faixas `HYPE_BANDS` do painel global, o `avg_hype` (v1) dos países, o
+  "hype por estação" do país (virou `looksBySeason`, só volume), o `hypeMin` numérico e os campos `hypeScore`/`stars`
+  de Marcas & lojas; no admin, o `hypeBands` v1 e as médias `avg_hype` de marcas e países;
+* `GET /api/hype/method` publica só a configuração v2; `GET /api/similarity-groups/global` (HypeGroups v1, sem tela)
+  foi removido; o job "hype" do admin e o atalho `POST /api/admin/hype/recalibration` (RF6.CA10) recalculam só o v2.
+
+O v2 grava só nas tabelas próprias, sempre com `algorithm_version`; uma calibração futura entra como `HYPE_V3` (§15).
 
 ## 2. Dimensões (cada uma 0–100, nunca soma de contagens brutas)
 
@@ -137,8 +150,9 @@ comentário, save, favorito, compartilhamento, remix de peça), `SchemeService` 
 
 A migração faz backfill dos sinais que já tinham data (`reactions`, `comments`, `shares`, `saved_items`,
 `piece_usage_diary`, `daily_looks`, remixes via `original_scheme_id`, aparições via `scheme_items`), sem
-auto-interação. Visualizações não tinham data e começam a contar a partir da V31. Tabelas reaproveitadas, nada
-duplicado: `metric_snapshots`/`hype_score_metrics` continuam do v1 (calibração e painel do Look do Dia).
+auto-interação. Visualizações não tinham data e começam a contar a partir da V31. As tabelas do v1
+(`metric_snapshots`, `hype_score_metrics`, `hype_groups`) e as colunas `hype_score*` ficam só como histórico: desde a
+limpeza P3-16 nada as grava nem as lê (§1).
 
 Migrações seguintes:
 
@@ -163,7 +177,7 @@ Migrações seguintes:
 | `GET /api/me/hype/wardrobe` · alias `GET /api/hype/me/wardrobe` | autenticado | Hype médio, destaques, redescobertas (o alias, citado na especificação, exige login no próprio endpoint porque `/api/hype/**` é GET público) |
 | `GET /api/me/hype/movers?days=90` | autenticado | séries, subiram/caíram, emergentes, novas tendências |
 | `POST /api/admin/hype/snapshots` | admin | recalcula agora |
-| `GET /api/hype/method` | público | v1 + `v2` (configuração ativa) |
+| `GET /api/hype/method` | público | configuração ativa do v2 (dimensões, pesos, faixas, janelas, decaimento); o v1 saiu em P3-16 |
 | `GET /api/me/closet?sort=hype_desc\|hype_asc\|growth\|worn\|least_worn\|rarity\|idle&hypeLevel=HOT&seal=hype\|brand\|any` | autenticado | ordenações, filtro por faixa e filtro "Com selo" (§16) |
 | `GET /api/me/schemes?sort=recent\|hype_desc\|hype_asc\|growth&hypeLevel=` | autenticado | Meus looks pelo Hype pessoal do dono (nulos por último) |
 | `POST /api/schemes/scores {pieceIds, occasion, style}` | autenticado | prévia do editor: os seis números de `RecommendationScoring` para as peças escolhidas; nada é gravado e nenhum sinal é emitido |
@@ -171,7 +185,7 @@ Migrações seguintes:
 | `GET /api/pieces/seals?ids=` | público (visibilidade) | selos de marca/celebridade APPROVED de tier PEÇA que cobrem cada peça (até 60 ids) (§16) |
 | `GET /api/schemes/{id}/seal-suggestions` · `POST /api/seal-suggestions/preview[-piece]` | autenticado | sugestões de selo com `hype {score, level}` da entidade avaliada, ordenadas por Hype (§16) |
 | `GET /api/feed` · `/api/search` · `/api/public-pieces` `?hypeLevel=` | público | faixa mínima do Hype público v2 (lote 1) |
-| `GET /api/hype/groups?type=BRAND\|CREATOR&keys=&window=` | público | **em implementação** (Lote A1; no working tree em 2026-10-05, sem commit): Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id) para os chips da busca, do perfil e de /brands — faixa, valor, itens públicos, `sufficient` (≥ 3) e posição. A rota legada de mesmo caminho (agrupamentos por similaridade, v1) vai para `/api/similarity-groups/global` (deprecada) |
+| `GET /api/hype/groups?type=BRAND\|CREATOR&keys=&window=` | público | Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id) para os chips da busca, do perfil e de /brands — faixa, valor, itens públicos, `sufficient` (≥ 3) e posição (Lote A1). A rota legada de agrupamentos por similaridade v1 foi removida em P3-16 |
 
 O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API). `/api/hype/me/wardrobe` existe só como alias,
 com a checagem de login no controller, porque `/api/hype/**` é público para GET.
@@ -197,6 +211,10 @@ com a checagem de login no controller, porque `/api/hype/**` é público para GE
   leitura em lote simplesmente não o devolve, e o detalhe responde 404.
 * A tendência das "peças semelhantes" usa só sinais de peças públicas; a presença de um modelo entre guarda-roupas é
   um agregado não identificável.
+* **Opt-out de "Criadores em alta"** (P3-12, `user_preferences.hype_creator_opt_out`, V42): em Configurações ›
+  Privacidade a pessoa pode sair do agregado público de criadores — some do ranking (os demais sobem) e o lote de chips
+  devolve a chave dela sem valor, faixa nem posição. Peças e looks públicos dela continuam com o próprio Hype; trocar a
+  opção (`PUT /api/me/preferences`, `hypeCreatorOptOut`) incrementa a geração do `HypeCache` e vai na exportação LGPD.
 
 **Resumo das regras por superfície**
 
@@ -261,7 +279,7 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   por contexto no Explorador (Passarela, Em alta, Ranking, Painel global, Marcas, Insights globais), na Cápsula, no
   Copilot, no Autopiloto, no Histórico, no Guarda-roupa e em Meus looks; "Reescrever com IA" opcional.
 * **Looks**: `LookHypePreview`/`PieceHypeTag` (`components/hype/look-hype-preview.tsx`) no editor; `lookHypeSortOptions()`
-  em Meus looks; `LookScores` compartilhado por Copilot e Autopiloto.
+  em Meus looks; `LookScores` compartilhado por Copilot, Autopiloto e Espelho ("Leitura do look", P3-07).
 * **Painéis** (`components/hype/hype-dashboards.tsx`): `IssuerHypeBlock` (dashboard do emissor), `HypeCoverageTable` e
   `HypeJobStatus` (admin).
 
@@ -284,8 +302,9 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
 
   O Hype nunca passa de 20% do peso; dimensão sem base fica neutra (50) e aparece como "—", nunca 0.
 * O cálculo dos seis números fica no `LookScorer`, compartilhado por Copilot, Autopiloto (que ganhou os três modos e
-  os números em Hoje e Semana), composições da IA no editor e a prévia `POST /api/schemes/scores` (`LookPreviewService`).
-  Os mesmos números aparecem em `LookScores` nas duas telas.
+  os números em Hoje e Semana), composições da IA no editor, a prévia `POST /api/schemes/scores` (`LookPreviewService`)
+  e o Espelho (P3-07: `scores` no estado de `/api/me/mirror` e no Vista-me; só peças do dono, só leitura do Hype gravado).
+  Os mesmos números aparecem em `LookScores` em todas essas telas.
 * "Peça esquecida" tem uma régua só no app inteiro: `RoomService.FORGOTTEN_DAYS` (60 dias desde o último uso ou, se
   nunca usada, desde o cadastro). O Copilot usava 30 dias e contava como esquecida até a peça cadastrada ontem.
 * As sugestões de compra (`purchaseSuggestions`: subcategoria, cor e ganho de combinações, sem marca) passaram a
@@ -307,6 +326,8 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   `SealHypeServiceTest`, `ClosetSealFilterTest`, `SealPromotionFlowTest`, `InstitutionalDisplayPolicyTest` e os testes
   dos lotes 1–9; no frontend, `hype-ranking`, `globe-hype`, `hype-seals`, `insight-strip`, `looks`, `lookbook-hype`,
   `hype-dashboards`, `flair-hype` e `hype-personal-details`.
+* Lote Final (P3-07/P3-12): `MirrorScoresTest`, `HypeCreatorOptOutTest`, `CreatorOptOutPreferencesTest`; no frontend,
+  `app/mirror-settings-hype.test.tsx`.
 * Validação manual: MySQL 8.4 + API + Next com Playwright (screenshots do flip, análise, Histórico, Insights, Em alta).
   Segunda rodada (2026-10-05, V1–V40): [`EVIDENCIAS_E2E.md`](EVIDENCIAS_E2E.md).
 
@@ -323,15 +344,24 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   ("Levi's" × "Levis") ainda contam como marcas diferentes até a peça apontar para o catálogo (RF47).
 * O ranking de marcas e criadores carrega as entidades da população pública numa consulta (volume do TCC); em escala,
   gravar `brand_key` no `hype_scores` durante o job.
+* O dedupe da antimanipulação (save/unsave repetido, rajadas) vive no cache: num reinício ou com várias instâncias sem
+  Redis, sinais repetidos dentro da janela voltam a contar uma vez.
+* As chaves do lote `GET /api/hype/groups` vão separadas por vírgula: um nome de marca com vírgula se parte.
+* Os limiares das faixas são configuráveis no backend (`HypeScoreConfig`), mas o frontend repete os valores padrão
+  (`lib/hype/model.ts`) para nomear a faixa a partir do número; trocar os limiares exige trocar os dois (e o
+  `algorithmVersion`).
 
 ## 15. Próximos passos
 
-1. Lotes adiados da auditoria de abas: A1 (`/api/hype/groups`), A2 (perfil da marca e /brands), A3 (telas do
-   Explorador), A4 (Lookbook › Peças para visitante), A5 (InsightStrip em novos contextos) e a limpeza final do v1
-   (P3-16: parar de escrever `hype_score`, remover os campos das views e as faixas v1).
-2. Calibrar os pesos com dados reais e publicar como `HYPE_V3` (nova série, histórico do v2 preservado).
-3. Antifraude além do mínimo (§10) e rótulo de patrocínio.
-4. `influenceScore` também para peças (looks derivados que usam a peça).
+A auditoria de abas está toda executada, incluindo os lotes adiados A1–A5 e o lote Final (P3-07, P3-12 e a limpeza do
+v1, P3-16) — ver [`HYPE_AUDITORIA_ABAS.md`](HYPE_AUDITORIA_ABAS.md) §5. O que segue aberto:
+
+1. Calibrar os pesos com dados reais e publicar como `HYPE_V3` (nova série, histórico do v2 preservado).
+2. Antifraude além do mínimo (§10: pontos de extensão listados em `HypeIntegrityPolicy`) e rótulo de patrocínio (o bloco
+   "Patrocinado" do Copilot existe, separado, mas ainda não há conteúdo patrocinado).
+3. `influenceScore` também para peças (looks derivados que usam a peça); hoje só looks têm a dimensão de influência.
+4. Persistir o dedupe da antimanipulação fora do cache (tabela ou Redis obrigatório) e agregar ranking/globo por região
+   no job quando o volume passar do TCC.
 
 ## 16. Selos × HypeScore e Selos de Hype FashionAI
 

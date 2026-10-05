@@ -148,7 +148,6 @@ public class DailyLookService {
         m.put("schemeId", dl.getScheme().getId());
         m.put("title", dl.getScheme().getTitle());
         m.put("coverImageUrl", dl.getScheme().getCoverImageUrl());
-        m.put("hypeScore", dl.getScheme().getHypeScore());   // @deprecated v1 — use o Hype v2 pelo schemeId
         m.put("feedback", dl.getFeedback() == null ? null : dl.getFeedback().name());
         m.put("feedbackAt", dl.getFeedbackAt());
         m.put("materialized", dl.getMaterializedFrom() != null);

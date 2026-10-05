@@ -1,0 +1,113 @@
+@startuml RF1_Atividades_Verificacao
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de atividades — verificação de marca e celebridade (fila do administrador e Central do emissor, CA06–CA10)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|API (IssuerReviewService)|
+start
+:Cadastro ou reenvio confirmado (depois do commit):\nnotifyAdmins avisa cada conta ADMIN ativa\n(notificação ISSUER_REVIEW_REQUEST, href /admin/users?tab=approvals)\ne manda e-mail aos ADMIN com e-mail confirmado e a ISSUER_REVIEW_NOTIFY_EMAILS;
+note right
+  Ninguém para avisar → só um aviso no log.
+  O prazo (3 dias úteis; 2 no reenvio) conta da
+  confirmação do e-mail do emissor.
+end note
+|Administrador|
+:Abre /admin/users (aba Aprovações);
+|Frontend (admin/users · AdminApprovals)|
+:GET /api/admin/approvals (só ROLE_ADMIN);
+|API (IssuerReviewService)|
+:queue: pedidos PENDENTE (mais antigo primeiro), pedidos em AJUSTES,\ncritérios e motivos da política 1.0, SLA e limite de 5 envios;
+if (Fila vazia?) then (sim)
+  |Frontend (admin/users · AdminApprovals)|
+  #EEF6FF:Mostra a fila vazia;
+  stop
+else (não)
+endif
+|Frontend (admin/users · AdminApprovals)|
+:Mostra o dossiê: dados do cadastro, verificações automáticas\n(OK, FALHA ou ANALISTA), código de verificação e documentos;
+|Administrador|
+if (Abrir documento?) then (sim)
+  |Frontend (admin/users · AdminApprovals)|
+  :GET /api/admin/approvals/{userId}/documents/{identity | activity-proof};
+  |API (IssuerReviewService)|
+  :Lê restricted/ (sem cache) e audita DOCUMENTO_VERIFICACAO_ABERTO\n(404 sem documento);
+else (não)
+endif
+|Administrador|
+:Marca a checklist e escolhe APROVAR, AJUSTES ou RECUSAR\n(motivos padronizados e observação);
+|Frontend (admin/users · AdminApprovals)|
+:POST /api/admin/approvals/{userId} {decision, reasons, notes, checklist};
+|API (IssuerReviewService)|
+if (Pedido válido?) then (não)
+  #FFE3E3:403 (o próprio perfil) · 400 PERFIL_PESSOAL · 400 DECISAO_INVALIDA\n· 409 FORA_DA_FILA · 400 MOTIVO_INVALIDO;
+  stop
+endif
+if (Decisão?) then (APROVAR)
+  if (E-mail confirmado e todos os critérios obrigatórios atendidos?) then (não)
+    #FFE3E3:409 EMAIL_NAO_CONFIRMADO\nou 409 CRITERIOS_PENDENTES {criteria};
+    stop
+  endif
+  :Perfil APROVADO, identityVerified; marca: documentVerified;\ncelebridade: requiresSealReview;
+  :users.status = ACTIVE e verified = true;\nSealService.ensureDefaultSeals (CA07/CA10);
+  note right: libera o perfil da marca (RF14)\nou da celebridade (RF22)
+else (AJUSTES ou RECUSAR)
+  if (Motivo informado (e observação quando OUTRO)?) then (não)
+    #FFE3E3:400 MOTIVO_OBRIGATORIO\nou 400 OBSERVACAO_OBRIGATORIA;
+    stop
+  endif
+  :Perfil AJUSTES ou RECUSADO, com os motivos;\na conta continua PENDING_VALIDATION;
+endif
+:Grava quem decidiu, quando, observação e checklist;\nnotificação ACCOUNT_APPROVAL (href /brands/{slug}?tab=CENTRAL);\ne-mail ao dono depois do commit;\naudita PERFIL_APROVADO, PERFIL_AJUSTES_SOLICITADOS ou PERFIL_RECUSADO;
+|Dono do perfil (Central do emissor)|
+:Abre a Central do emissor\n(/brands/{slug}?tab=CENTRAL ou /dashboard);
+:GET /api/me/issuer-review → status, motivos, critérios,\ncódigo de verificação, envios (n de 5) e canResubmit;
+if (Status?) then (APROVADO)
+  :Perfil aparece no feed de marcas (RF14)\nou de celebridades (RF22);
+  stop
+elseif (PENDENTE)
+  :Aguarda a análise;
+  stop
+else (AJUSTES ou RECUSADO)
+endif
+if (Menos de 5 envios?) then (não)
+  #FFE3E3:Reenvio indisponível\n(409 LIMITE_DE_ENVIOS se tentar);
+  stop
+endif
+:Corrige site ou perfil oficial, contato, nome civil;\nnovo documento por POST /api/auth/uploads e mensagem ao analista;
+:POST /api/me/issuer-review/resubmit;
+|API (IssuerReviewService)|
+if (Status AJUSTES ou RECUSADO?) then (não)
+  #FFE3E3:409 REENVIO_INDISPONIVEL;
+  stop
+endif
+if (Link válido, nome civil presente e documento do formulário?) then (não)
+  #FFE3E3:400 FORMULARIO_INVALIDO;
+  stop
+endif
+:Copia o documento para restricted/users/{id}/documents/;\nPENDENTE, reviewAttempts + 1, reviewSubmittedAt = agora;\naudita PERFIL_REENVIADO e chama submitted (novo aviso aos administradores);
+note right
+  Um pedido parado em AJUSTES pode ser
+  RECUSADO pelo analista (sem resposta).
+end note
+stop
+@enduml

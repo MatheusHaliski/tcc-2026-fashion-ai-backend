@@ -1,5 +1,5 @@
 @startuml RF38_Classes
-title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de classes — direito ao cupom (coupon_rights), fontes SELO e FLAIR e a carteira única
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,48 +11,82 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web" {
+class CouponController {
+  +mine(user): Map  «GET /api/me/coupons»
+  +redeem(user, id): Map  «POST /api/me/coupon-rights/{id}/redeem»
+  +dismiss(user, id): Map  «POST …/{id}/dismiss»
+  +admin(user): Map  «GET /api/me/coupons/admin»
+  +validate(user, CodeRequest): Map  «POST /api/me/coupons/validate»
 }
+}
+package "fai-application" {
+class CouponService {
+  +SELO = "SELO"
+  +FLAIR = "FLAIR"
+  ~PENDENTE = "PENDENTE"
+  ~RESGATADO = "RESGATADO"
+  ~DISPENSADO = "DISPENSADO"
+  +onCheck(CouponRightsCheck)
+  +onScheme(SchemeSaved)
+  +onPiece(PieceCreated)
+  +scan(userId): int
+  +mine(user): Map
+  +redeem(user, rightId): Map
+  +dismiss(user, rightId): Map
+  +admin(user): Map
+  +validate(user, code): Map
+  ~wallet(userId): List<Map>
+  ~{static} discountText(pct, amount, minPurchase): String
+}
+class SealService <<RF25>> {
+  +eligiblePromotions(userId): List<Promotion>
+  +redeem(user, promotionId): Map
+  +createPromotion(user, PromotionForm): Map
+  +setPromotionStatus(user, id, PromotionStatus): Map
+  ~{static} unavailable(Promotion, now): String
+  +{static} httpsOnly(url): String
+}
+class FlairService <<RF37>> {
+  +combinationsFor(user): List<Map>
+  +redeem(user, combinationId, schemeId): Map
+  +validateCode(user, code): Map
+  ~available(FlairCombination): boolean
+  +{static} sellerActive(User): boolean
+}
+class "DomainEvents.CouponRightsCheck" as Ev <<record>> {
+  +userId: UUID
+}
+class NotificationService {
+  +notify(recipient, actor, NotificationType, resourceType,\n  resourceId, title, body, payload)
+}
+}
+package "fai-domain · model" {
 class CouponRight {
   +user: User
   +owner: User
-  +sourceType: String
+  +sourceType: String  «SELO | FLAIR»
   +sourceId: UUID
   +title: String
   +detail: String
-  +status: String
+  +status: String  «PENDENTE | RESGATADO | DISPENSADO»
   +schemeId: UUID
   +couponRef: UUID
   +decidedAt: Instant
 }
 class Promotion {
   +seal: Seal
-  +sealBond: SealBond
   +type: PromotionType
-  +code: String
-  +description: String
+  +title: String
   +discountPercent: Integer
   +partnerBrandUserId: UUID
-  +campaignId: UUID
-  +campaignLimit: Integer
   +status: PromotionStatus
-  +visibility: Visibility
   +ownerUserId: UUID
-  +expiresAt: Instant
-  +redeemedAt: Instant
-  .. +8 campos ..
+  +startsAt / expiresAt: Instant
+  +totalQuota: Integer
+  +perUserLimit: int
+  +redeemedCount: int
+  +storeUrl: String
 }
 class PromotionRedemption {
   +promotion: Promotion
@@ -62,98 +96,58 @@ class PromotionRedemption {
   +issuerUserId: UUID
   +partnerBrandUserId: UUID
   +status: RedemptionStatus
-  +redeemedAt: Instant
-  +expiresAt: Instant
+  +redeemedAt / expiresAt: Instant
 }
 class FlairCombination {
   +brand: User
   +name: String
-  +description: String
-  +gameType: String
-  +requiredCategoriesJson: String
-  +requiredStylesJson: String
-  +requiredOccasionsJson: String
-  +minBrandPieces: int
-  +minDeckPower: int
-  +minRarity: String
-  +minWins: int
   +couponTitle: String
   +discountPercent: Integer
-  +discountAmount: BigDecimal
-  .. +9 campos ..
+  +discountAmount / minPurchase: BigDecimal
+  +validDays: int
+  +stock: Integer
+  +redeemed: int
+  +active: boolean
+  +storeUrl: String
 }
 class FlairRedemption {
   +combination: FlairCombination
   +user: User
   +scheme: Scheme
-  +code: String
-  +status: String
-  +deckPower: Integer
-  +expiresAt: Instant
-  +usedAt: Instant
+  +code: String  «FLR-XXXX-XXXX»
+  +status: String  «EMITIDO | USADO»
+  +expiresAt / usedAt: Instant
+}
+class SealBond {
+  +requestedBy: User
+  +targetOwner: User
+  +seal: Seal
+  +status: SealBondStatus
 }
 class Notification {
   +recipient: User
-  +actor: User
   +type: NotificationType
-  +category: NotificationCategory
-  +resourceType: String
-  +resourceId: UUID
-  +title: String
-  +body: String
+  +resourceType: String  «COUPON_RIGHT»
   +payloadJson: String
-  +read: boolean
-  +readAt: Instant
-  +delivered: boolean
 }
 class BrandProfile {
   +owner: User
   +brandName: String
-  +slug: String
   +logoUrl: String
-  +coverUrl: String
-  +bio: String
   +storeUrl: String
-  +cnpj: String
-  +razaoSocial: String
-  +nomeFantasia: String
-  +fashionCategory: String
-  +commercialContact: String
-  +officialHashtag: String
-  +activityProofUrl: String
-  .. +11 campos ..
 }
 class CelebrityProfile {
   +owner: User
   +stageName: String
-  +slug: String
   +avatarUrl: String
-  +coverUrl: String
-  +bio: String
-  +realName: String
-  +areasJson: String
-  +verifiableFollowersJson: String
-  +identityProofUrl: String
-  +verificationUrl: String
-  +professionalHistory: String
-  +representationContact: String
-  +fashionInterestsJson: String
-  .. +10 campos ..
+}
+class User {
+  +profileType: ProfileType
+  +status: AccountStatus
+  +linksJson: String
 }
 }
 package "fai-domain · enums" {
-enum PromotionType {
-  DESCONTO_ECOMMERCE
-  CUPOM_LOJA
-  EVENTO
-  SHOW
-  FRETE_GRATIS
-  BRINDE
-  ACESSO_ANTECIPADO
-  MEET_GREET
-  PRE_VENDA
-  CONTEUDO_EXCLUSIVO
-}
 enum PromotionStatus {
   AVAILABLE
   REDEEMED
@@ -165,49 +159,49 @@ enum RedemptionStatus {
   USED
   EXPIRED
 }
-enum NotificationType {
-  PASSWORD_RESET
-  TWO_FACTOR_CODE
-  NEW_LOGIN_DEVICE
-  EMAIL_CONFIRMATION
-  DATA_EXPORT_READY
-  FOLLOW_REQUEST
-  FOLLOW_ACCEPTED
-  NEW_FOLLOWER
-  NEW_COMMENT
-  NEW_LIKE
-  NEW_REACTION
-  NEW_REMIX
+enum "NotificationType (trecho)" as NT {
+  COUPON_AVAILABLE
   SEAL_GRANTED
-  FEATURED_SCHEME
-  ..
+  ACHIEVEMENT_UNLOCKED
 }
 }
-BrandProfile "1" --> "1" User : owner
-CelebrityProfile "1" --> "1" User : owner
-CouponRight "*" --> "1" User : owner
-CouponRight "*" --> "1" User : user
-FlairCombination "*" --> "1" User : brand
-FlairRedemption "*" --> "1" FlairCombination : combination
-FlairRedemption "*" --> "1" User : user
-Notification "*" --> "1" User : actor
-Notification "*" --> "1" User : recipient
-Notification --> NotificationType
-Promotion --> PromotionStatus
-Promotion --> PromotionType
-Promotion ..> User : partnerBrandUserId
-PromotionRedemption "*" --> "1" Promotion : promotion
-PromotionRedemption "*" --> "1" User : user
+package "fai-domain · repository" {
+interface CouponRightRepository {
+  +findByUserIdAndSourceTypeAndSourceId(…): Optional<CouponRight>
+  +findByUserIdAndStatusOrderByCreatedAtDesc(…): List<CouponRight>
+  +countByOwnerIdAndStatus(ownerId, status): long
+  +countBySourceTypeAndSourceIdAndStatus(…): long
+}
+}
+CouponController --> CouponService
+CouponService --> SealService : SELO
+CouponService --> FlairService : FLAIR
+CouponService --> NotificationService : COUPON_AVAILABLE
+CouponService --> CouponRightRepository
+CouponService ..> Ev : escuta (AFTER_COMMIT)
+SealService ..> Ev : publica
+FlairService ..> Ev : publica
+CouponRight "*" --> "1" User : user (quem conquistou)
+CouponRight "*" --> "1" User : owner (loja)
+CouponRight ..> Promotion : sourceId (SELO)
+CouponRight ..> FlairCombination : sourceId (FLAIR)
+CouponRight ..> PromotionRedemption : couponRef
+CouponRight ..> FlairRedemption : couponRef
+PromotionRedemption "*" --> "1" Promotion
+PromotionRedemption "*" --> "1" SealBond
+PromotionRedemption "*" --> "1" User
 PromotionRedemption --> RedemptionStatus
-PromotionRedemption ..> User : issuerUserId
-PromotionRedemption ..> User : partnerBrandUserId
-note top of User : tabela users
-note top of CouponRight : tabela coupon_rights
-note top of Promotion : tabela promotions
-note top of PromotionRedemption : tabela promotion_redemptions
-note top of FlairCombination : tabela flair_combinations
-note top of FlairRedemption : tabela flair_redemptions
-note top of Notification : tabela notifications
-note top of BrandProfile : tabela brand_profiles
-note top of CelebrityProfile : tabela celebrity_profiles
+Promotion --> PromotionStatus
+Promotion ..> User : ownerUserId
+FlairRedemption "*" --> "1" FlairCombination
+FlairRedemption "*" --> "1" User
+FlairCombination "*" --> "1" User : brand
+SealBond "*" --> "1" User : requestedBy
+Notification --> NT
+Notification "*" --> "1" User : recipient
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
+CouponRightRepository ..> CouponRight
+note top of CouponRight : tabela coupon_rights (V19)\núnico: user_id + source_type + source_id
+note bottom of PromotionRedemption : "EXPIRADO" na carteira é calculado na leitura\n(expiresAt no passado); nenhum job grava EXPIRED
 @enduml

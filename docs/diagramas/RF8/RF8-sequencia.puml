@@ -1,5 +1,5 @@
 @startuml RF8_Sequencia
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de sequência — endpoints reais
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de sequência — feed da comunidade (relevância com Hype público v2), Passarela, insights FEED e abertura do card
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,59 +9,77 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as U
-participant "Frontend\nsearch · feed" as FE
+participant "feed/page.tsx\nInsightStrip · SchemeCard\nInfiniteSentinel" as FE
+participant "InsightsController\nInsightService\nPublicInsights" as IS
 participant "DiscoveryController" as DC
 participant "SearchService" as SS
-participant "SchemeService" as SCH
-participant "Guard" as G
-participant "SocialController" as SC
-participant "SocialService" as SO
+participant "SchemeService\nGuard" as SCH
+participant "HypeController\nHypeQueryService" as HQ
+participant "HypeCache\n(RenderCachePort)" as HC
+participant "CassandraProjectionAdapter\n(TimelineProjectionPort)" as TL
 database "MySQL" as DB
-U -> FE: abre aba "Buscar", digita termo,\nescolhe aba (LOOKS/PECAS/...) e chips
-FE -> DC: GET /api/search?q=&tab=LOOKS&style=&occasion=&color=&brand=&category=&cursor=
-DC -> SS: search(viewer, term, tab, Filters, size, cursor)
-alt aba fora de TABS
-  SS --> FE: 400 ABA_INVALIDA
-else aba válida
-  SS -> DB: SELECT follows (status=BLOQUEADO) → bloqueados
-  SS -> DB: SELECT style_dna (styleKeywords do viewer)
-  SS -> DB: SELECT schemes (findPublicFeed) / wardrobe_items
-  loop para cada candidato
-    SS -> SCH: canView(viewer, scheme)
-    SCH -> G: canView(viewer, ownerId, moreRestrictive(visibility, profileVisibility))
-    G --> SCH: true/false
-    SS -> SS: matches(filters) + relevance(recência, hype, afinidade DNA)
-  end
-  opt sem resultados
-    SS -> SS: trending() + alternatives(term)
-  end
-  SS --> FE: 200 {term, tab, tabs, results, nextCursor, chips, engine, empty?}
+
+U -> FE: abre /feed (aba Feed)
+FE -> IS: GET /api/insights?context=FEED&window=7 (público)
+IS -> HC: get("insights:FEED:7:…", loader) por geração
+alt cache vazio na geração atual
+  IS -> DB: hype_scores públicos (public_eligible) dos looks
+  IS -> IS: PublicInsights.feed → FEED_STYLE_RISING,\nFEED_HOT_SHARE, FEED_TREND_VS_POPULARITY…
 end
-FE -> FE: SchemeCard / PieceCard; InfiniteSentinel
-opt feed da comunidade / passarela
-  FE -> DC: GET /api/feed?cursor=&size=20
-  DC -> SS: communityFeed(viewer, cursor, size, filters)
-  FE -> DC: GET /api/runway?cursor=
-  DC -> SS: runway(viewer, cursor, size)
-  SS -> DB: SELECT follows (status=ACEITO) → seguindo
-  SS --> FE: 200 {items (reason SEGUINDO/TRENDSETTER), nextCursor}
+IS --> FE: 200 {context: FEED, source: local, items[≤ 5]}
+U -> FE: liga o chip "Em alta" (opcional)
+FE -> DC: GET /api/feed?cursor&size=12&hypeLevel=HOT&style&occasion…
+DC -> SS: communityFeed(viewer, cursor, size, Filters)
+alt hypeLevel ou cursor inválidos
+  SS --> FE: 400 NIVEL_INVALIDO | CURSOR_INVALIDO
+else
+  SS -> DB: follows BLOQUEADO (dois sentidos) · style_dna de quem vê
+  SS -> DB: schemes.findPublicFeed (até 400, PUBLIC + PUBLISHED)
+  loop candidatos depois do cursor, mais recentes primeiro
+    SS -> SCH: canView(viewer, scheme) — dono ACTIVE, não bloqueado,\nmoreRestrictive(look, perfil)
+    opt filtro hypeLevel
+      SS -> SS: meetsLevel(hype_scores públicos, faixa mínima)
+    end
+    SS -> SS: matches(filtros) — até completar a página
+  end
+  SS -> DB: hype_scores da página (uma consulta, HYPE_V2)
+  SS -> SS: relevance = 0,5·recência + 0,3·Hype público\n(sem Hype = 0,5) + 0,2·afinidade DNA
+  SS --> FE: 200 {items: SchemeView[], nextCursor, chips, order}
 end
-U -> FE: abre o card de outra pessoa
+FE -> HQ: GET /api/hype/summaries?type=SCHEME&ids= (HypeBadge, lote)
+HQ --> FE: 200 {items} (só ids visíveis para quem vê)
+U -> FE: rola até o fim
+FE -> DC: GET /api/feed?cursor=<nextCursor>…
+note right of FE: nextCursor nulo = fim (sem itens repetidos)
+
+== Passarela (quem eu sigo) — exige login ==
+U -> FE: aba Passarela
+FE -> DC: GET /api/runway?cursor&size=12
+DC -> SS: runway(viewer, cursor, size)
+SS -> DB: follows ACEITO (quem sigo)
+opt projeção de timeline ligada
+  SS -> TL: readTimeline(viewerId, 300)
+end
+SS -> DB: looks de quem sigo · shares FEED · vínculos APPROVED\ndas marcas seguidas (reason SEGUINDO | COMPARTILHADO | VINCULO_*)
+alt ninguém seguido ou sem entradas
+  SS -> DB: findPublicFeed (reason COMUNIDADE, fallbackToCommunity)
+end
+SS --> FE: 200 {items: [{reason, scheme, at}], nextCursor, waywt, battles}
+FE -> FE: card recebe só item.scheme
+
+== Abrir o card de outra pessoa ==
+U -> FE: toca no card
 FE -> SCH: GET /api/schemes/{id} (SchemeController)
-SCH -> G: requireView(viewer, ownerId, effective, "scheme:{id}")
-alt negado
-  G -> DB: INSERT audit_log (ACESSO_NEGADO_403)
-  G --> FE: 403
-else permitido
-  SCH -> DB: UPDATE schemes SET view_count = view_count + 1
-  SCH --> FE: 200 {scheme, wearstyles, seals, sealBadges, canEdit=false}
+SCH -> SCH: requireView(viewer, scheme)
+alt sem permissão
+  SCH -> DB: INSERT audit_log (ACESSO_NEGADO_403)
+  SCH --> FE: 403
+else
+  opt quem vê não é o dono
+    SCH -> DB: UPDATE schemes.view_count + 1 (CounterStorePort "views")
+    SCH ->> SCH: logado → publishEvent HypeSignal(LOOK_VIEWED)\n(HypeSignalRecorder grava depois do commit — RF19)
+  end
+  SCH --> FE: 200 {scheme, wearstyles, seals, canEdit = false}
 end
-FE -> SC: GET /api/interactions/SCHEME/{id}/counters
-SC -> SO: counters(viewer, type, id)
-SO --> FE: 200 {reactions, comments, saves, shares}
-U -> FE: curte / comenta / salva
-FE -> SC: POST /api/interactions/SCHEME/{id}/reactions {reaction: LIKE}
-SC -> SO: react(user, SCHEME, id, LIKE)
-SO -> DB: INSERT/DELETE reactions; UPDATE schemes.like_count
-SO --> FE: 200 {liked, counters}
+FE -> FE: CardActions → GET /api/interactions/SCHEME/{id}/counters (RF19)
 @enduml

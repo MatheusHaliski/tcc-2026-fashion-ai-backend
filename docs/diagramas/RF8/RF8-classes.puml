@@ -1,5 +1,5 @@
 @startuml RF8_Classes
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de classes — SearchService, filtros, visibilidade, HypeScore v2 público e insights FEED/SEARCH
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -12,146 +12,218 @@ skinparam packageStyle rectangle
 hide empty methods
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +profileType: ProfileType
-  +profileVisibility: Visibility
-  +status: AccountStatus
+  class User <<table users>> {
+    +username: String
+    +displayName: String
+    +profileType: ProfileType
+    +profileVisibility: Visibility
+    +status: AccountStatus
+    +country: String
+  }
+  class Scheme <<table schemes>> {
+    +title: String
+    +style: String
+    +occasion: String
+    +visibility: Visibility
+    +status: SchemeStatus
+    +communityIndexed: boolean
+    +publishedAt: Instant
+    +likeCount: long
+    +viewCount: long
+  }
+  class SchemeItem <<table scheme_items>> {
+    +slot: SchemeSlot
+    +sortOrder: int
+    +snapshotJson: String
+  }
+  class WardrobeItem <<table wardrobe_items>> {
+    +name: String
+    +category: String
+    +color: String
+    +brandName: String
+    +styleTags: String
+    +occasionTags: String
+    +visibility: Visibility
+    +moderationStatus: ModerationStatus
+    +viewCount: long
+  }
+  class Follow <<table follows>> {
+    +status: FollowStatus
+    +respondedAt: Instant
+  }
+  class StyleDna <<table style_dna>> {
+    +styleKeywords: String
+  }
+  class Share <<table shares>> {
+    +channel: ShareChannel
+    +caption: String
+  }
+  class HypeScoreCurrent <<table hype_scores>> {
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +status: HypeStatus
+    +score: BigDecimal
+    +level: HypeLevel
+    +deltaPoints: BigDecimal
+    +momentum: HypeMomentum
+    +publicEligible: boolean
+    +calculatedAt: Instant
+  }
 }
-class Scheme {
-  +user: User
-  +title: String
-  +description: String
-  +style: String
-  +occasion: String
-  +visibility: Visibility
-  +status: SchemeStatus
-  +communityIndexed: boolean
-  +coverImageUrl: String
-  +hypeScore: BigDecimal
-  +likeCount: long
-  +commentCount: long
-  +saveCount: long
-  +viewCount: long
-  +publishedAt: Instant
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +sortOrder: int
-  +snapshotJson: String
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +category: String
-  +color: String
-  +brandName: String
-  +styleTags: String
-  +occasionTags: String
-  +imageUrl: String
-  +visibility: Visibility
-  +moderationStatus: ModerationStatus
-  +hypeScore: BigDecimal
-  +likesCount: long
-}
-class Follow {
-  +follower: User
-  +following: User
-  +status: FollowStatus
-  +respondedAt: Instant
-}
-class StyleDna {
-  +user: User
-  +styleKeywords: String
-}
-class Reaction {
-  +actor: User
-  +targetType: TargetType
-  +targetId: UUID
-  +reactionType: ReactionType
-}
-class Comment {
-  +author: User
-  +targetType: TargetType
-  +targetId: UUID
-  +parentCommentId: UUID
-  +content: String
-  +active: boolean
-}
-}
+
 package "fai-domain · enums" {
-enum SchemeStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum FollowStatus {
+    PENDENTE
+    ACEITO
+    BLOQUEADO
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum HypeLevel {
+    LOW_SIGNAL
+    NICHE
+    RELEVANT
+    HOT
+    TRENDING
+    VIRAL
+  }
 }
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum FollowStatus {
-  PENDENTE
-  ACEITO
-  BLOQUEADO
-}
-enum ModerationStatus {
-  PENDING
-  APPROVED
-  REJECTED_POLICY
-  REJECTED_NOT_CLOTHING
-}
-enum TargetType {
-  PIECE
-  SCHEME
-  DNA
-}
-}
+
 package "fai-application · service" {
-class SearchService {
-  +TABS: List<String>
-  +search(viewer, term, tab, Filters, size, cursor)
-  +communityFeed(viewer, cursor, size, Filters)
-  +runway(viewer, cursor, size)
-  +publicPieces(viewer, Filters, cursor, size)
+  class SearchService {
+    {static} +TABS = LOOKS, PECAS, PESSOAS, MARCAS, CELEBRIDADES
+    {static} ~NEUTRAL_HYPE = 0.5
+    {static} ~TRENDING_POOL = 30
+    +communityFeed(viewer, cursor, size, Filters): Map
+    +runway(viewer, cursor, size): Map
+    +search(viewer, term, tab, Filters, size, cursor): Map
+    +publicPieces(viewer, Filters, cursor, size): Map
+    ~visible(viewer, scheme|piece, blocked): boolean
+    {static} ~relevance(scheme, items, dnaStyles, publicHype): double
+    {static} ~meetsLevel(current, minLevel, config): boolean
+    {static} ~publicRow(current): HypeScoreCurrent
+    ~trending(viewer, blocked): List<SchemeView>
+    ~alternatives(term): List<String>
+  }
+  class "SearchService.Filters" as Filters <<record>> {
+    +style: String
+    +occasion: String
+    +color: String
+    +brand: String
+    +category: String
+    +hypeLevel: String
+    ~chips(): List<Map>
+  }
+  class "SearchService.Cursor" as Cursor <<record>> {
+    +at: Instant
+    +id: UUID
+    {static} ~parse(raw): Cursor
+    ~encode(): String
+  }
+  class SchemeService {
+    +canView(viewer, scheme): boolean
+    +requireView(viewer, scheme)
+    {static} +moreRestrictive(a, b): Visibility
+    +get(viewer, id): Map
+    +view(viewer, scheme, items): SchemeView
+  }
+  class Guard {
+    +canView(viewer, ownerId, visibility): boolean
+    +blocked(a, b): boolean
+    +deny(user, resource, message): ApiException
+  }
 }
-class SocialService {
-  +react(user, TargetType, id, ReactionType)
-  +comments(viewer, TargetType, id)
-  +toggleSave(user, TargetType, id)
-  +share(user, TargetType, id, ShareChannel, caption)
-  +counters(viewer, TargetType, id)
+
+package "fai-application · insights" {
+  enum InsightContext {
+    FEED
+    SEARCH
+    EXPLORER_TRENDING
+    CREATOR_PROFILE
+    .. (públicos e pessoais) ..
+    +isPublic(): boolean
+  }
+  class InsightService {
+    {static} ~MAX_ITEMS = 5
+    +insights(viewer, context, window, region, category,\nsubcategory, key, pieces, withAi): Map
+  }
+  class PublicInsights {
+    ~feed(Filters): List<Insight>
+    ~search(Filters): List<Insight>
+  }
 }
+
+package "fai-application · ports" {
+  interface SearchIndexPort <<port>> {
+    +enabled(): boolean
+    +search(index, term, filters, limit): List<UUID>
+  }
+  interface TimelineProjectionPort <<port>> {
+    +enabled(): boolean
+    +readTimeline(userId, limit): List<UUID>
+  }
 }
+
+package "fai-application · hype" {
+  class HypeScoreConfig {
+    +algorithmVersion(): String = HYPE_V2
+    +levelThresholds(): int[] = 20,40,60,75,90
+    +staleAfterHours(): int = 24
+  }
+}
+
 Scheme "*" --> "1" User : user
-Scheme --> SchemeStatus
-Scheme --> Visibility
 SchemeItem "*" --> "1" Scheme : scheme
 SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
 WardrobeItem "*" --> "1" User : user
-WardrobeItem --> Visibility
-WardrobeItem --> ModerationStatus
 Follow "*" --> "1" User : follower
 Follow "*" --> "1" User : following
-Follow --> FollowStatus
 StyleDna "1" --> "1" User : user
-Reaction "*" --> "1" User : actor
-Reaction --> TargetType
-Comment "*" --> "1" User : author
-Comment --> TargetType
-SearchService ..> Scheme
-SearchService ..> WardrobeItem
+Share "*" --> "1" User : user
+Scheme --> SchemeStatus
+Scheme --> Visibility
+WardrobeItem --> ModerationStatus
+Follow --> FollowStatus
+HypeScoreCurrent --> HypeLevel
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+
+SearchService ..> Filters
+SearchService ..> Cursor
+SearchService --> SchemeService : canView · view
+SearchService --> Guard : canView (peças)
 SearchService ..> Follow : bloqueados / seguindo
 SearchService ..> StyleDna : afinidade
-SocialService ..> Reaction
-SocialService ..> Comment
-note top of Scheme : tabela schemes
-note top of WardrobeItem : tabela wardrobe_items
-note top of Follow : tabela follows
-note top of StyleDna : tabela style_dna
-note top of Reaction : tabela reactions
-note top of Comment : tabela comments
+SearchService ..> Share : COMPARTILHADO (runway)
+SearchService ..> HypeScoreCurrent : relevância, filtro, "Em alta"
+SearchService ..> HypeScoreConfig
+SearchService ..> SearchIndexPort : termo (opcional)
+SearchService ..> TimelineProjectionPort : runway (opcional)
+SchemeService --> Guard
+InsightService --> PublicInsights
+InsightService ..> InsightContext
+PublicInsights ..> HypeScoreCurrent : só public_eligible
+
+note bottom of HypeScoreCurrent
+  publicEligible = PUBLIC (+ PUBLISHED no look),
+  perfil não PRIVATE, peça APPROVED e conta fora
+  do modo de teste. Só esse Hype ordena e filtra
+  em contexto de terceiros (sem ele = neutro 0,5 no
+  feed e fora do filtro hypeLevel — nunca 0).
+end note
+note right of Filters : hypeLevel é FILTRO de faixa mínima,\nnunca aba nem ordenação
 @enduml

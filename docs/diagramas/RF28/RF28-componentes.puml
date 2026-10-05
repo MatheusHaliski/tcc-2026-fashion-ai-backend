@@ -1,5 +1,5 @@
 @startuml RF28_Componentes
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de componentes — telas do espelho → MirrorController → MirrorService → serviços, IA e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,35 +17,58 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "mirror — Smart Mirror" as FE0
-  component "room — Vista-me no espelho do quarto" as FE1
+  component "app/(site)/(app)/mirror/page.tsx\n(slots, Vista-me, seis números)" as FE0
+  component "app/(site)/(app)/room/page.tsx\n(Vista-me no espelho do quarto)" as FE1
+  component "components/mirror/mirror-stage.tsx\n(MirrorStage, MirrorWornStrip)" as FE2
+  component "components/hype/look-scores.tsx\n(LookScores)" as FE3
 }
 package "fai-web (REST)" {
-  [MirrorController] as MirrorController
+  [MirrorController\n/api/me/mirror/*] as MC
+  [Avatar3dController\n/api/me/avatar3d (RF40)] as AC
 }
-package "fai-application (casos de uso)" {
-  [MirrorService] as MirrorService
-  [WardrobeService] as WardrobeService #FAFAFA
-  [RoomService] as RoomService #FAFAFA
-  [SchemeService] as SchemeService #FAFAFA
-  [DailyLookService] as DailyLookService #FAFAFA
+package "fai-application" {
+  [MirrorService] as MS
+  [LookScorer\n(RecommendationScoring)] as LS
+  [HypeQueryService\n(Hype v2, RF46)] as HQ
+  [WardrobeService] as WS
+  [RoomService\n(endereços, fora de estação)] as RS
+  [SchemeService] as SS
+  [DailyLookService] as DLS
+  [ChallengeService] as CHS
+  [AiEngine (RF24)] as AI
+  [WardrobeEventListeners\nAchievementService] as LIS
+  interface "MirrorService.PieceRestrictionProvider" as PRP <<port>>
+  interface "AiProviderPort" as APP <<port>>
 }
 package "fai-domain (repositórios JPA)" {
-  [MirrorStateRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nWardrobeItemRepository] as REPOS
+  [MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository · SchemeItemRepository\nStyleDnaRepository\nDailyLookRepository\nHypeScoreCurrentRepository] as REPOS
 }
-database "MySQL · fashionai_app\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+package "fai-infrastructure" {
+  [persistence-mysql\n(Spring Data JPA + Flyway)] as MYSQL
+  [ai-providers\n(ClaudeProvider, GeminiProvider)] as PROV
+}
+database "MySQL · fashionai_app\n• mirror_states\n• wardrobe_items\n• schemes · scheme_items\n• daily_looks · piece_usage_diary\n• style_dna · hype_scores\n• room_storage_map\n• fai_points_ledger" as DB
 
-FE0 --> MirrorController : HTTPS/JSON
-FE1 --> MirrorController : HTTPS/JSON
-MirrorController --> MirrorService
-MirrorService ..> WardrobeService
-MirrorService ..> RoomService
-MirrorService ..> SchemeService
-MirrorService ..> DailyLookService
-MirrorService --> REPOS
-MirrorService --> P_ai
-MirrorService --> P_events
-REPOS --> DB : JPA/Flyway
+FE0 --> FE2
+FE0 --> FE3
+FE0 --> MC : HTTPS/JSON
+FE1 --> MC : POST /vista-me · /use
+FE2 --> AC : GET /api/me/avatar3d
+MC --> MS
+MS --> LS : scores (P3-07)
+LS --> HQ : currentOf(PIECE)
+MS --> WS : owned · eligible
+MS --> RS : locateAll · outOfSeason
+MS --> SS : create (origin SMART_MIRROR / VISTA_ME)
+MS --> DLS : register (Look do Dia)
+MS --> PRP
+CHS ..|> PRP
+MS --> AI : interpretar · compor · sugerir · tirar uma coisa
+AI --> APP
+APP <.. PROV
+MS ..> LIS : MirrorAction / SchemeSaved /\nDailyLookRegistered (AFTER_COMMIT)
+MS --> REPOS
+LS --> REPOS
+REPOS <.. MYSQL
+MYSQL --> DB : JDBC
 @enduml

@@ -1430,7 +1430,6 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             m.put("occasion", Json.csv(s.getOccasion()));
             m.put("style", Json.csv(s.getStyle()));
             m.put("totalPrice", s.getTotalPrice());
-            m.put("hypeScore", s.getHypeScore());   // v1 legado (deprecado): mantido para clientes antigos; use "hype"
             // RF53 · P3-06: HypeScore v2 do look (Hype pessoal do dono, também de look privado); sem cálculo = NOT_CALCULATED, nunca 0
             m.put("hype", hypeOf.getOrDefault(id.toString(), Map.of("status", "NOT_CALCULATED")));
             m.put("pieces", items.stream().map(si -> Map.of("id", si.getWardrobeItem().getId(), "name", String.valueOf(si.getWardrobeItem().getName()),

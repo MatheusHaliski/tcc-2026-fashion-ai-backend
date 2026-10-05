@@ -1,5 +1,5 @@
 @startuml RF2_Atividades
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — login, segundo fator, freios contra força bruta e sessão no navegador
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,65 +25,85 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre /login e informa e-mail ou username,\nsenha e "lembrar-me";
-|Frontend (login · BFF /bff/auth)|
-:POST /bff/auth/login → POST /api/auth/login\n(LoginCommand: identifier, password, rememberMe, deviceName, twoFactorCode);
-|Backend (AuthController · IdentityService)|
-:Localiza a conta (e-mail → emailHash;\nusername normalizado);
+:Abre /login e informa e-mail ou @, senha\ne "lembrar-me" (ligado por padrão);
+|Frontend (login/page.tsx · BFF)|
+:POST /bff/auth/login (mesma origem, corpo ≤ 64 KB)\nLoginCommand {identifier, password, rememberMe,\ndeviceName = userAgent, twoFactorCode};
+:BFF repassa a POST /api/auth/login\ncom X-Dev-Gate e o IP assinado (HMAC);
+|API (AuthRateLimitFilter)|
+if (Mais de 30 logins em 10 min deste IP (IPv6: prefixo /64)?) then (sim)
+  #FFE3E3:429 MUITAS_TENTATIVAS + Retry-After;
+  stop
+endif
+if (Vaga no teto de hashes Argon2 em até 2 s?) then (não)
+  #FFE3E3:503 AUTENTICACAO_OCUPADA + Retry-After: 2;
+  stop
+endif
+|API (AuthController · IdentityService)|
+:Busca a conta: com "@" pelo emailHash,\nsenão pelo @ normalizado;
 if (Conta existe?) then (não)
-  :Compara com hash fictício (tempo uniforme)\ne audita LOGIN_FALHO;
+  :Confere a senha contra um hash falso (mesmo tempo)\ne audita LOGIN_FALHO (usuario_inexistente);
   #FFE3E3:401 NAO_AUTENTICADO;
   stop
 endif
-:Confere a senha (Argon2) e o bloqueio\n(5 falhas em 15 min — RateLimitPort);
-if (Bloqueada ou senha errada?) then (sim)
-  :Conta a falha e audita\nLOGIN_FALHO / LOGIN_BLOQUEADO_TENTATIVAS;
-  #FFE3E3:401 idêntico (não revela cadastro);
+:Reserva 1 tentativa no balde "login-fail"\n(5 em 15 min, atômico) e confere a senha (Argon2id) sempre;
+if (Balde cheio (conta bloqueada)?) then (sim)
+  :Audita LOGIN_BLOQUEADO_TENTATIVAS;
+  #FFE3E3:401 NAO_AUTENTICADO (igual à senha errada);
   stop
+elseif (Senha errada?) then (sim)
+  :A reserva fica (conta como falha);\naudita LOGIN_FALHO;
+  #FFE3E3:401 NAO_AUTENTICADO;
+  stop
+else (senha certa)
+  :Devolve a reserva (release);
 endif
 if (status DELETED ou SUSPENDED?) then (sim)
   #FFE3E3:403 CONTA_INDISPONIVEL;
   stop
 endif
+if (Hash com parâmetros antigos?) then (sim)
+  :Refaz o hash com a senha certa (needsRehash);
+else (não)
+endif
 if (twoFactorEnabled?) then (sim)
-  if (Código 2FA informado?) then (não)
-    :Gera VerificationCode TWO_FACTOR (6 dígitos, 10 min)\ne envia por e-mail;
-    #FFF5F8:401 DOIS_FATORES_NECESSARIO\n{twoFactorRequired: true};
-    |Pessoa|
-    :Digita o código e reenvia o login;
-    |Backend (AuthController · IdentityService)|
-    detach
-  else (sim)
-    if (Código válido (< 5 tentativas, não expirado)?) then (não)
-      #FFE3E3:401 código inválido (conta no bloqueio);
-      stop
-    endif
+  if (Código 2FA veio no pedido?) then (não)
+    :VerificationCode TWO_FACTOR (6 dígitos, 10 min)\ne envio por e-mail;
+    #FFF5F8:401 DOIS_FATORES_NECESSARIO {twoFactorRequired: true};
+    note right
+      Divergência: a tela /login procura os códigos
+      2FA_OBRIGATORIO ou CODIGO_2FA para mostrar o campo
+      do código; a API manda DOIS_FATORES_NECESSARIO.
+    end note
+    stop
   endif
+  if (Código aberto, válido e correto?) then (não)
+    :attempts + 1 (o 5º erro mata o código);\na falha entra no balde "login-fail"; audita LOGIN_FALHO (2fa);
+    #FFE3E3:401 NAO_AUTENTICADO;
+    stop
+  endif
+  :Consome o código;
 else (não)
 endif
-:Zera o contador de falhas; lastLoginAt = agora;\naudita LOGIN_SUCESSO;
-if (User-Agent nunca visto nas sessões ativas?) then (sim)
-  :Notificação NEW_LOGIN_DEVICE;
+:Zera o balde "login-fail"; lastLoginAt = agora; audita LOGIN_SUCESSO;
+if (User-Agent ausente das sessões ativas?) then (sim)
+  :Notificação NEW_LOGIN_DEVICE (categoria SECURITY);
 else (não)
 endif
-:Cria RefreshToken (família nova; 30 d se "lembrar-me", senão 1 d)\ne emite JWT RS256 (15 min; claims sid, user_id, role, profile_type);
-:200 Session {accessToken, refreshToken, status, emailVerified, warnings};
-|Frontend (login · BFF /bff/auth)|
-:BFF guarda o refresh token em cookie HttpOnly (fai_rt);\naccess token só na memória da aba;
-if (E-mail confirmado?) then (não)
+:Cria RefreshToken (família nova; 30 dias com "lembrar-me", senão 1 dia)\ne emite o JWT RS256 de 15 min (iss, aud, sid, user_id, role, profile_type);
+:200 Session {accessToken, expiresInSeconds, refreshToken,\nrefreshExpiresAt, sessionId, user, status, emailVerified, warnings};
+|Frontend (login/page.tsx · BFF)|
+:BFF tira o refreshToken do JSON e grava o cookie fai_rt\n(HttpOnly, SameSite=Strict, Path=/bff/auth) e o sinal fai_rt_h;
+:signIn: access token só em memória (BroadcastChannel "fai-auth"\navisa as outras abas) e mostra os avisos da sessão;
+if (emailVerified?) then (não)
   :Vai para /verify-email (RF1.CA05);
 else (sim)
-  :Vai para ?next= ou /closet;
+  :Vai para ?next= (safeNext) ou /feed;
 endif
 note right
-  Sessão em uso: todo request leva Bearer; SessionActiveFilter
-  confere o sid → 401 SESSAO_ENCERRADA se a família foi revogada.
-  Access expirado → POST /bff/auth/refresh → POST /api/auth/refresh
-  (rotação; reuso de token já rotacionado revoga a família inteira).
-  Sair → POST /api/auth/logout e apaga os cookies.
-  Esqueci a senha → /forgot-password (POST /api/auth/password-reset/request,
-  resposta uniforme) → link por e-mail → /reset-password
-  (POST /api/auth/password-reset/confirm, encerra as outras sessões).
+  Erros 401/429 viram aviso com o atalho
+  "Recuperar senha" (/forgot-password — RF3).
+  Renovação, requisições e saída:
+  RF2_Sequencia_Sessao e RF2_MaquinaDeEstados_Sessao.
 end note
 stop
 @enduml

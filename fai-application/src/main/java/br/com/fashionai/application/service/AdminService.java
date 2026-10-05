@@ -63,8 +63,7 @@ public class AdminService {
     private final UploadQuarantine quarantine;
     private final AssetCatalogService assets;
     private final ChallengeService challenges;
-    private final HypeScoreService hype;
-    /** HypeScore v2 — snapshots multidimensionais com algorithmVersion (o job "hype" roda as duas versões) */
+    /** HypeScore v2 — snapshots multidimensionais com algorithmVersion (o job "hype"; o v1 do RF6 saiu em P3-16) */
     private final br.com.fashionai.application.hype.HypeSnapshotService hypeV2;
     private final InventoryScoreService inventory;
     private final AiEngine ai;
@@ -88,7 +87,7 @@ public class AdminService {
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
                         BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics,
                         IdentityService identity, NotificationService notifications, AssetCatalogService assets, ChallengeService challenges,
-                        HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
+                        InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
                         UploadQuarantine quarantine, br.com.fashionai.application.hype.HypeSnapshotService hypeV2,
                         HypeScoreConfig hypeConfig, ObjectProvider<HypeLiveRecalc> hypeLive) {
         this.quarantine = quarantine;
@@ -108,7 +107,6 @@ public class AdminService {
         this.notifications = notifications;
         this.assets = assets;
         this.challenges = challenges;
-        this.hype = hype;
         this.inventory = inventory;
         this.ai = ai;
         this.guard = guard;
@@ -289,7 +287,7 @@ public class AdminService {
     public Map<String, Object> runJob(CurrentUser admin, String job) {
         guard.requireAdmin(admin);
         Object result = switch (job == null ? "" : job) {
-            case "hype" -> Map.of("v1", hype.recalibrate(), "v2", hypeV2.recalculate());
+            case "hype" -> Map.of("v2", hypeV2.recalculate());
             case "rankings" -> inventory.recomputeRankings();
             case "challenges" -> challenges.tick();
             case "assets" -> assets.syncPresets();
