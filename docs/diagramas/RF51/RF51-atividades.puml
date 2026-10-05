@@ -1,5 +1,5 @@
 @startuml RF51_Atividades
-title RF51 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de atividades — carregar perto da tela, tocar quando visível, plano B quando o navegador recusa
+title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — rascunho com Aplicar/Cancelar, prévia no card e gravação
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,55 +25,79 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre uma tela com cards que usam Aura em vídeo\n(feed, perfil, DNA, peça expandida, editor de arte);
-|Card (CardArtLayer + ArtVideo)|
-:resolveCardArt devolve video {src, poster} e still\n(animação CSS do preset para o plano B);
-:Mostra o pôster; o <video> nasce sem src, mudo,\nplaysinline e sem autoplay;
-if (Navegador tem IntersectionObserver?) then (não)
-  :autoplay = true e src = arquivo\n(o navegador decide);
-  stop
-else (sim)
-endif
-:Observa "perto da tela" (300 px) e "visível";\nescuta visibilitychange, pageshow e canplay;
-|Pessoa|
-:Rola a página;
-|Card (CardArtLayer + ArtVideo)|
-:Card a até 300 px da tela → src = arquivo\n(só agora o MP4 é baixado);
-repeat
-  if (Card visível e aba visível?) then (sim)
-    :play();
-    |Navegador|
-    :Aplica a política de reprodução automática\n(modo pouca energia do iOS, economia de bateria,\nlimite de vídeos tocando);
-    |Card (CardArtLayer + ArtVideo)|
-    switch (Resultado de play())
-    case (tocou)
-      :Vídeo tocando; remove a nova tentativa;\nonStuck(false) tira o plano B;
-    case (NotAllowedError)
-      :onStuck(true): pôster animado pela classe\nanim-<still> (padrão: drift);
-      :Arma nova tentativa no 1º toque ou tecla\n(pointerdown/keydown em captura);
-    case (AbortError ou outro)
-      :Ignora (pausa ou troca de arquivo em andamento);
-    endswitch
-  else (não)
-    :Pausa (o arquivo continua carregado);
-  endif
-  |Pessoa|
-  :Toca na tela, volta para a aba, volta pelo histórico\nou o card reaparece;
-  |Card (CardArtLayer + ArtVideo)|
-repeat while (Card ainda a até 300 px?) is (sim)
-->não;
-:Pausa, remove o src e chama load()\n(libera rede e decodificador);
+:Abre a arte do card: etapa 4 do Criar Look,\nDNA de Estilo ou editor de arte da peça;
+|Background Studio (frontend)|
+:Carrega o catálogo (GET /api/backgrounds/catalog):\ncartelas (Frost, Solstice, Ember, Bloom) e animações;
 note right
-  ao voltar para perto da tela,
-  o arquivo é carregado de novo
+  Cartela e animação não ficam mais no
+  segmento "Cor": só no modal do layout
 end note
-if (Aura trocada ou card desmontado?) then (sim)
-  :Limpeza: desconecta os observadores, remove ouvintes\ne a nova tentativa, libera o arquivo, onStuck(false);
+|Pessoa|
+:Em "Layout & Estilo", clica em Cartela sazonal\n(look: layout · DNA: narrativa B11 · peça: família "seasonal");
+|Background Studio (frontend)|
+if (Cartela sazonal já é o layout?) then (sim)
+  :Abre o modal em modo edição;
+else (não)
+  :Guarda enter() e o patch que limpa a arte própria\n(aura, material, arte com IA, upload) e abre o modal;
+  note right: o layout do card ainda não muda
+endif
+:SeasonalDraft cria o rascunho a partir do valor atual\n{seasonalPresetId, seasonalAuto, animation};
+|Pessoa|
+repeat
+  :Escolhe uma cartela (clicar de novo desmarca);
+  if (Look/DNA com estação?) then (sim)
+    :Pode ligar "cartela automática"\n(segue a estação dos dados);
+  else (não)
+    :Look sem estação: aviso para escolher uma cartela\nou preencher a estação · peça: sem opção automática;
+  endif
+  :Escolhe a animação:\nSem animação · Neve · Pétalas · Folhas · Brilho;
+repeat while (Continua ajustando?) is (sim)
+->não;
+if (Aplicar?) then (Cancelar, X, Esc ou fundo)
+  |Background Studio (frontend)|
+  :Descarta o rascunho: layout, narrativa e arte\nficam como estavam;
+else (Aplicar)
+  |Background Studio (frontend)|
+  :enter(): layout = CARTELA_SAZONAL\n(DNA: narrativa B11 · peça: família seasonal);
+  :onChange({...valor, ...patch, ...rascunho});
+  :Resumo "Cartela sazonal: <cartela> · <animação>"\n+ botão "Escolher cartela e animação" (reabre o modal);
+endif
+:Prévia do card: cartelaSeason(bg, estação);
+if (Há estação (cartela, automática ou do look)?) then (sim)
+  :SeasonCard / faixa B11: gradiente da estação,\ndecoração e animação (MotionFall ou brilho);
   note right
-    com outra Aura, o ciclo recomeça
-    e o vídeo novo substitui o antigo
+    com movimento reduzido (sistema ou
+    preferência do app) as animações param
+  end note
+else (não)
+  :O card cai para Lista vertical até haver estação;
+endif
+|Pessoa|
+if (Troca para outro layout?) then (sim)
+  |Background Studio (frontend)|
+  :Aplica CLEAR_CARTELA\n{seasonalPresetId: null, seasonalAuto: false, animation: "NONE"};
+  note right
+    No DNA, useLeaveCartela limpa em qualquer
+    saída da B11: outra narrativa, layout base,
+    outro alvo ou proposta da IA
   end note
 else (não)
 endif
+|Pessoa|
+:Salva o look, o DNA ou a peça;
+|Servidor (Spring Boot)|
+:Look: POST/PUT /api/schemes · DNA: POST/PUT /api/dna-schemes\n(seasonalTheme = cartelaSeason ?? AUTUMN) · peça: PUT /api/pieces/{id}/background (baseRev);
+:BackgroundStudioService.applyToScheme;
+if (Preset sazonal desconhecido?) then (sim)
+  :400 PRESET_INVALIDO;
+  stop
+else (não)
+endif
+if (seasonalAuto sem estação no look?) then (sim)
+  :400 ESTACAO_OBRIGATORIA;
+  stop
+else (não)
+endif
+:animation presente → enum (null → NONE); ausente → mantém a gravada;\ngrava studioConfigJson (+ gradiente do preset quando automática);
 stop
 @enduml

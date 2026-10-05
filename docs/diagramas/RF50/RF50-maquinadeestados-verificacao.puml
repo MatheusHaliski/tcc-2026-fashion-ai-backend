@@ -1,6 +1,6 @@
-@startuml RF49_MaquinaDeEstados_Verificacao
+@startuml RF50_MaquinaDeEstados_Verificacao
 !pragma layout smetana
-title RF49 — Pedido de verificação do perfil emissor (ApprovalStatus) e conta (AccountStatus)\nMáquina de estados — política v1.0
+title RF50 — Pedido de verificação do perfil emissor (ApprovalStatus) e conta (AccountStatus)\nMáquina de estados — política v1.0
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF

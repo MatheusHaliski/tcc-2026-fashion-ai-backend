@@ -1,6 +1,6 @@
-@startuml RF51_MaquinaDeEstados_Video
+@startuml RF52_MaquinaDeEstados_Video
 !pragma layout smetana
-title RF51 — Um vídeo de Aura no card (ArtVideo)\nMáquina de estados — sem fonte, carregado, tocando, pausado, travado (plano B), liberado
+title RF52 — Um vídeo de Aura no card (ArtVideo)\nMáquina de estados — sem fonte, carregado, tocando, pausado, travado (plano B), liberado
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF

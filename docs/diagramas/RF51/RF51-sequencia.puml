@@ -1,5 +1,5 @@
 @startuml RF51_Sequencia
-title RF51 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de sequência — ArtVideo: carga preguiçosa, play() com plano B e nova tentativa, liberação
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de sequência — abrir, rascunho, Aplicar/Cancelar, prévia e gravação (look; DNA e peça no fim)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -17,62 +17,75 @@ skinparam note {
 }
 autonumber
 actor "Pessoa" as U
-participant "SchemeCard · DnaCard\nArtStage (peça)" as K
-participant "lib/card-art.ts\nresolveCardArt\nvariantMotion" as L
-participant "CardArtLayer\n(stuck)" as CL
-participant "ArtVideo\n(tryPlay · retry)" as AV
-participant "IntersectionObserver\nnearIO (300 px) · seenIO" as IO
-participant "HTMLVideoElement" as V
-participant "document / window\n(eventos)" as DOC
-participant "Next.js public/\n(MP4 + pôster, CSP media-src)" as NX
+participant "SchemeBuilder\n(etapa 4 do look)" as H
+participant "BackgroundStudio\n(background-studio.tsx)" as BS
+participant "SeasonalDialog\nSeasonalDraft\nSeasonalOptions" as D
+participant "lib/card-art.ts\ncartelaSeason · resolveCardArt\nmotionOf" as L
+participant "SchemeCard\neffectiveAnatomy\nSeasonCard" as P
+participant "BackgroundController\nSchemeController" as C
+participant "SchemeService\nBackgroundStudioService" as S
+database "MySQL\nschemes" as DB
 
-U -> K : abre a tela
-K -> L : resolveCardArt(bg)
-L --> K : CardArt {video: {src, poster}, image: poster, still}
-K -> CL : <CardArtLayer art>
-CL -> AV : <ArtVideo src poster onStuck={setStuck}>
-AV -> V : muted, playsinline; sem src e sem autoplay (pôster visível)
-AV -> IO : observe(video) × 2
-AV -> DOC : visibilitychange · pageshow · canplay
-== perto da tela ==
-IO -> AV : nearIO: isIntersecting (≤ 300 px)
-AV -> V : src = arquivo
-V -> NX : GET /aura…/animacao.mp4 (metadata)
-AV -> AV : tryPlay() → ainda não visível: aguarda
-== visível ==
-IO -> AV : seenIO: isIntersecting → seen = true
-AV -> V : play()
-alt Promise resolvida
-  V --> AV : tocando
-  AV -> DOC : remove a nova tentativa (dropRetry)
-  AV -> CL : onStuck(false)
-else NotAllowedError (economia de energia, limite de vídeos)
-  V --> AV : rejeitada
-  AV -> CL : onStuck(true)
-  CL -> CL : classe anim-<still | drift> no .card-art\n(pôster animado por CSS)
-  AV -> DOC : pointerdown / keydown (captura) → retry
-  U -> DOC : primeiro toque ou tecla
-  DOC -> AV : retry() → dropRetry(); tryPlay()
-  AV -> V : play()
-  V --> AV : tocando
-  AV -> CL : onStuck(false) → sai do plano B
-else AbortError ou outro erro
-  V --> AV : rejeitada
-  AV -> AV : ignora
+U -> H : etapa 4 · Aparência
+H -> BS : <BackgroundStudio value anatomy season>
+BS -> C : GET /api/backgrounds/catalog
+C -> S : catalog()
+S --> BS : seasonal (frost, solstice, ember, bloom)\n+ animations (NONE, SNOW, PETALS, LEAVES, SHIMMER)
+U -> BS : Layout & Estilo → clica "Cartela sazonal"
+BS -> BS : chooseAnatomy("CARTELA_SAZONAL")
+alt já é o layout atual
+  BS -> D : setSeasonal({}) → modal em edição
+else outro layout
+  BS -> D : setSeasonal({enter: onAnatomy(CARTELA_SAZONAL),\npatch: limpa aura/material/arte com IA/upload})
+  note right of BS : o layout ainda não muda
 end
-opt aba volta a ficar visível · página restaurada (bfcache) · canplay
-  DOC -> AV : tryPlay()
+D -> D : draft = {seasonalPresetId, seasonalAuto, animation}\n(do valor atual)
+loop enquanto a pessoa ajusta
+  U -> D : cartela · automática (se o look tem estação) · animação
+  D -> D : altera só o rascunho
 end
-== fora da vista ==
-IO -> AV : seenIO: não visível → seen = false
-AV -> V : pause() (mantém o arquivo)
-IO -> AV : nearIO: além de 300 px
-AV -> V : pause(); removeAttribute("src"); load()\n(libera rede e decodificador)
-== troca de Aura ou desmontagem ==
-K -> CL : nova arte (outro src) ou card sai da página
-AV -> IO : disconnect() × 2
-AV -> DOC : remove ouvintes e a nova tentativa
-AV -> V : pause(); removeAttribute("src"); load()
-AV -> CL : onStuck(false)
-note over AV : com outro src o efeito recomeça;\nno 1º nearIO, src ≠ arquivo carregado → troca o vídeo
+alt Cancelar, X, Esc ou clique no fundo
+  D -> BS : onClose() → setSeasonal(null)
+  note right of BS : nenhum onChange/onAnatomy:\nlayout e arte como estavam
+else Aplicar
+  D -> BS : onApply(draft)
+  BS -> H : enter() → onAnatomy("CARTELA_SAZONAL")
+  BS -> H : onChange({...value, ...patch, ...draft})
+  D -> BS : onClose()
+end
+H -> P : prévia ao vivo (draft do look)
+P -> L : cartelaSeason(bg, estação do look)
+alt há estação
+  P -> L : motionOf(animation)
+  P -> P : SeasonCard: gradiente da estação, SeasonDecor,\nMotionFall (neve/pétalas/folhas) ou brilho
+  note right of P : movimento reduzido:\nanimações desligadas
+else sem cartela e sem estação
+  P -> P : effectiveAnatomy → LISTA_VERTICAL
+end
+opt troca para outro layout
+  U -> BS : escolhe outro layout
+  BS -> H : onAnatomy(outro) + onChange(CLEAR_CARTELA)\n{seasonalPresetId: null, seasonalAuto: false, animation: "NONE"}
+end
+U -> H : etapa 5 · salvar
+H -> C : POST /api/schemes | PUT /api/schemes/{id}\n{background: {scheme: {...bg, layoutAnatomy}}, season, layoutAnatomy, cardSkin}
+C -> S : create/update → applyForm (estação) → applyToScheme(scheme, config)
+alt preset desconhecido
+  S --> H : 400 PRESET_INVALIDO
+else seasonalAuto sem estação
+  S --> H : 400 ESTACAO_OBRIGATORIA
+else válido
+  S -> S : "animation" presente → BackgroundAnimation (null → NONE);\nausente → mantém; automática → preset e gradiente pela estação
+  S -> DB : backgroundGradient, backgroundAnimationType,\nlayoutAnatomy, studioConfigJson
+  S --> H : SchemeView (background.animation vem do studioConfigJson)
+end
+== DNA de Estilo (narrativa B11) ==
+U -> BS : narrativa "Cartela sazonal" (layoutPanel → openSeasonal(enter = setNarrative))
+note over BS, D : mesmo modal; Aplicar define a narrativa B11 e o fundo
+BS -> C : POST /api/dna-schemes/preview (debounce 250 ms)
+BS -> C : POST /api/dna-schemes | PUT /api/dna-schemes/{id}\n{background, narrativeType, seasonalTheme = cartelaSeason ?? AUTUMN}
+note over BS : useLeaveCartela: qualquer saída da B11\n(outra narrativa, layout base, outro alvo) aplica CLEAR_CARTELA
+== peça (família "seasonal") ==
+U -> BS : PieceArtEditor → variante sazonal → mesmo modal (sem "automática")
+BS -> C : PUT /api/pieces/{id}/background {...draft, baseRev}
+C -> S : savePiece → 409 ARTE_ALTERADA se baseRev ficou velho
 @enduml

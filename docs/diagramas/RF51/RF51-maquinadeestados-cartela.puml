@@ -1,6 +1,6 @@
-@startuml RF50_MaquinaDeEstados_Cartela
+@startuml RF51_MaquinaDeEstados_Cartela
 !pragma layout smetana
-title RF50 — Layout Cartela sazonal e rascunho do modal\nMáquina de estados — o card só muda ao Aplicar
+title RF51 — Layout Cartela sazonal e rascunho do modal\nMáquina de estados — o card só muda ao Aplicar
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF

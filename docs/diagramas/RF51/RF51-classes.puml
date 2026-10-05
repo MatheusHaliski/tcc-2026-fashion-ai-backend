@@ -1,5 +1,5 @@
 @startuml RF51_Classes
-title RF51 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de classes — tipos da arte, CardArtLayer e ArtVideo
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de classes — componentes e tipos do frontend, serviço e entidades do backend
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
@@ -14,80 +14,141 @@ skinparam packageStyle rectangle
 hide empty members
 set separator none
 
-package "lib/card-art.ts" {
-  class CardArt <<type>> {
-    +kind : aura | mosaic | seasonal | …
-    {field} +image : string (pôster ou arte)
-    +video : {src, poster} | undefined
-    +still : string | null
-    +animation : string | null
-    +frame : string | undefined
-    +motion : snow | petals | leaves | shimmer | null
-    +presetId : string
+package "Frontend · components/background-studio.tsx" {
+  class BgConfig <<type>> {
+    +seasonalPresetId : string | null
+    +seasonalAuto : boolean
+    +animation : "NONE" | "SNOW" | "PETALS" | "LEAVES" | "SHIMMER" | null
+    +color, gradient, gradientPresetId
+    +aura, materialId, aiArt, uploadUrl, posterUrl
+    +container
   }
+  class BgCatalog <<type>> {
+    +seasonal : SeasonalPreset[]
+    +animations : string[]
+  }
+  class SeasonalPreset <<type>> {
+    +id : frost | solstice | ember | bloom
+    +name : string
+    +season : Season
+    +stops : string[]
+    +animation : SNOW | SHIMMER | LEAVES | PETALS
+  }
+  class BackgroundStudio <<React>> {
+    -seg : cor | aura | layout | container
+    -seasonal : {enter?, patch?} | null
+    +props value, onChange, anatomy, onAnatomy
+    {field} +props season, layoutPanel(ctx {openSeasonal})
+    -chooseAnatomy(a)
+    -applySeasonal(draft)
+  }
+  class SeasonalDialog <<React>> {
+    +open : boolean
+    +value : BgConfig
+    +season : string | null | undefined
+    +onApply(draft)
+    +onClose()
+  }
+  class SeasonalDraft <<React>> {
+    -draft : {seasonalPresetId, seasonalAuto, animation}
+  }
+  class SeasonalOptions <<React>> {
+    +forLayout : boolean
+    +season : string | null | undefined
+    +onChange(patch)
+  }
+  class ColorPanel <<React>> {
+    +hideSeasonal : boolean
+    +keepCartela : boolean
+  }
+  class CartelaHelpers <<module>> {
+    +CLEAR_CARTELA = {seasonalPresetId: null,\n seasonalAuto: false, animation: "NONE"}
+    +useLeaveCartela(active, clear)
+    +useBgCatalog() : BgCatalog
+  }
+}
+package "Frontend · lib/card-art.ts" {
   class CardArtLib <<module>> {
-    +ART_INDEX : Idx
-    +resolveCardArt(bg, opts) : CardArt
-    -resolveLayers(...)
-    -variantMotion(variant)
-    +isVideo(url) : boolean
-    +media(url) : string
-    +FRAME_PRESETS = {aura_electro}
+    +cartelaSeason(bg, season) : Season | null
+    +resolveCardArt(bg, {season}) : CardArt
+    +motionOf(animation) : snow | petals | leaves | shimmer | null
+    +studioOf(bg) : Studio
+    +SEASON_PRESET : Season → preset
   }
-  class Idx <<type card-art-index.json>> {
-    +variants[] : {id, card, animated, animation}
-    +combos[] : {single, mosaic: {url, poster}}
-    +seasonal : {...}
+  class CardArt <<type>> {
+    +kind : "seasonal" | …
+    +season : Season
+    +motion : snow | petals | leaves | shimmer | null
   }
 }
-package "components/card-art.tsx" {
-  class CardArtLayer <<React>> {
-    -stuck : boolean
-    +art : CardArt
-    -fallback = stuck ∧ art.video ? art.still ?? "drift" : null
+package "Frontend · editores" {
+  class SchemeBuilder <<React>> {
+    -bg : BgConfig
+    -anatomy : string
   }
-  class ArtVideo <<React>> {
-    +src : string
-    +poster : string
-    +onStuck(stuck : boolean)
-    -ref : HTMLVideoElement
-    -stuckRef : onStuck mais recente
-    -seen : boolean
-    {field} -retry : (() => void) | null
-    -tryPlay()
-    -mark(stuck)
-    -dropRetry()
-    {field} -nearIO : IntersectionObserver (300px 0px)
-    -seenIO : IntersectionObserver
+  class DnaBuilder <<React>> {
+    -bg : BgConfig
+    -narrative : string
+    -layoutPanel({openSeasonal})
+  }
+  class PieceArtEditor <<React>> {
+    -seasonal : {variant?} | null
+    -chooseTemplate(f, v)
+    -applySeasonal(draft)
   }
 }
-package "Telas" {
-  class SchemeCard <<React>>
-  class DnaCard <<React>>
-  class ArtStage <<React>> {
-    +density : compact | expanded
+package "Backend · fai-application / fai-domain" {
+  class BackgroundStudioService <<Service>> {
+    +catalog() : Map
+    +applyToScheme(Scheme, Map, boolean)
+    +savePiece(...)
+    +resetScheme(...)
   }
-}
-package "Navegador" {
-  class HTMLVideoElement <<DOM>> {
-    +src, poster, muted, playsInline
-    +play() : Promise<void>
-    +pause()
-    +load()
+  class Scheme <<Entity schemes>> {
+    +season : Season
+    +layoutAnatomy : String
+    +backgroundGradient : String
+    +backgroundAnimationType : BackgroundAnimation
+    +studioConfigJson : String
   }
-  class IntersectionObserver <<DOM>>
+  class DnaScheme <<Entity dna_schemes>> {
+    +narrativeType : String
+    +seasonalTheme : Season
+    +studioConfigJson : String
+  }
+  enum BackgroundAnimation {
+    NONE
+    SNOW
+    PETALS
+    LEAVES
+    SHIMMER
+  }
+  enum Season {
+    SPRING
+    SUMMER
+    AUTUMN
+    WINTER
+  }
 }
 
-CardArtLib ..> CardArt : cria
-CardArtLib --> Idx
-SchemeCard ..> CardArtLib
-DnaCard ..> CardArtLib
-ArtStage ..> CardArtLib
-SchemeCard --> CardArtLayer
-DnaCard --> CardArtLayer
-ArtStage --> CardArtLayer
-CardArtLayer *-- ArtVideo : art.video
-CardArtLayer ..> CardArt
-ArtVideo --> HTMLVideoElement
-ArtVideo --> "2" IntersectionObserver
+BackgroundStudio *-- SeasonalDialog
+SeasonalDialog *-- SeasonalDraft
+SeasonalDraft *-- SeasonalOptions
+BackgroundStudio *-- ColorPanel
+BackgroundStudio ..> CartelaHelpers
+BackgroundStudio ..> BgConfig
+BgCatalog *-- SeasonalPreset
+SeasonalOptions ..> BgCatalog
+SchemeBuilder --> BackgroundStudio
+DnaBuilder --> BackgroundStudio
+DnaBuilder ..> CartelaHelpers : useLeaveCartela
+PieceArtEditor --> SeasonalDialog
+CardArtLib ..> CardArt
+SchemeBuilder ..> CardArtLib : prévia
+DnaBuilder ..> CardArtLib : seasonalTheme
+SchemeBuilder ..> BackgroundStudioService : POST/PUT /api/schemes
+BackgroundStudioService ..> Scheme : applyToScheme
+Scheme --> BackgroundAnimation
+Scheme --> Season
+DnaScheme --> Season
 @enduml

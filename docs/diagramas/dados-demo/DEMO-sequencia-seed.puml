@@ -1,5 +1,5 @@
 @startuml DEMO_Sequencia_Seed
-title Fashion AI — Sequência: seed idempotente do ambiente demo (PROPOSTA)
+title Fashion AI — Sequência: seed idempotente do ambiente demo (planejado; fixtures e guarda já no código)
 !include ../seguranca/_estilo.iuml
 autonumber
 actor "Dev/QA" as Dev
