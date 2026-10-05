@@ -344,15 +344,24 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   ("Levi's" × "Levis") ainda contam como marcas diferentes até a peça apontar para o catálogo (RF47).
 * O ranking de marcas e criadores carrega as entidades da população pública numa consulta (volume do TCC); em escala,
   gravar `brand_key` no `hype_scores` durante o job.
+* O dedupe da antimanipulação (save/unsave repetido, rajadas) vive no cache: num reinício ou com várias instâncias sem
+  Redis, sinais repetidos dentro da janela voltam a contar uma vez.
+* As chaves do lote `GET /api/hype/groups` vão separadas por vírgula: um nome de marca com vírgula se parte.
+* Os limiares das faixas são configuráveis no backend (`HypeScoreConfig`), mas o frontend repete os valores padrão
+  (`lib/hype/model.ts`) para nomear a faixa a partir do número; trocar os limiares exige trocar os dois (e o
+  `algorithmVersion`).
 
 ## 15. Próximos passos
 
-1. Lotes adiados da auditoria de abas: A1 (`/api/hype/groups`), A2 (perfil da marca e /brands), A3 (telas do
-   Explorador), A4 (Lookbook › Peças para visitante), A5 (InsightStrip em novos contextos) e a limpeza final do v1
-   (P3-16: parar de escrever `hype_score`, remover os campos das views e as faixas v1).
-2. Calibrar os pesos com dados reais e publicar como `HYPE_V3` (nova série, histórico do v2 preservado).
-3. Antifraude além do mínimo (§10) e rótulo de patrocínio.
-4. `influenceScore` também para peças (looks derivados que usam a peça).
+A auditoria de abas está toda executada, incluindo os lotes adiados A1–A5 e o lote Final (P3-07, P3-12 e a limpeza do
+v1, P3-16) — ver [`HYPE_AUDITORIA_ABAS.md`](HYPE_AUDITORIA_ABAS.md) §5. O que segue aberto:
+
+1. Calibrar os pesos com dados reais e publicar como `HYPE_V3` (nova série, histórico do v2 preservado).
+2. Antifraude além do mínimo (§10: pontos de extensão listados em `HypeIntegrityPolicy`) e rótulo de patrocínio (o bloco
+   "Patrocinado" do Copilot existe, separado, mas ainda não há conteúdo patrocinado).
+3. `influenceScore` também para peças (looks derivados que usam a peça); hoje só looks têm a dimensão de influência.
+4. Persistir o dedupe da antimanipulação fora do cache (tabela ou Redis obrigatório) e agregar ranking/globo por região
+   no job quando o volume passar do TCC.
 
 ## 16. Selos × HypeScore e Selos de Hype FashionAI
 

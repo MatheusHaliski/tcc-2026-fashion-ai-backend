@@ -73,9 +73,11 @@ public class HypeScoreService {
         if (withAi) {
             String localTip = tip;
             outcome = ai.text(new AiEngine.TextCall<>(dl.getUser().getId(), AiCapability.STYLE_ADVISOR,
-                    "Você é o Style Advisor do Fashion AI. Dê UMA dica acionável (até 2 frases, em " + Msg.languageName() + ") para o look "
-                            + "ganhar relevância, citando a dimensão mais fraca do HypeScore v2. Hype é relevância no FashionAI, não qualidade: "
-                            + "nunca diga que o look é bom ou ruim e nunca cite marcas reais que não estejam no look. Responda só o texto.",
+                    "Você é o Style Advisor do Fashion AI. Dê UMA dica acionável (até 2 frases, em " + Msg.languageName() + ") sobre como "
+                            + "mostrar melhor este look para quem o vê (foto, descrição, ocasião, publicação), citando a dimensão mais fraca do "
+                            + "HypeScore v2 como contexto. Hype é relevância no FashionAI, não qualidade nem meta: nunca sugira trocar peças para "
+                            + "seguir o que está em alta, nunca diga que o look é bom ou ruim e nunca cite marcas reais que não estejam no look. "
+                            + "Responda só o texto.",
                     Msg.t("hypeScore.look_dimensoes_v2", s.getTitle(), Json.csv(s.getStyle()), Json.csv(s.getOccasion()), Json.write(dims)),
                     List.of(), 200, List.of(Msg.t("hypeScore.contadores_sociais_do_look"), Msg.t("hypeScore.dimensoes_do_hypescore_v2")),
                     text -> text == null || text.isBlank() ? null : InputSanitizer.clean(text, 300), () -> localTip, null));
