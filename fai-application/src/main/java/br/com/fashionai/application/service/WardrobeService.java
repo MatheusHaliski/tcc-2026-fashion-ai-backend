@@ -1226,8 +1226,7 @@ public class WardrobeService {
         qs.setIssuesJson(Json.write(q.get("issues")));
         qs.setRecommendationsJson(Json.write(q.get("recommendations")));
         qualityScores.save(qs);
-        ProcessingJobLog log = new ProcessingJobLog();
-        log.setId(UUID.randomUUID());
+        ProcessingJobLog log = new ProcessingJobLog();   // id gerado pelo JPA (atribuir à mão vira merge e falha no Hibernate 6.6+)
         log.setPipelineJobId(draft.getId());
         log.setWardrobeItemId(w.getId());
         log.setUserId(w.getUser().getId());
