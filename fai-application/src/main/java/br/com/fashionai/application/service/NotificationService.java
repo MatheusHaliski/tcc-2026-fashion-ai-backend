@@ -9,6 +9,7 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Notification;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserPreferences;
+import br.com.fashionai.domain.model.enums.NotificationCategory;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.repository.NotificationRepository;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,8 +101,13 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> inbox(CurrentUser user) {
-        List<Views.NotificationView> items = notifications.findTop100ByRecipientIdAndDeliveredTrueOrderByCreatedAtDesc(user.id())
-                .stream().map(Views::notification).toList();
+        // o extrato dos FAI Points chega a dezenas de lançamentos por dia (curtidas, partidas): cota própria de 100,
+        // para não tirar da caixa as notificações sociais, de segurança e de sistema
+        List<Notification> rows = new ArrayList<>(notifications.findTop100ByRecipientIdAndDeliveredTrueAndCategoryNotOrderByCreatedAtDesc(
+                user.id(), NotificationCategory.POINTS));
+        rows.addAll(notifications.findTop100ByRecipientIdAndDeliveredTrueAndCategoryOrderByCreatedAtDesc(user.id(), NotificationCategory.POINTS));
+        rows.sort(Comparator.comparing(Notification::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        List<Views.NotificationView> items = rows.stream().map(Views::notification).toList();
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("unread", notifications.countByRecipientIdAndReadFalseAndDeliveredTrue(user.id()));
         out.put("items", items);

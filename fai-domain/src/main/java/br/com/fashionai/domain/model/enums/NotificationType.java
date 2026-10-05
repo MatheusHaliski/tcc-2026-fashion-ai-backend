@@ -37,7 +37,9 @@ public enum NotificationType {
     ACHIEVEMENT_UNLOCKED(NotificationCategory.ACHIEVEMENT, true),
     ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true),
     /** Card Trello RF38 — "Parabéns! Deseja resgatar o CUPOM?" (direito promocional conquistado no app). */
-    COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true);
+    COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true),
+    /** RF30/RF39 — extrato dos FAI Points: cada lançamento do ledger (ganho ou gasto) vira uma notificação. */
+    FAI_POINTS(NotificationCategory.POINTS, true);
 
     private final NotificationCategory category;
     private final boolean optOutAllowed;
