@@ -37,7 +37,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | # | Item | Por que nesta posição |
 |---|---|---|
 | 1 | **WARDROBE-FIX**: tirar a peça do guarda-roupa e provar no espelho (hoje não funciona) | Defeito funcional relatado em teste |
-| 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
+| 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
 | 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
 | 4b | **RF4-FOTO**: etapa opcional "Fotografia" no criador de peça (seção 5.1) | Definição nova do RF4 no Trello; o editor completo é o RF15 (Tema Futuro) |
@@ -432,3 +432,48 @@ a rodada de 05/10. Abaixo está o que tinha ficado de fora, com o estado conferi
 
 Os documentos de diagnóstico (auditorias de roupa e de identidade) e as decisões da seção 2 continuam valendo para
 estes itens.
+
+---
+
+## 6. AVATAR-ID: especificação completa do digital double (reafirmada em 05/10/2026)
+
+A especificação de 76 requisitos ("representação 3D reconhecível daquela pessoa específica, e não um avatar humano
+parecido") continua valendo na íntegra. Os 22 entregáveis técnicos dela estão em
+[`docs/avatar3d/auditoria-identidade-avatar/`](../avatar3d/auditoria-identidade-avatar/README.md) (seções 1–22). A tabela
+liga cada grupo de requisitos à seção da auditoria, à fase e ao estado conferido **no código** (não só no documento).
+
+| Req. | Tema | Auditoria | Fase | Estado no código |
+|---|---|---|---|---|
+| 1 | Auditoria do pipeline e ponto de perda de identidade | §1 | — | Entregue (c15f507) |
+| 2–3, 36–37 | Identidade separada do estilo; perfil persistente; identidade canônica única; versões sem sobrescrever a aprovada | §2, §4 | I1 | Versões, aprovação e histórico entregues (V42). **Falta** o campo `renderStyle` separado da identidade |
+| 4–6, 62–63 | Formato do rosto com medidas contínuas, assimetria preservada, estrutura craniofacial, topologia canônica e morphs nomeados | §5, §9 | I2 | Entregue (resíduo assimétrico, 19 morphs nomeados) |
+| 7–9, 44 | Olhos: forma, medidas, diferença entre os dois, cor detalhada e contínua, shader com córnea, ossos dos olhos | §6 | I4 | Aberto |
+| 10 | Sobrancelhas: espessura, curvatura, densidade, cor | §5 | I4 | Parcial (medidas de posição no I2; falta a forma própria da sobrancelha) |
+| 11–13 | Nariz, boca e lábios, mandíbula e queixo, sem embelezar | §5, §9 | I2 | Entregue nas medidas e morphs; o gate mede a boca (1 retrato reprova na reprojeção da boca) |
+| 14 | Orelhas | §5 | I6 | Aberto (genéricas; ver 5.2, item 2) |
+| 15–17 | Pele: tom, subtom, melanina, rugosidade, subsuperfície; luz separada da cor | §7 | I3 | Entregue (balanço pela esclera, ΔE 0,2, sem costura) |
+| 18–21, 56 | Sardas, pintas, acne, cicatrizes, rugas estáticas e de expressão, olheiras, nos três níveis (textura, superfície, geometria), sem exagero e sem remover | §12 | I6 | Aberto (`DistinctiveFeature` ainda não existe) |
+| 22–30, 64 | Cabelo como identidade: comprimento medido, curvatura 1A–4C só com confiança, densidade × volume × espessura, linha do cabelo, risca, franja, silhueta primeiro, níveis de geometria | §8, §13 | I5 | Parcial: silhueta, volume, curvatura e níveis de fios (HAIR-F2) existem; faltam linha do cabelo, risca, franja tipada e variedade de forma |
+| 31–32 | Barba e bigode; cor base, mecha e raiz | §8, §13 | I5 | Aberto |
+| 33–34, 67, 70 | Não alucinar; `value` + `confidence` + `source`; oclusão; nada além do visual | §11 | I1 + cada fase | Confiança por característica entregue no I1; cada fase nova grava a sua |
+| 35 | Várias fotos quando houver; uma foto continua funcionando, com incerteza maior | §11 | I7 | Parcial (uma foto: confiança de profundidade limitada a 0,6) |
+| 38–39, 57 | Revisão visual simples, correção localizada sem refazer o resto, refazer/editar/aprovar/apagar | §4 | I7 | Parcial (aprovar, restaurar e refazer existem; faltam os cartões de revisão e a correção localizada) |
+| 40–41 | Cabelo desacoplado da cabeça; penteado, maquiagem, idade e styling como **modificadores** que nunca gravam na identidade | §8 | I5 (cabelo), I7 (modificadores) | Cabelo já é malha separada; a camada de modificadores não existe (**acréscimo ao I7**) |
+| 42–43, 45 | Rig facial (piscar, sorrir, abrir a boca, sobrancelhas, olhar), blendshapes no padrão ARKit sem amarrar a uma plataforma, dentes e boca | §14 | I6 | Aberto |
+| 46–48 | LOD 0–3, mapas separados (cor, normal, rugosidade, subsuperfície, deslocamento, AO), microdetalhe por normal | §7, §18 | I3 (mapas), I7 (LOD) | Mapas de pele no I3; LOD só no cabelo (`hair-lod.ts`) |
+| 49–54 | Métricas, reprojeção de pontos, silhueta, validação em vários ângulos, gate, não depender só de embedding | §15, §16 | I0 | Entregue (gate 14/15); a renderização automática em 6 vistas para o gate é **acréscimo ao I7** |
+| 55 | Sem embelezamento automático | §2 | todas | Regra ativa; teste de regressão no gate (assimetria preservada) |
+| 58 | Dados derivados sensíveis fora dos logs | §21 | I0 | Entregue (`privacy.ts` e teste de privacidade dos logs) |
+| 59 | Modo de depuração visual (pontos, malha, máscaras, confiança) só para desenvolvimento autorizado | §21 | I7 | Aberto (**acréscimo ao I7**, atrás do gate de desenvolvedor) |
+| 60–61 | Módulos separados (`FaceAnalyzer` … `AvatarAssembler`) e pipeline recomendado | §2, §3 | I1–I7 | Parcial (`face-profile`, `face-residual`, `skin-tone`, `identity/*` separados; `pipeline.ts` ainda concentra etapas) |
+| 65 | Passes progressivos 1–11, cada um preservando os anteriores | §22 | I2–I7 | Seguido na ordem das fases; **acréscimo**: o gate roda depois de cada passe e a regressão não pode piorar mais que 0,03 |
+| 66 | Casos de teste obrigatórios (tipos de cabelo, tons de pele, detalhes, barba, óculos) | §17 | I0 + cada fase | Parcial (15 retratos autorizados, só agregados no repositório) |
+| 66, 3 do 29/09 | Óculos como acessório externo, nunca parte do rosto; óculos escuros removidos, de grau mantidos | §5 | I4 | Aberto (**acréscimo ao I4**) |
+| 68–69 | Qualidade da foto antes do pipeline e captura guiada (olhar para a câmera, expressão neutra, luz frontal, sem filtro, sem mão no rosto) | §1, §11 | I7 | Aberto (**acréscimo ao I7**: `ImageQualityGate` + instruções visuais na tela Meu Avatar 3D) |
+| 71 | Mesmo `CanonicalAvatar` no FashionAI e no Scores, com perfil de render, LOD e rig próprios | §20 | I7 | Aberto |
+| 72–74 | Esqueleto, medidas e âncoras compatíveis com o provador; cabeça e corpo da mesma pessoa; pescoço sem costura | §19 | I3 + GARMENT F1 | Costura resolvida no I3; âncoras do pescoço na GARMENT F1 |
+| 75–76 | Aceite: reconhecível por quem conhece a pessoa e mensurável | §16, §23 | I7 | O aceite final exige o gate nas 6 vistas e a revisão humana |
+
+**Aceite (requisito 76):** a fase I7 só fecha quando o sistema produz "uma representação 3D reconhecível daquela pessoa
+específica", e não "um avatar humano parecido". Isso vale nas métricas do gate, nas 6 vistas e na revisão da própria
+pessoa.
