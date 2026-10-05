@@ -2,11 +2,12 @@
 tipo da peça (category) + Marca + "Como ela se chama?" (q). Verifica o que a tela precisa: resultado, marca certa,
 tipo certo, cor pedida no topo e foto."""
 import json
+import os
 import sys
 import urllib.parse
 import urllib.request
 
-API = "http://localhost:8080"
+API = os.getenv("FAI_API", "http://localhost:8080").rstrip("/")   # FAI_API=https://<api-no-railway> para o ambiente publicado
 TOKEN = open(sys.argv[1]).read().strip()
 
 # (tipo, marca, texto, subtipos esperados, cor esperada no 1º resultado)

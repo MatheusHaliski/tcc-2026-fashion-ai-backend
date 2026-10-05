@@ -10,6 +10,8 @@
 #   scripts/catalog/import_railway.sh <host-do-proxy> <porta-do-proxy> [--dry-run]
 #   ex.: scripts/catalog/import_railway.sh mainline.proxy.rlwy.net 11960 --dry-run
 # Remova o TCP proxy ao terminar.
+# Rode de uma máquina com saída TCP livre (o protocolo do MySQL não passa por proxy HTTPS: numa sessão do
+# Claude Code na nuvem o túnel abre mas o MySQL não responde).
 #
 # Usuário: fai_app (menor privilégio, só com TLS) — infra/railway/mysql/start.sh. Banco: fashionai.
 set -euo pipefail
@@ -30,6 +32,7 @@ python3 -c "import pymysql" 2>/dev/null || python3 -m pip install -q -r "$HERE/r
 export MYSQL_HOST="$HOST" MYSQL_PORT="$PORT" MYSQL_DATABASE="${MYSQL_DATABASE:-fashionai}" MYSQL_USER="${MYSQL_USER:-fai_app}" \
        MYSQL_PASSWORD="$RAILWAY_MYSQL_APP_PASSWORD" MYSQL_SSL_MODE=REQUIRED
 
+cd "$ROOT"                                     # os passos abaixo usam caminhos relativos à raiz do repositório
 echo "== Conexão (TLS) com $MYSQL_HOST:$MYSQL_PORT/$MYSQL_DATABASE como $MYSQL_USER"
 python3 - <<'EOF'
 import sys
@@ -38,7 +41,7 @@ from db import connect
 c = connect()
 with c.cursor() as cur:
     cur.execute("SELECT VERSION() AS v, (SELECT COUNT(*) FROM catalog_products) AS produtos, (SELECT COUNT(*) FROM brands) AS marcas, "
-                "(SELECT MAX(version) FROM flyway_schema_history WHERE success = 1) AS schema_v")
+                "(SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success = 1) AS schema_v")   # version é VARCHAR: MAX(texto) daria V9
     r = cur.fetchone()
     cur.execute("SHOW STATUS LIKE 'Ssl_cipher'")
     ssl = cur.fetchone()
@@ -48,7 +51,6 @@ if not ssl["Value"]:
 c.close()
 EOF
 
-cd "$ROOT"
 echo "== 1/3 Seed (marcas, apelidos, fontes oficiais, produtos do seed)"
 python3 scripts/catalog/seed_catalog.py ${DRY}
 echo "== 2/3 Acervo oficial: ${ACERVO[*]##*/}"
