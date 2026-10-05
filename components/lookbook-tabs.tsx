@@ -8,11 +8,18 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { HypeBreakdown } from "@/components/hype/hype-breakdown";
+import { HypeInline } from "@/components/hype/hype-inline";
+import { HypeStateNotice } from "@/components/hype/hype-state-notice";
+import { HypeTrendIndicator } from "@/components/hype/hype-trend-indicator";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { Avatar, Button, Card, Chip, Dropdown, EmptyState, ErrorState, Field, Input, Pagination, SegmentPicker, Skeleton, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { SchemeCard } from "@/components/scheme-card";
-import { hypeColor } from "@/lib/hype/model";
+import { DIMENSION_ORDER, displayScore, hypeViewState, levelTone } from "@/lib/hype/model";
+import { primeHype, useHypeSummary } from "@/lib/hype/use-hype";
+import type { HypeLevel, HypeSummary } from "@/lib/hype/types";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
@@ -101,17 +108,27 @@ function DnaLooksTab() {
   return <div className="grid-looks">{list.map((d) => <DnaCard key={d.id ?? d.title} dna={d} href={d.id ? `/dna-schemes/${d.id}` : undefined} />)}</div>;
 }
 
+/** Ordenação da aba Looks (P3-02): é ordenação, não aba nem filtro. Valores aceitos por GET /api/profiles/{id}?sort=. */
+type LookSort = "recent" | "hype_desc" | "growth";
+
 /**
  * Looks: a vitrine — os looks publicados, os mesmos para o dono e para quem visita. Filtros, rascunhos e arquivados
- * (a gestão) ficam em /looks; o dono tem o atalho discreto "Gerenciar meus looks".
+ * (a gestão) ficam em /looks; o dono tem o atalho discreto "Gerenciar meus looks". Ordenar por Hype (P3-02): o dono
+ * ordena pelo próprio Hype pessoal; quem visita, só pelo Hype público — look sem Hype fica no fim (nunca vale 0).
  */
 function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
-  const { t } = useI18n(); const { user } = useAuth();
-  const { data, loading, error, reload } = useApi<{ schemes: SchemeView[] }>((signal) => api.get(`/api/profiles/${ownerId}`, { signal, anonymous: !user }), [ownerId, !!user]);
+  const { t } = useI18n(); const { user } = useAuth(); const [sort, setSort] = useState<LookSort>("recent");
+  // "Recentes" é a rota de sempre; as outras ordens mandam ?sort= (o backend respeita a privacidade do Hype)
+  const { data, loading, error, reload } = useApi<{ schemes: SchemeView[] }>((signal) => api.get(`/api/profiles/${ownerId}${qs({ sort: sort === "recent" ? undefined : sort })}`, { signal, anonymous: !user }), [ownerId, !!user, sort]);
   const list = data?.schemes ?? [];
   return (
     <>
-      {self && <p className="lookbook-manage"><Link href="/looks" className="lookbook-manage-link">{t("lookbook.manageLooks")} →</Link></p>}
+      <div className="lookbook-sort">
+        <Dropdown label={t("hypeLookbook.ordenar")} prefix={t("hypeLookbook.ordenar_prefixo")} value={sort} onChange={setSort}
+          options={[{ id: "recent", label: t("hypeLookbook.ordem.recent") }, { id: "hype_desc", label: t("hypeLookbook.ordem.hype_desc") }, { id: "growth", label: t("hypeLookbook.ordem.growth") }]} />
+        {sort !== "recent" && <span className="type-caption text-muted">{self ? t("hypeLookbook.ordem_pessoal") : t("hypeLookbook.ordem_publica")}</span>}
+        {self && <p className="lookbook-manage"><Link href="/looks" className="lookbook-manage-link">{t("lookbook.manageLooks")} →</Link></p>}
+      </div>
       {error ? <ErrorState error={error} onRetry={reload} /> : loading ? <SkeletonGrid />
         : list.length === 0 ? <EmptyState title={t("lookbook.noPublishedLooks")} action={self ? <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link> : undefined} />
         : <div className="grid-looks">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>}
@@ -187,39 +204,71 @@ function SavedPiecesTab() {
   );
 }
 
+/**
+ * Painel do Look do Dia (HypeScoreService.panel): `v2` = HypeScore v2 do look (P2-13, Hype pessoal do dono — o Look do
+ * Dia é sempre dele) e `magazineCover` = capa liberada pela faixa v2. Os demais campos são v1 (deprecados) e não aparecem.
+ */
+interface DailyPanel { v2?: HypeSummary | null; magazineCover?: { unlocked: boolean; minLevel: HypeLevel } | null; tip?: unknown; advice?: unknown; [legacyV1: string]: unknown }
+/** Linha do histórico (DailyLookService.view): `schemeId` é a chave do Hype v2 (P1-06); `hypeScore` é o v1 legado. */
+interface DailyHistoryRow { date: string; schemeId?: string; title?: string; scheme?: SchemeView; feedback?: string | null; /** @deprecated v1 */ hypeScore?: number | null }
+interface DailyTabData { panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: DailyPanel; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: DailyHistoryRow[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }
+
+/** HypeBadge v2 de uma linha do histórico (lote: todas as linhas viram uma requisição a /api/hype/summaries). */
+function DailyHistoryHype({ id }: { id?: string }) {
+  const hype = useHypeSummary("SCHEME", id);
+  if (!id) return null;
+  return <HypeBadge state={hypeViewState(hype.summary, hype)} summary={hype.summary} />;
+}
+
+/**
+ * Look do Dia (RF6): o número do painel é o HypeScore v2 do look em todas as 6 versões visuais (P2-13) — a versão muda
+ * só a apresentação. Faixa sempre em texto; "sem dados" vira "Dados insuficientes"/"Hype ainda não calculado", nunca 0.
+ * Ao lado, a análise completa do look (HypeInline) e, no histórico, o HypeBadge v2 de cada dia (P1-06).
+ */
 function DailyTab() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const [withAi, setWithAi] = useState(false);
-  const { data, loading, reload } = useApi<{ panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: Record<string, unknown>; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: { date: string; title?: string; scheme?: SchemeView; feedback?: string | null; hypeScore?: number | null; hype?: number }[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
+  const { data, loading, reload } = useApi<DailyTabData>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
+  // o painel já traz o resumo v2 do look: alimenta o cache para o card e a análise não pedirem de novo
+  const primed = data?.scheme?.id && data.panel?.v2 ? { id: data.scheme.id, v2: data.panel.v2 } : null;
+  useEffect(() => { if (primed) primeHype("SCHEME", { [primed.id]: primed.v2 }); }, [primed?.id, primed?.v2]); // eslint-disable-line react-hooks/exhaustive-deps
   // recarregar (depois de trocar a versão do painel) mantém a aba na tela: a lista não some e o foco fica nela
   if (!data) return <Skeleton className="h-64" />;
-  const panel = data.panel ?? {}; const hype = Number(panel.hype ?? panel.score ?? data.scheme?.hypeScore ?? 0);
-  const metrics = (panel.metrics ?? panel.components ?? {}) as Record<string, number | { value?: number; label?: string }>;
+  const v2 = data.panel?.v2 ?? null;
+  const state = hypeViewState(v2 ?? undefined, { loading: loading && !data.panel });
+  const score = state.kind === "available" ? state.score : null;
+  const level = state.kind === "available" ? state.level : null;
+  const version = data.panelVersion;
+  const bar = score != null ? <div className="hype-bar mt-2"><i style={{ width: `${Math.max(0, Math.min(100, score))}%`, background: "var(--thread)" }} /></div> : null;
   async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
   return (<>
     <InsightStrip context="HISTORY" collapsible className="mb-4" />
     <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-      <div>{data.scheme && <SchemeCard scheme={data.scheme} />}{data.scheme && <LookExports scheme={data.scheme} hype={hype} bandLabel={typeof panel.band === "object" && panel.band ? (panel.band as { label?: string }).label : undefined} date={data.today?.date} />}{!data.scheme && <EmptyState title={data.empty?.message ?? t("lookbookTabs.nenhum_look_do_dia")} action={(data.empty?.actions ?? []).map((a) => <Link key={a.href} href={a.href === "/add-piece" ? "/pieces/new" : a.href.startsWith("/create") ? "/schemes/new" : a.href.endsWith("?tab=looks") ? "/looks" : a.href} className="btn btn-primary">{a.label}</Link>)} />}</div>
+      <div>{data.scheme && <SchemeCard scheme={data.scheme} />}{data.scheme && <LookExports scheme={data.scheme} score={score} level={level} date={data.today?.date} />}{!data.scheme && <EmptyState title={data.empty?.message ?? t("lookbookTabs.nenhum_look_do_dia")} action={(data.empty?.actions ?? []).map((a) => <Link key={a.href} href={a.href === "/add-piece" ? "/pieces/new" : a.href.startsWith("/create") ? "/schemes/new" : a.href.endsWith("?tab=looks") ? "/looks" : a.href} className="btn btn-primary">{a.label}</Link>)} />}</div>
       <div>
         <Card className="mb-4">
           <div className="mb-2 flex items-center justify-between gap-2"><h2 className="type-h3">{t("lookbook.hype")} · {t("lookbook.panel")}</h2>
             <Dropdown label={t("lookbookTabs.versao_do_painel")} value={data.panelVersion} onChange={async (v) => { try { await api.put("/api/me/hype-panel-version", { version: v }); reload(); } catch (err) { toast.fromError(err); } }} options={data.panelVersions.map((v) => ({ id: v.code, label: v.name }))} /></div>
           {data.scheme ? (
-            <div className={`grid gap-3 ${data.panelVersion === "PASSARELA" ? "grid-cols-[80px_1fr]" : ""}`}>
-              {data.panelVersion === "PASSARELA" ? <div className="flex h-40 items-end rounded bg-surface-2 p-1"><div className="w-full rounded" style={{ height: `${hype}%`, background: hypeColor(hype) }} /></div> : null}
+            <div className={`grid gap-3 ${version === "PASSARELA" ? "grid-cols-[80px_1fr]" : ""}`} data-panel-version={version}>
+              {version === "PASSARELA" ? <div className="flex h-40 items-end rounded bg-surface-2 p-1" aria-hidden>{score != null && <div className="w-full rounded" style={{ height: `${Math.max(0, Math.min(100, score))}%`, background: "var(--thread)" }} />}</div> : null}
               <div>
-                <p className="hero-number text-5xl" style={{ color: hypeColor(hype) }}>{Math.round(hype)}</p>
-                <p className="type-caption text-muted">{String(panel.bandLabel ?? (typeof panel.band === "object" && panel.band ? (panel.band as { label?: string }).label ?? "" : panel.band ?? ""))} {panel.topPercentWeekly != null ? t("lookbookTabs.top_da_semana", { topPercentWeekly: panel.topPercentWeekly }) : ""}</p>
-                {data.panelVersion !== "PASSARELA" && <div className="hype-bar mt-2"><i style={{ width: `${hype}%`, background: hypeColor(hype) }} /></div>}
-                <dl className="mt-3 grid grid-cols-2 gap-2 type-body-sm">{Object.entries(metrics).map(([k, v]) => <div key={k}><dt className="label">{typeof v === "object" && v?.label ? v.label : k}</dt><dd className="type-data">{typeof v === "object" ? v?.value ?? "—" : v}</dd></div>)}</dl>
-                {typeof panel.tip === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {panel.tip}</p>}
-                {typeof panel.advice === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {panel.advice}</p>}
+                {score != null && level ? <>
+                  <p className={`hero-number ${version === "EDITORIAL_MINIMAL" ? "text-3xl" : "text-5xl"}`} aria-label={t("hype.badge.aria", { score: displayScore(score), level: t(`hype.level.${level}`) })}>{displayScore(score)}</p>
+                  <p className="lb-hype-line"><span className={`hype-level-chip ${levelTone(level)}`}>{t(`hype.level.${level}`)}</span><HypeTrendIndicator summary={v2} />{v2?.stale && <span className="type-caption text-faint">{t("hype.state.stale")}</span>}</p>
+                </> : <HypeStateNotice state={state} />}
+                {version !== "PASSARELA" && version !== "EDITORIAL_MINIMAL" && bar}
+                {version === "RAIO_X_ESTILO" && score != null && <HypeBreakdown type="SCHEME" dimensions={v2?.dimensions} list={DIMENSION_ORDER} />}
+                <p className="mt-2 type-caption text-muted">{t("hypeLookbook.painel_v2_dica")}</p>
+                {typeof data.panel?.tip === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {data.panel.tip}</p>}
+                {typeof data.panel?.advice === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {data.panel.advice}</p>}
                 <label className="mt-2 flex items-center gap-2 type-caption"><input type="checkbox" checked={withAi} onChange={(e) => setWithAi(e.target.checked)} />{" "}{t("lookbookTabs.dica_com_ia_style_advisor")}</label>
+                <HypeInline type="SCHEME" id={data.scheme.id} name={data.scheme.title} />
               </div>
             </div>
           ) : <p className="type-body text-muted">{t("lookbookTabs.marque_um_look_como_look")}</p>}
         </Card>
         {data.today && (data.today.feedback == null) && <Card className="mb-4"><p className="type-body mb-2">{data.feedbackReminder?.message ?? t("lookbookTabs.como_foi_o_look_de")}</p><div className="flex gap-2">{(data.feedbackOptions ?? ["ADOREI", "NAO_USEI", "NAO_GOSTEI"]).map((o) => <Button key={o} onClick={() => feedback(o)}>{o === "ADOREI" ? t("lookbookTabs.adorei") : o === "NAO_USEI" ? t("lookbookTabs.nao_usei") : t("lookbookTabs.nao_gostei")}</Button>)}</div></Card>}
-        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="flex items-center justify-between py-2 type-body-sm"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="type-data">{h.feedback ?? "—"}{(h.hypeScore ?? h.hype) != null ? t("lookbookTabs.hype", { Math: Math.round(Number(h.hypeScore ?? h.hype)) }) : ""}</span></li>)}</ul>}</Card>
+        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="flex items-center justify-between gap-2 py-2 type-body-sm"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="flex items-center gap-2"><span className="type-data">{h.feedback ?? "—"}</span><DailyHistoryHype id={h.schemeId ?? h.scheme?.id} /></span></li>)}</ul>}</Card>
       </div>
     </div>
   </>);
@@ -258,18 +307,37 @@ function CapsuleTab() {
   </>);
 }
 
+/**
+ * Agrupamento sugerido do acervo (LookbookService.groups): cluster por SIMILARIDADE de estilo, ocasião, cor, marca e tipo
+ * — não é Hype. `hype` = Hype médio v2 dos membros, mostrado à parte (avgScore nulo = nenhum membro com Hype, nunca 0).
+ */
+interface SimilarityGroup { id: string; label?: string; name?: string; kind?: string; count?: number; hype?: { avgScore: number | null; level: HypeLevel | null; items: number; members: number } | null }
+
+/** "Hype médio 72 · Em alta" ao lado do agrupamento; sem base, "Hype médio: —" (sem número inventado). */
+function SimilarityGroupHype({ hype }: { hype?: SimilarityGroup["hype"] }) {
+  const { t } = useI18n();
+  if (!hype) return null;
+  if (hype.avgScore == null) return <span className="block type-caption text-faint" title={t("hype.state.insufficient")}>{t("hypeLookbook.grupo_hype_vazio")}</span>;
+  return (
+    <span className="lb-hype-line type-caption text-muted">{t("hypeLookbook.grupo_hype", { n: displayScore(hype.avgScore), items: hype.items, members: hype.members })}
+      {hype.level && <span className={`hype-level-chip ${levelTone(hype.level)}`}>{t(`hype.level.${hype.level}`)}</span>}</span>
+  );
+}
+
 function GroupsTab({ ownerId, self, suggestions }: { ownerId: string; self: boolean; suggestions: boolean }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const [form, setForm] = useState({ type: "COLECAO", label: "", description: "" }); const [open, setOpen] = useState<string | null>(null);
   const groups = useApi<{ id: string; label: string; type: string; description?: string; coverUrl?: string; count?: number }[]>((signal) => api.get(`/api/users/${ownerId}/groupings`, { signal, anonymous: !user }), [ownerId, !!user]);
-  const hype = useApi<{ id: string; label?: string; name?: string; members?: unknown[]; similarity?: number }[]>((signal) => api.get("/api/me/hype-groups?type=SCHEME", { signal }), [], { enabled: self });
+  // agrupamentos SUGERIDOS por similaridade (P3-04; a rota antiga /api/me/hype-groups é só um apelido deprecado)
+  const similar = useApi<SimilarityGroup[]>((signal) => api.get("/api/me/similarity-groups?type=SCHEME", { signal }), [], { enabled: self });
   const schemes = useApi<SchemeView[]>((signal) => api.get(`/api/groupings/${open}/schemes`, { signal, anonymous: !user }), [open], { enabled: !!open });
   async function create() { try { await api.post("/api/groupings", form); setForm({ type: "COLECAO", label: "", description: "" }); groups.reload(); } catch (e) { toast.fromError(e); } }
-  async function suggest() { try { const r = await api.post<{ created?: number; groups?: unknown[]; message?: string }>("/api/me/hype-groups/suggestions?type=SCHEME"); toast.success(r.message ?? t("lookbookTabs.grupos_sugeridos", { value: r.created ?? r.groups?.length ?? 0 })); hype.reload(); } catch (e) { toast.fromError(e); } }
+  async function suggest() { try { const r = await api.post<{ created?: number; groups?: unknown[]; message?: string }>("/api/me/similarity-groups/suggestions?type=SCHEME"); toast.success(r.message ?? t("lookbookTabs.grupos_sugeridos", { value: r.created ?? r.groups?.length ?? 0 })); similar.reload(); } catch (e) { toast.fromError(e); } }
   return (
     <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
       <div>
         {self && <Card className="mb-4"><h2 className="type-h3 mb-2">{t("lookbookTabs.novo_agrupamento")}</h2><Field label={t("common.tipo")} id="gtype"><Dropdown id="gtype" label={t("common.tipo")} value={form.type} onChange={(v) => setForm({ ...form, type: v })} options={["COLECAO", "TEMPORADA", "EDITORIAL", "CAPSULA", "VIAGEM"].map((x) => ({ id: x, label: label(x.toLowerCase()) }))} /></Field><Field label={t("common.nome")} id="glabel"><Input id="glabel" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /></Field><Button variant="primary" onClick={create} disabled={!form.label.trim()}>{t("common.add")}</Button></Card>}
-        {self && suggestions && <Card className="mb-4"><h2 className="type-h3 mb-1">{t("lookbookTabs.hypegroups_ia")}</h2><p className="type-caption text-muted mb-2">{t("lookbookTabs.agrupa_looks_com_similaridade_0")}</p><Button size="sm" onClick={suggest}>{t("lookbookTabs.sugerir_grupos")}</Button><ul className="fai-list mt-2">{(hype.data ?? []).map((g) => <li key={g.id} className="flex items-center justify-between py-1 type-body-sm"><span>{g.label ?? g.name}</span><button type="button" className="underline type-caption" onClick={async () => { await api.delete(`/api/me/hype-groups/${g.id}`); hype.reload(); }}>{t("common.remove")}</button></li>)}</ul></Card>}
+        {self && suggestions && <Card className="mb-4"><h2 className="type-h3 mb-1">{t("hypeLookbook.grupos_titulo")}</h2><p className="type-caption text-muted mb-2">{t("hypeLookbook.grupos_dica")}</p><Button size="sm" onClick={suggest}>{t("lookbookTabs.sugerir_grupos")}</Button>
+          <ul className="fai-list mt-2">{(similar.data ?? []).map((g) => <li key={g.id} className="flex items-center justify-between gap-2 py-1 type-body-sm"><span className="min-w-0"><span className="block truncate">{g.label ?? g.name}</span><SimilarityGroupHype hype={g.hype} /></span><button type="button" className="underline type-caption" onClick={async () => { try { await api.delete(`/api/me/similarity-groups/${g.id}`); similar.reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</button></li>)}</ul></Card>}
         <ul className="fai-list surface">{(groups.data ?? []).map((g) => <li key={g.id}><button type="button" className={`flex w-full items-center gap-3 p-3 text-left hover:bg-surface-2 ${open === g.id ? "bg-surface-2" : ""}`} onClick={() => setOpen(g.id)}><Avatar src={mediaUrl(g.coverUrl)} name={g.label} size={36} /><span className="flex-1"><b>{g.label}</b><span className="block type-caption text-muted">{label(g.type.toLowerCase())}{g.count != null ? ` · ${g.count}` : ""}</span></span></button></li>)}{(groups.data ?? []).length === 0 && <li className="p-3 type-body text-muted">{t("common.empty")}</li>}</ul>
       </div>
       <div>{open ? schemes.loading ? <SkeletonGrid /> : <div className="grid-looks">{(schemes.data ?? []).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div> : <p className="type-body text-muted">{t("lookbookTabs.selecione_um_agrupamento")}</p>}</div>

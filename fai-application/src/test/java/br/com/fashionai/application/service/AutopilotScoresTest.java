@@ -214,4 +214,47 @@ class AutopilotScoresTest {
         assertThat(days.get(1).get("scores")).isNull();
         assertThat(days.get(1).get("gap")).isEqualTo(true);
     }
+
+    /**
+     * Autopiloto › Semana (P3-09): o plano recém-gerado já volta com os seis números por dia (a tela mostra o
+     * LookScores em cada card); lacuna = sem números. Hype é a média v2 das peças, nunca a nota do dia.
+     */
+    @Test
+    void plannedWeekResponseCarriesScoresForEveryDayWithALook() {
+        List<WeekPlanDay> savedDays = new ArrayList<>();
+        when(weekDays.save(any(WeekPlanDay.class))).thenAnswer(inv -> {
+            WeekPlanDay d = inv.getArgument(0);
+            if (d.getId() == null) {
+                d.assignId(UUID.randomUUID());
+            }
+            savedDays.add(d);
+            return d;
+        });
+        when(weekDays.findByWeekPlanIdOrderByDayDate(any())).thenAnswer(inv -> List.copyOf(savedDays));
+        when(weekPlans.save(any(WeekPlan.class))).thenAnswer(inv -> inv.getArgument(0));
+        User u = new User();
+        u.assignId(uid);
+        u.setProfileType(ProfileType.PESSOAL);
+        UserRepository users = mock(UserRepository.class);
+        when(users.findById(uid)).thenReturn(Optional.of(u));
+        WeatherService weather = mock(WeatherService.class);
+        when(weather.resolve(any(), any(), any())).thenReturn(WeatherService.Context.none(""));
+        PreferenceModel preferenceModel = mock(PreferenceModel.class);
+        when(preferenceModel.of(uid)).thenReturn(new PreferenceModel.Model(Map.of(), Map.of(), Map.of(), Map.of(), Map.of(), 0));
+        StyleDnaRepository dnas = mock(StyleDnaRepository.class);
+        when(dnas.findByUserId(uid)).thenReturn(Optional.empty());
+        AutopilotService planner = new AutopilotService(wardrobe, pieces, mock(SchemeService.class), schemes, schemeItems, mock(DailyLookService.class), weekPlans, weekDays,
+                users, mock(UserPreferencesRepository.class), preferenceModel, weather, mock(AiEngine.class), mock(Guard.class), dnas, hype, insights);
+
+        Map<String, Object> week = planner.planWeek(me, new AutopilotService.WeekRequest(LocalDate.now().with(java.time.DayOfWeek.MONDAY), List.of(), null, null, null));
+        List<Map<String, Object>> days = (List<Map<String, Object>>) week.get("days");
+        assertThat(days).hasSize(7);
+        assertThat(days.stream().filter(d -> !Boolean.TRUE.equals(d.get("gap")))).isNotEmpty().allSatisfy(d -> {
+            Map<String, Object> scores = (Map<String, Object>) d.get("scores");
+            assertThat(scores).containsOnlyKeys("compatibility", "hype", "novelty", "reuse", "usage", "sustainability");
+            assertThat((Integer) scores.get("hype")).isBetween(30, 90);   // média v2 das peças do dia
+            assertThat(scores.get("compatibility")).isNull();            // sem DNA: sem base ("—"), nunca 0
+        });
+        assertThat(days.stream().filter(d -> Boolean.TRUE.equals(d.get("gap")))).allSatisfy(d -> assertThat(d.get("scores")).isNull());
+    }
 }

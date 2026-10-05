@@ -8,11 +8,13 @@ import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.AcervoGroup;
 import br.com.fashionai.domain.model.DailyLook;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.SavedItem;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeGrouping;
@@ -24,11 +26,13 @@ import br.com.fashionai.domain.model.enums.DailyLookSource;
 import br.com.fashionai.domain.model.enums.GroupingType;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
+import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.TargetType;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.AcervoGroupRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SavedItemRepository;
 import br.com.fashionai.domain.repository.SchemeGroupingRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -38,17 +42,22 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +65,11 @@ import java.util.stream.Collectors;
  * (painel do Hype Score em 6 versões, continuidade na virada do dia, feedback HU19), Minha Cápsula & Versatilidade
  * (generalização do B4 do DNA), agrupamentos sugeridos do acervo (RF24.CA05) e agrupamentos editoriais (coleções,
  * eras, fases, temporadas, turnês) para perfis pessoais e institucionais.
+ * <p>
+ * HypeScore v2 (docs/hype/HYPE_AUDITORIA_ABAS.md, Lote 4): o painel do Look do Dia mostra o v2 (HypeScoreService.panel);
+ * Looks salvos ordenam por Hype (P3-03) — o dono vê o Hype pessoal dos próprios looks; looks de terceiros entram na
+ * ordem só com o Hype público elegível; sem Hype = por último, nunca 0. Os "HypeGroups" do acervo são agrupamentos por
+ * SIMILARIDADE (P3-04): o nome legado fica só nas rotas antigas, e a lista traz à parte o Hype médio v2 dos membros.
  */
 @Service
 public class LookbookService {
@@ -76,6 +90,15 @@ public class LookbookService {
     private final AiEngine ai;
     private final Guard guard;
     private final OwnMedia ownMedia;
+    /** HypeScore v2 (estado gravado pelo job; aqui só leitura). Opcional nos testes que montam o serviço à mão. */
+    private HypeScoreCurrentRepository hypeV2;
+    private HypeScoreConfig hypeV2Config;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setHypeV2(HypeScoreCurrentRepository hypeV2, HypeScoreConfig hypeV2Config) {
+        this.hypeV2 = hypeV2;
+        this.hypeV2Config = hypeV2Config;
+    }
 
     public LookbookService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces, SavedItemRepository saved,
                            UserRepository users, AcervoGroupRepository acervoGroups, SchemeGroupingRepository groupings, WardrobeService wardrobe,
@@ -213,6 +236,16 @@ public class LookbookService {
     // ================================================================== Looks Salvos (CA09–CA13)
     @Transactional
     public Views.Page<Map<String, Object>> savedLooks(CurrentUser user, String occasion, int page, int size) {
+        return savedLooks(user, occasion, null, page, size);
+    }
+
+    /**
+     * Looks salvos (próprios + salvos de terceiros) com ordenação (P3-03): {@code recent} (padrão), {@code hype_desc},
+     * {@code hype_asc} ou {@code growth}. Look próprio usa o Hype pessoal; look de terceiro, só o público elegível.
+     * Sem Hype fica por último; empate segue a ordem recente.
+     */
+    @Transactional
+    public Views.Page<Map<String, Object>> savedLooks(CurrentUser user, String occasion, String sort, int page, int size) {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED)) {
             if (occasion != null && !occasion.isBlank() && !Json.csv(s.getOccasion()).contains(occasion)) {
@@ -247,7 +280,15 @@ public class LookbookService {
             m.put("sortKey", si.getSavedAt());
             rows.add(m);
         }
-        rows.sort(Comparator.comparing((Map<String, Object> m) -> String.valueOf(m.get("sortKey"))).reversed());
+        Comparator<Map<String, Object>> recent = Comparator.comparing((Map<String, Object> m) -> String.valueOf(m.get("sortKey"))).reversed();
+        String order = lookSort(sort);
+        if ("recent".equals(order)) {
+            rows.sort(recent);
+        } else {
+            Function<Map<String, Object>, UUID> idOf = m -> ((Views.SchemeView) m.get("scheme")).id();
+            Map<UUID, HypeScoreCurrent> h = rankable(hypeV2Of(HypeEntityType.SCHEME, rows.stream().map(idOf).toList()), user.id());
+            rows.sort(hypeOrder(order, (Map<String, Object> m) -> h.get(idOf.apply(m))).thenComparing(recent));
+        }
         int from = Math.max(0, page * size);
         List<Map<String, Object>> slice = from >= rows.size() ? List.of() : rows.subList(from, Math.min(rows.size(), from + size));
         return new Views.Page<>(slice, page, size, rows.size(), from + size < rows.size());
@@ -394,6 +435,7 @@ public class LookbookService {
     }
 
     // ================================================================== agrupamentos sugeridos do acervo (RF24.CA05)
+    /** Agrupamentos sugeridos por similaridade (≥ 0,70, grupos de 3+). Não usam Hype: o nome legado "HypeGroups" engana. */
     @Transactional
     public Map<String, Object> suggestGroups(CurrentUser user, HypeEntityType type) {
         List<Similarity.Signature> sigs;
@@ -434,15 +476,127 @@ public class LookbookService {
             g.setComputedAt(java.time.Instant.now());
             acervoGroups.save(g);
             out.add(Map.of("id", g.getId(), "label", g.getLabel(), "members", cluster.stream().map(i -> Map.of("id", ids.get(i), "label", labels.get(i))).toList(),
-                    "count", cluster.size()));
+                    "count", cluster.size(), "kind", "SIMILARITY"));
         }
-        return Map.of("groups", out, "type", type.name(), "explanation", outcome.explanation(), "note", Msg.t("lookbook.sugestoes_sempre_descartaveis_rf24_ca05"));
+        // P3-04: o agrupamento é por similaridade (o nome "HypeGroups" das rotas antigas é legado); o Hype médio vem em groups()
+        return Map.of("groups", out, "type", type.name(), "kind", "SIMILARITY", "explanation", outcome.explanation(),
+                "note", Msg.t("lookbook.sugestoes_sempre_descartaveis_rf24_ca05"), "basis", Msg.t("hypeLookbook.grupos_similaridade_base"));
     }
 
+    /**
+     * Agrupamentos sugeridos do acervo — por SIMILARIDADE (estilo, ocasião, cor, marca e tipo), não por Hype (P3-04).
+     * {@code kind} = SIMILARITY deixa isso explícito; {@code hype} = Hype médio v2 dos membros, exibido ao lado (os itens
+     * são do próprio dono: vale o Hype pessoal). Sem nenhum membro com Hype, {@code avgScore} é nulo — nunca 0.
+     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> groups(CurrentUser user, HypeEntityType type) {
-        return acervoGroups.findByUserIdAndEntityTypeOrderByMemberCountDesc(user.id(), type).stream().map(g -> Map.<String, Object>of("id", g.getId(),
-                "label", String.valueOf(g.getLabel()), "memberIds", Json.strings(g.getMemberIdsJson()), "count", g.getMemberCount(), "computedAt", g.getComputedAt())).toList();
+        List<AcervoGroup> list = acervoGroups.findByUserIdAndEntityTypeOrderByMemberCountDesc(user.id(), type);
+        Set<UUID> members = new HashSet<>();
+        list.forEach(g -> members.addAll(uuids(Json.strings(g.getMemberIdsJson()))));
+        Map<UUID, HypeScoreCurrent> h = hypeV2Of(type, members);
+        return list.stream().map(g -> {
+            List<String> ids = Json.strings(g.getMemberIdsJson());
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", g.getId());
+            m.put("label", String.valueOf(g.getLabel()));
+            m.put("kind", "SIMILARITY");
+            m.put("memberIds", ids);
+            m.put("count", g.getMemberCount());
+            m.put("computedAt", g.getComputedAt());
+            m.put("hype", averageHype(uuids(ids), h, hypeV2Config));
+            return m;
+        }).toList();
+    }
+
+    /** Hype médio v2 de um conjunto (só AVAILABLE): {@code {avgScore, level, items, members}}; sem base, {@code avgScore} nulo. */
+    static Map<String, Object> averageHype(Collection<UUID> ids, Map<UUID, HypeScoreCurrent> rows, HypeScoreConfig cfg) {
+        double[] scores = ids.stream().map(rows::get).filter(c -> c != null && c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null)
+                .mapToDouble(c -> c.getScore().doubleValue()).toArray();
+        Map<String, Object> m = new LinkedHashMap<>();
+        Double avg = scores.length == 0 ? null : Math.round(java.util.Arrays.stream(scores).average().orElse(0) * 10) / 10.0;
+        m.put("avgScore", avg);
+        m.put("level", avg == null || cfg == null ? null : cfg.level(avg).name());
+        m.put("items", scores.length);
+        m.put("members", ids.size());
+        return m;
+    }
+
+    private static List<UUID> uuids(List<String> raw) {
+        List<UUID> out = new ArrayList<>();
+        for (String r : raw) {
+            try {
+                out.add(UUID.fromString(r));
+            } catch (IllegalArgumentException ignored) {
+                // id malformado: fora da média
+            }
+        }
+        return out;
+    }
+
+    // ================================================================== ordenação por HypeScore v2 (Looks e Salvos)
+    /** Normaliza a ordenação de looks: recent (padrão) · hype_desc · hype_asc · growth (aceita os apelidos em pt). */
+    public static String lookSort(String raw) {
+        String s = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        return switch (s) {
+            case "hype", "hype_desc", "maior_hype" -> "hype_desc";
+            case "hype_asc", "menor_hype" -> "hype_asc";
+            case "growth", "crescimento", "em_crescimento" -> "growth";
+            default -> "recent";
+        };
+    }
+
+    /**
+     * Comparador pelo Hype v2 ({@link #lookSort}); "sem Hype" (sem linha, dados insuficientes) fica SEMPRE por último —
+     * nunca é tratado como 0. {@code growth} = Δ pontos em 7 dias, depois a dimensão Trend. {@code recent} não ordena
+     * (quem chama completa com a ordem recente).
+     */
+    static <T> Comparator<T> hypeOrder(String sort, Function<T, HypeScoreCurrent> rowOf) {
+        Function<T, BigDecimal> score = x -> {
+            HypeScoreCurrent c = rowOf.apply(x);
+            return c == null || c.getStatus() != HypeStatus.AVAILABLE ? null : c.getScore();
+        };
+        Function<T, BigDecimal> delta = x -> {
+            HypeScoreCurrent c = rowOf.apply(x);
+            return c == null || c.getStatus() != HypeStatus.AVAILABLE ? null : c.getDeltaPoints();
+        };
+        Function<T, BigDecimal> trend = x -> {
+            HypeScoreCurrent c = rowOf.apply(x);
+            return c == null || c.getDimensions() == null ? null : c.getDimensions().getTrend();
+        };
+        return switch (sort) {
+            case "hype_desc" -> Comparator.comparing(score, Comparator.nullsLast(Comparator.reverseOrder()));
+            case "hype_asc" -> Comparator.comparing(score, Comparator.nullsLast(Comparator.naturalOrder()));
+            case "growth" -> Comparator.comparing(delta, Comparator.nullsLast(Comparator.<BigDecimal>reverseOrder()))
+                    .thenComparing(trend, Comparator.nullsLast(Comparator.reverseOrder()));
+            default -> (a, b) -> 0;
+        };
+    }
+
+    /**
+     * Hype que pode ordenar para quem vê (§3.1 da auditoria): o dono vê o próprio Hype pessoal (inclusive de item
+     * privado); para terceiros, só linha {@code publicEligible}. O resto some do mapa (= sem Hype, por último).
+     */
+    static Map<UUID, HypeScoreCurrent> rankable(Map<UUID, HypeScoreCurrent> rows, UUID viewerId) {
+        Map<UUID, HypeScoreCurrent> out = new HashMap<>();
+        rows.forEach((id, c) -> {
+            if (c.isPublicEligible() || (viewerId != null && viewerId.equals(c.getOwnerId()))) {
+                out.put(id, c);
+            }
+        });
+        return out;
+    }
+
+    /** Estado v2 atual (uma consulta). Só lê o que o job gravou — GET nunca recalcula. */
+    Map<UUID, HypeScoreCurrent> hypeV2Of(HypeEntityType type, Collection<UUID> ids) {
+        return hypeV2Of(hypeV2, hypeV2Config, type, ids);
+    }
+
+    static Map<UUID, HypeScoreCurrent> hypeV2Of(HypeScoreCurrentRepository repo, HypeScoreConfig cfg, HypeEntityType type, Collection<UUID> ids) {
+        if (repo == null || cfg == null || ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+        return repo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, new HashSet<>(ids), cfg.algorithmVersion()).stream()
+                .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, c -> c, (a, b) -> a));
     }
 
     @Transactional

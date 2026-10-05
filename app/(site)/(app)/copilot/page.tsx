@@ -29,7 +29,9 @@ interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: str
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
 interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
 
-interface Suggestions { weather?: { available?: boolean; temperatureC?: number; city?: string; description?: string }; weatherBand?: string; readyLooks: SchemeView[]; newCombinations: { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number }[]; forgottenPieces: PieceView[]; weatherPieces: PieceView[]; trendingLooks: SchemeView[]; }
+/** Combinação nova do motor local (Experimentar). `scores` (P2-16) = os mesmos seis números dos looks do chat e do Autopiloto. */
+interface NewCombination { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number; scores?: LookScoreValues | null }
+interface Suggestions { weather?: { available?: boolean; temperatureC?: number; city?: string; description?: string }; weatherBand?: string; readyLooks: SchemeView[]; newCombinations: NewCombination[]; forgottenPieces: PieceView[]; weatherPieces: PieceView[]; trendingLooks: SchemeView[]; }
 /** Seções do Copilot (domínios, não filtros): recomendações · descoberta · experimentação · redescoberta · insights. */
 type SuggestionSection = "recommendations" | "discovery" | "experiment" | "rediscovery" | "insights";
 /** Modo escolhido ANTES de gerar: Seguro prioriza o DNA; Descoberta mistura familiar e novo; Experimental vai mais longe. */
@@ -108,7 +110,7 @@ function Copilot() {
     if (!sug.data) return;
     rememberLooks([
       ...sug.data.readyLooks.map((look) => ({ title: look.title, pieceIds: look.items.map((item) => item.wardrobeItemId), pieces: look.items.map((item) => ({ pieceId: item.wardrobeItemId, name: item.name ?? item.piece?.name ?? "", imageUrl: item.imageUrl ?? item.piece?.thumbnailUrl ?? item.piece?.imageUrl ?? undefined })) })),
-      ...sug.data.newCombinations.map((look) => ({ title: look.title, pieceIds: look.pieceIds, pieces: look.pieces.map((piece) => ({ pieceId: piece.id, name: piece.name, imageUrl: piece.thumbnailUrl ?? piece.imageUrl ?? undefined })), why: look.rationale, occasion: look.occasions })),
+      ...sug.data.newCombinations.map((look) => ({ title: look.title, pieceIds: look.pieceIds, pieces: look.pieces.map((piece) => ({ pieceId: piece.id, name: piece.name, imageUrl: piece.thumbnailUrl ?? piece.imageUrl ?? undefined })), why: look.rationale, occasion: look.occasions, scores: look.scores ?? undefined })),
     ]);
   }, [sug.data, rememberLooks]);
   const visibleLooks = loadedStorageKey === storageKey ? savedLooks : [];
@@ -123,12 +125,15 @@ function Copilot() {
   }
   const prompts = msgs.length ? msgs[msgs.length - 1].reply?.suggestedPrompts ?? ctx?.suggestedPrompts : ctx?.suggestedPrompts;
   const md = (s: string) => s.split(/(\*\*[^*]+\*\*)/g).map((part, i) => part.startsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : <span key={i}>{part}</span>);
-  const newCard = (c: Suggestions["newCombinations"][number], i: number) => (
+  // Experimentar (P2-16): cada combinação nova mostra os seis números lado a lado — Hype é só uma dimensão, ao lado da
+  // compatibilidade com o DNA; "—" = sem base, nunca 0
+  const newCard = (c: NewCombination, i: number) => (
       <article key={i} className="fai-card" aria-label={c.title}>
         <div className="c-header"><span className="c-meta">{t("copilot.sugestao_do_copilot")}</span></div>
         <div className="grid grid-cols-2 gap-1 p-2">{c.pieces.map((p) => <button key={p.id} type="button" className="aspect-square overflow-hidden rounded bg-surface-2 hover:ring-2 hover:ring-mark" title={p.name} onClick={() => detail?.openPiece(p.id)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} className="h-full w-full object-contain p-1" /></button>)}</div>
         <div className="c-title">{c.title}</div>
         {c.rationale && <div className="c-row">{c.rationale}</div>}
+        {c.scores && <div className="c-row"><LookScores scores={c.scores} /></div>}
         <div className="c-extra"><Button size="sm" variant="primary" onClick={() => accept({ pieceIds: c.pieceIds, title: c.title, occasion: c.occasions })}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button></div>
       </article>);
   const row = (title: string, items: React.ReactNode[]) => items.length ? <div key={title}><h3 className="label mb-2">{title}</h3><div className="hscroll">{items}</div></div> : null;
@@ -165,7 +170,7 @@ function Copilot() {
             tabs={sections.map((item) => ({ id: item.id, label: item.title }))} />
           {sug.loading ? <p className="mt-4 type-body text-muted">{t("copilot.montando_sugestoes")}</p> : activeLook ? (() => {
             const look = visibleLooks.find((item) => lookKey(item) === activeLook);
-            return look ? <Card className="mt-4"><h2 className="type-h3">{look.title}</h2>{look.why && <p className="mt-1 type-body-sm text-muted">{look.why}</p>}<div className="mt-3 flex flex-wrap gap-2">{(look.pieces ?? []).map((piece) => <button key={piece.pieceId} type="button" title={piece.name} onClick={() => detail?.openPiece(piece.pieceId)}><img src={mediaUrl(piece.imageUrl)} alt={piece.name} className="h-16 w-16 rounded bg-surface-2 object-contain" /></button>)}</div><Button size="sm" className="mt-3" variant="primary" onClick={() => accept(look)}>{t("common.salvar_como_look")}</Button></Card> : null;
+            return look ? <Card className="mt-4"><h2 className="type-h3">{look.title}</h2>{look.why && <p className="mt-1 type-body-sm text-muted">{look.why}</p>}<div className="mt-3 flex flex-wrap gap-2">{(look.pieces ?? []).map((piece) => <button key={piece.pieceId} type="button" title={piece.name} onClick={() => detail?.openPiece(piece.pieceId)}><img src={mediaUrl(piece.imageUrl)} alt={piece.name} className="h-16 w-16 rounded bg-surface-2 object-contain" /></button>)}</div><LookScores scores={look.scores} /><Button size="sm" className="mt-3" variant="primary" onClick={() => accept(look)}>{t("common.salvar_como_look")}</Button></Card> : null;
           })() : sections.find((item) => item.id === section)?.empty ? <p className="mt-4 type-body-sm text-muted">{t("copilot.sem_clima_pecas_versateis")}</p>
             : <div role="tabpanel" className="mt-4">{sections.find((item) => item.id === section)?.content}</div>}
         </section>

@@ -15,7 +15,8 @@ import type { Insight } from "@/lib/insights/types";
 interface Weather { available: boolean; temperatureC?: number | null; description?: string | null; city?: string | null; band?: string | null; season?: string | null; note?: string | null; }
 interface Pick { key: string; title?: string; pieces?: { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string }[]; pieceIds?: string[]; why?: string; reason?: string; score?: number; layers?: string[]; /** dimensões lado a lado (compatibilidade, Hype, novidade…), nunca somadas */ scores?: LookScoreValues | null; }
 interface Daily { weather: Weather; suggestions: Pick[]; excludeKeys?: string[]; fallbackUsed?: boolean; message?: string | null; notice?: string; weatherNotice?: string; explanation?: { provider?: string; why?: string } | null; /** insights do contexto AUTOPILOT que já vêm com a sugestão (RF53) */ insights?: Insight[] | null; }
-interface Day { id: string; date: string; event?: string; occasion?: string; gap?: boolean; pieces?: Pick["pieces"]; schemeId?: string; title?: string; used?: boolean; weather?: Weather; }
+/** Dia do plano semanal. `scores` (P3-09) = os seis números do look do dia (mesma régua do Hoje); lacuna = sem números. */
+interface Day { id: string; date: string; event?: string; occasion?: string; gap?: boolean; pieces?: Pick["pieces"]; schemeId?: string; title?: string; used?: boolean; weather?: Weather; scores?: LookScoreValues | null; }
 /** Modo escolhido ANTES de gerar (o mesmo do Copilot): Seguro prioriza o DNA; Descoberta mistura familiar e novo; Experimental vai mais longe. */
 type Mode = "SAFE" | "DISCOVERY" | "EXPERIMENTAL";
 interface Week { active: boolean; id: string; weekStart: string; days: Day[]; gaps?: { date?: string; message?: string }[]; distinctLooks: number; }
@@ -79,6 +80,7 @@ function Autopilot() {
               <Card key={d.id ?? d.date}><p className="label">{fmtDate(d.date, { weekday: "long", day: "2-digit", month: "short" })}</p>{d.gap ? <p className="type-body text-muted">{t("autopilot.sem_look", { value: d.title ?? t("autopilot.pecas_insuficientes_sem_repetir") })}</p> : <>
                 <p className="type-h3">{d.title ?? label(d.occasion)}</p>{d.event && <p className="type-caption text-muted">{d.event}</p>}
                 <div className="mt-2 flex flex-wrap gap-1">{(d.pieces ?? []).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl)} alt={x.name} title={x.name} className="h-12 w-12 rounded bg-surface-2 object-contain" />)}</div>
+                <LookScores scores={d.scores} />
                 <div className="mt-2 flex gap-2">{!d.used && <Button size="sm" variant="primary" onClick={async () => { try { await api.post(`/api/autopilot/days/${d.id}/use`); toast.success(t("common.look_do_dia_registrado")); week.reload(); } catch (e) { toast.fromError(e); } }}>{t("autopilot.usar_hoje")}</Button>}{d.schemeId && <Link href={`/schemes/${d.schemeId}`} className="btn btn-sm">{t("common.see")}</Link>}</div></>}</Card>))}</div>
             {((week.data as Week).gaps ?? []).length > 0 && <p className="mt-3 type-body-sm text-muted">{t("autopilot.lacunas")}{" "}{((week.data as Week).gaps ?? []).map((g) => g.message ?? g.date).join("; ")}</p>}
           </>

@@ -301,7 +301,10 @@ public class CopilotService {
                 fresh.add(m);
             }
         }
-        out.put("newCombinations", fresh);
+        // P2-16 — os mesmos seis números dos looks do chat e do Autopiloto (LookScorer): compatibilidade com o DNA, Hype
+        // (média v2 das peças), novidade, reutilização, uso e sustentabilidade, lado a lado e nunca somados. Sem modo
+        // escolhido, a ordem do motor local fica como está; dimensão sem base vem nula ("—"), nunca 0.
+        out.put("newCombinations", fresh.isEmpty() ? fresh : scoreLooks(user, fresh, null));
         // 3) peças esquecidas: a MESMA régua do app inteiro (RoomService.forgotten — 60+ dias desde o último uso ou, se
         //    nunca usada, desde o cadastro). Antes era 30 dias aqui e "nunca usada" contava até para peça cadastrada ontem.
         LocalDate todayZ = LocalDate.now(FaiPointsService.ZONE);

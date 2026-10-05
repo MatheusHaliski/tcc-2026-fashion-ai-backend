@@ -56,7 +56,29 @@ export const levelTone = (level: HypeLevel) => `is-${level.toLowerCase().replace
 export const dimensionsFor = (type: HypeEntity, list: HypeDimension[] = DIMENSION_ORDER) => list.filter((d) => d !== "INFLUENCE" || type === "SCHEME");
 
 /**
- * Escala legada de popularidade (painel do Look do Dia v1, DNA "Hype Focus"): sem vermelho — nota baixa não é erro, é
- * conteúdo novo ou pouco visto.
+ * Limiares das faixas (o mesmo padrão do HypeScoreConfig.levelThresholds no backend: 20 · 40 · 60 · 75 · 90). O backend
+ * já manda a faixa pronta em cada resumo; isto é só para quando chega o número sem a faixa.
+ */
+export const LEVEL_THRESHOLDS = [20, 40, 60, 75, 90] as const;
+
+/**
+ * Faixa de um score v2 (0–100), seguindo o número EXIBIDO (inteiro arredondado): 89,6 aparece como 90 e é "Viral".
+ * Sem score ("sem dados") devolve null — nunca vira "Sinal baixo" nem 0.
+ */
+export function levelForScore(score: number | null | undefined): HypeLevel | null {
+  if (score == null || !Number.isFinite(score)) return null;
+  const s = displayScore(score);
+  let i = 0;
+  while (i < LEVEL_THRESHOLDS.length && s >= LEVEL_THRESHOLDS[i]) i++;
+  return LEVELS[i];
+}
+
+/** A faixa `level` alcança a mínima `min`? (ex.: capa da FAI Magazine a partir de Tendência). Sem faixa = não. */
+export const levelAtLeast = (level: HypeLevel | null | undefined, min: HypeLevel) => !!level && LEVELS.indexOf(level) >= LEVELS.indexOf(min);
+
+/**
+ * @deprecated Escala legada v1 (painel do Look do Dia v1, DNA "Hype Focus" v1), sem uso desde o Lote 4 (P2-12/P2-13):
+ * use a faixa v2 (`levelTone` + rótulo `hype.level.*`). Sai na limpeza do v1 (P3-16). Sem vermelho — nota baixa não é
+ * erro, é conteúdo novo ou pouco visto.
  */
 export const hypeColor = (h?: number | null) => ((h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)");

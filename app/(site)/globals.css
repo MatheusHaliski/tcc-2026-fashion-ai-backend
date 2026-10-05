@@ -2725,3 +2725,22 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
   .globe-card-body:focus-visible .globe-card-bg { stroke: Highlight !important; }
   .globe-dist-bar > span, .globe-legend-levels i, .globe-level-cell i, .globe-dist-list i, .globe-card-row-score i { forced-color-adjust: none; background: Canvas !important; box-shadow: inset 0 0 0 1.5px CanvasText; }
 }
+
+/* RF53 · Lotes 2–3 — Looks e anatomia */
+/* prévia do look no editor (POST /api/schemes/scores) e Hype de cada peça escolhida */
+.look-hype-preview { display: grid; gap: 6px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-2); }
+.look-hype-preview .copilot-scores { margin-top: 2px; }
+.look-hype-tag { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.look-hype-tag .hype-level-chip { font-size: 10px; padding: 0 7px; }
+/* Hype Focus v2: legenda das 6 faixas em texto; a cor do medidor e das barras é só decorativa */
+.hypef-vals .hype-level-chip { margin-bottom: 2px; }
+:root[data-theme="contrast"] .hypef .hype-bar > i, :root[data-theme="contrast"] .hypef-legend i { background: var(--line) !important; }
+@media (forced-colors: active) { .hypef .hype-bar > i, .hypef-legend i { forced-color-adjust: none; background: CanvasText !important; } }
+
+/* RF53 · Lotes 4 e 6 — Lookbook (Look do Dia, DNA e agrupamentos) e números do Copilot/Autopiloto em HypeScore v2:
+   ordenação da aba Looks, linha "faixa + movimento" do painel e dos agrupamentos, faixa do medidor Hype Focus do DNA. */
+.lookbook-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.lookbook-sort .lookbook-manage { margin: 0 0 0 auto; }
+.lb-hype-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.dna-hype-level { display: flex; justify-content: center; margin: 2px 0 6px; }
+.dna-mini .hype-level-chip { padding: 0 6px; font-size: 10px; }
