@@ -281,8 +281,7 @@ public class HypeScoreService {
         Collections.sort(weekHype);
         Weekly wk = new Weekly(weekHype, weekHype.size(), now);
         weekly.set(wk);
-        MetricSnapshot ws = new MetricSnapshot();
-        ws.setId(UUID.randomUUID());
+        MetricSnapshot ws = new MetricSnapshot(); // id gerado pelo Hibernate (nunca atribuir: viraria merge)
         ws.setKind(KIND_WEEK);
         ws.setPeriodStart(weekSince);
         ws.setPeriodEnd(now);
@@ -316,8 +315,7 @@ public class HypeScoreService {
     }
 
     private void persist(String kind, Calibration c, Instant from, Instant to) {
-        MetricSnapshot s = new MetricSnapshot();
-        s.setId(UUID.randomUUID());
+        MetricSnapshot s = new MetricSnapshot(); // id gerado pelo Hibernate (nunca atribuir: viraria merge)
         s.setKind(kind);
         s.setPeriodStart(from);
         s.setPeriodEnd(to);

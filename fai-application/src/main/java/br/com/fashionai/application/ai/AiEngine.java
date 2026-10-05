@@ -303,8 +303,9 @@ public class AiEngine {
     private UUID record(UUID userId, AiCapability capability, String provider, String model, long latency,
                         BigDecimal cost, AiCallResult result, boolean fallback, List<String> inputs, String output,
                         String consentState, String correlationId) {
+        // o id é gerado pelo Hibernate (@GeneratedValue): um id atribuído aqui faria o save() virar merge de uma linha
+        // inexistente, que desde o Hibernate 6.6 lança exceção e marca a transação de quem chamou para rollback
         AiInferenceLog entry = new AiInferenceLog();
-        entry.setId(UUID.randomUUID());
         entry.setUserId(userId);
         entry.setCapability(capability.name());
         entry.setHostRf(capability.hostRf());
@@ -319,10 +320,15 @@ public class AiEngine {
         entry.setConsentState(consentState);
         entry.setCorrelationId(correlationId);
         entry.setCreatedAt(Instant.now());
+        UUID id;
         try {
-            inferenceLogs.save(entry);
+            id = inferenceLogs.save(entry).getId();
         } catch (RuntimeException ex) {
             log.warn("Falha ao gravar ai_inference_log: {}", ex.getMessage());
+            id = null;
+        }
+        if (id == null) {
+            id = UUID.randomUUID(); // referência da chamada mesmo sem a linha do log
         }
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("capability", capability.name());
@@ -332,10 +338,10 @@ public class AiEngine {
         meta.put("latencyMs", latency);
         meta.put("estimatedCostUsd", cost);
         meta.put("fallbackUsed", fallback);
-        meta.put("inferenceId", entry.getId().toString());
+        meta.put("inferenceId", id.toString());
         auditService.record(new AuditEvent(userId == null ? "system" : userId.toString(), AuditActions.CHAMADA_IA,
                 capability.name(), result.name(), null, null, Instant.now(), correlationId, meta));
-        return entry.getId();
+        return id;
     }
 
     /**
