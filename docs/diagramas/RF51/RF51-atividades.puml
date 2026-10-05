@@ -62,16 +62,23 @@ else (Aplicar)
   :onChange({...valor, ...patch, ...rascunho});
   :Resumo "Cartela sazonal: <cartela> · <animação>"\n+ botão "Escolher cartela e animação" (reabre o modal);
 endif
-:Prévia do card: cartelaSeason(bg, estação);
-if (Há estação (cartela, automática ou do look)?) then (sim)
-  :SeasonCard / faixa B11: gradiente da estação,\ndecoração e animação (MotionFall ou brilho);
-  note right
-    com movimento reduzido (sistema ou
-    preferência do app) as animações param
-  end note
-else (não)
-  :O card cai para Lista vertical até haver estação;
-endif
+switch (Prévia do card: qual card?)
+case (look)
+  :cartelaSeason(bg, estação do look);
+  if (Há estação (cartela, automática ou do look)?) then (sim)
+    :SeasonCard: gradiente da estação,\ndecoração e animação (MotionFall ou brilho);
+  else (não)
+    :SchemeCard.effectiveAnatomy cai para\nLista vertical até haver estação;
+  endif
+case (DNA)
+  :Faixa B11 com cartelaSeason(...) ?? AUTUMN:\nsem cartela escolhida, prévia de outono;
+case (peça)
+  :Família "seasonal": sem cartela escolhida,\nmantém a estação do template (template.season);
+endswitch
+note right
+  com movimento reduzido (sistema ou
+  preferência do app) as animações param
+end note
 |Pessoa|
 if (Troca para outro layout?) then (sim)
   |Background Studio (frontend)|
@@ -86,18 +93,33 @@ endif
 |Pessoa|
 :Salva o look, o DNA ou a peça;
 |Servidor (Spring Boot)|
-:Look: POST/PUT /api/schemes · DNA: POST/PUT /api/dna-schemes\n(seasonalTheme = cartelaSeason ?? AUTUMN) · peça: PUT /api/pieces/{id}/background (baseRev);
-:BackgroundStudioService.applyToScheme;
-if (Preset sazonal desconhecido?) then (sim)
-  :400 PRESET_INVALIDO;
-  stop
-else (não)
-endif
-if (seasonalAuto sem estação no look?) then (sim)
-  :400 ESTACAO_OBRIGATORIA;
-  stop
-else (não)
-endif
-:animation presente → enum (null → NONE); ausente → mantém a gravada;\ngrava studioConfigJson (+ gradiente do preset quando automática);
+switch (Qual card?)
+case (look)
+  :POST/PUT /api/schemes → applyForm (estação);
+  :BackgroundStudioService.applyToScheme;
+  if (Preset sazonal desconhecido?) then (sim)
+    :400 PRESET_INVALIDO;
+    stop
+  else (não)
+  endif
+  if (seasonalAuto sem estação no look?) then (sim)
+    :400 ESTACAO_OBRIGATORIA;
+    stop
+  else (não)
+  endif
+  :animation presente → enum (null → NONE); ausente → mantém a gravada;\ngrava studioConfigJson (+ gradiente do preset quando automática);
+case (DNA)
+  :POST/PUT /api/dna-schemes\n(seasonalTheme = cartelaSeason ?? AUTUMN);
+  :DnaService.apply: grava studioConfigJson,\ncor e vídeo de fundo do DNA;
+case (peça)
+  :PUT /api/pieces/{id}/background {...rascunho, baseRev};
+  :BackgroundStudioService.savePiece;
+  if (baseRev diferente da revisão atual?) then (sim)
+    :409 ARTE_ALTERADA\n(outra aba ou aparelho gravou antes);
+    stop
+  else (não)
+  endif
+  :grava backgroundConfigJson com rev + 1;
+endswitch
 stop
 @enduml
