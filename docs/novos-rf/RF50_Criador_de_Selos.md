@@ -5,7 +5,7 @@ RF49 é o último cartão da lista *Requisitos Funcionais* do Trello e o RF48 es
 [README](README.md)).
 
 **Trello:** [RF50](https://trello.com/c/sEKTaBZD) (lista *Requisitos Funcionais*, critérios na checklist "Critérios de Aceite") ·
-**Diagramas:** [`docs/diagramas/RF50/`](../diagramas/RF50/) — atividades, sequência (criador e detecção por política),
+**Diagramas:** [`docs/diagramas/RF50/criador-de-selos/`](../diagramas/RF50/criador-de-selos/) — atividades, sequência (criador e detecção por política),
 componentes, máquina de estados (assistente, selo e vínculo) e classes.
 
 ## Objetivo
