@@ -158,6 +158,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       for (const m of meshes) { m.removeFromParent(); m.geometry.dispose(); const mat = m.material as THREE.MeshPhysicalMaterial; mat.map?.dispose(); mat.dispose(); }
       root.position.y = 0;
     };
-  }, [parts, urlKey, images]); // eslint-disable-line react-hooks/exhaustive-deps
+    // só o corpo (não o cabelo): trocar o nível de detalhe do cabelo não refaz as roupas
+  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, images]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

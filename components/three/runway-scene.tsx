@@ -87,7 +87,8 @@ function Walker({ entry, index, total, still, onPick, selected }: { entry: Runwa
   });
   return (
     <group ref={g}>
-      <Mannequin mannequin={entry.look.mannequin} pieces={entry.look.pieces} sway={false} onClick={() => onPick(entry)} />
+      {/* vários modelos em cena: cabelo em cards (nível 2, hair-lod.ts), leve de montar e de desenhar */}
+      <Mannequin mannequin={entry.look.mannequin} pieces={entry.look.pieces} sway={false} onClick={() => onPick(entry)} hairLod={2} />
       <NameTag text={`#${entry.position} @${entry.look.owner?.username ?? ""}`} you={entry.you || selected} />
     </group>
   );

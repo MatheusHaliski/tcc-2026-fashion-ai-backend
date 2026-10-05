@@ -307,7 +307,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   async function downloadGlb() {
     const p = human.current; if (!p) return;
     setBusy("glb");
-    try { downloadBlob(await exportAvatarGlb(p.human, p.pose), "fashionai-avatar.glb"); }
+    try { downloadBlob(await exportAvatarGlb(p.human, p.pose, { hair: { live: p.hair, build: p.exportHair } }), "fashionai-avatar.glb"); }
     catch (e) { if (e instanceof Error && e.message === AVATAR_NOT_DRESSED) toast.info(t("avatar3d.page.glb_aguarde_roupa")); else toast.fromError(e); } finally { setBusy(""); }
   }
   async function remove() {
