@@ -7,7 +7,7 @@ import landTopo from "world-atlas/land-110m.json";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { mediaUrl } from "@/lib/api/client";
 import { displayScore, LEVELS } from "@/lib/hype/model";
-import { COLUMN_MAX, columnHeight, columnTop, figuresFor, hypeShown, metricValue, pickCards, shortName, stackCards, type CardSlot, type GlobeLayer, type GlobeMetric } from "@/lib/hype/globe";
+import { COLUMN_CAP, COLUMN_MAX, COLUMN_W, FIGURE_H, FIGURE_SCALE, FIGURE_STEP, FIGURE_W, columnHeight, countryMarks, figuresFor, hypeShown, metricValue, pickCards, pillWidth, shortName, stackCards, type CardSlot, type CountryMarks, type GlobeLayer, type GlobeMetric } from "@/lib/hype/globe";
 import type { HypeGlobe, HypeGlobeCountry, HypeGlobeTop, HypeLevel } from "@/lib/hype/types";
 
 /** Centroide aproximado (lon, lat) e nome em português dos países mais comuns no acervo. */
@@ -58,7 +58,8 @@ export const reducedMotion = () => typeof window !== "undefined" && (!!window.ma
 /** Cards: largura, altura e a calha lateral onde eles ficam (fora do disco do globo). */
 export const CARD_W = 148;
 export const CARD_H = 48;
-const GUTTER = CARD_W + 14;
+/** A calha deixa folga para o topo das colunas da borda, que tombam um pouco para fora (os cards nunca cobrem a coluna). */
+const GUTTER = CARD_W + 24;
 /** Abaixo desta largura os cards saem das calhas e viram uma lista numerada sob o globo (legibilidade no celular). */
 const NARROW = 560;
 
@@ -68,8 +69,10 @@ const NARROW = 560;
  * médio); países abaixo do mínimo aparecem apagados.
  *
  * RF53 — com `hype`, o globo ganha camadas de HypeScore desenhadas na mesma projeção: números (Hype médio ou máximo, cor
- * = faixa), colunas 3D radiais (altura = métrica escolhida), bonecos (um por criador, roupa na cor dominante), cards do
+ * = faixa), colunas em pé (altura = métrica escolhida), bonecos (um por criador, roupa na cor dominante), cards do
  * destaque presos ao país por uma linha e calor (halo pela faixa). Os pontos do painel antigo viram âncoras discretas.
+ * Lote A3: colunas em pé com altura na tela proporcional à métrica (mínimo visível para país com dados suficientes),
+ * bonecos com o dobro do tamanho e a pílula do número sempre acima da coluna e da cabeça dos bonecos (countryMarks).
  */
 export function Globe({ points, selected, onSelect, size = 420, hype }: { points: GlobePoint[]; selected?: string; onSelect: (iso: string) => void; size?: number; hype?: GlobeHypeLayers }) {
   const { t } = useI18n();
@@ -129,6 +132,7 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
 
   const center: [number, number] = [-rot[0], -rot[1]];
   const C: [number, number] = [size / 2, size / 2];
+  const R = size / 2 - 8;
   const k = size / 420;
   const isFront = (at: [number, number]) => geoDistance(at, center) < Math.PI / 2 - 0.02;
   const maxTotal = Math.max(1, ...points.map((p) => p.total));
@@ -141,17 +145,24 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
   const vis = hypeMode ? all.map((c) => {
     const at = COUNTRIES[c.country].at; const xy = projection(at) as [number, number] | null;
     const shown = hypeShown(c, metric);
-    const h = on("columns") ? columnHeight(metricValue(c, metric), metric, maxVolume) * grow : 0;
-    return { c, at, xy, dist: geoDistance(at, center), shown, h, top: xy ? columnTop(C, xy, h) : null };
+    const h = on("columns") ? columnHeight(metricValue(c, metric), metric, maxVolume, c.sufficient) * grow : 0;
+    const txt = shown.value != null ? String(displayScore(shown.value)) : "";
+    const figs = on("figures") ? figuresFor(c.creators) : { shown: 0, extra: 0 };
+    const marks = xy ? countryMarks({ center: C, p: xy, radius: R, h, k, pillW: on("numbers") && txt ? pillWidth(txt, k) : null, figures: figs.shown, extra: figs.extra > 0 }) : null;
+    return { c, at, xy, dist: geoDistance(at, center), shown, h, txt, figs, marks, top: marks?.top ?? null };
   }).filter((v) => v.xy && v.dist < Math.PI / 2 - 0.02).sort((a, b) => b.dist - a.dist) as HypeVis[] : [];
   const select = (iso: string) => (e: { stopPropagation: () => void }) => { e.stopPropagation(); onSelect(iso); };
   const cardList = on("cards") ? pickCards(vis.map((v) => ({ country: v.c.country, sufficient: v.c.sufficient, hasTop: !!v.c.top, value: metricValue(v.c, metric) })), selected) : [];
   const anchorOf = (iso: string) => { const v = vis.find((x) => x.c.country === iso)!; return { country: iso, at: v.top as [number, number] }; };
-  const gutter = cardList.length && !narrow;
-  // folga em volta do disco: o topo das colunas e as pílulas passam do horizonte (nas laterais, as calhas dos cards já cobrem)
-  const padY = Math.round((on("columns") ? COLUMN_MAX * (size / 2 - 8) * 0.6 : 0) + (on("numbers") ? 20 * k : 0));
-  const padX = gutter ? GUTTER : Math.round(padY / 2);
-  const vb = { x: -padX, y: -padY, w: size + 2 * padX, h: size + 2 * padY };
+  const gutter = cardList.length > 0 && !narrow;   // booleano: `0 && …` desenhava um "0" solto dentro do <defs>
+  // folga acima do disco: colunas, bonecos e pílulas sobem a partir do país (nas laterais, as calhas dos cards já cobrem)
+  const rise = Math.max(on("columns") ? COLUMN_MAX * R + COLUMN_CAP * k : 0, on("figures") ? FIGURE_H * FIGURE_SCALE * k : 0);
+  const padTop = Math.round(rise + (on("numbers") ? 22 * k : 0));
+  const padBottom = hypeMode ? Math.round(8 * k) : 0;
+  const padX = gutter ? GUTTER : Math.round(padTop / 2);
+  const vb = { x: -padX, y: -padTop, w: size + 2 * padX, h: size + padTop + padBottom };
+  // com as calhas, as pílulas ficam entre elas (nunca por baixo de um card)
+  const pillMinX = gutter ? -GUTTER + CARD_W + 10 : vb.x + 2; const pillMaxX = gutter ? size + GUTTER - CARD_W - 10 : vb.x + vb.w - 2;
   const width = vb.w;
   const slots: CardSlot[] = gutter
     ? stackCards(cardList.map(anchorOf), { centerX: C[0], leftX: -GUTTER + 6, rightX: size + GUTTER - 6 - CARD_W, cardH: CARD_H, gap: 8, top: vb.y + 6, bottom: vb.y + vb.h - 6 }) : [];
@@ -207,7 +218,7 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
           const glow = Math.max(0.35, Math.min(1, (p.avg_hype ?? 30) / 100 + 0.25));
           return (
             <g key={p.country} className={`globe-point ${p.sufficient ? "lit" : "dim"} ${sel ? "on" : ""}${hypeMode ? " is-anchor" : ""}`} transform={`translate(${x},${y})`} onClick={select(p.country)} style={{ cursor: "pointer" }}>
-              <title>{t("globe.looks_pecas_hype", { countryName: countryName(p.country), schemes: p.schemes, pieces: p.pieces, value: p.avg_hype ?? "—", value2: p.sufficient ? "" : t("globe.poucos_dados") })}</title>
+              <title>{t("globe.looks_pecas_hype", { countryName: countryName(p.country), schemes: p.schemes, pieces: p.pieces, value: p.avg_hype != null ? Math.round(p.avg_hype) : "—", value2: p.sufficient ? "" : t("globe.poucos_dados") })}</title>
               {hypeMode ? <circle r={3 * k} fill={p.dominantColorHex ?? "#FFD54A"} stroke={sel ? "#fff" : "rgba(255,255,255,.6)"} strokeWidth={sel ? 2 : 0.8} opacity={0.75} /> : <>
                 {p.sufficient && <circle r={r * 1.9} fill={p.dominantColorHex ?? "#FFD54A"} opacity={0.22 * glow} className="pulse" />}
                 <circle r={p.sufficient ? r : 3.5} fill={p.sufficient ? p.dominantColorHex ?? "#FFD54A" : "#8a96a3"} stroke={sel ? "#fff" : "rgba(255,255,255,.75)"} strokeWidth={sel ? 2.5 : 1} filter={p.sufficient ? "url(#globe-glow)" : undefined} opacity={p.sufficient ? glow : 0.6} />
@@ -223,8 +234,8 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
             {vis.filter((v) => v.h > 0.001).map((v) => (
               <g key={v.c.country} className={`globe-col${v.c.sufficient ? "" : " is-dim"}${selected === v.c.country ? " is-selected" : ""}`} data-country={v.c.country} data-level={v.shown.level ?? undefined} onClick={select(v.c.country)}>
                 <title>{columnTitle(t, v.c, metric)}</title>
-                <line className="globe-col-shaft" x1={v.xy[0]} y1={v.xy[1]} x2={v.top[0]} y2={v.top[1]} stroke={`url(#${uid}-col-${v.c.country})`} strokeWidth={6 * k} strokeLinecap="round" />
-                <circle className="globe-col-cap" cx={v.top[0]} cy={v.top[1]} r={3.2 * k} fill={v.c.sufficient ? levelColor(v.shown.level) : DIM} />
+                <line className="globe-col-shaft" x1={v.xy[0]} y1={v.xy[1]} x2={v.top[0]} y2={v.top[1]} stroke={`url(#${uid}-col-${v.c.country})`} strokeWidth={COLUMN_W * k} strokeLinecap="round" />
+                <circle className="globe-col-cap" cx={v.top[0]} cy={v.top[1]} r={COLUMN_CAP * k} fill={v.c.sufficient ? levelColor(v.shown.level) : DIM} />
               </g>
             ))}
           </g>
@@ -233,21 +244,24 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
         {/* seleção de um país que só existe nos dados de Hype */}
         {hypeMode && vis.filter((v) => v.c.country === selected).map((v) => <circle key="sel" className="globe-sel-ring" cx={v.xy[0]} cy={v.xy[1]} r={8 * k} fill="none" stroke="#fff" strokeWidth={2} aria-hidden="true" />)}
 
-        {/* bonecos: um por criador (até 3, depois "+N"), roupa na cor dominante, em pé no país */}
+        {/* bonecos: um por criador (até 3, depois "+N"), roupa na cor dominante, em pé no país, do lado de dentro da coluna */}
         {on("figures") && (
           <g className="globe-layer globe-layer-figures" aria-hidden="true">
             {vis.map((v, i) => {
-              const { shown, extra } = figuresFor(v.c.creators);
-              if (!shown) return null;
+              const f = v.marks.figures; const { shown, extra } = v.figs;
+              if (!f || !shown) return null;
+              const step = FIGURE_STEP * f.scale; const half = (FIGURE_W * f.scale) / 2;
               return (
-                <g key={v.c.country} className={`globe-figs${v.c.sufficient ? "" : " is-dim"}`} data-country={v.c.country} data-figures={shown} transform={`translate(${v.xy[0] + 7 * k},${v.xy[1] + 1.5 * k}) scale(${k})`} onClick={select(v.c.country)}>
+                <g key={v.c.country} className={`globe-figs${v.c.sufficient ? "" : " is-dim"}`} data-country={v.c.country} data-figures={shown} data-scale={f.scale}
+                  transform={`translate(${f.x},${f.y})`} onClick={select(v.c.country)}>
                   <title>{t("globeHype.figures_title", { country: countryName(v.c.country), count: v.c.creators })}</title>
+                  <rect className="globe-figs-hit" x={f.box.x - f.x} y={f.box.y - f.y} width={f.box.w} height={f.box.h} fill="transparent" />
                   {Array.from({ length: shown }, (_, j) => (
-                    <g key={j} transform={`translate(${j * 7.5},0)`}>
+                    <g key={j} transform={`translate(${f.dir * j * step},0) scale(${f.scale})`}>
                       <g className="globe-fig" style={{ animationDelay: `${((i * 0.37 + j * 0.53) % 2.4).toFixed(2)}s` }}><Figure color={v.c.dominantColorHex} /></g>
                     </g>
                   ))}
-                  {extra > 0 && <text className="globe-fig-more" x={shown * 7.5 - 2} y={-4}>{t("globeHype.more", { n: extra })}</text>}
+                  {extra > 0 && <text className="globe-fig-more" x={f.dir * ((shown - 1) * step + half + 2 * k)} y={-FIGURE_H * f.scale * 0.42} textAnchor={f.dir > 0 ? "start" : "end"} style={{ fontSize: 12 * k }}>{t("globeHype.more", { n: extra })}</text>}
                 </g>
               );
             })}
@@ -257,10 +271,10 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
         {/* números: o Hype (médio ou máximo) em texto, numa pílula na cor da faixa; o nome da faixa vai no rótulo */}
         {on("numbers") && (
           <g className="globe-layer globe-layer-numbers">
-            {vis.filter((v) => v.shown.value != null).map((v) => {
-              const txt = String(displayScore(v.shown.value as number)); const w = (12 + 7 * txt.length) * k; const hgt = 16 * k;
-              const px = Math.max(vb.x + w / 2 + 2, Math.min(vb.x + vb.w - w / 2 - 2, v.top[0]));
-              const py = Math.max(vb.y + hgt / 2 + 2, Math.min(vb.y + vb.h - hgt / 2 - 2, v.top[1] - 11 * k));
+            {vis.filter((v) => v.marks.pill).map((v) => {
+              const box = v.marks.pill!; const txt = v.txt; const w = box.w; const hgt = box.h;
+              const px = Math.max(pillMinX + w / 2, Math.min(pillMaxX - w / 2, box.x + w / 2));
+              const py = Math.max(vb.y + hgt / 2 + 2, Math.min(vb.y + vb.h - hgt / 2 - 2, box.y + hgt / 2));
               const label = pillLabel(t, v.c, v.shown);
               return (
                 <g key={v.c.country} className={`globe-pill${v.c.sufficient ? "" : " is-dim"}${selected === v.c.country ? " is-selected" : ""}`} data-country={v.c.country} data-level={v.shown.level ?? undefined}
@@ -275,8 +289,8 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
         )}
 
         {/* lista estreita: um número no país liga o globo à lista de cards logo abaixo */}
-        {narrow && cardList.map((iso, i) => { const a = anchorOf(iso); return (
-          <g key={iso} className="globe-card-marker" transform={`translate(${a.at[0] + 10 * k},${a.at[1] - 10 * k})`} aria-hidden="true"><circle r={7 * k} /><text textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 9 * k }}>{i + 1}</text></g>
+        {narrow && cardList.map((iso, i) => { const m = vis.find((x) => x.c.country === iso)!.marks.marker; return (
+          <g key={iso} className="globe-card-marker" transform={`translate(${m[0]},${m[1]})`} aria-hidden="true"><circle r={7 * k} /><text textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 9 * k }}>{i + 1}</text></g>
         ); })}
 
         {/* cards: o destaque do país numa calha lateral, preso ao país por uma linha; empilhados sem sobreposição */}
@@ -334,7 +348,8 @@ export function Globe({ points, selected, onSelect, size = 420, hype }: { points
   );
 }
 
-type HypeVis = { c: HypeGlobeCountry; at: [number, number]; xy: [number, number]; dist: number; shown: ReturnType<typeof hypeShown>; h: number; top: [number, number] };
+type HypeVis = { c: HypeGlobeCountry; at: [number, number]; xy: [number, number]; dist: number; shown: ReturnType<typeof hypeShown>; h: number; txt: string;
+  figs: ReturnType<typeof figuresFor>; marks: CountryMarks; top: [number, number] };
 type T = ReturnType<typeof useI18n>["t"];
 
 /** Score e faixa do destaque (só quando disponível). */
@@ -355,11 +370,12 @@ function columnTitle(t: T, c: HypeGlobeCountry, metric: GlobeMetric) {
   return t("globeHype.column_title", { country: countryName(c.country), metric: t(`globeHype.metric.${metric}`), value: v != null ? Math.round(v) : "—" });
 }
 
-/** Boneco de ~14 unidades de altura com os pés na origem; a roupa leva a cor dominante do país. */
+/** Boneco de ~14 unidades de altura com os pés na origem (desenhado ampliado); a roupa leva a cor dominante do país. */
 function Figure({ color }: { color?: string | null }) {
   return (
     <>
       <path className="globe-fig-legs" d="M-1.3 0 L-0.9 -4.4 M1.3 0 L0.9 -4.4" fill="none" stroke="#e9e4da" strokeWidth="1.3" strokeLinecap="round" />
+      <path className="globe-fig-arms" d="M-2.5 -8.9 L-3.7 -5.4 M2.5 -8.9 L3.7 -5.4" fill="none" stroke="#e9e4da" strokeWidth="1" strokeLinecap="round" />
       <path className="globe-fig-outfit" d="M-2.3 -9.4 Q0 -10.5 2.3 -9.4 L3.5 -3.9 Q0 -3.1 -3.5 -3.9 Z" fill={color ?? "#FFD54A"} stroke="#ffffff" strokeOpacity=".8" strokeWidth=".7" />
       <circle className="globe-fig-head" cx="0" cy="-12" r="2.1" fill="#e9e4da" />
     </>

@@ -99,8 +99,10 @@ export function HypeGlobeLegend({ f, data }: { f: GlobeFilters; data?: HypeGlobe
     <div className="globe-legend" aria-label={t("globeHype.legend")} role="group">
       <ul className="globe-legend-items">
         {on("numbers") && <li><LayerGlyph layer="numbers" /><span>{t(f.metric === "max" ? "globeHype.legend_numbers_max" : "globeHype.legend_numbers_avg")}</span></li>}
+        {/* Lote A3: a altura mínima visível também é dita na legenda (não esconder a regra do desenho) */}
         {on("columns") && <li><LayerGlyph layer="columns" /><span>{t("globeHype.legend_columns", { metric: t(`globeHype.metric.${f.metric}`) })}
-          {best && <span className="text-muted"> · {t("globeHype.legend_columns_max", { value: Math.round(best.v), country: countryName(best.c.country) })}</span>}</span></li>}
+          {best && <span className="text-muted"> · {t("globeHype.legend_columns_max", { value: Math.round(best.v), country: countryName(best.c.country) })}</span>}
+          <span className="text-muted"> · {t("hypeGlobe.legend_columns_min")}</span></span></li>}
         {on("figures") && <li><LayerGlyph layer="figures" /><span>{t("globeHype.legend_figures")}</span></li>}
         {on("cards") && <li><LayerGlyph layer="cards" /><span>{t("globeHype.legend_cards")}</span></li>}
         {on("heat") && <li><LayerGlyph layer="heat" /><span>{t("globeHype.legend_heat")}</span></li>}

@@ -3,6 +3,8 @@
  * Globo do Painel global com camadas de Hype (RF53 × RF26): regras puras (filtros ⇄ URL, altura e topo das colunas,
  * bonecos, escolha e empilhamento dos cards), o desenho de cada camada no globo (some atrás do horizonte) e a aba do
  * Explorador (barra de filtros → consulta e URL, tabela, painel do país, busca anônima para quem não entrou).
+ * Lote A3: colunas com altura na tela proporcional à métrica (mínimo visível para país suficiente), bonecos 2× e a
+ * pílula do número sempre acima da coluna e da cabeça dos bonecos (countryMarks).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor, within } from "@/test-utils/render";
@@ -11,8 +13,8 @@ import { tokenStore } from "@/lib/api/client";
 import { Globe } from "@/components/globe";
 import ExplorerPage from "@/app/(site)/(app)/explorer/page";
 import {
-  COLUMN_MAX, DEFAULT_GLOBE_LAYERS, columnHeight, columnTop, figuresFor, globeFiltersFrom, globeQuery, globeSearch, hypeShown, levelFromScore, pickCards, stackCards,
-  type GlobeLayer,
+  COLUMN_CAP, COLUMN_MAX, COLUMN_MIN, COLUMN_W, DEFAULT_GLOBE_LAYERS, FIGURE_H, FIGURE_SCALE, columnDirection, columnHeight, columnTop, countryMarks, figuresFor, globeFiltersFrom,
+  globeQuery, globeSearch, hypeShown, levelFromScore, overlaps, pickCards, pillWidth, stackCards, type GlobeLayer,
 } from "@/lib/hype/globe";
 import type { HypeGlobe, HypeGlobeCountry } from "@/lib/hype/types";
 
@@ -37,7 +39,9 @@ const GLOBE: HypeGlobe = {
   regions: [{ key: "AMERICA_DO_SUL", label: "América do Sul", count: 20, avgHype: 48 }],
 };
 const C: [number, number] = [210, 210];
-const dist = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+/** raio do disco no globo de 420 (size / 2 − 8) */
+const R = 202;
+const dist = (a: readonly [number, number], b: readonly [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 beforeEach(() => {
   // "reduzir movimento" do sistema (o app pode reescrever o data-reduce-motion): sem giro nem crescimento, desenho determinístico
@@ -54,21 +58,58 @@ afterEach(() => {
 });
 
 describe("Globo de Hype › regras puras", () => {
-  it("topo da coluna: a projeção ortográfica é linear (c + (1+h)(p − c))", () => {
-    expect(columnTop(C, [310, 210], 0.3)).toEqual([340, 210]);
-    expect(columnTop(C, [210, 110], 0.5)).toEqual([210, 60]);
-    const [x, y] = columnTop(C, [250, 180], 0.2);
-    expect(x).toBeCloseTo(258); expect(y).toBeCloseTo(174);
-    expect(columnTop(C, [250, 180], 0)).toEqual([250, 180]);   // altura zero = na superfície
+  it("coluna em pé: sobe a partir do país, inclinada para fora, com a mesma altura na tela em qualquer ponto do globo", () => {
+    expect(columnDirection(C, [210, 300], R)).toEqual([0, -1]);   // no meio do disco: em pé
+    const [dx, dy] = columnDirection(C, [412, 210], R);           // na borda direita: tomba para a direita
+    expect(dx).toBeGreaterThan(0.3); expect(dy).toBeLessThan(-0.8); expect(Math.hypot(dx, dy)).toBeCloseTo(1);
+    expect(columnDirection(C, [8, 210], R)[0]).toBeCloseTo(-dx);   // espelhada na borda esquerda
+    // contínua ao cruzar o centro (a radial pura virava de lado)
+    expect(dist(columnDirection(C, [209, 260], R), columnDirection(C, [211, 260], R))).toBeLessThan(0.01);
+    // a altura desenhada é h·R em qualquer posição — a radial encurtava perto do centro do disco
+    for (const p of [[210, 210], [300, 150], [30, 380], [400, 60]] as [number, number][]) {
+      expect(dist(columnTop(C, p, 0.2, R), p)).toBeCloseTo(0.2 * R, 6);
+      expect(columnTop(C, p, 0.2, R)[1]).toBeLessThan(p[1]);   // sempre para cima
+    }
+    expect(columnTop(C, [250, 180], 0, R)).toEqual([250, 180]);   // altura zero = na superfície
   });
 
-  it("altura da coluna: Hype e crescimento na escala 0–100, volume relativo ao maior país; zero na superfície", () => {
+  it("altura da coluna: Hype e crescimento na escala 0–100, volume relativo ao maior país; mínimo visível só com dados suficientes", () => {
+    expect(COLUMN_MAX).toBeCloseTo(0.22);
     expect(columnHeight(50, "avg")).toBeCloseTo(COLUMN_MAX / 2);
     expect(columnHeight(100, "max")).toBeCloseTo(COLUMN_MAX);
     expect(columnHeight(150, "growth")).toBeCloseTo(COLUMN_MAX);   // nunca passa do máximo
     expect(columnHeight(5, "volume", 10)).toBeCloseTo(COLUMN_MAX / 2);
     expect(columnHeight(null, "avg")).toBe(0);
     expect(columnHeight(0, "avg")).toBe(0);
+    // país suficiente nunca some: valor baixo ganha a altura mínima; acima dela, segue proporcional
+    expect(columnHeight(2, "avg", 1, true)).toBe(COLUMN_MIN);
+    expect(columnHeight(2, "avg", 1, false)).toBeCloseTo(COLUMN_MAX * 0.02);
+    expect(columnHeight(80, "avg", 1, true)).toBeCloseTo(COLUMN_MAX * 0.8);
+    expect(columnHeight(null, "avg", 1, true)).toBe(0);   // sem dados não vira coluna (nunca um "0" desenhado)
+  });
+
+  it("marcas do país: pílula, coluna, bonecos e marcador nunca se sobrepõem", () => {
+    const pillW = pillWidth("100");
+    for (const x of [20, 120, 205, 215, 320, 400]) for (const y of [40, 210, 380]) for (const h of [0, COLUMN_MIN, 0.1, COLUMN_MAX]) for (const n of [1, 2, 3]) {
+      const m = countryMarks({ center: C, p: [x, y], radius: R, h, k: 1, pillW, figures: n, extra: n === 3 });
+      const figs = m.figures!; const pill = m.pill!;
+      expect(figs.dir).toBe(x > C[0] ? -1 : 1);   // bonecos do lado de dentro do disco
+      expect(overlaps(pill, figs.box)).toBe(false);
+      expect(pill.y + pill.h).toBeLessThanOrEqual(figs.box.y);   // número acima da cabeça dos bonecos
+      expect(pill.y + pill.h).toBeLessThanOrEqual(m.top[1] - (h > 0 ? COLUMN_CAP : 0));   // e acima da tampa da coluna
+      const half = Math.max(COLUMN_W / 2, COLUMN_CAP);
+      const col = { x: Math.min(x, m.top[0]) - half, y: m.top[1] - half, w: Math.abs(m.top[0] - x) + 2 * half, h: y - m.top[1] + 2 * half };
+      expect(overlaps(col, figs.box)).toBe(false);
+      const mk = { x: m.marker[0] - 7, y: m.marker[1] - 7, w: 14, h: 14 };
+      expect(overlaps(mk, pill)).toBe(false); expect(overlaps(mk, figs.box)).toBe(false);
+    }
+    // bonecos 2× (e proporcionais ao tamanho do globo): ~28 px de altura no globo de 420, metade no de 210
+    const big = countryMarks({ center: C, p: [100, 200], radius: R, h: 0.1, k: 1, figures: 2 }).figures!;
+    expect(big.scale).toBe(FIGURE_SCALE);
+    expect(big.box.h).toBeCloseTo(FIGURE_H * 2);
+    expect(countryMarks({ center: [105, 105], p: [50, 100], radius: 97, h: 0.1, k: 0.5, figures: 2 }).figures!.box.h).toBeCloseTo(FIGURE_H);
+    // sem bonecos nem número: só o topo da coluna
+    expect(countryMarks({ center: C, p: [100, 200], radius: R, h: 0.1, k: 1 })).toMatchObject({ pill: null, figures: null });
   });
 
   it("bonecos: um por criador até 3, o resto vira +N", () => {
@@ -162,22 +203,26 @@ describe("Globo de Hype › camadas no globo", () => {
     expect(screen.getByRole("img", { name: /^Brasil · Hype máximo 91 · Viral$/ })).toBeTruthy();
   });
 
-  it("colunas: o topo fica a (1+h) do centro, com h proporcional à métrica; nada atrás do horizonte", () => {
+  it("colunas: altura na tela = h·R com h proporcional à métrica, sempre para cima; nada atrás do horizonte", () => {
     const { container } = drawGlobe(["columns"]);
     expect(drawn(container, ".globe-col")).not.toContain("JP");
-    const line = (iso: string) => container.querySelector(`.globe-col[data-country="${iso}"] line`)!;
-    const ratio = (iso: string) => {
-      const l = line(iso); const n = (a: string) => Number(l.getAttribute(a));
-      return dist([n("x2"), n("y2")], C) / dist([n("x1"), n("y1")], C);
+    const seg = (c: HTMLElement, iso: string) => {
+      const l = c.querySelector(`.globe-col[data-country="${iso}"] line`)!; const n = (a: string) => Number(l.getAttribute(a));
+      return { base: [n("x1"), n("y1")] as [number, number], top: [n("x2"), n("y2")] as [number, number] };
     };
-    expect(ratio("BR")).toBeCloseTo(1 + columnHeight(52.3, "avg"), 4);
-    expect(ratio("US")).toBeCloseTo(1 + columnHeight(70, "avg"), 4);
-    expect(ratio("US")).toBeGreaterThan(ratio("BR"));
+    const len = (c: HTMLElement, iso: string) => { const s = seg(c, iso); return dist(s.top, s.base); };
+    expect(len(container, "BR")).toBeCloseTo(columnHeight(52.3, "avg", 1, true) * R, 4);
+    expect(len(container, "US")).toBeCloseTo(columnHeight(70, "avg", 1, true) * R, 4);
+    expect(len(container, "US")).toBeGreaterThan(len(container, "BR"));
+    for (const iso of ["BR", "AR", "US", "FR"]) expect(seg(container, iso).top[1]).toBeLessThan(seg(container, iso).base[1]);
+    // a coluna mais alta passa de 40 px no globo de 420 (antes, perto do centro, mal aparecia)
+    expect(columnHeight(100, "avg", 1, true) * R).toBeGreaterThan(40);
+    expect(container.querySelector('.globe-col[data-country="BR"] line')!.getAttribute("stroke-width")).toBe(String(COLUMN_W));
     cleanup();
     // volume: relativo ao maior país do recorte (BR, 14 itens)
     const vol = drawGlobe(["columns"], { metric: "volume" }).container;
-    const l = vol.querySelector('.globe-col[data-country="AR"] line')!; const n = (a: string) => Number(l.getAttribute(a));
-    expect(dist([n("x2"), n("y2")], C) / dist([n("x1"), n("y1")], C)).toBeCloseTo(1 + columnHeight(5, "volume", 14), 4);
+    expect(len(vol, "AR")).toBeCloseTo(columnHeight(5, "volume", 14, true) * R, 4);
+    expect(len(vol, "BR")).toBeCloseTo(COLUMN_MAX * R, 4);
   });
 
   it("as colunas crescem do chão quando o recorte chega (sem reduzir movimento)", () => {
@@ -188,12 +233,14 @@ describe("Globo de Hype › camadas no globo", () => {
     expect(container.querySelectorAll(".globe-col")).toHaveLength(0);   // começa na superfície
     act(() => { const later = performance.now() + 1000; queue.splice(0).forEach((cb) => cb(later)); });
     const l = container.querySelector('.globe-col[data-country="BR"] line')!; const n = (a: string) => Number(l.getAttribute(a));
-    expect(dist([n("x2"), n("y2")], C) / dist([n("x1"), n("y1")], C)).toBeCloseTo(1 + columnHeight(52.3, "avg"), 4);
+    expect(dist([n("x2"), n("y2")], [n("x1"), n("y1")])).toBeCloseTo(columnHeight(52.3, "avg", 1, true) * R, 4);
   });
 
-  it("bonecos: 1 a 3 por criadores e +N além disso, só na frente do globo", () => {
+  it("bonecos: 1 a 3 por criadores e +N além disso, 2× maiores, só na frente do globo", () => {
     const { container } = drawGlobe(["figures"]);
     const figs = (iso: string) => container.querySelector(`.globe-figs[data-country="${iso}"]`)!;
+    expect(figs("BR").getAttribute("data-scale")).toBe(String(FIGURE_SCALE));
+    expect(figs("BR").querySelector(".globe-fig")!.parentElement!.getAttribute("transform")).toContain(`scale(${FIGURE_SCALE})`);
     expect(figs("AR").querySelectorAll(".globe-fig")).toHaveLength(1);
     expect(figs("US").querySelectorAll(".globe-fig")).toHaveLength(3);
     expect(figs("US").querySelector(".globe-fig-more")).toBeNull();
@@ -202,6 +249,20 @@ describe("Globo de Hype › camadas no globo", () => {
     expect(figs("FR").querySelector(".globe-fig-more")!.textContent).toBe("+2");
     expect(figs("BR").querySelector(".globe-fig-outfit")!.getAttribute("fill")).toBe("#1f4f7a");   // roupa na cor dominante
     expect(drawn(container, ".globe-figs")).not.toContain("JP");
+  });
+
+  it("números acima das colunas e da cabeça dos bonecos do mesmo país (nada se cobre)", () => {
+    const { container } = drawGlobe(["numbers", "columns", "figures"]);
+    const xy = (el: Element) => { const m = /translate\(([-\d.e]+),([-\d.e]+)\)/.exec(el.getAttribute("transform")!)!; return [Number(m[1]), Number(m[2])] as const; };
+    for (const iso of ["BR", "AR", "US", "FR", "MX"]) {
+      const pill = container.querySelector(`.globe-pill[data-country="${iso}"]`)!;
+      const figs = container.querySelector(`.globe-figs[data-country="${iso}"]`)!;
+      const col = container.querySelector(`.globe-col[data-country="${iso}"] line`)!;
+      const [, py] = xy(pill); const ph = Number(pill.querySelector("rect")!.getAttribute("height"));
+      const [, fy] = xy(figs); const headTop = fy - FIGURE_H * Number(figs.getAttribute("data-scale"));
+      expect(py + ph / 2).toBeLessThanOrEqual(headTop);                                       // pílula acima dos bonecos
+      expect(py + ph / 2).toBeLessThanOrEqual(Number(col.getAttribute("y2")) - COLUMN_CAP);   // e acima da tampa da coluna
+    }
   });
 
   it("cards: os 3 mais altos visíveis + o selecionado, com linha até o país; clique abre a análise", () => {

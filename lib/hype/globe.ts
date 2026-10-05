@@ -86,26 +86,47 @@ export function metricValue(c: HypeGlobeCountry, metric: GlobeMetric): number | 
   }
 }
 
-/* ---------------------------------------------------------------- colunas 3D */
-/** Altura máxima da coluna (fração do raio do globo). */
-export const COLUMN_MAX = 0.3;
+/* ---------------------------------------------------------------- colunas */
+/**
+ * Altura máxima da coluna (fração do raio do globo, medida na TELA). Lote A3: a coluna radial pura encurtava perto do
+ * centro do disco (na projeção ortográfica ela aponta para quem olha) e o mesmo valor ficava com alturas diferentes
+ * conforme a posição; agora a altura desenhada é proporcional só à métrica, em qualquer ponto do globo.
+ */
+export const COLUMN_MAX = 0.22;
+/** Altura mínima visível de um país com dados suficientes (fração do raio): valor baixo não faz a coluna sumir. */
+export const COLUMN_MIN = 0.04;
+/** Inclinação para fora: no centro do disco a coluna fica em pé; na borda tomba ~27° do eixo vertical (efeito de globo). */
+export const COLUMN_LEAN = 0.5;
+/** Espessura da coluna e raio da tampa (× tamanho do globo / 420). */
+export const COLUMN_W = 7;
+export const COLUMN_CAP = 3.6;
 
 /**
  * Altura relativa da coluna (0…COLUMN_MAX do raio), proporcional ao valor — escala sequencial com zero na superfície.
  * Hype e crescimento usam a escala absoluta 0–100 (comparável entre recortes); volume é relativo ao maior país do recorte.
+ * País com dados suficientes nunca fica abaixo de COLUMN_MIN; sem valor ("sem dados") não há coluna (nunca vira 0 desenhado).
  */
-export function columnHeight(value: number | null | undefined, metric: GlobeMetric, maxVolume = 1) {
+export function columnHeight(value: number | null | undefined, metric: GlobeMetric, maxVolume = 1, sufficient = false) {
   if (value == null || !Number.isFinite(value)) return 0;
   const n = metric === "volume" ? value / Math.max(1, maxVolume) : value / 100;
-  return COLUMN_MAX * Math.max(0, Math.min(1, n));
+  const h = COLUMN_MAX * Math.max(0, Math.min(1, n));
+  return sufficient ? Math.max(COLUMN_MIN, h) : h;
 }
 
 /**
- * Topo de uma coluna radial de altura h (fração do raio) em pé no ponto projetado p. A projeção ortográfica é linear: o
- * ponto a (1+h)·R do centro da esfera, na mesma direção, cai em c + (1+h)·(p − c).
+ * Direção (unitária, na tela) da coluna em pé no ponto projetado p: para cima, inclinada para fora na proporção da
+ * distância horizontal ao centro do disco. Contínua enquanto o globo gira (sem viradas bruscas ao cruzar o centro).
  */
-export function columnTop(center: readonly [number, number], p: readonly [number, number], h: number): [number, number] {
-  return [center[0] + (1 + h) * (p[0] - center[0]), center[1] + (1 + h) * (p[1] - center[1])];
+export function columnDirection(center: readonly [number, number], p: readonly [number, number], radius: number): [number, number] {
+  const ux = radius > 0 ? Math.max(-1, Math.min(1, (p[0] - center[0]) / radius)) : 0;
+  const dx = COLUMN_LEAN * ux; const n = Math.hypot(dx, 1);
+  return [dx / n, -1 / n];
+}
+
+/** Topo de uma coluna de altura h (fração do raio) em pé no ponto projetado p: p + h·R·direção. */
+export function columnTop(center: readonly [number, number], p: readonly [number, number], h: number, radius: number): [number, number] {
+  const [dx, dy] = columnDirection(center, p, radius);
+  return [p[0] + dx * h * radius, p[1] + dy * h * radius];
 }
 
 /* ---------------------------------------------------------------- bonecos */
@@ -114,6 +135,62 @@ export const MAX_FIGURES = 3;
 export function figuresFor(creators: number) {
   const n = Math.max(0, Math.floor(creators || 0));
   return { shown: Math.min(MAX_FIGURES, n), extra: Math.max(0, n - MAX_FIGURES) };
+}
+/** Desenho do boneco: 7 × 14,2 unidades com os pés na origem, um a cada 7,5; ampliado FIGURE_SCALE × (tamanho / 420). */
+export const FIGURE_W = 7;
+export const FIGURE_H = 14.2;
+export const FIGURE_STEP = 7.5;
+/** Lote A3: o dobro do desenho original (no globo de 420 px, ~28 px de altura em vez de ~14). */
+export const FIGURE_SCALE = 2;
+/** Largura reservada para o "+N" depois do último boneco (× tamanho / 420). */
+export const FIGURE_MORE_W = 18;
+
+/* ---------------------------------------------------------------- marcas de um país (sem sobreposição) */
+export interface Box { x: number; y: number; w: number; h: number }
+export const PILL_H = 16;
+/** Largura da pílula do número (× k): folga + ~7 por algarismo. */
+export const pillWidth = (text: string, k = 1) => (12 + 7 * text.length) * k;
+/** Duas caixas se sobrepõem? (encostar não conta) */
+export const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+export interface CountryMarks {
+  /** topo da coluna (= o ponto do país quando não há coluna) */
+  top: [number, number];
+  /** pílula do número (caixa) */
+  pill: Box | null;
+  /** bonecos: pés do primeiro (x, y), lado em que a fila cresce, escala e a caixa ocupada */
+  figures: { x: number; y: number; dir: 1 | -1; scale: number; box: Box } | null;
+  /** número da lista estreita (fora da pílula, da coluna e dos bonecos) */
+  marker: [number, number];
+}
+
+/**
+ * Onde cada marca de um país vai, sem uma cobrir a outra: a coluna sobe (inclinada para fora), os bonecos ficam em pé do
+ * OUTRO lado (para dentro do disco, longe das calhas dos cards), a pílula do número fica acima do topo da coluna e, quando
+ * há bonecos, também acima da cabeça deles; o marcador da lista estreita vai ao lado da pílula, no lado da coluna.
+ */
+export function countryMarks(o: { center: readonly [number, number]; p: readonly [number, number]; radius: number; h: number; k: number; pillW?: number | null; figures?: number; extra?: boolean }): CountryMarks {
+  const { p, k } = o;
+  const top = columnTop(o.center, p, o.h, o.radius);
+  const dir: 1 | -1 = p[0] > o.center[0] ? -1 : 1;   // a coluna tomba para fora; os bonecos ficam do lado de dentro
+  let figures: CountryMarks["figures"] = null;
+  if (o.figures && o.figures > 0) {
+    const s = FIGURE_SCALE * k; const half = (FIGURE_W * s) / 2;
+    const x = p[0] + dir * (Math.max(COLUMN_W / 2, COLUMN_CAP) * k + 2 * k + half);
+    const y = p[1] + 1.5 * k;
+    const span = (o.figures - 1) * FIGURE_STEP * s + FIGURE_W * s + (o.extra ? FIGURE_MORE_W * k : 0);
+    const near = x - dir * half;
+    figures = { x, y, dir, scale: s, box: { x: dir > 0 ? near : near - span, y: y - FIGURE_H * s, w: span, h: FIGURE_H * s } };
+  }
+  const gap = 3 * k; const ph = PILL_H * k;
+  let pill: Box | null = null;
+  if (o.pillW) {
+    let cy = top[1] - (o.h > 0 ? COLUMN_CAP * k : 0) - gap - ph / 2;
+    if (figures) cy = Math.min(cy, figures.box.y - gap - ph / 2);
+    pill = { x: top[0] - o.pillW / 2, y: cy - ph / 2, w: o.pillW, h: ph };
+  }
+  const marker: [number, number] = pill ? [top[0] - dir * (pill.w / 2 + 9 * k), pill.y + ph / 2] : [top[0] - dir * 10 * k, top[1] - 6 * k];
+  return { top, pill, figures, marker };
 }
 
 /* ---------------------------------------------------------------- cards */
