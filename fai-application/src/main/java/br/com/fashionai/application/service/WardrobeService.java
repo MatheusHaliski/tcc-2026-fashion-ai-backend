@@ -27,6 +27,7 @@ import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.ModerationQueueItem;
@@ -36,6 +37,7 @@ import br.com.fashionai.domain.model.ProcessingJobLog;
 import br.com.fashionai.domain.model.QualityScore;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
+import br.com.fashionai.domain.model.TaxonomyAttribute;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
@@ -196,7 +198,8 @@ public class WardrobeService {
                           Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning,
                           Map<String, Object> logo, String size, BigDecimal price,
                           List<Map<String, Object>> subcategoryCandidates, Map<String, Object> brandSearch,
-                          List<Map<String, Object>> photoChecks) {
+                          List<Map<String, Object>> photoChecks, String variation, Double variationConfidence,
+                          Map<String, List<String>> attributes) {
     }
 
     /** @param rejection só na análise em lote: a foto recusada pelos critérios (as demais seguem) */
@@ -702,7 +705,11 @@ public class WardrobeService {
              "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
              "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
              "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
-             "color": código da paleta, "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+             "color": código da paleta, "material": código da lista de materiais,
+             "variation": {"code": código da lista de modelagens do subtipo escolhido (corte/silhueta/construção) ou null
+                           se a foto não deixar claro, "confidence": 0-1},
+             "attributes": {"DIMENSÃO": {"codes": [códigos dessa dimensão], "confidence": 0-1}} só com as dimensões e os
+                           códigos listados na mensagem e só o que dá para VER na foto (omita o resto; nunca invente código),
              "sex": um de [MASCULINO, FEMININO, UNISSEX], "occasion": até 2 códigos da lista de ocasiões,
              "style": até 2 códigos da lista de estilos,
              "brand": nome da marca ou null, "brandZone": id da zona em que a marca foi lida (ou "outra") ou null,
@@ -727,6 +734,10 @@ public class WardrobeService {
             p.append("Tipo não informado: descubra pela foto. Subtipos por tipo: ").append(Taxonomy.SUBCATEGORIES).append(".\n");
         }
         p.append("Ocasiões permitidas: ").append(String.join(", ", Taxonomy.allowedOccasions(category))).append(".\n");
+        p.append("Materiais: ").append(String.join(", ", Taxonomy.MATERIALS)).append(".\n");
+        if (category != null) {
+            p.append(analyzerVocabulary(category));
+        }
         p.append("Estilos: ").append(String.join(", ", Taxonomy.STYLES)).append(".\n");
         p.append("Cores (códigos): ").append(String.join(", ", Taxonomy.COLORS.keySet())).append(".\n");
         int n = 1;
@@ -751,8 +762,74 @@ public class WardrobeService {
             {"isClothing": boolean, "safe": boolean, "categories": [strings de violação, ex.: nudity, violence, hate, minor],
              "confidence": 0-1}. Em dúvida, safe=false.""";
 
+    /** Dimensões que a IA pode ler numa foto (docs/taxonomia, C.6); estilo e ocasião têm campos próprios. */
+    static final List<String> ANALYZER_DIMENSIONS = List.of("PATTERN", "FINISH", "LENGTH", "SHAFT_HEIGHT", "RISE", "HEM",
+            "SLEEVE_LENGTH", "SLEEVE_STYLE", "NECKLINE", "CLOSURE", "HEEL_TYPE", "HEEL_HEIGHT", "TOE_SHAPE", "SOLE_TYPE",
+            "CARRY_MODE", "FRAME_RIM");
+
+    /**
+     * Vocabulário fechado da variação e dos atributos para o tipo escolhido: modelagens de cada subtipo (código + nome) e,
+     * por dimensão que vale para o tipo, os códigos possíveis. A IA só pode responder com esses códigos.
+     */
+    static String analyzerVocabulary(String category) {
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        StringBuilder p = new StringBuilder("Modelagens por subtipo (código = nome): ");
+        List<String> subs = Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of());
+        p.append(String.join("; ", subs.stream().map(sub -> sub + ": " + String.join(", ", reg.variationsOf(sub).stream()
+                .map(l -> l.code() + " = " + reg.label(l.code(), Msg.PT_BR).orElse(l.code())).toList())).toList())).append(".\n");
+        p.append("Características (dimensão: códigos):");
+        for (String dim : ANALYZER_DIMENSIONS) {
+            java.util.LinkedHashSet<String> codes = new java.util.LinkedHashSet<>();
+            subs.forEach(sub -> reg.valuesFor(dim, category, sub).forEach(v -> codes.add(v.code())));
+            if (!codes.isEmpty()) {
+                p.append(" ").append(dim).append(": ").append(String.join(", ", codes)).append(".");
+            }
+        }
+        return p.append("\n").toString();
+    }
+
     static LocalVision.PieceGuess parseAnalysis(String text) {
         return parseAnalysis(text, null);
+    }
+
+    /**
+     * Variação e atributos da resposta da IA (C.6): só códigos do vocabulário da subcategoria (código exato ou alias),
+     * atributos só com confiança ≥ 0,75 e no máximo o teto de cada dimensão. O resto é descartado, nunca gravado como veio.
+     */
+    static LocalVision.Insights withTaxonomy(LocalVision.Insights base, Map<String, Object> m, String category, String sub) {
+        if (sub == null || category == null) {
+            return base;
+        }
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        String variation = null;
+        double vConf = 0;
+        if (m.get("variation") instanceof Map<?, ?> vm && str(vm.get("code")) != null) {
+            String raw = str(vm.get("code")).trim();
+            String up = raw.toUpperCase(Locale.ROOT);
+            variation = reg.isVariationOf(sub, up) ? up : reg.variationByText(sub, raw).orElse(null);
+            vConf = vm.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0;
+        }
+        Map<String, List<String>> attrs = new LinkedHashMap<>();
+        if (m.get("attributes") instanceof Map<?, ?> am) {
+            am.forEach((k, v) -> {
+                String dim = String.valueOf(k).toUpperCase(Locale.ROOT);
+                if (!ANALYZER_DIMENSIONS.contains(dim) || !(v instanceof Map<?, ?> dm)) {
+                    return;
+                }
+                double conf = dm.get("confidence") instanceof Number n ? n.doubleValue() : 0;
+                int max = reg.dimension(dim).map(TaxonomyRegistry.Dimension::maxPerPiece).orElse(1);
+                List<String> codes = strings(dm.get("codes")).stream()
+                        .map(x -> reg.isAllowed(dim, x.trim().toUpperCase(Locale.ROOT), category, sub) ? x.trim().toUpperCase(Locale.ROOT)
+                                : reg.valueByText(dim, category, sub, x).orElse(null))
+                        .filter(java.util.Objects::nonNull).distinct().limit(max).toList();
+                if (conf >= 0.75 && !codes.isEmpty()) {
+                    attrs.put(dim, codes);
+                }
+            });
+        }
+        return new LocalVision.Insights(base.name(), base.occasion(), base.style(), base.brandZone(), base.brandEvidence(),
+                base.matchesCategory(), base.detectedCategory(), base.fullyVisible(), base.viewAngle(), base.singlePiece(),
+                base.photoConfidence(), base.ranking(), vConf >= 0.40 ? variation : null, Math.round(vConf * 100) / 100.0, attrs);
     }
 
     /**
@@ -765,7 +842,7 @@ public class WardrobeService {
             return null;
         }
         String category = str(m.get("category"));
-        String sub = str(m.get("subcategory"));
+        String sub = Taxonomy.activeSubcategory(str(m.get("subcategory")));          // legado → código novo
         String detected = Taxonomy.isValidCategory(str(m.get("detectedCategory"))) ? str(m.get("detectedCategory"))
                 : Taxonomy.isValidCategory(category) ? category : null;
         List<SubtypeReferences.Match> ranking = new ArrayList<>();
@@ -773,7 +850,10 @@ public class WardrobeService {
             for (Object o : rl) {
                 if (o instanceof Map<?, ?> rm && str(rm.get("code")) != null && Taxonomy.categoryOf(str(rm.get("code"))) != null) {
                     double sim = rm.get("similarity") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0;
-                    ranking.add(new SubtypeReferences.Match(str(rm.get("code")), Math.round(sim * 1000) / 1000.0));
+                    String code = Taxonomy.activeSubcategory(str(rm.get("code")));
+                    if (ranking.stream().noneMatch(x -> x.subcategory().equals(code))) {
+                        ranking.add(new SubtypeReferences.Match(code, Math.round(sim * 1000) / 1000.0));
+                    }
                 }
             }
         }
@@ -815,6 +895,7 @@ public class WardrobeService {
                 m.get("matchesCategory") instanceof Boolean b ? b : null, detected,
                 photo.get("fullyVisible") instanceof Boolean b ? b : null, str(photo.get("viewAngle")),
                 photo.get("singlePiece") instanceof Boolean b ? b : null, photoConf, ranking);
+        insights = withTaxonomy(insights, m, category, sub);
         return new LocalVision.PieceGuess(category, sub, color, material, brandName(str(m.get("brand"))), sex, conf,
                 Math.round(overall * 100) / 100.0, List.of(), logoBox(m.get("logo")), insights);
     }
@@ -923,7 +1004,10 @@ public class WardrobeService {
         }
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
                 manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),
-                candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks);
+                candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks,
+                TaxonomyRegistry.get().isVariationOf(sub, seen.variation()) ? seen.variation() : null,
+                seen.variation() == null ? null : seen.variationConfidence(),
+                Taxonomy.variationErrors(category, sub, null, seen.attributes()).isEmpty() ? seen.attributes() : Map.of());
     }
 
     static String firstNonBlank(String... values) {
@@ -1016,11 +1100,53 @@ public class WardrobeService {
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background, UUID captureSessionId) {
+                            Map<String, Object> background, UUID captureSessionId, String variation,
+                            Map<String, List<String>> attributes) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
+            variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
+        }
+
+        /** Formulário sem variação/atributos (versões anteriores da tela, cadastro pelo catálogo, lote). */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId, null, null);
+        }
+
+        /**
+         * Subcategoria LEGACY no padrão novo (docs/taxonomia, C.3): bermuda_shorts vira shorts + LENGTH=KNEE, coturno vira
+         * boots + COMBAT, short jeans vira shorts + material DENIM. O que a pessoa já escolheu (variação, atributo,
+         * material) vale mais que o implícito.
+         */
+        public PieceForm resolveTaxonomy() {
+            TaxonomyRegistry.Resolved r = TaxonomyRegistry.get().resolve(subcategory);
+            if (r == null || r.legacyCode() == null) {
+                return this;
+            }
+            Map<String, List<String>> attrs = new LinkedHashMap<>(attributes == null ? Map.of() : attributes);
+            String mat = material;
+            for (Map.Entry<String, String> e : r.implied().entrySet()) {
+                if ("MATERIAL".equals(e.getKey())) {
+                    if (mat == null || Set.of("COTTON", "BLEND", "SYNTHETIC").contains(mat)) {
+                        mat = e.getValue();                      // short jeans antigo: algodão → denim
+                    }
+                } else {
+                    attrs.putIfAbsent(e.getKey(), List.of(e.getValue()));
+                }
+            }
+            return new PieceForm(draftId, useDefaultImage, name, category, r.subcategory(), sex, brandId, brandName, color, mat, size,
+                    market, occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation != null ? variation : r.variation(), attrs);
         }
 
         /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
@@ -1057,6 +1183,7 @@ public class WardrobeService {
     private Views.PieceView createInternal(CurrentUser user, PieceForm form, CatalogPick pick) {
         guard.requireCanCreate(user);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        form = form.resolveTaxonomy();
         validate(form);
         // o rascunho é travado (SELECT … FOR UPDATE): dois envios simultâneos do mesmo rascunho são atendidos um depois do outro
         PipelineJob draft = form.draftId() == null ? null : jobs.findByIdForUpdate(form.draftId()).orElse(null);
@@ -1252,6 +1379,9 @@ public class WardrobeService {
         // uma resposta com TODOS os campos a corrigir (antes: primeiro a taxonomia, depois nome e preço, em duas rodadas)
         Map<String, Object> errors = new LinkedHashMap<>(Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style()));
+        if (!errors.containsKey("category") && !errors.containsKey("subcategory")) {
+            errors.putAll(Taxonomy.variationErrors(f.category(), f.subcategory(), f.variation(), f.attributes()));
+        }
         if (f.name() == null || f.name().isBlank()) {
             errors.put("name", Msg.t("wardrobe.informe_o_nome_da_peca"));
         }
@@ -1273,6 +1403,7 @@ public class WardrobeService {
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
         w.setSubcategory(f.subcategory());
+        applyTaxonomy(w, f);
         w.setSex(f.sex());
         w.setColor(f.color());
         w.setMaterial(f.material());
@@ -1299,6 +1430,31 @@ public class WardrobeService {
         String previousBrand = w.getBrandName();
         resolveBrand(w, f.brandId(), f.brandName());
         brandFromWebSearch(w, f, previousBrand);
+    }
+
+    /**
+     * Variação e atributos da peça (docs/taxonomia, C.6). Formulário sem variação nem atributos (tela antiga, lote,
+     * catálogo) mantém os que a peça já tinha — só some a variação que deixou de valer para a subcategoria nova.
+     * Estilo e ocasião também vão para os atributos (as colunas CSV continuam, para compatibilidade).
+     */
+    static void applyTaxonomy(WardrobeItem w, PieceForm f) {
+        boolean full = f.attributes() != null || f.variation() != null;
+        if (full) {
+            if (!java.util.Objects.equals(w.getVariationCode(), f.variation())) {
+                w.setVariationCode(f.variation());
+                w.setVariationStatus(f.variation() == null ? null : "USER_CONFIRMED");
+                w.setVariationConfidence(null);
+            }
+            Map<String, List<String>> attrs = f.attributes() == null ? Map.of() : f.attributes();
+            w.getAttributes().removeIf(a -> !Taxonomy.FIELD_DIMENSIONS.contains(a.getDimensionCode()) && !attrs.containsKey(a.getDimensionCode()));
+            attrs.forEach((dim, codes) -> TaxonomyAttribute.replace(w.getAttributes(), dim, codes, "USER", null));
+        } else if (w.getVariationCode() != null && !TaxonomyRegistry.get().isVariationOf(f.subcategory(), w.getVariationCode())) {
+            w.setVariationCode(null);
+            w.setVariationStatus(null);
+            w.setVariationConfidence(null);
+        }
+        TaxonomyAttribute.replace(w.getAttributes(), "STYLE", Taxonomy.canonicalTags(f.style()), "USER", null);
+        TaxonomyAttribute.replace(w.getAttributes(), "OCCASION", Taxonomy.canonicalTags(f.occasion()), "USER", null);
     }
 
     /**
@@ -1623,6 +1779,7 @@ public class WardrobeService {
     public Views.PieceView update(CurrentUser user, UUID id, PieceForm form) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
+        form = form.resolveTaxonomy();
         validate(form);
         apply(w, form, false);
         if (form.visibility() != null) {
@@ -2420,8 +2577,61 @@ public class WardrobeService {
         Map<String, String> bySub = new LinkedHashMap<>();
         Taxonomy.SUBCATEGORIES.forEach((c, subs) -> subs.forEach(sub -> bySub.putIfAbsent(sub, assets.defaultPieceImage(c, sub))));
         out.put("defaultImagesBySubcategory", bySub);
+        TaxonomyRegistry.get().legacySubcategories()
+                .forEach(l -> bySub.putIfAbsent(l.code(), assets.defaultPieceImage(l.category(), l.code())));
         out.put("brands", brands.findAllByOrderByName().stream().map(b -> Map.of("id", b.getId(), "name", b.getName(),
                 "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList());
+        out.putAll(taxonomyV2());
+        return out;
+    }
+
+    /**
+     * Taxonomia CATEGORY → SUBCATEGORY → VARIATION + dimensões (docs/taxonomia, seções C e H): variações por subcategoria
+     * (CORE primeiro), catálogo de variações com rótulos e descrição, dimensões com escopo e valores (sem os de legado),
+     * subcategorias LEGACY com o equivalente novo e os rótulos dos códigos novos em pt-BR/en/es.
+     */
+    static Map<String, Object> taxonomyV2() {
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        Map<String, Object> out = new LinkedHashMap<>();
+        Map<String, Object> bySub = new LinkedHashMap<>();
+        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> bySub.put(sub, reg.variationsOf(sub).stream()
+                .map(l -> Map.of("code", l.code(), "tier", l.tier(), "priority", l.priority())).toList())));
+        out.put("variationsBySubcategory", bySub);
+        Map<String, Object> variations = new LinkedHashMap<>();
+        reg.variations().forEach((code, v) -> variations.put(code, Map.of("labels", v.labels(), "description", v.description())));
+        out.put("variations", variations);
+        out.put("dimensions", reg.dimensions().stream().map(d -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("code", d.code());
+            m.put("labels", d.labels());
+            m.put("multiValued", d.multiValued());
+            m.put("maxPerPiece", d.maxPerPiece());
+            m.put("maxPerScheme", d.maxPerScheme());
+            m.put("attribute", d.attribute() && !Taxonomy.FIELD_DIMENSIONS.contains(d.code()));
+            m.put("appliesTo", d.appliesTo());
+            m.put("values", d.values().stream().filter(v -> !v.legacy()).map(v -> {
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("code", v.code());
+                x.put("labels", v.labels());
+                x.put("tier", v.tier());
+                x.put("priority", v.priority());
+                if (v.group() != null) {
+                    x.put("group", v.group());
+                }
+                if (!v.appliesTo().isEmpty()) {
+                    x.put("appliesTo", v.appliesTo());
+                }
+                return x;
+            }).toList());
+            return m;
+        }).toList());
+        Map<String, Object> legacy = new LinkedHashMap<>();
+        reg.legacySubcategories().forEach(l -> legacy.put(l.code(), Map.of("category", l.category(), "replacedBy", l.replacedBy(),
+                "implies", l.implies(), "labels", l.labels())));
+        out.put("legacySubcategories", legacy);
+        Map<String, Object> subLabels = new LinkedHashMap<>();
+        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> reg.subcategory(sub).ifPresent(x -> subLabels.put(sub, x.labels()))));
+        out.put("subcategoryLabels", subLabels);
         return out;
     }
 
