@@ -9,7 +9,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Passarela 3D (Explorar): cada manequim veste o Look do Dia de uma pessoa e desfila da coxia até a ponta da
- * passarela, para, gira e volta. A ordem segue o Hype Score do dia. Com "reduzir movimento", os manequins ficam
+ * passarela, para, gira e volta. A ordem é a do ranking escolhido (Top 100 = HypeScore v2 público, sem Hype público no
+ * fim; Em alta = crescimento, não curtidas), já resolvida no backend. Com "reduzir movimento", os manequins ficam
  * parados em fila ao longo da passarela (mesmo conteúdo, sem animação).
  */
 
