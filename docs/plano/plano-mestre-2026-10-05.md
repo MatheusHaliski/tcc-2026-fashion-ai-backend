@@ -26,7 +26,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | AVATAR-ID-AUDIT | Diagnóstico de identidade do avatar (22 entregáveis) | `docs/avatar3d/auditoria-identidade-avatar/` |
 | PROV-2D | Prévia 2D no Espelho e no Vista-me com o mesmo Avatar 3D; reflexo no vidro do espelho do quarto | `docs/novos-rf/RF28_Previa_2D_Espelho_Vista-me.md` |
 | AVATAR-ID I0 | Métricas de fidelidade, gate de identidade, logs sem dado pessoal, linha de base no CI | seção 23 da auditoria de identidade |
-| AVATAR-ID I1 | Identidade versionada: refazer não apaga a aprovada; aprovar, restaurar, histórico | V38 + `Avatar3dService` |
+| AVATAR-ID I1 | Identidade versionada: refazer não apaga a aprovada; aprovar, restaurar, histórico | V42 + `Avatar3dService` |
 | AVATAR-ID I2 | Camada de resíduo assimétrico + medidas nomeadas: SFace de frente 0,369 → 0,476, top-1 15/15 | `face-residual.ts`, `face-profile.ts` |
 | AVATAR-ID I3 | Pele com balanço de branco pela esclera, rosto casado com o corpo: erro de cor 0,2, sem costura, gate 14/15 | `skin-tone.ts` |
 

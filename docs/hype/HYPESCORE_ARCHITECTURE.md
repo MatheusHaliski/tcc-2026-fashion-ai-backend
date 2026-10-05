@@ -5,6 +5,9 @@
 > separado da **compatibilidade pessoal** com o DNA de estilo.
 
 Auditoria e proposta de navegação que motivaram esta entrega: [`01-AUDITORIA_E_PROPOSTA_IA.md`](01-AUDITORIA_E_PROPOSTA_IA.md).
+Auditoria de abas (onde o v2 foi aplicado, lotes 1–9 e adiados): [`HYPE_AUDITORIA_ABAS.md`](HYPE_AUDITORIA_ABAS.md).
+Requisito e critérios de aceite: [`RF53_HypeScore_v2.md`](../novos-rf/RF53_HypeScore_v2.md). Teste real de ponta a ponta:
+[`EVIDENCIAS_E2E.md`](EVIDENCIAS_E2E.md).
 
 ## 1. Visão geral
 
@@ -17,6 +20,8 @@ Auditoria e proposta de navegação que motivaram esta entrega: [`01-AUDITORIA_E
  vestir peça (diário)         │  (antimanipulação)             │  algorithm_version = HYPE_V2      hype_score_snapshots (1/dia)
  look salvo / look do dia   ──┘  HypeSignalRecorder (AFTER_COMMIT)                                 /api/hype/trending · /api/me/hype/*
                                                                                                     + HypeCache (geração)
+ qualquer evento acima ──► HypeLiveRecalc.markDirty() ──(verificação 30 s, ≤ 1 recálculo / 120 s)──► HypeSnapshotService
+ HypeSnapshotService (subida de faixa/momento) ──► DomainEvents.HypeMilestone ──► HypeMilestoneNotifier ──► hype_milestones + notificação
 ```
 
 | Camada | Onde | Papel |
@@ -24,17 +29,24 @@ Auditoria e proposta de navegação que motivaram esta entrega: [`01-AUDITORIA_E
 | Configuração | `application/hype/HypeScoreConfig` | pesos, janelas, decaimento, faixas, integridade, `algorithmVersion` |
 | Cálculo puro | `HypeCalculator`, `HypeInputs`, `HypeResult`, `HypeSignalSeries` | sem banco, 100% testável |
 | Ingestão | `HypeSignalRecorder`, `HypeIntegrityPolicy` | eventos → agregado diário, com filtros |
-| Job | `HypeSnapshotService.recalculate()` | lote periódico + admin (`POST /api/admin/hype/snapshots`, job "hype") |
-| Leitura | `HypeQueryService`, `HypeCache`, `HypeController` | visibilidade, ranking com recortes, painéis pessoais |
+| Job | `HypeSnapshotService.recalculate()` (`synchronized`) | lote periódico + admin (`POST /api/admin/hype/snapshots`, job "hype"); grava país, região, categorias e subcategorias (V39) e os sinais por tipo (`signals_json.byType`) |
+| Ao vivo | `HypeLiveRecalc` | eventos só marcam "sujo"; verificação a cada 30 s, no máximo um recálculo a cada 120 s (§8) |
+| Marcos | `HypeSnapshotService.milestones`, `HypeMilestoneNotifier` | notificação `HYPE_MILESTONE` só na subida (§17) |
+| Selos de Hype | `HypeSeals` | códigos derivados do estado atual; nada gravado (§16) |
+| Leitura | `HypeQueryService`, `HypeCache`, `HypeController` | visibilidade, Em alta, ranking regional, facetas, posições, globo, painéis pessoais |
+| Insights | `application/insights` (`InsightService`, `PublicInsights`, `PersonalInsights`, `InsightMath`), `InsightsController` | insights determinísticos por aba (§18) |
 | Contexto do Copilot | `RecommendationScoring`, `StyleCompatibility`, `CopilotService.hypeAnswer/scoreLooks` | Hype como contexto, nunca critério único |
 | UI | `components/fashion-card.tsx`, `components/hype/*`, `lib/hype/*` | frente/verso, estados, análise completa |
 
 ### Convivência com o v1 (RF6)
 
-O `HypeScoreService` (v1: `0,65·E_norm + 0,35·T_norm`) continua dono das colunas `hype_score`/`hype_score_global` das
-entidades, do painel do Look do Dia, do Explorador e do FLAIR. O v2 grava **só** nas tabelas novas, sempre com
-`algorithm_version`, então as duas séries nunca se misturam. Cards, Histórico, Insights, ordenações do guarda-roupa,
-ranking "Em alta" e Copilot leem o v2. A migração dos demais consumidores é o próximo passo (§11).
+O `HypeScoreService` (v1: `0,65·E_norm + 0,35·T_norm`) ainda escreve as colunas `hype_score`/`hype_score_global` das
+entidades. O v2 grava **só** nas tabelas novas, sempre com `algorithm_version`, então as duas séries nunca se misturam.
+Depois dos lotes 1–9 da auditoria de abas, as telas leem o v2: cards, Histórico, Insights, guarda-roupa, Meus looks,
+Em alta, Ranking, Globo, feed, busca, Passarela 3D, vitrines, painel do Look do Dia (bloco `v2`), DNA, FLAIR, painéis e
+Copilot/Autopiloto. Ainda exibem números v1 as telas Marcas & lojas e Insights globais do Explorador e o painel lateral
+do país no globo (`avg_hype` por estação); o backend de Marcas & lojas e Insights globais já envia o v2, e a troca na
+tela é o Lote A3. Os campos v1 das views ficam como deprecados até a limpeza final (P3-16, §15).
 
 ## 2. Dimensões (cada uma 0–100, nunca soma de contagens brutas)
 
@@ -115,7 +127,7 @@ comentário, save, favorito, compartilhamento, remix de peça), `SchemeService` 
 `DailyLookRegistered`. O `HypeSignalRecorder` grava depois do commit, em transação própria (`SideEffectRunner`), com
 `INSERT … ON DUPLICATE KEY UPDATE` atômico. **Nada é recalculado por evento**.
 
-## 6. Banco (Flyway `V31__hype_score_v2.sql`)
+## 6. Banco (Flyway `V31__hype_score_v2.sql`, depois V39 e V41)
 
 | Tabela | Chave única | Conteúdo |
 |---|---|---|
@@ -128,6 +140,13 @@ A migração faz backfill dos sinais que já tinham data (`reactions`, `comments
 auto-interação. Visualizações não tinham data e começam a contar a partir da V31. Tabelas reaproveitadas, nada
 duplicado: `metric_snapshots`/`hype_score_metrics` continuam do v1 (calibração e painel do Look do Dia).
 
+Migrações seguintes:
+
+| Migração | Tabela | Conteúdo |
+|---|---|---|
+| `V39__hype_regiao_e_subcategorias.sql` | `hype_scores` | `country` (país do dono), `region` (`WorldRegions`), `categories` e `subcategories` (no look, as das peças) + índice `(entity_type, algorithm_version, public_eligible, region)`. Base do ranking regional e do globo |
+| `V41__hype_milestones.sql` | `hype_milestones` | marco alcançado, único por (entity_type, entity_id, milestone); `level`, `momentum`, `score`, `public_eligible`, `digest_date` e `notification_id` (resumo do dia). Queda nunca grava linha |
+
 ## 7. API
 
 | Método e rota | Acesso | Resposta |
@@ -136,14 +155,26 @@ duplicado: `metric_snapshots`/`hype_score_metrics` continuam do v1 (calibração
 | `GET /api/hype/pieces/{id}` · `/api/hype/looks/{id}` | público (visibilidade) | análise completa: dimensões, motivos, sinais, pesos, `compatibility` à parte |
 | `GET /api/hype/pieces/{id}/history?days=90` · `/looks/{id}/history` | público (visibilidade) | snapshots diários |
 | `GET /api/hype/trending?type&window=1\|7\|30&category&style&occasion&limit` | público | ranking só de `public_eligible`; 1 = trend, 7 = score, 30 = média do mês |
-| `GET /api/me/hype/wardrobe` | autenticado | Hype médio, destaques, redescobertas |
+| `GET /api/hype/trending?type=BRAND\|CREATOR&…` | público | **Marcas em alta** (só peças) e **Criadores em alta** (peças + looks): agregados por marca ou por pessoa, só com itens `public_eligible`; o grupo precisa de ≥ 3 itens públicos e o valor é a média dos seus 5 itens mais relevantes; criador bloqueado some para quem vê |
+| `GET /api/hype/ranking?type&window&region&country&category&subcategory&page&size` | público | **Ranking de HypeScore** (Explorador): só `public_eligible` e AVAILABLE; o look entra pelas categorias das peças e traz `pieces` (Hype de cada peça); sem país = região `OUTRAS`; numeração pública (quem vê só some itens que não pode ver); `size ≤ 48`; cache por geração |
+| `GET /api/hype/ranking/facets?type&window&region&category` | público | contagens de regiões (com Hype médio), países, categorias e subcategorias do recorte, e o total do mundo |
+| `GET /api/hype/pieces/{id}/positions` · `/looks/{id}/positions` | público (visibilidade) | posições no ranking público (janela 7): mundo, categoria e subcategoria (peça), região e país; fora da população pública → `eligible: false` |
+| `GET /api/hype/globe?type&window=1\|7\|30&category&subcategory&minLevel` | público | **Globo do Painel global** (Explorador): por país do dono, só `public_eligible` — itens, criadores, Hype médio/máximo (com a faixa), crescimento (TREND), subindo, faixas, cor dominante, item de destaque (respeita a visibilidade de quem vê) e `sufficient` (≥ 3 itens); sem país só no `world`. Camadas no front: números, colunas 3D, bonecos, cards e calor |
+| `GET /api/me/hype/wardrobe` · alias `GET /api/hype/me/wardrobe` | autenticado | Hype médio, destaques, redescobertas (o alias, citado na especificação, exige login no próprio endpoint porque `/api/hype/**` é GET público) |
 | `GET /api/me/hype/movers?days=90` | autenticado | séries, subiram/caíram, emergentes, novas tendências |
 | `POST /api/admin/hype/snapshots` | admin | recalcula agora |
 | `GET /api/hype/method` | público | v1 + `v2` (configuração ativa) |
-| `GET /api/me/closet?sort=hype_desc\|hype_asc\|growth\|worn\|least_worn\|rarity\|idle&hypeLevel=HOT` | autenticado | ordenações e filtro por faixa |
+| `GET /api/me/closet?sort=hype_desc\|hype_asc\|growth\|worn\|least_worn\|rarity\|idle&hypeLevel=HOT&seal=hype\|brand\|any` | autenticado | ordenações, filtro por faixa e filtro "Com selo" (§16) |
+| `GET /api/me/schemes?sort=recent\|hype_desc\|hype_asc\|growth&hypeLevel=` | autenticado | Meus looks pelo Hype pessoal do dono (nulos por último) |
+| `POST /api/schemes/scores {pieceIds, occasion, style}` | autenticado | prévia do editor: os seis números de `RecommendationScoring` para as peças escolhidas; nada é gravado e nenhum sinal é emitido |
+| `GET /api/insights?context&window&region&category&subcategory&withAi` | `EXPLORER_*` público; demais autenticado (401) | insights dinâmicos da aba (§18) |
+| `GET /api/pieces/seals?ids=` | público (visibilidade) | selos de marca/celebridade APPROVED de tier PEÇA que cobrem cada peça (até 60 ids) (§16) |
+| `GET /api/schemes/{id}/seal-suggestions` · `POST /api/seal-suggestions/preview[-piece]` | autenticado | sugestões de selo com `hype {score, level}` da entidade avaliada, ordenadas por Hype (§16) |
+| `GET /api/feed` · `/api/search` · `/api/public-pieces` `?hypeLevel=` | público | faixa mínima do Hype público v2 (lote 1) |
+| `GET /api/hype/groups?type=BRAND\|CREATOR&keys=&window=` | público | **em implementação** (Lote A1; no working tree em 2026-10-05, sem commit): Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id) para os chips da busca, do perfil e de /brands — faixa, valor, itens públicos, `sufficient` (≥ 3) e posição. A rota legada de mesmo caminho (agrupamentos por similaridade, v1) vai para `/api/similarity-groups/global` (deprecada) |
 
-O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API), não em `/api/hype/me/*`, porque `/api/hype/**`
-é público para GET.
+O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API). `/api/hype/me/wardrobe` existe só como alias,
+com a checagem de login no controller, porque `/api/hype/**` é público para GET.
 
 ## 8. Cache e desempenho
 
@@ -153,6 +184,10 @@ O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API), não e
 * No backend, `HypeCache` (Redis quando ligado, memória no fallback) com **geração**: o job incrementa a geração e
   todas as chaves antigas expiram sozinhas (TTL 10 min). Usado no ranking.
 * O verso do card só é montado no primeiro giro; o drawer de análise só busca dados quando abre.
+* **Hype ao vivo** (`HypeLiveRecalc`): criar/editar/excluir peça, salvar look, qualquer sinal, uso, look do dia e
+  mudança de disponibilidade só MARCAM o Hype como sujo; uma verificação a cada 30 s recalcula tudo de uma vez, no
+  máximo a cada 120 s (`fashionai.hype.live-recalc-seconds`). Rajadas de curtidas viram um recálculo só; peça nova tem
+  Hype em ~2 minutos em vez de esperar o job de 6 h. `recalculate()` é `synchronized` (job e ao vivo nunca se sobrepõem).
 
 ## 9. Privacidade
 
@@ -162,6 +197,20 @@ O painel pessoal fica em `/api/me/hype/*` (convenção `/api/me` da API), não e
   leitura em lote simplesmente não o devolve, e o detalhe responde 404.
 * A tendência das "peças semelhantes" usa só sinais de peças públicas; a presença de um modelo entre guarda-roupas é
   um agregado não identificável.
+
+**Resumo das regras por superfície**
+
+| Superfície | Quem entra | O que quem vê recebe |
+|---|---|---|
+| Card, detalhe, histórico | qualquer item visível para quem vê | privado de terceiros: fora do lote / 404 |
+| Em alta, Ranking, facetas, Globo, Insights públicos, Marcas/Criadores em alta | só `public_eligible` e AVAILABLE | o item de destaque e as páginas aplicam bloqueio e visibilidade de quem vê; agregados não aplicam bloqueio |
+| Posições na análise completa | só `public_eligible` | item fora da população pública → `eligible: false`; o dono continua vendo o Hype pessoal |
+| Selos de Hype | só `public_eligible` e AVAILABLE | item privado não tem selo de Hype |
+| Guarda-roupa, Meus looks, editor, Insights pessoais, Look do Dia | itens do dono | Hype pessoal (inclusive de item privado) |
+| Marcos de Hype | itens do dono | só o dono é avisado; item privado é descrito como Hype pessoal |
+| Exportação LGPD | o próprio usuário | snapshots do Hype pessoal e marcos (`AccountService`) |
+| Selos, prévia do editor, marcos, Lens, votação de desafio | — | **nunca** escrevem em `hype_signal_daily` |
+| Configurações › Privacidade | — | card "HypeScore e privacidade" explica as regras acima |
 
 ## 10. Antimanipulação (mínimo implementado + pontos de extensão)
 
@@ -184,17 +233,63 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   `HypeStateNotice`, `HypeAnalyticsDrawer` (em portal), `HypeCardBack`, `HypeInline`, `HypeItemRow`,
   `HypeRediscoveryCard`, `HypeWardrobeInsights`, `HypeTrendingPanel`, `hypeSortOptions`/`hypeLevelFilter` (HypeSort/HypeFilter).
 * **Estados**: carregando · Hype ainda não calculado · Dados insuficientes · disponível · desatualizado (> 24 h) · erro.
+* **Arte dinâmica do verso** (`HypeBackArt`): o fundo do verso acompanha a faixa — sinal baixo é tímido (céu discreto,
+  3 estrelas lentas), nicho 6, relevante 10, em alta 16 com brilho atravessando, tendência 24, viral 36 estrelas com
+  gradiente dourado em movimento e halo pulsando atrás do número. CSS puro (gradientes, estrelas de quatro pontas por
+  `clip-path` em posições determinísticas pela semente = id do item, só nas bordas; véu no miolo para os dados). Pausa
+  quando o card volta para a frente, para com movimento reduzido, some no alto contraste e em `forced-colors`.
+* **Análise completa conectada** (`HypeAnalyticsDrawer`): além de score, faixa, histórico e explicação, mostra o peso de
+  cada dimensão (do `HypeScoreConfig`), os **sinais reais por tipo** (curtidas, salvos, compartilhamentos, remixes,
+  visualizações, usos, aparições em looks — janela atual × anterior × horizonte, gravados pelo job em
+  `signals_json.byType`), em quantos looks a peça aparece, as **peças do look com o Hype de cada uma**, a **posição no
+  ranking público** (categoria, subcategoria, região, país — só itens elegíveis) e, com poucos sinais, as dimensões
+  estruturais que já existem (raridade, originalidade, novidade) em vez de esconder tudo.
 * **Telas**: cards de peça e look; detalhe ampliado; Guarda-roupa (ordenações + filtro); Lookbook → Insights;
   Histórico (novo: Timeline, Evolução do estilo, Uso de peças, Hype, Insights da IA); Explorador → Em alta; Copilot
-  (modos, seções, quatro números por look, perguntas de Hype).
+  (modos, seções, seis números por look, perguntas de Hype).
+* **Ranking de HypeScore** (`components/hype/hype-ranking.tsx`, `HypeRankingPanel`): Peças/Looks, Hoje/7/30 dias,
+  região (com contagem), país, chips de categoria e subcategoria, barra "Hype por região" (toque filtra), cards com a
+  posição e a região; no look, "Peças do look" com o Hype de cada peça. Filtros na URL.
+* **Globo do Painel global** (`components/globe.tsx`, `components/hype/hype-globe.tsx`, `lib/hype/globe.ts`): camadas
+  `numbers`, `columns`, `figures` (bonecos = criadores), `cards` e `heat` (padrão: números, colunas e cards); métricas
+  Hype médio, máximo, volume e crescimento; tipo, janela, categoria e nível mínimo; legenda, visão em tabela
+  (`HypeGlobeTable`), tema escuro, alto contraste e movimento reduzido.
+* **Selos de Hype** (`components/hype/hype-seals.tsx`, `lib/hype/seals.ts`): medalhão Padrão FashionAI por código no
+  `SealSlot` (máx. 2 no card), `HypeSealProgressList` no drawer, `SealSuggestionHype` nas sugestões e `SealHypeStat`
+  (Hype do selo) na aba Selos do emissor.
+* **Insights** (`components/insights/insight-strip.tsx`, `insight-card.tsx`, `lib/insights/types.ts`): `InsightStrip`
+  por contexto no Explorador (Passarela, Em alta, Ranking, Painel global, Marcas, Insights globais), na Cápsula, no
+  Copilot, no Autopiloto, no Histórico, no Guarda-roupa e em Meus looks; "Reescrever com IA" opcional.
+* **Looks**: `LookHypePreview`/`PieceHypeTag` (`components/hype/look-hype-preview.tsx`) no editor; `lookHypeSortOptions()`
+  em Meus looks; `LookScores` compartilhado por Copilot e Autopiloto.
+* **Painéis** (`components/hype/hype-dashboards.tsx`): `IssuerHypeBlock` (dashboard do emissor), `HypeCoverageTable` e
+  `HypeJobStatus` (admin).
 
 ## 12. Copilot
 
 * Intenção `HYPE` (regex, sem custo de IA): "qual a peça mais relevante", "o que está crescendo", "tenho peça rara",
   "o que está voltando a ser tendência", "qual look tem mais potencial de trend". Pedidos para **montar** look
   continuam `LOOKS`. Toda resposta traz a compatibilidade com o estilo ao lado e o aviso "Hype ≠ seu estilo".
-* Modos `SAFE` / `DISCOVERY` / `EXPERIMENTAL` reordenam os looks por `RecommendationScoring`
-  (compatibilidade, Hype, novidade, reutilização); o Hype nunca passa de 20% do peso.
+* Modos `SAFE` / `DISCOVERY` / `EXPERIMENTAL` reordenam os looks por `RecommendationScoring`, com **seis** dimensões
+  independentes, todas exibidas no card do look: compatibilidade com o DNA, Hype, novidade (pares nunca combinados),
+  reutilização (traz de volta peças paradas há 60+ dias), **uso comprovado** (peças que a pessoa de fato veste, 8+ usos
+  = 100) e **sustentabilidade** (metade pela parte do look que a pessoa já tem, metade pelo quanto mais um uso dilui o
+  custo por uso das peças pouco usadas). Pesos por modo:
+
+  | Modo | Compat. | Hype | Novidade | Reutilização | Uso | Sustentab. |
+  |---|---|---|---|---|---|---|
+  | SEGURO | .50 | .10 | .05 | .10 | .15 | .10 |
+  | DESCOBERTA | .30 | .20 | .20 | .10 | .10 | .10 |
+  | EXPERIMENTAL | .15 | .20 | .40 | .10 | .05 | .10 |
+
+  O Hype nunca passa de 20% do peso; dimensão sem base fica neutra (50) e aparece como "—", nunca 0.
+* O cálculo dos seis números fica no `LookScorer`, compartilhado por Copilot, Autopiloto (que ganhou os três modos e
+  os números em Hoje e Semana), composições da IA no editor e a prévia `POST /api/schemes/scores` (`LookPreviewService`).
+  Os mesmos números aparecem em `LookScores` nas duas telas.
+* "Peça esquecida" tem uma régua só no app inteiro: `RoomService.FORGOTTEN_DAYS` (60 dias desde o último uso ou, se
+  nunca usada, desde o cadastro). O Copilot usava 30 dias e contava como esquecida até a peça cadastrada ontem.
+* As sugestões de compra (`purchaseSuggestions`: subcategoria, cor e ganho de combinações, sem marca) passaram a
+  aparecer na tela — a página lia um campo `purchases` que o backend nunca enviou. Patrocínio fica num bloco separado.
 * A ferramenta da IA (`buscar_pecas`) agora recebe o Hype v2 e a data do último uso de cada peça.
 
 ## 13. Testes
@@ -206,7 +301,14 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
 * Frontend (Vitest): `lib/hype/model.test.ts`, `components/hype/hype-card.test.tsx` (abre na frente, flip e volta,
   curtir e foto não viram, teclado/Esc/foco, só um card vira, movimento reduzido, score 0, nulo, carregando,
   desatualizado, erro, histórico vazio, uma requisição por grade).
+* Evolução (contagem e lista em [`RF53_HypeScore_v2.md`](../novos-rf/RF53_HypeScore_v2.md) §4): `HypeLiveRecalcTest`,
+  `HypeRegionalRankingTest`, `HypeGlobeTest`, `HypeRankGroupsTest`, `HypeSealsTest`, `HypeSealsQueryTest`,
+  `HypeMilestoneTest`, `InsightServiceTest`, `InsightsAccessTest`, `AutopilotScoresTest`, `SealPoliciesHypeTest`,
+  `SealHypeServiceTest`, `ClosetSealFilterTest`, `SealPromotionFlowTest`, `InstitutionalDisplayPolicyTest` e os testes
+  dos lotes 1–9; no frontend, `hype-ranking`, `globe-hype`, `hype-seals`, `insight-strip`, `looks`, `lookbook-hype`,
+  `hype-dashboards`, `flair-hype` e `hype-personal-details`.
 * Validação manual: MySQL 8.4 + API + Next com Playwright (screenshots do flip, análise, Histórico, Insights, Em alta).
+  Segunda rodada (2026-10-05, V1–V40): [`EVIDENCIAS_E2E.md`](EVIDENCIAS_E2E.md).
 
 ## 14. Limitações conhecidas
 
@@ -214,11 +316,83 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   dono/lote e calcular a régua com amostragem.
 * Visualizações só existem a partir da V31; até lá o engajamento usa interações como piso do alcance.
 * "Usuários únicos" é aproximado pelo dedupe pessoa/dia, não por contagem distinta exata.
-* Ranking por região não foi implementado (a arquitetura de recortes comporta; falta o país no `hype_scores`).
+* Ranking por região: implementado (V39). Linhas anteriores à V39 ficam sem país/região até o próximo recálculo, e
+  quem não informou o país cai em "Outras regiões". Ranking, facetas e globo filtram a população pública em memória
+  (volume do TCC); em escala, agregar por região/país no job.
+* Marcas em alta agrupam pelo nome da marca normalizado (minúsculas, sem espaços nas pontas); variações de grafia
+  ("Levi's" × "Levis") ainda contam como marcas diferentes até a peça apontar para o catálogo (RF47).
+* O ranking de marcas e criadores carrega as entidades da população pública numa consulta (volume do TCC); em escala,
+  gravar `brand_key` no `hype_scores` durante o job.
 
 ## 15. Próximos passos
 
-1. Migrar Explorador, FLAIR, busca e o painel do Look do Dia para o v2 e aposentar a materialização v1.
+1. Lotes adiados da auditoria de abas: A1 (`/api/hype/groups`), A2 (perfil da marca e /brands), A3 (telas do
+   Explorador), A4 (Lookbook › Peças para visitante), A5 (InsightStrip em novos contextos) e a limpeza final do v1
+   (P3-16: parar de escrever `hype_score`, remover os campos das views e as faixas v1).
 2. Calibrar os pesos com dados reais e publicar como `HYPE_V3` (nova série, histórico do v2 preservado).
 3. Antifraude além do mínimo (§10) e rótulo de patrocínio.
-4. Recorte regional do ranking e `influenceScore` também para peças (looks derivados que usam a peça).
+4. `influenceScore` também para peças (looks derivados que usam a peça).
+
+## 16. Selos × HypeScore e Selos de Hype FashionAI
+
+Princípio: **o Hype alimenta os selos; selo nunca alimenta o Hype**. Nenhum vínculo, emissão ou selo vira sinal do
+`HypeCalculator`, e o Hype usado é sempre o estado atual de `hype_scores`.
+
+* **Critério de Hype na política padronizada** (`SealPolicies`, JSON em `seals.background_config_json.policy`, sem
+  migração): `rule.hypeMin` (a peça só passa no filtro com Hype ≥ o nível) e `policy.hype {minLevel, minScore,
+  momentum[≤ 3]}` para a entidade avaliada (peça no tier PEÇA, look no tier LOOK). Valor fora da escala → 400
+  `POLITICA_INVALIDA`. Sem Hype disponível (`NOT_CALCULATED`, `INSUFFICIENT_DATA`) o critério não é atendido. A frase da
+  política inclui o trecho de Hype ("look com Hype ≥ 60 e em crescimento").
+* **Sugestões** (`SealService`): cada sugestão traz `hype {score, level}` da entidade avaliada (tier LOOK: o Hype do
+  look; tier PEÇA: o maior Hype entre as peças vinculadas) e elas vêm ordenadas por Hype, sem Hype por último
+  (ordenação estável).
+* **Hype do selo**: listagens de selos trazem `hype {avgScore, level, bonded}` = média do HypeScore atual dos itens com
+  vínculo APPROVED. Exibido em `SealHypeStat` na aba Selos.
+* **Selos de Hype FashionAI** (`HypeSeals.of`, puro, nada gravado, nada emitido por marca), só para item AVAILABLE e
+  `publicEligible`:
+
+  | Código | Regra | Limiar |
+  |---|---|---|
+  | `VIRAL` | faixa = VIRAL | ≥ 90 |
+  | `TRENDING` | faixa ∈ {HOT, TRENDING} e momento ∈ {RISING, EMERGING} | ≥ 60 |
+  | `EMERGING` | momento EMERGING (e não VIRAL/TRENDING) | — |
+  | `CLASSIC` | momento CLASSIC, ou longevidade ≥ 70 e faixa ≥ RELEVANT | ≥ 40 |
+  | `RARE` | raridade ≥ 75 e faixa ≥ NICHE | ≥ 20 |
+
+  Prioridade VIRAL > TRENDING > EMERGING > CLASSIC > RARE; o card mostra no máximo 2 (`summary().seals`) e o detalhe
+  traz `sealProgress [{code, earned, criteria}]` com o que falta.
+* **Guarda-roupa**: `seal=hype|brand|any` em `/api/me/closet` e `GET /api/pieces/seals` (até 60 ids) para os selos de
+  marca/celebridade na frente do card da peça. Chip "Com selo" (Hype · Marca · Qualquer).
+* **Perfil do emissor** (`InstitutionalService`): destaques só com vínculo APPROVED vigente, ordenados pelo Hype v2.
+  Recusa por teto fica gravada (`SealService.SealUnavailable` + `noRollbackFor`, 409 `SELO_INDISPONIVEL`). Regras
+  completas no [RF50](../novos-rf/RF50_Criador_de_Selos.md).
+
+## 17. Marcos de Hype (notificação `HYPE_MILESTONE`)
+
+* **Detecção** (`HypeSnapshotService.milestones`, depois de gravar o estado): só **subida** para HOT, TRENDING ou VIRAL
+  (faixa nova acima da anterior) ou o surgimento do momento EMERGING. Sem estado anterior (primeiro cálculo ou nova
+  `algorithmVersion`) não há marco, para não disparar avisos em massa. O evento `DomainEvents.HypeMilestone` só é
+  publicado depois do commit do job.
+* **Registro** (`HypeMilestoneNotifier`, AFTER_COMMIT, transação própria via `SideEffectRunner`): dedupe por
+  (entidade, marco) em `hype_milestones`; atingir Viral já cobre Em alta e Tendência, então oscilar na borda (o
+  recálculo ao vivo roda a cada 120 s) nunca avisa de novo. O destinatário é sempre o dono, conferido no banco.
+* **Resumo diário**: os marcos do dono no mesmo dia (America/Sao_Paulo) atualizam a mesma notificação, que volta a
+  ficar não lida; com vários itens, o link abre `/history?tab=hype`.
+* **Regras**: categoria ACHIEVEMENT, desativável em Notificações › Preferências (o marco é gravado mesmo assim, para
+  não reaparecer); nunca notifica queda (ETI-02); não é sinal de Hype; marcos saem na exportação LGPD.
+
+## 18. Insights dinâmicos (`GET /api/insights`)
+
+* **Contextos**: públicos `EXPLORER_RUNWAY`, `EXPLORER_TRENDING`, `EXPLORER_RANKING`, `EXPLORER_MAP`,
+  `EXPLORER_BRANDS`, `EXPLORER_GLOBAL` (sem login, só agregados de itens `public_eligible`, no `HypeCache` pela
+  geração); pessoais `CAPSULE`, `COPILOT`, `AUTOPILOT`, `HISTORY`, `CLOSET`, `LOOKS` (401 sem login). Contexto
+  desconhecido → 400 `CONTEXTO_INVALIDO`; região fora de `WorldRegions` → 400. Em implementação (Lote A5, sem commit
+  em 2026-10-05): `FEED`, `SEARCH`, `BRAND_PROFILE` e `CREATOR_PROFILE` (públicos) e `LOOK_EDITOR` (pessoal).
+* **Resposta**: `{context, generatedAt, algorithmVersion, source: local|ia, items[≤ 5]}`; cada insight tem `code`
+  estável (ex.: `REGION_LEADER`, `CATEGORY_RISING`, `POPULAR_NOT_GROWING`, `CAPSULE_IDLE_REDISCOVERY`,
+  `PIECE_HYPE_AND_STYLE`), `tone`, `title`, `text` com o número, `metric`, `action` (CTA) e `basis` (HYPE_V2,
+  WARDROBE_USAGE, STYLE_DNA…). Lista vazia = "ainda sem dados suficientes".
+* **Regras**: tudo determinístico a partir dos dados (`PublicInsights`, `PersonalInsights`); `withAi=true` só reescreve
+  o texto pelo `AiEngine` (INSIGHT_GENERATOR), e a reescrita é descartada se os números mudarem (`InsightMath.numbers`).
+  Hype citado num contexto pessoal vem sempre com compatibilidade ou uso ao lado; tendência ≠ popularidade
+  (`TREND_VS_POPULARITY`); redescoberta antes de compra; sem pay-to-win.

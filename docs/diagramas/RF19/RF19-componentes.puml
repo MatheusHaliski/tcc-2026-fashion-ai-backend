@@ -34,13 +34,16 @@ package "fai-application · services" {
   [Guard\n(visibilidade, bloqueio)] as G
   [WardrobeEventListeners\nInteractionReceived → FaiPoints (RF35)] as EV
   [HypeScoreService\n(lê contadores — RF26)] as H
+  [WardrobeService\n(detalhe da peça)] as WS #FAFAFA
+  [HypeSignalRecorder <<RF49>>\n@TransactionalEventListener(AFTER_COMMIT)\n→ SideEffectRunner (REQUIRES_NEW)\n+ HypeIntegrityPolicy.weight(): próprio dono 0\n· dedupe 26 h · conta nova 0,5 · visitante 0] as HR
 }
 package "fai-infrastructure · adapters" {
   [InMemoryCounterStore\n(CounterStorePort)] as CT
+  [RenderCachePort <<RF49>>\n(Redis · InMemoryRenderCache)\nchaves hype:dedupe:*] as RC
   [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort — PNG exportado)] as ST
-  [Repositórios JPA (fai-domain · repository)\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository] as REPOS
+  [Repositórios JPA (fai-domain · repository)\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository\nHypeSignalDailyRepository <<RF49>>] as REPOS
 }
-database "MySQL · fashionai_app\n• reactions\n• comments\n• saved_items\n• shares\n• notifications\n• schemes · scheme_items\n• wardrobe_items" as DB
+database "MySQL · fashionai_app\n• reactions\n• comments\n• saved_items\n• shares\n• notifications\n• schemes · scheme_items\n• wardrobe_items\n• hype_signal_daily (RF49)" as DB
 
 FE0 --> SC : chama HTTPS/JSON
 FE0 --> CC : DELETE comentário
@@ -56,6 +59,11 @@ S --> N : notify(NEW_LIKE, NEW_REACTION,\nNEW_COMMENT, NEW_REMIX)
 S --> CT : increment / read
 S --> ST : grava PNG (EXTERNAL)
 S --> EV : publica InteractionReceived
+S --> HR : publica HypeSignal (LIKE · COMMENT · SAVE ·\nFAVORITE · SHARE · PIECE_REMIXED)
+HR <-- SS : HypeSignal LOOK_REMIXED (remix salvo)\n· LOOK_VIEWED (GET por não dono)
+HR <-- WS : HypeSignal PIECE_VIEWED
+HR --> RC : dedupe (TTL 26 h)
+HR --> REPOS : increment (upsert nativo)
 S --> REPOS : lê/grava
 N --> REPOS : grava notifications
 H --> REPOS : lê contadores

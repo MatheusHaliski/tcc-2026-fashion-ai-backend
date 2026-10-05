@@ -64,6 +64,10 @@ import java.util.stream.Collectors;
  * World Tour, FLAIR Conquest e Deck Battle. Eventos especiais: Wardrobe Wars, Runway, Draft, Tag Team, Fashion Boss,
  * Combo Battle, Fashion Monopoly, FLAIR Chess e Ultimate Team. Todos usam o motor {@link FlairLooks}; recompensas vêm
  * do sistema (sem aposta), com teto diário por modo.
+ *
+ * <p>HypeScore v2 (RF53 · P2-17): o atributo HYPE de cada look é o Hype v2 PÚBLICO ({@link FlairService#publicLookHype});
+ * sem ele, 50 neutro. A coluna da liga que somava os pontos das rodadas deixou de se chamar "hype" (era só homônima):
+ * agora é {@code stylePoints} ("Pontos de estilo"); {@code hype} segue no payload como alias deprecado.</p>
  */
 @Service
 public class FlairModesService {
@@ -232,13 +236,14 @@ public class FlairModesService {
     }
 
     List<Card> cardsOf(Scheme s) {
-        return schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).map(flair::card).toList();
+        return flair.cardsOf(schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).toList());
     }
 
+    /** Look do FLAIR: HYPE = HypeScore v2 público do look (nulo → neutro em FlairLooks), nunca o v1 de schemes.hype_score. */
     Look look(Scheme s) {
         return FlairLooks.look(new FlairLooks.LookInput(s.getId().toString(), s.getTitle(), s.getUser().getUsername(),
                 s.getCoverImageUrl() == null || "null".equals(s.getCoverImageUrl()) ? null : s.getCoverImageUrl(),
-                s.getHypeScore() == null ? null : s.getHypeScore().doubleValue(), s.getLikeCount(), s.getSaveCount(), s.getCommentCount(),
+                flair.publicLookHype(s.getId()), s.getLikeCount(), s.getSaveCount(), s.getCommentCount(),
                 s.getShareCount(), s.getRemixCount(), Json.csv(s.getStyle()), Json.csv(s.getOccasion()), s.getSeason() == null ? null : s.getSeason().name(), cardsOf(s)));
     }
 
@@ -293,7 +298,7 @@ public class FlairModesService {
                 .filter(w -> !w.getUser().getId().equals(exclude) && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> !guard.blocked(exclude, w.getUser().getId())).toList());
         java.util.Collections.shuffle(pub, new Random(seed));
-        return pub.stream().limit(n).map(flair::card).toList();
+        return flair.cardsOf(pub.stream().limit(n).toList());
     }
 
     User opponentUser(CurrentUser user, String opponent) {
@@ -562,13 +567,19 @@ public class FlairModesService {
         st.putIfAbsent("draws", 0);
         st.putIfAbsent("losses", 0);
         st.putIfAbsent("points", 0);
-        st.putIfAbsent("hype", 0);
+        st.putIfAbsent("stylePoints", stylePoints(st));
+        st.remove("hype");   // nome antigo (homônimo do HypeScore): migra para stylePoints na primeira escrita
         s.setStateJson(Json.write(st));
         return league(user);
     }
 
     static int num(Object o) {
         return o instanceof Number n ? n.intValue() : 0;
+    }
+
+    /** Pontos de estilo da liga (soma das notas das rodadas). Estados gravados antes da troca de nome guardam em "hype". */
+    static int stylePoints(Map<String, Object> st) {
+        return st.containsKey("stylePoints") ? num(st.get("stylePoints")) : num(st.get("hype"));
     }
 
     @Transactional(readOnly = true)
@@ -587,12 +598,13 @@ public class FlairModesService {
             row.put("draws", num(st.get("draws")));
             row.put("losses", num(st.get("losses")));
             row.put("points", num(st.get("points")));
-            row.put("hype", num(st.get("hype")));
+            row.put("stylePoints", stylePoints(st));
+            row.put("hype", stylePoints(st));   // deprecado: alias de stylePoints (não é HypeScore); sai em P3-16
             row.put("division", FlairLooks.division(num(st.get("points"))));
             row.put("you", s.getUser().getId().equals(user.id()));
             table.add(row);
         }
-        table.sort(Comparator.comparingInt((Map<String, Object> m) -> num(m.get("points"))).reversed().thenComparing(m -> -num(m.get("hype"))));
+        table.sort(Comparator.comparingInt((Map<String, Object> m) -> num(m.get("points"))).reversed().thenComparing(m -> -num(m.get("stylePoints"))));
         for (int i = 0; i < table.size(); i++) {
             table.get(i).put("position", i + 1);
         }
@@ -611,7 +623,7 @@ public class FlairModesService {
     }
 
     List<Card> cardsById(List<UUID> ids) {
-        return ids.stream().map(id -> pieces.findById(id).orElse(null)).filter(Objects::nonNull).map(flair::card).toList();
+        return flair.cardsOf(ids.stream().map(id -> pieces.findById(id).orElse(null)).filter(Objects::nonNull).toList());
     }
 
     @Transactional
@@ -655,11 +667,11 @@ public class FlairModesService {
         }
         List<Clash> rounds = FlairLooks.leagueMatch(sa, ra, ca, sb, rb, cb, sits);
         String w = overall(rounds);
-        int hypeA = (int) Math.round(rounds.stream().mapToDouble(Clash::scoreA).sum()), hypeB = (int) Math.round(rounds.stream().mapToDouble(Clash::scoreB).sum());
-        table(a, w, "A", hypeA);
+        int styleA = (int) Math.round(rounds.stream().mapToDouble(Clash::scoreA).sum()), styleB = (int) Math.round(rounds.stream().mapToDouble(Clash::scoreB).sum());
+        table(a, w, "A", styleA);
         mineState.setStateJson(Json.write(a));
         if (opp != null) {
-            table(b, w, "B", hypeB);
+            table(b, w, "B", styleB);
             opp.setStateJson(Json.write(b));
         }
         Map<String, Object> r = new LinkedHashMap<>();
@@ -678,9 +690,11 @@ public class FlairModesService {
         return finish(user, "LEAGUE", "Rodada " + matchday, w, r, sa, rival, sb);
     }
 
-    static void table(Map<String, Object> st, String winner, String side, int hype) {
+    /** Atualiza a tabela da liga; {@code stylePoints} = soma das notas da rodada (não é HypeScore). */
+    static void table(Map<String, Object> st, String winner, String side, int stylePoints) {
         st.put("played", num(st.get("played")) + 1);
-        st.put("hype", num(st.get("hype")) + hype);
+        st.put("stylePoints", stylePoints(st) + stylePoints);
+        st.remove("hype");
         if ("DRAW".equals(winner)) {
             st.put("draws", num(st.get("draws")) + 1);
             st.put("points", num(st.get("points")) + 1);
@@ -1185,8 +1199,8 @@ public class FlairModesService {
     }
 
     List<Card> suggestDeck(UUID userId) {
-        List<Card> mine = pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(flair::card)
-                .sorted(Comparator.comparingInt(Card::power).reversed()).toList();
+        List<Card> mine = flair.cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList())
+                .stream().sorted(Comparator.comparingInt(Card::power).reversed()).toList();
         List<Card> out = new ArrayList<>();
         for (Map.Entry<String, Integer> e : Map.of("upper_piece", 4, "lower_piece", 3, "shoes_piece", 2, "accessory_piece", 2).entrySet()) {
             mine.stream().filter(c -> e.getKey().equals(c.category()) || "upper_piece".equals(e.getKey()) && "full_body_piece".equals(c.category()))
@@ -1390,7 +1404,7 @@ public class FlairModesService {
             FlairLooks.Score sc = FlairLooks.score(l, t);
             List<Map<String, Object>> bd = new ArrayList<>();
             for (String k : FlairLooks.STATS) {
-                bd.add(Map.of("stat", k, "label", FlairLooks.LABELS.get(k), "weight", t.weights().getOrDefault(k, 0.8), "a", l.stats().get(k), "b", bl.stats().get(k)));
+                bd.add(Map.of("stat", k, "label", FlairLooks.LABELS.get(k), "weight", FlairLooks.weight(t, k), "a", l.stats().get(k), "b", bl.stats().get(k)));
             }
             rounds.add(new Clash(t.emoji() + " " + t.label(), l.title(), bl.title(), sc.total(), bs, FlairLooks.winner(sc.total(), bs), sc.notes(), bd));
         }
@@ -1416,8 +1430,10 @@ public class FlairModesService {
                 .filter(w -> !publicOnly || w.getVisibility() == Visibility.PUBLIC).toList();
         List<Scheme> ss = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED).stream()
                 .filter(s -> !publicOnly || s.getVisibility() == Visibility.PUBLIC && s.getStatus() == SchemeStatus.PUBLISHED).toList();
-        List<Card> cards = ws.stream().map(flair::card).toList();
-        double quality = ss.stream().filter(s -> s.getHypeScore() != null).mapToDouble(s -> s.getHypeScore().doubleValue()).average().orElse(0);
+        List<Card> cards = flair.cardsOf(ws);
+        // relevância média (HypeScore v2 público dos looks): nulo sem nenhum → 50 neutro na rodada, nunca 0
+        java.util.Collection<Double> hype = flair.publicLookHype(ss.stream().map(Scheme::getId).toList()).values();
+        Double relevance = hype.isEmpty() ? null : hype.stream().mapToDouble(Double::doubleValue).average().orElse(FlairLooks.NEUTRAL_HYPE);
         int styles = (int) cards.stream().flatMap(c -> c.styles().stream()).distinct().count();
         int occ = (int) cards.stream().flatMap(c -> c.occasions().stream()).distinct().count();
         Set<Set<String>> combos = new HashSet<>();
@@ -1435,7 +1451,7 @@ public class FlairModesService {
         double sustainability = ws.isEmpty() ? 0 : Math.min(100, ws.stream().mapToInt(WardrobeItem::getWearCount).average().orElse(0) * 6 + usedPieces.size() * 60.0 / ws.size());
         double eng = ss.stream().mapToLong(s -> s.getLikeCount() + 2 * s.getSaveCount() + 3 * s.getCommentCount()).sum();
         double community = Math.min(100, 18 * Math.log(1 + eng) / Math.log(2));
-        return new FlairLooks.Wardrobe(u.getUsername(), quality, styles, occ, originality, collection, sustainability, community);
+        return new FlairLooks.Wardrobe(u.getUsername(), relevance, styles, occ, originality, collection, sustainability, community);
     }
 
     @Transactional
@@ -1460,7 +1476,7 @@ public class FlairModesService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> chessSuggest(CurrentUser user) {
-        List<Card> mine = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(flair::card).toList();
+        List<Card> mine = flair.cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         Map<String, Card> board = FlairLooks.autoBoard(mine);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("slots", FlairLooks.BOARD);

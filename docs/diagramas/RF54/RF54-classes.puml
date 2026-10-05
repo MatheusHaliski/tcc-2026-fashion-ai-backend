@@ -1,0 +1,222 @@
+@startuml RF54_Classes
+title RF54 — FashionAI Lens (MVP)\nDiagrama de classes — entidades JPA reais da V40 (fai-domain), enums e serviços (fai-application)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+  class LensScan <<@Table lens_scans>> {
+    +userId: UUID
+    +source: LensSource
+    +sourceRefId: UUID
+    +intent: LensIntent = IDENTIFY
+    +status: LensScanStatus
+    +errorCode: String [NO_FASHION_FOUND | CONSENT_REQUIRED | QUOTA | FAILED]
+    +imageKey: String [restricted/users/{id}/lens/{scanId}.jpg]
+    +thumbKey: String
+    +width: int
+    +height: int
+    +facesRedacted: int
+    +redactionConfirmed: boolean
+    +aiSource: String [ia | local]
+    +modelVersion: String
+    +algorithmVersion: String = "LENS_V1"
+    +aiInferenceId: UUID
+    +savedAt: Instant
+    +expiresAt: Instant
+    +processedAt: Instant
+  }
+  class LensDetection <<@Table lens_detections>> {
+    +scanId: UUID
+    +ordinal: int
+    +boxJson: String [{x, y, w, h} em %]
+    +label: String
+    +category: String
+    +subcategory: String
+    +material: String
+    +sex: String
+    +colorsJson: String [{name, hex, share}]
+    +pattern: String [solid | striped | checked | printed]
+    +styleTags: String
+    +occasionTags: String
+    +confidence: BigDecimal [0–1]
+    +attributeConfidenceJson: String
+    +embeddingJson: String [96 dimensões]
+    +embeddingModel: String
+    +status: LensDetectionStatus
+    +dismissedAt: Instant
+    +wantedAt: Instant
+    +ownedItemId: UUID
+  }
+  class LensFeedback <<@Table lens_feedback>> {
+    +scanId: UUID
+    +detectionId: UUID
+    +userId: UUID
+    +kind: LensFeedbackKind
+    +beforeJson: String
+    +afterJson: String
+    +trainingConsent: boolean
+  }
+  class AuditableEntity <<@MappedSuperclass>>
+  class VersionedAuditableEntity <<@MappedSuperclass>>
+  class WardrobeItem <<@Table wardrobe_items>>
+  class User <<@Table users>>
+}
+package "fai-domain · model.enums" {
+  enum LensSource {
+    CAMERA
+    GALLERY
+    UPLOAD
+    IN_APP_PIECE
+    IN_APP_LOOK
+    +inApp(): boolean
+  }
+  enum LensIntent {
+    IDENTIFY
+    RECREATE
+  }
+  enum LensScanStatus {
+    READY
+    PARTIAL [reservado]
+    NO_FASHION_FOUND
+    FAILED
+  }
+  enum LensDetectionStatus {
+    DETECTED
+    CORRECTED
+    ADDED_BY_USER
+    DISMISSED [derivado de dismissed_at]
+  }
+  enum LensFeedbackKind {
+    WRONG_CATEGORY
+    WRONG_COLOR
+    WRONG_ATTRIBUTE
+    NOT_CLOTHING
+    MISSING_PIECE
+    BAD_BOX
+    WRONG_MATCH
+    GOOD_MATCH
+  }
+}
+package "fai-application · lens" {
+  class LensService <<@Service>> {
+    +create(user, cmd, bytes): ScanView
+    +fromApp(user, cmd): ScanView
+    +get(user, id): ScanView
+    +image(user, id, thumb): byte[]
+    +history(user, saved, wanted, page, size): Page<ScanCard>
+    +matches(user, id, detectionId, scope): Matches
+    +reading(user, id, detectionId): ReadingView
+    +recreate(user, id, cmd): RecreatePlan
+    +correct(user, id, did, cmd): DetectionView
+    +add(user, id, cmd): DetectionView
+    +want(user, id, did, wanted): DetectionView
+    +own(user, id, did, itemId): OwnResult
+    +setSaved(user, id, saved): ScanView
+    +delete(user, id)
+    +purgeExpired(now): int
+    +deleteAllFor(userId)
+    ~acquireQuota(user) [429 QUOTA]
+  }
+  class LensConfig <<@Component>> {
+    +ALGORITHM_VERSION = "LENS_V1"
+    +W_VISUAL = 0.45, W_ATTRIBUTES = 0.35, W_COLOR = 0.20
+    +A_SUBCATEGORY = 0.40, demais = 0.15
+    +DELTA_E_MAX = 40
+    +FLOOR_MY_CLOSET = 55, FLOOR_COMMUNITY = 65
+    +TOP_N = 12
+    +TREND_MIN_ITEMS = 5
+    +RECREATE_SIMILARITY_WEIGHT {SAFE .75, DISCOVERY .55, EXPERIMENTAL .35}
+    +dailyScans(): int = 30
+    +retentionDays(): int = 30
+    +confidenceBand(c): HIGH | MEDIUM | LOW
+  }
+  class LensSimilarity <<final>> {
+    +score(query: Features, target: Features): Score
+    +deltaE00(rgbA, rgbB): double [CIEDE2000]
+  }
+  class "LensSimilarity.Score" as Score <<record>> {
+    +similarity: int
+    +visual: Integer
+    +attributes: int
+    +color: Integer
+    +reasons: List<String>
+  }
+  class LensImageAnalysis <<final>> {
+    ~read(photo, box, color): Reading
+  }
+  class "LensImageAnalysis.Reading" as Reading <<record>> {
+    +colors: List<ColorShare>
+    +pattern: String
+    +patternConfidence: double
+    +embedding: float[96]
+  }
+  class LensReading <<final>> {
+    +styles(pieces): List<StyleShare>
+    +palette(pieces): List<PaletteColor>
+    +occasions(pieces): List<String>
+    +season(pieces): String
+    +groupKeys(category, color, material, styles): List<String>
+    +trend(keys, members, levelOf, …): Trend
+    +slotOf(category): String
+  }
+  class LensRetentionJob <<@Component>> {
+    +purgeExpired() <<@Scheduled 04:40>>
+  }
+  class LensViews {
+    ScanView · DetectionView · MatchView · Matches
+    ReadingView {styles, palette, occasions, season,
+      fit, trend, impact}
+    Trend {status, key, label, score, level, direction, items}
+    RecreatePlan {mode, slots, pieceIds, scores, createHref}
+    ScanCard · OwnResult
+  }
+}
+package "fai-application · reaproveitados" {
+  class MultiPieceService {
+    +detectPieces(userId, photo): PieceDetection
+    +localPiece(): DetectedPiece
+  }
+  class "RecommendationScoring.Scores" as RScores <<record>>
+  class StyleCompatibility
+  class HypeScoreCurrent <<@Table hype_scores>>
+}
+
+VersionedAuditableEntity <|-- LensScan
+VersionedAuditableEntity <|-- LensDetection
+AuditableEntity <|-- LensFeedback
+AuditableEntity <|-- VersionedAuditableEntity
+User "1" -- "0..*" LensScan : dono (ON DELETE CASCADE)
+LensScan "1" *-- "0..*" LensDetection : scan_id (CASCADE)
+LensDetection "1" *-- "0..*" LensFeedback : detection_id (CASCADE)
+LensScan "1" *-- "0..*" LensFeedback : scan_id
+LensDetection "0..*" --> "0..1" WardrobeItem : owned_item_id\n(SET NULL)
+LensScan --> LensSource
+LensScan --> LensIntent
+LensScan --> LensScanStatus
+LensDetection --> LensDetectionStatus
+LensFeedback --> LensFeedbackKind
+
+LensService ..> LensScan
+LensService ..> LensDetection
+LensService ..> LensFeedback
+LensService ..> LensConfig
+LensService ..> LensSimilarity
+LensService ..> LensImageAnalysis
+LensService ..> LensReading
+LensService ..> LensViews
+LensService ..> MultiPieceService : detecção (IA ou local)
+LensService ..> StyleCompatibility : fit com o DNA
+LensService ..> RScores : seis números do plano
+LensService ..> HypeScoreCurrent : só lê (Hype do grupo,\ncomunidade elegível)
+LensSimilarity ..> Score
+LensImageAnalysis ..> Reading
+LensRetentionJob ..> LensService
+@enduml

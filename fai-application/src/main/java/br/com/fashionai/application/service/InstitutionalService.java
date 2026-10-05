@@ -7,25 +7,32 @@ import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.BrandProfile;
 import br.com.fashionai.domain.model.CelebrityProfile;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.SealBond;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
 import br.com.fashionai.domain.model.enums.GroupingType;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeStatus;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.ReactionType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
 import br.com.fashionai.domain.model.enums.SealStatus;
+import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.TargetType;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
@@ -43,6 +50,7 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -80,11 +88,13 @@ public class InstitutionalService {
     private final SealService sealService;
     private final AiEngine ai;
     private final Guard guard;
+    private final HypeQueryService hype;
 
     public InstitutionalService(UserRepository users, BrandProfileRepository brands, CelebrityProfileRepository celebrities, FollowRepository follows,
                                 SealRepository seals, SealBondRepository bonds, SchemeRepository schemes, SchemeItemRepository schemeItems,
                                 WardrobeItemRepository pieces, SavedItemRepository saved, ReactionRepository reactions, SchemeGroupingRepository groupings,
-                                StyleDnaRepository dnas, SchemeService schemeService, SealService sealService, AiEngine ai, Guard guard) {
+                                StyleDnaRepository dnas, SchemeService schemeService, SealService sealService, AiEngine ai, Guard guard,
+                                HypeQueryService hype) {
         this.users = users;
         this.brands = brands;
         this.celebrities = celebrities;
@@ -102,6 +112,7 @@ public class InstitutionalService {
         this.sealService = sealService;
         this.ai = ai;
         this.guard = guard;
+        this.hype = hype;
     }
 
     // ================================================================== feeds (RF14.CA01/CA02, RF22, RF24.CA06)
@@ -146,25 +157,34 @@ public class InstitutionalService {
         return Similarity.jaccard(userStyles, styles);
     }
 
+    /** Ordens dos feeds de /brands: afinidade com o DNA, mais recentes e "Em alta" (Hype agregado público, P2-05). */
+    static final List<String> FEED_ORDERS = List.of("AFINIDADE", "RECENTES", "EM_ALTA");
+
     @Transactional(readOnly = true)
     public Map<String, Object> brandFeed(CurrentUser viewer, String term, String order) {
         List<BrandProfile> list = brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(b -> term == null || term.isBlank() || b.getBrandName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
         Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
-        boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        boolean hypeOrder = "EM_ALTA".equalsIgnoreCase(order);
+        boolean affinityOrder = !hypeOrder && !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        // RF53 · P2-05: o Hype agregado da marca (peças públicas com o nome da marca, ≥ 3 itens) em todo card, numa leitura só
+        Map<String, Object> hypeByKey = feedHype(viewer, HypeQueryService.RankGroup.BRAND, list.stream().map(b -> HypeQueryService.brandKey(b.getBrandName())).toList());
         List<Map<String, Object>> cards = new ArrayList<>();
         for (BrandProfile b : list) {
             Map<String, Object> m = brandCard(b);
             if (affinityOrder) {
                 m.put("affinity", Math.round(affinity(styles, b.getOwner().getId()) * 100));
             }
+            m.put("hype", hypeByKey.get(HypeQueryService.brandKey(b.getBrandName())));
             cards.add(m);
         }
         if (affinityOrder) {
             ai.local(viewer.id(), AiCapability.AFFINITY, List.of(Msg.t("institutional.estilos_do_seu_dna"), Msg.t("institutional.estilos_do_catalogo_das_marcas")), () -> cards.size());
             cards.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("affinity")).longValue()).reversed());
+        } else if (hypeOrder) {
+            cards.sort(BY_GROUP_HYPE);
         }
-        return Map.of("brands", cards, "order", affinityOrder ? "AFINIDADE" : "RECENTES", "orders", List.of("AFINIDADE", "RECENTES"),
+        return Map.of("brands", cards, "order", hypeOrder ? "EM_ALTA" : affinityOrder ? "AFINIDADE" : "RECENTES", "orders", FEED_ORDERS,
                 "empty", cards.isEmpty() ? (term == null ? Msg.t("institutional.nenhuma_marca_validada_ainda") : Msg.t("institutional.nenhuma_marca_encontrada_para", term)) : "");
     }
 
@@ -173,20 +193,44 @@ public class InstitutionalService {
         List<CelebrityProfile> list = celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                 .filter(c -> term == null || term.isBlank() || c.getStageName().toLowerCase(Locale.ROOT).contains(term.trim().toLowerCase(Locale.ROOT))).toList();
         Set<String> styles = viewer == null ? new HashSet<>() : dnas.findByUserId(viewer.id()).map(d -> new HashSet<>(Json.csv(d.getStyleKeywords()))).orElse(new HashSet<>());
-        boolean affinityOrder = !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        boolean hypeOrder = "EM_ALTA".equalsIgnoreCase(order);
+        boolean affinityOrder = !hypeOrder && !"RECENTES".equalsIgnoreCase(order) && !styles.isEmpty();
+        // celebridade = criadora: o agregado CREATOR das peças e looks públicos dela (bloqueio entre quem vê e ela = sem Hype)
+        Map<String, Object> hypeByKey = feedHype(viewer, HypeQueryService.RankGroup.CREATOR, list.stream().map(c -> c.getOwner().getId().toString()).toList());
         List<Map<String, Object>> cards = new ArrayList<>();
         for (CelebrityProfile c : list) {
             Map<String, Object> m = celebrityCard(c);
             if (affinityOrder) {
                 m.put("affinity", Math.round(affinity(styles, c.getOwner().getId()) * 100));
             }
+            m.put("hype", hypeByKey.get(c.getOwner().getId().toString()));
             cards.add(m);
         }
         if (affinityOrder) {
             cards.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("affinity")).longValue()).reversed());
+        } else if (hypeOrder) {
+            cards.sort(BY_GROUP_HYPE);
         }
-        return Map.of("celebrities", cards, "order", affinityOrder ? "AFINIDADE" : "RECENTES", "orders", List.of("AFINIDADE", "RECENTES"));
+        return Map.of("celebrities", cards, "order", hypeOrder ? "EM_ALTA" : affinityOrder ? "AFINIDADE" : "RECENTES", "orders", FEED_ORDERS);
     }
+
+    /** Agregados do Hype por chave ({@link HypeQueryService#groups}); falha ou sem serviço = sem Hype (o feed nunca quebra). */
+    @SuppressWarnings("unchecked")
+    Map<String, Object> feedHype(CurrentUser viewer, HypeQueryService.RankGroup group, List<String> keys) {
+        if (hype == null || keys.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> out = hype.groups(viewer, group, keys, 7);
+        return out != null && out.get("items") instanceof Map<?, ?> items ? (Map<String, Object>) items : Map.of();
+    }
+
+    /**
+     * "Em alta" (P2-05): grupos suficientes primeiro, do maior Hype agregado para o menor; quem não tem base (menos de 3
+     * itens públicos, bloqueio, sem dado) fica depois, na ordem recente — nunca vira 0. Sort estável.
+     */
+    static final Comparator<Map<String, Object>> BY_GROUP_HYPE = Comparator.comparing(
+            (Map<String, Object> m) -> m.get("hype") instanceof Map<?, ?> h && Boolean.TRUE.equals(h.get("sufficient")) && h.get("value") instanceof Number n
+                    ? n.doubleValue() : null, Comparator.nullsLast(Comparator.reverseOrder()));
 
     // ================================================================== perfil institucional (artefato #11)
     User institutionalUser(String slugOrId) {
@@ -293,7 +337,7 @@ public class InstitutionalService {
                     "centerEmpty", Msg.t("institutional.o_centro_do_selo_recebe"));
             case "MEUS_SELOS" -> Map.of("seals", sealService.sealsOf(u.getId()), "reviewQueue", sealService.reviewQueue(viewer), "metrics", sealService.issuerMetrics(viewer));
             case "MEUS_ESQUEMAS", "LOOKS_CONSAGRADOS" -> consecrated(viewer, u, filter, groupingId, admin);
-            case "MINHAS_PECAS", "CATALOGO" -> catalog(u, filter);
+            case "MINHAS_PECAS", "CATALOGO" -> catalog(viewer, u, filter, admin);
             case "ESQUEMAS_SALVOS" -> saved.findByUserIdAndTargetTypeOrderBySavedAtDesc(u.getId(), TargetType.SCHEME).stream()
                     .map(si -> schemes.findById(si.getTargetId()).filter(s -> schemeService.canView(viewer, s))
                             .map(s -> Map.<String, Object>of("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())),
@@ -312,79 +356,267 @@ public class InstitutionalService {
         };
     }
 
-    /** Looks consagrados: esquemas com vínculo aprovado; filtros de era/fase/temporada, disponível/indisponível e mais usadas. */
-    List<Map<String, Object>> consecrated(CurrentUser viewer, User u, String filter, UUID groupingId, boolean admin) {
-        List<Scheme> list;
-        if (admin) {
-            list = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED);
+    // ================================================================== política de exibição (RF14/RF22 × RF20/RF21/RF50)
+    /*
+     * O que o perfil de uma marca/celebridade mostra de conteúdo de OUTROS usuários é o que passou pela política do selo:
+     * vínculo APPROVED (política atendida + aceite de quem criou o look + revisão do emissor quando exigida). Nunca entram
+     * vínculos SUGGESTED, ACCEPTED/EDITED (ainda não roteados), PENDING_REVIEW, REFUSED, REJECTED ou REVOKED.
+     *
+     * - "Esquemas em destaque": vínculo APPROVED VIGENTE (sem expiresAt ou expiresAt no futuro), look publicado, sem
+     *   revalidação pendente (RF9.CA05: a lista de peças mudou depois da aprovação e o emissor ainda não revalidou),
+     *   visível para quem vê (visibilidade do look × privacidade do perfil × bloqueio) e autor com conta ativa. Ordem:
+     *   HypeScore v2 atual do look (sem score = no fim) e, no empate, a emissão mais recente.
+     * - "Looks consagrados": o histórico de conquistas — mesmos filtros de visibilidade, mas inclui vínculos expirados
+     *   (marcados {@code expired}) e looks em revalidação (marcados {@code revalidationPending}). Ordem: emissão mais recente.
+     * - "Peças em destaque": peças dos looks em destaque. Selo de PEÇA destaca só as peças vinculadas (linkedPieceIds);
+     *   selo de LOOK destaca todas. Cada peça leva só os selos que a cobrem. Peça arquivada, fora da moderação APPROVED,
+     *   invisível para quem vê ou de autor suspenso fica de fora (o look pode ser público com uma peça privada).
+     * - "Catálogo": o próprio acervo do perfil; o visitante vê só peças aprovadas na moderação e visíveis para ele, o
+     *   administrador do perfil vê tudo (menos arquivadas).
+     * Selo desativado (SealStatus.INACTIVE) só impede novas emissões: o que já foi emitido vale até expirar.
+     */
+    static final Set<AccountStatus> HIDDEN_AUTHORS = Set.of(AccountStatus.SUSPENDED, AccountStatus.DELETION_SCHEDULED, AccountStatus.DELETED);
+    static final int DESTAQUES_LIMIT = 12;
+    static final int TAB_LIMIT = 60;
+
+    /** Look promovido no perfil por um ou mais vínculos aprovados do emissor. */
+    record Promoted(Scheme scheme, List<SealBond> bonds, Instant issuedAt, Instant expiresAt, boolean expired, boolean revalidationPending) {
+    }
+
+    static boolean expired(SealBond b, Instant now) {
+        return b.getExpiresAt() != null && !b.getExpiresAt().isAfter(now);
+    }
+
+    /** Look de outra pessoa pode aparecer no perfil (publicado, autor ativo, visível para quem vê)? */
+    boolean displayable(CurrentUser viewer, Scheme s) {
+        return s.getStatus() == SchemeStatus.PUBLISHED && s.getUser() != null && !HIDDEN_AUTHORS.contains(s.getUser().getStatus())
+                && schemeService.canView(viewer, s);
+    }
+
+    /** Peça de um look promovido pode aparecer (não arquivada, aprovada na moderação, visível, autor ativo)? */
+    boolean displayable(CurrentUser viewer, WardrobeItem w) {
+        return w != null && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED && w.getModerationStatus() == ModerationStatus.APPROVED
+                && w.getUser() != null && !HIDDEN_AUTHORS.contains(w.getUser().getStatus())
+                && guard.canView(viewer, w.getUser().getId(), WardrobeService.effectiveVisibility(w));
+    }
+
+    /**
+     * Looks promovidos pelo perfil {@code u}, um por look (vários selos do mesmo emissor no mesmo look viram uma entrada).
+     * {@code history = false}: só vigentes e sem revalidação pendente ("Esquemas em destaque"); {@code true}: inclui
+     * expirados e em revalidação ("Looks consagrados").
+     */
+    List<Promoted> promoted(CurrentUser viewer, User u, boolean history, Instant now) {
+        Map<UUID, List<SealBond>> byScheme = new LinkedHashMap<>();
+        for (SealBond b : bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealBondStatus.APPROVED)) {
+            if (b.getScheme() != null && b.getStatus() == SealBondStatus.APPROVED) {
+                byScheme.computeIfAbsent(b.getScheme().getId(), k -> new ArrayList<>()).add(b);
+            }
+        }
+        List<Promoted> out = new ArrayList<>();
+        for (List<SealBond> list : byScheme.values()) {
+            Scheme s = list.get(0).getScheme();
+            if (!displayable(viewer, s)) {
+                continue;
+            }
+            List<SealBond> valid = list.stream().filter(b -> !expired(b, now)).toList();
+            boolean isExpired = valid.isEmpty();
+            if (!history && (isExpired || s.isRevalidationPending())) {
+                continue;
+            }
+            List<SealBond> shown = isExpired ? list : valid;
+            Instant issued = shown.stream().map(b -> b.getIssuedAt() != null ? b.getIssuedAt() : b.getCreatedAt()).filter(Objects::nonNull)
+                    .max(Comparator.naturalOrder()).orElse(null);
+            Instant expires = shown.stream().map(SealBond::getExpiresAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);
+            out.add(new Promoted(s, shown, issued, expires, isExpired, s.isRevalidationPending()));
+        }
+        Comparator<Promoted> byIssued = Comparator.comparing(Promoted::issuedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+        if (history) {
+            out.sort(byIssued);
         } else {
-            list = bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealBondStatus.APPROVED).stream().map(SealBond::getScheme)
-                    .filter(s -> s.getStatus() == SchemeStatus.PUBLISHED && schemeService.canView(viewer, s)).distinct().toList();
+            Map<UUID, HypeScoreCurrent> hype = hypeOf(out.stream().map(p -> p.scheme().getId()).toList());
+            out.sort(Comparator.comparing((Promoted p) -> lookHype(hype, p.scheme().getId()), Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(byIssued));
         }
-        if (groupingId != null) {
-            list = list.stream().filter(s -> groupingId.equals(s.getGroupingId())).toList();
+        return out;
+    }
+
+    /** HypeScore v2 atual dos looks (só AVAILABLE conta para a ordem; o resto vai para o fim). */
+    Map<UUID, HypeScoreCurrent> hypeOf(List<UUID> schemeIds) {
+        return schemeIds.isEmpty() ? Map.of() : hype.currentOf(HypeEntityType.SCHEME, schemeIds);
+    }
+
+    static Double lookHype(Map<UUID, HypeScoreCurrent> hype, UUID schemeId) {
+        return lookHype(hype, schemeId, false);
+    }
+
+    /**
+     * Score que pode ordenar: AVAILABLE com score. Em contexto de terceiros (destaques de looks de outras pessoas), só o
+     * Hype público elegível — o de look privado ou só para seguidores é pessoal, do dono (auditoria §3.1); sem ele, o look
+     * vai para o fim, nunca vira 0. {@code personal} = o próprio dono ordenando os próprios looks.
+     */
+    static Double lookHype(Map<UUID, HypeScoreCurrent> hype, UUID schemeId, boolean personal) {
+        HypeScoreCurrent c = hype.get(schemeId);
+        return c == null || c.getStatus() != HypeStatus.AVAILABLE || c.getScore() == null || (!personal && !c.isPublicEligible())
+                ? null : c.getScore().doubleValue();
+    }
+
+    /** Crescimento (P3-17): a dimensão TREND do Hype v2 (janela atual × anterior) — crescimento, não volume nem curtidas. */
+    static Double lookGrowth(Map<UUID, HypeScoreCurrent> hype, UUID schemeId, boolean personal) {
+        if (lookHype(hype, schemeId, personal) == null) {
+            return null;
         }
-        String f = filter == null ? "" : filter.toUpperCase(Locale.ROOT);
-        list = switch (f) {
-            case "DISPONIVEL" -> list.stream().filter(Scheme::isDisponivel).toList();
-            case "INDISPONIVEL" -> list.stream().filter(s -> !s.isDisponivel()).toList();
-            case "MAIS_USADAS" -> list.stream().sorted(Comparator.comparingInt(Scheme::getLookDoDiaCount).reversed()).toList();
-            case "DESTAQUES" -> list.stream().sorted(Comparator.comparing((Scheme s) -> s.getHypeScore() == null ? java.math.BigDecimal.ZERO : s.getHypeScore()).reversed()).limit(12).toList();
-            default -> list;
-        };
-        return list.stream().limit(60).map(s -> Map.<String, Object>of("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())),
-                "seals", bonds.findBySchemeId(s.getId()).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
-                        .map(SealService::badge).toList())).toList();
+        HypeScoreCurrent c = hype.get(schemeId);
+        return c.getDimensions() == null || c.getDimensions().getTrend() == null ? null : c.getDimensions().getTrend().doubleValue();
+    }
+
+    static Double lookDelta(Map<UUID, HypeScoreCurrent> hype, UUID schemeId) {
+        HypeScoreCurrent c = hype.get(schemeId);
+        return c == null || c.getDeltaPoints() == null ? null : c.getDeltaPoints().doubleValue();
+    }
+
+    /** Looks consagrados: o histórico (ou, para o administrador, os próprios looks); filtros de era, disponibilidade, uso e Hype. */
+    List<Map<String, Object>> consecrated(CurrentUser viewer, User u, String filter, UUID groupingId, boolean admin) {
+        if (admin) {
+            List<Scheme> own = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED);
+            return filterLooks(own.stream().map(s -> new Promoted(s, bonds.findBySchemeId(s.getId()).stream()
+                    .filter(b -> b.getStatus() == SealBondStatus.APPROVED).toList(), null, null, false, s.isRevalidationPending())).toList(), filter, groupingId, true)
+                    .stream().map(p -> entry(viewer, p)).toList();
+        }
+        return filterLooks(promoted(viewer, u, true, Instant.now()), filter, groupingId).stream().map(p -> entry(viewer, p)).toList();
     }
 
     /**
      * Abas "Esquemas em destaque" e "Peças em destaque": looks de qualquer usuário que conquistaram um selo deste perfil
-     * (vínculo APPROVED — política do selo + revisão do emissor) e as peças que compõem esses looks.
-     * Vale igual para o dono do perfil e para visitantes: destaque é o que passou pela política do selo.
+     * por política aceita (vínculo APPROVED vigente) e as peças que esses selos destacam. Vale igual para o dono do perfil
+     * e para visitantes: destaque é o que passou pela política do selo.
      */
     List<Map<String, Object>> highlightedSchemes(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        return consecrated(viewer, u, filter, groupingId, false);
+        return filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId).stream().map(p -> entry(viewer, p)).toList();
     }
 
-    /** Peças que compõem os looks em destaque (cada peça aponta para o look e os selos que ele conquistou). */
+    /** Peças que os selos vigentes destacam (cada peça aponta para o look e traz só os selos que a cobrem). */
     List<Map<String, Object>> highlightedPieces(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) highlighted(viewer, u, filter, groupingId).get("pieces");
-        return list;
+        return pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId));
     }
 
     /** Legado: as duas listas juntas (mantido para compatibilidade da API; a interface usa as abas separadas). */
     Map<String, Object> highlighted(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        List<Map<String, Object>> looks = highlightedSchemes(viewer, u, filter, groupingId);
-        Map<UUID, Map<String, Object>> piecesOut = new LinkedHashMap<>();
-        for (Map<String, Object> entry : looks) {
-            Views.SchemeView sv = (Views.SchemeView) entry.get("scheme");
-            for (SchemeItem si : schemeItems.findBySchemeIdOrderBySortOrder(sv.id())) {
-                WardrobeItem w = si.getWardrobeItem();
-                if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED || piecesOut.containsKey(w.getId())) {
-                    continue;
-                }
-                if (!guard.canView(viewer, w.getUser().getId(), WardrobeService.effectiveVisibility(w))) {
-                    continue;
-                }
-                piecesOut.put(w.getId(), Map.of("piece", Views.piece(w, null, null), "author", Views.user(w.getUser()),
-                        "schemeId", sv.id(), "schemeTitle", sv.title(), "seals", entry.get("seals")));
-                if (piecesOut.size() >= 60) {
-                    break;
-                }
-            }
-        }
+        List<Promoted> looks = filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId);
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("schemes", looks);
-        out.put("pieces", new ArrayList<>(piecesOut.values()));
+        out.put("schemes", looks.stream().map(p -> entry(viewer, p)).toList());
+        out.put("pieces", pieceEntries(viewer, looks));
         out.put("empty", looks.isEmpty() ? Msg.t("institutional.nenhum_look_conquistou_um_selo") : null);
         return out;
     }
 
+    /** Filtros das abas de looks de outras pessoas (destaques e consagrados): o Hype que ordena é só o público elegível. */
+    List<Promoted> filterLooks(List<Promoted> list, String filter, UUID groupingId) {
+        return filterLooks(list, filter, groupingId, false);
+    }
+
+    /**
+     * Filtros e ordenações das abas de looks: era/fase/temporada ({@code groupingId}), disponível/indisponível, mais usadas,
+     * destaques (Hype v2) e — P3-17, o SegmentPicker "Recentes · Hype · Em crescimento" da interface (ordenação, não aba):
+     * RECENTES (emissão mais recente), HYPE (HypeScore v2, sem score no fim) e GROWTH (dimensão TREND do v2 —
+     * crescimento, não volume —, empate pelo Δ; sem Hype no fim). Nada sai da lista nessas três: só muda a ordem, e a
+     * política de exibição (quem entra) continua a de {@link #promoted}. Sort estável: o empate mantém a ordem anterior.
+     */
+    List<Promoted> filterLooks(List<Promoted> list, String filter, UUID groupingId, boolean personal) {
+        if (groupingId != null) {
+            list = list.stream().filter(p -> groupingId.equals(p.scheme().getGroupingId())).toList();
+        }
+        String f = filter == null ? "" : filter.toUpperCase(Locale.ROOT);
+        return switch (f) {
+            case "DISPONIVEL" -> list.stream().filter(p -> p.scheme().isDisponivel()).toList();
+            case "INDISPONIVEL" -> list.stream().filter(p -> !p.scheme().isDisponivel()).toList();
+            case "MAIS_USADAS" -> list.stream().sorted(Comparator.comparingInt((Promoted p) -> p.scheme().getLookDoDiaCount()).reversed()).toList();
+            case "DESTAQUES" -> {
+                Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
+                yield list.stream().filter(p -> lookHype(h, p.scheme().getId(), personal) != null)
+                        .sorted(Comparator.comparing((Promoted p) -> lookHype(h, p.scheme().getId(), personal), Comparator.reverseOrder()))
+                        .limit(DESTAQUES_LIMIT).toList();
+            }
+            case "RECENTES", "RECENT" -> list.stream().sorted(Comparator.comparing((Promoted p) -> p.issuedAt() != null ? p.issuedAt() : p.scheme().getCreatedAt(),
+                    Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+            case "HYPE" -> {
+                Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
+                yield list.stream().sorted(Comparator.comparing((Promoted p) -> lookHype(h, p.scheme().getId(), personal),
+                        Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+            }
+            case "GROWTH", "CRESCIMENTO" -> {
+                Map<UUID, HypeScoreCurrent> h = hypeOf(list.stream().map(p -> p.scheme().getId()).toList());
+                yield list.stream().sorted(Comparator.comparing((Promoted p) -> lookGrowth(h, p.scheme().getId(), personal), Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(p -> lookGrowth(h, p.scheme().getId(), personal) == null ? null : lookDelta(h, p.scheme().getId()),
+                                Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+            }
+            default -> list;
+        };
+    }
+
+    Map<String, Object> entry(CurrentUser viewer, Promoted p) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("scheme", schemeService.view(viewer, p.scheme(), schemeItems.findBySchemeIdOrderBySortOrder(p.scheme().getId())));
+        m.put("seals", p.bonds().stream().map(SealService::badge).toList());
+        Map<String, Object> promotion = new LinkedHashMap<>();
+        promotion.put("issuedAt", p.issuedAt());
+        promotion.put("expiresAt", p.expiresAt());
+        promotion.put("expired", p.expired());
+        promotion.put("revalidationPending", p.revalidationPending());
+        m.put("promotion", promotion);
+        return m;
+    }
+
+    /** Peças em destaque: selo de PEÇA cobre só as peças vinculadas; selo de LOOK cobre todas as peças do look. */
+    List<Map<String, Object>> pieceEntries(CurrentUser viewer, List<Promoted> looks) {
+        Map<UUID, Map<String, Object>> out = new LinkedHashMap<>();
+        for (Promoted p : looks) {
+            for (SchemeItem si : schemeItems.findBySchemeIdOrderBySortOrder(p.scheme().getId())) {
+                WardrobeItem w = si.getWardrobeItem();
+                if (!displayable(viewer, w)) {
+                    continue;
+                }
+                List<SealBond> covering = p.bonds().stream().filter(b -> covers(b, w.getId())).toList();
+                if (covering.isEmpty()) {
+                    continue;
+                }
+                List<Map<String, Object>> badges = covering.stream().map(SealService::badge).toList();
+                Map<String, Object> existing = out.get(w.getId());
+                if (existing != null) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> seals = new ArrayList<>((List<Map<String, Object>>) existing.get("seals"));
+                    badges.stream().filter(b -> !seals.contains(b)).forEach(seals::add);
+                    existing.put("seals", seals);
+                    continue;
+                }
+                if (out.size() >= TAB_LIMIT) {
+                    continue;
+                }
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("piece", Views.piece(w, null, null));
+                m.put("author", Views.user(w.getUser()));
+                m.put("schemeId", p.scheme().getId());
+                m.put("schemeTitle", p.scheme().getTitle());
+                m.put("seals", badges);
+                out.put(w.getId(), m);
+            }
+        }
+        return new ArrayList<>(out.values());
+    }
+
+    /** O vínculo destaca esta peça? LOOK: todas as peças do look; PECA: só as vinculadas (sem lista = todas, legado). */
+    static boolean covers(SealBond b, UUID pieceId) {
+        if (b.getTier() != SealTier.PECA) {
+            return true;
+        }
+        List<String> linked = Json.strings(b.getLinkedPieceIdsJson());
+        return linked.isEmpty() || linked.contains(pieceId.toString());
+    }
+
     /** Catálogo (Minhas peças): linha compacta ≤ 18 mm — logo, nome, tipo, tamanho, sexo — e contador de usos em looks. */
-    List<Map<String, Object>> catalog(User u, String filter) {
+    List<Map<String, Object>> catalog(CurrentUser viewer, User u, String filter, boolean admin) {
         String f = filter == null ? "" : filter;
         return pieces.findByUserIdOrderByCreatedAtDesc(u.getId()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> admin || (w.getModerationStatus() == ModerationStatus.APPROVED
+                        && guard.canView(viewer, u.getId(), WardrobeService.effectiveVisibility(w))))
                 .filter(w -> f.isBlank() || f.equals(w.getCategory()))
                 .map(w -> Map.<String, Object>of("piece", Views.piece(w, null, null), "looks", schemeItems.countByWardrobeItemId(w.getId()),
                         "neverInLook", schemeItems.countByWardrobeItemId(w.getId()) == 0)).toList();

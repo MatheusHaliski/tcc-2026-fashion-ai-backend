@@ -49,6 +49,7 @@ import java.util.function.BiFunction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -486,5 +487,44 @@ class IdentitySecurityTest {
         }
         assertTrue(IdentityService.reservedUsername("moderador"));
         assertNotEquals("admin", identity.suggestUsername("Admin"));
+    }
+
+    // ------------------------------------------------------------------ link oficial no cadastro de emissor
+
+    /**
+     * Política de verificação: o perfil oficial da celebridade (onde o analista procura o código FAI-…) e o site da marca
+     * são critérios obrigatórios — sem eles o pedido nunca poderia ser aprovado, então o cadastro já os exige.
+     */
+    @Test
+    void cadastroDeCelebridadeExigeOLinkDoPerfilOficial() {
+        for (String link : new String[]{null, " ", "@samuelrosa"}) {
+            var celeb = new IdentityService.CelebrityData("Samuel Rosa", "Samuel Rosa Silva", "pending/x/id.png", "pending/x/foto.png", List.of("música"),
+                    Map.of(), link, null, null, List.of(), true);
+            var cmd = new IdentityService.RegisterCommand(ProfileType.CELEBRIDADE, "Samuel Rosa", "samuel", "samuel@exemplo.com", "Senha@Forte1",
+                    "Senha@Forte1", true, "1990-01-01", "BR", null, celeb, null, MannequinSex.MASCULINO);
+            ApiException ex = error(() -> identity.register(cmd, "1.1.1.1", "ua"));
+            assertEquals("FORMULARIO_INVALIDO", ex.code(), String.valueOf(link));
+            assertTrue(((Map<?, ?>) ex.details()).containsKey("celebrity.verificationUrl"), String.valueOf(link));
+        }
+    }
+
+    @Test
+    void cadastroDeMarcaExigeOSiteOficial() {
+        var brand = new IdentityService.BrandData("Atelier Lume Ltda", "11.222.333/0001-81", "Atelier Lume", "pending/x/logo.png", "casual",
+                null, null, null, null);
+        var cmd = new IdentityService.RegisterCommand(ProfileType.MARCA, "Atelier Lume", "atelierlume", "contato@exemplo.com", "Senha@Forte1",
+                "Senha@Forte1", true, "1990-01-01", "BR", brand, null, null, null);
+        ApiException ex = error(() -> identity.register(cmd, "1.1.1.1", "ua"));
+        assertTrue(((Map<?, ?>) ex.details()).containsKey("brand.storeUrl"));
+    }
+
+    @Test
+    void linkDigitadoSemHttpsViraUrlCompleta() {
+        assertEquals("https://instagram.com/samuelrosa", IssuerVerificationPolicy.normalizeUrl(" instagram.com/samuelrosa "));
+        assertEquals("https://www.atelierlume.com.br", IssuerVerificationPolicy.normalizeUrl("www.atelierlume.com.br"));
+        assertEquals("https://x.com/a", IssuerVerificationPolicy.normalizeUrl("https://x.com/a"));
+        assertEquals("@samuelrosa", IssuerVerificationPolicy.normalizeUrl("@samuelrosa"));     // sem domínio: a validação recusa
+        assertNull(IssuerVerificationPolicy.normalizeUrl("  "));
+        assertTrue(IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl("tiktok.com/@samuel")));
     }
 }

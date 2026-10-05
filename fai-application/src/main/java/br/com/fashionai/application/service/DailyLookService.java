@@ -135,6 +135,11 @@ public class DailyLookService {
         return out;
     }
 
+    /**
+     * Linha do Look do Dia (aba, histórico, Autopiloto). P1-06: {@code schemeId} é a chave do Hype v2 de cada linha — o
+     * frontend pede os resumos em lote (/api/hype/summaries, Hype pessoal do dono) e mostra o HypeBadge; nada é
+     * recalculado aqui. {@code hypeScore} é o v1 legado (deprecado; sai na limpeza do v1, P3-16).
+     */
     public Map<String, Object> view(DailyLook dl) {
         Map<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("id", dl.getId());
@@ -143,7 +148,7 @@ public class DailyLookService {
         m.put("schemeId", dl.getScheme().getId());
         m.put("title", dl.getScheme().getTitle());
         m.put("coverImageUrl", dl.getScheme().getCoverImageUrl());
-        m.put("hypeScore", dl.getScheme().getHypeScore());
+        m.put("hypeScore", dl.getScheme().getHypeScore());   // @deprecated v1 — use o Hype v2 pelo schemeId
         m.put("feedback", dl.getFeedback() == null ? null : dl.getFeedback().name());
         m.put("feedbackAt", dl.getFeedbackAt());
         m.put("materialized", dl.getMaterializedFrom() != null);

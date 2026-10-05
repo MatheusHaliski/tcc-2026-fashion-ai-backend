@@ -4,6 +4,7 @@ title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponí
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
+  BackgroundColor<<RF49>> #EAF6EE
   BorderColor #4A4852
   ArrowColor #4A4852
 }
@@ -17,7 +18,7 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "closet — filtros de estado" as FE0
+  component "closet — filtros de estado\n+ hypeLevel e ordenação (hype-filters.ts)" as FE0
   component "pieces/[id] — flags" as FE1
   component "room — cesto e cabide especial" as FE2
 }
@@ -31,11 +32,13 @@ package "fai-application (casos de uso)" {
   [ProjectionService] as ProjectionService #FAFAFA
   [JobQueuePort] as JobQueuePort #FAFAFA
   [Model3dService] as Model3dService #FAFAFA
+  [HypeScoreConfig\n(algorithmVersion · levelThresholds)] as HypeScoreConfig <<RF49>>
 }
 package "fai-domain (repositórios JPA)" {
   [BrandRepository\nModerationQueueRepository\nPhotoRepository\nPipelineJobRepository\nProcessingJobLogRepository\nQualityScoreRepository\nReactionRepository\nSavedItemRepository\nSchemeItemRepository\nSchemeRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+  [HypeScoreCurrentRepository] as HypeRepo <<RF49>>
 }
-database "MySQL · fashionai_app\n• ModerationQueue\n• brands\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• users\n• wardrobe_items" as DB
+database "MySQL · fashionai_app\n• ModerationQueue\n• brands\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• users\n• wardrobe_items\n• hype_scores (RF49)" as DB
 cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
 [Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
 database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
@@ -56,4 +59,7 @@ WardrobeService --> P_media
 WardrobeService --> P_notif
 WardrobeService --> P_events
 REPOS --> DB : JPA/Flyway
+WardrobeService --> HypeRepo : sort Hype · hypeLevel
+WardrobeService ..> HypeScoreConfig
+HypeRepo --> DB : JPA/Flyway
 @enduml

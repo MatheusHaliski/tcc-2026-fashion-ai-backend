@@ -28,6 +28,11 @@ start
 :Abre /lookbook (ou /u/{username});
 |Frontend (u/[username] · lookbook-tabs)|
 :/lookbook redireciona para /u/{seu usuário}?tab=...;
+if (?tab=cupons|coupons (dono)?) then (sim)
+  :CouponsRedirect → /coupons\n(a aba de cupons saiu do Lookbook);
+  note right: alterado (RF53 · HypeScore v2)
+  stop
+endif
 :GET /api/users/{ownerId}/lookbook;
 |Backend (LookbookController · LookbookService)|
 :overview(viewer, ownerId): carrega peças (sem ARCHIVED)\ne esquemas (sem ARCHIVED);
@@ -38,6 +43,12 @@ else (sim)
 endif
 :Monta as abas: closet · looks · saved_looks · saved_pieces\n· daily · capsule · room (peças e esquemas nunca na mesma aba);
 |Frontend (u/[username] · lookbook-tabs)|
+:Mostra as abas (TabId): closet · looks · groups\n+ dono: saved · dna · daily · capsule · insights;
+note right
+  alterado (RF53 · HypeScore v2): saved_looks/saved_pieces
+  viram "saved" (SegmentPicker looks | peças);
+  nova aba insights; sem aba de cupons
+end note
 if (Closet vazio?) then (sim)
   :Estado vazio com ação "Adicionar nova peça" → /pieces/new;
   stop
@@ -47,7 +58,7 @@ if (Qual aba?) then (Closet Digital)
   |Frontend (u/[username] · lookbook-tabs)|
   :GET /api/users/{ownerId}/closet (filtros, busca, ordenação);
   note right: clicar num item abre o detalhe — ver RF7
-elseif (Looks Salvos / Peças salvas)
+elseif (Salvos — SegmentPicker looks | peças)
   |Frontend (u/[username] · lookbook-tabs)|
   :GET /api/me/saved-looks?occasion= · GET /api/me/saved-pieces?category=;
   |Pessoa|
@@ -79,6 +90,10 @@ elseif (Look do Dia)
       stop
     endif
   endif
+elseif (Insights (dono))
+  |Frontend (u/[username] · lookbook-tabs)|
+  :HypeWardrobeInsights → GET /api/me/hype/wardrobe\n(HypeController → HypeQueryService.wardrobe:\nhype_scores do dono → Hype médio e variação,\ndestaques e redescobertas);
+  note right: novo (RF53 · HypeScore v2) —\nnunca compara com outras pessoas
 else (Agrupamentos)
   |Backend (LookbookController · LookbookService)|
   if (Sugestão por IA ou manual?) then (IA)
@@ -102,5 +117,13 @@ else (Agrupamentos)
 endif
 |Frontend (u/[username] · lookbook-tabs)|
 :Atualiza a aba;
+:Cards de peça e look (PieceCard · SchemeCard) em FashionCard:\nHypeBadge na frente; use-hype.ts junta os ids do tick\n→ GET /api/hype/summaries?type=PIECE|SCHEME&ids=;
+note right
+  novo (RF53 · HypeScore v2) — nas abas com cards
+  (closet, looks, salvos, look do dia, grupos)
+end note
+if (Pessoa vira o card (↻)?) then (sim)
+  :Verso HypeCardBack (mesmo cache): score, faixa, dimensões;\n"Ver análise completa" → HypeAnalyticsDrawer:\nGET /api/hype/pieces/{id} (ou /looks/{id}) + /history?days=90;
+endif
 stop
 @enduml

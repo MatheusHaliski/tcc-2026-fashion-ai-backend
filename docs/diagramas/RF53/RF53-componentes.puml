@@ -1,0 +1,120 @@
+@startuml RF53_Componentes
+title RF53 — HypeScore v2: núcleo do Hype de peças e looks\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "PieceCard · SchemeCard\n(FashionCard: frente/verso, CardFlipButton)" as FE_CARD
+  component "components/hype\nHypeBadge · HypeCardBack · HypeBackArt\nHypeAnalyticsDrawer · HypeSealProgressList" as FE_HYPE
+  component "lib/hype\nuseHypeSummary (lote 100, TTL 5 min)\nmodel · explain · seals · globe" as FE_LIB
+  component "Explorador › Em alta\n(HypeTrendingPanel)" as FE_TREND
+  component "Explorador › Ranking\n(HypeRankingPanel)" as FE_RANK
+  component "Explorador › Painel global\n(globe.tsx + HypeGlobe*: camadas,\nlegenda, tabela)" as FE_GLOBE
+  component "Lookbook › Insights · /history\n(HypeWardrobeInsights, history-hype)" as FE_INS
+  component "closet · Meus looks\n(ordenar e filtrar por Hype)" as FE_CLOSET
+}
+package "fai-web · controllers" {
+  [HypeController] as HC
+  [SocialController] as SOCC
+  [WardrobeController\nSchemeController] as SWC
+  [LookbookController\n(/api/hype/method)] as LBC
+  [AdminController\n(job "hype")] as ADM
+}
+package "fai-application · hype" {
+  [HypeQueryService\nsummaries · detail · history · positions\ntrending · ranking · facets · globe] as HQ
+  [HypeSnapshotService\n@Scheduled 6/6 h · synchronized] as JOB
+  [HypeLiveRecalc\nmarkDirty · tick 30 s · ≤ 1/120 s] as LIVE
+  [HypeSignalRecorder\n@TransactionalEventListener] as REC
+  [HypeIntegrityPolicy] as POL
+  [HypeCalculator\nHypeSignalSeries] as CALC
+  [HypeScoreConfig\n(pesos, janelas, faixas, HYPE_V2)] as CFG
+  [HypeCache\n(geração + TTL 10 min)] as HCACHE
+  [HypeSeals\n(VIRAL · TRENDING · EMERGING\nCLASSIC · RARE)] as SEALS
+  [HypeMilestoneNotifier\nAFTER_COMMIT · SideEffectRunner] as MIL
+  [StyleCompatibility\nRecommendationScoring] as REC2
+}
+package "fai-application · services" {
+  [SocialService\nSchemeService\nWardrobeService\nDailyLookService] as PUB
+  [AdminService] as ADMS
+  [NotificationService] as NOTS
+  [HypeScoreService (v1,\nainda escreve hype_score)] as V1
+}
+package "fai-application · taxonomy" {
+  [WorldRegions\n(país → região)] as WR
+}
+package "fai-domain · repositories" {
+  [HypeSignalDailyRepository\nHypeScoreCurrentRepository\nHypeScoreSnapshotRepository\nHypeMilestoneRepository] as REPOS
+  [WardrobeItemRepository\nSchemeRepository · SchemeItemRepository\nStyleDnaRepository · UserRepository] as OREPOS
+}
+package "fai-infrastructure · adapters" {
+  [RenderCachePort\n(Redis ou memória)] as RCP
+}
+database "MySQL" {
+  [hype_signal_daily] as T1
+  [hype_scores\n(+ country, region,\ncategories, subcategories: V39)] as T2
+  [hype_score_snapshots] as T3
+  [hype_milestones (V41)] as T4
+}
+
+FE_CARD --> FE_HYPE
+FE_HYPE --> FE_LIB
+FE_LIB --> HC : GET /api/hype/summaries\n/pieces|looks/{id}[/history|/positions]
+FE_TREND --> HC : GET /api/hype/trending
+FE_RANK --> HC : GET /api/hype/ranking\n/ranking/facets
+FE_GLOBE --> HC : GET /api/hype/globe
+FE_INS --> HC : GET /api/me/hype/wardrobe\n/api/me/hype/movers
+FE_CLOSET --> SWC : GET /api/me/closet?sort=&hypeLevel=&seal=\n/api/me/schemes?sort=&hypeLevel=
+FE_CARD --> SOCC : curtir, comentar, salvar…
+
+HC --> HQ
+HC --> JOB : POST /api/admin/hype/snapshots
+SOCC --> PUB
+SWC --> PUB
+ADM --> ADMS
+LBC --> CFG
+
+PUB ..> REC : DomainEvents.HypeSignal\nPieceWorn · SchemeSaved\nDailyLookRegistered
+PUB ..> LIVE : HypeSignal · PieceCreated/Updated/Deleted\nSchemeSaved · PieceWorn · DailyLook\nAvailabilityChanged
+LIVE --> JOB : recalculate()
+REC --> POL
+POL --> OREPOS : idade da conta (UserRepository)
+POL --> RCP : dedupe 26 h
+REC --> REPOS
+JOB --> CALC
+JOB --> CFG
+JOB --> WR : região do país do dono
+JOB --> REPOS
+JOB --> OREPOS
+JOB --> HCACHE : bump()
+JOB ..> MIL : DomainEvents.HypeMilestone\n(só subida)
+MIL --> REPOS : hype_milestones (dedupe)
+MIL --> NOTS : HYPE_MILESTONE\n(resumo do dia)
+HQ --> REPOS
+HQ --> OREPOS
+HQ --> HCACHE
+HQ --> REC2
+HQ --> SEALS : summary().seals\nsealProgress
+HQ --> WR
+HCACHE --> RCP
+PUB --> REPOS : WardrobeService / SchemeService:\nordenações por Hype
+ADMS --> JOB : v2
+ADMS --> V1 : v1 (convive)
+
+REPOS --> T1
+REPOS --> T2
+REPOS --> T3
+REPOS --> T4
+@enduml

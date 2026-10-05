@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ApiError, api } from "@/lib/api/client";
@@ -18,6 +18,7 @@ import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
+import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
 type Step = "piece" | "more" | "art" | "review";
@@ -26,10 +27,18 @@ const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
 /** Produto do catálogo escolhido na busca (RF47): a peça é criada por referência a ele. */
 interface CatalogPick { product: CatalogProduct; variant: CatalogVariant | null }
 
-/** ?category=, ?brand= e ?q= pré-preenchem a etapa Peça (atalhos do Explorador e das marcas). */
+/** Tipos oferecidos pelos chips do criador: o ?category= da URL só vale se for um deles. */
+const CATEGORY_IDS = CATEGORY_CARDS.map((c) => c.id as string);
+
+/**
+ * ?category=, ?brand= e ?q= pré-preenchem a etapa Peça (atalhos do Explorador e das marcas). O FashionAI Lens manda também
+ * ?subcategory=, ?color=, ?material=, ?styles= e ?from=lens (lib/pieces/prefill.ts): tudo validado na taxonomia — valor
+ * desconhecido é ignorado.
+ */
 function NewPiece() {
   const params = useSearchParams();
-  return <PieceCreator initial={{ category: params.get("category") ?? undefined, brand: params.get("brand") ?? undefined, query: params.get("q") ?? undefined }} />;
+  const prefill = readPiecePrefill(params);
+  return <PieceCreator initial={{ category: validPieceCategory(prefill.category, CATEGORY_IDS) || undefined, brand: prefill.brand, query: prefill.query }} prefill={prefill} />;
 }
 
 /**
@@ -38,11 +47,28 @@ function NewPiece() {
  * preenche o formulário e a peça é criada por referência (POST /api/pieces/from-catalog); sem produto, a peça é salva com os
  * dados do formulário e a ilustração da categoria (POST /api/pieces).
  */
-function PieceCreator({ initial }: { initial: Partial<CatalogSearchContext> }) {
+function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearchContext>; prefill?: PiecePrefillParams }) {
   const { t } = useI18n(); const toast = useToast(); const tax = useTaxonomy(); const { user } = useAuth();
   const [step, setStep] = useState<Step>("piece");
   const [pick, setPick] = useState<CatalogPick | null>(null);
-  const [value, setValue] = useState<PieceFormValue>({ ...EMPTY_PIECE, useDefaultImage: true, category: initial.category ?? "", subcategory: initial.subcategory ?? "", brandName: initial.brand ?? "" });
+  // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
+  // abaixo completa assim que ela chega
+  const [pre] = useState(() => validPiecePrefill(prefill, tax, CATEGORY_IDS));
+  const [value, setValue] = useState<PieceFormValue>(() => ({ ...EMPTY_PIECE, useDefaultImage: true, category: initial.category ?? "", subcategory: pre.subcategory || (initial.subcategory ?? ""), brandName: initial.brand ?? "",
+    name: pre.name, color: pre.color, material: pre.material, style: pre.style }));
+  // subtipo inicial da busca catalogada (ela lê o `initial` só ao montar: com o subtipo chegando depois, remonta uma vez);
+  // só vale enquanto o formulário continua nele (ao voltar de um produto do catálogo de outro tipo, a busca abre sem subtipo)
+  const [catalogSub, setCatalogSub] = useState(pre.subcategory);
+  const lateApplied = useRef(!!tax);
+  useEffect(() => {
+    if (lateApplied.current || !tax) return;
+    lateApplied.current = true;
+    const late = validPiecePrefill(prefill, tax, CATEGORY_IDS);
+    // só completa o que ainda está vazio (e o subtipo só se o tipo continua o mesmo): nada do que a pessoa já mexeu muda
+    setValue((v) => ({ ...v, subcategory: v.subcategory || (v.category === late.category ? late.subcategory : ""), color: v.color || late.color,
+      material: v.material || late.material, style: v.style.length ? v.style : late.style }));
+    if (late.subcategory) setCatalogSub(late.subcategory);
+  }, [tax]); // eslint-disable-line react-hooks/exhaustive-deps
   // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
   const [done, setDone] = useState<string | null>(null);
@@ -126,6 +152,13 @@ function PieceCreator({ initial }: { initial: Partial<CatalogSearchContext> }) {
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
+      {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
+      {pre.fromLens && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-thread-soft p-3 type-body-sm" role="note" data-prefill="lens">
+          <b>{t("pieceForm.lens.veio")}</b><span>{t("pieceForm.lens.dica")}</span>
+          {pre.scan && <Link className="underline" href={`/lens/${pre.scan}`}>{t("pieceForm.lens.voltar")}</Link>}
+        </p>
+      )}
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
@@ -150,7 +183,7 @@ function PieceCreator({ initial }: { initial: Partial<CatalogSearchContext> }) {
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch initial={initial} category={value.category} onPick={applyCatalog}
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog}
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>

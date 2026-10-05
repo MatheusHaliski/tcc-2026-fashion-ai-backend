@@ -16,7 +16,9 @@ participant "SocialService" as S
 participant "SchemeService" as SS
 participant "NotificationService" as N
 participant "CounterStorePort" as CT
+participant "HypeSignalRecorder\n+ HypeIntegrityPolicy\n<<RF53>>" as HR
 database "MySQL" as DB
+note over FE, SS : novo (RF53 · HypeScore v2): GET /api/schemes/{id} e GET /api/pieces/{id} por pessoa logada que não é dona\npublicam HypeSignal LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
 U -> FE: curtir
 FE -> SC: POST /api/interactions/{type}/{id}/reactions {reaction: LIKE}
 SC -> S: react(user, type, id, LIKE)
@@ -30,6 +32,9 @@ else nova reação
   S -> CT: increment("scheme"|"piece", id, "likes")
   S -> N: notify(owner, NEW_LIKE | NEW_REACTION)
   N -> DB: INSERT notifications (delivered = tipo habilitado)
+  opt reaction == LIKE
+    S ->> HR: publishEvent HypeSignal(LIKE_CREATED)
+  end
   S --> FE: 200 {active:true, reaction, count}
 end
 U -> FE: comentar
@@ -40,6 +45,7 @@ alt vazio / > 500 / ofensivo
 else válido
   S -> DB: INSERT comments (active=true) · commentCount+1
   S -> N: notify(owner, NEW_COMMENT)
+  S ->> HR: publishEvent HypeSignal(COMMENT_CREATED)
   S --> FE: 201 {id, author, content, createdAt}
 end
 U -> FE: excluir comentário
@@ -55,7 +61,11 @@ U -> FE: salvar
 FE -> SC: POST /api/interactions/{type}/{id}/saves
 SC -> S: toggleSave(user, type, id)
 S -> DB: INSERT | DELETE saved_items
+opt INSERT (salvou)
+  S ->> HR: publishEvent HypeSignal(SAVE_CREATED)
+end
 S --> FE: 200 {saved}
+note right of S: PUT .../saves/favorite (favorite = true)\n→ HypeSignal(FAVORITE_CREATED) <<RF53>>
 U -> FE: compartilhar (FEED ou EXTERNAL)
 FE -> SC: POST /api/interactions/{type}/{id}/shares {channel, caption}
 SC -> S: share(user, type, id, channel, caption)
@@ -64,6 +74,7 @@ opt channel == EXTERNAL e type == SCHEME
   S -> S: MediaService.put("shares/{user}/…png")
 end
 S -> DB: INSERT shares · shareCount+1
+S ->> HR: publishEvent HypeSignal(SHARE_CREATED)
 S -> N: notify(owner, NEW_REACTION, {channel})
 S --> FE: 200 {shareId, channel, shares, imageUrl?, link?}
 U -> FE: remixar
@@ -73,7 +84,9 @@ alt type == SCHEME
   S -> SS: remix(user, id)
   SS -> DB: SELECT scheme_items da origem · peças elegíveis do remixador
   SS --> FE: 201 {prefill(origin REMIX, remixedFromId), missingPieces, next:/create-look?remix=}
+  note right of SS: ao salvar o remix (POST /api/schemes → SchemeService.create\ncom originalScheme): HypeSignal(LOOK_REMIXED) <<RF53>>
 else type == PIECE
+  S ->> HR: publishEvent HypeSignal(PIECE_REMIXED)
   S -> N: notify(owner, NEW_REMIX)
   S --> FE: 201 {next:/create-look?seedPiece=, sourcePiece}
 end
@@ -82,4 +95,15 @@ FE -> CC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme={id}
 CC -> S: returnToOrigin(user, pieceId, fromScheme)
 S -> DB: SELECT scheme_items WHERE wardrobe_item_id (esquemas visíveis, mais antigo primeiro)
 S --> FE: 200 {originSchemeId, title, otherSchemes}
+
+== HypeScore v2: gravação do sinal (novo · RF53) ==
+note over HR : @TransactionalEventListener(AFTER_COMMIT) onSignal\n→ SideEffectRunner (REQUIRES_NEW): falha aqui nunca desfaz a interação
+HR -> HR: HypeIntegrityPolicy.weight(sinal, dia)
+alt visitante (sem ator) · ator == dono (exceto PIECE_USED / PIECE_IN_LOOK / LOOK_WORN)\n· chave hype:dedupe:{sinal}:{entidade}:{ator}:{dia} já existe (TTL 26 h)
+  HR -> HR: peso 0 — sinal descartado
+else conta criada há menos de 7 dias
+  HR -> DB: HypeSignalDailyRepository.increment(peso 0,5)\nINSERT … ON DUPLICATE KEY UPDATE hype_signal_daily
+else demais
+  HR -> DB: HypeSignalDailyRepository.increment(peso 1)\nINSERT … ON DUPLICATE KEY UPDATE hype_signal_daily
+end
 @enduml

@@ -140,6 +140,14 @@ public class WardrobeService {
         this.brandReader = brandReader;
     }
 
+    /** RF53 — vínculos de selo (filtro "com selo de marca/celebridade" do closet). Opcional nos testes. */
+    private br.com.fashionai.domain.repository.SealBondRepository sealBonds;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSealBonds(br.com.fashionai.domain.repository.SealBondRepository sealBonds) {
+        this.sealBonds = sealBonds;
+    }
+
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
                            QualityScoreRepository qualityScores, ModerationQueueRepository moderationQueue,
@@ -1218,7 +1226,7 @@ public class WardrobeService {
         qs.setIssuesJson(Json.write(q.get("issues")));
         qs.setRecommendationsJson(Json.write(q.get("recommendations")));
         qualityScores.save(qs);
-        ProcessingJobLog log = new ProcessingJobLog(); // id gerado pelo Hibernate (nunca atribuir: viraria merge)
+        ProcessingJobLog log = new ProcessingJobLog();   // id gerado pelo JPA (atribuir à mão vira merge e falha no Hibernate 6.6+)
         log.setPipelineJobId(draft.getId());
         log.setWardrobeItemId(w.getId());
         log.setUserId(w.getUser().getId());
@@ -1427,13 +1435,33 @@ public class WardrobeService {
     /**
      * Filtros do closet. {@code hypeLevel} é FILTRO (faixa mínima: NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba.
      * Ordenações: recent, name, price, worn (mais usada), least_worn, idle (mais tempo sem uso) e, do HypeScore v2,
-     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara).
+     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara). {@code seal} (RF53) também é FILTRO:
+     * {@code hype} (peças com selo de Hype FashionAI), {@code brand} (com selo de marca/celebridade aprovado na peça) ou
+     * {@code any} (qualquer um dos dois).
      */
     public record ClosetFilter(String category, String color, String season, String occasion, String style, String state,
-                               String q, String sort, int page, int size, String hypeLevel) {
+                               String q, String sort, int page, int size, String hypeLevel, String seal) {
         public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort, int page, int size) {
-            this(category, color, season, occasion, style, state, q, sort, page, size, null);
+            this(category, color, season, occasion, style, state, q, sort, page, size, null, null);
         }
+
+        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort,
+                            int page, int size, String hypeLevel) {
+            this(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, null);
+        }
+    }
+
+    /** RF53 — valor do filtro "com selo": hype, brand ou any (nulo = sem filtro; valor desconhecido é ignorado). */
+    static String sealFilter(String raw) {
+        if (blank(raw)) {
+            return null;
+        }
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "hype" -> "hype";
+            case "brand", "marca", "celebrity", "celebridade" -> "brand";
+            case "any", "qualquer", "all" -> "any";
+            default -> null;
+        };
     }
 
     static final java.util.Set<String> HYPE_SORTS = java.util.Set.of("hype", "hype_desc", "hype_asc", "growth", "rarity");
@@ -1441,13 +1469,19 @@ public class WardrobeService {
     static final Map<String, String> SORT_ALIASES = Map.of("recentes", "recent", "mais_usadas", "worn", "menos_usadas", "least_worn",
             "nome", "name", "preco", "price", "mais_tempo_sem_uso", "idle");
 
-    /** Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último). */
-    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list) {
+    /**
+     * Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último).
+     * Privacidade (HYPE_AUDITORIA_ABAS §3.1, P2-11): o dono vê o Hype pessoal de todas as peças; para terceiros (perfil
+     * de outra pessoa, visitante sem conta) só entra o score {@code publicEligible} — o resto conta como "sem Hype"
+     * ("—" no card, por último na ordem, fora do filtro por faixa), mesmo que a peça seja visível para quem segue.
+     */
+    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list, boolean self) {
         if (hypeScores == null || hypeConfig == null || list.isEmpty()) {
             return Map.of();
         }
         return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(br.com.fashionai.domain.model.enums.HypeEntityType.PIECE,
                         list.stream().map(WardrobeItem::getId).toList(), hypeConfig.algorithmVersion()).stream()
+                .filter(h -> self || h.isPublicEligible())
                 .collect(Collectors.toMap(br.com.fashionai.domain.model.HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
     }
 
@@ -1475,10 +1509,29 @@ public class WardrobeService {
                         || contains(w.getSubcategory(), f.q()))
                 .collect(Collectors.toCollection(ArrayList::new));
         String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
-        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel()) ? hypeOf(all) : Map.of();
+        String seal = sealFilter(f.seal());
+        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel())
+                || (seal != null && !"brand".equals(seal)) ? hypeOf(all, self) : Map.of();
         if (!blank(f.hypeLevel()) && hypeConfig != null) {
+            // faixa mínima sobre o número EXIBIDO (arredondado): 59,6 aparece como 60 e já é "Em alta"
             int min = hypeMinimum(f.hypeLevel());
             all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
+        }
+        if (seal != null) {
+            // RF53 — selo de Hype: derivado do Hype atual (peça privada não tem: só item público elegível); selo de marca:
+            // vínculo APROVADO de tier PEÇA vindo de um look que quem vê consegue ver
+            Set<UUID> branded = "hype".equals(seal) ? Set.of()
+                    : SealService.approvedPieceBonds(all.stream().map(WardrobeItem::getId).toList(), schemeItems, sealBonds,
+                    sc -> SealService.canViewScheme(guard, viewer, sc)).keySet();
+            all.removeIf(w -> {
+                boolean hasHype = !br.com.fashionai.application.hype.HypeSeals.of(hype.get(w.getId())).isEmpty();
+                boolean hasBrand = branded.contains(w.getId());
+                return switch (seal) {
+                    case "hype" -> !hasHype;
+                    case "brand" -> !hasBrand;
+                    default -> !hasHype && !hasBrand;
+                };
+            });
         }
         java.util.function.Function<WardrobeItem, BigDecimal> score = w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getScore() : null;
         LocalDate today = LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE);
@@ -1526,6 +1579,7 @@ public class WardrobeService {
             case "disponivel", "disponiveis", "available" -> w.isDisponivel();
             case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
             case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
+            case "doar", "para_doar", "doacao", "for_donation", "donation" -> w.isForDonation();
             default -> true;
         };
     }
@@ -1633,9 +1687,31 @@ public class WardrobeService {
         return Views.piece(w, viewerState(user, w), null);
     }
 
+    /** "À venda" e "para doar" são exclusivos: marcar um desmarca o outro; desmarcar não mexe no outro. */
+    static void applyListing(WardrobeItem w, Boolean forSale, Boolean forDonation) {
+        if (forSale != null) {
+            w.setForSale(forSale);
+            if (forSale) {
+                w.setForDonation(false);
+            }
+        }
+        if (forDonation != null) {
+            w.setForDonation(forDonation);
+            if (forDonation) {
+                w.setForSale(false);
+            }
+        }
+    }
+
     // ================================================================== RF31 — toggles da faixa superior
     @Transactional
     public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale) {
+        return toggles(user, id, favorite, disponivel, forSale, null);
+    }
+
+    /** Estados da peça; "à venda" e "para doar" são exclusivos entre si (marcar um desmarca o outro). */
+    @Transactional
+    public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
         if (favorite != null) {
@@ -1651,9 +1727,7 @@ public class WardrobeService {
                 events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), id, disponivel));
             }
         }
-        if (forSale != null) {
-            w.setForSale(forSale);
-        }
+        applyListing(w, forSale, forDonation);
         return Views.piece(w, viewerState(user, w), null);
     }
 

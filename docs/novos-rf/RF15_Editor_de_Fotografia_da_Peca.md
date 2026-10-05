@@ -360,8 +360,8 @@ decode + ICC + EXIF ─► linear sRGB
 | `EditProvenance` | **nova** (pode ser JSON na receita na v1) | ações, classes, uso de IA, `disclosure` (mostrar "Foto editada") |
 | `WardrobeItem` | existe — `image_origin` (CATALOG, USER_PHOTO, DEFAULT), `for_sale` | `coverPhotoId` (qual foto própria é a capa) |
 
-Migração Flyway nova, com o próximo número livre na hora da implementação (em 05/10/2026: V38 nesta branch e V41 no
-`main` — usar o maior + 1 depois de trazer o `main`).
+Migração Flyway nova, com o próximo número livre na hora da implementação (em 05/10/2026, depois de trazer o `main`,
+a maior é V42).
 
 ### 5.6 API proposta
 

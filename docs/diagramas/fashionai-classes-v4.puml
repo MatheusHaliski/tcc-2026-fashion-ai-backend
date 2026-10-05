@@ -1,5 +1,5 @@
 @startuml FashionAI_Classes_v4
-title Fashion AI — Diagrama de Classes v4 (RF25–RF39)\nEntidades JPA reais do fai-domain, agrupadas por área — gerado do código
+title Fashion AI — Diagrama de Classes v4 (RF25–RF39 + RF53 HypeScore v2)\nEntidades JPA reais do fai-domain, agrupadas por área — gerado do código
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -339,6 +339,87 @@ class FlairTrophy {
   +detailJson: String
 }
 }
+package "HypeScore v2 (RF53)" {
+class HypeSignalDaily {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +signalType: HypeSignalType
+  +signalDate: LocalDate
+  +eventCount: int
+  +weightedCount: BigDecimal
+  .. +2 campos ..
+}
+class HypeScoreCurrent {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String
+  +status: HypeStatus
+  +score: BigDecimal
+  .. +16 campos ..
+}
+class HypeScoreSnapshot {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +snapshotDate: LocalDate
+  +status: HypeStatus
+  +score: BigDecimal
+  .. +7 campos ..
+}
+class HypeDimensions <<Embeddable>> {
+  +popularity: BigDecimal
+  +engagement: BigDecimal
+  +trend: BigDecimal
+  +trendVelocity: BigDecimal
+  +novelty: BigDecimal
+  +longevity: BigDecimal
+  +rarity: BigDecimal
+  +originality: BigDecimal
+  +influence: BigDecimal
+}
+enum HypeEntityType {
+  PIECE
+  SCHEME
+}
+enum HypeSignalType {
+  LIKE_CREATED
+  COMMENT_CREATED
+  SAVE_CREATED
+  SHARE_CREATED
+  FAVORITE_CREATED
+  LOOK_REMIXED
+  PIECE_REMIXED
+  LOOK_VIEWED
+  PIECE_VIEWED
+  PIECE_USED
+  PIECE_IN_LOOK
+  LOOK_WORN
+}
+enum HypeStatus {
+  AVAILABLE
+  INSUFFICIENT_DATA
+}
+enum HypeLevel {
+  LOW_SIGNAL
+  NICHE
+  RELEVANT
+  HOT
+  TRENDING
+  VIRAL
+}
+enum HypeMomentum {
+  EMERGING
+  RISING
+  STABLE
+  COOLING
+  CLASSIC
+}
+interface HypeSignalDailyRepository <<JpaRepository>>
+interface HypeScoreCurrentRepository <<JpaRepository>>
+interface HypeScoreSnapshotRepository <<JpaRepository>>
+note "Vínculo polimórfico (entity_type, entity_id), sem FK JPA:\nPIECE → WardrobeItem · SCHEME → Scheme.\nalgorithm_version (HYPE_V2…) separa as séries;\nsem dados = INSUFFICIENT_DATA com score nulo (nunca 0)." as N_HYPE
+}
 package "Núcleo (RF1–RF24)" {
 class User {
   +username: String
@@ -425,7 +506,8 @@ FlairProfile "*" --> "1" User : user
 FlairRedemption "*" --> "1" FlairCombination : combination
 FlairRedemption "*" --> "1" Scheme : scheme
 FlairRedemption "*" --> "1" User : user
-FlairTeam "*" --> "1" User : owner
+' sem rótulo: o Smetana não consegue posicionar este rótulo (UnsupportedOperationException em edgeMidpoint); o papel já aparece como atributo +owner
+FlairTeam "*" --> "1" User
 FlairTeamMember "*" --> "1" FlairTeam : team
 FlairTeamMember "*" --> "1" User : user
 FlairTerritory "*" --> "1" User : owner
@@ -459,7 +541,8 @@ SchemeGrouping "*" --> "1" User : owner
 SchemeItem "*" --> "1" Scheme : scheme
 SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
 Seal "*" --> "1" User : owner
-SealBond "*" --> "1" Scheme : scheme
+' sem rótulo: mesmo limite do Smetana (ver FlairTeam → User); o papel já aparece como atributo +scheme
+SealBond "*" --> "1" Scheme
 SealBond "*" --> "1" Seal : seal
 SealBond "*" --> "1" User : requestedBy
 SealBond "*" --> "1" User : targetOwner
@@ -469,4 +552,27 @@ WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
 WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
+' --- HypeScore v2 (RF53) ---
+HypeScoreCurrent *-- HypeDimensions : dimensions
+HypeScoreSnapshot *-- HypeDimensions : dimensions
+HypeScoreCurrent --> HypeEntityType
+HypeScoreCurrent --> HypeLevel
+HypeScoreCurrent --> HypeMomentum
+HypeScoreCurrent --> HypeStatus
+HypeScoreSnapshot --> HypeEntityType
+HypeScoreSnapshot --> HypeLevel
+HypeScoreSnapshot --> HypeStatus
+HypeSignalDaily --> HypeEntityType
+HypeSignalDaily --> HypeSignalType
+HypeScoreCurrent ..> User : ownerId
+HypeSignalDaily ..> WardrobeItem : entityId (PIECE)
+HypeSignalDaily ..> Scheme : entityId (SCHEME)
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreSnapshot ..> WardrobeItem : entityId (PIECE)
+HypeScoreSnapshot ..> Scheme : entityId (SCHEME)
+HypeSignalDailyRepository ..> HypeSignalDaily
+HypeScoreCurrentRepository ..> HypeScoreCurrent
+HypeScoreSnapshotRepository ..> HypeScoreSnapshot
+N_HYPE .. HypeScoreCurrent
 @enduml

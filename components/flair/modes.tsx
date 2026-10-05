@@ -47,7 +47,7 @@ export function FlairModes({ initial }: { initial?: string | null }) {
       {!current && <>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.nucleo_do_flair")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "NUCLEO").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.eventos_e_modos_especiais")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "ESPECIAL").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
-        <p className="type-caption text-muted">{t("flair.modes.o_hypescore_e_a_forca", { ethics: c.ethics })}</p>
+        <p className="type-caption text-muted">{t("hypeFlair.modes_nota", { ethics: c.ethics })}</p>
       </>}
       {current && (
         <Card>
@@ -114,7 +114,18 @@ function SquadPanel({ looks, onDone }: PanelProps) {
 }
 
 // ------------------------------------------------------------------ 3. Fashion League
-interface LeagueRow { position: number; user: UserCard; played: number; wins: number; draws: number; losses: number; points: number; hype: number; division: { label: string }; you: boolean; }
+/** Linha da tabela da liga. `stylePoints` = soma das notas das rodadas (não é HypeScore); `hype` é o alias antigo, deprecado. */
+export interface LeagueRow { position: number; user: UserCard; played: number; wins: number; draws: number; losses: number; points: number; stylePoints?: number; /** @deprecated use stylePoints */ hype?: number; division: { label: string }; you: boolean; }
+
+/** Tabela da Fashion League: a última coluna numérica é "Pontos de estilo" (antes rotulada "Hype", só homônima). */
+export function LeagueTable({ rows }: { rows: LeagueRow[] }) {
+  const { t } = useI18n();
+  return (
+    <div className="overflow-x-auto"><table className="mode-table"><thead><tr><th>#</th><th>{t("flair.modes.jogador")}</th><th>J</th><th>V</th><th>E</th><th>D</th><th>{t("common.pts")}</th><th title={t("hypeFlair.pontos_de_estilo_hint")}>{t("hypeFlair.pontos_de_estilo")}</th><th>{t("flair.modes.divisao")}</th></tr></thead>
+      <tbody>{rows.map((r) => <tr key={r.user.id} className={r.you ? "font-semibold" : ""}><td>{r.position}</td><td><span className="flex items-center gap-1"><Avatar src={r.user.avatarUrl} name={r.user.displayName} size={20} />@{r.user.username}</span></td><td>{r.played}</td><td>{r.wins}</td><td>{r.draws}</td><td>{r.losses}</td><td><b>{r.points}</b></td><td>{(r.stylePoints ?? r.hype ?? 0).toLocaleString(currentIntl())}</td><td>{r.division.label}</td></tr>)}
+        {rows.length === 0 && <tr><td colSpan={9} className="text-muted">{t("flair.modes.ninguem_escalou_o_elenco_nesta")}</td></tr>}</tbody></table></div>
+  );
+}
 function LeaguePanel({ looks, onDone }: PanelProps) {
   const { rich, t } = useI18n();
   const toast = useToast();
@@ -130,9 +141,7 @@ function LeaguePanel({ looks, onDone }: PanelProps) {
     <div className="grid gap-4">
       <p className="type-body-sm">{rich("flair.modes.temporada_sua_divisao", { season: d.season }, { 0: ($c) => <b>{$c}</b> })}{" "}<Badge tone="thread">{d.division.label}</Badge></p>
       <p className="type-caption text-muted">{d.rule}</p>
-      <div className="overflow-x-auto"><table className="mode-table"><thead><tr><th>#</th><th>{t("flair.modes.jogador")}</th><th>J</th><th>V</th><th>E</th><th>D</th><th>{t("common.pts")}</th><th>{t("common.hype")}</th><th>{t("flair.modes.divisao")}</th></tr></thead>
-        <tbody>{d.table.map((r) => <tr key={r.user.id} className={r.you ? "font-semibold" : ""}><td>{r.position}</td><td><span className="flex items-center gap-1"><Avatar src={r.user.avatarUrl} name={r.user.displayName} size={20} />@{r.user.username}</span></td><td>{r.played}</td><td>{r.wins}</td><td>{r.draws}</td><td>{r.losses}</td><td><b>{r.points}</b></td><td>{r.hype.toLocaleString(currentIntl())}</td><td>{r.division.label}</td></tr>)}
-          {d.table.length === 0 && <tr><td colSpan={9} className="text-muted">{t("flair.modes.ninguem_escalou_o_elenco_nesta")}</td></tr>}</tbody></table></div>
+      <LeagueTable rows={d.table} />
       <LookPicker looks={looks} value={starters} onChange={(v) => { setStarters(v); setReserves(reserves.filter((x) => !v.includes(x))); }} max={5} label={t("flair.modes.titulares")} />
       <LookPicker looks={looks.filter((l) => !starters.includes(l.schemeId ?? ""))} value={reserves} onChange={setReserves} max={3} label={t("flair.modes.reservas")} />
       <div><p className="label">{t("flair.modes.pecas_especiais_5_3_na", { specialsCount: specials.length })}</p>

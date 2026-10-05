@@ -1,0 +1,107 @@
+@startuml RF53_Componentes_Integracoes
+title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — Insights, Copilot/Autopiloto, Looks, Selos, perfil do emissor, Descobrir, painéis, FLAIR, marcos e LGPD
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "InsightStrip · InsightCard\n(Explorador, Cápsula, Copilot, Autopiloto,\nHistórico, Guarda-roupa, Meus looks)" as F_INS
+  component "copilot · autopilot\nLookScores (seis números, modos)" as F_COP
+  component "scheme-builder · my-looks\nLookHypePreview · PieceHypeTag\nanatomia Hype Focus" as F_LOOK
+  component "seal-policy-editor · brands/[slug]\nSealSuggestionHype · SealHypeStat\nselos no card (SealSlot)" as F_SEAL
+  component "feed · search · runway-panel\nshowcase-tabs (Eras/Coleções)" as F_DISC
+  component "dashboard · admin/dashboard\nadmin/system (hype-dashboards)" as F_DASH
+  component "flair (cartas, modos)" as F_FLAIR
+  component "settings (privacidade)\nnotifications · highlights" as F_ME
+}
+package "fai-web · controllers" {
+  [InsightsController] as C_INS
+  [AutopilotController\n(/api/copilot/*, /api/autopilot/*)] as C_COP
+  [SchemeController\n(/api/schemes/scores, /api/me/schemes)] as C_SCH
+  [SealController\n(/api/seals, /api/seal-*, /api/pieces/seals)] as C_SEAL
+  [ProfileController\n(/api/institutional/{slug}/tabs/{tab})] as C_PROF
+  [DiscoveryController\n(feed, search, public-pieces, explorer)] as C_DISC
+  [DashboardController · AdminController] as C_DASH
+  [FlairController · FlairModesController] as C_FLAIR
+  [MeController (/api/me/exports)\nNotificationController] as C_ME
+}
+package "fai-application · insights" {
+  [InsightService] as S_INS
+  [PublicInsights\nPersonalInsights] as S_INS2
+  [InsightMath\n(números iguais na reescrita)] as S_MATH
+}
+package "fai-application · services" {
+  [CopilotService · AutopilotService] as S_COP
+  [LookScorer\n(seis números)] as S_SCORER
+  [LookPreviewService\n(prévia; nada gravado)] as S_PREV
+  [SchemeService\n(sort/hypeLevel, PNG v2)] as S_SCH
+  [SealService · SealPolicies\n(policy.hype, hypeMin, Hype do selo,\nSealUnavailable + noRollbackFor)] as S_SEAL
+  [InstitutionalService\n(destaques APPROVED vigentes,\nordem pelo v2)] as S_INST
+  [SearchService · ShowcaseService\nExplorerService (marcas, insights)] as S_DISC
+  [LookbookService · DailyLookService\nDnaService · HypeScoreService.panel (v2)] as S_LB
+  [DashboardService · AdminService\nMysqlAnalyticsAdapter (consultas v2)] as S_DASH
+  [FlairService · FlairModesService\nFlairEngine · FlairLooks] as S_FLAIR
+  [AccountService\n(exportação LGPD)] as S_ACC
+}
+package "fai-application · hype (núcleo, ver RF53_Componentes)" {
+  [HypeQueryService] as HQ
+  [HypeScoreCurrentRepository\nHypeScoreSnapshotRepository\nHypeMilestoneRepository\n+ HypeScoreConfig] as HREPO
+  [HypeSeals] as HSEALS
+  [RecommendationScoring\nStyleCompatibility] as RS
+  [HypeCache] as HC
+}
+package "fai-application · ai" {
+  [AiEngine\n(INSIGHT_GENERATOR;\nid do log gerado pelo JPA)] as AI
+}
+
+F_INS --> C_INS : GET /api/insights?context=
+F_COP --> C_COP
+F_LOOK --> C_SCH : POST /api/schemes/scores\nGET /api/me/schemes?sort=&hypeLevel=
+F_SEAL --> C_SEAL
+F_SEAL --> C_PROF
+F_DISC --> C_DISC : ?hypeLevel=
+F_DASH --> C_DASH
+F_FLAIR --> C_FLAIR
+F_ME --> C_ME
+
+C_INS --> S_INS
+S_INS --> S_INS2
+S_INS --> S_MATH
+S_INS --> HC : contextos públicos
+S_INS --> AI : withAi = true (só texto)
+S_INS2 --> HQ
+S_INS2 --> HREPO
+C_COP --> S_COP
+S_COP --> S_SCORER
+S_COP --> HQ : hypeAnswer
+C_SCH --> S_PREV
+C_SCH --> S_SCH
+S_PREV --> S_SCORER
+S_SCORER --> RS
+S_SCORER --> HQ
+S_SCH --> HREPO : sem HypeQueryService\n(evita ciclo)
+C_SEAL --> S_SEAL
+S_SEAL --> HQ : Hype da entidade,\nHype do selo
+S_SEAL --> AI : sugestões com IA
+C_PROF --> S_INST
+S_INST --> HQ : ordem pelo v2
+C_DISC --> S_DISC
+S_DISC --> HREPO : só publicEligible
+S_DISC --> HQ : SearchService (resumos)
+S_LB --> HREPO
+C_DASH --> S_DASH
+S_DASH --> HREPO : consultas v2 sobre hype_scores\n(faixas, cobertura, looks vinculados)
+C_FLAIR --> S_FLAIR
+S_FLAIR --> HREPO : stat HYPE e raridade v2\n(público; neutro 50)
+C_ME --> S_ACC
+S_ACC --> HREPO : snapshots do Hype pessoal\ne marcos do dono
+HQ --> HSEALS
+@enduml
