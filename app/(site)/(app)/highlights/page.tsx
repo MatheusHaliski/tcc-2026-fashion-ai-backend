@@ -9,9 +9,35 @@ import { Badge, Button, Card, Dialog, ErrorState, Input, PageHeader, Skeleton, S
 import { FaiIcon } from "@/components/fai-icon";
 import { chronological } from "@/components/history/history-style";
 import { InsightStrip } from "@/components/insights/insight-strip";
+import { HypeItemRow } from "@/components/hype/hype-item-row";
+import type { HypeWardrobe } from "@/lib/hype/types";
 
 interface Highlights { eligible: boolean; pieces: number; progress?: { missing: number; target: number; message: string; steps: { label: string; done: boolean }[] }; manifesto: string; score?: number; band?: string; bands?: { min: number; max: number; label: string }[]; k?: number; kNote?: string; dimensions?: { code: string; name: string; value?: number; weight: number; rule?: string; pullingDown?: { name?: string; id?: string }[] }[]; dims?: Record<string, number>; delta?: { score?: number; previous?: number }; highlights?: { emoji?: string; title?: string; name?: string; value?: string; pieceId?: string; text?: string }[]; evolution?: { history?: { date: string; score: number }[]; title?: string }; records?: { noRepeatStreak?: number; currentStreak?: number; rescuedInAWeek?: number; uniqueLooks?: number; note?: string }; achievements?: { code: string; name?: string; emoji?: string; unlocked?: boolean; unlockedAt?: string; secret?: boolean }[]; suggestedChallenges?: { code: string; name: string }[]; rankingsOptIn?: boolean; computedAt?: string; }
 const bandColor = (s?: number) => (s ?? 0) >= 800 ? "var(--status-good)" : (s ?? 0) >= 500 ? "var(--thread)" : (s ?? 0) >= 300 ? "var(--status-warning)" : "var(--status-serious)";
+
+/**
+ * RF53 · P3-11 — "Maior crescimento de Hype" ao lado dos destaques do mês (de /api/me/hype/wardrobe, o estado gravado
+ * pelo job). Hype ≠ Inventory Score: o card diz a janela da variação e não entra na nota do inventário. Sem item que
+ * cresceu, texto neutro (nunca 0); erro do Hype não derruba a página de Destaques.
+ */
+function HypeGrowthCard() {
+  const { t } = useI18n();
+  const { data, loading, error } = useApi<HypeWardrobe>((signal) => api.get("/api/me/hype/wardrobe", { signal }), []);
+  if (error) return null;
+  const item = data?.highlights?.biggestGrowth;
+  return (
+    <Card>
+      <h2 className="type-h3 mb-1">{t("hypeHighlights.growth_title")}</h2>
+      {loading || !data ? <Skeleton className="h-16" /> : (
+        <>
+          <p className="type-caption text-muted mb-2">{t("hypeHighlights.growth_hint", { days: data.deltaWindowDays })}</p>
+          {item ? <div className="hype-items"><HypeItemRow item={item} /></div> : <p className="type-body-sm text-muted">{t("hypeHighlights.growth_empty")}</p>}
+          <Link href="/history?tab=hype" className="mt-2 inline-block type-caption underline">{t("hypeHighlights.see_history")}</Link>
+        </>
+      )}
+    </Card>
+  );
+}
 
 function Highlights() {
   const { t, fmtDate, rich } = useI18n(); const toast = useToast();
@@ -38,6 +64,7 @@ function Highlights() {
             <Card><h2 className="type-h3 mb-2">{t("highlights.n7_dimensoes")}</h2><ul className="fai-list">{(data.dimensions ?? []).map((d) => <li key={d.code} className="flex items-center gap-3 py-2"><span className="min-w-0 flex-1"><span className="type-body">{d.name}</span><span className="hype-bar mt-1"><i style={{ width: `${d.value ?? data.dims?.[d.code] ?? 0}%`, background: "var(--thread)" }} /></span></span><span className="w-12 text-right type-data tabular">{d.value ?? data.dims?.[d.code] ?? 0}</span><Button size="sm" variant="ghost" onClick={async () => { try { setExplain(await api.get(`/api/me/inventory-score/dimensions/${d.code}`)); } catch (e) { toast.fromError(e); } }}>{t("highlights.por_que")}</Button></li>)}</ul></Card>
             {/* o backend devolve {emoji, title, name, value} (InventoryScoreService.highlights) — antes a tela filtrava por "text" e a seção nunca aparecia */}
             {data.highlights?.length ? <Card><h2 className="type-h3 mb-2">{t("highlights.destaques_do_mes")}</h2><ul className="fai-list sm:grid-cols-2">{data.highlights.map((h, i) => <li key={i} className="rounded bg-surface-2 p-2"><p className="type-body"><b>{h.emoji ? `${h.emoji} ` : ""}{h.title}</b></p><p className="type-body-sm text-muted">{h.pieceId ? <Link className="underline" href={`/pieces/${h.pieceId}`}>{h.name}</Link> : h.name}{h.name && (h.value ?? h.text) ? " · " : ""}{h.value ?? h.text}</p></li>)}</ul></Card> : null}
+            <HypeGrowthCard />
             {data.evolution?.history?.length ? <Card><h2 className="type-h3 mb-2">{data.evolution.title ?? t("highlights.evolucao")}</h2><div className="flex h-24 items-end gap-1">{/* do mais antigo para o mais novo (a API manda do mais novo): os 24 dias mais recentes, em ordem */}{chronological(data.evolution.history).slice(-24).map((p) => <span key={p.date} title={`${fmtDate(p.date)}: ${p.score}`} className="flex-1 rounded-t bg-thread" style={{ height: `${p.score / 10}%` }} />)}</div></Card> : null}
             <Card><h2 className="type-h3 mb-2">{t("highlights.conquistas")}</h2><div className="flex flex-wrap gap-2">{(data.achievements ?? []).map((a) => <span key={a.code} className={`chip ${a.unlocked ? "active" : ""}`} title={a.unlockedAt ? fmtDate(a.unlockedAt) : t("highlights.bloqueada")}>{a.emoji ?? "🏅"} {a.name ?? a.code}{a.secret && " 🤫"}</span>)}</div></Card>
             {data.suggestedChallenges?.length ? <Card><h2 className="type-h3 mb-2">{t("highlights.desafios_sugeridos")}</h2><div className="flex flex-wrap gap-2">{data.suggestedChallenges.map((c) => <Link key={c.code} href={`/challenges?start=${c.code}`} className="chip">{c.name}</Link>)}</div></Card> : null}

@@ -15,6 +15,9 @@ import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
 import { HypeInline } from "@/components/hype/hype-inline";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { hypeViewState } from "@/lib/hype/model";
+import { useHypeSummary } from "@/lib/hype/use-hype";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { BrandLogo } from "@/components/brand-logo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
@@ -147,6 +150,15 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
  * opções"). As ferramentas de imagem (enquadramento, recorte, original × processado, logo) ficam em "Editar imagem",
  * dentro de "Mais opções", só para o dono; motor, provedor e diagnósticos ficam nos detalhes técnicos.
  */
+/**
+ * RF53 · P3-05 — Hype v2 de cada look em "Looks com esta peça". Lote via useHypeSummary (uma requisição para a lista);
+ * o endpoint respeita a visibilidade: o dono vê o Hype pessoal, terceiros só o que podem ver ("—" no resto, nunca 0).
+ */
+function LookHype({ id }: { id: string }) {
+  const { summary, loading, error } = useHypeSummary("SCHEME", id);
+  return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
+}
+
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
@@ -282,7 +294,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                 <div className="grid gap-1.5">{usedIn.map((s) => (
                   <button key={s.schemeId} type="button" className="list-row is-action flex items-center gap-2 text-left" onClick={() => (onScheme ? onScheme(s.schemeId) : router.push(`/schemes/${s.schemeId}`))}>
                     <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">{s.coverImageUrl && s.coverImageUrl !== "null" && <img src={mediaUrl(s.coverImageUrl)} alt="" className="h-full w-full object-cover" />}</span>
-                    <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span></button>))}</div>
+                    <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>

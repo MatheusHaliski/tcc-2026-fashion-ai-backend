@@ -1,10 +1,12 @@
 package br.com.fashionai.application.hype;
 
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.hype.HypeCalculator.Baseline;
 import br.com.fashionai.application.hype.HypeResult.HypeReason;
 import br.com.fashionai.application.hype.HypeScoreConfig.Dimension;
 import br.com.fashionai.domain.model.HypeDimensions;
+import br.com.fashionai.domain.model.HypeMilestone;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.HypeScoreSnapshot;
 import br.com.fashionai.domain.model.Scheme;
@@ -12,6 +14,8 @@ import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeLevel;
+import br.com.fashionai.domain.model.enums.HypeMomentum;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -23,6 +27,7 @@ import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,10 +72,12 @@ public class HypeSnapshotService {
     private final HypeScoreCurrentRepository current;
     private final HypeScoreSnapshotRepository snapshots;
     private final HypeCache cache;
+    /** RF53 · P1-10: marcos de Hype (subida de faixa / emergente) saem como evento depois de gravar o estado. */
+    private final ApplicationEventPublisher events;
 
     public HypeSnapshotService(HypeScoreConfig config, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                                HypeSignalDailyRepository signals, HypeScoreCurrentRepository current, HypeScoreSnapshotRepository snapshots,
-                               HypeCache cache) {
+                               HypeCache cache, ApplicationEventPublisher events) {
         this.config = config;
         this.calculator = new HypeCalculator(config);
         this.pieces = pieces;
@@ -80,6 +87,7 @@ public class HypeSnapshotService {
         this.current = current;
         this.snapshots = snapshots;
         this.cache = cache;
+        this.events = events;
     }
 
     /** Entrada de uma entidade + metadados que vão para o read model (recortes do ranking, dono, elegibilidade). */
@@ -327,11 +335,19 @@ public class HypeSnapshotService {
         Instant windowStart = now.minus(config.horizonDays(), ChronoUnit.DAYS);
         List<HypeScoreCurrent> toSave = new ArrayList<>();
         List<HypeScoreSnapshot> toSnap = new ArrayList<>();
+        List<DomainEvents.HypeMilestone> reached = new ArrayList<>();
         Set<UUID> seen = new HashSet<>();
         for (Entry e : entries) {
             HypeResult r = calculator.compute(e.inputs(), base);
             seen.add(e.id());
             HypeScoreCurrent c = existing.getOrDefault(e.id(), new HypeScoreCurrent());
+            // RF53 · P1-10: estado ANTERIOR (antes de sobrescrever) para detectar subida de faixa / emergente
+            boolean hadPrevious = existing.containsKey(e.id());
+            HypeLevel levelBefore = c.getLevel();
+            HypeMomentum momentumBefore = c.getMomentum();
+            for (HypeMilestone.Kind k : milestones(hadPrevious, levelBefore, momentumBefore, r.level(), r.momentum())) {
+                reached.add(new DomainEvents.HypeMilestone(type, e.id(), e.ownerId(), k, r.level(), r.momentum(), r.score(), e.publicEligible()));
+            }
             c.setEntityType(type);
             c.setEntityId(e.id());
             c.setOwnerId(e.ownerId());
@@ -387,10 +403,37 @@ public class HypeSnapshotService {
         }
         current.saveAll(toSave);
         snapshots.saveAll(toSnap);
+        // só depois de gravar: o HypeMilestoneNotifier ouve AFTER_COMMIT (rollback do job = nenhum aviso)
+        if (events != null) {
+            reached.forEach(events::publishEvent);
+        }
         // entidade arquivada/excluída sai do estado atual (e, portanto, de qualquer ranking); o histórico fica
         List<HypeScoreCurrent> gone = existing.values().stream().filter(c -> !seen.contains(c.getEntityId())).toList();
         current.deleteAll(gone);
         return toSave.size();
+    }
+
+    /**
+     * RF53 · P1-10 — marcos de Hype entre o estado anterior e o novo. Só SUBIDA: a faixa nova precisa ser Em alta,
+     * Tendência ou Viral e estar acima da anterior (queda ou permanência nunca contam); EMERGING conta quando surge (não
+     * estava emergente antes). Sem estado anterior (primeiro cálculo da entidade ou troca de {@code algorithmVersion})
+     * não há marco: não se compara com o nada, e uma nova versão do algoritmo não dispara avisos em massa. "Dados
+     * insuficientes" (faixa nula) → Em alta conta como subida. A 1ª vez (dedupe) fica com o notifier, que conhece o histórico.
+     */
+    static List<HypeMilestone.Kind> milestones(boolean hadPrevious, HypeLevel levelBefore, HypeMomentum momentumBefore,
+                                               HypeLevel levelAfter, HypeMomentum momentumAfter) {
+        if (!hadPrevious) {
+            return List.of();
+        }
+        List<HypeMilestone.Kind> out = new ArrayList<>(2);
+        HypeMilestone.Kind level = HypeMilestone.Kind.ofLevel(levelAfter);
+        if (level != null && (levelBefore == null || levelAfter.ordinal() > levelBefore.ordinal())) {
+            out.add(level);
+        }
+        if (momentumAfter == HypeMomentum.EMERGING && momentumBefore != HypeMomentum.EMERGING) {
+            out.add(HypeMilestone.Kind.EMERGING);
+        }
+        return out;
     }
 
     /** Score de referência para o delta: o snapshot mais recente com data ≤ hoje − janela (até 3 dias antes disso). */
