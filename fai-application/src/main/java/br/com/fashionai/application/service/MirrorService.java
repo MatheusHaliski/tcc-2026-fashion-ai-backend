@@ -224,7 +224,7 @@ public class MirrorService {
         boolean wideLower = subs.stream().anyMatch(Set.of("culottes", "skirt", "cargo_pants", "casual_pants", "sweatpants", "jogger_pants")::contains);
         boolean fittedLower = subs.stream().anyMatch(Set.of("leggings", "jeans", "tailored_pants", "chino_pants", "skort")::contains);
         boolean volUpper = subs.stream().anyMatch(Set.of("hoodie", "coat", "parka", "sweatshirt", "kimono", "jacket", "blazer")::contains);
-        boolean fittedUpper = subs.stream().anyMatch(Set.of("tank_top", "crop_top", "bodysuit", "polo_shirt", "t_shirt")::contains);
+        boolean fittedUpper = subs.stream().anyMatch(Set.of("tank_top", "crop_top", "top", "bodysuit", "polo_shirt", "t_shirt")::contains);
         boolean dress = subs.stream().anyMatch(Set.of("dress", "jumpsuit", "romper")::contains);
         boolean belt = subs.contains("belt");
         String letter = dress || belt ? "X" : wideLower && fittedUpper ? "A" : volUpper && fittedLower ? "V" : volUpper && wideLower ? "H" : "H";

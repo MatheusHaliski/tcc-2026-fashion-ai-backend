@@ -1548,6 +1548,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
   .fai-card.piece-card .c-post .c-actions .grow { display: none; }
   .fai-card.piece-card .c-post .c-act { padding: 0 3px; gap: 2px; min-width: 26px; font-size: 12px; }
   .fai-card.piece-card .c-post .c-act.is-share .c-act-n { display: none; }
+  .fai-card.piece-card .c-post .c-act.is-remix .c-act-n { display: none; }
   .piece-card .c-act-icon { width: 20px; height: 20px; }
   .piece-card .pc-id { padding: 0 10px 10px; }
 }

@@ -74,6 +74,8 @@ public class V34__integridade_referencial_por_dominio extends BaseJavaMigration 
     /**
      * Política completa: as 89 FKs da auditoria (KEEP inclusive) + as 20 novas, as 19 que a V29 (captura adaptativa) e a
      * V30 (catálogo global) criaram já na regra certa — entram para o verify acusar desvio — e 3 novas em wardrobe_items.
+     * Também as FKs de colunas simples criadas depois (V45 fila de revisão do catálogo, V46 linhagem do remix): num banco
+     * novo a V34 roda antes delas e só registra "tabela ou coluna inexistente"; o verify do pipeline demo as confere.
      */
     public static final List<Fk> POLICY = List.of(
             // → users
@@ -129,6 +131,7 @@ public class V34__integridade_referencial_por_dominio extends BaseJavaMigration 
             new Fk("refresh_tokens", "user_id", "users", "CASCADE"),
             new Fk("render_jobs_log", "user_id", "users", "CASCADE"),
             new Fk("room_catalog", "creator_user_id", "users", "SET NULL"),
+            new Fk("scheme_remix_sources", "source_owner_id", "users", "SET NULL"),
             new Fk("room_inventory", "user_id", "users", "CASCADE"),
             new Fk("room_layouts", "user_id", "users", "CASCADE"),
             new Fk("room_storage_map", "user_id", "users", "CASCADE"),
@@ -165,6 +168,7 @@ public class V34__integridade_referencial_por_dominio extends BaseJavaMigration 
             new Fk("piece_images", "session_id", "capture_sessions", "CASCADE"),
             new Fk("wardrobe_items", "capture_session_id", "capture_sessions", "SET NULL"),
             // → catalog_products (a peça do usuário segura o produto: a revalidação só apaga produto sem dono)
+            new Fk("ai_review_items", "product_id", "catalog_products", "CASCADE"),
             new Fk("catalog_images", "product_id", "catalog_products", "CASCADE"),
             new Fk("catalog_product_aliases", "product_id", "catalog_products", "CASCADE"),
             new Fk("catalog_variants", "product_id", "catalog_products", "CASCADE"),
@@ -215,6 +219,8 @@ public class V34__integridade_referencial_por_dominio extends BaseJavaMigration 
             new Fk("hype_score_metrics", "scheme_id", "schemes", "CASCADE"),
             new Fk("render_jobs_log", "scheme_id", "schemes", "CASCADE"),
             new Fk("scheme_items", "scheme_id", "schemes", "CASCADE"),
+            new Fk("scheme_remix_sources", "scheme_id", "schemes", "CASCADE"),
+            new Fk("scheme_remix_sources", "source_scheme_id", "schemes", "SET NULL"),
             new Fk("schemes", "original_scheme_id", "schemes", "SET NULL"),
             new Fk("seal_bonds", "scheme_id", "schemes", "CASCADE"),
             new Fk("week_plan_days", "scheme_id", "schemes", "SET NULL"),
@@ -229,6 +235,8 @@ public class V34__integridade_referencial_por_dominio extends BaseJavaMigration 
             new Fk("piece_usage_diary", "wardrobe_item_id", "wardrobe_items", "CASCADE"),
             new Fk("room_storage_map", "wardrobe_item_id", "wardrobe_items", "CASCADE"),
             new Fk("scheme_items", "wardrobe_item_id", "wardrobe_items", "CASCADE"),
+            new Fk("scheme_remix_sources", "mapped_piece_id", "wardrobe_items", "SET NULL"),
+            new Fk("scheme_remix_sources", "source_piece_id", "wardrobe_items", "SET NULL"),
             new Fk("wardrobe_availability_log", "wardrobe_item_id", "wardrobe_items", "CASCADE"),
             // → week_plans
             new Fk("week_plan_days", "week_plan_id", "week_plans", "CASCADE")

@@ -353,7 +353,7 @@ public class DnaService {
 
     static String silhouette(List<WardrobeItem> wardrobe) {
         Set<String> oversized = Set.of("hoodie", "sweatshirt", "parka", "coat", "cargo_pants", "sweatpants", "jogger_pants", "kimono");
-        Set<String> fitted = Set.of("bodysuit", "crop_top", "leggings", "tank_top", "tailored_pants", "skirt");
+        Set<String> fitted = Set.of("bodysuit", "crop_top", "top", "leggings", "tank_top", "tailored_pants", "skirt");
         Set<String> layering = Set.of("blazer", "cardigan", "jacket", "vest", "windbreaker", "coat");
         long o = wardrobe.stream().filter(w -> oversized.contains(w.getSubcategory())).count();
         long f = wardrobe.stream().filter(w -> fitted.contains(w.getSubcategory())).count();

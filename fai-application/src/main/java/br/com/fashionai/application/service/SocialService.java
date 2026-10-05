@@ -359,7 +359,9 @@ public class SocialService {
     public Map<String, Object> remix(CurrentUser user, TargetType type, UUID id) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
-        if (!t.available()) {
+        // indisponível vale para os outros: a dona remixa a própria peça mesmo marcada como indisponível (vira semente)
+        boolean ownPiece = type == TargetType.PIECE && t.owner().getId().equals(user.id());
+        if (!t.available() && !ownPiece) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("social.o_autor_marcou_este_conteudo"));
         }
         if (type == TargetType.SCHEME) {
@@ -371,7 +373,8 @@ public class SocialService {
             WardrobeItem w = (WardrobeItem) t.entity();
             notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REMIX, "PIECE", id,
                     Msg.k("social.remixou_a_peca", user.username(), w.getName()), null, null);
-            return Map.of("next", "/create-look?seedPiece=" + id, "sourcePiece", Views.piece(w, null, null),
+            // a peça entra como semente no criador de looks (scheme-builder lê ?pieces=)
+            return Map.of("next", "/schemes/new?pieces=" + id, "sourcePiece", Views.piece(w, null, null),
                     "hint", w.getUser().getId().equals(user.id()) ? Msg.t("social.a_peca_entra_como_semente")
                             : Msg.t("social.adicione_a_peca_ao_seu"));
         }

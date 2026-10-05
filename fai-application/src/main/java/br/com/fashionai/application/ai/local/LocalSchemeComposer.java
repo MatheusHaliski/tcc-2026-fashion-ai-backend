@@ -212,14 +212,14 @@ public final class LocalSchemeComposer {
             return 0;
         }
         String sub = w.getSubcategory() == null ? "" : w.getSubcategory();
-        Set<String> warm = Set.of("shorts", "bermuda_shorts", "denim_shorts", "tank_top", "crop_top", "sandals",
+        Set<String> warm = Set.of("shorts", "bermuda_shorts", "denim_shorts", "tank_top", "crop_top", "top", "sandals",
                 "flip_flops", "espadrilles", "skirt", "skort");
         Set<String> cold = Set.of("coat", "parka", "sweater", "sweatshirt", "hoodie", "cardigan", "long_boots",
-                "ankle_boots", "combat_boots", "beanie", "scarf", "gloves");
+                "ankle_boots", "combat_boots", "boots", "beanie", "scarf", "gloves");
         return switch (season.toUpperCase(Locale.ROOT)) {
             case "SUMMER" -> warm.contains(sub) ? 1.0 : cold.contains(sub) || "WOOL".equals(w.getMaterial()) ? -1.5 : 0;
             case "WINTER" -> cold.contains(sub) || "WOOL".equals(w.getMaterial()) ? 1.0 : warm.contains(sub) ? -1.5 : 0;
-            case "AUTUMN" -> Set.of("jacket", "cardigan", "ankle_boots", "blazer").contains(sub) ? 0.8 : 0;
+            case "AUTUMN" -> Set.of("jacket", "cardigan", "ankle_boots", "boots", "blazer").contains(sub) ? 0.8 : 0;
             case "SPRING" -> Set.of("blouse", "t_shirt", "shirt", "flats", "loafers").contains(sub) ? 0.8 : 0;
             default -> 0;
         };

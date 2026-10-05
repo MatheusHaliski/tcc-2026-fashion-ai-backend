@@ -26,6 +26,10 @@ public class AiReviewItem extends VersionedAuditableEntity {
     @Column(name = "kind", nullable = false, length = 20)
     private AiReviewKind kind;
 
+    /** PIECE (peça de uma pessoa) · CATALOG_PRODUCT (produto do catálogo, sem dona — V45). */
+    @Column(name = "target_type", nullable = false, length = 20)
+    private String targetType = "PIECE";
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AiReviewStatus status;
@@ -36,10 +40,14 @@ public class AiReviewItem extends VersionedAuditableEntity {
     @Column(name = "piece_id", length = 36)
     private UUID pieceId;
 
+    @Column(name = "product_id", length = 36)
+    private UUID productId;
+
     @Column(name = "image_id", length = 36)
     private UUID imageId;
 
-    @Column(name = "user_id", nullable = false, length = 36)
+    /** Dona da peça; null para item de produto do catálogo. */
+    @Column(name = "user_id", length = 36)
     private UUID userId;
 
     @Column(name = "field", nullable = false, length = 40)
