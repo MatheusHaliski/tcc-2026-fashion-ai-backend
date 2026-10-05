@@ -23,7 +23,7 @@ class RecommendationScoringTest {
     @Test
     void hypeIsContextNeverTheMainCriterion() {
         RecommendationScoring.WEIGHTS.values().forEach(w -> {
-            double total = w[0] + w[1] + w[2] + w[3];
+            double total = java.util.Arrays.stream(w).sum();
             assertThat(w[1] / total).isLessThanOrEqualTo(0.20);
         });
         Scores viralButFarFromStyle = new Scores(20, 100, 50, 50);
@@ -50,6 +50,32 @@ class RecommendationScoringTest {
         assertThat(RecommendationScoring.reuse(List.of(120L, 60L))).isEqualTo(100);
         assertThat(RecommendationScoring.reuse(List.of(0L, 30L))).isEqualTo(25);
         assertThat(RecommendationScoring.reuse(List.of())).isNull();
+    }
+
+    @Test
+    void usageRewardsPiecesActuallyWorn() {
+        assertThat(RecommendationScoring.usage(List.of(8, 16))).isEqualTo(100);
+        assertThat(RecommendationScoring.usage(List.of(0, 4))).isEqualTo(25);
+        assertThat(RecommendationScoring.usage(List.of())).isNull();
+    }
+
+    @Test
+    void sustainabilityRewardsOwnedAndLittleWornPieces() {
+        // tudo próprio e nunca usado: 0,5·1 + 0,5·1 = 100
+        assertThat(RecommendationScoring.sustainability(List.of(0, 0), 2, 2)).isEqualTo(100);
+        // metade a comprar e peças muito usadas valem menos
+        assertThat(RecommendationScoring.sustainability(List.of(9, 9), 1, 2)).isEqualTo(38);
+        assertThat(RecommendationScoring.sustainability(List.of(), 0, 0)).isNull();
+    }
+
+    @Test
+    void sixDimensionsAllCountAndMissingOnesStayNeutral() {
+        Scores sustainable = new Scores(60, 50, 50, 50, 90, 95);
+        Scores wasteful = new Scores(60, 50, 50, 50, 10, 5);
+        for (Mode m : Mode.values()) {
+            assertThat(RecommendationScoring.rankValue(m, sustainable)).isGreaterThan(RecommendationScoring.rankValue(m, wasteful));
+        }
+        assertThat(new Scores(1, 2, 3, 4).toMap()).containsEntry("usage", null).containsEntry("sustainability", null);
     }
 
     @Test

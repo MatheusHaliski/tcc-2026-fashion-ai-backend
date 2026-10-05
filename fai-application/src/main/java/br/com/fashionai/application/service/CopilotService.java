@@ -30,6 +30,8 @@ import br.com.fashionai.domain.repository.StyleDnaRepository;
 import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.hype.RecommendationScoring;
 import br.com.fashionai.application.hype.StyleCompatibility;
+import br.com.fashionai.application.insights.InsightContext;
+import br.com.fashionai.application.insights.InsightService;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
@@ -194,14 +196,20 @@ public class CopilotService {
     private final BackgroundStudioService backgroundStudio;
     /** HypeScore v2 — contexto de recomendação (nunca critério único) */
     private final HypeQueryService hype;
+    /** Seis dimensões por look — a mesma régua do Autopiloto. */
+    private final LookScorer scorer;
+    /** Insights dinâmicos do contexto COPILOT (Hype ao lado do DNA e do uso, redescoberta antes de compra). */
+    private final InsightService insights;
     private final Map<UUID, Deque<String>> shown = new ConcurrentHashMap<>();
 
     public CopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                           DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, RoomService room,
                           MirrorService mirror, InventoryScoreService inventory, ChallengeService challenges, AutopilotService autopilot,
                           DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService,
-                          BackgroundStudioService backgroundStudio, HypeQueryService hype) {
+                          BackgroundStudioService backgroundStudio, HypeQueryService hype, InsightService insights) {
         this.hype = hype;
+        this.insights = insights;
+        this.scorer = new LookScorer(pieces, schemes, schemeItems, dnas, hype);
         this.schemeService = schemeService;
         this.backgroundStudio = backgroundStudio;
         this.wardrobe = wardrobe;
@@ -293,11 +301,15 @@ public class CopilotService {
                 fresh.add(m);
             }
         }
-        out.put("newCombinations", fresh);
-        // 3) peças esquecidas: disponíveis e sem uso há 30+ dias (ou nunca usadas)
-        LocalDate limit = LocalDate.now().minusDays(30);
-        out.put("forgottenPieces", eligible.stream().filter(x -> x.getLastWornDate() == null || x.getLastWornDate().isBefore(limit))
-                .sorted(Comparator.comparing((WardrobeItem x) -> x.getLastWornDate() == null ? LocalDate.MIN : x.getLastWornDate()))
+        // P2-16 — os mesmos seis números dos looks do chat e do Autopiloto (LookScorer): compatibilidade com o DNA, Hype
+        // (média v2 das peças), novidade, reutilização, uso e sustentabilidade, lado a lado e nunca somados. Sem modo
+        // escolhido, a ordem do motor local fica como está; dimensão sem base vem nula ("—"), nunca 0.
+        out.put("newCombinations", fresh.isEmpty() ? fresh : scoreLooks(user, fresh, null));
+        // 3) peças esquecidas: a MESMA régua do app inteiro (RoomService.forgotten — 60+ dias desde o último uso ou, se
+        //    nunca usada, desde o cadastro). Antes era 30 dias aqui e "nunca usada" contava até para peça cadastrada ontem.
+        LocalDate todayZ = LocalDate.now(FaiPointsService.ZONE);
+        out.put("forgottenPieces", eligible.stream().filter(x -> RoomService.forgotten(x, x.getLastWornDate(), todayZ))
+                .sorted(Comparator.comparingLong((WardrobeItem x) -> -HypeQueryService.idleDays(x, todayZ)))
                 .limit(6).map(x -> Views.piece(x, null, null)).toList());
         // 4) peças para o clima: mesma régua do Autopiloto (faixa de temperatura → descarta peças inadequadas; camadas no frio)
         String band = w.band();
@@ -314,6 +326,8 @@ public class CopilotService {
                         Comparator.nullsLast(Comparator.<java.math.BigDecimal>reverseOrder())))
                 .limit(4).map(s -> schemeService.view(user, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
         out.put("suggestedPrompts", promptsFor("COPILOT"));
+        // insights dinâmicos do contexto COPILOT: Hype sempre ao lado do DNA/uso, redescoberta antes de qualquer compra
+        out.put("insights", insights.itemsOrEmpty(user, InsightContext.COPILOT));
         return out;
     }
 
@@ -877,33 +891,7 @@ public class CopilotService {
         out.put("reuse", reuseSuggestions);
         // 2) sugestão de compra só depois, com Δcombinações > 0, genérica e com opt-out
         boolean enabled = preferences.findByUserId(user.id()).map(UserPreferences::isPurchaseSuggestionsEnabled).orElse(true);
-        List<Map<String, Object>> purchases = new ArrayList<>();
-        if (enabled) {
-            long base = InventoryScoreService.combos(a, 0, null).total();
-            WeatherService.Context none = WeatherService.Context.none("");
-            for (LocalAdvisors.PieceSuggestion g : LocalAdvisors.wardrobeGaps(a, none.temperatureC())) {
-                String cat = Taxonomy.categoryOf(g.subcategory());
-                Set<String> occ = new LinkedHashSet<>();
-                a.stream().flatMap(w -> Json.csv(w.getOccasionTags()).stream()).collect(Collectors.groupingBy(o -> o, Collectors.counting()))
-                        .entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(2).forEach(e -> occ.add(e.getKey()));
-                WardrobeItem hyp = new WardrobeItem();
-                hyp.setCategory(cat);
-                hyp.setSubcategory(g.subcategory());
-                hyp.setColor(g.color());
-                hyp.setOccasionTags(String.join(",", occ));
-                hyp.setDisponivel(true);
-                hyp.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
-                List<WardrobeItem> plus = new ArrayList<>(a);
-                plus.add(hyp);
-                long gain = InventoryScoreService.combos(plus, 0, null).total() - base;
-                if (gain > 0) {
-                    purchases.add(Map.of("category", String.valueOf(cat), "subcategory", g.subcategory(), "color", g.color(), "occasions", occ,
-                            "gain", gain, "gainText", Msg.t("copilot.combinacoes_possiveis", gain), "reason", g.reason(), "external", true,
-                            "action", Map.of("type", "ADD_PIECE", "label", Msg.t("copilot.cadastrar_se_voce_ja_tiver"), "href", "/pieces/new")));
-                }
-            }
-            purchases.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("gain")).reversed());
-        }
+        List<Map<String, Object>> purchases = enabled ? purchaseSuggestions(a) : new ArrayList<>();
         out.put("purchaseSuggestions", enabled ? purchases.stream().limit(3).toList() : List.of());
         out.put("purchaseSuggestionsEnabled", enabled);
         out.put("purchaseRules", List.of(Msg.t("copilot.reuso_antes_de_compra"), Msg.t("copilot.combinacoes_visivel"), Msg.t("copilot.sem_marca_ou_produto"), Msg.t("copilot.patrocinio_so_em_bloco_separado"), Msg.t("copilot.opt_out_em_preferencias")));
@@ -911,6 +899,40 @@ public class CopilotService {
         out.put("text", String.join(" ", findings) + (purchases.isEmpty() || !enabled ? "" : Msg.t("copilot.depois_de_reaproveitar_o_que", purchases.get(0).get("subcategory"), purchases.get(0).get("color"), purchases.get(0).get("gainText"))));
         out.put("tools", List.of("buscar_pecas", "historico_uso", "ler_inventory_score"));
         return out;
+    }
+
+    /**
+     * Sugestões de compra GENÉRICAS (subcategoria + cor, nunca marca ou produto) que aumentam as combinações válidas do
+     * acervo disponível ({@code InventoryScoreService.combos}), em ordem de ganho. Só aparecem DEPOIS do reuso (quem chama
+     * mostra antes as peças esquecidas e as combinações não descobertas) e respeitam o opt-out das preferências.
+     */
+    public static List<Map<String, Object>> purchaseSuggestions(List<WardrobeItem> a) {
+        List<Map<String, Object>> purchases = new ArrayList<>();
+        long base = InventoryScoreService.combos(a, 0, null).total();
+        WeatherService.Context none = WeatherService.Context.none("");
+        for (LocalAdvisors.PieceSuggestion g : LocalAdvisors.wardrobeGaps(a, none.temperatureC())) {
+            String cat = Taxonomy.categoryOf(g.subcategory());
+            Set<String> occ = new LinkedHashSet<>();
+            a.stream().flatMap(w -> Json.csv(w.getOccasionTags()).stream()).collect(Collectors.groupingBy(o -> o, Collectors.counting()))
+                    .entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(2).forEach(e -> occ.add(e.getKey()));
+            WardrobeItem hyp = new WardrobeItem();
+            hyp.setCategory(cat);
+            hyp.setSubcategory(g.subcategory());
+            hyp.setColor(g.color());
+            hyp.setOccasionTags(String.join(",", occ));
+            hyp.setDisponivel(true);
+            hyp.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+            List<WardrobeItem> plus = new ArrayList<>(a);
+            plus.add(hyp);
+            long gain = InventoryScoreService.combos(plus, 0, null).total() - base;
+            if (gain > 0) {
+                purchases.add(Map.of("category", String.valueOf(cat), "subcategory", g.subcategory(), "color", g.color(), "occasions", occ,
+                        "gain", gain, "gainText", Msg.t("copilot.combinacoes_possiveis", gain), "reason", g.reason(), "external", true,
+                        "action", Map.of("type", "ADD_PIECE", "label", Msg.t("copilot.cadastrar_se_voce_ja_tiver"), "href", "/pieces/new")));
+            }
+        }
+        purchases.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("gain")).reversed());
+        return purchases;
     }
 
     /** CA02/CA03/CA05 — 3 looks distintos com justificativa; sem repetir a rodada anterior; fallback local. */
@@ -993,59 +1015,12 @@ public class CopilotService {
 
     // ================================================================== HypeScore v2 como contexto
     /**
-     * Pontua cada look sugerido em quatro dimensões independentes (compatibilidade com o DNA, Hype, novidade, reutilização)
-     * e, com um modo escolhido, reordena pelo peso do modo. Sem modo, mantém a ordem do motor e só mostra os números.
+     * Pontua cada look sugerido nas seis dimensões independentes de {@link RecommendationScoring} (a mesma régua do
+     * Autopiloto, em {@link LookScorer}) e, com um modo escolhido, reordena pelo peso do modo. Sem modo, mantém a ordem
+     * do motor e só mostra os números.
      */
     List<Map<String, Object>> scoreLooks(CurrentUser user, List<Map<String, Object>> cards, RecommendationScoring.Mode mode) {
-        if (cards.isEmpty()) {
-            return cards;
-        }
-        LocalDate today = LocalDate.now(FaiPointsService.ZONE);
-        StyleCompatibility.Profile dna = dnas.findByUserId(user.id()).map(HypeQueryService::profileOf).orElse(null);
-        Set<String> seen = new HashSet<>();
-        List<Scheme> mine = schemes.findByUserIdOrderByCreatedAtDesc(user.id());
-        if (!mine.isEmpty()) {
-            schemeItems.findBySchemeIdIn(mine.stream().map(Scheme::getId).toList()).stream()
-                    .collect(Collectors.groupingBy(si -> si.getScheme().getId(), Collectors.mapping(si -> si.getWardrobeItem().getId(), Collectors.toList())))
-                    .values().forEach(ids -> {
-                        for (int a = 0; a < ids.size(); a++) {
-                            for (int b = a + 1; b < ids.size(); b++) {
-                                seen.add(RecommendationScoring.pair(ids.get(a), ids.get(b)));
-                            }
-                        }
-                    });
-        }
-        List<Map<String, Object>> out = new ArrayList<>();
-        Map<Map<String, Object>, Double> rank = new java.util.IdentityHashMap<>();
-        for (Map<String, Object> card : cards) {
-            @SuppressWarnings("unchecked") List<UUID> ids = (List<UUID>) card.getOrDefault("pieceIds", List.of());
-            List<WardrobeItem> look = ids.isEmpty() ? List.of() : pieces.findByIdIn(ids);
-            Map<UUID, HypeScoreCurrent> h = hype.currentOf(HypeEntityType.PIECE, ids);
-            List<Double> hypes = h.values().stream().filter(c -> c.getScore() != null).map(c -> c.getScore().doubleValue()).toList();
-            Integer compat = null;
-            if (dna != null && !look.isEmpty()) {
-                Set<String> styles = new LinkedHashSet<>(), colors = new LinkedHashSet<>(), occasions = new LinkedHashSet<>();
-                look.forEach(w -> {
-                    styles.addAll(Json.csv(w.getStyleTags()));
-                    colors.addAll(HypeQueryService.colorsOf(w));
-                    occasions.addAll(Json.csv(w.getOccasionTags()));
-                });
-                Map<String, Object> c = StyleCompatibility.score(dna, StyleCompatibility.profile(styles, colors, occasions));
-                compat = c == null ? null : ((Number) c.get("score")).intValue();
-            }
-            RecommendationScoring.Scores scores = new RecommendationScoring.Scores(compat,
-                    hypes.isEmpty() ? null : (int) Math.round(hypes.stream().mapToDouble(Double::doubleValue).average().orElse(0)),
-                    RecommendationScoring.novelty(ids, seen),
-                    RecommendationScoring.reuse(look.stream().map(w -> HypeQueryService.idleDays(w, today)).toList()));
-            Map<String, Object> m = new LinkedHashMap<>(card);
-            m.put("scores", scores.toMap());
-            rank.put(m, RecommendationScoring.rankValue(mode, scores));
-            out.add(m);
-        }
-        if (mode != null) {
-            out.sort(Comparator.comparingDouble((Map<String, Object> m) -> rank.get(m)).reversed());
-        }
-        return out;
+        return scorer.scoreCards(user, cards, mode);
     }
 
     /**
@@ -1104,7 +1079,7 @@ public class CopilotService {
                     .sorted(Comparator.comparing((WardrobeItem w) -> h.get(w.getId()).getDimensions().getRarity()).reversed()).limit(5).toList();
         } else if (t.matches(".*(voltando|volta a ser|voltar a ser|comeback|coming back|volviendo|vuelve a ser).*")) {
             header = Msg.t("copilot.hype.comeback");
-            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= 60 && comeback(h.get(w.getId())))
+            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= RoomService.FORGOTTEN_DAYS && comeback(h.get(w.getId())))
                     .sorted(Comparator.comparingDouble((WardrobeItem w) -> similarGrowth(h.get(w.getId()))).reversed()).limit(5).toList();
         } else if (t.matches(".*(crescend|subindo|growing|rising|creciendo|em crescimento|aumentando).*")) {
             header = Msg.t("copilot.hype.rising", hype.config().deltaWindowDays());

@@ -8,6 +8,8 @@ import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeLiveRecalc;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.moderation.UploadQuarantine;
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.ports.BackupPort;
@@ -71,15 +73,28 @@ public class AdminService {
     /** Quantos backups COMPLETED manter (os mais antigos têm o arquivo apagado do storage). */
     @Value("${fashionai.backup.retention-count:14}")
     private int backupRetention = 14;
+    /** HypeScore v2 (P3-14): configuração ativa e recálculo ao vivo, só para exibir o estado em Admin › Sistema. */
+    private final HypeScoreConfig hypeConfig;
+    private final ObjectProvider<HypeLiveRecalc> hypeLive;
+    /** Mesmas propriedades (e padrões) de HypeSnapshotService e HypeLiveRecalc: aqui só são lidas para exibição. */
+    @Value("${fashionai.hype.cron:0 20 */6 * * *}")
+    private String hypeCron = "0 20 */6 * * *";
+    @Value("${fashionai.hype.live-recalc-enabled:true}")
+    private boolean hypeLiveEnabled = true;
+    @Value("${fashionai.hype.live-recalc-seconds:120}")
+    private long hypeLiveSeconds = 120;
 
     public AdminService(UserRepository users, ModerationQueueRepository moderation,
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
                         BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics,
                         IdentityService identity, NotificationService notifications, AssetCatalogService assets, ChallengeService challenges,
                         HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
-                        UploadQuarantine quarantine, br.com.fashionai.application.hype.HypeSnapshotService hypeV2) {
+                        UploadQuarantine quarantine, br.com.fashionai.application.hype.HypeSnapshotService hypeV2,
+                        HypeScoreConfig hypeConfig, ObjectProvider<HypeLiveRecalc> hypeLive) {
         this.quarantine = quarantine;
         this.hypeV2 = hypeV2;
+        this.hypeConfig = hypeConfig;
+        this.hypeLive = hypeLive;
         this.users = users;
         this.moderation = moderation;
         this.pieces = pieces;
@@ -207,13 +222,38 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Map<String, Object> aiOverview(CurrentUser admin) {
         guard.requireAdmin(admin);
-        return Map.of("providers", ai.providerAvailability(), "remoteEnabled", ai.remoteEnabled(),
-                "catalog", AiCatalog.all().stream().map(s -> Map.of("capability", s.capability().name(), "name", s.capability().officialName(),
-                        "hostRf", s.capability().hostRf(), "primary", s.primary() == null ? "" : s.primary().service() + " · " + s.primary().model(),
-                        "fallback", s.fallbackBehavior(), "dailyQuota", s.dailyQuotaPerUser(), "status", s.status())).toList(),
-                "recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(l -> Map.<String, Object>of("capability", l.getCapability(),
-                        "provider", l.getProvider(), "model", String.valueOf(l.getModel()), "latencyMs", l.getLatencyMs(), "costUsd", String.valueOf(l.getEstimatedCostUsd()),
-                        "result", l.getResult().name(), "fallback", l.isFallbackUsed(), "at", l.getCreatedAt())).toList());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("providers", ai.providerAvailability());
+        out.put("remoteEnabled", ai.remoteEnabled());
+        out.put("catalog", AiCatalog.all().stream().map(s -> Map.of("capability", s.capability().name(), "name", s.capability().officialName(),
+                "hostRf", s.capability().hostRf(), "primary", s.primary() == null ? "" : s.primary().service() + " · " + s.primary().model(),
+                "fallback", s.fallbackBehavior(), "dailyQuota", s.dailyQuotaPerUser(), "status", s.status())).toList());
+        out.put("recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(l -> Map.<String, Object>of("capability", l.getCapability(),
+                "provider", l.getProvider(), "model", String.valueOf(l.getModel()), "latencyMs", l.getLatencyMs(), "costUsd", String.valueOf(l.getEstimatedCostUsd()),
+                "result", l.getResult().name(), "fallback", l.isFallbackUsed(), "at", l.getCreatedAt())).toList());
+        // Admin › Sistema (IA & sistema) lê o estado do job v2 deste mesmo endpoint (campo aditivo, P3-14)
+        out.put("hypeV2", hypeV2State());
+        return out;
+    }
+
+    /**
+     * HypeScore v2 em Admin › Sistema (P3-14): versão do algoritmo, último cálculo gravado (job de 6 h ou recálculo ao
+     * vivo — lido de hype_scores, nada é recalculado aqui), agenda do job, recálculo ao vivo (ligado, intervalo, pendente)
+     * e cobertura por tipo (AVAILABLE · INSUFFICIENT · NOT_CALCULATED). O v1 continua no mesmo job "hype" até P3-16.
+     */
+    Map<String, Object> hypeV2State() {
+        String version = hypeConfig.algorithmVersion();
+        Map<String, Object> m = new LinkedHashMap<>(DashboardService.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
+        m.put("cron", hypeCron);
+        HypeLiveRecalc live = hypeLive.getIfAvailable();
+        Map<String, Object> l = new LinkedHashMap<>();
+        l.put("enabled", hypeLiveEnabled && live != null);
+        l.put("intervalSeconds", Math.max(10, hypeLiveSeconds));
+        l.put("pending", live != null && live.isDirty());
+        m.put("live", l);
+        m.put("coverage", DashboardService.hypeV2Block(List.of(), analytics.hypeCoverageV2(
+                new AnalyticsQueryPort.Filter(Instant.EPOCH, Instant.now(), null, null), version), Map.of(), hypeConfig, Instant.now()).get("coverage"));
+        return m;
     }
 
     // ================================================================== backups (RNF) e jobs

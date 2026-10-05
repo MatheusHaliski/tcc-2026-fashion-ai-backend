@@ -6,12 +6,14 @@ import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.ports.SearchIndexPort;
 import br.com.fashionai.application.ports.TimelineProjectionPort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.Share;
@@ -21,6 +23,10 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeLevel;
+import br.com.fashionai.domain.model.enums.HypeMomentum;
+import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
@@ -29,6 +35,7 @@ import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.FollowRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
@@ -45,9 +52,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -57,6 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -64,12 +76,25 @@ import java.util.stream.Collectors;
  * Marcas e Celebridades (CA02), filtros combináveis em chips (CA03), sugestões quando vazio (CA04), nunca conteúdo
  * privado ou bloqueado (CA05) e paginação por cursor sem duplicar (CA06). Inclui The Runway (feed de quem se segue,
  * compartilhamentos no feed interno, vínculos das marcas seguidas) e a vitrine de Peças Públicas.
+ * <p>
+ * HypeScore v2 (RF53 · Lote 1 da auditoria de abas): a relevância do feed e o "Em alta na comunidade" da busca vazia leem
+ * o estado gravado pelo job ({@code hype_scores}); o filtro {@code hypeLevel} ("Em alta" = faixa mínima) vale para feed,
+ * busca (Looks e Peças) e Peças Públicas. Em contexto de terceiros só conta o Hype {@code publicEligible} e disponível;
+ * sem Hype público o item fica neutro na ordem e fora do filtro (nunca vira 0). GET nunca recalcula nem emite sinal.
  */
 @Service
 public class SearchService {
     public static final List<String> TABS = List.of("LOOKS", "PECAS", "PESSOAS", "MARCAS", "CELEBRIDADES");
 
-    public record Filters(String style, String occasion, String color, String brand, String category) {
+    /**
+     * Filtros combináveis (CA03). {@code hypeLevel} é FILTRO de faixa mínima do HypeScore v2 público (ex.: HOT = "Em alta"),
+     * nunca aba nem ordenação; {@link #empty()} continua olhando só os atributos do look/peça.
+     */
+    public record Filters(String style, String occasion, String color, String brand, String category, String hypeLevel) {
+        public Filters(String style, String occasion, String color, String brand, String category) {
+            this(style, occasion, color, brand, category, null);
+        }
+
         boolean empty() {
             return blank(style) && blank(occasion) && blank(color) && blank(brand) && blank(category);
         }
@@ -94,6 +119,9 @@ public class SearchService {
             }
             if (!blank(category)) {
                 out.add(Map.of("key", "category", "value", category));
+            }
+            if (!blank(hypeLevel)) {
+                out.add(Map.of("key", "hypeLevel", "value", hypeLevel.trim().toUpperCase(Locale.ROOT)));
             }
             return out;
         }
@@ -139,12 +167,15 @@ public class SearchService {
     private final ChallengeService challenges;
     private final Guard guard;
     private final BrandRepository catalog;
+    /** HypeScore v2: estado atual lido direto do repositório (sem HypeQueryService, como o WardrobeService). */
+    private final HypeScoreCurrentRepository hypeScores;
+    private final HypeScoreConfig hypeConfig;
 
     public SearchService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces, UserRepository users,
                          BrandProfileRepository brands, CelebrityProfileRepository celebrities, FollowRepository follows, ShareRepository shares,
                          SealBondRepository bonds, StyleDnaRepository dnas, ObjectProvider<SearchIndexPort> searchIndex,
                          ObjectProvider<TimelineProjectionPort> timeline, SchemeService schemeService, ChallengeService challenges, Guard guard,
-                         BrandRepository catalog) {
+                         BrandRepository catalog, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
         this.schemes = schemes;
         this.schemeItems = schemeItems;
         this.pieces = pieces;
@@ -161,6 +192,8 @@ public class SearchService {
         this.challenges = challenges;
         this.guard = guard;
         this.catalog = catalog;
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
     }
 
     // ================================================================== visibilidade (CA05)
@@ -220,14 +253,142 @@ public class SearchService {
                 && (Filters.blank(f.category()) || f.category().equals(w.getCategory()));
     }
 
-    /** Relevância: recência (meia-vida de 3 dias) + Hype + afinidade com o DNA do usuário. */
-    static double relevance(Scheme s, List<SchemeItem> items, Set<String> dnaStyles) {
+    /**
+     * Relevância: recência (meia-vida de 3 dias) + HypeScore v2 PÚBLICO do look + afinidade com o DNA de quem vê.
+     * {@code publicHype} nulo (sem Hype público: dados insuficientes, ainda não calculado ou Hype só pessoal) = 0,5 neutro,
+     * para não punir conteúdo novo; o v1 ({@code Scheme.hypeScore}) não entra mais.
+     */
+    static double relevance(Scheme s, List<SchemeItem> items, Set<String> dnaStyles, Double publicHype) {
         Instant at = s.getPublishedAt() == null ? s.getCreatedAt() : s.getPublishedAt();
         double hours = Math.max(0, Duration.between(at, Instant.now()).toHours());
         double recency = Math.pow(0.5, hours / 72.0);
-        double hype = s.getHypeScore() == null ? 0 : s.getHypeScore().doubleValue() / 100.0;
+        double hype = publicHype == null ? NEUTRAL_HYPE : Math.max(0, Math.min(100, publicHype)) / 100.0;
         double affinity = dnaStyles.isEmpty() ? 0 : Similarity.jaccard(dnaStyles, new HashSet<>(Json.csv(s.getStyle())));
         return 0.5 * recency + 0.3 * hype + 0.2 * affinity;
+    }
+
+    // ================================================================== HypeScore v2 em contexto de terceiros (RF53)
+    /** Hype de um look sem base pública na relevância do feed: meio da escala (neutro). */
+    static final double NEUTRAL_HYPE = 0.5;
+    /** Quantos looks do topo público a busca vazia examina para mostrar 6 visíveis (bloqueios e visibilidade cortam alguns). */
+    static final int TRENDING_POOL = 30;
+
+    /**
+     * Linha de Hype que pode ORDENAR, FILTRAR ou AGREGAR em contexto de terceiros: só {@code publicEligible} e AVAILABLE
+     * com score. Item privado ou só para seguidores tem Hype pessoal (do dono), que nunca entra em vitrine pública.
+     */
+    static HypeScoreCurrent publicRow(HypeScoreCurrent c) {
+        return c != null && c.isPublicEligible() && c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null ? c : null;
+    }
+
+    /** Score v2 público (nulo = sem Hype público: fica neutro ou por último, nunca 0). */
+    static Double publicScore(HypeScoreCurrent c) {
+        HypeScoreCurrent p = publicRow(c);
+        return p == null ? null : p.getScore().doubleValue();
+    }
+
+    /** Como {@link #publicScore}, mas o próprio dono usa o Hype pessoal (vitrine do próprio perfil). */
+    static Double scoreFor(HypeScoreCurrent c, boolean self) {
+        if (self && c != null && c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null) {
+            return c.getScore().doubleValue();
+        }
+        return publicScore(c);
+    }
+
+    /** Dimensão TREND (crescimento recente) com a mesma regra de visibilidade: tendência ≠ popularidade. */
+    static Double trendFor(HypeScoreCurrent c, boolean self) {
+        if (scoreFor(c, self) == null || c.getDimensions() == null || c.getDimensions().getTrend() == null) {
+            return null;
+        }
+        return c.getDimensions().getTrend().doubleValue();
+    }
+
+    /** Variação em pontos contra a semana anterior (ordem "Em crescimento"), com a mesma regra de visibilidade. */
+    static Double growthFor(HypeScoreCurrent c, boolean self) {
+        return scoreFor(c, self) == null || c.getDeltaPoints() == null ? null : c.getDeltaPoints().doubleValue();
+    }
+
+    /** Momento de alta (RISING ou EMERGING) no Hype público. */
+    static boolean risingFor(HypeScoreCurrent c, boolean self) {
+        return scoreFor(c, self) != null && (c.getMomentum() == HypeMomentum.RISING || c.getMomentum() == HypeMomentum.EMERGING);
+    }
+
+    /** Estado v2 de vários itens numa consulta (uma por página/lista). Sem repositório (testes antigos) = vazio. */
+    static Map<UUID, HypeScoreCurrent> hypeRows(HypeScoreCurrentRepository repo, HypeScoreConfig cfg, HypeEntityType type, Collection<UUID> ids) {
+        if (repo == null || cfg == null || ids == null || ids.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<UUID> distinct = ids.stream().filter(Objects::nonNull).distinct().toList();
+        if (distinct.isEmpty()) {
+            return new HashMap<>();
+        }
+        return repo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, distinct, cfg.algorithmVersion()).stream()
+                .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, Function.identity(), (a, b) -> a, HashMap::new));
+    }
+
+    Map<UUID, HypeScoreCurrent> hypeRows(HypeEntityType type, Collection<UUID> ids) {
+        return hypeRows(hypeScores, hypeConfig, type, ids);
+    }
+
+    /** Faixa mínima pedida no filtro (nulo = sem filtro). Valor desconhecido = 400, com as faixas válidas. */
+    static HypeLevel parseLevel(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return HypeLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw ApiException.badRequest("NIVEL_INVALIDO", "hypeLevel: " + Arrays.toString(HypeLevel.values()));
+        }
+    }
+
+    /** Score mínimo da faixa (limiares do HypeScoreConfig; LOW_SIGNAL = qualquer score público). */
+    static double levelMinimum(HypeScoreConfig cfg, HypeLevel level) {
+        int[] t = cfg == null ? HypeScoreConfig.defaults().levelThresholds() : cfg.levelThresholds();
+        return level == null || level.ordinal() == 0 ? 0 : t[Math.min(t.length, level.ordinal()) - 1];
+    }
+
+    /**
+     * O item passa no filtro de faixa mínima? Só com Hype PÚBLICO disponível e com o mesmo arredondamento da faixa
+     * exibida (59,5 aparece como 60 = Em alta). Sem Hype público nunca passa (não é "0", é "sem dado").
+     */
+    static boolean meetsLevel(HypeScoreCurrent c, HypeLevel min, HypeScoreConfig cfg) {
+        if (min == null) {
+            return true;
+        }
+        Double score = publicScore(c);
+        return score != null && score >= levelMinimum(cfg, min) - 0.5;
+    }
+
+    /**
+     * Resumo no formato do HypeSummary dos cards ({@code /api/hype/summaries}) para quem vê: público elegível para todos;
+     * Hype pessoal só para o dono ({@code self}); para os demais, item sem Hype público vira NOT_CALCULATED ("—" na tela).
+     * Sem dimensões (o verso e a análise completa buscam o detalhe); "sem dados" nunca vira 0.
+     */
+    static Map<String, Object> hypeSummary(HypeScoreCurrent c, boolean self, HypeScoreConfig cfg) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (c == null || !(c.isPublicEligible() || self)) {
+            m.put("status", "NOT_CALCULATED");
+            return m;
+        }
+        boolean available = c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null;
+        m.put("status", available ? HypeStatus.AVAILABLE.name() : HypeStatus.INSUFFICIENT_DATA.name());
+        int staleHours = cfg == null ? 24 : cfg.staleAfterHours();
+        m.put("stale", c.getCalculatedAt() != null && c.getCalculatedAt().isBefore(Instant.now().minus(staleHours, ChronoUnit.HOURS)));
+        m.put("score", available ? round1(c.getScore().doubleValue()) : null);
+        m.put("level", available && c.getLevel() != null ? c.getLevel().name() : null);
+        m.put("direction", available ? c.getDirection() : null);
+        m.put("deltaPoints", available && c.getDeltaPoints() != null ? round1(c.getDeltaPoints().doubleValue()) : null);
+        m.put("deltaPercent", available && c.getDeltaPercent() != null ? round1(c.getDeltaPercent().doubleValue()) : null);
+        m.put("momentum", available && c.getMomentum() != null ? c.getMomentum().name() : null);
+        m.put("calculatedAt", c.getCalculatedAt() == null ? null : c.getCalculatedAt().toString());
+        m.put("algorithmVersion", c.getAlgorithmVersion());
+        m.put("publicEligible", c.isPublicEligible());
+        return m;
+    }
+
+    static double round1(double v) {
+        return Math.round(v * 10) / 10.0;
     }
 
     Set<String> dnaStyles(UUID userId) {
@@ -244,13 +405,19 @@ public class SearchService {
         Cursor cursor = Cursor.parse(rawCursor);
         Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
         Set<String> dna = dnaStyles(viewer == null ? null : viewer.id());
+        HypeLevel minLevel = parseLevel(filters == null ? null : filters.hypeLevel());
         List<Scheme> candidates = schemes.findPublicFeed(PageRequest.of(0, 400)).stream()
                 .filter(s -> cursor == null || cursor.before(s.getPublishedAt(), s.getId()))
                 .sorted(Comparator.comparing(Scheme::getPublishedAt).thenComparing(Scheme::getId).reversed())
                 .filter(s -> visible(viewer, s, blocked)).toList();
+        // com o filtro "Em alta" o Hype da janela inteira vem numa consulta só (antes de montar a página)
+        Map<UUID, HypeScoreCurrent> hype = minLevel == null ? new HashMap<>() : hypeRows(HypeEntityType.SCHEME, candidates.stream().map(Scheme::getId).toList());
         List<Scheme> page = new ArrayList<>();
         Map<UUID, List<SchemeItem>> itemsBy = new LinkedHashMap<>();
         for (Scheme s : candidates) {
+            if (!meetsLevel(hype.get(s.getId()), minLevel, hypeConfig)) {
+                continue;
+            }
             List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
             if (matches(filters, s, items)) {
                 page.add(s);
@@ -261,7 +428,11 @@ public class SearchService {
             }
         }
         String next = page.size() == limit ? new Cursor(page.get(page.size() - 1).getPublishedAt(), page.get(page.size() - 1).getId()).encode() : null;
-        List<Scheme> ordered = page.stream().sorted(Comparator.comparingDouble((Scheme s) -> relevance(s, itemsBy.get(s.getId()), dna)).reversed()).toList();
+        // P1-01: sem filtro, o Hype v2 da página vem numa consulta antes de ordenar (só o público entra na relevância)
+        Map<UUID, HypeScoreCurrent> pageHype = minLevel == null ? hypeRows(HypeEntityType.SCHEME, page.stream().map(Scheme::getId).toList()) : hype;
+        List<Scheme> ordered = page.stream()
+                .sorted(Comparator.comparingDouble((Scheme s) -> relevance(s, itemsBy.get(s.getId()), dna, publicScore(pageHype.get(s.getId())))).reversed())
+                .toList();
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", ordered.stream().map(s -> schemeService.view(viewer, s, itemsBy.get(s.getId()))).toList());
         out.put("nextCursor", next);
@@ -344,6 +515,7 @@ public class SearchService {
         }
         int limit = Math.max(1, Math.min(size <= 0 ? 30 : size, 60));
         int offset = offsetOf(rawCursor);
+        parseLevel(filters == null ? null : filters.hypeLevel());   // faixa inválida = 400 antes de buscar
         Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
         Pageable page = PageRequest.of(0, 400);
         int want = offset + limit + 1; // um a mais para saber se existe próxima página
@@ -446,9 +618,11 @@ public class SearchService {
         } else {
             base = term.isEmpty() ? schemes.findAllPublic(page) : schemes.searchPublic(term, page);
         }
+        HypeLevel min = parseLevel(f == null ? null : f.hypeLevel());
+        Map<UUID, HypeScoreCurrent> hype = min == null ? Map.of() : hypeRows(HypeEntityType.SCHEME, base.stream().map(Scheme::getId).toList());
         List<Views.SchemeView> out = new ArrayList<>();
         for (Scheme s : base) {
-            if (!visible(viewer, s, blocked)) {
+            if (!visible(viewer, s, blocked) || !meetsLevel(hype.get(s.getId()), min, hypeConfig)) {
                 continue;
             }
             List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
@@ -470,7 +644,11 @@ public class SearchService {
         } else {
             base = term.isEmpty() ? pieces.findAllPublic(page) : pieces.searchPublic(term, page);
         }
-        return base.stream().filter(w -> visible(viewer, w, blocked)).filter(w -> matches(f, w)).limit(limit).map(w -> Views.piece(w, null, null)).toList();
+        HypeLevel min = parseLevel(f == null ? null : f.hypeLevel());
+        Map<UUID, HypeScoreCurrent> hype = min == null ? Map.of() : hypeRows(HypeEntityType.PIECE, base.stream().map(WardrobeItem::getId).toList());
+        return base.stream().filter(w -> visible(viewer, w, blocked)).filter(w -> matches(f, w))
+                .filter(w -> meetsLevel(hype.get(w.getId()), min, hypeConfig))
+                .limit(limit).map(w -> Views.piece(w, null, null)).toList();
     }
 
     /** CA04 — termos alternativos pelo vocabulário da taxonomia e das marcas (Jaro-Winkler). */
@@ -489,9 +667,25 @@ public class SearchService {
                 .filter(e -> e.getValue() >= 0.75).sorted(Map.Entry.<String, Double>comparingByValue().reversed()).limit(5).map(Map.Entry::getKey).toList();
     }
 
+    /**
+     * P1-02 — "Em alta na comunidade" da busca vazia: o mesmo critério de {@code /api/hype/trending?type=LOOK&window=7}
+     * (HypeScore v2 atual, só população pública com score disponível), e não mais o v1. Sem Hype público, a seção some
+     * (nenhum look é apresentado como "em alta" sem base).
+     */
     List<Views.SchemeView> trending(CurrentUser viewer, Set<UUID> blocked) {
-        return schemes.findPublicFeed(PageRequest.of(0, 100)).stream().filter(s -> visible(viewer, s, blocked))
-                .sorted(Comparator.comparing((Scheme s) -> s.getHypeScore() == null ? java.math.BigDecimal.ZERO : s.getHypeScore()).reversed()).limit(6)
+        if (hypeScores == null || hypeConfig == null) {
+            return List.of();
+        }
+        List<UUID> top = hypeScores.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, hypeConfig.algorithmVersion(),
+                        HypeStatus.AVAILABLE).stream()
+                .filter(c -> c.getScore() != null)
+                .sorted(Comparator.comparing(HypeScoreCurrent::getScore).reversed().thenComparing(HypeScoreCurrent::getEntityId))
+                .limit(TRENDING_POOL).map(HypeScoreCurrent::getEntityId).toList();
+        if (top.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, Scheme> byId = schemes.findByIdIn(top).stream().collect(Collectors.toMap(Scheme::getId, Function.identity(), (a, b) -> a));
+        return top.stream().map(byId::get).filter(Objects::nonNull).filter(s -> visible(viewer, s, blocked)).limit(6)
                 .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList();
     }
 
@@ -501,10 +695,14 @@ public class SearchService {
         int limit = Math.max(1, Math.min(size <= 0 ? 30 : size, 60));
         Cursor cursor = Cursor.parse(rawCursor);
         Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
-        List<WardrobeItem> list = pieces.findAllPublic(PageRequest.of(0, 500)).stream()
+        HypeLevel min = parseLevel(f == null ? null : f.hypeLevel());
+        List<WardrobeItem> window = pieces.findAllPublic(PageRequest.of(0, 500));
+        Map<UUID, HypeScoreCurrent> hype = min == null ? Map.of() : hypeRows(HypeEntityType.PIECE, window.stream().map(WardrobeItem::getId).toList());
+        List<WardrobeItem> list = window.stream()
                 .filter(w -> cursor == null || cursor.before(w.getCreatedAt(), w.getId()))
                 .sorted(Comparator.comparing(WardrobeItem::getCreatedAt).thenComparing(WardrobeItem::getId).reversed())
-                .filter(w -> visible(viewer, w, blocked)).filter(w -> matches(f, w)).limit(limit).toList();
+                .filter(w -> visible(viewer, w, blocked)).filter(w -> matches(f, w))
+                .filter(w -> meetsLevel(hype.get(w.getId()), min, hypeConfig)).limit(limit).toList();
         String next = list.size() == limit ? new Cursor(list.get(limit - 1).getCreatedAt(), list.get(limit - 1).getId()).encode() : null;
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", list.stream().map(w -> Views.piece(w, null, null)).toList());

@@ -8,11 +8,11 @@ import { HypeMetricBar } from "./hype-metric-bar";
  * Componentes do Hype. No verso do card: 7 dimensões de leitura rápida; na análise completa: todas, com a definição.
  * Trend e popularidade aparecem separadas de propósito — muito popular sem crescer ≠ pequeno crescendo rápido.
  */
-export function HypeBreakdown({ type, dimensions, list = BACK_DIMENSIONS, hints }: { type: HypeEntity; dimensions?: Partial<Record<HypeDimension, number>>; list?: HypeDimension[]; hints?: boolean }) {
+export function HypeBreakdown({ type, dimensions, list = BACK_DIMENSIONS, hints, weights }: { type: HypeEntity; dimensions?: Partial<Record<HypeDimension, number>>; list?: HypeDimension[]; hints?: boolean; weights?: Partial<Record<HypeDimension, number>> | null }) {
   const { t } = useI18n();
   return (
     <ul className="hype-breakdown" aria-label={t("hype.drawer.breakdown")}>
-      {dimensionsFor(type, list).map((d) => <HypeMetricBar key={d} dimension={d} value={dimensions?.[d]} hint={hints} />)}
+      {dimensionsFor(type, list).map((d) => <HypeMetricBar key={d} dimension={d} value={dimensions?.[d]} hint={hints} weight={weights?.[d] ?? null} />)}
     </ul>
   );
 }

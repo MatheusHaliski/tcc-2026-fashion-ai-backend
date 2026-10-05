@@ -77,6 +77,48 @@ guarda `kind` (CIRCULAR · FOLHA · FASHIONAI), `mode`, `template`, `label`, `ca
 - **Testes:** `components/seal-wizard.test.tsx`, `SealDesignsTest`, `SealDraftsTest`, `SealDesignServiceTest`,
   `SealPoliciesTest`.
 
+## Exibição no perfil do emissor (RF14/RF22) — política revisada em 2026-10-05
+
+O perfil de uma marca ou celebridade mostra conteúdo de **outros usuários** só quando ele passou pela política do selo:
+vínculo **APPROVED** (política atendida → aceite de quem criou o look → revisão do emissor quando exigida → emissão).
+Vínculos `SUGGESTED`, `ACCEPTED`/`EDITED` (ainda não roteados), `PENDING_REVIEW`, `REFUSED`, `REJECTED` e `REVOKED`
+**nunca** aparecem. Implementação: `InstitutionalService` (`promoted`, `displayable`, `covers`, `catalog`).
+
+| Aba | Entra | Fica de fora | Ordem |
+|---|---|---|---|
+| **Esquemas em destaque** | look com vínculo APPROVED **vigente** (`expiresAt` vazio ou no futuro) | selo expirado; look em **revalidação** (peças mudaram depois da aprovação, RF9.CA05); look não publicado, arquivado, privado ou só para seguidores (para quem não segue); bloqueio entre quem vê e o autor; autor suspenso, em exclusão ou excluído; perfil do autor privado | **HypeScore v2** do look (sem score no fim) e, no empate, a emissão mais recente |
+| **Looks consagrados** | o **histórico**: os mesmos looks visíveis, inclusive com selo **expirado** (marcado "Selo expirado em…") e em revalidação (marcado "Em revalidação") | os mesmos de visibilidade/autor; revogados e rejeitados | emissão mais recente |
+| **Peças em destaque** | peças dos looks em destaque: selo de **LOOK** destaca todas; selo de **PEÇA** destaca só as `linkedPieceIds`; cada peça leva **só os selos que a cobrem** | peça arquivada, fora da moderação `APPROVED`, invisível para quem vê (o look pode ser público com uma peça privada) ou de autor suspenso | ordem dos looks |
+| **Catálogo** | acervo do próprio perfil: o visitante vê só peças **aprovadas na moderação e visíveis** para ele; o administrador vê todas (menos arquivadas) | — | mais recentes |
+
+Cada entrada de look traz `promotion { issuedAt, expiresAt, expired, revalidationPending }`, que a tela mostra embaixo do card.
+Desativar um selo (`INACTIVE`) só impede novas emissões; o que já foi emitido vale até expirar. O filtro "Destaques" usa o
+HypeScore v2 (não o `hype_score` legado do look).
+
+**Teto de emissões:** quando o selo fica indisponível no aceite (teto atingido, fora da janela ou inativo), o vínculo fica
+`REJECTED`, com o motivo e a auditoria `RECUSADO_LIMITE`, e a API responde 409 `SELO_INDISPONIVEL`. Até esta revisão, o
+rollback da transação apagava esse registro. Agora `SealService.SealUnavailable` e `@Transactional(noRollbackFor = …)` o
+mantêm. Os outros erros, como o aceite sem consentimento de imagem, continuam desfazendo o aceite, e o vínculo segue
+`SUGGESTED`.
+
+**Testes:**
+- `InstitutionalDisplayPolicyTest` (17): só APPROVED aparece; expirado sai do destaque e fica nos consagrados; o vínculo
+  vigente prevalece sobre o expirado; revalidação; privado, rascunho e arquivado; perfil privado; seguidores; bloqueio;
+  autor suspenso; ordem por Hype v2; filtro Destaques; selo de peça × selo de look; peça privada, em moderação ou
+  arquivada; catálogo do visitante × administrador.
+- `SealPromotionFlowTest` (11), com os serviços reais, de ponta a ponta: política da marca atendida → sugestão → aceite →
+  emissão (`BRD…`, contador) → destaque, consagrados e peças. Também cobre:
+  - política não atendida;
+  - recusa;
+  - marca que exige revisão;
+  - celebridade com selo de PEÇA: consentimento, revisão (`PRM…`) e só a peça que atende;
+  - rejeição pela celebridade;
+  - teto de emissões;
+  - revogação;
+  - revalidação após edição;
+  - look tornado privado;
+  - vínculo duplicado.
+
 ## Dependências
 
 RF1 (emissor aprovado), RF4 e RF5 (detecção), RF14 e RF22 (perfis), RF20 e RF21 (vínculo a marca/celebridade),

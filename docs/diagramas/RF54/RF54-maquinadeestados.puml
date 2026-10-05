@@ -1,0 +1,87 @@
+@startuml RF54_MaquinaDeEstados_Scan
+!pragma layout smetana
+title RF54 — FashionAI Lens (MVP)\nMáquina de estados do scan (lens_scans) e da peça detectada (lens_detections)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+
+state "Scan (lens_scans)" as Scan {
+  state "Recusado antes de existir\n(nada gravado)\n422 IMAGEM_RECUSADA / IMAGEM_EM_REVISAO\n429 QUOTA (com resetAt)\n400 ORIGEM/INTENCAO/ARQUIVO" as Recusado
+  state "Processamento síncrono\n(POST /api/lens/scans ou /from-app)" as Proc
+  state "READY\n(aiSource ia ou local;\nerrorCode CONSENT_REQUIRED/QUOTA\nquando a leitura foi local)" as Ready
+  state "NO_FASHION_FOUND\nUI: «Não encontramos roupas»\ncom dicas e «Marcar uma peça»" as NoFashion
+  state "FAILED\n(detector lançou exceção;\na cota volta para a pessoa)" as Failed
+  state "PARTIAL\n(reservado: o MVP síncrono não usa)" as Partial
+
+  [*] --> Recusado : moderação BLOCK/REVIEW,\ncota estourada ou entrada inválida
+  [*] --> Proc : imagem ALLOW e cota disponível
+  Proc --> Ready : ≥ 1 peça (ou leitura local)
+  Proc --> NoFashion : 0 peças
+  Proc --> Failed : erro no detector
+  NoFashion --> Ready : a pessoa marca uma peça\n(POST …/detections)
+
+  state "Retenção" as Ret {
+    state "Não salvo\nexpires_at = criação + 30 dias\nUI: «Expira em N dias»" as NaoSalvo
+    state "Salvo como inspiração\nsaved_at preenchido\n(não expira)" as Salvo
+    [*] --> NaoSalvo
+    NaoSalvo --> Salvo : PATCH {saved: true}
+    Salvo --> NaoSalvo : PATCH {saved: false}
+  }
+  Ready --> Ret
+  NoFashion --> Ret
+  Failed --> Ret
+}
+
+state "Apagado\n(imagem, miniatura, peças\ne correções)" as Apagado
+Ret --> Apagado : LensRetentionJob (04:40):\nnão salvo e vencido
+Ret --> Apagado : DELETE /api/lens/scans/{id}
+Ret --> Apagado : exclusão da conta\n(LensService.deleteAllFor)
+Apagado --> [*]
+
+note right of Scan
+  camada viva (correspondências, leitura,
+  Hype do grupo, plano Recriar) é recalculada
+  a cada leitura e nunca é gravada: o scan não
+  tem estado "desatualizado" no MVP;
+  quem não é o dono recebe 404 em qualquer estado
+end note
+
+state "Peça detectada (lens_detections)" as Det {
+  state "DETECTED\n(pelo detector; confiança HIGH ≥ 0,75,\nMEDIUM ≥ 0,5, LOW abaixo)" as D1
+  state "CORRECTED\n(a pessoa mudou categoria, subcategoria,\ncor, material, padrão ou estilos)" as D2
+  state "ADDED_BY_USER\n(marcada pela pessoa;\nconfiança 1)" as D3
+  state "DISMISSED\n«Não é roupa» (dismissed_at;\nsome do scan e das relações)" as D4
+  [*] --> D1 : detecção
+  [*] --> D3 : POST …/detections\n(feedback MISSING_PIECE)
+  D1 --> D2 : PATCH com mudança\n(feedback WRONG_*)
+  D2 --> D2 : nova correção
+  D1 --> D4 : PATCH {dismissed: true}\n(feedback NOT_CLOTHING)
+  D2 --> D4 : PATCH {dismissed: true}
+  D3 --> D4 : PATCH {dismissed: true}
+  D4 --> D1 : desfazer {dismissed: false}\n(volta ao estado anterior)
+}
+note bottom of Det
+  correções gravam lens_feedback (antes/depois);
+  training_consent = AI_MODEL_TRAINING concedido;
+  as correspondências se refazem na hora
+end note
+
+state "Quero (wanted_at)\nde cada peça detectada" as W {
+  state "sem desejo" as W0
+  state "Quero" as W1
+  [*] --> W0
+  W0 --> W1 : PUT …/want {wanted: true}
+  W1 --> W0 : PUT …/want {wanted: false}
+}
+state "Eu tenho (owned_item_id)\nde cada peça detectada" as O {
+  state "sem vínculo" as O0
+  state "ligada a uma peça própria" as O1
+  [*] --> O0
+  O0 --> O1 : POST …/own {itemId}\n(peça de outra pessoa ou arquivada = 404)
+  O0 --> O0 : POST …/own sem itemId\n→ /pieces/new pré-preenchido\n(nunca o recorte da foto)
+}
+@enduml

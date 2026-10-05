@@ -44,6 +44,11 @@ public final class LocalAdvisors {
     }
 
     // ---------------------------------------------------------------- #8 Insight Generator
+    /**
+     * Leitura local dos rankings do Explorador. Os rankings de Hype ({@code hypeByColor}, {@code hypeBySeason}) são o
+     * HypeScore v2 público; {@code growthByCategory} (opcional) é o CRESCIMENTO (dimensão TREND) — a frase deixa claro
+     * que tendência não é volume. Texto descritivo, nunca juízo de qualidade.
+     */
     public static String insightText(Map<String, Object> rankings) {
         StringBuilder sb = new StringBuilder();
         Object countries = rankings.get("topCountries");
@@ -51,6 +56,7 @@ public final class LocalAdvisors {
         Object colors = rankings.get("hypeByColor") instanceof List<?> l && !l.isEmpty() ? rankings.get("hypeByColor") : null;
         Object used = rankings.get("topColors");
         Object seasons = rankings.get("hypeBySeason");
+        Object growth = rankings.get("growthByCategory");
         if (countries instanceof List<?> list && !list.isEmpty()) {
             sb.append(Msg.t("localAdvisors.o_pais_com_mais_atividade")).append(countryPt(label(list.get(0)))).append(". ");
         }
@@ -65,7 +71,21 @@ public final class LocalAdvisors {
         if (seasons instanceof List<?> list && !list.isEmpty()) {
             sb.append(Msg.t("localAdvisors.entre_as_estacoes")).append(seasonPt(label(list.get(0)))).append(Msg.t("localAdvisors.lidera_o_hype_score_medio"));
         }
+        if (growth instanceof List<?> list && !list.isEmpty()) {
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != ' ') {
+                sb.append(' ');
+            }
+            sb.append(Msg.t("localAdvisors.categoria_em_crescimento", categoryPt(label(list.get(0))))).append(' ');
+        }
         return sb.length() == 0 ? Msg.t("localAdvisors.ainda_nao_ha_dados_suficientes") : sb.toString().trim();
+    }
+
+    /** Nome da categoria no idioma da requisição (rótulo da taxonomia, minúsculo no meio da frase). */
+    static String categoryPt(String code) {
+        if (code == null) return "";
+        String key = "taxonomy." + code.toLowerCase(Locale.ROOT);
+        if (Msg.has(key)) return Msg.t(key).toLowerCase(Msg.locale());
+        return code.replace('_', ' ');
     }
 
     private static String label(Object o) {

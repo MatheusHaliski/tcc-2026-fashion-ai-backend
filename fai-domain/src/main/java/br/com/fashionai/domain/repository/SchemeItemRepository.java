@@ -26,4 +26,7 @@ public interface SchemeItemRepository extends JpaRepository<SchemeItem, UUID> {
     List<SchemeItem> findBySchemeIdIn(Collection<UUID> schemeIds);
 
     long countByWardrobeItemId(UUID wardrobeItemId);
+
+    /** RF53 — looks em que várias peças aparecem (selos de marca/celebridade das peças, em lote). */
+    List<SchemeItem> findByWardrobeItemIdIn(Collection<UUID> wardrobeItemIds);
 }

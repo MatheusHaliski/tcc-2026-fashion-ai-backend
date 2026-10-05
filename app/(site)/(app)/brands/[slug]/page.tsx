@@ -7,11 +7,12 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
-import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Tabs, Textarea, useToast } from "@/components/ui";
+import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Tabs, Textarea, cn, useToast } from "@/components/ui";
 import { SchemeCard, toSealBadges } from "@/components/scheme-card";
 import { SealWizard, type SealFormState } from "@/components/seal-wizard";
 import { EMPTY_POLICY, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { SealHypeStat, type SealHypeAggregate } from "@/components/hype/hype-seals";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
 import { BrandCouponsTab, BRAND_PROMO_TYPES, CELEB_PROMO_TYPES } from "@/components/coupons/brand-coupons-tab";
@@ -22,8 +23,21 @@ import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
 import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
 import { RoomStore } from "@/components/room3d/room-store";
 import { IssuerCenter, IssuerCenterButton, useIssuerReview } from "@/components/issuer-review";
+import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
+import { InsightStrip } from "@/components/insights/insight-strip";
+import { levelTone } from "@/lib/hype/model";
+import type { HypeDirection, HypeLevel } from "@/lib/hype/types";
 
-interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; }
+/**
+ * RF53 · Lote A2 (P3-17): ordenação das abas de destaque — "Recentes · Hype · Em crescimento" — é ORDENAÇÃO, não aba nem
+ * filtro: só muda a ordem do que a política do selo já deixa aparecer. Vai para o backend como `filter=` (InstitutionalService:
+ * RECENTES, HYPE e GROWTH = dimensão TREND do v2, crescimento e não curtidas); o Hype que ordena é só o público elegível.
+ * Cada aba tem a sua ordem padrão (a do backend sem `filter`): destaques pelo Hype, consagrados pela emissão mais recente.
+ */
+type HighlightSort = "RECENTES" | "HYPE" | "GROWTH";
+const SORTABLE_TABS: Record<string, HighlightSort> = { ESQUEMAS_DESTAQUE: "HYPE", PECAS_DESTAQUE: "HYPE", LOOKS_CONSAGRADOS: "RECENTES" };
+
+interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; /** RF53 — Hype do selo: média do Hype atual dos vinculados */ hype?: SealHypeAggregate | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
 interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 
@@ -31,6 +45,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const slug = encodeURIComponent(use(params).slug);   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
   const [tab, setTab] = useState("ESQUEMAS_DESTAQUE"); const [flairNew, setFlairNew] = useState(0);
+  const [sorts, setSorts] = useState<Record<string, HighlightSort>>({});
+  const sortDefault = SORTABLE_TABS[tab]; const sort = sorts[tab] ?? sortDefault;
+  const sortParam = sortDefault && sort !== sortDefault ? `?filter=${sort}` : "";
   useEffect(() => { const q = new URLSearchParams(window.location.search).get("tab"); if (q) setTab(q.toUpperCase()); }, []);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
@@ -44,9 +61,14 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
   type SavedPieces = { piece: PieceView; author?: UserCard; snapshot?: boolean; savedAt?: string }[];
   type Catalog = { piece: PieceView; looks: number; neverInLook: boolean }[];
-  type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[] }[];
+  /** promotion: vínculo que pôs o look no perfil (RF20/RF21) — emissão, validade, expirado, revalidação pendente */
+  type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[]; promotion?: { issuedAt?: string | null; expiresAt?: string | null; expired?: boolean; revalidationPending?: boolean } }[];
+  const promotionNote = (p?: Consecrated[number]["promotion"]) => !p ? null : p.expired
+    ? <span className="caption promo-note is-expired">{t("brands.slug.promo_expirado", { date: fmtDate(p.expiresAt) })}</span>
+    : p.revalidationPending ? <span className="caption promo-note is-review">{t("brands.slug.promo_revalidacao")}</span>
+    : p.issuedAt ? <span className="caption promo-note">{p.expiresAt ? t("brands.slug.promo_vigente_ate", { date: fmtDate(p.issuedAt), until: fmtDate(p.expiresAt) }) : t("brands.slug.promo_vigente", { date: fmtDate(p.issuedAt) })}</span> : null;
   // Esquemas e peças sempre em abas separadas (RF14/RF22): cada aba carrega um único tipo de conteúdo.
-  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
+  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}${sortParam}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode, sortParam], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK" as SealTierId, policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign, policy: EMPTY_POLICY };
   // RF25 — política padronizada (regras + tags) no lugar do texto livre; policyText só guarda a descrição antiga, se houver
@@ -83,19 +105,29 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
+        hype={isCeleb ? <HypeGroupBadge type="CREATOR" groupKey={ownerId} variant="header" /> : <HypeGroupBadge type="BRAND" groupKey={(brand.brandName as string) ?? h.name} variant="header" />}
         actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+      {/* RF53 · Lote A5 (P3-15): Hype agregado do perfil com o estilo ao lado, crescimento e looks com selo (só públicos) */}
+      <InsightStrip context="BRAND_PROFILE" params={{ key: decodeURIComponent(slug) }} collapsible className="mb-3" />
       <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
+      {sortDefault && (
+        <div className="brand-sort">
+          <SegmentPicker<HighlightSort> label={t("hypeBrands.sort_label")} value={sort} onChange={(v) => setSorts((o) => ({ ...o, [tab]: v }))}
+            options={[{ id: "RECENTES", label: t("hypeBrands.sort_recent") }, { id: "HYPE", label: t("hypeBrands.sort_hype") }, { id: "GROWTH", label: t("hypeBrands.sort_growth") }]} />
+          <p className="brand-sort-hint">{t(`hypeBrands.sort_hint_${sort}`)}</p>
+        </div>
+      )}
       {tab === "CENTRAL" && admin && <IssuerCenter review={review} onTab={setTab} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
       {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title={t("brands.slug.entre_para_ver_os_itens")} hint={t("brands.slug.componentes_e_guarda_roupas_inteiros")} />)}
       {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
-      {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
+      {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={promotionNote(e.promotion)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.pecas_que_compoem_os_looks")}</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">{rich("brands.slug.no_look", { schemeTitle: e.schemeTitle, value: e.author ? ` · @${e.author.username}` : "" }, { 0: ($c) => <Link className="underline" href={`/schemes/${e.schemeId}`}>{$c}</Link> })}</span>} />)}</div></> : <EmptyState title={t("brands.slug.nenhuma_peca_em_destaque_ainda")} hint={t("brands.slug.as_pecas_dos_looks_com")} />)}
       {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title={t("brands.slug.nenhum_esquema_salvo")} />)}
       {tab === "PECAS_SALVAS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedPieces>("piece").length ? <div className="grid-cards">{only<SavedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={e.author ? <span className="caption">{t("brands.slug.de_2", { username: e.author.username, value: e.snapshot ? t("brands.slug.arquivada_pelo_autor") : "" })}</span> : undefined} />)}</div> : <EmptyState title={t("common.nenhuma_peca_salva")} />)}
-      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div> : <EmptyState title={t("common.empty")} />)}
+      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={admin ? undefined : promotionNote(e.promotion)} />)}</div> : <EmptyState title={t("common.empty")} />)}
       {tab === "CATALOGO" && (tabData.loading ? <SkeletonGrid /> : only<Catalog>("piece").length ? <div className="grid-cards">{only<Catalog>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={<span className="caption tabular">{t("brands.slug.looks", { looks: e.looks, value: e.neverInLook ? t("brands.slug.nunca_usada_em_look") : "" })}</span>} />)}</div> : <EmptyState title={t("common.empty")} />)}
       {tab === "SELOS" && (
         <>
@@ -105,6 +137,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
               <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
+              <SealHypeStat hype={s.hype} tier={s.tier} />
               <p className="mt-2 type-data text-faint tabular">{t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? `/${s.usageLimit}` : "" })}{(s.availableFrom || s.availableUntil) && <>{t("brands.slug.valido", { value: s.availableFrom ? t("brands.slug.de", { date: fmtDate(s.availableFrom) }) : "", value2: s.availableUntil ? t("common.ate", { date: fmtDate(s.availableUntil) }) : "" })}</>}</p>
               {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
             </Card>))}</div>}
@@ -144,9 +177,31 @@ function ReviewQueue() {
   if (!data || data.length === 0) return <EmptyState title={t("brands.slug.nenhum_vinculo_aguardando_revisao")} />;
   return <ul className="fai-list surface">{data.map((b) => <li key={b.id} className="flex flex-wrap items-center gap-3 p-3"><div className="min-w-0 flex-1"><p className="type-body">{rich("brands.slug.por", { value: b.scheme?.title ?? t("common.look"), value2: b.requestedBy?.username ?? b.scheme?.owner?.username }, { 0: ($c) => <b>{$c}</b> })}</p><p className="type-caption text-muted">{t("brands.slug.selo", { value: b.seal?.name ?? "", value2: b.basis ?? "", value3: b.confidence != null ? t("brands.slug.confianca", { Math: Math.round(b.confidence * 100) }) : "" })}</p></div>{b.scheme && <Link href={`/schemes/${b.scheme.id}`} className="btn btn-sm">{t("brands.slug.ver_look")}</Link>}<Button size="sm" variant="primary" onClick={() => decide(b.id, true)}>{t("common.aprovar")}</Button><Button size="sm" variant="danger" onClick={() => decide(b.id, false)}>{t("common.rejeitar")}</Button></li>)}</ul>;
 }
+/** P2-09 — Hype v2 dos looks vinculados (SealService.issuerMetrics.hype): só públicos elegíveis com Hype calculado. */
+interface IssuerHypeData { bonded: number; withHype: number; avgScore?: number | null; level?: HypeLevel | null; deltaPoints?: number | null; direction?: HypeDirection | null; deltaWindowDays?: number | null; top?: { schemeId: string; title?: string | null; score: number; level: HypeLevel }[] }
+const ARROWS: Record<HypeDirection, string> = { UP: "↑", DOWN: "↓", STABLE: "→" };
 function IssuerMetrics() {
   const { t } = useI18n();
   const { data, loading } = useApi<Record<string, unknown>>((signal) => api.get("/api/me/issuer-metrics", { signal }), []);
   if (loading || !data) return <Skeleton className="h-40" />;
-  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}<Link href="/dashboard" className="btn sm:col-span-3">{t("brands.slug.abrir_dashboard_do_emissor")}</Link></div>;
+  const hype = data.hype && typeof data.hype === "object" ? data.hype as IssuerHypeData : null;
+  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}{hype && <IssuerHype hype={hype} />}<Link href="/dashboard" className="btn sm:col-span-3">{t("brands.slug.abrir_dashboard_do_emissor")}</Link></div>;
+}
+function IssuerHype({ hype }: { hype: IssuerHypeData }) {
+  const { t } = useI18n();
+  const has = hype.avgScore != null && !!hype.level;
+  return (
+    <Card className="issuer-hype sm:col-span-3">
+      <div className="issuer-hype-head">
+        <p className="label">{t("hypeBrands.issuer_title")}</p>
+        {has ? <><span className={cn("hype-level-chip", levelTone(hype.level!))}>{t(`hype.level.${hype.level}`)}</span><p className="hero-number text-3xl tabular">{Math.round(hype.avgScore!)}</p></>
+          : <p className="type-body text-muted">{t("hype.state.insufficient")}</p>}
+        {has && hype.direction && hype.deltaPoints != null && <span className="type-body-sm tabular">{t("hypeBrands.issuer_delta", { arrow: ARROWS[hype.direction], points: Math.round(Math.abs(hype.deltaPoints)), days: hype.deltaWindowDays ?? 7 })}</span>}
+      </div>
+      <p className="type-caption text-muted">{t("hypeBrands.issuer_base", { withHype: hype.withHype, bonded: hype.bonded })}</p>
+      {(hype.top ?? []).length > 0 && <ol className="issuer-hype-top" aria-label={t("hypeBrands.issuer_top")}>{(hype.top ?? []).map((x) => (
+        <li key={x.schemeId}><Link href={`/schemes/${x.schemeId}`} className="underline">{x.title || t("common.look")}</Link><span className={cn("hype-level-chip", levelTone(x.level))}>{t(`hype.level.${x.level}`)}</span><b className="tabular">🔥 {Math.round(x.score)}</b></li>))}</ol>}
+      <p className="type-caption text-muted">{t("hypeBrands.issuer_hint")}</p>
+    </Card>
+  );
 }

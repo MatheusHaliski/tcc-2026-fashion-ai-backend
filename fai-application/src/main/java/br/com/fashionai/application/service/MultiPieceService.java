@@ -103,6 +103,28 @@ public class MultiPieceService {
 
     // ================================================================== 1 — detectar
 
+    /**
+     * Resultado do núcleo de detecção: as peças, de onde vieram ("ia" ou "local") e o desfecho governado da chamada
+     * (consentimento, cota, custo, id da inferência).
+     */
+    public record PieceDetection(List<DetectedPiece> pieces, String source, AiOutcome<List<DetectedPiece>> outcome) {
+    }
+
+    /**
+     * Núcleo da detecção, sem efeito colateral fora do motor de IA (nenhum rascunho, job ou arquivo): a IA de visão acha
+     * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), uma peça cobrindo a foto. Usado
+     * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
+     */
+    public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
+        List<DetectedPiece> local = List.of(localPiece());
+        AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
+                DETECTOR_SYSTEM, detectorPrompt(),
+                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
+                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
+        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
+        return new PieceDetection(pieces, pieces == local ? "local" : "ia", outcome);
+    }
+
     @Transactional
     public Detection detect(CurrentUser user, byte[] bytes) {
         guard.requireCanCreate(user);
@@ -110,13 +132,10 @@ public class MultiPieceService {
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         BufferedImage photo = ImageOps.decode(bytes);
 
-        List<DetectedPiece> local = List.of(localPiece());
-        AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.MULTI_PIECE_DETECTOR,
-                DETECTOR_SYSTEM, detectorPrompt(),
-                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
-                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
-        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
-        String source = pieces == local ? "local" : "ia";
+        PieceDetection detection = detectPieces(user.id(), photo);
+        AiOutcome<List<DetectedPiece>> outcome = detection.outcome();
+        List<DetectedPiece> pieces = detection.pieces();
+        String source = detection.source();
 
         PipelineJob job = new PipelineJob();
         job.setUser(owner);
@@ -149,7 +168,7 @@ public class MultiPieceService {
     }
 
     /** Sem IA de visão: uma peça cobrindo a foto inteira, sem campos — a pessoa preenche e recorta na revisão. */
-    static DetectedPiece localPiece() {
+    public static DetectedPiece localPiece() {
         return new DetectedPiece(0, null, null, null, null, null, null, List.of(), List.of(), new Box(0, 0, 100, 100), 0);
     }
 

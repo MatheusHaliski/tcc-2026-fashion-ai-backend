@@ -22,9 +22,14 @@ import java.util.stream.Collectors;
 /**
  * Motor dos modos do FLAIR: <b>PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO</b>. Um look (esquema) tem 10 atributos —
  * HypeScore, Style, Color Harmony, Occasion Fit, Originality, Brand Power, Rarity, Trend, Community e AI Score —
- * calculados das peças (cartas), do HypeScore e do engajamento. O HypeScore é a força-base; o <b>tema</b> da rodada
- * muda os pesos, e sinergias (combos), cor, diversidade e condições do tabuleiro alteram o resultado. Tudo é
- * determinístico e sem aposta (as recompensas vêm do sistema).
+ * calculados das peças (cartas), do HypeScore e do engajamento. O <b>tema</b> da rodada muda os pesos, e sinergias
+ * (combos), cor, diversidade e condições do tabuleiro alteram o resultado. Tudo é determinístico e sem aposta (as
+ * recompensas vêm do sistema).
+ *
+ * <p>HYPE (RF53 · P2-17): é o HypeScore v2 <b>público</b> do look (relevância, não qualidade) e só um atributo entre
+ * dez — peso 1 na nota geral (como os demais) e, no tema, nunca acima do menor peso entre os outros atributos
+ * ({@link #weight}). Sem Hype público (privado, dados insuficientes, não calculado) vale {@value #NEUTRAL_HYPE}
+ * (neutro): "sem dados" nunca vira 0 nem herda o poder das cartas.</p>
  */
 public final class FlairLooks {
     private FlairLooks() {
@@ -54,9 +59,14 @@ public final class FlairLooks {
     static final Set<String> LEATHER_SHOES = Set.of("loafers", "oxford_shoes", "derby_shoes", "brogues", "monk_shoes", "heels", "pumps", "ankle_boots", "chelsea_boots", "boots");
     public static final Set<String> OUTERWEAR = Set.of("jacket", "coat", "blazer", "parka", "cardigan", "trench_coat", "puffer_jacket", "denim_jacket", "leather_jacket", "bomber_jacket", "windbreaker", "vest");
     static final Map<String, Integer> RARITY_INDEX = Map.of("STANDARD", 40, "PREMIUM", 60, "LIMITED", 80, "RARE", 100);
+    /** HYPE de um look sem Hype v2 público: neutro (nem prêmio nem punição). */
+    public static final int NEUTRAL_HYPE = 50;
+    /** Peso padrão de um atributo que o tema não cita. */
+    static final double DEFAULT_WEIGHT = 0.8;
 
     // ------------------------------------------------------------------ tipos
 
+    /** {@code hype}: HypeScore v2 PÚBLICO do look (nulo = sem Hype público → {@link #NEUTRAL_HYPE}). */
     public record LookInput(String schemeId, String title, String owner, String coverUrl, Double hype, long likes, long saves, long comments,
                             long shares, long remixes, List<String> styles, List<String> occasions, String season, List<Card> cards) {
     }
@@ -101,7 +111,7 @@ public final class FlairLooks {
 
     static {
         theme(new Theme("FESTIVAL_NOITE", Msg.k("flairLooks.festival_de_musica_noite"), "🎶", List.of("festival", "party", "night_out"), List.of("streetwear", "boho", "y2k", "edgy"),
-                w("STYLE", 1.4, "ORIGINALITY", 1.5, "TREND", 1.4, "HYPE", 1.0), Msg.k("flairLooks.style_originality_e_trend_recebem")));
+                w("STYLE", 1.4, "ORIGINALITY", 1.5, "TREND", 1.4), Msg.k("flairLooks.style_originality_e_trend_recebem")));
         theme(new Theme("DATE_NIGHT", Msg.k("flairLooks.date_night"), "🌙", List.of("date", "night_out"), List.of("romantic", "chic", "glam"),
                 w("COLOR", 1.4, "STYLE", 1.3, "OCCASION", 1.3, "AI", 1.1), Msg.k("flairLooks.harmonia_de_cores_e_coerencia")));
         theme(new Theme("BUSINESS_MEETING", Msg.k("flairLooks.business_meeting"), "💼", List.of("work", "business"), List.of("tailored", "classic", "minimalist"),
@@ -111,7 +121,7 @@ public final class FlairLooks {
         theme(new Theme("BEACH_CLUB", Msg.k("flairLooks.beach_club"), "🏖️", List.of("beach", "vacation", "party"), List.of("resort", "boho", "minimalist"),
                 w("COLOR", 1.3, "OCCASION", 1.4, "TREND", 1.1), Msg.k("common.ocasiao_de_praia_e_cores")));
         theme(new Theme("RED_CARPET", Msg.k("flairLooks.red_carpet"), "🎬", List.of("formal", "ceremony", "party"), List.of("glam", "luxury", "avant_garde"),
-                w("BRAND", 1.4, "RARITY", 1.4, "HYPE", 1.3, "STYLE", 1.2), Set.of(), 0, "luxury", "BRAND", 0.15, null,
+                w("BRAND", 1.4, "RARITY", 1.4, "STYLE", 1.2), Set.of(), 0, "luxury", "BRAND", 0.15, null,
                 Msg.k("common.formal_luxury_marca_de_celebridade")));
         theme(new Theme("CYBERPUNK_FORMAL", Msg.k("flairLooks.cyberpunk_formal"), "🤖", List.of("formal", "party", "night_out"), List.of("futuristic", "techwear", "tailored", "avant_garde"),
                 w("ORIGINALITY", 1.5, "TREND", 1.3, "STYLE", 1.2), Msg.k("flairLooks.tema_da_flair_runway_tecnologia")));
@@ -187,6 +197,19 @@ public final class FlairLooks {
         return (int) Math.max(0, Math.min(100, Math.round(v)));
     }
 
+    /**
+     * Peso de um atributo no tema. O HYPE nunca pesa mais que o menor peso entre os outros nove (P2-17): relevância é
+     * contexto, não critério dominante — nenhum tema transforma o jogo em concurso de popularidade.
+     */
+    public static double weight(Theme t, String stat) {
+        double w = t.weights().getOrDefault(stat, DEFAULT_WEIGHT);
+        if (!"HYPE".equals(stat)) {
+            return w;
+        }
+        double floor = STATS.stream().filter(k -> !"HYPE".equals(k)).mapToDouble(k -> t.weights().getOrDefault(k, DEFAULT_WEIGHT)).min().orElse(DEFAULT_WEIGHT);
+        return Math.min(w, floor);
+    }
+
     /** Sinergias entre peças (FLAIR Combo Battle): cada uma soma pontos num atributo do look. */
     public static List<Synergy> synergies(List<Card> cards, Theme theme) {
         List<Synergy> out = new ArrayList<>();
@@ -222,8 +245,7 @@ public final class FlairLooks {
         List<Card> cards = in.cards() == null ? List.of() : in.cards();
         int n = Math.max(1, cards.size());
         Map<String, Integer> s = new LinkedHashMap<>();
-        double avgPower = cards.stream().mapToInt(Card::power).average().orElse(50);
-        s.put("HYPE", clamp(in.hype() != null && in.hype() > 0 ? in.hype() : Math.min(100, avgPower * 0.7)));
+        s.put("HYPE", in.hype() == null ? NEUTRAL_HYPE : clamp(in.hype()));
         Map<String, Long> styleCount = cards.stream().flatMap(c -> c.styles().stream().distinct()).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         String top = styleCount.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
         double share = top == null ? 0 : styleCount.get(top) / (double) n;
@@ -251,7 +273,8 @@ public final class FlairLooks {
         for (Synergy x : syn) {
             s.merge(x.stat(), x.bonus(), (a, b) -> clamp(a + b));
         }
-        int rating = clamp(STATS.stream().mapToDouble(k -> s.get(k) * ("HYPE".equals(k) ? 1.5 : 1)).sum() / (STATS.size() + 0.5));
+        // nota geral: média simples dos 10 atributos (o HYPE pesa 1, como os demais; antes era a "força-base" ×1,5)
+        int rating = clamp(STATS.stream().mapToDouble(s::get).sum() / STATS.size());
         return new Look(in.schemeId(), in.title(), in.owner(), in.coverUrl(), s, syn, rating, new ArrayList<>(styles),
                 new ArrayList<>(occCount.keySet()), fams.stream().distinct().toList(), new ArrayList<>(brands), cards);
     }
@@ -292,7 +315,7 @@ public final class FlairLooks {
         double sw = 0, sum = 0;
         Map<String, Double> parts = new LinkedHashMap<>();
         for (String k : STATS) {
-            double wt = t.weights().getOrDefault(k, 0.8);
+            double wt = weight(t, k);
             sw += wt;
             sum += wt * v.get(k);
             parts.put(k, Math.round(wt * v.get(k) * 10) / 10.0);
@@ -322,7 +345,7 @@ public final class FlairLooks {
         Score sa = score(a, t), sb = score(b, t);
         List<Map<String, Object>> bd = new ArrayList<>();
         for (String k : STATS) {
-            bd.add(Map.of("stat", k, "label", LABELS.get(k), "weight", t.weights().getOrDefault(k, 0.8), "a", a.stats().get(k), "b", b.stats().get(k)));
+            bd.add(Map.of("stat", k, "label", LABELS.get(k), "weight", weight(t, k), "a", a.stats().get(k), "b", b.stats().get(k)));
         }
         List<String> notes = new ArrayList<>();
         sa.notes().forEach(x -> notes.add("A: " + x));
@@ -517,7 +540,7 @@ public final class FlairLooks {
     public static double bossScore(Look boss, Theme t) {
         double sw = 0, sum = 0;
         for (String k : STATS) {
-            double wt = t.weights().getOrDefault(k, 0.8);
+            double wt = weight(t, k);
             sw += wt;
             sum += wt * boss.stats().get(k);
         }
@@ -740,12 +763,32 @@ public final class FlairLooks {
 
     // ------------------------------------------------------------------ Wardrobe Wars
 
-    public record Wardrobe(String owner, double quality, int styles, int occasions, double originality, double collection, double sustainability, double community) {
+    /**
+     * Guarda-roupa no Wardrobe Wars. {@code relevance}: média do HypeScore v2 PÚBLICO dos looks (nulo = nenhum look com
+     * Hype público). {@code quality} fica só por compatibilidade da API (deprecado: era a "qualidade média do HypeScore"
+     * v1, um juízo de qualidade) e espelha a relevância usada na rodada ({@link #NEUTRAL_HYPE} sem dados).
+     */
+    public record Wardrobe(String owner, double quality, int styles, int occasions, double originality, double collection, double sustainability,
+                           double community, Double relevance) {
+        public Wardrobe(String owner, Double relevance, int styles, int occasions, double originality, double collection, double sustainability,
+                        double community) {
+            this(owner, relevance == null ? NEUTRAL_HYPE : relevance, styles, occasions, originality, collection, sustainability, community, relevance);
+        }
     }
 
     public static List<Clash> wardrobeWars(Wardrobe a, Wardrobe b) {
         List<Clash> out = new ArrayList<>();
-        out.add(cat(Msg.t("flairLooks.qualidade_media_do_hypescore"), a.quality(), b.quality()));
+        // "relevância média (HypeScore)": descreve alcance/momento, não qualidade; sem Hype público = 50 (neutro), com nota
+        List<String> neutral = new ArrayList<>();
+        if (a.relevance() == null) {
+            neutral.add(Msg.t("hypeFlair.sem_hype_publico_neutro", "A"));
+        }
+        if (b.relevance() == null) {
+            neutral.add(Msg.t("hypeFlair.sem_hype_publico_neutro", "B"));
+        }
+        double ra = a.relevance() == null ? NEUTRAL_HYPE : a.relevance(), rb = b.relevance() == null ? NEUTRAL_HYPE : b.relevance();
+        out.add(new Clash(Msg.t("hypeFlair.relevancia_media_hypescore"), "", "", Math.round(ra * 10) / 10.0, Math.round(rb * 10) / 10.0,
+                winner(ra, rb), neutral, List.of()));
         out.add(cat(Msg.t("flairLooks.diversidade_estilos"), a.styles(), b.styles()));
         out.add(cat(Msg.t("flairLooks.versatilidade_ocasioes_atendidas"), a.occasions(), b.occasions()));
         out.add(cat(Msg.t("flairLooks.originalidade_combinacoes_por_peca"), a.originality(), b.originality()));

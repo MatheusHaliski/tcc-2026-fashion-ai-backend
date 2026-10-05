@@ -1,6 +1,6 @@
 @startuml RF53_MaquinaDeEstados_Hype
 !pragma layout smetana
-title RF53 — Estado do HypeScore v2 de uma peça ou look (hype_scores, por algorithm_version)
+title RF53 — Estado do HypeScore v2 de uma peça ou look (hype_scores, por algorithm_version)\ncom recálculo ao vivo (HypeLiveRecalc) e Selos de Hype derivados
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,8 +8,8 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Não calculado\n(sem linha em hype_scores)\nUI: HYPE NÃO CALCULADO" as NaoCalc
-state "Dados insuficientes\nstatus = INSUFFICIENT_DATA\n(< 3 eventos no horizonte)\nUI: DADOS INSUFICIENTES" as Insuf
+state "Não calculado\n(sem linha em hype_scores)\nUI: HYPE NÃO CALCULADO\n(calculando: ao vivo em ~2 min)" as NaoCalc
+state "Dados insuficientes\nstatus = INSUFFICIENT_DATA\n(< 3 eventos no horizonte)\nUI: DADOS INSUFICIENTES\nsem Selos de Hype" as Insuf
 state "Disponível\nstatus = AVAILABLE" as Disp {
   state "Nível" as Nivel {
     state "LOW_SIGNAL (< 20)" as L0
@@ -34,15 +34,25 @@ state "Disponível\nstatus = AVAILABLE" as Disp {
     a cada recálculo o nível segue o score
     (faixas do HypeScoreConfig, arredondamento
     igual ao do frontend); o texto do nível
-    sempre acompanha a cor
+    sempre acompanha a cor; o verso do card
+    muda de arte por faixa (HypeBackArt)
+  end note
+  note left of Nivel
+    subida para HOT, TRENDING ou VIRAL
+    (ou momento EMERGING novo)
+    → DomainEvents.HypeMilestone
+    (ver RF53_MaquinaDeEstados_Marco)
   end note
 }
 state "Desatualizado\n(calculated_at > 24 h)\nUI: HYPE DESATUALIZADO" as Stale
+state "Sujo (aguardando recálculo)\nHypeLiveRecalc.dirty = true\n(o estado gravado continua valendo)" as Sujo
 
 [*] --> NaoCalc : peça cadastrada\nou look criado
-NaoCalc --> Insuf : job (< 3 eventos)
-NaoCalc --> Disp : job (≥ 3 eventos)
-Insuf --> Disp : novos sinais
+NaoCalc --> Sujo : PieceCreated / SchemeSaved\n(o job de 6 h também calcula)
+Sujo --> Insuf : recálculo ao vivo (≤ 120 s)\nou job — < 3 eventos
+Sujo --> Disp : recálculo ao vivo (≤ 120 s)\nou job — ≥ 3 eventos
+Insuf --> Sujo : evento
+Disp --> Sujo : novo sinal, uso, edição,\nlook do dia, disponibilidade
 Disp --> Insuf : sinais saem\ndo horizonte
 Disp -right-> Stale
 Insuf --> Stale : job atrasado
@@ -50,22 +60,33 @@ Stale --> Disp
 Disp --> [*] : peça/look arquivado\nou excluído
 
 note right of Disp
-  a cada recálculo (6/6 h):
+  a cada recálculo:
   • score e nível novos
   • delta de 7 dias em pontos e %
     → direção UP / DOWN / STABLE
-    (sem snapshot de 7 dias: sem seta)
   • momentum EMERGING · RISING ·
     STABLE · COOLING · CLASSIC
+  • país, região, categorias, subcategorias (V39)
   • public_eligible = false (item ou perfil
     privado, moderação pendente, conta de
-    teste): o dono continua vendo, mas o
-    item sai do "Em alta" e das estatísticas
+    teste): o dono continua vendo o Hype
+    pessoal, mas o item sai do Em alta, do
+    Ranking, do Globo, das posições e não
+    tem Selos de Hype
+  • public_eligible = true: Selos de Hype
+    VIRAL > TRENDING > EMERGING >
+    CLASSIC > RARE (derivados, nada gravado)
+end note
+note bottom of Sujo
+  eventos só marcam; a verificação de 30 s recalcula
+  tudo de uma vez, no máximo a cada 120 s;
+  recalculate() é synchronized (job e ao vivo
+  nunca se sobrepõem); falha → continua sujo
 end note
 note bottom of Stale
   entra quando o job atrasa (vale também
   para "Dados insuficientes"); o próximo
   recálculo devolve o estado calculado;
-  arquivado/excluído some no job seguinte
+  arquivado/excluído some no recálculo seguinte
 end note
 @enduml

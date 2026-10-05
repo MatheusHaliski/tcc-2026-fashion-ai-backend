@@ -22,10 +22,15 @@ public class ProfileController {
         this.institutional = institutional;
     }
 
+    /**
+     * Perfil público. {@code sort} ordena a grade de looks (Lookbook › Looks, P3-02): recent (padrão) · hype_desc ·
+     * hype_asc · growth pelo HypeScore v2 — o dono ordena pelo Hype pessoal, terceiros só pelo público elegível. Sem
+     * {@code sort}, a resposta é a de sempre (mais recentes primeiro).
+     */
     @GetMapping("/api/profiles/{idOrUsername}")
-    @Operation(summary = "RF17 — Perfil público (por id ou @username)")
-    public Map<String, Object> profile(CurrentUser viewer, @PathVariable String idOrUsername) {
-        return profiles.profile(viewer, idOrUsername);
+    @Operation(summary = "RF17 — Perfil público (por id ou @username); sort = recent | hype_desc | hype_asc | growth (HypeScore v2) ordena a grade de looks")
+    public Map<String, Object> profile(CurrentUser viewer, @PathVariable String idOrUsername, @RequestParam(required = false) String sort) {
+        return profiles.profile(viewer, idOrUsername, sort);
     }
 
     @PostMapping("/api/users/{targetId}/followers")

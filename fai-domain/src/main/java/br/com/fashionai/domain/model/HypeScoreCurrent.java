@@ -82,6 +82,20 @@ public class HypeScoreCurrent {
     @Column(length = 255)
     private String occasions;
 
+    /** País do dono (ISO-2) e região do mundo (WorldRegions) — recorte regional do ranking. */
+    @Column(name = "country", length = 8)
+    private String country;
+
+    @Column(name = "region", length = 40)
+    private String region;
+
+    /** Peça: a própria categoria/subcategoria; look: as das peças que o compõem (CSV). */
+    @Column(name = "categories", length = 255)
+    private String categories;
+
+    @Column(name = "subcategories", length = 1000)
+    private String subcategories;
+
     @Column(name = "signals_json", columnDefinition = "json")
     private String signalsJson;
 

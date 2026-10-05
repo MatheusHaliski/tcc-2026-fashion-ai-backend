@@ -96,12 +96,15 @@ public class WardrobeController {
                                                @RequestParam(required = false) String sort,
                                                @RequestParam(defaultValue = "0") int page,
                                                @RequestParam(defaultValue = "24") int size,
-                                               @RequestParam(required = false) String hypeLevel) {
-        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
+                                               @RequestParam(required = false) String hypeLevel,
+                                               @RequestParam(required = false) String seal) {
+        // seal (RF53): hype | brand | any — peças com selo de Hype, com selo de marca/celebridade, ou qualquer um
+        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, seal));
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
-    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade)")
+    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade); sort=recent|hype_desc|growth… e "
+            + "hypeLevel (faixa mínima). Para quem não é o dono, só o Hype público (publicEligible) ordena e filtra")
     public Views.Page<Views.PieceView> closet(CurrentUser viewer, @PathVariable UUID ownerId,
                                              @RequestParam(required = false) String category,
                                              @RequestParam(required = false) String color,
@@ -112,9 +115,12 @@ public class WardrobeController {
                                              @RequestParam(required = false) String q,
                                              @RequestParam(required = false) String sort,
                                              @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "24") int size) {
+                                             @RequestParam(defaultValue = "24") int size,
+                                             @RequestParam(required = false) String hypeLevel) {
         // estado (disponível / indisponível / à venda) também vale no perfil: são dados públicos da peça
-        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
+        // hypeLevel (P2-11, Lookbook › Peças): FILTRO por faixa mínima, mesma regra do /api/me/closet; o serviço aplica a
+        // guarda de privacidade (terceiros só com score publicEligible; o resto fica "—", por último e fora do filtro)
+        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
     }
 
     @GetMapping("/api/pieces/{id}")
@@ -129,13 +135,13 @@ public class WardrobeController {
         return wardrobe.update(user, id, form);
     }
 
-    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale) {
+    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
     }
 
     @PatchMapping("/api/pieces/{id}/flags")
-    @Operation(summary = "RF7 — Favoritar, marcar disponível/indisponível ou à venda")
+    @Operation(summary = "RF7/RF31 — Favoritar, marcar disponível/indisponível, à venda ou para doar")
     public Views.PieceView flags(CurrentUser user, @PathVariable UUID id, @RequestBody Flags body) {
-        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale());
+        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale(), body.forDonation());
     }
 
     @PostMapping("/api/pieces/{id}/worn")
