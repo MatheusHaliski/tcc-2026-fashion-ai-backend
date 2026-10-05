@@ -83,7 +83,30 @@ public class HypeSnapshotService {
     }
 
     /** Entrada de uma entidade + metadados que vão para o read model (recortes do ranking, dono, elegibilidade). */
-    record Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions) {
+    record Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions,
+                 String country, String region, String categories, String subcategories) {
+        /** Forma curta (sem recortes regionais e de subcategoria). */
+        Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions) {
+            this(id, ownerId, inputs, publicEligible, category, styles, occasions, null, null, null, null);
+        }
+    }
+
+    /** País (ISO-2, maiúsculo) e região do mundo do dono — a mesma tabela WorldRegions do Painel global. */
+    static String[] place(br.com.fashionai.domain.model.User u) {
+        String country = u == null || u.getCountry() == null || u.getCountry().isBlank() ? null : u.getCountry().trim().toUpperCase(Locale.ROOT);
+        return new String[]{country, country == null ? null : br.com.fashionai.application.taxonomy.WorldRegions.of(country)};
+    }
+
+    static String csvOf(java.util.stream.Stream<String> values, int max) {
+        String joined = values.filter(v -> v != null && !v.isBlank()).distinct().sorted().collect(Collectors.joining(","));
+        if (joined.isEmpty()) {
+            return null;
+        }
+        if (joined.length() <= max) {
+            return joined;
+        }
+        int cut = joined.lastIndexOf(',', max);   // corta numa vírgula: nunca deixa um valor pela metade
+        return cut > 0 ? joined.substring(0, cut) : null;
     }
 
     @Transactional
@@ -174,7 +197,9 @@ public class HypeSnapshotService {
             HypeInputs in = new HypeInputs(HypeEntityType.PIECE, s.activity(), s.interactions(), s.views(), s.windows(), lifetime, p.getViewCount(),
                     s.totalEvents(), ageDays(p.getCreatedAt(), now), presence, cohortGrowth, surprise(attributeKeys(p), freq, all.size()), null,
                     limitedEdition(p.getTags()));
-            out.add(new Entry(p.getId(), p.getUser().getId(), in, pub, p.getCategory(), trim(p.getStyleTags()), trim(p.getOccasionTags())));
+            String[] place = place(p.getUser());
+            out.add(new Entry(p.getId(), p.getUser().getId(), in, pub, p.getCategory(), trim(p.getStyleTags()), trim(p.getOccasionTags()),
+                    place[0], place[1], p.getCategory(), p.getSubcategory()));
         }
         return out;
     }
@@ -236,7 +261,11 @@ public class HypeSnapshotService {
             HypeInputs in = new HypeInputs(HypeEntityType.SCHEME, ss.activity(), ss.interactions(), ss.views(), ss.windows(), lifetime, s.getViewCount(),
                     ss.totalEvents(), ageDays(s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), now), presence, null,
                     surprise(keysBy.get(s.getId()), freq, all.size()), influence, limited);
-            out.add(new Entry(s.getId(), s.getUser().getId(), in, publicScheme(s), null, trim(s.getStyle()), trim(s.getOccasion())));
+            String[] place = place(s.getUser());
+            // o look entra nos recortes de categoria/subcategoria das peças que o compõem
+            out.add(new Entry(s.getId(), s.getUser().getId(), in, publicScheme(s), null, trim(s.getStyle()), trim(s.getOccasion()), place[0], place[1],
+                    csvOf(items.stream().map(si -> si.getWardrobeItem().getCategory()), 255),
+                    csvOf(items.stream().map(si -> si.getWardrobeItem().getSubcategory()), 1000)));
         }
         return out;
     }
@@ -298,6 +327,10 @@ public class HypeSnapshotService {
             c.setCategory(e.category());
             c.setStyles(e.styles());
             c.setOccasions(e.occasions());
+            c.setCountry(e.country());
+            c.setRegion(e.region());
+            c.setCategories(e.categories());
+            c.setSubcategories(e.subcategories());
             Map<String, Object> sig = new LinkedHashMap<>(r.signals());
             sig.put("ageDays", e.inputs().ageDays());
             c.setSignalsJson(Json.write(sig));

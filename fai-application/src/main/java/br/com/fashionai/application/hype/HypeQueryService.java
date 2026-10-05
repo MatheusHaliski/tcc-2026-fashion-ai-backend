@@ -190,12 +190,16 @@ public class HypeQueryService {
     @Transactional(readOnly = true)
     public Map<String, Object> detail(CurrentUser viewer, HypeEntityType type, UUID id) {
         StyleCompatibility.Profile item;
+        List<SchemeItem> lookItems = List.of();
+        long inLooks = 0;
         if (type == HypeEntityType.PIECE) {
             WardrobeItem w = pieces.findById(id).filter(x -> canView(viewer, x)).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
             item = profileOf(w);
+            inLooks = schemeItems.countByWardrobeItemId(id);
         } else {
             Scheme s = schemes.findById(id).filter(x -> canView(viewer, x)).orElseThrow(() -> ApiException.notFound(Msg.t("entity.esquema")));
-            item = profileOf(s, schemeItems.findBySchemeIdOrderBySortOrder(id));
+            lookItems = schemeItems.findBySchemeIdOrderBySortOrder(id);
+            item = profileOf(s, lookItems);
         }
         Optional<HypeScoreCurrent> row = current.findByEntityTypeAndEntityIdAndAlgorithmVersion(type, id, config.algorithmVersion());
         Map<String, Object> out = new LinkedHashMap<>(summary(row.orElse(null), Instant.now()));
@@ -207,6 +211,33 @@ public class HypeQueryService {
         out.put("weights", config.describe().get("weights") instanceof Map<?, ?> w ? w.get(type.name()) : null);
         // compatibilidade PESSOAL — separada do Hype (nunca entra no score)
         out.put("compatibility", viewer == null ? null : dnas.findByUserId(viewer.id()).map(d -> StyleCompatibility.score(profileOf(d), item)).orElse(null));
+        if (type == HypeEntityType.PIECE) {
+            out.put("inLooks", inLooks);   // em quantos looks a peça aparece (sinal de uso "peça em look")
+        } else {
+            out.put("pieces", lookPieces(viewer, lookItems));   // o Hype do look ao lado do Hype de cada peça dele
+        }
+        return out;
+    }
+
+    /** Peças de um look com o Hype de cada uma (só as que quem vê pode ver), na ordem do look. */
+    List<Map<String, Object>> lookPieces(CurrentUser viewer, List<SchemeItem> items) {
+        if (items.isEmpty()) {
+            return List.of();
+        }
+        List<WardrobeItem> visible = items.stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).filter(w -> canView(viewer, w)).toList();
+        Map<UUID, HypeScoreCurrent> hype = currentOf(HypeEntityType.PIECE, visible.stream().map(WardrobeItem::getId).toList());
+        Instant now = Instant.now();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (WardrobeItem w : visible) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", w.getId().toString());
+            m.put("name", w.getName());
+            m.put("category", w.getCategory());
+            m.put("subcategory", w.getSubcategory());
+            m.put("imageUrl", w.getStudioImageUrl() != null ? Views.studioThumb(w.getStudioImageUrl()) : w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+            m.put("hype", summary(hype.get(w.getId()), now));
+            out.add(m);
+        }
         return out;
     }
 
