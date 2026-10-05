@@ -558,6 +558,24 @@ compartilhados).
 |---|---|---|
 | I0 | **Entregue (05/10)** | `lib/avatar3d/identity/metrics.ts` (reprojeção por região, preservação da forma, captura, assimetria, CIEDE2000, IoU), `gate.ts` (limiares da seção 16; o que o aparelho não mede fica "não medido"), `privacy.ts` (`identityLogPayload`, chaves proibidas), `identity.test.ts` (referências de cor de Sharma et al., gate, varredura de `console.*`, **linha de base no CI** com rostos sintéticos). O `HumanAvatar` calcula a fidelidade ao montar o corpo (`parts.identity`), sem log. |
 | I1 | **Entregue (05/10)** | `avatar_identity_versions` (V38) + `AvatarIdentityVersion`; `user_avatars_3d` vira a versão atual (`identity_id`, `current_version`, `approved_version`, `identity_status`, `quality_json`). Os avatares existentes migram como versão 1 aprovada. Salvar cria uma versão: o gate é **recalculado no servidor** (`IdentityQuality`) a partir dos números do aparelho; reprovou → `NEEDS_REFINEMENT` e as outras pessoas continuam vendo a última aprovada (forma e textura por `?version=`). Endpoints `GET /api/me/avatar3d/versions`, `POST …/versions/{n}/approve` (com avisos só com `acceptWarnings`) e `POST …/versions/{n}/restore` (cria versão nova). Guarda a atual, a aprovada e as 5 mais recentes; o resto some com a textura. Auditoria só com versão, status e nomes das métricas. Tela Meu Avatar 3D: versão, status, o que reprovou em palavras, aprovar mesmo assim, histórico e restaurar. Testes: 6 novos no `Avatar3dServiceTest` (incluindo a auditoria sem dado pessoal) e verificação da migração num MySQL local com um avatar criado pela versão anterior. |
+| I2 | **Entregue (05/10)** | `lib/avatar3d/human/face-residual.ts`: camada de resíduo assimétrico (RBF de Wendland C2 com suporte compacto, profundidade com peso 0,35, resíduo limitado a 6% da altura do rosto, λ = 0,008) sobre o espaço de rostos, na mesma topologia (rig, UV, pesos, cabelo e roupas valem). Os olhos andam inteiros com o campo. `fitFace` devolve o campo; `compose(..., residual)` aplica; `NEXT_PUBLIC_FACE_RESIDUAL=off` desliga. Medidas nomeadas da seção 5 em `identity/face-profile.ts`: 18 proporções, ângulo da mandíbula, classe do formato derivada, assimetria por região, confiança e origem; `proportionErrorPct` entra no relatório de qualidade. |
+
+
+**Resultado do I2 nos 15 retratos autorizados** (reconhecedores independentes; agregados em
+[`metricas-identidade-I2-2026-10-05.json`](metricas-identidade-I2-2026-10-05.json)):
+
+| Medida | I0 (só espaço simétrico) | I2 (com resíduo) |
+|---|---|---|
+| SFace, frente, mediana | 0,369 | **0,476** |
+| Acima do limiar "mesma pessoa" (0,363), frente | 8 de 15 | **14 de 15** |
+| ArcFace, frente, mediana | 0,312 | **0,493** |
+| A própria foto é a mais parecida (top-1), frente | 11 de 15 | **15 de 15** |
+| SFace, 3/4, mediana | 0,279 | **0,404** |
+| Acima do limiar, 3/4 | 2 de 14 | **9 de 14** |
+| Top-1, 3/4 | 10 de 14 | **13 de 14** |
+
+A semelhança de frente subiu em 15 de 15 retratos e a de 3/4 em 13 de 14. A frente já passa o limiar do gate (SFace ≥ 0,45);
+o 3/4 ainda não (0,404 < 0,45 no conjunto; o gate de 3/4 pede ≥ 0,363 por pessoa, atendido em 9 de 14).
 
 **Linha de base do I0 (rostos sintéticos, sem foto de ninguém):**
 

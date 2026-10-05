@@ -56,6 +56,8 @@ public final class IdentityQuality {
             Double v = num(q.get(k), 0, 1);
             if (v != null) out.put(k, v);
         }
+        Double proportion = num(q.get("proportionErrorPct"), 0, 100);
+        if (proportion != null) out.put("proportionErrorPct", proportion);
         Double skin = num(q.get("skinColorError"), 0, 100), hair = num(q.get("hairSilhouetteError"), 0, 1), seams = num(q.get("seams"), 0, 1000);
         if (skin != null) out.put("skinColorError", skin);
         if (hair != null) out.put("hairSilhouetteError", hair);

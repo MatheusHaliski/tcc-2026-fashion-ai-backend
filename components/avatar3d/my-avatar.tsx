@@ -39,7 +39,7 @@ interface VersionRow { version: number; status: IdentityView["status"]; basedOn?
 /** Relatório de qualidade que vai com o avatar: só números agregados (lib/avatar3d/identity), nunca forma ou cor. */
 function qualityReport(f: FaceFidelity | null | undefined) {
   if (!f) return undefined;
-  return { reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry, capture: f.capture, shapePreservation: f.shapePreservation };
+  return { reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry, capture: f.capture, shapePreservation: f.shapePreservation, proportionErrorPct: f.proportionErrorPct };
 }
 
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];

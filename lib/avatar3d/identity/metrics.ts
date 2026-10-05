@@ -11,6 +11,7 @@
  */
 import { CANON_POS } from "@/lib/avatar3d/canonical-face";
 import { similarity } from "@/lib/avatar3d/geometry";
+import { proportionErrorPct } from "./face-profile";
 
 export const N_LM = 468;
 
@@ -75,6 +76,8 @@ export interface FaceFidelity {
    * foi capturado (1 − resíduo² depois / resíduo² antes). É a medida que a camada de resíduo (I2) leva perto de 1.
    */
   capture?: number;
+  /** erro médio das medidas nomeadas do rosto (relativas à altura do rosto), em % (face-profile.ts) */
+  proportionErrorPct: number;
 }
 
 /**
@@ -109,7 +112,7 @@ export function faceFidelity(measuredCm: ArrayLike<number>, avatarM: ArrayLike<n
     capture = r0 > 1e-14 ? Math.round(Math.max(0, Math.min(1, 1 - res / r0)) * 1000) / 1000 : 1;
   }
   return {
-    capture, reprojectionMm, shapePreservation: Math.round(shapePreservation * 1000) / 1000,
+    capture, proportionErrorPct: proportionErrorPct(measuredCm, avatarM), reprojectionMm, shapePreservation: Math.round(shapePreservation * 1000) / 1000,
     asymmetry: { measuredMm: Math.round(mean(aM) * 100) / 100, avatarMm: Math.round(mean(aA) * 100) / 100, preservation: den > 1e-14 ? Math.round(Math.max(0, dot / den) * 1000) / 1000 : 1 },
   };
 }

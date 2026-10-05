@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { deltaE2000, faceFidelity, hexToLab, maskIoU, mirrorIndex, N_LM } from "./metrics";
 import { evaluateIdentityGate, IDENTITY_GATE } from "./gate";
 import { FORBIDDEN_LOG_KEYS, identityLogPayload } from "./privacy";
+import { faceProfile, faceProportions, proportionErrorPct, regionalAsymmetry, shapeClass } from "./face-profile";
 import { parseBodyAsset, type BodyMeta } from "../human/asset";
 import { compose, fitBody, fitFace, landmarksOn } from "../human/compose";
 import { CANON_POS } from "../canonical-face";
@@ -67,6 +68,36 @@ describe("fidelidade do rosto (métrica)", () => {
   });
 });
 
+describe("perfil do rosto (medidas nomeadas)", () => {
+  it("mede as proporções do rosto canônico e deriva uma classe de formato", () => {
+    const p = faceProportions(canon());
+    expect(p.faceHeight).toBeGreaterThan(p.faceWidth * 0.9);
+    expect(p.mouthWidth).toBeGreaterThan(p.noseWidth);
+    expect(p.eyeWidthL).toBeCloseTo(p.eyeWidthR, 1);                 // rosto canônico é simétrico
+    expect(p.jawAngle).toBeGreaterThan(90); expect(p.jawAngle).toBeLessThan(180);
+    expect(["OVAL", "ROUND", "SQUARE", "RECTANGULAR", "OBLONG", "HEART", "DIAMOND", "TRIANGULAR"]).toContain(shapeClass(p));
+  });
+  it("mandíbula mais larga muda a classe para um formato mais quadrado/triangular", () => {
+    const wide = canon(); for (let i = 0; i < N_LM; i++) if (wide[i * 3 + 1] < -2) wide[i * 3] *= 1.25;
+    expect(faceProportions(wide).jawWidth).toBeGreaterThan(faceProportions(canon()).jawWidth * 1.2);
+    expect(shapeClass(faceProportions(wide))).not.toBe("HEART");
+  });
+  it("assimetria por região aponta o olho e a sobrancelha, não a mandíbula", () => {
+    const r = regionalAsymmetry(asymFace());
+    expect(r.eye).toBeGreaterThan(1); expect(r.brow).toBeGreaterThan(1);
+    expect(r.jaw).toBeLessThan(r.eye);
+    expect(regionalAsymmetry(canon()).eye).toBeLessThan(0.5);
+  });
+  it("confiança cai com avisos e sobe com mais vistas; erro de proporção 0 para o mesmo rosto", () => {
+    const one = faceProfile(canon())!; const occl = faceProfile(canon(), { warnings: ["FACE_OCCLUDED"] })!; const multi = faceProfile(canon(), { views: 3 })!;
+    expect(occl.proportions.confidence).toBeLessThan(one.proportions.confidence);
+    expect(multi.proportions.confidence).toBeGreaterThan(one.proportions.confidence);
+    expect(multi.proportions.source).toBe("MULTI_VIEW");
+    expect(proportionErrorPct(canon(), Float64Array.from(canon(), (v) => v * 0.01))).toBe(0);
+    expect(faceProfile([1, 2, 3])).toBeNull();
+  });
+});
+
 describe("gate de identidade", () => {
   const good = { reprojectionMm: { all: 1.1, eyes: 1, nose: 0.9, mouth: 1 }, asymmetry: { measuredMm: 2, preservation: 0.8 }, skinColorError: 3, hairSilhouetteError: 0.1, seams: 0 };
   it("passa com tudo dentro dos limiares e lista o que não foi medido", () => {
@@ -123,21 +154,31 @@ const bin = readFileSync(new URL("fai-body-v1.bin", dir));
 const asset = parseBodyAsset(meta, bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength));
 
 /** O rosto medido levado ao corpo humano como o app faz (HumanAvatar), e a fidelidade do resultado. */
-function onBody(measuredCm: Float64Array, sex: "FEMININO" | "MASCULINO" = "FEMININO") {
+function onBody(measuredCm: Float64Array, sex: "FEMININO" | "MASCULINO" = "FEMININO", residual = true) {
   const st = DEFAULT_BODY[sex].stature; const z = fitBody(asset, { sex }).z;
   const raw = compose(asset, z, null, st);
-  const fit = fitFace(asset, Float32Array.from(raw.body, (v) => v / raw.scale), measuredCm);
-  const c = compose(asset, z, fit.z, st);
+  const fit = fitFace(asset, Float32Array.from(raw.body, (v) => v / raw.scale), measuredCm, 4, { residual });
+  const c = compose(asset, z, fit.z, st, fit.residual);
   return faceFidelity(measuredCm, landmarksOn(asset, c.body), landmarksOn(asset, raw.body));
 }
 
 /**
- * Linha de base do pipeline atual com rostos sintéticos (sem foto de ninguém). Valores do I0, antes da camada de
- * resíduo (I2): a regressão não pode piorar mais que 0,03; o I2 sobe estes pisos.
+ * Linha de base com rostos sintéticos (sem foto de ninguém). I0 (só o espaço de rostos, simétrico): assimetria 0,009,
+ * olhos 1,6 mm, captura 0,48. I2 (com a camada de resíduo): os pisos abaixo. A regressão não pode piorar mais que 0,03.
  */
-const BASELINE = { asymmetryPreservation: 0, reprojectionEyesMm: 1.6, captureJaw: 0.48 };
+const BASELINE = { asymmetryPreservation: 0.9, reprojectionEyesMm: 0.6, captureJaw: 0.85 };
 
 describe("linha de base do rosto no corpo (sintético)", () => {
+  it("sem a camada de resíduo, o espaço simétrico perde a assimetria (o problema que o I2 resolve)", () => {
+    const f = onBody(asymFace(), "FEMININO", false);
+    expect(f.asymmetry.preservation).toBeLessThan(0.1);
+  }, 60000);
+  it("com a camada de resíduo, passa no gate de identidade nas métricas medidas no aparelho", () => {
+    const f = onBody(asymFace());
+    const g = evaluateIdentityGate({ reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry });
+    expect(g.failed).toEqual([]);
+    expect(f.proportionErrorPct).toBeLessThan(onBody(asymFace(), "FEMININO", false).proportionErrorPct);
+  }, 60000);
   it("olho e sobrancelha 3 mm mais altos e canto da boca 2 mm mais baixo de um lado", () => {
     const f = onBody(asymFace());
     expect(f.asymmetry.measuredMm).toBeGreaterThan(1);                 // relevante para o gate (> 1 mm)

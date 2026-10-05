@@ -5,6 +5,10 @@ import * as THREE from "three";
 import { loadBodyAsset, type BodyAsset } from "@/lib/avatar3d/human/asset";
 import { compose, fitBody, fitFace, landmarksOn, type BodyInput, type Composed } from "@/lib/avatar3d/human/compose";
 import { faceFidelity, type FaceFidelity } from "@/lib/avatar3d/identity/metrics";
+import type { FaceResidual } from "@/lib/avatar3d/human/face-residual";
+
+/** Camada de resíduo do rosto (AVATAR-ID I2); NEXT_PUBLIC_FACE_RESIDUAL=off volta ao rosto só do espaço simétrico. */
+const FACE_RESIDUAL = process.env.NEXT_PUBLIC_FACE_RESIDUAL !== "off";
 import { buildHuman, type Human } from "@/lib/avatar3d/human/three-human";
 import { applyIdle, applyRestPose, type PoseState } from "@/lib/avatar3d/human/pose";
 import { buildHair } from "@/lib/avatar3d/human/hair-geometry";
@@ -100,12 +104,14 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   const built = useMemo(() => {
     if (!asset || asset === "error") return null;
     const fit = fitBody(asset, body);
-    let fz: Float64Array | null = null; let rawBody: Float32Array | null = null;
+    let fz: Float64Array | null = null; let rawBody: Float32Array | null = null; let residual: FaceResidual | null = null;
     if (face?.shape?.length === 468 * 3) {
       const raw = compose(asset, fit.z, null, stature); rawBody = raw.body;
-      fz = fitFace(asset, Float32Array.from(raw.body, (v) => v / raw.scale), face.shape).z;
+      const ff = fitFace(asset, Float32Array.from(raw.body, (v) => v / raw.scale), face.shape, 4, { residual: FACE_RESIDUAL });
+      fz = ff.z; residual = ff.residual;
     }
-    const c = compose(asset, fit.z, fz, stature);
+    // AVATAR-ID I2: o espaço de rostos (simétrico) + a camada de resíduo assimétrico, na mesma topologia
+    const c = compose(asset, fit.z, fz, stature, residual);
     // métricas de fidelidade (reprojeção, assimetria, captura): o gate de identidade usa estes números
     const identity = face?.shape?.length === 468 * 3 && rawBody ? faceFidelity(face.shape, landmarksOn(asset, c.body), landmarksOn(asset, rawBody)) : null;
     const h = buildHuman(asset, c, { skin, debugHair });
