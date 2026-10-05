@@ -18,6 +18,7 @@ import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 
@@ -42,7 +43,7 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
  * Camadas (RF11): superfície externa (o article) → área artística visível nas quatro laterais ({@link ArtStage}) →
  * container com o conteúdo acima → área da peça com fundo próprio. A arte é decorativa: não recebe clique nem foco.
  */
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra, flip = true }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
@@ -55,6 +56,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   const flippable = flip && !preview && !selectable;
   const hype = useHypeSummary("PIECE", piece.id, !preview && !selectable);
   const hypeState = hypeViewState(hype.summary, hype);
+  // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
+  const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;

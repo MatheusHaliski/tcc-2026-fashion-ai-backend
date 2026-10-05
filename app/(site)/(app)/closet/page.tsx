@@ -11,6 +11,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, EmptyState, ErrorState, PageHeader, Pagination, SkeletonGrid, Tabs, useToast } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { PieceCard } from "@/components/piece-card";
+import { toSealBadges } from "@/components/scheme-card";
 import { usePieceUpdates } from "@/lib/pieces/piece-events";
 import { FaiIcon } from "@/components/fai-icon";
 import { hypeLevelFilter, hypeSortOptions } from "@/components/hype";
@@ -26,17 +27,33 @@ const CATEGORY_TABS = ["", "upper_piece", "lower_piece", "shoes_piece", "accesso
 type CategoryTab = (typeof CATEGORY_TABS)[number];
 // ?category= (ou ?tab=) na URL: o link para uma categoria abre direto na aba certa
 const parseTab = (v: string | null): CategoryTab => (CATEGORY_TABS as readonly string[]).includes(v ?? "") ? ((v ?? "") as CategoryTab) : "";
+/**
+ * RF53 — "Com selo": peças com Selo de Hype FashionAI, com selo de marca/celebridade aprovado ou qualquer um dos dois
+ * (`seal=hype|brand|any` em GET /api/me/closet). Fica na URL (?seal=) como a aba, para o link abrir já filtrado.
+ */
+const SEAL_FILTERS = ["hype", "brand", "any"] as const;
+type SealFilter = (typeof SEAL_FILTERS)[number] | "";
+const parseSeal = (v: string | null): SealFilter => (SEAL_FILTERS as readonly string[]).includes(v ?? "") ? ((v ?? "") as SealFilter) : "";
+const closetHref = (category: string, seal: string) => `/closet${qs({ category, seal })}`;
+type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
 
 function Closet() {
   const { t } = useI18n(); const tax = useTaxonomy(); const toast = useToast();
   const sp = useSearchParams(); const router = useRouter();
   const urlTab = parseTab(sp.get("category") ?? sp.get("tab"));
-  const [f, setF] = useState({ category: urlTab as string, color: "", season: "", occasion: "", style: "", state: "", hypeLevel: "", q: "", sort: "recent", page: 0, size: 24 });
+  const urlSeal = parseSeal(sp.get("seal"));
+  const [f, setF] = useState({ category: urlTab as string, color: "", season: "", occasion: "", style: "", state: "", hypeLevel: "", seal: urlSeal as string, q: "", sort: "recent", page: 0, size: 24 });
   const { data, loading, error, reload, setData } = useApi<Page<PieceView>>((signal) => api.get(`/api/me/closet${qs(f)}`, { signal }), [JSON.stringify(f)]);
   const set = (k: keyof typeof f, v: string | number) => setF((o) => ({ ...o, [k]: v, page: k === "page" ? (v as number) : 0 }));
   // voltar/avançar do navegador (ou um link com outra ?category=) troca a aba; os filtros ficam
   useEffect(() => { setF((o) => (o.category === urlTab ? o : { ...o, category: urlTab, page: 0 })); }, [urlTab]);
-  const changeTab = (next: CategoryTab) => { set("category", next); router.replace(next ? `/closet?category=${next}` : "/closet", { scroll: false }); };
+  useEffect(() => { setF((o) => (o.seal === urlSeal ? o : { ...o, seal: urlSeal, page: 0 })); }, [urlSeal]);
+  const changeTab = (next: CategoryTab) => { set("category", next); router.replace(closetHref(next, f.seal), { scroll: false }); };
+  const changeSeal = (next: SealFilter) => { set("seal", next); router.replace(closetHref(f.category, next), { scroll: false }); };
+  // selos de marca/celebridade aprovados nas peças da página: UM pedido por página (até 60 ids); falha = cards sem selo
+  const ids = (data?.items ?? []).slice(0, 60).map((p) => p.id).join(",");
+  const pieceSeals = useApi<{ items?: Record<string, SealBadgeSource[]> }>((signal) => api.get(`/api/pieces/seals?ids=${ids}`, { signal }), [ids], { enabled: !!ids });
+  const sealsOf = (id: string) => toSealBadges(pieceSeals.data?.items?.[id]);
   // favorita/disponível agora se marcam no detalhe da peça ("Mais opções"): a grade acompanha a mudança
   usePieceUpdates((p) => setData((d) => (d ? { ...d, items: d.items.map((x) => (x.id === p.id ? p : x)) } : d)));
   // RF4 · Estúdio: leva ao estúdio as peças que ainda estão só com o recorte (até 40 por vez)
@@ -69,13 +86,19 @@ function Closet() {
           { value: "recent", label: t("common.mais_recentes") }, ...hypeSortOptions(),
           { value: "name", label: t("closet.nome_a_z") }, { value: "price", label: t("common.price") },
         ] }}
-        resultCount={data?.total} />
+        resultCount={data?.total}
+        extra={
+          <div className="seal-filter" role="group" aria-label={t("closet.seal.label")}>
+            <span className="seal-filter-label" aria-hidden>{t("closet.seal.label")}</span>
+            {SEAL_FILTERS.map((v) => <button key={v} type="button" className="chip" aria-pressed={f.seal === v} onClick={() => changeSeal(f.seal === v ? "" : v)}>{t(`closet.seal.${v}`)}</button>)}
+          </div>
+        } />
       {error && <ErrorState error={error} onRetry={reload} />}
       {loading && <SkeletonGrid n={8} />}
       {!loading && data && data.items.length === 0 && <EmptyState title={t("closet.empty")} hint={t("closet.emptyHint")} action={<Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link>} />}
       {data && data.items.length > 0 && (
         <>
-          <div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} />)}</div>
+          <div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />
         </>
       )}

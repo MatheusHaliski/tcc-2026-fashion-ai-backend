@@ -17,6 +17,7 @@ import { HypeStateNotice } from "./hype-state-notice";
 import { HypeTrendIndicator } from "./hype-trend-indicator";
 import { HypeVsStyle } from "./hype-vs-style";
 import { HypeBadge } from "./hype-badge";
+import { HypeSealProgressList } from "./hype-seals";
 
 const path = (type: HypeEntity, id: string) => `/api/hype/${type === "PIECE" ? "pieces" : "looks"}/${id}`;
 
@@ -84,6 +85,8 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
             <Link className="type-caption underline" href={`/explorer?tab=ranking&type=${type === "PIECE" ? "PIECE" : "LOOK"}`}>{t("hype.drawer.see_ranking")}</Link>
           </section>
         )}
+        {/* RF53: Selos de Hype conquistados e as próximas metas (some quando o detalhe não traz o progresso) */}
+        {d?.sealProgress && <HypeSealProgressList progress={d.sealProgress} />}
         {d && <HypeVsStyle score={d.score} compatibility={d.compatibility} signedIn={!!user} />}
         <section aria-label={t("hype.history.title")}>
           <h3 className="type-h3 mb-2">{t("hype.history.title")}</h3>

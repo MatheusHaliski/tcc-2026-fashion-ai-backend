@@ -12,6 +12,14 @@ export type HypeLevel = "LOW_SIGNAL" | "NICHE" | "RELEVANT" | "HOT" | "TRENDING"
 export type HypeDirection = "UP" | "DOWN" | "STABLE";
 export type HypeMomentum = "EMERGING" | "RISING" | "STABLE" | "COOLING" | "CLASSIC";
 export type HypeDimension = "POPULARITY" | "ENGAGEMENT" | "TREND" | "TREND_VELOCITY" | "ORIGINALITY" | "RARITY" | "LONGEVITY" | "NOVELTY" | "INFLUENCE";
+/**
+ * RF53 — Selos de Hype FashionAI: automáticos, derivados do HypeScore atual (HypeSeals.of no backend; nada salvo, nada
+ * emitido por marca). Ordem de prioridade: VIRAL > TRENDING > EMERGING > CLASSIC > RARE. O Hype alimenta os selos; selo
+ * nunca alimenta o Hype.
+ */
+export type HypeSealCode = "VIRAL" | "TRENDING" | "EMERGING" | "CLASSIC" | "RARE";
+/** Progresso de cada Selo de Hype no detalhe (drawer): conquistado ou o critério que falta (texto já traduzido). */
+export interface HypeSealProgress { code: HypeSealCode; earned: boolean; criteria: string }
 
 export interface HypeSummary {
   status: HypeStatus;
@@ -25,6 +33,8 @@ export interface HypeSummary {
   dimensions?: Partial<Record<HypeDimension, number>>;
   calculatedAt?: string;
   algorithmVersion?: string;
+  /** RF53 — Selos de Hype conquistados (ordenados por prioridade; lista vazia quando nenhum) */
+  seals?: HypeSealCode[];
 }
 
 export interface HypeReason { code: string; tone: "POSITIVE" | "NEGATIVE" | "NEUTRAL"; dimension?: HypeDimension; value?: number }
@@ -45,6 +55,8 @@ export interface HypeDetail extends HypeSummary {
   inLooks?: number;
   /** look: cada peça com o próprio Hype */
   pieces?: { id: string; name: string; category?: string | null; subcategory?: string | null; imageUrl?: string | null; hype: HypeSummary }[];
+  /** RF53 — todos os Selos de Hype: conquistados (earned) e o critério de cada um */
+  sealProgress?: HypeSealProgress[];
 }
 /** Posições do item no ranking público (análise completa); fora da população pública: eligible = false. */
 export type HypePositionScope = "GLOBAL" | "CATEGORY" | "SUBCATEGORY" | "REGION" | "COUNTRY";
@@ -119,4 +131,40 @@ export interface HypeRankingFacets {
   countries: { key: string; count: number }[];
   categories: { key: string; count: number }[];
   subcategories: { key: string; category?: string | null; count: number }[];
+}
+
+/* ---------- Explorador → Painel global: globo com camadas de Hype (GET /api/hype/globe) ---------- */
+/** Item de destaque do país (o de maior métrica da janela que quem vê pode ver). */
+export interface HypeGlobeTop {
+  id: string; type: HypeEntity; name?: string | null; imageUrl?: string | null; category?: string | null;
+  owner?: { username?: string | null } | null; hype: HypeSummary;
+}
+/** Agregado de um país (país do dono): só a população pública elegível com score no recorte. */
+export interface HypeGlobeCountry {
+  country: string; region: HypeWorldRegion | string; regionLabel?: string | null;
+  /** itens públicos com score no recorte */
+  count: number;
+  /** donos distintos */
+  creators: number;
+  avgHype?: number | null; maxHype?: number | null;
+  /** faixa do número exibido (régua do backend); ausente → calculada pela régua padrão */
+  avgLevel?: HypeLevel | null; maxLevel?: HypeLevel | null;
+  /** média da dimensão TREND (0–100): crescimento, não volume */
+  trend?: number | null;
+  /** quantos estão em RISING/EMERGING */
+  rising: number;
+  levels: Partial<Record<HypeLevel, number>>;
+  topLevel?: HypeLevel | null;
+  dominantColorHex?: string | null; topCategory?: string | null;
+  top?: HypeGlobeTop | null;
+  /** count ≥ minItems (abaixo disso o globo desenha apagado e sem card) */
+  sufficient: boolean;
+}
+export interface HypeGlobe {
+  type: HypeEntity; window: 1 | 7 | 30; algorithmVersion: string;
+  filters: { category?: string | null; subcategory?: string | null; minLevel?: HypeLevel | null };
+  minItems?: number;
+  world: { count: number; avgHype?: number | null; maxHype?: number | null; creators: number; countries?: number };
+  countries: HypeGlobeCountry[];
+  regions: { key: string; label?: string | null; count: number; avgHype?: number | null }[];
 }

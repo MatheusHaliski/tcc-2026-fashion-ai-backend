@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, mockApi, renderApp, screen } from "@/test-utils/render";
-import { EMPTY_POLICY, SealPolicyEditor, cleanPolicy, describePolicy, type SealPolicy, type SealTierId } from "./seal-policy-editor";
+import { EMPTY_POLICY, SealPolicyEditor, cleanHype, cleanPolicy, describeHype, describePolicy, type SealPolicy, type SealTierId } from "./seal-policy-editor";
 
 const TAXONOMY = {
   subcategories: { upper_piece: ["t_shirt"], lower_piece: ["jeans"], shoes_piece: ["casual_sneakers"], accessory_piece: ["cap"], full_body_piece: ["dress"] },
@@ -49,5 +49,70 @@ describe("RF25 — política padronizada do selo", () => {
     const p: SealPolicy = { match: "ALL", rules: [{ quantifier: "ALL", color: "Amarelo", brand: " Adidas " }], occasions: [], styles: [] };
     expect(cleanPolicy(p)!.rules[0].brand).toBe("Adidas");
     expect(describePolicy(p, "LOOK")).toBe("todas as peças na cor amarelo da marca Adidas");
+  });
+});
+
+describe("RF53 — Hype na política do selo", () => {
+  const nikeHot: SealPolicy = { match: "ALL", rules: [{ quantifier: "AT_LEAST", count: 2, brand: "Nike", hypeMin: "HOT" }], occasions: [], styles: [], hype: { minScore: 60, momentum: ["RISING"] } };
+
+  it("a frase junta a regra com Hype mínimo e o Hype da entidade (como no contrato)", () => {
+    expect(describePolicy(nikeHot, "LOOK")).toBe("no mínimo 2 peças da marca Nike com Hype ≥ Em alta; look com Hype ≥ 60 e em crescimento");
+    // no nível Peça o Hype vale para a própria peça
+    expect(describePolicy({ ...nikeHot, rules: [{ quantifier: "ALL", hypeMin: "VIRAL" }] }, "PECA")).toBe("Peça com Hype ≥ Viral; peça com Hype ≥ 60 e em crescimento");
+    expect(describeHype({ minLevel: "HOT", minScore: 70 }, "LOOK")).toBe("look com Hype ≥ Em alta e ≥ 70");
+    expect(describeHype({ momentum: ["CLASSIC"] }, "PECA")).toBe("peça clássica");
+    expect(describeHype({ momentum: ["RISING", "EMERGING"] }, "LOOK")).toBe("look em crescimento ou emergente");
+    expect(describeHype(null, "LOOK")).toBe("");
+  });
+
+  it("política só com Hype é válida; regra só com Hype mínimo também conta como filtro", () => {
+    const onlyHype: SealPolicy = { ...EMPTY_POLICY, hype: { minLevel: "TRENDING" } };
+    expect(cleanPolicy(onlyHype)).toEqual({ match: "ALL", rules: [], occasions: [], styles: [], hype: { minLevel: "TRENDING", minScore: null, momentum: [] } });
+    expect(describePolicy(onlyHype, "PECA")).toBe("peça com Hype ≥ Tendência");
+    const onlyRule = cleanPolicy({ ...EMPTY_POLICY, rules: [{ quantifier: "AT_LEAST", count: 2, hypeMin: "HOT" }] })!;
+    expect(onlyRule.rules).toEqual([{ quantifier: "AT_LEAST", count: 2, color: null, brand: null, category: null, subcategory: null, hypeMin: "HOT" }]);
+    expect(describePolicy(onlyRule, "LOOK")).toBe("no mínimo 2 peças com Hype ≥ Em alta");
+  });
+
+  it("cleanPolicy/cleanHype: nível inválido sai, score vira inteiro 0–100, momento sem repetição e no máximo 3", () => {
+    expect(cleanHype({ minLevel: "SUPER" as never, minScore: 150, momentum: ["RISING", "RISING", "XYZ" as never] })).toEqual({ minLevel: null, minScore: 100, momentum: ["RISING"] });
+    expect(cleanHype({ minScore: -5.4 })).toEqual({ minLevel: null, minScore: 0, momentum: [] });
+    expect(cleanHype({ momentum: ["EMERGING", "RISING", "STABLE", "CLASSIC"] })!.momentum).toHaveLength(3);
+    expect(cleanHype({ minLevel: null, minScore: null, momentum: [] })).toBeNull();
+    // Hype vazio não vai no envio; regra com hypeMin inválido e sem outro filtro some
+    const c = cleanPolicy({ ...EMPTY_POLICY, rules: [{ quantifier: "ALL", hypeMin: "X" as never }, { quantifier: "ALL", color: "Azul" }], hype: {} })!;
+    expect(c.rules).toHaveLength(1);
+    expect(c.rules[0]).not.toHaveProperty("hypeMin");
+    expect(c).not.toHaveProperty("hype");
+  });
+
+  it("o editor tem a seção de Hype (nível, score, momento) e o \"Hype mín.\" por regra, com rótulos acessíveis", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    let last: SealPolicy = EMPTY_POLICY;
+    renderApp(<Harness onPolicy={(p) => { last = p; }} />);
+    expect(await screen.findByText("Critério de Hype")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Nível mínimo de Hype" }));
+    fireEvent.click(screen.getByRole("option", { name: "Em alta ou mais" }));
+    expect(last.hype).toMatchObject({ minLevel: "HOT" });
+    fireEvent.change(screen.getByLabelText("Score mínimo de Hype (0–100)"), { target: { value: "60" } });
+    expect(last.hype).toMatchObject({ minLevel: "HOT", minScore: 60 });
+    const rising = screen.getByRole("button", { name: "Em crescimento" });
+    fireEvent.click(rising);
+    expect(last.hype?.momentum).toEqual(["RISING"]);
+    expect(screen.getByRole("button", { name: /Em crescimento/ }).getAttribute("aria-pressed")).toBe("true");   // estado em atributo, não só cor
+    expect(screen.getAllByText("look com Hype ≥ Em alta e ≥ 60 e em crescimento").length).toBeGreaterThan(0);
+    // limpar tudo tira o critério de Hype da política
+    fireEvent.change(screen.getByLabelText("Score mínimo de Hype (0–100)"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: /Em crescimento/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Nível mínimo de Hype" }));
+    fireEvent.click(screen.getByRole("option", { name: "Qualquer nível" }));
+    expect(last.hype).toBeNull();
+
+    // por regra: "Hype mín." filtra as peças da regra
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar regra" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hype mín." }));
+    fireEvent.click(screen.getByRole("option", { name: "Viral ou mais" }));
+    expect(last.rules[0].hypeMin).toBe("VIRAL");
+    expect(screen.getAllByText(/ao menos uma peça da marca Zara com Hype ≥ Viral/).length).toBeGreaterThan(0);
   });
 });

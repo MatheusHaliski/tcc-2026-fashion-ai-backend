@@ -2574,3 +2574,40 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
   .lens-hotspot:hover, .lens-hotspot.is-focused { transform: none; }
 }
 :root[data-reduce-motion="true"] .lens-hotspot:hover, :root[data-reduce-motion="true"] .lens-hotspot.is-focused { transform: none; }
+
+/* RF20/RF21 · Estado do selo que promoveu o look no perfil de marca/celebridade (texto + ícone, nunca só cor) */
+.promo-note { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
+.promo-note::before { content: "✓"; font-weight: 700; color: var(--thread-ink); }
+.promo-note.is-expired::before { content: "⏱"; color: var(--muted); }
+.promo-note.is-review::before { content: "↻"; color: var(--status-warning, var(--mark-ink)); }
+.promo-note.is-review { color: var(--ink); }
+
+/* RF53 · Selos de Hype — medalhão de Hype nos cards, Hype das sugestões, "Hype do selo", metas no drawer e o filtro
+   "Com selo" do guarda-roupa. O significado vai sempre em texto (title/nome acessível, rótulos); a cor só reforça. */
+:root { --hype-seal-ring: #F58220; --hype-seal-glow: #E2A517; --hype-seal-goal-opacity: .5; --hype-seal-earned-ink: var(--thread-ink); }
+:root[data-theme="dark"] { --hype-seal-ring: #FF9A4D; --hype-seal-glow: #F5C842; --hype-seal-goal-opacity: .45; }
+:root[data-theme="contrast"] { --hype-seal-ring: var(--line); --hype-seal-glow: var(--line); --hype-seal-goal-opacity: 1; --hype-seal-earned-ink: var(--line); }
+.seal-medallion.is-hype { box-shadow: 0 0 0 1.5px var(--hype-seal-ring), 0 2px 6px rgba(0,0,0,.28); }
+.hype-seal-sugg { display: flex; align-items: center; gap: 2px; width: fit-content; margin-top: 2px; font-family: var(--font-data); font-size: 12px; font-weight: 600; color: var(--muted); }
+.seal-hype-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; font-size: 13px; }
+.seal-hype-stat-label { font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.seal-hype-stat b { font-family: var(--font-data); font-size: 16px; }
+.seal-hype-policy { display: grid; gap: 4px; }
+.hype-seal-list { display: grid; gap: 8px; margin: 0 0 4px; padding: 0; list-style: none; }
+.hype-seal-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--line-soft); background: var(--surface); }
+.hype-seal-item.is-earned { border-color: color-mix(in srgb, var(--hype-seal-ring) 55%, var(--line-soft)); }
+.hype-seal-item.is-goal .seal-medallion { filter: grayscale(1); opacity: var(--hype-seal-goal-opacity); }
+.hype-seal-item-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hype-seal-check { font-size: 12px; font-weight: 700; color: var(--hype-seal-earned-ink); }
+.hype-seal-item.is-earned .seal-medallion.is-hype { animation: hype-seal-glow 2.4s ease-in-out infinite alternate; }
+@keyframes hype-seal-glow { from { box-shadow: 0 0 0 1.5px var(--hype-seal-ring), 0 0 0 0 transparent; } to { box-shadow: 0 0 0 1.5px var(--hype-seal-ring), 0 0 10px 1px color-mix(in srgb, var(--hype-seal-glow) 60%, transparent); } }
+.seal-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.seal-filter-label { font-size: var(--text-body-sm); color: var(--muted); }
+.seal-filter .chip { flex: none; }
+:root[data-theme="contrast"] .seal-medallion.is-hype { box-shadow: 0 0 0 2px var(--line); }
+:root[data-theme="contrast"] .hype-seal-item { border: 2px solid var(--line-soft); }
+:root[data-theme="contrast"] .hype-seal-item.is-earned { border-color: var(--line); }
+:root[data-theme="contrast"] .hype-seal-item.is-goal .seal-medallion { filter: none; }
+@media (forced-colors: active) { .seal-medallion.is-hype { outline: 2px solid CanvasText; } .hype-seal-item.is-goal .seal-medallion { filter: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hype-seal-item.is-earned .seal-medallion.is-hype { animation: none; } }
+:root[data-reduce-motion="true"] .hype-seal-item.is-earned .seal-medallion.is-hype { animation: none; }
