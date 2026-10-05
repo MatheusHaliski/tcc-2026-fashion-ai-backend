@@ -134,7 +134,9 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
 }
 
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
-  const [images, setImages] = useState<Record<string, Img | null>>({});
+  // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
+  const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null> }>({ key: "", images: {} });
+  const images = loaded.images;
   const items = outfitOf(pieces);
   const urlKey = items.map((i) => `${i.key}:${i.piece.studioUrl ?? i.piece.imageUrl ?? ""}`).join("|");
   useEffect(() => {
@@ -143,7 +145,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       const u = mediaUrl(i.piece.studioUrl ?? i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       return [i.key, (t?.image as Img | undefined) ?? null] as const;
-    })).then((kv) => { if (alive) setImages(Object.fromEntries(kv)); });
+    })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da pintura: o corpo nunca é desenhado sem as peças (sem foto ainda, na cor do tecido)
@@ -151,14 +153,15 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     const root = parts.human.root;
     const { meshes, dressed } = dress(parts, items, images);
     root.userData.dressed = dressed; root.visible = dressed;
+    root.userData.outfitReady = loaded.key === urlKey;
     root.userData.garments = meshes.map((m) => m.name);
     if (!dressed) console.error("[FashionAI] avatar sem as três zonas cobertas: corpo escondido");
     return () => {
-      root.userData.dressed = false; root.visible = false; root.userData.garments = [];
+      root.userData.dressed = false; root.visible = false; root.userData.garments = []; root.userData.outfitReady = false;
       for (const m of meshes) { m.removeFromParent(); m.geometry.dispose(); const mat = m.material as THREE.MeshPhysicalMaterial; mat.map?.dispose(); mat.dispose(); }
       root.position.y = 0;
     };
     // só o corpo (não o cabelo): trocar o nível de detalhe do cabelo não refaz as roupas
-  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, images]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

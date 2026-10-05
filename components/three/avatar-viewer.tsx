@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { StudioLight } from "@/components/three/common";
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import type { HumanParts } from "@/components/three/human-avatar";
+import type { HairLod } from "@/lib/avatar3d/human/hair-lod";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -17,20 +18,30 @@ import { useI18n } from "@/lib/i18n/i18n";
 export type AvatarView = "front" | "left34" | "right34" | "profile" | "back";
 const ANGLE: Record<AvatarView, number> = { front: 0, left34: -35, right34: 35, profile: 90, back: 180 };
 
-function Rig({ view, target, dist }: { view: AvatarView; target: [number, number, number]; dist: number }) {
-  const { camera } = useThree();
+/**
+ * Câmera da vista. `fitWidth` (metros): em telas estreitas (espelho, Prévia 2D no celular) a câmera recua até a
+ * largura do corpo com os braços caber, em vez de cortar as mãos nas bordas.
+ */
+function Rig({ view, target, dist, fitWidth = 0 }: { view: AvatarView; target: [number, number, number]; dist: number; fitWidth?: number }) {
+  const { camera, size } = useThree();
+  const aspect = size.width > 0 && size.height > 0 ? size.width / size.height : 1;
+  const fov = (camera as THREE.PerspectiveCamera).fov ?? 30;
+  const d = Math.max(dist, fitWidth / 2 / (Math.tan((fov * Math.PI) / 360) * aspect));
   useEffect(() => {
     const a = (ANGLE[view] * Math.PI) / 180;
-    camera.position.set(target[0] + Math.sin(a) * dist, target[1] + 0.03, target[2] + Math.cos(a) * dist);
+    camera.position.set(target[0] + Math.sin(a) * d, target[1] + 0.03, target[2] + Math.cos(a) * d);
     camera.lookAt(...target); camera.updateProjectionMatrix();
-  }, [view, camera, target, dist]);
+  }, [view, camera, target, d]);
   return null;
 }
 
-export default function AvatarViewer({ avatar, sex, build, skinTone, view = "front", background = "#e9e4dc", onCanvas, pieces = [], framing = "bust", body, controls = true, onHuman }: {
+export default function AvatarViewer({ avatar, sex, build, skinTone, view = "front", background = "#e9e4dc", onCanvas, pieces = [], framing = "bust", body, controls = true, onHuman, still = false, hairLod, children }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; view?: AvatarView; background?: string;
   onCanvas?: (c: HTMLCanvasElement) => void; pieces?: Look3dPiece[]; framing?: "bust" | "upper" | "full"; body?: BodyParams | null; controls?: boolean;
   onHuman?: (p: HumanParts) => void;                 // o corpo pronto (esqueleto, malhas): exportação GLB
+  still?: boolean;                                   // parado na pose de repouso (Prévia 2D): sem respiração nem apoio
+  hairLod?: HairLod;                                 // nível de detalhe do cabelo fixo (a Prévia 2D usa um quadro só)
+  children?: React.ReactNode;                        // dentro do Canvas (ex.: a captura da Prévia 2D)
 }) {
   const { t } = useI18n();
   sex = avatar?.model?.sex ?? sex;                   // corpo base do avatar (estimado pelo rosto ou escolhido) vence o cadastro
@@ -49,8 +60,9 @@ export default function AvatarViewer({ avatar, sex, build, skinTone, view = "fro
       <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.7} />
       <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
       <directionalLight position={[0, 2.2, -2.5]} intensity={0.35} />
-      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} onHuman={onHuman} />
-      <Rig view={view} target={target} dist={dist} />
+      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} onHuman={onHuman} still={still} hairLod={hairLod} />
+      <Rig view={view} target={target} dist={dist} fitWidth={framing === "full" ? H * 0.74 : 0} />
+      {children}
       {controls && <OrbitControls target={target} enablePan={false} minDistance={0.5} maxDistance={Math.max(3.5, dist * 1.4)} />}
     </Canvas>
   );

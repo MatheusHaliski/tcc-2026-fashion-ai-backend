@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
@@ -10,6 +10,7 @@ import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
 import { analyzePhoto, buildAvatar, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import type { AvatarHair } from "@/lib/avatar3d/model";
 import type { HairLod } from "@/lib/avatar3d/human/hair-lod";
+import AvatarStill from "@/components/three/avatar-still";
 
 const P = (id: string, sub: string, url: string): Look3dPiece => ({ id, name: id, slot: sub, subcategory: sub, imageUrl: url });
 const OUTFITS: Record<string, Look3dPiece[]> = {
@@ -60,6 +61,7 @@ export default function HumanLab() {
   const [built, setBuilt] = useState<BuiltAvatar | null>(null); const [status, setStatus] = useState("idle"); const [outfit, setOutfit] = useState("none");
   const [cut, setCut] = useState(0);
   const [hairPreset, setHairPreset] = useState<string | null>(null); const [hairLod, setHairLod] = useState<HairLod | undefined>(undefined);
+  const [still, setStill] = useState(false); const [stillBytes, setStillBytes] = useState(0);   // Prévia 2D (avatar da foto ou manequim)
   const bodySex = built?.model.sex ?? sex;                  // corpo base estimado pelo rosto (ou o botão, sem foto)
   const H = DEFAULT_BODY[bodySex].stature;
   const parts = useRef<HumanParts | null>(null);
@@ -73,9 +75,11 @@ export default function HumanLab() {
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
-    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
+    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes, hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
   });
   const model = built?.model ?? null;
+  // Prévia 2D do avatar da foto (mesmo caminho do espelho: Avatar3dRef com a textura do atlas)
+  const stillAvatar = useMemo(() => (built ? { model: built.model, texture: new THREE.CanvasTexture(built.atlas) } : null), [built]);
   return (
     <main style={{ padding: 16, fontFamily: "system-ui", background: "#f4f1ec", minHeight: "100vh" }}>
       <h1>Corpo humano — lab</h1>
@@ -86,6 +90,7 @@ export default function HumanLab() {
         {Object.keys(OUTFITS).map((o) => <button key={o} onClick={() => setOutfit(o)}>{o}</button>)}
         {Object.keys(HAIR_PRESETS).map((h) => <button key={h} onClick={() => setHairPreset(h)}>{h}</button>)}
         {([0, 1, 2, 3] as HairLod[]).map((l) => <button key={l} onClick={() => setHairLod(l)}>LOD {l}</button>)}
+        <button id="human-still-toggle" onClick={() => setStill(!still)}>prévia 2D {String(still)}</button>
         <FileButton id="human-photo" accept="image/*" onFiles={(fs) => { if (fs[0]) void run(fs[0]); }}>Foto</FileButton>
       </div>
       <p id="human-status">{status} · {ready ? "ready" : "loading"}</p>
@@ -105,6 +110,9 @@ export default function HumanLab() {
             <Cam view={view} H={H} />
           </Canvas>
         </div>
+        {still && <div id="human-still" style={{ width: 360, height: 720, background: "#EEEAE2" }}>
+          <AvatarStill avatar={stillAvatar} sex={bodySex} body={null} pieces={OUTFITS[outfit] ?? []} background="#EEEAE2" className="mirror-still" alt="Prévia 2D" onStill={(u) => setStillBytes(u.length)} />
+        </div>}
         <pre style={{ fontSize: 11, maxWidth: 420, whiteSpace: "pre-wrap" }}>{JSON.stringify({ hair: model?.hair, profile: built?.hairProfile, skin: model?.skin }, null, 1)}</pre>
       </div>
     </main>

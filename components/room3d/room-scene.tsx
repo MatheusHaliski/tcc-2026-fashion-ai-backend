@@ -28,6 +28,8 @@ export interface RoomData3D {
 }
 /** Estado do espelho e do Vista-me vindo da página (RF28). */
 export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
+  /** PROV-2D — reflexo no vidro: a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória) */
+  reflectionUrl?: string | null;
   /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
   onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
@@ -69,6 +71,26 @@ function loadTexture(url: string): Promise<THREE.Texture | null> {
 function useTex(url?: string | null) {
   const [t, setT] = useState<THREE.Texture | null>(null);
   useEffect(() => { let alive = true; const u = mediaUrl(url ?? null); if (!u || u.endsWith("/null")) return; loadTexture(u).then((x) => alive && setT(x)); return () => { alive = false; }; }, [url]);
+  return t;
+}
+
+/**
+ * Reflexo do espelho (PROV-2D): a Prévia 2D do avatar chega como data: URL só em memória. Sem o cache global de
+ * texturas (que guardaria cada foto para sempre): a textura anterior é descartada quando chega a nova, e o reflexo
+ * antigo continua no vidro até lá (sem piscar).
+ */
+function useReflection(url?: string | null) {
+  const [t, setT] = useState<THREE.Texture | null>(null);
+  const cur = useRef<THREE.Texture | null>(null);
+  useEffect(() => {
+    if (!url) return; let alive = true;
+    new THREE.TextureLoader().load(url, (x) => {
+      if (!alive) { x.dispose(); return; }
+      x.colorSpace = THREE.SRGBColorSpace; cur.current?.dispose(); cur.current = x; setT(x);
+    });
+    return () => { alive = false; };
+  }, [url]);
+  useEffect(() => () => { cur.current?.dispose(); cur.current = null; }, []);
   return t;
 }
 
@@ -269,6 +291,7 @@ function GlassButton({ text, position, w, onClick, primary }: { text: string; po
 function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: { position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
   const { t } = useI18n();
   const tex = useTex(look?.coverImageUrl);
+  const reflection = useReflection(overlay?.reflectionUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   useEffect(() => { if (overlay?.closingKey) start.current = performance.now(); }, [overlay?.closingKey]);
   useFrame(() => {
@@ -287,8 +310,10 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
       <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
-      {tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
-      {hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
+      {/* reflexo: o avatar da pessoa vestindo o look do espelho; sem ele, a capa do Look do Dia ou as peças penduradas */}
+      {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" /></mesh>}
+      {!reflection && tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
+      {!reflection && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
       <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.46} h={0.055} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
       {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.46} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, mold === "ESP-ARC" ? 1.55 : 1.72, 0.026]} />}
       {overlay?.postIt && <group position={[0.2, 0.74, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}

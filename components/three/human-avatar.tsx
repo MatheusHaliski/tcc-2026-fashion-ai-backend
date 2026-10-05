@@ -159,20 +159,22 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   }, [built]);
   // pele: tom medido em todo o corpo; rosto da foto quando há atlas
   useEffect(() => {
-    if (!built) return; const m = built.h.body.material as THREE.MeshPhysicalMaterial;
-    if (!atlas) { m.map?.dispose(); m.map = null; m.color.set(skin); m.needsUpdate = true; return; }
-    let alive = true;
+    if (!built) return; const m = built.h.body.material as THREE.MeshPhysicalMaterial; const ud = built.h.root.userData;
+    // estado da pele para a Prévia 2D: "color" (tom só), "pending" (rosto ainda assando), "baked" (rosto da foto)
+    if (!atlas) { m.map?.dispose(); m.map = null; m.color.set(skin); m.needsUpdate = true; ud.skin = "color"; return; }
+    let alive = true; ud.skin = "pending";
     const id = window.setTimeout(() => {
       if (!alive) return;
       const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, imageOf(atlas))); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-      m.map?.dispose(); m.map = tex; m.color.set("#ffffff"); m.needsUpdate = true;
+      m.map?.dispose(); m.map = tex; m.color.set("#ffffff"); m.needsUpdate = true; ud.skin = "baked";
     }, 0);
     return () => { alive = false; window.clearTimeout(id); };
   }, [built, atlas, skin]);
   useEffect(() => {
     if (!built) return; let alive = true;
     loadTexture(EYE_TEXTURE).then((t) => {
-      if (!alive || !t) return; const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
+      if (!alive) return; built.h.root.userData.eyesReady = true; if (!t) return;
+      const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
     });
     return () => { alive = false; };
   }, [built]);
