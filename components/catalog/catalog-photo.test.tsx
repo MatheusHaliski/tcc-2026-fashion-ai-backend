@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { CatalogPhoto, semanticCropStyle } from "./catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, semanticCropStyle } from "./catalog-photo";
+import type { PieceView } from "@/lib/api/types";
 
 describe("semanticCropStyle", () => {
   it("mostra só o recorte 4:5 da foto original, sem esticar", () => {
@@ -34,5 +35,20 @@ describe("CatalogPhoto", () => {
     expect(b.container.querySelector("[data-mode='processed']")).not.toBeNull();
     const c = render(<CatalogPhoto alt="" />);
     expect(c.container.innerHTML).toBe("");
+  });
+});
+
+describe("pieceCatalogCrop", () => {
+  const card = { url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 }, background: "#f6f6f6" };
+  const piece = (imageUrl: string, catalogImage: unknown) => ({ imageUrl, flatLayMetadata: { catalogImage } }) as unknown as PieceView;
+
+  it("peça do catálogo com a foto oficial herda o recorte do card", () => {
+    expect(pieceCatalogCrop(piece(card.url, card))).toEqual(card);
+  });
+
+  it("foto própria da pessoa ou master processado não recebem recorte", () => {
+    expect(pieceCatalogCrop(piece("https://media.fashion-ai.app/minha.jpg", card))).toBeNull();
+    expect(pieceCatalogCrop(piece(card.url, { ...card, mode: "PROCESSED" }))).toBeNull();
+    expect(pieceCatalogCrop(piece(card.url, undefined))).toBeNull();
   });
 });
