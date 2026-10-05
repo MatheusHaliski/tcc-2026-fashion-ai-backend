@@ -111,6 +111,40 @@ public class HypeController {
         return hype.trending(viewer, type(type), window, category, style, occasion, limit);
     }
 
+    @GetMapping("/api/hype/ranking")
+    @Operation(summary = "Ranking de HypeScore por região do mundo, país, categoria e subcategoria (peças ou looks; o look entra pelas peças dele); só conteúdo público")
+    public Map<String, Object> ranking(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
+                                       @RequestParam(defaultValue = "7") int window,
+                                       @RequestParam(required = false) String region,
+                                       @RequestParam(required = false) String country,
+                                       @RequestParam(required = false) String category,
+                                       @RequestParam(required = false) String subcategory,
+                                       @RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "24") int size) {
+        return hype.ranking(viewer, type(type), window, region, country, category, subcategory, page, size);
+    }
+
+    @GetMapping("/api/hype/ranking/facets")
+    @Operation(summary = "Contagens dos filtros do ranking (regiões com o Hype médio, países, categorias, subcategorias); só conteúdo público")
+    public Map<String, Object> rankingFacets(@RequestParam(defaultValue = "PIECE") String type,
+                                             @RequestParam(defaultValue = "7") int window,
+                                             @RequestParam(required = false) String region,
+                                             @RequestParam(required = false) String category) {
+        return hype.rankingFacets(type(type), window, region, category);
+    }
+
+    @GetMapping("/api/hype/pieces/{id}/positions")
+    @Operation(summary = "Posições da peça no ranking público: mundo, categoria, subcategoria, região e país")
+    public Map<String, Object> piecePositions(CurrentUser viewer, @PathVariable UUID id) {
+        return hype.positions(viewer, HypeEntityType.PIECE, id);
+    }
+
+    @GetMapping("/api/hype/looks/{id}/positions")
+    @Operation(summary = "Posições do look no ranking público: mundo, região e país")
+    public Map<String, Object> lookPositions(CurrentUser viewer, @PathVariable UUID id) {
+        return hype.positions(viewer, HypeEntityType.SCHEME, id);
+    }
+
     @GetMapping("/api/me/hype/wardrobe")
     @Operation(summary = "Seu guarda-roupa: Hype médio, destaques (maior Hype, crescimento, clássica, rara, esquecida) e redescobertas")
     public Map<String, Object> wardrobe(CurrentUser user) {

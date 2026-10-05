@@ -710,6 +710,315 @@ public class HypeQueryService {
         return m;
     }
 
+    // ================================================================== ranking por região (Explorador → Ranking de HypeScore)
+    /*
+     * Ranking de HypeScore com recortes: TIPO (peça/look) e JANELA mudam o contexto; região do mundo, país, categoria e
+     * subcategoria são filtros. A peça entra pela própria categoria/subcategoria; o look entra pelas das peças que o
+     * compõem ("um look que tem calçado"). Só a população pública elegível com score disponível — item privado nunca
+     * entra. A métrica de cada janela é a mesma do rank() (1 = trend, 7 = score, 30 = média dos snapshots do mês), com
+     * desempate estável pelo id. As posições são fatos públicos: quem vê não muda a numeração — item bloqueado (ou que
+     * deixou de ser visível) só some da página. Quem não informou o país fica em "Outras regiões" (WorldRegions.of(null)).
+     */
+    public static final int RANKING_MAX_SIZE = 48;
+    static final String NO_REGION = "OUTRAS";
+    /** Janela das posições do item (análise completa): o HypeScore atual. */
+    static final int POSITIONS_WINDOW = 7;
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> ranking(CurrentUser viewer, HypeEntityType type, int window, String region, String country, String category,
+                                       String subcategory, int page, int size) {
+        int win = window <= 1 ? 1 : window >= 30 ? 30 : 7;
+        int sz = Math.max(1, Math.min(RANKING_MAX_SIZE, size <= 0 ? 24 : size));
+        int pg = Math.max(0, page);
+        String r = upper(region);
+        String co = upper(country);
+        String cat = norm(category);
+        String sub = norm(subcategory);
+        String key = "ranking:" + type + ":" + win + ":" + r + ":" + co + ":" + cat + ":" + sub;
+        Map<String, Object> ranked = cache.get(key, () -> rankRegional(type, win, r, co, cat, sub));
+        List<String> ids = ranked.get("ids") instanceof List<?> li ? li.stream().map(String::valueOf).toList() : List.of();
+        List<?> values = ranked.get("values") instanceof List<?> lv ? lv : List.of();
+        int total = ids.size();
+        int from = (int) Math.min((long) pg * sz, total);
+        int to = Math.min(from + sz, total);
+        List<UUID> pageIds = ids.subList(from, to).stream().map(UUID::fromString).toList();
+        Map<UUID, HypeScoreCurrent> rows = currentOf(type, pageIds);
+        Map<UUID, Object> views = new HashMap<>();
+        Map<UUID, List<Map<String, Object>>> lookPieces = new HashMap<>();
+        if (type == HypeEntityType.PIECE) {
+            views.putAll(views(viewer, type, pageIds));
+        } else if (!pageIds.isEmpty()) {
+            List<Scheme> list = schemes.findByIdIn(pageIds).stream().filter(s -> canView(viewer, s)).toList();
+            Map<UUID, List<SchemeItem>> itemsBy = list.isEmpty() ? Map.of() : schemeItems.findBySchemeIdIn(list.stream().map(Scheme::getId).toList()).stream()
+                    .sorted(Comparator.comparingInt(SchemeItem::getSortOrder)).collect(Collectors.groupingBy(si -> si.getScheme().getId()));
+            for (Scheme s : list) {
+                List<SchemeItem> items = itemsBy.getOrDefault(s.getId(), List.of());
+                views.put(s.getId(), schemeService.view(viewer, s, items));
+                lookPieces.put(s.getId(), lookPieces(viewer, items));   // o Hype do look pelas peças dentro dele
+            }
+        }
+        Instant now = Instant.now();
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (int i = 0; i < pageIds.size(); i++) {
+            UUID id = pageIds.get(i);
+            HypeScoreCurrent c = rows.get(id);
+            Object view = views.get(id);
+            if (c == null || !c.isPublicEligible() || c.getStatus() != HypeStatus.AVAILABLE || view == null) {
+                continue;   // deixou de ser público depois do cálculo, bloqueio entre as contas ou sem permissão de ver
+            }
+            String reg = regionOf(c);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("rank", from + i + 1);
+            m.put("id", id.toString());
+            Object v = from + i < values.size() ? values.get(from + i) : null;
+            m.put("value", v instanceof Number n ? round1(n.doubleValue()) : null);
+            m.put("hype", summary(c, now));
+            m.put("region", reg);
+            m.put("regionLabel", br.com.fashionai.application.taxonomy.WorldRegions.label(reg));
+            m.put("country", c.getCountry());
+            if (type == HypeEntityType.PIECE) {
+                m.put("piece", view);
+            } else {
+                m.put("scheme", view);
+                m.put("pieces", lookPieces.getOrDefault(id, List.of()));
+            }
+            items.add(m);
+        }
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("region", r.isEmpty() ? null : r);
+        filters.put("country", co.isEmpty() ? null : co);
+        filters.put("category", cat.isEmpty() ? null : cat);
+        filters.put("subcategory", sub.isEmpty() ? null : sub);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("type", type.name());
+        out.put("window", win);
+        out.put("algorithmVersion", config.algorithmVersion());
+        out.put("total", total);
+        out.put("page", pg);
+        out.put("size", sz);
+        out.put("hasMore", to < total);
+        out.put("filters", filters);
+        out.put("items", items);
+        return out;
+    }
+
+    /** Ids ordenados do recorte (vai para o HypeCache; o que é de quem vê é aplicado depois, na página). */
+    Map<String, Object> rankRegional(HypeEntityType type, int win, String region, String country, String category, String subcategory) {
+        List<HypeScoreCurrent> pool = publicPool(type).stream()
+                .filter(c -> inRegion(c, region) && inCountry(c, country) && hasCategory(c, category) && hasSubcategory(c, subcategory)).toList();
+        Map<UUID, Double> avg = win == 30 ? monthAverage(type, pool.stream().map(HypeScoreCurrent::getEntityId).collect(Collectors.toSet())) : Map.of();
+        ToDoubleFunction<HypeScoreCurrent> metric = win == 1 ? c -> trendOf(c) * 1000 + c.getScore().doubleValue()
+                : win == 30 ? c -> avg.getOrDefault(c.getEntityId(), c.getScore().doubleValue()) : c -> c.getScore().doubleValue();
+        ToDoubleFunction<HypeScoreCurrent> shown = win == 1 ? HypeQueryService::trendOf : metric;   // o número exibido: trend, score ou média do mês
+        List<HypeScoreCurrent> sorted = pool.stream().sorted(Comparator.comparingDouble(metric).reversed()
+                .thenComparing(c -> c.getEntityId().toString())).toList();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ids", sorted.stream().map(c -> c.getEntityId().toString()).toList());
+        out.put("values", sorted.stream().map(c -> round1(shown.applyAsDouble(c))).toList());
+        return out;
+    }
+
+    /** Contagens dos filtros e a comparação "Hype por região" (média do Hype de cada região no tipo/categoria atuais). */
+    @Transactional(readOnly = true)
+    public Map<String, Object> rankingFacets(HypeEntityType type, int window, String region, String category) {
+        int win = window <= 1 ? 1 : window >= 30 ? 30 : 7;
+        String r = upper(region);
+        String cat = norm(category);
+        return cache.get("ranking-facets:" + type + ":" + win + ":" + r + ":" + cat, () -> facets(type, win, r, cat));
+    }
+
+    Map<String, Object> facets(HypeEntityType type, int win, String region, String category) {
+        List<HypeScoreCurrent> pool = publicPool(type);
+        Map<UUID, Double> month = win == 30 ? monthAverage(type, pool.stream().map(HypeScoreCurrent::getEntityId).collect(Collectors.toSet())) : Map.of();
+        // "Hype" da região: o HypeScore atual (1 e 7 dias) ou a média do mês (30 dias) — o trend do "Hoje" ordena, mas não é Hype
+        ToDoubleFunction<HypeScoreCurrent> hype = c -> month.getOrDefault(c.getEntityId(), c.getScore().doubleValue());
+        List<HypeScoreCurrent> byCategory = pool.stream().filter(c -> hasCategory(c, category)).toList();
+        List<HypeScoreCurrent> scoped = byCategory.stream().filter(c -> inRegion(c, region)).toList();
+
+        List<Map<String, Object>> regions = new ArrayList<>();
+        for (String code : br.com.fashionai.application.taxonomy.WorldRegions.codes()) {
+            List<HypeScoreCurrent> in = byCategory.stream().filter(c -> code.equals(regionOf(c))).toList();
+            if (!in.isEmpty()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("key", code);
+                m.put("label", br.com.fashionai.application.taxonomy.WorldRegions.label(code));
+                m.put("count", in.size());
+                m.put("avgHype", round1(in.stream().mapToDouble(hype).average().orElse(0)));
+                regions.add(m);
+            }
+        }
+        Map<String, Object> world = new LinkedHashMap<>();
+        world.put("count", byCategory.size());
+        world.put("avgHype", byCategory.isEmpty() ? null : round1(byCategory.stream().mapToDouble(hype).average().orElse(0)));
+
+        Map<String, Long> countryCount = scoped.stream().filter(c -> !blank(c.getCountry()))
+                .collect(Collectors.groupingBy(c -> c.getCountry().trim().toUpperCase(Locale.ROOT), TreeMap::new, Collectors.counting()));
+        List<Map<String, Object>> countries = countryCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .map(e -> Map.<String, Object>of("key", e.getKey(), "count", e.getValue())).toList();
+
+        Map<String, Long> categoryCount = new TreeMap<>(Comparator.comparingInt(HypeQueryService::categoryOrder).thenComparing(Comparator.naturalOrder()));
+        pool.stream().filter(c -> inRegion(c, region))
+                .forEach(c -> categoriesOf(c).stream().map(x -> x.toLowerCase(Locale.ROOT)).distinct().forEach(x -> categoryCount.merge(x, 1L, Long::sum)));
+        List<Map<String, Object>> categories = categoryCount.entrySet().stream()
+                .map(e -> Map.<String, Object>of("key", e.getKey(), "count", e.getValue())).toList();
+
+        Map<String, Long> subCount = new TreeMap<>();
+        Map<String, String> subCategory = new HashMap<>();
+        for (HypeScoreCurrent c : scoped) {
+            for (String s : subcategoriesOf(c).stream().map(x -> x.toLowerCase(Locale.ROOT)).distinct().toList()) {
+                // peça: a própria categoria; look: a categoria da subcategoria na taxonomia (o look mistura várias)
+                String owner = type == HypeEntityType.PIECE && c.getCategory() != null ? c.getCategory().toLowerCase(Locale.ROOT) : Taxonomy.categoryOf(s);
+                if (!category.isEmpty() && !category.equalsIgnoreCase(owner)) {
+                    continue;
+                }
+                subCount.merge(s, 1L, Long::sum);
+                subCategory.putIfAbsent(s, owner);
+            }
+        }
+        List<Map<String, Object>> subcategories = subCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("key", e.getKey());
+                    m.put("category", subCategory.get(e.getKey()));
+                    m.put("count", e.getValue());
+                    return m;
+                }).toList();
+
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("region", region.isEmpty() ? null : region);
+        filters.put("category", category.isEmpty() ? null : category);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("type", type.name());
+        out.put("window", win);
+        out.put("algorithmVersion", config.algorithmVersion());
+        out.put("filters", filters);
+        out.put("total", scoped.size());
+        out.put("world", world);
+        out.put("regions", regions);
+        out.put("countries", countries);
+        out.put("categories", categories);
+        out.put("subcategories", subcategories);
+        return out;
+    }
+
+    /**
+     * Posições do item no ranking público (janela de 7 dias = HypeScore atual): no mundo, na categoria e na subcategoria
+     * (peças) e na região e no país (peças e looks). Item fora da população pública (privado, não aprovado, sem dados)
+     * não tem posição: {@code eligible = false} — o dono continua vendo o próprio Hype na análise. Visibilidade = detalhe (404).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> positions(CurrentUser viewer, HypeEntityType type, UUID id) {
+        boolean ok = type == HypeEntityType.PIECE ? pieces.findById(id).filter(w -> canView(viewer, w)).isPresent()
+                : schemes.findById(id).filter(s -> canView(viewer, s)).isPresent();
+        if (!ok) {
+            throw ApiException.notFound(type == HypeEntityType.PIECE ? Msg.t("common.peca") : Msg.t("entity.esquema"));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("eligible", false);
+        out.put("window", POSITIONS_WINDOW);
+        out.put("positions", List.of());
+        Optional<HypeScoreCurrent> row = current.findByEntityTypeAndEntityIdAndAlgorithmVersion(type, id, config.algorithmVersion());
+        if (row.isEmpty() || !row.get().isPublicEligible() || row.get().getStatus() != HypeStatus.AVAILABLE || row.get().getScore() == null) {
+            return out;
+        }
+        HypeScoreCurrent me = row.get();
+        List<HypeScoreCurrent> pool = publicPool(type);
+        List<Map<String, Object>> positions = new ArrayList<>();
+        positions.add(position(pool, me, "GLOBAL", null, Msg.k("worldRegions.mundo"), c -> true));
+        if (type == HypeEntityType.PIECE) {
+            String cat = categoriesOf(me).stream().findFirst().orElse(null);
+            if (!blank(cat)) {
+                positions.add(position(pool, me, "CATEGORY", cat, taxonomyLabel(cat), c -> hasCategory(c, cat)));
+            }
+            String sub = subcategoriesOf(me).stream().findFirst().orElse(null);
+            if (!blank(sub)) {
+                positions.add(position(pool, me, "SUBCATEGORY", sub, taxonomyLabel(sub), c -> hasSubcategory(c, sub)));
+            }
+        }
+        String reg = regionOf(me);
+        positions.add(position(pool, me, "REGION", reg, br.com.fashionai.application.taxonomy.WorldRegions.label(reg), c -> reg.equals(regionOf(c))));
+        if (!blank(me.getCountry())) {
+            String co = me.getCountry().trim().toUpperCase(Locale.ROOT);
+            String name = Locale.of("", co).getDisplayCountry(Msg.locale());
+            positions.add(position(pool, me, "COUNTRY", co, blank(name) ? co : name, c -> inCountry(c, co)));
+        }
+        out.put("eligible", true);
+        out.put("positions", positions);
+        return out;
+    }
+
+    /** Posição no recorte: 1 + quantos do recorte vêm antes (score maior; empate pelo id, como na lista do ranking). */
+    static Map<String, Object> position(List<HypeScoreCurrent> pool, HypeScoreCurrent me, String scope, String key, String label,
+                                        java.util.function.Predicate<HypeScoreCurrent> inScope) {
+        Comparator<HypeScoreCurrent> order = Comparator.comparingDouble((HypeScoreCurrent c) -> c.getScore().doubleValue()).reversed()
+                .thenComparing(c -> c.getEntityId().toString());
+        List<HypeScoreCurrent> others = pool.stream().filter(c -> !c.getEntityId().equals(me.getEntityId()) && c.getScore() != null && inScope.test(c)).toList();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("scope", scope);
+        m.put("key", key);
+        m.put("label", label);
+        m.put("rank", 1 + others.stream().filter(c -> order.compare(c, me) < 0).count());
+        m.put("total", others.size() + 1);
+        return m;
+    }
+
+    /** População do ranking público: só elegível e com score (privacidade e "sem dados" ficam de fora). */
+    List<HypeScoreCurrent> publicPool(HypeEntityType type) {
+        return current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(type, config.algorithmVersion(), HypeStatus.AVAILABLE)
+                .stream().filter(c -> c.isPublicEligible() && c.getScore() != null).toList();
+    }
+
+    static String regionOf(HypeScoreCurrent c) {
+        return blank(c.getRegion()) ? NO_REGION : c.getRegion().trim().toUpperCase(Locale.ROOT);
+    }
+
+    /** Peça: a própria categoria; look: as das peças dele (linhas anteriores à V39 só têm a coluna {@code category}). */
+    static List<String> categoriesOf(HypeScoreCurrent c) {
+        List<String> list = Json.csv(c.getCategories());
+        return list.isEmpty() && !blank(c.getCategory()) ? List.of(c.getCategory()) : list;
+    }
+
+    static List<String> subcategoriesOf(HypeScoreCurrent c) {
+        return Json.csv(c.getSubcategories());
+    }
+
+    static boolean inRegion(HypeScoreCurrent c, String region) {
+        return blank(region) || region.equalsIgnoreCase(regionOf(c));
+    }
+
+    static boolean inCountry(HypeScoreCurrent c, String country) {
+        return blank(country) || (c.getCountry() != null && country.equalsIgnoreCase(c.getCountry().trim()));
+    }
+
+    static boolean hasCategory(HypeScoreCurrent c, String category) {
+        return blank(category) || categoriesOf(c).stream().anyMatch(category::equalsIgnoreCase);
+    }
+
+    static boolean hasSubcategory(HypeScoreCurrent c, String subcategory) {
+        return blank(subcategory) || subcategoriesOf(c).stream().anyMatch(subcategory::equalsIgnoreCase);
+    }
+
+    static double trendOf(HypeScoreCurrent c) {
+        return c.getDimensions() == null || c.getDimensions().getTrend() == null ? 0 : c.getDimensions().getTrend().doubleValue();
+    }
+
+    /** Ordem das categorias da taxonomia (parte de cima, de baixo, calçados, acessórios, peça inteira); fora dela, no fim. */
+    static int categoryOrder(String category) {
+        int i = new ArrayList<>(Taxonomy.SUBCATEGORIES.keySet()).indexOf(category);
+        return i < 0 ? Integer.MAX_VALUE : i;
+    }
+
+    /** Rótulo adiado (resolvido no idioma de quem lê) de um código da taxonomia; sem rótulo, o próprio código. */
+    static String taxonomyLabel(String code) {
+        return Msg.has("taxonomy." + code) ? Msg.k("taxonomy." + code) : code;
+    }
+
+    private static String upper(String s) {
+        return blank(s) ? "" : s.trim().toUpperCase(Locale.ROOT);
+    }
+
     // ================================================================== uso por outros serviços
     /** Estado atual de várias entidades do dono (ordenações do guarda-roupa, Copilot). */
     @Transactional(readOnly = true)
