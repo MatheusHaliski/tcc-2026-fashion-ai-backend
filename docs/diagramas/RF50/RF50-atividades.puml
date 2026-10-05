@@ -1,5 +1,5 @@
-@startuml RF25_Criador_Atividades
-title RF25 — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades
+@startuml RF50_Atividades
+title RF50 (evolução do RF25) — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,7 +25,8 @@ skinparam note {
 }
 |Marca/Celebridade (aprovada)|
 start
-:Perfil → aba "Selos" → "Novo selo";
+:Perfil → aba "Selos" → "Novo selo"
+(só com perfil emissor APROVADO no RF1);
 partition "Passo 1 · Modo" {
   if (Com IA?) then (sim)
     |Sistema (SealService / SealDrafts)|
@@ -81,5 +82,9 @@ endif
 :Salva o selo (MySQL · seals.background_config_json\n{design, policy}) e audita;
 |Marca/Celebridade (aprovada)|
 :Selo aparece na aba e nos cards com o medalhão do tipo escolhido;
+|Sistema (SealService / SealDesigns)|
+:Selo ACTIVE, dentro da validade e do limite de emissões
+entra na detecção por política nos criadores de peça (RF4)
+e de look (RF5) — ver RF50_Sequencia_Deteccao;
 stop
 @enduml

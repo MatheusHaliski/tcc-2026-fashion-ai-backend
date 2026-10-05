@@ -1,5 +1,5 @@
-@startuml RF25_Criador_Componentes
-title RF25 — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)
+@startuml RF50_Componentes
+title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam component {
@@ -22,6 +22,7 @@ package "Frontend (Next.js)" {
   [SealMedallion\n(render por tipo)] as Med
   [lib/seals/templates.ts\n+ templates.json] as Cat
   [scheme-card / cards\n(selos nos looks e peças)] as Cards
+  [Criador de peça (RF4)\ne de look (RF5)\n(selos sugeridos)] as Criadores
 }
 package "Assets públicos" {
   [public/selos/fai/*.webp\n(13 medalhões)] as FAI
@@ -33,7 +34,7 @@ package "Geração de modelos (scripts/selos)" {
   [build_folhas.mjs\n(Chromium: camadas, slots\nde texto e emblema)] as BF
 }
 package "Backend (Spring Boot)" {
-  [SealController\n/api/seals, /draft, /uploads] as Ctl
+  [SealController\n/api/seals, /draft, /uploads,\n/api/seal-suggestions, /api/seal-bonds] as Ctl
   [SealService] as Svc
   [SealDrafts\n(IA local)] as Drafts
   [SealDesigns\n(validação do desenho)] as Designs
@@ -66,6 +67,8 @@ BF --> Cat
 BT --> BCat
 BF --> BCat
 Wizard --> Ctl : POST /api/seals/draft\nPOST/PUT /api/seals
+Criadores --> Ctl : POST /api/seal-suggestions/preview(-piece)\nPOST /api/schemes/{id}/seal-bonds
+Criadores --> Med
 Core --> Ctl : POST /api/seals/uploads?purpose=core
 Ctl --> Svc
 Ctl --> Up

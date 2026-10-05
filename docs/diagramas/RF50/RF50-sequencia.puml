@@ -1,5 +1,5 @@
-@startuml RF25_Criador_Sequencia
-title RF25 — Criador de selo: sugestão "Com IA", upload do núcleo e salvamento\nDiagrama de sequência
+@startuml RF50_Sequencia
+title RF50 (evolução do RF25) — Criador de selo: sugestão "Com IA", upload do núcleo e salvamento\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {

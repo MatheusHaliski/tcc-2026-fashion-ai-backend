@@ -1,5 +1,5 @@
-@startuml RF25_Deteccao_Politica_Sequencia
-title RF25 — Política padronizada do selo usada na detecção dentro dos criadores de peça (RF4) e de look (RF5)\nDiagrama de sequência
+@startuml RF50_Sequencia_Deteccao
+title RF50 (evolução do RF25) — Política padronizada do selo usada na detecção dentro dos criadores de peça (RF4) e de look (RF5)\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {

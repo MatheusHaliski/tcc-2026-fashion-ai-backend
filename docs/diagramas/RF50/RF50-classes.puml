@@ -1,5 +1,5 @@
-@startuml RF25_Criador_Classes
-title RF25 — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes
+@startuml RF50_Classes
+title RF50 (evolução do RF25) — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam class {
@@ -88,10 +88,50 @@ class Seal <<Entity seals>> {
   iconUrl, status, premium
   availableFrom / availableUntil / usageLimit
 }
+enum SealStatus {
+  ACTIVE
+  INACTIVE
+}
+enum SealTier {
+  PECA
+  LOOK
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+class SealBond <<Entity seal_bonds>> {
+  id : UUID
+  seal : Seal
+  scheme : Scheme  «look ou peça publicada»
+  tier : SealTier
+  linkedPieceIdsJson : String  «peças que atendem»
+  confidence : BigDecimal  «0,97 por política»
+  justification : String  «"atende: …"»
+  targetOwner : User  «emissor»
+  requestedBy : User
+  status : SealBondStatus
+  requiresReview : boolean
+  imageRightsConsent : Boolean
+}
+class Verdict <<record SealPolicies.Verdict>> {
+  matched : boolean
+  pieceIds : List<UUID>
+  why : String  «"atende: <frase da política>"»
+}
 class SealService {
   +createSeal(user, SealForm)
   +updateSeal(user, id, SealForm)
   +draft(user, tier)
+  +preview(peças, ocasiões, estilos)  «sugestões no look»
+  +previewPiece(campos da peça)  «sugestões na peça»
+  +review(bond, aprovar?) / revoke(bond)
   -applySeal(seal, form, owner)
 }
 class SealDrafts {
@@ -131,6 +171,12 @@ SealDesign ..> FaiTemplate : template (FASHIONAI)
 Seal o-- SealDesign
 Seal o-- SealPolicy
 SealService --> Seal
+SealService --> SealBond
+SealBond --> Seal
+SealBond ..> SealBondStatus
+Seal ..> SealStatus
+Seal ..> SealTier
+SealPolicies ..> Verdict : evaluate()
 SealService ..> SealDesigns
 SealService ..> SealPolicies
 SealService ..> SealDrafts

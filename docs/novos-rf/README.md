@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF48): índice e mapa de numeração
+# Novos RF (RF25–RF50): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -28,6 +28,7 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF47 | Acervo & Busca Catalogada (catálogo global, criador de peça em etapa única) | RF47 | [RF47_ACERVO_BUSCA_CATALOGADA.md](../catalogo/RF47_ACERVO_BUSCA_CATALOGADA.md) | `docs/diagramas/RF47/` |
 | RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
 | RF48 *(proposta concorrente; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF48_FashionAI_Lens.md](RF48_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
+| RF50 | Criar selos em três tipos (Circular, Folha, Padrão FashionAI) num criador em 4 passos (Com IA/Sem IA), com folha e núcleo editáveis e política padronizada usada na detecção — evolução do RF25 | RF25 (comentários de `SealService`/`SealDesigns`) | [RF50_Criador_de_Selos.md](RF50_Criador_de_Selos.md) | `docs/diagramas/RF50/` |
 
 ## Mudanças em RF antigos (2026-09-24)
 
