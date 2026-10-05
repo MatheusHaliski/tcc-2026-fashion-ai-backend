@@ -1,0 +1,97 @@
+@startuml RF54_Atividades
+!pragma layout smetana
+title RF54 — FashionAI Lens (MVP)\nDiagrama de atividades — captura → rostos borrados no aparelho → envio → peças → correspondências, leitura e recriar → corrigir e salvar
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+|Pessoa (app)|
+start
+:Abre /lens (login obrigatório)\nCâmera · Galeria · Recentes;
+:Tira a foto (input capture="environment")\nou escolhe uma imagem;
+|Navegador (lib/lens/redact.ts)|
+:decodifica com a orientação do EXIF\ne redesenha num canvas ≤ 2048 px\n(o redesenho descarta EXIF/GPS);
+if (MediaPipe Face Landmarker carregou?) then (sim)
+  repeat
+    :acha rostos (até 3 por passada);
+    :pixela (≈ 6 blocos) e desfoca cada rosto;
+  repeat while (achou rosto novo e passadas < 4?) is (sim) not (não)
+  :faces = rostos borrados;
+else (não: offline, sem WebAssembly/WebGL,\nheadless, tempo esgotado)
+  :faces = -1;
+endif
+:regrava em JPEG;
+|Pessoa (app)|
+:vê a prévia já borrada;
+if (faces = -1?) then (sim)
+  :marca "Confirmo que a foto não mostra\no rosto de ninguém (ou já recortei)";
+else (não)
+endif
+:Analisar;
+|Backend|
+:POST /api/lens/scans (multipart: image, source,\nintent, facesRedacted, redactionConfirmed);
+:UploadSafetyInterceptor (ImageSafety);
+if (veredito?) then (BLOCK)
+  :422 IMAGEM_RECUSADA (nada guardado);
+  stop
+elseif (REVIEW) then
+  :quarentena restricted/ + fila do admin\n422 IMAGEM_EM_REVISAO;
+  stop
+else (ALLOW)
+endif
+:LensService.create: valida origem e intenção,\naceita só imagem legível, reduz a ≤ 2048 px;
+if (cota do dia (30 scans) disponível?) then (não)
+  :429 QUOTA com resetAt (nada gravado);
+  stop
+else (sim)
+endif
+:MultiPieceService.detectPieces via AiEngine\n(MULTI_PIECE_DETECTOR: consentimento\nAI_EXTERNAL_PHOTO_PROCESSING, cota, orçamento);
+if (resultado?) then (exceção)
+  :scan FAILED (cota devolvida);
+elseif (IA indisponível ou sem consentimento) then
+  :leitura LOCAL: 1 peça cobrindo a foto,\nsem categoria, confiança 0 (baixa);\nerrorCode CONSENT_REQUIRED ou QUOTA;
+  :scan READY (aiSource = local);
+elseif (0 peças) then
+  :scan NO_FASHION_FOUND;
+else (≥ 1 peça)
+  :scan READY (aiSource = ia);
+endif
+:grava JPEG sem metadados + miniatura 480 px\nem restricted/users/{id}/lens/{scanId}.jpg;
+:para cada peça (de cima para baixo):\nLensImageAnalysis do recorte → paleta com fração,\npadrão, embedding de 96 dimensões;
+:grava lens_scans + lens_detections\n(expires_at = criação + 30 dias);
+:devolve o scan pronto (MVP síncrono);
+|Pessoa (app)|
+:/lens/{scanId}: imagem com hotspots,\nFoco (?focus=) e abas (?tab=);
+fork
+  :Leitura: estilos, paleta, ocasiões, estação\n(GET …/reading);
+fork again
+  :Seu guarda-roupa: peças próprias parecidas\n(GET …/matches?scope=MY_CLOSET, piso 55)\nou "sem correspondência" + lacuna (nunca 0%);
+fork again
+  :Recriar: plano por slots com o modo\nSeguro / Descoberta / Experimental\n(POST …/recreate) → Salvar como look;
+fork again
+  :Estilo & Hype: compatibilidade com o DNA\ne Hype do grupo (≥ 5 públicos), separados;
+fork again
+  :Descobrir: peças públicas de outras pessoas\n(scope=COMMUNITY, piso 65; só semelhança);
+end fork
+|Backend|
+:camada viva calculada a cada leitura\n(guarda-roupa, DNA e Hype de agora);\nnunca escreve hype_signal_daily;
+|Pessoa (app)|
+if (a leitura está errada ou faltou peça?) then (sim)
+  :corrige chips (PATCH …/detections/{did}),\n"não é roupa" (dismissed) ou marca uma peça\n(POST …/detections);
+  |Backend|
+  :grava lens_feedback (training_consent só com\nAI_MODEL_TRAINING) e refaz as correspondências;
+  |Pessoa (app)|
+else (não)
+endif
+:"Quero" (PUT …/want) ou "Eu tenho" (POST …/own:\nliga a uma peça sua ou abre /pieces/new pré-preenchido,\nnunca com o recorte da foto);
+if (salvar como inspiração?) then (sim)
+  :PATCH …/scans/{id} {saved: true}: não expira;
+else (não)
+  |Backend|
+  :LensRetentionJob (diário, 04:40): vencido o prazo,\napaga imagem, miniatura, peças e correções;
+endif
+stop
+@enduml

@@ -36,6 +36,13 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 |---|---|---|---|
 | RF4 | Campo marca = buscador web de marcas (Wikidata, Simple Icons no GitHub, IA com busca na web), sem catálogo pré-cadastrado; logo filtrado (fundo branco, letras pretas nítidas) no slot | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF4/` (v3) |
 | RF5 / RF13 | Sem campo de marca no esquema/DNA: a marca de cada slot vem da peça inserida (somente leitura) | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF5/` (v4) |
+| RF4 → RF15 *(Tema Futuro, 2026-10-05)* | RF4 passa a ser busca catalogada, formulário & fotografia, com a foto **opcional** para itens mais personalizados; a foto própria (no cadastro ou depois) gera o RF15 — estudo e plano do Editor de Fotografia da Peça (receita não destrutiva, verdade do produto × apresentação, 3 modos, fases E0–E7) | [RF15_Editor_de_Fotografia_da_Peca.md](RF15_Editor_de_Fotografia_da_Peca.md) | diagramas Mermaid no próprio documento |
+
+## Mudanças em RF antigos (2026-10-05)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF28 | CA17–CA22: Prévia 2D no Espelho e no Vista-me com o **mesmo** Avatar 3D (foto parada da mesma cena, sem boneco genérico); reflexo do avatar no vidro do espelho do Meu Quarto 3D | [RF28_Previa_2D_Espelho_Vista-me.md](RF28_Previa_2D_Espelho_Vista-me.md) |
 
 ## Mudanças em RF antigos (2026-10-04)
 

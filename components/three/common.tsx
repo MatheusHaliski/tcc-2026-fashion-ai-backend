@@ -6,6 +6,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { useThree } from "@react-three/fiber";
 import { mediaUrl } from "@/lib/api/client";
 import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
+import type { HypeSummary } from "@/lib/hype/types";
 
 /* Vitrines 3D (Passarela, My Stage, mini lojas, "Gerar 3D"): utilitários compartilhados. Unidades em metros. */
 
@@ -14,7 +15,12 @@ export interface FaceFit { offsetX?: number; offsetY?: number; scale?: number }
 /** Avatar 3D (RF40) confirmado pela pessoa: forma do rosto + textura (rota autenticada) + ajustes finos. */
 export interface Avatar3dRef { version?: number; model: AvatarModel; adjust?: Partial<AvatarAdjust> | null; textureUrl?: string | null; texture?: THREE.Texture | null }
 export interface Mannequin3d { sex: "FEMININO" | "MASCULINO"; sexSource?: string; photoUrl?: string | null; head?: "FOTO" | "PADRAO" | "AVATAR"; skinTone?: string | null; build?: string | null; face?: FaceFit | null; avatar?: Avatar3dRef | null; }
-export interface Look3d { schemeId?: string; pieceId?: string; title: string; owner?: { id: string; username: string; displayName: string; avatarUrl?: string | null }; hypeScore?: number | null; likes?: number; mannequin: Mannequin3d; pieces: Look3dPiece[]; ready3d?: number; missing3d?: number; canRequest?: boolean; }
+/**
+ * Look no manequim. `hype` é o resumo do HypeScore v2 (mesmo formato do card: público para quem vê; pessoal só para o
+ * dono; sem Hype público = NOT_CALCULATED, "—"). `hypeScore` é o v1 legado: DEPRECADO, não exibir. `likes` é
+ * popularidade e aparece à parte do Hype.
+ */
+export interface Look3d { schemeId?: string; pieceId?: string; title: string; owner?: { id: string; username: string; displayName: string; avatarUrl?: string | null }; /** @deprecated v1 — use `hype` */ hypeScore?: number | null; hype?: HypeSummary | null; likes?: number; mannequin: Mannequin3d; pieces: Look3dPiece[]; ready3d?: number; missing3d?: number; canRequest?: boolean; }
 
 /** "Reduzir movimento": preferência do app (RF23, data-reduce-motion no <html>) ou do sistema. */
 export function useReducedMotion(): boolean {

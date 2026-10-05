@@ -1,1318 +1,751 @@
-# Auditoria da taxonomia de peças e proposta CATEGORY → SUBCATEGORY → VARIATION
+# Auditoria da taxonomia de peças e proposta de variações
 
-FashionAI · TCC 2026 · 05/10/2026 · base: `main` em `5f506ce` (schema V37)
+> **Status:** auditoria + proposta (RASCUNHO). Nenhum arquivo existente foi alterado, nenhuma migration foi criada no código, nada foi commitado.
+> **Data:** 2026-10-05 · **Base:** branch `claude/adaptive-garment-capture` (= `main`), Flyway até V37, `normalization.json` 1.1.0.
+> **Entregáveis:** este documento + `docs/taxonomia/proposta/` (`taxonomia_variacoes.csv`, `taxonomia_variacoes.json`, `seed_piece_variations.sql`).
 
-**Status: só auditoria e proposta. Nada aqui altera código ou schema.** As mudanças dependem de aprovação (seção I).
+## Resumo executivo
 
-Arquivos desta entrega:
-
-| Arquivo | O que é |
-|---|---|
-| `docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md` | este documento (seções A–I) |
-| `docs/taxonomia/proposta/taxonomia_variacoes.csv` | tabela mestre: uma linha por subcategoria × variação (530 linhas) |
-| `docs/taxonomia/proposta/taxonomia_variacoes.json` | proposta completa: categorias, subcategorias (ativas e legado), 353 variações, 23 dimensões de atributo com valores e aliases |
-| `docs/taxonomia/proposta/seed_piece_variations.sql` | rascunho do seed: DDL das tabelas de vocabulário, categorias, subcategorias, variações, ligações e 2.486 aliases |
-
-Resumo:
-
-- **Taxonomia atual:** 5 categorias, 78 subcategorias, 59 cores, 7 materiais, 10 estampas, 25 estilos e 20 ocasiões, sem nenhuma noção de variação. Os vocabulários estão espalhados em pelo menos 9 lugares. Nenhum campo de taxonomia tem tabela de domínio, FK ou CHECK no banco.
-- **Proposta:**
-  - **72 subcategorias ativas:** 70 atuais + 2 novas, `top` e `boots`.
-  - **8 subcategorias atuais viram LEGADO.** Elas continuam válidas, mas cada uma mapeia para "subcategoria + atributo".
-  - **353 variações** com código único em inglês, ligadas às subcategorias em **530 pares**: 248 CORE, 212 EXTENDED e 70 NICHE.
-  - **23 dimensões de atributo** separadas: acabamento, comprimento, cano, cintura, barra, manga, decote, fechamento, salto, bico, solado, uso/esporte, forma de carregar, aro, cor, material, estampa, estilo, ocasião, gênero e faixa etária.
-- **Modelo de dados:** tabelas de vocabulário, mais `variation_code` na peça e no produto, mais tabelas de atributos peça→valor. **Migrations só aditivas, a partir da V39** (a V38 de produção é a identidade do avatar).
-- **Busca catalogada:** todos os atributos viram select. Preço vem do JSON-LD (`offers`) das páginas oficiais. Estilo e ocasião saem de regras + IA com vocabulário fechado.
-
----
-
-## A. Taxonomia atual
-
-### A.1 Onde a taxonomia vive
-
-| Camada | Arquivo | O que define |
-|---|---|---|
-| Backend (fonte "oficial") | `fai-application/.../taxonomy/Taxonomy.java` | 5 categorias × 78 subcategorias (l. 47–58), `SNEAKERS`, `RIGID_SUBCATEGORIES` (código morto), 20 ocasiões, 25 estilos, 7 materiais, 3 sexos, 59 cores em 12 famílias com hex, 31 tamanhos, mercado, wearstyles, limites de cardinalidade (l. 146–147) |
-| Normalização (Java + Python) | `fai-application/src/main/resources/catalog/normalization.json` (v1.1.0) | cópia da hierarquia, 298 sinônimos de subcategoria, 176 de cor, 55 de material, 21 de gênero, 48 apelidos de marca, 20 stopwords, vocabulário de design (10 estampas, 5 posições de logo, tamanhos, lados) |
-| API | `GET /api/taxonomy` (`WardrobeController:235`, `WardrobeService.taxonomy():2397`) | mapa cru (sem DTO): subcategorias, cores, famílias, materiais, tamanhos, sexos, ocasiões, estilos, ocasiões por categoria, wearstyles, imagens padrão, marcas |
-| Frontend | `lib/api/taxonomy.ts` (busca a API), `lib/api/labels-{pt,en,es}.ts` (244 rótulos cada) | rótulos fixos em código; `piece-form.tsx` (4 categorias), `catalog-search.tsx`, `capture-guides.ts`, `scheme-builder.tsx` |
-| Traduções backend | `messages*.properties` (`taxonomy.*`) | os mesmos 244 rótulos (sem diferença hoje, sem teste de paridade) |
-| Pipeline Python | `scripts/catalog/normalize_product.py`, `providers/official_sitemap.py` | lê `normalization.json`; inferência de subtipo por n-gramas; `MODIFIERS`, `UNSUPPORTED` |
-| IA | `WardrobeService.java:685–746` (analisador de peça), `MultiPieceService.java:156–184`, `CatalogTextInterpreter.java:44–52`, `OfficialCatalogDiscovery.java:34–50` | listas fechadas no prompt (exceto a descoberta oficial: cor e material livres) |
-| Visão local | `LocalVision.java:90–127`, `PatternAnalyzer.java:18`, `LabelTextParser.java:24–34`, `CaptureProfiles.java` | só 5 subtipos; 4 estampas próprias; mapa de fibras; ~30 perfis de captura |
-| Copilot | `CopilotService.java:108–152`, `CopilotLexicon.java:195–223` | um 4º vocabulário de texto livre |
-
-### A.2 Hierarquia atual (5 × 78)
-
-| Categoria | Qtde | Subcategorias |
-|---|---|---|
-| `upper_piece` | 18 | t_shirt, shirt, blouse, tank_top, crop_top, polo_shirt, bodysuit, sweater, sweatshirt, hoodie, cardigan, vest, blazer, jacket, coat, parka, windbreaker, kimono |
-| `lower_piece` | 14 | jeans, tailored_pants, casual_pants, chino_pants, cargo_pants, jogger_pants, sweatpants, leggings, culottes, shorts, bermuda_shorts, denim_shorts, skirt, skort |
-| `full_body_piece` | 5 | dress, jumpsuit, romper, matching_set, overalls |
-| `shoes_piece` | 18 | casual_sneakers, running_shoes, training_shoes, basketball_shoes, skate_shoes, high_top_sneakers, loafers, moccasins, oxford_shoes, derby_shoes, ankle_boots, long_boots, combat_boots, sandals, flip_flops, heels, flats, espadrilles |
-| `accessory_piece` | 23 | handbag, crossbody_bag, tote_bag, clutch, backpack, belt, cap, hat, beanie, scarf, tie, bow_tie, sunglasses, eyeglasses, necklace, bracelet, earrings, ring, watch, wallet, gloves, socks, hair_accessory |
-
-Não existe nível de variação, modelagem ou caimento em nenhuma camada. A informação de corte só aparece solta, dentro de nomes de produto:
-
-- **Acervo (9.573 linhas):** "slim" 581, "relaxed" 163, "skinny" 151, "oversized" 122, "wide leg" 28, "bootcut" 19.
-- **Base de conhecimento:** "511 Slim", na V29.
-
-### A.3 Vocabulários de atributo atuais
-
-| Dimensão | Valores | Observação |
-|---|---|---|
-| Cor | 59 códigos em 12 famílias (Preto, Branco, Cinza, Azul, Vermelho, Rosa, Laranja, Amarelo, Verde, Roxo, Marrom, Especiais) | inclui `print`, `multicolor`, `denim`, `washed_black` |
-| Material | COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND | únicos em maiúsculas; sem linho, viscose, denim |
-| Estampa | `design.patterns`: ALLOVER_LOGO, SINGLE_LOGO, STRIPES, PLAID, FLORAL, CAMO, TIE_DYE, COLOR_BLOCK, GRAPHIC, PLAIN | só no catálogo (`design_json`, V36); a peça não guarda estampa |
-| Estilo | classic, minimalist, modern, chic, streetwear, sporty, athleisure, preppy, romantic, boho, vintage, grunge, edgy, glam, luxury, avant_garde, y2k, utility, techwear, tailored, urban, resort, basic, statement, futuristic | 25 |
-| Ocasião | casual, work, business, formal, party, night_out, date, wedding, ceremony, sport, gym, travel, beach, vacation, school, university, social, home, outdoor, festival | 20, restritas por categoria via wearstyles ("proposta a validar") |
-| Sexo | MASCULINO, FEMININO, UNISSEX | + `MARKET_GENDERS` male/female/unisex + `MannequinSex` |
-| Tamanho | xs…xxl, br_34…br_52, shoe_33…shoe_46, one_size | lista única, sem vínculo com categoria |
-
-### A.4 Persistência
-
-| Entidade (tabela) | Campos de taxonomia | Tipo |
-|---|---|---|
-| Peça: `WardrobeItem` (`wardrobe_items`) | category, subcategory, sex, color, material, size_label, market, **style_tags / occasion_tags (CSV em VARCHAR(512))**, price DECIMAL(10,2) sem moeda, catalog_product_id/variant_id | tudo VARCHAR livre |
-| Esquema / look: `Scheme` (`schemes`) | **style / occasion (CSV em VARCHAR(160))**, season, mood, total_price | VARCHAR livre + enums Java |
-| Produto do catálogo: `CatalogProduct` (`catalog_products`, V30/V36) | category, subcategory, color, color_name, material VARCHAR(40), gender VARCHAR(20), description, design_json | **sem estilo, ocasião, preço, tamanho ou variação** |
-| Variante: `CatalogVariant` | color, color_name, codes, availability | "variante" = cor/SKU, não modelagem |
-| Marca: `Brand` | name, slug, source, catalog_origin, country | sem segmento nem faixa de preço |
-
-- Nenhuma coluna de taxonomia tem tabela de domínio, FK ou CHECK. Os únicos CHECKs do schema estão na V35, em `users.account_origin` e `brands.catalog_origin`.
-- Estilo e ocasião aparecem como CSV ou texto livre em pelo menos 7 tabelas: peças, looks, `dna_schemes`, `hype_scores`, `style_dna`, KB e `flair`.
-
-### A.5 Regras de cardinalidade em vigor
-
-| Regra | Backend | Frontend |
-|---|---|---|
-| Peça: 1–2 estilos e 1–2 ocasiões (ocasião restrita à categoria) | `Taxonomy.MAX_PIECE_TAGS = 2`, `pieceErrors`; cortes da IA com o literal 2 (`WardrobeService:812–813, 916–921`) | `lib/pieces/tags.ts` (`MAX_TAGS=2`), `piece-form.tsx` |
-| Esquema (look): 1–3 estilos e 1–3 ocasiões | `SchemeService:470–471` (literal 3); `MAX_SCHEME_TAGS` não é usado fora de teste | `scheme-tags.tsx` (`SCHEME_MAX_TAGS=3`) |
-| Selos: peça ≤ 2, look ≤ 4 | `WardrobeService:1261`, `SchemeService:472` | `piece-form.tsx:57` |
-
-**A proposta preserva essas cardinalidades:** peça ≤ 2 estilos e ≤ 2 ocasiões, esquema ≤ 3 de cada.
-
-### A.6 IA e visão
-
-| Uso | Vocabulário entregue ao modelo | Lista fechada? | Validação da saída |
-|---|---|---|---|
-| Analisador de peça (Gemini → Claude Haiku → local) | categorias, subtipos da categoria, cores, materiais, sexos, ocasiões permitidas, estilos | sim | `parseAnalysis` descarta fora da lista e cai em padrões (`upper_piece`, primeiro subtipo, `black`, `UNISSEX`, `basic`) |
-| Detector de várias peças (Claude Opus → Gemini) | mapa de subcategorias, ocasiões, estilos, cores | sim | `parseDetections` descarta fora da lista |
-| Intérprete de texto da busca (Claude Haiku) | estampa, posição/tamanho do logo, lados, cores | sim | `parse` descarta |
-| Descoberta oficial (Claude Opus + busca web) | nome, modelo, **cor e material livres** | **não** | normalizado depois; o desconhecido é descartado em silêncio |
-| Visão local | 5 subtipos, 4 estampas (`SOLID/STRIPED/CHECKED/PRINTED`) | — | não mapeado para `design.patterns` |
-
-### A.7 Busca catalogada (RF47)
-
-`CatalogService.resolve` processa o pedido em quatro passos:
-
-1. Normaliza os campos explícitos.
-2. Lê o design do texto.
-3. Procura o subtipo pela frase mais longa (de 4 a 2 palavras).
-4. Passa token por token, nesta ordem: **cor antes de subcategoria**, depois marca, e o que sobra vira palavra-chave.
-
-O pool de candidatos é montado nesta ordem: subtipo+cor, depois subtipo, depois palavras da estampa, depois o pool geral (FULLTEXT ngram, 200 por consulta).
-
-A ordenação usa o `CatalogMatchScorer`, com pesos marca 0,25, categoria 0,10, subcategoria 0,20, texto 0,35, cor 0,10, visual 0,15 e design 0,45.
-
-O formulário da busca hoje tem: tipo, subtipo (chips), marca, texto, cor e gênero. **Não tem** variação, material, estampa, acabamento, comprimento, estilo, ocasião nem preço.
+- **Taxonomia atual.** São **5 categorias e 78 subcategorias**, sem nenhum nível abaixo da subcategoria.
+  - Está definida **duas vezes**: em `Taxonomy.java` e em `normalization.json → taxonomy`. O `CatalogNormalizerTest` mantém as duas iguais.
+  - Os rótulos estão em **duas tabelas paralelas**: `messages*.properties` e `lib/api/labels-*.ts`.
+- **Conceitos misturados dentro das subcategorias:**
+  - comprimento: `crop_top`, `bermuda_shorts`, `culottes`/pantacourt;
+  - cano: `high_top_sneakers`, `ankle_boots`, `long_boots`;
+  - uso/esporte: `running_shoes`, `training_shoes`, `basketball_shoes`, `skate_shoes`;
+  - material: `jeans`, `denim_shorts`;
+  - salto: `heels`;
+  - composição: `matching_set`.
+- **Sinônimos que escondem variações.** "chelsea boot" → `ankle_boots`, "bomber" → `jacket`, "trench coat" → `coat`, "bucket hat" → `hat`. Já "bootcut" é **descartado** como modificador.
+- **A proposta não cria taxonomia paralela.** Mantém os 78 códigos existentes (`lower_snake_case`) e acrescenta dois níveis:
+  1. **VARIAÇÃO** — valor único, opcional (`null` = não informado) e restrito por subcategoria.
+     - **394 variações únicas** e **541 vínculos** subcategoria × variação.
+     - Por nível: **244 CORE / 216 EXTENDED / 81 NICHE**.
+     - Uma mesma variação pode valer para várias subcategorias (relação N:N).
+  2. **30 dimensões de atributo** com `appliesTo` (387 valores).
+     - 9 já existem no código e são reaproveitadas com os mesmos códigos: cor, material, estampa, posição do logo, estilo, ocasião, gênero etc.
+     - 21 são novas: caimento, cintura, comprimento, manga, decote, fechamento, acabamento, uso, cano, salto, bico, solado e outras.
+- **Contrato de IA.**
+  - Só vocabulário fechado. O texto livre é normalizado por alias dentro da subcategoria: "wide jeans" → `jeans.WIDE_LEG`.
+  - Sem confiança suficiente, o resultado é `UNKNOWN` ou vai para revisão.
+  - A cardinalidade atual não muda: peça ≤2 estilos e ≤2 ocasiões; esquema ≤3 e ≤3.
+- **Backfill estimado no acervo real (9.573 produtos):**
+  - 19,7% dos nomes já trazem a variação por alias (1.890 produtos);
+  - somando a descrição, 29,5% (2.827), com confiança menor;
+  - em `jeans`, 66% (486 de 733).
+- **Validação do seed SQL.**
+  - Rodado num schema descartável em **MySQL 8.0.46 local**, incluindo o bloco V45 (colunas + FK composta) e o rollback.
+  - A FK recusou `casual_sneakers + CHELSEA`, como esperado.
+  - O container `fai-mysql` não estava disponível (daemon Docker desligado).
 
 ---
 
-## B. Problemas e inconsistências
+## A. A taxonomia atual
 
-Severidade: **A** = corrompe dado ou impede o uso; **M** = gera divergência ou retrabalho; **B** = cosmético ou de documentação.
+### A.1 Árvore CATEGORY → SUBCATEGORY (oficial, 78 subcategorias)
 
-### B.1 Modelo
-
-| # | Sev. | Problema | Evidência |
+| Categoria (código · rótulo pt-BR) | Nº | Subcategorias (código) | No acervo |
 |---|---|---|---|
-| 1 | A | **Não existe variação/modelagem.** "Calça jeans mom" e "calça jeans skinny" são indistinguíveis no banco, na busca, nos filtros e na IA. | `WardrobeItem.java`, `CatalogProduct.java`, `Taxonomy.java` |
-| 2 | A | **O coletor apaga o corte.** `MODIFIERS` remove "boot cut", "bootcut", "shirt dress", "tee dress" e o comprimento da manga antes de inferir o tipo; "\| Tall" e "caimento" também saem do título. | `official_sitemap.py:260–261, 303` |
-| 3 | M | **Subcategorias que são "outra subcategoria + 1 atributo":** `denim_shorts` (material), `bermuda_shorts` e `crop_top` (comprimento), `high_top_sneakers` e `ankle_boots`/`long_boots` (altura do cano), `combat_boots` (variação de bota), `crossbody_bag` (forma de carregar). Variações iguais acabariam duplicadas em duas subcategorias (ex.: COMBAT em `ankle_boots` e em `combat_boots`). | `Taxonomy.java:47–58` |
-| 4 | M | **Uso/esporte misturado com silhueta** em calçados: `running/training/basketball/skate_shoes` (uso) ao lado de `high_top_sneakers` (cano). | idem |
-| 5 | M | **O DNA de estilo deduz a silhueta pela subcategoria:** todo casaco vira "oversized" e toda saia vira "fitted". | `DnaService.java:339–350` |
-| 6 | M | **Tipos sem código:** slides (17 chinelos slide caem em `flip_flops`), mules, tamancos, chuteira (citada na UI, `pt-BR.json:2687`), moda praia, meia-calça, top esportivo. | acervo; `official_sitemap.py:290` |
+| `upper_piece` · Parte superior | 18 | t_shirt, shirt, blouse, tank_top, crop_top, polo_shirt, bodysuit, sweater, sweatshirt, hoodie, cardigan, vest, blazer, jacket, coat, parka, windbreaker, kimono | 3.769 |
+| `lower_piece` · Parte inferior | 14 | jeans, tailored_pants, casual_pants, chino_pants, cargo_pants, jogger_pants, sweatpants, leggings, culottes, shorts, bermuda_shorts, denim_shorts, skirt, skort | 2.206 |
+| `shoes_piece` · Calçados | 18 | casual_sneakers, running_shoes, training_shoes, basketball_shoes, skate_shoes, high_top_sneakers, loafers, moccasins, oxford_shoes, derby_shoes, ankle_boots, long_boots, combat_boots, sandals, flip_flops, heels, flats, espadrilles | 1.383 |
+| `accessory_piece` · Acessórios | 23 | handbag, crossbody_bag, tote_bag, clutch, backpack, belt, cap, hat, beanie, scarf, tie, bow_tie, sunglasses, eyeglasses, necklace, bracelet, earrings, ring, watch, wallet, gloves, socks, hair_accessory | 1.784 |
+| `full_body_piece` · Peça única | 5 | dress, jumpsuit, romper, matching_set, overalls | 431 |
 
-### B.2 Vocabulários sobrepostos
+Acervo oficial `data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz`:
+- 9.573 produtos de 45 marcas;
+- **75 das 78 subcategorias** presentes; ausentes: `windbreaker`, `culottes`, `long_boots`;
+- maiores: t_shirt (1.322), jeans (733), shirt (558), casual_pants (476), jacket (437).
 
-| # | Sev. | Problema | Evidência |
-|---|---|---|---|
-| 7 | A | **A mesma palavra cai em dimensões diferentes.** "denim" vira subcategoria `jeans`, cor `denim` e material COTTON; "jeans" vira subcategoria e cor; "estampa/print" vira cor `print` e estampa GRAPHIC; "tricot" vira `sweater` e WOOL. Como a busca testa **cor antes de subcategoria**, "jeans skinny" resolve como cor=denim, sem subtipo, e `color("Calça Jeans Azul")` dá `denim`. | `normalization.json:324–329, 762–766, 946–950`; `CatalogService.java:145–158` |
-| 8 | A | **Sinônimos curtos e perigosos.** "la" vira WOOL ("camiseta **de la** marca" fica de lã); "m", "f", "w", "u" e "all" viram gênero; "body", "royal", "sail" e "nude" são ambíguos; "maxi" e "mini" marcam **logo grande ou pequeno** mesmo sem logo, então "vestido maxi" sai como "Logo grande" (o acervo tem "maxi" 228 vezes). | `normalization.json:977, 1032–1049, 1336–1352`; `CatalogDesignInterpreter.java:95` |
-| 9 | M | **A paleta de cores mistura o que não é cor:** `print` e `multicolor` (estampa), `denim` (tecido), `washed_black` (lavagem), metálicos que duplicam dourado e prata. | `Taxonomy.java:73–89` |
-| 10 | M | **Material grosseiro.** BLEND não é fibra. SYNTHETIC agrupa nylon, borracha, EVA, PVC, acetato e metal. Não existe LINEN, embora o rótulo "Linho" exista. Viscose e elastano viram SYNTHETIC em um parser e não existem no outro. "Couro sintético" vira LEATHER no normalizador e SYNTHETIC no Copilot. | `normalization.json:952–1022`; `LabelTextParser.java:24–34`; `CopilotLexicon.java:220` |
-| 11 | M | **Três vocabulários de estampa:** os 10 do `design`, os 4 do `PatternAnalyzer` e as cores `print`/`multicolor`. ALLOVER_LOGO e SINGLE_LOGO misturam quantidade e posição de logo dentro de "estampa". | `PatternAnalyzer.java:18`; `normalization.json:1162–1334` |
-| 12 | M | **Estilos misturam estética com outras coisas:** construção (`tailored`), faixa de preço (`luxury`), ocasião/estação (`resort`), detalhe (`utility`), e há pares sobrepostos (`sporty` × `athleisure`, `streetwear` × `urban`). Existe ainda um 2º vocabulário de estilo, `StyleArchetype`. | `Taxonomy.java:26–28` |
-| 13 | M | **Rótulo e sinônimo divergem.** "castanho" é sinônimo de brown, mas é o rótulo de tan. "vinho" é sinônimo de burgundy, mas é o rótulo de maroon. "pink" é a cor pink, mas é o rótulo de hot_pink. taupe tem o rótulo "Fendi" (nome de marca). "rasteira" é `sandals` no normalizador e `flats` no Copilot. | `labels-pt.ts:22–27`; `normalization.json` |
-| 14 | M | **Três vocabulários de gênero e códigos em línguas misturadas:** MASCULINO/FEMININO/UNISSEX × male/female/unisex × MannequinSex; materiais em maiúsculas; famílias de cor que são rótulos em português usados como chave; wearstyles com chaves em PT e EN. | `Taxonomy.java:29–37, 60–89` |
+### A.2 Onde vive cada parte
 
-### B.3 Fonte da verdade duplicada
-
-| # | Sev. | Problema | Evidência |
-|---|---|---|---|
-| 15 | M | **A hierarquia está escrita 2 vezes no backend** (Taxonomy.java e normalization.json), com 6 tabelas de rótulo (3 no front e 3 no back). Só existe um teste parcial, que verifica num sentido só. O cabeçalho cita arquivos que não existem (`taxonomias_fashion_ai_v5.html`, `lib/taxonomy.ts`). | `CatalogNormalizerTest.java:12–16`; `Taxonomy.java:12–13` |
-| 16 | M | **"OUTERWEAR" definido 9 vezes com membros diferentes.** O colete é sobreposição no front e TOP no back. A regra "uma peça por categoria" do `scheme-builder` impede TOP + OUTERWEAR num look manual. | `scheme-builder.tsx:26`, `fitting-room.ts:14`, `CaptureProfiles.java:91`, `FlairLooks.java:55`… |
-| 17 | M | **Três algoritmos de inferência de subtipo:** n-gramas em Python com heurística de idioma; frase mais longa + token em Java; nome inteiro exato na descoberta (que quase nunca casa). | `official_sitemap.py:265–287`; `CatalogService.java:126–158, 449` |
-| 18 | A | **O coletor classifica errado.** `ENGLISH_HINTS` contém "s", então o "s" de "Levi's" troca o título em português para o modo "última ocorrência": "Jaqueta Jeans Levi's® Trucker" vira `jeans`. No acervo, ~50 jaquetas, camisas, saias e vestidos jeans estão em `jeans`, 114 "Sandália … Salto" estão em `sandals` e 14 chemises estão em `shirt`. | `official_sitemap.py:262` |
-| 19 | M | **Códigos fora da taxonomia usados no código:** `FlairLooks` (sneakers, chelsea_boots, trench_coat, puffer_jacket…), `DefaultOutfit` ("sneakers") e `search_tests.py` (full_piece, slip_on_sneakers, mini/midi/maxi_dress, trench_coat). | `FlairLooks.java:51–55` |
-| 20 | B | **`search_text` montado de 3 jeitos** (Java, `ingest.py`, `rebuild_search_index.py`); **2 fontes de apelido de marca** (18 × 29 marcas); **limites escritos como literais** em vez de constantes. | `CatalogIngestService.java:328–344`; `seed_catalog.py:39` |
-
-### B.4 Persistência e dados
-
-| # | Sev. | Problema | Evidência |
-|---|---|---|---|
-| 21 | A | **`catalog_products` não tem estilo, ocasião, preço nem variação.** Ao adicionar ao guarda-roupa entram constantes: estilo `basic`, ocasião `casual`, preço 0, material **BLEND**, sexo UNISSEX, cor black. O acervo tem **0% de material, 0% de gênero e 0% de preço**, então toda peça vinda do catálogo vira "misto". | `CatalogService.java:493–505`; `pieces/new/page.tsx:64–71` |
-| 22 | M | **Estilo e ocasião em CSV/texto livre, sem FK.** O Javadoc da peça diz "JSON", mas é CSV; `dna_schemes` guarda um texto livre de até 120 caracteres. | `V1:72–73, 105–106`; `DnaService.java:652–657` |
-| 23 | M | **Tamanhos de colunas divergentes:** material é 80, 40 ou 30; sexo 40 × gênero 20; categoria 80 × 40. | `V1:69`, `V30:55`, `V20:7`, `V31:45` |
-| 24 | M | **Preço sem moeda.** A chave i18n diz `_usd`, a interface diz "R$". | `messages.properties:2083`; `pt-BR.json:2633` |
-| 25 | M | **Sem faixa etária:** produtos infantis aparecem na busca adulta. 432 nomes do acervo são infantis, e o 1º resultado de "Nike · camiseta azul" foi uma camiseta "Big Kids'". | `docs/testes/busca-catalogada/README.md` |
-| 26 | B | **Tamanho ignora a categoria** (shoe_40 é aceito numa camiseta); **mercado é validado mas nunca capturado.** | `Taxonomy.java:33–35, 249–255` |
-
-### B.5 Interface
-
-| # | Sev. | Problema | Evidência |
-|---|---|---|---|
-| 27 | A | **`full_body_piece` está meio removida.** Saiu do formulário da peça e do lookbook, mas continua na taxonomia, nos chips do criador, no detector de IA e no catálogo (431 itens). Um item escolhido do catálogo ou detectado pela IA recebe uma categoria que o select não mostra. | `piece-form.tsx:26–27`; `pieces/new/page.tsx:137` |
-| 28 | M | **A ocasião restrita por categoria bloqueia usos legítimos:** gravata, clutch ou relógio não podem ser "trabalho/formal/casamento"; oxford não pode ser "trabalho"; calça não pode ser "festa". | `Taxonomy.java:60–70, 224–232` |
-| 29 | M | **O "refinar por cor" da busca mostra só 18 das 59 cores**: nenhum vermelho, rosa, laranja, amarelo, verde, roxo ou marrom. | `catalog-search.tsx:176` (`slice(0, 18)`) |
-| 30 | B | **Termos à deriva:** "Tipo" ora é categoria, ora subcategoria; `full_body_piece` aparece como "Peça única", "Peça inteira" e "corpo inteiro"; há rótulos órfãos (`linen`, `livre`, `like_new`) e status sem rótulo (`DAMAGED`). | `pt-BR.json:814, 2860`; `labels-pt.ts` |
-
-### B.6 Documentação
-
-| # | Sev. | Problema |
+| Parte | Onde (arquivo) | Observação |
 |---|---|---|
-| 31 | B | `RF47_ACERVO_BUSCA_CATALOGADA.md` diz V31 para `design_json` (é V36). `RF04_ADAPTIVE_GARMENT_CAPTURE.md` diz que `wallet` não existe e fala em "83+ subcategorias" (são 78). O Javadoc de `WardrobeItem` diz JSON (é CSV). |
+| Categorias, subcategorias, cores (59 + família + hex), materiais (7), tamanhos, sexos, ocasiões (20), estilos (25), mercado | `fai-application/.../taxonomy/Taxonomy.java` | Constantes estáticas. Não lê o `normalization.json`. |
+| Validação da peça + cardinalidade (peça ≤2 / esquema ≤3) | `Taxonomy.pieceErrors`, `requireTags`, `MAX_PIECE_TAGS=2`, `MAX_SCHEME_TAGS=3` | Mensagens `taxonomy.peca.*` / `taxonomy.look.*`. |
+| Ocasiões por categoria | `Taxonomy.WEARSTYLE_GROUPS` + `WEARSTYLES_BY_PART` → `allowedOccasions()` | Exposto como `allowedOccasionsByCategory` e `wearstylesByPart`. O próprio código diz "proposta a validar". |
+| Conjuntos especiais | `Taxonomy.SNEAKERS`, `Taxonomy.RIGID_SUBCATEGORIES` (FASHN.ai × compositor) | Listas fixas no código. |
+| Fonte compartilhada Java + Python | `fai-application/src/main/resources/catalog/normalization.json` | `taxonomy`, `categorySynonyms`, `subcategorySynonyms`, `colorSynonyms`, `materialSynonyms`, `genderSynonyms`, `brandAliases`, `stopwords`, `design` (patterns, placements, sizes, sides…). |
+| Leitura Java do JSON | `catalog/CatalogNormalizer.java` (singleton), `CatalogDesignInterpreter.java` | `CatalogNormalizerTest` exige `taxonomy` == `Taxonomy.java`. |
+| Leitura Python do JSON | `scripts/catalog/normalize_product.py`; `providers/official_sitemap.py` (`infer_subcategory`, `MODIFIERS`, `UNSUPPORTED`, `clean_title`) | O tipo vem do nome do produto, nunca da descrição. |
+| API | `GET /api/taxonomy` (`WardrobeController` → `WardrobeService.taxonomy()`) | subcategories, colors, colorFamilies, materials, sizes, sexes, occasions, styles, marketSeasons/Genders, allowedOccasionsByCategory, wearstylesByPart, wearstyleGroups, defaultImages, defaultImagesBySubcategory, brands. |
+| Banco: peça pessoal | `wardrobe_items` (V1; V2 `brand_id`, `tags`…; V30 `catalog_product_id`) | `category`, `subcategory`, `color`, `material`, `sex`, `size_label`, `style_tags`, `occasion_tags` (JSON em VARCHAR), `price` (sem moeda). |
+| Banco: produto global | `catalog_products` (V30; V36 `description`, `design_json`) + `catalog_variants` (cor/SKU) | Sem estilo, ocasião ou preço. Estampa só dentro de `design_json`. |
+| Outras colunas `subcategory` | `capture_sessions`, `piece_images.detected_subcategory`, `garment_embeddings.subcategory`, `kb_product_models.subcategory`, regras de selo (`SealPolicies`) | Todas VARCHAR livres, sem FK. |
+| Enums de domínio | `fai-domain/.../model/enums/` | **Não há** enum de categoria/subcategoria/material/cor/estilo/ocasião. Só `IdentificationLevel` (CATEGORY, SUBCATEGORY, BRAND, PRODUCT_LINE, MODEL, **VARIANT**). |
+| Front: dados | `lib/api/taxonomy.ts` (`useTaxonomy` → `/api/taxonomy`, `CATEGORY_KEYS`, `label()`), `lib/api/types.ts` | Não existe `lib/taxonomy.ts`, apesar de o javadoc de `Taxonomy.java` (linha 13) citá-lo. |
+| Front: rótulos | `lib/api/labels-pt.ts`, `labels-en.ts`, `labels-es.ts` | Duplicam `taxonomy.*` de `fai-application/src/main/resources/i18n/messages*.properties` (254 chaves por idioma). |
+| Front: formulário da peça | `components/piece-form.tsx` (selects categoria → subcategoria; ocasião filtrada por `allowedOccasionsByCategory`), `components/multi-piece-review.tsx` | Sem variação e sem atributos estruturais. |
+| Front: busca catalogada | `components/catalog/catalog-search.tsx`, `category-cards.tsx`, `lib/capture/capture-guides.ts` (`CATEGORY_CARDS`) | Cards de categoria → chips de subcategoria → marca → texto → chips de cor/gênero (só sobre o resultado). |
+| Front: filtros | `closet/page.tsx` (category, color, season, occasion, style, state, hypeLevel); `explorer/page.tsx` (category, color, season, hype); `try-on/page.tsx` (chips de categoria) | Nenhum filtra por subcategoria ou material. |
+| IA de visão | `WardrobeService.ANALYZER_SYSTEM` + `analyzerPrompt()`; `parseAnalysis()` valida pela taxonomia; `imaging/LocalVision` (heurística local) | Folha de referência por subtipo: `fai-web/.../catalog/asset-manifest.json → defaultPieceImages.bySubcategory` (77/78; falta `wallet`), artes em `public/assets_pecas/`. |
+| IA de texto | `catalog/CatalogTextInterpreter.SYSTEM` (só estampa/logo/lados/cores); `CopilotService.TYPE_WORDS` + `CopilotLexicon.TYPE_PREFIXES` | O Copilot tem **outra** lista de palavras → subcategoria. |
+| Captura | `vision/capture/CaptureProfiles.java` | Agrupa subcategorias por perfil de foto (PANTS, BOOT…). |
+| Ranking da busca | `CatalogMatchScorer` | Pesos: W_BRAND 0.25, W_CATEGORY 0.10, W_SUBCATEGORY 0.20, W_TEXT 0.35, W_COLOR 0.10, W_VISUAL 0.15, W_DESIGN 0.45. |
+| Hype Score | `HypeSnapshotService` linha 132 | Chave do "modelo" = `category\|subcategory\|brand` (raridade e semelhantes). |
 
 ---
 
-## C. Nova taxonomia proposta
+## B. Problemas encontrados (com evidência)
+
+### B.1 Duplicidade de fontes e de rótulos
+
+1. **Taxonomia definida duas vezes.** `Taxonomy.java` (estático) e `normalization.json → taxonomy` só ficam iguais porque um teste obriga (`CatalogNormalizerTest`). Qualquer expansão tem de ser escrita duas vezes.
+2. **Rótulos em 3 lugares × 3 idiomas.** `messages*.properties` (`taxonomy.*`, 254 chaves) e `lib/api/labels-{pt,en,es}.ts`. Já há divergência: o front tem `linen: "Linho"`, mas `LINEN` não existe em `Taxonomy.MATERIALS` nem em `materialSynonyms`.
+3. **Sinônimos de subcategoria em listas paralelas.** `normalization.json → subcategorySynonyms` convive com `CopilotService.TYPE_WORDS`, `CopilotLexicon.TYPE_PREFIXES` e os agrupamentos de `CaptureProfiles`.
+4. **Documentação defasada.** O javadoc de `Taxonomy.java` diz "Espelhada no frontend em lib/taxonomy.ts", mas o arquivo não existe (o front consome `/api/taxonomy`).
+5. **Alias repetido.** `subcategorySynonyms.loafers = ["loafer","loafers","mocassim social","loafer"]`.
+
+### B.2 Conceitos misturados na subcategoria (eixos que deveriam ser atributo)
+
+| Subcategoria | Eixo misturado | Consequência | Proposta |
+|---|---|---|---|
+| `crop_top` | comprimento | "cropped" é alias de `crop_top`, mas o termo vale também para calça, jaqueta e moletom | Manter o código; `LENGTH=CROPPED` implícito. |
+| `bermuda_shorts` | comprimento | Bermuda × short é só comprimento | Manter; `LENGTH=KNEE_LENGTH` implícito. |
+| `culottes` (alias "pantacourt") | comprimento | — | Manter; `LENGTH=CAPRI` implícito. |
+| `high_top_sneakers` | altura do cano | Um Chuck Taylor alto e um baixo caem em subcategorias diferentes | Manter; `SHAFT_HEIGHT=HIGH_TOP` implícito. Candidata a alias (decisão I-2). |
+| `ankle_boots`, `long_boots` | altura do cano | Uma texana pode ser curta ou alta | Manter; `SHAFT_HEIGHT` implícito. COWBOY, ENGINEER, RAIN, SOCK_BOOT e SNOW valem para ambas (N:N). |
+| `combat_boots` | estilo/construção | — | Manter; variações MILITARY/TACTICAL/JUNGLE; `SOLE_TYPE=LUG_SOLE` implícito. |
+| `running_shoes`, `training_shoes`, `basketball_shoes`, `skate_shoes` | uso/esporte | Esporte virou subcategoria | Manter; `USAGE_TYPE` implícito. Nenhuma variação nova por esporte. |
+| `jeans`, `denim_shorts` | material | `denim_shorts` sobrepõe `shorts`/`bermuda_shorts` | Manter; `MATERIAL_DETAIL=DENIM` implícito. |
+| `heels` | altura/tipo de salto | Inclui sandália de salto (alias "sandalia de salto") | Manter. As variações descrevem o cabedal (PUMP, SLINGBACK, HEELED_SANDAL…); o salto vai para `HEEL_HEIGHT`/`HEEL_TYPE`. |
+| `matching_set` | composição | Não é silhueta | Variações SUIT, TRACKSUIT, CO_ORD… |
+| `scarf`, `hair_accessory` | pacote de tipos | "cachecol", "lenço" e "echarpe" juntos | As variações separam os tipos. |
+| `flip_flops` × `sandals` | sobreposição | "chinelo slide" pode cair em qualquer uma | Variação `SLIDE` liga às duas; decidir a canônica (I-3). |
+| `jogger_pants` × `sweatpants` | sobreposição | Calça de moletom com punho ≈ jogger | `sweatpants.CUFFED_JOGGER` documenta a sobreposição. |
+| `loafers` × `moccasins` | nomenclatura | No varejo BR, "mocassim" quase sempre é loafer | Aliases; decisão I-4. |
+
+### B.3 Sinônimos que escondem ou descartam variação (`normalization.json`, `official_sitemap.py`)
+
+- **Variação usada como sinônimo de subcategoria** (a informação some na ingestão):
+  - "chelsea boot" → `ankle_boots`;
+  - "bomber", "trucker jacket", "track jacket", "track top" → `jacket`;
+  - "trench coat" → `coat`;
+  - "bucket hat" → `hat`;
+  - "baseball cap" → `cap`;
+  - "scarpin" → `heels`;
+  - "rasteira" → `sandals`;
+  - "quarter zip"/"half zip"/"1/4 zip" → `sweatshirt` (suéteres também têm meio zíper);
+  - "sling bag" → `crossbody_bag`;
+  - "ballet flat" → `flats`.
+- **Variação descartada.** `MODIFIERS` em `official_sitemap.py` (linha 260) remove "boot cut"/"bootcut" para não confundir com bota. Com isso, a modelagem bootcut nunca é registrada.
+- **Termos com várias leituras:**
+  - "denim" = alias de `jeans` **e** sinônimo de material `COTTON` **e** código de **cor** `denim`;
+  - "tricot"/"tricô" = `sweater` **e** material `WOOL` (tricô é técnica, não fibra);
+  - "cropped" → `crop_top`; "running" → `running_shoes`; "body" → `bodysuit`.
+- **Materiais grosseiros e trocados.** Só existem 7 famílias.
+  - `metal`, `aço`, `acetato` e `borracha` viram `SYNTHETIC`;
+  - `denim`, `sarja`, `canvas`, `jersey` e `piquet` viram `COTTON` (tecido ≠ fibra);
+  - "linho" não tem destino.
+- **Cores com outros eixos dentro:**
+  - estampa: `print`, `multicolor`;
+  - acabamento: `washed_black`, `metallic_gold`/`metallic_silver`.
+  - A paleta tem 59 códigos; parte deles não tem nenhum sinônimo em `colorSynonyms` (`washed_black`, `rose`, `amber`, `apricot`, `butter`, `metallic_*`, `bronze`).
+- **Catch-all.** "calça", "pants" e "trousers" → `casual_pants`. Por absorver as calças sem tipo, ela é a 4ª maior subcategoria do acervo (476).
+
+### B.4 Ocasiões restritas por categoria (achado com impacto direto)
+
+`Taxonomy.java` (linhas 66–70), em `WEARSTYLES_BY_PART`:
+
+| Categoria | Grupos permitidos | Ocasiões **proibidas** pela validação |
+|---|---|---|
+| `accessory_piece` | casual, esporte, praia, festa | **social, formal, business, wedding, ceremony, work**. Uma **gravata** (`tie`), gravata-borboleta ou relógio social não pode ser marcada "formal" nem "trabalho". |
+| `lower_piece` | casual, social, esporte, trabalho, praia | party, night_out, festival. Uma saia de paetê não pode ser "festa". |
+| `shoes_piece` | casual, social, esporte, festa, praia | work. Um sapato oxford não pode ser "trabalho" (só "business", via social). |
+
+O próprio código marca essa regra como "proposta a validar". Recomendação (decisão I-6): passar a regra para **subcategoria/variação**, por exemplo `tie`/`bow_tie` → social + trabalho. Assim a taxonomia nova não herda o bloqueio.
+
+### B.5 Gaps front × back × banco × Python × IA
+
+| Tema | Front | Back/API | Banco | Python | IA |
+|---|---|---|---|---|---|
+| Variação/modelagem | não existe | não existe | não existe | descarta (MODIFIERS) | não pede |
+| Comprimento, cintura, manga, decote, fechamento, acabamento | não existe | não existe | não existe | `MODIFIERS` remove manga do nome | não pede |
+| Estampa | não aparece na busca | `CatalogDesignInterpreter` (só catálogo) | `catalog_products.design_json` (V36); **ausente em `wardrobe_items`** | valida `design` | `CatalogTextInterpreter` (só texto da busca) |
+| Estilo/ocasião | formulário e closet | validados | só `wardrobe_items` | — | analyzer (≤2) |
+| Estilo/ocasião no catálogo | — | — | **ausentes** em `catalog_products` | — | — |
+| Preço | campo livre na peça | `price` | `wardrobe_items.price` sem moeda; **ausente** em `catalog_products` | JSON-LD `offers` lido só para `url` (`official_sitemap.py` ~l.395) | — |
+| Gênero | filtro **só no cliente** (`catalog-search.tsx` l.105) | `/api/catalog/search` **não recebe** gender | `catalog_products.gender` | `genderSynonyms` | `sex` |
+| Material fino | — | 7 famílias | VARCHAR(40/80) | 7 famílias | 7 famílias |
+| Subcategoria nos filtros | só na busca catalogada | — | indexada | — | ranking local de silhueta |
+
+Outros pontos:
+- **Colisão de nome.** `catalog_variants` e `IdentificationLevel.VARIANT` já usam "variant" para cor/SKU. O conceito novo deve se chamar **variation** (modelagem), nunca "variant".
+- **Código morto.** `LocalVision.java` linha 105 compara `"jeans".equals(color)`, mas "jeans" não é código de cor (o código é `denim`). É inofensivo.
+- **Prompt sem descrições.** `ANALYZER_SYSTEM` envia a lista de subtipos só como códigos, sem descrição nem exemplo. O modelo precisa adivinhar `loafers` × `moccasins`.
+- **API de busca limitada.** `/api/catalog/search` só aceita `category, subcategory, brand, q, color, limit`.
+
+### B.6 Atributos sem select (o que a pessoa não consegue filtrar hoje)
+
+- **Busca catalogada:** sem variação, material, estampa, acabamento, comprimento, cintura, manga, decote, estilo, ocasião e preço. Gênero e cor só aparecem como chips extraídos do resultado atual, não como selects da consulta.
+- **Closet:** sem subcategoria, material, marca, variação e preço.
+- **Explorer:** sem subcategoria, material, estilo e ocasião.
+- **Try-on:** só categoria.
+
+---
+
+## C. Nova taxonomia (CATEGORIA → SUBCATEGORIA → VARIAÇÃO)
 
 ### C.1 Princípios
 
-1. **CATEGORY → SUBCATEGORY → VARIATION.**
-   - A subcategoria é o tipo de produto como o varejo e a pessoa o chamam: "calça jeans", "saia", "bota".
-   - A variação é **só corte, silhueta ou construção**.
-   - Todo o resto é atributo, numa dimensão separada.
-2. **Fora da variação:**
-   - acabamento (ripped, washed, raw), comprimento (mini/midi/maxi, cropped, capri), cintura (rise), manga, decote, fechamento, uso/esporte, cor, material, estampa, estilo e ocasião;
-   - também: cano, salto, bico, solado, barra, forma de carregar e aro.
-3. **Código único no sistema inteiro, em inglês `UPPER_SNAKE`.**
-   - O mesmo código tem **o mesmo significado** em todas as subcategorias. WIDE_LEG serve para jeans, alfaiataria, moletom e macacão; MULE serve para sandália, salto, sapatilha e alpargata.
-   - Palavras genéricas com sentidos diferentes ganham sufixo: `BUCKET_HAT` × `BUCKET_BAG`, `MUSCLE_FIT` (camiseta) × `MUSCLE_TANK` (regata machão), `CUFFED_HEM` (barra com punho) × `CUFFED_BEANIE`.
-   - Assim, 62 códigos são reaproveitados sem duplicidade semântica.
-4. **Uma variação por peça.** Quando duas parecem caber, vale a que define a silhueta. O que é ortogonal foi para atributo:
-   - "transpassado" é `CLOSURE=DOUBLE_BREASTED`;
-   - "plataforma" é `SOLE_TYPE=PLATFORM`;
-   - "assimétrica" é `HEM=ASYMMETRIC`;
-   - "slip-on" é `CLOSURE=SLIP_ON`.
-5. **Subcategoria = outra subcategoria + 1 atributo vira LEGADO.**
-   - O código continua válido no banco e na API, e um mapeamento diz o equivalente novo.
-   - Os aliases ("bermuda", "short jeans", "coturno", "tênis cano alto") passam a resolver para "subcategoria + atributo".
-6. **Tiers:**
-   - **CORE** aparece por padrão no formulário e nos filtros;
-   - **EXTENDED** fica em "mais opções" e na busca;
-   - **NICHE** só é alcançado por busca, alias ou IA.
+1. **Códigos existentes intocados.** As 5 categorias e as 78 subcategorias continuam em `lower_snake_case` e viram chave natural das tabelas novas. `wardrobe_items.subcategory` e `catalog_products.subcategory` continuam válidos sem migração de dados.
+2. **Variação = só estrutura** (corte, silhueta, modelagem, construção).
+   - Uma por peça, opcional (`null`), sempre restrita à subcategoria pelo vínculo N:N.
+   - Um mesmo código pode valer para várias subcategorias: `STRAIGHT` vale para jeans, alfaiataria, cargo e macacão; `MULE` para salto, sapatilha, loafer e alpargata.
+   - Se o sentido muda, o código muda: `BIKER` (jaqueta perfecto) × `ENGINEER` (bota biker) × `BIKE_SHORT` (bermuda ciclista); `TRUCKER` (jaqueta) × `TRUCKER_CAP` (boné).
+3. **Nunca são variação:** acabamento, comprimento, cintura, manga, decote, fechamento, uso/esporte, cor, material, estampa, estilo, ocasião e marca. Viram **dimensões de atributo** com `appliesTo` (seção D).
+4. **Caimento.**
+   - Em partes de baixo, o varejo nomeia a modelagem pelo caimento da perna (jeans SKINNY, SLIM, RELAXED…). Ali o caimento **é** a variação.
+   - Em tops, outerwear e peças únicas, o caimento é ortogonal ao arquétipo (uma camisa western pode ser slim ou oversized). Por isso vira a dimensão `FIT` (SLIM_FIT, REGULAR_FIT, RELAXED_FIT, OVERSIZED_FIT, BOXY_FIT, MUSCLE_FIT).
+   - Por isso camiseta e polo têm poucas variações: a diferença real delas está em FIT, NECKLINE, SLEEVE e PATTERN.
+5. **Sem duplicidade semântica.** Um canônico, o resto vira alias:
+   - WIDE / WIDE_LEG / WIDE_FIT → `WIDE_LEG`;
+   - BARREL / HORSESHOE → `BARREL`;
+   - FEDORA / PANAMÁ → `FEDORA` (panamá é fedora de palha toquilla; o material vai para `MATERIAL_DETAIL=STRAW`);
+   - DROP / DANGLE → `DROP`;
+   - CABLE / ARAN → `CABLE_KNIT`;
+   - SLIP_ON é fechamento, não variação de tênis;
+   - RAGLAN é manga; HENLEY e CAMP_COLLAR são decote/gola.
+6. **Variação implica atributos.** O valor implícito é um padrão editável e nunca sobrescreve o que foi informado.
+   - `sweatshirt.QUARTER_ZIP` → `CLOSURE=QUARTER_ZIP`, `NECKLINE=MOCK_NECK`;
+   - `ankle_boots.CHELSEA` → `CLOSURE=SLIP_ON`;
+   - `coat.TRENCH` → `CLOSURE=DOUBLE_BREASTED`.
+   - Subcategorias legadas também implicam atributos: `high_top_sneakers` → `SHAFT_HEIGHT=HIGH_TOP`.
+7. **Já são subcategoria (logo não viram variação):**
+   - COMBAT (botas) = `combat_boots`;
+   - CROSSBODY, TOTE, CLUTCH (bolsas) = `crossbody_bag`, `tote_bag`, `clutch`;
+   - BACKPACK = `backpack`.
+   - Variações de bolsa:
+     - `crossbody_bag`: MESSENGER, CAMERA, BELT_BAG, SLING;
+     - `handbag`: SHOULDER, HOBO, BUCKET, SATCHEL, BOWLING, BAGUETTE, SADDLE, BOX, DUFFEL, BRIEFCASE.
+   - ANKLE, KNEE_HIGH e OVER_THE_KNEE (botas) viram valores de `SHAFT_HEIGHT`, porque `ankle_boots`/`long_boots` já codificam o cano.
 
-   A `priority` (1–5) ordena dentro do tier; 1 aparece primeiro.
-7. **A IA só grava valores do vocabulário** (C.6).
-8. **Cardinalidade preservada:** peça ≤ 2 estilos e ≤ 2 ocasiões; esquema ≤ 3 de cada; acabamento ≤ 3. As demais dimensões são de valor único.
+### C.2 Árvore CORE / EXTENDED (NICHE só contado)
 
-### C.2 Categorias
+- **upper_piece** — Parte superior (18 subcategorias · 39 CORE / 41 EXTENDED / 16 NICHE)
+  - `t_shirt` (Camiseta): CORE — · EXT BABY_TEE, POCKET_TEE · NICHE 1
+  - `shirt` (Camisa): CORE DRESS_SHIRT, OVERSHIRT · EXT WESTERN, WORK_SHIRT · NICHE 4
+  - `blouse` (Blusa): CORE PEASANT, WRAP, CAMISOLE · EXT TUNIC, CORSET, PEPLUM, RUFFLED, SMOCKED · NICHE 1
+  - `tank_top` (Regata): CORE MUSCLE_TANK, RACERBACK, CAMISOLE · EXT — · NICHE 0
+  - `crop_top` (Cropped): CORE BANDEAU, CORSET · EXT BABY_TEE, KNOT_FRONT, BRALETTE, WRAP · NICHE 0
+  - `polo_shirt` (Camisa polo): CORE — · EXT KNIT_POLO, RUGBY · NICHE 1
+  - `bodysuit` (Body): CORE — · EXT CORSET, WRAP, CUTOUT · NICHE 1
+  - `sweater` (Suéter): CORE CHUNKY_KNIT, FINE_KNIT, CABLE_KNIT · EXT QUARTER_ZIP · NICHE 1
+  - `sweatshirt` (Moletom): CORE CREWNECK, QUARTER_ZIP · EXT FULL_ZIP · NICHE 1
+  - `hoodie` (Moletom com capuz): CORE FULL_ZIP, PULLOVER · EXT — · NICHE 1
+  - `cardigan` (Cardigã): CORE CHUNKY_KNIT, FINE_KNIT, OPEN_FRONT · EXT CABLE_KNIT, BOLERO, WRAP · NICHE 0
+  - `vest` (Colete): CORE PUFFER, WAISTCOAT, SWEATER_VEST · EXT UTILITY_VEST · NICHE 0
+  - `blazer` (Blazer): CORE TAILORED, UNSTRUCTURED · EXT TUXEDO · NICHE 2
+  - `jacket` (Jaqueta): CORE BIKER, BOMBER, PUFFER, TRUCKER, TRACK_JACKET · EXT QUILTED, VARSITY, CHORE, COACH, FIELD, HARRINGTON · NICHE 1
+  - `coat` (Casaco): CORE OVERCOAT, PEACOAT, TRENCH, PUFFER, WRAP · EXT CAPE, CAR_COAT, COCOON, DUFFLE, RAINCOAT · NICHE 1
+  - `parka` (Parka): CORE PUFFER, SNORKEL · EXT FISHTAIL, SHELL · NICHE 0
+  - `windbreaker` (Corta-vento): CORE ANORAK · EXT SHELL, PACKABLE · NICHE 0
+  - `kimono` (Quimono): CORE KIMONO_CARDIGAN · EXT ROBE_KIMONO · NICHE 1
+- **lower_piece** — Parte inferior (14 subcategorias · 60 CORE / 47 EXTENDED / 17 NICHE)
+  - `jeans` (Calça jeans): CORE REGULAR, SKINNY, SLIM, STRAIGHT, WIDE_LEG, BAGGY, BOOTCUT, BOYFRIEND, FLARE, LOOSE, MOM, RELAXED, TAPERED · EXT ATHLETIC, BARREL, CARPENTER, CARROT, CIGARETTE, DAD · NICHE 4
+  - `tailored_pants` (Calça de alfaiataria): CORE SLIM, STRAIGHT, WIDE_LEG, CIGARETTE, PALAZZO, TAPERED · EXT BOOTCUT, CARROT, FLARE · NICHE 1
+  - `casual_pants` (Calça casual): CORE SLIM, STRAIGHT, WIDE_LEG, PALAZZO, RELAXED, TAPERED · EXT BAGGY, FLARE, BARREL, CARPENTER, CARROT, CIGARETTE, LOOSE, PAPERBAG, PARACHUTE, SKINNY · NICHE 1
+  - `chino_pants` (Calça chino): CORE SLIM, STRAIGHT, TAPERED · EXT RELAXED, WIDE_LEG · NICHE 1
+  - `cargo_pants` (Calça cargo): CORE BAGGY, RELAXED, STRAIGHT, CUFFED_JOGGER, WIDE_LEG · EXT PARACHUTE, SLIM, TAPERED · NICHE 1
+  - `jogger_pants` (Calça jogger): CORE RELAXED, SLIM · EXT CARGO_JOGGER · NICHE 0
+  - `sweatpants` (Calça de moletom): CORE CUFFED_JOGGER, OPEN_HEM, WIDE_LEG · EXT BAGGY, TRACK_PANTS, FLARE · NICHE 0
+  - `leggings` (Legging): CORE FLARE_LEGGING · EXT COMPRESSION, SEAMLESS, SCRUNCH · NICHE 1
+  - `culottes` (Pantacourt): CORE WIDE_LEG · EXT PANTSKIRT · NICHE 1
+  - `shorts` (Short): CORE BIKE_SHORT, CARGO, CHINO, TAILORED, VOLLEY · EXT BOARD, MOM, BOYFRIEND, PAPERBAG, RELAXED · NICHE 1
+  - `bermuda_shorts` (Bermuda): CORE CARGO, CHINO, BIKE_SHORT, TAILORED · EXT BOARD, BAGGY, RELAXED · NICHE 0
+  - `denim_shorts` (Short jeans): CORE MOM, BOYFRIEND, STRAIGHT · EXT BAGGY, RELAXED, CARGO · NICHE 1
+  - `skirt` (Saia): CORE A_LINE, PENCIL, PLEATED, SLIP, STRAIGHT_SKIRT, WRAP · EXT CIRCLE, CARGO, TIERED · NICHE 5
+  - `skort` (Short-saia): CORE A_LINE, PLEATED · EXT WRAP · NICHE 0
+- **shoes_piece** — Calçados (18 subcategorias · 49 CORE / 41 EXTENDED / 15 NICHE)
+  - `casual_sneakers` (Tênis casual): CORE COURT, LIFESTYLE_RUNNER, VULCANIZED, CHUNKY, TERRACE · EXT SOCK_SNEAKER, TRAIL_INSPIRED · NICHE 2
+  - `running_shoes` (Tênis de corrida): CORE ROAD, TRAIL · EXT MAX_CUSHION, STABILITY, RACING · NICHE 1
+  - `training_shoes` (Tênis de treino): CORE CROSS_TRAINING · EXT MINIMALIST, WEIGHTLIFTING · NICHE 0
+  - `basketball_shoes` (Tênis de basquete): CORE PERFORMANCE, RETRO_HERITAGE · EXT — · NICHE 0
+  - `skate_shoes` (Tênis de skate): CORE CUPSOLE, VULCANIZED · EXT PUFFY · NICHE 0
+  - `high_top_sneakers` (Tênis cano alto): CORE COURT, VULCANIZED, RETRO_HERITAGE · EXT CHUNKY, SNEAKER_BOOT · NICHE 1
+  - `loafers` (Mocassim loafer): CORE HORSEBIT, PENNY, TASSEL · EXT VENETIAN, MULE, SMOKING_SLIPPER · NICHE 2
+  - `moccasins` (Mocassim): CORE BOAT_SHOE, DRIVING · EXT SOFT_SOLE_MOC · NICHE 1
+  - `oxford_shoes` (Sapato oxford): CORE BROGUE, CAP_TOE, PLAIN_TOE · EXT WHOLECUT · NICHE 1
+  - `derby_shoes` (Sapato derby): CORE BROGUE, PLAIN_TOE · EXT APRON_TOE, CAP_TOE, MONK_STRAP · NICHE 0
+  - `ankle_boots` (Bota curta): CORE CHELSEA, CHUKKA, WORK, COWBOY, HIKING · EXT DESERT, LACE_UP_BOOT, ENGINEER, RAIN, SOCK_BOOT · NICHE 2
+  - `long_boots` (Bota cano longo): CORE COWBOY, RIDING, SLOUCH · EXT LACE_UP_BOOT, RAIN, SOCK_BOOT, ENGINEER · NICHE 1
+  - `combat_boots` (Coturno): CORE MILITARY · EXT TACTICAL · NICHE 1
+  - `sandals` (Sandália): CORE FOOTBED, SLIDE, STRAPPY, SPORT_SANDAL · EXT ANKLE_STRAP, FISHERMAN, GLADIATOR, CLOG, TOE_POST, T_STRAP · NICHE 1
+  - `flip_flops` (Chinelo): CORE SLIDE, THONG · EXT SLIM_STRAP · NICHE 0
+  - `heels` (Salto): CORE HEELED_SANDAL, PUMP, SLINGBACK, ANKLE_STRAP, MARY_JANE, MULE · EXT D_ORSAY, T_STRAP · NICHE 1
+  - `flats` (Sapatilha): CORE BALLET, MARY_JANE, MULE · EXT SLINGBACK · NICHE 1
+  - `espadrilles` (Alpargata): CORE — · EXT ANKLE_TIE, MULE, SLINGBACK · NICHE 0
+- **accessory_piece** — Acessórios (23 subcategorias · 79 CORE / 70 EXTENDED / 28 NICHE)
+  - `handbag` (Bolsa de mão): CORE BUCKET, HOBO, SHOULDER, SATCHEL, TOP_HANDLE · EXT BAGUETTE, BOWLING, BOX, BRIEFCASE, DUFFEL, SADDLE · NICHE 2
+  - `crossbody_bag` (Bolsa transversal): CORE BELT_BAG, CAMERA, MESSENGER, SLING · EXT SADDLE, BOX, PHONE_POUCH · NICHE 0
+  - `tote_bag` (Bolsa tote): CORE SHOPPER, STRUCTURED_TOTE · EXT EAST_WEST, NORTH_SOUTH · NICHE 1
+  - `clutch` (Clutch): CORE BOX_CLUTCH, ENVELOPE, POUCH · EXT WRISTLET · NICHE 1
+  - `backpack` (Mochila): CORE DAYPACK, DRAWSTRING, LAPTOP · EXT RUCKSACK, HIKING_PACK, ROLLTOP · NICHE 1
+  - `belt` (Cinto): CORE DRESS_BELT, PLATE_BUCKLE, BRAIDED, WEB · EXT REVERSIBLE, D_RING, WESTERN_BELT, WIDE_WAIST · NICHE 1
+  - `cap` (Boné): CORE BASEBALL, DAD_CAP, TRUCKER_CAP, SNAPBACK · EXT FITTED, FIVE_PANEL, VISOR · NICHE 0
+  - `hat` (Chapéu): CORE BUCKET_HAT, FEDORA, SUN_HAT, BERET · EXT FLAT_CAP, COWBOY_HAT, TRILBY · NICHE 4
+  - `beanie` (Gorro): CORE CUFFED_BEANIE, SLOUCHY, POM_POM · EXT FISHERMAN_BEANIE, BALACLAVA · NICHE 1
+  - `scarf` (Cachecol): CORE OBLONG, SQUARE_SCARF, STOLE · EXT BANDANA, INFINITY, SKINNY_SCARF · NICHE 1
+  - `tie` (Gravata): CORE SKINNY_TIE · EXT KNIT_TIE · NICHE 3
+  - `bow_tie` (Gravata-borboleta): CORE PRE_TIED, SELF_TIE · EXT BATWING, BUTTERFLY · NICHE 1
+  - `sunglasses` (Óculos de sol): CORE AVIATOR, CAT_EYE, ROUND, SQUARE, WAYFARER · EXT BROWLINE, OVAL, RECTANGLE, GEOMETRIC, SHIELD, WRAPAROUND · NICHE 1
+  - `eyeglasses` (Óculos de grau): CORE RECTANGLE, ROUND, SQUARE, CAT_EYE, OVAL · EXT BROWLINE, AVIATOR, GEOMETRIC, WAYFARER · NICHE 0
+  - `necklace` (Colar): CORE CHAIN, CHOKER, PENDANT · EXT BEADED, LAYERED, BIB, LARIAT · NICHE 2
+  - `bracelet` (Pulseira): CORE BANGLE, CHAIN, CUFF, BEADED, CHARM · EXT CORD, MULTI_WRAP, TENNIS · NICHE 0
+  - `earrings` (Brincos): CORE DROP, HOOP, HUGGIE, STUD · EXT CHANDELIER, CLIP_ON, EAR_CUFF · NICHE 2
+  - `ring` (Anel): CORE BAND, SIGNET, SOLITAIRE · EXT STACKABLE, COCKTAIL, ETERNITY, OPEN_RING · NICHE 0
+  - `watch` (Relógio): CORE CHRONOGRAPH, DIVER, DRESS_WATCH, SMARTWATCH · EXT FIELD_WATCH, PILOT, GMT, INTEGRATED_BRACELET, RECTANGULAR_CASE · NICHE 1
+  - `wallet` (Carteira): CORE BIFOLD, CARD_HOLDER, CONTINENTAL · EXT COIN_PURSE, MONEY_CLIP, TRIFOLD · NICHE 1
+  - `gloves` (Luvas): CORE FINGERLESS · EXT MITTENS · NICHE 2
+  - `socks` (Meias): CORE CUSHIONED, DRESS_SOCK · EXT COMPRESSION_SOCK · NICHE 2
+  - `hair_accessory` (Acessório de cabelo): CORE CLAW_CLIP, HEADBAND, SCRUNCHIE, BARRETTE, HAIR_BOW, HAIR_TIE · EXT BOBBY_PIN, SNAP_CLIP, TURBAN · NICHE 1
+- **full_body_piece** — Peça única (5 subcategorias · 17 CORE / 17 EXTENDED / 5 NICHE)
+  - `dress` (Vestido): CORE A_LINE, BODYCON, FIT_AND_FLARE, SHEATH, SHIFT, SHIRT_DRESS, SLIP, WRAP · EXT CORSET, TIERED, T_SHIRT_DRESS, BABYDOLL, EMPIRE, KAFTAN, MERMAID, SMOCKED · NICHE 2
+  - `jumpsuit` (Macacão): CORE BOILERSUIT, STRAIGHT, WIDE_LEG · EXT FLARE, WRAP · NICHE 1
+  - `romper` (Macaquinho): CORE WRAP · EXT SMOCKED, TAILORED · NICHE 1
+  - `matching_set` (Conjunto): CORE CO_ORD, SUIT, TRACKSUIT · EXT SKIRT_SUIT, RESORT_SET · NICHE 1
+  - `overalls` (Jardineira): CORE RELAXED, SKIRTALL · EXT SLIM, WIDE_LEG, CARPENTER · NICHE 0
 
-Os 5 códigos atuais continuam sem renomear:
+Totais: **541 vínculos** (244 CORE · 216 EXTENDED · 81 NICHE) e **394 variações únicas**.
+- Média de 6,9 variações por subcategoria.
+- Máximo: `jeans`, com 23 (19 sem NICHE).
+- Mínimo: `basketball_shoes`, com 2 (cano e uso cobrem o resto).
 
-| Código | PT-BR (proposto) | EN |
+Lista completa, com descrição e aliases: `proposta/taxonomia_variacoes.csv`.
+
+### C.3 Subcategorias candidatas (não incluídas no CSV — decisão do fundador)
+
+| Código sugerido | Categoria | Motivo |
 |---|---|---|
-| `upper_piece` | Parte superior | Top |
-| `lower_piece` | Parte inferior | Bottom |
-| `full_body_piece` | Peça inteira | One-piece |
-| `shoes_piece` | Calçados | Shoes |
-| `accessory_piece` | Acessórios | Accessories |
-
-O rótulo "Peça inteira" substitui "Peça única", que conflita com o slot `full_body` e com o padrão de calçado "peça única" (WHOLECUT). Veja a decisão I.6.
-
-### C.3 Mudanças de subcategoria
-
-**Novas (2):**
-
-| Código | Categoria | Por quê |
-|---|---|---|
-| `top` (Top) | upper | tops de moda e esportivos que não são camiseta, regata nem blusa: CORSET, BANDEAU, BRALETTE, SPORTS_BRA, BUSTIER… Absorve o `crop_top`, cujo nome descrevia comprimento. |
-| `boots` (Bota) | shoes | uma só subcategoria de bota. A altura do cano vira o atributo `SHAFT_HEIGHT` e o estilo vira variação (CHELSEA, COMBAT, WESTERN, RIDING…). |
-
-**Viram LEGADO (8).** Continuam aceitas; a migração é feita com revisão:
-
-| Legado | Equivalente novo | Revisão? | Itens no acervo |
-|---|---|---|---|
-| `crop_top` | `top` + LENGTH=CROPPED | **sim**: camiseta, regata ou blusa cropped vão para a própria subcategoria + CROPPED | 46 |
-| `bermuda_shorts` | `shorts` + LENGTH=KNEE | não | 92 |
-| `denim_shorts` | `shorts` + MATERIAL=DENIM | não | 16 |
-| `high_top_sneakers` | `casual_sneakers` + SHAFT_HEIGHT=HIGH_TOP | não | 9 |
-| `ankle_boots` | `boots` + SHAFT_HEIGHT=ANKLE | não | 11 |
-| `long_boots` | `boots` + SHAFT_HEIGHT=KNEE_HIGH | **sim**: pode ser MID_CALF ou OVER_THE_KNEE | 0 |
-| `combat_boots` | `boots` + variação COMBAT | não | 15 |
-| `crossbody_bag` | `handbag` + CARRY_MODE=CROSSBODY | não | 69 |
-
-Total no acervo: 258 de 9.573 itens. No formulário, "Bermuda", "Short jeans" e "Tênis cano alto" podem continuar como atalhos visuais que preenchem subcategoria + atributo.
-
-**Ficam como estão, apesar de serem quase um atributo.** São nomes fortes do varejo; veja a decisão I.2.
-
-- `jeans`: calça + denim. É o exemplo do próprio pedido.
-- `culottes`: pantacourt, ou seja, pantalona + comprimento capri.
-- `hoodie`: moletom + capuz.
-- `heels` × `flats`: separados pela altura do salto.
-- `tote_bag` e `clutch`: são formatos de bolsa.
-- os tênis por esporte.
-
-Para esses casos valem regras de consistência (C.7) em vez de mudar a estrutura.
-
-### C.4 Árvore completa (subcategoria → variações por tier)
-
-**Parte superior** (`upper_piece`)
-
-| Subcategoria | Status | CORE | EXTENDED | NICHE |
-|---|---|---|---|---|
-| `t_shirt` (Camiseta) | ativa | REGULAR, SLIM, OVERSIZED, BOXY, RELAXED, BABY_TEE | MUSCLE_FIT | ATHLETIC_FIT |
-| `shirt` (Camisa) | ativa | REGULAR, SLIM, OVERSIZED, RELAXED | OVERSHIRT, BOXY, EXTRA_SLIM | WESTERN_SHIRT, TUXEDO_SHIRT |
-| `blouse` (Blusa) | ativa | RELAXED, SLIM, WRAP, PEASANT, PEPLUM | OVERSIZED, TUNIC, BABYDOLL, SMOCKED, TIE_FRONT | CORSET |
-| `tank_top` (Regata) | ativa | REGULAR, CAMISOLE, SLIM, RACERBACK, MUSCLE_TANK | BOXY, DEEP_ARMHOLE | STRAPPY |
-| ~~crop_top~~ (Cropped) | LEGADO → `top` + LENGTH=CROPPED | | | |
-| `polo_shirt` (Camisa polo) | ativa | REGULAR, SLIM | OVERSIZED, RELAXED | BOXY, RUGBY |
-| `bodysuit` (Body) | ativa | SLIM, CORSET | CUT_OUT, WRAP, HIGH_CUT, SHAPING | DRAPED |
-| `sweater` (Suéter) | ativa | REGULAR, SLIM, OVERSIZED, BOXY | RELAXED |  |
-| `sweatshirt` (Moletom) | ativa | REGULAR, OVERSIZED, BOXY | RELAXED, SLIM |  |
-| `hoodie` (Moletom com capuz) | ativa | REGULAR, OVERSIZED, BOXY | RELAXED, SLIM |  |
-| `cardigan` (Cardigã) | ativa | REGULAR, OVERSIZED, SLIM | BOXY, WRAP | BOLERO |
-| `vest` (Colete) | ativa | TAILORED_VEST, PUFFER, KNIT_VEST | UTILITY, QUILTED |  |
-| `blazer` (Blazer) | ativa | REGULAR, SLIM, OVERSIZED | BOXY, RELAXED, UNSTRUCTURED |  |
-| `jacket` (Jaqueta) | ativa | BOMBER, TRUCKER, MOTO, PUFFER, VARSITY, FIELD, TRACK | QUILTED, CHORE, AVIATOR_JACKET, COACH | HARRINGTON, SAFARI, NAPOLEON |
-| `coat` (Casaco) | ativa | TRENCH, OVERCOAT, PEACOAT, PUFFER | WRAP, COCOON, CAPE | DUFFLE, CAR_COAT |
-| `parka` (Parka) | ativa | PUFFER, SHELL | FISHTAIL | SNORKEL |
-| `windbreaker` (Corta-vento) | ativa | SHELL, ANORAK, RAIN_JACKET | PACKABLE |  |
-| `kimono` (Quimono) | ativa | OPEN_FRONT | BELTED |  |
-| `top` (Top) **(nova)** | ativa | CORSET, BANDEAU, SPORTS_BRA, BRALETTE | BUSTIER, CUT_OUT, TIE_FRONT | DRAPED |
-
-**Parte inferior** (`lower_piece`)
-
-| Subcategoria | Status | CORE | EXTENDED | NICHE |
-|---|---|---|---|---|
-| `jeans` (Calça jeans) | ativa | SKINNY, SLIM, STRAIGHT, MOM, WIDE_LEG, FLARE, BAGGY, RELAXED | BOOTCUT, REGULAR, TAPERED, BOYFRIEND, LOOSE, DAD, BARREL, CARROT, SKATER, BALLOON | BELL_BOTTOM, GIRLFRIEND, HORSESHOE |
-| `tailored_pants` (Calça de alfaiataria) | ativa | STRAIGHT, SLIM, WIDE_LEG, PALAZZO, CIGARETTE, FLARE | TAPERED, CARROT, PAPERBAG, BOOTCUT | SKINNY, BARREL, SAILOR |
-| `casual_pants` (Calça casual) | ativa | STRAIGHT, SLIM, WIDE_LEG, RELAXED | SKINNY, FLARE, PALAZZO, BAGGY, TAPERED, PARACHUTE, PAPERBAG | HAREM |
-| `chino_pants` (Calça chino) | ativa | SLIM, STRAIGHT, REGULAR | TAPERED, RELAXED | SKINNY, WIDE_LEG |
-| `cargo_pants` (Calça cargo) | ativa | STRAIGHT, RELAXED, BAGGY | WIDE_LEG, CUFFED_HEM, SLIM, TAPERED, PARACHUTE |  |
-| `jogger_pants` (Calça jogger) | ativa | REGULAR, SLIM | RELAXED | HAREM |
-| `sweatpants` (Calça de moletom) | ativa | CUFFED_HEM, STRAIGHT, WIDE_LEG | BAGGY, FLARE | PALAZZO |
-| `leggings` (Legging) | ativa | SKINNY, FLARE | SEAMLESS, COMPRESSION, STRAIGHT | STIRRUP |
-| `culottes` (Pantacourt) | ativa | STRAIGHT, A_LINE | PAPERBAG | GAUCHO, WRAP |
-| `shorts` (Short) | ativa | STRAIGHT, MOM, RELAXED, BIKER | BAGGY, CARGO, SLIM, BOYFRIEND, PAPERBAG, A_LINE |  |
-| ~~bermuda_shorts~~ (Bermuda) | LEGADO → `shorts` + LENGTH=KNEE | | | |
-| ~~denim_shorts~~ (Short jeans) | LEGADO → `shorts` + MATERIAL=DENIM | | | |
-| `skirt` (Saia) | ativa | A_LINE, PENCIL, CIRCLE, PLEATED, STRAIGHT, WRAP | SLIP, TIERED, MERMAID, GATHERED | BALLOON, TULIP, CARGO, TUTU |
-| `skort` (Short-saia) | ativa | A_LINE, PLEATED | WRAP, STRAIGHT |  |
-
-**Peça inteira** (`full_body_piece`)
-
-| Subcategoria | Status | CORE | EXTENDED | NICHE |
-|---|---|---|---|---|
-| `dress` (Vestido) | ativa | SHEATH, A_LINE, FIT_AND_FLARE, SLIP, WRAP, SHIRT_DRESS, BODYCON, SHIFT | T_SHIRT_DRESS, TIERED, BABYDOLL, SMOCKED, EMPIRE, MERMAID, CORSET, KAFTAN | TRAPEZE, BLAZER_DRESS, PINAFORE, BALL_GOWN, CUT_OUT, PEPLUM, BALLOON |
-| `jumpsuit` (Macacão) | ativa | WIDE_LEG, STRAIGHT, BOILERSUIT | PALAZZO, FLARE, WRAP, CUFFED_HEM, SLIM | CUT_OUT |
-| `romper` (Macaquinho) | ativa | RELAXED, WRAP | SMOCKED, SLIM, A_LINE | BOILERSUIT |
-| `matching_set` (Conjunto) | ativa | TOP_AND_PANTS, TOP_AND_SKIRT, TOP_AND_SHORTS, SUIT, TRACKSUIT |  | THREE_PIECE |
-| `overalls` (Jardineira) | ativa | STRAIGHT, RELAXED | WIDE_LEG, BAGGY, SLIM, CARPENTER |  |
-
-**Calçados** (`shoes_piece`)
-
-| Subcategoria | Status | CORE | EXTENDED | NICHE |
-|---|---|---|---|---|
-| `casual_sneakers` (Tênis casual) | ativa | COURT, VULCANIZED, RETRO_RUNNER, DAD_SNEAKER, TERRACE | DRESS_SNEAKER, TECH_RUNNER, SOCK_SNEAKER | SNEAKER_BOOT |
-| `running_shoes` (Tênis de corrida) | ativa | NEUTRAL, STABILITY, TRAIL | MAX_CUSHION, RACING | TRACK_SPIKE, MINIMALIST |
-| `training_shoes` (Tênis de treino) | ativa | CROSS_TRAINING | WALKING, WEIGHTLIFTING |  |
-| `basketball_shoes` (Tênis de basquete) | ativa | PERFORMANCE, HERITAGE |  |  |
-| `skate_shoes` (Tênis de skate) | ativa | VULCANIZED, CUPSOLE |  |  |
-| ~~high_top_sneakers~~ (Tênis cano alto) | LEGADO → `casual_sneakers` + SHAFT_HEIGHT=HIGH_TOP | | | |
-| `loafers` (Mocassim loafer) | ativa | PENNY, HORSEBIT | TASSEL, VENETIAN, SLIPPER | BELGIAN |
-| `moccasins` (Mocassim) | ativa | TRUE_MOC, DRIVER, BOAT_SHOE |  |  |
-| `oxford_shoes` (Sapato oxford) | ativa | PLAIN_TOE, CAP_TOE, WINGTIP | SEMI_BROGUE, WHOLECUT | SADDLE_SHOE |
-| `derby_shoes` (Sapato derby) | ativa | PLAIN_TOE | CAP_TOE, WINGTIP, APRON_TOE, MONK_STRAP |  |
-| ~~ankle_boots~~ (Bota curta) | LEGADO → `boots` + SHAFT_HEIGHT=ANKLE | | | |
-| ~~long_boots~~ (Bota cano longo) | LEGADO → `boots` + SHAFT_HEIGHT=KNEE_HIGH | | | |
-| ~~combat_boots~~ (Coturno) | LEGADO → `boots` + VARIATION=COMBAT | | | |
-| `sandals` (Sandália) | ativa | STRAPPY, ANKLE_STRAP, SPORT_SANDAL, FOOTBED, MULE | GLADIATOR, FISHERMAN, T_STRAP, CLOG |  |
-| `flip_flops` (Chinelo) | ativa | THONG, SLIDE |  |  |
-| `heels` (Salto) | ativa | PUMP, SLINGBACK, MULE, MARY_JANE | ANKLE_STRAP, D_ORSAY |  |
-| `flats` (Sapatilha) | ativa | BALLET, MARY_JANE, MULE | SLINGBACK, SLIPPER | D_ORSAY |
-| `espadrilles` (Alpargata) | ativa | CLASSIC_ESPADRILLE | LACE_UP_ESPADRILLE, MULE |  |
-| `boots` (Bota) **(nova)** | ativa | CHELSEA, COMBAT, WESTERN, WORK_BOOT, RIDING | CHUKKA, HIKING, SOCK_BOOT, ENGINEER, SLOUCH, RAIN_BOOT | SNOW_BOOT |
-
-**Acessórios** (`accessory_piece`)
-
-| Subcategoria | Status | CORE | EXTENDED | NICHE |
-|---|---|---|---|---|
-| `handbag` (Bolsa de mão) | ativa | TOP_HANDLE, SHOPPER, HOBO, BUCKET_BAG, BAGUETTE, SATCHEL, CAMERA_BAG, BELT_BAG | SADDLE_BAG, HALF_MOON_BAG, BOX_BAG, MESSENGER_BAG, PHONE_BAG, SLING_BAG, BOWLER_BAG, BASKET_BAG, DUFFLE_BAG | DOCTOR_BAG, FRAME_BAG |
-| ~~crossbody_bag~~ (Bolsa transversal) | LEGADO → `handbag` + CARRY_MODE=CROSSBODY | | | |
-| `tote_bag` (Bolsa tote) | ativa | SHOPPER, STRUCTURED_TOTE | SLOUCHY_TOTE | EAST_WEST_TOTE |
-| `clutch` (Clutch) | ativa | ENVELOPE_CLUTCH, POUCH | MINAUDIERE, WRISTLET, FOLDOVER |  |
-| `backpack` (Mochila) | ativa | DAYPACK, LAPTOP_BACKPACK, GYMSACK | ROLLTOP, RUCKSACK, CONVERTIBLE_BACKPACK, HIKING_PACK |  |
-| `belt` (Cinto) | ativa | PIN_BUCKLE, PLATE_BUCKLE, BRAIDED_BELT, WIDE_BELT | D_RING, WEB_BELT, WESTERN_BELT, CHAIN_BELT, REVERSIBLE_BELT |  |
-| `cap` (Boné) | ativa | BASEBALL_CAP, DAD_CAP, FLAT_BRIM_CAP, TRUCKER_CAP | FIVE_PANEL, VISOR | MILITARY_CAP |
-| `hat` (Chapéu) | ativa | BUCKET_HAT, FEDORA, BERET, FLOPPY_HAT | FLAT_CAP, COWBOY_HAT, BOATER, TRILBY | CLOCHE, BOWLER_HAT |
-| `beanie` (Gorro) | ativa | CUFFED_BEANIE, SLOUCHY_BEANIE | FISHERMAN_BEANIE, BALACLAVA |  |
-| `scarf` (Cachecol) | ativa | LONG_SCARF, SQUARE_SCARF, BLANKET_SCARF | INFINITY_SCARF, BANDANA, SKINNY_SCARF |  |
-| `tie` (Gravata) | ativa | CLASSIC_TIE, SLIM_TIE | SKINNY_TIE, KNIT_TIE | ASCOT_TIE, BOLO_TIE |
-| `bow_tie` (Gravata-borboleta) | ativa | PRE_TIED_BOW, SELF_TIE_BOW |  |  |
-| `sunglasses` (Óculos de sol) | ativa | AVIATOR, WAYFARER, SQUARE_FRAME, ROUND_FRAME, CAT_EYE, RECTANGLE_FRAME, OVERSIZED_FRAME | SHIELD, BROWLINE, OVAL_FRAME, WRAPAROUND, GEOMETRIC_FRAME | BUTTERFLY_FRAME |
-| `eyeglasses` (Óculos de grau) | ativa | RECTANGLE_FRAME, ROUND_FRAME, SQUARE_FRAME, WAYFARER, CAT_EYE, OVAL_FRAME | BROWLINE, AVIATOR, GEOMETRIC_FRAME, OVERSIZED_FRAME |  |
-| `necklace` (Colar) | ativa | CHAIN_NECKLACE, PENDANT_NECKLACE, CHOKER, LAYERED_NECKLACE | STRAND_NECKLACE, TENNIS_NECKLACE, LARIAT, STATEMENT_NECKLACE, SCAPULAR | LOCKET |
-| `bracelet` (Pulseira) | ativa | CHAIN_BRACELET, BANGLE, CUFF_BRACELET, BEADED_BRACELET | CHARM_BRACELET, TENNIS_BRACELET, CORD_BRACELET |  |
-| `earrings` (Brincos) | ativa | STUD, HOOP, DROP, HUGGIE | CHANDELIER, EAR_CUFF, STATEMENT_EARRING, FRINGE_EARRING | CLIMBER, THREADER |
-| `ring` (Anel) | ativa | BAND_RING, SOLITAIRE | SIGNET, COCKTAIL_RING, OPEN_RING, ETERNITY_RING, MIDI_RING | ENHANCER_RING, CLUSTER_RING |
-| `watch` (Relógio) | ativa | ANALOG_WATCH, DIGITAL_WATCH, SMARTWATCH | ANADIGI_WATCH |  |
-| `wallet` (Carteira) | ativa | BIFOLD, CARD_HOLDER, LONG_WALLET | TRIFOLD, COIN_PURSE | MONEY_CLIP |
-| `gloves` (Luvas) | ativa | FIVE_FINGER | FINGERLESS, MITTEN |  |
-| `socks` (Meias) | ativa | TIGHTS, CUSHIONED_SOCK | COMPRESSION_SOCK, FISHNET | TOE_SOCK, LEG_WARMER |
-| `hair_accessory` (Acessório de cabelo) | ativa | SCRUNCHIE, CLAW_CLIP, HEADBAND, BARRETTE, HAIR_BOW | DUCKBILL_CLIP, HAIR_TIE, HEAD_WRAP | BOBBY_PIN, FASCINATOR |
-
-### C.5 Dimensões de atributo
-
-**Cor, estilo, ocasião e gênero mantêm os códigos atuais:** 59 cores com hex e família, 25 estilos, 20 ocasiões, MASCULINO/FEMININO/UNISSEX. Ajustes propostos em I.7–I.10:
-
-- tirar `print`, `multicolor`, `denim` e `washed_black` da paleta e levá-los para PATTERN e FINISH;
-- limpar a lista de estilos.
-
-**Material** passa de 7 para 33 códigos. Os 7 atuais continuam válidos; BLEND e SYNTHETIC ficam como genéricos de legado.
-
-**Estampa** passa de 10 para 19 códigos: os 10 atuais, mais GINGHAM, HOUNDSTOOTH, POLKA_DOT, GEOMETRIC, ARGYLE, TROPICAL, PAISLEY, ANIMAL_PRINT e ABSTRACT.
-
-Valores com ᴱ são EXTENDED; com ᴺ, NICHE. Os aliases PT/EN de cada valor estão no JSON.
-
-**Material** — `MATERIAL` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Material predominante (composição completa fica para depois).
-
-- FIBER: `COTTON` Algodão · `LINEN` Linho · `WOOL` Lã · `CASHMERE` Cashmereᴱ · `SILK` Seda · `VISCOSE` Viscose · `POLYESTER` Poliéster · `NYLON` Poliamida (nylon) · `ACRYLIC` Acrílicoᴱ
-- FABRIC: `DENIM` Jeans (denim) · `SATIN` Cetim · `FLEECE` Moletom / fleece · `KNIT` Malha / tricô · `CORDUROY` Veludo cotelêᴱ · `VELVET` Veludoᴱ · `CANVAS` Lonaᴱ · `MESH` Telaᴱ
-- LEATHER: `LEATHER` Couro · `SUEDE` Camurça · `FAUX_LEATHER` Couro sintético · `SHEARLING` Pelo / shearlingᴱ
-- OTHER: `RUBBER` Borrachaᴱ · `EVA` EVAᴱ · `CORK` Cortiçaᴺ · `STRAW` Palhaᴱ
-- JEWELRY: `METAL` Metalᴱ · `GOLD` Ouroᴱ · `SILVER` Prataᴱ · `PLATED` Folheado (semijoia)ᴱ · `PEARL` Pérolaᴺ
-- EYEWEAR: `ACETATE` Acetatoᴱ
-- LEGACY: `SYNTHETIC` Sintético (legado)ᴺ · `BLEND` Misto (legado)ᴺ
-
-**Estampa** — `PATTERN` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Estampa/padrão de superfície.
-
-- BASE: `PLAIN` Lisa
-- GEOMETRIC: `STRIPES` Listrada · `PLAID` Xadrez · `GINGHAM` Vichyᴱ · `HOUNDSTOOTH` Pied-de-pouleᴱ · `POLKA_DOT` Poá · `GEOMETRIC` Geométricaᴱ · `ARGYLE` Argyleᴺ
-- ORGANIC: `FLORAL` Floral · `TROPICAL` Tropicalᴱ · `PAISLEY` Paisleyᴱ · `ANIMAL_PRINT` Animal print · `CAMO` Camufladaᴱ · `TIE_DYE` Tie-dyeᴱ · `ABSTRACT` Abstrataᴱ
-- GRAPHIC: `COLOR_BLOCK` Color blockᴱ · `GRAPHIC` Com estampa/arte
-- LOGO: `ALLOVER_LOGO` Logo em toda a peça · `SINGLE_LOGO` Um logo
-
-**Acabamento** — `FINISH` · por peça: até 3 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Lavagem, desgaste, superfície, textura e aplicações.
-
-- WASH: `RAW` Cru (sem lavagem) · `RINSE` Amaciado escuroᴱ · `DARK_WASH` Lavagem escura · `MEDIUM_WASH` Lavagem média · `LIGHT_WASH` Lavagem clara · `BLEACHED` Delavêᴱ · `STONE_WASH` Stonadoᴱ · `ACID_WASH` Marmorizadoᴺ · `FADED` Desbotadoᴱ · `GARMENT_DYED` Tingido na peçaᴺ
-- DISTRESS: `RIPPED` Destroyed · `DISTRESSED` Puídoᴱ · `FRAYED_HEM` Barra desfiadaᴱ · `REPAIRED` Rasgo remendadoᴺ
-- SURFACE: `COATED` Resinadoᴱ · `WAXED` Enceradoᴺ · `PATENT` Vernizᴱ · `METALLIC` Metalizadoᴱ · `SATIN_FINISH` Acetinadoᴱ · `BRUSHED` Peletizadoᴺ
-- TEXTURE: `CABLE_KNIT` Tricô trançadoᴱ · `RIBBED` Canelado · `WAFFLE` Waffleᴱ · `CHUNKY_KNIT` Tricô grossoᴱ · `POINTELLE` Pointelleᴺ · `CROCHET` Crochêᴱ
-- EMBELLISHMENT: `EMBROIDERED` Bordado · `SEQUINED` Paetêᴱ · `BEADED` Pedrariaᴱ · `STUDDED` Tachasᴱ · `FRINGED` Franjasᴱ · `RUFFLED` Babadosᴱ
-
-**Comprimento** — `LENGTH` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece. Onde a barra termina no corpo (blusa, casaco, short, calça, saia, vestido).
-
-- TOP: `CROPPED` Cropped · `REGULAR_LENGTH` Comprimento regular · `LONGLINE` Alongado
-- BOTTOM: `MICRO` Microᴱ · `MINI` Mini · `MID_THIGH` Meio da coxa · `KNEE` Joelho · `MIDI` Midi · `MAXI` Longo · `FLOOR_LENGTH` Até o chãoᴱ
-- PANTS: `FULL_LENGTH` Comprimento total · `ANKLE_LENGTH` Tornozelo (7/8) · `CAPRI` Capriᴱ · `PEDAL_PUSHER` Corsárioᴺ
-
-**Altura do cano** — `SHAFT_HEIGHT` · por peça: 1 · vale para: shoes_piece, socks. Cano do tênis, da bota e da meia.
-
-- SNEAKER: `LOW_TOP` Cano baixo · `MID_TOP` Cano médio (tênis) · `HIGH_TOP` Cano alto
-- SOCK: `NO_SHOW` Invisível · `QUARTER` Meia cano curtoᴱ · `CREW` Meia cano médio
-- BOOT_SOCK: `ANKLE` Tornozelo · `MID_CALF` Meia canela · `KNEE_HIGH` Joelho · `OVER_THE_KNEE` Acima do joelhoᴱ · `THIGH_HIGH` Coxaᴺ
-
-**Cintura** — `RISE` · por peça: 1 · vale para: lower_piece, jumpsuit, romper, overalls. Altura do cós.
-
-- `LOW_RISE` Cintura baixa · `MID_RISE` Cintura média · `HIGH_RISE` Cintura alta · `SUPER_HIGH_RISE` Cintura altíssimaᴱ
-
-**Barra** — `HEM` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece. Formato da barra (assimétrica, mullet, fenda).
-
-- `ASYMMETRIC` Assimétrica · `HIGH_LOW` Mullet · `HANDKERCHIEF` Pontasᴱ · `SLIT` Fenda
-
-**Comprimento da manga** — `SLEEVE_LENGTH` · por peça: 1 · vale para: upper_piece, full_body_piece. Sem manga a manga longa.
-
-- `SLEEVELESS` Sem manga · `SHORT_SLEEVE` Manga curta · `ELBOW_SLEEVE` Meia mangaᴱ · `THREE_QUARTER_SLEEVE` Manga 3/4 · `LONG_SLEEVE` Manga longa
-
-**Tipo de manga** — `SLEEVE_STYLE` · por peça: 1 · vale para: upper_piece, full_body_piece. Construção da manga.
-
-- `SET_IN` Comum · `RAGLAN` Raglan · `DROP_SHOULDER` Ombro caído · `DOLMAN` Morcegoᴱ · `KIMONO_SLEEVE` Japonesaᴱ · `PUFF` Bufante · `BALLOON_SLEEVE` Balãoᴱ · `BELL` Sinoᴱ · `FLUTTER` Babadoᴱ · `CAP_SLEEVE` Cavada curtinhaᴱ
-
-**Decote / gola** — `NECKLINE` · por peça: 1 · vale para: upper_piece, full_body_piece. Decote, gola, lapela ou capuz.
-
-- NECK: `CREW` Careca · `V_NECK` Decote V · `SCOOP` Decote Uᴱ · `BOAT` Canoaᴱ · `SQUARE_NECK` Quadradoᴱ · `SWEETHEART` Coraçãoᴱ · `PLUNGE` Profundoᴱ · `OFF_SHOULDER` Ombro a ombro · `ONE_SHOULDER` Um ombro sóᴱ · `HALTER` Frente única · `STRAPLESS` Tomara que caia · `COWL` Drapeadoᴱ · `KEYHOLE` Gotaᴺ
-- COLLAR: `TURTLENECK` Gola alta · `MOCK_NECK` Gola médiaᴱ · `HENLEY` Portinholaᴱ · `POLO_COLLAR` Gola polo · `SHIRT_COLLAR` Colarinho · `BUTTON_DOWN_COLLAR` Button-downᴱ · `MANDARIN` Gola padreᴱ · `CAMP_COLLAR` Gola cubanaᴱ · `PETER_PAN` Gola bonecaᴱ · `BOW_COLLAR` Gola laçoᴱ · `HOOD` Capuz
-- LAPEL: `NOTCH_LAPEL` Lapela tradicionalᴱ · `PEAK_LAPEL` Lapela pontiagudaᴱ · `SHAWL_LAPEL` Gola xaleᴱ
-
-**Fechamento** — `CLOSURE` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Fechamento principal.
-
-- `PULLOVER` Sem fechamento (vestir pela cabeça) · `BUTTON` Botões · `SNAP` Botão de pressãoᴱ · `ZIPPER` Zíper · `HALF_ZIP` Meio zíper · `SINGLE_BREASTED` Abotoamento simples · `DOUBLE_BREASTED` Transpassado · `HOOK_AND_EYE` Colcheteᴱ · `TIE` Amarração · `DRAWSTRING` Cordão · `ELASTIC` Elástico · `LACE_UP` Cadarço · `SLIP_ON` Calce fácil · `VELCRO` Velcroᴱ · `BUCKLE` Fivela · `MAGNETIC` Ímãᴱ · `TOGGLE` Pino (toggle)ᴺ · `FLAP` Aba · `OPEN_TOP` Abertaᴱ · `CLASP` Fecho de joiaᴱ · `CLIP_ON` Pressão sem furoᴱ
-
-**Tipo de salto** — `HEEL_TYPE` · por peça: 1 · vale para: shoes_piece. Forma do salto.
-
-- `STILETTO` Agulha · `BLOCK` Bloco · `KITTEN` Gatinho · `WEDGE` Anabela · `CONE` Coneᴱ · `SPOOL` Carretelᴺ · `CUBAN` Cubanoᴱ · `SCULPTURAL` Esculturalᴺ
-
-**Altura do salto** — `HEEL_HEIGHT` · por peça: 1 · vale para: shoes_piece. Faixa de altura (guardar também em cm).
-
-- `FLAT` Rasteiro (0–1,2 cm) · `LOW` Baixo (2,5–6 cm) · `MID` Médio (6–8,5 cm) · `HIGH` Alto (8,5–10 cm) · `VERY_HIGH` Altíssimo (> 10 cm)ᴱ
-
-**Bico** — `TOE_SHAPE` · por peça: 1 · vale para: shoes_piece. Formato do bico.
-
-- `ROUND_TOE` Redondo · `ALMOND_TOE` Amendoadoᴱ · `POINTED_TOE` Bico fino · `SQUARE_TOE` Bico quadrado · `PEEP_TOE` Peep toe · `OPEN_TOE` Aberto
-
-**Solado** — `SOLE_TYPE` · por peça: 1 · vale para: shoes_piece. Plataforma, meia pata, tratorado.
-
-- `PLATFORM` Plataforma · `FRONT_PLATFORM` Meia pata · `FLATFORM` Flatformᴱ · `LUG` Tratorado
-
-**Uso / esporte** — `SPORT_USE` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Para que a peça foi feita tecnicamente (≠ ocasião, que é quando a pessoa usa).
-
-- `LIFESTYLE` Casual / lifestyle · `RUNNING` Corrida · `TRAINING` Treino / academia · `BASKETBALL` Basquete · `SKATE` Skate · `FOOTBALL` Futebol · `TENNIS` Tênis / padelᴱ · `VOLLEYBALL` Vôleiᴱ · `CYCLING` Ciclismoᴱ · `SWIM_SURF` Natação / surfᴱ · `HIKING` Trilha / outdoor · `YOGA_PILATES` Yoga / pilatesᴱ · `DANCE` Dançaᴺ · `COMBAT_SPORTS` Lutasᴺ · `GOLF` Golfeᴺ
-
-**Forma de carregar** — `CARRY_MODE` · por peça: 1 · vale para: handbag, tote_bag, clutch, backpack. Mão, ombro, transversal, cintura, costas.
-
-- `HAND` Mão · `SHOULDER` Ombro · `CROSSBODY` Transversal · `WAIST` Cintura · `BACK` Costas · `WRIST` Pulsoᴱ
-
-**Aro** — `FRAME_RIM` · por peça: 1 · vale para: sunglasses, eyeglasses. Aro fechado, fio de nylon, sem aro.
-
-- `FULL_RIM` Aro fechado · `SEMI_RIMLESS` Fio de nylon · `RIMLESS` Sem aro
-
-**Faixa etária** — `AGE_GROUP` · por peça: 1 · vale para: upper_piece, lower_piece, full_body_piece, shoes_piece, accessory_piece. Adulto, infantil, bebê.
-
-- `ADULT` Adulto · `TEEN` Juvenilᴱ · `KIDS` Infantil · `BABY` Bebê
-
-**Faixa de preço** não é um código guardado. Ela é calculada do preço (seção H).
-
-### C.6 Como a IA grava (vocabulário fechado)
-
-1. **Prompt por subcategoria.** O analisador de peça já recebe a categoria escolhida. Depois de definir a subcategoria, ele recebe **só as variações daquela subcategoria** (código + nome PT + descrição curta) e, por dimensão, **só os valores que se aplicam** (`appliesTo`).
-2. **Resposta estruturada:** `{"variation": {"code": "MOM", "confidence": 0.82}, "attributes": {"LENGTH": {"code": "…", "confidence": …}, …}}`.
-3. **Validação no servidor, nesta ordem:**
-   1. o código está no conjunto permitido → aceita;
-   2. senão, procura em `taxonomy_aliases` (`alias_norm`, mesmo `key()` do `CatalogNormalizer`, com escopo da subcategoria) → converte para o código;
-   3. senão → `NULL`.
-
-   **Nunca grava texto fora do vocabulário.**
-4. **Confiança:**
-
-   | Confiança | O que acontece |
-   |---|---|
-   | ≥ 0,75 | grava com `source=AI`, status `AI_SUGGESTED`; a pessoa vê o valor pré-preenchido e pode trocar |
-   | 0,40–0,75 | `NULL` + status `NEEDS_REVIEW` + item em `ai_review_items` (a tabela já existe, V29) |
-   | < 0,40 ou sem resposta | `NULL` + `UNKNOWN` |
-5. **A confirmação humana vira `USER_CONFIRMED`,** e a IA nunca sobrescreve um `USER_CONFIRMED`.
-6. **O mesmo pipeline vale para o catálogo** (`source=CATALOG_RULE` ou `CATALOG_AI`). O texto do nome oficial ("Slim Fit", "Wide Leg", "Cintura Alta") resolve por alias **antes** da IA. Por isso o coletor deve **parar de descartar** esses termos (B.2): em vez de removê-los do título, passa a anotá-los.
-
-### C.7 Regras de consistência (validação)
-
-- `heels` exige `HEEL_HEIGHT ≠ FLAT`; `flats` implica `HEEL_HEIGHT = FLAT`; "rasteira" implica `sandals.STRAPPY` + `HEEL_HEIGHT=FLAT`.
-- `hoodie` implica `NECKLINE=HOOD`; `jeans` implica `MATERIAL=DENIM` (pode ser sobrescrito por "jeans de sarja"); `culottes` implica `LENGTH=CAPRI`.
-- Sandália com salto continua `sandals` + `HEEL_HEIGHT`. A subcategoria `heels` fica para sapato fechado de salto (scarpin, slingback, mule fechado, boneca).
-- Material de moletom em calça vai para `sweatpants`; `jogger_pants` é a calça com punho em outros tecidos. "Jogger cargo" é `cargo_pants.CUFFED_HEM`.
-- Shacket: `shirt.OVERSHIRT` (não `jacket`). Jardineira-saia: `dress.PINAFORE`. Chinelo slide: `flip_flops.SLIDE`.
+| `swimwear` | full_body_piece (ou separado) | Biquíni, maiô e sunga hoje caem em `shorts` ("swim", "volley") ou ficam de fora. Exige política de moderação. |
+| `boots` | shoes_piece | Unificar `ankle_boots`/`long_boots`/`combat_boots` + `SHAFT_HEIGHT`. |
+| `travel_bag` | accessory_piece | Duffel/weekender hoje entra como `handbag.DUFFEL`. |
+| `anklet` | accessory_piece | Tornozeleira, hoje sem lugar. |
+| `mules_clogs` | shoes_piece | Hoje resolvido pelas variações `MULE`/`CLOG` em N:N. |
+
+### C.4 Fontes consultadas (convergência entre varejistas, guias de marca e glossários)
+
+- **Jeans e calças:**
+  - Levi's: [guia 505 vs outros fits](https://www.levi.com/US/en_US/blog/article/505-vs-500-mens), [loose](https://www.levi.com/US/en_US/clothing/men/jeans/c/levi_clothing_men_jeans/facets/feature-fit/loose), [athletic](https://www.levi.com/CA/en_CA/clothing/men/jeans/c/levi_clothing_men_jeans/facets/feature-fit/athletic); [The Modest Man — Levi's fits](https://www.themodestman.com/levis-fits-explained/).
+  - Guias femininos: [H&M bootcut](https://www2.hm.com/en_us/women/guides/denim/bootcut-jeans.html), [Diesel denim guide](https://diesel.com/en-us/woman/denim-guide/), [rag & bone](https://www.rag-bone.com/womens/denim/fit-guide/), [DL1961](https://dl1961.com/pages/womens-fit-guide), [FatFace](https://www.fatface.com/guides/womens-jeans-fit-guide).
+  - Brasil: [Dafiti — tipos de calça jeans](https://www.dafiti.com.br/moda/tipos-de-calca-jeans-feminina/), [Riachuelo](https://www.riachuelo.com.br/jeans/feminino/calca-jeans), [Zattini — modelagens](https://www.zattini.com.br/blog/como-usar/post/conheca-as-diferentes-modelagens-de-jeans-e-veja-dicas-para-usar), [Steal the Look](https://stealthelook.com.br/tipos-de-calca-jeans/).
+  - Alfaiataria: [Minerva — trouser silhouettes](https://minervapatterns.com/blog/types-of-trousers-and-pant-silhouettes), [MasterClass — types of pants](https://www.masterclass.com/articles/types-of-pants).
+- **Tops e outerwear:**
+  - Camisas: [MasterClass — shirts](https://www.masterclass.com/articles/types-of-shirts), [Nimble Made — oxford/OCBD](https://www.nimble-made.com/blogs/news/what-is-an-oxford-shirt).
+  - T-shirt fits: [The Litt](https://thelitt.com/blogs/articles/the-ultimate-men-s-t-shirt-fit-guide-oversized-vs-relaxed-vs-regular), [Garment Printing](https://blog.garmentprinting.com.au/t-shirt-fit-guide/).
+  - Jaquetas: [MasterClass — jackets](https://www.masterclass.com/articles/types-of-jackets-guide), [Man Collected](https://mancollected.com/guides/types-of-jackets-for-men/).
+  - Casacos: [Hockerty — coats](https://www.hockerty.com/en-us/blog/types-mens-coats), [Peacoat × trench × overcoat × duffle](https://anahiv.com/blogs/the-journal/peacoat-vs-trench-coat-vs-overcoat-vs-duffle-coat-which-is-which).
+- **Saias e vestidos:**
+  - [MasterClass — skirts](https://www.masterclass.com/articles/types-of-skirts), [Treasurie — 21 skirts](https://blog.treasurie.com/types-of-skirts-illustrated-guide/).
+  - [Fashion Informed — dress silhouettes](https://fashioninformed.com/dresses/silhouettes/), [Minerva — dress silhouettes](https://minervapatterns.com/blog/types-of-dresses-and-their-silhouettes).
+- **Calçados:**
+  - Botas: [Charles & Keith — boots](https://www.charleskeith.com/us/guides/types-of-boots.html), [Heddels — boot types](https://www.heddels.com/2017/12/know-your-boots-the-most-common-boot-types-2/), [Gentleman's Gazette — chukka](https://www.gentlemansgazette.com/the-chukka-boots-guide/).
+  - Saltos: [Charles & Keith — heels](https://www.charleskeith.com/us/guides/types-of-heels.html), [Clarks — heels](https://www.clarks.com/en-us/editorial/four-essential-types-of-heels).
+  - Sandálias: [Charles & Keith — sandals](https://www.charleskeith.com/us/guides/types-of-sandals.html), [WWD/Footwear News — sandals](https://wwd.com/footwear-news/shoe-trends/sandals-types-guide-1237702106/).
+  - Tênis: [Clarks — sneakers](https://www.clarks.com/en-us/editorial/types-of-sneakers), [The Modest Man — sneakers](https://www.themodestman.com/types-of-sneakers/), [retro-athletic: terrace × dad shoe](https://www.shoestation.com/blog/retro-sneaker-trend).
+- **Acessórios:**
+  - Bolsas: [Foley + Corinna — handbag types](https://www.foleyandcorinna.com/types-of-handbags/), [Jing Sourcing — 30 handbags](https://jingsourcing.com/p/b10-handbag-styles/).
+  - Chapéus/bonés: [Nimble Made — hats](https://www.nimble-made.com/blogs/news/types-of-hats-for-men), [evo — hat guide](https://www.evo.com/blogs/guides/how-to-buy-hats-types-styles-materials).
+  - Óculos: [FramesDirect — sunglasses](https://www.framesdirect.com/knowledge-center/types-sunglasses), [Heddels — sunglasses](https://www.heddels.com/2019/07/know-sunglasses-aviator-p3-wayfarer/).
+  - Relógios: [Vaer — field/dive/chrono](https://www.vaerwatches.com/blogs/journal/the-watch-as-wardrobe-a-style-guide-to-field-dive-and-chronograph-watches), [Unfinished Man](https://www.unfinishedman.com/essential-watch-types-dive-chronograph-pilot-dress-gmt/).
+  - Joias: [Angara — necklaces](https://www.angara.com/blog/what-are-the-different-types-of-necklaces/), [AJ Luxe — earrings](https://ajluxe.com/blogs/jewelry-guide/types-of-earrings).
+- **Dados estruturados de preço:** [Google — merchant listing structured data](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing).
+- **Calibração no acervo real** (contagem de termos nos 9.573 nomes):
+  - jeans: skinny 133, slim 119, regular 55, straight 49, relaxed 34, boyfriend 27, loose 17, baggy 16, tapered 13, bootcut 11, wide 10, flare 7, barrel 4;
+  - sandals: rasteira 95;
+  - heels: scarpin 37, slingback 8;
+  - sunglasses: aviator 25;
+  - jacket: bomber 30, trucker 14, puffer 13, track 13;
+  - coat: trench 11.
+  - Linhas de modelo de marca ("501", Havaianas "Slim/Top/Brasil") **não** viram variação; ficam como `model_name`/`catalog_product_aliases`.
 
 ---
 
-## D. Tabela mestre
+## D. Tabela mestre e dimensões de atributo
 
-530 linhas (subcategoria × variação). As colunas completas estão em `proposta/taxonomia_variacoes.csv`: categoria, subcategoria, código, tier, prioridade, ordem, nomes PT/EN, descrição, aliases PT/EN e "usado também em". Abaixo vai a mesma tabela, com até 5 aliases PT e 3 EN por linha.
+### D.1 Tabela mestre por subcategoria
 
-Termos conferidos em guias e páginas de varejo: Levi's, H&M, Zara, Uniqlo, Gap, ASOS, Net-a-Porter, Nike, Renner, C&A, Riachuelo, Hering, Dafiti, Centauro, Netshoes, Schutz, Aramis, Lupo e Havaianas. Os que não tinham fonte direta estão como EXTENDED ou NICHE, e os pares quase duplicados estão em I.3.
+Dimensões universais, omitidas na coluna: COLOR, MATERIAL, MATERIAL_DETAIL, PATTERN, CLOSURE, STYLE, OCCASION, GENDER, PRICE_RANGE. A última coluna conta quantos produtos do acervo têm a variação reconhecida já pelo nome.
 
-#### D.1 Parte superior (`upper_piece`)
+| Categoria | Subcategoria | Nº var. (C/E/N) | Variações CORE (amostra) | Dimensões aplicáveis além das universais | Acervo (peças · com variação pelo nome) |
+|---|---|---|---|---|---|
+| upper_piece | `t_shirt` | 3 (0/2/1) | — | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 1322 · 97 |
+| upper_piece | `shirt` | 8 (2/2/4) | DRESS_SHIRT, OVERSHIRT | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 558 · 53 |
+| upper_piece | `blouse` | 9 (3/5/1) | PEASANT, WRAP, CAMISOLE | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 82 · 4 |
+| upper_piece | `tank_top` | 3 (3/0/0) | MUSCLE_TANK, RACERBACK, CAMISOLE | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 116 · 14 |
+| upper_piece | `crop_top` | 6 (2/4/0) | BANDEAU, CORSET | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 46 · 0 |
+| upper_piece | `polo_shirt` | 3 (0/2/1) | — | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 377 · 2 |
+| upper_piece | `bodysuit` | 4 (0/3/1) | — | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 23 · 1 |
+| upper_piece | `sweater` | 5 (3/1/1) | CHUNKY_KNIT, FINE_KNIT, CABLE_KNIT | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 179 · 11 |
+| upper_piece | `sweatshirt` | 4 (2/1/1) | CREWNECK, QUARTER_ZIP | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 180 · 93 |
+| upper_piece | `hoodie` | 3 (2/0/1) | FULL_ZIP, PULLOVER | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 152 · 33 |
+| upper_piece | `cardigan` | 6 (3/3/0) | CHUNKY_KNIT, FINE_KNIT, OPEN_FRONT | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 61 · 1 |
+| upper_piece | `vest` | 4 (3/1/0) | PUFFER, WAISTCOAT, SWEATER_VEST | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 53 · 5 |
+| upper_piece | `blazer` | 5 (2/1/2) | TAILORED, UNSTRUCTURED | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 76 · 5 |
+| upper_piece | `jacket` | 12 (5/6/1) | BIKER, BOMBER, PUFFER, TRUCKER, TRACK_JACKET | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 437 · 113 |
+| upper_piece | `coat` | 11 (5/5/1) | OVERCOAT, PEACOAT, TRENCH, PUFFER, WRAP | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 86 · 28 |
+| upper_piece | `parka` | 4 (2/2/0) | PUFFER, SNORKEL | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 17 · 0 |
+| upper_piece | `windbreaker` | 3 (1/2/0) | ANORAK | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 0 · 0 |
+| upper_piece | `kimono` | 3 (1/1/1) | KIMONO_CARDIGAN | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 4 · 0 |
+| lower_piece | `jeans` | 23 (13/6/4) | REGULAR, SKINNY, SLIM, STRAIGHT, WIDE_LEG, BAGGY, BOOTCUT, BOYFRIEND, FLARE, LOOSE, MOM, R | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 733 · 486 |
+| lower_piece | `tailored_pants` | 10 (6/3/1) | SLIM, STRAIGHT, WIDE_LEG, CIGARETTE, PALAZZO, TAPERED | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 5 · 3 |
+| lower_piece | `casual_pants` | 17 (6/10/1) | SLIM, STRAIGHT, WIDE_LEG, PALAZZO, RELAXED, TAPERED | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 476 · 159 |
+| lower_piece | `chino_pants` | 6 (3/2/1) | SLIM, STRAIGHT, TAPERED | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 83 · 31 |
+| lower_piece | `cargo_pants` | 9 (5/3/1) | BAGGY, RELAXED, STRAIGHT, CUFFED_JOGGER, WIDE_LEG | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 75 · 29 |
+| lower_piece | `jogger_pants` | 3 (2/1/0) | RELAXED, SLIM | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 73 · 15 |
+| lower_piece | `sweatpants` | 6 (3/3/0) | CUFFED_JOGGER, OPEN_HEM, WIDE_LEG | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 34 · 11 |
+| lower_piece | `leggings` | 5 (1/3/1) | FLARE_LEGGING | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 63 · 4 |
+| lower_piece | `culottes` | 3 (1/1/1) | WIDE_LEG | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 0 · 0 |
+| lower_piece | `shorts` | 11 (5/5/1) | BIKE_SHORT, CARGO, CHINO, TAILORED, VOLLEY | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 391 · 43 |
+| lower_piece | `bermuda_shorts` | 7 (4/3/0) | CARGO, CHINO, BIKE_SHORT, TAILORED | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, FRONT_PLEAT, USAGE_TYPE | 92 · 45 |
+| lower_piece | `denim_shorts` | 7 (3/3/1) | MOM, BOYFRIEND, STRAIGHT | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 16 · 0 |
+| lower_piece | `skirt` | 14 (6/3/5) | A_LINE, PENCIL, PLEATED, SLIP, STRAIGHT_SKIRT, WRAP | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 150 · 39 |
+| lower_piece | `skort` | 3 (2/1/0) | A_LINE, PLEATED | LOGO_PLACEMENT, WAIST_RISE, LENGTH, FINISH, USAGE_TYPE | 15 · 2 |
+| shoes_piece | `casual_sneakers` | 9 (5/2/2) | COURT, LIFESTYLE_RUNNER, VULCANIZED, CHUNKY, TERRACE | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 360 · 3 |
+| shoes_piece | `running_shoes` | 6 (2/3/1) | ROAD, TRAIL | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 30 · 9 |
+| shoes_piece | `training_shoes` | 3 (1/2/0) | CROSS_TRAINING | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 56 · 0 |
+| shoes_piece | `basketball_shoes` | 2 (2/0/0) | PERFORMANCE, RETRO_HERITAGE | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 10 · 1 |
+| shoes_piece | `skate_shoes` | 3 (2/1/0) | CUPSOLE, VULCANIZED | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 1 · 0 |
+| shoes_piece | `high_top_sneakers` | 6 (3/2/1) | COURT, VULCANIZED, RETRO_HERITAGE | FINISH, USAGE_TYPE, SHAFT_HEIGHT, SOLE_TYPE | 9 · 0 |
+| shoes_piece | `loafers` | 8 (3/3/2) | HORSEBIT, PENNY, TASSEL | FINISH, USAGE_TYPE, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 20 · 3 |
+| shoes_piece | `moccasins` | 4 (2/1/1) | BOAT_SHOE, DRIVING | FINISH, USAGE_TYPE, TOE_SHAPE, SOLE_TYPE | 24 · 0 |
+| shoes_piece | `oxford_shoes` | 5 (3/1/1) | BROGUE, CAP_TOE, PLAIN_TOE | FINISH, USAGE_TYPE, HEEL_HEIGHT, TOE_SHAPE, SOLE_TYPE | 40 · 0 |
+| shoes_piece | `derby_shoes` | 5 (2/3/0) | BROGUE, PLAIN_TOE | FINISH, USAGE_TYPE, HEEL_HEIGHT, TOE_SHAPE, SOLE_TYPE | 1 · 0 |
+| shoes_piece | `ankle_boots` | 12 (5/5/2) | CHELSEA, CHUKKA, WORK, COWBOY, HIKING | FINISH, USAGE_TYPE, SHAFT_HEIGHT, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 11 · 3 |
+| shoes_piece | `long_boots` | 8 (3/4/1) | COWBOY, RIDING, SLOUCH | FINISH, USAGE_TYPE, SHAFT_HEIGHT, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 0 · 0 |
+| shoes_piece | `combat_boots` | 3 (1/1/1) | MILITARY | FINISH, USAGE_TYPE, SHAFT_HEIGHT, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 15 · 0 |
+| shoes_piece | `sandals` | 11 (4/6/1) | FOOTBED, SLIDE, STRAPPY, SPORT_SANDAL | FINISH, USAGE_TYPE, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 338 · 139 |
+| shoes_piece | `flip_flops` | 3 (2/1/0) | SLIDE, THONG | FINISH, USAGE_TYPE, HEEL_TYPE, SOLE_TYPE | 369 · 51 |
+| shoes_piece | `heels` | 9 (6/2/1) | HEELED_SANDAL, PUMP, SLINGBACK, ANKLE_STRAP, MARY_JANE, MULE | FINISH, USAGE_TYPE, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 66 · 41 |
+| shoes_piece | `flats` | 5 (3/1/1) | BALLET, MARY_JANE, MULE | FINISH, USAGE_TYPE, HEEL_HEIGHT, TOE_SHAPE, SOLE_TYPE | 32 · 9 |
+| shoes_piece | `espadrilles` | 3 (0/3/0) | — | FINISH, USAGE_TYPE, HEEL_HEIGHT, HEEL_TYPE, TOE_SHAPE, SOLE_TYPE | 1 · 0 |
+| accessory_piece | `handbag` | 13 (5/6/2) | BUCKET, HOBO, SHOULDER, SATCHEL, TOP_HANDLE | LOGO_PLACEMENT, FINISH, SIZE_CLASS | 102 · 14 |
+| accessory_piece | `crossbody_bag` | 7 (4/3/0) | BELT_BAG, CAMERA, MESSENGER, SLING | LOGO_PLACEMENT, FINISH, SIZE_CLASS | 69 · 8 |
+| accessory_piece | `tote_bag` | 5 (2/2/1) | SHOPPER, STRUCTURED_TOTE | LOGO_PLACEMENT, FINISH, SIZE_CLASS | 250 · 4 |
+| accessory_piece | `clutch` | 5 (3/1/1) | BOX_CLUTCH, ENVELOPE, POUCH | LOGO_PLACEMENT, FINISH, SIZE_CLASS | 12 · 0 |
+| accessory_piece | `backpack` | 7 (3/3/1) | DAYPACK, DRAWSTRING, LAPTOP | LOGO_PLACEMENT, FINISH, USAGE_TYPE, SIZE_CLASS | 107 · 1 |
+| accessory_piece | `belt` | 9 (4/4/1) | DRESS_BELT, PLATE_BUCKLE, BRAIDED, WEB | LOGO_PLACEMENT, FINISH | 96 · 15 |
+| accessory_piece | `cap` | 7 (4/3/0) | BASEBALL, DAD_CAP, TRUCKER_CAP, SNAPBACK | LOGO_PLACEMENT, FINISH, USAGE_TYPE | 182 · 61 |
+| accessory_piece | `hat` | 11 (4/3/4) | BUCKET_HAT, FEDORA, SUN_HAT, BERET | LOGO_PLACEMENT | 114 · 15 |
+| accessory_piece | `beanie` | 6 (3/2/1) | CUFFED_BEANIE, SLOUCHY, POM_POM | LOGO_PLACEMENT | 37 · 3 |
+| accessory_piece | `scarf` | 7 (3/3/1) | OBLONG, SQUARE_SCARF, STOLE | LOGO_PLACEMENT | 97 · 0 |
+| accessory_piece | `tie` | 5 (1/1/3) | SKINNY_TIE | LOGO_PLACEMENT | 124 · 3 |
+| accessory_piece | `bow_tie` | 5 (2/2/1) | PRE_TIED, SELF_TIE | LOGO_PLACEMENT | 23 · 4 |
+| accessory_piece | `sunglasses` | 12 (5/6/1) | AVIATOR, CAT_EYE, ROUND, SQUARE, WAYFARER | LOGO_PLACEMENT, USAGE_TYPE, SIZE_CLASS, FRAME_RIM, LENS_TYPE | 101 · 46 |
+| accessory_piece | `eyeglasses` | 9 (5/4/0) | RECTANGLE, ROUND, SQUARE, CAT_EYE, OVAL | LOGO_PLACEMENT, SIZE_CLASS, FRAME_RIM, LENS_TYPE | 1 · 0 |
+| accessory_piece | `necklace` | 9 (3/4/2) | CHAIN, CHOKER, PENDANT | LOGO_PLACEMENT, FINISH, CHAIN_LINK | 63 · 11 |
+| accessory_piece | `bracelet` | 8 (5/3/0) | BANGLE, CHAIN, CUFF, BEADED, CHARM | LOGO_PLACEMENT, FINISH, CHAIN_LINK | 31 · 10 |
+| accessory_piece | `earrings` | 9 (4/3/2) | DROP, HOOP, HUGGIE, STUD | LOGO_PLACEMENT, FINISH, SIZE_CLASS | 48 · 19 |
+| accessory_piece | `ring` | 7 (3/4/0) | BAND, SIGNET, SOLITAIRE | LOGO_PLACEMENT, FINISH | 37 · 1 |
+| accessory_piece | `watch` | 10 (4/5/1) | CHRONOGRAPH, DIVER, DRESS_WATCH, SMARTWATCH | LOGO_PLACEMENT, FINISH, USAGE_TYPE, SIZE_CLASS, WATCH_DISPLAY, WATCH_STRAP | 80 · 1 |
+| accessory_piece | `wallet` | 7 (3/3/1) | BIFOLD, CARD_HOLDER, CONTINENTAL | LOGO_PLACEMENT, FINISH | 86 · 32 |
+| accessory_piece | `gloves` | 4 (1/1/2) | FINGERLESS | LOGO_PLACEMENT, USAGE_TYPE | 12 · 0 |
+| accessory_piece | `socks` | 5 (2/1/2) | CUSHIONED, DRESS_SOCK | LOGO_PLACEMENT, USAGE_TYPE, SHAFT_HEIGHT | 106 · 3 |
+| accessory_piece | `hair_accessory` | 10 (6/3/1) | CLAW_CLIP, HEADBAND, SCRUNCHIE, BARRETTE, HAIR_BOW, HAIR_TIE | LOGO_PLACEMENT | 6 · 6 |
+| full_body_piece | `dress` | 18 (8/8/2) | A_LINE, BODYCON, FIT_AND_FLARE, SHEATH, SHIFT, SHIRT_DRESS, SLIP, WRAP | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 339 · 38 |
+| full_body_piece | `jumpsuit` | 6 (3/2/1) | BOILERSUIT, STRAIGHT, WIDE_LEG | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 23 · 1 |
+| full_body_piece | `romper` | 4 (1/2/1) | WRAP | LOGO_PLACEMENT, FIT, LENGTH, SLEEVE_LENGTH, SLEEVE_STYLE, NECKLINE, FINISH, USAGE_TYPE | 12 · 1 |
+| full_body_piece | `matching_set` | 6 (3/2/1) | CO_ORD, SUIT, TRACKSUIT | LOGO_PLACEMENT, FIT, LENGTH, FINISH, USAGE_TYPE | 22 · 0 |
+| full_body_piece | `overalls` | 5 (2/3/0) | RELAXED, SKIRTALL | LOGO_PLACEMENT, LENGTH, FINISH, USAGE_TYPE | 35 · 7 |
 
-| Subcategoria | Código | Tier | P | PT-BR | EN | Descrição (PT-BR) | Aliases PT / EN |
-|---|---|---|---|---|---|---|---|
-| t_shirt | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| t_shirt | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| t_shirt | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| t_shirt | `BOXY` | CORE | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| t_shirt | `RELAXED` | CORE | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| t_shirt | `BABY_TEE` | CORE | 2 | Baby look | Baby tee | Camiseta feminina curta e justa, de mangas curtinhas. | baby look, babylook, baby tee, camiseta baby look / baby tee, shrunken tee, fitted tee |
-| t_shirt | `MUSCLE_FIT` | EXT | 3 | Muscle | Muscle fit | Bem justa no peito e nos braços, mangas curtas apertadas, para marcar o corpo. | muscle, muscle fit, camiseta muscle / muscle fit, muscle tee |
-| t_shirt | `ATHLETIC_FIT` | NICHE | 4 | Atlética | Athletic fit | Folga no peito e nos ombros, afinando na cintura. | athletic, atlética, athletic fit / athletic fit, athletic cut |
-| shirt | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| shirt | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| shirt | `OVERSIZED` | CORE | 2 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| shirt | `RELAXED` | CORE | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| shirt | `OVERSHIRT` | EXT | 2 | Camisa-jaqueta | Overshirt | Camisa encorpada usada aberta como terceira peça (shacket). | overshirt, shacket, camisa jaqueta, sobrecamisa / overshirt, shacket, shirt jacket |
-| shirt | `BOXY` | EXT | 3 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| shirt | `EXTRA_SLIM` | EXT | 3 | Super slim | Extra slim | Mais justa que a slim, rente ao tronco (camisa social). | super slim, extra slim / extra slim, super slim, skinny fit |
-| shirt | `WESTERN_SHIRT` | NICHE | 4 | Camisa western | Western shirt | Pala recortada na frente/costas, bolsos com aba e botões de pressão. | camisa western, camisa country, camisa cowboy / western shirt, cowboy shirt |
-| shirt | `TUXEDO_SHIRT` | NICHE | 4 | Camisa de smoking | Tuxedo shirt | Peitilho com pregas ou nervuras e punho duplo. | camisa smoking, camisa de gala, peitilho / tuxedo shirt, bib front shirt |
-| blouse | `RELAXED` | CORE | 1 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| blouse | `SLIM` | CORE | 2 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| blouse | `WRAP` | CORE | 2 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| blouse | `PEASANT` | CORE | 2 | Bata | Peasant | Ampla e leve, decote franzido e mangas soltas ou bufantes (camponesa). | bata, camponesa, blusa camponesa / peasant, peasant blouse, boho blouse |
-| blouse | `PEPLUM` | CORE | 3 | Peplum | Peplum | Babado/godê na cintura que se abre sobre o quadril. | peplum, babado na cintura / peplum |
-| blouse | `OVERSIZED` | EXT | 3 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| blouse | `TUNIC` | EXT | 3 | Túnica | Tunic | Blusa longa e reta que cobre o quadril, vestida pela cabeça. | túnica, tunica, batinha longa / tunic |
-| blouse | `BABYDOLL` | EXT | 3 | Babydoll | Babydoll | Justa no busto (recorte alto) e solta/rodada abaixo; curta. | babydoll, baby doll / babydoll, baby doll, smock |
-| blouse | `SMOCKED` | EXT | 3 | Lastex | Smocked | Corpo franzido com elástico (smock/lastex), ajusta sem fechamento. | lastex, franzida, franzido, smocking / smocked, shirred |
-| blouse | `TIE_FRONT` | EXT | 4 | Amarração frontal | Tie-front | Barra ou decote com nó/laço na frente. | amarração, com amarração, amarrar na frente, nózinho / tie front, knot front, tie up |
-| blouse | `CORSET` | NICHE | 4 | Corset | Corset | Corpo estruturado com barbatanas e recortes que modelam a cintura. | corset, corselet, espartilho, corpete / corset, corset top, bustier corset |
-| tank_top | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| tank_top | `CAMISOLE` | CORE | 1 | Alcinha | Camisole | Alças finas (spaghetti), tecido leve. | alcinha, alça fina, regata de alcinha / camisole, cami, spaghetti strap |
-| tank_top | `SLIM` | CORE | 2 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| tank_top | `RACERBACK` | CORE | 2 | Nadador | Racerback | Alças que se encontram no meio das costas, deixando as escápulas livres. | nadador, costas nadador, racerback / racerback |
-| tank_top | `MUSCLE_TANK` | CORE | 2 | Machão | Muscle tank | Regata de cava funda e larga, corpo reto. | machão, regata machão, muscle tank / muscle tank, drop armhole tank |
-| tank_top | `BOXY` | EXT | 3 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| tank_top | `DEEP_ARMHOLE` | EXT | 3 | Cavada | Deep armhole | Cava aberta quase até a cintura, laterais à mostra. | cavada, regata cavada, cava americana / deep armhole, side cut tank |
-| tank_top | `STRAPPY` | NICHE | 4 | Tiras | Strappy | Várias tiras cruzadas nas costas ou nos ombros (na sandália, várias tiras finas sobre o pé). | tiras, alças cruzadas, costas de tiras, rasteira, rasteirinha / strappy, cross back |
-| polo_shirt | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| polo_shirt | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| polo_shirt | `OVERSIZED` | EXT | 2 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| polo_shirt | `RELAXED` | EXT | 3 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| polo_shirt | `BOXY` | NICHE | 4 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| polo_shirt | `RUGBY` | NICHE | 4 | Rugby | Rugby | Polo de manga longa em malha encorpada e gola de tecido plano. | rugby, camisa rugby, polo rugby / rugby shirt |
-| bodysuit | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| bodysuit | `CORSET` | CORE | 2 | Corset | Corset | Corpo estruturado com barbatanas e recortes que modelam a cintura. | corset, corselet, espartilho, corpete / corset, corset top, bustier corset |
-| bodysuit | `CUT_OUT` | EXT | 2 | Vazado | Cut-out | Recortes que mostram partes do corpo (cintura, ombro, costas). | vazado, vazada, recorte vazado, cut out, recortes / cut out, cutout |
-| bodysuit | `WRAP` | EXT | 3 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| bodysuit | `HIGH_CUT` | EXT | 3 | Cavado | High-cut | Body com cava alta na perna, quadril à mostra. | cavado, body cavado, asa delta / high cut, high leg |
-| bodysuit | `SHAPING` | EXT | 3 | Modelador | Shaping | Body de compressão que modela cintura e abdômen. | modelador, body modelador, cinta / shaping, shapewear bodysuit |
-| bodysuit | `DRAPED` | NICHE | 4 | Drapeado | Draped | Tecido franzido/torcido em dobras soltas que modelam a peça. | drapeado, drapeada, franzido lateral / draped, ruched |
-| sweater | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| sweater | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| sweater | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| sweater | `BOXY` | CORE | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| sweater | `RELAXED` | EXT | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| sweatshirt | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| sweatshirt | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| sweatshirt | `BOXY` | CORE | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| sweatshirt | `RELAXED` | EXT | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| sweatshirt | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| hoodie | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| hoodie | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| hoodie | `BOXY` | CORE | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| hoodie | `RELAXED` | EXT | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| hoodie | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| cardigan | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| cardigan | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| cardigan | `SLIM` | CORE | 2 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| cardigan | `BOXY` | EXT | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| cardigan | `WRAP` | EXT | 3 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| cardigan | `BOLERO` | NICHE | 4 | Bolero | Bolero | Casaquinho curtíssimo que cobre só ombros e braços, aberto na frente. | bolero, casaquinho curto / bolero, shrug |
-| vest | `TAILORED_VEST` | CORE | 1 | Colete de alfaiataria | Tailored vest | Colete de terno (waistcoat), com botões e decote em V. | colete social, colete alfaiataria, colete de terno / waistcoat, suit vest, tailored vest |
-| vest | `PUFFER` | CORE | 1 | Puffer | Puffer | Acolchoado em gomos com enchimento (pluma ou sintético). | puffer, acolchoado, acolchoada, jaqueta de gomos, nylon acolchoado / puffer, padded, down |
-| vest | `KNIT_VEST` | CORE | 2 | Colete de tricô | Sweater vest | Colete de malha/tricô, sem mangas e sem fechamento. | colete de tricô, colete de lã, colete tricot / sweater vest, knit vest |
-| vest | `UTILITY` | EXT | 2 | Utilitário | Utility | Muitos bolsos aplicados, estilo militar/workwear. | utilitário, colete de bolsos, tático, colete cargo / utility, cargo vest, tactical vest |
-| vest | `QUILTED` | EXT | 3 | Matelassê | Quilted | Pespontos em losango ou linhas, achatado, com pouco enchimento. | matelassê, matelasse, pespontado / quilted, diamond quilted |
-| blazer | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| blazer | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| blazer | `OVERSIZED` | CORE | 1 | Oversized | Oversized | Propositalmente maior que o corpo: ombro caído, corpo e mangas amplos e mais compridos. | oversized, oversize, over, modelagem ampla, boyfriend / oversized, oversize, oversized fit |
-| blazer | `BOXY` | EXT | 2 | Boxy | Boxy | Corte reto e quadrado: largo no corpo e mais curto, terminando na cintura, sem acinturar. | boxy, quadrada, quadrado, corte quadrado / boxy, boxy fit, square fit |
-| blazer | `RELAXED` | EXT | 3 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| blazer | `UNSTRUCTURED` | EXT | 3 | Desestruturado | Unstructured | Sem ombreira nem entretela rígida, caimento macio. | desestruturado, sem ombreira / unstructured, unconstructed, soft tailoring |
-| jacket | `BOMBER` | CORE | 1 | Bomber | Bomber | Curta, com ribana na gola, punhos e barra. | bomber, jaqueta bomber / bomber, flight jacket, MA-1 |
-| jacket | `TRUCKER` | CORE | 1 | Trucker | Trucker | Jaqueta jeans clássica: bolsos de aba no peito, pences verticais e cós com botões. | trucker, jaqueta trucker, jaqueta jeans clássica / trucker, type III, denim trucker |
-| jacket | `MOTO` | CORE | 1 | Motoqueiro | Moto | Zíper diagonal, lapelas largas e cinto (perfecto), em geral de couro. | perfecto, motoqueiro, biker, jaqueta motociclista / moto jacket, biker jacket, perfecto |
-| jacket | `PUFFER` | CORE | 1 | Puffer | Puffer | Acolchoado em gomos com enchimento (pluma ou sintético). | puffer, acolchoado, acolchoada, jaqueta de gomos, nylon acolchoado / puffer, padded, down |
-| jacket | `VARSITY` | CORE | 2 | College | Varsity | Corpo de lã com mangas contrastantes, botões de pressão e ribanas listradas. | college, jaqueta college, varsity, universitária / varsity, letterman |
-| jacket | `FIELD` | CORE | 2 | Militar | Field | Jaqueta militar (M-65) com quatro bolsos e cordão na cintura. | militar, field jacket, jaqueta militar, m65 / field jacket, M-65, military jacket |
-| jacket | `TRACK` | CORE | 2 | Agasalho | Track | Jaqueta de treino em malha ou tactel, com zíper e gola alta. | agasalho, jaqueta de treino, jaqueta esportiva, track top / track jacket, track top |
-| jacket | `QUILTED` | EXT | 2 | Matelassê | Quilted | Pespontos em losango ou linhas, achatado, com pouco enchimento. | matelassê, matelasse, pespontado / quilted, diamond quilted |
-| jacket | `CHORE` | EXT | 3 | Workwear | Chore | Reta, de sarja ou lona, com três bolsos aplicados. | chore, jaqueta workwear, jaqueta de trabalho / chore coat, work jacket |
-| jacket | `AVIATOR_JACKET` | EXT | 3 | Aviador | Aviator | Jaqueta de aviador com gola e forro de pelo (shearling). | aviador, jaqueta aviador / aviator jacket, shearling aviator, flight jacket shearling |
-| jacket | `COACH` | EXT | 3 | Coach | Coach | Nylon leve, gola de camisa e botões de pressão. | coach, jaqueta coach / coach jacket |
-| jacket | `HARRINGTON` | NICHE | 4 | Harrington | Harrington | Curta, gola de padre com botão e forro xadrez. | harrington / harrington, G9 |
-| jacket | `SAFARI` | NICHE | 4 | Safári | Safari | Cintura marcada por cinto, quatro bolsos e dragonas. | safári, safari, sahariana / safari jacket, bush jacket |
-| jacket | `NAPOLEON` | NICHE | 5 | Napoleônica | Military/Napoleon | Estilo militar de gala: abotoamento duplo, gola alta e alamares. | napoleônica, jaqueta napoleão, militar de gala / napoleon jacket, military dress jacket |
-| coat | `TRENCH` | CORE | 1 | Trench coat | Trench | Transpassado, com cinto, pala de tempestade e dragonas. | trench, trench coat, sobretudo trench, gabardine / trench, trench coat |
-| coat | `OVERCOAT` | CORE | 1 | Sobretudo | Overcoat | Reto, abaixo do quadril, de lã, com lapela (ex.: chesterfield). | sobretudo, casacão, chesterfield, mantô / overcoat, topcoat, chesterfield |
-| coat | `PEACOAT` | CORE | 2 | Japona | Peacoat | Curto, transpassado, de lã grossa e gola larga. | japona, peacoat, casaco marinheiro / peacoat, pea coat, reefer |
-| coat | `PUFFER` | CORE | 2 | Puffer | Puffer | Acolchoado em gomos com enchimento (pluma ou sintético). | puffer, acolchoado, acolchoada, jaqueta de gomos, nylon acolchoado / puffer, padded, down |
-| coat | `WRAP` | EXT | 2 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| coat | `COCOON` | EXT | 3 | Casulo | Cocoon | Ombros arredondados e corpo oval que afina na barra. | casulo, cocoon, casaco casulo / cocoon coat |
-| coat | `CAPE` | EXT | 3 | Capa | Cape | Sem mangas, cai dos ombros como capa ou poncho. | capa, poncho, pelerine / cape, poncho, cape coat |
-| coat | `DUFFLE` | NICHE | 4 | Duffle | Duffle | Com capuz e fechamento de pinos de madeira (toggles). | duffle, montgomery / duffle coat, toggle coat |
-| coat | `CAR_COAT` | NICHE | 4 | Car coat | Car coat | Reto e curto (meio da coxa), feito para dirigir. | car coat / car coat |
-| parka | `PUFFER` | CORE | 1 | Puffer | Puffer | Acolchoado em gomos com enchimento (pluma ou sintético). | puffer, acolchoado, acolchoada, jaqueta de gomos, nylon acolchoado / puffer, padded, down |
-| parka | `SHELL` | CORE | 1 | Shell | Shell | Casca corta-vento/impermeável leve, sem enchimento. | shell, corta vento leve, casca / shell, shell jacket, hard shell |
-| parka | `FISHTAIL` | EXT | 2 | Rabo de peixe | Fishtail | Barra traseira mais longa em ponta, com capuz (M-51). | rabo de peixe, m51, parka militar / fishtail, M-51 |
-| parka | `SNORKEL` | NICHE | 4 | Snorkel | Snorkel | Capuz que fecha em túnel sobre o rosto. | snorkel / snorkel parka |
-| windbreaker | `SHELL` | CORE | 1 | Shell | Shell | Casca corta-vento/impermeável leve, sem enchimento. | shell, corta vento leve, casca / shell, shell jacket, hard shell |
-| windbreaker | `ANORAK` | CORE | 1 | Anoraque | Anorak | Vestido pela cabeça: meio zíper, capuz e bolso canguru. | anoraque, anorak, corta vento canguru / anorak, pullover windbreaker |
-| windbreaker | `RAIN_JACKET` | CORE | 2 | Capa de chuva | Rain jacket | Impermeável com costuras seladas e capuz. | capa de chuva, impermeável, jaqueta impermeável / rain jacket, raincoat, waterproof jacket |
-| windbreaker | `PACKABLE` | EXT | 3 | Dobrável | Packable | Guarda-se no próprio bolso ou saquinho. | dobrável, compactável, packable / packable |
-| kimono | `OPEN_FRONT` | CORE | 1 | Aberto | Open-front | Aberto na frente, sem fechamento, mangas largas tipo quimono. | quimono aberto, kimono aberto / open front, kimono jacket |
-| kimono | `BELTED` | EXT | 2 | Com faixa | Belted | Fecha na cintura com faixa ou cinto do mesmo tecido. | com faixa, com cinto, amarrado na cintura / belted, robe style |
-| top | `CORSET` | CORE | 1 | Corset | Corset | Corpo estruturado com barbatanas e recortes que modelam a cintura. | corset, corselet, espartilho, corpete / corset, corset top, bustier corset |
-| top | `BANDEAU` | CORE | 1 | Faixa | Bandeau | Faixa reta que envolve o busto, sem alças. | faixa, top faixa, cropped faixa, tubinho, tomara que caia / bandeau, tube top, boob tube |
-| top | `SPORTS_BRA` | CORE | 1 | Top esportivo | Sports bra | Top de sustentação para atividade física. | top fitness, top esportivo, top de academia, top de ginástica, top de corrida / sports bra, sport top, training bra |
-| top | `BRALETTE` | CORE | 2 | Bralette | Bralette | Top de lingerie sem bojo nem aro, usado aparente. | bralette, top de renda / bralette |
-| top | `BUSTIER` | EXT | 2 | Bustiê | Bustier | Estruturado só no busto (bojo/barbatana), sem alça ou com alça fina. | bustiê, bustie, bustier / bustier |
-| top | `CUT_OUT` | EXT | 3 | Vazado | Cut-out | Recortes que mostram partes do corpo (cintura, ombro, costas). | vazado, vazada, recorte vazado, cut out, recortes / cut out, cutout |
-| top | `TIE_FRONT` | EXT | 3 | Amarração frontal | Tie-front | Barra ou decote com nó/laço na frente. | amarração, com amarração, amarrar na frente, nózinho / tie front, knot front, tie up |
-| top | `DRAPED` | NICHE | 4 | Drapeado | Draped | Tecido franzido/torcido em dobras soltas que modelam a peça. | drapeado, drapeada, franzido lateral / draped, ruched |
+### D.2 Dimensões de atributo
 
-#### D.2 Parte inferior (`lower_piece`)
+| Dimensão | Origem | Cardinalidade | Valores (C/E/N) | Aplica-se a | Exemplos de valores |
+|---|---|---|---|---|---|
+| `COLOR` Cor | EXISTING | SINGLE | 59 (54/5/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | black, charcoal, washed_black, white, off_white, ivory, cream … |
+| `MATERIAL` Material (família) | EXISTING | SINGLE | 10 (10/0/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND … |
+| `MATERIAL_DETAIL` Tecido / matéria-prima | NEW | MULTI ≤3 | 43 (20/20/3) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | DENIM, CHAMBRAY, JERSEY, PIQUE, TWILL, CANVAS, CORDUROY … |
+| `PATTERN` Estampa | EXISTING | SINGLE | 21 (12/8/1) | categorias: upper_piece, lower_piece, full_body_piece, accessory_piece, shoes_piece | ALLOVER_LOGO, SINGLE_LOGO, STRIPES, PLAID, FLORAL, CAMO, TIE_DYE … |
+| `LOGO_PLACEMENT` Posição do logo | EXISTING | SINGLE | 5 (0/5/0) | categorias: upper_piece, lower_piece, full_body_piece, accessory_piece | ALLOVER, CENTER_CHEST, LEFT_CHEST, BACK, SLEEVE |
+| `STYLE` Estilo | EXISTING | MULTI ≤2 (esquema ≤3) | 25 (25/0/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | classic, minimalist, modern, chic, streetwear, sporty, athleisure … |
+| `OCCASION` Ocasião | EXISTING | MULTI ≤2 (esquema ≤3) | 20 (20/0/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | casual, work, business, formal, party, night_out, date … |
+| `GENDER` Gênero | EXISTING | SINGLE | 3 (3/0/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | MASCULINO, FEMININO, UNISSEX |
+| `PRICE_RANGE` Faixa de preço | NEW | SINGLE | 4 (4/0/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | BUDGET, MID, PREMIUM, LUXURY |
+| `FIT` Caimento | NEW | SINGLE | 6 (5/1/0) | 22 subcategorias | SLIM_FIT, REGULAR_FIT, RELAXED_FIT, OVERSIZED_FIT, BOXY_FIT, MUSCLE_FIT |
+| `WAIST_RISE` Cintura (altura) | NEW | SINGLE | 4 (3/1/0) | 14 subcategorias | LOW_RISE, MID_RISE, HIGH_RISE, ULTRA_HIGH_RISE |
+| `LENGTH` Comprimento | NEW | SINGLE | 16 (10/4/2) | 38 subcategorias | CROPPED, REGULAR_LENGTH, LONGLINE, WAIST_LENGTH, HIP_LENGTH, MICRO, MINI … |
+| `SLEEVE_LENGTH` Manga (comprimento) | NEW | SINGLE | 6 (4/2/0) | 21 subcategorias | SLEEVELESS, CAP_SLEEVE, SHORT_SLEEVE, ELBOW_SLEEVE, THREE_QUARTER_SLEEVE, LONG_SLEEVE |
+| `SLEEVE_STYLE` Manga (modelo) | NEW | MULTI ≤2 | 10 (3/6/1) | 21 subcategorias | SET_IN, RAGLAN, DROP_SHOULDER, PUFF, BALLOON_SLEEVE, BELL_SLEEVE, BISHOP … |
+| `NECKLINE` Decote / gola | NEW | SINGLE | 30 (15/13/2) | 21 subcategorias | CREW_NECK, V_NECK, SCOOP, BOAT, SQUARE_NECK, SWEETHEART, HALTER … |
+| `CLOSURE` Fechamento | NEW | MULTI ≤2 | 18 (13/5/0) | categorias: upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece | BUTTON, ZIPPER, SNAP, HOOK_AND_LOOP, DRAWSTRING, ELASTIC, LACE_UP … |
+| `FINISH` Acabamento / lavagem | NEW | MULTI ≤3 | 21 (11/7/3) | categorias: upper_piece, lower_piece, full_body_piece, shoes_piece + 13 subcategorias | RAW, RINSE, LIGHT_WASH, MEDIUM_WASH, DARK_WASH, STONE_WASH, ACID_WASH … |
+| `FRONT_PLEAT` Pregas frontais | NEW | SINGLE | 3 (2/1/0) | 6 subcategorias | FLAT_FRONT, SINGLE_PLEAT, DOUBLE_PLEAT |
+| `USAGE_TYPE` Uso / esporte | NEW | MULTI ≤2 | 16 (10/4/2) | categorias: shoes_piece, upper_piece, lower_piece, full_body_piece + 6 subcategorias | LIFESTYLE, RUNNING, TRAINING, BASKETBALL, SKATE, TENNIS, FOOTBALL … |
+| `SHAFT_HEIGHT` Altura do cano | NEW | SINGLE | 12 (10/1/1) | 10 subcategorias | LOW_TOP, MID_TOP, HIGH_TOP, ANKLE_HEIGHT, MID_CALF, KNEE_HIGH, OVER_THE_KNEE … |
+| `HEEL_HEIGHT` Altura do salto | NEW | SINGLE | 5 (4/1/0) | 10 subcategorias | FLAT, LOW_HEEL, MID_HEEL, HIGH_HEEL, VERY_HIGH_HEEL |
+| `HEEL_TYPE` Tipo de salto | NEW | SINGLE | 8 (4/2/2) | 8 subcategorias | STILETTO, BLOCK, KITTEN, WEDGE, CONE, CUBAN, SCULPTURAL … |
+| `TOE_SHAPE` Bico | NEW | SINGLE | 6 (5/1/0) | 11 subcategorias | ROUND_TOE, POINTED_TOE, ALMOND_TOE, SQUARE_TOE, OPEN_TOE, PEEP_TOE |
+| `SOLE_TYPE` Solado | NEW | SINGLE | 6 (4/2/0) | categorias: shoes_piece | RUBBER_SOLE, LEATHER_SOLE, LUG_SOLE, CREPE_SOLE, PLATFORM, GUM_SOLE |
+| `SIZE_CLASS` Tamanho (escala) | NEW | SINGLE | 5 (5/0/0) | 9 subcategorias | MINI, SMALL, MEDIUM, LARGE, OVERSIZED |
+| `FRAME_RIM` Aro | NEW | SINGLE | 3 (2/1/0) | 2 subcategorias | FULL_RIM, SEMI_RIMLESS, RIMLESS |
+| `LENS_TYPE` Lente | NEW | MULTI ≤2 | 5 (3/2/0) | 2 subcategorias | POLARIZED, MIRRORED, GRADIENT, PHOTOCHROMIC, BLUE_LIGHT |
+| `CHAIN_LINK` Tipo de elo | NEW | SINGLE | 9 (5/4/0) | 2 subcategorias | CABLE, CURB, ROPE, BOX, SNAKE, FIGARO, BALL … |
+| `WATCH_DISPLAY` Mostrador | NEW | SINGLE | 3 (2/1/0) | 1 subcategorias | ANALOG, DIGITAL, ANA_DIGI |
+| `WATCH_STRAP` Pulseira do relógio | NEW | SINGLE | 5 (3/2/0) | 1 subcategorias | METAL_BRACELET, LEATHER_STRAP, RUBBER_STRAP, NATO_STRAP, MESH_STRAP |
 
-| Subcategoria | Código | Tier | P | PT-BR | EN | Descrição (PT-BR) | Aliases PT / EN |
-|---|---|---|---|---|---|---|---|
-| jeans | `SKINNY` | CORE | 1 | Skinny | Skinny | Justa do quadril ao tornozelo, colada na perna (na legging, a forma tradicional). | skinny, super skinny, justa, colada, jegging / skinny, super skinny, jegging |
-| jeans | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| jeans | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| jeans | `MOM` | CORE | 1 | Mom | Mom | Cintura alta, folga no quadril e afunilamento acentuado até o tornozelo (anos 80/90). | mom, mom jeans, mom fit / mom, mom jeans, mom fit |
-| jeans | `WIDE_LEG` | CORE | 1 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| jeans | `FLARE` | CORE | 2 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| jeans | `BAGGY` | CORE | 2 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| jeans | `RELAXED` | CORE | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| jeans | `BOOTCUT` | EXT | 1 | Bootcut | Bootcut | Justa até o joelho e levemente aberta na barra (cabe a bota). | bootcut, boot cut, semi flare, flare suave / bootcut, boot cut |
-| jeans | `REGULAR` | EXT | 2 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| jeans | `TAPERED` | EXT | 2 | Afunilada | Tapered | Folga no quadril e coxa, estreitando aos poucos até o tornozelo. | afunilada, tapered, slim taper, slim afunilada / tapered, tapered leg, slim taper |
-| jeans | `BOYFRIEND` | EXT | 2 | Boyfriend | Boyfriend | Feminina, cintura baixa/média e perna reta folgada 'emprestada do namorado'. | boyfriend, boy / boyfriend, boyfriend fit |
-| jeans | `LOOSE` | EXT | 3 | Loose | Loose | Folgada do quadril à barra, reta e ampla — mais que relaxed, menos que baggy. | loose, solta, larga / loose, loose fit |
-| jeans | `DAD` | EXT | 3 | Dad | Dad | Cintura logo abaixo do umbigo, quadril e coxa folgados e perna reta e solta. | dad, dad jeans / dad, dad jeans, baggy dad |
-| jeans | `BARREL` | EXT | 3 | Barrel | Barrel | Perna curva: mais larga no joelho, fechando no quadril e na barra (barril). | barrel, barril, curva / barrel, barrel leg, curved leg |
-| jeans | `CARROT` | EXT | 3 | Cenoura | Carrot | Volume no quadril (com pregas) e afunilamento acentuado até o tornozelo. | cenoura, carrot, calça cenoura / carrot, carrot fit, pleated tapered |
-| jeans | `SKATER` | EXT | 3 | Skater | Skater | Gancho longo, perna larga e levemente afunilada, um pouco mais curta (C&A/Renner). | skater, calça skater / skater, skater jeans |
-| jeans | `BALLOON` | EXT | 4 | Balonê | Balloon | Volume arredondado em toda a perna (ou na saia/vestido) que se fecha na barra. | balonê, balone, balão, balloon / balloon, balloon leg, bubble |
-| jeans | `BELL_BOTTOM` | NICHE | 4 | Boca de sino | Bell-bottom | Abertura dramática a partir do joelho, barra muito larga (anos 70). | boca de sino, bell bottom / bell bottom, bell-bottoms |
-| jeans | `GIRLFRIEND` | NICHE | 5 | Girlfriend | Girlfriend | Versão mais esculpida do boyfriend: folgada no quadril, afinando na barra. | girlfriend / girlfriend |
-| jeans | `HORSESHOE` | NICHE | 5 | Ferradura | Horseshoe | Curva mais exagerada que o barrel, costuras arqueadas para fora (ferradura). | ferradura, horseshoe / horseshoe, horseshoe jeans |
-| tailored_pants | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| tailored_pants | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| tailored_pants | `WIDE_LEG` | CORE | 1 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| tailored_pants | `PALAZZO` | CORE | 2 | Palazzo | Palazzo | Extremamente larga e fluida desde o quadril, até o chão. | palazzo, pantalona fluida, calça palazzo / palazzo |
-| tailored_pants | `CIGARETTE` | CORE | 2 | Cigarrete | Cigarette | Reta e estreita, ajustada sem afunilar, barra no tornozelo. | cigarrete, cigarette, calça cigarrete / cigarette, cigarette pants |
-| tailored_pants | `FLARE` | CORE | 2 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| tailored_pants | `TAPERED` | EXT | 2 | Afunilada | Tapered | Folga no quadril e coxa, estreitando aos poucos até o tornozelo. | afunilada, tapered, slim taper, slim afunilada / tapered, tapered leg, slim taper |
-| tailored_pants | `CARROT` | EXT | 2 | Cenoura | Carrot | Volume no quadril (com pregas) e afunilamento acentuado até o tornozelo. | cenoura, carrot, calça cenoura / carrot, carrot fit, pleated tapered |
-| tailored_pants | `PAPERBAG` | EXT | 3 | Clochard | Paperbag | Cintura alta franzida por cinto/amarração, formando babado acima do cós. | clochard, paperbag, paper bag / paperbag, paper bag waist |
-| tailored_pants | `BOOTCUT` | EXT | 3 | Bootcut | Bootcut | Justa até o joelho e levemente aberta na barra (cabe a bota). | bootcut, boot cut, semi flare, flare suave / bootcut, boot cut |
-| tailored_pants | `SKINNY` | NICHE | 4 | Skinny | Skinny | Justa do quadril ao tornozelo, colada na perna (na legging, a forma tradicional). | skinny, super skinny, justa, colada, jegging / skinny, super skinny, jegging |
-| tailored_pants | `BARREL` | NICHE | 4 | Barrel | Barrel | Perna curva: mais larga no joelho, fechando no quadril e na barra (barril). | barrel, barril, curva / barrel, barrel leg, curved leg |
-| tailored_pants | `SAILOR` | NICHE | 5 | Marinheiro | Sailor | Cintura alta, perna larga e abotoamento frontal duplo. | marinheiro, calça marinheiro / sailor pants |
-| casual_pants | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| casual_pants | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| casual_pants | `WIDE_LEG` | CORE | 1 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| casual_pants | `RELAXED` | CORE | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| casual_pants | `SKINNY` | EXT | 2 | Skinny | Skinny | Justa do quadril ao tornozelo, colada na perna (na legging, a forma tradicional). | skinny, super skinny, justa, colada, jegging / skinny, super skinny, jegging |
-| casual_pants | `FLARE` | EXT | 2 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| casual_pants | `PALAZZO` | EXT | 2 | Palazzo | Palazzo | Extremamente larga e fluida desde o quadril, até o chão. | palazzo, pantalona fluida, calça palazzo / palazzo |
-| casual_pants | `BAGGY` | EXT | 2 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| casual_pants | `TAPERED` | EXT | 3 | Afunilada | Tapered | Folga no quadril e coxa, estreitando aos poucos até o tornozelo. | afunilada, tapered, slim taper, slim afunilada / tapered, tapered leg, slim taper |
-| casual_pants | `PARACHUTE` | EXT | 3 | Parachute | Parachute | Nylon leve, muito larga, com cordões/reguladores na barra. | parachute, calça paraquedas / parachute, parachute pants |
-| casual_pants | `PAPERBAG` | EXT | 3 | Clochard | Paperbag | Cintura alta franzida por cinto/amarração, formando babado acima do cós. | clochard, paperbag, paper bag / paperbag, paper bag waist |
-| casual_pants | `HAREM` | NICHE | 4 | Saruel | Harem | Gancho bem baixo, volume no quadril e barra justa. | saruel, harém, sarouel, gancho baixo / harem, drop crotch |
-| chino_pants | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| chino_pants | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| chino_pants | `REGULAR` | CORE | 2 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| chino_pants | `TAPERED` | EXT | 2 | Afunilada | Tapered | Folga no quadril e coxa, estreitando aos poucos até o tornozelo. | afunilada, tapered, slim taper, slim afunilada / tapered, tapered leg, slim taper |
-| chino_pants | `RELAXED` | EXT | 3 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| chino_pants | `SKINNY` | NICHE | 4 | Skinny | Skinny | Justa do quadril ao tornozelo, colada na perna (na legging, a forma tradicional). | skinny, super skinny, justa, colada, jegging / skinny, super skinny, jegging |
-| chino_pants | `WIDE_LEG` | NICHE | 4 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| cargo_pants | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| cargo_pants | `RELAXED` | CORE | 1 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| cargo_pants | `BAGGY` | CORE | 1 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| cargo_pants | `WIDE_LEG` | EXT | 2 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| cargo_pants | `CUFFED_HEM` | EXT | 2 | Com punho | Cuffed hem | Barra com punho ou elástico (estilo jogger), presa no tornozelo. | com punho, barra com elástico, jogger, punho na barra / cuffed, cuffed hem, jogger |
-| cargo_pants | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| cargo_pants | `TAPERED` | EXT | 3 | Afunilada | Tapered | Folga no quadril e coxa, estreitando aos poucos até o tornozelo. | afunilada, tapered, slim taper, slim afunilada / tapered, tapered leg, slim taper |
-| cargo_pants | `PARACHUTE` | EXT | 3 | Parachute | Parachute | Nylon leve, muito larga, com cordões/reguladores na barra. | parachute, calça paraquedas / parachute, parachute pants |
-| jogger_pants | `REGULAR` | CORE | 1 | Regular | Regular | Caimento tradicional, folga moderada: nem justo nem largo. | regular, regular fit, tradicional, modelagem tradicional, comfort / regular, regular fit, classic fit |
-| jogger_pants | `SLIM` | CORE | 1 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| jogger_pants | `RELAXED` | EXT | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| jogger_pants | `HAREM` | NICHE | 4 | Saruel | Harem | Gancho bem baixo, volume no quadril e barra justa. | saruel, harém, sarouel, gancho baixo / harem, drop crotch |
-| sweatpants | `CUFFED_HEM` | CORE | 1 | Com punho | Cuffed hem | Barra com punho ou elástico (estilo jogger), presa no tornozelo. | com punho, barra com elástico, jogger, punho na barra / cuffed, cuffed hem, jogger |
-| sweatpants | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| sweatpants | `WIDE_LEG` | CORE | 2 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| sweatpants | `BAGGY` | EXT | 2 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| sweatpants | `FLARE` | EXT | 3 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| sweatpants | `PALAZZO` | NICHE | 4 | Palazzo | Palazzo | Extremamente larga e fluida desde o quadril, até o chão. | palazzo, pantalona fluida, calça palazzo / palazzo |
-| leggings | `SKINNY` | CORE | 1 | Skinny | Skinny | Justa do quadril ao tornozelo, colada na perna (na legging, a forma tradicional). | skinny, super skinny, justa, colada, jegging / skinny, super skinny, jegging |
-| leggings | `FLARE` | CORE | 1 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| leggings | `SEAMLESS` | EXT | 2 | Sem costura | Seamless | Malha tubular contínua, sem costuras laterais. | sem costura, seamless / seamless |
-| leggings | `COMPRESSION` | EXT | 2 | Compressão | Compression | Malha de alta compressão para suporte muscular. | compressão, compressiva, modeladora / compression |
-| leggings | `STRAIGHT` | EXT | 3 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| leggings | `STIRRUP` | NICHE | 4 | Com pezinho | Stirrup | Alça sob o pé que segura a barra. | com pezinho, pezinho, estribo / stirrup |
-| culottes | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| culottes | `A_LINE` | CORE | 1 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| culottes | `PAPERBAG` | EXT | 2 | Clochard | Paperbag | Cintura alta franzida por cinto/amarração, formando babado acima do cós. | clochard, paperbag, paper bag / paperbag, paper bag waist |
-| culottes | `GAUCHO` | NICHE | 4 | Gaúcha | Gaucho | Pantacourt um pouco mais estreita e curta, abrindo na barra. | gaúcha, gaucha, bombacha / gaucho |
-| culottes | `WRAP` | NICHE | 4 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| shorts | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| shorts | `MOM` | CORE | 1 | Mom | Mom | Cintura alta, folga no quadril e afunilamento acentuado até o tornozelo (anos 80/90). | mom, mom jeans, mom fit / mom, mom jeans, mom fit |
-| shorts | `RELAXED` | CORE | 2 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| shorts | `BIKER` | CORE | 2 | Ciclista | Bike short | Short justo de malha elástica, até o meio da coxa. | ciclista, bermuda ciclista, short ciclista, biker / bike shorts, biker shorts, cycling shorts |
-| shorts | `BAGGY` | EXT | 2 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| shorts | `CARGO` | EXT | 2 | Cargo | Cargo | Bolsos laterais aplicados com aba na altura da coxa. | cargo, bolso cargo / cargo |
-| shorts | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| shorts | `BOYFRIEND` | EXT | 3 | Boyfriend | Boyfriend | Feminina, cintura baixa/média e perna reta folgada 'emprestada do namorado'. | boyfriend, boy / boyfriend, boyfriend fit |
-| shorts | `PAPERBAG` | EXT | 3 | Clochard | Paperbag | Cintura alta franzida por cinto/amarração, formando babado acima do cós. | clochard, paperbag, paper bag / paperbag, paper bag waist |
-| shorts | `A_LINE` | EXT | 3 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| skirt | `A_LINE` | CORE | 1 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| skirt | `PENCIL` | CORE | 1 | Lápis | Pencil | Justa e reta, afinando levemente em direção à barra. | lápis, saia lápis / pencil, pencil skirt |
-| skirt | `CIRCLE` | CORE | 1 | Godê | Circle | Cortada em círculo, com muito volume e movimento na barra. | godê, gode, rodada, godê inteiro, meio godê / circle, skater, full skirt |
-| skirt | `PLEATED` | CORE | 1 | Plissada | Pleated | Pregas prensadas ao longo de toda a peça. | plissada, plissado, pregueada, de pregas, prega macho / pleated, accordion pleat, knife pleat |
-| skirt | `STRAIGHT` | CORE | 2 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| skirt | `WRAP` | CORE | 2 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| skirt | `SLIP` | EXT | 2 | Slip | Slip | Cortado no viés, fluido e rente ao corpo (no vestido, de alças finas, como camisola). | slip, enviesada, enviesado, viés, vestido camisola / slip, bias cut, slip dress |
-| skirt | `TIERED` | EXT | 2 | Camadas | Tiered | Faixas horizontais franzidas sobrepostas (estilo prairie). | camadas, em camadas, três marias, tres marias / tiered, prairie |
-| skirt | `MERMAID` | EXT | 3 | Sereia | Mermaid | Justa até o joelho e abrindo em godê na barra (inclui trumpet). | sereia, mermaid / mermaid, trumpet |
-| skirt | `GATHERED` | EXT | 3 | Franzida | Gathered | Franzida na cintura, volume suave sem pregas marcadas. | franzida, franzido na cintura / gathered, dirndl |
-| skirt | `BALLOON` | NICHE | 4 | Balonê | Balloon | Volume arredondado em toda a perna (ou na saia/vestido) que se fecha na barra. | balonê, balone, balão, balloon / balloon, balloon leg, bubble |
-| skirt | `TULIP` | NICHE | 4 | Tulipa | Tulip | Transpassada na frente, volume no quadril e barra fechando em pétala. | tulipa / tulip |
-| skirt | `CARGO` | NICHE | 4 | Cargo | Cargo | Bolsos laterais aplicados com aba na altura da coxa. | cargo, bolso cargo / cargo |
-| skirt | `TUTU` | NICHE | 5 | Tutu | Tutu | Camadas de tule armado. | tutu, saia de tule, bailarina / tutu, tulle skirt |
-| skort | `A_LINE` | CORE | 1 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| skort | `PLEATED` | CORE | 1 | Plissada | Pleated | Pregas prensadas ao longo de toda a peça. | plissada, plissado, pregueada, de pregas, prega macho / pleated, accordion pleat, knife pleat |
-| skort | `WRAP` | EXT | 2 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| skort | `STRAIGHT` | EXT | 3 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
+Regras:
+- **Códigos existentes preservados.**
+  - Cores, estilos e ocasiões continuam em `lower_snake`; materiais e gênero em `UPPER`.
+  - Estampa e logo reaproveitam `normalization.json → design` (`ALLOVER_LOGO`, `STRIPES`…).
+  - Valores novos ficam com `status=PROPOSED`: materiais `LINEN`, `VISCOSE`, `METAL`; estampas `POLKA_DOT`, `ANIMAL_PRINT`, `PAISLEY`, `GINGHAM`…
+- **`MATERIAL_DETAIL`** (tecido/matéria-prima) aponta para a família `MATERIAL`. Os aliases "metal" e "aço" saem de `SYNTHETIC` e passam para `METAL`.
+- **`appliesTo` em dois níveis:**
+  - dimensão: ex. `WAIST_RISE` só em partes de baixo;
+  - valor: ex. `LOW_TOP` só em tênis, `OVER_THE_KNEE` só em `long_boots`, `RAW` só em peças de jeans, `POLARIZED` só em óculos de sol.
+- **Cardinalidade.**
+  - `STYLE`/`OCCASION` continuam ≤2 na peça e ≤3 no esquema (`MAX_PIECE_TAGS`/`MAX_SCHEME_TAGS`).
+  - Tetos das MULTI novas: CLOSURE ≤2, FINISH ≤3, SLEEVE_STYLE ≤2, USAGE_TYPE ≤2, LENS_TYPE ≤2, MATERIAL_DETAIL ≤3.
+- **`PRICE_RANGE`** é derivada de `price_brl`; nunca é digitada.
 
-#### D.3 Peça inteira (`full_body_piece`)
+### D.3 Exemplo composicional
 
-| Subcategoria | Código | Tier | P | PT-BR | EN | Descrição (PT-BR) | Aliases PT / EN |
-|---|---|---|---|---|---|---|---|
-| dress | `SHEATH` | CORE | 1 | Tubinho | Sheath | Justo e reto acompanhando o corpo (pences), sem recorte na cintura. | tubinho, tubo, vestido tubinho, coluna / sheath, column |
-| dress | `A_LINE` | CORE | 1 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| dress | `FIT_AND_FLARE` | CORE | 1 | Acinturado e rodado | Fit and flare | Corpo ajustado até a cintura e saia godê abaixo. | acinturado, rodado, fit and flare, godê, skater / fit and flare, skater dress |
-| dress | `SLIP` | CORE | 1 | Slip | Slip | Cortado no viés, fluido e rente ao corpo (no vestido, de alças finas, como camisola). | slip, enviesada, enviesado, viés, vestido camisola / slip, bias cut, slip dress |
-| dress | `WRAP` | CORE | 2 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| dress | `SHIRT_DRESS` | CORE | 2 | Chemise | Shirt dress | Abotoamento frontal, gola e punhos de camisa. | chemise, chemisier, vestido camisa, camisão / shirt dress, shirtdress |
-| dress | `BODYCON` | CORE | 2 | Bodycon | Bodycon | Malha elástica colada ao corpo, do busto à barra. | bodycon, colado, justinho, vestido colado / bodycon, body con |
-| dress | `SHIFT` | CORE | 2 | Reto | Shift | Solto, sem marcar a cintura, caindo reto dos ombros. | reto, vestido reto, soltinho, shift / shift |
-| dress | `T_SHIRT_DRESS` | EXT | 2 | Vestido camiseta | T-shirt dress | Corpo de camiseta alongado, reto, em malha. | vestido camiseta, camisetão, vestido de malha / t-shirt dress, tee dress |
-| dress | `TIERED` | EXT | 2 | Camadas | Tiered | Faixas horizontais franzidas sobrepostas (estilo prairie). | camadas, em camadas, três marias, tres marias / tiered, prairie |
-| dress | `BABYDOLL` | EXT | 2 | Babydoll | Babydoll | Justa no busto (recorte alto) e solta/rodada abaixo; curta. | babydoll, baby doll / babydoll, baby doll, smock |
-| dress | `SMOCKED` | EXT | 3 | Lastex | Smocked | Corpo franzido com elástico (smock/lastex), ajusta sem fechamento. | lastex, franzida, franzido, smocking / smocked, shirred |
-| dress | `EMPIRE` | EXT | 3 | Império | Empire | Recorte logo abaixo do busto e saia fluida longa. | império, recorte império, cintura império / empire, empire waist |
-| dress | `MERMAID` | EXT | 3 | Sereia | Mermaid | Justa até o joelho e abrindo em godê na barra (inclui trumpet). | sereia, mermaid / mermaid, trumpet |
-| dress | `CORSET` | EXT | 3 | Corset | Corset | Corpo estruturado com barbatanas e recortes que modelam a cintura. | corset, corselet, espartilho, corpete / corset, corset top, bustier corset |
-| dress | `KAFTAN` | EXT | 3 | Kaftan | Kaftan | Amplo e reto, mangas largas, vestido pela cabeça. | kaftan, cafetã, caftan / kaftan, caftan |
-| dress | `TRAPEZE` | NICHE | 4 | Trapézio | Trapeze | Estreito nos ombros e abrindo muito até a barra, sem cintura. | trapézio, trapezio / trapeze, swing |
-| dress | `BLAZER_DRESS` | NICHE | 4 | Vestido blazer | Blazer dress | Modelagem de blazer alongada, com lapela e botões. | vestido blazer / blazer dress, tuxedo dress |
-| dress | `PINAFORE` | NICHE | 4 | Salopete | Pinafore | Vestido com peitilho e alças, usado sobre blusa (jardineira-vestido). | salopete, jardineira vestido, jardineira saia, vestido jardineira / pinafore, jumper dress, overall dress |
-| dress | `BALL_GOWN` | NICHE | 4 | Princesa | Ball gown | Corpete ajustado e saia muito volumosa (com anágua). | princesa, vestido de baile, debutante / ball gown, princess |
-| dress | `CUT_OUT` | NICHE | 4 | Vazado | Cut-out | Recortes que mostram partes do corpo (cintura, ombro, costas). | vazado, vazada, recorte vazado, cut out, recortes / cut out, cutout |
-| dress | `PEPLUM` | NICHE | 5 | Peplum | Peplum | Babado/godê na cintura que se abre sobre o quadril. | peplum, babado na cintura / peplum |
-| dress | `BALLOON` | NICHE | 5 | Balonê | Balloon | Volume arredondado em toda a perna (ou na saia/vestido) que se fecha na barra. | balonê, balone, balão, balloon / balloon, balloon leg, bubble |
-| jumpsuit | `WIDE_LEG` | CORE | 1 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| jumpsuit | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| jumpsuit | `BOILERSUIT` | CORE | 2 | Utilitário | Boilersuit | Macacão workwear com zíper/botões frontais e bolsos. | utilitário, macacão utilitário, boilersuit, macacão de trabalho / boilersuit, utility jumpsuit, coverall |
-| jumpsuit | `PALAZZO` | EXT | 2 | Palazzo | Palazzo | Extremamente larga e fluida desde o quadril, até o chão. | palazzo, pantalona fluida, calça palazzo / palazzo |
-| jumpsuit | `FLARE` | EXT | 2 | Flare | Flare | Justa até o joelho e bem aberta do joelho à barra. | flare, calça flare, flarezinha / flare, flared |
-| jumpsuit | `WRAP` | EXT | 3 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| jumpsuit | `CUFFED_HEM` | EXT | 3 | Com punho | Cuffed hem | Barra com punho ou elástico (estilo jogger), presa no tornozelo. | com punho, barra com elástico, jogger, punho na barra / cuffed, cuffed hem, jogger |
-| jumpsuit | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| jumpsuit | `CUT_OUT` | NICHE | 4 | Vazado | Cut-out | Recortes que mostram partes do corpo (cintura, ombro, costas). | vazado, vazada, recorte vazado, cut out, recortes / cut out, cutout |
-| romper | `RELAXED` | CORE | 1 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| romper | `WRAP` | CORE | 1 | Transpassado | Wrap | Frente cruzada (envelope) que fecha amarrando ou com faixa na lateral. | transpassada, transpassado, envelope, wrap, cache coeur / wrap, wrap front, crossover |
-| romper | `SMOCKED` | EXT | 2 | Lastex | Smocked | Corpo franzido com elástico (smock/lastex), ajusta sem fechamento. | lastex, franzida, franzido, smocking / smocked, shirred |
-| romper | `SLIM` | EXT | 2 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| romper | `A_LINE` | EXT | 3 | Evasê | A-line | Ajustada na cintura e abrindo aos poucos em forma de A. | evasê, evase, linha a, godezinho / a-line, a line, flared |
-| romper | `BOILERSUIT` | NICHE | 4 | Utilitário | Boilersuit | Macacão workwear com zíper/botões frontais e bolsos. | utilitário, macacão utilitário, boilersuit, macacão de trabalho / boilersuit, utility jumpsuit, coverall |
-| matching_set | `TOP_AND_PANTS` | CORE | 1 | Conjunto com calça | Pant set | Parte de cima e calça do mesmo tecido/estampa. | conjunto calça, conjunto de calça / pant set, trouser set |
-| matching_set | `TOP_AND_SKIRT` | CORE | 1 | Conjunto com saia | Skirt set | Parte de cima e saia do mesmo tecido/estampa. | conjunto saia, conjunto de saia, conjuntinho saia / skirt set, two-piece skirt set |
-| matching_set | `TOP_AND_SHORTS` | CORE | 1 | Conjunto com short | Shorts set | Parte de cima e short do mesmo tecido/estampa. | conjunto short, conjuntinho short / shorts set |
-| matching_set | `SUIT` | CORE | 1 | Terno / tailleur | Suit | Blazer com calça ou saia do mesmo tecido. | terno, tailleur, costume, conjunto alfaiataria / suit, pantsuit, skirt suit |
-| matching_set | `TRACKSUIT` | CORE | 2 | Agasalho completo | Tracksuit | Jaqueta + calça de treino ou conjunto de moletom. | agasalho completo, conjunto moletom, conjunto de moletom, abrigo / tracksuit, jogging suit, sweatsuit |
-| matching_set | `THREE_PIECE` | NICHE | 4 | Terno três peças | Three-piece suit | Blazer, colete e calça. | terno três peças, terno com colete / three-piece suit |
-| overalls | `STRAIGHT` | CORE | 1 | Reta | Straight | Mesma largura do joelho à barra, sem afunilar nem abrir (na saia, reta/secretária). | reta, perna reta, straight, corte reto, secretária / straight, straight leg, straight fit |
-| overalls | `RELAXED` | CORE | 1 | Relaxed | Relaxed | Mais folga no corpo (na calça, quadril e coxa folgados), sem chegar a oversized/baggy. | relaxed, soltinha, soltinho, confortável, folgada / relaxed, relaxed fit, easy fit |
-| overalls | `WIDE_LEG` | EXT | 2 | Wide leg | Wide leg | Cintura ajustada e perna larga e reta desde a coxa (pantalona). | wide leg, pantalona, perna larga, wide / wide leg, wide-leg, stride |
-| overalls | `BAGGY` | EXT | 2 | Baggy | Baggy | Muito larga em toda a perna, gancho baixo, sobra de tecido na barra. | baggy, bem larga, folgadona, jorts / baggy, extra loose, jorts |
-| overalls | `SLIM` | EXT | 3 | Slim | Slim | Justa sem apertar, com pouca folga; na calça, perna estreita que afina de leve até a barra. | slim, slim fit, ajustada, ajustado, acinturado / slim, slim fit, fitted |
-| overalls | `CARPENTER` | EXT | 3 | Carpinteiro | Carpenter | Alça de martelo e bolsos utilitários (workwear). | carpinteiro, carpenter / carpenter |
+```json
+{
+  "category": "lower_piece",
+  "subcategory": "jeans",
+  "variation": "WIDE_LEG",
+  "waistRise": "HIGH_RISE",
+  "length": "FULL_LENGTH",
+  "finish": ["LIGHT_WASH", "FRAYED_HEM"],
+  "material": "COTTON",
+  "materialDetail": ["DENIM", "ELASTANE_BLEND"],
+  "color": "light_blue",
+  "pattern": "PLAIN",
+  "closure": ["BUTTON"],
+  "style": ["streetwear", "vintage"],
+  "occasion": ["casual", "travel"],
+  "gender": "FEMININO",
+  "priceRange": "MID",
+  "brand": "levis"
+}
+```
 
-#### D.4 Calçados (`shoes_piece`)
+Texto livre equivalente: "calça jeans pantalona cintura alta clara barra desfiada Levi's".
+- `pantalona` → `WIDE_LEG` (alias com escopo `jeans`);
+- `cintura alta` → `HIGH_RISE`;
+- `clara` → `LIGHT_WASH`;
+- `barra desfiada` → `FRAYED_HEM`;
+- `Levi's` → `brandAliases`.
 
-| Subcategoria | Código | Tier | P | PT-BR | EN | Descrição (PT-BR) | Aliases PT / EN |
-|---|---|---|---|---|---|---|---|
-| casual_sneakers | `COURT` | CORE | 1 | Estilo quadra | Court | Cabedal liso, sola de borracha e perfil limpo (ex.: Stan Smith, Air Force 1). | quadra, court, tênis branco liso / court, court sneaker, cupsole sneaker |
-| casual_sneakers | `VULCANIZED` | CORE | 1 | Vulcanizado | Vulcanized | Sola fina vulcanizada e biqueira de borracha; flexível (lona: All Star, Vans). | vulcanizado, lona, tênis de lona, plimsoll / vulcanized, canvas sneaker, plimsoll |
-| casual_sneakers | `RETRO_RUNNER` | CORE | 1 | Retrô de corrida | Retro runner | Silhueta de corrida dos anos 70–90 em camurça/nylon (ex.: NB 574). | jogging, retrô, retro running / retro runner, jogger sneaker |
-| casual_sneakers | `DAD_SNEAKER` | CORE | 2 | Dad sneaker | Dad sneaker | Volumoso, com camadas e sola grossa (chunky, anos 90). | dad sneaker, dad shoes, chunky, tênis robusto, tênis grosso / dad sneaker, chunky sneaker |
-| casual_sneakers | `TERRACE` | CORE | 2 | Terrace | Terrace | Perfil baixo e fino, biqueira em T e sola de goma (ex.: Samba, Gazelle). | terrace, low profile, perfil baixo, baixinho / terrace, low-profile, T-toe |
-| casual_sneakers | `DRESS_SNEAKER` | EXT | 2 | Sapatênis | Dress sneaker | Cabedal de sapato em couro sobre solado de tênis. | sapatênis, sapatenis / dress sneaker, hybrid shoe |
-| casual_sneakers | `TECH_RUNNER` | EXT | 3 | Tech runner | Tech runner | Tela técnica e entressola de corrida em visual lifestyle Y2K. | tech runner, y2k, estilo running / tech runner, Y2K runner |
-| casual_sneakers | `SOCK_SNEAKER` | EXT | 3 | Tênis meia | Sock sneaker | Cabedal de malha elástica que veste como meia. | tênis meia, knit, tênis de malha / sock sneaker, knit sneaker |
-| casual_sneakers | `SNEAKER_BOOT` | NICHE | 4 | Tênis botinha | Sneaker boot | Tênis com cano de bota acima do tornozelo. | tênis botinha, sneaker boot / sneaker boot |
-| running_shoes | `NEUTRAL` | CORE | 1 | Pisada neutra | Neutral | Amortecimento sem estrutura de controle de pisada. | pisada neutra, neutro, corrida de rua, asfalto / neutral, road running |
-| running_shoes | `STABILITY` | CORE | 1 | Estabilidade | Stability | Suporte medial para pisada pronada. | estabilidade, pronada, controle de pisada / stability, support |
-| running_shoes | `TRAIL` | CORE | 1 | Trail | Trail | Solado com cravos e proteção para terra/montanha. | trail, trilha, corrida de trilha / trail, trail running |
-| running_shoes | `MAX_CUSHION` | EXT | 2 | Máximo amortecimento | Max cushion | Entressola alta e macia. | máximo amortecimento, max cushion / max cushion, maximalist |
-| running_shoes | `RACING` | EXT | 2 | Competição | Racing | Leve, com placa (carbono) e drop baixo. | competição, placa de carbono, racing / racing, racer, carbon plate |
-| running_shoes | `TRACK_SPIKE` | NICHE | 4 | Sapatilha de atletismo | Track spike | Sola rígida com pregos para pista. | sapatilha de atletismo, spike, sapatilha de prego / track spike, spikes |
-| running_shoes | `MINIMALIST` | NICHE | 4 | Minimalista | Minimalist | Sola fina e flexível, drop zero (barefoot). | minimalista, barefoot, drop zero / minimalist, barefoot |
-| training_shoes | `CROSS_TRAINING` | CORE | 1 | Treino funcional | Cross training | Base larga e estável para treino funcional/academia. | cross training, funcional, crossfit, academia, treino / cross training, cross trainer, gym shoe |
-| training_shoes | `WALKING` | EXT | 2 | Caminhada | Walking | Amortecimento confortável e solado flexível para caminhar. | caminhada, tênis de caminhada / walking shoe |
-| training_shoes | `WEIGHTLIFTING` | EXT | 3 | LPO | Weightlifting | Salto rígido elevado e tira de ajuste para levantamento de peso. | lpo, levantamento de peso, weightlifting / weightlifting, lifter |
-| basketball_shoes | `PERFORMANCE` | CORE | 1 | Performance | Performance | Tecnologia atual de amortecimento e tração para jogo. | performance, de jogo / performance |
-| basketball_shoes | `HERITAGE` | CORE | 1 | Retrô | Heritage | Relançamento de modelo clássico de basquete usado como lifestyle (ex.: Jordan 1, Dunk). | retrô, heritage, clássico de basquete / retro, heritage |
-| skate_shoes | `VULCANIZED` | CORE | 1 | Vulcanizado | Vulcanized | Sola fina vulcanizada e biqueira de borracha; flexível (lona: All Star, Vans). | vulcanizado, lona, tênis de lona, plimsoll / vulcanized, canvas sneaker, plimsoll |
-| skate_shoes | `CUPSOLE` | CORE | 1 | Sola copo | Cupsole | Sola de borracha em peça única costurada, mais amortecida. | cupsole, sola copo, sola costurada / cupsole |
-| loafers | `PENNY` | CORE | 1 | Penny | Penny | Tira sobre o peito do pé com recorte em losango. | penny, penny loafer, mocassim social / penny loafer |
-| loafers | `HORSEBIT` | CORE | 1 | Horsebit | Horsebit | Ferragem metálica (freio) sobre o peito do pé. | horsebit, com ferragem, com freio / horsebit, bit loafer |
-| loafers | `TASSEL` | EXT | 2 | Tassel | Tassel | Borlas (pingentes de franja) no peito do pé. | tassel, com franja, borla / tassel loafer |
-| loafers | `VENETIAN` | EXT | 2 | Veneziano | Venetian | Liso, sem tira nem ornamento. | veneziano, loafer liso / venetian, plain loafer |
-| loafers | `SLIPPER` | EXT | 3 | Slipper | Slipper | Sapato baixo de calce fácil, cabedal macio (veludo/couro) sem cadarço. | slipper, slipper shoe / slipper, smoking slipper |
-| loafers | `BELGIAN` | NICHE | 4 | Belga | Belgian | Cabedal macio com pequeno laço e sola fina. | belga / belgian loafer |
-| moccasins | `TRUE_MOC` | CORE | 1 | Mocassim tradicional | True moccasin | Peça única de couro envolvendo o pé, costura em U, sem salto. | mocassim tradicional, costura avental, mocassim de verdade / true moccasin, camp moc, apron moc |
-| moccasins | `DRIVER` | CORE | 1 | Drive | Driver | Mocassim macio com sola de pinos de borracha que sobe no calcanhar. | drive, driver, mocassim drive / driving moccasin, driver |
-| moccasins | `BOAT_SHOE` | CORE | 1 | Dockside | Boat shoe | Cadarço de couro ao redor do colarinho e sola antiderrapante. | dockside, docksider, sapato náutico, sapato de vela / boat shoe, deck shoe |
-| oxford_shoes | `PLAIN_TOE` | CORE | 1 | Bico liso | Plain toe | Biqueira sem costura nem ornamento. | bico liso, liso, plain toe / plain toe |
-| oxford_shoes | `CAP_TOE` | CORE | 1 | Biqueira | Cap toe | Costura reta atravessando a ponta do pé. | biqueira, cap toe, ponteira costurada / cap toe, captoe |
-| oxford_shoes | `WINGTIP` | CORE | 1 | Brogue | Wingtip | Biqueira em forma de asa (W) com perfurações (full brogue). | brogue, full brogue, wingtip, asa / wingtip, full brogue |
-| oxford_shoes | `SEMI_BROGUE` | EXT | 2 | Semi brogue | Semi-brogue | Biqueira reta com perfurações e medalhão na ponta. | semi brogue, meio brogue / semi brogue |
-| oxford_shoes | `WHOLECUT` | EXT | 3 | Peça única | Wholecut | Cabedal de uma única peça de couro, sem costuras aparentes. | wholecut, peça única / wholecut |
-| oxford_shoes | `SADDLE_SHOE` | NICHE | 4 | Saddle | Saddle shoe | Faixa de couro contrastante sobre o peito do pé. | saddle, sapato saddle / saddle shoe |
-| derby_shoes | `PLAIN_TOE` | CORE | 1 | Bico liso | Plain toe | Biqueira sem costura nem ornamento. | bico liso, liso, plain toe / plain toe |
-| derby_shoes | `CAP_TOE` | EXT | 2 | Biqueira | Cap toe | Costura reta atravessando a ponta do pé. | biqueira, cap toe, ponteira costurada / cap toe, captoe |
-| derby_shoes | `WINGTIP` | EXT | 2 | Brogue | Wingtip | Biqueira em forma de asa (W) com perfurações (full brogue). | brogue, full brogue, wingtip, asa / wingtip, full brogue |
-| derby_shoes | `APRON_TOE` | EXT | 3 | Avental | Apron toe | Costura em U ao redor da frente do pé (norwegian/split toe). | avental, bico avental, norueguês / apron toe, split toe, norwegian |
-| derby_shoes | `MONK_STRAP` | EXT | 3 | Monk | Monk strap | Sem cadarço: fecha com tira e fivela (simples ou dupla). | monk, monk strap, sapato de fivela, double monk / monk strap, double monk |
-| sandals | `STRAPPY` | CORE | 1 | Tiras | Strappy | Várias tiras cruzadas nas costas ou nos ombros (na sandália, várias tiras finas sobre o pé). | tiras, alças cruzadas, costas de tiras, rasteira, rasteirinha / strappy, cross back |
-| sandals | `ANKLE_STRAP` | CORE | 1 | Tira no tornozelo | Ankle strap | Tira que circunda o tornozelo, com fivela. | tira no tornozelo, pulseira no tornozelo / ankle strap |
-| sandals | `SPORT_SANDAL` | CORE | 1 | Papete | Sport sandal | Tiras largas de velcro/nylon e solado esportivo. | papete, sandália esportiva / sport sandal, trekking sandal |
-| sandals | `FOOTBED` | CORE | 2 | Anatômica | Footbed | Palmilha de cortiça/látex moldada e tiras largas com fivela (estilo Birken). | birken, anatômica, palmilha anatômica / footbed sandal, cork footbed |
-| sandals | `MULE` | CORE | 2 | Mule | Mule | Sem a parte de trás: calcanhar livre. | mule, tamanco, mule de salto / mule, backless |
-| sandals | `GLADIATOR` | EXT | 2 | Gladiadora | Gladiator | Muitas tiras subindo pelo tornozelo/perna. | gladiadora, gladiador / gladiator |
-| sandals | `FISHERMAN` | EXT | 3 | Fisherman | Fisherman | Cabedal de tiras trançadas fechado na frente. | fisherman, sandália fisherman, franciscana / fisherman sandal |
-| sandals | `T_STRAP` | EXT | 3 | Tira em T | T-strap | Tira central no peito do pé ligada à tira do tornozelo. | tira em t, t bar / t-strap, t-bar |
-| sandals | `CLOG` | EXT | 3 | Babuche | Clog | Frente fechada, calcanhar aberto e sola grossa moldada (ex.: Crocs, Boston). | babuche, clog, crocs / clog |
-| flip_flops | `THONG` | CORE | 1 | De dedo | Thong | Tira em V presa entre os dedos. | de dedo, chinelo de dedo / thong, flip flop |
-| flip_flops | `SLIDE` | CORE | 1 | Slide | Slide | Uma tira larga sobre o peito do pé. | slide, chinelo slide, chinelo nuvem, slide nuvem / slide, slides, pool slide |
-| heels | `PUMP` | CORE | 1 | Scarpin | Pump | Fechado, decotado no peito do pé, sem tiras. | scarpin, escarpim, pump / pump, court shoe |
-| heels | `SLINGBACK` | CORE | 1 | Slingback | Slingback | Frente fechada e calcanhar aberto com tira. | chanel, slingback, sapato chanel / slingback |
-| heels | `MULE` | CORE | 1 | Mule | Mule | Sem a parte de trás: calcanhar livre. | mule, tamanco, mule de salto / mule, backless |
-| heels | `MARY_JANE` | CORE | 2 | Boneca | Mary Jane | Tira sobre o peito do pé com fivela ou botão. | boneca, sapato boneca, mary jane / mary jane |
-| heels | `ANKLE_STRAP` | EXT | 2 | Tira no tornozelo | Ankle strap | Tira que circunda o tornozelo, com fivela. | tira no tornozelo, pulseira no tornozelo / ankle strap |
-| heels | `D_ORSAY` | EXT | 3 | D'Orsay | D'Orsay | Laterais recortadas deixando o arco do pé à mostra. | d'orsay, dorsay / d'orsay |
-| flats | `BALLET` | CORE | 1 | Sapatilha | Ballet flat | Baixa, fechada e decotada, inspirada na sapatilha de balé. | sapatilha, bailarina, ballet flat / ballet flat, ballerina |
-| flats | `MARY_JANE` | CORE | 1 | Boneca | Mary Jane | Tira sobre o peito do pé com fivela ou botão. | boneca, sapato boneca, mary jane / mary jane |
-| flats | `MULE` | CORE | 2 | Mule | Mule | Sem a parte de trás: calcanhar livre. | mule, tamanco, mule de salto / mule, backless |
-| flats | `SLINGBACK` | EXT | 2 | Slingback | Slingback | Frente fechada e calcanhar aberto com tira. | chanel, slingback, sapato chanel / slingback |
-| flats | `SLIPPER` | EXT | 3 | Slipper | Slipper | Sapato baixo de calce fácil, cabedal macio (veludo/couro) sem cadarço. | slipper, slipper shoe / slipper, smoking slipper |
-| flats | `D_ORSAY` | NICHE | 4 | D'Orsay | D'Orsay | Laterais recortadas deixando o arco do pé à mostra. | d'orsay, dorsay / d'orsay |
-| espadrilles | `CLASSIC_ESPADRILLE` | CORE | 1 | Alpargata | Espadrille | Fechada, de lona, com sola de juta trançada. | alpargata, espadrille / espadrille |
-| espadrilles | `LACE_UP_ESPADRILLE` | EXT | 2 | Espadrille de amarrar | Lace-up espadrille | Fitas que sobem amarrando no tornozelo. | espadrille de amarrar, alpargata de amarrar / lace-up espadrille, tie espadrille |
-| espadrilles | `MULE` | EXT | 2 | Mule | Mule | Sem a parte de trás: calcanhar livre. | mule, tamanco, mule de salto / mule, backless |
-| boots | `CHELSEA` | CORE | 1 | Chelsea | Chelsea | Cano com elástico lateral, sem cadarço. | chelsea, bota chelsea, botina chelsea, elástico lateral / chelsea boot |
-| boots | `COMBAT` | CORE | 1 | Coturno | Combat | Militar, de amarrar com muitos ilhoses e sola tratorada. | coturno, combat, bota militar, coturno tratorado / combat boot, military boot |
-| boots | `WESTERN` | CORE | 1 | Texana | Western | Bico fino, salto cubano e cano com pesponto decorativo. | texana, country, western, bota de cowboy, bota de peão / western boot, cowboy boot |
-| boots | `WORK_BOOT` | CORE | 2 | Botina | Work boot | Robusta, de amarrar, com biqueira reforçada e sola grossa. | botina, bota de trabalho, workwear / work boot |
-| boots | `RIDING` | CORE | 2 | Montaria | Riding | Cano alto liso e justo, bico redondo e salto baixo. | montaria, bota de montaria, equestre / riding boot, equestrian boot |
-| boots | `CHUKKA` | EXT | 2 | Desert | Chukka | Cano no tornozelo, dois ou três pares de ilhoses, camurça. | chukka, desert, desert boot / chukka, desert boot |
-| boots | `HIKING` | EXT | 2 | Trekking | Hiking | Cano médio acolchoado, solado com cravos e cabedal resistente. | trekking, bota de trilha, bota de caminhada, adventure / hiking boot, trekking boot |
-| boots | `SOCK_BOOT` | EXT | 3 | Bota meia | Sock boot | Cano de malha elástica justo na perna, sem fechamento. | bota meia, sock boot / sock boot, stretch boot |
-| boots | `ENGINEER` | EXT | 3 | Motociclista | Engineer | Cano alto sem cadarço, com fivelas no topo e no peito do pé. | motociclista, bota de motoqueiro, engineer, biker boot / engineer boot, biker boot, moto boot |
-| boots | `SLOUCH` | EXT | 3 | Slouch | Slouch | Cano largo e mole que forma dobras (sanfonado). | slouch, sanfonada, cano enrugado / slouch boot |
-| boots | `RAIN_BOOT` | EXT | 3 | Galocha | Rain boot | Borracha moldada impermeável. | galocha, bota de chuva, bota de borracha / rain boot, wellington, wellies |
-| boots | `SNOW_BOOT` | NICHE | 4 | Bota de neve | Snow boot | Cano forrado de pelo ou lã e sola de inverno. | bota de neve, bota de pelo, bota forrada / snow boot, winter boot, shearling boot |
+Outros exemplos:
+- `{"category":"shoes_piece","subcategory":"ankle_boots","variation":"CHELSEA","shaftHeight":"ANKLE_HEIGHT","closure":["SLIP_ON"],"soleType":"LUG_SOLE","materialDetail":["SUEDE"],"color":"tan"}`
+- `{"category":"accessory_piece","subcategory":"handbag","variation":"BAGUETTE","sizeClass":"SMALL","finish":["PATENT"],"materialDetail":["FAUX_LEATHER"],"color":"black"}`
 
-#### D.5 Acessórios (`accessory_piece`)
+### D.4 Contrato de IA (vocabulário fechado)
 
-| Subcategoria | Código | Tier | P | PT-BR | EN | Descrição (PT-BR) | Aliases PT / EN |
-|---|---|---|---|---|---|---|---|
-| handbag | `TOP_HANDLE` | CORE | 1 | Alça de mão | Top handle | Estruturada, com alça curta superior para a mão ou o antebraço. | alça de mão, top handle / top handle, top-handle |
-| handbag | `SHOPPER` | CORE | 1 | Shopper | Shopper | Aberta, grande, com alças longas de ombro. | shopper, shopping, sacola / shopper |
-| handbag | `HOBO` | CORE | 1 | Hobo | Hobo | Macia, em meia-lua caída, alça de ombro. | hobo / hobo |
-| handbag | `BUCKET_BAG` | CORE | 1 | Saco | Bucket bag | Formato de balde, fechamento de cordão. | saco, bucket, bolsa saco, balde / bucket bag |
-| handbag | `BAGUETTE` | CORE | 2 | Baguete | Baguette | Pequena, alongada e estreita, usada sob o braço. | baguete, baguette / baguette |
-| handbag | `SATCHEL` | CORE | 2 | Satchel | Satchel | Estruturada, base larga, alça de mão e alça transversal removível. | satchel, bolsa estruturada / satchel |
-| handbag | `CAMERA_BAG` | CORE | 2 | Câmera | Camera bag | Pequena, retangular, com zíper e alça transversal. | câmera, bolsa câmera / camera bag |
-| handbag | `BELT_BAG` | CORE | 2 | Pochete | Belt bag | Pequena com zíper, presa na cintura ou cruzada no peito. | pochete, doleira, belt bag / belt bag, fanny pack, bum bag |
-| handbag | `SADDLE_BAG` | EXT | 2 | Saddle | Saddle bag | Formato de sela, com aba arredondada. | saddle, sela / saddle bag |
-| handbag | `HALF_MOON_BAG` | EXT | 2 | Meia-lua | Half-moon bag | Formato de meia-lua (croissant). | meia lua, croissant / half moon, crescent, croissant bag |
-| handbag | `BOX_BAG` | EXT | 3 | Bolsa caixa | Box bag | Rígida em formato de caixa. | bolsa caixa, box / box bag |
-| handbag | `MESSENGER_BAG` | EXT | 3 | Carteiro | Messenger bag | Retangular, com aba frontal e alça transversal longa. | carteiro, mensageiro, messenger / messenger bag |
-| handbag | `PHONE_BAG` | EXT | 3 | Porta-celular | Phone bag | Mini bolsa do tamanho do celular. | porta celular, bolsa celular, bolsa para celular / phone bag, phone pouch |
-| handbag | `SLING_BAG` | EXT | 3 | Sling | Sling bag | Alça única cruzando o peito ou as costas. | sling, bolsa de peito / sling bag, chest bag |
-| handbag | `BOWLER_BAG` | EXT | 3 | Baú | Bowler bag | Arredondada, alças de mão e zíper superior. | baú, bau, bowling, bowler / bowler bag, bowling bag |
-| handbag | `BASKET_BAG` | EXT | 3 | Cesta | Basket bag | Formato de cesto, geralmente de palha ou vime. | cesta, cestinha, bolsa cesta / basket bag |
-| handbag | `DUFFLE_BAG` | EXT | 3 | Bolsa de viagem | Duffle bag | Cilíndrica e grande, para viagem ou academia. | bolsa de viagem, bolsa de academia, mala de mão / duffle, duffel, gym bag |
-| handbag | `DOCTOR_BAG` | NICHE | 4 | Maleta | Doctor bag | Abertura em armação com alças de mão. | maleta, bolsa médico / doctor bag |
-| handbag | `FRAME_BAG` | NICHE | 4 | Fecho beijinho | Frame bag | Boca rígida de metal com fecho de beijinho (kiss-lock). | fecho beijinho, armação / frame bag, kiss lock |
-| tote_bag | `SHOPPER` | CORE | 1 | Shopper | Shopper | Aberta, grande, com alças longas de ombro. | shopper, shopping, sacola / shopper |
-| tote_bag | `STRUCTURED_TOTE` | CORE | 1 | Tote estruturada | Structured tote | Tote rígida, com base firme e laterais retas. | tote estruturada, tote rígida / structured tote |
-| tote_bag | `SLOUCHY_TOTE` | EXT | 2 | Tote molenga | Slouchy tote | Tote macia que cede quando cheia. | tote macia, tote molenga / slouchy tote, soft tote |
-| tote_bag | `EAST_WEST_TOTE` | NICHE | 4 | Tote horizontal | East-west tote | Mais larga que alta, formato horizontal. | tote horizontal, east west / east west tote |
-| clutch | `ENVELOPE_CLUTCH` | CORE | 1 | Envelope | Envelope clutch | Retangular com aba triangular. | envelope, carteira envelope / envelope clutch |
-| clutch | `POUCH` | CORE | 1 | Pouch | Pouch | Macia, franzida ou lisa, sem estrutura. | pouch, carteira de mão, bolsa saquinho / pouch, soft clutch |
-| clutch | `MINAUDIERE` | EXT | 2 | Minaudière | Minaudière | Clutch rígida de festa, metálica ou bordada. | minaudière, minaudiere, clutch de festa, clutch rígida / minaudiere, box clutch |
-| clutch | `WRISTLET` | EXT | 3 | Clutch de pulso | Wristlet | Pequena, com alça de pulso. | clutch de pulso, wristlet / wristlet |
-| clutch | `FOLDOVER` | EXT | 3 | Dobrável | Fold-over | Corpo que se dobra sobre si mesmo. | dobrável, fold over / foldover clutch |
-| backpack | `DAYPACK` | CORE | 1 | Tradicional | Daypack | Compartimento principal com zíper e bolso frontal. | mochila tradicional, escolar, mochila básica / daypack, school backpack |
-| backpack | `LAPTOP_BACKPACK` | CORE | 1 | Executiva | Laptop backpack | Compartimento acolchoado para notebook. | executiva, notebook, mochila de notebook / laptop backpack |
-| backpack | `GYMSACK` | CORE | 2 | Mochila saco | Gymsack | Mochila de tecido com cordões que viram alças. | mochila saco, saco / gymsack, drawstring bag |
-| backpack | `ROLLTOP` | EXT | 2 | Rolltop | Rolltop | Abertura que enrola e fecha com fivela. | rolltop, roll top / rolltop |
-| backpack | `RUCKSACK` | EXT | 3 | Mochila com aba | Rucksack | Abertura com cordão sob aba com fivelas. | mochila com aba, rucksack / rucksack, flap backpack |
-| backpack | `CONVERTIBLE_BACKPACK` | EXT | 3 | Mochila bolsa | Convertible | Vira bolsa de ombro ou de mão. | mochila bolsa, conversível / convertible backpack |
-| backpack | `HIKING_PACK` | EXT | 3 | Cargueira | Hiking pack | Estrutura com barrigueira e regulagens para carga. | cargueira, mochila de trilha, camping / hiking backpack, trekking pack |
-| belt | `PIN_BUCKLE` | CORE | 1 | Fivela de pino | Pin buckle | Fivela tradicional com pino nos furos. | fivela tradicional, cinto clássico, cinto social / pin buckle, classic belt |
-| belt | `PLATE_BUCKLE` | CORE | 1 | Fivela placa | Plate buckle | Fivela em placa ou monograma, sem pino aparente. | fivela placa, fivela logo, fivela de logo, monograma / plate buckle, logo buckle |
-| belt | `BRAIDED_BELT` | CORE | 2 | Trançado | Braided | Tira trançada (couro ou elástico) que aceita a fivela em qualquer ponto. | trançado, cinto trançado / braided belt, woven belt |
-| belt | `WIDE_BELT` | CORE | 2 | Faixa | Wide/waist | Largo, marcando a cintura sobre vestidos e casacos (obi/corset). | cinto faixa, faixa, cinto largo, cinto corset, obi / wide belt, waist belt, corset belt |
-| belt | `D_RING` | EXT | 2 | Argola | D-ring | Fecha passando a ponta por duas argolas. | argola, argola dupla / d-ring, double ring |
-| belt | `WEB_BELT` | EXT | 2 | Lona | Web | Tira de lona/nylon com fivela de pressão ou de trava. | cinto de lona, cinto militar, tático / web belt, canvas belt, military belt |
-| belt | `WESTERN_BELT` | EXT | 3 | Country | Western | Couro trabalhado com fivela grande ornamentada. | cinto country, cinto western, cinto cowboy / western belt |
-| belt | `CHAIN_BELT` | EXT | 3 | Corrente | Chain | Cinto de elos metálicos. | cinto corrente, corrente / chain belt |
-| belt | `REVERSIBLE_BELT` | EXT | 3 | Dupla face | Reversible | Duas faces de cor/acabamento com fivela giratória. | dupla face, reversível, 2 em 1 / reversible belt |
-| cap | `BASEBALL_CAP` | CORE | 1 | Aba curva | Baseball | Copa firme de 6 gomos e aba curva. | aba curva, boné de beisebol, boné estruturado / baseball cap |
-| cap | `DAD_CAP` | CORE | 1 | Dad hat | Dad hat | Copa baixa e desestruturada, aba curva, ajuste de fivela/tira. | dad hat, boné desestruturado / dad hat, unstructured cap |
-| cap | `FLAT_BRIM_CAP` | CORE | 1 | Aba reta | Flat brim | Copa alta e aba plana (snapback/fitted). | aba reta, snapback, boné aba reta / flat brim, snapback, fitted cap |
-| cap | `TRUCKER_CAP` | CORE | 2 | Trucker | Trucker | Frente de espuma e traseira de tela. | trucker, boné de tela, boné caminhoneiro / trucker hat, mesh cap |
-| cap | `FIVE_PANEL` | EXT | 3 | Five panel | Five-panel | Copa baixa de 5 gomos, aba curta reta (camper). | five panel, camper / five panel, camp cap |
-| cap | `VISOR` | EXT | 3 | Viseira | Visor | Só a aba e a faixa, sem copa. | viseira / visor, sun visor |
-| cap | `MILITARY_CAP` | NICHE | 4 | Quepe | Military cap | Copa reta achatada no topo e aba curta. | boné militar, quepe / military cap, cadet cap |
-| hat | `BUCKET_HAT` | CORE | 1 | Bucket | Bucket hat | Aba curta inclinada para baixo em toda a volta. | bucket, chapéu bucket, pescador / bucket hat, fisherman hat |
-| hat | `FEDORA` | CORE | 1 | Fedora | Fedora | Aba média, copa com vinco central e pinças na frente (de palha = panamá). | fedora, panamá, panama, chapéu social / fedora, panama |
-| hat | `BERET` | CORE | 2 | Boina | Beret | Redonda, macia e achatada, sem aba. | boina, boina francesa / beret |
-| hat | `FLOPPY_HAT` | CORE | 2 | Aba larga | Floppy hat | Aba muito larga e mole. | chapéu de praia, aba larga, floppy / floppy hat, sun hat, wide brim |
-| hat | `FLAT_CAP` | EXT | 2 | Boina inglesa | Flat cap | Achatada com pequena aba frontal (inclui newsboy de gomos). | boina inglesa, gatsby, newsboy, boina de aba / flat cap, newsboy, ivy cap |
-| hat | `COWBOY_HAT` | EXT | 2 | Chapéu country | Cowboy hat | Aba larga curvada nas laterais e copa alta. | chapéu country, chapéu de cowboy, chapéu de peão / cowboy hat, western hat |
-| hat | `BOATER` | EXT | 3 | Palheta | Boater | Copa baixa e plana, aba reta, de palha rígida. | palheta, boater / boater, skimmer |
-| hat | `TRILBY` | EXT | 3 | Trilby | Trilby | Como o fedora, mas com aba curta virada para baixo atrás. | trilby / trilby |
-| hat | `CLOCHE` | NICHE | 4 | Cloche | Cloche | Em forma de sino, justo na cabeça (anos 20). | cloche / cloche |
-| hat | `BOWLER_HAT` | NICHE | 5 | Chapéu coco | Bowler | Copa arredondada e rígida. | chapéu coco, coco / bowler, derby hat |
-| beanie | `CUFFED_BEANIE` | CORE | 1 | Gorro com dobra | Cuffed beanie | Gorro com barra dobrada. | gorro com dobra, gorro dobrado / cuffed beanie, watch cap |
-| beanie | `SLOUCHY_BEANIE` | CORE | 1 | Gorro caído | Slouchy beanie | Comprido, com sobra caída atrás. | gorro caído, slouchy / slouchy beanie |
-| beanie | `FISHERMAN_BEANIE` | EXT | 2 | Gorro curto | Fisherman beanie | Curto, acima das orelhas. | gorro curto, gorro pescador / fisherman beanie, docker |
-| beanie | `BALACLAVA` | EXT | 3 | Balaclava | Balaclava | Cobre cabeça e pescoço, com abertura no rosto. | balaclava, touca ninja / balaclava, ski mask |
-| scarf | `LONG_SCARF` | CORE | 1 | Cachecol | Long scarf | Longo e retangular, enrolado no pescoço. | cachecol, cachecol longo / long scarf, oblong scarf |
-| scarf | `SQUARE_SCARF` | CORE | 1 | Lenço | Square scarf | Lenço quadrado (seda, carré). | lenço, lenço de seda, carré, foulard / square scarf, silk scarf, foulard |
-| scarf | `BLANKET_SCARF` | CORE | 2 | Xale | Blanket scarf | Grande e largo, usado sobre os ombros (echarpe, estola). | xale, manta, echarpe, estola, pashmina / blanket scarf, shawl, wrap |
-| scarf | `INFINITY_SCARF` | EXT | 2 | Gola | Infinity scarf | Tubo fechado, sem pontas (snood). | gola, gola infinita, cachecol gola, snood / infinity scarf, snood, loop scarf |
-| scarf | `BANDANA` | EXT | 2 | Bandana | Bandana | Pequeno lenço quadrado de algodão, dobrado em triângulo. | bandana / bandana, kerchief |
-| scarf | `SKINNY_SCARF` | EXT | 3 | Twilly | Skinny scarf | Tira estreita amarrada no pescoço ou na alça da bolsa. | twilly, lenço fino, lencinho / skinny scarf, twilly |
-| tie | `CLASSIC_TIE` | CORE | 1 | Gravata tradicional | Classic tie | Largura de 7–9 cm, ponta em V. | gravata tradicional, gravata clássica / classic tie, standard tie |
-| tie | `SLIM_TIE` | CORE | 1 | Gravata slim | Slim tie | Largura em torno de 6 cm. | gravata slim / slim tie |
-| tie | `SKINNY_TIE` | EXT | 2 | Gravata fina | Skinny tie | Largura em torno de 4–5 cm. | gravata fina, gravata skinny / skinny tie |
-| tie | `KNIT_TIE` | EXT | 3 | Gravata de tricô | Knit tie | Malha de tricô com ponta reta. | gravata de tricô, gravata tricot / knit tie |
-| tie | `ASCOT_TIE` | NICHE | 4 | Plastrom | Ascot | Larga, presa sob a gola em trajes de gala. | plastrom, plastron, ascot / ascot, cravat |
-| tie | `BOLO_TIE` | NICHE | 5 | Gravata country | Bolo tie | Cordão com ponteiras e ornamento deslizante. | gravata country, bolo / bolo tie |
-| bow_tie | `PRE_TIED_BOW` | CORE | 1 | Nó pronto | Pre-tied | Gravata-borboleta já atada, com regulador. | nó pronto, pré atada / pre tied |
-| bow_tie | `SELF_TIE_BOW` | CORE | 1 | Para dar nó | Self-tie | Gravata-borboleta que se amarra à mão. | para dar nó, de amarrar / self tie, freestyle |
-| sunglasses | `AVIATOR` | CORE | 1 | Aviador | Aviator | Lentes em gota, ponte dupla e armação de metal fina. | aviador, piloto / aviator, pilot |
-| sunglasses | `WAYFARER` | CORE | 1 | Wayfarer | Wayfarer | Acetato com topo mais largo que a base (trapezoidal). | wayfarer, trapezoidal / wayfarer, d-frame |
-| sunglasses | `SQUARE_FRAME` | CORE | 1 | Quadrado | Square | Altura e largura parecidas, cantos retos. | quadrado, quadrada / square |
-| sunglasses | `ROUND_FRAME` | CORE | 1 | Redondo | Round | Lentes circulares. | redondo, redonda / round |
-| sunglasses | `CAT_EYE` | CORE | 1 | Gatinho | Cat eye | Cantos superiores externos levantados. | gatinho, cat eye, olho de gato / cat eye, cat-eye |
-| sunglasses | `RECTANGLE_FRAME` | CORE | 2 | Retangular | Rectangle | Mais largo que alto, perfil estreito. | retangular, estreito / rectangle, rectangular, narrow |
-| sunglasses | `OVERSIZED_FRAME` | CORE | 2 | Lentes grandes | Oversized | Armação e lentes bem maiores que o rosto. | lentes grandes, maxi óculos, oversized / oversized, big lens |
-| sunglasses | `SHIELD` | EXT | 2 | Máscara | Shield | Lente única contínua cobrindo os dois olhos. | máscara, lente única, shield / shield, visor glasses |
-| sunglasses | `BROWLINE` | EXT | 2 | Clubmaster | Browline | Parte superior grossa (sobrancelha) e inferior fina ou de metal. | clubmaster, browline / browline, clubmaster |
-| sunglasses | `OVAL_FRAME` | EXT | 3 | Oval | Oval | Lentes ovais. | oval / oval |
-| sunglasses | `WRAPAROUND` | EXT | 3 | Envolvente | Wraparound | Armação curva que envolve a lateral do rosto (esportivo). | envolvente, curvado, esportivo / wraparound, sport |
-| sunglasses | `GEOMETRIC_FRAME` | EXT | 3 | Geométrico | Geometric | Lentes poligonais (hexagonal, octogonal). | hexagonal, octogonal, geométrico / geometric, hexagonal, octagonal |
-| sunglasses | `BUTTERFLY_FRAME` | NICHE | 4 | Borboleta | Butterfly | Lentes grandes que se alargam na parte inferior externa. | borboleta / butterfly |
-| eyeglasses | `RECTANGLE_FRAME` | CORE | 1 | Retangular | Rectangle | Mais largo que alto, perfil estreito. | retangular, estreito / rectangle, rectangular, narrow |
-| eyeglasses | `ROUND_FRAME` | CORE | 1 | Redondo | Round | Lentes circulares. | redondo, redonda / round |
-| eyeglasses | `SQUARE_FRAME` | CORE | 1 | Quadrado | Square | Altura e largura parecidas, cantos retos. | quadrado, quadrada / square |
-| eyeglasses | `WAYFARER` | CORE | 2 | Wayfarer | Wayfarer | Acetato com topo mais largo que a base (trapezoidal). | wayfarer, trapezoidal / wayfarer, d-frame |
-| eyeglasses | `CAT_EYE` | CORE | 2 | Gatinho | Cat eye | Cantos superiores externos levantados. | gatinho, cat eye, olho de gato / cat eye, cat-eye |
-| eyeglasses | `OVAL_FRAME` | CORE | 2 | Oval | Oval | Lentes ovais. | oval / oval |
-| eyeglasses | `BROWLINE` | EXT | 2 | Clubmaster | Browline | Parte superior grossa (sobrancelha) e inferior fina ou de metal. | clubmaster, browline / browline, clubmaster |
-| eyeglasses | `AVIATOR` | EXT | 3 | Aviador | Aviator | Lentes em gota, ponte dupla e armação de metal fina. | aviador, piloto / aviator, pilot |
-| eyeglasses | `GEOMETRIC_FRAME` | EXT | 3 | Geométrico | Geometric | Lentes poligonais (hexagonal, octogonal). | hexagonal, octogonal, geométrico / geometric, hexagonal, octagonal |
-| eyeglasses | `OVERSIZED_FRAME` | EXT | 3 | Lentes grandes | Oversized | Armação e lentes bem maiores que o rosto. | lentes grandes, maxi óculos, oversized / oversized, big lens |
-| necklace | `CHAIN_NECKLACE` | CORE | 1 | Corrente | Chain | Só a corrente (cartier, grumet, veneziana…). | corrente, cordão / chain necklace |
-| necklace | `PENDANT_NECKLACE` | CORE | 1 | Pingente | Pendant | Corrente com um pingente ou medalha. | pingente, colar com pingente, medalha / pendant necklace |
-| necklace | `CHOKER` | CORE | 1 | Choker | Choker | Justo ao pescoço (gargantilha, 30–36 cm). | choker, gargantilha / choker, collar necklace |
-| necklace | `LAYERED_NECKLACE` | CORE | 2 | Camadas | Layered | Vários fios de comprimentos diferentes num só colar. | colar de camadas, mix de correntes / layered necklace, multi strand |
-| necklace | `STRAND_NECKLACE` | EXT | 2 | Fio de contas | Strand | Contas ou pérolas enfiadas num fio. | fio de pérolas, colar de contas, colar de pérolas / strand, beaded necklace, pearl strand |
-| necklace | `TENNIS_NECKLACE` | EXT | 2 | Riviera | Tennis | Fileira contínua de pedras. | riviera, colar riviera / tennis necklace, riviera |
-| necklace | `LARIAT` | EXT | 3 | Gravatinha | Lariat | Fio que forma um Y, com ponta pendente. | gravatinha, colar y, lariat / lariat, y necklace |
-| necklace | `STATEMENT_NECKLACE` | EXT | 3 | Maxi colar | Statement | Grande e chamativo. | maxi colar, maxicolar, colarão / statement necklace, bib necklace |
-| necklace | `SCAPULAR` | EXT | 3 | Escapulário | Scapular | Dois pingentes ligados, um na frente e outro nas costas. | escapulário / scapular |
-| necklace | `LOCKET` | NICHE | 4 | Relicário | Locket | Pingente que abre para guardar foto. | relicário / locket |
-| bracelet | `CHAIN_BRACELET` | CORE | 1 | Elos | Chain | Pulseira de corrente ou elos. | pulseira de elos, corrente, grumet / chain bracelet, link bracelet |
-| bracelet | `BANGLE` | CORE | 1 | Bracelete | Bangle | Bracelete rígido fechado (argola). | bracelete, pulseira rígida, argola / bangle |
-| bracelet | `CUFF_BRACELET` | CORE | 2 | Bracelete aberto | Cuff | Bracelete rígido aberto. | bracelete aberto, cuff / cuff, cuff bracelet |
-| bracelet | `BEADED_BRACELET` | CORE | 2 | Contas | Beaded | Contas ou miçangas. | miçanga, miçangas, contas, pulseira de pedras / beaded bracelet |
-| bracelet | `CHARM_BRACELET` | EXT | 2 | Berloques | Charm | Corrente com pingentes (charms). | berloque, berloques, pulseira de berloques / charm bracelet |
-| bracelet | `TENNIS_BRACELET` | EXT | 2 | Riviera | Tennis | Fileira contínua de pedras. | riviera, pulseira riviera / tennis bracelet |
-| bracelet | `CORD_BRACELET` | EXT | 3 | Fio | Cord | Fio, couro ou macramê com nó corrediço. | pulseira de fio, macramê, fitinha / cord bracelet, friendship bracelet |
-| earrings | `STUD` | CORE | 1 | Ponto de luz | Stud | Fixo no lóbulo, sem pendente. | ponto de luz, botão, pino, brinco pequeno / stud, solitaire stud |
-| earrings | `HOOP` | CORE | 1 | Argola | Hoop | Argola. | argola / hoop |
-| earrings | `DROP` | CORE | 1 | Pendente | Drop | Pende abaixo do lóbulo (gota). | pendente, gota, brinco pendurado, pêndulo / drop, dangle |
-| earrings | `HUGGIE` | CORE | 2 | Argolinha | Huggie | Argolinha justa ao lóbulo. | argolinha, huggie / huggie |
-| earrings | `CHANDELIER` | EXT | 2 | Cascata | Chandelier | Pendente grande, em camadas. | cascata, lustre / chandelier, cascade |
-| earrings | `EAR_CUFF` | EXT | 2 | Ear cuff | Ear cuff | Abraça a cartilagem sem furo. | ear cuff, piercing fake / ear cuff |
-| earrings | `STATEMENT_EARRING` | EXT | 3 | Maxi brinco | Statement | Grande e chamativo, peça principal do look. | maxi brinco, maxibrinco / statement earring |
-| earrings | `FRINGE_EARRING` | EXT | 3 | Franja | Fringe | Fios ou correntes finas pendentes. | franja, brinco de franja / fringe earring, tassel earring |
-| earrings | `CLIMBER` | NICHE | 4 | Ear climber | Ear climber | Sobe pela borda da orelha a partir do furo. | ear climber, brinco escalador, trepador / climber, crawler |
-| earrings | `THREADER` | NICHE | 4 | Brinco de fio | Threader | Corrente fina que atravessa o furo e pende. | brinco de fio / threader |
-| ring | `BAND_RING` | CORE | 1 | Aliança | Band | Aro liso ou trabalhado, sem pedra central. | aliança, aro, anel liso, anel fino / band, stackable ring |
-| ring | `SOLITAIRE` | CORE | 1 | Solitário | Solitaire | Uma pedra central em destaque. | solitário / solitaire |
-| ring | `SIGNET` | EXT | 2 | Chevalier | Signet | Face plana gravável (brasão, iniciais). | chevalier, anel de selo, sinete / signet ring |
-| ring | `COCKTAIL_RING` | EXT | 2 | Maxi anel | Cocktail | Grande, com pedra ou ornamento chamativo. | maxi anel, anel coquetel / cocktail ring, statement ring |
-| ring | `OPEN_RING` | EXT | 2 | Ajustável | Open | Aro aberto com pontas que não se encontram. | anel aberto, ajustável / open ring, adjustable ring |
-| ring | `ETERNITY_RING` | EXT | 3 | Meia-aliança | Eternity | Fileira de pedras ao redor do aro. | meia aliança, aliança cravejada, eternidade / eternity ring, half eternity |
-| ring | `MIDI_RING` | EXT | 3 | Anel de falange | Midi ring | Usado acima da articulação do dedo. | anel de falange, falange / midi ring, knuckle ring |
-| ring | `ENHANCER_RING` | NICHE | 4 | Aparador | Enhancer | Usado junto da aliança ou do solitário. | aparador / enhancer, ring guard |
-| ring | `CLUSTER_RING` | NICHE | 4 | Cluster | Cluster | Várias pedras pequenas agrupadas. | cluster / cluster ring |
-| watch | `ANALOG_WATCH` | CORE | 1 | Analógico | Analog | Mostrador com ponteiros. | analógico, de ponteiro / analog |
-| watch | `DIGITAL_WATCH` | CORE | 1 | Digital | Digital | Visor numérico. | digital / digital |
-| watch | `SMARTWATCH` | CORE | 1 | Smartwatch | Smartwatch | Tela conectada ao celular. | smartwatch, relógio inteligente / smartwatch |
-| watch | `ANADIGI_WATCH` | EXT | 3 | Anadigi | Ana-digi | Ponteiros e visor digital juntos. | anadigi, analógico digital, híbrido / ana-digi, hybrid |
-| wallet | `BIFOLD` | CORE | 1 | Dobra dupla | Bifold | Carteira de duas dobras. | carteira tradicional, bifold, dobra dupla / bifold |
-| wallet | `CARD_HOLDER` | CORE | 1 | Porta-cartão | Card holder | Fina, só para cartões. | porta cartão, porta cartões, carteira slim / card holder, card case, slim wallet |
-| wallet | `LONG_WALLET` | CORE | 1 | Carteira longa | Long wallet | Comprida, com zíper ou aba (continental). | carteira longa, carteira feminina, continental / long wallet, continental, zip around |
-| wallet | `TRIFOLD` | EXT | 2 | Três dobras | Trifold | Carteira de três dobras. | trifold, três dobras / trifold |
-| wallet | `COIN_PURSE` | EXT | 3 | Porta-moedas | Coin purse | Porta-moedas. | porta moedas, moedeira / coin purse |
-| wallet | `MONEY_CLIP` | NICHE | 4 | Prendedor de notas | Money clip | Prendedor de dinheiro. | prendedor de dinheiro, clipe de dinheiro / money clip |
-| gloves | `FIVE_FINGER` | CORE | 1 | Cinco dedos | Full-finger | Luva tradicional, com os cinco dedos. | luva tradicional, luva de dedos / full finger gloves |
-| gloves | `FINGERLESS` | EXT | 2 | Sem dedos | Fingerless | Meio dedo, pontas dos dedos livres (mitene, no Brasil). | sem dedos, meio dedo, mitene / fingerless |
-| gloves | `MITTEN` | EXT | 3 | Sem divisão | Mitten | Dedos juntos num só compartimento, polegar separado. | luva sem divisão, luva inteiriça, mitten / mitten, mittens |
-| socks | `TIGHTS` | CORE | 1 | Meia-calça | Tights | Meia-calça da cintura aos pés. | meia calça, meia-calça / tights, pantyhose |
-| socks | `CUSHIONED_SOCK` | CORE | 2 | Atoalhada | Cushioned | Sola felpuda acolchoada (esportiva). | atoalhada, meia esportiva, felpuda / cushioned, athletic sock, terry sock |
-| socks | `COMPRESSION_SOCK` | EXT | 2 | Compressão | Compression | Meia de compressão graduada. | meia de compressão, compressiva / compression sock |
-| socks | `FISHNET` | EXT | 3 | Arrastão | Fishnet | Malha de rede aberta. | arrastão, meia arrastão / fishnet |
-| socks | `TOE_SOCK` | NICHE | 4 | Dedinhos | Toe socks | Cada dedo separado. | meia de dedinho, meia dedos / toe socks |
-| socks | `LEG_WARMER` | NICHE | 4 | Polaina | Leg warmer | Tubo de malha da canela ao tornozelo, sem pé. | polaina / leg warmer |
-| hair_accessory | `SCRUNCHIE` | CORE | 1 | Xuxinha | Scrunchie | Elástico revestido de tecido franzido. | xuxinha, chuchinha, scrunchie / scrunchie |
-| hair_accessory | `CLAW_CLIP` | CORE | 1 | Piranha | Claw clip | Prendedor de garras com mola. | piranha, presilha piranha / claw clip, hair claw |
-| hair_accessory | `HEADBAND` | CORE | 1 | Tiara | Headband | Arco sobre a cabeça (no Brasil, 'tiara'). | tiara, arco / headband, alice band |
-| hair_accessory | `BARRETTE` | CORE | 1 | Presilha | Barrette | Prendedor achatado com trava. | presilha, fivela de cabelo / barrette, hair clip |
-| hair_accessory | `HAIR_BOW` | CORE | 2 | Laço | Bow | Laço de cabelo. | laço, laço de cabelo / hair bow |
-| hair_accessory | `DUCKBILL_CLIP` | EXT | 2 | Bico de pato | Duckbill clip | Presilha longa e fina de pressão. | bico de pato, tic tac / duckbill clip, snap clip |
-| hair_accessory | `HAIR_TIE` | EXT | 2 | Elástico | Hair tie | Elástico simples. | elástico de cabelo, liga / hair tie, elastic |
-| hair_accessory | `HEAD_WRAP` | EXT | 2 | Faixa/turbante | Head wrap | Tecido amarrado na cabeça. | faixa de cabelo, turbante, lenço de cabelo / head wrap, turban, headscarf |
-| hair_accessory | `BOBBY_PIN` | NICHE | 4 | Grampo | Bobby pin | Grampo. | grampo / bobby pin, hair pin |
-| hair_accessory | `FASCINATOR` | NICHE | 4 | Arranjo | Fascinator | Adorno de festa preso no cabelo. | arranjo, casquete, fascinator / fascinator, headpiece |
+1. **Entrada do modelo.** Para a subcategoria escolhida ou detectada, o prompt envia:
+   - só as variações vinculadas (código + `descriptionPtBr`, CORE e EXTENDED primeiro);
+   - só as dimensões e valores do `appliesTo` daquela subcategoria.
+   - Isso substitui a lista crua de códigos do `ANALYZER_SYSTEM`.
+2. **Saída.**
+   - Campos: `variation` (código da lista ou `"UNKNOWN"`), `variationConfidence` 0–1, `attributes` (`{DIM: código | [códigos]}`) e `confidence` por dimensão.
+   - Códigos fora do vocabulário são **descartados**, como `Taxonomy.keepAllowed` já faz com estilo e ocasião.
+3. **Normalização de texto livre** (busca, Copilot, títulos do catálogo):
+   1. `CatalogNormalizer.key`;
+   2. resolve a subcategoria pelo núcleo do nome (regra atual de `infer_subcategory`);
+   3. no texto restante, casa os aliases das variações **vinculadas** àquela subcategoria (frase mais longa primeiro).
+   - Assim "cargo" em "bermuda cargo" vira `bermuda_shorts.CARGO`, não `cargo_pants`.
+   - Há 21 aliases que coincidem com sinônimo de outra subcategoria (`chino`, `cargo`, `alfaiataria`, `quarter zip`, `tank`…). Estão listados na validação e seguem essa precedência.
+   - `MODIFIERS` deixa de descartar "bootcut": o termo passa a ser lido como variação depois que a subcategoria é fixada.
+4. **Limiares propostos:**
+   - ≥ 0,6: aceita, `source=AI`;
+   - 0,4–0,6: sugestão para o usuário ("Parece wide leg — confirmar?");
+   - < 0,4: `UNKNOWN`, gravado como `NULL`.
+   - O usuário corrige a qualquer momento (`source=USER`). O catálogo oficial vale `source=CATALOG/OFFICIAL`.
+5. **Proibido:**
+   - variação de outra subcategoria (a FK composta recusa `casual_sneakers + CHELSEA`);
+   - mais de 2 estilos ou ocasiões na peça (3 no esquema);
+   - ocasião fora de `allowedOccasions`;
+   - inventar marca.
 
 ---
 
 ## E. Modelo de dados
 
-### E.1 Tabelas × ENUM × JSON: por que tabelas
+### E.1 Tabelas de referência (por que tabelas, e não ENUM nem só JSON)
 
-| Critério | ENUM do MySQL | Coluna JSON | **Tabelas de vocabulário (proposta)** |
+| Opção | Prós | Contras | Veredito |
 |---|---|---|---|
-| Acrescentar um valor | `ALTER TABLE` na tabela de fatos (lock em `wardrobe_items`/`catalog_products`) + deploy | livre, sem integridade | `INSERT` numa tabela pequena; dá para usar migration ou tela de admin |
-| Garantir o vocabulário | sim | **não** (qualquer texto entra) | **sim, por FK**, inclusive "variação pertence à subcategoria" (FK composta) |
-| Nomes PT/EN, descrição, tier, prioridade, aliases | não cabe | duplicado em cada linha | uma linha por código |
-| `/api/taxonomy` e i18n | lista no código | idem | lido do banco, sem duplicar no front |
-| Filtro e contagem por faceta | bom | ruim (`JSON_TABLE`, sem índice) | bom (índice por `dimension, value`) |
-| Peça com 2 estilos / 3 acabamentos | não (SET seria pior) | sim, sem limite garantido | linhas peça→valor + limite na aplicação |
+| `ENUM` MySQL nas colunas | Validação no banco | Cada valor novo exige `ALTER TABLE` em tabela grande; não guarda rótulo, alias, tier nem `appliesTo`; não expressa N:N | ❌ |
+| Só JSON (`attributes_json` na peça) | Flexível | Sem FK; facetas com contagem exigem colunas geradas por atributo; validação só na aplicação | ❌ como fonte (pode existir como cache) |
+| **Tabelas de referência + vínculo N:N + EAV tipado** | FK real; N:N subcategoria×variação; aliases indexados; `appliesTo` consultável; facetas por `GROUP BY` em índice; tudo aditivo | Mais tabelas e joins | ✅ |
 
-**Decisão proposta:**
+Tabelas (DDL completo em `proposta/seed_piece_variations.sql`):
+- **`piece_category`** (code PK) e **`piece_subcategory`** (code PK, category_code FK, status, concept_issue, implied_attributes_json). Os códigos são os existentes; usa-se `status=DEPRECATED` em vez de apagar.
+- **`piece_variation`** (code PK, rótulos, description_pt, status): catálogo global.
+- **`piece_subcategory_variation`** ((subcategory_code, variation_code) PK, tier, priority, sort_order, implied_attributes_json): é a **aplicabilidade**. CHELSEA nunca entra em sneakers porque o vínculo não existe.
+- **`piece_variation_alias`** (variation_code, scope_subcategory `'*'` ou código, alias, alias_norm). O escopo resolve "pantalona" = WIDE_LEG em jeans e PALAZZO em calça casual.
+- **`attribute_dimension`**, **`attribute_value`** ((dimension_code, code) PK), **`attribute_value_alias`** e **`attribute_applicability`** (dimension, value ou `'*'`, subcategory): `appliesTo` materializado.
+- **`catalog_product_attribute`** e **`wardrobe_item_attribute`** ((item, dimension, value) PK, source, confidence), com índice `(dimension, value, item)` para facetas.
 
-- **Vocabulário em tabelas.**
-- **Variação como coluna** `variation_code` na peça e no produto. É o terceiro nível da hierarquia: é único, aparece sempre e é usado em todas as telas.
-- **Demais dimensões como linhas** em `*_attributes`. São opcionais, muitas são multivaloradas e o conjunto cresce sem DDL.
+### E.2 Relação com WardrobeItem, CatalogProduct e Brand
 
-As colunas atuais (`category`, `subcategory`, `color`, `material`, `sex`/`gender`, `style_tags`, `occasion_tags`) **continuam**. A nova escrita grava nos dois lugares até a leitura migrar (F.3).
+- **Colunas novas.** `wardrobe_items` e `catalog_products` ganham `variation_code VARCHAR(60) NULL`, `variation_source` e `variation_confidence`. Tudo nullable: peças antigas e peças sem variação continuam válidas.
+- **FK composta** `(subcategory, variation_code) → piece_subcategory_variation`. O MySQL ignora a FK quando `variation_code` é NULL. Testado: aceita `jeans/WIDE_LEG` e `t_shirt/NULL`; recusa `casual_sneakers/CHELSEA`.
+- **Atributos** multi e de baixa cardinalidade ficam nas tabelas EAV.
+  - As colunas legadas `color`, `material`, `style_tags`, `occasion_tags` e `sex` **continuam sendo a fonte da verdade** desses 5 campos durante a transição.
+  - O EAV recebe um espelho (dupla escrita) para servir facetas. Nada é removido.
+- **WardrobeItem ← CatalogProduct.** Quando a peça vem do catálogo (`catalog_product_id`), herda `variation_code` e os atributos com `source=CATALOG`. O usuário pode sobrescrever.
+- **Brand** continua em `brands` + `brand_aliases` (V30). A marca é FK, não valor de dimensão.
+- **Preço.** `catalog_products` ganha `price_amount`, `price_currency`, `price_brl` e `price_observed_at`; `wardrobe_items` ganha `price_currency`.
 
-### E.2 Diagrama
+### E.3 Fonte da verdade e geração
 
-```mermaid
-erDiagram
-  taxonomy_categories ||--o{ taxonomy_subcategories : contém
-  taxonomy_subcategories ||--o{ taxonomy_subcategory_variations : "tem variações"
-  taxonomy_variations ||--o{ taxonomy_subcategory_variations : "usada em"
-  taxonomy_subcategories ||--o{ taxonomy_subcategory_mappings : "legado → novo"
-  taxonomy_dimensions ||--o{ taxonomy_values : "valores"
-  taxonomy_dimensions ||--o{ taxonomy_dimension_scopes : "vale para"
-  taxonomy_aliases }o--|| taxonomy_variations : "alias de"
-  brands ||--o{ catalog_products : "N:1"
-  brands ||--o{ brand_style_priors : "estilo típico"
-  catalog_products ||--o{ catalog_variants : "cores/SKUs"
-  catalog_products ||--o{ catalog_product_attributes : "atributos"
-  catalog_products }o--o| taxonomy_subcategory_variations : "subcategory+variation_code"
-  wardrobe_items }o--o| catalog_products : "veio do catálogo"
-  wardrobe_items ||--o{ wardrobe_item_attributes : "atributos"
-  wardrobe_items }o--o| taxonomy_subcategory_variations : "subcategory+variation_code"
-  wardrobe_item_attributes }o--|| taxonomy_values : "dimension+value"
-  catalog_product_attributes }o--|| taxonomy_values : "dimension+value"
-```
+- **Proposta: um único arquivo versionado como fonte.** O `normalization.json` ganha as seções `variations`, `subcategoryVariations` e `attributeDimensions` (formato em `proposta/taxonomia_variacoes.json`). Ele já é lido por Java e Python, o que evita um 3º arquivo.
+- **Gerado a partir dele:**
+  - o **seed SQL** da migration, por script de build. Um teste compara banco × JSON, como o `CatalogNormalizerTest` já faz;
+  - as constantes de `Taxonomy.java`, que **passam a ser lidas** do JSON via `CatalogNormalizer` (fim da duplicação B.1-1);
+  - os rótulos pt/en/es do front, servidos por `/api/taxonomy` e substituindo `labels-*.ts` aos poucos.
+- **`/api/taxonomy`** recebe só acréscimos, sem mudar nenhum campo atual:
+  - `taxonomyVersion`;
+  - `variationsBySubcategory` (`{sub: [{code, tier, priority, labelPt, labelEn, description}]}`);
+  - `attributeDimensions` (com `appliesTo` por subcategoria);
+  - `impliedAttributes`.
+  - Os aliases vão para `GET /api/taxonomy/aliases` (pesado, com cache e ETag).
 
-### E.3 Tabelas
+### E.4 Compatibilidade
 
-**Vocabulário** (DDL completa em `proposta/seed_piece_variations.sql` e na V39):
-
-| Tabela | Chave | Colunas principais |
-|---|---|---|
-| `taxonomy_categories` | `code` | nomes PT/EN, ordem, ativo |
-| `taxonomy_subcategories` | `code` | `category_code` FK, nomes, `status` ACTIVE/LEGACY (CHECK), `replaced_by_code` FK, ordem |
-| `taxonomy_subcategory_mappings` | (`legacy_code`, `dimension_code`) | o que o legado implica: `VARIATION=COMBAT`, `LENGTH=KNEE`…; `needs_review` |
-| `taxonomy_variations` | `code` | nomes PT/EN, `description_pt_br`, ativo |
-| `taxonomy_subcategory_variations` | (`subcategory_code`, `variation_code`) | `tier` (CHECK), `priority` 1–5 (CHECK), ordem, ativo |
-| `taxonomy_dimensions` | `code` | nomes, `multi_valued`, `max_per_piece`, `max_per_scheme`, `ai_assignable` |
-| `taxonomy_dimension_scopes` | (`dimension_code`, `category_code`, `subcategory_code`) | onde a dimensão se aplica (alimenta formulário, filtros e prompt) |
-| `taxonomy_values` | (`dimension_code`, `code`) | nomes, descrição, `tier`, `priority`, `value_group` (ex.: WASH/DISTRESS), `hex` (cores), escopo opcional |
-| `taxonomy_aliases` | `id`; UNIQUE (`target_type`, `dimension_code`, `scope_subcategory_code`, `alias_norm`) | alias → código, normalizado igual ao `CatalogNormalizer.key()`, locale, `source` CURATED/LEARNED |
-
-**Fatos** (só colunas novas e anuláveis):
-
-| Tabela | Acréscimo | Observação |
-|---|---|---|
-| `wardrobe_items` (peça) | `variation_code` VARCHAR(60) NULL; `variation_status` (USER_CONFIRMED · AI_SUGGESTED · NEEDS_REVIEW · UNKNOWN); `variation_confidence` DECIMAL(4,3); `price_currency` CHAR(3) DEFAULT 'BRL' | FK composta (`subcategory`, `variation_code`) → `taxonomy_subcategory_variations`. Com `variation_code` NULL, o MySQL não verifica a FK, então os dados atuais passam. |
-| `wardrobe_item_attributes` (nova) | (`item_id`, `dimension_code`, `value_code`) PK; `source` (USER · AI · CATALOG · RULE); `confidence`; `position`; `created_at` | FK para `taxonomy_values`; índice (`dimension_code`, `value_code`, `item_id`) para filtro. Estilo e ocasião passam a ter linhas aqui (≤ 2), e o CSV continua por compatibilidade. |
-| `catalog_products` | `variation_code`, `variation_status`, `variation_confidence`; `price_min` / `price_max` DECIMAL(12,2), `price_currency` CHAR(3), `list_price` (riscado), `price_source` (JSONLD_OFFER · JSONLD_AGGREGATE · META · MANUAL), `price_checked_at`; `age_group` VARCHAR(10) | FK composta igual à da peça |
-| `catalog_variants` | `price` DECIMAL(12,2), `price_currency` | quando a página traz preço por cor/SKU |
-| `catalog_product_attributes` (nova) | mesma forma de `wardrobe_item_attributes` | estilo e ocasião do catálogo (≤ 2), acabamento, comprimento… |
-| `brand_style_priors` (nova) | (`brand_id`, `style_code`) PK, `weight` | estilo típico da marca, usado pelas regras (H.4) |
-| `brands` | `price_tier` VARCHAR(10) NULL (BUDGET · MID · PREMIUM · LUXURY), CHECK | calculado da mediana de preço do catálogo da marca |
-
-### E.4 Relação peça × produto × marca
-
-- **`CatalogProduct` N:1 `Brand`** (já existe, FK V34).
-  - O produto tem uma subcategoria e no máximo uma variação.
-  - As cores ficam em `catalog_variants`, como hoje.
-  - Os demais atributos ficam em `catalog_product_attributes`.
-- **`WardrobeItem` N:0..1 `CatalogProduct`** (já existe, `catalog_product_id`).
-  - Quando a peça vem do catálogo, ela **copia** subcategoria, variação e atributos, com `source=CATALOG`.
-  - A peça é da pessoa e pode divergir (ex.: ela cortou a barra), então copiar é melhor do que ler do produto.
-  - Isso substitui as constantes de hoje (BLEND, `basic`, `casual`, preço 0) pelos valores do produto, quando existem.
-- **`WardrobeItem` N:0..1 `Brand`:** já existe e continua.
-- **`Brand` 1:N `brand_style_priors`:** prior de estilo para regras e IA.
-- **Esquema (look):** estilo e ocasião continuam no esquema (≤ 3). O look **não** guarda variação; ela é de cada peça.
+- Nenhum código existente é renomeado, apagado ou muda de caixa. Os novos seguem UPPER_SNAKE_CASE, como já fazem `MATERIALS`, `SEXES` e `design.patterns`.
+- Os consumidores de `subcategory` não mudam: `capture_sessions`, `piece_images`, `garment_embeddings`, `kb_product_models`, regras de selo, `CaptureProfiles`, `SNEAKERS`, `RIGID_SUBCATEGORIES`.
+- Variação ausente = `NULL`; a UI mostra "Não informado".
 
 ---
 
-## F. Plano de migration (V39+, só aditivo)
+## F. Plano de migration e impacto por módulo
 
-A `main` está em **V37**. A branch de deploy (`claude/fashion-ai-interfaces-config-id7naj`) e a produção estão na **V38** (`identidade_do_avatar_versionada`, log do deploy de 05/10/2026), que ainda não está na `main`. Por isso a taxonomia começa na **V39**; a `main` precisa receber a V38 do avatar antes (ou junto) do merge desta série. Nenhuma migration abaixo faz `DROP`, `RENAME`, `NOT NULL` em coluna existente ou `UPDATE` em dado de usuário.
+### F.1 Migrations (só aditivas, a partir da V44 — V38–V43 já existem no main)
 
-| Versão | Conteúdo | Risco / observação |
+| Versão | Conteúdo | Rollback |
 |---|---|---|
-| **V39__taxonomia_vocabulario.sql** | `CREATE TABLE` das 9 tabelas de vocabulário (E.3). CHECKs de tier, priority, status e target_type. | tabelas novas e vazias; nenhum lock em tabela existente |
-| **V40__taxonomia_seed_estrutura.sql** | 5 categorias; 80 subcategorias (78 atuais, sendo 8 LEGACY, + `top` e `boots`); mapeamentos de legado; 23 dimensões com escopo | gerada do JSON; `INSERT … AS new ON DUPLICATE KEY UPDATE` (idempotente) |
-| **V41__taxonomia_seed_valores.sql** | valores das dimensões: os atuais (59 cores, 25 estilos, 20 ocasiões, 3 gêneros) **sem mudar código** + os novos; aliases de valor | idem |
-| **V42__taxonomia_seed_variacoes.sql** | 353 variações, 530 ligações, 2.486 aliases de variação | é o conteúdo de `proposta/seed_piece_variations.sql`, sem a DDL |
-| **V43__peca_variacao_e_atributos.sql** | `ALTER TABLE wardrobe_items ADD variation_code, variation_status, variation_confidence, price_currency` (anuláveis/default); índice (`subcategory`, `variation_code`); FK composta; `CREATE TABLE wardrobe_item_attributes` | `ADD COLUMN` anulável é INPLACE/INSTANT no MySQL 8; a FK nova é validada de forma trivial (tudo NULL) |
-| **V44__catalogo_variacao_atributos_preco.sql** | `ALTER TABLE catalog_products ADD variation_*, price_*, age_group`; `ALTER TABLE catalog_variants ADD price, price_currency`; `CREATE TABLE catalog_product_attributes, brand_style_priors`; `ALTER TABLE brands ADD price_tier` + CHECK | idem |
-| (job, não migration) | **backfill com dry-run e relatório:** (1) aliases do nome oficial → variação/atributos do catálogo; (2) legado → novo, com `NEEDS_REVIEW` quando `needsReview`; (3) CSV de estilo/ocasião → linhas de atributo; (4) recalcular `search_text` com nomes e aliases da variação | fica fora do Flyway, para poder rodar em lotes, repetir e desfazer |
+| **V44** `taxonomia_variacoes_referencia.sql` | `CREATE TABLE` das 9 tabelas de referência + 2 EAV; seed gerado: categorias, subcategorias, 394 variações, 541 vínculos, ~1,9 mil aliases, 30 dimensões, 387 valores, ~1,4 mil aliases de valor, ~1,65 mil linhas de aplicabilidade | `DROP` das tabelas novas (nenhum dado legado envolvido) |
+| **V45** `variacao_e_preco_nas_pecas.sql` | `ALTER TABLE ... ADD COLUMN` NULL em `wardrobe_items` e `catalog_products` (variação, origem, confiança, preço); índices; FKs compostas; FKs das tabelas EAV | `DROP FOREIGN KEY` + `DROP COLUMN` (testado no schema descartável) |
+| **Backfill** (job idempotente, **fora** do Flyway) | Ver passos abaixo | `UPDATE ... SET variation_code=NULL WHERE variation_source='ALIAS'` + `DELETE FROM *_attribute WHERE source IN ('ALIAS','RULE')` |
 
-**F.3 Ordem de adoção no código** (depois das migrations, em PRs separados):
+Passos do backfill:
+1. **`catalog_products`.** Aplica os aliases da subcategoria primeiro em `product_name` (`source=ALIAS`, confiança 0,8) e depois em `description` (0,6).
+2. **Implícitos.** Aplica os atributos implícitos de subcategoria e variação (`source=RULE`).
+3. **`wardrobe_items`.** Itens vindos do catálogo herdam do produto; os demais recebem os aliases sobre `name`.
+4. **Execução** em lote, com relatório em `catalog_ingestion_runs.report_json`.
 
-1. `TaxonomyRegistry` (cache do banco) atrás do `Taxonomy.java`, mantendo a mesma API pública.
-2. `/api/taxonomy` com as variações e dimensões, mantendo as chaves antigas.
-3. Escrita dupla: colunas antigas + tabelas novas.
-4. Formulário, busca e IA leem o novo.
-5. Quando a leitura das colunas CSV chegar a zero, um PR futuro (fora deste plano aditivo) decide aposentá-las.
+Estimativa no acervo atual:
+- **Variação:** 1.890 produtos pelo nome (19,7%) + 937 pela descrição (29,5% no total).
+- **Nomes ambíguos:** 98 (ex.: "mom slim"). Resolvidos pela frase mais longa ou enviados para revisão.
+- **Atributos casados só pelo nome:** MATERIAL_DETAIL ~2.400 · PATTERN ~1.050 · SLEEVE_LENGTH ~740 · FIT ~710 · CLOSURE ~600 · USAGE_TYPE ~530 · LENGTH ~520.
 
-**Teste de migração:** subir as migrations num MySQL 8 vazio e numa cópia do banco de produção, conferindo contagens e FKs. O seed rascunho já foi carregado duas vezes num MySQL 8.0.46 local (G).
+### F.2 Impacto por módulo
+
+| Módulo | Mudança |
+|---|---|
+| **Backend (domínio/aplicação)** | Entidades de referência + repositórios. `Taxonomy` lê do JSON. `pieceErrors` valida `variation` (opcional, vinculada) e atributos (`appliesTo` + cardinalidade). `WardrobeService.taxonomy()` ganha os campos novos. `PieceView`/`CatalogProductView` expõem `variation` + `attributes`. |
+| **Selects do front** | `piece-form.tsx`: select **Variação** dependente da subcategoria (CORE primeiro; "Ver mais" para EXTENDED/NICHE) e bloco "Detalhes" com as dimensões aplicáveis, pré-preenchidas por implícitos e IA. `multi-piece-review.tsx` idem. Closet/explorer ganham subcategoria, variação, material e marca. Rótulos passam a vir da API. |
+| **Pipeline Python** | `normalize_product.py` lê `variations`/`attributeDimensions`. `infer_subcategory` mantém a regra e chama `infer_variation(sub, texto_restante)`. `MODIFIERS` passa a **capturar** manga/comprimento em vez de descartar. `structured_product` lê `offers.price/priceCurrency/priceSpecification` e `audience/suggestedGender`. Testes em `scripts/catalog/tests/`. |
+| **Prompts de IA** | `ANALYZER_SYSTEM`: campos `variation`, `variationConfidence`, `attributes`; `analyzerPrompt` envia só o vocabulário da subcategoria, com descrição. `CatalogTextInterpreter.SYSTEM` estende o JSON com `variation` e atributos estruturais (mesmo descarte). A médio prazo, a folha de referência ganha referência por variação CORE (artes em `public/assets_pecas/`). `CopilotLexicon.TYPE_PREFIXES` passa a derivar de `subcategorySynonyms` + aliases (fim da lista paralela). |
+| **Ranking da busca** (`CatalogMatchScorer`) | Novo componente `W_VARIATION` (sugestão 0,15) quando a intenção tem variação: 1 se igual, 0,3 se o produto tem `null`, 0 se diferente. Atributos estruturais entram em `W_DESIGN` (que já pesa estampa/logo). `search_text` inclui rótulos e aliases da variação para o FULLTEXT ngram. |
+| **Hype Score** | Com variação, a chave do "modelo" em `HypeSnapshotService` (l.132) passa a `category\|subcategory\|variation\|brand`, deixando a raridade mais fina ("jeans barrel" ≠ "jeans skinny"). Requer recálculo do snapshot e período de convivência para não mexer em todos os níveis de uma vez. |
+| **Datasets / embeddings** | `garment_embeddings` e `piece_images` ganham `variation` como rótulo de treino. `DatasetSource`/`VisionDataset` podem filtrar por variação. Os embeddings não mudam; os rótulos novos só ampliam a avaliação. |
+| **i18n** | Chaves `taxonomy.var.<CODE>` e `taxonomy.attr.<DIM>.<CODE>` geradas do JSON (pt/en/es). |
 
 ---
 
 ## G. Seed
 
-`proposta/seed_piece_variations.sql` (rascunho; **não** está em `db/migration`):
+`proposta/seed_piece_variations.sql`:
+- **Natureza:** rascunho, **não** Flyway.
+- **Sintaxe:** MySQL 8/9, InnoDB, `utf8mb4_0900_ai_ci`, CHECKs de tier e prioridade, FKs entre as tabelas de referência.
 
-- **DDL** de `taxonomy_categories`, `taxonomy_subcategories`, `taxonomy_variations`, `taxonomy_subcategory_variations` e `taxonomy_aliases`, com `CREATE TABLE IF NOT EXISTS`, FKs e CHECKs.
-- **Dados:**
-  - 5 categorias;
-  - 80 subcategorias: as ativas primeiro, por causa do FK `replaced_by_code`; as 8 LEGACY apontam para a nova;
-  - 353 variações (código, nome PT/EN, descrição);
-  - 530 ligações subcategoria × variação, com tier, prioridade e ordem;
-  - 2.486 aliases de variação com escopo por subcategoria, normalizados como `CatalogNormalizer.key()` (sem acento, minúsculo, `&` → "and", não alfanumérico → espaço).
-- **Idempotente:** usa `INSERT … AS new ON DUPLICATE KEY UPDATE` (MySQL ≥ 8.0.19) em lotes de 60 linhas.
-- **Testado** num MySQL 8.0.46 local (base vazia), rodando duas vezes. Resultado: 5 / 80 (8 LEGACY) / 353 / 530 / 2.486, sem erro e sem duplicar. Exemplo de busca: alias "boca de sino" no escopo `jeans` → `BELL_BOTTOM`.
-- **Garantias do gerador:**
-  - toda variação usada existe e toda variação definida é usada;
-  - toda subcategoria ativa tem variação;
-  - dentro de uma subcategoria, **nenhum alias normalizado aponta para duas variações**;
-  - dentro de uma dimensão, nenhum alias se repete entre valores de escopo sobreposto;
-  - os mapeamentos de legado apontam para valores que existem.
-- **Fora deste arquivo** (vai para V40/V41, gerado do mesmo JSON): os valores das 23 dimensões, os escopos e os mapeamentos de legado.
+**Execução no MySQL.**
+- Rodado no MySQL 8.0.46, instalado no container da sessão (datadir temporário, fora do repositório), num schema descartável `tax_scratch`.
+- Contagens após a carga: 5 categorias, 78 subcategorias, 394 variações, 541 vínculos (244/216/81), 1.892 aliases de variação, 30 dimensões, 387 valores, 1.356 aliases de valor, 1.650 linhas de aplicabilidade.
+- Consultas de resolução:
+  - alias `wide` em `jeans` → `WIDE_LEG`;
+  - `pantalona` em `casual_pants` → `PALAZZO`;
+  - zero vínculos `casual_sneakers × CHELSEA`.
+- Bloco V45 (comentado no fim do arquivo), aplicado sobre `wardrobe_items`/`catalog_products` simuladas:
+  - a FK composta aceitou `jeans/WIDE_LEG` e `t_shirt/NULL` e recusou `casual_sneakers/CHELSEA`;
+  - o rollback devolveu as tabelas ao estado original.
+- O container `fai-mysql` **não** foi usado: o daemon Docker não estava rodando.
 
----
-
-## H. Filtros da busca catalogada
-
-### H.1 Filtros (todos select; dependentes onde indicado)
-
-| Filtro | Controle | Fonte | Parâmetro da API (proposto) | Observação |
-|---|---|---|---|---|
-| Categoria | select (cards atuais) | `catalog_products.category` | `category` | já existe |
-| Subcategoria | select dependente da categoria | `subcategory` (ativas + legado resolvido) | `subcategory` | hoje são chips |
-| Variação | select dependente da subcategoria (CORE; "mais" abre EXTENDED) | `variation_code` | `variation` (multi) | **novo** |
-| Cor | select com bolinha de cor (59, por família) | `color` + `catalog_variants.color` | `color` (multi) | corrige o `slice(0, 18)` |
-| Material | select (33, por grupo) | `catalog_product_attributes` ou `material` | `material` (multi) | o acervo tem 0%: depende da coleta (H.3) |
-| Estampa | select (19) | `design_json.pattern` → atributo PATTERN | `pattern` (multi) | |
-| Acabamento | select (32, por grupo) | atributos FINISH | `finish` (multi) | |
-| Comprimento | select dependente da categoria | atributo LENGTH | `length` | |
-| Estilo | select (25) | atributos STYLE (≤ 2 por produto) | `style` (multi) | **novo no catálogo** (H.4) |
-| Ocasião | select (20) | atributos OCCASION (≤ 2) | `occasion` (multi) | **novo no catálogo** (H.4) |
-| Gênero | select (3) | `gender` | `gender` | o acervo tem 0%: preencher pela URL/categoria da loja (H.3) |
-| Faixa etária | select (Adulto/Infantil/Bebê), padrão Adulto | `age_group` | `ageGroup` | resolve os resultados "Big Kids'" |
-| Faixa de preço | select de faixas + "de/até" | `price_min`/`price_max` | `priceMin`, `priceMax` | faixas: até R$ 99 · 100–199 · 200–399 · 400–799 · 800–1.499 · 1.500+ |
-| Marca | select com busca (52 marcas com produtos) | `brand_id` | `brand` | já existe |
-
-Por subcategoria também entram os atributos que se aplicam a ela (`taxonomy_dimension_scopes`):
-
-- calçados: cano, tipo de salto, altura do salto, bico, solado e uso/esporte;
-- partes de cima: manga e decote;
-- partes de baixo: cintura;
-- bolsas: forma de carregar.
-
-**Comportamento:**
-
-- **Facetas com contagem:** `GET /api/catalog/facets?…`, com contagem por valor dentro dos filtros já aplicados. Valores com 0 resultado aparecem desabilitados.
-- **Filtro × pontuação:** os filtros escolhidos no select **filtram**. O que vem lido do texto continua **só pontuando**, como hoje com o subtipo do texto.
-- **Valor ausente:** produto sem o atributo não aparece quando o filtro está ativo.
-- **Selects montados pelo `/api/taxonomy`:** respeitam `appliesTo`, tier e prioridade.
-
-### H.2 Preço (JSON-LD das páginas oficiais)
-
-O coletor (`official_sitemap.structured_product`) já lê o nó `Product`/`ProductGroup`. Ele passa a ler também `offers`:
-
-| JSON-LD | Grava |
-|---|---|
-| `Offer.price` + `priceCurrency` | `price_min = price_max = price` |
-| `AggregateOffer.lowPrice` / `highPrice` + `priceCurrency` | `price_min` / `price_max` |
-| `priceSpecification` com `priceType = StrikethroughPrice` | `list_price` (preço "de"); o ativo é o outro |
-| `offers` dentro de cada `hasVariant` | `catalog_variants.price` |
-| sem JSON-LD: `product:price:amount` / `og:price:amount` | `price_source = META` |
-
-- **Normalização:** `price` é número com ponto decimal. Se vier texto "1.299,90", converte. Moeda ISO-4217; sem moeda, não grava. Cada coleta atualiza `price_checked_at`.
-- **Exibição:** "a partir de R$ X · verificado em dd/mm" (preço informativo).
-- **Opcional:** guardar histórico de preço (I.13).
-- **`brands.price_tier`:** é derivado da mediana de preço da marca e alimenta o filtro "faixa da marca" e as regras de estilo (`luxury`).
-
-### H.3 Gênero, faixa etária e material do catálogo
-
-O acervo tem 0% de gênero e material. O coletor passa a ler:
-
-- `audience`/`suggestedGender`/`material` do JSON-LD;
-- o segmento da URL ou breadcrumb (`/feminino/`, `/masculino/`, `/infantil/`, `kids`);
-- os termos do nome ("Big Kids'", "Infantil", "Women's").
-
-Tudo isso passa pelos mesmos aliases. Quando nada é encontrado, o campo fica `NULL`; nada de BLEND ou UNISSEX inventados.
-
-### H.4 Estilo e ocasião no catálogo (vocabulário fechado)
-
-1. **Regras determinísticas**, com pontuação somada e versionadas em JSON. Exemplos:
-   - `blazer` + `tailored_pants` → `classic`/`tailored` + ocasião `work`/`business`;
-   - `cargo_pants.BAGGY` + `hoodie` → `streetwear`;
-   - `running_shoes` → `sporty` + `sport`/`gym`;
-   - `dress.SLIP` + `SATIN` → `glam` + `party`/`night_out`;
-   - FINISH `SEQUINED` → `party`;
-   - prior da marca (`brand_style_priors`, ex.: Farm → `boho`/`resort`) e `price_tier=LUXURY` → `luxury`.
-2. **IA (Claude Haiku, como o intérprete de texto)** só quando as regras ficam abaixo do limiar.
-   - Entra: nome, descrição, subcategoria, variação e atributos.
-   - Sai: **até 2 estilos e 2 ocasiões, só dos códigos fornecidos**, com confiança.
-   - O resultado passa pela mesma validação de C.6.
-3. Grava em `catalog_product_attributes` com `source` (RULE/AI) e `confidence`. A peça adicionada ao guarda-roupa herda esses valores como **sugestão editável**, no lugar de `basic`/`casual`.
+**Validação dos arquivos (python3):**
+- linhas do CSV (541) = vínculos no JSON (541), mesmos pares;
+- 0 pares (subcategory, variation) duplicados;
+- 78/78 subcategorias existentes cobertas;
+- 394 variações no JSON, todas usadas;
+- CSV ordenado: categoria → subcategoria (ordem oficial) → tier → prioridade → código;
+- nenhum alias ambíguo dentro de uma subcategoria nem dentro de uma dimensão com escopos sobrepostos;
+- todos os códigos de variação em UPPER_SNAKE_CASE.
 
 ---
 
-## I. Decisões em aberto
+## H. Filtros da busca catalogada (pedido do fundador)
 
-| # | Decisão | Opções | Recomendação |
-|---|---|---|---|
-| I.1 | Aprovar os 8 legados (C.3)? | (a) aprovar; (b) aprovar só os sem revisão (bermuda, short jeans, cano alto, bota curta, coturno, transversal); (c) nenhum | **(a)**; `crop_top` e `long_boots` vão para a fila de revisão |
-| I.2 | Casos "quase atributo" mantidos (jeans, culottes, hoodie, heels×flats, tote, clutch, tênis por esporte) | manter com regras (C.7) × colapsar (ex.: `tote_bag`/`clutch` como variações de `handbag`; tênis esportivos em `sneakers` + SPORT_USE) | **manter** agora (nomes do varejo, `RIGID_SUBCATEGORIES`, perfis de captura); reavaliar com dados de uso |
-| I.3 | Quase duplicados em jeans: HORSESHOE × BALLOON × BARREL, GIRLFRIEND × BOYFRIEND, BELL_BOTTOM × FLARE | manter os 20 da lista pedida (com descrições distintas, NICHE) × fundir como alias | **manter**, como pedido; a pesquisa de varejo indica fundir HORSESHOE→BALLOON, GIRLFRIEND→BOYFRIEND e BELL_BOTTOM→FLARE se a IA confundir (medir no teste de rotulagem) |
-| I.4 | Variação única por peça | única × principal + secundária × dimensão FIT separada (caimento) para casacos/blazers | **única** (atributos absorvem o ortogonal); reabrir se "oversized transpassado" etc. aparecerem muito |
-| I.5 | Caixa dos códigos | subcategoria `snake_case` (atual) + variação/valor `UPPER_SNAKE` × tudo `UPPER_SNAKE` | **manter os dois padrões** (renomear subcategoria quebraria dados e URLs) |
-| I.6 | `full_body_piece` meio removida (B.27) | devolver ao formulário × remover de vez (mapear vestido/macacão para outra categoria) | **devolver** ao formulário (431 itens no catálogo, IA e criador já usam); rótulo "Peça inteira" |
-| I.7 | Paleta: `print`, `multicolor`, `denim`, `washed_black` | manter × marcar como legado e migrar para PATTERN/FINISH | **legado** com mapeamento: print→GRAPHIC, multicolor→COLOR_BLOCK, denim→blue + MATERIAL DENIM, washed_black→black + FINISH FADED |
-| I.8 | Material: BLEND e SYNTHETIC | manter como genéricos × legado | **legado** (N5) + composição em % no futuro |
-| I.9 | Estilos que não são estética (`tailored`, `luxury`, `resort`, `utility`, `basic`, `statement`) | manter × remover × mover | **manter** por compatibilidade; `luxury` passa a ser derivado de `price_tier` e `tailored`, da subcategoria/variação; revisar em outra rodada |
-| I.10 | Gênero PT (MASCULINO…) × EN | manter × migrar para MEN/WOMEN/UNISEX | **manter** (já está em dados e manequim); unificar `MARKET_GENDERS` nele |
-| I.11 | Ocasião restrita por categoria (B.28) | manter × afrouxar × remover | **remover a restrição na peça** (o look já aceita as 20); usar a categoria só para ordenar sugestões |
-| I.12 | Novas categorias: moda praia (biquíni, maiô, sunga, saída de praia), íntima (hoje excluída de propósito), meia-calça, chuteira | criar × deixar fora | moda praia **sim** (forte no Brasil: Farm, Havaianas); íntima **não**; meia-calça fica em `socks.TIGHTS`; chuteira = `FOOTBALL` em SPORT_USE dentro de uma subcategoria nova `cleats` (decidir) |
-| I.13 | Preço: nível de produto × variante; histórico | só produto × produto + variante × + histórico (`catalog_price_observations`) | **produto + variante**; histórico depois |
-| I.14 | Acabamento: limite por peça | 2 × 3 | **3** (ex.: stone + destroyed + barra desfiada) |
-| I.15 | Alias com atributos implícitos ("bermuda" → shorts + KNEE, "rasteira" → STRAPPY + FLAT) | só nos mapeamentos de legado × coluna `implies_json` em `taxonomy_aliases` | **coluna `implies_json`** (só leitura pela IA e pela busca) |
-| I.16 | Onde fica a variação de `matching_set` e `overalls` | composição (TOP_AND_PANTS…) e perna (STRAIGHT…) × tipo de peitilho (calça/short/saia) | como proposto; jardineira-short = LENGTH, jardineira-saia = `dress.PINAFORE` |
-| I.17 | Revisão humana do backfill | tudo automático × fila só para `needsReview` e confiança < 0,75 | **fila** (`ai_review_items`) |
-| I.18 | Ordem de deploy | aplicar V39+ só depois de levar a `main` (V37) para a branch de deploy | **sim**. Em 05/10/2026 a produção já está na V38 (`V38__identidade_do_avatar_versionada`, vinda da branch de deploy); por isso a taxonomia foi renumerada para V39–V44. Outras frentes (HypeScore v2/Lens, pipeline de imagens) também usam V38+: o número final é atribuído no merge, sempre `max(branch de deploy) + 1` |
+### H.1 Selects e de onde vem cada dado
+
+| Select | Fonte no banco | Como obter |
+|---|---|---|
+| Categoria / Subcategoria | `catalog_products.category/subcategory` | Já existe. |
+| Variação | `catalog_products.variation_code` (V45) | Alias no nome → alias na descrição → IA (vocabulário fechado) → usuário/admin. |
+| Cor | `catalog_products.color` + `catalog_variants.color` | Já existe (paleta). |
+| Material (família) / Tecido | `material` + `catalog_product_attribute(MATERIAL_DETAIL)` | JSON-LD `material`; alias na descrição oficial; IA. |
+| Estampa | `design_json.pattern` → espelho em `catalog_product_attribute(PATTERN)` | `CatalogDesignInterpreter` (já existe). |
+| Acabamento, comprimento, cintura, manga, decote, fechamento, cano, salto… | `catalog_product_attribute` | Aliases no nome e na descrição (com `MODIFIERS` capturando) + implícitos + IA. |
+| Estilo (≤2) / Ocasião (≤2) | `catalog_product_attribute(STYLE/OCCASION)`, `source=RULE\|AI` | Ver "Estilo e ocasião", abaixo da tabela. |
+| Gênero | `catalog_products.gender` | JSON-LD `audience.suggestedGender`; URL/segmento ("/feminino/", "- Women", que `clean_title` hoje remove); `genderSynonyms`. |
+| Faixa de preço | `price_brl` → `PRICE_RANGE` | Ver H.2. |
+| Marca | `brand_id` → `brands` | Já existe (autocomplete). |
+
+Estilo e ocasião são obtidos em três camadas, nesta ordem:
+1. **Regras** subcategoria/variação/material → estilo e ocasião padrão, respeitando `allowedOccasions`:
+   - `blazer.TAILORED` → tailored/classic, work/business;
+   - `jeans.BAGGY` → streetwear, casual;
+   - `sandals.FOOTBED` → casual, travel;
+   - `heels.PUMP` → classic/chic, work/party.
+2. **IA** com vocabulário fechado sobre nome + descrição + imagem, só quando a regra não decide.
+3. **Voto dos donos** (`wardrobe_items` ligados ao produto), que refina com o tempo.
+
+### H.2 Preço
+
+1. **Coleta.** Em `structured_product` (`official_sitemap.py`), ler `offers.price` + `offers.priceCurrency`.
+   - Na falta deles: `offers.lowPrice`/`highPrice` (AggregateOffer), `priceSpecification.price` ou `og:price:amount` + `og:price:currency`.
+   - Gravar `price_amount`, `price_currency` e `price_observed_at`.
+2. **Conversão.** `price_brl` é calculado na ingestão (câmbio do dia, registrado no relatório do run). O valor original nunca é sobrescrito.
+3. **Faixas.**
+   - Absolutas no seed (BRL): BUDGET < 150 · MID 150–400 · PREMIUM 400–1.200 · LUXURY > 1.200.
+   - Alternativa: percentis por subcategoria (decisão I-7).
+   - O preço é exibido como "informativo, coletado em <data>". **Não** é oferta e é revalidado junto com `last_verified_at`.
+
+### H.3 Regras de UX dos filtros
+
+- **Selects dependentes da subcategoria.**
+  - Sem subcategoria: categoria, subcategoria, cor, gênero, estilo, ocasião, preço e marca.
+  - Com subcategoria: entram a variação e só as dimensões do `appliesTo` (WAIST_RISE só em partes de baixo, SHAFT_HEIGHT só em tênis e botas…).
+- **Ordem dos valores.** CORE primeiro, por prioridade. EXTENDED e NICHE ficam atrás de **"Ver mais"**. NICHE só aparece se a contagem for > 0.
+- **Contagem por opção** ("Wide leg (42)"):
+  - vem de `GROUP BY value_code` em `catalog_product_attribute` (índice `idx_cpa_facet`);
+  - é calculada sobre o resultado filtrado pelos **outros** filtros (facetas disjuntivas);
+  - opções com 0 ficam desabilitadas, mas não somem, para a lista não "pular".
+- **Combinação.** Vários valores no mesmo select = OU; selects diferentes = E.
+- **"Não informado"** aparece como opção quando > 0, para não esconder os ~70% sem variação no início do backfill.
+- **Chips do texto livre.** O que o texto livre reconhece vira chip removível ("wide" → Variação: Wide leg), pelo contrato de alias de D.4.
+- **API.**
+  - `/api/catalog/search` recebe `variation`, `attr[DIM]=CODE` (repetível), `style`, `occasion`, `gender`, `priceMin`/`priceMax` ou `priceRange` e `brand`.
+  - A resposta traz `facets: {DIM: [{code, label, count, tier}]}`.
+  - O filtro de gênero, hoje feito no cliente (`catalog-search.tsx` l.105), passa para o servidor.
+
+---
+
+## I. Decisões em aberto para o fundador
+
+1. **Caimento em tops.** Confirmar `FIT` como dimensão separada em tops e outerwear, enquanto nas partes de baixo o caimento é a variação.
+2. **Botas e cano alto.** Manter `ankle_boots`, `long_boots`, `combat_boots` e `high_top_sneakers` (proposta atual, com implícitos) ou unificar em `boots`/`casual_sneakers` + `SHAFT_HEIGHT`. Unificar exige mapear dados antigos e mudar as artes por subtipo.
+3. **SLIDE.** A canônica é `sandals` ou `flip_flops`? Hoje a variação liga às duas.
+4. **loafers × moccasins.** Manter os dois ou fundir? No varejo BR, "mocassim" ≈ loafer.
+5. **Esporte como subcategoria.** Manter `running_shoes`, `training_shoes`, `basketball_shoes` e `skate_shoes` (com `USAGE_TYPE` implícito) ou rebaixá-las a `USAGE_TYPE` de `casual_sneakers`.
+6. **Ocasiões por categoria (B.4).** Liberar social/trabalho em acessórios (gravata, relógio), festa em partes de baixo e trabalho em calçados — ou passar a regra para subcategoria.
+7. **Faixas de preço.** Absolutas em BRL (seed) ou percentis por subcategoria? Com quais limites?
+8. **Novas subcategorias (C.3).** `swimwear`, `travel_bag` e `anklet` entram? Moda praia exige política de moderação.
+9. **Materiais.** Adicionar as famílias `LINEN`, `VISCOSE`, `METAL` e mover "metal/aço" de `SYNTHETIC` para `METAL`?
+10. **Cores que são estampa ou acabamento.** Deprecar `print`, `multicolor`, `washed_black` e `metallic_*` em favor de `PATTERN`/`FINISH`, ou manter e mapear?
+11. **Fonte única.** Estender o `normalization.json` (recomendado) ou criar um `taxonomy.json` irmão? Nos dois casos, `Taxonomy.java` passa a ler do arquivo.
+12. **Hype Score.** Incluir a variação na chave de raridade já, ou só quando o backfill passar de X% de cobertura?
+13. **Atributos obrigatórios.** A proposta deixa todos os novos opcionais. Algum deve ser obrigatório em alguma subcategoria (ex.: `WAIST_RISE` em jeans)?
+14. **Limiares de confiança da IA (0,4/0,6).** Calibrar com amostra rotulada do acervo antes de ativar.

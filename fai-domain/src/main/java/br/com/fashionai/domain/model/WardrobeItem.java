@@ -176,6 +176,10 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "for_sale", nullable = false)
     private boolean forSale;
 
+    /** RF31/RF53 — "Para doar": estado público da peça, exclusivo com "à venda". */
+    @Column(name = "for_donation", nullable = false)
+    private boolean forDonation;
+
     @Column(name = "wear_count", nullable = false)
     private int wearCount;
 

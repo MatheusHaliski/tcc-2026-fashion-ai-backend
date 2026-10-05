@@ -249,12 +249,58 @@ Para peças de marcas parceiras (RF39), aceitar GLB/glTF com UV de molde vindo d
 | Loiro sem virar cor de pele | teste automático |
 | Testes | +16 testes unitários (sexo, volume, corte, tom); backend 11/11 no serviço do avatar |
 
+### C1.1 Fase 2 — cabelo em fios (entregue em 2026-10-05)
+
+**Código:** `lib/avatar3d/human/hair-strands.ts` (penteado, fitas, sombreamento), `lib/avatar3d/human/hair-lod.ts`
+(níveis, escolha pelo aparelho, vigia do tempo de quadro), `components/three/human-avatar.tsx` (integração),
+`lib/avatar3d/human/export-glb.ts` (GLB com cards). Laboratório: `/lab/human` com 6 penteados **sintéticos** (curto,
+médio ondulado com franja, longo liso, cacheado, crespo, loiro longo) e botões LOD 0–3 — nenhuma foto de pessoa.
+
+| Item do plano | Como ficou |
+|---|---|
+| Formato de penteado (A3.1) | `HairGroom`: guias (polilinhas da raiz à ponta, ~600–820 por penteado) crescidas uma vez por cabelo e reaproveitadas pelos níveis; JSON em mm inteiros (`groomToJSON`/`groomFromJSON`, erro ≤ 0,5 mm) — é o formato que a biblioteca da fase 3 vai preencher |
+| Mechas, cacho, frizz | fitas agrupadas por guia (clumping); onda e hélice **com a mesma fase na mecha** (sem cruzar fios); a hélice ganha pontos (até 2×) para ter ≥ 5 pontos por volta — antes virava zigue-zague |
+| Sombreamento de fio (A3.3) | Kajiya-Kay de dois lóbulos sobre a tangente (atributo `tangent`), deslocado para raiz/ponta; o lóbulo GGX da fita é zerado e o reflexo do ambiente fica em 30% (fita plana em ângulo rasante deixava o cabelo prateado); raiz mais escura, ponta +6%, tom ±5% por fio, oclusão no interior da mecha, alpha-to-coverage |
+| Fios soltos | 3–4% das fitas nos níveis 0 e 1; nenhum nos cards |
+| Níveis (A3.4) | 0 = 3 fitas finas por fita do nível 1; 1 = padrão; 2 = cards (85% das guias, fita 4,2× mais larga, ≤ 8 mil triângulos, cacho vira onda larga); 3 = só a casca |
+| Escolha automática | desktop com ≥ 8 núcleos e ≥ 8 GB → 0; desktop comum e celular forte → 1; celular fraco ou sem WebGL2 → 2; média de 90 quadros acima de 22 ms (nível 0) ou 33 ms (nível 1) desce um nível, nunca sobe sozinho. `NEXT_PUBLIC_AVATAR_HAIR_LOD` força o nível; `NEXT_PUBLIC_AVATAR_HAIR_STRANDS=off` volta à casca |
+| GLB | sempre nível 2 (cards): o cabelo em cena fica oculto durante a exportação e volta depois |
+| Rosto livre | nenhuma mecha passa na frente do rosto abaixo da sobrancelha (desviada para o lado da risca e para trás) nem deita na pele nua da testa/têmpora/bochecha (vai para trás da orelha ou termina); franja para na sobrancelha |
+
+**Medido** (corpo F de referência, CPU do contêiner, sem GPU):
+
+| Penteado | Guias | Nível 0 | Nível 1 (padrão) | Nível 2 (cards/GLB) |
+|---|---|---|---|---|
+| curto | 819 | 9 828 fitas · 96 mil tri | 3 276 · 32 mil | 667 · 6,5 mil |
+| médio ondulado | 614 | 11 052 · 207 mil | 3 684 · 69 mil | 519 · 5,0 mil |
+| longo liso | 620 | 11 160 · 246 mil | 3 720 · 82 mil | 524 · 5,2 mil |
+| cacheado | 592 | 8 880 · 337 mil | 2 960 · 112 mil | 504 · 4,8 mil |
+| crespo | 819 | 9 828 · 205 mil | 3 276 · 68 mil | 666 · 6,4 mil |
+
+Crescer o penteado leva 10–22 ms; gerar as fitas, 110–155 ms no nível 1 e 330–520 ms no nível 0 (uma vez por cabelo
+ou troca de nível). O padrão **não** usa dezenas de milhares de fios: o nível 1 tem ~3–4 mil fitas.
+
+**Defeitos achados e corrigidos na validação visual:**
+
+1. *Malha de cabelo duplicada*: o cabelo entrava na cena dentro do `useMemo`; no modo estrito (dev) o memo roda duas
+   vezes e cada troca de nível deixava uma cópia. Agora a malha nasce no memo e entra na cena num efeito.
+2. *Riscos no rosto*: `polygonOffsetFactor` −8/−9 (proporcional à inclinação) trazia triângulos inclinados de trás da
+   cabeça para a frente da pele. Valia também para a casca antiga. Fator −1 (casca) e −1,5 (fios); o deslocamento fixo
+   (−8/−10) continua vencendo a roupa (verificado com jaqueta, de costas e de perfil).
+3. *Cortina de cabelo sobre o rosto* e *cabelo prateado* (itens acima).
+
+Na passarela (vários modelos em cena) o cabelo fica fixo em cards (nível 2).
+
+**Limites conhecidos (fase 3):** a colisão usa o corpo com folga, não a peça vestida (casaco grosso pode cobrir a
+ponta do cabelo longo); os penteados ainda são crescidos pelas medidas da foto, não escolhidos de uma biblioteca; o
+tempo de GPU por nível (A3.4) não foi medido — as capturas rodaram em SwiftShader, sem placa de vídeo.
+
 ### C2. Fases
 
 | Fase | Entrega | Esforço |
 |---|---|---|
 | 1 | Commit do item C1; conjunto de teste ≥ 60 fotos; teste "falso careca = 0" no CI; cabelo longo por cima da roupa | 1 semana |
-| 2 | Formato de penteado (guias + fios), renderizador de fios com sombreamento de fio, níveis de detalhe | 2 semanas |
+| 2 | Formato de penteado (guias + fios), renderizador de fios com sombreamento de fio, níveis de detalhe — **entregue** (C1.1) | 2 semanas |
 | 3 | Biblioteca de 24–30 penteados + escolha automática + ajuste à silhueta + colisão | 2–3 semanas |
 | 4 | ECP: extração (visão + IA estruturada) + confirmação no formulário | 2 semanas |
 | 5 | Construção paramétrica: decote, gola, mangas, barra, recorte de borda, costuras, materiais | 3 semanas |

@@ -7,6 +7,10 @@ As medições e imagens estão em `docs/avatar3d/`.
 Documentos relacionados: `plano-a-rig-e-rosto.md` (esqueleto, exportação e rosto), `proposta-profissional-2026-09-27.md`
 (§5.2 "Roupa que veste e se mexe") e `digital-double.md` (o mesmo avatar no provador 2D e no 3D).
 
+> **Atualização 2026-10-05:** a auditoria [`auditoria-roupas-3d/`](auditoria-roupas-3d/README.md) mede este pipeline
+> (gola, mangas, camadas, estampa) e propõe a substituição do molde "pele afastada" por moldes paramétricos com
+> regiões, costuras e restrições.
+
 ---
 
 ## 1. Resposta curta

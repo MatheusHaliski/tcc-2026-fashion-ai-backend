@@ -303,8 +303,10 @@ public class AiEngine {
     private UUID record(UUID userId, AiCapability capability, String provider, String model, long latency,
                         BigDecimal cost, AiCallResult result, boolean fallback, List<String> inputs, String output,
                         String consentState, String correlationId) {
+        // id gerado pelo JPA (@GeneratedValue): atribuir à mão faz o save() virar merge de "entidade destacada" e, no
+        // Hibernate 6.6+, falhar com "Row was already updated or deleted" — o que marcava a transação de quem chamou a
+        // IA como rollback-only (500 em sugestões de selo, por exemplo) e perdia o log de inferência.
         AiInferenceLog entry = new AiInferenceLog();
-        entry.setId(UUID.randomUUID());
         entry.setUserId(userId);
         entry.setCapability(capability.name());
         entry.setHostRf(capability.hostRf());
@@ -319,10 +321,15 @@ public class AiEngine {
         entry.setConsentState(consentState);
         entry.setCorrelationId(correlationId);
         entry.setCreatedAt(Instant.now());
+        UUID inferenceId;
         try {
-            inferenceLogs.save(entry);
+            inferenceId = inferenceLogs.save(entry).getId();
         } catch (RuntimeException ex) {
             log.warn("Falha ao gravar ai_inference_log: {}", ex.getMessage());
+            inferenceId = null;
+        }
+        if (inferenceId == null) {
+            inferenceId = UUID.randomUUID();
         }
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("capability", capability.name());
@@ -332,10 +339,10 @@ public class AiEngine {
         meta.put("latencyMs", latency);
         meta.put("estimatedCostUsd", cost);
         meta.put("fallbackUsed", fallback);
-        meta.put("inferenceId", entry.getId().toString());
+        meta.put("inferenceId", inferenceId.toString());
         auditService.record(new AuditEvent(userId == null ? "system" : userId.toString(), AuditActions.CHAMADA_IA,
                 capability.name(), result.name(), null, null, Instant.now(), correlationId, meta));
-        return entry.getId();
+        return inferenceId;
     }
 
     /**

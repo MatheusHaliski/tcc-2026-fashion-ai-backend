@@ -1,0 +1,7097 @@
+[
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1517,
+  "triangles": 2941,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 46,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 15.3,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 13,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.7,
+    "stdMm": 1.2,
+    "p5Mm": 4.2,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 475,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.6,
+    "stdMm": 1.4,
+    "p5Mm": 3.6,
+    "p95Mm": 8.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 326,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 268,
+    "meanMm": 13.4,
+    "stdMm": 4.7,
+    "p5Mm": 5,
+    "p95Mm": 20.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.5,
+    "p5Mm": 15.9,
+    "p95Mm": 24.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1312,
+   "uvDistortionP95": 1.65,
+   "stretchedOver2xPct": 17,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1943,
+  "triangles": 3730,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 98,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2,
+  "edgeStretchOver10Pct": 31.5,
+  "edgeCompressUnder10Pct": 17.4,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 10.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 254,
+    "meanMm": 4.9,
+    "stdMm": 1.6,
+    "p5Mm": 3.2,
+    "p95Mm": 8.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 144,
+    "meanMm": 10.3,
+    "stdMm": 3.8,
+    "p5Mm": 4.5,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.6,
+    "stdMm": 3.5,
+    "p5Mm": 15,
+    "p95Mm": 26.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 351,
+    "meanMm": 9.4,
+    "stdMm": 5.4,
+    "p5Mm": 4.2,
+    "p95Mm": 21.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 614,
+    "meanMm": 17.7,
+    "stdMm": 8.7,
+    "p5Mm": 5.9,
+    "p95Mm": 28.9,
+    "floatingPct": 3.6,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 28.9,
+    "stdMm": 6.6,
+    "p5Mm": 19.5,
+    "p95Mm": 41.2,
+    "floatingPct": 26.8,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.9,
+    "stdMm": 0,
+    "p5Mm": 26.9,
+    "p95Mm": 26.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.6,
+   "circularity": 0.167,
+   "bandInnerMinMm": -18.2,
+   "bandInnerMeanMm": 2.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1264,
+   "uvDistortionP95": 1.65,
+   "stretchedOver2xPct": 9.8,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "FEMININO",
+  "kind": "shoes",
+  "layer": 2,
+  "vertices": 2200,
+  "triangles": 4354,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 61,
+  "intersectionRestPct": 5.2,
+  "intersectionDisplayPosePct": 5.2,
+  "edgeStretchOver10Pct": 66.8,
+  "edgeCompressUnder10Pct": 17.2,
+  "edgeRatioP95": 2.95,
+  "relaxShiftP95Mm": 21.4,
+  "regions": {
+   "FOOT": {
+    "n": 2075,
+    "meanMm": 5.5,
+    "stdMm": 4.2,
+    "p5Mm": -2.2,
+    "p95Mm": 12.4,
+    "floatingPct": 0,
+    "insidePct": 5.4
+   },
+   "SHAFT": {
+    "n": 81,
+    "meanMm": 25,
+    "stdMm": 4.1,
+    "p5Mm": 14.7,
+    "p95Mm": 28.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": null
+ },
+ {
+  "label": "manga_longa",
+  "sex": "FEMININO",
+  "kind": "longsleeve",
+  "layer": 3,
+  "vertices": 2561,
+  "triangles": 4968,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 54,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.6,
+  "edgeStretchOver10Pct": 29.3,
+  "edgeCompressUnder10Pct": 17.8,
+  "edgeRatioP95": 1.35,
+  "relaxShiftP95Mm": 10.4,
+  "regions": {
+   "SHOULDER": {
+    "n": 254,
+    "meanMm": 4.7,
+    "stdMm": 1.4,
+    "p5Mm": 3.2,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 722,
+    "meanMm": 4.6,
+    "stdMm": 1.4,
+    "p5Mm": 2.5,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 351,
+    "meanMm": 9.4,
+    "stdMm": 5.4,
+    "p5Mm": 4.2,
+    "p95Mm": 21.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 614,
+    "meanMm": 11.1,
+    "stdMm": 7,
+    "p5Mm": 3,
+    "p95Mm": 25.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 94,
+    "meanMm": 6.2,
+    "stdMm": 1.2,
+    "p5Mm": 4,
+    "p95Mm": 8.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 3.9,
+    "stdMm": 1,
+    "p5Mm": 2.4,
+    "p95Mm": 5.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 7.5,
+    "stdMm": 6.3,
+    "p5Mm": 2.2,
+    "p95Mm": 19.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 4.9,
+    "stdMm": 0,
+    "p5Mm": 4.9,
+    "p95Mm": 4.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.6,
+   "circularity": 0.167,
+   "bandInnerMinMm": -18.2,
+   "bandInnerMeanMm": 2.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1338,
+   "uvDistortionP95": 1.38,
+   "stretchedOver2xPct": 9,
+   "compressedUnderHalfPct": 0.1
+  }
+ },
+ {
+  "label": "camisa",
+  "sex": "FEMININO",
+  "kind": "shirt",
+  "layer": 3,
+  "vertices": 2629,
+  "triangles": 5103,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 40,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.6,
+  "edgeStretchOver10Pct": 30.8,
+  "edgeCompressUnder10Pct": 19.3,
+  "edgeRatioP95": 1.38,
+  "relaxShiftP95Mm": 11.5,
+  "regions": {
+   "COLLAR": {
+    "n": 96,
+    "meanMm": 9,
+    "stdMm": 2.6,
+    "p5Mm": 4.7,
+    "p95Mm": 13.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 5.3,
+    "stdMm": 1.5,
+    "p5Mm": 3.7,
+    "p95Mm": 8.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 722,
+    "meanMm": 5.1,
+    "stdMm": 1.4,
+    "p5Mm": 3.1,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 362,
+    "meanMm": 10.9,
+    "stdMm": 6,
+    "p5Mm": 5.1,
+    "p95Mm": 22.9,
+    "floatingPct": 1.7,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 191,
+    "meanMm": 7.1,
+    "stdMm": 3.7,
+    "p5Mm": 3.8,
+    "p95Mm": 14.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 629,
+    "meanMm": 12.8,
+    "stdMm": 8,
+    "p5Mm": 3.5,
+    "p95Mm": 28.9,
+    "floatingPct": 3.3,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 94,
+    "meanMm": 6.7,
+    "stdMm": 1.3,
+    "p5Mm": 4.5,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 36,
+    "meanMm": 4.7,
+    "stdMm": 1.4,
+    "p5Mm": 3,
+    "p95Mm": 6.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 31,
+    "meanMm": 10.6,
+    "stdMm": 8.6,
+    "p5Mm": 3.3,
+    "p95Mm": 28,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 4,
+    "meanMm": 5,
+    "stdMm": 1.1,
+    "p5Mm": 3.4,
+    "p95Mm": 5.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 56,
+   "gapMeanMm": 8,
+   "gapMinMm": 7.4,
+   "gapMaxMm": 8.6,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 3,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 26.4,
+   "circularity": 0.221,
+   "bandInnerMinMm": -16.9,
+   "bandInnerMeanMm": 1.8,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1411,
+   "uvDistortionP95": 1.47,
+   "stretchedOver2xPct": 9.6,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "moletom",
+  "sex": "FEMININO",
+  "kind": "hoodie",
+  "layer": 4,
+  "vertices": 2686,
+  "triangles": 5228,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 36,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.1,
+  "edgeStretchOver10Pct": 37.9,
+  "edgeCompressUnder10Pct": 22.2,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 17.8,
+  "regions": {
+   "COLLAR": {
+    "n": 115,
+    "meanMm": 15,
+    "stdMm": 3.6,
+    "p5Mm": 8.3,
+    "p95Mm": 19.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 274,
+    "meanMm": 8.5,
+    "stdMm": 1.6,
+    "p5Mm": 6.9,
+    "p95Mm": 12.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 742,
+    "meanMm": 8.5,
+    "stdMm": 1.8,
+    "p5Mm": 6.3,
+    "p95Mm": 12.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 377,
+    "meanMm": 15,
+    "stdMm": 6.3,
+    "p5Mm": 8.3,
+    "p95Mm": 28.8,
+    "floatingPct": 5,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 195,
+    "meanMm": 11.4,
+    "stdMm": 4.9,
+    "p5Mm": 7.1,
+    "p95Mm": 21.1,
+    "floatingPct": 0.5,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 618,
+    "meanMm": 17.5,
+    "stdMm": 8.8,
+    "p5Mm": 7.9,
+    "p95Mm": 36.1,
+    "floatingPct": 14.4,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 96,
+    "meanMm": 3.9,
+    "stdMm": 1.3,
+    "p5Mm": 2.8,
+    "p95Mm": 6.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 28,
+    "meanMm": 12.1,
+    "stdMm": 3.6,
+    "p5Mm": 5.5,
+    "p95Mm": 16.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 50,
+    "meanMm": 5.9,
+    "stdMm": 2.7,
+    "p5Mm": 2.7,
+    "p95Mm": 10.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 14.2,
+    "stdMm": 0,
+    "p5Mm": 14.2,
+    "p95Mm": 14.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 13.8,
+   "gapMinMm": 13.2,
+   "gapMaxMm": 14.4,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 8.8,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 30.5,
+   "circularity": 0.184,
+   "bandInnerMinMm": -8,
+   "bandInnerMeanMm": 8.6,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": false
+   }
+  },
+  "uv": {
+   "printedTriangles": 1501,
+   "uvDistortionP95": 1.41,
+   "stretchedOver2xPct": 9.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "jaqueta_sobre_camiseta",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1943,
+  "triangles": 3730,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 32,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.6,
+  "edgeStretchOver10Pct": 26.8,
+  "edgeCompressUnder10Pct": 18.9,
+  "edgeRatioP95": 1.4,
+  "relaxShiftP95Mm": 10.4,
+  "regions": {
+   "SHOULDER": {
+    "n": 254,
+    "meanMm": 4.9,
+    "stdMm": 1.6,
+    "p5Mm": 3.2,
+    "p95Mm": 8.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 144,
+    "meanMm": 10.3,
+    "stdMm": 3.8,
+    "p5Mm": 4.5,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.6,
+    "stdMm": 3.5,
+    "p5Mm": 15,
+    "p95Mm": 26.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 351,
+    "meanMm": 9.4,
+    "stdMm": 5.4,
+    "p5Mm": 4.2,
+    "p95Mm": 21.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 614,
+    "meanMm": 11.1,
+    "stdMm": 7,
+    "p5Mm": 3,
+    "p95Mm": 25.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 3.9,
+    "stdMm": 1,
+    "p5Mm": 2.4,
+    "p95Mm": 5.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 7.5,
+    "stdMm": 6.3,
+    "p5Mm": 2.2,
+    "p95Mm": 19.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 4.9,
+    "stdMm": 0,
+    "p5Mm": 4.9,
+    "p95Mm": 4.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.6,
+   "circularity": 0.167,
+   "bandInnerMinMm": -18.2,
+   "bandInnerMeanMm": 2.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1270,
+   "uvDistortionP95": 1.46,
+   "stretchedOver2xPct": 8.5,
+   "compressedUnderHalfPct": 0.2
+  }
+ },
+ {
+  "label": "jaqueta_sobre_camiseta",
+  "sex": "FEMININO",
+  "kind": "jacket",
+  "layer": 5,
+  "vertices": 2673,
+  "triangles": 5190,
+  "trims": 2,
+  "collarBand": false,
+  "buildMs": 28,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 3.1,
+  "edgeStretchOver10Pct": 55.6,
+  "edgeCompressUnder10Pct": 14.3,
+  "edgeRatioP95": 1.71,
+  "relaxShiftP95Mm": 16.5,
+  "regions": {
+   "COLLAR": {
+    "n": 98,
+    "meanMm": 28.3,
+    "stdMm": 4.5,
+    "p5Mm": 21.7,
+    "p95Mm": 38.6,
+    "floatingPct": 23.5,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 26,
+    "stdMm": 3.7,
+    "p5Mm": 15.9,
+    "p95Mm": 29.1,
+    "floatingPct": 1.5,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 746,
+    "meanMm": 17,
+    "stdMm": 7.4,
+    "p5Mm": 8.7,
+    "p95Mm": 27.6,
+    "floatingPct": 0.5,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 362,
+    "meanMm": 35.6,
+    "stdMm": 7.7,
+    "p5Mm": 27.1,
+    "p95Mm": 51.4,
+    "floatingPct": 78.7,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 195,
+    "meanMm": 31.3,
+    "stdMm": 5.6,
+    "p5Mm": 26.1,
+    "p95Mm": 41.4,
+    "floatingPct": 50.3,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 618,
+    "meanMm": 38.6,
+    "stdMm": 9.9,
+    "p5Mm": 26.4,
+    "p95Mm": 57.8,
+    "floatingPct": 81.4,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 106,
+    "meanMm": 14.8,
+    "stdMm": 1.6,
+    "p5Mm": 11.9,
+    "p95Mm": 16.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 28,
+    "meanMm": 26.9,
+    "stdMm": 1,
+    "p5Mm": 25.5,
+    "p95Mm": 28.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 50,
+    "meanMm": 31.9,
+    "stdMm": 9.5,
+    "p5Mm": 19.4,
+    "p95Mm": 49.2,
+    "floatingPct": 32,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 27.9,
+    "stdMm": 0,
+    "p5Mm": 27.9,
+    "p95Mm": 27.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 18,
+   "gapMinMm": 17.4,
+   "gapMaxMm": 18.6,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 13,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 33.6,
+   "circularity": 0.199,
+   "bandInnerMinMm": null,
+   "bandInnerMeanMm": null,
+   "verdict": {
+    "centered": true,
+    "intersection": false,
+    "clearanceOk": false
+   }
+  },
+  "uv": {
+   "printedTriangles": 1445,
+   "uvDistortionP95": 1.32,
+   "stretchedOver2xPct": 9.8,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "vestido",
+  "sex": "FEMININO",
+  "kind": "dress",
+  "layer": 3,
+  "vertices": 3693,
+  "triangles": 7120,
+  "trims": 0,
+  "collarBand": true,
+  "buildMs": 32,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.1,
+  "edgeStretchOver10Pct": 19.2,
+  "edgeCompressUnder10Pct": 17.8,
+  "edgeRatioP95": 1.29,
+  "relaxShiftP95Mm": 5.3,
+  "regions": {
+   "COLLAR": {
+    "n": 54,
+    "meanMm": 4.6,
+    "stdMm": 1.6,
+    "p5Mm": 2.7,
+    "p95Mm": 8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 312,
+    "meanMm": 4.1,
+    "stdMm": 1.1,
+    "p5Mm": 2.5,
+    "p95Mm": 5.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 10,
+    "meanMm": 3.6,
+    "stdMm": 0.3,
+    "p5Mm": 3.1,
+    "p95Mm": 4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 156,
+    "meanMm": 4.7,
+    "stdMm": 2,
+    "p5Mm": 2.6,
+    "p95Mm": 8.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 171,
+    "meanMm": 6.4,
+    "stdMm": 3.2,
+    "p5Mm": 2.8,
+    "p95Mm": 12.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 70,
+    "meanMm": 7.3,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 12.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SKIRT_TUBE": {
+    "n": 2752,
+    "meanMm": null,
+    "stdMm": null,
+    "p5Mm": 17.7,
+    "p95Mm": null,
+    "floatingPct": 80.6,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 32,
+   "gapMeanMm": 6.1,
+   "gapMinMm": 5.1,
+   "gapMaxMm": 7,
+   "gapStdMm": 0.4,
+   "collarFitErrorMm": 1.1,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 35.3,
+   "circularity": 0.199,
+   "bandInnerMinMm": -48.7,
+   "bandInnerMeanMm": -5.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 2854,
+   "uvDistortionP95": 1.58,
+   "stretchedOver2xPct": 13.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "saia+blusa",
+  "sex": "FEMININO",
+  "kind": "skirt",
+  "layer": 2,
+  "vertices": 2421,
+  "triangles": 4624,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 12,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 17.1,
+  "edgeCompressUnder10Pct": 15.5,
+  "edgeRatioP95": 1.17,
+  "relaxShiftP95Mm": 0,
+  "regions": {
+   "WAISTBAND": {
+    "n": 59,
+    "meanMm": 7.6,
+    "stdMm": 1.4,
+    "p5Mm": 4.3,
+    "p95Mm": 9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 12,
+    "meanMm": 8.2,
+    "stdMm": 0.8,
+    "p5Mm": 6.6,
+    "p95Mm": 9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SKIRT_TUBE": {
+    "n": 2304,
+    "meanMm": null,
+    "stdMm": null,
+    "p5Mm": 18.9,
+    "p95Mm": null,
+    "floatingPct": 80.2,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1559,
+   "uvDistortionP95": 1.76,
+   "stretchedOver2xPct": 14,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "saia+blusa",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1943,
+  "triangles": 3730,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 36,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.2,
+  "edgeStretchOver10Pct": 31.5,
+  "edgeCompressUnder10Pct": 17.3,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 11.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 254,
+    "meanMm": 4.9,
+    "stdMm": 1.6,
+    "p5Mm": 3.2,
+    "p95Mm": 8.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 144,
+    "meanMm": 10.3,
+    "stdMm": 3.8,
+    "p5Mm": 4.5,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.6,
+    "stdMm": 3.5,
+    "p5Mm": 15,
+    "p95Mm": 26.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 351,
+    "meanMm": 9.4,
+    "stdMm": 5.4,
+    "p5Mm": 4.2,
+    "p95Mm": 21.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 614,
+    "meanMm": 17.2,
+    "stdMm": 8.8,
+    "p5Mm": 5.9,
+    "p95Mm": 32.1,
+    "floatingPct": 6.7,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 27.6,
+    "stdMm": 3.1,
+    "p5Mm": 22.3,
+    "p95Mm": 32.6,
+    "floatingPct": 22.2,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 39.8,
+    "stdMm": 6,
+    "p5Mm": 27.5,
+    "p95Mm": 48.7,
+    "floatingPct": 92.9,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 35.1,
+    "stdMm": 0,
+    "p5Mm": 35.1,
+    "p95Mm": 35.1,
+    "floatingPct": 100,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.6,
+   "circularity": 0.167,
+   "bandInnerMinMm": -18.2,
+   "bandInnerMeanMm": 2.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1240,
+   "uvDistortionP95": 1.47,
+   "stretchedOver2xPct": 9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "shorts",
+  "sex": "FEMININO",
+  "kind": "shorts",
+  "layer": 2,
+  "vertices": 783,
+  "triangles": 1473,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 6,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 21.2,
+  "edgeCompressUnder10Pct": 21,
+  "edgeRatioP95": 1.24,
+  "relaxShiftP95Mm": 11,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 4.3,
+    "stdMm": 1,
+    "p5Mm": 3,
+    "p95Mm": 5.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 4.2,
+    "stdMm": 1.2,
+    "p5Mm": 2.2,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 371,
+    "meanMm": 3.9,
+    "stdMm": 0.6,
+    "p5Mm": 3,
+    "p95Mm": 4.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 4.4,
+    "stdMm": 1.6,
+    "p5Mm": 2.5,
+    "p95Mm": 8.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 62,
+    "meanMm": 4,
+    "stdMm": 0.7,
+    "p5Mm": 2.9,
+    "p95Mm": 5.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 645,
+   "uvDistortionP95": 2.16,
+   "stretchedOver2xPct": 20.2,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "regata",
+  "sex": "FEMININO",
+  "kind": "tank",
+  "layer": 3,
+  "vertices": 1322,
+  "triangles": 2521,
+  "trims": 1,
+  "collarBand": true,
+  "buildMs": 16,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.3,
+  "edgeStretchOver10Pct": 18.9,
+  "edgeCompressUnder10Pct": 17.4,
+  "edgeRatioP95": 1.26,
+  "relaxShiftP95Mm": 6.4,
+  "regions": {
+   "COLLAR": {
+    "n": 65,
+    "meanMm": 3.9,
+    "stdMm": 1.4,
+    "p5Mm": 2.5,
+    "p95Mm": 6.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 286,
+    "meanMm": 3.6,
+    "stdMm": 0.9,
+    "p5Mm": 2.3,
+    "p95Mm": 5.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 10,
+    "meanMm": 3.3,
+    "stdMm": 0.3,
+    "p5Mm": 2.8,
+    "p95Mm": 3.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 156,
+    "meanMm": 4.4,
+    "stdMm": 2.1,
+    "p5Mm": 2.3,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 593,
+    "meanMm": 7.1,
+    "stdMm": 4.3,
+    "p5Mm": 2.5,
+    "p95Mm": 15.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 62,
+    "meanMm": 5.1,
+    "stdMm": 3.3,
+    "p5Mm": 2.2,
+    "p95Mm": 11.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 8,
+    "meanMm": 3,
+    "stdMm": 0.3,
+    "p5Mm": 2.7,
+    "p95Mm": 3.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 13,
+   "gapMeanMm": 5,
+   "gapMinMm": 4.1,
+   "gapMaxMm": 5.4,
+   "gapStdMm": 0.4,
+   "collarFitErrorMm": 0.3,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": -57.3,
+   "circularity": 0.283,
+   "bandInnerMinMm": -50.7,
+   "bandInnerMeanMm": -5.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1082,
+   "uvDistortionP95": 1.41,
+   "stretchedOver2xPct": 10,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1539,
+  "triangles": 2987,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 12,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 16.3,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 15.9,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 6,
+    "stdMm": 1.4,
+    "p5Mm": 4.2,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 523,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4.1,
+    "p95Mm": 6.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 5.5,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 274,
+    "meanMm": 6.2,
+    "stdMm": 1.9,
+    "p5Mm": 3.8,
+    "p95Mm": 10.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 218,
+    "meanMm": 12.1,
+    "stdMm": 6,
+    "p5Mm": 4.3,
+    "p95Mm": 23.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.7,
+    "stdMm": 4,
+    "p5Mm": 10.5,
+    "p95Mm": 25,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1197,
+   "uvDistortionP95": 1.8,
+   "stretchedOver2xPct": 15.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2024,
+  "triangles": 3899,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 39,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.9,
+  "edgeStretchOver10Pct": 32,
+  "edgeCompressUnder10Pct": 17.9,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 4.9,
+    "stdMm": 1.8,
+    "p5Mm": 3,
+    "p95Mm": 9.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 160,
+    "meanMm": 9.3,
+    "stdMm": 4.2,
+    "p5Mm": 3.9,
+    "p95Mm": 17.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 9.3,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 369,
+    "meanMm": 11.1,
+    "stdMm": 5.2,
+    "p5Mm": 4.5,
+    "p95Mm": 21.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.7,
+    "stdMm": 2.8,
+    "p5Mm": 16,
+    "p95Mm": 24.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 621,
+    "meanMm": 18.3,
+    "stdMm": 10.1,
+    "p5Mm": 4.6,
+    "p95Mm": 34.6,
+    "floatingPct": 11.9,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 28,
+    "stdMm": 3.7,
+    "p5Mm": 24.1,
+    "p95Mm": 35.8,
+    "floatingPct": 20.6,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 23.9,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.6,
+   "circularity": 0.164,
+   "bandInnerMinMm": -13.8,
+   "bandInnerMeanMm": 3.4,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1406,
+   "uvDistortionP95": 1.45,
+   "stretchedOver2xPct": 8.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camiseta+calca+tenis",
+  "sex": "MASCULINO",
+  "kind": "shoes",
+  "layer": 2,
+  "vertices": 2214,
+  "triangles": 4378,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 20,
+  "intersectionRestPct": 4.4,
+  "intersectionDisplayPosePct": 4.4,
+  "edgeStretchOver10Pct": 61.6,
+  "edgeCompressUnder10Pct": 22.2,
+  "edgeRatioP95": 3,
+  "relaxShiftP95Mm": 20.6,
+  "regions": {
+   "FOOT": {
+    "n": 2075,
+    "meanMm": 5.2,
+    "stdMm": 4.1,
+    "p5Mm": -1.9,
+    "p95Mm": 12.4,
+    "floatingPct": 0,
+    "insidePct": 4.6
+   },
+   "SHAFT": {
+    "n": 91,
+    "meanMm": 25,
+    "stdMm": 4.9,
+    "p5Mm": 10.3,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": null
+ },
+ {
+  "label": "manga_longa",
+  "sex": "MASCULINO",
+  "kind": "longsleeve",
+  "layer": 3,
+  "vertices": 2622,
+  "triangles": 5097,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 47,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.7,
+  "edgeStretchOver10Pct": 28.6,
+  "edgeCompressUnder10Pct": 17.9,
+  "edgeRatioP95": 1.3,
+  "relaxShiftP95Mm": 11,
+  "regions": {
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 4.7,
+    "stdMm": 1.6,
+    "p5Mm": 3,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 728,
+    "meanMm": 4.5,
+    "stdMm": 1.4,
+    "p5Mm": 2.6,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 9.3,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 369,
+    "meanMm": 11.1,
+    "stdMm": 5.2,
+    "p5Mm": 4.4,
+    "p95Mm": 21.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 621,
+    "meanMm": 11.1,
+    "stdMm": 7.7,
+    "p5Mm": 3.5,
+    "p95Mm": 27.5,
+    "floatingPct": 2.4,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 82,
+    "meanMm": 6.3,
+    "stdMm": 1,
+    "p5Mm": 4.6,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 6.6,
+    "stdMm": 4,
+    "p5Mm": 2.4,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 3.8,
+    "stdMm": 1,
+    "p5Mm": 1.9,
+    "p95Mm": 4.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.6,
+   "circularity": 0.164,
+   "bandInnerMinMm": -13.8,
+   "bandInnerMeanMm": 3.4,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1463,
+   "uvDistortionP95": 1.6,
+   "stretchedOver2xPct": 8.9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "camisa",
+  "sex": "MASCULINO",
+  "kind": "shirt",
+  "layer": 3,
+  "vertices": 2699,
+  "triangles": 5257,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 30,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.7,
+  "edgeStretchOver10Pct": 30.2,
+  "edgeCompressUnder10Pct": 19.7,
+  "edgeRatioP95": 1.32,
+  "relaxShiftP95Mm": 12.5,
+  "regions": {
+   "COLLAR": {
+    "n": 124,
+    "meanMm": 10.4,
+    "stdMm": 3.6,
+    "p5Mm": 6,
+    "p95Mm": 17.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 280,
+    "meanMm": 5.2,
+    "stdMm": 1.7,
+    "p5Mm": 3.4,
+    "p95Mm": 9.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 728,
+    "meanMm": 5,
+    "stdMm": 1.3,
+    "p5Mm": 3.2,
+    "p95Mm": 7.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 374,
+    "meanMm": 12.8,
+    "stdMm": 5.9,
+    "p5Mm": 5,
+    "p95Mm": 25.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 194,
+    "meanMm": 7,
+    "stdMm": 2.9,
+    "p5Mm": 4.1,
+    "p95Mm": 12.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 642,
+    "meanMm": 12.7,
+    "stdMm": 8.7,
+    "p5Mm": 4.1,
+    "p95Mm": 31.1,
+    "floatingPct": 6.5,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 82,
+    "meanMm": 6.8,
+    "stdMm": 1,
+    "p5Mm": 5.1,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 34,
+    "meanMm": 4.7,
+    "stdMm": 1.2,
+    "p5Mm": 2.8,
+    "p95Mm": 6.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 41,
+    "meanMm": 10,
+    "stdMm": 5.6,
+    "p5Mm": 3.8,
+    "p95Mm": 20.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 6.4,
+    "stdMm": 0,
+    "p5Mm": 6.4,
+    "p95Mm": 6.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 43,
+   "gapMeanMm": 8,
+   "gapMinMm": 7.5,
+   "gapMaxMm": 8.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 3,
+   "centerOffsetXmm": 0.2,
+   "centerOffsetZmm": 25.3,
+   "circularity": 0.184,
+   "bandInnerMinMm": -15.8,
+   "bandInnerMeanMm": 2,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1539,
+   "uvDistortionP95": 1.46,
+   "stretchedOver2xPct": 7.7,
+   "compressedUnderHalfPct": 0.1
+  }
+ },
+ {
+  "label": "moletom",
+  "sex": "MASCULINO",
+  "kind": "hoodie",
+  "layer": 4,
+  "vertices": 2769,
+  "triangles": 5392,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 51,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.2,
+  "edgeStretchOver10Pct": 36.9,
+  "edgeCompressUnder10Pct": 23.6,
+  "edgeRatioP95": 1.4,
+  "relaxShiftP95Mm": 20.1,
+  "regions": {
+   "COLLAR": {
+    "n": 129,
+    "meanMm": 15.2,
+    "stdMm": 3.1,
+    "p5Mm": 11.3,
+    "p95Mm": 20.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 302,
+    "meanMm": 8.8,
+    "stdMm": 3,
+    "p5Mm": 6.6,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 734,
+    "meanMm": 8.5,
+    "stdMm": 1.9,
+    "p5Mm": 6.5,
+    "p95Mm": 12.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 399,
+    "meanMm": 17.9,
+    "stdMm": 6.4,
+    "p5Mm": 8.2,
+    "p95Mm": 30.1,
+    "floatingPct": 5.3,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 201,
+    "meanMm": 11.3,
+    "stdMm": 4,
+    "p5Mm": 7.4,
+    "p95Mm": 18.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 634,
+    "meanMm": 17.2,
+    "stdMm": 9.8,
+    "p5Mm": 7.6,
+    "p95Mm": 39,
+    "floatingPct": 14.2,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 96,
+    "meanMm": 4,
+    "stdMm": 1.5,
+    "p5Mm": 2.7,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 24,
+    "meanMm": 10.6,
+    "stdMm": 3.2,
+    "p5Mm": 5.3,
+    "p95Mm": 14.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 5.7,
+    "stdMm": 2,
+    "p5Mm": 2.9,
+    "p95Mm": 9.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 13.8,
+    "stdMm": 0,
+    "p5Mm": 13.8,
+    "p95Mm": 13.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 45,
+   "gapMeanMm": 14,
+   "gapMinMm": 12.9,
+   "gapMaxMm": 14.5,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 9,
+   "centerOffsetXmm": -3.1,
+   "centerOffsetZmm": 25.4,
+   "circularity": 0.174,
+   "bandInnerMinMm": -4.3,
+   "bandInnerMeanMm": 10.2,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": false
+   }
+  },
+  "uv": {
+   "printedTriangles": 1668,
+   "uvDistortionP95": 1.42,
+   "stretchedOver2xPct": 7.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "jaqueta_sobre_camiseta",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2024,
+  "triangles": 3899,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 27,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.5,
+  "edgeStretchOver10Pct": 26.9,
+  "edgeCompressUnder10Pct": 19.9,
+  "edgeRatioP95": 1.32,
+  "relaxShiftP95Mm": 11.2,
+  "regions": {
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 4.9,
+    "stdMm": 1.8,
+    "p5Mm": 3,
+    "p95Mm": 9.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 160,
+    "meanMm": 9.3,
+    "stdMm": 4.2,
+    "p5Mm": 3.9,
+    "p95Mm": 17.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 9.3,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 369,
+    "meanMm": 11.1,
+    "stdMm": 5.2,
+    "p5Mm": 4.5,
+    "p95Mm": 21.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.7,
+    "stdMm": 2.8,
+    "p5Mm": 16,
+    "p95Mm": 24.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 621,
+    "meanMm": 11.1,
+    "stdMm": 7.7,
+    "p5Mm": 3.5,
+    "p95Mm": 27.5,
+    "floatingPct": 2.4,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 6.6,
+    "stdMm": 4,
+    "p5Mm": 2.4,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 3.8,
+    "stdMm": 1,
+    "p5Mm": 1.9,
+    "p95Mm": 4.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.6,
+   "circularity": 0.164,
+   "bandInnerMinMm": -13.8,
+   "bandInnerMeanMm": 3.4,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1422,
+   "uvDistortionP95": 1.51,
+   "stretchedOver2xPct": 8.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "jaqueta_sobre_camiseta",
+  "sex": "MASCULINO",
+  "kind": "jacket",
+  "layer": 5,
+  "vertices": 2749,
+  "triangles": 5340,
+  "trims": 2,
+  "collarBand": false,
+  "buildMs": 21,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.9,
+  "edgeStretchOver10Pct": 53.9,
+  "edgeCompressUnder10Pct": 13.9,
+  "edgeRatioP95": 1.57,
+  "relaxShiftP95Mm": 17.6,
+  "regions": {
+   "COLLAR": {
+    "n": 123,
+    "meanMm": 30.5,
+    "stdMm": 6.2,
+    "p5Mm": 21.7,
+    "p95Mm": 42.9,
+    "floatingPct": 43.1,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 286,
+    "meanMm": 26.9,
+    "stdMm": 4,
+    "p5Mm": 16.7,
+    "p95Mm": 33,
+    "floatingPct": 10.5,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 740,
+    "meanMm": 16.9,
+    "stdMm": 7.4,
+    "p5Mm": 8.8,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 374,
+    "meanMm": 38.6,
+    "stdMm": 7.2,
+    "p5Mm": 27.7,
+    "p95Mm": 53.7,
+    "floatingPct": 89.3,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 201,
+    "meanMm": 31,
+    "stdMm": 4.3,
+    "p5Mm": 26.5,
+    "p95Mm": 39,
+    "floatingPct": 50.2,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 634,
+    "meanMm": null,
+    "stdMm": null,
+    "p5Mm": 27.8,
+    "p95Mm": 62.3,
+    "floatingPct": 84.1,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 108,
+    "meanMm": 14.7,
+    "stdMm": 1.5,
+    "p5Mm": 11.7,
+    "p95Mm": 16.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 24,
+    "meanMm": 27,
+    "stdMm": 1,
+    "p5Mm": 25.6,
+    "p95Mm": 28.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 56,
+    "meanMm": 30.3,
+    "stdMm": 4.1,
+    "p5Mm": 25.9,
+    "p95Mm": 38.9,
+    "floatingPct": 39.3,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 29.2,
+    "stdMm": 0,
+    "p5Mm": 29.2,
+    "p95Mm": 29.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 50,
+   "gapMeanMm": 17.9,
+   "gapMinMm": 17.4,
+   "gapMaxMm": 18.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 12.9,
+   "centerOffsetXmm": -0.9,
+   "centerOffsetZmm": 25,
+   "circularity": 0.161,
+   "bandInnerMinMm": null,
+   "bandInnerMeanMm": null,
+   "verdict": {
+    "centered": true,
+    "intersection": false,
+    "clearanceOk": false
+   }
+  },
+  "uv": {
+   "printedTriangles": 1600,
+   "uvDistortionP95": 1.43,
+   "stretchedOver2xPct": 7.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "vestido",
+  "sex": "MASCULINO",
+  "kind": "dress",
+  "layer": 3,
+  "vertices": 3686,
+  "triangles": 7100,
+  "trims": 0,
+  "collarBand": true,
+  "buildMs": 21,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 18.8,
+  "edgeCompressUnder10Pct": 21.2,
+  "edgeRatioP95": 1.22,
+  "relaxShiftP95Mm": 6.1,
+  "regions": {
+   "COLLAR": {
+    "n": 51,
+    "meanMm": 5.2,
+    "stdMm": 1.9,
+    "p5Mm": 3,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 334,
+    "meanMm": 4.6,
+    "stdMm": 1.2,
+    "p5Mm": 2.9,
+    "p95Mm": 5.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 26,
+    "meanMm": 3.5,
+    "stdMm": 0.9,
+    "p5Mm": 2.2,
+    "p95Mm": 4.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 154,
+    "meanMm": 4.6,
+    "stdMm": 1.9,
+    "p5Mm": 2.9,
+    "p95Mm": 9.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 131,
+    "meanMm": 4.7,
+    "stdMm": 1.9,
+    "p5Mm": 3,
+    "p95Mm": 9.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 73,
+    "meanMm": 6.4,
+    "stdMm": 2.9,
+    "p5Mm": 3,
+    "p95Mm": 11,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SKIRT_TUBE": {
+    "n": 2752,
+    "meanMm": null,
+    "stdMm": null,
+    "p5Mm": 19.4,
+    "p95Mm": null,
+    "floatingPct": 81.5,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 27,
+   "gapMeanMm": 6,
+   "gapMinMm": 5,
+   "gapMaxMm": 7,
+   "gapStdMm": 0.5,
+   "collarFitErrorMm": 1,
+   "centerOffsetXmm": 4.8,
+   "centerOffsetZmm": -1.5,
+   "circularity": 0.229,
+   "bandInnerMinMm": -41.9,
+   "bandInnerMeanMm": -3,
+   "verdict": {
+    "centered": false,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 2917,
+   "uvDistortionP95": 1.85,
+   "stretchedOver2xPct": 14.6,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "saia+blusa",
+  "sex": "MASCULINO",
+  "kind": "skirt",
+  "layer": 2,
+  "vertices": 2440,
+  "triangles": 4652,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 16,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 21.3,
+  "edgeCompressUnder10Pct": 23.8,
+  "edgeRatioP95": 1.18,
+  "relaxShiftP95Mm": 0,
+  "regions": {
+   "WAISTBAND": {
+    "n": 52,
+    "meanMm": 8.1,
+    "stdMm": 1.3,
+    "p5Mm": 5.6,
+    "p95Mm": 9.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 7,
+    "meanMm": 7.8,
+    "stdMm": 0.1,
+    "p5Mm": 7.5,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SKIRT_TUBE": {
+    "n": 2304,
+    "meanMm": null,
+    "stdMm": null,
+    "p5Mm": 18.5,
+    "p95Mm": null,
+    "floatingPct": 79.9,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1582,
+   "uvDistortionP95": 1.99,
+   "stretchedOver2xPct": 16.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "saia+blusa",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2024,
+  "triangles": 3899,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 42,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.1,
+  "edgeStretchOver10Pct": 31.6,
+  "edgeCompressUnder10Pct": 17.8,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 268,
+    "meanMm": 4.9,
+    "stdMm": 1.8,
+    "p5Mm": 3,
+    "p95Mm": 9.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 160,
+    "meanMm": 9.3,
+    "stdMm": 4.2,
+    "p5Mm": 3.9,
+    "p95Mm": 17.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 9.3,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 369,
+    "meanMm": 11.1,
+    "stdMm": 5.2,
+    "p5Mm": 4.5,
+    "p95Mm": 21.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.7,
+    "stdMm": 2.8,
+    "p5Mm": 16,
+    "p95Mm": 24.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 621,
+    "meanMm": 17.8,
+    "stdMm": 10.5,
+    "p5Mm": 4.6,
+    "p95Mm": 35.3,
+    "floatingPct": 16.3,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 40.3,
+    "stdMm": 5.5,
+    "p5Mm": 32.9,
+    "p95Mm": 51.5,
+    "floatingPct": 100,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 30.9,
+    "stdMm": 1.4,
+    "p5Mm": 27.9,
+    "p95Mm": 32.5,
+    "floatingPct": 84.6,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.6,
+   "circularity": 0.164,
+   "bandInnerMinMm": -13.8,
+   "bandInnerMeanMm": 3.4,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1391,
+   "uvDistortionP95": 1.47,
+   "stretchedOver2xPct": 7.9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "shorts",
+  "sex": "MASCULINO",
+  "kind": "shorts",
+  "layer": 2,
+  "vertices": 863,
+  "triangles": 1635,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 6,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 20.9,
+  "edgeCompressUnder10Pct": 20.1,
+  "edgeRatioP95": 1.24,
+  "relaxShiftP95Mm": 11.3,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 4.5,
+    "stdMm": 1.2,
+    "p5Mm": 3.1,
+    "p95Mm": 6.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 4.1,
+    "stdMm": 1,
+    "p5Mm": 2.7,
+    "p95Mm": 6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 401,
+    "meanMm": 3.9,
+    "stdMm": 0.6,
+    "p5Mm": 2.9,
+    "p95Mm": 4.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 4.3,
+    "stdMm": 0.9,
+    "p5Mm": 2.7,
+    "p95Mm": 5.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 58,
+    "meanMm": 4,
+    "stdMm": 0.7,
+    "p5Mm": 2.7,
+    "p95Mm": 5,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 620,
+   "uvDistortionP95": 2.08,
+   "stretchedOver2xPct": 19.8,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "regata",
+  "sex": "MASCULINO",
+  "kind": "tank",
+  "layer": 3,
+  "vertices": 1372,
+  "triangles": 2604,
+  "trims": 1,
+  "collarBand": true,
+  "buildMs": 16,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.1,
+  "edgeStretchOver10Pct": 18.4,
+  "edgeCompressUnder10Pct": 18.8,
+  "edgeRatioP95": 1.22,
+  "relaxShiftP95Mm": 7.6,
+  "regions": {
+   "COLLAR": {
+    "n": 55,
+    "meanMm": 4.2,
+    "stdMm": 1.6,
+    "p5Mm": 2.4,
+    "p95Mm": 6.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 315,
+    "meanMm": 4,
+    "stdMm": 0.9,
+    "p5Mm": 2.7,
+    "p95Mm": 4.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SHOULDER": {
+    "n": 26,
+    "meanMm": 3.1,
+    "stdMm": 0.9,
+    "p5Mm": 1.8,
+    "p95Mm": 4.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 154,
+    "meanMm": 4.3,
+    "stdMm": 1.8,
+    "p5Mm": 2.6,
+    "p95Mm": 8.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 609,
+    "meanMm": 7.1,
+    "stdMm": 4.8,
+    "p5Mm": 2.7,
+    "p95Mm": 17.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 58,
+    "meanMm": 4.3,
+    "stdMm": 2.6,
+    "p5Mm": 2.3,
+    "p95Mm": 11.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 17,
+   "gapMeanMm": 5,
+   "gapMinMm": 4,
+   "gapMaxMm": 6,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 0.5,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": -50.6,
+   "circularity": 0.259,
+   "bandInnerMinMm": -44.1,
+   "bandInnerMeanMm": -5.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1245,
+   "uvDistortionP95": 1.88,
+   "stretchedOver2xPct": 12.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_estreitos",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1515,
+  "triangles": 2939,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 15,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 31,
+  "edgeCompressUnder10Pct": 15.4,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 12.8,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.7,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.4,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 473,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.6,
+    "stdMm": 1.5,
+    "p5Mm": 3.6,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 324,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 3.8,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 272,
+    "meanMm": 13.3,
+    "stdMm": 4.6,
+    "p5Mm": 5.1,
+    "p95Mm": 20.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.5,
+    "p5Mm": 16,
+    "p95Mm": 24.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1305,
+   "uvDistortionP95": 1.56,
+   "stretchedOver2xPct": 16.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_estreitos",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1931,
+  "triangles": 3712,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 27,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.1,
+  "edgeStretchOver10Pct": 31.3,
+  "edgeCompressUnder10Pct": 17.4,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 11.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 232,
+    "meanMm": 4.8,
+    "stdMm": 1.5,
+    "p5Mm": 3.2,
+    "p95Mm": 8.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 166,
+    "meanMm": 9.7,
+    "stdMm": 3.9,
+    "p5Mm": 4.4,
+    "p95Mm": 16.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 70,
+    "meanMm": 21.5,
+    "stdMm": 3.4,
+    "p5Mm": 15.3,
+    "p95Mm": 26.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 71,
+    "meanMm": 7.1,
+    "stdMm": 3.1,
+    "p5Mm": 3.5,
+    "p95Mm": 12.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 353,
+    "meanMm": 9.3,
+    "stdMm": 5.4,
+    "p5Mm": 4,
+    "p95Mm": 21.2,
+    "floatingPct": 0.8,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 185,
+    "meanMm": 6.3,
+    "stdMm": 3.6,
+    "p5Mm": 3.2,
+    "p95Mm": 13.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 606,
+    "meanMm": 18.7,
+    "stdMm": 9.3,
+    "p5Mm": 5.7,
+    "p95Mm": 32.1,
+    "floatingPct": 11.4,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1,
+    "p5Mm": 24.3,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 54,
+    "meanMm": 30,
+    "stdMm": 7.1,
+    "p5Mm": 22.8,
+    "p95Mm": 43.3,
+    "floatingPct": 29.6,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.9,
+    "stdMm": 0,
+    "p5Mm": 26.9,
+    "p95Mm": 26.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 58,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 23.5,
+   "circularity": 0.164,
+   "bandInnerMinMm": -19.4,
+   "bandInnerMeanMm": 1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1232,
+   "uvDistortionP95": 1.55,
+   "stretchedOver2xPct": 8.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_largos",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1515,
+  "triangles": 2939,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 12,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.4,
+  "edgeCompressUnder10Pct": 15.7,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 13.1,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.6,
+    "stdMm": 1.2,
+    "p5Mm": 4.2,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.5,
+    "stdMm": 1.4,
+    "p5Mm": 3.3,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 479,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4,
+    "p95Mm": 6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 51,
+    "meanMm": 5.6,
+    "stdMm": 1.4,
+    "p5Mm": 3.9,
+    "p95Mm": 8.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 334,
+    "meanMm": 6.5,
+    "stdMm": 2.2,
+    "p5Mm": 3.9,
+    "p95Mm": 11.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 258,
+    "meanMm": 13.5,
+    "stdMm": 4.9,
+    "p5Mm": 4.9,
+    "p95Mm": 20.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.5,
+    "p5Mm": 15.9,
+    "p95Mm": 24.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1326,
+   "uvDistortionP95": 1.71,
+   "stretchedOver2xPct": 17.6,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_largos",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1951,
+  "triangles": 3749,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 29,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.5,
+  "edgeStretchOver10Pct": 32.2,
+  "edgeCompressUnder10Pct": 17.4,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 10.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 258,
+    "meanMm": 5.1,
+    "stdMm": 1.8,
+    "p5Mm": 3.1,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 140,
+    "meanMm": 10.6,
+    "stdMm": 3.9,
+    "p5Mm": 4.5,
+    "p95Mm": 17.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.4,
+    "stdMm": 3.6,
+    "p5Mm": 14.3,
+    "p95Mm": 26.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 70,
+    "meanMm": 8.5,
+    "stdMm": 4.6,
+    "p5Mm": 3.3,
+    "p95Mm": 17.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 357,
+    "meanMm": 9.7,
+    "stdMm": 5.5,
+    "p5Mm": 4.4,
+    "p95Mm": 22.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.4,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 612,
+    "meanMm": 17.2,
+    "stdMm": 8.3,
+    "p5Mm": 5.6,
+    "p95Mm": 28,
+    "floatingPct": 3.1,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1.1,
+    "p5Mm": 24.5,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 54,
+    "meanMm": 27.7,
+    "stdMm": 5.7,
+    "p5Mm": 18.8,
+    "p95Mm": 39.5,
+    "floatingPct": 18.5,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.8,
+    "stdMm": 0,
+    "p5Mm": 26.8,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 60,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.2,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 22.9,
+   "circularity": 0.178,
+   "bandInnerMinMm": -15.5,
+   "bandInnerMeanMm": 2.2,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1285,
+   "uvDistortionP95": 1.68,
+   "stretchedOver2xPct": 10.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_menor",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1513,
+  "triangles": 2935,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.5,
+  "edgeCompressUnder10Pct": 15.4,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 12.9,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.7,
+    "stdMm": 1.2,
+    "p5Mm": 4.2,
+    "p95Mm": 7.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 473,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.6,
+    "stdMm": 1.5,
+    "p5Mm": 3.6,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 324,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 3.8,
+    "p95Mm": 11.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 272,
+    "meanMm": 13.4,
+    "stdMm": 4.6,
+    "p5Mm": 5,
+    "p95Mm": 20.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 21,
+    "stdMm": 2.6,
+    "p5Mm": 16,
+    "p95Mm": 24.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1320,
+   "uvDistortionP95": 1.7,
+   "stretchedOver2xPct": 17.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_menor",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1943,
+  "triangles": 3731,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 43,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.3,
+  "edgeStretchOver10Pct": 31.5,
+  "edgeCompressUnder10Pct": 17.3,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 10.2,
+  "regions": {
+   "SHOULDER": {
+    "n": 260,
+    "meanMm": 5.2,
+    "stdMm": 2,
+    "p5Mm": 3.2,
+    "p95Mm": 9.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 138,
+    "meanMm": 10.5,
+    "stdMm": 4,
+    "p5Mm": 4.5,
+    "p95Mm": 17.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 68,
+    "meanMm": 21.6,
+    "stdMm": 3.4,
+    "p5Mm": 14.8,
+    "p95Mm": 26.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.7,
+    "stdMm": 3.7,
+    "p5Mm": 3.2,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 373,
+    "meanMm": 9.7,
+    "stdMm": 4.8,
+    "p5Mm": 4.6,
+    "p95Mm": 19.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 192,
+    "meanMm": 6.9,
+    "stdMm": 3.9,
+    "p5Mm": 3.3,
+    "p95Mm": 15.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 579,
+    "meanMm": 15.6,
+    "stdMm": 8.7,
+    "p5Mm": 4.2,
+    "p95Mm": 27.8,
+    "floatingPct": 2.6,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1.1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 48,
+    "meanMm": 27.6,
+    "stdMm": 4.9,
+    "p5Mm": 19.8,
+    "p95Mm": 37.1,
+    "floatingPct": 20.8,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.8,
+    "stdMm": 0,
+    "p5Mm": 26.8,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 62,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.2,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.3,
+   "circularity": 0.171,
+   "bandInnerMinMm": -18,
+   "bandInnerMeanMm": 1.7,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1295,
+   "uvDistortionP95": 1.67,
+   "stretchedOver2xPct": 11.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_maior",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1527,
+  "triangles": 2956,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 15.4,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 13.1,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.6,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.4,
+    "p95Mm": 8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 479,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.5,
+    "stdMm": 1.4,
+    "p5Mm": 3.7,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 330,
+    "meanMm": 6.5,
+    "stdMm": 2.2,
+    "p5Mm": 3.9,
+    "p95Mm": 11.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 260,
+    "meanMm": 13.4,
+    "stdMm": 4.9,
+    "p5Mm": 4.8,
+    "p95Mm": 20.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.8,
+    "stdMm": 2.6,
+    "p5Mm": 15.9,
+    "p95Mm": 24.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1314,
+   "uvDistortionP95": 1.7,
+   "stretchedOver2xPct": 17,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_maior",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1945,
+  "triangles": 3730,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 26,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.2,
+  "edgeStretchOver10Pct": 32,
+  "edgeCompressUnder10Pct": 17.6,
+  "edgeRatioP95": 1.44,
+  "relaxShiftP95Mm": 12.2,
+  "regions": {
+   "SHOULDER": {
+    "n": 222,
+    "meanMm": 4.6,
+    "stdMm": 1.5,
+    "p5Mm": 3.1,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 174,
+    "meanMm": 9.4,
+    "stdMm": 3.8,
+    "p5Mm": 4.2,
+    "p95Mm": 16,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 76,
+    "meanMm": 21.3,
+    "stdMm": 3.6,
+    "p5Mm": 15.1,
+    "p95Mm": 26.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.6,
+    "stdMm": 3.7,
+    "p5Mm": 3.6,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 331,
+    "meanMm": 9.6,
+    "stdMm": 6,
+    "p5Mm": 3.8,
+    "p95Mm": 22.8,
+    "floatingPct": 1.2,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.1,
+    "stdMm": 3.4,
+    "p5Mm": 3.2,
+    "p95Mm": 13.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 634,
+    "meanMm": 20.8,
+    "stdMm": 9.8,
+    "p5Mm": 6,
+    "p95Mm": 36,
+    "floatingPct": 20.2,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 26.1,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 60,
+    "meanMm": 31.3,
+    "stdMm": 8.8,
+    "p5Mm": 24.1,
+    "p95Mm": 48.4,
+    "floatingPct": 30,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.9,
+    "stdMm": 0,
+    "p5Mm": 26.9,
+    "p95Mm": 26.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.3,
+   "gapMinMm": 6.5,
+   "gapMaxMm": 8.4,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.3,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 24.1,
+   "circularity": 0.168,
+   "bandInnerMinMm": -18.4,
+   "bandInnerMeanMm": 0.8,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1228,
+   "uvDistortionP95": 1.66,
+   "stretchedOver2xPct": 8.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_magra",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1525,
+  "triangles": 2952,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 15.5,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 12.9,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.6,
+    "stdMm": 1.2,
+    "p5Mm": 4.1,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.5,
+    "stdMm": 1.3,
+    "p5Mm": 3.4,
+    "p95Mm": 8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 473,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.7,
+    "stdMm": 1.5,
+    "p5Mm": 3.9,
+    "p95Mm": 9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 328,
+    "meanMm": 6.4,
+    "stdMm": 2.1,
+    "p5Mm": 3.9,
+    "p95Mm": 11.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 268,
+    "meanMm": 13.5,
+    "stdMm": 4.7,
+    "p5Mm": 5,
+    "p95Mm": 20.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 21,
+    "stdMm": 2.5,
+    "p5Mm": 15.9,
+    "p95Mm": 24.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1300,
+   "uvDistortionP95": 1.71,
+   "stretchedOver2xPct": 16.8,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_magra",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1950,
+  "triangles": 3747,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 27,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.4,
+  "edgeStretchOver10Pct": 31.6,
+  "edgeCompressUnder10Pct": 17,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 10.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 258,
+    "meanMm": 5.1,
+    "stdMm": 1.7,
+    "p5Mm": 3.3,
+    "p95Mm": 8.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 142,
+    "meanMm": 10.5,
+    "stdMm": 3.9,
+    "p5Mm": 4.4,
+    "p95Mm": 16.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 70,
+    "meanMm": 21.5,
+    "stdMm": 3.5,
+    "p5Mm": 14.4,
+    "p95Mm": 26.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.7,
+    "stdMm": 3.7,
+    "p5Mm": 3.5,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 345,
+    "meanMm": 9.4,
+    "stdMm": 5.3,
+    "p5Mm": 4.2,
+    "p95Mm": 19.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 181,
+    "meanMm": 6.2,
+    "stdMm": 3.2,
+    "p5Mm": 3.1,
+    "p95Mm": 13.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 620,
+    "meanMm": 17.6,
+    "stdMm": 8.7,
+    "p5Mm": 5.5,
+    "p95Mm": 28.8,
+    "floatingPct": 3.2,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1.1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 52,
+    "meanMm": 28.6,
+    "stdMm": 5.7,
+    "p5Mm": 20.9,
+    "p95Mm": 39.9,
+    "floatingPct": 23.1,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.7,
+    "stdMm": 0,
+    "p5Mm": 26.7,
+    "p95Mm": 26.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 60,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 8.6,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 24.2,
+   "circularity": 0.168,
+   "bandInnerMinMm": -17.5,
+   "bandInnerMeanMm": 2.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1253,
+   "uvDistortionP95": 1.54,
+   "stretchedOver2xPct": 8.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_forte",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1513,
+  "triangles": 2935,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 15.4,
+  "edgeRatioP95": 1.46,
+  "relaxShiftP95Mm": 13.3,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.7,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 479,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.5,
+    "stdMm": 1.4,
+    "p5Mm": 3.4,
+    "p95Mm": 8.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 322,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 4,
+    "p95Mm": 11.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 268,
+    "meanMm": 13.2,
+    "stdMm": 4.8,
+    "p5Mm": 4.9,
+    "p95Mm": 20.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.5,
+    "p5Mm": 16,
+    "p95Mm": 24.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1326,
+   "uvDistortionP95": 1.56,
+   "stretchedOver2xPct": 17.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_forte",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1933,
+  "triangles": 3712,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 26,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.6,
+  "edgeStretchOver10Pct": 31.7,
+  "edgeCompressUnder10Pct": 17.6,
+  "edgeRatioP95": 1.41,
+  "relaxShiftP95Mm": 10.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 250,
+    "meanMm": 4.9,
+    "stdMm": 1.6,
+    "p5Mm": 3.1,
+    "p95Mm": 8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 146,
+    "meanMm": 10.1,
+    "stdMm": 3.8,
+    "p5Mm": 4.4,
+    "p95Mm": 16.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 70,
+    "meanMm": 21.2,
+    "stdMm": 3.5,
+    "p5Mm": 14.9,
+    "p95Mm": 26.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 361,
+    "meanMm": 9.7,
+    "stdMm": 5.4,
+    "p5Mm": 4.4,
+    "p95Mm": 21.3,
+    "floatingPct": 0.3,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 185,
+    "meanMm": 6.5,
+    "stdMm": 3.8,
+    "p5Mm": 3.3,
+    "p95Mm": 14.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 598,
+    "meanMm": 18.1,
+    "stdMm": 8.6,
+    "p5Mm": 6.2,
+    "p95Mm": 29.3,
+    "floatingPct": 3.7,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 26,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 58,
+    "meanMm": 28.9,
+    "stdMm": 6.7,
+    "p5Mm": 19.6,
+    "p95Mm": 41.5,
+    "floatingPct": 25.9,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 27,
+    "stdMm": 0,
+    "p5Mm": 27,
+    "p95Mm": 27,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 62,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 22.6,
+   "circularity": 0.177,
+   "bandInnerMinMm": -19,
+   "bandInnerMeanMm": 0.8,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1275,
+   "uvDistortionP95": 1.65,
+   "stretchedOver2xPct": 10.2,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_curto",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1521,
+  "triangles": 2940,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 31.2,
+  "edgeCompressUnder10Pct": 15.2,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 13.4,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 5.4,
+    "stdMm": 1,
+    "p5Mm": 4.3,
+    "p95Mm": 7.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 131,
+    "meanMm": 5.5,
+    "stdMm": 1.4,
+    "p5Mm": 3.3,
+    "p95Mm": 8.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 475,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 55,
+    "meanMm": 5.5,
+    "stdMm": 1.3,
+    "p5Mm": 3.5,
+    "p95Mm": 8.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 320,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 4,
+    "p95Mm": 11.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 272,
+    "meanMm": 13.3,
+    "stdMm": 4.8,
+    "p5Mm": 5.1,
+    "p95Mm": 21.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.6,
+    "p5Mm": 15.8,
+    "p95Mm": 24.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1322,
+   "uvDistortionP95": 1.53,
+   "stretchedOver2xPct": 16.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_curto",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1939,
+  "triangles": 3726,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 25,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2,
+  "edgeStretchOver10Pct": 32.3,
+  "edgeCompressUnder10Pct": 17.6,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 10.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 256,
+    "meanMm": 4.9,
+    "stdMm": 1.6,
+    "p5Mm": 3.2,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 142,
+    "meanMm": 10.4,
+    "stdMm": 3.9,
+    "p5Mm": 4.5,
+    "p95Mm": 16.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 64,
+    "meanMm": 21.5,
+    "stdMm": 3.4,
+    "p5Mm": 15.5,
+    "p95Mm": 26.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.8,
+    "stdMm": 3.8,
+    "p5Mm": 3.4,
+    "p95Mm": 15,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 339,
+    "meanMm": 9.6,
+    "stdMm": 5.5,
+    "p5Mm": 4.3,
+    "p95Mm": 21.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 181,
+    "meanMm": 6.3,
+    "stdMm": 3.3,
+    "p5Mm": 3.4,
+    "p95Mm": 13.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 626,
+    "meanMm": 17.4,
+    "stdMm": 8.6,
+    "p5Mm": 5.4,
+    "p95Mm": 28.2,
+    "floatingPct": 3.4,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 26,
+    "stdMm": 1.1,
+    "p5Mm": 24.5,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 60,
+    "meanMm": 28.6,
+    "stdMm": 6.4,
+    "p5Mm": 19.6,
+    "p95Mm": 40.7,
+    "floatingPct": 23.3,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 27,
+    "stdMm": 0,
+    "p5Mm": 27,
+    "p95Mm": 27,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 62,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.7,
+   "circularity": 0.167,
+   "bandInnerMinMm": -16.2,
+   "bandInnerMeanMm": 1.9,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1267,
+   "uvDistortionP95": 1.63,
+   "stretchedOver2xPct": 9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_longo",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1515,
+  "triangles": 2943,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.3,
+  "edgeCompressUnder10Pct": 16,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 12.6,
+  "regions": {
+   "WAISTBAND": {
+    "n": 46,
+    "meanMm": 5.7,
+    "stdMm": 1.4,
+    "p5Mm": 4,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 151,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 491,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4,
+    "p95Mm": 6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 43,
+    "meanMm": 5.5,
+    "stdMm": 1.3,
+    "p5Mm": 3.9,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 326,
+    "meanMm": 6.4,
+    "stdMm": 2.1,
+    "p5Mm": 3.8,
+    "p95Mm": 11.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 262,
+    "meanMm": 13.6,
+    "stdMm": 5,
+    "p5Mm": 4.9,
+    "p95Mm": 21.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 92,
+    "meanMm": 20.8,
+    "stdMm": 2.6,
+    "p5Mm": 15.9,
+    "p95Mm": 24.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1316,
+   "uvDistortionP95": 1.69,
+   "stretchedOver2xPct": 16.9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_longo",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1949,
+  "triangles": 3737,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 25,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.5,
+  "edgeStretchOver10Pct": 31.6,
+  "edgeCompressUnder10Pct": 17.8,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 11.1,
+  "regions": {
+   "SHOULDER": {
+    "n": 242,
+    "meanMm": 5.1,
+    "stdMm": 1.8,
+    "p5Mm": 3.2,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 158,
+    "meanMm": 10.1,
+    "stdMm": 3.9,
+    "p5Mm": 4.3,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.4,
+    "stdMm": 3.6,
+    "p5Mm": 14.3,
+    "p95Mm": 26.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.8,
+    "stdMm": 4,
+    "p5Mm": 3.4,
+    "p95Mm": 15,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 361,
+    "meanMm": 9.9,
+    "stdMm": 5.5,
+    "p5Mm": 4.4,
+    "p95Mm": 21.6,
+    "floatingPct": 0.3,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 189,
+    "meanMm": 6.6,
+    "stdMm": 3.8,
+    "p5Mm": 3.1,
+    "p95Mm": 14.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 592,
+    "meanMm": 18,
+    "stdMm": 8.7,
+    "p5Mm": 6.2,
+    "p95Mm": 29.1,
+    "floatingPct": 3.2,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 14,
+    "meanMm": 26,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 50,
+    "meanMm": 29.5,
+    "stdMm": 6.8,
+    "p5Mm": 20.5,
+    "p95Mm": 41.9,
+    "floatingPct": 28,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.7,
+    "stdMm": 0,
+    "p5Mm": 26.7,
+    "p95Mm": 26.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 24.2,
+   "circularity": 0.171,
+   "bandInnerMinMm": -18.8,
+   "bandInnerMeanMm": 2,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1274,
+   "uvDistortionP95": 1.65,
+   "stretchedOver2xPct": 10.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_curtos",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1513,
+  "triangles": 2935,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 31,
+  "edgeCompressUnder10Pct": 15.7,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 13.1,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.7,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 473,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.6,
+    "stdMm": 1.5,
+    "p5Mm": 3.7,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 328,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 3.8,
+    "p95Mm": 11.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 268,
+    "meanMm": 13.4,
+    "stdMm": 4.7,
+    "p5Mm": 5,
+    "p95Mm": 20.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.7,
+    "p5Mm": 15.9,
+    "p95Mm": 24.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1316,
+   "uvDistortionP95": 1.73,
+   "stretchedOver2xPct": 17.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_curtos",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1959,
+  "triangles": 3758,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 33,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.2,
+  "edgeStretchOver10Pct": 32.2,
+  "edgeCompressUnder10Pct": 17.2,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 10.9,
+  "regions": {
+   "SHOULDER": {
+    "n": 230,
+    "meanMm": 4.9,
+    "stdMm": 1.7,
+    "p5Mm": 3.2,
+    "p95Mm": 8.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 164,
+    "meanMm": 10,
+    "stdMm": 4,
+    "p5Mm": 4.2,
+    "p95Mm": 16.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 78,
+    "meanMm": 20.9,
+    "stdMm": 3.5,
+    "p5Mm": 14.3,
+    "p95Mm": 25.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.6,
+    "stdMm": 3.6,
+    "p5Mm": 3.4,
+    "p95Mm": 14.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 349,
+    "meanMm": 9.4,
+    "stdMm": 5.4,
+    "p5Mm": 4.1,
+    "p95Mm": 21.5,
+    "floatingPct": 0.3,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 179,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.3,
+    "p95Mm": 13.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 616,
+    "meanMm": 17.8,
+    "stdMm": 8.8,
+    "p5Mm": 6,
+    "p95Mm": 29.1,
+    "floatingPct": 3.7,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 58,
+    "meanMm": 28.9,
+    "stdMm": 6.7,
+    "p5Mm": 19.8,
+    "p95Mm": 41.7,
+    "floatingPct": 25.9,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 26.8,
+    "stdMm": 0,
+    "p5Mm": 26.8,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 62,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 26.4,
+   "circularity": 0.17,
+   "bandInnerMinMm": -18,
+   "bandInnerMeanMm": 1.8,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1265,
+   "uvDistortionP95": 1.7,
+   "stretchedOver2xPct": 9.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_longos",
+  "sex": "FEMININO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1517,
+  "triangles": 2943,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 10,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.3,
+  "edgeCompressUnder10Pct": 15.4,
+  "edgeRatioP95": 1.47,
+  "relaxShiftP95Mm": 12.8,
+  "regions": {
+   "WAISTBAND": {
+    "n": 48,
+    "meanMm": 5.6,
+    "stdMm": 1.2,
+    "p5Mm": 4.2,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 145,
+    "meanMm": 5.4,
+    "stdMm": 1.3,
+    "p5Mm": 3.3,
+    "p95Mm": 7.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 485,
+    "meanMm": 5,
+    "stdMm": 0.6,
+    "p5Mm": 4,
+    "p95Mm": 5.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 53,
+    "meanMm": 5.6,
+    "stdMm": 1.4,
+    "p5Mm": 3.6,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 316,
+    "meanMm": 6.4,
+    "stdMm": 2.2,
+    "p5Mm": 4,
+    "p95Mm": 11.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 268,
+    "meanMm": 13.4,
+    "stdMm": 4.8,
+    "p5Mm": 5,
+    "p95Mm": 20.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 90,
+    "meanMm": 20.9,
+    "stdMm": 2.4,
+    "p5Mm": 16,
+    "p95Mm": 24,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1315,
+   "uvDistortionP95": 1.63,
+   "stretchedOver2xPct": 16.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_longos",
+  "sex": "FEMININO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 1937,
+  "triangles": 3718,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 42,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.7,
+  "edgeStretchOver10Pct": 31.1,
+  "edgeCompressUnder10Pct": 17.3,
+  "edgeRatioP95": 1.41,
+  "relaxShiftP95Mm": 11.1,
+  "regions": {
+   "SHOULDER": {
+    "n": 272,
+    "meanMm": 5.1,
+    "stdMm": 1.8,
+    "p5Mm": 3.3,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 130,
+    "meanMm": 10.6,
+    "stdMm": 3.9,
+    "p5Mm": 4.6,
+    "p95Mm": 17.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 58,
+    "meanMm": 21.6,
+    "stdMm": 3.1,
+    "p5Mm": 15.5,
+    "p95Mm": 26.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 72,
+    "meanMm": 7.5,
+    "stdMm": 3.5,
+    "p5Mm": 3.4,
+    "p95Mm": 14.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 351,
+    "meanMm": 9.3,
+    "stdMm": 5.3,
+    "p5Mm": 4.2,
+    "p95Mm": 21,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 181,
+    "meanMm": 6.2,
+    "stdMm": 3.3,
+    "p5Mm": 3.2,
+    "p95Mm": 13.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 614,
+    "meanMm": 17.6,
+    "stdMm": 8.6,
+    "p5Mm": 5.7,
+    "p95Mm": 28.6,
+    "floatingPct": 3.3,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 18,
+    "meanMm": 25.9,
+    "stdMm": 1,
+    "p5Mm": 24.4,
+    "p95Mm": 27.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 54,
+    "meanMm": 29.1,
+    "stdMm": 6.3,
+    "p5Mm": 20.4,
+    "p95Mm": 40.7,
+    "floatingPct": 25.9,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 1,
+    "meanMm": 27,
+    "stdMm": 0,
+    "p5Mm": 27,
+    "p95Mm": 27,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 64,
+   "gapMeanMm": 7.2,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 8.5,
+   "gapStdMm": 0.6,
+   "collarFitErrorMm": 2.2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 25.3,
+   "circularity": 0.165,
+   "bandInnerMinMm": -18.3,
+   "bandInnerMeanMm": 1.5,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1266,
+   "uvDistortionP95": 1.65,
+   "stretchedOver2xPct": 9.6,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_estreitos",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1539,
+  "triangles": 2985,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 11,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 16.1,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 15.7,
+  "regions": {
+   "WAISTBAND": {
+    "n": 58,
+    "meanMm": 6.1,
+    "stdMm": 1.4,
+    "p5Mm": 4.3,
+    "p95Mm": 8.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 517,
+    "meanMm": 5.1,
+    "stdMm": 0.6,
+    "p5Mm": 4.1,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 69,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.5,
+    "p95Mm": 7.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 276,
+    "meanMm": 6.4,
+    "stdMm": 1.9,
+    "p5Mm": 4,
+    "p95Mm": 10.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 220,
+    "meanMm": 12.1,
+    "stdMm": 5.9,
+    "p5Mm": 4.6,
+    "p95Mm": 23.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.7,
+    "stdMm": 3.9,
+    "p5Mm": 10.7,
+    "p95Mm": 24.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1208,
+   "uvDistortionP95": 1.88,
+   "stretchedOver2xPct": 15.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_estreitos",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2019,
+  "triangles": 3882,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 35,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.2,
+  "edgeStretchOver10Pct": 31.4,
+  "edgeCompressUnder10Pct": 18,
+  "edgeRatioP95": 1.37,
+  "relaxShiftP95Mm": 12.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 254,
+    "meanMm": 4.8,
+    "stdMm": 1.7,
+    "p5Mm": 2.9,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 172,
+    "meanMm": 9,
+    "stdMm": 4.1,
+    "p5Mm": 4.2,
+    "p95Mm": 17.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 94,
+    "meanMm": 8.7,
+    "stdMm": 3.6,
+    "p5Mm": 3.6,
+    "p95Mm": 14.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 365,
+    "meanMm": 10.5,
+    "stdMm": 5,
+    "p5Mm": 4.3,
+    "p95Mm": 20.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 178,
+    "meanMm": 5.9,
+    "stdMm": 2.7,
+    "p5Mm": 3.5,
+    "p95Mm": 11.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.9,
+    "stdMm": 2.8,
+    "p5Mm": 16.4,
+    "p95Mm": 24.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 622,
+    "meanMm": 19.1,
+    "stdMm": 11.2,
+    "p5Mm": 4.4,
+    "p95Mm": 37.4,
+    "floatingPct": 18,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 62,
+    "meanMm": 29.1,
+    "stdMm": 4.7,
+    "p5Mm": 24.8,
+    "p95Mm": 38.6,
+    "floatingPct": 29,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 11,
+    "meanMm": 25.7,
+    "stdMm": 1,
+    "p5Mm": 23.9,
+    "p95Mm": 26.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 58,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.6,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 11.3,
+   "circularity": 0.161,
+   "bandInnerMinMm": -14,
+   "bandInnerMeanMm": 2.6,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1406,
+   "uvDistortionP95": 1.69,
+   "stretchedOver2xPct": 9.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_largos",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1543,
+  "triangles": 2993,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.8,
+  "edgeCompressUnder10Pct": 17,
+  "edgeRatioP95": 1.44,
+  "relaxShiftP95Mm": 16.2,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 5.9,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 525,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 3.9,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 5.5,
+    "stdMm": 1.1,
+    "p5Mm": 3.6,
+    "p95Mm": 7.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 282,
+    "meanMm": 6.1,
+    "stdMm": 1.9,
+    "p5Mm": 3.7,
+    "p95Mm": 9.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 224,
+    "meanMm": 13.2,
+    "stdMm": 6.6,
+    "p5Mm": 4.5,
+    "p95Mm": 24.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 112,
+    "meanMm": 20.2,
+    "stdMm": 4,
+    "p5Mm": 9.5,
+    "p95Mm": 24,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1189,
+   "uvDistortionP95": 1.72,
+   "stretchedOver2xPct": 14.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:ombros_largos",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2026,
+  "triangles": 3905,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 34,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.7,
+  "edgeStretchOver10Pct": 32.4,
+  "edgeCompressUnder10Pct": 17.9,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 286,
+    "meanMm": 5,
+    "stdMm": 2,
+    "p5Mm": 2.9,
+    "p95Mm": 9.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 142,
+    "meanMm": 9.8,
+    "stdMm": 4.2,
+    "p5Mm": 4.4,
+    "p95Mm": 17.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 90,
+    "meanMm": 9.1,
+    "stdMm": 4.1,
+    "p5Mm": 3.6,
+    "p95Mm": 16.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 371,
+    "meanMm": 12.5,
+    "stdMm": 5,
+    "p5Mm": 5.9,
+    "p95Mm": 23,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.3,
+    "stdMm": 2.7,
+    "p5Mm": 3.5,
+    "p95Mm": 11.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.6,
+    "stdMm": 2.8,
+    "p5Mm": 15.6,
+    "p95Mm": 24.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 622,
+    "meanMm": 17.6,
+    "stdMm": 9.4,
+    "p5Mm": 4.5,
+    "p95Mm": 32,
+    "floatingPct": 9,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 65,
+    "meanMm": 27.2,
+    "stdMm": 3.4,
+    "p5Mm": 23.7,
+    "p95Mm": 34.7,
+    "floatingPct": 13.8,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.9,
+    "stdMm": 1,
+    "p5Mm": 23.9,
+    "p95Mm": 26.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 6.9,
+   "gapMinMm": 6.3,
+   "gapMaxMm": 7.5,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 1.9,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 13.6,
+   "circularity": 0.181,
+   "bandInnerMinMm": -11.3,
+   "bandInnerMeanMm": 3.5,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1406,
+   "uvDistortionP95": 1.33,
+   "stretchedOver2xPct": 7.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_menor",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1537,
+  "triangles": 2980,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 31,
+  "edgeCompressUnder10Pct": 16.9,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 15.7,
+  "regions": {
+   "WAISTBAND": {
+    "n": 58,
+    "meanMm": 6,
+    "stdMm": 1.4,
+    "p5Mm": 4.2,
+    "p95Mm": 8.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 521,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 3.9,
+    "p95Mm": 6.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 5.5,
+    "stdMm": 1.1,
+    "p5Mm": 3.7,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 276,
+    "meanMm": 6.3,
+    "stdMm": 1.9,
+    "p5Mm": 4,
+    "p95Mm": 10.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 218,
+    "meanMm": 12.2,
+    "stdMm": 5.9,
+    "p5Mm": 4.5,
+    "p95Mm": 23.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.7,
+    "stdMm": 4.2,
+    "p5Mm": 10.1,
+    "p95Mm": 25.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1199,
+   "uvDistortionP95": 1.78,
+   "stretchedOver2xPct": 14.1,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_menor",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2020,
+  "triangles": 3891,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 51,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0.7,
+  "edgeStretchOver10Pct": 31.8,
+  "edgeCompressUnder10Pct": 19,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 11.6,
+  "regions": {
+   "SHOULDER": {
+    "n": 290,
+    "meanMm": 5.1,
+    "stdMm": 2,
+    "p5Mm": 3,
+    "p95Mm": 9.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 136,
+    "meanMm": 9.8,
+    "stdMm": 4.3,
+    "p5Mm": 4.3,
+    "p95Mm": 17.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 98,
+    "meanMm": 9.7,
+    "stdMm": 4.7,
+    "p5Mm": 3.6,
+    "p95Mm": 19.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 373,
+    "meanMm": 11,
+    "stdMm": 4.7,
+    "p5Mm": 4.8,
+    "p95Mm": 21.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.2,
+    "stdMm": 2.6,
+    "p5Mm": 3.4,
+    "p95Mm": 11.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 64,
+    "meanMm": 20.7,
+    "stdMm": 2.8,
+    "p5Mm": 16,
+    "p95Mm": 24.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 609,
+    "meanMm": 15.6,
+    "stdMm": 9.3,
+    "p5Mm": 3.8,
+    "p95Mm": 29.2,
+    "floatingPct": 4.1,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 64,
+    "meanMm": 26.4,
+    "stdMm": 3.7,
+    "p5Mm": 18.1,
+    "p95Mm": 33.3,
+    "floatingPct": 12.5,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 11,
+    "meanMm": 25.7,
+    "stdMm": 1.1,
+    "p5Mm": 23.8,
+    "p95Mm": 27,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 54,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.5,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 15.6,
+   "circularity": 0.176,
+   "bandInnerMinMm": -11.4,
+   "bandInnerMeanMm": 4,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1406,
+   "uvDistortionP95": 1.39,
+   "stretchedOver2xPct": 7.3,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_maior",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1555,
+  "triangles": 3007,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.2,
+  "edgeCompressUnder10Pct": 16.2,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 16.2,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 6.2,
+    "stdMm": 1.5,
+    "p5Mm": 4.2,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 162,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 523,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4.1,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 69,
+    "meanMm": 5.4,
+    "stdMm": 1,
+    "p5Mm": 3.4,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 278,
+    "meanMm": 6.1,
+    "stdMm": 1.8,
+    "p5Mm": 3.8,
+    "p95Mm": 9.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 212,
+    "meanMm": 12.2,
+    "stdMm": 6.1,
+    "p5Mm": 4.3,
+    "p95Mm": 23.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.7,
+    "stdMm": 3.8,
+    "p5Mm": 10.8,
+    "p95Mm": 24.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1197,
+   "uvDistortionP95": 1.9,
+   "stretchedOver2xPct": 14.9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:peito_maior",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2027,
+  "triangles": 3904,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 32,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.3,
+  "edgeStretchOver10Pct": 32,
+  "edgeCompressUnder10Pct": 18.2,
+  "edgeRatioP95": 1.38,
+  "relaxShiftP95Mm": 13.4,
+  "regions": {
+   "SHOULDER": {
+    "n": 250,
+    "meanMm": 4.8,
+    "stdMm": 1.7,
+    "p5Mm": 2.9,
+    "p95Mm": 8.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 178,
+    "meanMm": 8.7,
+    "stdMm": 4,
+    "p5Mm": 4,
+    "p95Mm": 16.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 88,
+    "meanMm": 9.4,
+    "stdMm": 4.3,
+    "p5Mm": 3.5,
+    "p95Mm": 17.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 346,
+    "meanMm": 11.8,
+    "stdMm": 5.9,
+    "p5Mm": 4.1,
+    "p95Mm": 23.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 174,
+    "meanMm": 6,
+    "stdMm": 2.8,
+    "p5Mm": 3.4,
+    "p95Mm": 11.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 70,
+    "meanMm": 20.9,
+    "stdMm": 2.9,
+    "p5Mm": 15.9,
+    "p95Mm": 25.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 653,
+    "meanMm": 20.5,
+    "stdMm": 12.5,
+    "p5Mm": 4.1,
+    "p95Mm": 42,
+    "floatingPct": 25.3,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 66,
+    "meanMm": 31.1,
+    "stdMm": 5,
+    "p5Mm": 25.1,
+    "p95Mm": 41.1,
+    "floatingPct": 54.5,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 15,
+    "meanMm": 26.4,
+    "stdMm": 1.2,
+    "p5Mm": 24.6,
+    "p95Mm": 27.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 58,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.5,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 11.3,
+   "circularity": 0.165,
+   "bandInnerMinMm": -12.4,
+   "bandInnerMeanMm": 2.8,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1388,
+   "uvDistortionP95": 1.4,
+   "stretchedOver2xPct": 7.4,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_magra",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1543,
+  "triangles": 2993,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.7,
+  "edgeCompressUnder10Pct": 16.7,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 15.9,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 5.9,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 8.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 521,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 3.9,
+    "p95Mm": 6.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 5.6,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 280,
+    "meanMm": 6.2,
+    "stdMm": 1.9,
+    "p5Mm": 3.8,
+    "p95Mm": 10,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 230,
+    "meanMm": 13.2,
+    "stdMm": 6.5,
+    "p5Mm": 4.4,
+    "p95Mm": 24.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 112,
+    "meanMm": 20.1,
+    "stdMm": 4,
+    "p5Mm": 9.5,
+    "p95Mm": 24,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1176,
+   "uvDistortionP95": 1.68,
+   "stretchedOver2xPct": 13.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_magra",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2028,
+  "triangles": 3905,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 34,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.9,
+  "edgeStretchOver10Pct": 31.8,
+  "edgeCompressUnder10Pct": 17.9,
+  "edgeRatioP95": 1.37,
+  "relaxShiftP95Mm": 12.3,
+  "regions": {
+   "SHOULDER": {
+    "n": 274,
+    "meanMm": 4.9,
+    "stdMm": 1.8,
+    "p5Mm": 3,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 156,
+    "meanMm": 9.6,
+    "stdMm": 4.3,
+    "p5Mm": 4.4,
+    "p95Mm": 17.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 89,
+    "meanMm": 9,
+    "stdMm": 3.9,
+    "p5Mm": 3.6,
+    "p95Mm": 16.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 365,
+    "meanMm": 11.3,
+    "stdMm": 5.3,
+    "p5Mm": 4.4,
+    "p95Mm": 22,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6,
+    "stdMm": 2.5,
+    "p5Mm": 3.4,
+    "p95Mm": 10.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 66,
+    "meanMm": 21.2,
+    "stdMm": 2.9,
+    "p5Mm": 15.8,
+    "p95Mm": 25.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 628,
+    "meanMm": 17.9,
+    "stdMm": 10.1,
+    "p5Mm": 4.2,
+    "p95Mm": 33.9,
+    "floatingPct": 11,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 27.8,
+    "stdMm": 4,
+    "p5Mm": 22.4,
+    "p95Mm": 35.9,
+    "floatingPct": 19,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 23.7,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 54,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.5,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 15.6,
+   "circularity": 0.177,
+   "bandInnerMinMm": -11.6,
+   "bandInnerMeanMm": 3.3,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1405,
+   "uvDistortionP95": 1.63,
+   "stretchedOver2xPct": 8.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_forte",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1537,
+  "triangles": 2983,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.5,
+  "edgeCompressUnder10Pct": 16.3,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 16,
+  "regions": {
+   "WAISTBAND": {
+    "n": 58,
+    "meanMm": 6.1,
+    "stdMm": 1.5,
+    "p5Mm": 4.3,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 523,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4.1,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 69,
+    "meanMm": 5.3,
+    "stdMm": 1.1,
+    "p5Mm": 3.4,
+    "p95Mm": 7.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 272,
+    "meanMm": 6.2,
+    "stdMm": 1.9,
+    "p5Mm": 3.8,
+    "p95Mm": 10.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 218,
+    "meanMm": 12,
+    "stdMm": 6.1,
+    "p5Mm": 4.2,
+    "p95Mm": 23.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.8,
+    "stdMm": 3.9,
+    "p5Mm": 10.6,
+    "p95Mm": 24.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1209,
+   "uvDistortionP95": 1.79,
+   "stretchedOver2xPct": 15.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:compleicao_forte",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2021,
+  "triangles": 3890,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 33,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2,
+  "edgeStretchOver10Pct": 32,
+  "edgeCompressUnder10Pct": 17.9,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.7,
+  "regions": {
+   "SHOULDER": {
+    "n": 262,
+    "meanMm": 4.8,
+    "stdMm": 1.7,
+    "p5Mm": 3.1,
+    "p95Mm": 9.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 166,
+    "meanMm": 9.1,
+    "stdMm": 4.1,
+    "p5Mm": 4,
+    "p95Mm": 16.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 94,
+    "meanMm": 9.4,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 367,
+    "meanMm": 11,
+    "stdMm": 5.1,
+    "p5Mm": 4.4,
+    "p95Mm": 21.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 178,
+    "meanMm": 6.1,
+    "stdMm": 2.8,
+    "p5Mm": 3.5,
+    "p95Mm": 11.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.7,
+    "stdMm": 2.8,
+    "p5Mm": 16.3,
+    "p95Mm": 24.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 620,
+    "meanMm": 18.4,
+    "stdMm": 10.2,
+    "p5Mm": 4.9,
+    "p95Mm": 34.8,
+    "floatingPct": 13.5,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 65,
+    "meanMm": 28.3,
+    "stdMm": 4.5,
+    "p5Mm": 24.1,
+    "p95Mm": 38,
+    "floatingPct": 23.1,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 24.1,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 56,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.5,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 12,
+   "circularity": 0.163,
+   "bandInnerMinMm": -14.2,
+   "bandInnerMeanMm": 3,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1421,
+   "uvDistortionP95": 1.58,
+   "stretchedOver2xPct": 8.1,
+   "compressedUnderHalfPct": 0.1
+  }
+ },
+ {
+  "label": "extremo:torso_curto",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1559,
+  "triangles": 3017,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 31.2,
+  "edgeCompressUnder10Pct": 16.7,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 16.6,
+  "regions": {
+   "WAISTBAND": {
+    "n": 67,
+    "meanMm": 5.9,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 8.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 157,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 501,
+    "meanMm": 5.1,
+    "stdMm": 0.6,
+    "p5Mm": 4,
+    "p95Mm": 6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 77,
+    "meanMm": 5.3,
+    "stdMm": 1,
+    "p5Mm": 3.5,
+    "p95Mm": 7.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 286,
+    "meanMm": 6.4,
+    "stdMm": 1.9,
+    "p5Mm": 4.1,
+    "p95Mm": 10.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 218,
+    "meanMm": 12.2,
+    "stdMm": 6.1,
+    "p5Mm": 4.3,
+    "p95Mm": 23.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.8,
+    "stdMm": 4.1,
+    "p5Mm": 9.8,
+    "p95Mm": 25.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1231,
+   "uvDistortionP95": 1.77,
+   "stretchedOver2xPct": 15.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_curto",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2026,
+  "triangles": 3898,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 33,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.4,
+  "edgeStretchOver10Pct": 32.8,
+  "edgeCompressUnder10Pct": 18,
+  "edgeRatioP95": 1.37,
+  "relaxShiftP95Mm": 12.4,
+  "regions": {
+   "SHOULDER": {
+    "n": 276,
+    "meanMm": 4.8,
+    "stdMm": 1.7,
+    "p5Mm": 2.8,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 148,
+    "meanMm": 9.3,
+    "stdMm": 4.1,
+    "p5Mm": 4.3,
+    "p95Mm": 16.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 8.9,
+    "stdMm": 3.7,
+    "p5Mm": 3.6,
+    "p95Mm": 15.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 365,
+    "meanMm": 11.6,
+    "stdMm": 5.3,
+    "p5Mm": 4.4,
+    "p95Mm": 22.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 174,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.5,
+    "p95Mm": 11.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 64,
+    "meanMm": 20.8,
+    "stdMm": 2.9,
+    "p5Mm": 16.5,
+    "p95Mm": 24.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 641,
+    "meanMm": 17.7,
+    "stdMm": 10.2,
+    "p5Mm": 4.1,
+    "p95Mm": 33.2,
+    "floatingPct": 10.9,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 27.7,
+    "stdMm": 3.6,
+    "p5Mm": 24.5,
+    "p95Mm": 35.4,
+    "floatingPct": 15.9,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 15,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 24.1,
+    "p95Mm": 27.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 54,
+   "gapMeanMm": 6.9,
+   "gapMinMm": 6.5,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 1.9,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 14.7,
+   "circularity": 0.17,
+   "bandInnerMinMm": -15.5,
+   "bandInnerMeanMm": 2.9,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1419,
+   "uvDistortionP95": 1.58,
+   "stretchedOver2xPct": 8.2,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_longo",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1537,
+  "triangles": 2980,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.9,
+  "edgeCompressUnder10Pct": 16.6,
+  "edgeRatioP95": 1.42,
+  "relaxShiftP95Mm": 15.4,
+  "regions": {
+   "WAISTBAND": {
+    "n": 53,
+    "meanMm": 6.1,
+    "stdMm": 1.5,
+    "p5Mm": 4.5,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 164,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 533,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4,
+    "p95Mm": 6.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 59,
+    "meanMm": 5.7,
+    "stdMm": 1.2,
+    "p5Mm": 3.9,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 282,
+    "meanMm": 6.1,
+    "stdMm": 1.8,
+    "p5Mm": 3.8,
+    "p95Mm": 9.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 232,
+    "meanMm": 13.3,
+    "stdMm": 6.3,
+    "p5Mm": 4.5,
+    "p95Mm": 23.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 104,
+    "meanMm": 19.7,
+    "stdMm": 3.9,
+    "p5Mm": 10.1,
+    "p95Mm": 23.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1172,
+   "uvDistortionP95": 1.74,
+   "stretchedOver2xPct": 13.7,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:torso_longo",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2019,
+  "triangles": 3888,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 33,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.3,
+  "edgeStretchOver10Pct": 31.3,
+  "edgeCompressUnder10Pct": 18.5,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.4,
+  "regions": {
+   "SHOULDER": {
+    "n": 264,
+    "meanMm": 4.9,
+    "stdMm": 1.8,
+    "p5Mm": 3,
+    "p95Mm": 9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 168,
+    "meanMm": 9.2,
+    "stdMm": 4.2,
+    "p5Mm": 4.1,
+    "p95Mm": 17.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 96,
+    "meanMm": 9.3,
+    "stdMm": 4.4,
+    "p5Mm": 3.6,
+    "p95Mm": 17.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 369,
+    "meanMm": 10.8,
+    "stdMm": 5.1,
+    "p5Mm": 4.3,
+    "p95Mm": 21.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 178,
+    "meanMm": 6,
+    "stdMm": 2.6,
+    "p5Mm": 3.4,
+    "p95Mm": 10.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 72,
+    "meanMm": 21.4,
+    "stdMm": 3.1,
+    "p5Mm": 15.5,
+    "p95Mm": 25.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 611,
+    "meanMm": 17.7,
+    "stdMm": 10.3,
+    "p5Mm": 4.3,
+    "p95Mm": 34.6,
+    "floatingPct": 12.6,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 57,
+    "meanMm": 28.3,
+    "stdMm": 4.7,
+    "p5Mm": 22.4,
+    "p95Mm": 38.8,
+    "floatingPct": 22.8,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 11,
+    "meanMm": 25.6,
+    "stdMm": 1.1,
+    "p5Mm": 23.6,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 48,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.5,
+   "gapStdMm": 0.3,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 15.1,
+   "circularity": 0.178,
+   "bandInnerMinMm": -13.5,
+   "bandInnerMeanMm": 3.2,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1410,
+   "uvDistortionP95": 1.7,
+   "stretchedOver2xPct": 8.5,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_curtos",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1539,
+  "triangles": 2985,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 7,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.9,
+  "edgeCompressUnder10Pct": 16.5,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 16.2,
+  "regions": {
+   "WAISTBAND": {
+    "n": 58,
+    "meanMm": 6,
+    "stdMm": 1.4,
+    "p5Mm": 4.3,
+    "p95Mm": 8.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.1,
+    "p5Mm": 3.7,
+    "p95Mm": 7.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 515,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4.1,
+    "p95Mm": 6.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 69,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.3,
+    "p95Mm": 7.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 284,
+    "meanMm": 6.2,
+    "stdMm": 1.9,
+    "p5Mm": 4,
+    "p95Mm": 10.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 214,
+    "meanMm": 12.2,
+    "stdMm": 5.9,
+    "p5Mm": 4.3,
+    "p95Mm": 23.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 128,
+    "meanMm": 20.8,
+    "stdMm": 4,
+    "p5Mm": 10.6,
+    "p95Mm": 25.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1180,
+   "uvDistortionP95": 1.77,
+   "stretchedOver2xPct": 14.9,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_curtos",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2035,
+  "triangles": 3926,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 44,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 2.2,
+  "edgeStretchOver10Pct": 32.7,
+  "edgeCompressUnder10Pct": 17.7,
+  "edgeRatioP95": 1.37,
+  "relaxShiftP95Mm": 12.3,
+  "regions": {
+   "SHOULDER": {
+    "n": 256,
+    "meanMm": 4.9,
+    "stdMm": 1.7,
+    "p5Mm": 3,
+    "p95Mm": 8.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 176,
+    "meanMm": 9.3,
+    "stdMm": 4.1,
+    "p5Mm": 4,
+    "p95Mm": 16.5,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 92,
+    "meanMm": 9.1,
+    "stdMm": 4,
+    "p5Mm": 3.6,
+    "p95Mm": 16.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 365,
+    "meanMm": 11.2,
+    "stdMm": 5.2,
+    "p5Mm": 4.4,
+    "p95Mm": 21.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.6,
+    "p5Mm": 3.4,
+    "p95Mm": 11.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 74,
+    "meanMm": 21.2,
+    "stdMm": 3,
+    "p5Mm": 16.1,
+    "p95Mm": 25.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 630,
+    "meanMm": 18.2,
+    "stdMm": 10.2,
+    "p5Mm": 4.8,
+    "p95Mm": 34.6,
+    "floatingPct": 12.2,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 63,
+    "meanMm": 28.1,
+    "stdMm": 3.8,
+    "p5Mm": 24.3,
+    "p95Mm": 36,
+    "floatingPct": 19,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 23.8,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.5,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.9,
+   "circularity": 0.168,
+   "bandInnerMinMm": -13.5,
+   "bandInnerMeanMm": 3.5,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1413,
+   "uvDistortionP95": 1.44,
+   "stretchedOver2xPct": 8.1,
+   "compressedUnderHalfPct": 0.1
+  }
+ },
+ {
+  "label": "extremo:bracos_longos",
+  "sex": "MASCULINO",
+  "kind": "pants",
+  "layer": 2,
+  "vertices": 1543,
+  "triangles": 2993,
+  "trims": 0,
+  "collarBand": false,
+  "buildMs": 8,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 0,
+  "edgeStretchOver10Pct": 30.2,
+  "edgeCompressUnder10Pct": 16.9,
+  "edgeRatioP95": 1.43,
+  "relaxShiftP95Mm": 15.7,
+  "regions": {
+   "WAISTBAND": {
+    "n": 60,
+    "meanMm": 5.9,
+    "stdMm": 1.3,
+    "p5Mm": 4.2,
+    "p95Mm": 8.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 160,
+    "meanMm": 5.4,
+    "stdMm": 1.2,
+    "p5Mm": 3.8,
+    "p95Mm": 7.6,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 527,
+    "meanMm": 5.1,
+    "stdMm": 0.7,
+    "p5Mm": 4,
+    "p95Mm": 6.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CROTCH": {
+    "n": 67,
+    "meanMm": 5.5,
+    "stdMm": 1.1,
+    "p5Mm": 3.8,
+    "p95Mm": 7.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "KNEE": {
+    "n": 270,
+    "meanMm": 6.2,
+    "stdMm": 1.9,
+    "p5Mm": 3.7,
+    "p95Mm": 10.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LOWER_LEG": {
+    "n": 224,
+    "meanMm": 12.4,
+    "stdMm": 6.2,
+    "p5Mm": 4.3,
+    "p95Mm": 24.1,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "LEG_HEM": {
+    "n": 122,
+    "meanMm": 20.5,
+    "stdMm": 4,
+    "p5Mm": 10.3,
+    "p95Mm": 24.9,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": null,
+  "uv": {
+   "printedTriangles": 1209,
+   "uvDistortionP95": 1.77,
+   "stretchedOver2xPct": 14.6,
+   "compressedUnderHalfPct": 0
+  }
+ },
+ {
+  "label": "extremo:bracos_longos",
+  "sex": "MASCULINO",
+  "kind": "tee",
+  "layer": 3,
+  "vertices": 2012,
+  "triangles": 3875,
+  "trims": 3,
+  "collarBand": true,
+  "buildMs": 35,
+  "intersectionRestPct": 0,
+  "intersectionDisplayPosePct": 1.6,
+  "edgeStretchOver10Pct": 31.3,
+  "edgeCompressUnder10Pct": 18.2,
+  "edgeRatioP95": 1.36,
+  "relaxShiftP95Mm": 12.8,
+  "regions": {
+   "SHOULDER": {
+    "n": 290,
+    "meanMm": 4.9,
+    "stdMm": 1.7,
+    "p5Mm": 3,
+    "p95Mm": 8.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "SLEEVE": {
+    "n": 134,
+    "meanMm": 9.6,
+    "stdMm": 4.1,
+    "p5Mm": 4.3,
+    "p95Mm": 17.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "COLLAR": {
+    "n": 96,
+    "meanMm": 9.6,
+    "stdMm": 4.7,
+    "p5Mm": 3.6,
+    "p95Mm": 18.2,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CHEST": {
+    "n": 367,
+    "meanMm": 11,
+    "stdMm": 5.1,
+    "p5Mm": 4.4,
+    "p95Mm": 21.3,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "BACK": {
+    "n": 180,
+    "meanMm": 6.1,
+    "stdMm": 2.7,
+    "p5Mm": 3.5,
+    "p95Mm": 11.4,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "CUFF": {
+    "n": 62,
+    "meanMm": 20.9,
+    "stdMm": 2.9,
+    "p5Mm": 16,
+    "p95Mm": 24.7,
+    "floatingPct": 0,
+    "insidePct": 0
+   },
+   "WAIST_HIP": {
+    "n": 617,
+    "meanMm": 18.2,
+    "stdMm": 10.1,
+    "p5Mm": 4.4,
+    "p95Mm": 34.2,
+    "floatingPct": 12.2,
+    "insidePct": 0
+   },
+   "HEM": {
+    "n": 65,
+    "meanMm": 28.1,
+    "stdMm": 4.2,
+    "p5Mm": 23.9,
+    "p95Mm": 37.3,
+    "floatingPct": 21.5,
+    "insidePct": 0
+   },
+   "THIGH": {
+    "n": 13,
+    "meanMm": 25.8,
+    "stdMm": 1,
+    "p5Mm": 24,
+    "p95Mm": 26.8,
+    "floatingPct": 0,
+    "insidePct": 0
+   }
+  },
+  "collar": {
+   "loopVertices": 52,
+   "gapMeanMm": 7,
+   "gapMinMm": 6.4,
+   "gapMaxMm": 7.4,
+   "gapStdMm": 0.2,
+   "collarFitErrorMm": 2,
+   "centerOffsetXmm": 0,
+   "centerOffsetZmm": 17.2,
+   "circularity": 0.16,
+   "bandInnerMinMm": -16,
+   "bandInnerMeanMm": 3.1,
+   "verdict": {
+    "centered": true,
+    "intersection": true,
+    "clearanceOk": true
+   }
+  },
+  "uv": {
+   "printedTriangles": 1406,
+   "uvDistortionP95": 1.45,
+   "stretchedOver2xPct": 8.4,
+   "compressedUnderHalfPct": 0
+  }
+ }
+]

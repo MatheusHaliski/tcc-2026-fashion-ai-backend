@@ -1,0 +1,66 @@
+{
+ "data": "2026-10-05",
+ "fase": "AVATAR-ID I2 (camada de resíduo assimétrico)",
+ "conjunto": "15 retratos de teste autorizados (docs/testes/dados); só agregados, nenhum valor por pessoa",
+ "reconhecedores": {
+  "SFace": "limiar mesma pessoa 0,363",
+  "ArcFace": "referência 0,30"
+ },
+ "vistas": {
+  "frente": {
+   "n": 15,
+   "antes_I0": {
+    "sfaceMediana": 0.369,
+    "sfaceAcimaDoLimiar": 8,
+    "arcfaceMediana": 0.312,
+    "top1": 11
+   },
+   "depois_I2": {
+    "sfaceMediana": 0.476,
+    "sfaceAcimaDoLimiar": 14,
+    "arcfaceMediana": 0.493,
+    "top1": 15
+   },
+   "melhoraram": 15
+  },
+  "tres_quartos": {
+   "n": 14,
+   "antes_I0": {
+    "sfaceMediana": 0.279,
+    "sfaceAcimaDoLimiar": 2,
+    "arcfaceMediana": 0.282,
+    "top1": 10
+   },
+   "depois_I2": {
+    "sfaceMediana": 0.404,
+    "sfaceAcimaDoLimiar": 9,
+    "arcfaceMediana": 0.374,
+    "top1": 13
+   },
+   "melhoraram": 13
+  }
+ },
+ "sinteticos_CI": {
+  "assimetriaPreservada": {
+   "antes": 0.009,
+   "depois": 0.95
+  },
+  "reprojecaoTodosMm": {
+   "antes": 1.4,
+   "depois": 0.5
+  },
+  "reprojecaoOlhosMm": {
+   "antes": 1.6,
+   "depois": 0.5
+  },
+  "reprojecaoBocaMm": {
+   "antes": 1.7,
+   "depois": 1.0
+  },
+  "captura": {
+   "antes": 0.57,
+   "depois": 0.95
+  },
+  "custoMs": "≈150 ms a mais por avatar (montagem do corpo)"
+ }
+}

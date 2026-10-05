@@ -18,6 +18,18 @@ export function hypeSortOptions(): FilterOption[] {
   ];
 }
 
+/**
+ * Ordenações de LOOKS (Meus looks em /api/me/schemes?sort=, Looks salvos): o subconjunto de hypeSortOptions que vale
+ * para um look — usos, raridade e tempo parado são de peça e ficam fora. "Mais recentes" é o padrão de quem chama.
+ */
+export function lookHypeSortOptions(): FilterOption[] {
+  return [
+    { value: "hype_desc", label: tr("hype.sort.hype_desc") },
+    { value: "hype_asc", label: tr("hype.sort.hype_asc") },
+    { value: "growth", label: tr("hype.sort.growth") },
+  ];
+}
+
 /** Faixa mínima de Hype (a partir de Nicho); "Sinal baixo" não filtra nada, então fica fora. */
 export function hypeLevelFilter(): FilterDef {
   return {

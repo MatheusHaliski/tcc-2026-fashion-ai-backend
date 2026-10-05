@@ -3,33 +3,60 @@ import { Button, ChipMultiSelect, Dropdown, Field, Input, SegmentPicker } from "
 import { CATEGORY_KEYS, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { tr } from "@/lib/i18n/core";
+import { LEVELS } from "@/lib/hype/model";
+import type { HypeLevel, HypeMomentum } from "@/lib/hype/types";
 
 /**
  * RF25 — política padronizada do selo. No lugar de um texto livre separado por vírgulas, o emissor monta regras que o
  * sistema avalia sozinho nos criadores de peça (RF4) e de look (RF5): "no mínimo 3 peças azuis da Zara", "peça
  * vermelha", "todas as peças amarelas da Adidas". Ocasiões e estilos do selo são tags escolhidas como no Criar Look.
  * O backend (SealPolicies.java) valida e gera o mesmo texto que o card mostra.
+ *
+ * RF53 — o HypeScore atual entra na política (o Hype alimenta os selos; selo nunca alimenta o Hype): `rule.hypeMin` é
+ * mais um filtro da regra ("ao menos 2 peças com Hype ≥ Em alta") e `policy.hype` vale para a entidade avaliada (o look
+ * no nível Look, a própria peça no nível Peça). Sem HypeScore calculado o critério de Hype não é atendido.
  */
 export type SealQuantifier = "AT_LEAST" | "ALL" | "NONE";
-export interface SealRule { quantifier: SealQuantifier; count?: number | null; color?: string | null; brand?: string | null; category?: string | null; subcategory?: string | null }
-export interface SealPolicy { match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[] }
+export interface SealRule { quantifier: SealQuantifier; count?: number | null; color?: string | null; brand?: string | null; category?: string | null; subcategory?: string | null;
+  /** RF53 — a peça só passa no filtro com Hype atual ≥ esse nível */ hypeMin?: HypeLevel | null }
+/** RF53 — critério de Hype da entidade avaliada: nível e score juntos = os dois precisam valer; momento = qualquer um da lista. */
+export interface SealHypeCriteria { minLevel?: HypeLevel | null; minScore?: number | null; momentum?: HypeMomentum[] | null }
+export interface SealPolicy { match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; hype?: SealHypeCriteria | null }
 export const EMPTY_POLICY: SealPolicy = { match: "ALL", rules: [], occasions: [], styles: [] };
 export const MAX_RULES = 6;
 export const MAX_SEAL_TAGS = 4;
 export type SealTierId = "LOOK" | "PECA";
+/** Momentos oferecidos no editor (o backend aceita os 5 do HypeMomentum, até 3 por política). */
+export const HYPE_MOMENTUM_CHOICES: HypeMomentum[] = ["RISING", "EMERGING", "CLASSIC"];
+const MOMENTUMS: HypeMomentum[] = ["EMERGING", "RISING", "STABLE", "COOLING", "CLASSIC"];
+export const MAX_HYPE_MOMENTUM = 3;
+const isLevel = (v: unknown): v is HypeLevel => typeof v === "string" && (LEVELS as string[]).includes(v);
 
 /** Famílias de cor da taxonomia (chave do backend → id da mensagem). */
 const FAMILIES = ["Preto", "Branco", "Cinza", "Azul", "Vermelho", "Rosa", "Laranja", "Amarelo", "Verde", "Roxo", "Marrom", "Especiais"];
 const familyLabel = (f: string) => tr(`sealPolicy.familia.${f.toLowerCase()}`);
 const colorLabel = (c: string) => (FAMILIES.includes(c) ? familyLabel(c) : label(c));
 
-/** Regra sem filtro nenhum não diz nada: some do envio (o backend faz o mesmo). */
+/** Critério de Hype limpo (nível válido, score inteiro 0–100, até 3 momentos sem repetição) ou null quando não diz nada. */
+export function cleanHype(h: SealHypeCriteria | null | undefined): SealHypeCriteria | null {
+  if (!h) return null;
+  const minLevel = isLevel(h.minLevel) ? h.minLevel : null;
+  const n = h.minScore == null ? NaN : Number(h.minScore);
+  const minScore = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : null;
+  const momentum = [...new Set(h.momentum ?? [])].filter((m) => MOMENTUMS.includes(m)).slice(0, MAX_HYPE_MOMENTUM);
+  if (!minLevel && minScore == null && !momentum.length) return null;
+  return { minLevel, minScore, momentum };
+}
+
+/** Regra sem filtro nenhum não diz nada: some do envio (o backend faz o mesmo). Política só com Hype é válida. */
 export function cleanPolicy(p: SealPolicy | null | undefined): SealPolicy | null {
   if (!p) return null;
-  const rules = p.rules.filter((r) => r.color || r.brand?.trim() || r.category || r.subcategory)
-    .map((r) => ({ quantifier: r.quantifier, count: r.quantifier === "AT_LEAST" ? Math.min(4, Math.max(1, r.count ?? 1)) : null, color: r.color || null, brand: r.brand?.trim() || null, category: r.category || null, subcategory: r.subcategory || null }));
-  if (!rules.length && !p.occasions.length && !p.styles.length) return null;
-  return { match: p.match, rules, occasions: p.occasions, styles: p.styles };
+  const rules = p.rules.filter((r) => r.color || r.brand?.trim() || r.category || r.subcategory || isLevel(r.hypeMin))
+    .map((r) => ({ quantifier: r.quantifier, count: r.quantifier === "AT_LEAST" ? Math.min(4, Math.max(1, r.count ?? 1)) : null, color: r.color || null, brand: r.brand?.trim() || null, category: r.category || null, subcategory: r.subcategory || null,
+      ...(isLevel(r.hypeMin) ? { hypeMin: r.hypeMin } : {}) }));
+  const hype = cleanHype(p.hype);
+  if (!rules.length && !p.occasions.length && !p.styles.length && !hype) return null;
+  return { match: p.match, rules, occasions: p.occasions, styles: p.styles, ...(hype ? { hype } : {}) };
 }
 
 function pieceWords(r: SealRule): string {
@@ -37,7 +64,23 @@ function pieceWords(r: SealRule): string {
   if (r.subcategory) w.push(label(r.subcategory).toLowerCase()); else if (r.category) w.push(label(r.category).toLowerCase());
   if (r.color) w.push(tr("sealPolicy.cor", { c: colorLabel(r.color).toLowerCase() }));
   if (r.brand?.trim()) w.push(tr("sealPolicy.da_marca", { b: r.brand.trim() }));
+  if (isLevel(r.hypeMin)) w.push(tr("sealPolicy.hype.com_hype_min", { level: tr(`hype.level.${r.hypeMin}`) }));
   return w.join(" ");
+}
+
+/** Trecho de Hype da política: "look com Hype ≥ 60 e em crescimento", "peça emergente", "look com Hype ≥ Em alta". */
+export function describeHype(h: SealHypeCriteria | null | undefined, tier: SealTierId): string {
+  const c = cleanHype(h);
+  if (!c) return "";
+  const level = c.minLevel ? tr(`hype.level.${c.minLevel}`) : null;
+  const hype = level && c.minScore != null ? tr("sealPolicy.hype.nivel_e_score", { level, score: c.minScore })
+    : level ? tr("sealPolicy.hype.nivel", { level }) : c.minScore != null ? tr("sealPolicy.hype.score", { score: c.minScore }) : "";
+  const g = tier === "PECA" ? "f" : "m";   // concordância de "clássico/clássica" (peça × look)
+  const momentum = (c.momentum ?? []).map((m) => tr(`sealPolicy.hype.mom.${m}`, { g })).join(tr("sealPolicy.ou"));
+  const subject = tr(tier === "PECA" ? "sealPolicy.hype.sujeito_peca" : "sealPolicy.hype.sujeito_look");
+  if (hype && momentum) return tr("sealPolicy.hype.com_e_momento", { subject, hype, momentum });
+  if (hype) return tr("sealPolicy.hype.com", { subject, hype });
+  return tr("sealPolicy.hype.so_momento", { subject, momentum });
 }
 
 export function describeRule(r: SealRule, tier: SealTierId): string {
@@ -53,8 +96,10 @@ export function describePolicy(p: SealPolicy | null, tier: SealTierId): string {
   const c = cleanPolicy(p);
   if (!c) return "";
   const rules = c.rules.map((r) => describeRule(r, tier)).join(c.match === "ANY" ? tr("sealPolicy.ou") : tr("sealPolicy.e"));
+  // RF53: as regras e o Hype da entidade numa frase só ("ao menos 2 peças … com Hype ≥ Em alta; look com Hype ≥ 60 …")
+  const head = [rules, describeHype(c.hype, tier)].filter(Boolean).join(tr("sealPolicy.hype.separador"));
   const tags = [c.occasions.length ? tr("sealPolicy.ocasioes", { v: c.occasions.map(label).join(", ") }) : "", c.styles.length ? tr("sealPolicy.estilos", { v: c.styles.map(label).join(", ") }) : ""].filter(Boolean).join(" · ");
-  return [rules, tags].filter(Boolean).join(" · ");
+  return [head, tags].filter(Boolean).join(" · ");
 }
 
 export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
@@ -79,6 +124,14 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
     ? [{ id: "ALL" as SealQuantifier, label: t("sealPolicy.q_peca_e") }, { id: "NONE" as SealQuantifier, label: t("sealPolicy.q_peca_nao_e") }]
     : [{ id: "AT_LEAST" as SealQuantifier, label: t("sealPolicy.q_no_minimo") }, { id: "ALL" as SealQuantifier, label: t("sealPolicy.q_todas") }, { id: "NONE" as SealQuantifier, label: t("sealPolicy.q_nenhuma") }];
   const sentence = describePolicy(value, tier);
+  // RF53: nível mínimo de Hype (por regra e da entidade) com os rótulos de faixa do Hype — texto, nunca só cor
+  const hypeLevelOptions = (empty: string) => [{ id: "", label: empty }, ...LEVELS.map((l) => ({ id: l as string, label: t("sealPolicy.hype.nivel_opcao", { level: t(`hype.level.${l}`) }) }))];
+  const hype = value.hype ?? {};
+  const setHype = (patch: Partial<SealHypeCriteria>) => {
+    const next = { ...hype, ...patch };
+    const empty = !next.minLevel && next.minScore == null && !(next.momentum ?? []).length;
+    onChange({ ...value, hype: empty ? null : next });
+  };
 
   return (
     <div className="space-y-4">
@@ -122,6 +175,9 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
                 <Field label={t("sealPolicy.marca_label")} id={`sp-brand-${i}`} hint={t("sealPolicy.marca_dica")}>
                   <Input id={`sp-brand-${i}`} value={r.brand ?? ""} maxLength={80} placeholder={t("sealPolicy.qualquer_marca")} onChange={(e) => setRule(i, { brand: e.target.value })} />
                 </Field>
+                <Field label={t("sealPolicy.hype.regra_label")} id={`sp-hype-${i}`} hint={t("sealPolicy.hype.regra_dica")}>
+                  <Dropdown id={`sp-hype-${i}`} block value={(r.hypeMin ?? "") as string} options={hypeLevelOptions(t("sealPolicy.hype.qualquer_hype"))} onChange={(v) => setRule(i, { hypeMin: (v || null) as HypeLevel | null })} />
+                </Field>
               </div>
               {brand && (r.brand ?? "").trim().toLowerCase() !== brand.toLowerCase() && <Button size="sm" type="button" className="mt-2" onClick={() => setRule(i, { brand })}>{t("sealPolicy.usar_minha_marca", { b: brand })}</Button>}
               <p className="type-caption text-muted mt-2">{describeRule(r, tier)}</p>
@@ -138,6 +194,24 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
         options={(tax?.occasions ?? []).map((o) => ({ id: o, label: label(o) }))} hint={t("sealPolicy.tags_dica")} />
       <ChipMultiSelect legend={t("common.style")} max={MAX_SEAL_TAGS} value={value.styles} onChange={(v) => onChange({ ...value, styles: v })}
         options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} hint={t("sealPolicy.tags_dica")} />
+
+      {/* RF53 — Hype da entidade avaliada (o look no nível Look; a própria peça no nível Peça) */}
+      <section aria-labelledby="sp-hype" className="seal-hype-policy surface p-3">
+        <p id="sp-hype" className="label mb-1">{t("sealPolicy.hype.titulo")}</p>
+        <p className="help mb-2">{tier === "PECA" ? t("sealPolicy.hype.dica_peca") : t("sealPolicy.hype.dica_look")}</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label={t("sealPolicy.hype.nivel_minimo")} id="sp-hype-level">
+            <Dropdown id="sp-hype-level" block value={(hype.minLevel ?? "") as string} options={hypeLevelOptions(t("sealPolicy.hype.qualquer_nivel"))} onChange={(v) => setHype({ minLevel: (v || null) as HypeLevel | null })} />
+          </Field>
+          <Field label={t("sealPolicy.hype.score_minimo")} id="sp-hype-score" hint={t("sealPolicy.hype.score_dica")}>
+            <Input id="sp-hype-score" type="number" inputMode="numeric" min={0} max={100} step={1} value={hype.minScore ?? ""} placeholder={t("sealPolicy.hype.sem_score")}
+              onChange={(e) => { const raw = e.target.value.trim(); setHype({ minScore: raw === "" || !Number.isFinite(Number(raw)) ? null : Math.min(100, Math.max(0, Math.round(Number(raw)))) }); }} />
+          </Field>
+        </div>
+        <ChipMultiSelect legend={t("sealPolicy.hype.momento")} max={MAX_HYPE_MOMENTUM} value={hype.momentum ?? []} onChange={(v) => setHype({ momentum: v as HypeMomentum[] })}
+          options={HYPE_MOMENTUM_CHOICES.map((m) => ({ id: m, label: t(`sealPolicy.hype.chip.${m}`) }))} hint={t("sealPolicy.hype.momento_dica")} />
+        <p className="type-caption text-muted">{t("sealPolicy.hype.sem_pay_to_win")}</p>
+      </section>
 
       <div className="surface p-3" aria-live="polite">
         <p className="label mb-1">{t("sealPolicy.o_selo_sera_sugerido_quando")}</p>

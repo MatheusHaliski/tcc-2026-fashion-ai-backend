@@ -14,6 +14,11 @@ import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
+import { SealSuggestionHype } from "@/components/hype/hype-seals";
+import { LookHypePreview, PieceHypeTag } from "@/components/hype/look-hype-preview";
+import { InsightStrip } from "@/components/insights/insight-strip";
+import type { LookScoreValues } from "@/components/hype/look-scores";
+import type { HypeLevel } from "@/lib/hype/types";
 import { studioOf } from "@/lib/card-art";
 import { CreationSuccess } from "@/components/expanded-card";
 import Link from "next/link";
@@ -21,13 +26,15 @@ import { useSearchParams } from "next/navigation";
 
 interface Builder { totalPieces: number; eligiblePieces: number; hiddenPieces?: number; source?: string; status: string; message?: string; action?: { label: string; href: string }; lists: Record<string, PieceView[]>; defaultVisibility: string; steps?: string[]; slots?: string[]; }
 interface Orientation { background?: { color?: string | null; gradientPresetId?: string; seasonalPresetId?: string; aura?: { variantId: string }; materialId?: string; cardSkin?: string; animation?: string } | null; occasions?: string[]; styles?: string[]; season?: string | null; mood?: string | null; weather?: string | null }
-interface Composition { title: string; items: { wardrobeItemId: string; slot: string }[]; occasions?: string[]; styles?: string[]; why?: string; reason?: string; }
+/** `scores`: os seis números da combinação (RF53 · P2-14), na mesma ordem de `compositions` na resposta. */
+interface Composition { title: string; items: { wardrobeItemId: string; slot: string }[]; occasions?: string[]; styles?: string[]; why?: string; reason?: string; scores?: LookScoreValues | null; }
 // mesmos valores do enum SchemeSlot do backend (um valor diferente faria o POST falhar com JSON_INVALIDO)
 const OUTER_SUBCATEGORIES = new Set(["jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono", "vest"]);
 const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "FULL_BODY" };
 const slotOf = (p: PieceView) => (p.category === "upper_piece" && OUTER_SUBCATEGORIES.has(p.subcategory ?? "") ? "OUTERWEAR" : SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY");
 const SLOT_LABEL: Record<string, string> = { get OUTERWEAR() { return tr("schemeBuilder.sobreposicao"); }, get TOP() { return tr("schemeBuilder.parte_de_cima"); }, get FULL_BODY() { return tr("schemeBuilder.peca_unica"); }, get BOTTOM() { return tr("schemeBuilder.parte_de_baixo"); }, get SHOES() { return tr("common.calcado"); }, get ACCESSORY() { return tr("common.acessorio"); } };
-interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null }
+/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. */
+interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
 interface SealSearch { loading: boolean; list: SealOption[]; message?: string | null; unregisteredMessage?: string | null; failed?: boolean }
 
 /**
@@ -46,7 +53,7 @@ function SealSuggestions({ search, picked, onToggle, consent, onConsent }: { sea
             return (
               <button key={s.targetOwnerId} type="button" role="checkbox" aria-checked={on} onClick={() => onToggle(s.targetOwnerId)} className={`list-row is-action flex items-center gap-3 text-left ${on ? "is-active" : ""}`}>
                 <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
-                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}</span>
+                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}<SealSuggestionHype hype={s.hype} /></span>
                 <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>
                 <span aria-hidden className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-ink bg-ink text-surface" : "border-line"}`}>{on ? "✓" : ""}</span>
               </button>
@@ -180,8 +187,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   async function compose() {
     setBusy(true); setComps(null);
     try {
-      const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string; orientation?: Orientation | null }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null });
-      setComps(r.compositions); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null));
+      const r = await api.post<{ compositions: Composition[]; message?: string; fallbackUsed?: boolean; provider?: string; orientation?: Orientation | null; scores?: (LookScoreValues | null)[] | null }>("/api/schemes/compositions", { occasion: form.occasion, style: form.style, mood: form.mood || null, season: form.season || null, prompt: prompt || null });
+      setComps(r.compositions.map((c, i) => ({ ...c, scores: r.scores?.[i] ?? null }))); setAiMsg(r.message ?? (r.fallbackUsed ? t("common.motor_local_ia_remota_indisponivel") : r.provider ? t("common.gerado_por", { provider: r.provider }) : null));
       applyOrientation(r.orientation);
     }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
@@ -228,7 +235,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
                 {orientationNote && <p className="type-caption text-chalk-ink">{orientationNote}</p>}
                 {aiMsg && <p className="type-caption text-muted">{aiMsg}</p>}
                 {comps && <div className="grid gap-2 sm:grid-cols-3">{comps.map((c, i) => (
-                  <AiCompositionCard key={i} title={c.title} why={c.why ?? c.reason} slotLabel={(slot) => SLOT_LABEL[slot] ?? slot} onApply={() => applyComposition(c)}
+                  <AiCompositionCard key={i} title={c.title} why={c.why ?? c.reason} scores={c.scores} slotLabel={(slot) => SLOT_LABEL[slot] ?? slot} onApply={() => applyComposition(c)}
                     items={onePerType(c.items.map((it) => ({ ...it, id: it.wardrobeItemId })), (id) => byId.get(id)).map((it) => ({ wardrobeItemId: it.wardrobeItemId, slot: it.slot, piece: byId.get(it.wardrobeItemId) ?? null }))} />))}</div>}
               </div>
             )}
@@ -241,7 +248,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               <section className="surface mb-4 p-3" aria-label={t("schemeBuilder.slots_do_look")}>
                 <p className="label">{t("schemeBuilder.slots_do_look_a_marca")}</p>
                 <div className="grid gap-2 sm:grid-cols-2">{selected.map((s) => { const p = byId.get(s.id); return (
-                  <div key={s.id} className="list-row flex min-w-0 items-center gap-2"><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-9 w-9 shrink-0 rounded bg-surface-2 object-contain" /><span className="min-w-0 flex-1 truncate type-body-sm">{p?.name ?? s.id}</span><SlotBrand piece={p} /></div>); })}</div>
+                  <div key={s.id} className="list-row flex min-w-0 items-center gap-2"><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-9 w-9 shrink-0 rounded bg-surface-2 object-contain" /><span className="min-w-0 flex-1"><span className="block truncate type-body-sm">{p?.name ?? s.id}</span><PieceHypeTag id={s.id} /></span><SlotBrand piece={p} /></div>); })}</div>
                 <p className="mt-2 type-caption text-muted">{t("schemeBuilder.o_esquema_nao_tem_campo")} {t("schemeBuilder.uma_peca_por_tipo")}</p>
               </section>
             )}
@@ -278,7 +285,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
             <div className="mb-4 grid gap-2">{selected.map((s) => { const p = byId.get(s.id); return (
-              <div key={s.id} className="list-row flex items-center gap-3"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="min-w-0 flex-1 truncate">{p?.name ?? s.id}</span><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><SlotBrand piece={p} />
+              <div key={s.id} className="list-row flex items-center gap-3"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="min-w-0 flex-1"><span className="block truncate">{p?.name ?? s.id}</span><PieceHypeTag id={s.id} /></span><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><SlotBrand piece={p} />
                 <Button size="sm" variant="ghost" aria-label={t("common.remove")} disabled={selected.length <= 2} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></div>); })}</div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={doPreview} loading={busy}>{t("schemeBuilder.png", { txt: t("scheme.preview") })}</Button>
@@ -293,7 +300,11 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("scheme.card")}</p>
           {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout, skin e peças ficam */}
           <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
-        <SchemeCard scheme={draft} href="#" /></aside>
+        <SchemeCard scheme={draft} href="#" />
+        {/* RF53 (P1-08): os seis números do rascunho — o Hype aqui é a média das peças; nada é salvo nem vira sinal */}
+        <LookHypePreview pieceIds={selected.map((x) => x.id)} occasion={form.occasion} style={form.style} schemeId={initial?.id ?? null} />
+        {/* RF53 · Lote A5 (P3-15): leitura pessoal das peças escolhidas (Hype ao lado do DNA e do uso) e redescobertas; fechada até abrir */}
+        <InsightStrip context="LOOK_EDITOR" params={{ pieces: selected.map((x) => x.id).sort().join(",") }} collapsible className="mt-3" /></aside>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );

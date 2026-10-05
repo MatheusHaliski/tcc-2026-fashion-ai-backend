@@ -335,4 +335,62 @@ public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
         jdbc.getJdbcOperations().queryForObject("SELECT 1", Integer.class);
         return Math.max(0, (System.nanoTime() - t0) / 1_000_000);
     }
+
+    // ---------------------------------------------------------------- HypeScore v2 (RF53 · Lote 7) — só leitura de hype_scores
+    // As datas saem formatadas em ISO-8601 UTC (as colunas DATETIME guardam UTC: hibernate.jdbc.time_zone), sem depender
+    // do tipo que o driver devolve para DATETIME.
+
+    @Override
+    public List<Map<String, Object>> hypeLevelsV2(Filter f, String algorithmVersion) {
+        // LEFT JOIN: sem recorte, dono ausente não some; com recorte, a condição de usuário filtra normalmente
+        return jdbc.queryForList("""
+                SELECT h.entity_type AS entity_type, h.level AS level, COUNT(*) AS total
+                FROM hype_scores h LEFT JOIN users u ON u.id = h.owner_id
+                WHERE h.algorithm_version = :version AND h.public_eligible = TRUE AND h.status = 'AVAILABLE' AND h.level IS NOT NULL
+                  AND""" + USER_SCOPE + """
+                GROUP BY h.entity_type, h.level""", params(f).addValue("version", algorithmVersion));
+    }
+
+    @Override
+    public List<Map<String, Object>> hypeCoverageV2(Filter f, String algorithmVersion) {
+        String counts = """
+                COUNT(*) AS total,
+                       SUM(CASE WHEN h.status = 'AVAILABLE' THEN 1 ELSE 0 END) AS available,
+                       SUM(CASE WHEN h.status = 'INSUFFICIENT_DATA' THEN 1 ELSE 0 END) AS insufficient,
+                       SUM(CASE WHEN h.id IS NULL THEN 1 ELSE 0 END) AS not_calculated,
+                       SUM(CASE WHEN h.public_eligible THEN 1 ELSE 0 END) AS public_eligible""";
+        return jdbc.queryForList("""
+                SELECT 'PIECE' AS entity_type, %1$s
+                FROM wardrobe_items w JOIN users u ON u.id = w.user_id
+                LEFT JOIN hype_scores h ON h.entity_type = 'PIECE' AND h.entity_id = w.id AND h.algorithm_version = :version
+                WHERE w.availability_status <> 'ARCHIVED' AND %2$s
+                UNION ALL
+                SELECT 'SCHEME', %1$s
+                FROM schemes s JOIN users u ON u.id = s.user_id
+                LEFT JOIN hype_scores h ON h.entity_type = 'SCHEME' AND h.entity_id = s.id AND h.algorithm_version = :version
+                WHERE s.status <> 'ARCHIVED' AND %2$s""".formatted(counts, USER_SCOPE), params(f).addValue("version", algorithmVersion));
+    }
+
+    @Override
+    public Map<String, Object> hypeJobV2(String algorithmVersion) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT (SELECT DATE_FORMAT(MAX(calculated_at), '%Y-%m-%dT%H:%i:%sZ') FROM hype_scores WHERE algorithm_version = :version) AS last_calculated_at,
+                       (SELECT DATE_FORMAT(MAX(snapshot_date), '%Y-%m-%d') FROM hype_score_snapshots WHERE algorithm_version = :version) AS last_snapshot_date,
+                       (SELECT COUNT(*) FROM hype_scores WHERE algorithm_version = :version) AS rows_total""",
+                new MapSqlParameterSource("version", algorithmVersion));
+        return rows.isEmpty() ? Map.of() : rows.get(0);
+    }
+
+    @Override
+    public List<Map<String, Object>> bondedLooksHypeV2(UUID issuerId, String algorithmVersion) {
+        return jdbc.queryForList("""
+                SELECT s.id AS scheme_id, s.title AS title, s.cover_image_url AS cover_url, u.username AS owner,
+                       h.status AS status, h.score AS score, h.level AS level, h.delta_points AS delta_points, h.direction AS direction,
+                       h.public_eligible AS public_eligible, DATE_FORMAT(h.calculated_at, '%Y-%m-%dT%H:%i:%sZ') AS calculated_at
+                FROM schemes s JOIN users u ON u.id = s.user_id
+                LEFT JOIN hype_scores h ON h.entity_type = 'SCHEME' AND h.entity_id = s.id AND h.algorithm_version = :version
+                WHERE s.status <> 'ARCHIVED'
+                  AND s.id IN (SELECT b.scheme_id FROM seal_bonds b WHERE b.target_owner_user_id = :owner AND b.status = 'APPROVED')""",
+                new MapSqlParameterSource("version", algorithmVersion).addValue("owner", issuerId.toString()));
+    }
 }

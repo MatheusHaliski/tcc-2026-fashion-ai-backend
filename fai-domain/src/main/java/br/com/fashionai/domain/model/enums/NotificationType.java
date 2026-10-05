@@ -36,6 +36,11 @@ public enum NotificationType {
     /** RF34 §4.3 / RF35 §5.3 — conquista desbloqueada e evolução do quarto. */
     ACHIEVEMENT_UNLOCKED(NotificationCategory.ACHIEVEMENT, true),
     ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true),
+    /**
+     * RF53 · P1-10 — marco de Hype: peça ou look do dono SOBE pela 1ª vez para Em alta, Tendência ou Viral, ou passa a
+     * ser emergente. Nunca avisa queda (ETI-02); no máximo um resumo por dono por dia; só o dono recebe.
+     */
+    HYPE_MILESTONE(NotificationCategory.ACHIEVEMENT, true),
     /** Card Trello RF38 — "Parabéns! Deseja resgatar o CUPOM?" (direito promocional conquistado no app). */
     COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true),
     /** RF30/RF39 — extrato dos FAI Points: cada lançamento do ledger (ganho ou gasto) vira uma notificação. */

@@ -141,4 +141,41 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
   });
+
+  it("várias fotos: analisa cada uma, revisa foto por foto e cadastra todas as peças detectadas", async () => {
+    const onSaved = vi.fn();
+    const second: MultiDetection = { ...DETECTION, draftId: "d2", pieces: [{ ...DETECTION.pieces[0], index: 0, name: "Tênis branco", category: "shoes_piece", subcategory: "casual_sneakers", color: "white" }] };
+    let analysed = 0;
+    const { calls } = mockApi({
+      "GET /api/taxonomy": TAXONOMY,
+      "POST /api/pieces/analysis/multi": () => (analysed++ === 0 ? DETECTION : second),
+      "POST /api/pieces/analysis/multi/d1/pieces": { draftId: "p1" },
+      "POST /api/pieces/analysis/multi/d2/pieces": { draftId: "p2" },
+      "POST /api/pieces": { id: "novo" },
+    });
+    const { container } = renderApp(<MultiPieceUpload onSaved={onSaved} />);
+    expect(container.querySelector("input[type=file]")!.hasAttribute("multiple")).toBe(true);
+    fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [photo(), photo()] } });
+    expect(screen.getByText("Foto 2")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: /foto 1 de 2/ })).toBeTruthy());
+    expect(calls.filter((c) => c.path === "/api/pieces/analysis/multi").length).toBe(2);
+    await waitFor(() => expect(screen.getByDisplayValue("Saia azul")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Salvar 2 peças/ }));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: /foto 2 de 2/ })).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue("Tênis branco")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Salvar 1 peça/ }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(3));
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/api/pieces").length).toBe(3);
+  });
+
+  it("várias fotos: respeita o limite por envio e deixa remover uma foto antes de analisar", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    const { container } = renderApp(<MultiPieceUpload onSaved={vi.fn()} />);
+    fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: Array.from({ length: 12 }, photo) } });
+    expect(screen.getByText(/Até 10 fotos por vez/)).toBeTruthy();
+    expect(screen.getAllByRole("img", { name: /^Foto \d+$/ }).length).toBe(10);
+    fireEvent.click(screen.getByRole("button", { name: "Remover foto 1" }));
+    expect(screen.getAllByRole("img", { name: /^Foto \d+$/ }).length).toBe(9);
+  });
 });

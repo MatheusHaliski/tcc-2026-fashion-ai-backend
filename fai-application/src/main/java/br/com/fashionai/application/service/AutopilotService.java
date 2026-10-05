@@ -9,6 +9,10 @@ import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
+import br.com.fashionai.application.insights.InsightContext;
+import br.com.fashionai.application.insights.InsightService;
 import br.com.fashionai.application.imaging.MannequinGeometry;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -33,6 +37,7 @@ import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.model.enums.WeekPlanStatus;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
+import br.com.fashionai.domain.repository.StyleDnaRepository;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
@@ -68,7 +73,15 @@ public class AutopilotService {
     public static final int MIN_PIECES = 3;
     static final double W_OCCASION = 0.35, W_CLIMATE = 0.25, W_PREFERENCE = 0.25, W_DIVERSITY = 0.15;
 
-    public record DailyRequest(List<String> occasion, String mood, String city, Double latitude, Double longitude, List<String> excludeKeys) {
+    /**
+     * {@code mode} (opcional): SAFE, DISCOVERY ou EXPERIMENTAL — ordena as alternativas pela pontuação multidimensional
+     * ({@link RecommendationScoring}), a mesma do Copilot. Sem modo, vale a ordem do motor.
+     */
+    public record DailyRequest(List<String> occasion, String mood, String city, Double latitude, Double longitude, List<String> excludeKeys, String mode) {
+        /** Forma anterior (sem modo). */
+        public DailyRequest(List<String> occasion, String mood, String city, Double latitude, Double longitude, List<String> excludeKeys) {
+            this(occasion, mood, city, latitude, longitude, excludeKeys, null);
+        }
     }
 
     public record DayRequest(LocalDate date, String event, String occasion) {
@@ -94,11 +107,17 @@ public class AutopilotService {
     private final WeatherService weather;
     private final AiEngine ai;
     private final Guard guard;
+    /** Seis dimensões por look (DNA, Hype, novidade, reutilização, uso, sustentabilidade) — a mesma régua do Copilot. */
+    private final LookScorer scorer;
+    /** Insights dinâmicos do contexto AUTOPILOT (reuso, uso, DNA; Hype só ao lado deles). */
+    private final InsightService insights;
 
     public AutopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeService schemeService, SchemeRepository schemes,
                             SchemeItemRepository schemeItems, DailyLookService dailyLooks, WeekPlanRepository weekPlans, WeekPlanDayRepository weekDays,
                             UserRepository users, UserPreferencesRepository preferences, PreferenceModel preferenceModel, WeatherService weather,
-                            AiEngine ai, Guard guard) {
+                            AiEngine ai, Guard guard, StyleDnaRepository dnas, HypeQueryService hype, InsightService insights) {
+        this.scorer = new LookScorer(pieces, schemes, schemeItems, dnas, hype);
+        this.insights = insights;
         this.wardrobe = wardrobe;
         this.pieces = pieces;
         this.schemeService = schemeService;
@@ -303,7 +322,10 @@ public class AutopilotService {
     // ================================================================== HU17 — Autopiloto diário
     @Transactional
     public Map<String, Object> daily(CurrentUser user, DailyRequest req) {
-        return daily(user, req, Set.of());
+        Map<String, Object> out = new LinkedHashMap<>(daily(user, req, Set.of()));
+        // insights do contexto AUTOPILOT: peças paradas (60+ dias), uso real e DNA; o Hype só aparece ao lado deles
+        out.put("insights", insights.itemsOrEmpty(user, InsightContext.AUTOPILOT));
+        return out;
     }
 
     @Transactional
@@ -334,9 +356,17 @@ public class AutopilotService {
             out.put("message", Msg.t("autopilot.nao_ha_combinacoes_novas_diferentes"));
             return out;
         }
+        // pontuação multidimensional das alternativas (as 10 que a IA/fallback podem escolher) e, com modo, a ordem do modo
+        RecommendationScoring.Mode mode = RecommendationScoring.Mode.parse(req.mode());
+        List<Candidate> pool = ranked.stream().limit(10).toList();
+        Map<String, RecommendationScoring.Scores> scores = scoresOf(user.id(), pool);
+        if (mode != null) {
+            pool = byMode(pool, scores, mode);
+        }
         AiOutcome<?>[] holder = new AiOutcome<?>[1];
-        List<Map<String, Object>> picks = pickWithAi(user, ranked, occasions, req.mood(), ctx, holder);
+        List<Map<String, Object>> picks = attachScores(pickWithAi(user, pool, occasions, req.mood(), ctx, holder), pool, scores, mode);
         out.put("suggestions", picks);
+        out.put("mode", mode == null ? null : mode.name());
         List<String> nextExclude = new ArrayList<>(exclude);
         picks.forEach(p -> nextExclude.add(String.valueOf(p.get("key"))));
         out.put("excludeKeys", nextExclude);
@@ -349,6 +379,52 @@ public class AutopilotService {
         }
         if (picks.size() < 3) {
             out.put("notice", Msg.t("autopilot.seu_acervo_permitiu_combinacao_oes", picks.size()));
+        }
+        return out;
+    }
+
+    /** Seis números de cada candidata (por chave da combinação), numa rodada só de consultas. */
+    Map<String, RecommendationScoring.Scores> scoresOf(UUID userId, List<Candidate> pool) {
+        List<RecommendationScoring.Scores> list = scorer.scoreLooks(userId, pool.stream().map(Candidate::pieces).toList());
+        Map<String, RecommendationScoring.Scores> out = new LinkedHashMap<>();
+        for (int i = 0; i < pool.size() && i < list.size(); i++) {
+            out.put(pool.get(i).key(), list.get(i));
+        }
+        return out;
+    }
+
+    /** Ordem do modo (SAFE/DISCOVERY/EXPERIMENTAL); empate = ordem do motor (ocasião, clima, preferências, diversidade). */
+    static List<Candidate> byMode(List<Candidate> pool, Map<String, RecommendationScoring.Scores> scores, RecommendationScoring.Mode mode) {
+        List<Candidate> sorted = new ArrayList<>(pool);
+        sorted.sort(Comparator.comparingDouble((Candidate c) -> -RecommendationScoring.rankValue(mode, scores.getOrDefault(c.key(),
+                new RecommendationScoring.Scores(null, null, null, null)))));
+        return sorted;
+    }
+
+    /**
+     * Acrescenta {@code scores} a cada look sugerido e, com modo, reordena as escolhas pelo peso do modo (a numeração do
+     * título acompanha a nova ordem).
+     */
+    static List<Map<String, Object>> attachScores(List<Map<String, Object>> picks, List<Candidate> pool, Map<String, RecommendationScoring.Scores> scores,
+                                                  RecommendationScoring.Mode mode) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> p : picks) {
+            Map<String, Object> m = new LinkedHashMap<>(p);
+            RecommendationScoring.Scores s = scores.get(String.valueOf(p.get("key")));
+            m.put("scores", s == null ? null : s.toMap());
+            out.add(m);
+        }
+        if (mode != null) {
+            out.sort(Comparator.comparingDouble((Map<String, Object> m) -> -RecommendationScoring.rankValue(mode,
+                    scores.getOrDefault(String.valueOf(m.get("key")), new RecommendationScoring.Scores(null, null, null, null)))));
+            Map<String, Candidate> byKey = new HashMap<>();
+            pool.forEach(c -> byKey.put(c.key(), c));
+            for (int i = 0; i < out.size(); i++) {
+                Candidate c = byKey.get(String.valueOf(out.get(i).get("key")));
+                if (c != null) {
+                    out.get(i).put("title", Msg.t("autopilot.look_do_dia", i + 1, c.composition().title()));
+                }
+            }
         }
         return out;
     }
@@ -511,9 +587,12 @@ public class AutopilotService {
     Map<String, Object> planView(CurrentUser user, WeekPlan plan) {
         LocalDate today = LocalDate.now(FaiPointsService.ZONE);
         List<Map<String, Object>> days = new ArrayList<>();
+        List<List<WardrobeItem>> planned = new ArrayList<>();
+        List<Map<String, Object>> plannedDays = new ArrayList<>();
         for (WeekPlanDay d : weekDays.findByWeekPlanIdOrderByDayDate(plan.getId())) {
             List<UUID> ids = Json.strings(d.getPieceIdsJson()).stream().map(UUID::fromString).toList();
             Map<UUID, WardrobeItem> byId = ids.isEmpty() ? Map.of() : pieces.findByIdIn(ids).stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
+            List<WardrobeItem> look = ids.stream().map(byId::get).filter(Objects::nonNull).toList();
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", d.getId());
             m.put("date", d.getDayDate());
@@ -525,7 +604,17 @@ public class AutopilotService {
             m.put("rationale", d.getRationale());
             m.put("editedManually", d.isEditedManually());
             m.put("schemeId", d.getScheme() == null ? null : d.getScheme().getId());
+            m.put("scores", null);
+            if (!look.isEmpty()) {
+                planned.add(look);
+                plannedDays.add(m);
+            }
             days.add(m);
+        }
+        // a mesma pontuação multidimensional do look diário, para cada dia com look (lacuna = sem scores)
+        List<RecommendationScoring.Scores> scored = planned.isEmpty() ? List.of() : scorer.scoreLooks(user.id(), planned);
+        for (int i = 0; i < plannedDays.size() && i < scored.size(); i++) {
+            plannedDays.get(i).put("scores", scored.get(i).toMap());
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("active", plan.getStatus() == WeekPlanStatus.ACTIVE);

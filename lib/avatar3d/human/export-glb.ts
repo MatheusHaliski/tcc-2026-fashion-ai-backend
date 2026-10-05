@@ -12,16 +12,31 @@ import { applyIdle, idleClip, type PoseState } from "./pose";
 /** Código do erro quando o avatar ainda não está vestido (a tela traduz). */
 export const AVATAR_NOT_DRESSED = "AVATAR_NOT_DRESSED";
 
-export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { animation?: boolean } = {}): Promise<Blob> {
+/**
+ * `opts.hair`: o cabelo em cena (`live`) e quem monta o cabelo do arquivo (`build`, nível 2 — cards, hair-lod.ts).
+ * Durante a exportação o cabelo em cena fica oculto e o de cards entra no lugar; depois tudo volta como estava.
+ */
+export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { animation?: boolean; hair?: { live: THREE.Object3D | null; build?: () => THREE.SkinnedMesh | null } } = {}): Promise<Blob> {
   // nunca exporta o corpo sem roupa: só com tronco, pernas e pés cobertos (HumanOutfit marca root.userData.dressed)
   if (human.root.userData.dressed !== true || !human.root.visible) throw new Error(AVATAR_NOT_DRESSED);
   const clips: THREE.AnimationClip[] = [];
   if (opts.animation !== false) clips.push(idleClip(human, pose));
   applyIdle(human, pose, 0, 0);                              // o arquivo guarda a pose de exibição como pose inicial
-  human.root.updateMatrixWorld(true);
-  const exporter = new GLTFExporter();
-  const out = await exporter.parseAsync(human.root, { binary: true, animations: clips, onlyVisible: true, maxTextureSize: 2048 });
-  return new Blob([out as ArrayBuffer], { type: "model/gltf-binary" });
+  const live = opts.hair?.live ?? null; const wasVisible = live?.visible ?? false;
+  const fileHair = opts.hair?.build?.() ?? null;            // já preso ao esqueleto (HumanParts.exportHair)
+  if (fileHair && live) live.visible = false;
+  try {
+    human.root.updateMatrixWorld(true);
+    const exporter = new GLTFExporter();
+    const out = await exporter.parseAsync(human.root, { binary: true, animations: clips, onlyVisible: true, maxTextureSize: 2048 });
+    return new Blob([out as ArrayBuffer], { type: "model/gltf-binary" });
+  } finally {
+    if (fileHair) {
+      fileHair.removeFromParent(); fileHair.geometry.dispose();
+      for (const m of ([] as THREE.Material[]).concat(fileHair.material)) { (m as THREE.MeshPhysicalMaterial).map?.dispose(); m.dispose(); }
+    }
+    if (live) live.visible = wasVisible;
+  }
 }
 
 /** Baixa o arquivo no navegador. */

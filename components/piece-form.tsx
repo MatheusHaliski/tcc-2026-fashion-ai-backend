@@ -6,6 +6,8 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
+import { SealSuggestionHype } from "@/components/hype/hype-seals";
+import type { HypeLevel } from "@/lib/hype/types";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
@@ -32,7 +34,8 @@ export function toPayload(v: PieceFormValue) {
   return { ...rest, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
 }
 
-interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string }
+/** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
+interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; hype?: { score: number | null; level: HypeLevel | null } | null }
 /** identificador guardado em seals[] da peça: tipo + nome (o mesmo formato "TIPO:nome" que o card lê) */
 const sealId = (s: SealOption) => `${s.kind}:${s.name}`;
 
@@ -62,7 +65,7 @@ export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValu
           {search.list.map((s) => { const on = value.seals.includes(sealId(s)); return (
             <button key={s.targetOwnerId} type="button" role="checkbox" aria-checked={on} onClick={() => toggle(s)} className={`list-row is-action flex items-center gap-3 text-left ${on ? "is-active" : ""}`}>
               <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
-              <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}</span>
+              <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}<SealSuggestionHype hype={s.hype} /></span>
               <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>
               <span aria-hidden className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-ink bg-ink text-surface" : "border-line"}`}>{on ? "✓" : ""}</span>
             </button>); })}
